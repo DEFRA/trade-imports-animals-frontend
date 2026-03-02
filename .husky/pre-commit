@@ -1,1 +1,1 @@
-npm run git:pre-commit-hook
+npm test
