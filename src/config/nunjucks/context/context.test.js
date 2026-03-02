@@ -60,7 +60,7 @@ describe('context and cache', () => {
               href: '/about'
             }
           ],
-          serviceName: 'trade-imports-animals-frontend',
+          serviceName: 'Animals',
           serviceUrl: '/'
         })
       })
@@ -149,7 +149,7 @@ describe('context and cache', () => {
               href: '/about'
             }
           ],
-          serviceName: 'trade-imports-animals-frontend',
+          serviceName: 'Animals',
           serviceUrl: '/'
         })
       })
