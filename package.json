@@ -53,7 +53,7 @@
     "cssnano": "7.1.2",
     "cssnano-preset-default": "7.0.10",
     "date-fns": "4.1.0",
-    "global-agent": "3.0.0",
+    "global-agent": "4.1.2",
     "govuk-frontend": "5.13.0",
     "hapi-pino": "13.0.0",
     "hapi-pulse": "3.0.1",
