@@ -22,9 +22,7 @@ describe('#errors', () => {
       url: '/non-existent-path'
     })
 
-    expect(result).toEqual(
-      expect.stringContaining('Page not found | trade-imports-animals-frontend')
-    )
+    expect(result).toEqual(expect.stringContaining('Page not found | Animals'))
     expect(statusCode).toBe(statusCodes.notFound)
   })
 })

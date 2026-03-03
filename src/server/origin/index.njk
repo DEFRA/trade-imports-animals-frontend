@@ -1,0 +1,60 @@
+{% extends 'layouts/page.njk' %}
+
+{% block content %}
+  {{ appHeading({
+    text: heading
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+        {% from "govuk/components/select/macro.njk" import govukSelect %}
+
+        {{ govukSelect({
+          id: "country-select",
+          name: "country-select",
+          label: {
+            text: "Select Country of Origin",
+            classes: "govuk-label--l",
+            isPageHeading: true
+          },
+          hint: {
+            text: "Select the country where the animal or product was produced, reared or grown"
+          },
+          items: [
+            { value: "", text: "Select a country" },
+            { text: "──────────", disabled: true },
+            { value: "AT", text: "Austria" },
+            { value: "BE", text: "Belgium" },
+            { value: "BG", text: "Bulgaria" },
+            { value: "HR", text: "Croatia" },
+            { value: "CY", text: "Cyprus" },
+            { value: "CZ", text: "Czech Republic" },
+            { value: "DK", text: "Denmark" },
+            { value: "EE", text: "Estonia" },
+            { value: "FI", text: "Finland" },
+            { value: "FR", text: "France" },
+            { value: "DE", text: "Germany" },
+            { value: "GR", text: "Greece" },
+            { value: "HU", text: "Hungary" },
+            { value: "IE", text: "Ireland" },
+            { value: "IT", text: "Italy" },
+            { value: "LV", text: "Latvia" },
+            { value: "LT", text: "Lithuania" },
+            { value: "LU", text: "Luxembourg" },
+            { value: "MT", text: "Malta" },
+            { value: "NL", text: "Netherlands" },
+            { value: "PL", text: "Poland" },
+            { value: "PT", text: "Portugal" },
+            { value: "RO", text: "Romania" },
+            { value: "SK", text: "Slovakia" },
+            { value: "SI", text: "Slovenia" },
+            { value: "ES", text: "Spain" },
+            { value: "SE", text: "Sweden" }
+          ]
+        }) }}
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

@@ -44,7 +44,7 @@ export const config = convict({
   serviceName: {
     doc: 'Applications Service Name',
     format: String,
-    default: 'trade-imports-animals-frontend'
+    default: 'Animals'
   },
   root: {
     doc: 'Project root',

@@ -188,8 +188,8 @@ docker compose up --build -d
 
 ### Dependabot
 
-We have added an example dependabot configuration file to the repository. You can enable it by renaming
-the [.github/example.dependabot.yml](.github/example.dependabot.yml) to `.github/dependabot.yml`
+The dependabot configuration lives at `.github/dependabot.yml`
+**This has been enabled for this repo.**
 
 ### SonarCloud
 
