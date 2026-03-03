@@ -12,7 +12,12 @@ export const origin = {
         {
           method: 'GET',
           path: '/origin',
-          ...originController
+          ...originController.get
+        },
+        {
+          method: 'POST',
+          path: '/origin',
+          ...originController.post
         }
       ])
     }

@@ -1,4 +1,6 @@
 {% extends 'layouts/page.njk' %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 
 {% block content %}
   {{ appHeading({
@@ -8,16 +10,18 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
-        {% from "govuk/components/select/macro.njk" import govukSelect %}
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
 
         {{ govukSelect({
-          id: "country-select",
-          name: "country-select",
+          id: "countryCode",
+          name: "countryCode",
           label: {
             text: "Select Country of Origin",
             classes: "govuk-label--l",
             isPageHeading: true
           },
+          value: countryCode,
           hint: {
             text: "Select the country where the animal or product was produced, reared or grown"
           },
@@ -53,6 +57,12 @@
             { value: "SE", text: "Sweden" }
           ]
         }) }}
+          <div class="govuk-button-group">
+            {{ govukButton({
+              text: "Save"
+            }) }}
+          </div>
+        </form>
       </div>
     </div>
   </div>
