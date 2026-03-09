@@ -3,6 +3,7 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
+import { originClient } from './origin-client.js'
 
 const logger = createLogger()
 
@@ -20,10 +21,20 @@ export const originController = {
     }
   },
   post: {
-    handler(_request, h) {
+    async handler(_request, h) {
       const { countryCode } = _request.payload
       logger.info(`Country of origin: ${countryCode}`)
       setSessionValue(_request, 'countryCode', countryCode)
+
+      const origin = { countryCode }
+
+      try {
+        await originClient.submit(origin, 'x-trace-id')
+        logger.info('Country code saved successfully')
+      } catch (error) {
+        logger.error(`Failed to submit country code: ${error.message}`)
+      }
+
       return h.redirect('/origin')
     }
   }

@@ -1,10 +1,12 @@
+import { vi } from 'vitest'
+
+import { originClient } from './origin-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
 describe('#originController', () => {
   let server
-
   beforeAll(async () => {
     server = await createServer()
     await server.initialize()
@@ -12,6 +14,7 @@ describe('#originController', () => {
 
   afterAll(async () => {
     await server.stop({ timeout: 0 })
+    vi.restoreAllMocks()
   })
 
   describe('GET /origin', () => {
@@ -142,6 +145,28 @@ describe('#originController', () => {
 
         expect(selectedOption.val()).toBe('PT')
       }
+    })
+
+    test('Should throw when backend submit fails', async () => {
+      originClient.submit = vi.fn().mockRejectedValue(
+        Object.assign(new Error('Backend error'), {
+          status: 500,
+          statusText: 'Internal Server Error'
+        })
+      )
+
+      const options = {
+        method: 'POST',
+        url: '/origin',
+        payload: {
+          countryCode: 'IT'
+        }
+      }
+
+      const { statusCode, headers } = await server.inject(options)
+
+      expect(statusCode).toBe(302)
+      expect(headers.location).toBe('/origin')
     })
   })
 })
