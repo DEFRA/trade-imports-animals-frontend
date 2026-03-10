@@ -3,6 +3,9 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
+import { originSchema } from './origin-schema.js'
+import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 import { originClient } from './origin-client.js'
 
 const logger = createLogger()
@@ -22,9 +25,33 @@ export const originController = {
   },
   post: {
     async handler(_request, h) {
-      const { countryCode } = _request.payload
+      const { countryCode, requiresOriginCode, internalReference } =
+        _request.payload
       logger.info(`Country of origin: ${countryCode}`)
+
+      // Validate using Joi schema
+      const { error } = originSchema.validate(_request.payload, {
+        abortEarly: false
+      })
+
+      if (error) {
+        const formattedErrors = formatValidationErrors(error)
+        const viewModel = {
+          countryCode,
+          requiresOriginCode,
+          internalReference
+        }
+        viewModel.errorList = formattedErrors.errorList
+        viewModel.formError = {
+          text: formattedErrors.errorList[0].text
+        }
+
+        return h.view('origin/index', viewModel).code(statusCodes.badRequest)
+      }
+
       setSessionValue(_request, 'countryCode', countryCode)
+      setSessionValue(_request, 'requiresOriginCode', requiresOriginCode)
+      setSessionValue(_request, 'internalReference', internalReference)
 
       const origin = { countryOfOrigin: countryCode }
 
