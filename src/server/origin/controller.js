@@ -26,7 +26,7 @@ export const originController = {
       logger.info(`Country of origin: ${countryCode}`)
       setSessionValue(_request, 'countryCode', countryCode)
 
-      const origin = { countryCode }
+      const origin = { countryOfOrigin: countryCode }
 
       try {
         await originClient.submit(origin, 'x-trace-id')

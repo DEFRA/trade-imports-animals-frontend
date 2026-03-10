@@ -85,7 +85,7 @@ describe('#originController', () => {
         method: 'POST',
         url: '/origin',
         payload: {
-          countryCode: 'DE'
+          countryOfOrigin: 'DE'
         }
       }
 
@@ -103,7 +103,7 @@ describe('#originController', () => {
           method: 'POST',
           url: '/origin',
           payload: {
-            countryCode: code
+            countryOfOrigin: code
           }
         }
 
@@ -159,7 +159,7 @@ describe('#originController', () => {
         method: 'POST',
         url: '/origin',
         payload: {
-          countryCode: 'IT'
+          countryOfOrigin: 'IT'
         }
       }
 
