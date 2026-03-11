@@ -24,6 +24,7 @@ Core delivery platform Node.js Frontend Template.
   - [Docker Compose](#docker-compose)
   - [Dependabot](#dependabot)
   - [SonarCloud](#sonarcloud)
+- [Lighthouse performance testing](#lighthouse)
 - [Licence](#licence)
   - [About the licence](#about-the-licence)
 
@@ -185,6 +186,73 @@ A local environment with:
 ```bash
 docker compose up --build -d
 ```
+
+## Lighthouse
+
+### Lighthouse performance testing
+
+This project uses [Lighthouse](https://github.com/GoogleChrome/lighthouse) to run performance and best‑practices checks against the /origin page.
+
+### Local usage
+
+Start the app locally (on port 3000):
+
+```
+npm run dev
+```
+
+### Run Lighthouse against a chosen URL:
+
+Run locally (app must already be running):
+
+```
+LH_BASE_URL=http://localhost:3000 npm run lighthouse
+```
+
+In CI against perf:
+
+```
+LH_BASE_URL=https://your-perf-env npm run lighthouse
+```
+
+### How to add new Lighthouse tests
+
+For a new page, say /example:
+
+1. Create tests/lighthouse/example.config.js:
+
+   ```
+   export const exampleLighthouseConfig = {
+     path: '/example',
+     variants: [
+      {
+        preset: 'mobile',
+        thresholds: { performance: 0.6, accessibility: 0.7, bestPractices: 0.7 }
+      },
+      {
+        preset: 'desktop',
+        thresholds: { performance: 0.7, accessibility: 0.7, bestPractices: 0.8 }
+      }
+     ],
+     thresholds: { performance: 0.6, accessibility: 0.7, bestPractices: 0.7 }
+   }
+   ```
+
+   2. Import and register it in tests/lighthouse/index.mjs:
+      ```
+      import { exampleLighthouseConfig } from './example.config.js'
+      // ...
+      const pageConfigs = [
+       ...
+       exampleLighthouseConfig
+      ]
+      ```
+
+   ```
+
+   ```
+
+- Each new “test” is just a small config file plus a line in the main runner.
 
 ### Dependabot
 
