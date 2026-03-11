@@ -10,3 +10,5 @@ coverage
 .envrc
 tsconfig.tsbuildinfo
 .env
+chromewebdata**
+localhost**
