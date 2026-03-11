@@ -44,7 +44,7 @@ describe('originSchema', () => {
     test('Should pass validation with requiresOriginCode present', () => {
       const data = {
         countryCode: 'FR',
-        requiresOriginCode: 'yes'
+        requiresRegionCode: 'yes'
       }
       const { error } = originSchema.validate(data)
 
@@ -61,7 +61,7 @@ describe('originSchema', () => {
     test('Should pass validation with requiresOriginCode as empty string', () => {
       const data = {
         countryCode: 'FR',
-        requiresOriginCode: ''
+        requiresRegionCode: ''
       }
       const { error } = originSchema.validate(data)
 
@@ -71,7 +71,7 @@ describe('originSchema', () => {
     test('Should accept "yes" value', () => {
       const data = {
         countryCode: 'FR',
-        requiresOriginCode: 'yes'
+        requiresRegionCode: 'yes'
       }
       const { error } = originSchema.validate(data)
 
@@ -81,7 +81,56 @@ describe('originSchema', () => {
     test('Should accept "no" value', () => {
       const data = {
         countryCode: 'FR',
-        requiresOriginCode: 'no'
+        requiresRegionCode: 'no'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+  })
+
+  describe('referenceNumber validation', () => {
+    test('Should pass validation with referenceNumber present', () => {
+      const data = {
+        countryCode: 'FR',
+        referenceNumber: 'REF-12345'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should pass validation without referenceNumber (optional)', () => {
+      const data = { countryCode: 'FR' }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should pass validation with empty string referenceNumber', () => {
+      const data = {
+        countryCode: 'FR',
+        referenceNumber: ''
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should pass validation with null referenceNumber', () => {
+      const data = {
+        countryCode: 'FR',
+        referenceNumber: null
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should accept alphanumeric referenceNumber', () => {
+      const data = {
+        countryCode: 'FR',
+        referenceNumber: 'ABC123-XYZ-789'
       }
       const { error } = originSchema.validate(data)
 
@@ -161,7 +210,8 @@ describe('originSchema', () => {
     test('Should pass validation with all fields populated', () => {
       const data = {
         countryCode: 'DE',
-        requiresOriginCode: 'yes',
+        referenceNumber: 'REF-98765',
+        requiresRegionCode: 'yes',
         internalReference: 'TEST-REF-001',
         crumb: 'csrf-token'
       }
