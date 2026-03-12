@@ -1,5 +1,7 @@
 import { config } from '../../../config/config.js'
 import { createLogger } from '../helpers/logging/logger.js'
+import { getSessionValue, setSessionValue } from '../helpers/session-helpers.js'
+
 const tradeImportsAnimalsBackendUrl = config.get(
   'tradeImportsAnimalsBackendApi.baseUrl'
 )
@@ -7,9 +9,44 @@ const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
 export const notificationClient = {
-  async submit(notification, traceId) {
+  /**
+   * Builds a complete notification object from all session values
+   * and submits it to the backend
+   */
+  async submit(_request, traceId) {
+    // Build notification from all session values
+    const notification = {}
+
+    // Get reference number if it exists
+    const referenceNumber = getSessionValue(_request, 'referenceNumber')
+    if (referenceNumber) {
+      notification.referenceNumber = referenceNumber
+    }
+
+    // Build origin object from session values
+    const countryCode = getSessionValue(_request, 'countryCode')
+    const requiresRegionCode = getSessionValue(_request, 'requiresRegionCode')
+    const internalReference = getSessionValue(_request, 'internalReference')
+
+    if (countryCode || requiresRegionCode || internalReference) {
+      notification.origin = {}
+      if (countryCode) notification.origin.countryCode = countryCode
+      if (requiresRegionCode) {
+        notification.origin.requiresRegionCode = requiresRegionCode
+      }
+      if (internalReference) {
+        notification.origin.internalReference = internalReference
+      }
+    }
+
+    // Get commodity from session
+    const commodity = getSessionValue(_request, 'commodity')
+    if (commodity) {
+      notification.commodity = commodity
+    }
+
     const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/notification`,
+      `${tradeImportsAnimalsBackendUrl}/notifications`,
       {
         method: 'POST',
         headers: {
@@ -32,9 +69,14 @@ export const notificationClient = {
 
     return response.json()
   },
-  async get(referenceNumber, traceId) {
+
+  /**
+   * Retrieves a notification from the backend and stores all values
+   * in individual session keys
+   */
+  async get(_request, referenceNumber, traceId) {
     const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/notification/` + referenceNumber,
+      `${tradeImportsAnimalsBackendUrl}/notifications/` + referenceNumber,
       {
         method: 'GET',
         headers: {
@@ -52,5 +94,42 @@ export const notificationClient = {
 
       throw error
     }
+
+    const notification = await response.json()
+
+    // Store all notification values in individual session keys
+    if (notification.referenceNumber) {
+      setSessionValue(_request, 'referenceNumber', notification.referenceNumber)
+    }
+
+    if (notification.origin) {
+      if (notification.origin.countryCode) {
+        setSessionValue(
+          _request,
+          'countryCode',
+          notification.origin.countryCode
+        )
+      }
+      if (notification.origin.requiresRegionCode) {
+        setSessionValue(
+          _request,
+          'requiresRegionCode',
+          notification.origin.requiresRegionCode
+        )
+      }
+      if (notification.origin.internalReference) {
+        setSessionValue(
+          _request,
+          'internalReference',
+          notification.origin.internalReference
+        )
+      }
+    }
+
+    if (notification.commodity) {
+      setSessionValue(_request, 'commodity', notification.commodity)
+    }
+
+    return notification
   }
 }

@@ -5,7 +5,7 @@ import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
-describe('#originController', () => {
+describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
     server = await createServer()
@@ -17,77 +17,70 @@ describe('#originController', () => {
     vi.restoreAllMocks()
   })
 
-  describe('GET /origin', () => {
-    test('Should render the origin page with expected content', async () => {
+  describe('GET /commodities', () => {
+    test('Should render the commodities page with expected content', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/commodities'
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Origin of the import'))
-      expect(result).toEqual(expect.stringContaining('Origin of the Import'))
+      expect(result).toEqual(expect.stringContaining('Commodities |'))
+      expect(result).toEqual(expect.stringContaining('Select a Commodity'))
     })
 
-    test('Should display country select dropdown with all EU countries', async () => {
+    test('Should display commodity select dropdown with Fish, Cat, Dog', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/commodities'
       })
 
       expect(statusCode).toBe(statusCodes.ok)
 
       const $ = load(result)
-      const selectOptions = $('#countryCode option')
+      const selectOptions = $('#commodity option')
 
-      expect(selectOptions.length).toBeGreaterThan(25)
-      expect(result).toEqual(expect.stringContaining('France'))
-      expect(result).toEqual(expect.stringContaining('Germany'))
-      expect(result).toEqual(expect.stringContaining('Spain'))
+      expect(selectOptions.length).toBe(5)
+      expect(result).toEqual(expect.stringContaining('Fish'))
+      expect(result).toEqual(expect.stringContaining('Cat'))
+      expect(result).toEqual(expect.stringContaining('Dog'))
     })
 
-    test('Should render form with radio buttons for region code', async () => {
+    test('Should render form with CSRF token', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/commodities'
       })
 
       expect(statusCode).toBe(statusCodes.ok)
 
       const $ = load(result)
-      const regionRadios = $('input[name="requiresRegionCode"]')
+      const csrfInput = $('input[name="crumb"]')
 
-      expect(regionRadios.length).toBeGreaterThan(0)
-      expect(result).toEqual(
-        expect.stringContaining(
-          'Does the consignment require a region of origin code?'
-        )
-      )
+      expect(csrfInput.length).toBe(1)
+      expect(csrfInput.attr('type')).toBe('hidden')
     })
 
-    test('Should display hint text for region code', async () => {
+    test('Should display hint text for commodity selection', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/commodities'
       })
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(
-        expect.stringContaining(
-          'If a region of origin code is required it will be shown on your health certificate'
-        )
+        expect.stringContaining('Select the type of animal you are importing')
       )
     })
   })
 
-  describe('POST /origin', () => {
-    test('Should save country code to session and redirect', async () => {
+  describe('POST /commodities', () => {
+    test('Should save commodity to session and redirect', async () => {
       const options = {
         method: 'POST',
-        url: '/origin',
+        url: '/commodities',
         payload: {
-          countryCode: 'DE',
-          requiresRegionCode: 'no'
+          commodity: 'Fish'
         }
       }
 
@@ -97,16 +90,15 @@ describe('#originController', () => {
       expect(headers.location).toBe('/commodities')
     })
 
-    test('Should handle different country codes correctly', async () => {
-      const countryCodes = ['FR', 'ES', 'IT', 'NL', 'BE']
+    test('Should handle different commodity values correctly', async () => {
+      const commodities = ['Fish', 'Cat', 'Dog']
 
-      for (const code of countryCodes) {
+      for (const commodity of commodities) {
         const options = {
           method: 'POST',
-          url: '/origin',
+          url: '/commodities',
           payload: {
-            countryCode: code,
-            requiresRegionCode: 'no'
+            commodity
           }
         }
 
@@ -117,14 +109,12 @@ describe('#originController', () => {
       }
     })
 
-    test('Should persist country code across requests', async () => {
+    test('Should persist commodity across requests', async () => {
       const postResponse = await server.inject({
         method: 'POST',
-        url: '/origin',
+        url: '/commodities',
         payload: {
-          countryCode: 'PT',
-          requiresRegionCode: 'yes',
-          internalReference: 'TEST-123'
+          commodity: 'Cat'
         }
       })
 
@@ -147,10 +137,9 @@ describe('#originController', () => {
 
       const options = {
         method: 'POST',
-        url: '/origin',
+        url: '/commodities',
         payload: {
-          countryCode: 'IT',
-          requiresRegionCode: 'no'
+          commodity: 'Dog'
         }
       }
 

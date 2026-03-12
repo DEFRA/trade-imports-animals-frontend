@@ -1,0 +1,50 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block content %}
+  {% if referenceNumber %}
+    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+  {% endif %}
+
+  {{ appHeading({
+    text: heading
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+        {{ govukSelect({
+          id: "commodity",
+          name: "commodity",
+          label: {
+            text: "Select a commodity",
+            classes: "govuk-label--l",
+            isPageHeading: true
+          },
+          value: commodity,
+          hint: {
+            text: "Select the type of animal you are importing"
+          },
+          items: [
+            { value: "", text: "Select a commodity" },
+            { text: "──────────", disabled: true },
+            { value: "Fish", text: "Fish" },
+            { value: "Cat", text: "Cat" },
+            { value: "Dog", text: "Dog" }
+          ]
+        }) }}
+          <div class="govuk-button-group">
+            {{ govukButton({
+              text: "Save and continue"
+            }) }}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

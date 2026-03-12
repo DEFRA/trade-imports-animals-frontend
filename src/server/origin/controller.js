@@ -17,23 +17,21 @@ export const originController = {
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      let notification = {}
       if (referenceNumber) {
-        notification = notificationClient.get(referenceNumber, 'x-trace-id')
-        setSessionValue(_request, 'notification', notification)
+        notificationClient.get(_request, referenceNumber, 'x-trace-id')
         logger.info(
-          `Notification retrieved from notification client: {}`,
-          notification.referenceNumber
+          `Notification retrieved from notification client: ${referenceNumber}`
         )
       }
 
       return h.view('origin/index', {
         pageTitle: 'Origin of the import',
         heading: 'Origin of the import',
-        referenceNumber: notification?.referenceNumber,
-        countryCode: notification.origin?.countryOfOrigin,
-        requiresRegionCode: notification.origin?.requiresRegionCode || 'no',
-        internalReference: notification.origin?.internalReference
+        referenceNumber: getSessionValue(_request, 'referenceNumber'),
+        countryCode: getSessionValue(_request, 'countryCode'),
+        requiresRegionCode:
+          getSessionValue(_request, 'requiresRegionCode') || 'no',
+        internalReference: getSessionValue(_request, 'internalReference')
       })
     }
   },
@@ -63,28 +61,27 @@ export const originController = {
         return h.view('origin/index', viewModel).code(statusCodes.badRequest)
       }
 
+      // Store values in session
       setSessionValue(_request, 'countryCode', countryCode)
       setSessionValue(_request, 'requiresRegionCode', requiresRegionCode)
       setSessionValue(_request, 'internalReference', internalReference)
 
-      let notification = getSessionValue(_request, 'notification')
-      if (!notification) {
-        notification = { origin: {} }
-      }
-      // get the notification from the session and update the changes.
-      notification.origin.countryOfOrigin = countryCode
-      notification.origin.requiresRegionCode = requiresRegionCode
-      notification.origin.internalReference = internalReference
-
       try {
-        // send the updated notification to the backend.
-        await notificationClient.submit(notification, 'x-trace-id')
+        // Submit notification - client will build complete notification from all session values
+        const response = await notificationClient.submit(_request, 'x-trace-id')
+
+        // Store reference number in session if returned (backend returns string directly)
+        if (response?.referenceNumber) {
+          setSessionValue(_request, 'referenceNumber', response.referenceNumber)
+          logger.info(`Reference number saved: ${response.referenceNumber}`)
+        }
+
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/origin')
+      return h.redirect('/commodities')
     }
   }
 }
