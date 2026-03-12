@@ -1,6 +1,15 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+<div class="govuk-!-padding-top-6">
+    <span class="heading-tertiary">
+        <span id="reference-number">{{referenceNumber}}</span>
+    </span>
+</div>
 
 {% block content %}
   {{ appHeading({
@@ -10,56 +19,98 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
-        <form method="post" novalidate>
-          <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-        {{ govukSelect({
-          id: "countryCode",
-          name: "countryCode",
-          label: {
-            text: "Select Country of Origin",
-            classes: "govuk-label--l",
-            isPageHeading: true
-          },
-          value: countryCode,
-          hint: {
-            text: "Select the country where the animal or product was produced, reared or grown"
-          },
-          items: [
-            { value: "", text: "Select a country" },
-            { text: "──────────", disabled: true },
-            { value: "AT", text: "Austria" },
-            { value: "BE", text: "Belgium" },
-            { value: "BG", text: "Bulgaria" },
-            { value: "HR", text: "Croatia" },
-            { value: "CY", text: "Cyprus" },
-            { value: "CZ", text: "Czech Republic" },
-            { value: "DK", text: "Denmark" },
-            { value: "EE", text: "Estonia" },
-            { value: "FI", text: "Finland" },
-            { value: "FR", text: "France" },
-            { value: "DE", text: "Germany" },
-            { value: "GR", text: "Greece" },
-            { value: "HU", text: "Hungary" },
-            { value: "IE", text: "Ireland" },
-            { value: "IT", text: "Italy" },
-            { value: "LV", text: "Latvia" },
-            { value: "LT", text: "Lithuania" },
-            { value: "LU", text: "Luxembourg" },
-            { value: "MT", text: "Malta" },
-            { value: "NL", text: "Netherlands" },
-            { value: "PL", text: "Poland" },
-            { value: "PT", text: "Portugal" },
-            { value: "RO", text: "Romania" },
-            { value: "SK", text: "Slovakia" },
-            { value: "SI", text: "Slovenia" },
-            { value: "ES", text: "Spain" },
-            { value: "SE", text: "Sweden" }
-          ]
-        }) }}
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
+
+        <form method="post" novalidate>
+
+            {{ govukSelect({
+              id: "countryCode",
+              name: "countryCode",
+              label: {
+                text: "Origin of the Import",
+                classes: "govuk-label--m"
+              },
+              value: countryCode,
+              errorMessage: formError,
+              items: [
+                { value: "", text: "Select a country" },
+                { text: "──────────", disabled: true },
+                { value: "AT", text: "Austria" },
+                { value: "BE", text: "Belgium" },
+                { value: "BG", text: "Bulgaria" },
+                { value: "HR", text: "Croatia" },
+                { value: "CY", text: "Cyprus" },
+                { value: "CZ", text: "Czech Republic" },
+                { value: "DK", text: "Denmark" },
+                { value: "EE", text: "Estonia" },
+                { value: "FI", text: "Finland" },
+                { value: "FR", text: "France" },
+                { value: "DE", text: "Germany" },
+                { value: "GR", text: "Greece" },
+                { value: "HU", text: "Hungary" },
+                { value: "IE", text: "Ireland" },
+                { value: "IT", text: "Italy" },
+                { value: "LV", text: "Latvia" },
+                { value: "LT", text: "Lithuania" },
+                { value: "LU", text: "Luxembourg" },
+                { value: "MT", text: "Malta" },
+                { value: "NL", text: "Netherlands" },
+                { value: "PL", text: "Poland" },
+                { value: "PT", text: "Portugal" },
+                { value: "RO", text: "Romania" },
+                { value: "SK", text: "Slovakia" },
+                { value: "SI", text: "Slovenia" },
+                { value: "ES", text: "Spain" },
+                { value: "SE", text: "Sweden" }
+              ]
+            }) }}
+
+            {{ govukRadios({
+              name: "requiresRegionCode",
+              value: requiresRegionCode,
+              fieldset: {
+                legend: {
+                  text: "Does the consignment require a region of origin code?",
+                  classes: "govuk-fieldset__legend--m"
+                }
+              },
+              hint: {
+                text: "If a region of origin code is required it will be shown on your health certificate."
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes"
+                },
+                {
+                  value: "no",
+                  text: "No"
+                }
+              ]
+            }) }}
+
+          {{ govukInput({
+            label: {
+              text: "Your internal reference number for this consignment (optional)",
+              classes: "govuk-label--m"
+            },
+            hint: {
+              text: "Enter any internal reference number you want to use to identify this consignment, or leave blank."
+            },
+            id: "internalReference",
+            name: "internalReference",
+            value: internalReference if internalReference
+          }) }}
+
           <div class="govuk-button-group">
             {{ govukButton({
-              text: "Save"
+              text: "Save and continue"
             }) }}
           </div>
         </form>
