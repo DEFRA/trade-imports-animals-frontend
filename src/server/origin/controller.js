@@ -54,9 +54,7 @@ export const originController = {
           internalReference
         }
         viewModel.errorList = formattedErrors.errorList
-        viewModel.formError = {
-          text: formattedErrors.errorList[0].text
-        }
+        viewModel.fieldErrors = formattedErrors.fieldErrors
 
         return h.view('origin/index', viewModel).code(statusCodes.badRequest)
       }

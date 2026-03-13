@@ -142,7 +142,7 @@ describe('originSchema', () => {
     test('Should pass validation with internalReference present', () => {
       const data = {
         countryCode: 'FR',
-        internalReference: 'REF-12345'
+        internalReference: 'REF12345'
       }
       const { error } = originSchema.validate(data)
 
@@ -179,11 +179,97 @@ describe('originSchema', () => {
     test('Should accept alphanumeric internalReference', () => {
       const data = {
         countryCode: 'FR',
-        internalReference: 'ABC123-XYZ-789'
+        internalReference: 'ABC123XYZ789'
       }
       const { error } = originSchema.validate(data)
 
       expect(error).toBeUndefined()
+    })
+
+    test('Should fail validation when internalReference contains non-alphanumeric characters', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: 'ABC-123'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeDefined()
+      expect(error.details[0].path).toEqual(['internalReference'])
+      expect(error.details[0].message).toBe(
+        'Internal reference must only contain letters and numbers'
+      )
+    })
+
+    test('Should fail validation when internalReference exceeds 58 characters', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: 'A'.repeat(59)
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeDefined()
+      expect(error.details[0].path).toEqual(['internalReference'])
+      expect(error.details[0].message).toBe(
+        'Internal reference must be 58 characters or less'
+      )
+    })
+
+    test('Should pass validation when internalReference is exactly 58 characters', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: 'A'.repeat(58)
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should pass validation when internalReference contains only letters', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: 'ABCDEFG'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should pass validation when internalReference contains only numbers', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: '1234567'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeUndefined()
+    })
+
+    test('Should fail validation when internalReference contains special characters', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: 'ABC@123'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeDefined()
+      expect(error.details[0].path).toEqual(['internalReference'])
+      expect(error.details[0].message).toBe(
+        'Internal reference must only contain letters and numbers'
+      )
+    })
+
+    test('Should fail validation when internalReference contains spaces', () => {
+      const data = {
+        countryCode: 'FR',
+        internalReference: 'ABC 123'
+      }
+      const { error } = originSchema.validate(data)
+
+      expect(error).toBeDefined()
+      expect(error.details[0].path).toEqual(['internalReference'])
+      expect(error.details[0].message).toBe(
+        'Internal reference must only contain letters and numbers'
+      )
     })
   })
 
@@ -212,7 +298,7 @@ describe('originSchema', () => {
         countryCode: 'DE',
         referenceNumber: 'REF-98765',
         requiresRegionCode: 'yes',
-        internalReference: 'TEST-REF-001',
+        internalReference: 'TESTREF001',
         crumb: 'csrf-token'
       }
       const { error } = originSchema.validate(data)

@@ -37,7 +37,7 @@
                 classes: "govuk-label--m"
               },
               value: countryCode,
-              errorMessage: formError,
+              errorMessage: fieldErrors.countryCode if fieldErrors,
               items: [
                 { value: "", text: "Select a country" },
                 { text: "──────────", disabled: true },
@@ -105,7 +105,8 @@
             },
             id: "internalReference",
             name: "internalReference",
-            value: internalReference if internalReference
+            value: internalReference if internalReference,
+            errorMessage: fieldErrors.internalReference if fieldErrors
           }) }}
 
           <div class="govuk-button-group">

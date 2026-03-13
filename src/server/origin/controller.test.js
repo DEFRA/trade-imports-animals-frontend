@@ -124,7 +124,7 @@ describe('#originController', () => {
         payload: {
           countryCode: 'PT',
           requiresRegionCode: 'yes',
-          internalReference: 'TEST-123'
+          internalReference: 'TEST123'
         }
       })
 
