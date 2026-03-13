@@ -1,13 +1,13 @@
-export const originLighthouseConfig = {
-  path: '/origin',
+export const commoditiesLighthouseConfig = {
+  path: '/commodities',
   variants: [
     {
-      name: 'countryOfOriginPage',
+      name: 'commoditiesPage',
       preset: 'mobile',
       thresholds: { performance: 0.8, accessibility: 0.7, bestPractices: 0.7 }
     },
     {
-      name: 'countryOfOriginPage',
+      name: 'commoditiesPage',
       preset: 'desktop',
       thresholds: { performance: 0.6, accessibility: 0.6, bestPractices: 0.8 }
     }
