@@ -1,11 +1,22 @@
+import { writeFile, mkdir } from 'node:fs/promises'
+import path from 'node:path'
+
 import { runLighthouse } from './run-lighthouse.js'
 import { originLighthouseConfig } from './origin.config.js'
+import { aboutLighthouseConfig } from "./about.config.js"
+import { homeLighthouseConfig } from "./home.config.js"
+import { commoditiesLighthouseConfig } from "./commodities.config.js"
 
 const pageConfigs = [
-  originLighthouseConfig
+  homeLighthouseConfig,
+  aboutLighthouseConfig,
+  originLighthouseConfig,
+  commoditiesLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
+const reportsDir = process.env.LH_REPORT_DIR || 'lighthouse-reports'
+
 async function runVariant(basePath, variant) {
   const url = `${baseUrl}${basePath}`
   const lhr = await runLighthouse(url, { preset: variant.preset })
@@ -16,6 +27,16 @@ async function runVariant(basePath, variant) {
     accessibility: accessibility.score,
     bestPractices: bestPractices.score
   }
+
+  // Write full JSON report per preset
+  const fileSafeName = variant.name + '_' + variant.preset
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\\-]/g, '')
+  await mkdir(reportsDir, { recursive: true })
+  const reportPath = path.join(reportsDir, `${fileSafeName}.json`)
+  await writeFile(reportPath, JSON.stringify(lhr, null, 2), 'utf8')
+
   // Threshold checks
   for (const [key, min] of Object.entries(variant.name)) {
     const actual = results[key]
@@ -25,8 +46,9 @@ async function runVariant(basePath, variant) {
       )
     }
   }
+
   // Separate, labeled output per preset
-  console.log(`\n=== [✔] Lighthouse results: ${variant.name} ===`)
+  console.log(`\n=== [✔] Lighthouse results for the page: ${variant.name} ===`)
   console.log(`URL: ${url}`)
   console.log(`Preset: ${variant.preset}`)
   console.log(
@@ -34,6 +56,7 @@ async function runVariant(basePath, variant) {
     `accessibility: ${results.accessibility}, ` +
     `bestPractices: ${results.bestPractices}`
   )
+  console.log(`\nReport saved to → ${reportPath}`)
 }
 async function main() {
   for (const pageConfig of pageConfigs) {

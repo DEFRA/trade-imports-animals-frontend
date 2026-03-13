@@ -233,8 +233,7 @@ For a new page, say /example:
         preset: 'desktop',
         thresholds: { performance: 0.7, accessibility: 0.7, bestPractices: 0.8 }
       }
-     ],
-     thresholds: { performance: 0.6, accessibility: 0.7, bestPractices: 0.7 }
+     ]
    }
    ```
 

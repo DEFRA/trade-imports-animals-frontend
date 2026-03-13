@@ -10,5 +10,6 @@ coverage
 .envrc
 tsconfig.tsbuildinfo
 .env
+lighthouse-reports/
 chromewebdata**
 localhost**
