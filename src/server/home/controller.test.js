@@ -89,7 +89,7 @@ describe('#homeController', () => {
         payload: {
           countryCode: 'DE',
           requiresRegionCode: 'no',
-          internalReference: 'REF-999'
+          internalReference: 'REF999'
         }
       })
 
@@ -108,7 +108,7 @@ describe('#homeController', () => {
 
       const $before = load(verifyResponse.result)
       expect($before('#countryCode').val()).toBe('DE')
-      expect($before('#internalReference').val()).toBe('REF-999')
+      expect($before('#internalReference').val()).toBe('REF999')
 
       // Start new journey - this should call resetSession
       const startJourneyResponse = await server.inject({
