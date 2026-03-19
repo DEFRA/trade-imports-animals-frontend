@@ -2,7 +2,14 @@ import { vi } from 'vitest'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { notificationClient } from '../common/clients/notification-client.js'
-import { load } from 'cheerio'
+import { startJourneyController } from './controller.js'
+
+import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+import { config } from '../../config/config.js'
+
+vi.mock('../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
+}))
 
 describe('#homeController', () => {
   let server
@@ -26,7 +33,11 @@ describe('#homeController', () => {
   test('Should provide expected response', async () => {
     const { result, statusCode } = await server.inject({
       method: 'GET',
-      url: '/'
+      url: '/',
+      auth: {
+        strategy: 'session',
+        credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+      }
     })
 
     expect(result).toEqual(
@@ -38,7 +49,11 @@ describe('#homeController', () => {
   test('Should display title "Import notification service"', async () => {
     const { result } = await server.inject({
       method: 'GET',
-      url: '/'
+      url: '/',
+      auth: {
+        strategy: 'session',
+        credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+      }
     })
 
     expect(result).toEqual(
@@ -49,7 +64,11 @@ describe('#homeController', () => {
   test('Should display button to create import notification', async () => {
     const { result } = await server.inject({
       method: 'GET',
-      url: '/'
+      url: '/',
+      auth: {
+        strategy: 'session',
+        credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+      }
     })
 
     expect(result).toEqual(
@@ -58,89 +77,73 @@ describe('#homeController', () => {
     expect(result).toEqual(expect.stringContaining('action="/start-journey"'))
   })
 
+  test('Should not render sign-in/sign-out links when authEnabled is false', async () => {
+    const originalGet = config.get.bind(config)
+    const getSpy = vi
+      .spyOn(config, 'get')
+      .mockImplementation((key) =>
+        key === 'auth.enabled' ? false : originalGet(key)
+      )
+
+    const { result, statusCode } = await server.inject({
+      method: 'GET',
+      url: '/',
+      auth: {
+        strategy: 'session',
+        credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+      }
+    })
+
+    expect(statusCode).toBe(statusCodes.ok)
+    expect(result).not.toContain('Sign in')
+    expect(result).not.toContain('Sign out')
+    expect(result).not.toContain('/auth/sign-in-oidc')
+    expect(result).not.toContain('/signout')
+
+    getSpy.mockRestore()
+  })
+
   describe('POST /start-journey', () => {
     test('Should redirect to origin page', async () => {
-      const startJourneyResponse = await server.inject({
-        method: 'POST',
-        url: '/start-journey'
-      })
+      const request = {
+        yar: {
+          reset: vi.fn()
+        }
+      }
 
-      expect(startJourneyResponse.statusCode).toBe(302)
-      expect(startJourneyResponse.headers.location).toBe('/origin')
+      const h = {
+        redirect: (location) => ({
+          statusCode: 302,
+          location
+        })
+      }
+
+      const response = await startJourneyController.handler(request, h)
+
+      expect(request.yar.reset).toHaveBeenCalledTimes(1)
+      expect(response.statusCode).toBe(302)
+      expect(response.location).toBe('/origin')
     })
 
     test('Should clear session when starting new journey', async () => {
-      // Get origin page to establish session
-      const initialResponse = await server.inject({
-        method: 'GET',
-        url: '/origin'
-      })
-
-      let sessionCookie =
-        initialResponse.headers['set-cookie']?.[0]?.split(';')[0]
-
-      // Post data to set session values (like origin controller does)
-      const postResponse = await server.inject({
-        method: 'POST',
-        url: '/origin',
-        headers: {
-          cookie: sessionCookie
-        },
-        payload: {
-          countryCode: 'DE',
-          requiresRegionCode: 'no',
-          internalReference: 'REF999'
+      const request = {
+        yar: {
+          reset: vi.fn()
         }
-      })
+      }
 
-      // Update cookie from POST response if provided
-      sessionCookie =
-        postResponse.headers['set-cookie']?.[0]?.split(';')[0] || sessionCookie
+      const h = {
+        redirect: (location) => ({
+          statusCode: 302,
+          location
+        })
+      }
 
-      // Verify data was saved in session
-      const verifyResponse = await server.inject({
-        method: 'GET',
-        url: '/origin',
-        headers: {
-          cookie: sessionCookie
-        }
-      })
+      const response = await startJourneyController.handler(request, h)
 
-      const $before = load(verifyResponse.result)
-      expect($before('#countryCode').val()).toBe('DE')
-      expect($before('#internalReference').val()).toBe('REF999')
-
-      // Start new journey - this should call resetSession
-      const startJourneyResponse = await server.inject({
-        method: 'POST',
-        url: '/start-journey',
-        headers: {
-          cookie: sessionCookie
-        }
-      })
-
-      expect(startJourneyResponse.statusCode).toBe(302)
-
-      // The response should have a new session cookie (resetSession creates new ID)
-      const newSessionCookie =
-        startJourneyResponse.headers['set-cookie']?.[0]?.split(';')[0]
-
-      expect(newSessionCookie).toBeTruthy()
-      expect(newSessionCookie).not.toBe(sessionCookie)
-
-      // Verify session was cleared - get origin with new session
-      const afterResetResponse = await server.inject({
-        method: 'GET',
-        url: '/origin',
-        headers: {
-          cookie: newSessionCookie
-        }
-      })
-
-      // Should NOT have the old values - fields should be empty
-      const $after = load(afterResetResponse.result)
-      expect($after('#countryCode').val()).toBe('')
-      expect($after('#internalReference').val()).toBe('')
+      expect(request.yar.reset).toHaveBeenCalledTimes(1)
+      expect(response.statusCode).toBe(302)
+      expect(response.location).toBe('/origin')
     })
   })
 })

@@ -42,10 +42,27 @@ services:
       - mongodb-data:/data
     restart: always
 
+  trade-imports-defra-id-stub:
+    image: defradigital/trade-imports-defra-id-stub
+    ports:
+      - '3007:3007'
+    environment:
+      port: 3007
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-null}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3007/health" ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 3s
+    networks:
+      - cdp-tenant
+
 ################################################################################
 
-  your-frontend:
-    build: ./
+  trade-imports-animals-frontend:
+    build:
+      context: .
     ports:
       - '3000:3000'
     links:
@@ -56,14 +73,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      trade-imports-defra-id-stub:
+        condition: service_healthy
     env_file:
       - 'compose/aws.env'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       PORT: 3000
       NODE_ENV: development
       REDIS_HOST: redis
       LOCALSTACK_ENDPOINT: http://localstack:4566
       USE_SINGLE_INSTANCE_CACHE: true
+      # OIDC discovery URL must be reachable from inside the container.
+      DEFRA_ID_OIDC_CONFIGURATION_URL: ${DEFRA_ID_OIDC_CONFIGURATION_URL}
+      DEFRA_ID_REDIRECT_URL: http://localhost:3000/auth/sign-in-oidc
+      DEFRA_ID_SIGN_OUT_REDIRECT_URL: http://localhost:3000/auth/sign-out-oidc
     networks:
       - cdp-tenant
 

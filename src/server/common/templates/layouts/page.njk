@@ -6,10 +6,12 @@
 
 {# Import custom components globally #}
 {% from "heading/macro.njk" import appHeading %}
+{% from "service-header/macro.njk" import appServiceHeader %}
 
 {% set mainClasses = "app-main-wrapper" %}
 
 {% block head %}
+  <meta name="csrf-token" content="{{ crumb }}">
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
@@ -27,6 +29,7 @@
   {{ govukServiceNavigation({
     navigation: navigation
   }) }}
+
 {% endblock %}
 
 {% block pageTitle %}
@@ -34,6 +37,8 @@
 {% endblock %}
 
 {% block beforeContent %}
+  {{ appServiceHeader({ userSession: userSession }) }}
+
   {% if breadcrumbs.length > 1 %}
     {{ govukBreadcrumbs({
       items: breadcrumbs

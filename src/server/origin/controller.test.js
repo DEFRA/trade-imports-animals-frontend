@@ -5,9 +5,43 @@ import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
+import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
+}))
+
+vi.mock('../../config/config.js', async (importOriginal) => {
+  const sessionCookiePassword = 'this-must-be-at-least-32-characters-long'
+  const mod = await importOriginal()
+  const originalGet = mod.config.get.bind(mod.config)
+  vi.spyOn(mod.config, 'get').mockImplementation((key) => {
+    if (key === 'session') {
+      const session = originalGet('session')
+      return {
+        ...session,
+        cookie: {
+          ...session.cookie,
+          password: sessionCookiePassword
+        }
+      }
+    }
+    if (key === 'session.cookie.password') {
+      return sessionCookiePassword
+    }
+    return originalGet(key)
+  })
+  return mod
+})
+
 describe('#originController', () => {
   let server
   beforeAll(async () => {
+    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      referenceNumber: 'TEST-REF-123'
+    })
+
     server = await createServer()
     await server.initialize()
   })
@@ -21,7 +55,11 @@ describe('#originController', () => {
     test('Should render the origin page with expected content', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -32,7 +70,11 @@ describe('#originController', () => {
     test('Should display country select dropdown with all EU countries', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -49,7 +91,11 @@ describe('#originController', () => {
     test('Should render form with radio buttons for region code', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -68,7 +114,11 @@ describe('#originController', () => {
     test('Should display hint text for region code', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/origin'
+        url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -85,6 +135,10 @@ describe('#originController', () => {
       const options = {
         method: 'POST',
         url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {} }
+        },
         payload: {
           countryCode: 'DE',
           requiresRegionCode: 'no'
@@ -104,6 +158,10 @@ describe('#originController', () => {
         const options = {
           method: 'POST',
           url: '/origin',
+          auth: {
+            strategy: 'session',
+            credentials: { user: {} }
+          },
           payload: {
             countryCode: code,
             requiresRegionCode: 'no'
@@ -121,6 +179,10 @@ describe('#originController', () => {
       const postResponse = await server.inject({
         method: 'POST',
         url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {} }
+        },
         payload: {
           countryCode: 'PT',
           requiresRegionCode: 'yes',
@@ -138,7 +200,7 @@ describe('#originController', () => {
     })
 
     test('Should handle when backend submit fails', async () => {
-      notificationClient.submit = vi.fn().mockRejectedValue(
+      notificationClient.submit.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'
@@ -148,6 +210,10 @@ describe('#originController', () => {
       const options = {
         method: 'POST',
         url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {} }
+        },
         payload: {
           countryCode: 'IT',
           requiresRegionCode: 'no'

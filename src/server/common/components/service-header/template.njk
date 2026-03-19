@@ -1,0 +1,29 @@
+{#
+  Service Header Component
+
+  Displays user information in the header (CDP Portal pattern)
+  - User icon with displayName
+  - Conditional "Manage account" link (based on user session)
+  - Sign in/out link
+#}
+<div class="app-service-navigation">
+  <div class="govuk-width-container">
+    <div class="app-service-header__content govuk-!-text-align-right">
+      {% if userSession and userSession.isAuthenticated %}
+        <span class="app-service-header__user">
+          <svg class="app-service-header__user-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path d="M10 10C12.2091 10 14 8.20914 14 6C14 3.79086 12.2091 2 10 2C7.79086 2 6 3.79086 6 6C6 8.20914 7.79086 10 10 10Z" fill="currentColor"/>
+            <path d="M4 18C4 14.6863 6.68629 12 10 12C13.3137 12 16 14.6863 16 18H4Z" fill="currentColor"/>
+          </svg>
+          <span class="app-service-header__user-name">{{ userSession.displayName }}</span>
+        </span>
+        <span class="app-service-header__separator" aria-hidden="true">|</span>
+        <a href="/signout" class="govuk-link govuk-link--no-visited-state app-service-header__link">Sign out</a>
+      {% else %}
+        {% if authEnabled %}
+          <a href="/auth/sign-in-oidc" class="govuk-link govuk-link--no-visited-state app-service-header__link">Sign in</a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
