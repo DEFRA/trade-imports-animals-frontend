@@ -18,7 +18,7 @@ export const originController = {
       )
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, 'x-trace-id')
+        notificationClient.get(_request, referenceNumber)
         logger.info(
           `Notification retrieved from notification client: ${referenceNumber}`
         )
@@ -66,7 +66,7 @@ export const originController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        const response = await notificationClient.submit(_request, 'x-trace-id')
+        const response = await notificationClient.submit(_request)
 
         // Store reference number in session if returned (backend returns string directly)
         if (response?.referenceNumber) {

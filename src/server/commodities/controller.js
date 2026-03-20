@@ -15,7 +15,7 @@ export const commoditiesController = {
       )
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, 'x-trace-id')
+        notificationClient.get(_request, referenceNumber)
         logger.info(
           `Notification retrieved from notification client: ${referenceNumber}`
         )
@@ -39,7 +39,7 @@ export const commoditiesController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, 'x-trace-id')
+        await notificationClient.submit(_request)
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
