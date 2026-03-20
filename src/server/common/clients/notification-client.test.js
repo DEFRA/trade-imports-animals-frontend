@@ -36,7 +36,7 @@ vi.mock('../../../config/config.js', () => ({
 
 describe('#notificationClient', () => {
   const traceId = 'trace-123'
-  const mockRequest = { session: {}, headers: { 'x-trace-id': traceId } }
+  const mockRequest = { session: {} }
   let originalFetch
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('#notificationClient', () => {
           json: vi.fn().mockResolvedValue(responseBody)
         })
 
-        const result = await notificationClient.submit(mockRequest)
+        const result = await notificationClient.submit(mockRequest, traceId)
 
         expect(fetch).toHaveBeenCalledTimes(1)
         expect(fetch).toHaveBeenCalledWith(
@@ -124,7 +124,7 @@ describe('#notificationClient', () => {
           json: vi.fn().mockResolvedValue({})
         })
 
-        await notificationClient.submit(mockRequest)
+        await notificationClient.submit(mockRequest, traceId)
 
         expect(fetch).toHaveBeenCalledWith(
           'http://mock-backend/notifications',
@@ -152,7 +152,7 @@ describe('#notificationClient', () => {
         })
 
         await expect(
-          notificationClient.submit(mockRequest)
+          notificationClient.submit(mockRequest, traceId)
         ).rejects.toMatchObject({
           message: 'Failed to submit notification',
           status: 500,
@@ -186,7 +186,8 @@ describe('#notificationClient', () => {
 
         const result = await notificationClient.get(
           mockRequest,
-          referenceNumber
+          referenceNumber,
+          traceId
         )
 
         expect(fetch).toHaveBeenCalledTimes(1)
@@ -242,7 +243,7 @@ describe('#notificationClient', () => {
         })
 
         await expect(
-          notificationClient.get(mockRequest, referenceNumber)
+          notificationClient.get(mockRequest, referenceNumber, traceId)
         ).rejects.toMatchObject({
           message: 'Failed to get notification',
           status: 404,
