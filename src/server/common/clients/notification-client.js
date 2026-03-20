@@ -13,8 +13,7 @@ export const notificationClient = {
    * Builds a complete notification object from all session values
    * and submits it to the backend
    */
-  async submit(_request) {
-    const traceId = _request.headers[tracingHeader]
+  async submit(_request, traceId) {
     // Build notification from all session values
     const notification = {}
 
@@ -75,8 +74,7 @@ export const notificationClient = {
    * Retrieves a notification from the backend and stores all values
    * in individual session keys
    */
-  async get(_request, referenceNumber) {
-    const traceId = _request.headers[tracingHeader]
+  async get(_request, referenceNumber, traceId) {
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications/` + referenceNumber,
       {
