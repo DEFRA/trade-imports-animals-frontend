@@ -12,6 +12,7 @@
         <p></p>
 
         <form method="post" action="/start-journey">
+          <input type="hidden" name="crumb" value="{{ crumb }}"/>
           <div class="govuk-button-group">
             {{ govukButton({
               text: "Create an import notification"

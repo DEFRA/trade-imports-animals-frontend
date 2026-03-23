@@ -1,5 +1,13 @@
+import { vi } from 'vitest'
+
+import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+
+vi.mock('../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
+}))
 
 describe('#aboutController', () => {
   let server

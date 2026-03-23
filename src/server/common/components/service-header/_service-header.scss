@@ -1,0 +1,46 @@
+// Service Header Component
+// CDP Portal pattern for displaying user information in header
+
+@use "govuk-frontend" as *;
+
+.app-service-header {
+  background-color: govuk-colour("light-grey");
+  border-bottom: 1px solid govuk-colour("mid-grey");
+  padding-top: govuk-spacing(2);
+  padding-bottom: govuk-spacing(2);
+
+  &__content {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: govuk-spacing(2);
+  }
+
+  &__user {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(1);
+    color: govuk-colour("black");
+    @include govuk-font($size: 16);
+  }
+
+  &__user-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  &__user-name {
+    font-weight: 400;
+  }
+
+  &__separator {
+    color: govuk-colour("dark-grey");
+    user-select: none;
+  }
+
+  &__link {
+    white-space: nowrap;
+    @include govuk-font($size: 16);
+  }
+}

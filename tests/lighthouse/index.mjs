@@ -2,12 +2,24 @@ import { writeFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 
 import { runLighthouse } from './run-lighthouse.js'
+import { signinLighthouseConfig } from './signin.config.js'
+import { signinOidcLighthouseConfig } from './signin-oidc.config.js'
+import { signoutLighthouseConfig } from './signout.config.js'
+import { authSignoutLighthouseConfig } from "./auth-signout.config.js";
+import { signoutOidcLighthouseConfig } from './signout-oidc.config.js'
+import { organisationLighthouseConfig } from './organisation.config.js'
 import { originLighthouseConfig } from './origin.config.js'
 import { aboutLighthouseConfig } from "./about.config.js"
 import { homeLighthouseConfig } from "./home.config.js"
 import { commoditiesLighthouseConfig } from "./commodities.config.js"
 
 const pageConfigs = [
+  signinLighthouseConfig,
+  signinOidcLighthouseConfig,
+  signoutLighthouseConfig,
+  signoutOidcLighthouseConfig,
+  authSignoutLighthouseConfig,
+  organisationLighthouseConfig,
   homeLighthouseConfig,
   aboutLighthouseConfig,
   originLighthouseConfig,

@@ -5,9 +5,43 @@ import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
+import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
+}))
+
+vi.mock('../../config/config.js', async (importOriginal) => {
+  const sessionCookiePassword = 'this-must-be-at-least-32-characters-long'
+  const mod = await importOriginal()
+  const originalGet = mod.config.get.bind(mod.config)
+  vi.spyOn(mod.config, 'get').mockImplementation((key) => {
+    if (key === 'session') {
+      const session = originalGet('session')
+      return {
+        ...session,
+        cookie: {
+          ...session.cookie,
+          password: sessionCookiePassword
+        }
+      }
+    }
+    if (key === 'session.cookie.password') {
+      return sessionCookiePassword
+    }
+    return originalGet(key)
+  })
+  return mod
+})
+
 describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
+    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      referenceNumber: 'TEST-REF-123'
+    })
+
     server = await createServer()
     await server.initialize()
   })
@@ -21,7 +55,11 @@ describe('#commoditiesController', () => {
     test('Should render the commodities page with expected content', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/commodities'
+        url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -32,7 +70,11 @@ describe('#commoditiesController', () => {
     test('Should display commodity select dropdown with Fish, Cat, Dog', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/commodities'
+        url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -49,7 +91,11 @@ describe('#commoditiesController', () => {
     test('Should render form with CSRF token', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/commodities'
+        url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -64,7 +110,11 @@ describe('#commoditiesController', () => {
     test('Should display hint text for commodity selection', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/commodities'
+        url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
       })
 
       expect(statusCode).toBe(statusCodes.ok)
@@ -79,6 +129,10 @@ describe('#commoditiesController', () => {
       const options = {
         method: 'POST',
         url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           commodity: 'Fish'
         }
@@ -97,6 +151,10 @@ describe('#commoditiesController', () => {
         const options = {
           method: 'POST',
           url: '/commodities',
+          auth: {
+            strategy: 'session',
+            credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+          },
           payload: {
             commodity
           }
@@ -113,6 +171,10 @@ describe('#commoditiesController', () => {
       const postResponse = await server.inject({
         method: 'POST',
         url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           commodity: 'Cat'
         }
@@ -138,6 +200,10 @@ describe('#commoditiesController', () => {
       const options = {
         method: 'POST',
         url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           commodity: 'Dog'
         }

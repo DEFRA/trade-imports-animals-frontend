@@ -1,8 +1,13 @@
 import path from 'path'
+import Bell from '@hapi/bell'
 import hapi from '@hapi/hapi'
+import Cookie from '@hapi/cookie'
 import Scooter from '@hapi/scooter'
 
 import { router } from './router.js'
+import { csrf } from '../plugins/csrf.js'
+import { authPlugin } from '../plugins/auth.js'
+import { authRoutes } from './auth/index.js'
 import { config } from '../config/config.js'
 import { pulse } from './common/helpers/pulse.js'
 import { catchAll } from './common/helpers/errors.js'
@@ -18,6 +23,7 @@ import { metrics } from '@defra/cdp-metrics'
 
 export async function createServer() {
   setupProxy()
+  const authEnabled = config.get('auth.enabled')
   const server = hapi.server({
     host: config.get('host'),
     port: config.get('port'),
@@ -64,8 +70,18 @@ export async function createServer() {
     nunjucksConfig,
     Scooter,
     contentSecurityPolicy,
+    csrf,
+    Cookie,
+    Bell,
+    ...(authEnabled ? [authPlugin, authRoutes] : []),
     router // Register all the controllers/routes defined in src/server/router.js
   ])
+
+  server.app.cache = server.cache({
+    segment: 'auth-sessions',
+    cache: config.get('session.cache.name'),
+    expiresIn: config.get('session.cache.ttl')
+  })
 
   server.ext('onPreResponse', catchAll)
 

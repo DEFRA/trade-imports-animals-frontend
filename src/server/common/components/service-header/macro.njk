@@ -1,0 +1,11 @@
+{#
+  Service Header Macro
+
+  Usage:
+  {% from "service-header/macro.njk" import appServiceHeader %}
+  {{ appServiceHeader({ userSession: userSession }) }}
+#}
+{% macro appServiceHeader(params) %}
+  {% set userSession = params.userSession %}
+  {% include "./template.njk" %}
+{% endmacro %}

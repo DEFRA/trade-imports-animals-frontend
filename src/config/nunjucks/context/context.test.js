@@ -33,14 +33,14 @@ describe('context and cache', () => {
         contextImport = await import('./context.js')
       })
 
-      beforeEach(() => {
+      beforeEach(async () => {
         // Return JSON string
         mockReadFileSync.mockReturnValue(`{
         "application.js": "javascripts/application.js",
         "stylesheets/application.scss": "stylesheets/application.css"
       }`)
 
-        contextResult = contextImport.context(mockRequest)
+        contextResult = await contextImport.context(mockRequest)
       })
 
       test('Should provide expected context', () => {
@@ -61,7 +61,9 @@ describe('context and cache', () => {
             }
           ],
           serviceName: 'Animals',
-          serviceUrl: '/'
+          serviceUrl: '/',
+          authEnabled: true,
+          userSession: { isAuthenticated: false }
         })
       })
 
@@ -92,7 +94,7 @@ describe('context and cache', () => {
       beforeEach(() => {
         mockReadFileSync.mockReturnValue(new Error('File not found'))
 
-        contextImport.context(mockRequest)
+        return contextImport.context(mockRequest)
       })
 
       test('Should log that the Webpack Manifest file is not available', () => {
@@ -114,14 +116,14 @@ describe('context and cache', () => {
         contextImport = await import('./context.js')
       })
 
-      beforeEach(() => {
+      beforeEach(async () => {
         // Return JSON string
         mockReadFileSync.mockReturnValue(`{
         "application.js": "javascripts/application.js",
         "stylesheets/application.scss": "stylesheets/application.css"
       }`)
 
-        contextResult = contextImport.context(mockRequest)
+        contextResult = await contextImport.context(mockRequest)
       })
 
       test('Should read file', () => {
@@ -150,9 +152,39 @@ describe('context and cache', () => {
             }
           ],
           serviceName: 'Animals',
-          serviceUrl: '/'
+          serviceUrl: '/',
+          authEnabled: true,
+          userSession: { isAuthenticated: false }
         })
       })
     })
+  })
+})
+
+describe('When auth.enabled is set to false', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    mockReadFileSync.mockReset()
+    mockLoggerError.mockReset()
+  })
+  test('returns authEnabled=false in context', async () => {
+    vi.doMock('../../config.js', async (importOriginal) => {
+      const mod = await importOriginal()
+      const originalGet = mod.config.get.bind(mod.config)
+      vi.spyOn(mod.config, 'get').mockImplementation((key) => {
+        if (key === 'auth.enabled') return false
+        return originalGet(key)
+      })
+      return mod
+    })
+    const contextImport = await import('./context.js')
+    mockReadFileSync.mockReturnValue(`{
+      "application.js": "javascripts/application.js",
+      "stylesheets/application.scss": "stylesheets/application.css"
+    }`)
+    const mockRequest = { path: '/' }
+    const contextResult = await contextImport.context(mockRequest)
+    expect(contextResult.authEnabled).toBe(false)
+    expect(contextResult.userSession).toEqual({ isAuthenticated: false })
   })
 })
