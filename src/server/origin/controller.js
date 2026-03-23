@@ -7,6 +7,7 @@ import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
@@ -17,8 +18,9 @@ export const originController = {
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const traceId = getTraceId() ?? ''
       if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber)
+        notificationClient.get(_request, referenceNumber, traceId)
         logger.info(
           `Notification retrieved from notification client: ${referenceNumber}`
         )
@@ -40,6 +42,7 @@ export const originController = {
       const { countryCode, requiresRegionCode, internalReference } =
         _request.payload
       logger.info(`Country of origin: ${countryCode}`)
+      const traceId = getTraceId() ?? ''
 
       // Validate using Joi schema
       const { error } = originSchema.validate(_request.payload, {
@@ -66,7 +69,7 @@ export const originController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        const response = await notificationClient.submit(_request)
+        const response = await notificationClient.submit(_request, traceId)
 
         // Store reference number in session if returned (backend returns string directly)
         if (response?.referenceNumber) {
