@@ -12,26 +12,9 @@ vi.mock('../../auth/get-oidc-config.js', () => ({
 }))
 
 vi.mock('../../config/config.js', async (importOriginal) => {
-  const sessionCookiePassword = 'this-must-be-at-least-32-characters-long'
-  const mod = await importOriginal()
-  const originalGet = mod.config.get.bind(mod.config)
-  vi.spyOn(mod.config, 'get').mockImplementation((key) => {
-    if (key === 'session') {
-      const session = originalGet('session')
-      return {
-        ...session,
-        cookie: {
-          ...session.cookie,
-          password: sessionCookiePassword
-        }
-      }
-    }
-    if (key === 'session.cookie.password') {
-      return sessionCookiePassword
-    }
-    return originalGet(key)
-  })
-  return mod
+  const { mockAuthConfig } =
+    await import('../common/test-helpers/mock-auth-config.js')
+  return mockAuthConfig(importOriginal)
 })
 
 describe('#originController', () => {

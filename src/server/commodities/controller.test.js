@@ -12,26 +12,9 @@ vi.mock('../../auth/get-oidc-config.js', () => ({
 }))
 
 vi.mock('../../config/config.js', async (importOriginal) => {
-  const sessionCookiePassword = 'this-must-be-at-least-32-characters-long'
-  const mod = await importOriginal()
-  const originalGet = mod.config.get.bind(mod.config)
-  vi.spyOn(mod.config, 'get').mockImplementation((key) => {
-    if (key === 'session') {
-      const session = originalGet('session')
-      return {
-        ...session,
-        cookie: {
-          ...session.cookie,
-          password: sessionCookiePassword
-        }
-      }
-    }
-    if (key === 'session.cookie.password') {
-      return sessionCookiePassword
-    }
-    return originalGet(key)
-  })
-  return mod
+  const { mockAuthConfig } =
+    await import('../common/test-helpers/mock-auth-config.js')
+  return mockAuthConfig(importOriginal)
 })
 
 describe('#commoditiesController', () => {
@@ -107,7 +90,7 @@ describe('#commoditiesController', () => {
       expect(csrfInput.attr('type')).toBe('hidden')
     })
 
-    test('Should display hint text for commodity selection', async () => {
+    test('Should display hint text for commodity select', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/commodities',
@@ -141,7 +124,7 @@ describe('#commoditiesController', () => {
       const { statusCode, headers } = await server.inject(options)
 
       expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/commodities')
+      expect(headers.location).toBe('/commodities/select')
     })
 
     test('Should handle different commodity values correctly', async () => {
@@ -163,7 +146,7 @@ describe('#commoditiesController', () => {
         const { statusCode, headers } = await server.inject(options)
 
         expect(statusCode).toBe(302)
-        expect(headers.location).toBe('/commodities')
+        expect(headers.location).toBe('/commodities/select')
       }
     })
 
@@ -212,7 +195,7 @@ describe('#commoditiesController', () => {
       const { statusCode, headers } = await server.inject(options)
 
       expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/commodities')
+      expect(headers.location).toBe('/commodities/select')
     })
   })
 })

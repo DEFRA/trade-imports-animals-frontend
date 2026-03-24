@@ -48,7 +48,7 @@ export const commoditiesController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/commodities')
+      return h.redirect('/commodities/select')
     }
   }
 }

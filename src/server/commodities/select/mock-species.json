@@ -1,0 +1,85 @@
+{
+  "certificateType": "cveda",
+  "commodityCode": "0102",
+  "data": {
+    "types": [
+      {
+        "text": "Domestic",
+        "value": "16",
+        "isDefault": "0"
+      }
+    ],
+    "classes": [
+      {
+        "text": "",
+        "value": "1586274",
+        "type": "24",
+        "isDefault": "0"
+      },
+      {
+        "text": "",
+        "value": "716661",
+        "type": "16",
+        "isDefault": "0"
+      }
+    ],
+    "families": [
+      {
+        "text": "",
+        "value": "1586274",
+        "clazz": "1586274",
+        "isDefault": "0"
+      },
+      {
+        "text": "",
+        "value": "716661",
+        "clazz": "716661",
+        "isDefault": "0"
+      }
+    ],
+    "models": [
+      {
+        "text": "",
+        "value": "1041681",
+        "family": "1041681",
+        "isDefault": "0"
+      },
+      {
+        "text": "",
+        "value": "1148346",
+        "family": "1148346",
+        "isDefault": "0"
+      }
+    ],
+    "species": [
+      {
+        "text": "Bison bison",
+        "eppoCode": null,
+        "value": "716661",
+        "model": "1148346",
+        "isDefault": "0"
+      },
+      {
+        "text": "Bos spp.",
+        "eppoCode": null,
+        "value": "1388624",
+        "model": "1041681",
+        "isDefault": "0"
+      },
+      {
+        "text": "Bos taurus",
+        "eppoCode": null,
+        "value": "1148346",
+        "model": "1148346",
+        "isDefault": "0"
+      },
+      {
+        "text": "Bubalus bubalis",
+        "eppoCode": null,
+        "value": "749313",
+        "model": "1148346",
+        "isDefault": "0"
+      }
+    ]
+  }
+}
