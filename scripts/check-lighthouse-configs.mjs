@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -6,50 +6,62 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
-const serverDir = path.join(projectRoot, 'src', 'server')
 const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
 // Routes to ignore when checking for Lighthouse coverage
 const IGNORED_PATHS = new Set(['/health'])
+const IGNORED_PREFIXES = ['/public/']
+const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
 
-// Naive but effective: looks for blocks like:
-// { method: 'GET', path: '/origin', ... }
-const GET_ROUTE_REGEX =
-  /method:\s*'GET'[\s\S]*?path:\s*'([^']+)'/g
+async function findFilesRecursively(dir, matcher) {
+  const entries = await readdir(dir, { withFileTypes: true })
+  const files = []
 
-async function findServerPagePaths() {
-  const entries = await readdir(serverDir, { withFileTypes: true })
-  const indexFiles = entries
-    .filter((e) => e.isDirectory())
-    .map((dir) => path.join(serverDir, dir.name, 'index.js'))
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
 
-  const paths = new Set()
-
-  for (const file of indexFiles) {
-    try {
-      const content = await readFile(file, 'utf8')
-      let match
-      while ((match = GET_ROUTE_REGEX.exec(content)) !== null) {
-        const routePath = match[1]
-        if (!IGNORED_PATHS.has(routePath)) {
-          paths.add(routePath)
-        }
-      }
-    } catch {
-      // ignore missing index.js
+    if (entry.isDirectory()) {
+      files.push(...(await findFilesRecursively(fullPath, matcher)))
+    } else if (entry.isFile() && matcher(entry.name)) {
+      files.push(fullPath)
     }
   }
+
+  return files
+}
+
+async function findServerPagePaths() {
+  // Avoid auth bootstrap side-effects (OIDC discovery) while building route table.
+  process.env.AUTH_ENABLED = 'false'
+  const { createServer } = await import('../src/server/server.js')
+  const server = await createServer()
+  await server.initialize()
+  const paths = new Set()
+  for (const route of server.table()) {
+    if (route.method !== 'get') {
+      continue
+    }
+    if (IGNORED_PATHS.has(route.path)) {
+      continue
+    }
+    if (IGNORED_ROUTE_PATTERNS.includes(route.path)) {
+      continue
+    }
+    if (IGNORED_PREFIXES.some((prefix) => route.path.startsWith(prefix))) {
+      continue
+    }
+    paths.add(route.path)
+  }
+  await server.stop({ timeout: 0 })
 
   return paths
 }
 
 async function findLighthouseConfigPaths() {
-  const entries = await readdir(lighthouseDir, { withFileTypes: true })
-  const configFiles = entries
-    .filter(
-      (e) => e.isFile() && e.name.endsWith('.config.js')
-    )
-    .map((e) => path.join(lighthouseDir, e.name))
+  const configFiles = await findFilesRecursively(
+    lighthouseDir,
+    (name) => name.endsWith('.config.js')
+  )
 
   const paths = new Set()
 
@@ -61,6 +73,9 @@ async function findLighthouseConfigPaths() {
     Object.values(module).forEach((exported) => {
       if (exported && typeof exported === 'object' && exported.path) {
         paths.add(exported.path)
+      }
+      if (exported && typeof exported === 'object' && Array.isArray(exported.paths)) {
+        exported.paths.forEach((routePath) => paths.add(routePath))
       }
     })
   }

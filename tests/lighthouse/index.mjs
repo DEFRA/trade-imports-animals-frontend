@@ -12,6 +12,7 @@ import { originLighthouseConfig } from './origin.config.js'
 import { aboutLighthouseConfig } from "./about.config.js"
 import { homeLighthouseConfig } from "./home.config.js"
 import { commoditiesLighthouseConfig } from "./commodities.config.js"
+import { commoditiesSelectLighthouseConfig } from './commodities-select.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -23,7 +24,8 @@ const pageConfigs = [
   homeLighthouseConfig,
   aboutLighthouseConfig,
   originLighthouseConfig,
-  commoditiesLighthouseConfig
+  commoditiesLighthouseConfig,
+  commoditiesSelectLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
