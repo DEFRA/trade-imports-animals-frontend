@@ -7,6 +7,7 @@ import { origin } from './origin/index.js'
 import { signout } from './signout/index.js'
 import { commodities } from './commodities/index.js'
 import { commoditiesSelect } from './commodities/select/index.js'
+import { importReason } from './import-reason/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
 
@@ -21,7 +22,14 @@ export const router = {
 
       // Application specific routes, add your own routes here
       const authEnabled = config.get('auth.enabled')
-      const routes = [origin, commodities, commoditiesSelect, home, about]
+      const routes = [
+        about,
+        home,
+        origin,
+        commodities,
+        commoditiesSelect,
+        importReason
+      ]
 
       if (authEnabled) {
         routes.push(signout)

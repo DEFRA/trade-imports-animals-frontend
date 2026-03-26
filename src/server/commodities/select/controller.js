@@ -98,7 +98,7 @@ export const commoditiesSelectController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/commodities/select', { referenceNumber })
+      return h.redirect('/import-reason', { referenceNumber })
     }
   }
 }

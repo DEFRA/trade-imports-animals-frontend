@@ -125,7 +125,7 @@ describe('commoditiesSelectController', () => {
       })
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/select'
+        location: '/import-reason'
       })
     })
 
@@ -202,7 +202,7 @@ describe('commoditiesSelectController', () => {
 
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/select'
+        location: '/import-reason'
       })
     })
   })
