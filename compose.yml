@@ -48,7 +48,7 @@ services:
       - '3007:3007'
     environment:
       port: 3007
-      AUTH_PASSWORD: ${AUTH_PASSWORD:-null}
+      AUTH_PASSWORD: ${AUTH_PASSWORD}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:3007/health" ]
       interval: 1m30s
@@ -86,6 +86,8 @@ services:
       LOCALSTACK_ENDPOINT: http://localstack:4566
       USE_SINGLE_INSTANCE_CACHE: true
       # OIDC discovery URL must be reachable from inside the container.
+      DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED: ${DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED}
+      DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_TO: ${DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_TO}
       DEFRA_ID_OIDC_CONFIGURATION_URL: ${DEFRA_ID_OIDC_CONFIGURATION_URL}
       DEFRA_ID_REDIRECT_URL: http://localhost:3000/auth/sign-in-oidc
       DEFRA_ID_SIGN_OUT_REDIRECT_URL: http://localhost:3000/auth/sign-out-oidc
