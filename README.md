@@ -18,6 +18,7 @@ Core delivery platform Node.js Frontend Template.
   - [Update dependencies](#update-dependencies)
   - [Formatting](#formatting)
     - [Windows prettier issue](#windows-prettier-issue)
+- [Auth](#authentication-trade-imports-defra-id-stub)
 - [Docker](#docker)
   - [Development image](#development-image)
   - [Production image](#production-image)
@@ -137,6 +138,24 @@ If you are having issues with formatting of line breaks on Windows update your g
 
 ```bash
 git config --global core.autocrlf false
+```
+
+## AUTHENTICATION (trade-imports-defra-id-stub)
+
+When spinning up trade-imports-defra-id-stub from the docker compose file add the below entry to your /etc/hosts file
+
+```
+127.0.0.1 host.docker.internal
+```
+
+Create an env file and add the below entries
+
+```
+DEFRA_ID_OIDC_CONFIGURATION_URL=http://host.docker.internal:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
+DEFRA_ID_CLIENT_ID=8c5e0bd-8223-4908-a5aa-c9c1d7cddaac
+DEFRA_ID_CLIENT_SECRET=test_value
+DEFRA_ID_SERVICE_ID=aeaa0a80-15f3-48b2-8bd7-0e02874b3d32
+DEFRA_ID_POLICY=b2c_1a_cui_cpdev_signupsigninsfi
 ```
 
 ## Docker
