@@ -51,6 +51,8 @@
               </h1>
             </legend>
             <select class="govuk-select" id="typeOfCommodity" name="typeOfCommodity">
+              <option value="">Select type of commodity</option>
+              <option value="" disabled>────────────────────────</option>
               {% for type in speciesDetails.data.types %}
                 <option value="{{ type.text }}" {% if typeOfCommodity == type.text %}selected{% endif %}>{{ type.text }}</option>
               {% endfor %}
