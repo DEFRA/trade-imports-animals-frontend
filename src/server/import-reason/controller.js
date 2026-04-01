@@ -47,7 +47,7 @@ export const importReasonController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/import-reason', { referenceNumber })
+      return h.redirect('/commodities/details', { referenceNumber })
     }
   }
 }

@@ -30,10 +30,16 @@ describe('commoditiesSelectController', () => {
     test('passes selected type and species from session to the view', async () => {
       const get = vi.fn((key) => {
         const values = {
-          commodity: 'Fish',
-          referenceNumber: 'REF-123',
-          typeOfCommodity: 'Domestic',
-          species: ['1586274', '716661']
+          commodity: {
+            commodity: 'Fish',
+            commodityComplement: [
+              {
+                typeOfCommodity: 'Domestic',
+                species: ['1586274', '716661']
+              }
+            ]
+          },
+          referenceNumber: 'REF-123'
         }
         return values[key] ?? null
       })
@@ -54,7 +60,15 @@ describe('commoditiesSelectController', () => {
           pageTitle: 'Select species of commodity',
           heading: 'Commodity',
           referenceNumber: 'REF-123',
-          commodity: 'Fish',
+          commodity: {
+            commodity: 'Fish',
+            commodityComplement: [
+              {
+                typeOfCommodity: 'Domestic',
+                species: ['1586274', '716661']
+              }
+            ]
+          },
           typeOfCommodity: 'Domestic',
           species: ['1586274', '716661'],
           commodityDetails: expect.objectContaining({
@@ -112,14 +126,16 @@ describe('commoditiesSelectController', () => {
         h
       )
 
-      expect(set).toHaveBeenCalledWith('typeOfCommodity', 'Domestic')
-      expect(set).toHaveBeenCalledWith('species', ['1586274', '716661'])
+      expect(set).toHaveBeenCalledTimes(1)
       expect(set).toHaveBeenCalledWith('commodity', {
         commodity: 'Fish',
         commodityComplement: [
           {
             typeOfCommodity: 'Domestic',
-            species: ['1586274', '716661']
+            species: [
+              { value: '1586274', text: '1586274' },
+              { value: '716661', text: 'Bison bison' }
+            ]
           }
         ]
       })
@@ -149,14 +165,13 @@ describe('commoditiesSelectController', () => {
 
       await commoditiesSelectController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('typeOfCommodity', 'Game')
-      expect(set).toHaveBeenCalledWith('species', ['716661'])
+      expect(set).toHaveBeenCalledTimes(1)
       expect(set).toHaveBeenCalledWith('commodity', {
         commodity: 'Fish',
         commodityComplement: [
           {
             typeOfCommodity: 'Game',
-            species: ['716661']
+            species: [{ value: '716661', text: 'Bison bison' }]
           }
         ]
       })
