@@ -80,7 +80,7 @@
     "@babel/preset-env": "7.29.2",
     "@vitest/coverage-v8": "4.0.18",
     "autoprefixer": "10.4.27",
-    "babel-loader": "10.0.0",
+    "babel-loader": "10.1.1",
     "cheerio": "1.1.2",
     "chrome-launcher": "1.2.1",
     "clean-webpack-plugin": "4.0.0",
