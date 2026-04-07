@@ -103,7 +103,7 @@
     "vitest": "4.0.18",
     "vitest-fetch-mock": "0.4.5",
     "webpack": "5.105.3",
-    "webpack-assets-manifest": "6.5.0",
+    "webpack-assets-manifest": "6.5.1",
     "webpack-cli": "6.0.1"
   },
   "overrides": {
