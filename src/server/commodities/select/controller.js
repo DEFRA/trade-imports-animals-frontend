@@ -51,6 +51,7 @@ export const commoditiesSelectController = {
       const species = selectedSpecies
         .map((s) => (typeof s === 'string' ? s : s?.value))
         .filter(Boolean)
+      const savedSpeciesValues = selectedSpecies.map((s) => s.value)
 
       return h.view('commodities/select/index', {
         pageTitle: 'Select species of commodity',
@@ -59,6 +60,7 @@ export const commoditiesSelectController = {
         commodity,
         typeOfCommodity,
         species,
+        savedSpeciesValues,
         commodityDetails: toJsonObject(commodityDetailsList),
         speciesDetails: toJsonObject(speciesDetailsList)
       })
