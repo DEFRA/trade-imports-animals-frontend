@@ -105,7 +105,10 @@ describe('importReasonController', () => {
         request,
         'trace-123'
       )
-      expect(response).toEqual({ statusCode: 302, location: '/import-reason' })
+      expect(response).toEqual({
+        statusCode: 302,
+        location: '/commodities/details'
+      })
     })
 
     test('redirects even when backend submit fails', async () => {
@@ -135,7 +138,10 @@ describe('importReasonController', () => {
         request,
         'trace-123'
       )
-      expect(response).toEqual({ statusCode: 302, location: '/import-reason' })
+      expect(response).toEqual({
+        statusCode: 302,
+        location: '/commodities/details'
+      })
     })
   })
 })

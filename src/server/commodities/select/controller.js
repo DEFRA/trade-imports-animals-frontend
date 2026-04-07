@@ -8,6 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import { toObject } from '../../common/helpers/object-helpers.js'
 
 const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -43,8 +44,13 @@ export const commoditiesSelectController = {
 
       const commodity = getSessionValue(_request, 'commodity')
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const typeOfCommodity = getSessionValue(_request, 'typeOfCommodity')
-      const species = getSessionValue(_request, 'species') || []
+      const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
+      const selectedSpecies = commodityComplement?.species ?? []
+      const typeOfCommodity = commodityComplement?.typeOfCommodity
+
+      const species = selectedSpecies
+        .map((s) => (typeof s === 'string' ? s : s?.value))
+        .filter(Boolean)
 
       return h.view('commodities/select/index', {
         pageTitle: 'Select species of commodity',
@@ -65,28 +71,54 @@ export const commoditiesSelectController = {
       )
 
       const traceId = getTraceId() ?? ''
-
-      const commodity = getSessionValue(_request, 'commodity')
-      const { typeOfCommodity, species } = _request.payload
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const commodity = getSessionValue(_request, 'commodity')
+      const existingCommodityComplement = (
+        commodity?.commodityComplement ?? []
+      ).at(-1)
+      const savedSpecies = existingCommodityComplement?.species ?? []
+      const savedSpeciesByValue = new Map(savedSpecies.map((s) => [s.value, s]))
 
-      const speciesLst = Array.isArray(species)
+      const { typeOfCommodity, species } = _request.payload
+
+      const speciesValues = Array.isArray(species)
         ? species
         : species
           ? [species]
           : []
 
-      setSessionValue(_request, 'typeOfCommodity', typeOfCommodity)
-      setSessionValue(_request, 'species', speciesLst)
+      const speciesDetails = toJsonObject(speciesDetailsList)
+      const speciesByValue = new Map(
+        (speciesDetails?.data?.species ?? []).map((s) => [s.value, s.text])
+      )
+      let speciesLst = speciesValues.map((value) => ({
+        value,
+        text: speciesByValue.get(value) ?? value
+      }))
+
+      if (savedSpecies.length > 0) {
+        speciesLst = speciesLst.map((s) => {
+          const match = savedSpeciesByValue.get(s.value)
+          if (!match) return s
+
+          return {
+            ...s,
+            ...(match.noOfAnimals !== undefined
+              ? { noOfAnimals: match.noOfAnimals }
+              : {}),
+            ...(match.noOfPackages !== undefined
+              ? { noOfPackages: match.noOfPackages }
+              : {})
+          }
+        })
+      }
 
       const commodityComplement = {
         typeOfCommodity,
         species: speciesLst
       }
 
-      const commodityJson =
-        commodity && typeof commodity === 'object' ? commodity : { commodity }
-
+      const commodityJson = toObject(commodity, 'commodity')
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 

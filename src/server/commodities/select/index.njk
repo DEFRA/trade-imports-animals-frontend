@@ -75,7 +75,7 @@
               {% for speciesItem in speciesDetails.data.species %}
                 <div class="govuk-checkboxes__item">
                   <input class="govuk-checkboxes__input" id="{{ speciesItem.value }}-checkbox" name="species" id="species"
-                         type="checkbox" value="{{ speciesItem.value }}" {% if speciesItem.value in species %}checked{% endif %}>
+                         type="checkbox" value="{{ speciesItem.value }}" {% if speciesItem.value in selectedSpeciesValues %}checked{% endif %}>
                   <label class="govuk-label govuk-checkboxes__label" for="{{ speciesItem.value }}-checkbox">
                     {{ speciesItem.text }}
                   </label>

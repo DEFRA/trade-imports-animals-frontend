@@ -1,0 +1,88 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+
+
+{% block content %}
+  {% if referenceNumber %}
+    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+  {% endif %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/import-reason"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+        <form method="post" novalidate>
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          <span class="govuk-caption-xl">Description of the goods</span>
+          <h1 class="govuk-heading-xl">Commodity</h1>
+
+          <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-table__caption--m">Commodities</caption>
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Commodity code</th>
+              <th scope="col" class="govuk-table__header govuk-!-width-two-thirds">Description</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell">0102</td>
+                <td class="govuk-table__cell">Live bovine animals</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-table__caption--m">Live dovine animals</caption>
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Species and type</th>
+              <th scope="col" class="govuk-table__header">Number of animals</th>
+              <th scope="col" class="govuk-table__header">Number of packages such as crates, bags or boxes (when required)</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            {% for species in speciesLst %}
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell">
+                  {{ species.text }}, {{ typeOfCommodity }}
+                </td>
+                <td class="govuk-table__cell">
+                  <input class="govuk-input" id="noOfAnimals" name="noOfAnimals" type="number" value="{{ species.noOfAnimals }}"/>
+                </td>
+                <td class="govuk-table__cell">
+                  <input class="govuk-input" id="noOfPackages" name="noOfPackages" type="number" value="{{ species.noOfPackages }}"/>
+                </td>
+              </tr>
+            {% endfor %}
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell govuk-table__header">Subtotal</td>
+                <td class="govuk-table__cell">{{ totalNoOfAnimals }}</td>
+                <td class="govuk-table__cell">{{ totalNoOfPackages }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="govuk-button-group">
+            {{ govukButton({
+              text: "Save and continue"
+            }) }}
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+{% endblock %}
