@@ -59,7 +59,7 @@
     "convict": "^6.2.5",
     "convict-format-with-validator": "6.2.0",
     "crypto": "^1.0.1",
-    "cssnano": "7.1.2",
+    "cssnano": "7.1.4",
     "cssnano-preset-default": "7.0.12",
     "date-fns": "4.1.0",
     "global-agent": "3.0.0",
