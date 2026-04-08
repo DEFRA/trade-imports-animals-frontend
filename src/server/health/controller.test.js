@@ -1,13 +1,11 @@
 import { vi } from 'vitest'
-
+import { createServer } from '../server.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
-
-import { createServer } from '../server.js'
-import { statusCodes } from '../common/constants/status-codes.js'
 
 describe('#healthController', () => {
   let server
