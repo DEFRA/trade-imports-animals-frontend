@@ -43,8 +43,12 @@ describe('commodityDetailsController', () => {
 
       const request = {
         payload: {
-          noOfAnimals: ['2', '3'],
-          noOfPackages: ['1', '4']
+          'noOfAnimals-1586274': '2',
+          'noOfAnimals-716661': '3',
+          'noOfPackages-1586274': '1',
+          'noOfPackages-716661': '4',
+          totalNoOfAnimals: '5',
+          totalNoOfPackages: '5'
         },
         yar: { set, get }
       }

@@ -17,8 +17,10 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
-        <form method="post" novalidate>
+        <form method="post" id="commodity-details-form" name="commodity-details-form" novalidate>
         <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <input type="hidden" id="totalNoOfAnimals" name="totalNoOfAnimals" value="{{ totalNoOfAnimals }}" />
+        <input type="hidden" id="totalNoOfPackages" name="totalNoOfPackages" value="{{ totalNoOfPackages }}" />
 
           <span class="govuk-caption-xl">Description of the goods</span>
           <h1 class="govuk-heading-xl">Commodity</h1>
@@ -55,17 +57,17 @@
                   {{ species.text }}, {{ typeOfCommodity }}
                 </td>
                 <td class="govuk-table__cell">
-                  <input class="govuk-input" id="noOfAnimals" name="noOfAnimals" type="number" value="{{ species.noOfAnimals }}"/>
+                  <input class="govuk-input" id="noOfAnimals-{{ species.value }}" name="noOfAnimals-{{ species.value }}" type="number" value="{{ species.noOfAnimals }}"/>
                 </td>
                 <td class="govuk-table__cell">
-                  <input class="govuk-input" id="noOfPackages" name="noOfPackages" type="number" value="{{ species.noOfPackages }}"/>
+                  <input class="govuk-input" id="noOfPackages-{{ species.value }}" name="noOfPackages-{{ species.value }}" type="number" value="{{ species.noOfPackages }}"/>
                 </td>
               </tr>
             {% endfor %}
               <tr class="govuk-table__row">
                 <td class="govuk-table__cell govuk-table__header">Subtotal</td>
-                <td class="govuk-table__cell">{{ totalNoOfAnimals }}</td>
-                <td class="govuk-table__cell">{{ totalNoOfPackages }}</td>
+                <td class="govuk-table__cell" id="subtotalNoOfAnimals">{{ totalNoOfAnimals }}</td>
+                <td class="govuk-table__cell" id="subtotalNoOfPackages">{{ totalNoOfPackages }}</td>
               </tr>
             </tbody>
           </table>
@@ -77,12 +79,14 @@
           </div>
 
         </form>
+
       </div>
     </div>
   </div>
-
-
-
-
-
 {% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('commoditySubTotal.js') }}"></script>
+{% endblock %}
+
