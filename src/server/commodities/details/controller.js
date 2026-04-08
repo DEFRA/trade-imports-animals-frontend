@@ -47,8 +47,12 @@ export const commodityDetailsController = {
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const speciesLst = commodityComplement?.species ?? []
 
-      const noOfAnimals = Object.values(_request.payload.noOfAnimals ?? [])
-      const noOfPackages = Object.values(_request.payload.noOfPackages ?? [])
+      const noOfAnimals = speciesLst.map(
+        (s) => _request.payload[`noOfAnimals-${s.value}`]
+      )
+      const noOfPackages = speciesLst.map(
+        (s) => _request.payload[`noOfPackages-${s.value}`]
+      )
 
       commodityComplement.species = speciesLst.map((species, index) => ({
         ...species,

@@ -22,6 +22,9 @@ export default {
   entry: {
     application: {
       import: ['./javascripts/application.js', './stylesheets/application.scss']
+    },
+    commoditySubTotal: {
+      import: './javascripts/commodity-subtotal-autocomplete.js'
     }
   },
   experiments: {
