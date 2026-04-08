@@ -9,6 +9,7 @@
 {% from "service-header/macro.njk" import appServiceHeader %}
 
 {% set mainClasses = "app-main-wrapper" %}
+{% set govukRebrand = true %}
 
 {% block head %}
   <meta name="csrf-token" content="{{ crumb }}">
@@ -17,6 +18,7 @@
 
 {% block header %}
   {{ govukHeader({
+    rebrand: true,
     homepageUrl: "https://www.gov.uk/",
     classes: "app-header",
     containerClasses: "govuk-width-container",
@@ -49,6 +51,7 @@
 
 {% block footer %}
   {{ govukFooter({
+    rebrand: true,
     meta: {
       items: [
         {
