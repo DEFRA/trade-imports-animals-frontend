@@ -16,12 +16,16 @@ export const commodityDetailsController = {
         `Commodity: ${getSessionValue(_request, 'commodity')} details page`
       )
 
+      const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const commodity = getSessionValue(_request, 'commodity')
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const speciesLst = commodityComplement?.species ?? []
       const typeOfCommodity = commodityComplement?.typeOfCommodity
 
       return h.view('commodities/details/index', {
+        pageTitle: 'Description of goods',
+        heading: 'Commodity',
+        referenceNumber,
         commodity,
         typeOfCommodity,
         speciesLst,
