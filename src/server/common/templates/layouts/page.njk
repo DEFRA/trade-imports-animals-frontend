@@ -9,20 +9,17 @@
 {% from "service-header/macro.njk" import appServiceHeader %}
 
 {% set mainClasses = "app-main-wrapper" %}
-{% set govukRebrand = true %}
 
 {% block head %}
   <meta name="csrf-token" content="{{ crumb }}">
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block header %}
+{% block govukHeader %}
   {{ govukHeader({
-    rebrand: true,
     homepageUrl: "https://www.gov.uk/",
     classes: "app-header",
-    containerClasses: "govuk-width-container",
-    useTudorCrown: true
+    containerClasses: "govuk-width-container"
   }) }}
 
   {{ govukServiceNavigation({
@@ -37,7 +34,7 @@
   {{ pageTitle }} | {{ serviceName }}
 {% endblock %}
 
-{% block beforeContent %}
+{% block containerStart %}
   {{ appServiceHeader({ userSession: userSession }) }}
 
   {% if breadcrumbs.length > 1 %}
@@ -49,9 +46,8 @@
 
 {% block content %}{% endblock %}
 
-{% block footer %}
+{% block govukFooter %}
   {{ govukFooter({
-    rebrand: true,
     meta: {
       items: [
         {
