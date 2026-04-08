@@ -1,3 +1,1 @@
-const govukRebrand = true
-
-export { govukRebrand }
+export {}
