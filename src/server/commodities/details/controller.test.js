@@ -26,7 +26,7 @@ describe('commodityDetailsController', () => {
         if (key === 'referenceNumber') return 'REF-123'
         if (key === 'commodity') {
           return {
-            commodity: 'Fish',
+            name: 'Fish',
             commodityComplement: [
               {
                 typeOfCommodity: 'Domestic',
@@ -85,7 +85,7 @@ describe('commodityDetailsController', () => {
       )
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/details'
+        location: '/additional-details'
       })
     })
   })

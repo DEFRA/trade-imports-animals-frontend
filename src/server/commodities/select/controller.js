@@ -120,7 +120,7 @@ export const commoditiesSelectController = {
         species: speciesLst
       }
 
-      const commodityJson = toObject(commodity, 'commodity')
+      const commodityJson = toObject(commodity, 'name')
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 

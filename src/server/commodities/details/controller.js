@@ -59,7 +59,7 @@ export const commodityDetailsController = {
       commodityComplement.totalNoOfAnimals = getTotal(noOfAnimals)
       commodityComplement.totalNoOfPackages = getTotal(noOfPackages)
 
-      const commodityJson = toObject(commodity, 'commodity')
+      const commodityJson = toObject(commodity, 'name')
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
@@ -70,7 +70,7 @@ export const commodityDetailsController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/commodities/details', { referenceNumber })
+      return h.redirect('/additional-details', { referenceNumber })
     }
   }
 }
