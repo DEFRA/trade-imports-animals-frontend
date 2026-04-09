@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { getOidcConfig } from './get-oidc-config.js'
 
 // Must be hoisted too (because vi.mock factories are hoisted)
 const wreckGetMock = vi.hoisted(() => vi.fn())
@@ -11,8 +12,6 @@ vi.mock('@hapi/wreck', () => ({
 vi.mock('../config/config.js', () => ({
   config: { get: configGetMock }
 }))
-
-import { getOidcConfig } from './get-oidc-config.js'
 
 describe('getOidcConfig', () => {
   beforeEach(() => {

@@ -1,4 +1,5 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest'
+import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
 
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
@@ -34,8 +35,6 @@ vi.mock('@hapi/jwt', () => ({
     }
   }
 }))
-
-import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
 
 describe('auth plugin', () => {
   const oidcConfig = {

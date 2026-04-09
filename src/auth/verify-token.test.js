@@ -1,4 +1,5 @@
 import { describe, test, expect, vi } from 'vitest'
+import { verifyToken } from './verify-token.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
@@ -26,8 +27,6 @@ vi.mock('@hapi/jwt', () => ({
     }
   }
 }))
-
-import { verifyToken } from './verify-token.js'
 
 describe('verifyToken', () => {
   test('verifies token using first JWK', async () => {

@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { getSignOutUrl } from './get-sign-out-url.js'
 
 const configGetMock = vi.hoisted(() => vi.fn())
 
@@ -7,8 +8,6 @@ vi.mock('../config/config.js', () => ({
     get: configGetMock
   }
 }))
-
-import { getSignOutUrl } from './get-sign-out-url.js'
 
 describe('getSignOutUrl', () => {
   beforeEach(() => {

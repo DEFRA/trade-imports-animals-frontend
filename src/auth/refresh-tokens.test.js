@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { refreshTokens } from './refresh-tokens.js'
 
 const wreckPostMock = vi.hoisted(() => vi.fn())
 vi.mock('@hapi/wreck', () => ({
@@ -18,8 +19,6 @@ vi.mock('../config/config.js', () => ({
     get: configGetMock
   }
 }))
-
-import { refreshTokens } from './refresh-tokens.js'
 
 describe('refreshTokens', () => {
   beforeEach(() => {
