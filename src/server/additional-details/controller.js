@@ -8,12 +8,13 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
-export const commoditiesController = {
+export const additionalDetailsController = {
   get: {
     handler(_request, h) {
-      logger.info(
-        `Commodity in session: ${getSessionValue(_request, 'commodity')}`
-      )
+      const certifiedFor = getSessionValue(_request, 'certifiedFor')
+      const unweanedAnimals =
+        getSessionValue(_request, 'unweanedAnimals') ?? 'no'
+
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const traceId = getTraceId() ?? ''
       if (referenceNumber) {
@@ -23,32 +24,34 @@ export const commoditiesController = {
         )
       }
 
-      return h.view('commodities/index', {
-        pageTitle: 'Commodities',
-        heading: 'Select a Commodity',
-        referenceNumber: getSessionValue(_request, 'referenceNumber'),
-        commodity: getSessionValue(_request, 'commodity')
+      return h.view('additional-details/index', {
+        pageTitle: 'Additional animal details',
+        heading: 'Additional animal details',
+        certifiedFor,
+        unweanedAnimals,
+        referenceNumber
       })
     }
   },
   post: {
     async handler(_request, h) {
-      const { commodity } = _request.payload
+      const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const traceId = getTraceId() ?? ''
-      logger.info(`Commodity: ${commodity}`)
 
-      // Store value in session as object so the backend always receives a consistent type
-      setSessionValue(_request, 'commodity', { name: commodity })
+      const { certifiedFor, unweanedAnimals } = _request.payload
+
+      logger.info(`Additional details: ${referenceNumber}`)
+      setSessionValue(_request, 'certifiedFor', certifiedFor)
+      setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
       try {
-        // Submit notification - client will build complete notification from all session values
         await notificationClient.submit(_request, traceId)
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/commodities/select')
+      return h.redirect('/additional-details')
     }
   }
 }

@@ -31,7 +31,7 @@ describe('commoditiesSelectController', () => {
       const get = vi.fn((key) => {
         const values = {
           commodity: {
-            commodity: 'Fish',
+            name: 'Fish',
             commodityComplement: [
               {
                 typeOfCommodity: 'Domestic',
@@ -61,7 +61,7 @@ describe('commoditiesSelectController', () => {
           heading: 'Commodity',
           referenceNumber: 'REF-123',
           commodity: {
-            commodity: 'Fish',
+            name: 'Fish',
             commodityComplement: [
               {
                 typeOfCommodity: 'Domestic',
@@ -128,7 +128,7 @@ describe('commoditiesSelectController', () => {
 
       expect(set).toHaveBeenCalledTimes(1)
       expect(set).toHaveBeenCalledWith('commodity', {
-        commodity: 'Fish',
+        name: 'Fish',
         commodityComplement: [
           {
             typeOfCommodity: 'Domestic',
@@ -167,7 +167,7 @@ describe('commoditiesSelectController', () => {
 
       expect(set).toHaveBeenCalledTimes(1)
       expect(set).toHaveBeenCalledWith('commodity', {
-        commodity: 'Fish',
+        name: 'Fish',
         commodityComplement: [
           {
             typeOfCommodity: 'Game',
@@ -189,7 +189,7 @@ describe('commoditiesSelectController', () => {
       const set = vi.fn()
       const get = vi.fn((key) => {
         const values = {
-          commodity: 'Fish',
+          commodity: { name: 'Fish' },
           referenceNumber: 'REF-123'
         }
         return values[key] ?? null
