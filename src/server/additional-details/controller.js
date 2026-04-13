@@ -51,7 +51,7 @@ export const additionalDetailsController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/additional-details')
+      return h.redirect('/commodities/identification', { referenceNumber })
     }
   }
 }
