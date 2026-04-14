@@ -20,11 +20,21 @@ vi.mock('../config/config.js', () => ({
   }
 }))
 
+const getTraceIdMock = vi.hoisted(() => vi.fn())
+vi.mock('@defra/hapi-tracing', () => ({
+  getTraceId: getTraceIdMock
+}))
+
 describe('refreshTokens', () => {
+  const tracingHeader = 'x-cdp-request-id'
+  const traceId = 'test-trace-id'
+
   beforeEach(() => {
     wreckPostMock.mockReset()
     getOidcConfigMock.mockReset()
     configGetMock.mockReset()
+    getTraceIdMock.mockReset()
+    getTraceIdMock.mockReturnValue(traceId)
   })
 
   test('posts refresh token to token endpoint and returns payload', async () => {
@@ -43,6 +53,8 @@ describe('refreshTokens', () => {
           return clientSecret
         case 'defraId.redirectUrl':
           return redirectUrl
+        case 'tracing.header':
+          return tracingHeader
         default:
           return undefined
       }
@@ -75,7 +87,8 @@ describe('refreshTokens', () => {
       `${tokenEndpoint}?${expectedQuery}`,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/x-www-form-urlencoded',
+          [tracingHeader]: traceId
         },
         json: true
       }
@@ -90,6 +103,7 @@ describe('refreshTokens', () => {
       if (key === 'defraId.clientId') return 'client-id'
       if (key === 'defraId.clientSecret') return 'client-secret'
       if (key === 'defraId.redirectUrl') return 'http://localhost/callback'
+      if (key === 'tracing.header') return tracingHeader
       return undefined
     })
 

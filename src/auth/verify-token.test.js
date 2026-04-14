@@ -1,4 +1,4 @@
-import { describe, test, expect, vi } from 'vitest'
+import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { verifyToken } from './verify-token.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
@@ -6,6 +6,8 @@ const getOidcConfigMock = vi.hoisted(() => vi.fn())
 const jwkToPemMock = vi.hoisted(() => vi.fn())
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyMock = vi.hoisted(() => vi.fn())
+const configGetMock = vi.hoisted(() => vi.fn())
+const getTraceIdMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@hapi/wreck', () => ({
   default: { get: wreckGetMock }
@@ -28,7 +30,25 @@ vi.mock('@hapi/jwt', () => ({
   }
 }))
 
+vi.mock('../config/config.js', () => ({
+  config: { get: configGetMock }
+}))
+
+vi.mock('@defra/hapi-tracing', () => ({
+  getTraceId: getTraceIdMock
+}))
+
 describe('verifyToken', () => {
+  const tracingHeader = 'x-cdp-request-id'
+  const traceId = 'test-trace-id'
+
+  beforeEach(() => {
+    configGetMock.mockImplementation((key) => {
+      if (key === 'tracing.header') return tracingHeader
+    })
+    getTraceIdMock.mockReturnValue(traceId)
+  })
+
   test('verifies token using first JWK', async () => {
     const token = 'jwt-token'
     const jwksUri = 'https://mock-auth-server/.well-known/jwks'
@@ -48,7 +68,10 @@ describe('verifyToken', () => {
     await expect(verifyToken(token)).resolves.toBeUndefined()
 
     expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
-    expect(wreckGetMock).toHaveBeenCalledWith(jwksUri, { json: true })
+    expect(wreckGetMock).toHaveBeenCalledWith(jwksUri, {
+      headers: { [tracingHeader]: traceId },
+      json: true
+    })
     expect(jwkToPemMock).toHaveBeenCalledWith(jwk)
     expect(jwtDecodeMock).toHaveBeenCalledWith(token)
     expect(jwtVerifyMock).toHaveBeenCalledWith(decoded, {
