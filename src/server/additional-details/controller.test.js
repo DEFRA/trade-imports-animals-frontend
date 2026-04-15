@@ -124,7 +124,7 @@ describe('additionalDetailsController', () => {
       )
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/identification'
+        location: '/additional-details'
       })
     })
 
@@ -158,7 +158,7 @@ describe('additionalDetailsController', () => {
 
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/identification'
+        location: '/additional-details'
       })
     })
   })

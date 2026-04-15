@@ -65,7 +65,8 @@ describe('#commoditiesController', () => {
       const $ = load(result)
       const selectOptions = $('#commodity option')
 
-      expect(selectOptions.length).toBe(5)
+      expect(selectOptions.length).toBe(6)
+      expect(result).toEqual(expect.stringContaining('Cow'))
       expect(result).toEqual(expect.stringContaining('Fish'))
       expect(result).toEqual(expect.stringContaining('Cat'))
       expect(result).toEqual(expect.stringContaining('Dog'))

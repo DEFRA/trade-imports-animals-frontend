@@ -156,12 +156,12 @@ describe('animalIdentificationDetailsController', () => {
         request,
         'trace-123'
       )
-      expect(h.redirect).toHaveBeenCalledWith('/commodities/identification', {
+      expect(h.redirect).toHaveBeenCalledWith('/additional-details', {
         referenceNumber: 'REF-789'
       })
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/identification',
+        location: '/additional-details',
         state: { referenceNumber: 'REF-789' }
       })
     })
@@ -210,7 +210,7 @@ describe('animalIdentificationDetailsController', () => {
 
       expect(response).toEqual({
         statusCode: 302,
-        location: '/commodities/identification',
+        location: '/additional-details',
         state: { referenceNumber: 'REF-ERR' }
       })
     })
