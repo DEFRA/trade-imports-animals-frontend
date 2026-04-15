@@ -73,7 +73,7 @@ services:
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
       REDIS_HOST: redis
-      CONSUMER_BUCKETS: cdp-uploader-quarantine
+      CONSUMER_BUCKETS: cdp-uploader-quarantine,trade-imports-animals-documents
     depends_on:
       localstack:
         condition: service_healthy
