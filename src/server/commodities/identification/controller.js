@@ -69,7 +69,7 @@ export const animalIdentificationDetailsController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/commodities/identification', { referenceNumber })
+      return h.redirect('/additional-details', { referenceNumber })
     }
   }
 }

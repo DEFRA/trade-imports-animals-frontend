@@ -89,7 +89,7 @@ describe('commodityDetailsController', () => {
       )
       expect(response).toEqual({
         statusCode: 302,
-        location: '/additional-details'
+        location: '/commodities/identification'
       })
     })
   })
