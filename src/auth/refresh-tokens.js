@@ -1,4 +1,5 @@
 import Wreck from '@hapi/wreck'
+import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig } from './get-oidc-config.js'
 import { config } from '../config/config.js'
 
@@ -16,7 +17,8 @@ async function refreshTokens(refreshToken) {
 
   const { payload } = await Wreck.post(`${url}?${query}`, {
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
+      [config.get('tracing.header')]: getTraceId() ?? ''
     },
     json: true
   })

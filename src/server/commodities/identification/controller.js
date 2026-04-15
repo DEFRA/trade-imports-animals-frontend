@@ -5,15 +5,15 @@ import {
 } from '../../common/helpers/session-helpers.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
-import { getTotal, toObject } from '../../common/helpers/object-helpers.js'
+import { toObject } from '../../common/helpers/object-helpers.js'
 
 const logger = createLogger()
 
-export const commodityDetailsController = {
+export const animalIdentificationDetailsController = {
   get: {
     handler(_request, h) {
       logger.info(
-        `Commodity: ${getSessionValue(_request, 'commodity')} details page`
+        `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
       )
 
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
@@ -22,22 +22,20 @@ export const commodityDetailsController = {
       const speciesLst = commodityComplement?.species ?? []
       const typeOfCommodity = commodityComplement?.typeOfCommodity
 
-      return h.view('commodities/details/index', {
+      return h.view('commodities/identification/index', {
         pageTitle: 'Description of goods',
         heading: 'Commodity',
         referenceNumber,
         commodity,
         typeOfCommodity,
-        speciesLst,
-        totalNoOfAnimals: commodityComplement?.totalNoOfAnimals ?? 0,
-        totalNoOfPackages: commodityComplement?.totalNoOfPackages ?? 0
+        speciesLst
       })
     }
   },
   post: {
     async handler(_request, h) {
       logger.info(
-        `Commodity: ${getSessionValue(_request, 'commodity')} details page`
+        `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
       )
 
       const traceId = getTraceId() ?? ''
@@ -47,23 +45,20 @@ export const commodityDetailsController = {
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const speciesLst = commodityComplement?.species ?? []
 
-      const noOfAnimals = speciesLst.map(
-        (s) => _request.payload[`noOfAnimals-${s.value}`]
+      const earTags = speciesLst.map(
+        (s) => _request.payload[`earTag-${s.value}`]
       )
-      const noOfPackages = speciesLst.map(
-        (s) => _request.payload[`noOfPackages-${s.value}`]
+      const passports = speciesLst.map(
+        (s) => _request.payload[`passport-${s.value}`]
       )
 
       commodityComplement.species = speciesLst.map((species, index) => ({
         ...species,
-        noOfAnimals: noOfAnimals[index],
-        noOfPackages: noOfPackages[index]
+        earTag: earTags[index],
+        passport: passports[index]
       }))
 
-      commodityComplement.totalNoOfAnimals = getTotal(noOfAnimals)
-      commodityComplement.totalNoOfPackages = getTotal(noOfPackages)
-
-      const commodityJson = toObject(commodity, 'name')
+      const commodityJson = toObject(commodity, 'commodity')
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
@@ -74,7 +69,7 @@ export const commodityDetailsController = {
         logger.error(`Failed to submit notification: ${error.message}`)
       }
 
-      return h.redirect('/commodities/identification', { referenceNumber })
+      return h.redirect('/additional-details', { referenceNumber })
     }
   }
 }

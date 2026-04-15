@@ -1,0 +1,84 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+
+
+{% block content %}
+  {% if referenceNumber %}
+    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+  {% endif %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/commodities/details"
+  }) }}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <div class="govuk-body" data-testid="app-page-body">
+      <form method="post" id="commodity-details-form" name="commodity-details-form" novalidate>
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <input type="hidden" id="totalNoOfAnimals" name="totalNoOfAnimals" value="{{ totalNoOfAnimals }}" />
+        <input type="hidden" id="totalNoOfPackages" name="totalNoOfPackages" value="{{ totalNoOfPackages }}" />
+
+        <span class="govuk-caption-xl">Description of the goods</span>
+        <h1 class="govuk-heading-xl">Enter animal identification details</h1>
+
+        <span class="govuk-caption-m">You must enter all animal identification details into the notification before arrival at the port of entry</span>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Commodity code</th>
+            <th scope="col" class="govuk-table__header">Description</th>
+            <th scope="col" class="govuk-table__header">Species and type</th>
+            <th scope="col" class="govuk-table__header">Number of animals</th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          {% for species in speciesLst %}
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">0102</td>
+              <td class="govuk-table__cell">Live bovine animals</td>
+              <td class="govuk-table__cell">{{ species.text }}, {{ typeOfCommodity }}</td>
+              <td class="govuk-table__cell">{{ species.noOfAnimals }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        {% for species in speciesLst %}
+          <span class="govuk-caption-m">{{ species.text }}, {{ typeOfCommodity }} identification details</span>
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Animal</th>
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Ear tag</th>
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Passport</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">{{ species.text }}, {{ typeOfCommodity }}</td>
+              <td class="govuk-table__cell">
+                <input class="govuk-input" id="earTag-{{ species.value }}" name="earTag-{{ species.value }}" value="{{ species.earTag }}"/>
+              </td>
+              <td class="govuk-table__cell">
+                <input class="govuk-input" id="passport-{{ species.value }}" name="passport-{{ species.value }}" value="{{ species.passport }}"/>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        {% endfor %}
+
+        <div class="govuk-button-group">
+          {{ govukButton({
+            text: "Save and continue"
+          }) }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

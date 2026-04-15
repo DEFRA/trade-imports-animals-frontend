@@ -1,12 +1,15 @@
 import Wreck from '@hapi/wreck'
 import Jwt from '@hapi/jwt'
 import jwkToPem from 'jwk-to-pem'
+import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig } from './get-oidc-config.js'
+import { config } from '../config/config.js'
 
 async function verifyToken(token) {
   const { jwks_uri: uri } = await getOidcConfig()
 
   const { payload } = await Wreck.get(uri, {
+    headers: { [config.get('tracing.header')]: getTraceId() ?? '' },
     json: true
   })
   const { keys } = payload

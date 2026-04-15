@@ -110,6 +110,10 @@ export const commoditiesSelectController = {
               : {}),
             ...(match.noOfPackages !== undefined
               ? { noOfPackages: match.noOfPackages }
+              : {}),
+            ...(match.earTag !== undefined ? { earTag: match.earTag } : {}),
+            ...(match.passport !== undefined
+              ? { passport: match.passport }
               : {})
           }
         })
@@ -120,7 +124,7 @@ export const commoditiesSelectController = {
         species: speciesLst
       }
 
-      const commodityJson = toObject(commodity, 'commodity')
+      const commodityJson = toObject(commodity, 'name')
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 

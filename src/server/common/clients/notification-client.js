@@ -45,6 +45,26 @@ export const notificationClient = {
       notification.commodity = commodity
     }
 
+    // Get reason for import from session
+    const reasonForImport = getSessionValue(_request, 'reasonForImport')
+    if (reasonForImport) {
+      notification.reasonForImport = reasonForImport
+    }
+
+    // Build additional details from session values
+    const certifiedFor = getSessionValue(_request, 'certifiedFor')
+    const unweanedAnimals = getSessionValue(_request, 'unweanedAnimals')
+
+    if (certifiedFor || unweanedAnimals) {
+      notification.additionalDetails = {}
+      if (certifiedFor) {
+        notification.additionalDetails.certifiedFor = certifiedFor
+      }
+      if (unweanedAnimals) {
+        notification.additionalDetails.unweanedAnimals = unweanedAnimals
+      }
+    }
+
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications`,
       {
@@ -128,6 +148,10 @@ export const notificationClient = {
 
     if (notification.commodity) {
       setSessionValue(_request, 'commodity', notification.commodity)
+    }
+
+    if (notification.reasonForImport) {
+      setSessionValue(_request, 'reasonForImport', notification.reasonForImport)
     }
 
     return notification

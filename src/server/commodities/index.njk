@@ -25,13 +25,14 @@
             classes: "govuk-label--l",
             isPageHeading: true
           },
-          value: commodity,
+          value: commodity.name,
           hint: {
             text: "Select the type of animal you are importing"
           },
           items: [
             { value: "", text: "Select a commodity" },
             { text: "──────────", disabled: true },
+            { value: "Cow", text: "Cow" },
             { value: "Fish", text: "Fish" },
             { value: "Cat", text: "Cat" },
             { value: "Dog", text: "Dog" }
