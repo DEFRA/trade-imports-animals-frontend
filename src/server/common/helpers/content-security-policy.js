@@ -1,4 +1,7 @@
 import Blankie from 'blankie'
+import { config } from '../../../config/config.js'
+
+const cdpUploaderOrigin = new URL(config.get('cdpUploaderUrl')).origin
 
 /**
  * Manage content security policies.
@@ -22,7 +25,7 @@ const contentSecurityPolicy = {
     frameSrc: ['self', 'data:'],
     objectSrc: ['none'],
     frameAncestors: ['none'],
-    formAction: ['self'],
+    formAction: ['self', cdpUploaderOrigin],
     manifestSrc: ['self'],
     generateNonces: false
   }

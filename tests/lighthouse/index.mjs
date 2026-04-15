@@ -15,6 +15,8 @@ import { commoditiesLighthouseConfig } from "./commodities.config.js"
 import { commoditiesSelectLighthouseConfig } from './commodities-select.config.js'
 import {importReasonLighthouseConfig} from "./import-reason.config.js";
 import {commodityDetailsLighthouseConfig} from "./commodities-details.config.js";
+import { accompanyingDocumentsLighthouseConfig } from "./accompanying-documents.config.js";
+import { uploadReceivedLighthouseConfig } from "./upload-received.config.js";
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -29,7 +31,9 @@ const pageConfigs = [
   commoditiesLighthouseConfig,
   commoditiesSelectLighthouseConfig,
   importReasonLighthouseConfig,
-  commodityDetailsLighthouseConfig
+  commodityDetailsLighthouseConfig,
+  accompanyingDocumentsLighthouseConfig,
+  uploadReceivedLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'

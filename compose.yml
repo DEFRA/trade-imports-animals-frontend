@@ -58,6 +58,30 @@ services:
     networks:
       - cdp-tenant
 
+  cdp-uploader:
+    image: defradigital/cdp-uploader:latest
+    platform: linux/amd64
+    ports:
+      - '7337:7337'
+    environment:
+      PORT: 7337
+      MOCK_VIRUS_SCAN_ENABLED: 'true'
+      MOCK_VIRUS_RESULT_DELAY: 3
+      SQS_ENDPOINT: http://localstack:4566
+      S3_ENDPOINT: http://localstack:4566
+      AWS_REGION: eu-west-2
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      REDIS_HOST: redis
+      CONSUMER_BUCKETS: cdp-uploader-quarantine
+    depends_on:
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - cdp-tenant
+
 ################################################################################
 
   trade-imports-animals-frontend:
@@ -75,6 +99,8 @@ services:
         condition: service_started
       trade-imports-defra-id-stub:
         condition: service_healthy
+      cdp-uploader:
+        condition: service_started
     env_file:
       - 'compose/aws.env'
     extra_hosts:
@@ -91,6 +117,8 @@ services:
       DEFRA_ID_OIDC_CONFIGURATION_URL: ${DEFRA_ID_OIDC_CONFIGURATION_URL}
       DEFRA_ID_REDIRECT_URL: http://localhost:3000/auth/sign-in-oidc
       DEFRA_ID_SIGN_OUT_REDIRECT_URL: http://localhost:3000/auth/sign-out-oidc
+      CDP_UPLOADER_URL: http://cdp-uploader:7337
+      FRONTEND_BASE_URL: http://localhost:3000
     networks:
       - cdp-tenant
 

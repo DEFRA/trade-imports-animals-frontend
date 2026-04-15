@@ -9,6 +9,7 @@ import { commodities } from './commodities/index.js'
 import { commoditiesSelect } from './commodities/select/index.js'
 import { commodityDetails } from './commodities/details/index.js'
 import { importReason } from './import-reason/index.js'
+import { accompanyingDocuments } from './accompanying-documents/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
 
@@ -30,6 +31,7 @@ export const router = {
         commodities,
         commoditiesSelect,
         importReason,
+        accompanyingDocuments,
         commodityDetails
       ]
 
