@@ -7,12 +7,13 @@
   margin-bottom: govuk-spacing(4);
 }
 
-// Filename and status tag on the same line
-.app-document-row-title {
-  display: flex;
-  align-items: center;
-  gap: govuk-spacing(2);
-  flex-wrap: wrap;
+// Shrink the status tag column to its content, letting the filename take the rest
+.app-documents-list {
+  .govuk-summary-list__value {
+    width: 1%;
+    white-space: nowrap;
+    padding-right: govuk-spacing(4);
+  }
 }
 
 // Remove button rendered as a link in the summary list actions column
