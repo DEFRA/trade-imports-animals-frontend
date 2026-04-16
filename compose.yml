@@ -74,6 +74,7 @@ services:
       AWS_SECRET_ACCESS_KEY: test
       REDIS_HOST: redis
       CONSUMER_BUCKETS: cdp-uploader-quarantine,trade-imports-animals-documents
+      SQS_SCAN_RESULTS_CALLBACK: http://localstack:4566/000000000000/cdp-uploader-scan-results-callback.fifo
     depends_on:
       localstack:
         condition: service_healthy
