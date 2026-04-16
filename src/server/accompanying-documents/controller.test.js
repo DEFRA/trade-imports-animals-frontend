@@ -109,7 +109,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('health.pdf'))
       expect(result).toEqual(expect.stringContaining('Checking'))
       expect(result).toEqual(expect.stringContaining('Safe'))
-      expect(result).toEqual(expect.stringContaining('Add another document'))
+      expect(result).toEqual(expect.stringContaining('Document 3'))
     })
 
     test('Should include meta refresh when any document is PENDING', async () => {
