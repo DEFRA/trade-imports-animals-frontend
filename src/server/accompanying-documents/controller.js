@@ -54,7 +54,7 @@ function buildPageModel(documentsWithStatus, attempt, extra = {}) {
     anyPending,
     timedOut,
     nextAttempt: attempt + 1,
-    canContinue: documentsWithStatus.length > 0 && !anyPending && !anyRejected,
+    canContinue: !anyPending && !anyRejected,
     ...extra,
     // Merge rejected errors with any form validation errors from `extra`
     errorList: [...(rejectedErrors ?? []), ...(extra.errorList ?? [])].length

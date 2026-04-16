@@ -81,6 +81,9 @@ describe('#accompanyingDocumentsController', () => {
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Accompanying documents'))
       expect(result).toEqual(expect.stringContaining('Document 1'))
+      expect(result).not.toEqual(
+        expect.stringContaining('aria-disabled="true"')
+      )
     })
 
     test('Should show document rows with status tags when documents are in session', async () => {
