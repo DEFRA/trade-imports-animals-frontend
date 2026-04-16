@@ -15,6 +15,17 @@ import { config } from '../../config/config.js'
 const frontendBaseUrl = config.get('frontendBaseUrl')
 const MAX_POLLING_ATTEMPTS = 10
 
+const ALLOWED_EXTENSIONS = new Set([
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.jpeg',
+  '.jpg',
+  '.png',
+  '.xls',
+  '.xlsx'
+])
+
 async function getDocumentsWithStatus(documents, traceId, logger) {
   return Promise.all(
     documents.map(async (doc) => {
@@ -125,6 +136,11 @@ export const accompanyingDocumentsController = {
 
       const partialDateError = validatePartialDate(request.payload)
       const hasFile = fileData?.payload?.length > 0
+      const filename = fileData?.filename ?? ''
+      const ext = filename.includes('.')
+        ? `.${filename.split('.').pop().toLowerCase()}`
+        : ''
+      const validFileType = !hasFile || ALLOWED_EXTENSIONS.has(ext)
 
       const allErrors = []
       if (error) allErrors.push(...error.details)
@@ -134,6 +150,14 @@ export const accompanyingDocumentsController = {
           message: 'Select a file to upload',
           path: ['file'],
           type: 'any.required',
+          context: { label: 'file', key: 'file' }
+        })
+      } else if (!validFileType) {
+        allErrors.push({
+          message:
+            'The selected file must be a PDF, DOC, DOCX, JPEG, PNG or XLS',
+          path: ['file'],
+          type: 'any.invalid',
           context: { label: 'file', key: 'file' }
         })
       }
