@@ -2,14 +2,14 @@
 
 // Bordered card wrapping a single document's form fields
 .app-document-card {
-  border: 1px solid govuk-colour("mid-grey");
+  border: 1px solid govuk-colour("black", $variant: "tint-80");
   padding: govuk-spacing(5);
   margin-bottom: govuk-spacing(4);
 }
 
 // Dashed "Add another document" box
 .app-add-another {
-  border: 2px dashed govuk-colour("mid-grey");
+  border: 2px dashed govuk-colour("black", $variant: "tint-80");
   padding: govuk-spacing(4);
   text-align: center;
   margin-bottom: govuk-spacing(6);
