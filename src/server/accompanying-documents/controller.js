@@ -50,7 +50,6 @@ function buildPageModel(documentsWithStatus, attempt, extra = {}) {
 
   return {
     pageTitle: 'Accompanying documents',
-    heading: 'Accompanying documents',
     documents: documentsWithStatus,
     anyPending,
     timedOut,

@@ -80,7 +80,7 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Accompanying documents'))
-      expect(result).toEqual(expect.stringContaining('Add a document'))
+      expect(result).toEqual(expect.stringContaining('Document 1'))
     })
 
     test('Should show document rows with status tags when documents are in session', async () => {
@@ -179,7 +179,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Virus found'))
       expect(result).toEqual(expect.stringContaining('contains a virus'))
-      expect(result).not.toEqual(expect.stringContaining('Save and continue'))
+      expect(result).toEqual(expect.stringContaining('aria-disabled="true"'))
     })
 
     test('Should show Save and continue when all documents are COMPLETE', async () => {

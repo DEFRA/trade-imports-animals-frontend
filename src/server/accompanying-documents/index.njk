@@ -6,6 +6,7 @@
 {% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/details/macro.njk" import govukDetails %}
 
 {% block head %}
   {{ super() }}
@@ -16,7 +17,7 @@
 
 {% block content %}
   {{ appHeading({
-    text: heading
+    text: "Accompanying documents (Optional)"
   }) }}
 
   <div class="govuk-grid-row">
@@ -28,6 +29,21 @@
           errorList: errorList
         }) }}
       {% endif %}
+
+      <p class="govuk-body">Where an ITAHC applies, you need to upload it for this notification. If you do not have it when you submit, you must add it to your notification once you receive it. You can also return to your notification later to upload any other documents you still need.</p>
+
+      <p class="govuk-body">If you already have documents, you can add them below. For example:</p>
+
+      <ul class="govuk-list govuk-list--bullet">
+        <li>ITAHC</li>
+        <li>import licences or authorisations</li>
+        <li>commercial documents or invoices</li>
+      </ul>
+
+      {{ govukDetails({
+        summaryText: "Check which additional documents you may need to upload",
+        text: "You may also need to upload a veterinary health certificate, air waybill, commercial invoice, or other supporting documentation depending on the type of animals being imported."
+      }) }}
 
       {% if documents and documents.length %}
         <h2 class="govuk-heading-m" id="documents-added">Documents added</h2>
@@ -64,7 +80,7 @@
         </dl>
 
         {% if timedOut %}
-          <p class="govuk-body govuk-hint">
+          <p class="govuk-hint">
             Still checking some documents.
             <a href="?attempt={{ nextAttempt }}" class="govuk-link">Refresh to check status</a>
           </p>
@@ -72,99 +88,113 @@
 
       {% endif %}
 
-      <h2 class="govuk-heading-m">{{ "Add another document" if documents and documents.length else "Add a document" }}</h2>
-
       <div data-testid="app-page-body">
 
-        <form method="post" enctype="multipart/form-data" novalidate>
-          <input type="hidden" name="crumb" value="{{ crumb }}"/>
+        <div class="app-document-card">
+          <h2 class="govuk-heading-m">Document {{ (documents.length + 1) if documents else 1 }}</h2>
 
-          {{ govukSelect({
-            id: "documentType",
-            name: "documentType",
-            label: {
-              text: "Document type",
-              classes: "govuk-label--m"
-            },
-            value: documentType,
-            errorMessage: fieldErrors.documentType if fieldErrors,
-            items: [
-              { value: "", text: "Select a document type" },
-              { value: "ITAHC", text: "Intra-Trade Animal Health Certificate (ITAHC)" },
-              { value: "VETERINARY_HEALTH_CERTIFICATE", text: "Veterinary health certificate" }
-            ]
-          }) }}
+          <form method="post" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="crumb" value="{{ crumb }}"/>
 
-          {{ govukInput({
-            label: {
-              text: "Document reference",
-              classes: "govuk-label--m"
-            },
-            id: "documentReference",
-            name: "documentReference",
-            value: documentReference if documentReference,
-            errorMessage: fieldErrors.documentReference if fieldErrors
-          }) }}
-
-          {{ govukDateInput({
-            id: "issueDate",
-            namePrefix: "issueDate",
-            fieldset: {
-              legend: {
-                text: "Date of issue",
-                classes: "govuk-fieldset__legend--m"
-              }
-            },
-            errorMessage: fieldErrors["issueDate-day"] if fieldErrors,
-            items: [
-              {
-                name: "day",
-                classes: "govuk-input--width-2",
-                value: issueDate_day if issueDate_day
+            {{ govukSelect({
+              id: "documentType",
+              name: "documentType",
+              label: {
+                text: "Document type",
+                classes: "govuk-label--s"
               },
-              {
-                name: "month",
-                classes: "govuk-input--width-2",
-                value: issueDate_month if issueDate_month
-              },
-              {
-                name: "year",
-                classes: "govuk-input--width-4",
-                value: issueDate_year if issueDate_year
-              }
-            ]
-          }) }}
-
-          {{ govukFileUpload({
-            id: "file",
-            name: "file",
-            label: {
-              text: "Upload a document",
-              classes: "govuk-label--m"
-            },
-            hint: {
-              text: "Maximum file size 50MB."
-            },
-            errorMessage: fieldErrors.file if fieldErrors
-          }) }}
-
-          <div class="govuk-button-group">
-            {{ govukButton({
-              text: "Upload document"
+              value: documentType,
+              errorMessage: fieldErrors.documentType if fieldErrors,
+              items: [
+                { value: "", text: "Select document type" },
+                { value: "ITAHC", text: "Intra-Trade Animal Health Certificate (ITAHC)" },
+                { value: "VETERINARY_HEALTH_CERTIFICATE", text: "Veterinary health certificate" }
+              ]
             }) }}
+
+            {{ govukInput({
+              label: {
+                text: "Document reference",
+                classes: "govuk-label--s"
+              },
+              id: "documentReference",
+              name: "documentReference",
+              value: documentReference if documentReference,
+              errorMessage: fieldErrors.documentReference if fieldErrors
+            }) }}
+
+            {{ govukDateInput({
+              id: "issueDate",
+              namePrefix: "issueDate",
+              fieldset: {
+                legend: {
+                  text: "Date of issue",
+                  classes: "govuk-fieldset__legend--s"
+                }
+              },
+              hint: {
+                text: "For example, 27 3 2024"
+              },
+              errorMessage: fieldErrors["issueDate-day"] if fieldErrors,
+              items: [
+                {
+                  name: "day",
+                  classes: "govuk-input--width-2",
+                  value: issueDate_day if issueDate_day
+                },
+                {
+                  name: "month",
+                  classes: "govuk-input--width-2",
+                  value: issueDate_month if issueDate_month
+                },
+                {
+                  name: "year",
+                  classes: "govuk-input--width-4",
+                  value: issueDate_year if issueDate_year
+                }
+              ]
+            }) }}
+
+            <div class="govuk-form-group{% if fieldErrors and fieldErrors.file %} govuk-form-group--error{% endif %}">
+              <label class="govuk-label govuk-label--s" for="file">Attachment</label>
+              <p class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p>
+              <ul class="govuk-list govuk-list--bullet govuk-body-s govuk-!-margin-bottom-2">
+                <li>smaller than 50MB</li>
+                <li>PDF, DOC, DOCX, JPEG, PNG or XLS</li>
+                <li>ZIP files are not allowed for security reasons</li>
+              </ul>
+              {% if fieldErrors and fieldErrors.file %}
+                <p id="file-error" class="govuk-error-message">
+                  <span class="govuk-visually-hidden">Error:</span> {{ fieldErrors.file.text }}
+                </p>
+              {% endif %}
+              <input class="govuk-file-upload{% if fieldErrors and fieldErrors.file %} govuk-file-upload--error{% endif %}" id="file" name="file" type="file"{% if fieldErrors and fieldErrors.file %} aria-describedby="file-error"{% endif %}>
+            </div>
+
+            <div class="govuk-button-group govuk-!-margin-bottom-0">
+              {{ govukButton({
+                text: "Add attachment",
+                classes: "govuk-button--secondary"
+              }) }}
+            </div>
+          </form>
+        </div>
+
+        {% if documents and documents.length %}
+          <div class="app-add-another">
+            <a href="#" class="govuk-link govuk-body">Add another document</a>
           </div>
-        </form>
+        {% endif %}
 
       </div>
 
-      {% if canContinue %}
-        <div class="govuk-button-group">
-          {{ govukButton({
-            text: "Save and continue",
-            href: "/"
-          }) }}
-        </div>
-      {% endif %}
+      <div class="govuk-button-group">
+        {% if canContinue %}
+          {{ govukButton({ text: "Save and continue", href: "/" }) }}
+        {% else %}
+          {{ govukButton({ text: "Save and continue", disabled: true }) }}
+        {% endif %}
+      </div>
 
     </div>
   </div>
