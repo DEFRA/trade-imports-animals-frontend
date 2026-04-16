@@ -17,6 +17,7 @@ import {importReasonLighthouseConfig} from "./import-reason.config.js";
 import {commodityDetailsLighthouseConfig} from "./commodities-details.config.js";
 import {additionalDetailsLighthouseConfig} from "./additional-details.config.js";
 import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
+import { cphNumberLighthouseConfig } from './cph-number.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -33,6 +34,7 @@ const pageConfigs = [
   importReasonLighthouseConfig,
   commodityDetailsLighthouseConfig,
   additionalDetailsLighthouseConfig,
+  cphNumberLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig
 ]
 

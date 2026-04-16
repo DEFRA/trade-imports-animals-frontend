@@ -63,7 +63,8 @@ describe('#notificationClient', () => {
             requiresRegionCode: 'yes',
             internalReference: 'TEST-001',
             commodity: { name: 'Fish' },
-            reasonForImport: 'internalMarket'
+            reasonForImport: 'internalMarket',
+            cphNumber: '123456789'
           }
           return sessionData[key]
         })
@@ -76,7 +77,8 @@ describe('#notificationClient', () => {
             internalReference: 'TEST-001'
           },
           commodity: { name: 'Fish' },
-          reasonForImport: 'internalMarket'
+          reasonForImport: 'internalMarket',
+          cphNumber: '123456789'
         }
 
         const responseBody = { referenceNumber: 'REF-123' }
@@ -179,7 +181,8 @@ describe('#notificationClient', () => {
             internalReference: 'TEST-001'
           },
           commodity: { name: 'Fish' },
-          reasonForImport: 'internalMarket'
+          reasonForImport: 'internalMarket',
+          cphNumber: '123456789'
         }
 
         fetch.mockResolvedValueOnce({
@@ -237,6 +240,11 @@ describe('#notificationClient', () => {
           mockRequest,
           'reasonForImport',
           'internalMarket'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'cphNumber',
+          '123456789'
         )
 
         expect(result).toEqual(responseBody)
