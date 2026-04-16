@@ -19,7 +19,7 @@
 
 {% block content %}
   {{ appHeading({
-    text: "Accompanying documents (Optional)"
+    text: "Accompanying documents"
   }) }}
 
   <div class="govuk-grid-row">
@@ -50,36 +50,47 @@
       {% if documents and documents.length %}
         <h2 class="govuk-heading-m" id="documents-added">Documents added</h2>
 
-        <dl class="govuk-summary-list app-documents-list">
-          {% for doc in documents %}
-            <div class="govuk-summary-list__row" data-upload-id="{{ doc.uploadId }}" data-scan-status="{{ doc.scanStatus }}">
-              <dt class="govuk-summary-list__key">
-                {{ doc.filename }}
-                {% if doc.documentType or doc.documentReference %}
-                  <div class="govuk-hint govuk-!-margin-bottom-0">{{ doc.documentType }}{% if doc.documentReference %} — {{ doc.documentReference }}{% endif %}</div>
-                {% endif %}
-              </dt>
-              <dd class="govuk-summary-list__value">
-                {% if doc.scanStatus === 'COMPLETE' %}
-                  {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
-                {% elif doc.scanStatus === 'REJECTED' %}
-                  {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
-                {% else %}
-                  {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
-                {% endif %}
-              </dd>
-              <dd class="govuk-summary-list__actions">
-                <form method="post" action="/accompanying-documents/remove">
-                  <input type="hidden" name="crumb" value="{{ crumb }}">
-                  <input type="hidden" name="uploadId" value="{{ doc.uploadId }}">
-                  <button type="submit" class="govuk-link govuk-body app-button-as-link">
-                    Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
-                  </button>
-                </form>
-              </dd>
-            </div>
-          {% endfor %}
-        </dl>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Document</th>
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Status</th>
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">
+                <span class="govuk-visually-hidden">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            {% for doc in documents %}
+              <tr class="govuk-table__row" data-upload-id="{{ doc.uploadId }}" data-scan-status="{{ doc.scanStatus }}">
+                <td class="govuk-table__cell">
+                  {{ doc.filename }}
+                  {% if doc.documentType or doc.documentReference %}
+                    <div class="govuk-hint govuk-!-margin-bottom-0">{{ doc.documentType }}{% if doc.documentReference %} — {{ doc.documentReference }}{% endif %}</div>
+                  {% endif %}
+                </td>
+                <td class="govuk-table__cell">
+                  {% if doc.scanStatus === 'COMPLETE' %}
+                    {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
+                  {% elif doc.scanStatus === 'REJECTED' %}
+                    {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
+                  {% else %}
+                    {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
+                  {% endif %}
+                </td>
+                <td class="govuk-table__cell govuk-!-text-align-right">
+                  <form method="post" action="/accompanying-documents/remove">
+                    <input type="hidden" name="crumb" value="{{ crumb }}">
+                    <input type="hidden" name="uploadId" value="{{ doc.uploadId }}">
+                    <button type="submit" class="govuk-link govuk-body app-button-as-link">
+                      Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
 
         {% if anyPending %}
           <p id="js-refresh-fallback" class="govuk-body">
@@ -98,95 +109,94 @@
 
       <div data-testid="app-page-body">
 
-        <div class="app-document-card">
-          <h2 class="govuk-heading-m">Document {{ (documents.length + 1) if documents else 1 }}</h2>
+        {% if documents and documents.length %}
+          <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+        {% endif %}
 
-          <form method="post" enctype="multipart/form-data" novalidate>
-            <input type="hidden" name="crumb" value="{{ crumb }}"/>
+        <h2 class="govuk-heading-m">Document {{ (documents.length + 1) if documents else 1 }}</h2>
 
-            {{ govukSelect({
-              id: "documentType",
-              name: "documentType",
-              label: {
-                text: "Document type",
-                classes: "govuk-label--s"
+        <form method="post" enctype="multipart/form-data" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}"/>
+
+          {{ govukSelect({
+            id: "documentType",
+            name: "documentType",
+            label: {
+              text: "Document type",
+              classes: "govuk-label--s"
+            },
+            value: documentType,
+            errorMessage: fieldErrors.documentType if fieldErrors,
+            items: [
+              { value: "", text: "Select document type" },
+              { value: "ITAHC", text: "Intra-Trade Animal Health Certificate (ITAHC)" },
+              { value: "VETERINARY_HEALTH_CERTIFICATE", text: "Veterinary health certificate" }
+            ]
+          }) }}
+
+          {{ govukInput({
+            label: {
+              text: "Document reference",
+              classes: "govuk-label--s"
+            },
+            id: "documentReference",
+            name: "documentReference",
+            value: documentReference if documentReference,
+            errorMessage: fieldErrors.documentReference if fieldErrors
+          }) }}
+
+          {{ govukDateInput({
+            id: "issueDate",
+            namePrefix: "issueDate",
+            fieldset: {
+              legend: {
+                text: "Date of issue",
+                classes: "govuk-fieldset__legend--s"
+              }
+            },
+            hint: {
+              text: "For example, 27 3 2024"
+            },
+            errorMessage: fieldErrors["issueDate-day"] if fieldErrors,
+            items: [
+              {
+                name: "day",
+                classes: "govuk-input--width-2",
+                value: issueDate_day if issueDate_day
               },
-              value: documentType,
-              errorMessage: fieldErrors.documentType if fieldErrors,
-              items: [
-                { value: "", text: "Select document type" },
-                { value: "ITAHC", text: "Intra-Trade Animal Health Certificate (ITAHC)" },
-                { value: "VETERINARY_HEALTH_CERTIFICATE", text: "Veterinary health certificate" }
-              ]
+              {
+                name: "month",
+                classes: "govuk-input--width-2",
+                value: issueDate_month if issueDate_month
+              },
+              {
+                name: "year",
+                classes: "govuk-input--width-4",
+                value: issueDate_year if issueDate_year
+              }
+            ]
+          }) }}
+
+          {{ govukFileUpload({
+            id: "file",
+            name: "file",
+            label: {
+              text: "Attachment",
+              classes: "govuk-label--s"
+            },
+            hint: {
+              html: '<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>smaller than 50MB</li><li>PDF, DOC, DOCX, JPEG, PNG or XLS</li><li>ZIP files are not allowed for security reasons</li></ul>'
+            },
+            errorMessage: fieldErrors.file if fieldErrors
+          }) }}
+
+          <div class="govuk-button-group govuk-!-margin-bottom-0">
+            {{ govukButton({
+              text: "Add attachment",
+              classes: "govuk-button--secondary"
             }) }}
-
-            {{ govukInput({
-              label: {
-                text: "Document reference",
-                classes: "govuk-label--s"
-              },
-              id: "documentReference",
-              name: "documentReference",
-              value: documentReference if documentReference,
-              errorMessage: fieldErrors.documentReference if fieldErrors
-            }) }}
-
-            {{ govukDateInput({
-              id: "issueDate",
-              namePrefix: "issueDate",
-              fieldset: {
-                legend: {
-                  text: "Date of issue",
-                  classes: "govuk-fieldset__legend--s"
-                }
-              },
-              hint: {
-                text: "For example, 27 3 2024"
-              },
-              errorMessage: fieldErrors["issueDate-day"] if fieldErrors,
-              items: [
-                {
-                  name: "day",
-                  classes: "govuk-input--width-2",
-                  value: issueDate_day if issueDate_day
-                },
-                {
-                  name: "month",
-                  classes: "govuk-input--width-2",
-                  value: issueDate_month if issueDate_month
-                },
-                {
-                  name: "year",
-                  classes: "govuk-input--width-4",
-                  value: issueDate_year if issueDate_year
-                }
-              ]
-            }) }}
-
-            <div class="govuk-form-group{% if fieldErrors and fieldErrors.file %} govuk-form-group--error{% endif %}">
-              <label class="govuk-label govuk-label--s" for="file">Attachment</label>
-              <p class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p>
-              <ul class="govuk-list govuk-list--bullet govuk-body-s govuk-!-margin-bottom-2">
-                <li>smaller than 50MB</li>
-                <li>PDF, DOC, DOCX, JPEG, PNG or XLS</li>
-                <li>ZIP files are not allowed for security reasons</li>
-              </ul>
-              {% if fieldErrors and fieldErrors.file %}
-                <p id="file-error" class="govuk-error-message">
-                  <span class="govuk-visually-hidden">Error:</span> {{ fieldErrors.file.text }}
-                </p>
-              {% endif %}
-              <input class="govuk-file-upload{% if fieldErrors and fieldErrors.file %} govuk-file-upload--error{% endif %}" id="file" name="file" type="file"{% if fieldErrors and fieldErrors.file %} aria-describedby="file-error"{% endif %}>
-            </div>
-
-            <div class="govuk-button-group govuk-!-margin-bottom-0">
-              {{ govukButton({
-                text: "Add attachment",
-                classes: "govuk-button--secondary"
-              }) }}
-            </div>
-          </form>
-        </div>
+          </div>
+        </form>
 
       </div>
 
