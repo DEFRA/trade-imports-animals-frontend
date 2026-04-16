@@ -18,6 +18,14 @@ export const accompanyingDocuments = {
           ...accompanyingDocumentsController.get
         },
         {
+          method: 'GET',
+          path: '/accompanying-documents/status',
+          options: authEnabled
+            ? { auth: { strategy: 'session', mode: 'try' } }
+            : { auth: false },
+          ...accompanyingDocumentsController.status
+        },
+        {
           method: 'POST',
           path: '/accompanying-documents',
           options: {

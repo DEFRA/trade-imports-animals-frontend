@@ -64,6 +64,18 @@ function buildPageModel(documentsWithStatus, attempt, extra = {}) {
 }
 
 export const accompanyingDocumentsController = {
+  status: {
+    async handler(request, h) {
+      const traceId = getTraceId() ?? ''
+      const rawDocuments = getSessionValue(request, 'documents') ?? []
+      const documentsWithStatus = await getDocumentsWithStatus(
+        rawDocuments,
+        traceId,
+        request.logger
+      )
+      return h.response({ documents: documentsWithStatus }).code(200)
+    }
+  },
   get: {
     async handler(request, h) {
       const traceId = getTraceId() ?? ''

@@ -10,9 +10,11 @@
 
 {% block head %}
   {{ super() }}
-  {% if anyPending and not timedOut %}
-    <meta http-equiv="refresh" content="3; url=?attempt={{ nextAttempt }}">
-  {% endif %}
+  <noscript>
+    {% if anyPending and not timedOut %}
+      <meta http-equiv="refresh" content="3; url=?attempt={{ nextAttempt }}">
+    {% endif %}
+  </noscript>
 {% endblock %}
 
 {% block content %}
@@ -50,7 +52,7 @@
 
         <dl class="govuk-summary-list">
           {% for doc in documents %}
-            <div class="govuk-summary-list__row">
+            <div class="govuk-summary-list__row" data-upload-id="{{ doc.uploadId }}" data-scan-status="{{ doc.scanStatus }}">
               <dt class="govuk-summary-list__key">
                 {{ doc.filename }}
                 {% if doc.documentType or doc.documentReference %}
@@ -78,6 +80,12 @@
             </div>
           {% endfor %}
         </dl>
+
+        {% if anyPending %}
+          <p id="js-refresh-fallback" class="govuk-body">
+            <a href="?attempt={{ nextAttempt }}" class="govuk-link">Refresh virus scan status</a>
+          </p>
+        {% endif %}
 
         {% if timedOut %}
           <p class="govuk-hint">
@@ -199,4 +207,9 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('accompanyingDocuments.js') }}"></script>
 {% endblock %}

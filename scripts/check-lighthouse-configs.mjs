@@ -9,7 +9,7 @@ const projectRoot = path.resolve(__dirname, '..')
 const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
 // Routes to ignore when checking for Lighthouse coverage
-const IGNORED_PATHS = new Set(['/health'])
+const IGNORED_PATHS = new Set(['/health', '/accompanying-documents/status'])
 const IGNORED_PREFIXES = ['/public/']
 const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
 
