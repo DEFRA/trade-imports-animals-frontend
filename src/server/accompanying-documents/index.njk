@@ -54,20 +54,20 @@
           {% for doc in documents %}
             <div class="govuk-summary-list__row" data-upload-id="{{ doc.uploadId }}" data-scan-status="{{ doc.scanStatus }}">
               <dt class="govuk-summary-list__key">
-                {{ doc.filename }}
+                <div class="app-document-row-title">
+                  <span>{{ doc.filename }}</span>
+                  {% if doc.scanStatus === 'COMPLETE' %}
+                    {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
+                  {% elif doc.scanStatus === 'REJECTED' %}
+                    {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
+                  {% else %}
+                    {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
+                  {% endif %}
+                </div>
                 {% if doc.documentType or doc.documentReference %}
                   <div class="govuk-hint govuk-!-margin-bottom-0">{{ doc.documentType }}{% if doc.documentReference %} — {{ doc.documentReference }}{% endif %}</div>
                 {% endif %}
               </dt>
-              <dd class="govuk-summary-list__value">
-                {% if doc.scanStatus === 'COMPLETE' %}
-                  {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
-                {% elif doc.scanStatus === 'REJECTED' %}
-                  {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
-                {% else %}
-                  {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
-                {% endif %}
-              </dd>
               <dd class="govuk-summary-list__actions">
                 <form method="post" action="/accompanying-documents/remove">
                   <input type="hidden" name="crumb" value="{{ crumb }}">

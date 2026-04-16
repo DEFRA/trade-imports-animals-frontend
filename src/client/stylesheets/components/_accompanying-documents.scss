@@ -7,6 +7,14 @@
   margin-bottom: govuk-spacing(4);
 }
 
+// Filename and status tag on the same line
+.app-document-row-title {
+  display: flex;
+  align-items: center;
+  gap: govuk-spacing(2);
+  flex-wrap: wrap;
+}
+
 // Remove button rendered as a link in the summary list actions column
 .app-button-as-link {
   appearance: none;
