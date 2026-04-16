@@ -96,6 +96,7 @@ export const accompanyingDocumentsController = {
   },
   post: {
     async handler(request, h) {
+      const traceId = getTraceId() ?? ''
       const {
         'issueDate-day': issueDateDay,
         'issueDate-month': issueDateMonth,
@@ -107,7 +108,7 @@ export const accompanyingDocumentsController = {
       } = request.payload
 
       if (!documentType) {
-        return h.redirect('/')
+        return h.redirect('/accompanying-documents')
       }
 
       const { error } = accompanyingDocumentsSchema.validate(
@@ -138,7 +139,6 @@ export const accompanyingDocumentsController = {
       }
 
       if (allErrors.length > 0) {
-        const traceId = getTraceId() ?? ''
         const attempt = parseInt(request.query.attempt ?? '0', 10)
         const rawDocuments = getSessionValue(request, 'documents') ?? []
         const documentsWithStatus = await getDocumentsWithStatus(
@@ -165,13 +165,34 @@ export const accompanyingDocumentsController = {
           .code(statusCodes.badRequest)
       }
 
+      const documents = getSessionValue(request, 'documents') ?? []
+      if (documents.length >= 10) {
+        const documentsWithStatus = await getDocumentsWithStatus(
+          documents,
+          traceId,
+          request.logger
+        )
+        return h
+          .view(
+            'accompanying-documents/index',
+            buildPageModel(documentsWithStatus, 0, {
+              errorList: [
+                {
+                  href: '#documentType',
+                  text: 'You can add a maximum of 10 documents'
+                }
+              ]
+            })
+          )
+          .code(statusCodes.badRequest)
+      }
+
       const year = String(issueDateYear).padStart(4, '0')
       const month = String(issueDateMonth).padStart(2, '0')
       const day = String(issueDateDay).padStart(2, '0')
       const dateOfIssue = `${year}-${month}-${day}`
 
       const notificationRef = getSessionValue(request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
 
       let uploadId
       try {
@@ -190,11 +211,17 @@ export const accompanyingDocumentsController = {
         const blob = new Blob([fileData.payload], { type: contentType })
         formData.append('file', blob, fileData.filename || 'upload')
 
-        await fetch(response.uploadUrl, {
+        const uploadResponse = await fetch(response.uploadUrl, {
           method: 'POST',
           body: formData,
           redirect: 'manual'
         })
+        // cdp-uploader redirects on success (3xx) — treat any non-redirect as failure
+        if (uploadResponse.status < 300 || uploadResponse.status >= 400) {
+          throw new Error(
+            `cdp-uploader returned status ${uploadResponse.status}`
+          )
+        }
         request.logger.info(
           `File proxied to cdp-uploader: uploadId=${uploadId}`
         )
@@ -203,7 +230,6 @@ export const accompanyingDocumentsController = {
         return h.redirect('/accompanying-documents')
       }
 
-      const documents = getSessionValue(request, 'documents') ?? []
       documents.push({
         uploadId,
         filename: fileData.filename || 'upload',

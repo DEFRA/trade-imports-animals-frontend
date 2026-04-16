@@ -279,7 +279,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('Select a file to upload'))
     })
 
-    test('Should redirect to / without calling documentClient.initiate when documentType is empty', async () => {
+    test('Should redirect to /accompanying-documents without calling documentClient.initiate when documentType is empty', async () => {
       documentClient.initiate.mockClear()
 
       const { statusCode, headers } = await server.inject({
@@ -299,8 +299,266 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/')
+      expect(headers.location).toBe('/accompanying-documents')
       expect(documentClient.initiate).not.toHaveBeenCalled()
+    })
+
+    test('Should upload file, update session, and redirect on successful POST', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 302 }))
+
+      documentClient.initiate.mockResolvedValue({
+        uploadId: 'TEST-UPLOAD-ID',
+        uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
+      })
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return []
+        if (key === 'referenceNumber') return 'REF-123'
+        return null
+      })
+
+      const boundary = '----TestBoundary12345'
+      const fileContent = Buffer.from('fake pdf content')
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentType"',
+        '',
+        'ITAHC',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentReference"',
+        '',
+        'REF-001',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-day"',
+        '',
+        '10',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-month"',
+        '',
+        '3',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-year"',
+        '',
+        '2024',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
+        'Content-Type: application/pdf',
+        '',
+        fileContent.toString('binary'),
+        `--${boundary}--`
+      ].join('\r\n')
+
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      expect(documentClient.initiate).toHaveBeenCalled()
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID',
+        expect.objectContaining({ method: 'POST' })
+      )
+      expect(setSessionValue).toHaveBeenCalledWith(
+        expect.anything(),
+        'documents',
+        expect.arrayContaining([
+          expect.objectContaining({
+            uploadId: 'TEST-UPLOAD-ID',
+            documentType: 'ITAHC',
+            documentReference: 'REF-001'
+          })
+        ])
+      )
+      expect(statusCode).toBe(302)
+      expect(headers.location).toBe('/accompanying-documents')
+
+      vi.unstubAllGlobals()
+    })
+
+    test('Should redirect to /accompanying-documents and NOT call setSessionValue when cdp-uploader returns non-3xx', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 200 }))
+
+      documentClient.initiate.mockResolvedValue({
+        uploadId: 'TEST-UPLOAD-ID',
+        uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
+      })
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return []
+        if (key === 'referenceNumber') return 'REF-123'
+        return null
+      })
+
+      const boundary = '----TestBoundary99999'
+      const fileContent = Buffer.from('fake pdf content')
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentType"',
+        '',
+        'ITAHC',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentReference"',
+        '',
+        'REF-001',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-day"',
+        '',
+        '10',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-month"',
+        '',
+        '3',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-year"',
+        '',
+        '2024',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
+        'Content-Type: application/pdf',
+        '',
+        fileContent.toString('binary'),
+        `--${boundary}--`
+      ].join('\r\n')
+
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      expect(statusCode).toBe(302)
+      expect(headers.location).toBe('/accompanying-documents')
+      expect(setSessionValue).not.toHaveBeenCalled()
+
+      vi.unstubAllGlobals()
+    })
+
+    test('Should return 400 with error message when 10 documents already in session', async () => {
+      const tenDocuments = Array.from({ length: 10 }, (_, i) => ({
+        uploadId: `UPLOAD-${i}`,
+        filename: `doc${i}.pdf`,
+        documentType: 'ITAHC',
+        documentReference: `REF-00${i}`,
+        dateOfIssue: '2026-01-01'
+      }))
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return tenDocuments
+        return null
+      })
+      vi.spyOn(documentClient, 'getStatus').mockResolvedValue({
+        scanStatus: 'COMPLETE'
+      })
+
+      const boundary = '----TestBoundaryLimit'
+      const fileContent = Buffer.from('fake pdf content')
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentType"',
+        '',
+        'ITAHC',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentReference"',
+        '',
+        'REF-001',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-day"',
+        '',
+        '10',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-month"',
+        '',
+        '3',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-year"',
+        '',
+        '2024',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
+        'Content-Type: application/pdf',
+        '',
+        fileContent.toString('binary'),
+        `--${boundary}--`
+      ].join('\r\n')
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(
+        expect.stringContaining('You can add a maximum of 10 documents')
+      )
+    })
+  })
+
+  describe('GET /accompanying-documents/status', () => {
+    test('Should return JSON with documents and their statuses when documents are in session', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'getStatus')
+        .mockResolvedValueOnce({ scanStatus: 'COMPLETE' })
+        .mockResolvedValueOnce({ scanStatus: 'PENDING' })
+
+      const { statusCode, result } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/status',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toHaveProperty('documents')
+      expect(result.documents).toHaveLength(2)
+      expect(result.documents[0]).toMatchObject({
+        uploadId: 'UPLOAD-1',
+        scanStatus: 'COMPLETE'
+      })
+      expect(result.documents[1]).toMatchObject({
+        uploadId: 'UPLOAD-2',
+        scanStatus: 'PENDING'
+      })
+    })
+
+    test('Should return empty documents array when no documents in session', async () => {
+      getSessionValue.mockReturnValue(null)
+
+      const { statusCode, result } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/status',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual({ documents: [] })
     })
   })
 })
