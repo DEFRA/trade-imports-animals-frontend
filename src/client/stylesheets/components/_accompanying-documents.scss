@@ -1,6 +1,7 @@
 @use "govuk-frontend" as *;
 
-// Remove button rendered as a link in the table actions column
+// Remove button rendered as a link in the table actions column.
+// Uses GOV.UK Frontend mixins for correct focus, hover and colour states.
 .app-button-as-link {
   appearance: none;
   background: none;
@@ -9,5 +10,7 @@
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
+
+  @include govuk-link-common;
+  @include govuk-link-style-default;
 }
