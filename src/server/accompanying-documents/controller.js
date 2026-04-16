@@ -1,6 +1,6 @@
 import {
-  setSessionValue,
-  getSessionValue
+  getSessionValue,
+  setSessionValue
 } from '../common/helpers/session-helpers.js'
 import {
   accompanyingDocumentsSchema,
@@ -13,25 +13,74 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../../config/config.js'
 
 const frontendBaseUrl = config.get('frontendBaseUrl')
+const MAX_POLLING_ATTEMPTS = 10
 
-function renderForm(h, values = {}) {
-  return h.view('accompanying-documents/index', {
+async function getDocumentsWithStatus(documents, traceId, logger) {
+  return Promise.all(
+    documents.map(async (doc) => {
+      try {
+        const { scanStatus } = await documentClient.getStatus(
+          doc.uploadId,
+          traceId
+        )
+        return { ...doc, scanStatus }
+      } catch (err) {
+        logger.error(
+          `Failed to get scan status for uploadId=${doc.uploadId}: ${err.message}`
+        )
+        return { ...doc, scanStatus: 'PENDING' }
+      }
+    })
+  )
+}
+
+function buildPageModel(documentsWithStatus, attempt, extra = {}) {
+  const anyPending = documentsWithStatus.some((d) => d.scanStatus === 'PENDING')
+  const anyRejected = documentsWithStatus.some(
+    (d) => d.scanStatus === 'REJECTED'
+  )
+  const timedOut = anyPending && attempt >= MAX_POLLING_ATTEMPTS
+
+  const rejectedErrors = documentsWithStatus
+    .filter((d) => d.scanStatus === 'REJECTED')
+    .map((d) => ({
+      href: '#documents-added',
+      text: `${d.filename} contains a virus. Remove it and try again with a different file.`
+    }))
+
+  return {
     pageTitle: 'Accompanying documents',
     heading: 'Accompanying documents',
-    ...values
-  })
+    documents: documentsWithStatus,
+    anyPending,
+    timedOut,
+    nextAttempt: attempt + 1,
+    canContinue: documentsWithStatus.length > 0 && !anyPending && !anyRejected,
+    ...extra,
+    // Merge rejected errors with any form validation errors from `extra`
+    errorList: [...(rejectedErrors ?? []), ...(extra.errorList ?? [])].length
+      ? [...(rejectedErrors ?? []), ...(extra.errorList ?? [])]
+      : null
+  }
 }
 
 export const accompanyingDocumentsController = {
   get: {
-    handler(request, h) {
-      return renderForm(h, {
-        documentType: getSessionValue(request, 'documentType'),
-        documentReference: getSessionValue(request, 'documentReference'),
-        'issueDate-day': getSessionValue(request, 'issueDate-day'),
-        'issueDate-month': getSessionValue(request, 'issueDate-month'),
-        'issueDate-year': getSessionValue(request, 'issueDate-year')
-      })
+    async handler(request, h) {
+      const traceId = getTraceId() ?? ''
+      const attempt = parseInt(request.query.attempt ?? '0', 10)
+      const rawDocuments = getSessionValue(request, 'documents') ?? []
+
+      const documentsWithStatus = await getDocumentsWithStatus(
+        rawDocuments,
+        traceId,
+        request.logger
+      )
+
+      return h.view(
+        'accompanying-documents/index',
+        buildPageModel(documentsWithStatus, attempt)
+      )
     }
   },
   post: {
@@ -78,24 +127,32 @@ export const accompanyingDocumentsController = {
       }
 
       if (allErrors.length > 0) {
-        const formattedErrors = formatValidationErrors({ details: allErrors })
-        return renderForm(h, {
-          documentType,
-          documentReference,
-          'issueDate-day': issueDateDay,
-          'issueDate-month': issueDateMonth,
-          'issueDate-year': issueDateYear,
-          crumb,
-          errorList: formattedErrors.errorList,
-          fieldErrors: formattedErrors.fieldErrors
-        }).code(statusCodes.badRequest)
-      }
+        const traceId = getTraceId() ?? ''
+        const attempt = parseInt(request.query.attempt ?? '0', 10)
+        const rawDocuments = getSessionValue(request, 'documents') ?? []
+        const documentsWithStatus = await getDocumentsWithStatus(
+          rawDocuments,
+          traceId,
+          request.logger
+        )
 
-      setSessionValue(request, 'documentType', documentType)
-      setSessionValue(request, 'documentReference', documentReference)
-      setSessionValue(request, 'issueDate-day', issueDateDay)
-      setSessionValue(request, 'issueDate-month', issueDateMonth)
-      setSessionValue(request, 'issueDate-year', issueDateYear)
+        const formattedErrors = formatValidationErrors({ details: allErrors })
+        return h
+          .view(
+            'accompanying-documents/index',
+            buildPageModel(documentsWithStatus, attempt, {
+              documentType,
+              documentReference,
+              'issueDate-day': issueDateDay,
+              'issueDate-month': issueDateMonth,
+              'issueDate-year': issueDateYear,
+              crumb,
+              errorList: formattedErrors.errorList,
+              fieldErrors: formattedErrors.fieldErrors
+            })
+          )
+          .code(statusCodes.badRequest)
+      }
 
       const year = String(issueDateYear).padStart(4, '0')
       const month = String(issueDateMonth).padStart(2, '0')
@@ -107,14 +164,13 @@ export const accompanyingDocumentsController = {
 
       let uploadId
       try {
-        const redirectUrl = `${frontendBaseUrl}/accompanying-documents/upload-received`
+        const redirectUrl = `${frontendBaseUrl}/accompanying-documents`
         const response = await documentClient.initiate(
           notificationRef,
           { documentType, documentReference, dateOfIssue, redirectUrl },
           traceId
         )
         uploadId = response?.uploadId
-        setSessionValue(request, 'uploadId', uploadId)
         request.logger.info(`Document upload initiated: uploadId=${uploadId}`)
 
         const formData = new FormData()
@@ -133,11 +189,20 @@ export const accompanyingDocumentsController = {
         )
       } catch (err) {
         request.logger.error(`Failed to upload document: ${err.message}`)
-        if (uploadId) setSessionValue(request, 'uploadId', null)
         return h.redirect('/accompanying-documents')
       }
 
-      return h.redirect('/accompanying-documents/upload-received')
+      const documents = getSessionValue(request, 'documents') ?? []
+      documents.push({
+        uploadId,
+        filename: fileData.filename || 'upload',
+        documentType,
+        documentReference,
+        dateOfIssue
+      })
+      setSessionValue(request, 'documents', documents)
+
+      return h.redirect('/accompanying-documents')
     }
   }
 }

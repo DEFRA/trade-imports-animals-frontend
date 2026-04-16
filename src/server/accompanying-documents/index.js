@@ -1,5 +1,5 @@
 import { accompanyingDocumentsController } from './controller.js'
-import { uploadReceivedController } from './upload-received-controller.js'
+import { removeDocumentController } from './remove-controller.js'
 import { config } from '../../config/config.js'
 
 /**
@@ -30,12 +30,12 @@ export const accompanyingDocuments = {
           }
         },
         {
-          method: 'GET',
-          path: '/accompanying-documents/upload-received',
+          method: 'POST',
+          path: '/accompanying-documents/remove',
           options: authEnabled
             ? { auth: { strategy: 'session', mode: 'try' } }
             : { auth: false },
-          ...uploadReceivedController.get
+          ...removeDocumentController.post
         }
       ])
     }

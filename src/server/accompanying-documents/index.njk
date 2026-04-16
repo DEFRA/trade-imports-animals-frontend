@@ -5,6 +5,14 @@
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
 {% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+
+{% block head %}
+  {{ super() }}
+  {% if anyPending and not timedOut %}
+    <meta http-equiv="refresh" content="3; url=?attempt={{ nextAttempt }}">
+  {% endif %}
+{% endblock %}
 
 {% block content %}
   {{ appHeading({
@@ -13,14 +21,60 @@
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      <div class="govuk-body" data-testid="app-page-body">
 
-        {% if errorList %}
-          {{ govukErrorSummary({
-            titleText: "There is a problem",
-            errorList: errorList
-          }) }}
+      {% if errorList %}
+        {{ govukErrorSummary({
+          titleText: "There is a problem",
+          errorList: errorList
+        }) }}
+      {% endif %}
+
+      {% if documents and documents.length %}
+        <h2 class="govuk-heading-m" id="documents-added">Documents added</h2>
+
+        <dl class="govuk-summary-list">
+          {% for doc in documents %}
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">
+                {{ doc.filename }}
+                {% if doc.documentType or doc.documentReference %}
+                  <div class="govuk-hint govuk-!-margin-bottom-0">{{ doc.documentType }}{% if doc.documentReference %} — {{ doc.documentReference }}{% endif %}</div>
+                {% endif %}
+              </dt>
+              <dd class="govuk-summary-list__value">
+                {% if doc.scanStatus === 'COMPLETE' %}
+                  {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
+                {% elif doc.scanStatus === 'REJECTED' %}
+                  {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
+                {% else %}
+                  {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
+                {% endif %}
+              </dd>
+              <dd class="govuk-summary-list__actions">
+                <form method="post" action="/accompanying-documents/remove">
+                  <input type="hidden" name="crumb" value="{{ crumb }}">
+                  <input type="hidden" name="uploadId" value="{{ doc.uploadId }}">
+                  <button type="submit" class="govuk-link govuk-body app-button-as-link">
+                    Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
+                  </button>
+                </form>
+              </dd>
+            </div>
+          {% endfor %}
+        </dl>
+
+        {% if timedOut %}
+          <p class="govuk-body govuk-hint">
+            Still checking some documents.
+            <a href="?attempt={{ nextAttempt }}" class="govuk-link">Refresh to check status</a>
+          </p>
         {% endif %}
+
+      {% endif %}
+
+      <h2 class="govuk-heading-m">{{ "Add another document" if documents and documents.length else "Add a document" }}</h2>
+
+      <div data-testid="app-page-body">
 
         <form method="post" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}"/>
@@ -96,12 +150,22 @@
 
           <div class="govuk-button-group">
             {{ govukButton({
-              text: "Save and continue"
+              text: "Upload document"
             }) }}
           </div>
         </form>
 
       </div>
+
+      {% if canContinue %}
+        <div class="govuk-button-group">
+          {{ govukButton({
+            text: "Save and continue",
+            href: "/"
+          }) }}
+        </div>
+      {% endif %}
+
     </div>
   </div>
 
