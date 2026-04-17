@@ -18,6 +18,9 @@
 {% endblock %}
 
 {% block content %}
+  {% if referenceNumber %}
+    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+  {% endif %}
   {{ appHeading({
     text: "Accompanying documents"
   }) }}

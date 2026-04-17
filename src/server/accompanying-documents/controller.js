@@ -92,6 +92,7 @@ export const accompanyingDocumentsController = {
       const traceId = getTraceId() ?? ''
       const attempt = parseInt(request.query.attempt ?? '0', 10)
       const rawDocuments = getSessionValue(request, 'documents') ?? []
+      const referenceNumber = getSessionValue(request, 'referenceNumber')
 
       const documentsWithStatus = await getDocumentsWithStatus(
         rawDocuments,
@@ -101,7 +102,7 @@ export const accompanyingDocumentsController = {
 
       return h.view(
         'accompanying-documents/index',
-        buildPageModel(documentsWithStatus, attempt)
+        buildPageModel(documentsWithStatus, attempt, { referenceNumber })
       )
     }
   },

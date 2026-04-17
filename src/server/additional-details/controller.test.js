@@ -124,7 +124,7 @@ describe('additionalDetailsController', () => {
       )
       expect(response).toEqual({
         statusCode: 302,
-        location: '/additional-details'
+        location: '/accompanying-documents'
       })
     })
 
@@ -158,7 +158,7 @@ describe('additionalDetailsController', () => {
 
       expect(response).toEqual({
         statusCode: 302,
-        location: '/additional-details'
+        location: '/accompanying-documents'
       })
     })
   })
