@@ -11,6 +11,7 @@ import { commodityDetails } from './commodities/details/index.js'
 import { importReason } from './import-reason/index.js'
 import { additionalDetails } from './additional-details/index.js'
 import { animalsIdentificationDetails } from './commodities/identification/index.js'
+import { addresses } from './addresses/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
 
@@ -33,8 +34,9 @@ export const router = {
         commoditiesSelect,
         importReason,
         commodityDetails,
+        animalsIdentificationDetails,
         additionalDetails,
-        animalsIdentificationDetails
+        addresses
       ]
 
       if (authEnabled) {
