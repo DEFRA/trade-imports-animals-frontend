@@ -151,9 +151,8 @@ export const accompanyingDocumentsController = {
 
       const documents = getSessionValue(request, 'documents') ?? []
       if (documents.length >= 10) {
-        const rawDocuments = getSessionValue(request, 'documents') ?? []
         const documentsWithStatus = await getDocumentsWithStatus(
-          rawDocuments,
+          documents,
           traceId,
           request.logger
         )

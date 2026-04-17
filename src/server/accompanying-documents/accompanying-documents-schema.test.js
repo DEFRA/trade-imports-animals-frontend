@@ -140,6 +140,17 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details[0].path).toEqual(['issueDate-day'])
     })
 
+    test('Should return error when day is out of range (32nd of a month)', () => {
+      const error = validatePartialDate({
+        'issueDate-day': '32',
+        'issueDate-month': '1',
+        'issueDate-year': '2024'
+      })
+      expect(error).not.toBeNull()
+      expect(error.details[0].message).toBe('Enter a real date of issue')
+      expect(error.details[0].path).toEqual(['issueDate-day'])
+    })
+
     test('Should return null for a valid calendar date (29 Feb in a leap year)', () => {
       const error = validatePartialDate({
         'issueDate-day': '29',

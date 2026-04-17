@@ -97,12 +97,10 @@
           </p>
         {% endif %}
 
-        {% if timedOut %}
-          <p class="govuk-hint">
-            Still checking some documents.
-            <a href="?attempt={{ nextAttempt }}" class="govuk-link">Refresh to check status</a>
-          </p>
-        {% endif %}
+        <p id="js-timeout-message" class="govuk-hint" {% if not timedOut %}hidden{% endif %}>
+          Still checking some documents.
+          <a href="?attempt={{ nextAttempt }}" class="govuk-link">Refresh to check status</a>
+        </p>
 
       {% endif %}
 
