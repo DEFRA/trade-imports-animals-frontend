@@ -65,7 +65,8 @@ export const additionalDetailsController = {
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/cph-number')
+      return h.redirect('/addresses', { referenceNumber })
+
     }
   }
 }
