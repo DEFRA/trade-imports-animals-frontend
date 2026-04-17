@@ -15,8 +15,11 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 describe('cphNumberController', () => {
   describe('GET /cph-number', () => {
-    test('renders view with cphNumber from session', () => {
-      const get = vi.fn((key) => (key === 'cphNumber' ? '123456789' : null))
+    test('renders view with cphNumber and referenceNumber from session', () => {
+      const get = vi.fn((key) => {
+        const values = { cphNumber: '123456789', referenceNumber: 'REF-123' }
+        return values[key] ?? null
+      })
       const request = { yar: { get } }
       const h = { view: vi.fn((template, data) => ({ template, data })) }
 
@@ -25,12 +28,13 @@ describe('cphNumberController', () => {
       expect(h.view).toHaveBeenCalledWith('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
         heading: 'Add the County Parish Holding number (CPH)',
-        cphNumber: '123456789'
+        cphNumber: '123456789',
+        referenceNumber: 'REF-123'
       })
       expect(response.template).toBe('cph-number/index')
     })
 
-    test('renders view with null cphNumber when session is empty', () => {
+    test('renders view with null values when session is empty', () => {
       const get = vi.fn(() => null)
       const request = { yar: { get } }
       const h = { view: vi.fn((template, data) => ({ template, data })) }
@@ -40,7 +44,8 @@ describe('cphNumberController', () => {
       expect(h.view).toHaveBeenCalledWith('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
         heading: 'Add the County Parish Holding number (CPH)',
-        cphNumber: null
+        cphNumber: null,
+        referenceNumber: null
       })
     })
   })

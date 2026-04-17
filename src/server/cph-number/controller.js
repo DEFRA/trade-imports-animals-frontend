@@ -15,11 +15,13 @@ export const cphNumberController = {
   get: {
     handler(_request, h) {
       const cphNumber = getSessionValue(_request, 'cphNumber')
+      const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
       return h.view('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
         heading: 'Add the County Parish Holding number (CPH)',
-        cphNumber
+        cphNumber,
+        referenceNumber
       })
     }
   },
@@ -27,6 +29,7 @@ export const cphNumberController = {
     async handler(_request, h) {
       const { cphNumber } = _request.payload
       const traceId = getTraceId() ?? ''
+      const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
       const { error } = cphNumberSchema.validate(_request.payload, {
         abortEarly: false
@@ -39,6 +42,7 @@ export const cphNumberController = {
             pageTitle: 'Add the County Parish Holding number (CPH)',
             heading: 'Add the County Parish Holding number (CPH)',
             cphNumber,
+            referenceNumber,
             errorList: formattedErrors.errorList,
             fieldErrors: formattedErrors.fieldErrors
           })
@@ -58,6 +62,7 @@ export const cphNumberController = {
             pageTitle: 'Add the County Parish Holding number (CPH)',
             heading: 'Add the County Parish Holding number (CPH)',
             cphNumber: getSessionValue(_request, 'cphNumber'),
+            referenceNumber,
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]

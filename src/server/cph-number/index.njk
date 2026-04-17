@@ -7,7 +7,7 @@
 {% block content %}
   {{ govukBackLink({
     text: "Back",
-    href: "/additional-details"
+    href: "/addresses"
   }) }}
 
   <div class="govuk-grid-row">
@@ -21,7 +21,9 @@
           }) }}
         {% endif %}
 
-        <span class="govuk-caption-l">Addresses</span>
+        {% if referenceNumber %}
+          <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+        {% endif %}
         <h1 class="govuk-heading-l">Add the County Parish Holding number (CPH)</h1>
 
         <form method="post" novalidate>

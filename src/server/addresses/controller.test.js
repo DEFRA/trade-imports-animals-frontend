@@ -72,14 +72,43 @@ describe('addressesController', () => {
         request,
         'trace-123'
       )
-      expect(h.redirect).toHaveBeenCalledWith('/addresses', {
-        referenceNumber: 'REF-123'
-      })
+      expect(h.redirect).toHaveBeenCalledWith('/cph-number')
       expect(response).toEqual({
         statusCode: 302,
-        location: '/addresses',
-        opts: { referenceNumber: 'REF-123' }
+        location: '/cph-number',
+        opts: undefined
       })
+    })
+
+    test('shows error page when notification client throws', async () => {
+      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+        new Error('Backend error')
+      )
+
+      const get = vi.fn((key) => {
+        const values = { referenceNumber: 'REF-123' }
+        return values[key] ?? null
+      })
+
+      const request = { yar: { get } }
+      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const h = {
+        view: vi.fn(() => ({ code: mockCode })),
+        redirect: vi.fn()
+      }
+
+      await addressesController.post.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'addresses/index',
+        expect.objectContaining({
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        })
+      )
+      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
     })
 
     test('still submits and redirects when addresses are not in session', async () => {
@@ -113,8 +142,8 @@ describe('addressesController', () => {
       )
       expect(response).toEqual({
         statusCode: 302,
-        location: '/addresses',
-        opts: { referenceNumber: 'REF-123' }
+        location: '/cph-number',
+        opts: undefined
       })
     })
   })

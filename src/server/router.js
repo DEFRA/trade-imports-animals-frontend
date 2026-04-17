@@ -37,9 +37,8 @@ export const router = {
         commodityDetails,
         animalsIdentificationDetails,
         additionalDetails,
-        animalsIdentificationDetails,
+        addresses,
         cphNumber
-        addresses
       ]
 
       if (authEnabled) {

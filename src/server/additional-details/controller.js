@@ -66,7 +66,6 @@ export const additionalDetailsController = {
       }
 
       return h.redirect('/addresses', { referenceNumber })
-
     }
   }
 }
