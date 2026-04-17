@@ -3,9 +3,9 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { toObject } from '../../common/helpers/object-helpers.js'
+import { submitNotification } from '../../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -62,12 +62,7 @@ export const animalIdentificationDetailsController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
-      try {
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-      }
+      await submitNotification(_request, traceId, logger)
 
       return h.redirect('/additional-details', { referenceNumber })
     }

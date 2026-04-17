@@ -3,8 +3,11 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -13,14 +16,7 @@ export const importReasonController = {
     handler(_request, h) {
       const reasonForImport = getSessionValue(_request, 'reasonForImport')
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const referenceNumber = fetchNotification(_request, logger)
 
       return h.view('import-reason/index', {
         pageTitle: 'Reason for import',
@@ -39,13 +35,7 @@ export const importReasonController = {
       logger.info(`Reason for import: ${referenceNumber}`)
       setSessionValue(_request, 'reasonForImport', reasonForImport)
 
-      try {
-        // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-      }
+      await submitNotification(_request, traceId, logger)
 
       return h.redirect('/commodities/details', { referenceNumber })
     }

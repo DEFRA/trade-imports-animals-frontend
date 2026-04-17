@@ -3,8 +3,11 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -14,19 +17,12 @@ export const commoditiesController = {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const referenceNumber = fetchNotification(_request, logger)
 
       return h.view('commodities/index', {
         pageTitle: 'Commodities',
         heading: 'Select a Commodity',
-        referenceNumber: getSessionValue(_request, 'referenceNumber'),
+        referenceNumber,
         commodity: getSessionValue(_request, 'commodity')
       })
     }
@@ -40,13 +36,7 @@ export const commoditiesController = {
       // Store value in session as object so the backend always receives a consistent type
       setSessionValue(_request, 'commodity', { name: commodity })
 
-      try {
-        // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-      }
+      await submitNotification(_request, traceId, logger)
 
       return h.redirect('/commodities/select')
     }

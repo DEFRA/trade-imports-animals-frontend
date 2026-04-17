@@ -1,7 +1,11 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { additionalDetailsController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -14,16 +18,20 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  fetchNotification: vi.fn().mockReturnValue('REF-123'),
+  submitNotification: vi.fn().mockResolvedValue(undefined)
+}))
+
 describe('additionalDetailsController', () => {
   describe('GET /additional-details', () => {
-    test('renders view with session values and calls notificationClient.get when referenceNumber exists', () => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('renders view with session values and calls fetchNotification when referenceNumber exists', () => {
+      fetchNotification.mockReturnValue('REF-123')
 
       const get = vi.fn((key) => {
         const values = {
           certifiedFor: 'approvedBodies',
-          unweanedAnimals: 'yes',
-          referenceNumber: 'REF-123'
+          unweanedAnimals: 'yes'
         }
         return values[key] ?? null
       })
@@ -35,10 +43,9 @@ describe('additionalDetailsController', () => {
 
       const response = additionalDetailsController.get.handler(request, h)
 
-      expect(notificationClient.get).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
-        'REF-123',
-        'trace-123'
+        expect.any(Object)
       )
 
       expect(h.view).toHaveBeenCalledWith('additional-details/index', {
@@ -53,6 +60,8 @@ describe('additionalDetailsController', () => {
     })
 
     test('defaults unweanedAnimals to "no" when not set in session', () => {
+      fetchNotification.mockReturnValue(null)
+
       const get = vi.fn(() => null)
 
       const request = { yar: { get } }
@@ -71,8 +80,8 @@ describe('additionalDetailsController', () => {
       )
     })
 
-    test('does not call notificationClient.get when no referenceNumber', () => {
-      const getSpy = vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('does not call fetchNotification with a referenceNumber when no referenceNumber', () => {
+      fetchNotification.mockReturnValue(null)
 
       const get = vi.fn(() => null)
 
@@ -83,15 +92,16 @@ describe('additionalDetailsController', () => {
 
       additionalDetailsController.get.handler(request, h)
 
-      expect(getSpy).not.toHaveBeenCalled()
+      expect(fetchNotification).toHaveBeenCalledWith(
+        request,
+        expect.any(Object)
+      )
     })
   })
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
+      submitNotification.mockResolvedValue(undefined)
 
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
@@ -118,9 +128,10 @@ describe('additionalDetailsController', () => {
         'breedingAndOrProduction'
       )
       expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123'
+        'trace-123',
+        expect.any(Object)
       )
       expect(response).toEqual({
         statusCode: 302,
@@ -129,12 +140,7 @@ describe('additionalDetailsController', () => {
     })
 
     test('redirects even when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
-        Object.assign(new Error('Backend error'), {
-          status: 500,
-          statusText: 'Internal Server Error'
-        })
-      )
+      submitNotification.mockResolvedValue(undefined)
 
       const set = vi.fn()
       const get = vi.fn(() => null)

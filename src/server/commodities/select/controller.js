@@ -6,9 +6,9 @@ import {
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { toObject } from '../../common/helpers/object-helpers.js'
+import { submitNotification } from '../../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -128,13 +128,7 @@ export const commoditiesSelectController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
-      try {
-        // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-      }
+      await submitNotification(_request, traceId, logger)
 
       return h.redirect('/import-reason', { referenceNumber })
     }

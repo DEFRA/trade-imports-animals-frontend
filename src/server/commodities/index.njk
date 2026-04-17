@@ -3,9 +3,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {% block content %}
-  {% if referenceNumber %}
-    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-  {% endif %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   {{ appHeading({
     text: heading

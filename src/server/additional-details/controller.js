@@ -3,8 +3,11 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -15,14 +18,7 @@ export const additionalDetailsController = {
       const unweanedAnimals =
         getSessionValue(_request, 'unweanedAnimals') ?? 'no'
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const referenceNumber = fetchNotification(_request, logger)
 
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',
@@ -44,12 +40,7 @@ export const additionalDetailsController = {
       setSessionValue(_request, 'certifiedFor', certifiedFor)
       setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
-      try {
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-      }
+      await submitNotification(_request, traceId, logger)
 
       return h.redirect('/accompanying-documents')
     }

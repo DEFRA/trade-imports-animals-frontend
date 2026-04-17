@@ -6,8 +6,11 @@ import {
 import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -17,19 +20,12 @@ export const originController = {
       logger.info(
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const referenceNumber = fetchNotification(_request, logger)
 
       return h.view('origin/index', {
         pageTitle: 'Origin of the import',
         heading: 'Origin of the import',
-        referenceNumber: getSessionValue(_request, 'referenceNumber'),
+        referenceNumber,
         countryCode: getSessionValue(_request, 'countryCode'),
         requiresRegionCode:
           getSessionValue(_request, 'requiresRegionCode') || 'no',
@@ -67,19 +63,10 @@ export const originController = {
       setSessionValue(_request, 'requiresRegionCode', requiresRegionCode)
       setSessionValue(_request, 'internalReference', internalReference)
 
-      try {
-        // Submit notification - client will build complete notification from all session values
-        const response = await notificationClient.submit(_request, traceId)
-
-        // Store reference number in session if returned (backend returns string directly)
-        if (response?.referenceNumber) {
-          setSessionValue(_request, 'referenceNumber', response.referenceNumber)
-          logger.info(`Reference number saved: ${response.referenceNumber}`)
-        }
-
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
+      const response = await submitNotification(_request, traceId, logger)
+      if (response?.referenceNumber) {
+        setSessionValue(_request, 'referenceNumber', response.referenceNumber)
+        logger.info(`Reference number saved: ${response.referenceNumber}`)
       }
 
       return h.redirect('/commodities')
