@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
+import { vi } from 'vitest'
 
 // jsdom strips bare <tr> elements from body.innerHTML because they are invalid
 // HTML outside a <table>. All row fixtures must be wrapped in a proper table.
@@ -24,6 +24,8 @@ const TABLE_COMPLETE = `
   </table>
 `
 
+let originalFetch
+
 function makeFetchOk(docs) {
   return vi.fn().mockResolvedValue({
     ok: true,
@@ -31,26 +33,23 @@ function makeFetchOk(docs) {
   })
 }
 
-describe('accompanying-documents module', () => {
+describe('#accompanyingDocuments', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.resetModules()
+    originalFetch = global.fetch
+    global.fetch = vi.fn()
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    vi.unstubAllGlobals()
+    global.fetch = originalFetch
   })
 
-  // ---------------------------------------------------------------------------
-  // Initialisation
-  // ---------------------------------------------------------------------------
-
   describe('initialisation', () => {
-    test('hides #js-refresh-fallback when element exists', async () => {
+    test('Should hide #js-refresh-fallback when element exists', async () => {
       document.body.innerHTML =
         '<div id="js-refresh-fallback"></div>' + TABLE_COMPLETE
-      vi.stubGlobal('fetch', vi.fn())
 
       await import('./accompanying-documents.js')
 
@@ -58,18 +57,16 @@ describe('accompanying-documents module', () => {
       expect(fallback.hidden).toBe(true)
     })
 
-    test('schedules polling when PENDING rows exist', async () => {
+    test('Should schedule polling when PENDING rows exist', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal('fetch', vi.fn())
 
       await import('./accompanying-documents.js')
 
       expect(vi.getTimerCount()).toBe(1)
     })
 
-    test('does not schedule polling when no PENDING rows exist', async () => {
+    test('Should not schedule polling when no PENDING rows exist', async () => {
       document.body.innerHTML = TABLE_COMPLETE
-      vi.stubGlobal('fetch', vi.fn())
 
       await import('./accompanying-documents.js')
 
@@ -77,14 +74,10 @@ describe('accompanying-documents module', () => {
     })
   })
 
-  // ---------------------------------------------------------------------------
-  // Polling — error / retry paths
-  // ---------------------------------------------------------------------------
-
-  describe('polling', () => {
-    test('retries when fetch returns a non-ok response', async () => {
+  describe('polling — retry paths', () => {
+    test('Should retry when fetch returns a non-ok response', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
+      global.fetch = vi.fn().mockResolvedValue({ ok: false })
 
       await import('./accompanying-documents.js')
       expect(vi.getTimerCount()).toBe(1)
@@ -93,16 +86,12 @@ describe('accompanying-documents module', () => {
       // runAllTimersAsync would recursively drain all retries up to MAX_ATTEMPTS.
       await vi.advanceTimersByTimeAsync(3000)
 
-      // A retry setTimeout should have been rescheduled
       expect(vi.getTimerCount()).toBe(1)
     })
 
-    test('retries when fetch throws a network error', async () => {
+    test('Should retry when fetch throws a network error', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockRejectedValue(new Error('Network error'))
-      )
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
       await import('./accompanying-documents.js')
       expect(vi.getTimerCount()).toBe(1)
@@ -112,15 +101,12 @@ describe('accompanying-documents module', () => {
       expect(vi.getTimerCount()).toBe(1)
     })
 
-    test('retries when response JSON has no documents field', async () => {
+    test('Should retry when response JSON has no documents field', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: () => Promise.resolve({})
-        })
-      )
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({})
+      })
 
       await import('./accompanying-documents.js')
       expect(vi.getTimerCount()).toBe(1)
@@ -129,17 +115,12 @@ describe('accompanying-documents module', () => {
 
       expect(vi.getTimerCount()).toBe(1)
     })
+  })
 
-    // -------------------------------------------------------------------------
-    // Status updates
-    // -------------------------------------------------------------------------
-
-    test('updates row tag to Safe/green on COMPLETE status', async () => {
+  describe('polling — status updates', () => {
+    test('Should update row tag to Safe/green on COMPLETE status', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal(
-        'fetch',
-        makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
-      )
+      global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
       Object.defineProperty(window, 'location', {
         value: { reload: vi.fn() },
         writable: true
@@ -153,12 +134,9 @@ describe('accompanying-documents module', () => {
       expect(tag.classList.contains('govuk-tag--green')).toBe(true)
     })
 
-    test('updates row tag to "Virus found"/red on REJECTED status', async () => {
+    test('Should update row tag to "Virus found"/red on REJECTED status', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal(
-        'fetch',
-        makeFetchOk([{ uploadId: 'U1', scanStatus: 'REJECTED' }])
-      )
+      global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'REJECTED' }])
       Object.defineProperty(window, 'location', {
         value: { reload: vi.fn() },
         writable: true
@@ -172,67 +150,24 @@ describe('accompanying-documents module', () => {
       expect(tag.classList.contains('govuk-tag--red')).toBe(true)
     })
 
-    // -------------------------------------------------------------------------
-    // Page reload
-    // -------------------------------------------------------------------------
-
-    test('reloads page when all documents are no longer PENDING', async () => {
+    test('Should reload the page when all documents are no longer PENDING', async () => {
       document.body.innerHTML = TABLE_PENDING
       const reload = vi.fn()
       Object.defineProperty(window, 'location', {
         value: { reload },
         writable: true
       })
-      vi.stubGlobal(
-        'fetch',
-        makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
-      )
+      global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
 
       await import('./accompanying-documents.js')
       await vi.runAllTimersAsync()
 
-      expect(reload).toHaveBeenCalledOnce()
+      expect(reload).toHaveBeenCalledTimes(1)
     })
 
-    // -------------------------------------------------------------------------
-    // Timeout after MAX_ATTEMPTS (10)
-    // -------------------------------------------------------------------------
-
-    test('shows #js-timeout-message and stops polling after 10 attempts', async () => {
-      document.body.innerHTML =
-        TABLE_PENDING + '<div id="js-timeout-message" hidden></div>'
-
-      // Always return PENDING so the module keeps rescheduling
-      vi.stubGlobal(
-        'fetch',
-        makeFetchOk([{ uploadId: 'U1', scanStatus: 'PENDING' }])
-      )
-
-      await import('./accompanying-documents.js')
-
-      // Advance one POLL_INTERVAL at a time.
-      // Attempts 0-9 each fetch (returning PENDING) and reschedule.
-      // The 11th advance triggers pollStatus(10) which hits MAX_ATTEMPTS and stops.
-      for (let i = 0; i < 11; i++) {
-        await vi.advanceTimersByTimeAsync(3000)
-      }
-
-      const timeoutMsg = document.getElementById('js-timeout-message')
-      expect(timeoutMsg.hidden).toBe(false)
-      // No more timers should be pending — polling has stopped
-      expect(vi.getTimerCount()).toBe(0)
-    })
-
-    // -------------------------------------------------------------------------
-    // Aria-live announcements
-    // -------------------------------------------------------------------------
-
-    test('creates aria-live region and announces status on COMPLETE', async () => {
+    test('Should create an aria-live region and announce status on COMPLETE', async () => {
       document.body.innerHTML = TABLE_PENDING
-      vi.stubGlobal(
-        'fetch',
-        makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
-      )
+      global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
       Object.defineProperty(window, 'location', {
         value: { reload: vi.fn() },
         writable: true
@@ -245,6 +180,28 @@ describe('accompanying-documents module', () => {
       expect(announcer).not.toBeNull()
       expect(announcer.getAttribute('aria-live')).toBe('polite')
       expect(announcer.textContent).toBe('Document scan complete: safe to use')
+    })
+  })
+
+  describe('polling — timeout', () => {
+    test('Should show #js-timeout-message and stop polling after 10 attempts', async () => {
+      document.body.innerHTML =
+        TABLE_PENDING + '<div id="js-timeout-message" hidden></div>'
+      // Always return PENDING so the module keeps rescheduling
+      global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'PENDING' }])
+
+      await import('./accompanying-documents.js')
+
+      // Advance one POLL_INTERVAL at a time.
+      // Attempts 0–9 each fetch (returning PENDING) and reschedule.
+      // The 11th advance triggers pollStatus(10) which hits MAX_ATTEMPTS and stops.
+      for (let i = 0; i < 11; i++) {
+        await vi.advanceTimersByTimeAsync(3000)
+      }
+
+      const timeoutMsg = document.getElementById('js-timeout-message')
+      expect(timeoutMsg.hidden).toBe(false)
+      expect(vi.getTimerCount()).toBe(0)
     })
   })
 })
