@@ -177,13 +177,12 @@ describe('commoditiesSelectController', () => {
       })
     })
 
-    test('Should handle when backend submit fails', async () => {
+    test('Should show error page when backend submit fails', async () => {
       const submitError = Object.assign(new Error('Backend error'), {
         status: 500,
         statusText: 'Internal Server Error'
       })
 
-      // The controller catches the error and still redirects.
       notificationClient.submit.mockRejectedValue(submitError)
 
       const set = vi.fn()
@@ -206,19 +205,24 @@ describe('commoditiesSelectController', () => {
         }
       }
 
+      const mockCode = vi.fn(() => ({ statusCode: 500 }))
       const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        view: vi.fn(() => ({ code: mockCode })),
+        redirect: vi.fn()
       }
 
-      const response = await commoditiesSelectController.post.handler(
-        request,
-        h
-      )
+      await commoditiesSelectController.post.handler(request, h)
 
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/import-reason'
-      })
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/select/index',
+        expect.objectContaining({
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        })
+      )
+      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
     })
   })
 })

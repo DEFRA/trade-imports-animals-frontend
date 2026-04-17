@@ -5,6 +5,7 @@ import {
 } from '../../common/helpers/session-helpers.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import { statusCodes } from '../../common/constants/status-codes.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 
 const logger = createLogger()
@@ -67,6 +68,23 @@ export const animalIdentificationDetailsController = {
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
+        const updatedCommodity = getSessionValue(_request, 'commodity')
+        const updatedComplement = (
+          updatedCommodity?.commodityComplement ?? []
+        ).at(-1)
+        return h
+          .view('commodities/identification/index', {
+            pageTitle: 'Description of goods',
+            heading: 'Commodity',
+            referenceNumber,
+            commodity: updatedCommodity,
+            typeOfCommodity: updatedComplement?.typeOfCommodity,
+            speciesLst: updatedComplement?.species ?? [],
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
       }
 
       return h.redirect('/additional-details', { referenceNumber })

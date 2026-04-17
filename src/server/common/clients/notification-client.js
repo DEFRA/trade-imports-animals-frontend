@@ -65,6 +65,12 @@ export const notificationClient = {
       }
     }
 
+    // Get CPH number from session
+    const cphNumber = getSessionValue(_request, 'cphNumber')
+    if (cphNumber) {
+      notification.cphNumber = cphNumber
+    }
+
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications`,
       {
@@ -152,6 +158,10 @@ export const notificationClient = {
 
     if (notification.reasonForImport) {
       setSessionValue(_request, 'reasonForImport', notification.reasonForImport)
+    }
+
+    if (notification.cphNumber) {
+      setSessionValue(_request, 'cphNumber', notification.cphNumber)
     }
 
     return notification

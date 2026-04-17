@@ -1,0 +1,57 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block content %}
+  {{ govukBackLink({
+    text: "Back",
+    href: "/addresses"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
+
+        {% if referenceNumber %}
+          <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+        {% endif %}
+        <h1 class="govuk-heading-l">Add the County Parish Holding number (CPH)</h1>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          {{ govukInput({
+            label: {
+              text: "CPH number"
+            },
+            id: "cphNumber",
+            name: "cphNumber",
+            value: cphNumber if cphNumber,
+            inputmode: "numeric",
+            spellcheck: false,
+            attributes: {
+              maxlength: "9"
+            },
+            errorMessage: fieldErrors.cphNumber if fieldErrors
+          }) }}
+
+          <div class="govuk-button-group">
+            {{ govukButton({
+              text: "Save and continue"
+            }) }}
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+{% endblock %}

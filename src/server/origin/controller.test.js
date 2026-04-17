@@ -182,7 +182,7 @@ describe('#originController', () => {
       expect(sessionCookie).toBeTruthy()
     })
 
-    test('Should handle when backend submit fails', async () => {
+    test('Should show error page when backend submit fails', async () => {
       notificationClient.submit.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
@@ -203,10 +203,9 @@ describe('#originController', () => {
         }
       }
 
-      const { statusCode, headers } = await server.inject(options)
+      const { statusCode } = await server.inject(options)
 
-      expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/commodities')
+      expect(statusCode).toBe(500)
     })
   })
 })

@@ -111,7 +111,7 @@ describe('importReasonController', () => {
       })
     })
 
-    test('redirects even when backend submit fails', async () => {
+    test('shows error page when backend submit fails', async () => {
       vi.spyOn(notificationClient, 'submit').mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: 500,
@@ -127,21 +127,24 @@ describe('importReasonController', () => {
         yar: { set, get }
       }
 
+      const mockCode = vi.fn(() => ({ statusCode: 500 }))
       const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        view: vi.fn(() => ({ code: mockCode })),
+        redirect: vi.fn()
       }
 
-      const response = await importReasonController.post.handler(request, h)
+      await importReasonController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('reasonForImport', 'reEntry')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
-        request,
-        'trace-123'
+      expect(h.view).toHaveBeenCalledWith(
+        'import-reason/index',
+        expect.objectContaining({
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        })
       )
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/commodities/details'
-      })
+      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
     })
   })
 })
