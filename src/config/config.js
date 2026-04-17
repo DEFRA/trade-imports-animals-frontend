@@ -4,20 +4,20 @@ import { fileURLToPath } from 'node:url'
 
 import convictFormatWithValidator from 'convict-format-with-validator'
 
+const env = process.env.NODE_ENV
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const fourHoursMs = 14400000
 const oneWeekMs = 604800000
 
-const isLocal = process.env.NODE_ENV !== 'production'
-const isProduction = process.env.NODE_ENV === 'production'
-const isTest = process.env.NODE_ENV === 'test'
-const isDevelopment = process.env.NODE_ENV === 'development'
+const isProduction = env === 'production'
+const isTest = env === 'test'
+const isDevelopment = env === 'development'
+const isLocal = isDevelopment || isTest
 const isPlatform = !isLocal // Deployed to CDP platform
 
 const authCookieSameSite = 'Lax'
 const csrfEnabled = !isTest
-const csrfCookieSecure = isPlatform
 
 convict.addFormats(convictFormatWithValidator)
 
@@ -313,7 +313,7 @@ export const config = convict({
       secure: {
         doc: 'Set secure flag on CSRF cookie',
         format: Boolean,
-        default: csrfCookieSecure
+        default: isPlatform
       }
     }
   },

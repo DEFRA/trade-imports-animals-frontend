@@ -19,6 +19,7 @@ import { accompanyingDocumentsLighthouseConfig } from "./accompanying-documents.
 import { uploadReceivedLighthouseConfig } from "./upload-received.config.js";
 import {additionalDetailsLighthouseConfig} from "./additional-details.config.js";
 import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
+import { addressesLighthouseConfig } from './addresses.config.js';
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -37,7 +38,8 @@ const pageConfigs = [
   accompanyingDocumentsLighthouseConfig,
   uploadReceivedLighthouseConfig,
   additionalDetailsLighthouseConfig,
-  animalsIdentificationDetailsLighthouseConfig
+  animalsIdentificationDetailsLighthouseConfig,
+  addressesLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
