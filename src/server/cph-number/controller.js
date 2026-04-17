@@ -53,6 +53,16 @@ export const cphNumberController = {
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
+        return h
+          .view('cph-number/index', {
+            pageTitle: 'Add the County Parish Holding number (CPH)',
+            heading: 'Add the County Parish Holding number (CPH)',
+            cphNumber: getSessionValue(_request, 'cphNumber'),
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
       }
 
       return h.redirect('/cph-number')

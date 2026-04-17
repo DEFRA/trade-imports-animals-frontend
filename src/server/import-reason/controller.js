@@ -5,6 +5,7 @@ import {
 } from '../common/helpers/session-helpers.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 const logger = createLogger()
 
@@ -45,6 +46,17 @@ export const importReasonController = {
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
+        return h
+          .view('import-reason/index', {
+            pageTitle: 'Reason for import',
+            heading: 'Reason for import',
+            reasonForImport: getSessionValue(_request, 'reasonForImport'),
+            referenceNumber,
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
       }
 
       return h.redirect('/commodities/details', { referenceNumber })

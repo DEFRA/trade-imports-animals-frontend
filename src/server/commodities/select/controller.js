@@ -8,6 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import { statusCodes } from '../../common/constants/status-codes.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 
 const logger = createLogger()
@@ -134,6 +135,29 @@ export const commoditiesSelectController = {
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
+        const updatedCommodity = getSessionValue(_request, 'commodity')
+        const updatedComplement = (
+          updatedCommodity?.commodityComplement ?? []
+        ).at(-1)
+        const updatedSpecies = (updatedComplement?.species ?? [])
+          .map((s) => (typeof s === 'string' ? s : s?.value))
+          .filter(Boolean)
+        return h
+          .view('commodities/select/index', {
+            pageTitle: 'Select species of commodity',
+            heading: 'Commodity',
+            referenceNumber,
+            commodity: updatedCommodity,
+            typeOfCommodity: updatedComplement?.typeOfCommodity,
+            species: updatedSpecies,
+            savedSpeciesValues: updatedSpecies,
+            commodityDetails: toJsonObject(commodityDetailsList),
+            speciesDetails: toJsonObject(speciesDetailsList),
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
       }
 
       return h.redirect('/import-reason', { referenceNumber })

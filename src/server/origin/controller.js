@@ -80,6 +80,20 @@ export const originController = {
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
+        return h
+          .view('origin/index', {
+            pageTitle: 'Origin of the import',
+            heading: 'Origin of the import',
+            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            countryCode: getSessionValue(_request, 'countryCode'),
+            requiresRegionCode:
+              getSessionValue(_request, 'requiresRegionCode') || 'no',
+            internalReference: getSessionValue(_request, 'internalReference'),
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
       }
 
       return h.redirect('/commodities')

@@ -166,7 +166,7 @@ describe('animalIdentificationDetailsController', () => {
       })
     })
 
-    test('redirects even when notification submit fails', async () => {
+    test('shows error page when notification submit fails', async () => {
       vi.spyOn(notificationClient, 'submit').mockRejectedValue(
         new Error('Backend error')
       )
@@ -195,24 +195,24 @@ describe('animalIdentificationDetailsController', () => {
         yar: { set, get }
       }
 
+      const mockCode = vi.fn(() => ({ statusCode: 500 }))
       const h = {
-        redirect: vi.fn((location, state) => ({
-          statusCode: 302,
-          location,
-          state
-        }))
+        view: vi.fn(() => ({ code: mockCode })),
+        redirect: vi.fn()
       }
 
-      const response = await animalIdentificationDetailsController.post.handler(
-        request,
-        h
-      )
+      await animalIdentificationDetailsController.post.handler(request, h)
 
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/additional-details',
-        state: { referenceNumber: 'REF-ERR' }
-      })
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/identification/index',
+        expect.objectContaining({
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        })
+      )
+      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
     })
   })
 })

@@ -163,7 +163,7 @@ describe('cphNumberController', () => {
       expect(response.statusCode).toBe(400)
     })
 
-    test('redirects to /cph-number even when notification client throws', async () => {
+    test('shows error page when notification client throws', async () => {
       vi.spyOn(notificationClient, 'submit').mockRejectedValue(
         new Error('Backend error')
       )
@@ -174,14 +174,24 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '123456789' },
         yar: { set, get }
       }
+      const mockCode = vi.fn(() => ({ statusCode: 500 }))
       const h = {
-        view: vi.fn(),
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        view: vi.fn(() => ({ code: mockCode })),
+        redirect: vi.fn()
       }
 
-      const response = await cphNumberController.post.handler(request, h)
+      await cphNumberController.post.handler(request, h)
 
-      expect(response).toEqual({ statusCode: 302, location: '/cph-number' })
+      expect(h.view).toHaveBeenCalledWith(
+        'cph-number/index',
+        expect.objectContaining({
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        })
+      )
+      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
     })
   })
 })
