@@ -4,11 +4,12 @@ export const DOCUMENT_TYPES = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
 
 export const accompanyingDocumentsSchema = Joi.object({
   documentType: Joi.string()
-    .valid(...DOCUMENT_TYPES, '')
-    .optional()
-    .allow('', null)
+    .valid(...DOCUMENT_TYPES)
+    .required()
     .messages({
-      'any.only': 'Select a document type'
+      'any.only': 'Select a document type',
+      'any.required': 'Select a document type',
+      'string.empty': 'Select a document type'
     }),
   documentReference: Joi.string()
     .optional()
@@ -21,13 +22,22 @@ export const accompanyingDocumentsSchema = Joi.object({
       'string.max': 'Document reference must be 100 characters or less'
     }),
   'issueDate-day': Joi.alternatives()
-    .try(Joi.number().integer().min(1).max(31), Joi.string().allow('', null))
+    .try(
+      Joi.number().integer().min(1).max(31),
+      Joi.string().pattern(/^\d+$/).allow('')
+    )
     .optional(),
   'issueDate-month': Joi.alternatives()
-    .try(Joi.number().integer().min(1).max(12), Joi.string().allow('', null))
+    .try(
+      Joi.number().integer().min(1).max(12),
+      Joi.string().pattern(/^\d+$/).allow('')
+    )
     .optional(),
   'issueDate-year': Joi.alternatives()
-    .try(Joi.number().integer().min(1900), Joi.string().allow('', null))
+    .try(
+      Joi.number().integer().min(1900),
+      Joi.string().pattern(/^\d+$/).allow('')
+    )
     .optional(),
   crumb: Joi.string().optional().allow('', null),
   file: Joi.any().optional()
@@ -57,6 +67,29 @@ export function validatePartialDate(payload) {
           context: { label: 'issueDate-day', key: 'issueDate-day' }
         }
       ]
+    }
+  }
+
+  if (filledCount === 3) {
+    const d = parseInt(day, 10)
+    const m = parseInt(month, 10)
+    const y = parseInt(year, 10)
+    const date = new Date(y, m - 1, d)
+    if (
+      date.getFullYear() !== y ||
+      date.getMonth() !== m - 1 ||
+      date.getDate() !== d
+    ) {
+      return {
+        details: [
+          {
+            message: 'Enter a real date of issue',
+            path: ['issueDate-day'],
+            type: 'date.invalid',
+            context: { label: 'issueDate-day', key: 'issueDate-day' }
+          }
+        ]
+      }
     }
   }
 

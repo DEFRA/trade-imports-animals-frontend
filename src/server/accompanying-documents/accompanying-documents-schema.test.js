@@ -17,16 +17,18 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error).toBeUndefined()
     })
 
-    test('Should pass with an empty submission (all fields optional)', () => {
+    test('Should fail with an empty submission (documentType is required)', () => {
       const { error } = accompanyingDocumentsSchema.validate({})
-      expect(error).toBeUndefined()
+      expect(error).toBeDefined()
+      expect(error.details[0].message).toBe('Select a document type')
     })
 
-    test('Should pass when documentType is empty string', () => {
+    test('Should fail when documentType is empty string', () => {
       const { error } = accompanyingDocumentsSchema.validate({
         documentType: ''
       })
-      expect(error).toBeUndefined()
+      expect(error).toBeDefined()
+      expect(error.details[0].message).toBe('Select a document type')
     })
 
     test('Should pass for each valid document type', () => {
@@ -50,9 +52,20 @@ describe('#accompanyingDocumentsSchema', () => {
     })
   })
 
+  describe('invalid date field values', () => {
+    test('Should fail when issueDate-day is a non-numeric string', () => {
+      const { error } = accompanyingDocumentsSchema.validate({
+        documentType: 'ITAHC',
+        'issueDate-day': 'abc'
+      })
+      expect(error).toBeDefined()
+    })
+  })
+
   describe('invalid documentReference', () => {
     test('Should fail when documentReference contains special characters', () => {
       const { error } = accompanyingDocumentsSchema.validate({
+        documentType: 'ITAHC',
         documentReference: 'REF@#$%!'
       })
       expect(error).toBeDefined()
@@ -63,6 +76,7 @@ describe('#accompanyingDocumentsSchema', () => {
 
     test('Should fail when documentReference exceeds 100 characters', () => {
       const { error } = accompanyingDocumentsSchema.validate({
+        documentType: 'ITAHC',
         documentReference: 'A'.repeat(101)
       })
       expect(error).toBeDefined()
@@ -73,6 +87,7 @@ describe('#accompanyingDocumentsSchema', () => {
 
     test('Should pass when documentReference is exactly 100 characters', () => {
       const { error } = accompanyingDocumentsSchema.validate({
+        documentType: 'ITAHC',
         documentReference: 'A'.repeat(100)
       })
       expect(error).toBeUndefined()
@@ -110,6 +125,26 @@ describe('#accompanyingDocumentsSchema', () => {
         'issueDate-day': '',
         'issueDate-month': '',
         'issueDate-year': ''
+      })
+      expect(error).toBeNull()
+    })
+
+    test('Should return error when date is not a real calendar date (31 Feb)', () => {
+      const error = validatePartialDate({
+        'issueDate-day': '31',
+        'issueDate-month': '2',
+        'issueDate-year': '2024'
+      })
+      expect(error).not.toBeNull()
+      expect(error.details[0].message).toBe('Enter a real date of issue')
+      expect(error.details[0].path).toEqual(['issueDate-day'])
+    })
+
+    test('Should return null for a valid calendar date (29 Feb in a leap year)', () => {
+      const error = validatePartialDate({
+        'issueDate-day': '29',
+        'issueDate-month': '2',
+        'issueDate-year': '2024'
       })
       expect(error).toBeNull()
     })

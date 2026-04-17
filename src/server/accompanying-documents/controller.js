@@ -26,6 +26,18 @@ const ALLOWED_EXTENSIONS = new Set([
   '.xlsx'
 ])
 
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+]
+
+const MAX_FILE_SIZE_BYTES = 52428800 // 50MB
+
 async function getDocumentsWithStatus(documents, traceId, logger) {
   return Promise.all(
     documents.map(async (doc) => {
@@ -119,10 +131,6 @@ export const accompanyingDocumentsController = {
         file: fileData
       } = request.payload
 
-      if (!documentType) {
-        return h.redirect('/accompanying-documents')
-      }
-
       const { error } = accompanyingDocumentsSchema.validate(
         {
           documentType,
@@ -136,6 +144,34 @@ export const accompanyingDocumentsController = {
       )
 
       const partialDateError = validatePartialDate(request.payload)
+
+      const schemaErrors = []
+      if (error) schemaErrors.push(...error.details)
+      if (partialDateError) schemaErrors.push(...partialDateError.details)
+
+      const documents = getSessionValue(request, 'documents') ?? []
+      if (documents.length >= 10) {
+        const rawDocuments = getSessionValue(request, 'documents') ?? []
+        const documentsWithStatus = await getDocumentsWithStatus(
+          rawDocuments,
+          traceId,
+          request.logger
+        )
+        return h
+          .view(
+            'accompanying-documents/index',
+            buildPageModel(documentsWithStatus, 0, {
+              errorList: [
+                {
+                  href: '#documentType',
+                  text: 'You can add a maximum of 10 documents'
+                }
+              ]
+            })
+          )
+          .code(statusCodes.badRequest)
+      }
+
       const hasFile = fileData?.payload?.length > 0
       const filename = fileData?.filename ?? ''
       const ext = filename.includes('.')
@@ -143,9 +179,7 @@ export const accompanyingDocumentsController = {
         : ''
       const validFileType = !hasFile || ALLOWED_EXTENSIONS.has(ext)
 
-      const allErrors = []
-      if (error) allErrors.push(...error.details)
-      if (partialDateError) allErrors.push(...partialDateError.details)
+      const allErrors = [...schemaErrors]
       if (!hasFile) {
         allErrors.push({
           message: 'Select a file to upload',
@@ -179,34 +213,12 @@ export const accompanyingDocumentsController = {
             buildPageModel(documentsWithStatus, attempt, {
               documentType,
               documentReference,
-              'issueDate-day': issueDateDay,
-              'issueDate-month': issueDateMonth,
-              'issueDate-year': issueDateYear,
+              issueDate_day: issueDateDay,
+              issueDate_month: issueDateMonth,
+              issueDate_year: issueDateYear,
               crumb,
               errorList: formattedErrors.errorList,
               fieldErrors: formattedErrors.fieldErrors
-            })
-          )
-          .code(statusCodes.badRequest)
-      }
-
-      const documents = getSessionValue(request, 'documents') ?? []
-      if (documents.length >= 10) {
-        const documentsWithStatus = await getDocumentsWithStatus(
-          documents,
-          traceId,
-          request.logger
-        )
-        return h
-          .view(
-            'accompanying-documents/index',
-            buildPageModel(documentsWithStatus, 0, {
-              errorList: [
-                {
-                  href: '#documentType',
-                  text: 'You can add a maximum of 10 documents'
-                }
-              ]
             })
           )
           .code(statusCodes.badRequest)
@@ -224,7 +236,14 @@ export const accompanyingDocumentsController = {
         const redirectUrl = `${frontendBaseUrl}/accompanying-documents`
         const response = await documentClient.initiate(
           notificationRef,
-          { documentType, documentReference, dateOfIssue, redirectUrl },
+          {
+            documentType,
+            documentReference,
+            dateOfIssue,
+            redirectUrl,
+            maxFileSize: MAX_FILE_SIZE_BYTES,
+            mimeTypes: ALLOWED_MIME_TYPES
+          },
           traceId
         )
         uploadId = response?.uploadId

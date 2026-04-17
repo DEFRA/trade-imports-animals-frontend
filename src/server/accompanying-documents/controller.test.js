@@ -112,7 +112,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('Document 3'))
     })
 
-    test('Should include meta refresh when any document is PENDING', async () => {
+    test('Should show manual refresh link (not meta-refresh) when any document is PENDING', async () => {
       getSessionValue.mockImplementation((request, key) => {
         if (key === 'documents') return [TEST_DOCUMENTS[0]]
         return null
@@ -131,8 +131,11 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(
+      expect(result).not.toEqual(
         expect.stringContaining('meta http-equiv="refresh"')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('Refresh virus scan status')
       )
     })
 
@@ -209,6 +212,10 @@ describe('#accompanyingDocumentsController', () => {
   })
 
   describe('POST /accompanying-documents', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
     test('Should re-render with 400 when documentType is invalid', async () => {
       const { statusCode, result } = await server.inject({
         method: 'POST',
@@ -279,10 +286,10 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('Select a file to upload'))
     })
 
-    test('Should redirect to /accompanying-documents without calling documentClient.initiate when documentType is empty', async () => {
+    test('Should re-render with 400 and Select a document type error when documentType is empty', async () => {
       documentClient.initiate.mockClear()
 
-      const { statusCode, headers } = await server.inject({
+      const { statusCode, result } = await server.inject({
         method: 'POST',
         url: '/accompanying-documents',
         auth: {
@@ -298,8 +305,9 @@ describe('#accompanyingDocumentsController', () => {
         }
       })
 
-      expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/accompanying-documents')
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(expect.stringContaining('Select a document type'))
       expect(documentClient.initiate).not.toHaveBeenCalled()
     })
 
@@ -372,14 +380,13 @@ describe('#accompanyingDocumentsController', () => {
           expect.objectContaining({
             uploadId: 'TEST-UPLOAD-ID',
             documentType: 'ITAHC',
-            documentReference: 'REF-001'
+            documentReference: 'REF-001',
+            dateOfIssue: '2024-03-10'
           })
         ])
       )
       expect(statusCode).toBe(302)
       expect(headers.location).toBe('/accompanying-documents')
-
-      vi.unstubAllGlobals()
     })
 
     test('Should redirect to /accompanying-documents and NOT call setSessionValue when cdp-uploader returns non-3xx', async () => {
@@ -442,8 +449,6 @@ describe('#accompanyingDocumentsController', () => {
       expect(statusCode).toBe(302)
       expect(headers.location).toBe('/accompanying-documents')
       expect(setSessionValue).not.toHaveBeenCalled()
-
-      vi.unstubAllGlobals()
     })
 
     test('Should return 400 with error message when 10 documents already in session', async () => {

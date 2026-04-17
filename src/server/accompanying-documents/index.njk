@@ -9,15 +9,6 @@
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/details/macro.njk" import govukDetails %}
 
-{% block head %}
-  {{ super() }}
-  <noscript>
-    {% if anyPending and not timedOut %}
-      <meta http-equiv="refresh" content="3; url=?attempt={{ nextAttempt }}">
-    {% endif %}
-  </noscript>
-{% endblock %}
-
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
