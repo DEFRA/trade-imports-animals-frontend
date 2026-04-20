@@ -121,6 +121,27 @@ export const accompanyingDocumentsController = {
   post: {
     async handler(request, h) {
       const traceId = getTraceId() ?? ''
+      const { _action } = request.payload
+
+      if (_action?.startsWith('remove-')) {
+        const uploadId = _action.slice('remove-'.length)
+        try {
+          await documentClient.delete(uploadId, traceId)
+        } catch (err) {
+          request.logger.error(
+            `Failed to delete document from backend: ${err.message}`
+          )
+          return h.redirect('/accompanying-documents')
+        }
+        const documents = getSessionValue(request, 'documents') ?? []
+        setSessionValue(
+          request,
+          'documents',
+          documents.filter((d) => d.uploadId !== uploadId)
+        )
+        return h.redirect('/accompanying-documents')
+      }
+
       const {
         'issueDate-day': issueDateDay,
         'issueDate-month': issueDateMonth,

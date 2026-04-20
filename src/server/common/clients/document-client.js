@@ -34,6 +34,28 @@ export const documentClient = {
     return response.json()
   },
 
+  async delete(uploadId, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to delete document upload')
+      error.status = response.status
+      error.statusText = response.statusText
+
+      logger.error(`Failed to delete document upload: ${error.message}`)
+
+      throw error
+    }
+  },
+
   async getStatus(uploadId, traceId) {
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}`,

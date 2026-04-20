@@ -1,5 +1,4 @@
 import { accompanyingDocumentsController } from './controller.js'
-import { removeDocumentController } from './remove-controller.js'
 import { config } from '../../config/config.js'
 
 /**
@@ -36,14 +35,6 @@ export const accompanyingDocuments = {
               multipart: { output: 'annotated' }
             }
           }
-        },
-        {
-          method: 'POST',
-          path: '/accompanying-documents/remove',
-          options: authEnabled
-            ? { auth: { strategy: 'session', mode: 'try' } }
-            : { auth: false },
-          ...removeDocumentController.post
         }
       ])
     }

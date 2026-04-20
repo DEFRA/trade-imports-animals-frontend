@@ -211,7 +211,66 @@ describe('#accompanyingDocumentsController', () => {
     })
   })
 
-  describe('POST /accompanying-documents', () => {
+  describe('POST /accompanying-documents — remove action', () => {
+    beforeEach(() => {
+      vi.spyOn(documentClient, 'delete').mockResolvedValue(undefined)
+    })
+
+    test('Should delete from backend, update session, and redirect when _action is remove-{uploadId}', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-1' }
+      })
+
+      expect(statusCode).toBe(302)
+      expect(headers.location).toBe('/accompanying-documents')
+      expect(documentClient.delete).toHaveBeenCalledWith(
+        'UPLOAD-1',
+        expect.any(String)
+      )
+      expect(setSessionValue).toHaveBeenCalledWith(
+        expect.anything(),
+        'documents',
+        [TEST_DOCUMENTS[1]]
+      )
+    })
+
+    test('Should redirect without updating session when backend delete fails', async () => {
+      vi.spyOn(documentClient, 'delete').mockRejectedValue(
+        new Error('Backend error')
+      )
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-1' }
+      })
+
+      expect(statusCode).toBe(302)
+      expect(headers.location).toBe('/accompanying-documents')
+      expect(setSessionValue).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('POST /accompanying-documents — upload action', () => {
     afterEach(() => {
       vi.unstubAllGlobals()
     })
