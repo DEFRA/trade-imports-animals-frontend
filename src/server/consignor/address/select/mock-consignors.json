@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Astra Rosales",
+    "address": {
+      "addressLine1": "43 East Hague Extension",
+      "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+      "addressLine3": "Quasoccaecat ut ear, 30055",
+      "country": "Switzerland"
+    }
+  },
+  {
+    "name": "EuroStore Services",
+    "address": {
+      "addressLine1": "Rue de la Loi 200",
+      "addressLine2": "1040 Brussels",
+      "country": "Belgium"
+    }
+  },
+  {
+    "name": "Laiterie du Nord SARL",
+    "address": {
+      "addressLine1": "12 Rue de la Gare",
+      "addressLine2": "59000 Lille",
+      "country": "France"
+    }
+  }
+]
