@@ -11,8 +11,8 @@ import { commodityDetails } from './commodities/details/index.js'
 import { importReason } from './import-reason/index.js'
 import { additionalDetails } from './additional-details/index.js'
 import { animalsIdentificationDetails } from './commodities/identification/index.js'
-import { consignorAddress } from './consignor/address/index.js'
-import { consignorAddressSelect } from './consignor/address/select/index.js'
+import { addresses } from './addresses/index.js'
+import { consignorSelect } from './addresses/consignor/select/index.js'
 import { cphNumber } from './cph-number/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
@@ -38,8 +38,8 @@ export const router = {
         commodityDetails,
         animalsIdentificationDetails,
         additionalDetails,
-        consignorAddress,
-        consignorAddressSelect,
+        addresses,
+        consignorSelect,
         cphNumber
       ]
 

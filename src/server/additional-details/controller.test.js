@@ -124,7 +124,7 @@ describe('additionalDetailsController', () => {
       )
       expect(response).toEqual({
         statusCode: 302,
-        location: '/consignor/address'
+        location: '/addresses'
       })
     })
 

@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { consignorAddressController } from './controller.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
+import { addressesController } from './controller.js'
+import { notificationClient } from '../common/clients/notification-client.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -31,15 +31,15 @@ describe('addressesController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = consignorAddressController.get.handler(request, h)
+      const response = addressesController.get.handler(request, h)
 
-      expect(h.view).toHaveBeenCalledWith('consignor/address/index', {
+      expect(h.view).toHaveBeenCalledWith('addresses/index', {
         pageTitle: 'Addresses',
         heading: 'Addresses',
         referenceNumber: 'REF-123',
         selectedConsignor: null
       })
-      expect(response.template).toBe('consignor/address/index')
+      expect(response.template).toBe('addresses/index')
     })
 
     test('saves selected consignor from query and redirects to the address landing page', () => {
@@ -69,7 +69,7 @@ describe('addressesController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      consignorAddressController.get.handler(request, h)
+      addressesController.get.handler(request, h)
 
       expect(set).toHaveBeenCalledWith('consignor', {
         name: 'Astra Rosales',
@@ -81,7 +81,7 @@ describe('addressesController', () => {
         }
       })
       expect(h.view).toHaveBeenCalledWith(
-        'consignor/address/index',
+        'addresses/index',
         expect.objectContaining({
           selectedConsignor
         })
@@ -102,7 +102,7 @@ describe('addressesController', () => {
       redirect
     }
 
-    const response = await consignorAddressController.post.handler(request, h)
+    const response = await addressesController.post.handler(request, h)
 
     expect(notificationClient.submit).toHaveBeenCalledWith(request, 'trace-123')
     expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
@@ -132,7 +132,7 @@ describe('addressesController', () => {
       const redirect = createRedirect()
       const h = { redirect }
 
-      const response = await consignorAddressController.post.handler(request, h)
+      const response = await addressesController.post.handler(request, h)
 
       expect(notificationClient.submit).toHaveBeenCalledWith(
         request,
