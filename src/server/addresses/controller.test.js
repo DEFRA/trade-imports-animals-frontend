@@ -18,14 +18,14 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 }))
 
 vi.mock('../common/helpers/notification-helpers.js', () => ({
-  fetchNotification: vi.fn().mockReturnValue('REF-123'),
+  fetchNotification: vi.fn().mockResolvedValue({ referenceNumber: 'REF-123' }),
   submitNotification: vi.fn().mockResolvedValue(undefined)
 }))
 
 describe('addressesController', () => {
   describe('GET /addresses', () => {
-    test('renders addresses page using fetchNotification for referenceNumber', () => {
-      fetchNotification.mockReturnValue('REF-123')
+    test('renders addresses page using fetchNotification for referenceNumber', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
 
       const get = vi.fn((key) => {
         const values = { commodity: 'Fish' }
@@ -37,7 +37,7 @@ describe('addressesController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = addressesController.get.handler(request, h)
+      const response = await addressesController.get.handler(request, h)
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
@@ -72,8 +72,8 @@ describe('addressesController', () => {
       expect(response).toEqual({ statusCode: 302, location: '/addresses' })
     })
 
-    test('redirects even when backend submit fails', async () => {
-      submitNotification.mockResolvedValue(undefined)
+    test('propagates error when backend submit fails', async () => {
+      submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const get = vi.fn(() => null)
       const request = { yar: { get } }
@@ -81,9 +81,9 @@ describe('addressesController', () => {
         redirect: vi.fn((location) => ({ statusCode: 302, location }))
       }
 
-      const response = await addressesController.post.handler(request, h)
-
-      expect(response).toEqual({ statusCode: 302, location: '/addresses' })
+      await expect(
+        addressesController.post.handler(request, h)
+      ).rejects.toThrow('Backend error')
     })
   })
 })

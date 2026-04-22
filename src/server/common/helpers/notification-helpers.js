@@ -2,16 +2,21 @@ import { getSessionValue } from './session-helpers.js'
 import { notificationClient } from '../clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
-export function fetchNotification(request, logger) {
+export async function fetchNotification(request, logger) {
   const referenceNumber = getSessionValue(request, 'referenceNumber')
   const traceId = getTraceId() ?? ''
   if (referenceNumber) {
-    notificationClient.get(request, referenceNumber, traceId)
+    const notification = await notificationClient.get(
+      request,
+      referenceNumber,
+      traceId
+    )
     logger.info(
       `Notification retrieved from notification client: ${referenceNumber}`
     )
+    return notification
   }
-  return referenceNumber
+  return null
 }
 
 export async function submitNotification(request, traceId, logger) {
@@ -21,5 +26,6 @@ export async function submitNotification(request, traceId, logger) {
     return response
   } catch (error) {
     logger.error(`Failed to submit notification: ${error.message}`)
+    throw error
   }
 }

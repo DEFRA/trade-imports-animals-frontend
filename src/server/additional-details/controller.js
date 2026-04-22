@@ -13,12 +13,13 @@ const logger = createLogger()
 
 export const additionalDetailsController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       const certifiedFor = getSessionValue(_request, 'certifiedFor')
       const unweanedAnimals =
         getSessionValue(_request, 'unweanedAnimals') ?? 'no'
 
-      const referenceNumber = fetchNotification(_request, logger)
+      const notification = await fetchNotification(_request, logger)
+      const referenceNumber = notification?.referenceNumber ?? null
 
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',

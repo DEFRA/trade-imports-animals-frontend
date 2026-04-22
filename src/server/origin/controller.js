@@ -16,11 +16,12 @@ const logger = createLogger()
 
 export const originController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       logger.info(
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
-      const referenceNumber = fetchNotification(_request, logger)
+      const notification = await fetchNotification(_request, logger)
+      const referenceNumber = notification?.referenceNumber ?? null
 
       return h.view('origin/index', {
         pageTitle: 'Origin of the import',

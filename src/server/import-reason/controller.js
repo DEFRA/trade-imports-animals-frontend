@@ -13,10 +13,11 @@ const logger = createLogger()
 
 export const importReasonController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       const reasonForImport = getSessionValue(_request, 'reasonForImport')
 
-      const referenceNumber = fetchNotification(_request, logger)
+      const notification = await fetchNotification(_request, logger)
+      const referenceNumber = notification?.referenceNumber ?? null
 
       return h.view('import-reason/index', {
         pageTitle: 'Reason for import',
@@ -37,7 +38,7 @@ export const importReasonController = {
 
       await submitNotification(_request, traceId, logger)
 
-      return h.redirect('/commodities/details', { referenceNumber })
+      return h.redirect('/commodities/details')
     }
   }
 }

@@ -10,11 +10,12 @@ const logger = createLogger()
 
 export const addressesController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       logger.info(
         `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
       )
-      const referenceNumber = fetchNotification(_request, logger)
+      const notification = await fetchNotification(_request, logger)
+      const referenceNumber = notification?.referenceNumber ?? null
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',

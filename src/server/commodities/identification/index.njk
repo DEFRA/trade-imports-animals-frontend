@@ -36,8 +36,8 @@
           <tbody class="govuk-table__body">
           {% for species in speciesLst %}
             <tr class="govuk-table__row">
-              <td class="govuk-table__cell">0102</td>
-              <td class="govuk-table__cell">Live bovine animals</td>
+              <td class="govuk-table__cell">{{ commodityDetails.code }}</td>
+              <td class="govuk-table__cell">{{ commodityDetails.description }}</td>
               <td class="govuk-table__cell">{{ species.text }}, {{ typeOfCommodity }}</td>
               <td class="govuk-table__cell">{{ species.noOfAnimals }}</td>
             </tr>

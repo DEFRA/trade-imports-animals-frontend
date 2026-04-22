@@ -19,14 +19,14 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 }))
 
 vi.mock('../common/helpers/notification-helpers.js', () => ({
-  fetchNotification: vi.fn().mockReturnValue('REF-123'),
+  fetchNotification: vi.fn().mockResolvedValue({ referenceNumber: 'REF-123' }),
   submitNotification: vi.fn().mockResolvedValue(undefined)
 }))
 
 describe('importReasonController', () => {
   describe('GET reason for import', () => {
-    test('renders view with reasonForImport and calls fetchNotification when referenceNumber exists', () => {
-      fetchNotification.mockReturnValue('REF-123')
+    test('renders view with reasonForImport and calls fetchNotification when referenceNumber exists', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
 
       const get = vi.fn((key) => {
         const values = {
@@ -40,7 +40,7 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = importReasonController.get.handler(request, h)
+      const response = await importReasonController.get.handler(request, h)
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
@@ -58,8 +58,8 @@ describe('importReasonController', () => {
       expect(response.data.reasonForImport).toBe('internalMarket')
     })
 
-    test('renders view and does not call fetchNotification with referenceNumber when no referenceNumber', () => {
-      fetchNotification.mockReturnValue(null)
+    test('renders view and does not call fetchNotification with referenceNumber when no referenceNumber', async () => {
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
@@ -73,7 +73,7 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      importReasonController.get.handler(request, h)
+      await importReasonController.get.handler(request, h)
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
@@ -119,8 +119,8 @@ describe('importReasonController', () => {
       })
     })
 
-    test('redirects even when backend submit fails', async () => {
-      submitNotification.mockResolvedValue(undefined)
+    test('propagates error when backend submit fails', async () => {
+      submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
@@ -134,18 +134,9 @@ describe('importReasonController', () => {
         redirect: vi.fn((location) => ({ statusCode: 302, location }))
       }
 
-      const response = await importReasonController.post.handler(request, h)
-
-      expect(set).toHaveBeenCalledWith('reasonForImport', 'reEntry')
-      expect(submitNotification).toHaveBeenCalledWith(
-        request,
-        'trace-123',
-        expect.any(Object)
-      )
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/commodities/details'
-      })
+      await expect(
+        importReasonController.post.handler(request, h)
+      ).rejects.toThrow('Backend error')
     })
   })
 })

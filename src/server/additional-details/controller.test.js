@@ -19,14 +19,14 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 }))
 
 vi.mock('../common/helpers/notification-helpers.js', () => ({
-  fetchNotification: vi.fn().mockReturnValue('REF-123'),
+  fetchNotification: vi.fn().mockResolvedValue({ referenceNumber: 'REF-123' }),
   submitNotification: vi.fn().mockResolvedValue(undefined)
 }))
 
 describe('additionalDetailsController', () => {
   describe('GET /additional-details', () => {
-    test('renders view with session values and calls fetchNotification when referenceNumber exists', () => {
-      fetchNotification.mockReturnValue('REF-123')
+    test('renders view with session values and calls fetchNotification when referenceNumber exists', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
 
       const get = vi.fn((key) => {
         const values = {
@@ -41,7 +41,7 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = additionalDetailsController.get.handler(request, h)
+      const response = await additionalDetailsController.get.handler(request, h)
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
@@ -59,8 +59,8 @@ describe('additionalDetailsController', () => {
       expect(response.template).toBe('additional-details/index')
     })
 
-    test('defaults unweanedAnimals to "no" when not set in session', () => {
-      fetchNotification.mockReturnValue(null)
+    test('defaults unweanedAnimals to "no" when not set in session', async () => {
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
 
@@ -69,7 +69,7 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      additionalDetailsController.get.handler(request, h)
+      await additionalDetailsController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith(
         'additional-details/index',
@@ -80,8 +80,8 @@ describe('additionalDetailsController', () => {
       )
     })
 
-    test('does not call fetchNotification with a referenceNumber when no referenceNumber', () => {
-      fetchNotification.mockReturnValue(null)
+    test('does not call fetchNotification with a referenceNumber when no referenceNumber', async () => {
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
 
@@ -90,7 +90,7 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      additionalDetailsController.get.handler(request, h)
+      await additionalDetailsController.get.handler(request, h)
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
@@ -139,8 +139,8 @@ describe('additionalDetailsController', () => {
       })
     })
 
-    test('redirects even when backend submit fails', async () => {
-      submitNotification.mockResolvedValue(undefined)
+    test('propagates error when backend submit fails', async () => {
+      submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -157,15 +157,9 @@ describe('additionalDetailsController', () => {
         redirect: vi.fn((location) => ({ statusCode: 302, location }))
       }
 
-      const response = await additionalDetailsController.post.handler(
-        request,
-        h
-      )
-
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/accompanying-documents'
-      })
+      await expect(
+        additionalDetailsController.post.handler(request, h)
+      ).rejects.toThrow('Backend error')
     })
   })
 })

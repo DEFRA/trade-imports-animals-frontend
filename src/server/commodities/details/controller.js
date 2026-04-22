@@ -6,8 +6,26 @@ import {
 import { getTraceId } from '@defra/hapi-tracing'
 import { getTotal, toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const logger = createLogger()
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+const commodityDetailsPath = path.join(
+  dirname,
+  '../select/mock-commodity-details.json'
+)
+const commodityDetailsList = JSON.parse(
+  readFileSync(commodityDetailsPath, 'utf-8')
+)
+
+function toCommodityDetails(detailsList) {
+  if (Array.isArray(detailsList)) {
+    return detailsList.length > 0 ? detailsList[0] : null
+  }
+  return detailsList && typeof detailsList === 'object' ? detailsList : null
+}
 
 export const commodityDetailsController = {
   get: {
@@ -30,7 +48,8 @@ export const commodityDetailsController = {
         typeOfCommodity,
         speciesLst,
         totalNoOfAnimals: commodityComplement?.totalNoOfAnimals ?? 0,
-        totalNoOfPackages: commodityComplement?.totalNoOfPackages ?? 0
+        totalNoOfPackages: commodityComplement?.totalNoOfPackages ?? 0,
+        commodityDetails: toCommodityDetails(commodityDetailsList)
       })
     }
   },
@@ -42,7 +61,6 @@ export const commodityDetailsController = {
 
       const traceId = getTraceId() ?? ''
       const commodity = getSessionValue(_request, 'commodity')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const speciesLst = commodityComplement?.species ?? []
@@ -69,7 +87,7 @@ export const commodityDetailsController = {
 
       await submitNotification(_request, traceId, logger)
 
-      return h.redirect('/commodities/identification', { referenceNumber })
+      return h.redirect('/commodities/identification')
     }
   }
 }

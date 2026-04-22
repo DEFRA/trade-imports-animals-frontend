@@ -173,7 +173,7 @@ describe('#commoditiesController', () => {
       expect(sessionCookie).toBeTruthy()
     })
 
-    test('Should handle when backend submit fails', async () => {
+    test('Should return 500 when backend submit fails', async () => {
       notificationClient.submit = vi.fn().mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: 500,
@@ -193,10 +193,9 @@ describe('#commoditiesController', () => {
         }
       }
 
-      const { statusCode, headers } = await server.inject(options)
+      const { statusCode } = await server.inject(options)
 
-      expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/commodities/select')
+      expect(statusCode).toBe(500)
     })
   })
 })

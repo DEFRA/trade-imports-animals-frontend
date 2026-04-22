@@ -53,7 +53,8 @@ describe('animalIdentificationDetailsController', () => {
         referenceNumber: 'REF-456',
         commodity,
         typeOfCommodity: 'Domestic',
-        speciesLst: commodity.commodityComplement[1].species
+        speciesLst: commodity.commodityComplement[1].species,
+        commodityDetails: expect.objectContaining({ code: expect.any(String) })
       })
 
       expect(response.template).toBe('commodities/identification/index')
@@ -118,11 +119,7 @@ describe('animalIdentificationDetailsController', () => {
       }
 
       const h = {
-        redirect: vi.fn((location, state) => ({
-          statusCode: 302,
-          location,
-          state
-        }))
+        redirect: vi.fn((location) => ({ statusCode: 302, location }))
       }
 
       const response = await animalIdentificationDetailsController.post.handler(
@@ -156,17 +153,14 @@ describe('animalIdentificationDetailsController', () => {
         request,
         'trace-123'
       )
-      expect(h.redirect).toHaveBeenCalledWith('/additional-details', {
-        referenceNumber: 'REF-789'
-      })
+      expect(h.redirect).toHaveBeenCalledWith('/additional-details')
       expect(response).toEqual({
         statusCode: 302,
-        location: '/additional-details',
-        state: { referenceNumber: 'REF-789' }
+        location: '/additional-details'
       })
     })
 
-    test('redirects even when notification submit fails', async () => {
+    test('propagates error when notification submit fails', async () => {
       vi.spyOn(notificationClient, 'submit').mockRejectedValue(
         new Error('Backend error')
       )
@@ -203,16 +197,9 @@ describe('animalIdentificationDetailsController', () => {
         }))
       }
 
-      const response = await animalIdentificationDetailsController.post.handler(
-        request,
-        h
-      )
-
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/additional-details',
-        state: { referenceNumber: 'REF-ERR' }
-      })
+      await expect(
+        animalIdentificationDetailsController.post.handler(request, h)
+      ).rejects.toThrow('Backend error')
     })
   })
 })

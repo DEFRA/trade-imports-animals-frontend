@@ -73,7 +73,6 @@ export const commoditiesSelectController = {
       )
 
       const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const commodity = getSessionValue(_request, 'commodity')
       const existingCommodityComplement = (
         commodity?.commodityComplement ?? []
@@ -130,7 +129,7 @@ export const commoditiesSelectController = {
 
       await submitNotification(_request, traceId, logger)
 
-      return h.redirect('/import-reason', { referenceNumber })
+      return h.redirect('/import-reason')
     }
   }
 }

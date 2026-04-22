@@ -177,13 +177,12 @@ describe('commoditiesSelectController', () => {
       })
     })
 
-    test('Should handle when backend submit fails', async () => {
+    test('Should propagate error when backend submit fails', async () => {
       const submitError = Object.assign(new Error('Backend error'), {
         status: 500,
         statusText: 'Internal Server Error'
       })
 
-      // The controller catches the error and still redirects.
       notificationClient.submit.mockRejectedValue(submitError)
 
       const set = vi.fn()
@@ -210,15 +209,9 @@ describe('commoditiesSelectController', () => {
         redirect: vi.fn((location) => ({ statusCode: 302, location }))
       }
 
-      const response = await commoditiesSelectController.post.handler(
-        request,
-        h
-      )
-
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/import-reason'
-      })
+      await expect(
+        commoditiesSelectController.post.handler(request, h)
+      ).rejects.toThrow('Backend error')
     })
   })
 })

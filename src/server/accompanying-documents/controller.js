@@ -125,6 +125,16 @@ export const accompanyingDocumentsController = {
 
       if (_action?.startsWith('remove-')) {
         const uploadId = _action.slice('remove-'.length)
+        const sessionDocuments = getSessionValue(request, 'documents') ?? []
+        const ownedBySession = sessionDocuments.some(
+          (d) => d.uploadId === uploadId
+        )
+        if (!ownedBySession) {
+          request.logger.warn(
+            `Remove rejected: uploadId=${uploadId} not found in session`
+          )
+          return h.response('Bad Request').code(statusCodes.badRequest)
+        }
         try {
           await documentClient.delete(uploadId, traceId)
         } catch (err) {
@@ -133,11 +143,10 @@ export const accompanyingDocumentsController = {
           )
           return h.redirect('/accompanying-documents')
         }
-        const documents = getSessionValue(request, 'documents') ?? []
         setSessionValue(
           request,
           'documents',
-          documents.filter((d) => d.uploadId !== uploadId)
+          sessionDocuments.filter((d) => d.uploadId !== uploadId)
         )
         return h.redirect('/accompanying-documents')
       }
@@ -291,7 +300,31 @@ export const accompanyingDocumentsController = {
         )
       } catch (err) {
         request.logger.error(`Failed to upload document: ${err.message}`)
-        return h.redirect('/accompanying-documents')
+        const attempt = parseInt(request.query.attempt ?? '0', 10)
+        const rawDocuments = getSessionValue(request, 'documents') ?? []
+        const documentsWithStatus = await getDocumentsWithStatus(
+          rawDocuments,
+          traceId,
+          request.logger
+        )
+        return h
+          .view(
+            'accompanying-documents/index',
+            buildPageModel(documentsWithStatus, attempt, {
+              documentType,
+              documentReference,
+              issueDate_day: issueDateDay,
+              issueDate_month: issueDateMonth,
+              issueDate_year: issueDateYear,
+              errorList: [
+                {
+                  href: '#file',
+                  text: 'The file could not be uploaded. Try again.'
+                }
+              ]
+            })
+          )
+          .code(statusCodes.internalServerError)
       }
 
       documents.push({

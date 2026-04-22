@@ -4,12 +4,12 @@ export const accompanyingDocumentsLighthouseConfig = {
     {
       name: 'accompanyingDocumentsPage',
       preset: 'mobile',
-      thresholds: { performance: 0.8, accessibility: 0.7, bestPractices: 0.7 }
+      thresholds: { performance: 0.8, accessibility: 0.9, bestPractices: 0.7 }
     },
     {
       name: 'accompanyingDocumentsPage',
       preset: 'desktop',
-      thresholds: { performance: 0.6, accessibility: 0.6, bestPractices: 0.8 }
+      thresholds: { performance: 0.6, accessibility: 0.9, bestPractices: 0.8 }
     }
   ]
 }

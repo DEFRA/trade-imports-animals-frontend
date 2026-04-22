@@ -27,10 +27,15 @@ describe('fetchNotification', () => {
   const logger = { info: vi.fn(), error: vi.fn() }
   const request = {}
 
-  test('calls notificationClient.get, logs, and returns referenceNumber when referenceNumber is in session', () => {
+  test('calls notificationClient.get, logs, and returns notification object when referenceNumber is in session', async () => {
+    const mockNotification = {
+      referenceNumber: 'REF-123',
+      origin: { countryCode: 'DE' }
+    }
     getSessionValue.mockReturnValue('REF-123')
+    notificationClient.get.mockResolvedValue(mockNotification)
 
-    const result = fetchNotification(request, logger)
+    const result = await fetchNotification(request, logger)
 
     expect(notificationClient.get).toHaveBeenCalledWith(
       request,
@@ -40,15 +45,15 @@ describe('fetchNotification', () => {
     expect(logger.info).toHaveBeenCalledWith(
       'Notification retrieved from notification client: REF-123'
     )
-    expect(result).toBe('REF-123')
+    expect(result).toBe(mockNotification)
   })
 
-  test('does not call notificationClient.get and returns null/undefined when no referenceNumber in session', () => {
+  test('does not call notificationClient.get and returns null when no referenceNumber in session', async () => {
     getSessionValue.mockReturnValue(null)
     notificationClient.get.mockClear()
     logger.info.mockClear()
 
-    const result = fetchNotification(request, logger)
+    const result = await fetchNotification(request, logger)
 
     expect(notificationClient.get).not.toHaveBeenCalled()
     expect(logger.info).not.toHaveBeenCalled()
@@ -72,15 +77,17 @@ describe('submitNotification', () => {
     expect(result).toBe(mockResponse)
   })
 
-  test('logs error and returns undefined when notificationClient.submit rejects', async () => {
-    notificationClient.submit.mockRejectedValue(new Error('Network failure'))
+  test('logs error and re-throws when notificationClient.submit rejects', async () => {
+    const networkError = new Error('Network failure')
+    notificationClient.submit.mockRejectedValue(networkError)
     logger.error.mockClear()
 
-    const result = await submitNotification(request, traceId, logger)
+    await expect(submitNotification(request, traceId, logger)).rejects.toThrow(
+      'Network failure'
+    )
 
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to submit notification: Network failure'
     )
-    expect(result).toBeUndefined()
   })
 })

@@ -245,6 +245,27 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
+    test('Should return 400 and not call delete when uploadId is not in session', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-UNKNOWN' }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(documentClient.delete).not.toHaveBeenCalled()
+      expect(setSessionValue).not.toHaveBeenCalled()
+    })
+
     test('Should redirect without updating session when backend delete fails', async () => {
       vi.spyOn(documentClient, 'delete').mockRejectedValue(
         new Error('Backend error')
@@ -448,7 +469,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(headers.location).toBe('/accompanying-documents')
     })
 
-    test('Should redirect to /accompanying-documents and NOT call setSessionValue when cdp-uploader returns non-3xx', async () => {
+    test('Should re-render with 500 and error message and NOT call setSessionValue when cdp-uploader returns non-3xx', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 200 }))
 
       documentClient.initiate.mockResolvedValue({
@@ -492,7 +513,7 @@ describe('#accompanyingDocumentsController', () => {
         `--${boundary}--`
       ].join('\r\n')
 
-      const { statusCode, headers } = await server.inject({
+      const { statusCode, result } = await server.inject({
         method: 'POST',
         url: '/accompanying-documents',
         auth: {
@@ -505,8 +526,73 @@ describe('#accompanyingDocumentsController', () => {
         payload: Buffer.from(body, 'binary')
       })
 
-      expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/accompanying-documents')
+      expect(statusCode).toBe(statusCodes.internalServerError)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(
+        expect.stringContaining('The file could not be uploaded. Try again.')
+      )
+      expect(setSessionValue).not.toHaveBeenCalled()
+    })
+
+    test('Should re-render with 500 and upload error when documentClient.initiate rejects', async () => {
+      vi.spyOn(documentClient, 'initiate').mockRejectedValueOnce(
+        new Error('Backend unavailable')
+      )
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return []
+        if (key === 'referenceNumber') return 'REF-123'
+        return null
+      })
+
+      const boundary = '----TestBoundaryInitFail'
+      const fileContent = Buffer.from('fake pdf content')
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentType"',
+        '',
+        'ITAHC',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentReference"',
+        '',
+        'REF-001',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-day"',
+        '',
+        '10',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-month"',
+        '',
+        '3',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-year"',
+        '',
+        '2024',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
+        'Content-Type: application/pdf',
+        '',
+        fileContent.toString('binary'),
+        `--${boundary}--`
+      ].join('\r\n')
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      expect(statusCode).toBe(statusCodes.internalServerError)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(
+        expect.stringContaining('The file could not be uploaded. Try again.')
+      )
       expect(setSessionValue).not.toHaveBeenCalled()
     })
 
