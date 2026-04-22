@@ -9,7 +9,7 @@
 
   {{ govukBackLink({
     text: "Back",
-    href: "/consignor/address"
+    href: "/addresses"
   }) }}
 
   <div class="govuk-grid-row">
@@ -43,7 +43,7 @@
                       </td>
                       <td class="govuk-table__cell">{{ consignor.address.country }}</td>
                       <td class="govuk-table__cell">
-                        <a href="/consignor/address?selectedConsignor={{ loop.index0 }}" id="selectedConsignor-{{ loop.index0 }}">Select</a>
+                        <a href="/addresses?selectedConsignor={{ loop.index0 }}" id="selectedConsignor-{{ loop.index0 }}">Select</a>
                       </td>
                     </tr>
                   {% endfor %}
@@ -52,11 +52,6 @@
               </fieldset>
             </div>
           </div>
-
-          <button type="submit" class="govuk-button" data-module="govuk-button">
-            Save and continue
-          </button>
-
         </form>
       </div>
     </div>
