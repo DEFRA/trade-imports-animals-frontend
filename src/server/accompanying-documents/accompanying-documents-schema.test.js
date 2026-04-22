@@ -95,20 +95,48 @@ describe('#accompanyingDocumentsSchema', () => {
   })
 
   describe('cross-field partial date validation (validatePartialDate)', () => {
-    test('Should return error when only day is provided', () => {
-      const error = validatePartialDate({ 'issueDate-day': 15 })
+    test('Should return error for all three fields when date is completely absent (empty strings)', () => {
+      const error = validatePartialDate({
+        'issueDate-day': '',
+        'issueDate-month': '',
+        'issueDate-year': ''
+      })
       expect(error).not.toBeNull()
-      expect(error.details[0].message).toBe('Enter a complete date of issue')
+      expect(error.details).toHaveLength(3)
+      expect(error.details[0].message).toBe('Enter a date of issue')
       expect(error.details[0].path).toEqual(['issueDate-day'])
+      expect(error.details[1].path).toEqual(['issueDate-month'])
+      expect(error.details[2].path).toEqual(['issueDate-year'])
     })
 
-    test('Should return error when day and month are provided but year is missing', () => {
+    test('Should return error for all three fields when date is completely absent (undefined)', () => {
+      const error = validatePartialDate({})
+      expect(error).not.toBeNull()
+      expect(error.details).toHaveLength(3)
+      expect(error.details[0].message).toBe('Enter a date of issue')
+    })
+
+    test('Should return error only for missing fields when only day is provided', () => {
+      const error = validatePartialDate({ 'issueDate-day': 15 })
+      expect(error).not.toBeNull()
+      expect(error.details).toHaveLength(2)
+      expect(error.details[0].message).toBe(
+        'Date of issue must include a month'
+      )
+      expect(error.details[0].path).toEqual(['issueDate-month'])
+      expect(error.details[1].message).toBe('Date of issue must include a year')
+      expect(error.details[1].path).toEqual(['issueDate-year'])
+    })
+
+    test('Should return error only for year when day and month are provided', () => {
       const error = validatePartialDate({
         'issueDate-day': 15,
         'issueDate-month': 6
       })
       expect(error).not.toBeNull()
-      expect(error.details[0].message).toBe('Enter a complete date of issue')
+      expect(error.details).toHaveLength(1)
+      expect(error.details[0].message).toBe('Date of issue must include a year')
+      expect(error.details[0].path).toEqual(['issueDate-year'])
     })
 
     test('Should return null when all three date parts are provided', () => {
@@ -120,33 +148,28 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error).toBeNull()
     })
 
-    test('Should return null when all date parts are empty (no date provided)', () => {
-      const error = validatePartialDate({
-        'issueDate-day': '',
-        'issueDate-month': '',
-        'issueDate-year': ''
-      })
-      expect(error).toBeNull()
-    })
-
-    test('Should return error when date is not a real calendar date (31 Feb)', () => {
+    test('Should return error for all three fields when date is not a real calendar date (31 Feb)', () => {
       const error = validatePartialDate({
         'issueDate-day': '31',
         'issueDate-month': '2',
         'issueDate-year': '2024'
       })
       expect(error).not.toBeNull()
+      expect(error.details).toHaveLength(3)
       expect(error.details[0].message).toBe('Enter a real date of issue')
       expect(error.details[0].path).toEqual(['issueDate-day'])
+      expect(error.details[1].path).toEqual(['issueDate-month'])
+      expect(error.details[2].path).toEqual(['issueDate-year'])
     })
 
-    test('Should return error when day is out of range (32nd of a month)', () => {
+    test('Should return error for all three fields when day is out of range (32nd of a month)', () => {
       const error = validatePartialDate({
         'issueDate-day': '32',
         'issueDate-month': '1',
         'issueDate-year': '2024'
       })
       expect(error).not.toBeNull()
+      expect(error.details).toHaveLength(3)
       expect(error.details[0].message).toBe('Enter a real date of issue')
       expect(error.details[0].path).toEqual(['issueDate-day'])
     })

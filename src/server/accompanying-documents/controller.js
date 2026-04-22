@@ -175,9 +175,8 @@ export const accompanyingDocumentsController = {
 
       const partialDateError = validatePartialDate(request.payload)
 
-      const schemaErrors = []
-      if (error) schemaErrors.push(...error.details)
-      if (partialDateError) schemaErrors.push(...partialDateError.details)
+      const schemaErrors = error ? error.details : []
+      const dateErrors = partialDateError ? partialDateError.details : []
 
       const documents = getSessionValue(request, 'documents') ?? []
       if (documents.length >= 10) {
@@ -208,16 +207,16 @@ export const accompanyingDocumentsController = {
         : ''
       const validFileType = !hasFile || ALLOWED_EXTENSIONS.has(ext)
 
-      const allErrors = [...schemaErrors]
+      const fileErrors = []
       if (!hasFile) {
-        allErrors.push({
+        fileErrors.push({
           message: 'Select a file to upload',
           path: ['file'],
           type: 'any.required',
           context: { label: 'file', key: 'file' }
         })
       } else if (!validFileType) {
-        allErrors.push({
+        fileErrors.push({
           message:
             'The selected file must be a PDF, DOC, DOCX, JPEG, PNG or XLS',
           path: ['file'],
@@ -225,6 +224,8 @@ export const accompanyingDocumentsController = {
           context: { label: 'file', key: 'file' }
         })
       }
+
+      const allErrors = [...schemaErrors, ...dateErrors, ...fileErrors]
 
       if (allErrors.length > 0) {
         const attempt = parseInt(request.query.attempt ?? '0', 10)
@@ -235,7 +236,16 @@ export const accompanyingDocumentsController = {
           request.logger
         )
 
-        const formattedErrors = formatValidationErrors({ details: allErrors })
+        // Error summary: one entry per date group — only first date error links to the date input.
+        // Field errors: all date errors, so each individual input can be highlighted correctly.
+        const summaryErrors = [
+          ...schemaErrors,
+          ...dateErrors.slice(0, 1),
+          ...fileErrors
+        ]
+        const { errorList } = formatValidationErrors({ details: summaryErrors })
+        const { fieldErrors } = formatValidationErrors({ details: allErrors })
+
         return h
           .view(
             'accompanying-documents/index',
@@ -246,8 +256,8 @@ export const accompanyingDocumentsController = {
               issueDate_month: issueDateMonth,
               issueDate_year: issueDateYear,
               crumb,
-              errorList: formattedErrors.errorList,
-              fieldErrors: formattedErrors.fieldErrors
+              errorList,
+              fieldErrors
             })
           )
           .code(statusCodes.badRequest)

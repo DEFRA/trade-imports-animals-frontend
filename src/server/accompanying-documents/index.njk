@@ -139,6 +139,7 @@
             errorMessage: fieldErrors.documentReference if fieldErrors
           }) }}
 
+          {%- set dateErrorMessage = fieldErrors["issueDate-day"] or fieldErrors["issueDate-month"] or fieldErrors["issueDate-year"] -%}
           {{ govukDateInput({
             id: "issueDate",
             namePrefix: "issueDate",
@@ -150,21 +151,21 @@
             hint: {
               text: "For example, 27 3 2024"
             },
-            errorMessage: fieldErrors["issueDate-day"] if fieldErrors,
+            errorMessage: dateErrorMessage if fieldErrors,
             items: [
               {
                 name: "day",
-                classes: "govuk-input--width-2",
+                classes: ("govuk-input--error " if fieldErrors["issueDate-day"]) + "govuk-input--width-2",
                 value: issueDate_day if issueDate_day
               },
               {
                 name: "month",
-                classes: "govuk-input--width-2",
+                classes: ("govuk-input--error " if fieldErrors["issueDate-month"]) + "govuk-input--width-2",
                 value: issueDate_month if issueDate_month
               },
               {
                 name: "year",
-                classes: "govuk-input--width-4",
+                classes: ("govuk-input--error " if fieldErrors["issueDate-year"]) + "govuk-input--width-4",
                 value: issueDate_year if issueDate_year
               }
             ]
