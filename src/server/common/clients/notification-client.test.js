@@ -142,6 +142,48 @@ describe('#notificationClient', () => {
           }
         )
       })
+
+      test('Should send arrivalDate as ISO string when all parts are present', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            portOfEntry: 'ABERDEEN',
+            arrivalDate: { day: 5, month: 3, year: 2026 }
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.submit(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport.portOfEntry).toBe('ABERDEEN')
+        expect(body.transport.arrivalDate).toBe('2026-03-05')
+      })
+
+      test('Should omit arrivalDate from transport when any part is missing', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            portOfEntry: 'EDINBURGH',
+            arrivalDate: { day: null, month: 3, year: 2026 }
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.submit(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport.portOfEntry).toBe('EDINBURGH')
+        expect(body.transport.arrivalDate).toBeUndefined()
+      })
     })
 
     describe('When submit request fails', () => {
@@ -248,6 +290,33 @@ describe('#notificationClient', () => {
         )
 
         expect(result).toEqual(responseBody)
+      })
+
+      test('Should parse transport ISO arrivalDate back into session as day/month/year', async () => {
+        const responseBody = {
+          transport: {
+            portOfEntry: 'ABERDEEN',
+            arrivalDate: '2026-03-05'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'portOfEntry',
+          'ABERDEEN'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'arrivalDate',
+          { day: 5, month: 3, year: 2026 }
+        )
       })
     })
 

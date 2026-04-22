@@ -12,6 +12,7 @@ import { importReason } from './import-reason/index.js'
 import { additionalDetails } from './additional-details/index.js'
 import { animalsIdentificationDetails } from './commodities/identification/index.js'
 import { cphNumber } from './cph-number/index.js'
+import { portOfEntry } from './port-of-entry/index.js'
 import { addresses } from './addresses/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
@@ -38,7 +39,8 @@ export const router = {
         animalsIdentificationDetails,
         additionalDetails,
         addresses,
-        cphNumber
+        cphNumber,
+        portOfEntry
       ]
 
       if (authEnabled) {

@@ -3,7 +3,7 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { cphNumberSchema } from './cph-number-schema.js'
+import { portOfEntrySchema } from './port-of-entry-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { notificationClient } from '../common/clients/notification-client.js'
@@ -11,37 +11,48 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
-export const cphNumberController = {
+const PAGE_TITLE = 'Entry point and arrival at destination'
+const VIEW = 'port-of-entry/index'
+
+export const portOfEntryController = {
   get: {
     handler(_request, h) {
-      const cphNumber = getSessionValue(_request, 'cphNumber')
+      const portOfEntry = getSessionValue(_request, 'portOfEntry')
+      const arrivalDate = getSessionValue(_request, 'arrivalDate')
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
-      return h.view('cph-number/index', {
-        pageTitle: 'Add the County Parish Holding number (CPH)',
-        heading: 'Add the County Parish Holding number (CPH)',
-        cphNumber,
+      return h.view(VIEW, {
+        pageTitle: PAGE_TITLE,
+        portOfEntry,
+        arrivalDate,
         referenceNumber
       })
     }
   },
   post: {
     async handler(_request, h) {
-      const { cphNumber } = _request.payload
+      const portOfEntry = _request.payload.portOfEntry
+      const arrivalDay = _request.payload['arrivalDate-day']
+      const arrivalMonth = _request.payload['arrivalDate-month']
+      const arrivalYear = _request.payload['arrivalDate-year']
       const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
-      const { error } = cphNumberSchema.validate(_request.payload, {
+      const { error } = portOfEntrySchema.validate(_request.payload, {
         abortEarly: false
       })
 
       if (error) {
         const formattedErrors = formatValidationErrors(error)
         return h
-          .view('cph-number/index', {
-            pageTitle: 'Add the County Parish Holding number (CPH)',
-            heading: 'Add the County Parish Holding number (CPH)',
-            cphNumber,
+          .view(VIEW, {
+            pageTitle: PAGE_TITLE,
+            portOfEntry,
+            arrivalDate: {
+              day: arrivalDay,
+              month: arrivalMonth,
+              year: arrivalYear
+            },
             referenceNumber,
             errorList: formattedErrors.errorList,
             fieldErrors: formattedErrors.fieldErrors
@@ -49,8 +60,14 @@ export const cphNumberController = {
           .code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, 'cphNumber', cphNumber)
-      logger.info(`CPH number saved: ${cphNumber}`)
+      const arrivalDate = {
+        day: arrivalDay,
+        month: arrivalMonth,
+        year: arrivalYear
+      }
+      setSessionValue(_request, 'portOfEntry', portOfEntry)
+      setSessionValue(_request, 'arrivalDate', arrivalDate)
+      logger.info(`Port of entry saved: ${portOfEntry}`)
 
       try {
         await notificationClient.submit(_request, traceId)
@@ -58,10 +75,10 @@ export const cphNumberController = {
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
         return h
-          .view('cph-number/index', {
-            pageTitle: 'Add the County Parish Holding number (CPH)',
-            heading: 'Add the County Parish Holding number (CPH)',
-            cphNumber: getSessionValue(_request, 'cphNumber'),
+          .view(VIEW, {
+            pageTitle: PAGE_TITLE,
+            portOfEntry,
+            arrivalDate,
             referenceNumber,
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
