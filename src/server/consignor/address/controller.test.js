@@ -2,7 +2,6 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { consignorAddressController } from './controller.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
-import { statusCodes } from '../../common/constants/status-codes.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -90,7 +89,7 @@ describe('addressesController', () => {
     })
   })
 
-  test('shows error page when notification client throws', async () => {
+  test('redirects to cph-number when notification client throws', async () => {
     vi.spyOn(notificationClient, 'submit').mockRejectedValue(
       new Error('Backend error')
     )
@@ -98,75 +97,27 @@ describe('addressesController', () => {
     const get = createYarGet()
 
     const request = { yar: { get } }
-    const code = vi.fn((statusCode) => ({ statusCode }))
+    const redirect = createRedirect()
     const h = {
-      view: vi.fn(() => ({ code })),
-      redirect: vi.fn()
+      redirect
     }
 
     const response = await consignorAddressController.post.handler(request, h)
 
-    expect(h.view).toHaveBeenCalledWith(
-      'consignor/address/index',
-      expect.objectContaining({
-        selectedConsignor: {
-          name: 'Astra Rosales',
-          address: {
-            addressLine1: '43 East Hague Extension',
-            country: 'Switzerland'
-          }
-        },
-        referenceNumber: 'REF-123',
-        errorList: [
-          { text: 'Something went wrong, please contact the EUDP team' }
-        ]
-      })
-    )
-    expect(code).toHaveBeenCalledWith(statusCodes.internalServerError)
-    expect(h.redirect).not.toHaveBeenCalled()
+    expect(notificationClient.submit).toHaveBeenCalledWith(request, 'trace-123')
+    expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
+      referenceNumber: 'REF-123'
+    })
     expect(response).toEqual({
-      statusCode: statusCodes.internalServerError
+      statusCode: 302,
+      location: '/cph-number',
+      opts: {
+        referenceNumber: 'REF-123'
+      }
     })
   })
 
   describe('POST addresses', () => {
-    test('throw validation error when no consignor is selected', async () => {
-      const set = vi.fn()
-      const get = createYarGet({
-        consignor: null
-      })
-
-      const request = {
-        yar: { get, set }
-      }
-
-      const code = vi.fn((statusCode) => ({ statusCode }))
-      const h = {
-        view: vi.fn(() => ({ code })),
-        redirect: vi.fn()
-      }
-
-      await consignorAddressController.post.handler(request, h)
-
-      expect(h.view).toHaveBeenCalledWith(
-        'consignor/address/index',
-        expect.objectContaining({
-          referenceNumber: 'REF-123',
-          selectedConsignor: null,
-          errorList: [
-            {
-              text: 'Select a consignor or exporter',
-              href: '#addConsignorOrExporter'
-            }
-          ]
-        })
-      )
-      expect(code).toHaveBeenCalledWith(statusCodes.badRequest)
-      expect(notificationClient.submit).not.toHaveBeenCalled()
-      expect(h.redirect).not.toHaveBeenCalled()
-      expect(set).not.toHaveBeenCalled()
-    })
-
     test('submit notification with selected consignor', async () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({
         referenceNumber: 'REF-123'
@@ -187,12 +138,12 @@ describe('addressesController', () => {
         request,
         'trace-123'
       )
-      expect(h.redirect).toHaveBeenCalledWith('/consignor/address', {
+      expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
         referenceNumber: 'REF-123'
       })
       expect(response).toEqual({
         statusCode: 302,
-        location: '/consignor/address',
+        location: '/cph-number',
         opts: {
           referenceNumber: 'REF-123'
         }

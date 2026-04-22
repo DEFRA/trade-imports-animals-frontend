@@ -8,7 +8,6 @@ import {
 } from '../../common/helpers/session-helpers.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
-import { statusCodes } from '../../common/constants/status-codes.js'
 
 const logger = createLogger()
 
@@ -57,44 +56,15 @@ export const consignorAddressController = {
 
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const traceId = getTraceId() ?? ''
-      const selectedConsignor = getSessionValue(_request, 'consignor')
-
-      if (!selectedConsignor) {
-        return h
-          .view('consignor/address/index', {
-            pageTitle: 'Addresses',
-            heading: 'Addresses',
-            referenceNumber,
-            selectedConsignor: null,
-            errorList: [
-              {
-                text: 'Select a consignor or exporter',
-                href: '#addConsignorOrExporter'
-              }
-            ]
-          })
-          .code(statusCodes.badRequest)
-      }
 
       try {
         await notificationClient.submit(_request, traceId)
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
-        return h
-          .view('consignor/address/index', {
-            pageTitle: 'Addresses',
-            heading: 'Addresses',
-            selectedConsignor: getSessionValue(_request, 'consignor'),
-            referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
-          })
-          .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/consignor/address', { referenceNumber })
+      return h.redirect('/cph-number', { referenceNumber })
     }
   }
 }
