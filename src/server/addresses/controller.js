@@ -14,7 +14,7 @@ const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const consignorsAddressesFilePath = path.join(
   dirname,
-  './consignor/select/mock-consignors.json'
+  './consignors/select/mock-consignors.json'
 )
 const consignors = JSON.parse(
   readFileSync(consignorsAddressesFilePath, 'utf-8')

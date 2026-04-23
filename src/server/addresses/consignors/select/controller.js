@@ -12,7 +12,7 @@ const consignors = JSON.parse(
   readFileSync(consignorsAddressesFilePath, 'utf-8')
 )
 
-export const consignorSelectController = {
+export const consignorsSelectController = {
   get: {
     handler(_request, h) {
       logger.info(
@@ -20,7 +20,7 @@ export const consignorSelectController = {
       )
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
-      return h.view('addresses/consignor/select/index', {
+      return h.view('addresses/consignors/select/index', {
         pageTitle: 'Search for an existing consignor or exporter',
         heading: 'Address',
         referenceNumber,

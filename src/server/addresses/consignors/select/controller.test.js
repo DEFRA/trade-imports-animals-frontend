@@ -36,7 +36,7 @@ describe('#addressSelectController', () => {
   test('GET select loads consignors from json file', async () => {
     const { result, statusCode } = await server.inject({
       method: 'GET',
-      url: '/consignor/select',
+      url: '/consignors/select',
       auth: {
         strategy: 'session',
         credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
