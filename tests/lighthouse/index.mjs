@@ -5,7 +5,7 @@ import { runLighthouse } from './run-lighthouse.js'
 import { signinLighthouseConfig } from './signin.config.js'
 import { signinOidcLighthouseConfig } from './signin-oidc.config.js'
 import { signoutLighthouseConfig } from './signout.config.js'
-import { authSignoutLighthouseConfig } from "./auth-signout.config.js";
+import { authSignoutLighthouseConfig } from "./auth-signout.config.js"
 import { signoutOidcLighthouseConfig } from './signout-oidc.config.js'
 import { organisationLighthouseConfig } from './organisation.config.js'
 import { originLighthouseConfig } from './origin.config.js'
@@ -17,8 +17,9 @@ import {importReasonLighthouseConfig} from "./import-reason.config.js";
 import {commodityDetailsLighthouseConfig} from "./commodities-details.config.js";
 import {additionalDetailsLighthouseConfig} from "./additional-details.config.js";
 import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
+import { addressesLighthouseConfig } from './addresses.config.js'
+import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
-import { addressesLighthouseConfig } from './addresses.config.js';
 import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
 
 const pageConfigs = [
@@ -36,10 +37,11 @@ const pageConfigs = [
   importReasonLighthouseConfig,
   commodityDetailsLighthouseConfig,
   additionalDetailsLighthouseConfig,
-  cphNumberLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig,
   addressesLighthouseConfig,
-  portOfEntryLighthouseConfig
+  portOfEntryLighthouseConfig,
+  consignorsSelectLighthouseConfig,
+  cphNumberLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
