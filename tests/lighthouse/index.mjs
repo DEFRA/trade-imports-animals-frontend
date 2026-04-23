@@ -18,7 +18,7 @@ import {commodityDetailsLighthouseConfig} from "./commodities-details.config.js"
 import {additionalDetailsLighthouseConfig} from "./additional-details.config.js";
 import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
 import { addressesLighthouseConfig } from './addresses.config.js'
-import { consignorSelectLighthouseConfig } from './consignor-select.config.js'
+import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
 
 const pageConfigs = [
@@ -38,7 +38,7 @@ const pageConfigs = [
   additionalDetailsLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig,
   addressesLighthouseConfig,
-  consignorSelectLighthouseConfig,
+  consignorsSelectLighthouseConfig,
   cphNumberLighthouseConfig
 ]
 
