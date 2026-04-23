@@ -20,6 +20,7 @@ import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identifi
 import { addressesLighthouseConfig } from './addresses.config.js'
 import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
+import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -38,6 +39,7 @@ const pageConfigs = [
   additionalDetailsLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig,
   addressesLighthouseConfig,
+  portOfEntryLighthouseConfig,
   consignorsSelectLighthouseConfig,
   cphNumberLighthouseConfig
 ]

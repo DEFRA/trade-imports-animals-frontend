@@ -51,7 +51,7 @@ describe('cphNumberController', () => {
   })
 
   describe('POST /cph-number', () => {
-    test('saves cphNumber to session, submits notification, and redirects to /cph-number', async () => {
+    test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({})
 
       const set = vi.fn()
@@ -72,7 +72,7 @@ describe('cphNumberController', () => {
         request,
         'trace-abc'
       )
-      expect(response).toEqual({ statusCode: 302, location: '/cph-number' })
+      expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {

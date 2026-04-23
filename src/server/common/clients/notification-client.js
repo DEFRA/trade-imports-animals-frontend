@@ -71,6 +71,20 @@ export const notificationClient = {
       notification.cphNumber = cphNumber
     }
 
+    // Build transport object from session values
+    const portOfEntry = getSessionValue(_request, 'portOfEntry')
+    const arrivalDate = getSessionValue(_request, 'arrivalDate')
+    const { day, month, year } = arrivalDate ?? {}
+    const arrivalDateIso =
+      day && month && year
+        ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        : null
+    if (portOfEntry || arrivalDateIso) {
+      notification.transport = {}
+      if (portOfEntry) notification.transport.portOfEntry = portOfEntry
+      if (arrivalDateIso) notification.transport.arrivalDate = arrivalDateIso
+    }
+
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications`,
       {
@@ -162,6 +176,24 @@ export const notificationClient = {
 
     if (notification.cphNumber) {
       setSessionValue(_request, 'cphNumber', notification.cphNumber)
+    }
+
+    if (notification.transport) {
+      if (notification.transport.portOfEntry) {
+        setSessionValue(
+          _request,
+          'portOfEntry',
+          notification.transport.portOfEntry
+        )
+      }
+      if (notification.transport.arrivalDate) {
+        const [y, m, d] = notification.transport.arrivalDate.split('-')
+        setSessionValue(_request, 'arrivalDate', {
+          day: Number(d),
+          month: Number(m),
+          year: Number(y)
+        })
+      }
     }
 
     return notification
