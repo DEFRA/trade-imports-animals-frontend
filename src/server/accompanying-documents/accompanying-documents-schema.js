@@ -2,7 +2,7 @@ import Joi from 'joi'
 
 export const DOCUMENT_TYPES = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
 
-const MAX_DOCUMENT_REFERENCE_LENGTH = 100
+export const MAX_DOCUMENT_REFERENCE_LENGTH = 100
 const MAX_DAY = 31
 const MAX_MONTH = 12
 const MIN_YEAR = 1900

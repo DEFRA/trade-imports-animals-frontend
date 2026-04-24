@@ -1,6 +1,7 @@
 import {
   accompanyingDocumentsSchema,
-  validatePartialDate
+  validatePartialDate,
+  MAX_DOCUMENT_REFERENCE_LENGTH
 } from './accompanying-documents-schema.js'
 
 describe('#accompanyingDocumentsSchema', () => {
@@ -33,12 +34,12 @@ describe('#accompanyingDocumentsSchema', () => {
 
     test('Should pass for each valid document type', () => {
       const validTypes = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
-      for (const type of validTypes) {
+      validTypes.forEach((type) => {
         const { error } = accompanyingDocumentsSchema.validate({
           documentType: type
         })
         expect(error).toBeUndefined()
-      }
+      })
     })
   })
 
@@ -77,18 +78,18 @@ describe('#accompanyingDocumentsSchema', () => {
     test('Should fail when documentReference exceeds 100 characters', () => {
       const { error } = accompanyingDocumentsSchema.validate({
         documentType: 'ITAHC',
-        documentReference: 'A'.repeat(101)
+        documentReference: 'A'.repeat(MAX_DOCUMENT_REFERENCE_LENGTH + 1)
       })
       expect(error).toBeDefined()
       expect(error.details[0].message).toBe(
-        'Document reference must be 100 characters or less'
+        `Document reference must be ${MAX_DOCUMENT_REFERENCE_LENGTH} characters or less`
       )
     })
 
     test('Should pass when documentReference is exactly 100 characters', () => {
       const { error } = accompanyingDocumentsSchema.validate({
         documentType: 'ITAHC',
-        documentReference: 'A'.repeat(100)
+        documentReference: 'A'.repeat(MAX_DOCUMENT_REFERENCE_LENGTH)
       })
       expect(error).toBeUndefined()
     })
