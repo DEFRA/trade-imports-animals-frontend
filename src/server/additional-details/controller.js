@@ -19,7 +19,7 @@ export const additionalDetailsController = {
         getSessionValue(_request, 'unweanedAnimals') ?? 'no'
 
       const notification = await fetchNotification(_request, logger)
-      const referenceNumber = notification?.referenceNumber ?? null
+      const referenceNumber = notification?.referenceNumber
 
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',
