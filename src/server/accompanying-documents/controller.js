@@ -37,9 +37,10 @@ const ALLOWED_MIME_TYPES = [
 ]
 
 const MAX_FILE_SIZE_BYTES = 52428800 // 50MB
+const MAX_DOCUMENTS = 10
 
-async function getDocumentsWithStatus(documents, traceId, logger) {
-  return Promise.all(
+const getDocumentsWithStatus = async (documents, traceId, logger) =>
+  Promise.all(
     documents.map(async (doc) => {
       try {
         const { scanStatus } = await documentClient.getStatus(
@@ -55,20 +56,21 @@ async function getDocumentsWithStatus(documents, traceId, logger) {
       }
     })
   )
-}
 
-function buildPageModel(documentsWithStatus, attempt, extra = {}) {
-  const anyPending = documentsWithStatus.some((d) => d.scanStatus === 'PENDING')
+const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
+  const anyPending = documentsWithStatus.some(
+    (doc) => doc.scanStatus === 'PENDING'
+  )
   const anyRejected = documentsWithStatus.some(
-    (d) => d.scanStatus === 'REJECTED'
+    (doc) => doc.scanStatus === 'REJECTED'
   )
   const timedOut = anyPending && attempt >= MAX_POLLING_ATTEMPTS
 
   const rejectedErrors = documentsWithStatus
-    .filter((d) => d.scanStatus === 'REJECTED')
-    .map((d) => ({
+    .filter((doc) => doc.scanStatus === 'REJECTED')
+    .map((doc) => ({
       href: '#documents-added',
-      text: `${d.filename} contains a virus. Remove it and try again with a different file.`
+      text: `${doc.filename} contains a virus. Remove it and try again with a different file.`
     }))
 
   return {
@@ -127,7 +129,7 @@ export const accompanyingDocumentsController = {
         const uploadId = _action.slice('remove-'.length)
         const sessionDocuments = getSessionValue(request, 'documents') ?? []
         const ownedBySession = sessionDocuments.some(
-          (d) => d.uploadId === uploadId
+          (doc) => doc.uploadId === uploadId
         )
         if (!ownedBySession) {
           request.logger.warn(
@@ -146,7 +148,7 @@ export const accompanyingDocumentsController = {
         setSessionValue(
           request,
           'documents',
-          sessionDocuments.filter((d) => d.uploadId !== uploadId)
+          sessionDocuments.filter((doc) => doc.uploadId !== uploadId)
         )
         return h.redirect('/accompanying-documents')
       }
@@ -179,7 +181,7 @@ export const accompanyingDocumentsController = {
       const dateErrors = partialDateError ? partialDateError.details : []
 
       const documents = getSessionValue(request, 'documents') ?? []
-      if (documents.length >= 10) {
+      if (documents.length >= MAX_DOCUMENTS) {
         const documentsWithStatus = await getDocumentsWithStatus(
           documents,
           traceId,
@@ -192,7 +194,7 @@ export const accompanyingDocumentsController = {
               errorList: [
                 {
                   href: '#documentType',
-                  text: 'You can add a maximum of 10 documents'
+                  text: `You can add a maximum of ${MAX_DOCUMENTS} documents`
                 }
               ]
             })
@@ -290,9 +292,9 @@ export const accompanyingDocumentsController = {
 
         const formData = new FormData()
         const contentType =
-          fileData.headers?.['content-type'] || 'application/octet-stream'
+          fileData.headers?.['content-type'] ?? 'application/octet-stream'
         const blob = new Blob([fileData.payload], { type: contentType })
-        formData.append('file', blob, fileData.filename || 'upload')
+        formData.append('file', blob, fileData.filename ?? 'upload')
 
         const uploadResponse = await fetch(response.uploadUrl, {
           method: 'POST',
@@ -339,7 +341,7 @@ export const accompanyingDocumentsController = {
 
       documents.push({
         uploadId,
-        filename: fileData.filename || 'upload',
+        filename: fileData.filename ?? 'upload',
         documentType,
         documentReference,
         dateOfIssue
