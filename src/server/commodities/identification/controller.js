@@ -20,11 +20,12 @@ const commodityDetailsList = JSON.parse(
   readFileSync(commodityDetailsPath, 'utf-8')
 )
 
-function toCommodityDetails(detailsList) {
+const toCommodityDetails = (detailsList) => {
   if (Array.isArray(detailsList)) {
     return detailsList.length > 0 ? detailsList[0] : null
   }
-  return detailsList && typeof detailsList === 'object' ? detailsList : null
+  if (detailsList === null || detailsList === undefined) return null
+  return typeof detailsList === 'object' ? detailsList : null
 }
 
 export const animalIdentificationDetailsController = {
