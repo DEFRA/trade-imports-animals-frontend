@@ -185,7 +185,7 @@ describe('#originController', () => {
     test('Should return 500 when backend submit fails', async () => {
       notificationClient.submit.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
-          status: 500,
+          status: statusCodes.internalServerError,
           statusText: 'Internal Server Error'
         })
       )
@@ -205,7 +205,7 @@ describe('#originController', () => {
 
       const { statusCode } = await server.inject(options)
 
-      expect(statusCode).toBe(500)
+      expect(statusCode).toBe(statusCodes.internalServerError)
     })
   })
 })
