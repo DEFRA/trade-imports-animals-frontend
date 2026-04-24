@@ -1,13 +1,17 @@
 const MAX_ATTEMPTS = 10
 const POLL_INTERVAL = 3000
+const SCAN_STATUS_PENDING = 'PENDING'
+const SCAN_STATUS_COMPLETE = 'COMPLETE'
+const SCAN_STATUS_REJECTED = 'REJECTED'
 
-function getPendingRows() {
-  return Array.from(
-    document.querySelectorAll('[data-upload-id][data-scan-status="PENDING"]')
+const getPendingRows = () =>
+  Array.from(
+    document.querySelectorAll(
+      `[data-upload-id][data-scan-status="${SCAN_STATUS_PENDING}"]`
+    )
   )
-}
 
-function announceStatus(message) {
+const announceStatus = (message) => {
   let liveRegion = document.getElementById('js-scan-status-announcer')
   if (!liveRegion) {
     liveRegion = document.createElement('div')
@@ -20,16 +24,16 @@ function announceStatus(message) {
   liveRegion.textContent = message
 }
 
-function updateRow(row, scanStatus) {
+const updateRow = (row, scanStatus) => {
   row.dataset.scanStatus = scanStatus
   const tag = row.querySelector('.govuk-tag')
   if (!tag) return
 
-  if (scanStatus === 'COMPLETE') {
+  if (scanStatus === SCAN_STATUS_COMPLETE) {
     tag.textContent = 'Safe'
     tag.className = 'govuk-tag govuk-tag--green'
     announceStatus('Document scan complete: safe to use')
-  } else if (scanStatus === 'REJECTED') {
+  } else if (scanStatus === SCAN_STATUS_REJECTED) {
     tag.textContent = 'Virus found'
     tag.className = 'govuk-tag govuk-tag--red'
     announceStatus(
@@ -38,7 +42,7 @@ function updateRow(row, scanStatus) {
   }
 }
 
-async function pollStatus(attempt = 0) {
+const pollStatus = async (attempt = 0) => {
   if (attempt >= MAX_ATTEMPTS) {
     // Show the timed-out hint that the server-rendered template already includes
     const timedOutHint = document.getElementById('js-timeout-message')
@@ -73,7 +77,9 @@ async function pollStatus(attempt = 0) {
     }
   })
 
-  const stillPending = documents.some((d) => d.scanStatus === 'PENDING')
+  const stillPending = documents.some(
+    (doc) => doc.scanStatus === SCAN_STATUS_PENDING
+  )
   if (stillPending) {
     setTimeout(() => pollStatus(attempt + 1), POLL_INTERVAL)
   } else {
