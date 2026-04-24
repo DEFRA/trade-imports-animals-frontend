@@ -1,5 +1,6 @@
 import { addressesController } from './controller.js'
 import { consignorsSelectController } from './consignors/select/controller.js'
+import { destinationsSelectController } from './destinations/select/controller.js'
 
 export const addresses = {
   plugin: {
@@ -15,6 +16,11 @@ export const addresses = {
           method: 'GET',
           path: '/consignors/select',
           ...consignorsSelectController.get
+        },
+        {
+          method: 'GET',
+          path: '/destinations/select',
+          ...destinationsSelectController.get
         },
         {
           method: 'POST',
