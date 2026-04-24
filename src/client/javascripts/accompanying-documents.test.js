@@ -26,12 +26,15 @@ const TABLE_COMPLETE = `
 
 let originalFetch
 
-function makeFetchOk(docs) {
-  return vi.fn().mockResolvedValue({
+const POLL_INTERVAL_MS = 3000
+const MAX_POLL_ATTEMPTS = 10
+const TOTAL_POLL_CYCLES = MAX_POLL_ATTEMPTS + 1
+
+const makeFetchOk = (docs) =>
+  vi.fn().mockResolvedValue({
     ok: true,
     json: () => Promise.resolve({ documents: docs })
   })
-}
 
 describe('#accompanyingDocuments', () => {
   beforeEach(() => {
@@ -84,7 +87,7 @@ describe('#accompanyingDocuments', () => {
 
       // Advance exactly one poll interval so only the first poll fires;
       // runAllTimersAsync would recursively drain all retries up to MAX_ATTEMPTS.
-      await vi.advanceTimersByTimeAsync(3000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
 
       expect(vi.getTimerCount()).toBe(1)
     })
@@ -96,7 +99,7 @@ describe('#accompanyingDocuments', () => {
       await import('./accompanying-documents.js')
       expect(vi.getTimerCount()).toBe(1)
 
-      await vi.advanceTimersByTimeAsync(3000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
 
       expect(vi.getTimerCount()).toBe(1)
     })
@@ -111,7 +114,7 @@ describe('#accompanyingDocuments', () => {
       await import('./accompanying-documents.js')
       expect(vi.getTimerCount()).toBe(1)
 
-      await vi.advanceTimersByTimeAsync(3000)
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
 
       expect(vi.getTimerCount()).toBe(1)
     })
@@ -195,8 +198,8 @@ describe('#accompanyingDocuments', () => {
       // Advance one POLL_INTERVAL at a time.
       // Attempts 0–9 each fetch (returning PENDING) and reschedule.
       // The 11th advance triggers pollStatus(10) which hits MAX_ATTEMPTS and stops.
-      for (let i = 0; i < 11; i++) {
-        await vi.advanceTimersByTimeAsync(3000)
+      for (let i = 0; i < TOTAL_POLL_CYCLES; i++) {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
       }
 
       const timeoutMsg = document.getElementById('js-timeout-message')
