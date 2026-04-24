@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Tech Imports Ltd",
+    "address": {
+      "addressLine1": "643 Main Street",
+      "addressLine2": "Birmingham G1 3AZ",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "United Commerce",
+    "address": {
+      "addressLine1": "446 Church Lane",
+      "addressLine2": "Manchester S1 2JE",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "Global Trading Co",
+    "address": {
+      "addressLine1": "945 Main Street",
+      "addressLine2": "London LS1 5AB",
+      "country": "United Kingdom"
+    }
+  }
+]

@@ -20,7 +20,8 @@ describe('addressesController', () => {
       const get = vi.fn((key) => {
         const values = {
           referenceNumber: 'REF-123',
-          selectedConsignor: null
+          selectedConsignor: null,
+          selectedDestination: null
         }
         return values[key] ?? null
       })
@@ -37,7 +38,8 @@ describe('addressesController', () => {
         pageTitle: 'Addresses',
         heading: 'Addresses',
         referenceNumber: 'REF-123',
-        selectedConsignor: null
+        selectedConsignor: null,
+        selectedDestination: null
       })
       expect(response.template).toBe('addresses/index')
     })
@@ -52,17 +54,26 @@ describe('addressesController', () => {
           country: 'Switzerland'
         }
       }
+      const selectedDestination = {
+        name: 'Tech Imports Ltd',
+        address: {
+          addressLine1: '643 Main Street',
+          addressLine2: 'Birmingham G1 3AZ',
+          country: 'United Kingdom'
+        }
+      }
       const get = vi.fn((key) => {
         const values = {
           referenceNumber: 'REF-123',
-          consignor: selectedConsignor
+          consignor: selectedConsignor,
+          destination: selectedDestination
         }
         return values[key] ?? null
       })
       const set = vi.fn()
 
       const request = {
-        query: { selectedConsignor: '0' },
+        query: { selectedConsignor: '0', selectedDestination: '0' },
         yar: { get, set }
       }
       const h = {
@@ -78,6 +89,14 @@ describe('addressesController', () => {
           addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
           addressLine3: 'Quasoccaecat ut ear, 30055',
           country: 'Switzerland'
+        }
+      })
+      expect(set).toHaveBeenCalledWith('destination', {
+        name: 'Tech Imports Ltd',
+        address: {
+          addressLine1: '643 Main Street',
+          addressLine2: 'Birmingham G1 3AZ',
+          country: 'United Kingdom'
         }
       })
       expect(h.view).toHaveBeenCalledWith(
@@ -161,6 +180,14 @@ function createYarGet(overrides = {}) {
       address: {
         addressLine1: '43 East Hague Extension',
         country: 'Switzerland'
+      }
+    },
+    destination: {
+      name: 'Global Trading Co',
+      address: {
+        addressLine1: '945 Main Street',
+        addressLine2: 'London LS1 5AB',
+        country: 'United Kingdom'
       }
     },
     ...overrides
