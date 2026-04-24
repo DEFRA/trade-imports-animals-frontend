@@ -1,0 +1,59 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+
+{% block content %}
+  {% if referenceNumber %}
+    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+  {% endif %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/addresses"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        <span class="govuk-caption-l">{{ heading }}</span>
+        <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          <div class="govuk-fieldset">
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <thead class="govuk-table__head">
+                  <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">Name</th>
+                    <th scope="col" class="govuk-table__header">Address</th>
+                    <th scope="col" class="govuk-table__header">Country</th>
+                    <th scope="col" class="govuk-table__header"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  {% for destination in destinations %}
+                    <tr class="govuk-table__row">
+                      <th scope="row" class="govuk-table__header">{{ destination.name }}</th>
+                      <td class="govuk-table__cell">
+                        {{ destination.address.addressLine1 }}{% if destination.address.addressLine2 %}, {{ destination.address.addressLine2 }}{% endif %}{% if destination.address.addressLine3 %}, {{ destination.address.addressLine3 }}{% endif %}
+                      </td>
+                      <td class="govuk-table__cell">{{ destination.address.country }}</td>
+                      <td class="govuk-table__cell">
+                        <a href="/addresses?selectedDestination={{ loop.index0 }}" id="selectedDestination-{{ loop.index0 }}">Select</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </fieldset>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

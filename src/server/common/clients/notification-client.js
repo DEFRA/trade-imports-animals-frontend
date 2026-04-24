@@ -65,6 +65,16 @@ export const notificationClient = {
       }
     }
 
+    // addresses
+    const selectedConsignor = getSessionValue(_request, 'consignor')
+    const selectedDestination = getSessionValue(_request, 'destination')
+    if (selectedConsignor) {
+      notification.consignor = selectedConsignor
+    }
+    if (selectedDestination) {
+      notification.destination = selectedDestination
+    }
+
     // Get CPH number from session
     const cphNumber = getSessionValue(_request, 'cphNumber')
     if (cphNumber) {
