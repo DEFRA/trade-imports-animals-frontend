@@ -2,6 +2,11 @@ import Joi from 'joi'
 
 export const DOCUMENT_TYPES = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
 
+const MAX_DOCUMENT_REFERENCE_LENGTH = 100
+const MAX_DAY = 31
+const MAX_MONTH = 12
+const MIN_YEAR = 1900
+
 export const accompanyingDocumentsSchema = Joi.object({
   documentType: Joi.string()
     .valid(...DOCUMENT_TYPES)
@@ -15,27 +20,27 @@ export const accompanyingDocumentsSchema = Joi.object({
     .optional()
     .allow('', null)
     .pattern(/^[a-zA-Z0-9 -]*$/)
-    .max(100)
+    .max(MAX_DOCUMENT_REFERENCE_LENGTH)
     .messages({
       'string.pattern.base':
         'Document reference must only contain letters, numbers, spaces and hyphens',
-      'string.max': 'Document reference must be 100 characters or less'
+      'string.max': `Document reference must be ${MAX_DOCUMENT_REFERENCE_LENGTH} characters or less`
     }),
   'issueDate-day': Joi.alternatives()
     .try(
-      Joi.number().integer().min(1).max(31),
+      Joi.number().integer().min(1).max(MAX_DAY),
       Joi.string().pattern(/^\d+$/).allow('')
     )
     .optional(),
   'issueDate-month': Joi.alternatives()
     .try(
-      Joi.number().integer().min(1).max(12),
+      Joi.number().integer().min(1).max(MAX_MONTH),
       Joi.string().pattern(/^\d+$/).allow('')
     )
     .optional(),
   'issueDate-year': Joi.alternatives()
     .try(
-      Joi.number().integer().min(1900),
+      Joi.number().integer().min(MIN_YEAR),
       Joi.string().pattern(/^\d+$/).allow('')
     )
     .optional(),
@@ -50,12 +55,15 @@ export const accompanyingDocumentsSchema = Joi.object({
  * @param {object} payload
  * @returns {{ details: Array } | null}
  */
-export function validatePartialDate(payload) {
-  const isEmpty = (v) => v === '' || v === null || v === undefined
+export const validatePartialDate = (payload) => {
+  const isEmpty = (value) =>
+    value === '' || value === null || value === undefined
   const day = payload['issueDate-day']
   const month = payload['issueDate-month']
   const year = payload['issueDate-year']
-  const filledCount = [day, month, year].filter((v) => !isEmpty(v)).length
+  const filledCount = [day, month, year].filter(
+    (value) => !isEmpty(value)
+  ).length
 
   if (filledCount === 0) {
     return {
@@ -111,14 +119,14 @@ export function validatePartialDate(payload) {
     return { details }
   }
 
-  const d = parseInt(day, 10)
-  const m = parseInt(month, 10)
-  const y = parseInt(year, 10)
-  const date = new Date(y, m - 1, d)
+  const dayInt = parseInt(day, 10)
+  const monthInt = parseInt(month, 10)
+  const yearInt = parseInt(year, 10)
+  const date = new Date(yearInt, monthInt - 1, dayInt)
   if (
-    date.getFullYear() !== y ||
-    date.getMonth() !== m - 1 ||
-    date.getDate() !== d
+    date.getFullYear() !== yearInt ||
+    date.getMonth() !== monthInt - 1 ||
+    date.getDate() !== dayInt
   ) {
     return {
       details: [
