@@ -13,7 +13,7 @@ const logger = createLogger()
 
 export const additionalDetailsController = {
   get: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const certifiedFor = getSessionValue(_request, 'certifiedFor')
       const unweanedAnimals =
         getSessionValue(_request, 'unweanedAnimals') ?? 'no'
@@ -31,7 +31,7 @@ export const additionalDetailsController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const traceId = getTraceId() ?? ''
 
