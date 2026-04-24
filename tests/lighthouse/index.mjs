@@ -19,6 +19,7 @@ import {additionalDetailsLighthouseConfig} from "./additional-details.config.js"
 import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
 import { addressesLighthouseConfig } from './addresses.config.js'
 import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
+import { destinationsSelectLighthouseConfig } from './destinations-select.config.js'
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
 import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
 
@@ -39,9 +40,10 @@ const pageConfigs = [
   additionalDetailsLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig,
   addressesLighthouseConfig,
-  portOfEntryLighthouseConfig,
   consignorsSelectLighthouseConfig,
-  cphNumberLighthouseConfig
+  destinationsSelectLighthouseConfig,
+  cphNumberLighthouseConfig,
+  portOfEntryLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
@@ -68,7 +70,7 @@ async function runVariant(basePath, variant) {
   await writeFile(reportPath, JSON.stringify(lhr, null, 2), 'utf8')
 
   // Threshold checks
-  for (const [key, min] of Object.entries(variant.name)) {
+  for (const [key, min] of Object.entries(variant.thresholds)) {
     const actual = results[key]
     if (actual < min) {
       throw new Error(

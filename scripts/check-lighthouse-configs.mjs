@@ -9,7 +9,9 @@ const projectRoot = path.resolve(__dirname, '..')
 const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
 // Routes to ignore when checking for Lighthouse coverage
-const IGNORED_PATHS = new Set(['/health', '/addresses/consignors/select'])
+// These paths are excluded from Lighthouse coverage because it does not represent
+// a standalone page target and is exercised indirectly via /addresses.
+const IGNORED_PATHS = new Set(['/health', '/addresses/consignors/select', '/addresses/destinations/select'])
 const IGNORED_PREFIXES = ['/public/']
 const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
 

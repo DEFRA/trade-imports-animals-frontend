@@ -64,6 +64,20 @@ describe('#notificationClient', () => {
             internalReference: 'TEST-001',
             commodity: { name: 'Fish' },
             reasonForImport: 'internalMarket',
+            consignor: {
+              name: 'Astra Rosales',
+              address: {
+                addressLine1: '43 East Hague Extension',
+                country: 'Switzerland'
+              }
+            },
+            destination: {
+              name: 'Tech Imports Ltd',
+              address: {
+                addressLine1: '643 Main Street',
+                country: 'United Kingdom'
+              }
+            },
             cphNumber: '123456789'
           }
           return sessionData[key]
@@ -78,6 +92,20 @@ describe('#notificationClient', () => {
           },
           commodity: { name: 'Fish' },
           reasonForImport: 'internalMarket',
+          consignor: {
+            name: 'Astra Rosales',
+            address: {
+              addressLine1: '43 East Hague Extension',
+              country: 'Switzerland'
+            }
+          },
+          destination: {
+            name: 'Tech Imports Ltd',
+            address: {
+              addressLine1: '643 Main Street',
+              country: 'United Kingdom'
+            }
+          },
           cphNumber: '123456789'
         }
 
@@ -224,6 +252,20 @@ describe('#notificationClient', () => {
           },
           commodity: { name: 'Fish' },
           reasonForImport: 'internalMarket',
+          consignor: {
+            name: 'Astra Rosales',
+            address: {
+              addressLine1: '43 East Hague Extension',
+              country: 'Switzerland'
+            }
+          },
+          destination: {
+            name: 'Tech Imports Ltd',
+            address: {
+              addressLine1: '643 Main Street',
+              country: 'United Kingdom'
+            }
+          },
           cphNumber: '123456789'
         }
 
@@ -282,6 +324,28 @@ describe('#notificationClient', () => {
           mockRequest,
           'reasonForImport',
           'internalMarket'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'consignor',
+          {
+            name: 'Astra Rosales',
+            address: {
+              addressLine1: '43 East Hague Extension',
+              country: 'Switzerland'
+            }
+          }
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'destination',
+          {
+            name: 'Tech Imports Ltd',
+            address: {
+              addressLine1: '643 Main Street',
+              country: 'United Kingdom'
+            }
+          }
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
