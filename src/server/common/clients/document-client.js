@@ -7,6 +7,13 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
+const buildFetchError = (message, response) => {
+  const error = new Error(message)
+  error.status = response.status
+  error.statusText = response.statusText
+  return error
+}
+
 export const documentClient = {
   async initiate(notificationRef, request, traceId) {
     const response = await fetch(
@@ -22,12 +29,11 @@ export const documentClient = {
     )
 
     if (!response.ok) {
-      const error = new Error('Failed to initiate document upload')
-      error.status = response.status
-      error.statusText = response.statusText
-
+      const error = buildFetchError(
+        'Failed to initiate document upload',
+        response
+      )
       logger.error(`Failed to initiate document upload: ${error.message}`)
-
       throw error
     }
 
@@ -46,12 +52,11 @@ export const documentClient = {
     )
 
     if (!response.ok) {
-      const error = new Error('Failed to delete document upload')
-      error.status = response.status
-      error.statusText = response.statusText
-
+      const error = buildFetchError(
+        'Failed to delete document upload',
+        response
+      )
       logger.error(`Failed to delete document upload: ${error.message}`)
-
       throw error
     }
   },
@@ -69,12 +74,11 @@ export const documentClient = {
     )
 
     if (!response.ok) {
-      const error = new Error('Failed to get document upload status')
-      error.status = response.status
-      error.statusText = response.statusText
-
+      const error = buildFetchError(
+        'Failed to get document upload status',
+        response
+      )
       logger.error(`Failed to get document upload status: ${error.message}`)
-
       throw error
     }
 
