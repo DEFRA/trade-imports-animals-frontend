@@ -25,6 +25,34 @@ vi.mock('../common/helpers/session-helpers.js', () => ({
   setSessionValue: vi.fn()
 }))
 
+const MAX_DOCUMENTS = 10
+
+const DEFAULT_MULTIPART_FIELDS = [
+  ['documentType', 'ITAHC'],
+  ['documentReference', 'REF-001'],
+  ['issueDate-day', '10'],
+  ['issueDate-month', '3'],
+  ['issueDate-year', '2024']
+]
+
+const buildMultipartBody = (boundary, fields = DEFAULT_MULTIPART_FIELDS) => {
+  const fileContent = Buffer.from('fake pdf content')
+  return [
+    ...fields.flatMap(([name, value]) => [
+      `--${boundary}`,
+      `Content-Disposition: form-data; name="${name}"`,
+      '',
+      value
+    ]),
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="file"; filename="test.pdf"',
+    'Content-Type: application/pdf',
+    '',
+    fileContent.toString('binary'),
+    `--${boundary}--`
+  ].join('\r\n')
+}
+
 const TEST_DOCUMENTS = [
   {
     uploadId: 'UPLOAD-1',
@@ -405,35 +433,7 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       const boundary = '----TestBoundary12345'
-      const fileContent = Buffer.from('fake pdf content')
-      const body = [
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentType"',
-        '',
-        'ITAHC',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentReference"',
-        '',
-        'REF-001',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-day"',
-        '',
-        '10',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-month"',
-        '',
-        '3',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-year"',
-        '',
-        '2024',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
-        'Content-Type: application/pdf',
-        '',
-        fileContent.toString('binary'),
-        `--${boundary}--`
-      ].join('\r\n')
+      const body = buildMultipartBody(boundary)
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
@@ -483,35 +483,7 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       const boundary = '----TestBoundary99999'
-      const fileContent = Buffer.from('fake pdf content')
-      const body = [
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentType"',
-        '',
-        'ITAHC',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentReference"',
-        '',
-        'REF-001',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-day"',
-        '',
-        '10',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-month"',
-        '',
-        '3',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-year"',
-        '',
-        '2024',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
-        'Content-Type: application/pdf',
-        '',
-        fileContent.toString('binary'),
-        `--${boundary}--`
-      ].join('\r\n')
+      const body = buildMultipartBody(boundary)
 
       const { statusCode, result } = await server.inject({
         method: 'POST',
@@ -545,35 +517,7 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       const boundary = '----TestBoundaryInitFail'
-      const fileContent = Buffer.from('fake pdf content')
-      const body = [
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentType"',
-        '',
-        'ITAHC',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentReference"',
-        '',
-        'REF-001',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-day"',
-        '',
-        '10',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-month"',
-        '',
-        '3',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-year"',
-        '',
-        '2024',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
-        'Content-Type: application/pdf',
-        '',
-        fileContent.toString('binary'),
-        `--${boundary}--`
-      ].join('\r\n')
+      const body = buildMultipartBody(boundary)
 
       const { statusCode, result } = await server.inject({
         method: 'POST',
@@ -597,7 +541,7 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should return 400 with error message when 10 documents already in session', async () => {
-      const tenDocuments = Array.from({ length: 10 }, (_, i) => ({
+      const tenDocuments = Array.from({ length: MAX_DOCUMENTS }, (_, i) => ({
         uploadId: `UPLOAD-${i}`,
         filename: `doc${i}.pdf`,
         documentType: 'ITAHC',
@@ -613,35 +557,7 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       const boundary = '----TestBoundaryLimit'
-      const fileContent = Buffer.from('fake pdf content')
-      const body = [
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentType"',
-        '',
-        'ITAHC',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentReference"',
-        '',
-        'REF-001',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-day"',
-        '',
-        '10',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-month"',
-        '',
-        '3',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-year"',
-        '',
-        '2024',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="file"; filename="test.pdf"',
-        'Content-Type: application/pdf',
-        '',
-        fileContent.toString('binary'),
-        `--${boundary}--`
-      ].join('\r\n')
+      const body = buildMultipartBody(boundary)
 
       const { statusCode, result } = await server.inject({
         method: 'POST',
@@ -658,7 +574,9 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.badRequest)
       expect(result).toEqual(
-        expect.stringContaining('You can add a maximum of 10 documents')
+        expect.stringContaining(
+          `You can add a maximum of ${MAX_DOCUMENTS} documents`
+        )
       )
     })
   })
