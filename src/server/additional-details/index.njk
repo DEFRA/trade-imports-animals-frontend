@@ -1,6 +1,7 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
 
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
@@ -20,61 +21,57 @@
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-          <div class="govuk-form-group">
-            <fieldset class="govuk-fieldset">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <h2 class="govuk-fieldset__heading">What are the animals certified for?</h2>
-              </legend>
-              <div id="certifiedFor-hint" class="govuk-hint">
-                You'll find this on the health certificate.
-              </div>
-              <div class="govuk-radios" data-module="govuk-radios">
-                <div class="govuk-radios__item">
-                  <input class="govuk-radios__input" id="approvedBodies" name="certifiedFor" type="radio" value="approvedBodies" {% if certifiedFor == 'approvedBodies' %}checked{% endif %}>
-                  <label class="govuk-label govuk-radios__label" for="approvedBodies">
-                    Approved bodies
-                  </label>
-                </div>
-                <div class="govuk-radios__item">
-                  <input class="govuk-radios__input" id="breedingAndOrProduction" name="certifiedFor" type="radio" value="breedingAndOrProduction" {% if certifiedFor == 'breedingAndOrProduction' %}checked{% endif %}>
-                  <label class="govuk-label govuk-radios__label" for="breedingAndOrProduction">
-                    Breeding and/or production
-                  </label>
-                </div>
-                <div class="govuk-radios__item">
-                  <input class="govuk-radios__input" id="slaughter" name="certifiedFor" type="radio" value="slaughter" {% if certifiedFor == 'slaughter' %}checked{% endif %}>
-                  <label class="govuk-label govuk-radios__label" for="slaughter">
-                    Slaughter
-                  </label>
-                </div>
-              </div>
-            </fieldset>
-          </div>
+          {{ govukRadios({
+            name: "certifiedFor",
+            value: certifiedFor,
+            fieldset: {
+              legend: {
+                text: "What are the animals certified for?",
+                classes: "govuk-fieldset__legend--m"
+              }
+            },
+            hint: {
+              text: "You'll find this on the health certificate."
+            },
+            items: [
+              {
+                value: "approvedBodies",
+                text: "Approved bodies"
+              },
+              {
+                value: "breedingAndOrProduction",
+                text: "Breeding and/or production"
+              },
+              {
+                value: "slaughter",
+                text: "Slaughter"
+              }
+            ]
+          }) }}
 
-          <div class="govuk-form-group">
-            <fieldset class="govuk-fieldset">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <h2 class="govuk-fieldset__heading">Does the consignment contain any unweaned animals?</h2>
-              </legend>
-              <div id="unweanedAnimals-hint" class="govuk-hint">
-                These are animals that are still feeding from their mother.
-              </div>
-              <div class="govuk-radios" data-module="govuk-radios">
-                <div class="govuk-radios__item">
-                  <input class="govuk-radios__input" id="unweanedAnimals-yes" name="unweanedAnimals" type="radio" value="yes" {% if unweanedAnimals == 'yes' %}checked{% endif %}>
-                  <label class="govuk-label govuk-radios__label" for="unweanedAnimals-yes">
-                    Yes
-                  </label>
-                </div>
-                <div class="govuk-radios__item">
-                  <input class="govuk-radios__input" id="unweanedAnimals-no" name="unweanedAnimals" type="radio" value="no" {% if unweanedAnimals == 'no' or not unweanedAnimals %}checked{% endif %}>
-                  <label class="govuk-label govuk-radios__label" for="unweanedAnimals-no">
-                    No
-                  </label>
-                </div>
-              </div>
-            </fieldset>
-          </div>
+          {{ govukRadios({
+            name: "unweanedAnimals",
+            value: unweanedAnimals,
+            fieldset: {
+              legend: {
+                text: "Does the consignment contain any unweaned animals?",
+                classes: "govuk-fieldset__legend--m"
+              }
+            },
+            hint: {
+              text: "These are animals that are still feeding from their mother."
+            },
+            items: [
+              {
+                value: "yes",
+                text: "Yes"
+              },
+              {
+                value: "no",
+                text: "No"
+              }
+            ]
+          }) }}
 
           <button type="submit" class="govuk-button" data-module="govuk-button">
             Save and continue
