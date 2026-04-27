@@ -66,6 +66,10 @@ export const validatePartialDate = (payload) => {
   ).length
 
   if (filledCount === 0) {
+    const hasFile = payload.file?.payload?.length > 0
+    if (!hasFile) {
+      return null
+    }
     return {
       details: [
         {

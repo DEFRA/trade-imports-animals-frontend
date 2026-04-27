@@ -96,11 +96,26 @@ describe('#accompanyingDocumentsSchema', () => {
   })
 
   describe('cross-field partial date validation (validatePartialDate)', () => {
-    test('Should return error for all three fields when date is completely absent (empty strings)', () => {
+    test('Should return null when date is completely absent and no file is attached (empty strings)', () => {
       const error = validatePartialDate({
         'issueDate-day': '',
         'issueDate-month': '',
         'issueDate-year': ''
+      })
+      expect(error).toBeNull()
+    })
+
+    test('Should return null when date is completely absent and no file is attached (undefined)', () => {
+      const error = validatePartialDate({})
+      expect(error).toBeNull()
+    })
+
+    test('Should return error for all three fields when date is completely absent (empty strings) and a file is attached', () => {
+      const error = validatePartialDate({
+        'issueDate-day': '',
+        'issueDate-month': '',
+        'issueDate-year': '',
+        file: { payload: Buffer.from('data') }
       })
       expect(error).not.toBeNull()
       expect(error.details).toHaveLength(3)
@@ -110,8 +125,10 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details[2].path).toEqual(['issueDate-year'])
     })
 
-    test('Should return error for all three fields when date is completely absent (undefined)', () => {
-      const error = validatePartialDate({})
+    test('Should return error for all three fields when date is completely absent (undefined) and a file is attached', () => {
+      const error = validatePartialDate({
+        file: { payload: Buffer.from('data') }
+      })
       expect(error).not.toBeNull()
       expect(error.details).toHaveLength(3)
       expect(error.details[0].message).toBe('Enter a date of issue')
