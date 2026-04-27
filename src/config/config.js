@@ -335,13 +335,13 @@ export const config = convict({
   },
   cdpUploaderUrl: {
     doc: 'CDP Uploader service base URL',
-    format: String,
+    format: 'url',
     default: 'http://localhost:7337',
     env: 'CDP_UPLOADER_URL'
   },
   frontendBaseUrl: {
     doc: 'Public base URL of this frontend service — used to construct absolute redirect URLs',
-    format: String,
+    format: 'url',
     default: 'http://localhost:3000',
     env: 'FRONTEND_BASE_URL'
   }
