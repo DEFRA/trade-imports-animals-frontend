@@ -33,7 +33,9 @@ export const documentClient = {
         'Failed to initiate document upload',
         response
       )
-      logger.error(`Failed to initiate document upload: ${error.message}`)
+      logger.error(
+        `Failed to initiate document upload: ${error.status} ${error.message}`
+      )
       throw error
     }
 
@@ -56,7 +58,9 @@ export const documentClient = {
         'Failed to delete document upload',
         response
       )
-      logger.error(`Failed to delete document upload: ${error.message}`)
+      logger.error(
+        `Failed to delete document upload: ${error.status} ${error.message}`
+      )
       throw error
     }
   },
@@ -67,7 +71,6 @@ export const documentClient = {
       {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           [tracingHeader]: traceId
         }
       }
@@ -78,7 +81,9 @@ export const documentClient = {
         'Failed to get document upload status',
         response
       )
-      logger.error(`Failed to get document upload status: ${error.message}`)
+      logger.error(
+        `Failed to get document upload status: ${error.status} ${error.message}`
+      )
       throw error
     }
 
