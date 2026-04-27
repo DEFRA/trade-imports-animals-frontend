@@ -5,6 +5,7 @@ import {
 } from '../../common/helpers/session-helpers.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
+import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -27,9 +28,6 @@ try {
     `Cannot start server: mock-commodity-details.json is missing or invalid. ${err.message}`
   )
 }
-
-const toCommodityDetails = (list) =>
-  Array.isArray(list) && list.length > 0 ? list[0] : null
 
 export const animalIdentificationDetailsController = {
   get: {

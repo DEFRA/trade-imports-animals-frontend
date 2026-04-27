@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { animalIdentificationDetailsController } from './controller.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
+import * as commodityHelpers from '../../common/helpers/commodity-helpers.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -54,7 +55,10 @@ describe('animalIdentificationDetailsController', () => {
         commodity,
         typeOfCommodity: 'Domestic',
         speciesLst: commodity.commodityComplement[1].species,
-        commodityDetails: expect.objectContaining({ code: expect.any(String) })
+        commodityDetails: expect.objectContaining({
+          code: expect.any(String),
+          description: expect.any(String)
+        })
       })
 
       expect(response.template).toBe('commodities/identification/index')
@@ -80,6 +84,30 @@ describe('animalIdentificationDetailsController', () => {
           referenceNumber: 'REF-1',
           typeOfCommodity: undefined,
           speciesLst: []
+        })
+      )
+    })
+
+    test('renders with commodityDetails null when mock list is empty', () => {
+      vi.spyOn(commodityHelpers, 'toCommodityDetails').mockReturnValueOnce(null)
+
+      const get = vi.fn((key) => {
+        if (key === 'referenceNumber') return 'REF-NULL'
+        if (key === 'commodity') return { name: 'X', commodityComplement: [] }
+        return null
+      })
+
+      const request = { yar: { get } }
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      animalIdentificationDetailsController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/identification/index',
+        expect.objectContaining({
+          commodityDetails: null
         })
       )
     })
@@ -190,11 +218,7 @@ describe('animalIdentificationDetailsController', () => {
       }
 
       const h = {
-        redirect: vi.fn((location, state) => ({
-          statusCode: 302,
-          location,
-          state
-        }))
+        redirect: vi.fn((location) => ({ statusCode: 302, location }))
       }
 
       await expect(
