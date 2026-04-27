@@ -121,6 +121,56 @@ describe('#documentClient', () => {
     })
   })
 
+  describe('delete', () => {
+    const uploadId = 'upload-abc'
+
+    describe('When delete is called with a valid upload ID', () => {
+      test('Should DELETE the correct URL and resolve without throwing', async () => {
+        global.fetch.mockResolvedValueOnce({
+          ok: true
+        })
+
+        await expect(
+          documentClient.delete(uploadId, traceId)
+        ).resolves.toBeUndefined()
+
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://mock-backend/document-uploads/upload-abc',
+          {
+            method: 'DELETE',
+            headers: {
+              'x-trace-id': traceId
+            }
+          }
+        )
+      })
+    })
+
+    describe('When delete request fails', () => {
+      test('Should throw an error when the response is not ok', async () => {
+        global.fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        await expect(
+          documentClient.delete(uploadId, traceId)
+        ).rejects.toMatchObject({
+          message: 'Failed to delete document upload',
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+        expect(mockLoggerError).toHaveBeenCalledWith(
+          expect.stringContaining('404')
+        )
+      })
+    })
+  })
+
   describe('getStatus', () => {
     const uploadId = 'upload-abc'
 
