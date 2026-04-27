@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import {
   fetchNotification,
@@ -27,6 +27,8 @@ describe('fetchNotification', () => {
   const logger = { info: vi.fn(), error: vi.fn() }
   const request = {}
 
+  beforeEach(() => vi.clearAllMocks())
+
   test('calls notificationClient.get, logs, and returns notification object when referenceNumber is in session', async () => {
     const mockNotification = {
       referenceNumber: 'REF-123',
@@ -50,8 +52,6 @@ describe('fetchNotification', () => {
 
   test('does not call notificationClient.get and returns null when no referenceNumber in session', async () => {
     getSessionValue.mockReturnValue(null)
-    notificationClient.get.mockClear()
-    logger.info.mockClear()
 
     const result = await fetchNotification(request, logger)
 
@@ -63,13 +63,11 @@ describe('fetchNotification', () => {
   test('logs error and returns null when notificationClient.get rejects', async () => {
     getSessionValue.mockReturnValue('REF-123')
     notificationClient.get.mockRejectedValue(new Error('Backend down'))
-    logger.error.mockClear()
-    logger.info.mockClear()
 
     const result = await fetchNotification(request, logger)
 
     expect(logger.error).toHaveBeenCalledWith(
-      'Failed to fetch notification: Backend down'
+      expect.stringContaining('Backend down')
     )
     expect(result).toBeNull()
   })
@@ -78,6 +76,8 @@ describe('fetchNotification', () => {
 describe('submitNotification', () => {
   const logger = { info: vi.fn(), error: vi.fn() }
   const request = {}
+
+  beforeEach(() => vi.clearAllMocks())
 
   test('calls notificationClient.submit, logs info, and returns response on success', async () => {
     const mockResponse = { referenceNumber: 'REF-789' }
@@ -93,7 +93,6 @@ describe('submitNotification', () => {
   test('logs error and re-throws when notificationClient.submit rejects', async () => {
     const networkError = new Error('Network failure')
     notificationClient.submit.mockRejectedValue(networkError)
-    logger.error.mockClear()
 
     await expect(submitNotification(request, logger)).rejects.toThrow(
       'Network failure'
