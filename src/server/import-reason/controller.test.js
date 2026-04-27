@@ -58,7 +58,7 @@ describe('importReasonController', () => {
       expect(response.data.reasonForImport).toBe('internalMarket')
     })
 
-    test('renders view and does not call fetchNotification with referenceNumber when no referenceNumber', async () => {
+    test('renders view with null referenceNumber when fetchNotification returns null', async () => {
       fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
@@ -136,6 +136,8 @@ describe('importReasonController', () => {
       await expect(
         importReasonController.post.handler(request, h)
       ).rejects.toThrow('Backend error')
+
+      expect(set).toHaveBeenCalledWith('reasonForImport', 'reEntry')
     })
   })
 })

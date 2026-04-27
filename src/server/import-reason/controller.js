@@ -31,7 +31,9 @@ export const importReasonController = {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
       const { reasonForImport } = _request.payload
-      logger.info(`Reason for import: ${referenceNumber}`)
+      logger.info(
+        `Reason for import: ${reasonForImport} (ref: ${referenceNumber})`
+      )
       setSessionValue(_request, 'reasonForImport', reasonForImport)
 
       await submitNotification(_request, logger)
