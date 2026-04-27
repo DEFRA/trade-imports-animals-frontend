@@ -10,6 +10,7 @@
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
+  line-height: inherit;
 
   @include govuk-link-common;
   @include govuk-link-style-default;
