@@ -50,6 +50,7 @@
         <h2 class="govuk-heading-m" id="documents-added">Documents added</h2>
 
         <table class="govuk-table" data-testid="documents-table">
+          <caption class="govuk-visually-hidden">Documents added</caption>
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
               <th scope="col" class="govuk-table__header">Document</th>
@@ -73,8 +74,10 @@
                     {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
                   {% elif doc.scanStatus === 'REJECTED' %}
                     {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
-                  {% else %}
+                  {% elif doc.scanStatus === 'PENDING' %}
                     {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
+                  {% else %}
+                    {{ govukTag({ text: "Unknown", classes: "govuk-tag--grey" }) }}
                   {% endif %}
                 </td>
                 <td class="govuk-table__cell govuk-!-text-align-right">
@@ -136,7 +139,8 @@
             id: "documentReference",
             name: "documentReference",
             value: documentReference if documentReference,
-            errorMessage: fieldErrors.documentReference if fieldErrors
+            errorMessage: fieldErrors.documentReference if fieldErrors,
+            attributes: { maxlength: "100" }
           }) }}
 
           {%- set dateErrorMessage = fieldErrors["issueDate-day"] or fieldErrors["issueDate-month"] or fieldErrors["issueDate-year"] -%}
@@ -171,6 +175,8 @@
             ]
           }) }}
 
+          {%- set fileHintHtml %}<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>smaller than 50MB</li><li>PDF, DOC, DOCX, JPEG, PNG or XLS</li><li>ZIP files are not allowed for security reasons</li></ul>{% endset -%}
+
           {{ govukFileUpload({
             id: "file",
             name: "file",
@@ -178,7 +184,7 @@
               text: "Attachment"
             },
             hint: {
-              html: '<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>smaller than 50MB</li><li>PDF, DOC, DOCX, JPEG, PNG or XLS</li><li>ZIP files are not allowed for security reasons</li></ul>'
+              html: fileHintHtml
             },
             attributes: {
               accept: ".pdf,.doc,.docx,.jpeg,.jpg,.png,.xls,.xlsx"
@@ -198,9 +204,11 @@
 
       <div class="govuk-button-group">
         {% if canContinue %}
+          {# Save and continue navigates directly — all document session state is written during the upload POST #}
           {{ govukButton({ text: "Save and continue", href: "/addresses" }) }}
         {% else %}
-          {{ govukButton({ text: "Save and continue", disabled: true }) }}
+          {{ govukButton({ text: "Save and continue", attributes: { 'aria-disabled': 'true', 'aria-describedby': 'cannot-continue-reason' } }) }}
+          <span class="govuk-visually-hidden" id="cannot-continue-reason">You cannot continue until all documents have been scanned or removed</span>
         {% endif %}
       </div>
 
