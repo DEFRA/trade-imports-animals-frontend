@@ -65,6 +65,14 @@ describe('#accompanyingDocumentsSchema', () => {
       )
       expect(error.details[0].path).toContain('issueDate-day')
     })
+
+    test('Should fail when issueDate-month is out of range (13)', () => {
+      const { error } = accompanyingDocumentsSchema.validate({
+        documentType: 'ITAHC',
+        'issueDate-month': 13
+      })
+      expect(error).toBeDefined()
+    })
   })
 
   describe('invalid documentReference', () => {
@@ -150,6 +158,14 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details[1].path).toEqual(['issueDate-year'])
     })
 
+    test('Should return error only for missing fields when only month is provided', () => {
+      const error = validatePartialDate({ 'issueDate-month': 6 })
+      expect(error).not.toBeNull()
+      expect(error.details).toHaveLength(2)
+      expect(error.details[0].path).toEqual(['issueDate-day'])
+      expect(error.details[1].path).toEqual(['issueDate-year'])
+    })
+
     test('Should return error only for year when day and month are provided', () => {
       const error = validatePartialDate({
         'issueDate-day': 15,
@@ -159,6 +175,16 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details).toHaveLength(1)
       expect(error.details[0].message).toBe('Date of issue must include a year')
       expect(error.details[0].path).toEqual(['issueDate-year'])
+    })
+
+    test('Should return error only for day when month and year are provided', () => {
+      const error = validatePartialDate({
+        'issueDate-month': 6,
+        'issueDate-year': 2024
+      })
+      expect(error).not.toBeNull()
+      expect(error.details).toHaveLength(1)
+      expect(error.details[0].path).toEqual(['issueDate-day'])
     })
 
     test('Should return null when all three date parts are provided', () => {
@@ -180,7 +206,9 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details).toHaveLength(3)
       expect(error.details[0].message).toBe('Enter a real date of issue')
       expect(error.details[0].path).toEqual(['issueDate-day'])
+      expect(error.details[1].message).toBe('Enter a real date of issue')
       expect(error.details[1].path).toEqual(['issueDate-month'])
+      expect(error.details[2].message).toBe('Enter a real date of issue')
       expect(error.details[2].path).toEqual(['issueDate-year'])
     })
 
@@ -194,6 +222,10 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details).toHaveLength(3)
       expect(error.details[0].message).toBe('Enter a real date of issue')
       expect(error.details[0].path).toEqual(['issueDate-day'])
+      expect(error.details[1].message).toBe('Enter a real date of issue')
+      expect(error.details[1].path).toEqual(['issueDate-month'])
+      expect(error.details[2].message).toBe('Enter a real date of issue')
+      expect(error.details[2].path).toEqual(['issueDate-year'])
     })
 
     test('Should return null for a valid calendar date (29 Feb in a leap year)', () => {
