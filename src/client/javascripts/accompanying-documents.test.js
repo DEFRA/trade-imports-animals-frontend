@@ -25,6 +25,7 @@ const TABLE_COMPLETE = `
 `
 
 let originalFetch
+let originalLocation
 
 const POLL_INTERVAL_MS = 3000
 const MAX_POLL_ATTEMPTS = 10
@@ -39,14 +40,20 @@ const makeFetchOk = (docs) =>
 describe('#accompanyingDocuments', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    // module runs top-level side-effects on import; reset so each test gets a fresh evaluation
     vi.resetModules()
     originalFetch = global.fetch
     global.fetch = vi.fn()
+    originalLocation = window.location
   })
 
   afterEach(() => {
     vi.useRealTimers()
     global.fetch = originalFetch
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true
+    })
   })
 
   describe('initialisation', () => {
@@ -138,7 +145,9 @@ describe('#accompanyingDocuments', () => {
     })
 
     test('Should update row tag to "Virus found"/red on REJECTED status', async () => {
-      document.body.innerHTML = TABLE_PENDING
+      document.body.innerHTML =
+        TABLE_PENDING +
+        '<div id="js-scan-status-announcer" aria-live="polite" aria-atomic="true" class="govuk-visually-hidden"></div>'
       global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'REJECTED' }])
       Object.defineProperty(window, 'location', {
         value: { reload: vi.fn() },
@@ -151,6 +160,10 @@ describe('#accompanyingDocuments', () => {
       const tag = document.querySelector('[data-upload-id="U1"] .govuk-tag')
       expect(tag.textContent).toBe('Virus found')
       expect(tag.classList.contains('govuk-tag--red')).toBe(true)
+      const announcer = document.getElementById('js-scan-status-announcer')
+      expect(announcer.textContent).toBe(
+        'Document scan failed: virus found. Remove the file and try again.'
+      )
     })
 
     test('Should reload the page when all documents are no longer PENDING', async () => {
@@ -206,6 +219,21 @@ describe('#accompanyingDocuments', () => {
 
       const timeoutMsg = document.getElementById('js-timeout-message')
       expect(timeoutMsg.hidden).toBe(false)
+      expect(vi.getTimerCount()).toBe(0)
+    })
+
+    test('Should stop polling cleanly when #js-timeout-message element is absent', async () => {
+      document.body.innerHTML = TABLE_PENDING
+      // Always return PENDING so the module keeps rescheduling
+      global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'PENDING' }])
+
+      await import('./accompanying-documents.js')
+
+      for (let i = 0; i < TOTAL_POLL_CYCLES; i++) {
+        await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS)
+      }
+
+      // Polling must stop without throwing even when the timeout element is missing
       expect(vi.getTimerCount()).toBe(0)
     })
   })
