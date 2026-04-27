@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { additionalDetailsController } from './controller.js'
 
@@ -24,6 +24,8 @@ vi.mock('../common/helpers/notification-helpers.js', () => ({
 }))
 
 describe('additionalDetailsController', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   describe('GET /additional-details', () => {
     test('renders view with session values and calls fetchNotification when referenceNumber exists', async () => {
       fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
@@ -45,7 +47,10 @@ describe('additionalDetailsController', () => {
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
-        expect.any(Object)
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
       )
 
       expect(h.view).toHaveBeenCalledWith('additional-details/index', {
@@ -80,7 +85,7 @@ describe('additionalDetailsController', () => {
       )
     })
 
-    test('does not call fetchNotification with a referenceNumber when no referenceNumber', async () => {
+    test('Should render page with null referenceNumber when none in session', async () => {
       fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
@@ -94,7 +99,15 @@ describe('additionalDetailsController', () => {
 
       expect(fetchNotification).toHaveBeenCalledWith(
         request,
-        expect.any(Object)
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
+
+      expect(h.view).toHaveBeenCalledWith(
+        'additional-details/index',
+        expect.objectContaining({ referenceNumber: undefined })
       )
     })
   })
@@ -130,7 +143,10 @@ describe('additionalDetailsController', () => {
       expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
       expect(submitNotification).toHaveBeenCalledWith(
         request,
-        expect.any(Object)
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
       )
       expect(response).toEqual({
         statusCode: 302,
