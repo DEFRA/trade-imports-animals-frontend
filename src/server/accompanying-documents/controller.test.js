@@ -48,6 +48,7 @@ const buildMultipartBody = (boundary, fields = DEFAULT_MULTIPART_FIELDS) => {
     'Content-Disposition: form-data; name="file"; filename="test.pdf"',
     'Content-Type: application/pdf',
     '',
+    // 'binary' (Latin-1) is safe here: test file content is ASCII-only; real binary files are handled by the multipart boundary
     fileContent.toString('binary'),
     `--${boundary}--`
   ].join('\r\n')
@@ -74,25 +75,27 @@ describe('#accompanyingDocumentsController', () => {
   let server
 
   beforeAll(async () => {
-    vi.spyOn(documentClient, 'initiate').mockResolvedValue({
-      uploadId: 'TEST-UPLOAD-ID',
-      uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
-    })
-
     server = await createServer()
     await server.initialize()
   })
 
   afterAll(async () => {
     await server.stop({ timeout: 0 })
-    vi.restoreAllMocks()
   })
 
   beforeEach(() => {
+    vi.spyOn(documentClient, 'initiate').mockResolvedValue({
+      uploadId: 'TEST-UPLOAD-ID',
+      uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
+    })
     getSessionValue.mockReset()
     setSessionValue.mockReset()
     // Default: no documents in session
     getSessionValue.mockReturnValue(null)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('GET /accompanying-documents', () => {
@@ -190,6 +193,34 @@ describe('#accompanyingDocumentsController', () => {
         expect.stringContaining('meta http-equiv="refresh"')
       )
       expect(result).toEqual(expect.stringContaining('Refresh to check status'))
+    })
+
+    test('Should still show refresh link (not timed out) when attempt=9 is below MAX_POLLING_ATTEMPTS boundary', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return [TEST_DOCUMENTS[0]]
+        return null
+      })
+      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
+        scanStatus: 'PENDING'
+      })
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents?attempt=9',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      // attempt=9 is still below MAX_POLLING_ATTEMPTS (10) so polling continues
+      expect(result).not.toEqual(
+        expect.stringContaining('meta http-equiv="refresh"')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('Refresh virus scan status')
+      )
     })
 
     test('Should show error summary and no Save and continue when a document is REJECTED', async () => {
@@ -372,6 +403,80 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
+    test('Should re-render with 400 and year error when issueDate-year is missing (partial date)', async () => {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: {
+          documentType: 'ITAHC',
+          documentReference: 'REF001',
+          'issueDate-day': 10,
+          'issueDate-month': 3,
+          'issueDate-year': ''
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(
+        expect.stringContaining('Date of issue must include a year')
+      )
+    })
+
+    test('Should re-render with 400 and real date error when calendar date is invalid (31 Feb 2024)', async () => {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: {
+          documentType: 'ITAHC',
+          documentReference: 'REF001',
+          'issueDate-day': 31,
+          'issueDate-month': 2,
+          'issueDate-year': 2024
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(
+        expect.stringContaining('Enter a real date of issue')
+      )
+    })
+
+    test('Should re-render with 400 and max-length error when documentReference exceeds 100 characters', async () => {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: {
+          documentType: 'ITAHC',
+          documentReference: 'a'.repeat(101),
+          'issueDate-day': 10,
+          'issueDate-month': 3,
+          'issueDate-year': 2024
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(
+        expect.stringContaining(
+          'Document reference must be 100 characters or less'
+        )
+      )
+    })
+
     test('Should re-render with 400 when no file is provided', async () => {
       const { statusCode, result } = await server.inject({
         method: 'POST',
@@ -451,7 +556,15 @@ describe('#accompanyingDocumentsController', () => {
         payload: Buffer.from(body, 'binary')
       })
 
-      expect(documentClient.initiate).toHaveBeenCalled()
+      expect(documentClient.initiate).toHaveBeenCalledWith(
+        'REF-123',
+        expect.objectContaining({
+          documentType: 'ITAHC',
+          documentReference: 'REF001',
+          dateOfIssue: '2024-03-10'
+        }),
+        expect.any(String)
+      )
       expect(global.fetch).toHaveBeenCalledWith(
         'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID',
         expect.objectContaining({ method: 'POST' })
