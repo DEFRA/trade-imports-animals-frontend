@@ -60,6 +60,10 @@ describe('#accompanyingDocumentsSchema', () => {
         'issueDate-day': 'abc'
       })
       expect(error).toBeDefined()
+      expect(error.details[0].message).toBe(
+        '"issueDate-day" with value "abc" fails to match the required pattern: /^0*[1-9]\\d*$/'
+      )
+      expect(error.details[0].path).toContain('issueDate-day')
     })
   })
 
