@@ -9,7 +9,7 @@ const projectRoot = path.resolve(__dirname, '..')
 const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
 // Routes to ignore when checking for Lighthouse coverage
-const IGNORED_PATHS = new Set(['/health', '/accompanying-documents/status'])
+const IGNORED_PATHS = new Set(['/health', '/accompanying-documents/status']) // JSON status polling endpoint — not a rendered page
 const IGNORED_PREFIXES = ['/public/']
 const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
 
@@ -58,9 +58,8 @@ async function findServerPagePaths() {
 }
 
 async function findLighthouseConfigPaths() {
-  const configFiles = await findFilesRecursively(
-    lighthouseDir,
-    (name) => name.endsWith('.config.js')
+  const configFiles = await findFilesRecursively(lighthouseDir, (name) =>
+    name.endsWith('.config.js')
   )
 
   const paths = new Set()
@@ -74,7 +73,11 @@ async function findLighthouseConfigPaths() {
       if (exported && typeof exported === 'object' && exported.path) {
         paths.add(exported.path)
       }
-      if (exported && typeof exported === 'object' && Array.isArray(exported.paths)) {
+      if (
+        exported &&
+        typeof exported === 'object' &&
+        Array.isArray(exported.paths)
+      ) {
         exported.paths.forEach((routePath) => paths.add(routePath))
       }
     })
@@ -112,4 +115,3 @@ main().catch((err) => {
   console.error(err)
   process.exit(1)
 })
-

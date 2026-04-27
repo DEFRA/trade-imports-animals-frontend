@@ -118,8 +118,8 @@ services:
       DEFRA_ID_OIDC_CONFIGURATION_URL: ${DEFRA_ID_OIDC_CONFIGURATION_URL}
       DEFRA_ID_REDIRECT_URL: http://localhost:3000/auth/sign-in-oidc
       DEFRA_ID_SIGN_OUT_REDIRECT_URL: http://localhost:3000/auth/sign-out-oidc
-      CDP_UPLOADER_URL: http://cdp-uploader:7337
-      FRONTEND_BASE_URL: http://localhost:3000
+      CDP_UPLOADER_URL: ${CDP_UPLOADER_URL:-http://cdp-uploader:7337}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
     networks:
       - cdp-tenant
 
