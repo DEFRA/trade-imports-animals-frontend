@@ -15,20 +15,19 @@ export const addressesController = {
         `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
       )
       const notification = await fetchNotification(_request, logger)
-      const referenceNumber = notification?.referenceNumber
+      const referenceNumber = notification?.referenceNumber ?? null
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',
         heading: 'Addresses',
+        captionText: 'Notification details',
         referenceNumber
       })
     }
   },
   post: {
     async handler(_request, h) {
-      logger.info(
-        `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
-      )
+      logger.info(`Addresses POST: form submitted`)
 
       const traceId = getTraceId() ?? ''
 

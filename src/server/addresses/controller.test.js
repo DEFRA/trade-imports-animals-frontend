@@ -25,8 +25,6 @@ vi.mock('../common/helpers/notification-helpers.js', () => ({
 describe('addressesController', () => {
   describe('GET /addresses', () => {
     test('renders addresses page using fetchNotification for referenceNumber', async () => {
-      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
-
       const get = vi.fn((key) => {
         const values = { commodity: 'Fish' }
         return values[key] ?? null
@@ -46,7 +44,32 @@ describe('addressesController', () => {
       expect(h.view).toHaveBeenCalledWith('addresses/index', {
         pageTitle: 'Addresses',
         heading: 'Addresses',
+        captionText: 'Notification details',
         referenceNumber: 'REF-123'
+      })
+      expect(response.template).toBe('addresses/index')
+    })
+
+    test('renders addresses page with referenceNumber null when fetchNotification returns null', async () => {
+      fetchNotification.mockResolvedValue(null)
+
+      const get = vi.fn((key) => {
+        const values = { commodity: 'Fish' }
+        return values[key] ?? null
+      })
+
+      const request = { yar: { get } }
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      const response = await addressesController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith('addresses/index', {
+        pageTitle: 'Addresses',
+        heading: 'Addresses',
+        captionText: 'Notification details',
+        referenceNumber: null
       })
       expect(response.template).toBe('addresses/index')
     })
