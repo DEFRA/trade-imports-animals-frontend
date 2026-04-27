@@ -34,10 +34,10 @@ export const router = {
         commodities,
         commoditiesSelect,
         importReason,
-        accompanyingDocuments,
         commodityDetails,
         animalsIdentificationDetails,
         additionalDetails,
+        accompanyingDocuments,
         addresses
       ]
 
