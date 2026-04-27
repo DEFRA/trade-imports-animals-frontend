@@ -8,6 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
+import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
 
 const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -17,22 +18,6 @@ const commodityDetailsList = JSON.parse(
   readFileSync(commodityDetailsPath, 'utf-8')
 )
 const speciesDetailsList = JSON.parse(readFileSync(speciesDetailsPath, 'utf-8'))
-
-function toJsonObject(detailsList) {
-  if (Array.isArray(detailsList)) {
-    if (detailsList.length === 0) {
-      return null
-    }
-
-    return detailsList[0]
-  }
-
-  if (detailsList && typeof detailsList === 'object') {
-    return detailsList
-  }
-
-  return null
-}
 
 export const commoditiesSelectController = {
   get: {
@@ -60,8 +45,8 @@ export const commoditiesSelectController = {
         typeOfCommodity,
         species,
         savedSpeciesValues,
-        commodityDetails: toJsonObject(commodityDetailsList),
-        speciesDetails: toJsonObject(speciesDetailsList)
+        commodityDetails: toCommodityDetails(commodityDetailsList),
+        speciesDetails: toCommodityDetails(speciesDetailsList)
       })
     }
   },
@@ -86,7 +71,7 @@ export const commoditiesSelectController = {
           ? [species]
           : []
 
-      const speciesDetails = toJsonObject(speciesDetailsList)
+      const speciesDetails = toCommodityDetails(speciesDetailsList)
       const speciesByValue = new Map(
         (speciesDetails?.data?.species ?? []).map((s) => [s.value, s.text])
       )
@@ -125,6 +110,7 @@ export const commoditiesSelectController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
+      // return value intentionally unused — submitNotification is called for side-effects only
       await submitNotification(_request, logger)
 
       return h.redirect('/import-reason')

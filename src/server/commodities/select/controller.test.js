@@ -1,4 +1,12 @@
-import { describe, expect, test, vi } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { commoditiesSelectController } from './controller.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
@@ -21,6 +29,10 @@ describe('commoditiesSelectController', () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
+    })
+
+    beforeEach(() => {
+      vi.clearAllMocks()
     })
 
     afterAll(() => {
@@ -96,6 +108,10 @@ describe('commoditiesSelectController', () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
+    })
+
+    beforeEach(() => {
+      vi.clearAllMocks()
     })
 
     afterAll(() => {
