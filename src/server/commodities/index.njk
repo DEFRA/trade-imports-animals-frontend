@@ -5,10 +5,6 @@
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
-  {{ appHeading({
-    text: heading
-  }) }}
-
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
@@ -19,7 +15,7 @@
           id: "commodity",
           name: "commodity",
           label: {
-            text: "Select a commodity",
+            text: heading,
             classes: "govuk-label--l",
             isPageHeading: true
           },
@@ -29,7 +25,6 @@
           },
           items: [
             { value: "", text: "Select a commodity" },
-            { text: "──────────", disabled: true },
             { value: "Cow", text: "Cow" },
             { value: "Fish", text: "Fish" },
             { value: "Cat", text: "Cat" },
