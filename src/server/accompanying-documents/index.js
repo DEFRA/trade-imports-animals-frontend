@@ -1,7 +1,6 @@
 import { accompanyingDocumentsController } from './controller.js'
 import { config } from '../../config/config.js'
-
-const MAX_PAYLOAD_BYTES = 52_428_800 // 50MB
+import { MAX_PAYLOAD_BYTES } from './document-upload-config.js'
 
 /**
  * Sets up the routes used in the accompanying documents page.

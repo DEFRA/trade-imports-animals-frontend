@@ -11,33 +11,17 @@ import { statusCodes } from '../common/constants/status-codes.js'
 import { documentClient } from '../common/clients/document-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../../config/config.js'
+import {
+  ALLOWED_TYPES,
+  MAX_FILE_SIZE_BYTES,
+  MAX_DOCUMENTS
+} from './document-upload-config.js'
 
 const frontendBaseUrl = config.get('frontendBaseUrl')
 const MAX_POLLING_ATTEMPTS = 10
 
-const ALLOWED_EXTENSIONS = new Set([
-  '.pdf',
-  '.doc',
-  '.docx',
-  '.jpeg',
-  '.jpg',
-  '.png',
-  '.xls',
-  '.xlsx'
-])
-
-const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'image/jpeg',
-  'image/png',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-]
-
-const MAX_FILE_SIZE_BYTES = 52428800 // 50MB
-const MAX_DOCUMENTS = 10
+const ALLOWED_EXTENSIONS = new Set(ALLOWED_TYPES.map((t) => `.${t.ext}`))
+const ALLOWED_MIME_TYPES = ALLOWED_TYPES.map((t) => t.mime)
 
 const getDocumentsWithStatus = async (documents, traceId, logger) =>
   Promise.all(

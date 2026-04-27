@@ -1,8 +1,10 @@
 import Joi from 'joi'
+import {
+  DOCUMENT_TYPES,
+  MAX_DOCUMENT_REFERENCE_LENGTH
+} from './document-upload-config.js'
 
-export const DOCUMENT_TYPES = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
-
-export const MAX_DOCUMENT_REFERENCE_LENGTH = 100
+export { DOCUMENT_TYPES, MAX_DOCUMENT_REFERENCE_LENGTH }
 const MAX_DAY = 31
 const MAX_MONTH = 12
 const MIN_YEAR = 1900
