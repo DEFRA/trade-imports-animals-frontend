@@ -9,7 +9,7 @@ describe('#accompanyingDocumentsSchema', () => {
     test('Should pass with a full valid payload', () => {
       const { error } = accompanyingDocumentsSchema.validate({
         documentType: 'ITAHC',
-        documentReference: 'REF-123 ABC',
+        documentReference: 'REF123ABC',
         'issueDate-day': 15,
         'issueDate-month': 6,
         'issueDate-year': 2024,
@@ -71,7 +71,7 @@ describe('#accompanyingDocumentsSchema', () => {
       })
       expect(error).toBeDefined()
       expect(error.details[0].message).toBe(
-        'Document reference must only contain letters, numbers, spaces and hyphens'
+        'Document reference must only contain letters and numbers'
       )
     })
 

@@ -29,7 +29,7 @@ const MAX_DOCUMENTS = 10
 
 const DEFAULT_MULTIPART_FIELDS = [
   ['documentType', 'ITAHC'],
-  ['documentReference', 'REF-001'],
+  ['documentReference', 'REF001'],
   ['issueDate-day', '10'],
   ['issueDate-month', '3'],
   ['issueDate-year', '2024']
@@ -367,7 +367,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('There is a problem'))
       expect(result).toEqual(
         expect.stringContaining(
-          'Document reference must only contain letters, numbers, spaces and hyphens'
+          'Document reference must only contain letters and numbers'
         )
       )
     })
@@ -382,7 +382,7 @@ describe('#accompanyingDocumentsController', () => {
         },
         payload: {
           documentType: 'ITAHC',
-          documentReference: 'REF-001',
+          documentReference: 'REF001',
           'issueDate-day': 10,
           'issueDate-month': 3,
           'issueDate-year': 2024
@@ -460,7 +460,7 @@ describe('#accompanyingDocumentsController', () => {
           expect.objectContaining({
             uploadId: 'TEST-UPLOAD-ID',
             documentType: 'ITAHC',
-            documentReference: 'REF-001',
+            documentReference: 'REF001',
             dateOfIssue: '2024-03-10'
           })
         ])

@@ -19,11 +19,11 @@ export const accompanyingDocumentsSchema = Joi.object({
   documentReference: Joi.string()
     .optional()
     .allow('', null)
-    .pattern(/^[a-zA-Z0-9 -]*$/)
+    .pattern(/^[a-zA-Z0-9]*$/)
     .max(MAX_DOCUMENT_REFERENCE_LENGTH)
     .messages({
       'string.pattern.base':
-        'Document reference must only contain letters, numbers, spaces and hyphens',
+        'Document reference must only contain letters and numbers',
       'string.max': `Document reference must be ${MAX_DOCUMENT_REFERENCE_LENGTH} characters or less`
     }),
   'issueDate-day': Joi.alternatives()
