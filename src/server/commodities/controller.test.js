@@ -106,6 +106,33 @@ describe('#commoditiesController', () => {
         expect.stringContaining('Select the type of animal you are importing')
       )
     })
+
+    test('Should include referenceNumber from fetchNotification in rendered view', async () => {
+      vi.spyOn(notificationClient, 'get').mockResolvedValueOnce({
+        referenceNumber: 'TEST-REF-123'
+      })
+
+      const request = {
+        yar: {
+          get: vi.fn((key) =>
+            key === 'referenceNumber' ? 'TEST-REF-123' : null
+          ),
+          set: vi.fn()
+        }
+      }
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      const { commoditiesController } = await import('./controller.js')
+      const response = await commoditiesController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/index',
+        expect.objectContaining({ referenceNumber: 'TEST-REF-123' })
+      )
+      expect(response.data.referenceNumber).toBe('TEST-REF-123')
+    })
   })
 
   describe('POST /commodities', () => {
@@ -174,7 +201,7 @@ describe('#commoditiesController', () => {
     })
 
     test('Should return 500 when backend submit fails', async () => {
-      notificationClient.submit = vi.fn().mockRejectedValue(
+      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: statusCodes.internalServerError,
           statusText: 'Internal Server Error'

@@ -17,7 +17,10 @@ export const commoditiesController = {
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
       const notification = await fetchNotification(_request, logger)
-      const referenceNumber = notification?.referenceNumber ?? null
+      const referenceNumber =
+        notification?.referenceNumber ??
+        getSessionValue(_request, 'referenceNumber') ??
+        null
 
       return h.view('commodities/index', {
         pageTitle: 'Commodities',
