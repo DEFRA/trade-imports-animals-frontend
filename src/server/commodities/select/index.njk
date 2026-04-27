@@ -41,7 +41,7 @@
           </tbody>
         </table>
 
-        {% set typeItems = [{ value: "", text: "Select type of commodity" }] %}
+        {% set typeItems = [{ value: "", text: "Select type of commodity" }, { text: "────────────────────────", disabled: true }] %}
         {% for type in speciesDetails.data.types %}
           {% set typeItems = (typeItems.push({ value: type.text, text: type.text, selected: typeOfCommodity == type.text }), typeItems) %}
         {% endfor %}

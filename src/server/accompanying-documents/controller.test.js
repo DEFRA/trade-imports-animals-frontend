@@ -585,10 +585,10 @@ describe('#accompanyingDocumentsController', () => {
       expect(headers.location).toBe('/accompanying-documents')
     })
 
-    test('Should re-render with 500 and error message and NOT call setSessionValue when cdp-uploader returns non-opaqueredirect response', async () => {
+    test('Should re-render with 500 and error message and NOT call setSessionValue when cdp-uploader returns error status', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue({ status: 200, type: 'basic' })
+        vi.fn().mockResolvedValue({ status: 500, type: 'basic' })
       )
 
       documentClient.initiate.mockResolvedValue({

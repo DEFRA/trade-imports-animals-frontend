@@ -307,11 +307,11 @@ export const accompanyingDocumentsController = {
           body: formData,
           redirect: 'manual'
         })
-        // cdp-uploader redirects on success — with redirect:'manual' the response
-        // is opaque (type 'opaqueredirect', status 0), treat anything else as failure
-        if (uploadResponse.type !== 'opaqueredirect') {
+        // cdp-uploader redirects on success (status 0 with redirect:'manual');
+        // local mock returns 200 directly — accept any status < 300 as success
+        if (uploadResponse.status >= 300) {
           throw new Error(
-            `cdp-uploader returned unexpected response type ${uploadResponse.type} (status ${uploadResponse.status})`
+            `cdp-uploader returned unexpected status ${uploadResponse.status}`
           )
         }
         request.logger.info(
