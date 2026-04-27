@@ -88,7 +88,8 @@ export const accompanyingDocumentsController = {
   get: {
     async handler(request, h) {
       const traceId = getTraceId() ?? ''
-      const attempt = parseInt(request.query.attempt ?? '0', 10)
+      const parsed = parseInt(request.query.attempt ?? '0', 10)
+      const attempt = Number.isNaN(parsed) ? 0 : parsed
       const rawDocuments = getSessionValue(request, 'documents') ?? []
       const referenceNumber = getSessionValue(request, 'referenceNumber')
 
@@ -214,7 +215,8 @@ export const accompanyingDocumentsController = {
       const allErrors = [...schemaErrors, ...dateErrors, ...fileErrors]
 
       if (allErrors.length > 0) {
-        const attempt = parseInt(request.query.attempt ?? '0', 10)
+        const parsed = parseInt(request.query.attempt ?? '0', 10)
+        const attempt = Number.isNaN(parsed) ? 0 : parsed
         const rawDocuments = getSessionValue(request, 'documents') ?? []
         const documentsWithStatus = await getDocumentsWithStatus(
           rawDocuments,
@@ -258,7 +260,8 @@ export const accompanyingDocumentsController = {
 
       if (!notificationRef) {
         request.logger.error('No referenceNumber in session')
-        const attempt = parseInt(request.query.attempt ?? '0', 10)
+        const parsed = parseInt(request.query.attempt ?? '0', 10)
+        const attempt = Number.isNaN(parsed) ? 0 : parsed
         const rawDocuments = getSessionValue(request, 'documents') ?? []
         const documentsWithStatus = await getDocumentsWithStatus(
           rawDocuments,
@@ -316,7 +319,8 @@ export const accompanyingDocumentsController = {
         )
       } catch (err) {
         request.logger.error(`Failed to upload document: ${err.message}`)
-        const attempt = parseInt(request.query.attempt ?? '0', 10)
+        const parsed = parseInt(request.query.attempt ?? '0', 10)
+        const attempt = Number.isNaN(parsed) ? 0 : parsed
         const rawDocuments = getSessionValue(request, 'documents') ?? []
         const documentsWithStatus = await getDocumentsWithStatus(
           rawDocuments,
