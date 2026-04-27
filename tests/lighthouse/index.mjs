@@ -5,20 +5,20 @@ import { runLighthouse } from './run-lighthouse.js'
 import { signinLighthouseConfig } from './signin.config.js'
 import { signinOidcLighthouseConfig } from './signin-oidc.config.js'
 import { signoutLighthouseConfig } from './signout.config.js'
-import { authSignoutLighthouseConfig } from "./auth-signout.config.js";
+import { authSignoutLighthouseConfig } from './auth-signout.config.js'
 import { signoutOidcLighthouseConfig } from './signout-oidc.config.js'
 import { organisationLighthouseConfig } from './organisation.config.js'
 import { originLighthouseConfig } from './origin.config.js'
-import { aboutLighthouseConfig } from "./about.config.js"
-import { homeLighthouseConfig } from "./home.config.js"
-import { commoditiesLighthouseConfig } from "./commodities.config.js"
+import { aboutLighthouseConfig } from './about.config.js'
+import { homeLighthouseConfig } from './home.config.js'
+import { commoditiesLighthouseConfig } from './commodities.config.js'
 import { commoditiesSelectLighthouseConfig } from './commodities-select.config.js'
-import {importReasonLighthouseConfig} from "./import-reason.config.js";
-import {commodityDetailsLighthouseConfig} from "./commodities-details.config.js";
-import { accompanyingDocumentsLighthouseConfig } from "./accompanying-documents.config.js";
-import {additionalDetailsLighthouseConfig} from "./additional-details.config.js";
-import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
-import { addressesLighthouseConfig } from './addresses.config.js';
+import { importReasonLighthouseConfig } from './import-reason.config.js'
+import { commodityDetailsLighthouseConfig } from './commodities-details.config.js'
+import { accompanyingDocumentsLighthouseConfig } from './accompanying-documents.config.js'
+import { additionalDetailsLighthouseConfig } from './additional-details.config.js'
+import { animalsIdentificationDetailsLighthouseConfig } from './animals-identification-details.config.js'
+import { addressesLighthouseConfig } from './addresses.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -55,7 +55,10 @@ async function runVariant(basePath, variant) {
   }
 
   // Write full JSON report per preset
-  const fileSafeName = variant.name + '_' + variant.preset
+  const fileSafeName =
+    variant.name +
+    '_' +
+    variant.preset
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9\\-]/g, '')
@@ -79,8 +82,8 @@ async function runVariant(basePath, variant) {
   console.log(`Preset: ${variant.preset}`)
   console.log(
     `Scores → performance: ${results.performance}, ` +
-    `accessibility: ${results.accessibility}, ` +
-    `bestPractices: ${results.bestPractices}`
+      `accessibility: ${results.accessibility}, ` +
+      `bestPractices: ${results.bestPractices}`
   )
   console.log(`\nReport saved to → ${reportPath}`)
 }

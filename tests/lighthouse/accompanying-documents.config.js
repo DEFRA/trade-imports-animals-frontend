@@ -2,12 +2,12 @@ export const accompanyingDocumentsLighthouseConfig = {
   path: '/accompanying-documents',
   variants: [
     {
-      name: 'accompanyingDocumentsPage-mobile',
+      name: 'accompanyingDocumentsPage',
       preset: 'mobile',
       thresholds: { performance: 0.8, accessibility: 0.9, bestPractices: 0.7 }
     },
     {
-      name: 'accompanyingDocumentsPage-desktop',
+      name: 'accompanyingDocumentsPage',
       preset: 'desktop',
       thresholds: { performance: 0.6, accessibility: 0.9, bestPractices: 0.8 }
     }
