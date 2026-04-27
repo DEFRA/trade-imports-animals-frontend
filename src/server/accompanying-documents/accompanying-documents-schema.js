@@ -29,13 +29,17 @@ export const accompanyingDocumentsSchema = Joi.object({
   'issueDate-day': Joi.alternatives()
     .try(
       Joi.number().integer().min(1).max(MAX_DAY),
-      Joi.string().pattern(/^\d+$/).allow('')
+      Joi.string()
+        .pattern(/^0*[1-9]\d*$/)
+        .allow('')
     )
     .optional(),
   'issueDate-month': Joi.alternatives()
     .try(
       Joi.number().integer().min(1).max(MAX_MONTH),
-      Joi.string().pattern(/^\d+$/).allow('')
+      Joi.string()
+        .pattern(/^0*[1-9]\d*$/)
+        .allow('')
     )
     .optional(),
   'issueDate-year': Joi.alternatives()
