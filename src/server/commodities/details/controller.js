@@ -13,19 +13,23 @@ const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const commodityDetailsPath = path.join(
   dirname,
-  '../select/mock-commodity-details.json'
-)
-const commodityDetailsList = JSON.parse(
-  readFileSync(commodityDetailsPath, 'utf-8')
+  '../../common/mock-data/mock-commodity-details.json'
 )
 
-const toCommodityDetails = (detailsList) => {
-  if (Array.isArray(detailsList)) {
-    return detailsList.length > 0 ? detailsList[0] : null
-  }
-  if (detailsList === null || detailsList === undefined) return null
-  return typeof detailsList === 'object' ? detailsList : null
+let commodityDetailsList
+try {
+  commodityDetailsList = JSON.parse(readFileSync(commodityDetailsPath, 'utf-8'))
+} catch (err) {
+  logger.error(
+    `Failed to load mock commodity details from ${commodityDetailsPath}: ${err.message}`
+  )
+  throw new Error(
+    `Cannot start server: mock-commodity-details.json is missing or invalid. ${err.message}`
+  )
 }
+
+const toCommodityDetails = (list) =>
+  Array.isArray(list) && list.length > 0 ? list[0] : null
 
 export const commodityDetailsController = {
   get: {
@@ -34,6 +38,9 @@ export const commodityDetailsController = {
         `Commodity: ${getSessionValue(_request, 'commodity')} details page`
       )
 
+      // TODO(follow-up): referenceNumber is read from session here, but the POST
+      // handler uses submitNotification which sources it via the notification API.
+      // These two paths are inconsistent and should be aligned in a follow-up.
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const commodity = getSessionValue(_request, 'commodity')
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)

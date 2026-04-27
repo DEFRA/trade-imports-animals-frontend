@@ -1,0 +1,12 @@
+[
+  {
+    "code": "0102",
+    "displayCode": "02",
+    "displayCodeFull": ["01", "02"],
+    "description": "Live bovine animals",
+    "certificateType": "CVED-A",
+    "parentCode": "01",
+    "commodity": true,
+    "parent": false
+  }
+]

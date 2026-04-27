@@ -1,5 +1,4 @@
 {% extends 'layouts/page.njk' %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 
@@ -20,8 +19,7 @@
         <input type="hidden" id="totalNoOfAnimals" name="totalNoOfAnimals" value="{{ totalNoOfAnimals }}" />
         <input type="hidden" id="totalNoOfPackages" name="totalNoOfPackages" value="{{ totalNoOfPackages }}" />
 
-          <span class="govuk-caption-xl">Description of the goods</span>
-          <h1 class="govuk-heading-xl">Commodity</h1>
+          {{ appHeading({ text: heading }) }}
 
           <table class="govuk-table">
             <caption class="govuk-table__caption govuk-table__caption--m">Commodities</caption>
@@ -33,14 +31,14 @@
             </thead>
             <tbody class="govuk-table__body">
               <tr class="govuk-table__row">
-                <td class="govuk-table__cell">{{ commodityDetails.code }}</td>
-                <td class="govuk-table__cell">{{ commodityDetails.description }}</td>
+                <td class="govuk-table__cell">{{ commodityDetails.code if commodityDetails else "—" }}</td>
+                <td class="govuk-table__cell">{{ commodityDetails.description if commodityDetails else "—" }}</td>
               </tr>
             </tbody>
           </table>
 
           <table class="govuk-table">
-            <caption class="govuk-table__caption govuk-table__caption--m">{{ commodityDetails.description }}</caption>
+            <caption class="govuk-table__caption govuk-table__caption--m">{{ commodityDetails.description if commodityDetails else "—" }}</caption>
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
               <th scope="col" class="govuk-table__header">Species and type</th>
@@ -55,10 +53,10 @@
                   {{ species.text }}, {{ typeOfCommodity }}
                 </td>
                 <td class="govuk-table__cell">
-                  <input class="govuk-input" id="noOfAnimals-{{ species.value }}" name="noOfAnimals-{{ species.value }}" type="number" value="{{ species.noOfAnimals }}"/>
+                  <input class="govuk-input" id="noOfAnimals-{{ species.value }}" name="noOfAnimals-{{ species.value }}" type="number" value="{{ species.noOfAnimals }}" aria-label="Number of animals for {{ species.text }}"/>
                 </td>
                 <td class="govuk-table__cell">
-                  <input class="govuk-input" id="noOfPackages-{{ species.value }}" name="noOfPackages-{{ species.value }}" type="number" value="{{ species.noOfPackages }}"/>
+                  <input class="govuk-input" id="noOfPackages-{{ species.value }}" name="noOfPackages-{{ species.value }}" type="number" value="{{ species.noOfPackages }}" aria-label="Number of packages for {{ species.text }}"/>
                 </td>
               </tr>
             {% endfor %}

@@ -13,19 +13,23 @@ const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const commodityDetailsPath = path.join(
   dirname,
-  '../select/mock-commodity-details.json'
-)
-const commodityDetailsList = JSON.parse(
-  readFileSync(commodityDetailsPath, 'utf-8')
+  '../../common/mock-data/mock-commodity-details.json'
 )
 
-const toCommodityDetails = (detailsList) => {
-  if (Array.isArray(detailsList)) {
-    return detailsList.length > 0 ? detailsList[0] : null
-  }
-  if (detailsList === null || detailsList === undefined) return null
-  return typeof detailsList === 'object' ? detailsList : null
+let commodityDetailsList
+try {
+  commodityDetailsList = JSON.parse(readFileSync(commodityDetailsPath, 'utf-8'))
+} catch (err) {
+  logger.error(
+    `Failed to load mock commodity details from ${commodityDetailsPath}: ${err.message}`
+  )
+  throw new Error(
+    `Cannot start server: mock-commodity-details.json is missing or invalid. ${err.message}`
+  )
 }
+
+const toCommodityDetails = (list) =>
+  Array.isArray(list) && list.length > 0 ? list[0] : null
 
 export const animalIdentificationDetailsController = {
   get: {
