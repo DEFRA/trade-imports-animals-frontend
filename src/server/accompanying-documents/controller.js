@@ -73,6 +73,8 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
       text: `${doc.filename} contains a virus. Remove it and try again with a different file.`
     }))
 
+  const mergedErrors = [...(rejectedErrors ?? []), ...(extra.errorList ?? [])]
+
   return {
     pageTitle: 'Accompanying documents',
     documents: documentsWithStatus,
@@ -82,9 +84,7 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     canContinue: !anyPending && !anyRejected,
     ...extra,
     // Merge rejected errors with any form validation errors from `extra`
-    errorList: [...(rejectedErrors ?? []), ...(extra.errorList ?? [])].length
-      ? [...(rejectedErrors ?? []), ...(extra.errorList ?? [])]
-      : null
+    errorList: mergedErrors.length ? mergedErrors : null
   }
 }
 
