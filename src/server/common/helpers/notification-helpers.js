@@ -6,18 +6,24 @@ export const fetchNotification = async (request, logger) => {
   const referenceNumber = getSessionValue(request, 'referenceNumber')
   const traceId = getTraceId() ?? ''
   if (!referenceNumber) return null
-  const notification = await notificationClient.get(
-    request,
-    referenceNumber,
-    traceId
-  )
-  logger.info(
-    `Notification retrieved from notification client: ${referenceNumber}`
-  )
-  return notification
+  try {
+    const notification = await notificationClient.get(
+      request,
+      referenceNumber,
+      traceId
+    )
+    logger.info(
+      `Notification retrieved from notification client: ${referenceNumber}`
+    )
+    return notification
+  } catch (error) {
+    logger.error(`Failed to fetch notification: ${error.message}`)
+    return null
+  }
 }
 
-export const submitNotification = async (request, traceId, logger) => {
+export const submitNotification = async (request, logger) => {
+  const traceId = getTraceId() ?? ''
   try {
     const response = await notificationClient.submit(request, traceId)
     logger.info('Notification saved successfully')

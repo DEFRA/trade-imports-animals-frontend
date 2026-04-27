@@ -3,7 +3,6 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import {
   fetchNotification,
   submitNotification
@@ -30,13 +29,12 @@ export const importReasonController = {
   post: {
     async handler(_request, h) {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
 
       const { reasonForImport } = _request.payload
       logger.info(`Reason for import: ${referenceNumber}`)
       setSessionValue(_request, 'reasonForImport', reasonForImport)
 
-      await submitNotification(_request, traceId, logger)
+      await submitNotification(_request, logger)
 
       return h.redirect('/commodities/details')
     }

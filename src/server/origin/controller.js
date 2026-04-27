@@ -6,7 +6,6 @@ import {
 import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import {
   fetchNotification,
   submitNotification
@@ -39,7 +38,6 @@ export const originController = {
       const { countryCode, requiresRegionCode, internalReference } =
         _request.payload
       logger.info(`Country of origin: ${countryCode}`)
-      const traceId = getTraceId() ?? ''
 
       // Validate using Joi schema
       const { error } = originSchema.validate(_request.payload, {
@@ -64,7 +62,7 @@ export const originController = {
       setSessionValue(_request, 'requiresRegionCode', requiresRegionCode)
       setSessionValue(_request, 'internalReference', internalReference)
 
-      const response = await submitNotification(_request, traceId, logger)
+      const response = await submitNotification(_request, logger)
       if (response?.referenceNumber) {
         setSessionValue(_request, 'referenceNumber', response.referenceNumber)
         logger.info(`Reference number saved: ${response.referenceNumber}`)

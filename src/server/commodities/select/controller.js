@@ -6,7 +6,6 @@ import {
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getTraceId } from '@defra/hapi-tracing'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
 
@@ -72,7 +71,6 @@ export const commoditiesSelectController = {
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
 
-      const traceId = getTraceId() ?? ''
       const commodity = getSessionValue(_request, 'commodity')
       const existingCommodityComplement = (
         commodity?.commodityComplement ?? []
@@ -127,7 +125,7 @@ export const commoditiesSelectController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
-      await submitNotification(_request, traceId, logger)
+      await submitNotification(_request, logger)
 
       return h.redirect('/import-reason')
     }

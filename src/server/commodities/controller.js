@@ -3,7 +3,6 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import {
   fetchNotification,
   submitNotification
@@ -31,13 +30,12 @@ export const commoditiesController = {
   post: {
     async handler(_request, h) {
       const { commodity } = _request.payload
-      const traceId = getTraceId() ?? ''
       logger.info(`Commodity: ${commodity}`)
 
       // Store value in session as object so the backend always receives a consistent type
       setSessionValue(_request, 'commodity', { name: commodity })
 
-      await submitNotification(_request, traceId, logger)
+      await submitNotification(_request, logger)
 
       return h.redirect('/commodities/select')
     }

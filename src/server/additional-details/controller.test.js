@@ -130,7 +130,6 @@ describe('additionalDetailsController', () => {
       expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
       expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123',
         expect.any(Object)
       )
       expect(response).toEqual({

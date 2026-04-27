@@ -3,7 +3,6 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import {
   fetchNotification,
   submitNotification
@@ -33,7 +32,6 @@ export const additionalDetailsController = {
   post: {
     handler: async (_request, h) => {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
 
       const { certifiedFor, unweanedAnimals } = _request.payload
 
@@ -41,7 +39,7 @@ export const additionalDetailsController = {
       setSessionValue(_request, 'certifiedFor', certifiedFor)
       setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
-      await submitNotification(_request, traceId, logger)
+      await submitNotification(_request, logger)
 
       return h.redirect('/accompanying-documents')
     }

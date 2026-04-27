@@ -59,20 +59,33 @@ describe('fetchNotification', () => {
     expect(logger.info).not.toHaveBeenCalled()
     expect(result).toBeNull()
   })
+
+  test('logs error and returns null when notificationClient.get rejects', async () => {
+    getSessionValue.mockReturnValue('REF-123')
+    notificationClient.get.mockRejectedValue(new Error('Backend down'))
+    logger.error.mockClear()
+    logger.info.mockClear()
+
+    const result = await fetchNotification(request, logger)
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to fetch notification: Backend down'
+    )
+    expect(result).toBeNull()
+  })
 })
 
 describe('submitNotification', () => {
   const logger = { info: vi.fn(), error: vi.fn() }
   const request = {}
-  const traceId = 'trace-456'
 
   test('calls notificationClient.submit, logs info, and returns response on success', async () => {
     const mockResponse = { referenceNumber: 'REF-789' }
     notificationClient.submit.mockResolvedValue(mockResponse)
 
-    const result = await submitNotification(request, traceId, logger)
+    const result = await submitNotification(request, logger)
 
-    expect(notificationClient.submit).toHaveBeenCalledWith(request, traceId)
+    expect(notificationClient.submit).toHaveBeenCalledWith(request, 'trace-123')
     expect(logger.info).toHaveBeenCalledWith('Notification saved successfully')
     expect(result).toBe(mockResponse)
   })
@@ -82,7 +95,7 @@ describe('submitNotification', () => {
     notificationClient.submit.mockRejectedValue(networkError)
     logger.error.mockClear()
 
-    await expect(submitNotification(request, traceId, logger)).rejects.toThrow(
+    await expect(submitNotification(request, logger)).rejects.toThrow(
       'Network failure'
     )
 

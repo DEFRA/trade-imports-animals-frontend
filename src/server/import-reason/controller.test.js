@@ -110,7 +110,6 @@ describe('importReasonController', () => {
       expect(set).toHaveBeenCalledWith('reasonForImport', 'internalMarket')
       expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123',
         expect.any(Object)
       )
       expect(response).toEqual({

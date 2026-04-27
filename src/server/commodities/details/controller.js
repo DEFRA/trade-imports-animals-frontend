@@ -3,7 +3,6 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { getTotal, toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
 import { readFileSync } from 'node:fs'
@@ -60,7 +59,6 @@ export const commodityDetailsController = {
         `Commodity: ${getSessionValue(_request, 'commodity')} details page`
       )
 
-      const traceId = getTraceId() ?? ''
       const commodity = getSessionValue(_request, 'commodity')
 
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
@@ -86,7 +84,7 @@ export const commodityDetailsController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
-      await submitNotification(_request, traceId, logger)
+      await submitNotification(_request, logger)
 
       return h.redirect('/commodities/identification')
     }
