@@ -168,8 +168,10 @@ describe('#accompanyingDocuments', () => {
       expect(reload).toHaveBeenCalledTimes(1)
     })
 
-    test('Should create an aria-live region and announce status on COMPLETE', async () => {
-      document.body.innerHTML = TABLE_PENDING
+    test('Should announce status via the static aria-live region on COMPLETE', async () => {
+      document.body.innerHTML =
+        TABLE_PENDING +
+        '<div id="js-scan-status-announcer" aria-live="polite" aria-atomic="true" class="govuk-visually-hidden"></div>'
       global.fetch = makeFetchOk([{ uploadId: 'U1', scanStatus: 'COMPLETE' }])
       Object.defineProperty(window, 'location', {
         value: { reload: vi.fn() },

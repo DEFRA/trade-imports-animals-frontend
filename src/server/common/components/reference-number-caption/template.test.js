@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach } from 'vitest'
 import { renderComponent } from '../../test-helpers/component-helpers.js'
 
 describe('Reference Number Caption Component', () => {

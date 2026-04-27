@@ -12,16 +12,8 @@ const getPendingRows = () =>
   )
 
 const announceStatus = (message) => {
-  let liveRegion = document.getElementById('js-scan-status-announcer')
-  if (!liveRegion) {
-    liveRegion = document.createElement('div')
-    liveRegion.id = 'js-scan-status-announcer'
-    liveRegion.setAttribute('aria-live', 'polite')
-    liveRegion.setAttribute('aria-atomic', 'true')
-    liveRegion.className = 'govuk-visually-hidden'
-    document.body.appendChild(liveRegion)
-  }
-  liveRegion.textContent = message
+  const liveRegion = document.getElementById('js-scan-status-announcer')
+  if (liveRegion) liveRegion.textContent = message
 }
 
 const updateRow = (row, scanStatus) => {
@@ -39,6 +31,9 @@ const updateRow = (row, scanStatus) => {
     announceStatus(
       'Document scan failed: virus found. Remove the file and try again.'
     )
+  } else {
+    tag.textContent = 'Unknown'
+    tag.className = 'govuk-tag govuk-tag--grey'
   }
 }
 
