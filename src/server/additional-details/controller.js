@@ -35,7 +35,7 @@ export const additionalDetailsController = {
 
       const { certifiedFor, unweanedAnimals } = _request.payload
 
-      logger.info(`Additional details: ${referenceNumber}`)
+      logger.info(`Additional details: ${referenceNumber ?? 'new'}`)
       setSessionValue(_request, 'certifiedFor', certifiedFor)
       setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
