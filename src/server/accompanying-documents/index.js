@@ -29,6 +29,7 @@ export const accompanyingDocuments = {
           method: 'POST',
           path: '/accompanying-documents',
           options: {
+            // Spread only handler so route-level payload config takes precedence over any controller options
             handler: accompanyingDocumentsController.post.handler,
             payload: {
               maxBytes: MAX_PAYLOAD_BYTES,
