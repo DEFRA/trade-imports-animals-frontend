@@ -301,10 +301,11 @@ export const accompanyingDocumentsController = {
           body: formData,
           redirect: 'manual'
         })
-        // cdp-uploader redirects on success (3xx) — treat any non-redirect as failure
-        if (uploadResponse.status < 300 || uploadResponse.status >= 400) {
+        // cdp-uploader redirects on success — with redirect:'manual' the response
+        // is opaque (type 'opaqueredirect', status 0), treat anything else as failure
+        if (uploadResponse.type !== 'opaqueredirect') {
           throw new Error(
-            `cdp-uploader returned status ${uploadResponse.status}`
+            `cdp-uploader returned unexpected response type ${uploadResponse.type} (status ${uploadResponse.status})`
           )
         }
         request.logger.info(

@@ -420,7 +420,10 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should upload file, update session, and redirect on successful POST', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 302 }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({ status: 0, type: 'opaqueredirect' })
+      )
 
       documentClient.initiate.mockResolvedValue({
         uploadId: 'TEST-UPLOAD-ID',
@@ -469,8 +472,11 @@ describe('#accompanyingDocumentsController', () => {
       expect(headers.location).toBe('/accompanying-documents')
     })
 
-    test('Should re-render with 500 and error message and NOT call setSessionValue when cdp-uploader returns non-3xx', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 200 }))
+    test('Should re-render with 500 and error message and NOT call setSessionValue when cdp-uploader returns non-opaqueredirect response', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({ status: 200, type: 'basic' })
+      )
 
       documentClient.initiate.mockResolvedValue({
         uploadId: 'TEST-UPLOAD-ID',
