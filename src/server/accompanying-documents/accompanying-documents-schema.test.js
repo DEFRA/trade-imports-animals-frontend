@@ -18,6 +18,18 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error).toBeUndefined()
     })
 
+    test('Should pass for each valid document type', () => {
+      const validTypes = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
+      validTypes.forEach((type) => {
+        const { error } = accompanyingDocumentsSchema.validate({
+          documentType: type
+        })
+        expect(error).toBeUndefined()
+      })
+    })
+  })
+
+  describe('invalid documentType', () => {
     test('Should fail with an empty submission (documentType is required)', () => {
       const { error } = accompanyingDocumentsSchema.validate({})
       expect(error).toBeDefined()
@@ -32,18 +44,6 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details[0].message).toBe('Select a document type')
     })
 
-    test('Should pass for each valid document type', () => {
-      const validTypes = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
-      validTypes.forEach((type) => {
-        const { error } = accompanyingDocumentsSchema.validate({
-          documentType: type
-        })
-        expect(error).toBeUndefined()
-      })
-    })
-  })
-
-  describe('invalid documentType', () => {
     test('Should fail with custom message when documentType is not in allowed list', () => {
       const { error } = accompanyingDocumentsSchema.validate({
         documentType: 'INVALID'
