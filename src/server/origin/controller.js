@@ -19,6 +19,10 @@ export const originController = {
       logger.info(
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
+      // Dual-source pattern: referenceNumber comes from the notification API
+      // (fetched via fetchNotification), while other view values such as
+      // countryCode come from the session. These will be normalised to a
+      // single source in a future refactor.
       const notification = await fetchNotification(_request, logger)
       const referenceNumber = notification?.referenceNumber ?? null
 
