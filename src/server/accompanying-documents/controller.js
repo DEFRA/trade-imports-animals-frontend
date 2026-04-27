@@ -272,6 +272,25 @@ export const accompanyingDocumentsController = {
 
       const notificationRef = getSessionValue(request, 'referenceNumber')
 
+      if (!notificationRef) {
+        request.logger.error('No referenceNumber in session')
+        const attempt = parseInt(request.query.attempt ?? '0', 10)
+        const rawDocuments = getSessionValue(request, 'documents') ?? []
+        const documentsWithStatus = await getDocumentsWithStatus(
+          rawDocuments,
+          traceId,
+          request.logger
+        )
+        return h
+          .view(
+            'accompanying-documents/index',
+            buildPageModel(documentsWithStatus, attempt, {
+              errorList: [{ text: 'Session expired, please start again' }]
+            })
+          )
+          .code(statusCodes.badRequest)
+      }
+
       let uploadId
       try {
         const redirectUrl = `${frontendBaseUrl}/accompanying-documents`
