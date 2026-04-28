@@ -5,6 +5,7 @@ const tradeImportsAnimalsBackendUrl = config.get(
   'tradeImportsAnimalsBackendApi.baseUrl'
 )
 const tracingHeader = config.get('tracing.header')
+const adminSecret = config.get('tradeImportsAnimalsAdminSecret')
 const logger = createLogger()
 
 const buildFetchError = (message, response) => {
@@ -48,7 +49,8 @@ export const documentClient = {
       {
         method: 'DELETE',
         headers: {
-          [tracingHeader]: traceId
+          [tracingHeader]: traceId,
+          'Trade-Imports-Animals-Admin-Secret': adminSecret
         }
       }
     )

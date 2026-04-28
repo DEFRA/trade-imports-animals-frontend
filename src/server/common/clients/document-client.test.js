@@ -22,6 +22,10 @@ vi.mock('../../../config/config.js', () => ({
         return 'x-trace-id'
       }
 
+      if (key === 'tradeImportsAnimalsAdminSecret') {
+        return 'test-admin-secret'
+      }
+
       return undefined
     })
   }
@@ -140,7 +144,8 @@ describe('#documentClient', () => {
           {
             method: 'DELETE',
             headers: {
-              'x-trace-id': traceId
+              'x-trace-id': traceId,
+              'Trade-Imports-Animals-Admin-Secret': 'test-admin-secret'
             }
           }
         )
