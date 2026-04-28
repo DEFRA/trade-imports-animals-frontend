@@ -16,8 +16,15 @@ const consignorsAddressesFilePath = path.join(
   dirname,
   './consignors/select/mock-consignors.json'
 )
+const destinationsAddressesFilePath = path.join(
+  dirname,
+  './destinations/select/mock-destinations.json'
+)
 const consignors = JSON.parse(
   readFileSync(consignorsAddressesFilePath, 'utf-8')
+)
+const destinations = JSON.parse(
+  readFileSync(destinationsAddressesFilePath, 'utf-8')
 )
 
 export const addressesController = {
@@ -31,20 +38,36 @@ export const addressesController = {
         _request.query?.selectedConsignor,
         10
       )
+      const selectedDestinationId = Number.parseInt(
+        _request.query?.selectedDestination,
+        10
+      )
       if (
         Number.isInteger(selectedConsignorId) &&
         consignors[selectedConsignorId]
       ) {
         setSessionValue(_request, 'consignor', consignors[selectedConsignorId])
       }
+      if (
+        Number.isInteger(selectedDestinationId) &&
+        destinations[selectedDestinationId]
+      ) {
+        setSessionValue(
+          _request,
+          'destination',
+          destinations[selectedDestinationId]
+        )
+      }
 
       const selectedConsignor = getSessionValue(_request, 'consignor')
+      const selectedDestination = getSessionValue(_request, 'destination')
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',
         heading: 'Addresses',
         referenceNumber,
-        selectedConsignor
+        selectedConsignor,
+        selectedDestination
       })
     }
   },

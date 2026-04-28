@@ -7,22 +7,27 @@ import { getSessionValue } from '../../../common/helpers/session-helpers.js'
 const logger = createLogger()
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-const consignorsAddressesFilePath = path.join(dirname, 'mock-consignors.json')
-const consignors = JSON.parse(
-  readFileSync(consignorsAddressesFilePath, 'utf-8')
+const destinationsAddressesFilePath = path.join(
+  dirname,
+  'mock-destinations.json'
+)
+const destinations = JSON.parse(
+  readFileSync(destinationsAddressesFilePath, 'utf-8')
 )
 
-export const consignorsSelectController = {
+export const destinationsSelectController = {
   get: {
     handler(_request, h) {
+      logger.info(
+        `Places of destination: ${getSessionValue(_request, 'commodity')} selection page`
+      )
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      logger.info(`Consignor address: ${referenceNumber} selection page`)
 
-      return h.view('addresses/consignors/select/index', {
-        pageTitle: 'Search for an existing consignor or exporter',
+      return h.view('addresses/destinations/select/index', {
+        pageTitle: 'Search for a place of destination',
         heading: 'Address',
         referenceNumber,
-        consignors
+        destinations
       })
     }
   }

@@ -65,6 +65,16 @@ export const notificationClient = {
       }
     }
 
+    // addresses
+    const selectedConsignor = getSessionValue(_request, 'consignor')
+    const selectedDestination = getSessionValue(_request, 'destination')
+    if (selectedConsignor) {
+      notification.consignor = selectedConsignor
+    }
+    if (selectedDestination) {
+      notification.destination = selectedDestination
+    }
+
     // Get CPH number from session
     const cphNumber = getSessionValue(_request, 'cphNumber')
     if (cphNumber) {
@@ -116,7 +126,7 @@ export const notificationClient = {
    */
   async get(_request, referenceNumber, traceId) {
     const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/notifications/` + referenceNumber,
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}`,
       {
         method: 'GET',
         headers: {
@@ -172,6 +182,14 @@ export const notificationClient = {
 
     if (notification.reasonForImport) {
       setSessionValue(_request, 'reasonForImport', notification.reasonForImport)
+    }
+
+    if (notification.consignor) {
+      setSessionValue(_request, 'consignor', notification.consignor)
+    }
+
+    if (notification.destination) {
+      setSessionValue(_request, 'destination', notification.destination)
     }
 
     if (notification.cphNumber) {
