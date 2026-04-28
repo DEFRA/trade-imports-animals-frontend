@@ -307,9 +307,10 @@ export const accompanyingDocumentsController = {
           body: formData,
           redirect: 'manual'
         })
-        // cdp-uploader redirects on success (status 0 with redirect:'manual');
-        // local mock returns 200 directly — accept any status < 300 as success
-        if (uploadResponse.status >= 300) {
+        // cdp-uploader redirects (302) on success; Node.js fetch with
+        // redirect:'manual' returns the actual redirect status, not status 0.
+        // Local mock returns 200 directly. Fail only on 4xx/5xx.
+        if (uploadResponse.status >= 400) {
           throw new Error(
             `cdp-uploader returned unexpected status ${uploadResponse.status}`
           )
