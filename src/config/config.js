@@ -344,13 +344,6 @@ export const config = convict({
     format: 'url',
     default: 'http://localhost:3000',
     env: 'FRONTEND_BASE_URL'
-  },
-  tradeImportsAnimalsAdminSecret: {
-    doc: 'Shared secret sent to the backend for privileged operations such as document deletion',
-    format: String,
-    default: 'local-trade-imports-animals-admin-secret',
-    env: 'TRADE_IMPORTS_ANIMALS_ADMIN_SECRET',
-    sensitive: true
   }
 })
 
