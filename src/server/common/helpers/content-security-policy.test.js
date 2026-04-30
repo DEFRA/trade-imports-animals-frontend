@@ -38,7 +38,7 @@ describe('#contentSecurityPolicy', () => {
     const cdpUploaderOrigin = new URL(config.get('cdpUploaderUrl')).origin
     const csp = resp.headers['content-security-policy']
 
-    expect(csp).toContain(`form-action`)
+    expect(csp).toContain('form-action')
     expect(csp).toContain(cdpUploaderOrigin)
   })
 })
