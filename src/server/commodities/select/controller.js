@@ -12,7 +12,10 @@ import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
 
 const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-const commodityDetailsPath = path.join(dirname, 'mock-commodity-details.json')
+const commodityDetailsPath = path.join(
+  dirname,
+  '../../common/mock-data/mock-commodity-details.json'
+)
 const speciesDetailsPath = path.join(dirname, 'mock-species.json')
 const commodityDetailsList = JSON.parse(
   readFileSync(commodityDetailsPath, 'utf-8')
