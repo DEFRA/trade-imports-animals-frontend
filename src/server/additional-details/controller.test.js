@@ -110,8 +110,6 @@ describe('additionalDetailsController', () => {
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      submitNotification.mockResolvedValue(undefined)
-
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
 
