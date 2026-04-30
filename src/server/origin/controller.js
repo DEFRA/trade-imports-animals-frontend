@@ -66,10 +66,27 @@ export const originController = {
       setSessionValue(_request, 'requiresRegionCode', requiresRegionCode)
       setSessionValue(_request, 'internalReference', internalReference)
 
-      const response = await submitNotification(_request, logger)
-      if (response?.referenceNumber) {
-        setSessionValue(_request, 'referenceNumber', response.referenceNumber)
-        logger.info(`Reference number saved: ${response.referenceNumber}`)
+      try {
+        const response = await submitNotification(_request, logger)
+        if (response?.referenceNumber) {
+          setSessionValue(_request, 'referenceNumber', response.referenceNumber)
+          logger.info(`Reference number saved: ${response.referenceNumber}`)
+        }
+      } catch {
+        return h
+          .view('origin/index', {
+            pageTitle: 'Origin of the import',
+            heading: 'Origin of the import',
+            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            countryCode: getSessionValue(_request, 'countryCode'),
+            requiresRegionCode:
+              getSessionValue(_request, 'requiresRegionCode') || 'no',
+            internalReference: getSessionValue(_request, 'internalReference'),
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
       }
 
       return h.redirect('/commodities')

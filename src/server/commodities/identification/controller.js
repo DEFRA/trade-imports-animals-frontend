@@ -3,6 +3,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
+import { statusCodes } from '../../common/constants/status-codes.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
 import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
@@ -81,7 +82,27 @@ export const animalIdentificationDetailsController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
-      await submitNotification(_request, logger)
+      try {
+        await submitNotification(_request, logger)
+      } catch {
+        const updatedCommodity = getSessionValue(_request, 'commodity')
+        const updatedComplement = (
+          updatedCommodity?.commodityComplement ?? []
+        ).at(-1)
+        return h
+          .view('commodities/identification/index', {
+            pageTitle: 'Description of goods',
+            heading: 'Commodity',
+            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            commodity: updatedCommodity,
+            typeOfCommodity: updatedComplement?.typeOfCommodity,
+            speciesLst: updatedComplement?.species ?? [],
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
+      }
 
       return h.redirect('/additional-details')
     }

@@ -7,6 +7,7 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 const logger = createLogger()
 
@@ -36,7 +37,21 @@ export const importReasonController = {
       )
       setSessionValue(_request, 'reasonForImport', reasonForImport)
 
-      await submitNotification(_request, logger)
+      try {
+        await submitNotification(_request, logger)
+      } catch {
+        return h
+          .view('import-reason/index', {
+            pageTitle: 'Reason for import',
+            heading: 'Reason for import',
+            reasonForImport: getSessionValue(_request, 'reasonForImport'),
+            referenceNumber,
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
+      }
 
       return h.redirect('/commodities/details')
     }

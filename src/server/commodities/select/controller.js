@@ -6,6 +6,7 @@ import {
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { statusCodes } from '../../common/constants/status-codes.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
 import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
@@ -114,8 +115,33 @@ export const commoditiesSelectController = {
       commodityJson.commodityComplement = [commodityComplement]
       setSessionValue(_request, 'commodity', commodityJson)
 
-      // return value intentionally unused — submitNotification is called for side-effects only
-      await submitNotification(_request, logger)
+      try {
+        await submitNotification(_request, logger)
+      } catch {
+        const updatedCommodity = getSessionValue(_request, 'commodity')
+        const updatedComplement = (
+          updatedCommodity?.commodityComplement ?? []
+        ).at(-1)
+        const updatedSpecies = (updatedComplement?.species ?? [])
+          .map((s) => (typeof s === 'string' ? s : s?.value))
+          .filter(Boolean)
+        return h
+          .view('commodities/select/index', {
+            pageTitle: 'Select species of commodity',
+            heading: 'Commodity',
+            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            commodity: updatedCommodity,
+            typeOfCommodity: updatedComplement?.typeOfCommodity,
+            species: updatedSpecies,
+            savedSpeciesValues: updatedSpecies,
+            commodityDetails,
+            speciesDetails,
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
+      }
 
       return h.redirect('/import-reason')
     }

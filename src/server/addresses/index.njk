@@ -1,6 +1,7 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
@@ -14,6 +15,13 @@
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
 
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
+
         <span class="govuk-caption-l">{{ captionText }}</span>
         <h1 class="govuk-heading-l">{{ heading }}</h1>
 
@@ -24,14 +32,35 @@
             <div class="govuk-form-group">
               <fieldset class="govuk-fieldset">
                 <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                  <h2 class="govuk-fieldset__heading">Consigner or exporter</h2>
+                  <h2 class="govuk-fieldset__heading">Consignor or exporter</h2>
                 </legend>
                 <div id="consignor-hint" class="govuk-hint">
                   This is the sender of the consignment.
                 </div>
-                <p class="govuk-body">
-                  <a href="#" class="govuk-link govuk-link--no-visited-state" id="addConsignorOrExporter">Add a consignor or exporter</a><!-- TODO: replace with real target before go-live -->
-                </p>
+                {% if selectedConsignor %}
+                  <table class="govuk-table govuk-table--small-text-until-tablet">
+                    <thead class="govuk-table__head">
+                    <tr class="govuk-table__row">
+                      <th scope="col" class="govuk-table__header">Name</th>
+                      <th scope="col" class="govuk-table__header">Address</th>
+                      <th scope="col" class="govuk-table__header">Country</th>
+                    </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                      <td class="govuk-table__cell">{{ selectedConsignor.name }}</td>
+                      <td class="govuk-table__cell">
+                        {{ selectedConsignor.address.addressLine1 }}{% if selectedConsignor.address.addressLine2 %}, {{ selectedConsignor.address.addressLine2 }}{% endif %}{% if selectedConsignor.address.addressLine3 %}, {{ selectedConsignor.address.addressLine3 }}{% endif %}
+                      </td>
+                      <td class="govuk-table__cell">{{ selectedConsignor.address.country }}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                {% else %}
+                  <p class="govuk-body">
+                    <a href="/consignors/select" class="govuk-link govuk-link--no-visited-state" id="addConsignorOrExporter">Add a consignor or exporter</a>
+                  </p>
+                {% endif %}
               </fieldset>
             </div>
             <div class="govuk-form-group">
@@ -75,9 +104,30 @@
                     Providing a false address is an act of fraud.
                   </strong>
                 </div>
-                <p class="govuk-body">
-                  <a href="#" class="govuk-link govuk-link--no-visited-state" id="addPlaceOfDestination">Add a place of destination</a><!-- TODO: replace with real target before go-live -->
-                </p>
+                {% if selectedDestination %}
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <thead class="govuk-table__head">
+                  <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">Name</th>
+                    <th scope="col" class="govuk-table__header">Address</th>
+                    <th scope="col" class="govuk-table__header">Country</th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row">
+                    <td class="govuk-table__cell">{{ selectedDestination.name }}</td>
+                    <td class="govuk-table__cell">
+                      {{ selectedDestination.address.addressLine1 }}{% if selectedDestination.address.addressLine2 %}, {{ selectedDestination.address.addressLine2 }}{% endif %}{% if selectedDestination.address.addressLine3 %}, {{ selectedDestination.address.addressLine3 }}{% endif %}
+                    </td>
+                    <td class="govuk-table__cell">{{ selectedDestination.address.country }}</td>
+                  </tr>
+                  </tbody>
+                </table>
+                {% else %}
+                  <p class="govuk-body">
+                    <a href="/destinations/select" class="govuk-link govuk-link--no-visited-state" id="addPlaceOfDestination">Add a place of destination</a>
+                  </p>
+                {% endif %}
               </fieldset>
             </div>
           </div>

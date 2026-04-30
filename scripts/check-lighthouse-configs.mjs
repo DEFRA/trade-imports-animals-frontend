@@ -8,8 +8,15 @@ const projectRoot = path.resolve(__dirname, '..')
 
 const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
-// Routes to ignore when checking for Lighthouse coverage
-const IGNORED_PATHS = new Set(['/health', '/accompanying-documents/status']) // JSON status polling endpoint — not a rendered page
+// Routes to ignore when checking for Lighthouse coverage:
+// - /accompanying-documents/status: JSON status polling endpoint, not a rendered page
+// - /addresses/{consignors,destinations}/select: not standalone page targets, exercised via /addresses
+const IGNORED_PATHS = new Set([
+  '/health',
+  '/accompanying-documents/status',
+  '/addresses/consignors/select',
+  '/addresses/destinations/select'
+])
 const IGNORED_PREFIXES = ['/public/']
 const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
 

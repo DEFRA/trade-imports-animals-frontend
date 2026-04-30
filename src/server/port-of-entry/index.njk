@@ -1,0 +1,96 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block content %}
+  {{ govukBackLink({
+    text: "Back",
+    href: "/cph-number"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
+
+        <span class="govuk-caption-l">Transport</span>
+        <h1 class="govuk-heading-l">Entry point and arrival at destination</h1>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          {{ govukSelect({
+            id: "portOfEntry",
+            name: "portOfEntry",
+            label: {
+              text: "What is the port of entry into Great Britain?",
+              classes: "govuk-label--m"
+            },
+            value: portOfEntry if portOfEntry,
+            errorMessage: fieldErrors["portOfEntry"] if fieldErrors,
+            items: [
+              { value: "", text: "Entry port of entry" },
+              { value: "ABERDEEN", text: "ABERDEEN" },
+              { value: "EAST MIDLANDS AIRPORT", text: "EAST MIDLANDS AIRPORT" },
+              { value: "EDINBURGH", text: "EDINBURGH" }
+            ]
+          }) }}
+
+          {{ govukDateInput({
+            id: "arrivalDate",
+            namePrefix: "arrivalDate",
+            fieldset: {
+              legend: {
+                text: "When will the consignment arrive at its final destination?",
+                classes: "govuk-fieldset__legend--m"
+              }
+            },
+            hint: {
+              text: "For example, 27 3 2026"
+            },
+            errorMessage: fieldErrors["arrivalDate-day"] or fieldErrors["arrivalDate-month"] or fieldErrors["arrivalDate-year"] if fieldErrors,
+            items: [
+              {
+                label: "Day",
+                id: "arrivalDate-day",
+                name: "day",
+                classes: "govuk-input--width-2",
+                value: arrivalDate.day if arrivalDate
+              },
+              {
+                label: "Month",
+                id: "arrivalDate-month",
+                name: "month",
+                classes: "govuk-input--width-2",
+                value: arrivalDate.month if arrivalDate
+              },
+              {
+                label: "Year",
+                id: "arrivalDate-year",
+                name: "year",
+                classes: "govuk-input--width-4",
+                value: arrivalDate.year if arrivalDate
+              }
+            ]
+          }) }}
+
+          <div class="govuk-button-group">
+            {{ govukButton({
+              text: "Save and continue"
+            }) }}
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+{% endblock %}

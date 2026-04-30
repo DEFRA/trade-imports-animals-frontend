@@ -1,10 +1,14 @@
 {% extends 'layouts/page.njk' %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ govukBackLink({
+    text: "Back",
+    href: "/addresses"
+  }) }}
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
@@ -17,38 +21,37 @@
           }) }}
         {% endif %}
 
+        {% if referenceNumber %}
+          <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+        {% endif %}
+        <h1 class="govuk-heading-l">Add the County Parish Holding number (CPH)</h1>
+
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-        {{ govukSelect({
-          id: "commodity",
-          name: "commodity",
-          label: {
-            text: heading,
-            classes: "govuk-label--l",
-            isPageHeading: true
-          },
-          value: commodity.name,
-          hint: {
-            text: "Select the type of animal you are importing"
-          },
-          items: [
-            { value: "", text: "Select a commodity" },
-            { text: "──────────", disabled: true },
-            { value: "Cow", text: "Cow" },
-            { value: "Fish", text: "Fish" },
-            { value: "Cat", text: "Cat" },
-            { value: "Dog", text: "Dog" }
-          ]
-        }) }}
+          {{ govukInput({
+            label: {
+              text: "CPH number"
+            },
+            id: "cphNumber",
+            name: "cphNumber",
+            value: cphNumber if cphNumber,
+            inputmode: "numeric",
+            spellcheck: false,
+            attributes: {
+              maxlength: "9"
+            },
+            errorMessage: fieldErrors.cphNumber if fieldErrors
+          }) }}
+
           <div class="govuk-button-group">
             {{ govukButton({
               text: "Save and continue"
             }) }}
           </div>
         </form>
+
       </div>
     </div>
   </div>
-
 {% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+
+{% block content %}
+  {% if referenceNumber %}
+    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
+  {% endif %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/addresses"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        <span class="govuk-caption-l">{{ heading }}</span>
+        <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          <div class="govuk-fieldset">
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <thead class="govuk-table__head">
+                  <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">Name</th>
+                    <th scope="col" class="govuk-table__header">Address</th>
+                    <th scope="col" class="govuk-table__header">Country</th>
+                    <th scope="col" class="govuk-table__header"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  {% for consignor in consignors %}
+                    <tr class="govuk-table__row">
+                      <th scope="row" class="govuk-table__header">{{ consignor.name }}</th>
+                      <td class="govuk-table__cell">
+                        {{ consignor.address.addressLine1 }}{% if consignor.address.addressLine2 %}, {{ consignor.address.addressLine2 }}{% endif %}{% if consignor.address.addressLine3 %}, {{ consignor.address.addressLine3 }}{% endif %}
+                      </td>
+                      <td class="govuk-table__cell">{{ consignor.address.country }}</td>
+                      <td class="govuk-table__cell">
+                        <a href="/addresses?selectedConsignor={{ loop.index0 }}" id="selectedConsignor-{{ loop.index0 }}">Select</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </fieldset>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

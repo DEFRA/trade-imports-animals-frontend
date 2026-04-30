@@ -19,6 +19,10 @@ import { accompanyingDocumentsLighthouseConfig } from './accompanying-documents.
 import { additionalDetailsLighthouseConfig } from './additional-details.config.js'
 import { animalsIdentificationDetailsLighthouseConfig } from './animals-identification-details.config.js'
 import { addressesLighthouseConfig } from './addresses.config.js'
+import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
+import { destinationsSelectLighthouseConfig } from './destinations-select.config.js'
+import { cphNumberLighthouseConfig } from './cph-number.config.js'
+import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -37,7 +41,11 @@ const pageConfigs = [
   accompanyingDocumentsLighthouseConfig,
   additionalDetailsLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig,
-  addressesLighthouseConfig
+  addressesLighthouseConfig,
+  consignorsSelectLighthouseConfig,
+  destinationsSelectLighthouseConfig,
+  cphNumberLighthouseConfig,
+  portOfEntryLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'

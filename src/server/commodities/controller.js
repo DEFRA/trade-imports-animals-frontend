@@ -7,6 +7,7 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 const logger = createLogger()
 
@@ -38,7 +39,21 @@ export const commoditiesController = {
       // Store value in session as object so the backend always receives a consistent type
       setSessionValue(_request, 'commodity', { name: commodity })
 
-      await submitNotification(_request, logger)
+      try {
+        await submitNotification(_request, logger)
+      } catch {
+        return h
+          .view('commodities/index', {
+            pageTitle: 'Commodities',
+            heading: 'Select a Commodity',
+            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            commodity: getSessionValue(_request, 'commodity'),
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
+      }
 
       return h.redirect('/commodities/select')
     }

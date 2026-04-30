@@ -240,9 +240,12 @@ describe('#commoditiesController', () => {
         }
       }
 
-      const { statusCode } = await server.inject(options)
+      const { statusCode, result } = await server.inject(options)
 
       expect(statusCode).toBe(statusCodes.internalServerError)
+      expect(result).toContain(
+        'Something went wrong, please contact the EUDP team'
+      )
     })
   })
 })

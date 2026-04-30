@@ -132,7 +132,7 @@ describe('#animalIdentificationDetailsController', () => {
       expect(headers.location).toBe('/additional-details')
     })
 
-    test('returns 500 when backend submit fails', async () => {
+    test('shows error page when backend submit fails', async () => {
       const complement = {
         typeOfCommodity: 'Domestic',
         species: [{ value: '1586274', text: '1586274' }]

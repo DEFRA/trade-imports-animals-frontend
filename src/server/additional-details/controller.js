@@ -7,6 +7,7 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 const logger = createLogger()
 
@@ -39,7 +40,23 @@ export const additionalDetailsController = {
       setSessionValue(_request, 'certifiedFor', certifiedFor)
       setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
-      await submitNotification(_request, logger)
+      try {
+        await submitNotification(_request, logger)
+      } catch {
+        return h
+          .view('additional-details/index', {
+            pageTitle: 'Additional animal details',
+            heading: 'Additional animal details',
+            certifiedFor: getSessionValue(_request, 'certifiedFor'),
+            unweanedAnimals:
+              getSessionValue(_request, 'unweanedAnimals') ?? 'no',
+            referenceNumber,
+            errorList: [
+              { text: 'Something went wrong, please contact the EUDP team' }
+            ]
+          })
+          .code(statusCodes.internalServerError)
+      }
 
       return h.redirect('/accompanying-documents')
     }
