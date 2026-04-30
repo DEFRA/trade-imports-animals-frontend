@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest'
 
 import {
   ALLOWED_TYPES,
+  ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
   MAX_DOCUMENTS,
@@ -28,6 +29,13 @@ describe('document-upload-config', () => {
           mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
       ])
+    })
+
+    test('ALLOWED_FILE_TYPES_HINT lists every MIME-distinct extension exactly once, joined with "or"', () => {
+      // De-duplicated by MIME, so JPEG appears once and JPG is collapsed away.
+      expect(ALLOWED_FILE_TYPES_HINT).toBe(
+        'PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX'
+      )
     })
 
     test('does not permit ZIP or archive types (security invariant)', () => {

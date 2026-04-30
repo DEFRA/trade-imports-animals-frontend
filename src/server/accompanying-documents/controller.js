@@ -13,6 +13,7 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../../config/config.js'
 import {
   ALLOWED_TYPES,
+  ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
   MAX_DOCUMENTS
 } from './document-upload-config.js'
@@ -66,6 +67,7 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     timedOut,
     nextAttempt: attempt + 1,
     canContinue: !anyPending && !anyRejected,
+    allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     ...extra,
     // Merge rejected errors with any form validation errors from `extra`
     errorList: mergedErrors.length ? mergedErrors : null

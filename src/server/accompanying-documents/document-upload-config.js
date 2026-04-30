@@ -21,6 +21,23 @@ export const ALLOWED_TYPES = [
   }
 ]
 
+// User-facing hint listing the allowed file types, derived from ALLOWED_TYPES
+// so the template never drifts from the real allow-list. JPEG and JPG share
+// the same MIME type (image/jpeg), so we de-duplicate by MIME — keeping only
+// the first extension per MIME — to avoid showing both "JPEG" and "JPG".
+const seenMimes = new Set()
+const allowedTypeLabels = ALLOWED_TYPES.filter((t) => {
+  if (seenMimes.has(t.mime)) return false
+  seenMimes.add(t.mime)
+  return true
+}).map((t) => t.ext.toUpperCase())
+
+// Use en-GB so the Oxford comma is omitted ("X, Y or Z" not "X, Y, or Z"),
+// matching GDS plain-English style.
+export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
+  type: 'disjunction'
+}).format(allowedTypeLabels)
+
 export const MAX_FILE_SIZE_BYTES = 52_428_800 // 50 MB
 
 // Headroom added on top of MAX_FILE_SIZE_BYTES so the Hapi route payload limit
