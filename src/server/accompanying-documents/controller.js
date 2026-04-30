@@ -260,7 +260,12 @@ export const accompanyingDocumentsController = {
           .view(
             'accompanying-documents/index',
             buildPageModel(documentsWithStatus, attempt, {
-              errorList: [{ text: 'Session expired, please start again' }]
+              errorList: [
+                {
+                  text: 'Session expired, please start again',
+                  href: '#documentType'
+                }
+              ]
             })
           )
           .code(statusCodes.badRequest)
