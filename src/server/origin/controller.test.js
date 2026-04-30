@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
@@ -17,6 +18,16 @@ vi.mock('../../config/config.js', async (importOriginal) => {
   return mockAuthConfig(importOriginal)
 })
 
+const mockCountries = [
+  { code: 'FR', name: 'France' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'PT', name: 'Portugal' }
+]
+
 describe('#originController', () => {
   let server
   beforeAll(async () => {
@@ -24,6 +35,7 @@ describe('#originController', () => {
     vi.spyOn(notificationClient, 'submit').mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
+    vi.spyOn(countriesClient, 'getCountries').mockResolvedValue(mockCountries)
 
     server = await createServer()
     await server.initialize()
@@ -50,7 +62,7 @@ describe('#originController', () => {
       expect(result).toEqual(expect.stringContaining('Origin of the Import'))
     })
 
-    test('Should display country select dropdown with all EU countries', async () => {
+    test('Should display country select dropdown populated from the API', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/origin',
@@ -65,10 +77,12 @@ describe('#originController', () => {
       const $ = load(result)
       const selectOptions = $('#countryCode option')
 
-      expect(selectOptions.length).toBeGreaterThan(25)
+      // placeholder + separator + mockCountries
+      expect(selectOptions.length).toBe(mockCountries.length + 2)
       expect(result).toEqual(expect.stringContaining('France'))
       expect(result).toEqual(expect.stringContaining('Germany'))
       expect(result).toEqual(expect.stringContaining('Spain'))
+      expect(countriesClient.getCountries).toHaveBeenCalled()
     })
 
     test('Should render form with radio buttons for region code', async () => {
