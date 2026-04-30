@@ -7,10 +7,6 @@ import {
   submitNotification
 } from '../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
-}))
-
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
