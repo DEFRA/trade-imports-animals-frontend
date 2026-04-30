@@ -23,10 +23,12 @@ export const ALLOWED_TYPES = [
 
 export const MAX_FILE_SIZE_BYTES = 52_428_800 // 50 MB
 
-// MAX_PAYLOAD_BYTES matches MAX_FILE_SIZE_BYTES but is kept separate because
-// it is set on the Hapi route payload option and must cover multipart overhead
-// (form fields, boundary markers) on top of the raw file bytes.
-export const MAX_PAYLOAD_BYTES = 52_428_800 // 50 MB
+// Headroom added on top of MAX_FILE_SIZE_BYTES so the Hapi route payload limit
+// covers the multipart envelope (form-field bytes and boundary markers) around
+// a 50 MB file. Without this buffer a precisely 50 MB upload would be rejected
+// by Hapi before the controller's size check could produce a friendly error.
+const MULTIPART_OVERHEAD_BYTES = 1024
+export const MAX_PAYLOAD_BYTES = MAX_FILE_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
 
 export const MAX_DOCUMENTS = 10
 
