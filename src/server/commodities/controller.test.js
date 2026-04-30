@@ -20,18 +20,23 @@ vi.mock('../../config/config.js', async (importOriginal) => {
 describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })
 
+  beforeEach(() => {
+    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      referenceNumber: 'TEST-REF-123'
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   afterAll(async () => {
     await server.stop({ timeout: 0 })
-    vi.restoreAllMocks()
   })
 
   describe('GET /commodities', () => {
