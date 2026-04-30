@@ -26,9 +26,6 @@ describe('#commoditiesController', () => {
 
   beforeEach(() => {
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
   })
 
   afterEach(() => {
@@ -153,6 +150,12 @@ describe('#commoditiesController', () => {
   })
 
   describe('POST /commodities', () => {
+    beforeEach(() => {
+      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+        referenceNumber: 'TEST-REF-123'
+      })
+    })
+
     test('Should save commodity to session and redirect', async () => {
       const options = {
         method: 'POST',
