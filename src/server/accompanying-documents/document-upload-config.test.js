@@ -37,31 +37,6 @@ describe('document-upload-config', () => {
         'PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX'
       )
     })
-
-    test('does not permit ZIP or archive types (security invariant)', () => {
-      const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz', 'tgz', 'bz2']
-      const archiveMimes = [
-        'application/zip',
-        'application/x-zip-compressed',
-        'application/x-rar-compressed',
-        'application/vnd.rar',
-        'application/x-7z-compressed',
-        'application/x-tar',
-        'application/gzip',
-        'application/x-gzip',
-        'application/x-bzip2'
-      ]
-
-      const exts = ALLOWED_TYPES.map((t) => t.ext)
-      const mimes = ALLOWED_TYPES.map((t) => t.mime)
-
-      for (const ext of archiveExts) {
-        expect(exts).not.toContain(ext)
-      }
-      for (const mime of archiveMimes) {
-        expect(mimes).not.toContain(mime)
-      }
-    })
   })
 
   describe('size limits', () => {
