@@ -21,6 +21,8 @@ const commodityDetailsList = JSON.parse(
   readFileSync(commodityDetailsPath, 'utf-8')
 )
 const speciesDetailsList = JSON.parse(readFileSync(speciesDetailsPath, 'utf-8'))
+const commodityDetails = toCommodityDetails(commodityDetailsList)
+const speciesDetails = toCommodityDetails(speciesDetailsList)
 
 export const commoditiesSelectController = {
   get: {
@@ -48,8 +50,8 @@ export const commoditiesSelectController = {
         typeOfCommodity,
         species,
         savedSpeciesValues,
-        commodityDetails: toCommodityDetails(commodityDetailsList),
-        speciesDetails: toCommodityDetails(speciesDetailsList)
+        commodityDetails,
+        speciesDetails
       })
     }
   },
@@ -74,7 +76,6 @@ export const commoditiesSelectController = {
           ? [species]
           : []
 
-      const speciesDetails = toCommodityDetails(speciesDetailsList)
       const speciesByValue = new Map(
         (speciesDetails?.data?.species ?? []).map((s) => [s.value, s.text])
       )
