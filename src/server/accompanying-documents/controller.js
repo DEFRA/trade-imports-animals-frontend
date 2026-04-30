@@ -15,7 +15,8 @@ import {
   ALLOWED_TYPES,
   ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
-  MAX_DOCUMENTS
+  MAX_DOCUMENTS,
+  MAX_DOCUMENT_REFERENCE_LENGTH
 } from './document-upload-config.js'
 
 const frontendBaseUrl = config.get('frontendBaseUrl')
@@ -68,6 +69,7 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     nextAttempt: attempt + 1,
     canContinue: !anyPending && !anyRejected,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
+    maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
     ...extra,
     // Merge rejected errors with any form validation errors from `extra`
     errorList: mergedErrors.length ? mergedErrors : null

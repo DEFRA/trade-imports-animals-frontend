@@ -142,7 +142,7 @@
             name: "documentReference",
             value: documentReference if documentReference,
             errorMessage: fieldErrors.documentReference if fieldErrors,
-            attributes: { maxlength: "100" }
+            attributes: { maxlength: maxDocumentReferenceLength }
           }) }}
 
           {%- set dateErrorMessage = fieldErrors["issueDate-day"] or fieldErrors["issueDate-month"] or fieldErrors["issueDate-year"] -%}
