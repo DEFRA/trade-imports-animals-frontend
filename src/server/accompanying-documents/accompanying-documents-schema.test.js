@@ -162,7 +162,9 @@ describe('#accompanyingDocumentsSchema', () => {
       const error = validatePartialDate({ 'issueDate-month': 6 })
       expect(error).not.toBeNull()
       expect(error.details).toHaveLength(2)
+      expect(error.details[0].message).toBe('Date of issue must include a day')
       expect(error.details[0].path).toEqual(['issueDate-day'])
+      expect(error.details[1].message).toBe('Date of issue must include a year')
       expect(error.details[1].path).toEqual(['issueDate-year'])
     })
 
@@ -184,6 +186,7 @@ describe('#accompanyingDocumentsSchema', () => {
       })
       expect(error).not.toBeNull()
       expect(error.details).toHaveLength(1)
+      expect(error.details[0].message).toBe('Date of issue must include a day')
       expect(error.details[0].path).toEqual(['issueDate-day'])
     })
 
