@@ -500,8 +500,6 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should re-render with 400 and Select a document type error when documentType is empty', async () => {
-      documentClient.initiate.mockClear()
-
       const { statusCode, result } = await server.inject({
         method: 'POST',
         url: '/accompanying-documents',
