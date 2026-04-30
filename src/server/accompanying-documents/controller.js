@@ -148,6 +148,17 @@ export const accompanyingDocumentsController = {
         file: fileData
       } = request.payload
 
+      // Hoisted so all error branches below can reuse the same values
+      // without re-parsing the attempt query param or re-fetching documents.
+      const parsed = parseInt(request.query.attempt ?? '0', 10)
+      const attempt = Number.isNaN(parsed) ? 0 : parsed
+      const documents = getSessionValue(request, 'documents') ?? []
+      const documentsWithStatus = await getDocumentsWithStatus(
+        documents,
+        traceId,
+        request.logger
+      )
+
       const { error } = accompanyingDocumentsSchema.validate(
         {
           documentType,
@@ -165,13 +176,7 @@ export const accompanyingDocumentsController = {
       const schemaErrors = error ? error.details : []
       const dateErrors = partialDateError ? partialDateError.details : []
 
-      const documents = getSessionValue(request, 'documents') ?? []
       if (documents.length >= MAX_DOCUMENTS) {
-        const documentsWithStatus = await getDocumentsWithStatus(
-          documents,
-          traceId,
-          request.logger
-        )
         return h
           .view(
             'accompanying-documents/index',
@@ -215,15 +220,6 @@ export const accompanyingDocumentsController = {
       const allErrors = [...schemaErrors, ...dateErrors, ...fileErrors]
 
       if (allErrors.length > 0) {
-        const parsed = parseInt(request.query.attempt ?? '0', 10)
-        const attempt = Number.isNaN(parsed) ? 0 : parsed
-        const rawDocuments = getSessionValue(request, 'documents') ?? []
-        const documentsWithStatus = await getDocumentsWithStatus(
-          rawDocuments,
-          traceId,
-          request.logger
-        )
-
         // Error summary: one entry per date group — only first date error links to the date input.
         // Field errors: all date errors, so each individual input can be highlighted correctly.
         const summaryErrors = [
@@ -260,14 +256,6 @@ export const accompanyingDocumentsController = {
 
       if (!notificationRef) {
         request.logger.error('No referenceNumber in session')
-        const parsed = parseInt(request.query.attempt ?? '0', 10)
-        const attempt = Number.isNaN(parsed) ? 0 : parsed
-        const rawDocuments = getSessionValue(request, 'documents') ?? []
-        const documentsWithStatus = await getDocumentsWithStatus(
-          rawDocuments,
-          traceId,
-          request.logger
-        )
         return h
           .view(
             'accompanying-documents/index',
@@ -320,14 +308,6 @@ export const accompanyingDocumentsController = {
         )
       } catch (err) {
         request.logger.error(`Failed to upload document: ${err.message}`)
-        const parsed = parseInt(request.query.attempt ?? '0', 10)
-        const attempt = Number.isNaN(parsed) ? 0 : parsed
-        const rawDocuments = getSessionValue(request, 'documents') ?? []
-        const documentsWithStatus = await getDocumentsWithStatus(
-          rawDocuments,
-          traceId,
-          request.logger
-        )
         return h
           .view(
             'accompanying-documents/index',
