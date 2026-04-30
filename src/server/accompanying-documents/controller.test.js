@@ -9,6 +9,7 @@ import {
 } from '../common/helpers/session-helpers.js'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+import { MAX_DOCUMENTS } from './document-upload-config.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -24,8 +25,6 @@ vi.mock('../common/helpers/session-helpers.js', () => ({
   getSessionValue: vi.fn(),
   setSessionValue: vi.fn()
 }))
-
-const MAX_DOCUMENTS = 10
 
 const DEFAULT_MULTIPART_FIELDS = [
   ['documentType', 'ITAHC'],
