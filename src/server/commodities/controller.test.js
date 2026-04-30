@@ -113,6 +113,11 @@ describe('#commoditiesController', () => {
       vi.spyOn(notificationClient, 'get').mockResolvedValueOnce({
         referenceNumber: 'TEST-REF-123'
       })
+      // Origin POST submits via notificationClient.submit; without this mock
+      // the seed POST hits a real backend and fails in CI.
+      vi.spyOn(notificationClient, 'submit').mockResolvedValueOnce({
+        referenceNumber: 'TEST-REF-123'
+      })
 
       // Seed the session with referenceNumber by posting to /origin first;
       // the origin POST handler stores response.referenceNumber in session,
