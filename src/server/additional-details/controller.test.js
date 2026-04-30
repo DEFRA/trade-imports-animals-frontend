@@ -81,7 +81,7 @@ describe('additionalDetailsController', () => {
       )
     })
 
-    test('Should render page with null referenceNumber when none in session', async () => {
+    test('renders page with null referenceNumber when none in session', async () => {
       fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
