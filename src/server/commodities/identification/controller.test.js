@@ -112,11 +112,19 @@ describe('#animalIdentificationDetailsController', () => {
       )
 
       // Observable network-boundary behaviour: the backend submission was
-      // triggered via notificationClient.submit (the fetch wrapper). Asserting
-      // here keeps the test decoupled from URL/method/header plumbing inside
-      // notificationClient itself.
+      // triggered via notificationClient.submit (the fetch wrapper) with the
+      // same Hapi request that carried this test's POST payload. Asserting on
+      // the forwarded payload proves the seeded commodity flowed through the
+      // controller; the second arg is the traceId string from @defra/hapi-tracing.
       expect(notificationClient.submit).toHaveBeenCalledWith(
-        expect.anything(),
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            'earTag-1586274': 'UK123',
+            'earTag-716661': 'UK456',
+            'passport-1586274': 'P1',
+            'passport-716661': 'P2'
+          })
+        }),
         expect.any(String)
       )
 
