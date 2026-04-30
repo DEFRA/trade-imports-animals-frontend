@@ -112,26 +112,38 @@ describe('#commoditiesController', () => {
         referenceNumber: 'TEST-REF-123'
       })
 
-      const request = {
-        yar: {
-          get: vi.fn((key) =>
-            key === 'referenceNumber' ? 'TEST-REF-123' : null
-          ),
-          set: vi.fn()
+      // Seed the session with referenceNumber by posting to /origin first;
+      // the origin POST handler stores response.referenceNumber in session,
+      // which subsequently triggers notificationClient.get on GET /commodities.
+      const seedResponse = await server.inject({
+        method: 'POST',
+        url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: {
+          countryCode: 'FR',
+          requiresRegionCode: 'no'
         }
-      }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
+      })
 
-      const { commoditiesController } = await import('./controller.js')
-      const response = await commoditiesController.get.handler(request, h)
+      const sessionCookie = seedResponse.headers['set-cookie']
+        ? seedResponse.headers['set-cookie'][0].split(';')[0]
+        : null
 
-      expect(h.view).toHaveBeenCalledWith(
-        'commodities/index',
-        expect.objectContaining({ referenceNumber: 'TEST-REF-123' })
-      )
-      expect(response.data.referenceNumber).toBe('TEST-REF-123')
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: sessionCookie ? { cookie: sessionCookie } : undefined
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('TEST-REF-123'))
     })
   })
 
