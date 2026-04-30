@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 import { toCommodityDetails } from './commodity-helpers.js'
 
-describe('#commodity-helpers', () => {
+describe('#commodityHelpers', () => {
   describe('#toCommodityDetails', () => {
     test('Returns the first entry of a non-empty array', () => {
       const first = { commodityCode: '0101' }
