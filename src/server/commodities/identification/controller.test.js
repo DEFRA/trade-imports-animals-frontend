@@ -1,12 +1,8 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { animalIdentificationDetailsController } from './controller.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
+import { submitNotification } from '../../common/helpers/notification-helpers.js'
 import * as commodityHelpers from '../../common/helpers/commodity-helpers.js'
-
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
-}))
 
 vi.mock('../../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -15,7 +11,13 @@ vi.mock('../../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+vi.mock('../../common/helpers/notification-helpers.js', () => ({
+  submitNotification: vi.fn().mockResolvedValue(undefined)
+}))
+
 describe('animalIdentificationDetailsController', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   describe('GET /commodities/identification', () => {
     test('renders view with referenceNumber, commodity, typeOfCommodity, and species from last selected species', () => {
       const commodity = {
@@ -115,8 +117,6 @@ describe('animalIdentificationDetailsController', () => {
 
   describe('POST /commodities/identification', () => {
     test('Append animal identification details to the species, saves commodity and submits notification', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue(undefined)
-
       const set = vi.fn()
       const complement = {
         typeOfCommodity: 'Domestic',
@@ -155,6 +155,8 @@ describe('animalIdentificationDetailsController', () => {
         h
       )
 
+      // Observable session-write side-effect: species rows are augmented with
+      // earTag/passport values keyed off each species value.
       expect(set).toHaveBeenCalledWith(
         'commodity',
         expect.objectContaining({
@@ -177,9 +179,16 @@ describe('animalIdentificationDetailsController', () => {
         })
       )
 
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      // Observable boundary behaviour: the backend submission was triggered.
+      // Asserting on submitNotification (the public helper) rather than the
+      // internal notificationClient.submit call keeps the test decoupled from
+      // tracing-header plumbing inside the helper.
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123'
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
       )
       expect(h.redirect).toHaveBeenCalledWith('/additional-details')
       expect(response).toEqual({
@@ -188,10 +197,8 @@ describe('animalIdentificationDetailsController', () => {
       })
     })
 
-    test('propagates error when notification submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
-        new Error('Backend error')
-      )
+    test('propagates error when backend submit fails', async () => {
+      submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const set = vi.fn()
       const complement = {
