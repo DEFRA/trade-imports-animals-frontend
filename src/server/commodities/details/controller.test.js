@@ -1,26 +1,57 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { vi } from 'vitest'
 
-import { commodityDetailsController } from './controller.js'
-import { submitNotification } from '../../common/helpers/notification-helpers.js'
+import { notificationClient } from '../../common/clients/notification-client.js'
+import { createServer } from '../../server.js'
+import { statusCodes } from '../../common/constants/status-codes.js'
+import {
+  getSessionValue,
+  setSessionValue
+} from '../../common/helpers/session-helpers.js'
 
-vi.mock('../../common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    info: vi.fn(),
-    error: vi.fn()
+import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
+}))
+
+vi.mock('../../../config/config.js', async (importOriginal) => {
+  const { mockAuthConfig } =
+    await import('../../common/test-helpers/mock-auth-config.js')
+  return mockAuthConfig(importOriginal)
+})
+
+vi.mock('../../common/helpers/session-helpers.js', () => ({
+  getSessionValue: vi.fn(),
+  setSessionValue: vi.fn()
+}))
+
+describe('#commodityDetailsController', () => {
+  let server
+
+  beforeAll(async () => {
+    server = await createServer()
+    await server.initialize()
   })
-}))
 
-vi.mock('../../common/helpers/notification-helpers.js', () => ({
-  submitNotification: vi.fn().mockResolvedValue(undefined)
-}))
+  afterAll(async () => {
+    await server.stop({ timeout: 0 })
+  })
 
-describe('commodityDetailsController', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      referenceNumber: 'TEST-REF-123'
+    })
+    getSessionValue.mockReset()
+    setSessionValue.mockReset()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
   describe('POST /commodities/details', () => {
     test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement, then submits notification and redirects', async () => {
-      const set = vi.fn()
-      const get = vi.fn((key) => {
+      getSessionValue.mockImplementation((_request, key) => {
         if (key === 'referenceNumber') return 'REF-123'
         if (key === 'commodity') {
           return {
@@ -39,7 +70,13 @@ describe('commodityDetailsController', () => {
         return null
       })
 
-      const request = {
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/commodities/details',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           'noOfAnimals-1586274': '2',
           'noOfAnimals-716661': '3',
@@ -47,19 +84,13 @@ describe('commodityDetailsController', () => {
           'noOfPackages-716661': '4',
           totalNoOfAnimals: '5',
           totalNoOfPackages: '5'
-        },
-        yar: { set, get }
-      }
-
-      const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
-      }
-
-      const response = await commodityDetailsController.post.handler(request, h)
+        }
+      })
 
       // Observable session-write side-effect: species rows are augmented with
       // noOfAnimals/noOfPackages and totals are summed onto the complement.
-      expect(set).toHaveBeenCalledWith(
+      expect(setSessionValue).toHaveBeenCalledWith(
+        expect.anything(),
         'commodity',
         expect.objectContaining({
           commodityComplement: [
@@ -83,29 +114,21 @@ describe('commodityDetailsController', () => {
         })
       )
 
-      // Observable boundary behaviour: the backend submission was triggered.
-      // Asserting on submitNotification (the public helper) rather than the
-      // internal notificationClient.submit call keeps the test decoupled from
-      // tracing-header plumbing inside the helper.
-      expect(submitNotification).toHaveBeenCalledWith(
-        request,
-        expect.objectContaining({
-          info: expect.any(Function),
-          error: expect.any(Function)
-        })
+      // Observable network-boundary behaviour: the backend submission was
+      // triggered via notificationClient.submit (the fetch wrapper). Asserting
+      // here keeps the test decoupled from URL/method/header plumbing inside
+      // notificationClient itself.
+      expect(notificationClient.submit).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String)
       )
 
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/commodities/identification'
-      })
+      expect(statusCode).toBe(302)
+      expect(headers.location).toBe('/commodities/identification')
     })
 
-    test('propagates error when backend submit fails', async () => {
-      submitNotification.mockRejectedValue(new Error('Backend error'))
-
-      const set = vi.fn()
-      const get = vi.fn((key) => {
+    test('returns 500 when backend submit fails', async () => {
+      getSessionValue.mockImplementation((_request, key) => {
         if (key === 'commodity') {
           return {
             name: 'Fish',
@@ -119,24 +142,29 @@ describe('commodityDetailsController', () => {
         }
         return null
       })
+      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+        Object.assign(new Error('Backend error'), {
+          status: statusCodes.internalServerError,
+          statusText: 'Internal Server Error'
+        })
+      )
 
-      const request = {
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url: '/commodities/details',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           'noOfAnimals-1586274': '2',
           'noOfPackages-1586274': '1',
           totalNoOfAnimals: '2',
           totalNoOfPackages: '1'
-        },
-        yar: { set, get }
-      }
+        }
+      })
 
-      const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
-      }
-
-      await expect(
-        commodityDetailsController.post.handler(request, h)
-      ).rejects.toThrow('Backend error')
+      expect(statusCode).toBe(statusCodes.internalServerError)
     })
   })
 })
