@@ -42,7 +42,7 @@ export const additionalDetailsController = {
 
       try {
         await submitNotification(_request, logger)
-      } catch {
+      } catch (_error) {
         return h
           .view('additional-details/index', {
             pageTitle: 'Additional animal details',
