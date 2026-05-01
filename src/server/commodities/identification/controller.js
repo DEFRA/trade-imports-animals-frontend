@@ -61,6 +61,7 @@ export const animalIdentificationDetailsController = {
         `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
       )
 
+      const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const commodity = getSessionValue(_request, 'commodity')
 
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
@@ -86,24 +87,19 @@ export const animalIdentificationDetailsController = {
       try {
         await submitNotification(_request, logger)
       } catch (_error) {
-        const referenceNumber = getSessionValue(_request, 'referenceNumber')
         const traceId = getTraceId() ?? ''
         logger.warn(
           { referenceNumber, traceId },
           'Submit failed; rendering error page'
         )
-        const updatedCommodity = getSessionValue(_request, 'commodity')
-        const updatedComplement = (
-          updatedCommodity?.commodityComplement ?? []
-        ).at(-1)
         return h
           .view('commodities/identification/index', {
             pageTitle: 'Description of goods',
             heading: 'Commodity',
             referenceNumber,
-            commodity: updatedCommodity,
-            typeOfCommodity: updatedComplement?.typeOfCommodity,
-            speciesLst: updatedComplement?.species ?? [],
+            commodity: commodityJson,
+            typeOfCommodity: commodityComplement?.typeOfCommodity,
+            speciesLst: commodityComplement?.species ?? [],
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]
