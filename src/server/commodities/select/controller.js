@@ -25,6 +25,12 @@ const speciesDetailsList = JSON.parse(readFileSync(speciesDetailsPath, 'utf-8'))
 const commodityDetails = toCommodityDetails(commodityDetailsList)
 const speciesDetails = toCommodityDetails(speciesDetailsList)
 
+const VIEW_NAME = 'commodities/select/index'
+const PAGE_TITLE = 'Select species of commodity'
+const HEADING = 'Commodity'
+const GENERIC_ERROR_MESSAGE =
+  'Something went wrong, please contact the EUDP team'
+
 export const commoditiesSelectController = {
   get: {
     handler(_request, h) {
@@ -43,9 +49,9 @@ export const commoditiesSelectController = {
         .filter(Boolean)
       const savedSpeciesValues = selectedSpecies.map((s) => s.value)
 
-      return h.view('commodities/select/index', {
-        pageTitle: 'Select species of commodity',
-        heading: 'Commodity',
+      return h.view(VIEW_NAME, {
+        pageTitle: PAGE_TITLE,
+        heading: HEADING,
         referenceNumber,
         commodity,
         typeOfCommodity,
@@ -122,9 +128,9 @@ export const commoditiesSelectController = {
           'submitNotification failed in commodity select POST; rendering error view'
         )
         return h
-          .view('commodities/select/index', {
-            pageTitle: 'Select species of commodity',
-            heading: 'Commodity',
+          .view(VIEW_NAME, {
+            pageTitle: PAGE_TITLE,
+            heading: HEADING,
             referenceNumber: getSessionValue(_request, 'referenceNumber'),
             commodity: commodityJson,
             typeOfCommodity: commodityComplement.typeOfCommodity,
@@ -132,9 +138,7 @@ export const commoditiesSelectController = {
             savedSpeciesValues: speciesValues,
             commodityDetails,
             speciesDetails,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: GENERIC_ERROR_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }
