@@ -118,22 +118,15 @@ export const commoditiesSelectController = {
       try {
         await submitNotification(_request, logger)
       } catch {
-        const updatedCommodity = getSessionValue(_request, 'commodity')
-        const updatedComplement = (
-          updatedCommodity?.commodityComplement ?? []
-        ).at(-1)
-        const updatedSpecies = (updatedComplement?.species ?? [])
-          .map((s) => (typeof s === 'string' ? s : s?.value))
-          .filter(Boolean)
         return h
           .view('commodities/select/index', {
             pageTitle: 'Select species of commodity',
             heading: 'Commodity',
             referenceNumber: getSessionValue(_request, 'referenceNumber'),
-            commodity: updatedCommodity,
-            typeOfCommodity: updatedComplement?.typeOfCommodity,
-            species: updatedSpecies,
-            savedSpeciesValues: updatedSpecies,
+            commodity: commodityJson,
+            typeOfCommodity: commodityComplement.typeOfCommodity,
+            species: speciesValues,
+            savedSpeciesValues: speciesValues,
             commodityDetails,
             speciesDetails,
             errorList: [
