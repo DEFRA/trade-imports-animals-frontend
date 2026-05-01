@@ -8,92 +8,166 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
+function getIsoArrivalDate(arrivalDate) {
+  const { day, month, year } = arrivalDate ?? {}
+  return day && month && year
+    ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    : null
+}
+
+function setOrigin(notification, request) {
+  const countryCode = getSessionValue(request, 'countryCode')
+  const requiresRegionCode = getSessionValue(request, 'requiresRegionCode')
+  const internalReference = getSessionValue(request, 'internalReference')
+
+  if (countryCode || requiresRegionCode || internalReference) {
+    notification.origin = {}
+    if (countryCode) notification.origin.countryCode = countryCode
+    if (requiresRegionCode) {
+      notification.origin.requiresRegionCode = requiresRegionCode
+    }
+    if (internalReference) {
+      notification.origin.internalReference = internalReference
+    }
+  }
+}
+
+function setAdditionalDetails(notification, request) {
+  const certifiedFor = getSessionValue(request, 'certifiedFor')
+  const unweanedAnimals = getSessionValue(request, 'unweanedAnimals')
+
+  if (certifiedFor || unweanedAnimals) {
+    notification.additionalDetails = {}
+    if (certifiedFor) {
+      notification.additionalDetails.certifiedFor = certifiedFor
+    }
+    if (unweanedAnimals) {
+      notification.additionalDetails.unweanedAnimals = unweanedAnimals
+    }
+  }
+}
+
+function setAddresses(notification, request) {
+  const selectedConsignor = getSessionValue(request, 'consignor')
+  const selectedDestination = getSessionValue(request, 'destination')
+  if (selectedConsignor) {
+    notification.consignor = selectedConsignor
+  }
+  if (selectedDestination) {
+    notification.destination = selectedDestination
+  }
+}
+
+function setTransport(notification, request) {
+  const portOfEntry = getSessionValue(request, 'portOfEntry')
+  const arrivalDateIso = getIsoArrivalDate(
+    getSessionValue(request, 'arrivalDate')
+  )
+
+  if (portOfEntry || arrivalDateIso) {
+    notification.transport = {}
+    if (portOfEntry) {
+      notification.transport.portOfEntry = portOfEntry
+    }
+    if (arrivalDateIso) {
+      notification.transport.arrivalDate = arrivalDateIso
+    }
+  }
+}
+
+function buildNotificationPayload(request) {
+  const notification = {}
+
+  const referenceNumber = getSessionValue(request, 'referenceNumber')
+  if (referenceNumber) {
+    notification.referenceNumber = referenceNumber
+  }
+
+  setOrigin(notification, request)
+
+  const commodity = getSessionValue(request, 'commodity')
+  if (commodity) {
+    notification.commodity = commodity
+  }
+
+  const reasonForImport = getSessionValue(request, 'reasonForImport')
+  if (reasonForImport) {
+    notification.reasonForImport = reasonForImport
+  }
+
+  setAdditionalDetails(notification, request)
+  setAddresses(notification, request)
+
+  const cphNumber = getSessionValue(request, 'cphNumber')
+  if (cphNumber) {
+    notification.cphNumber = cphNumber
+  }
+
+  setTransport(notification, request)
+
+  return notification
+}
+
+function setOriginValues(request, origin) {
+  if (origin.countryCode) {
+    setSessionValue(request, 'countryCode', origin.countryCode)
+  }
+  if (origin.requiresRegionCode) {
+    setSessionValue(request, 'requiresRegionCode', origin.requiresRegionCode)
+  }
+  if (origin.internalReference) {
+    setSessionValue(request, 'internalReference', origin.internalReference)
+  }
+}
+
+function setTransportValues(request, transport) {
+  if (transport.portOfEntry) {
+    setSessionValue(request, 'portOfEntry', transport.portOfEntry)
+  }
+  if (transport.arrivalDate) {
+    const [y, m, d] = transport.arrivalDate.split('-')
+    setSessionValue(request, 'arrivalDate', {
+      day: Number(d),
+      month: Number(m),
+      year: Number(y)
+    })
+  }
+}
+
+function setNotificationSessionValues(request, notification) {
+  if (notification.referenceNumber) {
+    setSessionValue(request, 'referenceNumber', notification.referenceNumber)
+  }
+  if (notification.origin) {
+    setOriginValues(request, notification.origin)
+  }
+  if (notification.commodity) {
+    setSessionValue(request, 'commodity', notification.commodity)
+  }
+  if (notification.reasonForImport) {
+    setSessionValue(request, 'reasonForImport', notification.reasonForImport)
+  }
+  if (notification.consignor) {
+    setSessionValue(request, 'consignor', notification.consignor)
+  }
+  if (notification.destination) {
+    setSessionValue(request, 'destination', notification.destination)
+  }
+  if (notification.cphNumber) {
+    setSessionValue(request, 'cphNumber', notification.cphNumber)
+  }
+  if (notification.transport) {
+    setTransportValues(request, notification.transport)
+  }
+}
+
 export const notificationClient = {
   /**
    * Builds a complete notification object from all session values
    * and submits it to the backend
    */
   async submit(_request, traceId) {
-    // Build notification from all session values
-    const notification = {}
-
-    // Get reference number if it exists
-    const referenceNumber = getSessionValue(_request, 'referenceNumber')
-    if (referenceNumber) {
-      notification.referenceNumber = referenceNumber
-    }
-
-    // Build origin object from session values
-    const countryCode = getSessionValue(_request, 'countryCode')
-    const requiresRegionCode = getSessionValue(_request, 'requiresRegionCode')
-    const internalReference = getSessionValue(_request, 'internalReference')
-
-    if (countryCode || requiresRegionCode || internalReference) {
-      notification.origin = {}
-      if (countryCode) notification.origin.countryCode = countryCode
-      if (requiresRegionCode) {
-        notification.origin.requiresRegionCode = requiresRegionCode
-      }
-      if (internalReference) {
-        notification.origin.internalReference = internalReference
-      }
-    }
-
-    // Get commodity from session
-    const commodity = getSessionValue(_request, 'commodity')
-    if (commodity) {
-      notification.commodity = commodity
-    }
-
-    // Get reason for import from session
-    const reasonForImport = getSessionValue(_request, 'reasonForImport')
-    if (reasonForImport) {
-      notification.reasonForImport = reasonForImport
-    }
-
-    // Build additional details from session values
-    const certifiedFor = getSessionValue(_request, 'certifiedFor')
-    const unweanedAnimals = getSessionValue(_request, 'unweanedAnimals')
-
-    if (certifiedFor || unweanedAnimals) {
-      notification.additionalDetails = {}
-      if (certifiedFor) {
-        notification.additionalDetails.certifiedFor = certifiedFor
-      }
-      if (unweanedAnimals) {
-        notification.additionalDetails.unweanedAnimals = unweanedAnimals
-      }
-    }
-
-    // addresses
-    const selectedConsignor = getSessionValue(_request, 'consignor')
-    const selectedDestination = getSessionValue(_request, 'destination')
-    if (selectedConsignor) {
-      notification.consignor = selectedConsignor
-    }
-    if (selectedDestination) {
-      notification.destination = selectedDestination
-    }
-
-    // Get CPH number from session
-    const cphNumber = getSessionValue(_request, 'cphNumber')
-    if (cphNumber) {
-      notification.cphNumber = cphNumber
-    }
-
-    // Build transport object from session values
-    const portOfEntry = getSessionValue(_request, 'portOfEntry')
-    const arrivalDate = getSessionValue(_request, 'arrivalDate')
-    const { day, month, year } = arrivalDate ?? {}
-    const arrivalDateIso =
-      day && month && year
-        ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        : null
-    if (portOfEntry || arrivalDateIso) {
-      notification.transport = {}
-      if (portOfEntry) notification.transport.portOfEntry = portOfEntry
-      if (arrivalDateIso) notification.transport.arrivalDate = arrivalDateIso
-    }
+    const notification = buildNotificationPayload(_request)
 
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications`,
@@ -139,80 +213,12 @@ export const notificationClient = {
       const error = new Error('Failed to get notification')
       error.status = response.status
       error.statusText = response.statusText
-
       logger.error(`Failed to get notification: ${error.message}`)
-
       throw error
     }
 
     const notification = await response.json()
-
-    // Store all notification values in individual session keys
-    if (notification.referenceNumber) {
-      setSessionValue(_request, 'referenceNumber', notification.referenceNumber)
-    }
-
-    if (notification.origin) {
-      if (notification.origin.countryCode) {
-        setSessionValue(
-          _request,
-          'countryCode',
-          notification.origin.countryCode
-        )
-      }
-      if (notification.origin.requiresRegionCode) {
-        setSessionValue(
-          _request,
-          'requiresRegionCode',
-          notification.origin.requiresRegionCode
-        )
-      }
-      if (notification.origin.internalReference) {
-        setSessionValue(
-          _request,
-          'internalReference',
-          notification.origin.internalReference
-        )
-      }
-    }
-
-    if (notification.commodity) {
-      setSessionValue(_request, 'commodity', notification.commodity)
-    }
-
-    if (notification.reasonForImport) {
-      setSessionValue(_request, 'reasonForImport', notification.reasonForImport)
-    }
-
-    if (notification.consignor) {
-      setSessionValue(_request, 'consignor', notification.consignor)
-    }
-
-    if (notification.destination) {
-      setSessionValue(_request, 'destination', notification.destination)
-    }
-
-    if (notification.cphNumber) {
-      setSessionValue(_request, 'cphNumber', notification.cphNumber)
-    }
-
-    if (notification.transport) {
-      if (notification.transport.portOfEntry) {
-        setSessionValue(
-          _request,
-          'portOfEntry',
-          notification.transport.portOfEntry
-        )
-      }
-      if (notification.transport.arrivalDate) {
-        const [y, m, d] = notification.transport.arrivalDate.split('-')
-        setSessionValue(_request, 'arrivalDate', {
-          day: Number(d),
-          month: Number(m),
-          year: Number(y)
-        })
-      }
-    }
+    setNotificationSessionValues(_request, notification)
 
     return notification
   }
