@@ -15,48 +15,47 @@ function getIsoArrivalDate(arrivalDate) {
     : null
 }
 
-function setOrigin(notification, request) {
+function buildOrigin(request) {
   const countryCode = getSessionValue(request, 'countryCode')
   const requiresRegionCode = getSessionValue(request, 'requiresRegionCode')
   const internalReference = getSessionValue(request, 'internalReference')
 
-  if (countryCode || requiresRegionCode || internalReference) {
-    notification.origin = {}
-    if (countryCode) notification.origin.countryCode = countryCode
-    if (requiresRegionCode) {
-      notification.origin.requiresRegionCode = requiresRegionCode
-    }
-    if (internalReference) {
-      notification.origin.internalReference = internalReference
-    }
+  if (!countryCode && !requiresRegionCode && !internalReference) {
+    return undefined
+  }
+
+  return {
+    ...(countryCode && { countryCode }),
+    ...(requiresRegionCode && { requiresRegionCode }),
+    ...(internalReference && { internalReference })
   }
 }
 
-function setAdditionalDetails(notification, request) {
+function buildAdditionalDetails(request) {
   const certifiedFor = getSessionValue(request, 'certifiedFor')
   const unweanedAnimals = getSessionValue(request, 'unweanedAnimals')
 
-  if (certifiedFor || unweanedAnimals) {
-    notification.additionalDetails = {}
-    if (certifiedFor) {
-      notification.additionalDetails.certifiedFor = certifiedFor
-    }
-    if (unweanedAnimals) {
-      notification.additionalDetails.unweanedAnimals = unweanedAnimals
-    }
+  if (!certifiedFor && !unweanedAnimals) {
+    return undefined
+  }
+
+  return {
+    ...(certifiedFor && { certifiedFor }),
+    ...(unweanedAnimals && { unweanedAnimals })
   }
 }
 
-function setTransport(notification, request) {
+function buildTransport(request) {
   const portOfEntry = getSessionValue(request, 'portOfEntry')
-  const arrivalDateIso = getIsoArrivalDate(
-    getSessionValue(request, 'arrivalDate')
-  )
+  const arrivalDate = getIsoArrivalDate(getSessionValue(request, 'arrivalDate'))
 
-  if (portOfEntry || arrivalDateIso) {
-    notification.transport = {}
-    if (portOfEntry) notification.transport.portOfEntry = portOfEntry
-    if (arrivalDateIso) notification.transport.arrivalDate = arrivalDateIso
+  if (!portOfEntry && !arrivalDate) {
+    return undefined
+  }
+
+  return {
+    ...(portOfEntry && { portOfEntry }),
+    ...(arrivalDate && { arrivalDate })
   }
 }
 
@@ -66,48 +65,27 @@ export const notificationClient = {
    * and submits it to the backend
    */
   async submit(_request, traceId) {
-    // Build notification from all session values
-    const notification = {}
-
-    // Get reference number if it exists
     const referenceNumber = getSessionValue(_request, 'referenceNumber')
-    if (referenceNumber) {
-      notification.referenceNumber = referenceNumber
-    }
-
-    setOrigin(notification, _request)
-
-    // Get commodity from session
+    const origin = buildOrigin(_request)
     const commodity = getSessionValue(_request, 'commodity')
-    if (commodity) {
-      notification.commodity = commodity
-    }
-
-    // Get reason for import from session
     const reasonForImport = getSessionValue(_request, 'reasonForImport')
-    if (reasonForImport) {
-      notification.reasonForImport = reasonForImport
-    }
-
-    setAdditionalDetails(notification, _request)
-
-    // addresses
-    const selectedConsignor = getSessionValue(_request, 'consignor')
-    const selectedDestination = getSessionValue(_request, 'destination')
-    if (selectedConsignor) {
-      notification.consignor = selectedConsignor
-    }
-    if (selectedDestination) {
-      notification.destination = selectedDestination
-    }
-
-    // Get CPH number from session
+    const additionalDetails = buildAdditionalDetails(_request)
+    const consignor = getSessionValue(_request, 'consignor')
+    const destination = getSessionValue(_request, 'destination')
     const cphNumber = getSessionValue(_request, 'cphNumber')
-    if (cphNumber) {
-      notification.cphNumber = cphNumber
-    }
+    const transport = buildTransport(_request)
 
-    setTransport(notification, _request)
+    const notification = {
+      ...(referenceNumber && { referenceNumber }),
+      ...(origin && { origin }),
+      ...(commodity && { commodity }),
+      ...(reasonForImport && { reasonForImport }),
+      ...(additionalDetails && { additionalDetails }),
+      ...(consignor && { consignor }),
+      ...(destination && { destination }),
+      ...(cphNumber && { cphNumber }),
+      ...(transport && { transport })
+    }
 
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications`,
