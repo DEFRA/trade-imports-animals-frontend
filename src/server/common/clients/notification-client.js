@@ -8,6 +8,58 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
+function getIsoArrivalDate(arrivalDate) {
+  const { day, month, year } = arrivalDate ?? {}
+  return day && month && year
+    ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    : null
+}
+
+function setOrigin(notification, request) {
+  const countryCode = getSessionValue(request, 'countryCode')
+  const requiresRegionCode = getSessionValue(request, 'requiresRegionCode')
+  const internalReference = getSessionValue(request, 'internalReference')
+
+  if (countryCode || requiresRegionCode || internalReference) {
+    notification.origin = {}
+    if (countryCode) notification.origin.countryCode = countryCode
+    if (requiresRegionCode) {
+      notification.origin.requiresRegionCode = requiresRegionCode
+    }
+    if (internalReference) {
+      notification.origin.internalReference = internalReference
+    }
+  }
+}
+
+function setAdditionalDetails(notification, request) {
+  const certifiedFor = getSessionValue(request, 'certifiedFor')
+  const unweanedAnimals = getSessionValue(request, 'unweanedAnimals')
+
+  if (certifiedFor || unweanedAnimals) {
+    notification.additionalDetails = {}
+    if (certifiedFor) {
+      notification.additionalDetails.certifiedFor = certifiedFor
+    }
+    if (unweanedAnimals) {
+      notification.additionalDetails.unweanedAnimals = unweanedAnimals
+    }
+  }
+}
+
+function setTransport(notification, request) {
+  const portOfEntry = getSessionValue(request, 'portOfEntry')
+  const arrivalDateIso = getIsoArrivalDate(
+    getSessionValue(request, 'arrivalDate')
+  )
+
+  if (portOfEntry || arrivalDateIso) {
+    notification.transport = {}
+    if (portOfEntry) notification.transport.portOfEntry = portOfEntry
+    if (arrivalDateIso) notification.transport.arrivalDate = arrivalDateIso
+  }
+}
+
 export const notificationClient = {
   /**
    * Builds a complete notification object from all session values
@@ -23,21 +75,7 @@ export const notificationClient = {
       notification.referenceNumber = referenceNumber
     }
 
-    // Build origin object from session values
-    const countryCode = getSessionValue(_request, 'countryCode')
-    const requiresRegionCode = getSessionValue(_request, 'requiresRegionCode')
-    const internalReference = getSessionValue(_request, 'internalReference')
-
-    if (countryCode || requiresRegionCode || internalReference) {
-      notification.origin = {}
-      if (countryCode) notification.origin.countryCode = countryCode
-      if (requiresRegionCode) {
-        notification.origin.requiresRegionCode = requiresRegionCode
-      }
-      if (internalReference) {
-        notification.origin.internalReference = internalReference
-      }
-    }
+    setOrigin(notification, _request)
 
     // Get commodity from session
     const commodity = getSessionValue(_request, 'commodity')
@@ -51,19 +89,7 @@ export const notificationClient = {
       notification.reasonForImport = reasonForImport
     }
 
-    // Build additional details from session values
-    const certifiedFor = getSessionValue(_request, 'certifiedFor')
-    const unweanedAnimals = getSessionValue(_request, 'unweanedAnimals')
-
-    if (certifiedFor || unweanedAnimals) {
-      notification.additionalDetails = {}
-      if (certifiedFor) {
-        notification.additionalDetails.certifiedFor = certifiedFor
-      }
-      if (unweanedAnimals) {
-        notification.additionalDetails.unweanedAnimals = unweanedAnimals
-      }
-    }
+    setAdditionalDetails(notification, _request)
 
     // addresses
     const selectedConsignor = getSessionValue(_request, 'consignor')
@@ -81,19 +107,7 @@ export const notificationClient = {
       notification.cphNumber = cphNumber
     }
 
-    // Build transport object from session values
-    const portOfEntry = getSessionValue(_request, 'portOfEntry')
-    const arrivalDate = getSessionValue(_request, 'arrivalDate')
-    const { day, month, year } = arrivalDate ?? {}
-    const arrivalDateIso =
-      day && month && year
-        ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        : null
-    if (portOfEntry || arrivalDateIso) {
-      notification.transport = {}
-      if (portOfEntry) notification.transport.portOfEntry = portOfEntry
-      if (arrivalDateIso) notification.transport.arrivalDate = arrivalDateIso
-    }
+    setTransport(notification, _request)
 
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications`,
