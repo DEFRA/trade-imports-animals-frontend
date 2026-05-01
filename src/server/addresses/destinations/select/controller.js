@@ -17,7 +17,7 @@ const destinations = JSON.parse(
 
 export const destinationsSelectController = {
   get: {
-    handler(_request, h) {
+    handler: (_request, h) => {
       logger.info(
         `Places of destination: ${getSessionValue(_request, 'commodity')} selection page`
       )
