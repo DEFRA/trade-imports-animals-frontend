@@ -21,22 +21,22 @@ describe('#contentSecurityPolicy', () => {
   })
 
   test('Should set the CSP policy header', async () => {
-    const resp = await server.inject({
+    const response = await server.inject({
       method: 'GET',
       url: '/'
     })
 
-    expect(resp.headers['content-security-policy']).toBeDefined()
+    expect(response.headers['content-security-policy']).toBeDefined()
   })
 
   test('Should include cdp-uploader origin in form-action directive', async () => {
-    const resp = await server.inject({
+    const response = await server.inject({
       method: 'GET',
       url: '/'
     })
 
     const cdpUploaderOrigin = new URL(config.get('cdpUploaderUrl')).origin
-    const csp = resp.headers['content-security-policy']
+    const csp = response.headers['content-security-policy']
 
     expect(csp).toContain('form-action')
     expect(csp).toContain(cdpUploaderOrigin)
