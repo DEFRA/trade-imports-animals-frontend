@@ -22,8 +22,8 @@ import {
 const frontendBaseUrl = config.get('frontendBaseUrl')
 const MAX_POLLING_ATTEMPTS = 10
 
-const ALLOWED_EXTENSIONS = new Set(ALLOWED_TYPES.map((t) => `.${t.ext}`))
-const ALLOWED_MIME_TYPES = ALLOWED_TYPES.map((t) => t.mime)
+const ALLOWED_EXTENSIONS = new Set(ALLOWED_TYPES.map((type) => `.${type.ext}`))
+const ALLOWED_MIME_TYPES = ALLOWED_TYPES.map((type) => type.mime)
 
 const getDocumentsWithStatus = async (documents, traceId, logger) =>
   Promise.all(
