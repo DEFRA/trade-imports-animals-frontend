@@ -34,10 +34,10 @@ const renderView = (
 
 export const cphNumberController = {
   get: {
-    handler(_request, h) {
-      const cphNumber = getSessionValue(_request, sessionKeys.cphNumber)
+    handler(request, h) {
+      const cphNumber = getSessionValue(request, sessionKeys.cphNumber)
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
 
@@ -45,15 +45,15 @@ export const cphNumberController = {
     }
   },
   post: {
-    async handler(_request, h) {
-      const { cphNumber } = _request.payload
+    async handler(request, h) {
+      const { cphNumber } = request.payload
       const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
 
-      const { error } = cphNumberSchema.validate(_request.payload, {
+      const { error } = cphNumberSchema.validate(request.payload, {
         abortEarly: false
       })
 
@@ -67,16 +67,16 @@ export const cphNumberController = {
         }).code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, sessionKeys.cphNumber, cphNumber)
+      setSessionValue(request, sessionKeys.cphNumber, cphNumber)
       logger.info(`CPH number saved: ${cphNumber}`)
 
       try {
-        await notificationClient.submit(_request, traceId)
+        await notificationClient.submit(request, traceId)
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
         return renderView(h, {
-          cphNumber: getSessionValue(_request, sessionKeys.cphNumber),
+          cphNumber: getSessionValue(request, sessionKeys.cphNumber),
           referenceNumber,
           errorList: [{ text: SUBMIT_ERROR_MESSAGE }]
         }).code(statusCodes.internalServerError)
