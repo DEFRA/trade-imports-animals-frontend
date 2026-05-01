@@ -29,6 +29,13 @@ const destinations = JSON.parse(
   readFileSync(destinationsAddressesFilePath, 'utf-8')
 )
 
+const applySelectedAddress = (request, sessionKey, source, idParam) => {
+  const id = Number.parseInt(idParam, 10)
+  if (Number.isInteger(id) && source[id]) {
+    setSessionValue(request, sessionKey, source[id])
+  }
+}
+
 export const addressesController = {
   get: {
     async handler(_request, h) {
@@ -42,27 +49,18 @@ export const addressesController = {
         selectedConsignor: selectedConsignorParam,
         selectedDestination: selectedDestinationParam
       } = _request.query ?? {}
-      const selectedConsignorId = Number.parseInt(selectedConsignorParam, 10)
-      const selectedDestinationId = Number.parseInt(
-        selectedDestinationParam,
-        10
+      applySelectedAddress(
+        _request,
+        'consignor',
+        consignors,
+        selectedConsignorParam
       )
-      if (
-        Number.isInteger(selectedConsignorId) &&
-        consignors[selectedConsignorId]
-      ) {
-        setSessionValue(_request, 'consignor', consignors[selectedConsignorId])
-      }
-      if (
-        Number.isInteger(selectedDestinationId) &&
-        destinations[selectedDestinationId]
-      ) {
-        setSessionValue(
-          _request,
-          'destination',
-          destinations[selectedDestinationId]
-        )
-      }
+      applySelectedAddress(
+        _request,
+        'destination',
+        destinations,
+        selectedDestinationParam
+      )
 
       const selectedConsignor = getSessionValue(_request, 'consignor')
       const selectedDestination = getSessionValue(_request, 'destination')
