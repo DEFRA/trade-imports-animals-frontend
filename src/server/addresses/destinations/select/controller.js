@@ -17,11 +17,11 @@ const destinations = JSON.parse(
 
 export const destinationsSelectController = {
   get: {
-    handler: (_request, h) => {
+    handler: (request, h) => {
       logger.info(
-        `Places of destination: ${getSessionValue(_request, 'commodity')} selection page`
+        `Places of destination: ${getSessionValue(request, 'commodity')} selection page`
       )
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(request, 'referenceNumber')
 
       return h.view('addresses/destinations/select/index', {
         pageTitle: 'Search for a place of destination',
