@@ -64,16 +64,16 @@ export const notificationClient = {
    * Builds a complete notification object from all session values
    * and submits it to the backend
    */
-  async submit(_request, traceId) {
-    const referenceNumber = getSessionValue(_request, 'referenceNumber')
-    const origin = buildOrigin(_request)
-    const commodity = getSessionValue(_request, 'commodity')
-    const reasonForImport = getSessionValue(_request, 'reasonForImport')
-    const additionalDetails = buildAdditionalDetails(_request)
-    const consignor = getSessionValue(_request, 'consignor')
-    const destination = getSessionValue(_request, 'destination')
-    const cphNumber = getSessionValue(_request, 'cphNumber')
-    const transport = buildTransport(_request)
+  async submit(request, traceId) {
+    const referenceNumber = getSessionValue(request, 'referenceNumber')
+    const origin = buildOrigin(request)
+    const commodity = getSessionValue(request, 'commodity')
+    const reasonForImport = getSessionValue(request, 'reasonForImport')
+    const additionalDetails = buildAdditionalDetails(request)
+    const consignor = getSessionValue(request, 'consignor')
+    const destination = getSessionValue(request, 'destination')
+    const cphNumber = getSessionValue(request, 'cphNumber')
+    const transport = buildTransport(request)
 
     const notification = {
       ...(referenceNumber && { referenceNumber }),
@@ -116,7 +116,7 @@ export const notificationClient = {
    * Retrieves a notification from the backend and stores all values
    * in individual session keys
    */
-  async get(_request, referenceNumber, traceId) {
+  async get(request, referenceNumber, traceId) {
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}`,
       {
@@ -141,27 +141,23 @@ export const notificationClient = {
 
     // Store all notification values in individual session keys
     if (notification.referenceNumber) {
-      setSessionValue(_request, 'referenceNumber', notification.referenceNumber)
+      setSessionValue(request, 'referenceNumber', notification.referenceNumber)
     }
 
     if (notification.origin) {
       if (notification.origin.countryCode) {
-        setSessionValue(
-          _request,
-          'countryCode',
-          notification.origin.countryCode
-        )
+        setSessionValue(request, 'countryCode', notification.origin.countryCode)
       }
       if (notification.origin.requiresRegionCode) {
         setSessionValue(
-          _request,
+          request,
           'requiresRegionCode',
           notification.origin.requiresRegionCode
         )
       }
       if (notification.origin.internalReference) {
         setSessionValue(
-          _request,
+          request,
           'internalReference',
           notification.origin.internalReference
         )
@@ -169,39 +165,39 @@ export const notificationClient = {
     }
 
     if (notification.commodity) {
-      setSessionValue(_request, 'commodity', notification.commodity)
+      setSessionValue(request, 'commodity', notification.commodity)
     }
 
     if (notification.reasonForImport) {
-      setSessionValue(_request, 'reasonForImport', notification.reasonForImport)
+      setSessionValue(request, 'reasonForImport', notification.reasonForImport)
     }
 
     if (notification.consignor) {
-      setSessionValue(_request, 'consignor', notification.consignor)
+      setSessionValue(request, 'consignor', notification.consignor)
     }
 
     if (notification.destination) {
-      setSessionValue(_request, 'destination', notification.destination)
+      setSessionValue(request, 'destination', notification.destination)
     }
 
     if (notification.cphNumber) {
-      setSessionValue(_request, 'cphNumber', notification.cphNumber)
+      setSessionValue(request, 'cphNumber', notification.cphNumber)
     }
 
     if (notification.transport) {
       if (notification.transport.portOfEntry) {
         setSessionValue(
-          _request,
+          request,
           'portOfEntry',
           notification.transport.portOfEntry
         )
       }
       if (notification.transport.arrivalDate) {
-        const [y, m, d] = notification.transport.arrivalDate.split('-')
-        setSessionValue(_request, 'arrivalDate', {
-          day: Number(d),
-          month: Number(m),
-          year: Number(y)
+        const [year, month, day] = notification.transport.arrivalDate.split('-')
+        setSessionValue(request, 'arrivalDate', {
+          day: Number(day),
+          month: Number(month),
+          year: Number(year)
         })
       }
     }
