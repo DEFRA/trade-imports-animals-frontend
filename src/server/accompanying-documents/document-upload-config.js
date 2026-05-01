@@ -1,7 +1,7 @@
 /**
  * Single source of truth for all accompanying-document upload constraints.
- * Import the derived ALLOWED_EXTENSIONS / ALLOWED_MIME_TYPES helpers from here
- * rather than duplicating them across controller, index, and schema.
+ * Consumers import ALLOWED_TYPES and derive extension/MIME lists locally
+ * rather than duplicating the underlying allow-list.
  */
 
 export const ALLOWED_TYPES = [
