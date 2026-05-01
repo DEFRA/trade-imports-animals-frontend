@@ -96,16 +96,15 @@ export const commodityDetailsController = {
         logger.warn(
           'submitNotification failed in commodity details POST; rendering error view'
         )
-        const updatedCommodity = getSessionValue(_request, 'commodity')
-        const updatedComplement = (
-          updatedCommodity?.commodityComplement ?? []
-        ).at(-1)
+        const updatedComplement = (commodityJson?.commodityComplement ?? []).at(
+          -1
+        )
         return h
           .view('commodities/details/index', {
             pageTitle: 'Description of goods',
             heading: 'Commodity',
             referenceNumber: getSessionValue(_request, 'referenceNumber'),
-            commodity: updatedCommodity,
+            commodity: commodityJson,
             typeOfCommodity: updatedComplement?.typeOfCommodity,
             speciesLst: updatedComplement?.species ?? [],
             totalNoOfAnimals: updatedComplement?.totalNoOfAnimals ?? 0,
