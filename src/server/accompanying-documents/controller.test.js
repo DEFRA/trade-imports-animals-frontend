@@ -9,7 +9,10 @@ import {
 } from '../common/helpers/session-helpers.js'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
-import { MAX_DOCUMENTS } from './document-upload-config.js'
+import {
+  MAX_DOCUMENTS,
+  MAX_DOCUMENT_REFERENCE_LENGTH
+} from './document-upload-config.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -460,7 +463,7 @@ describe('#accompanyingDocumentsController', () => {
         },
         payload: {
           documentType: 'ITAHC',
-          documentReference: 'a'.repeat(101),
+          documentReference: 'a'.repeat(MAX_DOCUMENT_REFERENCE_LENGTH + 1),
           'issueDate-day': 10,
           'issueDate-month': 3,
           'issueDate-year': 2024
