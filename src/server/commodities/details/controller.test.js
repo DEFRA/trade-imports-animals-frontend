@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 
+import { commodityDetailsController } from './controller.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
@@ -7,6 +8,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
+import * as commodityHelpers from '../../common/helpers/commodity-helpers.js'
 
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 
@@ -177,6 +179,110 @@ describe('#commodityDetailsController', () => {
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(result).toContain(
         'Something went wrong, please contact the EUDP team'
+      )
+    })
+  })
+})
+
+describe('#commodityDetailsController (unit)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  describe('GET handler', () => {
+    test('renders view with referenceNumber, commodity, typeOfCommodity, species and totals from last selected species', () => {
+      const commodity = {
+        name: 'Fish',
+        commodityComplement: [
+          { typeOfCommodity: 'ignored', species: [{ value: 'old' }] },
+          {
+            typeOfCommodity: 'Domestic',
+            species: [
+              { value: '1586274', text: '1586274' },
+              { value: '716661', text: 'Bison bison' }
+            ],
+            totalNoOfAnimals: 5,
+            totalNoOfPackages: 5
+          }
+        ]
+      }
+
+      getSessionValue.mockImplementation((_request, key) => {
+        if (key === 'referenceNumber') return 'REF-456'
+        if (key === 'commodity') return commodity
+        return null
+      })
+
+      const request = {}
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      const response = commodityDetailsController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith('commodities/details/index', {
+        pageTitle: 'Description of goods',
+        heading: 'Commodity',
+        referenceNumber: 'REF-456',
+        commodity,
+        typeOfCommodity: 'Domestic',
+        speciesLst: commodity.commodityComplement[1].species,
+        totalNoOfAnimals: 5,
+        totalNoOfPackages: 5,
+        commodityDetails: expect.objectContaining({
+          code: expect.any(String),
+          description: expect.any(String)
+        })
+      })
+
+      expect(response.template).toBe('commodities/details/index')
+    })
+
+    test('renders with empty species, no typeOfCommodity and zero totals when commodityComplement is empty', () => {
+      getSessionValue.mockImplementation((_request, key) => {
+        if (key === 'referenceNumber') return 'REF-1'
+        if (key === 'commodity') return { name: 'X', commodityComplement: [] }
+        return null
+      })
+
+      const request = {}
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      commodityDetailsController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/details/index',
+        expect.objectContaining({
+          referenceNumber: 'REF-1',
+          typeOfCommodity: undefined,
+          speciesLst: [],
+          totalNoOfAnimals: 0,
+          totalNoOfPackages: 0
+        })
+      )
+    })
+
+    test('renders with commodityDetails null when toCommodityDetails returns null', () => {
+      vi.spyOn(commodityHelpers, 'toCommodityDetails').mockReturnValueOnce(null)
+
+      getSessionValue.mockImplementation((_request, key) => {
+        if (key === 'referenceNumber') return 'REF-NULL'
+        if (key === 'commodity') return { name: 'X', commodityComplement: [] }
+        return null
+      })
+
+      const request = {}
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      commodityDetailsController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/details/index',
+        expect.objectContaining({
+          commodityDetails: null
+        })
       )
     })
   })
