@@ -30,6 +30,21 @@ try {
   )
 }
 
+const buildDetailsViewModel = (commodity, referenceNumber) => {
+  const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
+  return {
+    pageTitle: 'Description of goods',
+    heading: 'Commodity',
+    referenceNumber,
+    commodity,
+    typeOfCommodity: commodityComplement?.typeOfCommodity,
+    speciesLst: commodityComplement?.species ?? [],
+    totalNoOfAnimals: commodityComplement?.totalNoOfAnimals ?? 0,
+    totalNoOfPackages: commodityComplement?.totalNoOfPackages ?? 0,
+    commodityDetails: toCommodityDetails(commodityDetailsList)
+  }
+}
+
 export const commodityDetailsController = {
   get: {
     handler(_request, h) {
@@ -42,21 +57,11 @@ export const commodityDetailsController = {
       // These two paths are inconsistent and should be aligned in a follow-up.
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const commodity = getSessionValue(_request, 'commodity')
-      const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
-      const speciesLst = commodityComplement?.species ?? []
-      const typeOfCommodity = commodityComplement?.typeOfCommodity
 
-      return h.view('commodities/details/index', {
-        pageTitle: 'Description of goods',
-        heading: 'Commodity',
-        referenceNumber,
-        commodity,
-        typeOfCommodity,
-        speciesLst,
-        totalNoOfAnimals: commodityComplement?.totalNoOfAnimals ?? 0,
-        totalNoOfPackages: commodityComplement?.totalNoOfPackages ?? 0,
-        commodityDetails: toCommodityDetails(commodityDetailsList)
-      })
+      return h.view(
+        'commodities/details/index',
+        buildDetailsViewModel(commodity, referenceNumber)
+      )
     }
   },
   post: {
@@ -96,20 +101,12 @@ export const commodityDetailsController = {
         logger.warn(
           'submitNotification failed in commodity details POST; rendering error view'
         )
-        const updatedComplement = (commodityJson?.commodityComplement ?? []).at(
-          -1
-        )
         return h
           .view('commodities/details/index', {
-            pageTitle: 'Description of goods',
-            heading: 'Commodity',
-            referenceNumber: getSessionValue(_request, 'referenceNumber'),
-            commodity: commodityJson,
-            typeOfCommodity: updatedComplement?.typeOfCommodity,
-            speciesLst: updatedComplement?.species ?? [],
-            totalNoOfAnimals: updatedComplement?.totalNoOfAnimals ?? 0,
-            totalNoOfPackages: updatedComplement?.totalNoOfPackages ?? 0,
-            commodityDetails: toCommodityDetails(commodityDetailsList),
+            ...buildDetailsViewModel(
+              commodityJson,
+              getSessionValue(_request, 'referenceNumber')
+            ),
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]
