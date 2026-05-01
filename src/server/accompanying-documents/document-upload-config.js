@@ -26,11 +26,11 @@ export const ALLOWED_TYPES = [
 // the same MIME type (image/jpeg), so we de-duplicate by MIME — keeping only
 // the first extension per MIME — to avoid showing both "JPEG" and "JPG".
 const seenMimes = new Set()
-const allowedTypeLabels = ALLOWED_TYPES.filter((t) => {
-  if (seenMimes.has(t.mime)) return false
-  seenMimes.add(t.mime)
+const allowedTypeLabels = ALLOWED_TYPES.filter((type) => {
+  if (seenMimes.has(type.mime)) return false
+  seenMimes.add(type.mime)
   return true
-}).map((t) => t.ext.toUpperCase())
+}).map((type) => type.ext.toUpperCase())
 
 // Use en-GB so the Oxford comma is omitted ("X, Y or Z" not "X, Y, or Z"),
 // matching GDS plain-English style.
