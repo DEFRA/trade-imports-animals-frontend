@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
 import {
@@ -23,6 +23,10 @@ vi.mock('../common/helpers/notification-helpers.js', () => ({
 }))
 
 describe('addressesController', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('GET /addresses', () => {
     test('renders addresses page using fetchNotification for referenceNumber', async () => {
       fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
