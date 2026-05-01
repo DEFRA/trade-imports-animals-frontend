@@ -8,7 +8,7 @@
  */
 export const toCommodityDetails = (value) => {
   if (Array.isArray(value)) {
-    return value.length > 0 ? value[0] : null
+    return value.at(0) ?? null
   }
 
   if (value && typeof value === 'object' && Object.keys(value).length > 0) {
