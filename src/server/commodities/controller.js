@@ -13,7 +13,7 @@ const logger = createLogger()
 
 export const commoditiesController = {
   get: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
