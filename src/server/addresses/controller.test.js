@@ -121,14 +121,8 @@ describe('addressesController', () => {
 
       await addressesController.get.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith(
-        'consignor',
-        expect.objectContaining({ name: expect.any(String) })
-      )
-      expect(set).toHaveBeenCalledWith(
-        'destination',
-        expect.objectContaining({ name: expect.any(String) })
-      )
+      expect(set).toHaveBeenCalledWith('consignor', selectedConsignor)
+      expect(set).toHaveBeenCalledWith('destination', selectedDestination)
       expect(h.view).toHaveBeenCalledWith(
         'addresses/index',
         expect.objectContaining({
