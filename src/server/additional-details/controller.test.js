@@ -173,6 +173,11 @@ describe('additionalDetailsController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'additional-details/index',
         expect.objectContaining({
+          pageTitle: 'Additional animal details',
+          heading: 'Additional animal details',
+          certifiedFor: null,
+          unweanedAnimals: 'no',
+          referenceNumber: null,
           errorList: [
             { text: 'Something went wrong, please contact the EUDP team' }
           ]
