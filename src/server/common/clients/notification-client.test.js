@@ -37,6 +37,35 @@ vi.mock('../../../config/config.js', () => ({
 describe('#notificationClient', () => {
   const traceId = 'trace-123'
   const mockRequest = { session: {} }
+  const JSON_HEADERS = {
+    'Content-Type': 'application/json',
+    'x-trace-id': traceId
+  }
+  const notificationFixture = {
+    referenceNumber: 'REF-123',
+    origin: {
+      countryCode: 'GB',
+      requiresRegionCode: 'yes',
+      internalReference: 'TEST-001'
+    },
+    commodity: { name: 'Fish' },
+    reasonForImport: 'internalMarket',
+    consignor: {
+      name: 'Astra Rosales',
+      address: {
+        addressLine1: '43 East Hague Extension',
+        country: 'Switzerland'
+      }
+    },
+    destination: {
+      name: 'Tech Imports Ltd',
+      address: {
+        addressLine1: '643 Main Street',
+        country: 'United Kingdom'
+      }
+    },
+    cphNumber: '123456789'
+  }
   let originalFetch
 
   beforeEach(() => {
@@ -57,57 +86,10 @@ describe('#notificationClient', () => {
       test('Should build notification from session values and send POST request', async () => {
         // Mock session values
         mockGetSessionValue.mockImplementation((req, key) => {
-          const sessionData = {
-            referenceNumber: 'REF-123',
-            countryCode: 'GB',
-            requiresRegionCode: 'yes',
-            internalReference: 'TEST-001',
-            commodity: { name: 'Fish' },
-            reasonForImport: 'internalMarket',
-            consignor: {
-              name: 'Astra Rosales',
-              address: {
-                addressLine1: '43 East Hague Extension',
-                country: 'Switzerland'
-              }
-            },
-            destination: {
-              name: 'Tech Imports Ltd',
-              address: {
-                addressLine1: '643 Main Street',
-                country: 'United Kingdom'
-              }
-            },
-            cphNumber: '123456789'
-          }
+          const { origin, ...rest } = notificationFixture
+          const sessionData = { ...rest, ...origin }
           return sessionData[key]
         })
-
-        const expectedNotification = {
-          referenceNumber: 'REF-123',
-          origin: {
-            countryCode: 'GB',
-            requiresRegionCode: 'yes',
-            internalReference: 'TEST-001'
-          },
-          commodity: { name: 'Fish' },
-          reasonForImport: 'internalMarket',
-          consignor: {
-            name: 'Astra Rosales',
-            address: {
-              addressLine1: '43 East Hague Extension',
-              country: 'Switzerland'
-            }
-          },
-          destination: {
-            name: 'Tech Imports Ltd',
-            address: {
-              addressLine1: '643 Main Street',
-              country: 'United Kingdom'
-            }
-          },
-          cphNumber: '123456789'
-        }
 
         const responseBody = { referenceNumber: 'REF-123' }
 
@@ -123,11 +105,8 @@ describe('#notificationClient', () => {
           'http://mock-backend/notifications',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-trace-id': traceId
-            },
-            body: JSON.stringify(expectedNotification)
+            headers: JSON_HEADERS,
+            body: JSON.stringify(notificationFixture)
           }
         )
 
@@ -162,10 +141,7 @@ describe('#notificationClient', () => {
           'http://mock-backend/notifications',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-trace-id': traceId
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify(expectedNotification)
           }
         )
@@ -243,31 +219,7 @@ describe('#notificationClient', () => {
 
     describe('When get is called with valid reference number', () => {
       test('Should send GET request and store all values in session', async () => {
-        const responseBody = {
-          referenceNumber: 'REF-123',
-          origin: {
-            countryCode: 'GB',
-            requiresRegionCode: 'yes',
-            internalReference: 'TEST-001'
-          },
-          commodity: { name: 'Fish' },
-          reasonForImport: 'internalMarket',
-          consignor: {
-            name: 'Astra Rosales',
-            address: {
-              addressLine1: '43 East Hague Extension',
-              country: 'Switzerland'
-            }
-          },
-          destination: {
-            name: 'Tech Imports Ltd',
-            address: {
-              addressLine1: '643 Main Street',
-              country: 'United Kingdom'
-            }
-          },
-          cphNumber: '123456789'
-        }
+        const responseBody = notificationFixture
 
         fetch.mockResolvedValueOnce({
           ok: true,
@@ -285,10 +237,7 @@ describe('#notificationClient', () => {
           'http://mock-backend/notifications/REF-123',
           {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-trace-id': traceId
-            }
+            headers: JSON_HEADERS
           }
         )
 
