@@ -290,7 +290,7 @@ describe('#accompanyingDocumentsController', () => {
         payload: { _action: 'remove-UPLOAD-1' }
       })
 
-      expect(statusCode).toBe(302)
+      expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/accompanying-documents')
       expect(documentClient.delete).toHaveBeenCalledWith(
         'UPLOAD-1',
@@ -343,7 +343,7 @@ describe('#accompanyingDocumentsController', () => {
         payload: { _action: 'remove-UPLOAD-1' }
       })
 
-      expect(statusCode).toBe(302)
+      expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/accompanying-documents')
       expect(setSessionValue).not.toHaveBeenCalled()
     })
@@ -578,7 +578,7 @@ describe('#accompanyingDocumentsController', () => {
           })
         ])
       )
-      expect(statusCode).toBe(302)
+      expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/accompanying-documents')
     })
 
