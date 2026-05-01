@@ -13,7 +13,7 @@ import { getTraceId } from '@defra/hapi-tracing'
 const logger = createLogger()
 
 async function buildCountryItems(traceId) {
-  const classifiers = ['EU', 'EFTA', 'CTC']
+  const classifiers = ['EU', 'EEA']
   const countries = await countriesClient.getCountries(traceId, classifiers)
   return [
     { value: '', text: 'Select a country' },

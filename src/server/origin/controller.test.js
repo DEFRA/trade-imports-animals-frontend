@@ -62,7 +62,7 @@ describe('#originController', () => {
       expect(result).toEqual(expect.stringContaining('Origin of the Import'))
     })
 
-    test('Should display country select dropdown populated from the API', async () => {
+    test('Should display country select dropdown populated from the API for EU and EEA countries', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/origin',
@@ -82,7 +82,10 @@ describe('#originController', () => {
       expect(result).toEqual(expect.stringContaining('France'))
       expect(result).toEqual(expect.stringContaining('Germany'))
       expect(result).toEqual(expect.stringContaining('Spain'))
-      expect(countriesClient.getCountries).toHaveBeenCalled()
+      expect(countriesClient.getCountries).toHaveBeenCalledWith('', [
+        'EU',
+        'EEA'
+      ])
     })
 
     test('Should render form with radio buttons for region code', async () => {
