@@ -84,7 +84,6 @@ describe('#notificationClient', () => {
   describe('submit', () => {
     describe('When submit is called with session values', () => {
       test('Should build notification from session values and send POST request', async () => {
-        // Mock session values
         mockGetSessionValue.mockImplementation((req, key) => {
           const { origin, ...rest } = notificationFixture
           const sessionData = { ...rest, ...origin }
@@ -114,7 +113,6 @@ describe('#notificationClient', () => {
       })
 
       test('Should handle partial session values', async () => {
-        // Mock only some session values
         mockGetSessionValue.mockImplementation((req, key) => {
           const sessionData = {
             countryCode: 'FR',
@@ -241,7 +239,6 @@ describe('#notificationClient', () => {
           }
         )
 
-        // Verify all values were stored in session
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
           'referenceNumber',
