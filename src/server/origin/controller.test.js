@@ -20,6 +20,7 @@ vi.mock('../common/helpers/notification-helpers.js', () => ({
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
+    warn: vi.fn(),
     error: vi.fn()
   })
 }))

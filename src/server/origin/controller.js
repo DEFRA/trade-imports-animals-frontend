@@ -1,3 +1,4 @@
+import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import {
   setSessionValue,
@@ -72,7 +73,12 @@ export const originController = {
           setSessionValue(_request, 'referenceNumber', response.referenceNumber)
           logger.info(`Reference number saved: ${response.referenceNumber}`)
         }
-      } catch {
+      } catch (_error) {
+        const referenceNumber = getSessionValue(_request, 'referenceNumber')
+        const traceId = getTraceId() ?? ''
+        logger.warn(
+          `submitNotification failed in origin POST; rendering error view (referenceNumber=${referenceNumber ?? 'none'}, traceId=${traceId})`
+        )
         return h
           .view('origin/index', {
             pageTitle: 'Origin of the import',
