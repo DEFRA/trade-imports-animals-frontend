@@ -140,15 +140,13 @@ describe('addressesController', () => {
   })
 
   describe('POST /addresses', () => {
-    test('submits notification and redirects to /cph-number with referenceNumber', async () => {
+    test('submits notification and redirects to /cph-number', async () => {
       submitNotification.mockResolvedValue(undefined)
 
-      const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
-      const request = { yar: { get } }
-      const redirect = vi.fn((location, opts) => ({
+      const request = {}
+      const redirect = vi.fn((location) => ({
         statusCode: 302,
-        location,
-        opts
+        location
       }))
       const h = { redirect }
 
@@ -158,25 +156,20 @@ describe('addressesController', () => {
         request,
         expect.any(Object)
       )
-      expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
-        referenceNumber: 'REF-123'
-      })
+      expect(h.redirect).toHaveBeenCalledWith('/cph-number')
       expect(response).toEqual({
         statusCode: 302,
-        location: '/cph-number',
-        opts: { referenceNumber: 'REF-123' }
+        location: '/cph-number'
       })
     })
 
     test('still redirects to /cph-number when submitNotification throws', async () => {
       submitNotification.mockRejectedValue(new Error('Backend error'))
 
-      const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
-      const request = { yar: { get } }
-      const redirect = vi.fn((location, opts) => ({
+      const request = {}
+      const redirect = vi.fn((location) => ({
         statusCode: 302,
-        location,
-        opts
+        location
       }))
       const h = { redirect }
 
@@ -186,13 +179,10 @@ describe('addressesController', () => {
         request,
         expect.any(Object)
       )
-      expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
-        referenceNumber: 'REF-123'
-      })
+      expect(h.redirect).toHaveBeenCalledWith('/cph-number')
       expect(response).toEqual({
         statusCode: 302,
-        location: '/cph-number',
-        opts: { referenceNumber: 'REF-123' }
+        location: '/cph-number'
       })
     })
   })

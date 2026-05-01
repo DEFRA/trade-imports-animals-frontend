@@ -86,8 +86,7 @@ export const addressesController = {
         // Helper logged the error; allow the user to proceed.
       }
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      return h.redirect('/cph-number', { referenceNumber })
+      return h.redirect('/cph-number')
     }
   }
 }
