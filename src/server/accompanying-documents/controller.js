@@ -25,6 +25,11 @@ const MAX_POLLING_ATTEMPTS = 10
 const ALLOWED_EXTENSIONS = new Set(ALLOWED_TYPES.map((type) => `.${type.ext}`))
 const ALLOWED_MIME_TYPES = ALLOWED_TYPES.map((type) => type.mime)
 
+const getAttempt = (request) => {
+  const parsed = parseInt(request.query.attempt ?? '0', 10)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
 const getDocumentsWithStatus = async (documents, traceId, logger) =>
   Promise.all(
     documents.map(async (doc) => {
@@ -92,8 +97,7 @@ export const accompanyingDocumentsController = {
   get: {
     async handler(request, h) {
       const traceId = getTraceId() ?? ''
-      const parsed = parseInt(request.query.attempt ?? '0', 10)
-      const attempt = Number.isNaN(parsed) ? 0 : parsed
+      const attempt = getAttempt(request)
       const rawDocuments = getSessionValue(request, 'documents') ?? []
       const referenceNumber = getSessionValue(request, 'referenceNumber')
 
@@ -154,8 +158,7 @@ export const accompanyingDocumentsController = {
 
       // Hoisted so all error branches below can reuse the same values
       // without re-parsing the attempt query param or re-fetching documents.
-      const parsed = parseInt(request.query.attempt ?? '0', 10)
-      const attempt = Number.isNaN(parsed) ? 0 : parsed
+      const attempt = getAttempt(request)
       const documents = getSessionValue(request, 'documents') ?? []
       const documentsWithStatus = await getDocumentsWithStatus(
         documents,
