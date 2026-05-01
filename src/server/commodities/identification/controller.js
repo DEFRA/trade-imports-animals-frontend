@@ -100,6 +100,7 @@ export const animalIdentificationDetailsController = {
             commodity: commodityJson,
             typeOfCommodity: commodityComplement?.typeOfCommodity,
             speciesLst: commodityComplement?.species ?? [],
+            commodityDetails: toCommodityDetails(commodityDetailsList),
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]
