@@ -7,13 +7,24 @@ import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
+async function buildCountryItems(traceId) {
+  const classifiers = ['EU', 'EFTA', 'CTC']
+  const countries = await countriesClient.getCountries(traceId, classifiers)
+  return [
+    { value: '', text: 'Select a country' },
+    { text: '──────────', disabled: true },
+    ...countries.map(({ code, name }) => ({ value: code, text: name }))
+  ]
+}
+
 export const originController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       logger.info(
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
@@ -26,6 +37,8 @@ export const originController = {
         )
       }
 
+      const countryItems = await buildCountryItems(traceId)
+
       return h.view('origin/index', {
         pageTitle: 'Origin of the import',
         heading: 'Origin of the import',
@@ -33,7 +46,8 @@ export const originController = {
         countryCode: getSessionValue(_request, 'countryCode'),
         requiresRegionCode:
           getSessionValue(_request, 'requiresRegionCode') || 'no',
-        internalReference: getSessionValue(_request, 'internalReference')
+        internalReference: getSessionValue(_request, 'internalReference'),
+        countryItems
       })
     }
   },
@@ -43,6 +57,8 @@ export const originController = {
         _request.payload
       logger.info(`Country of origin: ${countryCode}`)
       const traceId = getTraceId() ?? ''
+
+      const countryItems = await buildCountryItems(traceId)
 
       // Validate using Joi schema
       const { error } = originSchema.validate(_request.payload, {
@@ -54,7 +70,8 @@ export const originController = {
         const viewModel = {
           countryCode,
           requiresRegionCode,
-          internalReference
+          internalReference,
+          countryItems
         }
         viewModel.errorList = formattedErrors.errorList
         viewModel.fieldErrors = formattedErrors.fieldErrors
@@ -89,6 +106,7 @@ export const originController = {
             requiresRegionCode:
               getSessionValue(_request, 'requiresRegionCode') || 'no',
             internalReference: getSessionValue(_request, 'internalReference'),
+            countryItems,
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]

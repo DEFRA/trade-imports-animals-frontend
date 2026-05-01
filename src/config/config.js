@@ -332,6 +332,14 @@ export const config = convict({
       default: 'http://localhost:8085',
       env: 'TRADE_IMPORTS_ANIMALS_BACKEND_URL'
     }
+  },
+  tradeImportsReferenceDataApi: {
+    baseUrl: {
+      doc: 'Trade Imports Reference Data API base URL',
+      format: String,
+      default: 'http://localhost:8086',
+      env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
+    }
   }
 })
 
