@@ -135,9 +135,8 @@ describe('#commoditiesController', () => {
         }
       })
 
-      const sessionCookie = seedResponse.headers['set-cookie']
-        ? seedResponse.headers['set-cookie'][0].split(';')[0]
-        : null
+      const sessionCookie =
+        seedResponse.headers['set-cookie']?.[0]?.split(';')[0] ?? null
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
