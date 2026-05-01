@@ -135,7 +135,7 @@ describe('#commodityDetailsController', () => {
         expect.any(String)
       )
 
-      expect(statusCode).toBe(302)
+      expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/commodities/identification')
     })
 
