@@ -19,6 +19,10 @@ const commodityDetailsPath = path.join(
   '../../common/mock-data/mock-commodity-details.json'
 )
 
+const VIEW_NAME = 'commodities/identification/index'
+const PAGE_TITLE = 'Description of goods'
+const HEADING = 'Commodity'
+
 let commodityDetailsList
 try {
   commodityDetailsList = JSON.parse(readFileSync(commodityDetailsPath, 'utf-8'))
@@ -44,9 +48,9 @@ export const animalIdentificationDetailsController = {
       const speciesLst = commodityComplement?.species ?? []
       const typeOfCommodity = commodityComplement?.typeOfCommodity
 
-      return h.view('commodities/identification/index', {
-        pageTitle: 'Description of goods',
-        heading: 'Commodity',
+      return h.view(VIEW_NAME, {
+        pageTitle: PAGE_TITLE,
+        heading: HEADING,
         referenceNumber,
         commodity,
         typeOfCommodity,
@@ -93,9 +97,9 @@ export const animalIdentificationDetailsController = {
           'Submit failed; rendering error page'
         )
         return h
-          .view('commodities/identification/index', {
-            pageTitle: 'Description of goods',
-            heading: 'Commodity',
+          .view(VIEW_NAME, {
+            pageTitle: PAGE_TITLE,
+            heading: HEADING,
             referenceNumber,
             commodity: commodityJson,
             typeOfCommodity: commodityComplement?.typeOfCommodity,
