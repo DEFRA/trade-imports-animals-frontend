@@ -14,8 +14,8 @@ const consignors = JSON.parse(
 
 export const consignorsSelectController = {
   get: {
-    handler: (_request, h) => {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+    handler: (request, h) => {
+      const referenceNumber = getSessionValue(request, 'referenceNumber')
       logger.info(`Consignor address: ${referenceNumber} selection page`)
 
       return h.view('addresses/consignors/select/index', {
