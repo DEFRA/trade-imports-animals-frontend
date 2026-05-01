@@ -92,7 +92,10 @@ export const commodityDetailsController = {
 
       try {
         await submitNotification(_request, logger)
-      } catch {
+      } catch (_error) {
+        logger.warn(
+          'submitNotification failed in commodity details POST; rendering error view'
+        )
         const updatedCommodity = getSessionValue(_request, 'commodity')
         const updatedComplement = (
           updatedCommodity?.commodityComplement ?? []
