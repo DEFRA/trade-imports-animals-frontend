@@ -161,7 +161,7 @@ describe('#commodityDetailsController', () => {
         })
       )
 
-      const { statusCode, result } = await server.inject({
+      const { statusCode, result, headers } = await server.inject({
         method: 'POST',
         url: '/commodities/details',
         auth: {
@@ -190,6 +190,7 @@ describe('#commodityDetailsController', () => {
       )
 
       expect(statusCode).toBe(statusCodes.internalServerError)
+      expect(headers.location).toBeUndefined()
       expect(result).toContain(
         'Something went wrong, please contact the EUDP team'
       )
