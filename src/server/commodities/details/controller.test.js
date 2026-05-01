@@ -176,6 +176,19 @@ describe('#commodityDetailsController', () => {
         }
       })
 
+      expect(setSessionValue).toHaveBeenCalledWith(
+        expect.anything(),
+        'commodity',
+        expect.objectContaining({
+          commodityComplement: [
+            expect.objectContaining({
+              totalNoOfAnimals: 2,
+              totalNoOfPackages: 1
+            })
+          ]
+        })
+      )
+
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(result).toContain(
         'Something went wrong, please contact the EUDP team'
