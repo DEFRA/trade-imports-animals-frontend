@@ -154,7 +154,7 @@ describe('#animalIdentificationDetailsController', () => {
         })
       )
 
-      const { statusCode } = await server.inject({
+      const { statusCode, result } = await server.inject({
         method: 'POST',
         url: '/commodities/identification',
         auth: {
@@ -168,6 +168,12 @@ describe('#animalIdentificationDetailsController', () => {
       })
 
       expect(statusCode).toBe(statusCodes.internalServerError)
+      // Lock in the rendered error view: the index template should re-render
+      // with the GDS error summary populated from the controller's errorList.
+      expect(result).toContain('There is a problem')
+      expect(result).toContain(
+        'Something went wrong, please contact the EUDP team'
+      )
     })
   })
 })
