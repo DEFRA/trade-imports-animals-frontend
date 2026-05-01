@@ -1,3 +1,4 @@
+import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import {
   getSessionValue,
@@ -84,7 +85,13 @@ export const animalIdentificationDetailsController = {
 
       try {
         await submitNotification(_request, logger)
-      } catch {
+      } catch (_error) {
+        const referenceNumber = getSessionValue(_request, 'referenceNumber')
+        const traceId = getTraceId() ?? ''
+        logger.warn(
+          { referenceNumber, traceId },
+          'Submit failed; rendering error page'
+        )
         const updatedCommodity = getSessionValue(_request, 'commodity')
         const updatedComplement = (
           updatedCommodity?.commodityComplement ?? []
@@ -93,7 +100,7 @@ export const animalIdentificationDetailsController = {
           .view('commodities/identification/index', {
             pageTitle: 'Description of goods',
             heading: 'Commodity',
-            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            referenceNumber,
             commodity: updatedCommodity,
             typeOfCommodity: updatedComplement?.typeOfCommodity,
             speciesLst: updatedComplement?.species ?? [],
