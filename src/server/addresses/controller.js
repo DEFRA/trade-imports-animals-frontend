@@ -36,7 +36,7 @@ export const addressesController = {
         `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
       )
       const notification = await fetchNotification(_request, logger)
-      const referenceNumber = notification?.referenceNumber ?? null
+      const referenceNumber = notification?.referenceNumber
 
       const selectedConsignorId = Number.parseInt(
         _request.query?.selectedConsignor,

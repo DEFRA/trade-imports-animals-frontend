@@ -59,7 +59,7 @@ describe('addressesController', () => {
       expect(response.template).toBe('addresses/index')
     })
 
-    test('renders addresses page with referenceNumber null when fetchNotification returns null', async () => {
+    test('renders addresses page with no referenceNumber when fetchNotification returns null', async () => {
       fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
@@ -79,7 +79,7 @@ describe('addressesController', () => {
         pageTitle: 'Addresses',
         heading: 'Addresses',
         captionText: 'Notification details',
-        referenceNumber: null,
+        referenceNumber: undefined,
         selectedConsignor: null,
         selectedDestination: null
       })
