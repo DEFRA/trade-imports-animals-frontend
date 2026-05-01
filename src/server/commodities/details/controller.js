@@ -107,6 +107,7 @@ export const commodityDetailsController = {
             speciesLst: updatedComplement?.species ?? [],
             totalNoOfAnimals: updatedComplement?.totalNoOfAnimals ?? 0,
             totalNoOfPackages: updatedComplement?.totalNoOfPackages ?? 0,
+            commodityDetails: toCommodityDetails(commodityDetailsList),
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]
