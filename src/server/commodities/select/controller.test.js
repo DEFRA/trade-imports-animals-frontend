@@ -9,6 +9,7 @@ import {
 } from 'vitest'
 
 import { commoditiesSelectController } from './controller.js'
+import { statusCodes } from '../../common/constants/status-codes.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 
@@ -237,7 +238,7 @@ describe('commoditiesSelectController', () => {
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
