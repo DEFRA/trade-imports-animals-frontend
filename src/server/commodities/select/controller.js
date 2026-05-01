@@ -117,7 +117,10 @@ export const commoditiesSelectController = {
 
       try {
         await submitNotification(_request, logger)
-      } catch {
+      } catch (_error) {
+        logger.warn(
+          'submitNotification failed in commodity select POST; rendering error view'
+        )
         return h
           .view('commodities/select/index', {
             pageTitle: 'Select species of commodity',
