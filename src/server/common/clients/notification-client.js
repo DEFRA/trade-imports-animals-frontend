@@ -139,7 +139,6 @@ export const notificationClient = {
 
     const notification = await response.json()
 
-    // Store all notification values in individual session keys
     if (notification.referenceNumber) {
       setSessionValue(request, 'referenceNumber', notification.referenceNumber)
     }
