@@ -6,6 +6,7 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -122,7 +123,10 @@ describe('additionalDetailsController', () => {
       }
 
       const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        redirect: vi.fn((location) => ({
+          statusCode: statusCodes.redirectFound,
+          location
+        }))
       }
 
       const response = await additionalDetailsController.post.handler(
@@ -143,7 +147,7 @@ describe('additionalDetailsController', () => {
         })
       )
       expect(response).toEqual({
-        statusCode: 302,
+        statusCode: statusCodes.redirectFound,
         location: '/accompanying-documents'
       })
     })
@@ -162,7 +166,9 @@ describe('additionalDetailsController', () => {
         yar: { set, get }
       }
 
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const mockCode = vi.fn(() => ({
+        statusCode: statusCodes.internalServerError
+      }))
       const h = {
         view: vi.fn(() => ({ code: mockCode })),
         redirect: vi.fn()
@@ -183,7 +189,7 @@ describe('additionalDetailsController', () => {
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
