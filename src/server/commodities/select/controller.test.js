@@ -233,6 +233,31 @@ describe('commoditiesSelectController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'commodities/select/index',
         expect.objectContaining({
+          referenceNumber: 'REF-123',
+          commodity: {
+            name: 'Fish',
+            commodityComplement: [
+              {
+                typeOfCommodity: 'Domestic',
+                species: [
+                  { value: '1586274', text: '1586274' },
+                  { value: '716661', text: 'Bison bison' }
+                ]
+              }
+            ]
+          },
+          typeOfCommodity: 'Domestic',
+          species: ['1586274', '716661'],
+          commodityDetails: expect.objectContaining({
+            code: expect.any(String),
+            description: expect.any(String)
+          }),
+          speciesDetails: expect.objectContaining({
+            data: expect.objectContaining({
+              types: expect.any(Array),
+              species: expect.any(Array)
+            })
+          }),
           errorList: [
             { text: 'Something went wrong, please contact the EUDP team' }
           ]
