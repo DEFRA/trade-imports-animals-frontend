@@ -55,7 +55,10 @@ export const accompanyingDocumentsSchema = Joi.object({
 })
 
 /**
- * Cross-field date validation: if any date part is provided, all three must be.
+ * Cross-field date validation. Returns errors when:
+ *  - no date parts are provided but a file is attached (date is required); or
+ *  - some date parts are provided but not all three; or
+ *  - all three parts are provided but do not form a real calendar date.
  * Returns a formatValidationErrors-compatible error object, or null if valid.
  *
  * @param {object} payload
