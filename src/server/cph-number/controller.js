@@ -11,18 +11,26 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
+const renderView = (
+  h,
+  { cphNumber, referenceNumber, errorList, fieldErrors }
+) =>
+  h.view('cph-number/index', {
+    pageTitle: 'Add the County Parish Holding number (CPH)',
+    heading: 'Add the County Parish Holding number (CPH)',
+    cphNumber,
+    referenceNumber,
+    ...(errorList !== undefined && { errorList }),
+    ...(fieldErrors !== undefined && { fieldErrors })
+  })
+
 export const cphNumberController = {
   get: {
     handler(_request, h) {
       const cphNumber = getSessionValue(_request, 'cphNumber')
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
 
-      return h.view('cph-number/index', {
-        pageTitle: 'Add the County Parish Holding number (CPH)',
-        heading: 'Add the County Parish Holding number (CPH)',
-        cphNumber,
-        referenceNumber
-      })
+      return renderView(h, { cphNumber, referenceNumber })
     }
   },
   post: {
@@ -37,16 +45,12 @@ export const cphNumberController = {
 
       if (error) {
         const formattedErrors = formatValidationErrors(error)
-        return h
-          .view('cph-number/index', {
-            pageTitle: 'Add the County Parish Holding number (CPH)',
-            heading: 'Add the County Parish Holding number (CPH)',
-            cphNumber,
-            referenceNumber,
-            errorList: formattedErrors.errorList,
-            fieldErrors: formattedErrors.fieldErrors
-          })
-          .code(statusCodes.badRequest)
+        return renderView(h, {
+          cphNumber,
+          referenceNumber,
+          errorList: formattedErrors.errorList,
+          fieldErrors: formattedErrors.fieldErrors
+        }).code(statusCodes.badRequest)
       }
 
       setSessionValue(_request, 'cphNumber', cphNumber)
@@ -57,17 +61,13 @@ export const cphNumberController = {
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
-        return h
-          .view('cph-number/index', {
-            pageTitle: 'Add the County Parish Holding number (CPH)',
-            heading: 'Add the County Parish Holding number (CPH)',
-            cphNumber: getSessionValue(_request, 'cphNumber'),
-            referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
-          })
-          .code(statusCodes.internalServerError)
+        return renderView(h, {
+          cphNumber: getSessionValue(_request, 'cphNumber'),
+          referenceNumber,
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        }).code(statusCodes.internalServerError)
       }
 
       return h.redirect('/port-of-entry')
