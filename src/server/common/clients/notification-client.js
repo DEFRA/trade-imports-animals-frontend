@@ -1,4 +1,5 @@
 import { config } from '../../../config/config.js'
+import { sessionKeys } from '../constants/session-keys.js'
 import { createLogger } from '../helpers/logging/logger.js'
 import { getSessionValue, setSessionValue } from '../helpers/session-helpers.js'
 
@@ -16,9 +17,15 @@ function getIsoArrivalDate(arrivalDate) {
 }
 
 function buildOrigin(request) {
-  const countryCode = getSessionValue(request, 'countryCode')
-  const requiresRegionCode = getSessionValue(request, 'requiresRegionCode')
-  const internalReference = getSessionValue(request, 'internalReference')
+  const countryCode = getSessionValue(request, sessionKeys.countryCode)
+  const requiresRegionCode = getSessionValue(
+    request,
+    sessionKeys.requiresRegionCode
+  )
+  const internalReference = getSessionValue(
+    request,
+    sessionKeys.internalReference
+  )
 
   if (!countryCode && !requiresRegionCode && !internalReference) {
     return undefined
@@ -32,8 +39,8 @@ function buildOrigin(request) {
 }
 
 function buildAdditionalDetails(request) {
-  const certifiedFor = getSessionValue(request, 'certifiedFor')
-  const unweanedAnimals = getSessionValue(request, 'unweanedAnimals')
+  const certifiedFor = getSessionValue(request, sessionKeys.certifiedFor)
+  const unweanedAnimals = getSessionValue(request, sessionKeys.unweanedAnimals)
 
   if (!certifiedFor && !unweanedAnimals) {
     return undefined
@@ -46,8 +53,10 @@ function buildAdditionalDetails(request) {
 }
 
 function buildTransport(request) {
-  const portOfEntry = getSessionValue(request, 'portOfEntry')
-  const arrivalDate = getIsoArrivalDate(getSessionValue(request, 'arrivalDate'))
+  const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
+  const arrivalDate = getIsoArrivalDate(
+    getSessionValue(request, sessionKeys.arrivalDate)
+  )
 
   if (!portOfEntry && !arrivalDate) {
     return undefined
@@ -65,14 +74,20 @@ export const notificationClient = {
    * and submits it to the backend
    */
   async submit(request, traceId) {
-    const referenceNumber = getSessionValue(request, 'referenceNumber')
+    const referenceNumber = getSessionValue(
+      request,
+      sessionKeys.referenceNumber
+    )
     const origin = buildOrigin(request)
-    const commodity = getSessionValue(request, 'commodity')
-    const reasonForImport = getSessionValue(request, 'reasonForImport')
+    const commodity = getSessionValue(request, sessionKeys.commodity)
+    const reasonForImport = getSessionValue(
+      request,
+      sessionKeys.reasonForImport
+    )
     const additionalDetails = buildAdditionalDetails(request)
-    const consignor = getSessionValue(request, 'consignor')
-    const destination = getSessionValue(request, 'destination')
-    const cphNumber = getSessionValue(request, 'cphNumber')
+    const consignor = getSessionValue(request, sessionKeys.consignor)
+    const destination = getSessionValue(request, sessionKeys.destination)
+    const cphNumber = getSessionValue(request, sessionKeys.cphNumber)
     const transport = buildTransport(request)
 
     const notification = {
@@ -140,60 +155,76 @@ export const notificationClient = {
     const notification = await response.json()
 
     if (notification.referenceNumber) {
-      setSessionValue(request, 'referenceNumber', notification.referenceNumber)
+      setSessionValue(
+        request,
+        sessionKeys.referenceNumber,
+        notification.referenceNumber
+      )
     }
 
     if (notification.origin) {
       if (notification.origin.countryCode) {
-        setSessionValue(request, 'countryCode', notification.origin.countryCode)
+        setSessionValue(
+          request,
+          sessionKeys.countryCode,
+          notification.origin.countryCode
+        )
       }
       if (notification.origin.requiresRegionCode) {
         setSessionValue(
           request,
-          'requiresRegionCode',
+          sessionKeys.requiresRegionCode,
           notification.origin.requiresRegionCode
         )
       }
       if (notification.origin.internalReference) {
         setSessionValue(
           request,
-          'internalReference',
+          sessionKeys.internalReference,
           notification.origin.internalReference
         )
       }
     }
 
     if (notification.commodity) {
-      setSessionValue(request, 'commodity', notification.commodity)
+      setSessionValue(request, sessionKeys.commodity, notification.commodity)
     }
 
     if (notification.reasonForImport) {
-      setSessionValue(request, 'reasonForImport', notification.reasonForImport)
+      setSessionValue(
+        request,
+        sessionKeys.reasonForImport,
+        notification.reasonForImport
+      )
     }
 
     if (notification.consignor) {
-      setSessionValue(request, 'consignor', notification.consignor)
+      setSessionValue(request, sessionKeys.consignor, notification.consignor)
     }
 
     if (notification.destination) {
-      setSessionValue(request, 'destination', notification.destination)
+      setSessionValue(
+        request,
+        sessionKeys.destination,
+        notification.destination
+      )
     }
 
     if (notification.cphNumber) {
-      setSessionValue(request, 'cphNumber', notification.cphNumber)
+      setSessionValue(request, sessionKeys.cphNumber, notification.cphNumber)
     }
 
     if (notification.transport) {
       if (notification.transport.portOfEntry) {
         setSessionValue(
           request,
-          'portOfEntry',
+          sessionKeys.portOfEntry,
           notification.transport.portOfEntry
         )
       }
       if (notification.transport.arrivalDate) {
         const [year, month, day] = notification.transport.arrivalDate.split('-')
-        setSessionValue(request, 'arrivalDate', {
+        setSessionValue(request, sessionKeys.arrivalDate, {
           day: Number(day),
           month: Number(month),
           year: Number(year)
