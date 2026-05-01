@@ -76,7 +76,6 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
     ...extra,
-    // Merge rejected errors with any form validation errors from `extra`
     errorList: mergedErrors.length ? mergedErrors : null
   }
 }
