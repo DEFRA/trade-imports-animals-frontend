@@ -38,12 +38,13 @@ export const addressesController = {
       const notification = await fetchNotification(_request, logger)
       const referenceNumber = notification?.referenceNumber
 
-      const selectedConsignorId = Number.parseInt(
-        _request.query?.selectedConsignor,
-        10
-      )
+      const {
+        selectedConsignor: selectedConsignorParam,
+        selectedDestination: selectedDestinationParam
+      } = _request.query ?? {}
+      const selectedConsignorId = Number.parseInt(selectedConsignorParam, 10)
       const selectedDestinationId = Number.parseInt(
-        _request.query?.selectedDestination,
+        selectedDestinationParam,
         10
       )
       if (
