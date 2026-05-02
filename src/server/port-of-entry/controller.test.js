@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -73,7 +74,10 @@ describe('portOfEntryController', () => {
       }
       const h = {
         view: vi.fn(),
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        redirect: vi.fn((location) => ({
+          statusCode: statusCodes.redirectFound,
+          location
+        }))
       }
 
       const response = await portOfEntryController.post.handler(request, h)
@@ -88,7 +92,10 @@ describe('portOfEntryController', () => {
         request,
         'trace-abc'
       )
-      expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
+      expect(response).toEqual({
+        statusCode: statusCodes.redirectFound,
+        location: '/port-of-entry'
+      })
     })
 
     test('returns 400 with error list when arrival day is out of range', async () => {
@@ -120,7 +127,7 @@ describe('portOfEntryController', () => {
           ])
         })
       )
-      expect(response.statusCode).toBe(400)
+      expect(response.statusCode).toBe(statusCodes.badRequest)
     })
 
     test('shows error when notification client throws', async () => {
@@ -134,7 +141,9 @@ describe('portOfEntryController', () => {
         payload: validPayload,
         yar: { set, get }
       }
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const mockCode = vi.fn(() => ({
+        statusCode: statusCodes.internalServerError
+      }))
       const h = {
         view: vi.fn(() => ({ code: mockCode })),
         redirect: vi.fn()
@@ -150,7 +159,7 @@ describe('portOfEntryController', () => {
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
