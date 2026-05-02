@@ -16,10 +16,10 @@ const VIEW = 'port-of-entry/index'
 
 export const portOfEntryController = {
   get: {
-    handler(_request, h) {
-      const portOfEntry = getSessionValue(_request, 'portOfEntry')
-      const arrivalDate = getSessionValue(_request, 'arrivalDate')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+    handler(request, h) {
+      const portOfEntry = getSessionValue(request, 'portOfEntry')
+      const arrivalDate = getSessionValue(request, 'arrivalDate')
+      const referenceNumber = getSessionValue(request, 'referenceNumber')
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -30,15 +30,15 @@ export const portOfEntryController = {
     }
   },
   post: {
-    async handler(_request, h) {
-      const portOfEntry = _request.payload.portOfEntry
-      const arrivalDay = _request.payload['arrivalDate-day']
-      const arrivalMonth = _request.payload['arrivalDate-month']
-      const arrivalYear = _request.payload['arrivalDate-year']
+    async handler(request, h) {
+      const portOfEntry = request.payload.portOfEntry
+      const arrivalDay = request.payload['arrivalDate-day']
+      const arrivalMonth = request.payload['arrivalDate-month']
+      const arrivalYear = request.payload['arrivalDate-year']
       const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(request, 'referenceNumber')
 
-      const { error } = portOfEntrySchema.validate(_request.payload, {
+      const { error } = portOfEntrySchema.validate(request.payload, {
         abortEarly: false
       })
 
@@ -65,12 +65,12 @@ export const portOfEntryController = {
         month: arrivalMonth,
         year: arrivalYear
       }
-      setSessionValue(_request, 'portOfEntry', portOfEntry)
-      setSessionValue(_request, 'arrivalDate', arrivalDate)
+      setSessionValue(request, 'portOfEntry', portOfEntry)
+      setSessionValue(request, 'arrivalDate', arrivalDate)
       logger.info(`Port of entry saved: ${portOfEntry}`)
 
       try {
-        await notificationClient.submit(_request, traceId)
+        await notificationClient.submit(request, traceId)
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
