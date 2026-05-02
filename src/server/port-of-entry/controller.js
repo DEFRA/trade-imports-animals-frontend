@@ -6,6 +6,7 @@ import {
 import { portOfEntrySchema } from './port-of-entry-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
@@ -52,9 +53,12 @@ const renderSubmissionFailure = (
 export const portOfEntryController = {
   get: {
     handler: (request, h) => {
-      const portOfEntry = getSessionValue(request, 'portOfEntry')
-      const arrivalDate = getSessionValue(request, 'arrivalDate')
-      const referenceNumber = getSessionValue(request, 'referenceNumber')
+      const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
+      const arrivalDate = getSessionValue(request, sessionKeys.arrivalDate)
+      const referenceNumber = getSessionValue(
+        request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -73,7 +77,10 @@ export const portOfEntryController = {
         'arrivalDate-year': arrivalYear
       } = request.payload
       const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        request,
+        sessionKeys.referenceNumber
+      )
       const arrivalDate = buildArrivalDate(
         arrivalDay,
         arrivalMonth,
@@ -93,8 +100,8 @@ export const portOfEntryController = {
         })
       }
 
-      setSessionValue(request, 'portOfEntry', portOfEntry)
-      setSessionValue(request, 'arrivalDate', arrivalDate)
+      setSessionValue(request, sessionKeys.portOfEntry, portOfEntry)
+      setSessionValue(request, sessionKeys.arrivalDate, arrivalDate)
       logger.info(`Port of entry saved: ${portOfEntry}`)
 
       try {
