@@ -14,6 +14,20 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+const createResponseToolkit = () => ({
+  view: vi.fn((template, data) => ({
+    template,
+    data,
+    code: vi.fn(function (statusCode) {
+      return { ...this, statusCode }
+    })
+  })),
+  redirect: vi.fn((location) => ({
+    statusCode: statusCodes.redirectFound,
+    location
+  }))
+})
+
 describe('cphNumberController', () => {
   describe('GET /cph-number', () => {
     test('renders view with cphNumber and referenceNumber from session', () => {
@@ -61,13 +75,7 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '123456789' },
         yar: { set, get }
       }
-      const h = {
-        view: vi.fn(),
-        redirect: vi.fn((location) => ({
-          statusCode: statusCodes.redirectFound,
-          location
-        }))
-      }
+      const h = createResponseToolkit()
 
       const response = await cphNumberController.post.handler(request, h)
 
@@ -91,13 +99,7 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '012345678' },
         yar: { set, get }
       }
-      const h = {
-        view: vi.fn(),
-        redirect: vi.fn((location) => ({
-          statusCode: statusCodes.redirectFound,
-          location
-        }))
-      }
+      const h = createResponseToolkit()
 
       await cphNumberController.post.handler(request, h)
 
@@ -111,16 +113,7 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '12345678' },
         yar: { set, get }
       }
-      const h = {
-        view: vi.fn((template, data) => ({
-          template,
-          data,
-          code: vi.fn(function (statusCode) {
-            return { ...this, statusCode }
-          })
-        })),
-        redirect: vi.fn()
-      }
+      const h = createResponseToolkit()
 
       const response = await cphNumberController.post.handler(request, h)
 
@@ -150,16 +143,7 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '12345678a' },
         yar: { set, get }
       }
-      const h = {
-        view: vi.fn((template, data) => ({
-          template,
-          data,
-          code: vi.fn(function (statusCode) {
-            return { ...this, statusCode }
-          })
-        })),
-        redirect: vi.fn()
-      }
+      const h = createResponseToolkit()
 
       const response = await cphNumberController.post.handler(request, h)
 
@@ -189,13 +173,7 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '123456789' },
         yar: { set, get }
       }
-      const mockCode = vi.fn(() => ({
-        statusCode: statusCodes.internalServerError
-      }))
-      const h = {
-        view: vi.fn(() => ({ code: mockCode })),
-        redirect: vi.fn()
-      }
+      const h = createResponseToolkit()
 
       await cphNumberController.post.handler(request, h)
 
@@ -207,7 +185,9 @@ describe('cphNumberController', () => {
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
+      expect(h.view.mock.results[0].value.code).toHaveBeenCalledWith(
+        statusCodes.internalServerError
+      )
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
