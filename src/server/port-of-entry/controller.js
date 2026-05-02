@@ -16,7 +16,7 @@ const VIEW = 'port-of-entry/index'
 
 export const portOfEntryController = {
   get: {
-    handler(request, h) {
+    handler: (request, h) => {
       const portOfEntry = getSessionValue(request, 'portOfEntry')
       const arrivalDate = getSessionValue(request, 'arrivalDate')
       const referenceNumber = getSessionValue(request, 'referenceNumber')
@@ -30,7 +30,7 @@ export const portOfEntryController = {
     }
   },
   post: {
-    async handler(request, h) {
+    handler: async (request, h) => {
       const {
         portOfEntry,
         'arrivalDate-day': arrivalDay,
