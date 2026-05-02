@@ -13,6 +13,41 @@ const logger = createLogger()
 
 const PAGE_TITLE = 'Entry point and arrival at destination'
 const VIEW = 'port-of-entry/index'
+const SUBMISSION_FAILURE_MESSAGE =
+  'Something went wrong, please contact the EUDP team'
+
+const buildArrivalDate = (day, month, year) => ({ day, month, year })
+
+const renderValidationFailure = (
+  h,
+  { portOfEntry, arrivalDate, referenceNumber, error }
+) => {
+  const formattedErrors = formatValidationErrors(error)
+  return h
+    .view(VIEW, {
+      pageTitle: PAGE_TITLE,
+      portOfEntry,
+      arrivalDate,
+      referenceNumber,
+      errorList: formattedErrors.errorList,
+      fieldErrors: formattedErrors.fieldErrors
+    })
+    .code(statusCodes.badRequest)
+}
+
+const renderSubmissionFailure = (
+  h,
+  { portOfEntry, arrivalDate, referenceNumber }
+) =>
+  h
+    .view(VIEW, {
+      pageTitle: PAGE_TITLE,
+      portOfEntry,
+      arrivalDate,
+      referenceNumber,
+      errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+    })
+    .code(statusCodes.internalServerError)
 
 export const portOfEntryController = {
   get: {
@@ -39,34 +74,25 @@ export const portOfEntryController = {
       } = request.payload
       const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(request, 'referenceNumber')
+      const arrivalDate = buildArrivalDate(
+        arrivalDay,
+        arrivalMonth,
+        arrivalYear
+      )
 
       const { error } = portOfEntrySchema.validate(request.payload, {
         abortEarly: false
       })
 
       if (error) {
-        const formattedErrors = formatValidationErrors(error)
-        return h
-          .view(VIEW, {
-            pageTitle: PAGE_TITLE,
-            portOfEntry,
-            arrivalDate: {
-              day: arrivalDay,
-              month: arrivalMonth,
-              year: arrivalYear
-            },
-            referenceNumber,
-            errorList: formattedErrors.errorList,
-            fieldErrors: formattedErrors.fieldErrors
-          })
-          .code(statusCodes.badRequest)
+        return renderValidationFailure(h, {
+          portOfEntry,
+          arrivalDate,
+          referenceNumber,
+          error
+        })
       }
 
-      const arrivalDate = {
-        day: arrivalDay,
-        month: arrivalMonth,
-        year: arrivalYear
-      }
       setSessionValue(request, 'portOfEntry', portOfEntry)
       setSessionValue(request, 'arrivalDate', arrivalDate)
       logger.info(`Port of entry saved: ${portOfEntry}`)
@@ -76,17 +102,11 @@ export const portOfEntryController = {
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
-        return h
-          .view(VIEW, {
-            pageTitle: PAGE_TITLE,
-            portOfEntry,
-            arrivalDate,
-            referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
-          })
-          .code(statusCodes.internalServerError)
+        return renderSubmissionFailure(h, {
+          portOfEntry,
+          arrivalDate,
+          referenceNumber
+        })
       }
 
       return h.redirect('/port-of-entry')
