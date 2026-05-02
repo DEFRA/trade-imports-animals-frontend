@@ -21,19 +21,41 @@ const validPayload = {
   'arrivalDate-year': 2026
 }
 
+const buildRequest = ({ payload, sessionValues = {} } = {}) => {
+  const set = vi.fn()
+  const get = vi.fn((key) => sessionValues[key] ?? null)
+  return {
+    request: { payload, yar: { set, get } },
+    set,
+    get
+  }
+}
+
+const buildResponseToolkit = () => ({
+  view: vi.fn((template, data) => ({
+    template,
+    data,
+    code: vi.fn(function (statusCode) {
+      return { ...this, statusCode }
+    })
+  })),
+  redirect: vi.fn((location) => ({
+    statusCode: statusCodes.redirectFound,
+    location
+  }))
+})
+
 describe('portOfEntryController', () => {
   describe('GET /port-of-entry', () => {
     test('renders view with portOfEntry, arrivalDate and referenceNumber from session', () => {
-      const get = vi.fn((key) => {
-        const values = {
+      const { request } = buildRequest({
+        sessionValues: {
           portOfEntry: 'ABERDEEN',
           arrivalDate: { day: 27, month: 3, year: 2026 },
           referenceNumber: 'REF-123'
         }
-        return values[key] ?? null
       })
-      const request = { yar: { get } }
-      const h = { view: vi.fn((template, data) => ({ template, data })) }
+      const h = buildResponseToolkit()
 
       const response = portOfEntryController.get.handler(request, h)
 
@@ -47,9 +69,8 @@ describe('portOfEntryController', () => {
     })
 
     test('renders view with null values when session is empty', () => {
-      const get = vi.fn(() => null)
-      const request = { yar: { get } }
-      const h = { view: vi.fn((template, data) => ({ template, data })) }
+      const { request } = buildRequest()
+      const h = buildResponseToolkit()
 
       portOfEntryController.get.handler(request, h)
 
@@ -66,19 +87,8 @@ describe('portOfEntryController', () => {
     test('saves portOfEntry and arrivalDate to session, submits notification, and redirects', async () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({})
 
-      const set = vi.fn()
-      const get = vi.fn(() => null)
-      const request = {
-        payload: validPayload,
-        yar: { set, get }
-      }
-      const h = {
-        view: vi.fn(),
-        redirect: vi.fn((location) => ({
-          statusCode: statusCodes.redirectFound,
-          location
-        }))
-      }
+      const { request, set } = buildRequest({ payload: validPayload })
+      const h = buildResponseToolkit()
 
       const response = await portOfEntryController.post.handler(request, h)
 
@@ -99,22 +109,10 @@ describe('portOfEntryController', () => {
     })
 
     test('returns 400 with error list when arrival day is out of range', async () => {
-      const set = vi.fn()
-      const get = vi.fn(() => null)
-      const request = {
-        payload: { ...validPayload, 'arrivalDate-day': 32 },
-        yar: { set, get }
-      }
-      const h = {
-        view: vi.fn((template, data) => ({
-          template,
-          data,
-          code: vi.fn(function (statusCode) {
-            return { ...this, statusCode }
-          })
-        })),
-        redirect: vi.fn()
-      }
+      const { request, set } = buildRequest({
+        payload: { ...validPayload, 'arrivalDate-day': 32 }
+      })
+      const h = buildResponseToolkit()
 
       const response = await portOfEntryController.post.handler(request, h)
 
@@ -135,12 +133,7 @@ describe('portOfEntryController', () => {
         new Error('Backend error')
       )
 
-      const set = vi.fn()
-      const get = vi.fn(() => null)
-      const request = {
-        payload: validPayload,
-        yar: { set, get }
-      }
+      const { request } = buildRequest({ payload: validPayload })
       const mockCode = vi.fn(() => ({
         statusCode: statusCodes.internalServerError
       }))
