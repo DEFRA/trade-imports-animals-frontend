@@ -239,7 +239,9 @@ describe('#originController (unit)', () => {
 
       const get = vi.fn(() => null)
       const request = { yar: { get } }
-      const h = { view: vi.fn((template, data) => ({ template, data })) }
+      const h = {
+        view: vi.fn((template, viewContext) => ({ template, viewContext }))
+      }
 
       const response = await originController.get.handler(request, h)
 
@@ -247,7 +249,7 @@ describe('#originController (unit)', () => {
         'origin/index',
         expect.objectContaining({ referenceNumber: 'TEST-REF-123' })
       )
-      expect(response.data.referenceNumber).toBe('TEST-REF-123')
+      expect(response.viewContext.referenceNumber).toBe('TEST-REF-123')
     })
   })
 })
