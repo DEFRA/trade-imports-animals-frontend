@@ -31,10 +31,12 @@ export const portOfEntryController = {
   },
   post: {
     async handler(request, h) {
-      const portOfEntry = request.payload.portOfEntry
-      const arrivalDay = request.payload['arrivalDate-day']
-      const arrivalMonth = request.payload['arrivalDate-month']
-      const arrivalYear = request.payload['arrivalDate-year']
+      const {
+        portOfEntry,
+        'arrivalDate-day': arrivalDay,
+        'arrivalDate-month': arrivalMonth,
+        'arrivalDate-year': arrivalYear
+      } = request.payload
       const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(request, 'referenceNumber')
 
