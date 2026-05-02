@@ -11,6 +11,12 @@ import { statusCodes } from '../common/constants/status-codes.js'
 
 const logger = createLogger()
 
+const VIEW_NAME = 'import-reason/index'
+const PAGE_TITLE = 'Reason for import'
+const HEADING = PAGE_TITLE
+const SUBMIT_ERROR_MESSAGE =
+  'Something went wrong, please contact the EUDP team'
+
 export const importReasonController = {
   get: {
     async handler(_request, h) {
@@ -19,9 +25,9 @@ export const importReasonController = {
       const notification = await fetchNotification(_request, logger)
       const referenceNumber = notification?.referenceNumber ?? null
 
-      return h.view('import-reason/index', {
-        pageTitle: 'Reason for import',
-        heading: 'Reason for import',
+      return h.view(VIEW_NAME, {
+        pageTitle: PAGE_TITLE,
+        heading: HEADING,
         reasonForImport,
         referenceNumber
       })
@@ -41,14 +47,12 @@ export const importReasonController = {
         await submitNotification(_request, logger)
       } catch {
         return h
-          .view('import-reason/index', {
-            pageTitle: 'Reason for import',
-            heading: 'Reason for import',
+          .view(VIEW_NAME, {
+            pageTitle: PAGE_TITLE,
+            heading: HEADING,
             reasonForImport: getSessionValue(_request, 'reasonForImport'),
             referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMIT_ERROR_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }
