@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -62,7 +63,10 @@ describe('cphNumberController', () => {
       }
       const h = {
         view: vi.fn(),
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        redirect: vi.fn((location) => ({
+          statusCode: statusCodes.redirectFound,
+          location
+        }))
       }
 
       const response = await cphNumberController.post.handler(request, h)
@@ -72,7 +76,10 @@ describe('cphNumberController', () => {
         request,
         'trace-abc'
       )
-      expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
+      expect(response).toEqual({
+        statusCode: statusCodes.redirectFound,
+        location: '/port-of-entry'
+      })
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
@@ -86,7 +93,10 @@ describe('cphNumberController', () => {
       }
       const h = {
         view: vi.fn(),
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        redirect: vi.fn((location) => ({
+          statusCode: statusCodes.redirectFound,
+          location
+        }))
       }
 
       await cphNumberController.post.handler(request, h)
@@ -130,7 +140,7 @@ describe('cphNumberController', () => {
         })
       )
       expect(response.template).toBe('cph-number/index')
-      expect(response.statusCode).toBe(400)
+      expect(response.statusCode).toBe(statusCodes.badRequest)
     })
 
     test('returns 400 with error list when cphNumber contains non-digit characters', async () => {
@@ -165,7 +175,7 @@ describe('cphNumberController', () => {
           ])
         })
       )
-      expect(response.statusCode).toBe(400)
+      expect(response.statusCode).toBe(statusCodes.badRequest)
     })
 
     test('shows error page when notification client throws', async () => {
@@ -179,7 +189,9 @@ describe('cphNumberController', () => {
         payload: { cphNumber: '123456789' },
         yar: { set, get }
       }
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const mockCode = vi.fn(() => ({
+        statusCode: statusCodes.internalServerError
+      }))
       const h = {
         view: vi.fn(() => ({ code: mockCode })),
         redirect: vi.fn()
@@ -195,7 +207,7 @@ describe('cphNumberController', () => {
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
