@@ -329,27 +329,9 @@ export const accompanyingDocumentsController = {
       const day = String(issueDateDay).padStart(2, '0')
       const dateOfIssue = `${year}-${month}-${day}`
 
-      const notificationRef = getSessionValue(request, 'referenceNumber')
-
-      if (!notificationRef) {
-        request.logger.error('No referenceNumber in session')
-        return h
-          .view(
-            'accompanying-documents/index',
-            buildPageModel(documentsWithStatus, attempt, {
-              errorList: [
-                {
-                  text: 'Session expired, please start again',
-                  href: '#documentType'
-                }
-              ]
-            })
-          )
-          .code(statusCodes.badRequest)
-      }
-
       let uploadId
       try {
+        const notificationRef = getSessionValue(request, 'referenceNumber')
         const redirectUrl = `${frontendBaseUrl}/accompanying-documents`
         const response = await documentClient.initiate(
           notificationRef,
