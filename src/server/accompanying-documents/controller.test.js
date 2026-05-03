@@ -13,6 +13,7 @@ import {
   MAX_DOCUMENTS,
   MAX_DOCUMENT_REFERENCE_LENGTH
 } from './document-upload-config.js'
+import { MAX_POLLING_ATTEMPTS } from './controller.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -172,7 +173,7 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
-    test('Should not include meta refresh and show manual refresh link when attempt >= 10', async () => {
+    test('Should not include meta refresh and show manual refresh link when attempt >= MAX_POLLING_ATTEMPTS', async () => {
       getSessionValue.mockImplementation((request, key) => {
         if (key === 'documents') return [TEST_DOCUMENTS[0]]
         return null
@@ -183,7 +184,7 @@ describe('#accompanyingDocumentsController', () => {
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/accompanying-documents?attempt=10',
+        url: `/accompanying-documents?attempt=${MAX_POLLING_ATTEMPTS}`,
         auth: {
           strategy: 'session',
           credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
@@ -197,7 +198,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('Refresh to check status'))
     })
 
-    test('Should still show refresh link (not timed out) when attempt=9 is below MAX_POLLING_ATTEMPTS boundary', async () => {
+    test('Should still show refresh link (not timed out) when attempt is one below MAX_POLLING_ATTEMPTS boundary', async () => {
       getSessionValue.mockImplementation((request, key) => {
         if (key === 'documents') return [TEST_DOCUMENTS[0]]
         return null
@@ -208,7 +209,7 @@ describe('#accompanyingDocumentsController', () => {
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/accompanying-documents?attempt=9',
+        url: `/accompanying-documents?attempt=${MAX_POLLING_ATTEMPTS - 1}`,
         auth: {
           strategy: 'session',
           credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
@@ -216,7 +217,7 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      // attempt=9 is still below MAX_POLLING_ATTEMPTS (10) so polling continues
+      // one below MAX_POLLING_ATTEMPTS so polling continues
       expect(result).not.toEqual(
         expect.stringContaining('meta http-equiv="refresh"')
       )
