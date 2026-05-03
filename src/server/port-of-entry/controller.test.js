@@ -31,19 +31,19 @@ const buildRequest = ({ payload, sessionValues = {} } = {}) => {
   }
 }
 
-const buildResponseToolkit = () => ({
-  view: vi.fn((template, data) => ({
-    template,
-    data,
-    code: vi.fn(function (statusCode) {
-      return { ...this, statusCode }
-    })
-  })),
-  redirect: vi.fn((location) => ({
-    statusCode: statusCodes.redirectFound,
-    location
-  }))
-})
+const buildResponseToolkit = () => {
+  const code = vi.fn(function (statusCode) {
+    return { ...this, statusCode }
+  })
+  return {
+    view: vi.fn((template, data) => ({ template, data, code })),
+    redirect: vi.fn((location) => ({
+      statusCode: statusCodes.redirectFound,
+      location
+    })),
+    code
+  }
+}
 
 describe('portOfEntryController', () => {
   describe('GET /port-of-entry', () => {
@@ -134,13 +134,7 @@ describe('portOfEntryController', () => {
       )
 
       const { request } = buildRequest({ payload: validPayload })
-      const mockCode = vi.fn(() => ({
-        statusCode: statusCodes.internalServerError
-      }))
-      const h = {
-        view: vi.fn(() => ({ code: mockCode })),
-        redirect: vi.fn()
-      }
+      const h = buildResponseToolkit()
 
       await portOfEntryController.post.handler(request, h)
 
@@ -152,7 +146,7 @@ describe('portOfEntryController', () => {
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
+      expect(h.code).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
