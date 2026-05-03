@@ -86,7 +86,7 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
       text: `${doc.filename} contains a virus. Remove it and try again with a different file.`
     }))
 
-  const mergedErrors = [...(rejectedErrors ?? []), ...(extra.errorList ?? [])]
+  const mergedErrors = [...rejectedErrors, ...(extra.errorList ?? [])]
 
   return {
     pageTitle: 'Accompanying documents',
