@@ -5,6 +5,10 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
+
+const REFERENCE_NUMBER = 'REF-123'
+const CPH_NUMBER_PATH = '/cph-number'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -33,7 +37,7 @@ const makeViewToolkit = () => ({
 
 const makeRedirectToolkit = () => ({
   redirect: vi.fn((location) => ({
-    statusCode: 302,
+    statusCode: statusCodes.redirectFound,
     location
   }))
 })
@@ -45,7 +49,7 @@ describe('addressesController', () => {
 
   describe('GET /addresses', () => {
     test('renders addresses page using fetchNotification for referenceNumber', async () => {
-      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
+      fetchNotification.mockResolvedValue({ referenceNumber: REFERENCE_NUMBER })
 
       const request = { query: {}, yar: makeYar({ commodity: 'Fish' }) }
       const h = makeViewToolkit()
@@ -60,7 +64,7 @@ describe('addressesController', () => {
         pageTitle: 'Addresses',
         heading: 'Addresses',
         captionText: 'Notification details',
-        referenceNumber: 'REF-123',
+        referenceNumber: REFERENCE_NUMBER,
         selectedConsignor: null,
         selectedDestination: null
       })
@@ -87,7 +91,7 @@ describe('addressesController', () => {
     })
 
     test('saves selected consignor and destination from query into session', async () => {
-      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
+      fetchNotification.mockResolvedValue({ referenceNumber: REFERENCE_NUMBER })
 
       const selectedConsignor = {
         name: 'Astra Rosales',
@@ -148,10 +152,10 @@ describe('addressesController', () => {
         request,
         expect.any(Object)
       )
-      expect(h.redirect).toHaveBeenCalledWith('/cph-number')
+      expect(h.redirect).toHaveBeenCalledWith(CPH_NUMBER_PATH)
       expect(response).toEqual({
-        statusCode: 302,
-        location: '/cph-number'
+        statusCode: statusCodes.redirectFound,
+        location: CPH_NUMBER_PATH
       })
     })
 
@@ -167,10 +171,10 @@ describe('addressesController', () => {
         request,
         expect.any(Object)
       )
-      expect(h.redirect).toHaveBeenCalledWith('/cph-number')
+      expect(h.redirect).toHaveBeenCalledWith(CPH_NUMBER_PATH)
       expect(response).toEqual({
-        statusCode: 302,
-        location: '/cph-number'
+        statusCode: statusCodes.redirectFound,
+        location: CPH_NUMBER_PATH
       })
     })
   })
