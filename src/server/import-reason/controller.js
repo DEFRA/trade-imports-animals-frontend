@@ -57,10 +57,7 @@ export const importReasonController = {
           .view(VIEW_NAME, {
             pageTitle: PAGE_TITLE,
             heading: HEADING,
-            reasonForImport: getSessionValue(
-              _request,
-              sessionKeys.reasonForImport
-            ),
+            reasonForImport,
             referenceNumber,
             errorList: [{ text: SUBMIT_ERROR_MESSAGE }]
           })
