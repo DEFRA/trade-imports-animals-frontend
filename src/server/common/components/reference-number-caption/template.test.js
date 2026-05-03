@@ -1,13 +1,15 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import { renderComponent } from '../../test-helpers/component-helpers.js'
 
+const REFERENCE_NUMBER = 'GBCHD2024.1234567'
+
 describe('Reference Number Caption Component', () => {
   describe('With a reference number', () => {
     let $component
 
     beforeEach(() => {
       $component = renderComponent('reference-number-caption', {
-        referenceNumber: 'GBCHD2024.1234567'
+        referenceNumber: REFERENCE_NUMBER
       })
     })
 
@@ -20,7 +22,7 @@ describe('Reference Number Caption Component', () => {
     test('Should contain the reference number value', () => {
       expect(
         $component('[data-testid="app-reference-number-caption"]').text().trim()
-      ).toBe('GBCHD2024.1234567')
+      ).toBe(REFERENCE_NUMBER)
     })
   })
 
