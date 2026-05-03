@@ -8,6 +8,7 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/details/macro.njk" import govukDetails %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
@@ -41,62 +42,72 @@
         <li>commercial documents or invoices</li>
       </ul>
 
+      {%- set additionalDocsHtml -%}
+        <ul class="govuk-list govuk-list--bullet">
+          <li>for animals that do not need a health certificate, an exporter's declaration that they are fit to travel</li>
+          <li>for livestock transiting bluetongue restricted territories, a bluetongue declaration GBHC172</li>
+          <li>for rodents imported for research purposes, a RM39 licence and supplementary health certificate</li>
+        </ul>
+        <p class="govuk-body">
+          For details about required documents,
+          <a class="govuk-link" href="#" target="_blank" rel="noopener noreferrer">check the import rules you must follow on GOV.UK (opens in new tab)</a>.
+        </p>
+      {%- endset -%}
+
       {{ govukDetails({
         summaryText: "Check which additional documents you may need to upload",
-        text: "You may also need to upload a veterinary health certificate, air waybill, commercial invoice, or other supporting documentation depending on the type of animals being imported."
+        html: additionalDocsHtml
       }) }}
 
       {% if documents and documents.length %}
         <h2 class="govuk-heading-m" id="documents-added">Documents added</h2>
 
-        <table class="govuk-table" data-testid="documents-table">
-          <caption class="govuk-visually-hidden">Documents added</caption>
-          <thead class="govuk-table__head">
-            <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header">Document</th>
-              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Status</th>
-              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">
-                <span class="govuk-visually-hidden">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            {% for doc in documents %}
-              <tr class="govuk-table__row" data-upload-id="{{ doc.uploadId }}" data-scan-status="{{ doc.scanStatus }}">
-                <td class="govuk-table__cell">
-                  {{ doc.filename }}
-                  {% if doc.documentType or doc.documentReference %}
-                    <div class="govuk-hint govuk-!-margin-bottom-0">{{ doc.documentType }}{% if doc.documentReference %} — {{ doc.documentReference }}{% endif %}</div>
-                  {% endif %}
-                </td>
-                <td class="govuk-table__cell">
-                  {% if doc.scanStatus === 'COMPLETE' %}
-                    {{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
-                  {% elif doc.scanStatus === 'REJECTED' %}
-                    {{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
-                  {% elif doc.scanStatus === 'PENDING' %}
-                    {{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
-                  {% else %}
-                    {{ govukTag({ text: "Unknown", classes: "govuk-tag--grey" }) }}
-                  {% endif %}
-                </td>
-                <td class="govuk-table__cell govuk-!-text-align-right">
-                  {% if doc.scanStatus === 'COMPLETE' %}
-                    <a href="/accompanying-documents/{{ doc.uploadId }}/file" class="govuk-link govuk-!-margin-right-2">
+        {% for doc in documents %}
+          {% set statusTagHtml %}
+            {% if doc.scanStatus === 'COMPLETE' %}{{ govukTag({ text: "Safe", classes: "govuk-tag--green" }) }}
+            {% elif doc.scanStatus === 'REJECTED' %}{{ govukTag({ text: "Virus found", classes: "govuk-tag--red" }) }}
+            {% elif doc.scanStatus === 'PENDING' %}{{ govukTag({ text: "Checking", classes: "govuk-tag--blue" }) }}
+            {% else %}{{ govukTag({ text: "Unknown", classes: "govuk-tag--grey" }) }}{% endif %}
+          {% endset %}
+
+          <div class="govuk-summary-card govuk-!-margin-bottom-6"
+            data-testid="document-card"
+            data-upload-id="{{ doc.uploadId }}"
+            data-scan-status="{{ doc.scanStatus }}">
+            <div class="govuk-summary-card__title-wrapper">
+              <h2 class="govuk-summary-card__title">{{ doc.filename }}</h2>
+              {% if doc.scanStatus === 'COMPLETE' %}
+                <ul class="govuk-summary-card__actions">
+                  <li class="govuk-summary-card__action">
+                    <a class="govuk-link" href="/accompanying-documents/{{ doc.uploadId }}/file">
                       View file<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
                     </a>
-                  {% endif %}
-                  <form method="post" action="/accompanying-documents" class="app-inline-form">
-                    <input type="hidden" name="crumb" value="{{ crumb }}">
-                    <button type="submit" name="_action" value="remove-{{ doc.uploadId }}" class="govuk-body app-button-as-link">
-                      Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                  </li>
+                </ul>
+              {% endif %}
+            </div>
+            <div class="govuk-summary-card__content">
+              {{ govukSummaryList({
+                rows: [
+                  { key: { text: "Document type" }, value: { text: doc.documentTypeLabel } },
+                  { key: { text: "Document reference" }, value: { text: doc.documentReference } },
+                  { key: { text: "Date of issue" }, value: { text: doc.dateOfIssue | formatDate('d MMMM yyyy') } },
+                  { key: { text: "Status" }, value: { html: statusTagHtml } }
+                ]
+              }) }}
+
+              <form method="post" action="/accompanying-documents">
+                <input type="hidden" name="crumb" value="{{ crumb }}">
+                {{ govukButton({
+                  html: 'Remove<span class="govuk-visually-hidden"> ' + doc.filename + '</span>',
+                  classes: "govuk-button--warning govuk-!-margin-bottom-0",
+                  name: "_action",
+                  value: "remove-" + doc.uploadId
+                }) }}
+              </form>
+            </div>
+          </div>
+        {% endfor %}
 
         {% if anyPending %}
           <p id="js-refresh-fallback" class="govuk-body">
@@ -115,11 +126,7 @@
 
       <div data-testid="app-page-body">
 
-        {% if documents and documents.length %}
-          <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
-        {% endif %}
-
-        <h2 class="govuk-heading-m">Document {{ (documents.length + 1) if documents else 1 }}</h2>
+        <h2 class="govuk-heading-m">{{ 'Add another document' if documents and documents.length else 'Add a document' }}</h2>
 
         <form method="post" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}"/>
@@ -132,12 +139,7 @@
             },
             value: documentType,
             errorMessage: fieldErrors.documentType if fieldErrors,
-            items: [
-              { value: "", text: "Select document type" },
-              { text: "──────────", disabled: true },
-              { value: "ITAHC", text: "Intra-Trade Animal Health Certificate (ITAHC)" },
-              { value: "VETERINARY_HEALTH_CERTIFICATE", text: "Veterinary health certificate" }
-            ]
+            items: documentTypeSelectItems
           }) }}
 
           {{ govukInput({
@@ -211,11 +213,12 @@
       </div>
 
       <div class="govuk-button-group">
+        {% set continueText = 'Save and continue' if documents and documents.length else 'Continue without documents' %}
         {% if canContinue %}
-          {# Save and continue navigates directly — all document session state is written during the upload POST #}
-          {{ govukButton({ text: "Save and continue", href: "/addresses" }) }}
+          {# Continue navigates directly — all document session state is written during the upload POST #}
+          {{ govukButton({ text: continueText, href: "/addresses" }) }}
         {% else %}
-          {{ govukButton({ text: "Save and continue", attributes: { 'aria-disabled': 'true', 'aria-describedby': 'cannot-continue-reason' } }) }}
+          {{ govukButton({ text: continueText, attributes: { 'aria-disabled': 'true', 'aria-describedby': 'cannot-continue-reason' } }) }}
           <span class="govuk-visually-hidden" id="cannot-continue-reason">You cannot continue until all documents have been scanned or removed</span>
         {% endif %}
       </div>

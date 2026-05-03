@@ -114,7 +114,10 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Accompanying documents'))
-      expect(result).toEqual(expect.stringContaining('Document 1'))
+      expect(result).toEqual(expect.stringContaining('Add a document'))
+      expect(result).toEqual(
+        expect.stringContaining('Continue without documents')
+      )
       expect(result).not.toEqual(
         expect.stringContaining('aria-disabled="true"')
       )
@@ -143,7 +146,15 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('health.pdf'))
       expect(result).toEqual(expect.stringContaining('Checking'))
       expect(result).toEqual(expect.stringContaining('Safe'))
-      expect(result).toEqual(expect.stringContaining('Document 3'))
+      expect(result).toEqual(expect.stringContaining('Add another document'))
+      expect(result).toEqual(
+        expect.stringContaining('Intra-Trade Animal Health Certificate (ITAHC)')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('Veterinary health certificate')
+      )
+      expect(result).toEqual(expect.stringContaining('REF-001'))
+      expect(result).toEqual(expect.stringContaining('1 January 2026'))
     })
 
     test('Should show manual refresh link (not meta-refresh) when any document is PENDING', async () => {

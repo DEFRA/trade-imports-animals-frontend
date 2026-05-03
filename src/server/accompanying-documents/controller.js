@@ -18,7 +18,9 @@ import {
   ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
   MAX_DOCUMENTS,
-  MAX_DOCUMENT_REFERENCE_LENGTH
+  MAX_DOCUMENT_REFERENCE_LENGTH,
+  DOCUMENT_TYPE_OPTIONS,
+  getDocumentTypeLabel
 } from './document-upload-config.js'
 
 const frontendBaseUrl = config.get('frontendBaseUrl')
@@ -55,17 +57,18 @@ const getAttempt = (request) => {
 const getDocumentsWithStatus = async (documents, traceId, logger) =>
   Promise.all(
     documents.map(async (doc) => {
+      const documentTypeLabel = getDocumentTypeLabel(doc.documentType)
       try {
         const { scanStatus } = await documentClient.getStatus(
           doc.uploadId,
           traceId
         )
-        return { ...doc, scanStatus }
+        return { ...doc, documentTypeLabel, scanStatus }
       } catch (err) {
         logger.error(
           `Failed to get scan status for uploadId=${doc.uploadId}: ${err.message}`
         )
-        return { ...doc, scanStatus: 'PENDING' }
+        return { ...doc, documentTypeLabel, scanStatus: 'PENDING' }
       }
     })
   )
@@ -97,6 +100,11 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     canContinue: !anyPending && !anyRejected,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
+    documentTypeSelectItems: [
+      { value: '', text: 'Select document type' },
+      { text: '──────────', disabled: true },
+      ...DOCUMENT_TYPE_OPTIONS
+    ],
     ...extra,
     errorList: mergedErrors.length ? mergedErrors : null
   }

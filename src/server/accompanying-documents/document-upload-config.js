@@ -51,4 +51,24 @@ export const MAX_DOCUMENTS = 10
 
 export const MAX_DOCUMENT_REFERENCE_LENGTH = 100
 
-export const DOCUMENT_TYPES = ['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE']
+export const DOCUMENT_TYPE_OPTIONS = [
+  {
+    value: 'ITAHC',
+    text: 'Intra-Trade Animal Health Certificate (ITAHC)'
+  },
+  {
+    value: 'VETERINARY_HEALTH_CERTIFICATE',
+    text: 'Veterinary health certificate'
+  }
+]
+
+export const DOCUMENT_TYPES = DOCUMENT_TYPE_OPTIONS.map(
+  (option) => option.value
+)
+
+const DOCUMENT_TYPE_LABELS = Object.fromEntries(
+  DOCUMENT_TYPE_OPTIONS.map((option) => [option.value, option.text])
+)
+
+export const getDocumentTypeLabel = (value) =>
+  DOCUMENT_TYPE_LABELS[value] ?? value
