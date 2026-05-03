@@ -315,12 +315,11 @@ describe('#accompanyingDocumentsController', () => {
           controller.close()
         }
       })
-      const headerInit = {}
-      if (contentType !== null) {
-        headerInit['content-type'] = contentType
-      }
-      if (contentDisposition !== null) {
-        headerInit['content-disposition'] = contentDisposition
+      const headerInit = {
+        ...(contentType !== null && { 'content-type': contentType }),
+        ...(contentDisposition !== null && {
+          'content-disposition': contentDisposition
+        })
       }
       return { headers: new Headers(headerInit), body: stream }
     }
