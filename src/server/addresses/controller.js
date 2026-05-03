@@ -10,6 +10,7 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 const logger = createLogger()
 
@@ -40,7 +41,7 @@ export const addressesController = {
   get: {
     async handler(_request, h) {
       logger.info(
-        `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
+        `Addresses: ${getSessionValue(_request, sessionKeys.commodity)} landing page`
       )
       const notification = await fetchNotification(_request, logger)
       const referenceNumber = notification?.referenceNumber
@@ -51,19 +52,22 @@ export const addressesController = {
       } = _request.query ?? {}
       applySelectedAddress(
         _request,
-        'consignor',
+        sessionKeys.consignor,
         consignors,
         selectedConsignorParam
       )
       applySelectedAddress(
         _request,
-        'destination',
+        sessionKeys.destination,
         destinations,
         selectedDestinationParam
       )
 
-      const selectedConsignor = getSessionValue(_request, 'consignor')
-      const selectedDestination = getSessionValue(_request, 'destination')
+      const selectedConsignor = getSessionValue(_request, sessionKeys.consignor)
+      const selectedDestination = getSessionValue(
+        _request,
+        sessionKeys.destination
+      )
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',
