@@ -270,6 +270,270 @@ describe('#accompanyingDocumentsController', () => {
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Save and continue'))
     })
+
+    test('Should render View file link only for COMPLETE documents', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'getStatus')
+        .mockResolvedValueOnce({ scanStatus: 'COMPLETE' })
+        .mockResolvedValueOnce({ scanStatus: 'PENDING' })
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(
+        expect.stringContaining('/accompanying-documents/UPLOAD-1/file')
+      )
+      expect(result).not.toEqual(
+        expect.stringContaining('/accompanying-documents/UPLOAD-2/file')
+      )
+    })
+  })
+
+  describe('GET /accompanying-documents/{uploadId}/file', () => {
+    beforeEach(() => {
+      vi.spyOn(documentClient, 'streamFile').mockReset()
+    })
+
+    const buildBackendResponse = ({
+      contentType = 'application/pdf',
+      contentDisposition = 'attachment; filename="cert.pdf"',
+      body = 'PDF file content'
+    } = {}) => {
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(body))
+          controller.close()
+        }
+      })
+      const headerInit = {}
+      if (contentType !== null) {
+        headerInit['content-type'] = contentType
+      }
+      if (contentDisposition !== null) {
+        headerInit['content-disposition'] = contentDisposition
+      }
+      return { headers: new Headers(headerInit), body: stream }
+    }
+
+    test('Should stream file with correct content headers when uploadId is in session', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      const fileContent = 'PDF file content'
+      vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
+        buildBackendResponse({
+          contentType: 'application/pdf',
+          contentDisposition: 'attachment; filename="cert.pdf"',
+          body: fileContent
+        })
+      )
+
+      const { statusCode, headers, payload } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(headers['content-type']).toContain('application/pdf')
+      expect(headers['content-disposition']).toBe(
+        'attachment; filename="cert.pdf"'
+      )
+      expect(headers['x-content-type-options']).toBe('nosniff')
+      expect(payload).toBe(fileContent)
+      expect(documentClient.streamFile).toHaveBeenCalledWith(
+        'UPLOAD-1',
+        expect.any(String)
+      )
+    })
+
+    test('Should return 404 and not call backend when uploadId is not in session', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'streamFile')
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-UNKNOWN/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.notFound)
+      expect(documentClient.streamFile).not.toHaveBeenCalled()
+    })
+
+    test('Should return 404 when no documents exist in the session', async () => {
+      getSessionValue.mockReturnValue(null)
+      vi.spyOn(documentClient, 'streamFile')
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.notFound)
+      expect(documentClient.streamFile).not.toHaveBeenCalled()
+    })
+
+    test('Should return 400 when uploadId contains invalid characters', async () => {
+      vi.spyOn(documentClient, 'streamFile')
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/..%2F..%2Fetc%2Fpasswd/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(documentClient.streamFile).not.toHaveBeenCalled()
+    })
+
+    test.each([
+      'image/jpeg',
+      'image/png',
+      'application/vnd.ms-excel',
+      'application/msword',
+      'application/octet-stream'
+    ])('Should serve %s without downgrade', async (mimeType) => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
+        buildBackendResponse({ contentType: mimeType })
+      )
+
+      const { statusCode, headers } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(headers['content-type']).toContain(mimeType)
+      expect(headers['x-content-type-options']).toBe('nosniff')
+    })
+
+    test('Should fall back to application/octet-stream for disallowed MIME types', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
+        buildBackendResponse({
+          contentType: 'text/html',
+          body: '<script>alert(1)</script>'
+        })
+      )
+
+      const { statusCode, headers } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(headers['content-type']).toContain('application/octet-stream')
+      expect(headers['x-content-type-options']).toBe('nosniff')
+    })
+
+    test('Should strip MIME type parameters before allow-list check', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
+        buildBackendResponse({ contentType: 'application/pdf; charset=utf-8' })
+      )
+
+      const { statusCode, headers } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(headers['content-type']).toContain('application/pdf')
+    })
+
+    test('Should fall back to application/octet-stream and attachment when backend returns no content headers', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
+        buildBackendResponse({ contentType: null, contentDisposition: null })
+      )
+
+      const { statusCode, headers } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(headers['content-type']).toContain('application/octet-stream')
+      expect(headers['content-disposition']).toBe('attachment')
+    })
+
+    test('Should return 500 when documentClient.streamFile throws', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === 'documents') return TEST_DOCUMENTS
+        return null
+      })
+      vi.spyOn(documentClient, 'streamFile').mockRejectedValue(
+        new Error('Backend error')
+      )
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.internalServerError)
+    })
   })
 
   describe('POST /accompanying-documents — remove action', () => {

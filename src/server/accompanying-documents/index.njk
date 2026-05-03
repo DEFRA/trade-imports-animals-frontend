@@ -81,7 +81,12 @@
                   {% endif %}
                 </td>
                 <td class="govuk-table__cell govuk-!-text-align-right">
-                  <form method="post" action="/accompanying-documents">
+                  {% if doc.scanStatus === 'COMPLETE' %}
+                    <a href="/accompanying-documents/{{ doc.uploadId }}/file" class="govuk-link govuk-!-margin-right-2">
+                      View file<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
+                    </a>
+                  {% endif %}
+                  <form method="post" action="/accompanying-documents" class="app-inline-form">
                     <input type="hidden" name="crumb" value="{{ crumb }}">
                     <button type="submit" name="_action" value="remove-{{ doc.uploadId }}" class="govuk-body app-button-as-link">
                       Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>

@@ -15,3 +15,7 @@
   @include govuk-link-common;
   @include govuk-link-style-default;
 }
+
+.app-inline-form {
+  display: inline;
+}

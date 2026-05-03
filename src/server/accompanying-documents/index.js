@@ -26,6 +26,11 @@ export const accompanyingDocuments = {
           ...accompanyingDocumentsController.status
         },
         {
+          method: 'GET',
+          path: '/accompanying-documents/{uploadId}/file',
+          ...accompanyingDocumentsController.download
+        },
+        {
           method: 'POST',
           path: '/accompanying-documents',
           options: {

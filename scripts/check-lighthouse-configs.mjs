@@ -10,9 +10,14 @@ const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
 // Routes to ignore when checking for Lighthouse coverage:
 // - /accompanying-documents/status: JSON status polling endpoint, not a rendered page
+// - /accompanying-documents/{uploadId}/file: binary file stream, not a rendered page
 const IGNORED_PATHS = new Set(['/health', '/accompanying-documents/status'])
 const IGNORED_PREFIXES = ['/public/']
-const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
+const IGNORED_ROUTE_PATTERNS = [
+  '/public/{param*}',
+  '/favicon.ico',
+  '/accompanying-documents/{uploadId}/file'
+]
 
 async function findFilesRecursively(dir, matcher) {
   const entries = await readdir(dir, { withFileTypes: true })

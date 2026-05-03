@@ -88,5 +88,30 @@ export const documentClient = {
     }
 
     return response.json()
+  },
+
+  async streamFile(uploadId, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}/file`,
+      {
+        method: 'GET',
+        headers: {
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = buildFetchError(
+        `Failed to stream file for upload ${uploadId}`,
+        response
+      )
+      logger.error(
+        `Failed to stream file for upload ${uploadId}: ${error.status} ${error.message}`
+      )
+      throw error
+    }
+
+    return response
   }
 }

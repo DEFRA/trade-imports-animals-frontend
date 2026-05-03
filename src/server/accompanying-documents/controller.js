@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream'
+import Joi from 'joi'
 import {
   getSessionValue,
   setSessionValue
@@ -24,6 +26,26 @@ const MAX_POLLING_ATTEMPTS = 10
 
 const ALLOWED_EXTENSIONS = new Set(ALLOWED_TYPES.map((type) => `.${type.ext}`))
 const ALLOWED_MIME_TYPES = ALLOWED_TYPES.map((type) => type.mime)
+
+const DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+const DEFAULT_CONTENT_DISPOSITION = 'attachment'
+
+const ALLOWED_DOWNLOAD_CONTENT_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'application/vnd.ms-excel',
+  'application/msword',
+  DEFAULT_CONTENT_TYPE
+])
+
+const resolveDownloadContentType = (headers) => {
+  const rawContentType = headers.get('content-type') ?? DEFAULT_CONTENT_TYPE
+  const mimeType = rawContentType.split(';')[0].trim().toLowerCase()
+  return ALLOWED_DOWNLOAD_CONTENT_TYPES.has(mimeType)
+    ? mimeType
+    : DEFAULT_CONTENT_TYPE
+}
 
 const getAttempt = (request) => {
   const parsed = parseInt(request.query.attempt ?? '0', 10)
@@ -110,6 +132,47 @@ export const accompanyingDocumentsController = {
         'accompanying-documents/index',
         buildPageModel(documentsWithStatus, attempt, { referenceNumber })
       )
+    }
+  },
+  download: {
+    options: {
+      validate: {
+        params: Joi.object({
+          uploadId: Joi.string()
+            .pattern(/^[a-zA-Z0-9-]+$/)
+            .required()
+        })
+      }
+    },
+    async handler(request, h) {
+      const traceId = getTraceId() ?? ''
+      const { uploadId } = request.params
+
+      const sessionDocuments = getSessionValue(request, 'documents') ?? []
+      const ownedBySession = sessionDocuments.some(
+        (doc) => doc.uploadId === uploadId
+      )
+      if (!ownedBySession) {
+        request.logger.warn(
+          `Download rejected: uploadId=${uploadId} not found in session`
+        )
+        return h.response('Not Found').code(statusCodes.notFound)
+      }
+
+      const backendResponse = await documentClient.streamFile(uploadId, traceId)
+
+      const contentType = resolveDownloadContentType(backendResponse.headers)
+      const contentDisposition =
+        backendResponse.headers.get('content-disposition') ??
+        DEFAULT_CONTENT_DISPOSITION
+
+      const nodeStream = Readable.fromWeb(backendResponse.body)
+
+      return h
+        .response(nodeStream)
+        .header('Content-Type', contentType)
+        .header('Content-Disposition', contentDisposition)
+        .header('X-Content-Type-Options', 'nosniff')
     }
   },
   post: {
