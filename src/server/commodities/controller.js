@@ -32,7 +32,7 @@ export const commoditiesController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const { commodity } = _request.payload
       logger.info(`Commodity: ${commodity}`)
 
