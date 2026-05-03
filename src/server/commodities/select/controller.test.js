@@ -222,7 +222,9 @@ describe('commoditiesSelectController', () => {
         }
       }
 
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const mockCode = vi.fn(() => ({
+        statusCode: statusCodes.internalServerError
+      }))
       const h = {
         view: vi.fn(() => ({ code: mockCode })),
         redirect: vi.fn()
