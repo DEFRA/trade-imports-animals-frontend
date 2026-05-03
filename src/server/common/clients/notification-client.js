@@ -68,6 +68,82 @@ function buildTransport(request) {
   }
 }
 
+function hydrateSessionFromNotification(request, notification) {
+  if (notification.referenceNumber) {
+    setSessionValue(
+      request,
+      sessionKeys.referenceNumber,
+      notification.referenceNumber
+    )
+  }
+
+  if (notification.origin) {
+    if (notification.origin.countryCode) {
+      setSessionValue(
+        request,
+        sessionKeys.countryCode,
+        notification.origin.countryCode
+      )
+    }
+    if (notification.origin.requiresRegionCode) {
+      setSessionValue(
+        request,
+        sessionKeys.requiresRegionCode,
+        notification.origin.requiresRegionCode
+      )
+    }
+    if (notification.origin.internalReference) {
+      setSessionValue(
+        request,
+        sessionKeys.internalReference,
+        notification.origin.internalReference
+      )
+    }
+  }
+
+  if (notification.commodity) {
+    setSessionValue(request, sessionKeys.commodity, notification.commodity)
+  }
+
+  if (notification.reasonForImport) {
+    setSessionValue(
+      request,
+      sessionKeys.reasonForImport,
+      notification.reasonForImport
+    )
+  }
+
+  if (notification.consignor) {
+    setSessionValue(request, sessionKeys.consignor, notification.consignor)
+  }
+
+  if (notification.destination) {
+    setSessionValue(request, sessionKeys.destination, notification.destination)
+  }
+
+  if (notification.cphNumber) {
+    setSessionValue(request, sessionKeys.cphNumber, notification.cphNumber)
+  }
+
+  if (notification.transport) {
+    if (notification.transport.portOfEntry) {
+      setSessionValue(
+        request,
+        sessionKeys.portOfEntry,
+        notification.transport.portOfEntry
+      )
+    }
+    if (notification.transport.arrivalDate) {
+      const [year, month, day] = notification.transport.arrivalDate.split('-')
+      setSessionValue(request, sessionKeys.arrivalDate, {
+        day: Number(day),
+        month: Number(month),
+        year: Number(year)
+      })
+    }
+  }
+}
+
 export const notificationClient = {
   /**
    * Builds a complete notification object from all session values
@@ -154,83 +230,7 @@ export const notificationClient = {
 
     const notification = await response.json()
 
-    if (notification.referenceNumber) {
-      setSessionValue(
-        request,
-        sessionKeys.referenceNumber,
-        notification.referenceNumber
-      )
-    }
-
-    if (notification.origin) {
-      if (notification.origin.countryCode) {
-        setSessionValue(
-          request,
-          sessionKeys.countryCode,
-          notification.origin.countryCode
-        )
-      }
-      if (notification.origin.requiresRegionCode) {
-        setSessionValue(
-          request,
-          sessionKeys.requiresRegionCode,
-          notification.origin.requiresRegionCode
-        )
-      }
-      if (notification.origin.internalReference) {
-        setSessionValue(
-          request,
-          sessionKeys.internalReference,
-          notification.origin.internalReference
-        )
-      }
-    }
-
-    if (notification.commodity) {
-      setSessionValue(request, sessionKeys.commodity, notification.commodity)
-    }
-
-    if (notification.reasonForImport) {
-      setSessionValue(
-        request,
-        sessionKeys.reasonForImport,
-        notification.reasonForImport
-      )
-    }
-
-    if (notification.consignor) {
-      setSessionValue(request, sessionKeys.consignor, notification.consignor)
-    }
-
-    if (notification.destination) {
-      setSessionValue(
-        request,
-        sessionKeys.destination,
-        notification.destination
-      )
-    }
-
-    if (notification.cphNumber) {
-      setSessionValue(request, sessionKeys.cphNumber, notification.cphNumber)
-    }
-
-    if (notification.transport) {
-      if (notification.transport.portOfEntry) {
-        setSessionValue(
-          request,
-          sessionKeys.portOfEntry,
-          notification.transport.portOfEntry
-        )
-      }
-      if (notification.transport.arrivalDate) {
-        const [year, month, day] = notification.transport.arrivalDate.split('-')
-        setSessionValue(request, sessionKeys.arrivalDate, {
-          day: Number(day),
-          month: Number(month),
-          year: Number(year)
-        })
-      }
-    }
+    hydrateSessionFromNotification(request, notification)
 
     return notification
   }
