@@ -22,6 +22,22 @@ vi.mock('../common/helpers/notification-helpers.js', () => ({
   submitNotification: vi.fn().mockResolvedValue(undefined)
 }))
 
+const makeYar = (values = {}) => ({
+  get: vi.fn((key) => values[key] ?? null),
+  set: vi.fn()
+})
+
+const makeViewToolkit = () => ({
+  view: vi.fn((template, data) => ({ template, data }))
+})
+
+const makeRedirectToolkit = () => ({
+  redirect: vi.fn((location) => ({
+    statusCode: 302,
+    location
+  }))
+})
+
 describe('addressesController', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -31,16 +47,8 @@ describe('addressesController', () => {
     test('renders addresses page using fetchNotification for referenceNumber', async () => {
       fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
 
-      const get = vi.fn((key) => {
-        const values = { commodity: 'Fish' }
-        return values[key] ?? null
-      })
-      const set = vi.fn()
-
-      const request = { query: {}, yar: { get, set } }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
+      const request = { query: {}, yar: makeYar({ commodity: 'Fish' }) }
+      const h = makeViewToolkit()
 
       const response = await addressesController.get.handler(request, h)
 
@@ -62,16 +70,8 @@ describe('addressesController', () => {
     test('renders addresses page with no referenceNumber when fetchNotification returns null', async () => {
       fetchNotification.mockResolvedValue(null)
 
-      const get = vi.fn((key) => {
-        const values = { commodity: 'Fish' }
-        return values[key] ?? null
-      })
-      const set = vi.fn()
-
-      const request = { query: {}, yar: { get, set } }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
+      const request = { query: {}, yar: makeYar({ commodity: 'Fish' }) }
+      const h = makeViewToolkit()
 
       const response = await addressesController.get.handler(request, h)
 
@@ -106,27 +106,25 @@ describe('addressesController', () => {
           country: 'United Kingdom'
         }
       }
-      const get = vi.fn((key) => {
-        const values = {
-          consignor: selectedConsignor,
-          destination: selectedDestination
-        }
-        return values[key] ?? null
-      })
-      const set = vi.fn()
-
       const request = {
         query: { selectedConsignor: '0', selectedDestination: '0' },
-        yar: { get, set }
+        yar: makeYar({
+          consignor: selectedConsignor,
+          destination: selectedDestination
+        })
       }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
+      const h = makeViewToolkit()
 
       await addressesController.get.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('consignor', selectedConsignor)
-      expect(set).toHaveBeenCalledWith('destination', selectedDestination)
+      expect(request.yar.set).toHaveBeenCalledWith(
+        'consignor',
+        selectedConsignor
+      )
+      expect(request.yar.set).toHaveBeenCalledWith(
+        'destination',
+        selectedDestination
+      )
       expect(h.view).toHaveBeenCalledWith(
         'addresses/index',
         expect.objectContaining({
@@ -142,11 +140,7 @@ describe('addressesController', () => {
       submitNotification.mockResolvedValue(undefined)
 
       const request = {}
-      const redirect = vi.fn((location) => ({
-        statusCode: 302,
-        location
-      }))
-      const h = { redirect }
+      const h = makeRedirectToolkit()
 
       const response = await addressesController.post.handler(request, h)
 
@@ -165,11 +159,7 @@ describe('addressesController', () => {
       submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const request = {}
-      const redirect = vi.fn((location) => ({
-        statusCode: 302,
-        location
-      }))
-      const h = { redirect }
+      const h = makeRedirectToolkit()
 
       const response = await addressesController.post.handler(request, h)
 
