@@ -128,7 +128,7 @@ describe('#animalIdentificationDetailsController', () => {
         expect.any(String)
       )
 
-      expect(statusCode).toBe(302)
+      expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/additional-details')
     })
 
