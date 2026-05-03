@@ -9,14 +9,14 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
-function getIsoArrivalDate(arrivalDate) {
+const getIsoArrivalDate = (arrivalDate) => {
   const { day, month, year } = arrivalDate ?? {}
   return day && month && year
     ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     : null
 }
 
-function buildOrigin(request) {
+const buildOrigin = (request) => {
   const countryCode = getSessionValue(request, sessionKeys.countryCode)
   const requiresRegionCode = getSessionValue(
     request,
@@ -38,7 +38,7 @@ function buildOrigin(request) {
   }
 }
 
-function buildAdditionalDetails(request) {
+const buildAdditionalDetails = (request) => {
   const certifiedFor = getSessionValue(request, sessionKeys.certifiedFor)
   const unweanedAnimals = getSessionValue(request, sessionKeys.unweanedAnimals)
 
@@ -52,7 +52,7 @@ function buildAdditionalDetails(request) {
   }
 }
 
-function buildTransport(request) {
+const buildTransport = (request) => {
   const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
   const arrivalDate = getIsoArrivalDate(
     getSessionValue(request, sessionKeys.arrivalDate)
@@ -68,7 +68,7 @@ function buildTransport(request) {
   }
 }
 
-function hydrateSessionFromNotification(request, notification) {
+const hydrateSessionFromNotification = (request, notification) => {
   if (notification.referenceNumber) {
     setSessionValue(
       request,
