@@ -134,11 +134,17 @@ describe('portOfEntryController', () => {
         new Error('Backend error')
       )
 
-      const { request } = buildRequest({ payload: validPayload })
+      const { request, set } = buildRequest({ payload: validPayload })
       const h = buildResponseToolkit()
 
       await portOfEntryController.post.handler(request, h)
 
+      expect(set).toHaveBeenCalledWith('portOfEntry', 'ABERDEEN')
+      expect(set).toHaveBeenCalledWith('arrivalDate', {
+        day: 27,
+        month: 3,
+        year: 2026
+      })
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
