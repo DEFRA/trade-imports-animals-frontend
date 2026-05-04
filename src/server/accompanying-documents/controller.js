@@ -10,6 +10,7 @@ import {
 } from './accompanying-documents-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { documentClient } from '../common/clients/document-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../../config/config.js'
@@ -122,7 +123,7 @@ export const accompanyingDocumentsController = {
   status: {
     async handler(request, h) {
       const traceId = getTraceId() ?? ''
-      const rawDocuments = getSessionValue(request, 'documents') ?? []
+      const rawDocuments = getSessionValue(request, sessionKeys.documents) ?? []
       const documentsWithStatus = await getDocumentsWithStatus(
         rawDocuments,
         traceId,
@@ -135,8 +136,11 @@ export const accompanyingDocumentsController = {
     async handler(request, h) {
       const traceId = getTraceId() ?? ''
       const attempt = getAttempt(request)
-      const rawDocuments = getSessionValue(request, 'documents') ?? []
-      const referenceNumber = getSessionValue(request, 'referenceNumber')
+      const rawDocuments = getSessionValue(request, sessionKeys.documents) ?? []
+      const referenceNumber = getSessionValue(
+        request,
+        sessionKeys.referenceNumber
+      )
 
       const documentsWithStatus = await getDocumentsWithStatus(
         rawDocuments,
@@ -164,7 +168,8 @@ export const accompanyingDocumentsController = {
       const traceId = getTraceId() ?? ''
       const { uploadId } = request.params
 
-      const sessionDocuments = getSessionValue(request, 'documents') ?? []
+      const sessionDocuments =
+        getSessionValue(request, sessionKeys.documents) ?? []
       const ownedBySession = sessionDocuments.some(
         (doc) => doc.uploadId === uploadId
       )
@@ -198,7 +203,8 @@ export const accompanyingDocumentsController = {
 
       if (_action?.startsWith('remove-')) {
         const uploadId = _action.slice('remove-'.length)
-        const sessionDocuments = getSessionValue(request, 'documents') ?? []
+        const sessionDocuments =
+          getSessionValue(request, sessionKeys.documents) ?? []
         const ownedBySession = sessionDocuments.some(
           (doc) => doc.uploadId === uploadId
         )
@@ -218,7 +224,7 @@ export const accompanyingDocumentsController = {
         }
         setSessionValue(
           request,
-          'documents',
+          sessionKeys.documents,
           sessionDocuments.filter((doc) => doc.uploadId !== uploadId)
         )
         return h.redirect('/accompanying-documents')
@@ -237,7 +243,7 @@ export const accompanyingDocumentsController = {
       // Hoisted so all error branches below can reuse the same values
       // without re-parsing the attempt query param or re-fetching documents.
       const attempt = getAttempt(request)
-      const documents = getSessionValue(request, 'documents') ?? []
+      const documents = getSessionValue(request, sessionKeys.documents) ?? []
       const documentsWithStatus = await getDocumentsWithStatus(
         documents,
         traceId,
@@ -339,7 +345,10 @@ export const accompanyingDocumentsController = {
 
       let uploadId
       try {
-        const notificationRef = getSessionValue(request, 'referenceNumber')
+        const notificationRef = getSessionValue(
+          request,
+          sessionKeys.referenceNumber
+        )
         if (!notificationRef) {
           request.logger.warn(
             'Document upload initiated without referenceNumber in session; backend will reject'
@@ -412,7 +421,7 @@ export const accompanyingDocumentsController = {
         documentReference,
         dateOfIssue
       })
-      setSessionValue(request, 'documents', documents)
+      setSessionValue(request, sessionKeys.documents, documents)
 
       return h.redirect('/accompanying-documents')
     }

@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import { documentClient } from '../common/clients/document-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import {
   getSessionValue,
   setSessionValue
@@ -125,7 +126,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should show document rows with status tags when documents are in session', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'getStatus')
@@ -159,7 +160,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should show manual refresh link (not meta-refresh) when any document is PENDING', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return [TEST_DOCUMENTS[0]]
+        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
         return null
       })
       vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
@@ -186,7 +187,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should not include meta refresh and show manual refresh link when attempt >= MAX_POLLING_ATTEMPTS', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return [TEST_DOCUMENTS[0]]
+        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
         return null
       })
       vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
@@ -211,7 +212,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should still show refresh link (not timed out) when attempt is one below MAX_POLLING_ATTEMPTS boundary', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return [TEST_DOCUMENTS[0]]
+        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
         return null
       })
       vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
@@ -239,7 +240,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should show error summary and no Save and continue when a document is REJECTED', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return [TEST_DOCUMENTS[0]]
+        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
         return null
       })
       vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
@@ -263,7 +264,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should show Save and continue when all documents are COMPLETE', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return [TEST_DOCUMENTS[0]]
+        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
         return null
       })
       vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
@@ -285,7 +286,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should render View file link only for COMPLETE documents', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'getStatus')
@@ -338,7 +339,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should stream file with correct content headers when uploadId is in session', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       const fileContent = 'PDF file content'
@@ -374,7 +375,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should return 404 and not call backend when uploadId is not in session', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'streamFile')
@@ -433,7 +434,7 @@ describe('#accompanyingDocumentsController', () => {
       'application/octet-stream'
     ])('Should serve %s without downgrade', async (mimeType) => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
@@ -456,7 +457,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should fall back to application/octet-stream for disallowed MIME types', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
@@ -482,7 +483,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should strip MIME type parameters before allow-list check', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
@@ -504,7 +505,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should fall back to application/octet-stream and attachment when backend returns no content headers', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
@@ -527,7 +528,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should return 500 when documentClient.streamFile throws', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'streamFile').mockRejectedValue(
@@ -554,7 +555,7 @@ describe('#accompanyingDocumentsController', () => {
 
     test('Should delete from backend, update session, and redirect when _action is remove-{uploadId}', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
 
@@ -576,14 +577,14 @@ describe('#accompanyingDocumentsController', () => {
       )
       expect(setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
-        'documents',
+        sessionKeys.documents,
         [TEST_DOCUMENTS[1]]
       )
     })
 
     test('Should return 400 and not call delete when uploadId is not in session', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
 
@@ -607,7 +608,7 @@ describe('#accompanyingDocumentsController', () => {
         new Error('Backend error')
       )
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
 
@@ -810,8 +811,8 @@ describe('#accompanyingDocumentsController', () => {
         uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
       })
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return []
-        if (key === 'referenceNumber') return 'REF-123'
+        if (key === sessionKeys.documents) return []
+        if (key === sessionKeys.referenceNumber) return 'REF-123'
         return null
       })
 
@@ -846,7 +847,7 @@ describe('#accompanyingDocumentsController', () => {
       )
       expect(setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
-        'documents',
+        sessionKeys.documents,
         expect.arrayContaining([
           expect.objectContaining({
             uploadId: 'TEST-UPLOAD-ID',
@@ -871,8 +872,8 @@ describe('#accompanyingDocumentsController', () => {
         uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
       })
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return []
-        if (key === 'referenceNumber') return 'REF-123'
+        if (key === sessionKeys.documents) return []
+        if (key === sessionKeys.referenceNumber) return 'REF-123'
         return null
       })
 
@@ -905,8 +906,8 @@ describe('#accompanyingDocumentsController', () => {
         new Error('Backend unavailable')
       )
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return []
-        if (key === 'referenceNumber') return 'REF-123'
+        if (key === sessionKeys.documents) return []
+        if (key === sessionKeys.referenceNumber) return 'REF-123'
         return null
       })
 
@@ -943,7 +944,7 @@ describe('#accompanyingDocumentsController', () => {
         dateOfIssue: '2026-01-01'
       }))
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return tenDocuments
+        if (key === sessionKeys.documents) return tenDocuments
         return null
       })
       vi.spyOn(documentClient, 'getStatus').mockResolvedValue({
@@ -978,7 +979,7 @@ describe('#accompanyingDocumentsController', () => {
   describe('GET /accompanying-documents/status', () => {
     test('Should return JSON with documents and their statuses when documents are in session', async () => {
       getSessionValue.mockImplementation((request, key) => {
-        if (key === 'documents') return TEST_DOCUMENTS
+        if (key === sessionKeys.documents) return TEST_DOCUMENTS
         return null
       })
       vi.spyOn(documentClient, 'getStatus')

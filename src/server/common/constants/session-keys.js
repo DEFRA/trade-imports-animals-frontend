@@ -11,5 +11,6 @@ export const sessionKeys = {
   reasonForImport: 'reasonForImport',
   consignor: 'consignor',
   destination: 'destination',
-  cphNumber: 'cphNumber'
+  cphNumber: 'cphNumber',
+  documents: 'documents'
 }
