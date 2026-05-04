@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -29,6 +29,10 @@ const createResponseToolkit = () => ({
 })
 
 describe('cphNumberController', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   describe('GET /cph-number', () => {
     test('renders view with cphNumber and referenceNumber from session', () => {
       const get = vi.fn((key) => {
