@@ -178,6 +178,38 @@ describe('#notificationClient', () => {
         expect(body.transport.arrivalDate).toBe('2026-03-05')
       })
 
+      test('Should include additionalDetails when certifiedFor and unweanedAnimals are present', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            certifiedFor: 'breeding',
+            unweanedAnimals: 'yes'
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.submit(mockRequest, traceId)
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          expect.objectContaining({
+            method: 'POST',
+            headers: JSON_HEADERS
+          })
+        )
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.additionalDetails).toEqual({
+          certifiedFor: 'breeding',
+          unweanedAnimals: 'yes'
+        })
+      })
+
       test('Should omit arrivalDate from transport when any part is missing', async () => {
         mockGetSessionValue.mockImplementation((req, key) => {
           const sessionData = {
