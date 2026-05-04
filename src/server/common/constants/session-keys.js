@@ -1,4 +1,4 @@
-export const sessionKeys = {
+export const sessionKeys = Object.freeze({
   referenceNumber: 'referenceNumber',
   countryCode: 'countryCode',
   requiresRegionCode: 'requiresRegionCode',
@@ -13,4 +13,4 @@ export const sessionKeys = {
   destination: 'destination',
   cphNumber: 'cphNumber',
   documents: 'documents'
-}
+})
