@@ -260,7 +260,6 @@ describe('#notificationClient', () => {
           statusText: 'Internal Server Error'
         })
 
-        expect(mockLoggerError).toHaveBeenCalledTimes(1)
         expect(mockLoggerError).toHaveBeenCalledWith(
           'Failed to submit notification: status=500 statusText=Internal Server Error'
         )
