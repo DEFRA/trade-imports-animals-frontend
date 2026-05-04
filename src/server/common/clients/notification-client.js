@@ -127,6 +127,23 @@ const hydrateSessionFromNotification = (request, notification) => {
     setSessionValue(request, sessionKeys.cphNumber, notification.cphNumber)
   }
 
+  if (notification.additionalDetails) {
+    if (notification.additionalDetails.certifiedFor) {
+      setSessionValue(
+        request,
+        sessionKeys.certifiedFor,
+        notification.additionalDetails.certifiedFor
+      )
+    }
+    if (notification.additionalDetails.unweanedAnimals) {
+      setSessionValue(
+        request,
+        sessionKeys.unweanedAnimals,
+        notification.additionalDetails.unweanedAnimals
+      )
+    }
+  }
+
   if (notification.transport) {
     if (notification.transport.portOfEntry) {
       setSessionValue(

@@ -385,6 +385,33 @@ describe('#notificationClient', () => {
         )
       })
 
+      test('Should hydrate additionalDetails fields back into session', async () => {
+        const responseBody = {
+          additionalDetails: {
+            certifiedFor: 'breeding',
+            unweanedAnimals: 'yes'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'certifiedFor',
+          'breeding'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'unweanedAnimals',
+          'yes'
+        )
+      })
+
       test('Should skip arrivalDate hydration and warn when value is not ISO yyyy-mm-dd', async () => {
         const responseBody = {
           referenceNumber: 'REF-XYZ',
