@@ -216,13 +216,14 @@
       </div>
 
       <div class="govuk-button-group">
-        {% set continueText = 'Save and continue' if documents and documents.length else 'Continue without documents' %}
+        {% set continueVerb = 'continue' %}
+        {% set continueText = ('Save and ' + continueVerb) if documents and documents.length else ((continueVerb | capitalize) + ' without documents') %}
         {% if canContinue %}
           {# Continue navigates directly — all document session state is written during the upload POST #}
           {{ govukButton({ text: continueText, href: "/addresses" }) }}
         {% else %}
           {{ govukButton({ text: continueText, attributes: { 'aria-disabled': 'true', 'aria-describedby': 'cannot-continue-reason' } }) }}
-          <span class="govuk-visually-hidden" id="cannot-continue-reason">You cannot continue until all documents have been scanned or removed</span>
+          <span class="govuk-visually-hidden" id="cannot-continue-reason">You cannot {{ continueVerb }} until all documents have been scanned or removed</span>
         {% endif %}
       </div>
 
