@@ -76,7 +76,7 @@ export const cphNumberController = {
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
         return renderView(h, {
-          cphNumber: getSessionValue(request, sessionKeys.cphNumber),
+          cphNumber,
           referenceNumber,
           errorList: [{ text: SUBMIT_ERROR_MESSAGE }]
         }).code(statusCodes.internalServerError)
