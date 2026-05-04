@@ -11,7 +11,7 @@ const logger = createLogger()
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
-const getIsoArrivalDate = (arrivalDate) => {
+const formatArrivalDate = (arrivalDate) => {
   const { day, month, year } = arrivalDate ?? {}
   return day && month && year
     ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -56,7 +56,7 @@ const buildAdditionalDetails = (request) => {
 
 const buildTransport = (request) => {
   const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
-  const arrivalDate = getIsoArrivalDate(
+  const arrivalDate = formatArrivalDate(
     getSessionValue(request, sessionKeys.arrivalDate)
   )
 
