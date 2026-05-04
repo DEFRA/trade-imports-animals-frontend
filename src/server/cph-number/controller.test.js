@@ -181,7 +181,10 @@ describe('cphNumberController', () => {
         'cph-number/index',
         expect.objectContaining({
           errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
+            {
+              text: 'Something went wrong, please contact the EUDP team',
+              href: '#cphNumber'
+            }
           ]
         })
       )

@@ -78,7 +78,7 @@ export const cphNumberController = {
         return renderView(h, {
           cphNumber,
           referenceNumber,
-          errorList: [{ text: SUBMIT_ERROR_MESSAGE }]
+          errorList: [{ text: SUBMIT_ERROR_MESSAGE, href: '#cphNumber' }]
         }).code(statusCodes.internalServerError)
       }
 
