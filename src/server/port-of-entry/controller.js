@@ -13,41 +13,23 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
+const VIEW_NAME = 'port-of-entry/index'
 const PAGE_TITLE = 'Entry point and arrival at destination'
-const VIEW = 'port-of-entry/index'
 
 const buildArrivalDate = (day, month, year) => ({ day, month, year })
 
-const renderValidationFailure = (
+const renderView = (
   h,
-  { portOfEntry, arrivalDate, referenceNumber, error }
-) => {
-  const formattedErrors = formatValidationErrors(error)
-  return h
-    .view(VIEW, {
-      pageTitle: PAGE_TITLE,
-      portOfEntry,
-      arrivalDate,
-      referenceNumber,
-      errorList: formattedErrors.errorList,
-      fieldErrors: formattedErrors.fieldErrors
-    })
-    .code(statusCodes.badRequest)
-}
-
-const renderSubmissionFailure = (
-  h,
-  { portOfEntry, arrivalDate, referenceNumber }
+  { portOfEntry, arrivalDate, referenceNumber, errorList, fieldErrors }
 ) =>
-  h
-    .view(VIEW, {
-      pageTitle: PAGE_TITLE,
-      portOfEntry,
-      arrivalDate,
-      referenceNumber,
-      errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
-    })
-    .code(statusCodes.internalServerError)
+  h.view(VIEW_NAME, {
+    pageTitle: PAGE_TITLE,
+    portOfEntry,
+    arrivalDate,
+    referenceNumber,
+    ...(errorList !== undefined && { errorList }),
+    ...(fieldErrors !== undefined && { fieldErrors })
+  })
 
 export const portOfEntryController = {
   get: {
@@ -59,12 +41,7 @@ export const portOfEntryController = {
         sessionKeys.referenceNumber
       )
 
-      return h.view(VIEW, {
-        pageTitle: PAGE_TITLE,
-        portOfEntry,
-        arrivalDate,
-        referenceNumber
-      })
+      return renderView(h, { portOfEntry, arrivalDate, referenceNumber })
     }
   },
   post: {
@@ -91,12 +68,14 @@ export const portOfEntryController = {
       })
 
       if (error) {
-        return renderValidationFailure(h, {
+        const formattedErrors = formatValidationErrors(error)
+        return renderView(h, {
           portOfEntry,
           arrivalDate,
           referenceNumber,
-          error
-        })
+          errorList: formattedErrors.errorList,
+          fieldErrors: formattedErrors.fieldErrors
+        }).code(statusCodes.badRequest)
       }
 
       setSessionValue(request, sessionKeys.portOfEntry, portOfEntry)
@@ -108,11 +87,12 @@ export const portOfEntryController = {
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
-        return renderSubmissionFailure(h, {
+        return renderView(h, {
           portOfEntry,
           arrivalDate,
-          referenceNumber
-        })
+          referenceNumber,
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+        }).code(statusCodes.internalServerError)
       }
 
       return h.redirect('/port-of-entry')
