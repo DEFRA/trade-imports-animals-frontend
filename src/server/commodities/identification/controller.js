@@ -106,7 +106,12 @@ export const animalIdentificationDetailsController = {
             typeOfCommodity: commodityComplement?.typeOfCommodity,
             speciesLst: commodityComplement?.species ?? [],
             commodityDetails: toCommodityDetails(commodityDetailsList),
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              {
+                text: SUBMISSION_FAILURE_MESSAGE,
+                href: '#commodity-details-form'
+              }
+            ]
           })
           .code(statusCodes.internalServerError)
       }

@@ -52,7 +52,9 @@ export const additionalDetailsController = {
             unweanedAnimals:
               getSessionValue(_request, 'unweanedAnimals') ?? 'no',
             referenceNumber,
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#certifiedFor' }
+            ]
           })
           .code(statusCodes.internalServerError)
       }

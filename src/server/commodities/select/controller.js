@@ -137,7 +137,9 @@ export const commoditiesSelectController = {
             savedSpeciesValues: speciesValues,
             commodityDetails,
             speciesDetails,
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#typeOfCommodity' }
+            ]
           })
           .code(statusCodes.internalServerError)
       }

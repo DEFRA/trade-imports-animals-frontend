@@ -261,7 +261,9 @@ describe('commoditiesSelectController', () => {
               species: expect.any(Array)
             })
           }),
-          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+          errorList: [
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#typeOfCommodity' }
+          ]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)

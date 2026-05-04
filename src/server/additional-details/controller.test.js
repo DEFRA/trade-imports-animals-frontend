@@ -185,7 +185,9 @@ describe('additionalDetailsController', () => {
           certifiedFor: null,
           unweanedAnimals: 'no',
           referenceNumber: null,
-          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+          errorList: [
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#certifiedFor' }
+          ]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)

@@ -91,7 +91,9 @@ export const portOfEntryController = {
           portOfEntry,
           arrivalDate,
           referenceNumber,
-          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+          errorList: [
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#portOfEntry' }
+          ]
         }).code(statusCodes.internalServerError)
       }
 

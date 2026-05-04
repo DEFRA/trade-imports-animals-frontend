@@ -108,7 +108,12 @@ export const commodityDetailsController = {
               commodityJson,
               getSessionValue(_request, 'referenceNumber')
             ),
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              {
+                text: SUBMISSION_FAILURE_MESSAGE,
+                href: '#commodity-details-form'
+              }
+            ]
           })
           .code(statusCodes.internalServerError)
       }

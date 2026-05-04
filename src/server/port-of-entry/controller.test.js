@@ -149,7 +149,9 @@ describe('portOfEntryController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
-          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+          errorList: [
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#portOfEntry' }
+          ]
         })
       )
       expect(h.code).toHaveBeenCalledWith(statusCodes.internalServerError)

@@ -143,7 +143,9 @@ describe('importReasonController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'import-reason/index',
         expect.objectContaining({
-          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+          errorList: [
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#internalMarket' }
+          ]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

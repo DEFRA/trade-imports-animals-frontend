@@ -86,7 +86,9 @@ export const originController = {
             requiresRegionCode:
               getSessionValue(_request, 'requiresRegionCode') || 'no',
             internalReference: getSessionValue(_request, 'internalReference'),
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#countryCode' }
+            ]
           })
           .code(statusCodes.internalServerError)
       }

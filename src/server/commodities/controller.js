@@ -49,7 +49,9 @@ export const commoditiesController = {
             heading: 'Select a Commodity',
             referenceNumber: getSessionValue(_request, 'referenceNumber'),
             commodity: getSessionValue(_request, 'commodity'),
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#commodity' }
+            ]
           })
           .code(statusCodes.internalServerError)
       }

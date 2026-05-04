@@ -58,7 +58,9 @@ export const importReasonController = {
             heading: HEADING,
             reasonForImport,
             referenceNumber,
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList: [
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#internalMarket' }
+            ]
           })
           .code(statusCodes.internalServerError)
       }
