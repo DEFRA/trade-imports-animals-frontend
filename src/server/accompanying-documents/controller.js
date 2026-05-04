@@ -57,18 +57,17 @@ const getAttempt = (request) => {
 const getDocumentsWithStatus = async (documents, traceId, logger) =>
   Promise.all(
     documents.map(async (doc) => {
-      const documentTypeLabel = getDocumentTypeLabel(doc.documentType)
       try {
         const { scanStatus } = await documentClient.getStatus(
           doc.uploadId,
           traceId
         )
-        return { ...doc, documentTypeLabel, scanStatus }
+        return { ...doc, scanStatus }
       } catch (err) {
         logger.error(
           `Failed to get scan status for uploadId=${doc.uploadId}: ${err.message}`
         )
-        return { ...doc, documentTypeLabel, scanStatus: 'PENDING' }
+        return { ...doc, scanStatus: 'PENDING' }
       }
     })
   )
@@ -91,9 +90,14 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
 
   const mergedErrors = [...rejectedErrors, ...(extra.errorList ?? [])]
 
+  const documentsForView = documentsWithStatus.map((doc) => ({
+    ...doc,
+    documentTypeLabel: getDocumentTypeLabel(doc.documentType)
+  }))
+
   return {
     pageTitle: 'Accompanying documents',
-    documents: documentsWithStatus,
+    documents: documentsForView,
     anyPending,
     timedOut,
     nextAttempt: attempt + 1,
