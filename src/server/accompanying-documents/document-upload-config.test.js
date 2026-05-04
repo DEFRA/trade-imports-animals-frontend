@@ -7,7 +7,9 @@ import {
   MAX_PAYLOAD_BYTES,
   MAX_DOCUMENTS,
   MAX_DOCUMENT_REFERENCE_LENGTH,
-  DOCUMENT_TYPES
+  DOCUMENT_TYPES,
+  DOCUMENT_TYPE_OPTIONS,
+  getDocumentTypeLabel
 } from './document-upload-config.js'
 
 describe('document-upload-config', () => {
@@ -61,6 +63,37 @@ describe('document-upload-config', () => {
 
     test('DOCUMENT_TYPES contains the supported certificate identifiers', () => {
       expect(DOCUMENT_TYPES).toEqual(['ITAHC', 'VETERINARY_HEALTH_CERTIFICATE'])
+    })
+  })
+
+  describe('document type labels', () => {
+    test('DOCUMENT_TYPE_OPTIONS exposes value/text pairs for each supported certificate', () => {
+      expect(DOCUMENT_TYPE_OPTIONS).toEqual([
+        {
+          value: 'ITAHC',
+          text: 'Intra-Trade Animal Health Certificate (ITAHC)'
+        },
+        {
+          value: 'VETERINARY_HEALTH_CERTIFICATE',
+          text: 'Veterinary health certificate'
+        }
+      ])
+    })
+
+    test('getDocumentTypeLabel returns the user-facing text for ITAHC', () => {
+      expect(getDocumentTypeLabel('ITAHC')).toBe(
+        'Intra-Trade Animal Health Certificate (ITAHC)'
+      )
+    })
+
+    test('getDocumentTypeLabel returns the user-facing text for VETERINARY_HEALTH_CERTIFICATE', () => {
+      expect(getDocumentTypeLabel('VETERINARY_HEALTH_CERTIFICATE')).toBe(
+        'Veterinary health certificate'
+      )
+    })
+
+    test('getDocumentTypeLabel falls back to the raw value for unknown identifiers', () => {
+      expect(getDocumentTypeLabel('UNKNOWN_TYPE')).toBe('UNKNOWN_TYPE')
     })
   })
 })
