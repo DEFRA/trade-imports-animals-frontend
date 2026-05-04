@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -60,6 +61,8 @@ describe('cphNumberController', () => {
 
       cphNumberController.get.handler(request, h)
 
+      expect(get).toHaveBeenCalledWith(sessionKeys.cphNumber, false)
+      expect(get).toHaveBeenCalledWith(sessionKeys.referenceNumber, false)
       expect(h.view).toHaveBeenCalledWith('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
         heading: 'Add the County Parish Holding number (CPH)',
