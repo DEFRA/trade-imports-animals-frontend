@@ -203,7 +203,9 @@ export const notificationClient = {
       error.status = response.status
       error.statusText = response.statusText
 
-      logger.error(`Failed to submit notification: ${error.message}`)
+      logger.error(
+        `Failed to submit notification: status=${response.status} statusText=${response.statusText}`
+      )
 
       throw error
     }
@@ -231,7 +233,9 @@ export const notificationClient = {
       error.status = response.status
       error.statusText = response.statusText
 
-      logger.error(`Failed to get notification: ${error.message}`)
+      logger.error(
+        `Failed to get notification: status=${response.status} statusText=${response.statusText}`
+      )
 
       throw error
     }
