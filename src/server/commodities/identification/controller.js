@@ -5,6 +5,7 @@ import {
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
 import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
@@ -105,9 +106,7 @@ export const animalIdentificationDetailsController = {
             typeOfCommodity: commodityComplement?.typeOfCommodity,
             speciesLst: commodityComplement?.species ?? [],
             commodityDetails: toCommodityDetails(commodityDetailsList),
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

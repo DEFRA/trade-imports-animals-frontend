@@ -7,6 +7,7 @@ import { portOfEntrySchema } from './port-of-entry-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
@@ -14,8 +15,6 @@ const logger = createLogger()
 
 const PAGE_TITLE = 'Entry point and arrival at destination'
 const VIEW = 'port-of-entry/index'
-const SUBMISSION_FAILURE_MESSAGE =
-  'Something went wrong, please contact the EUDP team'
 
 const buildArrivalDate = (day, month, year) => ({ day, month, year })
 

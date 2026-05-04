@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { submitNotification } from '../../common/helpers/notification-helpers.js'
 import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
@@ -28,8 +29,6 @@ const speciesDetails = toCommodityDetails(speciesDetailsList)
 const VIEW_NAME = 'commodities/select/index'
 const PAGE_TITLE = 'Select species of commodity'
 const HEADING = 'Commodity'
-const GENERIC_ERROR_MESSAGE =
-  'Something went wrong, please contact the EUDP team'
 
 export const commoditiesSelectController = {
   get: {
@@ -138,7 +137,7 @@ export const commoditiesSelectController = {
             savedSpeciesValues: speciesValues,
             commodityDetails,
             speciesDetails,
-            errorList: [{ text: GENERIC_ERROR_MESSAGE }]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

@@ -7,6 +7,7 @@ import { cphNumberSchema } from './cph-number-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
@@ -16,8 +17,6 @@ const VIEW_NAME = 'cph-number/index'
 const PAGE_TITLE = 'Add the County Parish Holding number (CPH)'
 const HEADING = PAGE_TITLE
 const NEXT_PATH = '/port-of-entry'
-const SUBMIT_ERROR_MESSAGE =
-  'Something went wrong, please contact the EUDP team'
 
 const renderView = (
   h,
@@ -78,7 +77,7 @@ export const cphNumberController = {
         return renderView(h, {
           cphNumber,
           referenceNumber,
-          errorList: [{ text: SUBMIT_ERROR_MESSAGE, href: '#cphNumber' }]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE, href: '#cphNumber' }]
         }).code(statusCodes.internalServerError)
       }
 

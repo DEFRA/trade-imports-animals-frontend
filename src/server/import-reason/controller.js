@@ -9,14 +9,13 @@ import {
 } from '../common/helpers/notification-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 const logger = createLogger()
 
 const VIEW_NAME = 'import-reason/index'
 const PAGE_TITLE = 'Reason for import'
 const HEADING = PAGE_TITLE
-const SUBMIT_ERROR_MESSAGE =
-  'Something went wrong, please contact the EUDP team'
 
 export const importReasonController = {
   get: {
@@ -59,7 +58,7 @@ export const importReasonController = {
             heading: HEADING,
             reasonForImport,
             referenceNumber,
-            errorList: [{ text: SUBMIT_ERROR_MESSAGE }]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

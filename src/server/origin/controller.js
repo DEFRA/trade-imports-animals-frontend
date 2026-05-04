@@ -7,6 +7,7 @@ import {
 import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import {
   fetchNotification,
   submitNotification
@@ -85,9 +86,7 @@ export const originController = {
             requiresRegionCode:
               getSessionValue(_request, 'requiresRegionCode') || 'no',
             internalReference: getSessionValue(_request, 'internalReference'),
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

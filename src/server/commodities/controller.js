@@ -8,6 +8,7 @@ import {
   submitNotification
 } from '../common/helpers/notification-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 const logger = createLogger()
 
@@ -48,9 +49,7 @@ export const commoditiesController = {
             heading: 'Select a Commodity',
             referenceNumber: getSessionValue(_request, 'referenceNumber'),
             commodity: getSessionValue(_request, 'commodity'),
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }
