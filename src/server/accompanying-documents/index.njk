@@ -100,10 +100,11 @@
             ]
           }) }}
 
+          {% set removeButtonHtml %}Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>{% endset %}
           <form method="post" action="/accompanying-documents" class="govuk-!-margin-bottom-6">
             <input type="hidden" name="crumb" value="{{ crumb }}">
             {{ govukButton({
-              html: 'Remove<span class="govuk-visually-hidden"> ' + doc.filename + '</span>',
+              html: removeButtonHtml,
               classes: "govuk-button--warning govuk-!-margin-bottom-0",
               name: "_action",
               value: "remove-" + doc.uploadId
