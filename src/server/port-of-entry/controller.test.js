@@ -31,6 +31,8 @@ const buildRequest = ({ payload, sessionValues = {} } = {}) => {
 }
 
 const buildResponseToolkit = () => {
+  // function-keyword (not arrow) so `this` binds to the view return object,
+  // preserving template/data when chained as h.view(...).code(...)
   const code = vi.fn(function (statusCode) {
     return { ...this, statusCode }
   })
