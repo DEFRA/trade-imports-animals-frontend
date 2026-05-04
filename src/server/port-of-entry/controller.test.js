@@ -26,8 +26,7 @@ const buildRequest = ({ payload, sessionValues = {} } = {}) => {
   const get = vi.fn((key) => sessionValues[key] ?? null)
   return {
     request: { payload, yar: { set, get } },
-    set,
-    get
+    set
   }
 }
 
