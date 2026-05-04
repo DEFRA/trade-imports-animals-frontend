@@ -15,6 +15,7 @@ const logger = createLogger()
 
 const VIEW_NAME = 'port-of-entry/index'
 const PAGE_TITLE = 'Entry point and arrival at destination'
+const NEXT_PATH = '/port-of-entry'
 
 const buildArrivalDate = (day, month, year) => ({ day, month, year })
 
@@ -97,7 +98,7 @@ export const portOfEntryController = {
         }).code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/port-of-entry')
+      return h.redirect(NEXT_PATH)
     }
   }
 }
