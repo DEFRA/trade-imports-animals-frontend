@@ -164,6 +164,15 @@ describe('#notificationClient', () => {
 
         await notificationClient.submit(mockRequest, traceId)
 
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          expect.objectContaining({
+            method: 'POST',
+            headers: JSON_HEADERS
+          })
+        )
+
         const body = JSON.parse(fetch.mock.calls[0][1].body)
         expect(body.transport.portOfEntry).toBe('ABERDEEN')
         expect(body.transport.arrivalDate).toBe('2026-03-05')
@@ -184,6 +193,15 @@ describe('#notificationClient', () => {
         })
 
         await notificationClient.submit(mockRequest, traceId)
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          expect.objectContaining({
+            method: 'POST',
+            headers: JSON_HEADERS
+          })
+        )
 
         const body = JSON.parse(fetch.mock.calls[0][1].body)
         expect(body.transport.portOfEntry).toBe('EDINBURGH')
