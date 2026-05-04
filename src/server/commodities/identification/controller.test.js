@@ -4,6 +4,7 @@ import { animalIdentificationDetailsController } from './controller.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import {
   getSessionValue,
   setSessionValue
@@ -171,9 +172,7 @@ describe('#animalIdentificationDetailsController', () => {
       // Lock in the rendered error view: the index template should re-render
       // with the GDS error summary populated from the controller's errorList.
       expect(result).toContain('There is a problem')
-      expect(result).toContain(
-        'Something went wrong, please contact the EUDP team'
-      )
+      expect(result).toContain(SUBMISSION_FAILURE_MESSAGE)
     })
   })
 })

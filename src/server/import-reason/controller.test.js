@@ -6,6 +6,7 @@ import {
   fetchNotification,
   submitNotification
 } from '../common/helpers/notification-helpers.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -142,9 +143,7 @@ describe('importReasonController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'import-reason/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -148,9 +149,7 @@ describe('portOfEntryController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(h.code).toHaveBeenCalledWith(statusCodes.internalServerError)

@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
@@ -247,9 +248,7 @@ describe('#commoditiesController', () => {
       const { statusCode, result } = await server.inject(options)
 
       expect(statusCode).toBe(statusCodes.internalServerError)
-      expect(result).toContain(
-        'Something went wrong, please contact the EUDP team'
-      )
+      expect(result).toContain(SUBMISSION_FAILURE_MESSAGE)
     })
   })
 })

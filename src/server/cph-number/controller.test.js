@@ -3,6 +3,7 @@ import { cphNumberController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
 vi.mock('@defra/hapi-tracing', () => ({
@@ -212,7 +213,7 @@ describe('cphNumberController', () => {
         expect.objectContaining({
           errorList: [
             {
-              text: 'Something went wrong, please contact the EUDP team',
+              text: SUBMISSION_FAILURE_MESSAGE,
               href: '#cphNumber'
             }
           ]

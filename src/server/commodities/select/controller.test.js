@@ -10,6 +10,7 @@ import {
 
 import { commoditiesSelectController } from './controller.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 
@@ -260,9 +261,7 @@ describe('commoditiesSelectController', () => {
               species: expect.any(Array)
             })
           }),
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
