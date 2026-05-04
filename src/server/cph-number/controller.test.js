@@ -40,7 +40,7 @@ describe('cphNumberController', () => {
         return values[key] ?? null
       })
       const request = { yar: { get } }
-      const h = { view: vi.fn((template, data) => ({ template, data })) }
+      const h = createResponseToolkit()
 
       const response = cphNumberController.get.handler(request, h)
 
@@ -56,7 +56,7 @@ describe('cphNumberController', () => {
     test('renders view with null values when session is empty', () => {
       const get = vi.fn(() => null)
       const request = { yar: { get } }
-      const h = { view: vi.fn((template, data) => ({ template, data })) }
+      const h = createResponseToolkit()
 
       cphNumberController.get.handler(request, h)
 
