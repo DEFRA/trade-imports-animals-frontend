@@ -9,6 +9,8 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
+
 const getIsoArrivalDate = (arrivalDate) => {
   const { day, month, year } = arrivalDate ?? {}
   return day && month && year
@@ -134,12 +136,18 @@ const hydrateSessionFromNotification = (request, notification) => {
       )
     }
     if (notification.transport.arrivalDate) {
-      const [year, month, day] = notification.transport.arrivalDate.split('-')
-      setSessionValue(request, sessionKeys.arrivalDate, {
-        day: Number(day),
-        month: Number(month),
-        year: Number(year)
-      })
+      if (ISO_DATE_REGEX.test(notification.transport.arrivalDate)) {
+        const [year, month, day] = notification.transport.arrivalDate.split('-')
+        setSessionValue(request, sessionKeys.arrivalDate, {
+          day: Number(day),
+          month: Number(month),
+          year: Number(year)
+        })
+      } else {
+        logger.warn(
+          `Skipping arrivalDate hydration: malformed value "${String(notification.transport.arrivalDate).slice(0, 32)}" (referenceNumber=${notification.referenceNumber ?? 'unknown'})`
+        )
+      }
     }
   }
 }

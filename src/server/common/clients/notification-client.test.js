@@ -3,12 +3,14 @@ import { vi } from 'vitest'
 import { notificationClient } from './notification-client.js'
 
 const mockLoggerError = vi.fn()
+const mockLoggerWarn = vi.fn()
 const mockGetSessionValue = vi.fn()
 const mockSetSessionValue = vi.fn()
 
 vi.mock('../helpers/logging/logger.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
+    warn: (...args) => mockLoggerWarn(...args),
     error: (...args) => mockLoggerError(...args)
   })
 }))
@@ -74,6 +76,7 @@ describe('#notificationClient', () => {
     mockGetSessionValue.mockClear()
     mockSetSessionValue.mockClear()
     mockLoggerError.mockClear()
+    mockLoggerWarn.mockClear()
   })
 
   afterEach(() => {
@@ -326,6 +329,41 @@ describe('#notificationClient', () => {
           mockRequest,
           'arrivalDate',
           { day: 5, month: 3, year: 2026 }
+        )
+      })
+
+      test('Should skip arrivalDate hydration and warn when value is not ISO yyyy-mm-dd', async () => {
+        const responseBody = {
+          referenceNumber: 'REF-XYZ',
+          transport: {
+            portOfEntry: 'ABERDEEN',
+            arrivalDate: 'not-a-date'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'portOfEntry',
+          'ABERDEEN'
+        )
+        expect(mockSetSessionValue).not.toHaveBeenCalledWith(
+          mockRequest,
+          'arrivalDate',
+          expect.anything()
+        )
+        expect(mockLoggerWarn).toHaveBeenCalledTimes(1)
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          expect.stringContaining('not-a-date')
+        )
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          expect.stringContaining('REF-XYZ')
         )
       })
     })
