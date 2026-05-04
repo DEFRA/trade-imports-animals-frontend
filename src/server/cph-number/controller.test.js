@@ -3,6 +3,7 @@ import { cphNumberController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { getTraceId } from '@defra/hapi-tracing'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -95,6 +96,23 @@ describe('cphNumberController', () => {
         statusCode: statusCodes.redirectFound,
         location: '/port-of-entry'
       })
+    })
+
+    test('submits notification with empty-string traceId when getTraceId returns null', async () => {
+      vi.mocked(getTraceId).mockReturnValueOnce(null)
+      vi.spyOn(notificationClient, 'submit').mockResolvedValue({})
+
+      const set = vi.fn()
+      const get = vi.fn(() => null)
+      const request = {
+        payload: { cphNumber: '123456789' },
+        yar: { set, get }
+      }
+      const h = createResponseToolkit()
+
+      await cphNumberController.post.handler(request, h)
+
+      expect(notificationClient.submit).toHaveBeenCalledWith(request, '')
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
