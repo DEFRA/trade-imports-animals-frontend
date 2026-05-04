@@ -11,12 +11,7 @@ const dateFieldNumber = (min, max, label) =>
     .empty('')
     .optional()
     .allow(null)
-    .messages({
-      'number.base': `Enter a valid ${label}`,
-      'number.integer': `Enter a valid ${label}`,
-      'number.min': `Enter a valid ${label}`,
-      'number.max': `Enter a valid ${label}`
-    })
+    .messages({ '*': `Enter a valid ${label}` })
 
 export const portOfEntrySchema = Joi.object({
   portOfEntry: Joi.string().optional().allow('', null),
