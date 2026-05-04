@@ -101,7 +101,7 @@
           }) }}
 
           {% set removeButtonHtml %}Remove<span class="govuk-visually-hidden"> {{ doc.filename }}</span>{% endset %}
-          <form method="post" action="/accompanying-documents" class="govuk-!-margin-bottom-6">
+          <form method="post" action="/accompanying-documents" class="govuk-!-margin-bottom-6" aria-label="Remove document {{ doc.filename }}">
             <input type="hidden" name="crumb" value="{{ crumb }}">
             {{ govukButton({
               html: removeButtonHtml,
