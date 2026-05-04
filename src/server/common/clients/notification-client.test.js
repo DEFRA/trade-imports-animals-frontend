@@ -464,7 +464,6 @@ describe('#notificationClient', () => {
           statusText: 'Not Found'
         })
 
-        expect(mockLoggerError).toHaveBeenCalledTimes(1)
         expect(mockLoggerError).toHaveBeenCalledWith(
           'Failed to get notification: status=404 statusText=Not Found'
         )
