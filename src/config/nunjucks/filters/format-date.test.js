@@ -37,4 +37,26 @@ describe('#formatDate', () => {
       ).toBe('11:40 am on Wednesday 1st February 2023')
     })
   })
+
+  describe('With invalid input', () => {
+    test('Should return empty string for undefined', () => {
+      expect(formatDate(undefined)).toBe('')
+    })
+
+    test('Should return empty string for null', () => {
+      expect(formatDate(null)).toBe('')
+    })
+
+    test('Should return empty string for empty string', () => {
+      expect(formatDate('')).toBe('')
+    })
+
+    test('Should return empty string for unparseable string', () => {
+      expect(formatDate('not-a-date')).toBe('')
+    })
+
+    test('Should return empty string for invalid Date object', () => {
+      expect(formatDate(new Date('invalid'))).toBe('')
+    })
+  })
 })
