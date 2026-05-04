@@ -119,7 +119,7 @@ describe('#notificationClient', () => {
         mockGetSessionValue.mockImplementation((req, key) => {
           const sessionData = {
             countryCode: 'FR',
-            commodity: 'Cat'
+            commodity: { name: 'Cat' }
           }
           return sessionData[key]
         })
@@ -128,7 +128,7 @@ describe('#notificationClient', () => {
           origin: {
             countryCode: 'FR'
           },
-          commodity: 'Cat'
+          commodity: { name: 'Cat' }
         }
 
         fetch.mockResolvedValueOnce({
