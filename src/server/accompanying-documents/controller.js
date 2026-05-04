@@ -106,7 +106,11 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
     documentTypeSelectItems: [
       { value: '', text: 'Select document type' },
-      { text: '──────────', disabled: true },
+      {
+        text: '──────────',
+        disabled: true,
+        attributes: { 'aria-hidden': 'true' }
+      },
       ...DOCUMENT_TYPE_OPTIONS
     ],
     ...extra,
