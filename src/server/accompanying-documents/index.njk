@@ -70,10 +70,11 @@
             {% else %}{{ govukTag({ text: "Unknown", classes: "govuk-tag--grey" }) }}{% endif %}
           {% endset %}
 
+          {% set viewButtonHtml %}View file<span class="govuk-visually-hidden"> {{ doc.filename }}</span>{% endset %}
           {%- set cardActions = { items: [
             {
               href: "/accompanying-documents/" + doc.uploadId + "/file",
-              html: 'View file<span class="govuk-visually-hidden"> ' + doc.filename + '</span>'
+              html: viewButtonHtml
             }
           ] } if doc.scanStatus === 'COMPLETE' else {} -%}
 
