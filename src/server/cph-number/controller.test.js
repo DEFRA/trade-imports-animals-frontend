@@ -122,20 +122,21 @@ describe('cphNumberController', () => {
       const response = await cphNumberController.post.handler(request, h)
 
       expect(set).not.toHaveBeenCalled()
-      expect(h.view).toHaveBeenCalledWith(
-        'cph-number/index',
-        expect.objectContaining({
-          errorList: expect.arrayContaining([
-            expect.objectContaining({
-              text: 'CPH number must be exactly 9 digits',
-              href: '#cphNumber'
-            })
-          ]),
-          fieldErrors: expect.objectContaining({
-            cphNumber: { text: 'CPH number must be exactly 9 digits' }
-          })
-        })
-      )
+      expect(h.view).toHaveBeenCalledWith('cph-number/index', {
+        pageTitle: 'Add the County Parish Holding number (CPH)',
+        heading: 'Add the County Parish Holding number (CPH)',
+        cphNumber: '12345678',
+        referenceNumber: null,
+        errorList: [
+          {
+            text: 'CPH number must be exactly 9 digits',
+            href: '#cphNumber'
+          }
+        ],
+        fieldErrors: {
+          cphNumber: { text: 'CPH number must be exactly 9 digits' }
+        }
+      })
       expect(response.template).toBe('cph-number/index')
       expect(response.statusCode).toBe(statusCodes.badRequest)
     })
@@ -152,17 +153,21 @@ describe('cphNumberController', () => {
       const response = await cphNumberController.post.handler(request, h)
 
       expect(set).not.toHaveBeenCalled()
-      expect(h.view).toHaveBeenCalledWith(
-        'cph-number/index',
-        expect.objectContaining({
-          errorList: expect.arrayContaining([
-            expect.objectContaining({
-              text: 'CPH number must only contain numbers',
-              href: '#cphNumber'
-            })
-          ])
-        })
-      )
+      expect(h.view).toHaveBeenCalledWith('cph-number/index', {
+        pageTitle: 'Add the County Parish Holding number (CPH)',
+        heading: 'Add the County Parish Holding number (CPH)',
+        cphNumber: '12345678a',
+        referenceNumber: null,
+        errorList: [
+          {
+            text: 'CPH number must only contain numbers',
+            href: '#cphNumber'
+          }
+        ],
+        fieldErrors: {
+          cphNumber: { text: 'CPH number must only contain numbers' }
+        }
+      })
       expect(response.statusCode).toBe(statusCodes.badRequest)
     })
 
