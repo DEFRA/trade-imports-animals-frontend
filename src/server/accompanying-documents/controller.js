@@ -121,7 +121,7 @@ const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
 
 export const accompanyingDocumentsController = {
   status: {
-    async handler(request, h) {
+    handler: async (request, h) => {
       const traceId = getTraceId() ?? ''
       const rawDocuments = getSessionValue(request, sessionKeys.documents) ?? []
       const documentsWithStatus = await getDocumentsWithStatus(
@@ -133,7 +133,7 @@ export const accompanyingDocumentsController = {
     }
   },
   get: {
-    async handler(request, h) {
+    handler: async (request, h) => {
       const traceId = getTraceId() ?? ''
       const attempt = getAttempt(request)
       const rawDocuments = getSessionValue(request, sessionKeys.documents) ?? []
@@ -164,7 +164,7 @@ export const accompanyingDocumentsController = {
         })
       }
     },
-    async handler(request, h) {
+    handler: async (request, h) => {
       const traceId = getTraceId() ?? ''
       const { uploadId } = request.params
 
@@ -197,7 +197,7 @@ export const accompanyingDocumentsController = {
     }
   },
   post: {
-    async handler(request, h) {
+    handler: async (request, h) => {
       const traceId = getTraceId() ?? ''
       const { _action } = request.payload
 

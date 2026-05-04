@@ -17,7 +17,7 @@ const logger = createLogger()
 
 export const originController = {
   get: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
       )
@@ -37,7 +37,7 @@ export const originController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const { countryCode, requiresRegionCode, internalReference } =
         _request.payload
       logger.info(`Country of origin: ${countryCode}`)

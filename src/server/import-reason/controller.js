@@ -19,7 +19,7 @@ const HEADING = PAGE_TITLE
 
 export const importReasonController = {
   get: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const reasonForImport = getSessionValue(
         _request,
         sessionKeys.reasonForImport
@@ -37,7 +37,7 @@ export const importReasonController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber

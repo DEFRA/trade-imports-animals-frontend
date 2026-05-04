@@ -33,7 +33,7 @@ const renderView = (
 
 export const cphNumberController = {
   get: {
-    handler(request, h) {
+    handler: (request, h) => {
       const cphNumber = getSessionValue(request, sessionKeys.cphNumber)
       const referenceNumber = getSessionValue(
         request,
@@ -44,7 +44,7 @@ export const cphNumberController = {
     }
   },
   post: {
-    async handler(request, h) {
+    handler: async (request, h) => {
       const { cphNumber } = request.payload
       const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(

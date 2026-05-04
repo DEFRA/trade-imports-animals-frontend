@@ -38,7 +38,7 @@ try {
 
 export const animalIdentificationDetailsController = {
   get: {
-    handler(_request, h) {
+    handler: (_request, h) => {
       logger.info(
         `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
       )
@@ -61,7 +61,7 @@ export const animalIdentificationDetailsController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
       )

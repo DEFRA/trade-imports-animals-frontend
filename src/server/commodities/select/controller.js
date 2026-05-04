@@ -32,7 +32,7 @@ const HEADING = 'Commodity'
 
 export const commoditiesSelectController = {
   get: {
-    handler(_request, h) {
+    handler: (_request, h) => {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
@@ -62,7 +62,7 @@ export const commoditiesSelectController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )

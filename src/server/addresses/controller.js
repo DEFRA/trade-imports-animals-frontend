@@ -39,7 +39,7 @@ const applySelectedAddress = (request, sessionKey, source, idParam) => {
 
 export const addressesController = {
   get: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Addresses: ${getSessionValue(_request, sessionKeys.commodity)} landing page`
       )
@@ -80,7 +80,7 @@ export const addressesController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(`Addresses POST: form submitted`)
 
       try {

@@ -48,7 +48,7 @@ const buildDetailsViewModel = (commodity, referenceNumber) => {
 
 export const commodityDetailsController = {
   get: {
-    handler(_request, h) {
+    handler: (_request, h) => {
       logger.info(
         `Commodity: ${getSessionValue(_request, 'commodity')} details page`
       )
@@ -66,7 +66,7 @@ export const commodityDetailsController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Commodity: ${getSessionValue(_request, 'commodity')} details page`
       )
