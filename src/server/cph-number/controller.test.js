@@ -179,7 +179,7 @@ describe('cphNumberController', () => {
       }
       const h = createResponseToolkit()
 
-      await cphNumberController.post.handler(request, h)
+      const response = await cphNumberController.post.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith(
         'cph-number/index',
@@ -192,9 +192,7 @@ describe('cphNumberController', () => {
           ]
         })
       )
-      expect(h.view.mock.results[0].value.code).toHaveBeenCalledWith(
-        statusCodes.internalServerError
-      )
+      expect(response.statusCode).toBe(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
