@@ -70,43 +70,45 @@
             {% else %}{{ govukTag({ text: "Unknown", classes: "govuk-tag--grey" }) }}{% endif %}
           {% endset %}
 
-          <div class="govuk-summary-card govuk-!-margin-bottom-6"
-            data-testid="document-card"
-            data-upload-id="{{ doc.uploadId }}"
-            data-scan-status="{{ doc.scanStatus }}">
-            <div class="govuk-summary-card__title-wrapper">
-              <h2 class="govuk-summary-card__title">{{ doc.filename }}</h2>
-              {% if doc.scanStatus === 'COMPLETE' %}
-                <ul class="govuk-summary-card__actions">
-                  <li class="govuk-summary-card__action">
-                    <a class="govuk-link" href="/accompanying-documents/{{ doc.uploadId }}/file">
-                      View file<span class="govuk-visually-hidden"> {{ doc.filename }}</span>
-                    </a>
-                  </li>
-                </ul>
-              {% endif %}
-            </div>
-            <div class="govuk-summary-card__content">
-              {{ govukSummaryList({
-                rows: [
-                  { key: { text: "Document type" }, value: { text: doc.documentTypeLabel } },
-                  { key: { text: "Document reference" }, value: { text: doc.documentReference } },
-                  { key: { text: "Date of issue" }, value: { text: doc.dateOfIssue | formatDate('d MMMM yyyy') } },
-                  { key: { text: "Status" }, value: { html: statusTagHtml } }
-                ]
-              }) }}
+          {%- set cardActions = { items: [
+            {
+              href: "/accompanying-documents/" + doc.uploadId + "/file",
+              html: 'View file<span class="govuk-visually-hidden"> ' + doc.filename + '</span>'
+            }
+          ] } if doc.scanStatus === 'COMPLETE' else {} -%}
 
-              <form method="post" action="/accompanying-documents">
-                <input type="hidden" name="crumb" value="{{ crumb }}">
-                {{ govukButton({
-                  html: 'Remove<span class="govuk-visually-hidden"> ' + doc.filename + '</span>',
-                  classes: "govuk-button--warning govuk-!-margin-bottom-0",
-                  name: "_action",
-                  value: "remove-" + doc.uploadId
-                }) }}
-              </form>
-            </div>
-          </div>
+          {{ govukSummaryList({
+            classes: "govuk-!-margin-bottom-0",
+            card: {
+              classes: "govuk-!-margin-bottom-6",
+              attributes: {
+                'data-testid': 'document-card',
+                'data-upload-id': doc.uploadId,
+                'data-scan-status': doc.scanStatus
+              },
+              title: {
+                text: doc.filename,
+                headingLevel: 3
+              },
+              actions: cardActions
+            },
+            rows: [
+              { key: { text: "Document type" }, value: { text: doc.documentTypeLabel } },
+              { key: { text: "Document reference" }, value: { text: doc.documentReference } },
+              { key: { text: "Date of issue" }, value: { text: doc.dateOfIssue | formatDate('d MMMM yyyy') } },
+              { key: { text: "Status" }, value: { html: statusTagHtml } }
+            ]
+          }) }}
+
+          <form method="post" action="/accompanying-documents" class="govuk-!-margin-bottom-6">
+            <input type="hidden" name="crumb" value="{{ crumb }}">
+            {{ govukButton({
+              html: 'Remove<span class="govuk-visually-hidden"> ' + doc.filename + '</span>',
+              classes: "govuk-button--warning govuk-!-margin-bottom-0",
+              name: "_action",
+              value: "remove-" + doc.uploadId
+            }) }}
+          </form>
         {% endfor %}
 
         {% if anyPending %}
