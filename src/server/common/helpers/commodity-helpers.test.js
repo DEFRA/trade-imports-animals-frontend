@@ -15,6 +15,10 @@ describe('#commodityHelpers', () => {
       expect(toCommodityDetails([])).toBeNull()
     })
 
+    test('returns null when first element is falsy even if later elements are present', () => {
+      expect(toCommodityDetails([null, { commodityCode: '0101' }])).toBeNull()
+    })
+
     test('returns the object as-is for a non-empty plain object', () => {
       const details = { commodityCode: '0101' }
 
