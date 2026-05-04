@@ -332,6 +332,11 @@ export const accompanyingDocumentsController = {
       let uploadId
       try {
         const notificationRef = getSessionValue(request, 'referenceNumber')
+        if (!notificationRef) {
+          request.logger.warn(
+            'Document upload initiated without referenceNumber in session; backend will reject'
+          )
+        }
         const redirectUrl = `${frontendBaseUrl}/accompanying-documents`
         const response = await documentClient.initiate(
           notificationRef,
