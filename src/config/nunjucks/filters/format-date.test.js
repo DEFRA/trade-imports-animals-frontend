@@ -55,6 +55,10 @@ describe('#formatDate', () => {
       expect(formatDate('not-a-date')).toBe('')
     })
 
+    test('Should return empty string for well-formed-but-out-of-range date string', () => {
+      expect(formatDate('2023-13-45')).toBe('')
+    })
+
     test('Should return empty string for invalid Date object', () => {
       expect(formatDate(new Date('invalid'))).toBe('')
     })
