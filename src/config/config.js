@@ -344,6 +344,14 @@ export const config = convict({
     format: 'url',
     default: 'http://localhost:3000',
     env: 'FRONTEND_BASE_URL'
+  },
+  tradeImportsReferenceDataApi: {
+    baseUrl: {
+      doc: 'Trade Imports Reference Data API base URL',
+      format: String,
+      default: 'http://localhost:8086',
+      env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
+    }
   }
 })
 

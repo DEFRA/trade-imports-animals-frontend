@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
@@ -27,6 +28,7 @@ describe('#commoditiesController', () => {
 
   beforeEach(() => {
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    vi.spyOn(countriesClient, 'getCountries').mockResolvedValue([])
   })
 
   afterEach(() => {
