@@ -15,6 +15,7 @@ import { commoditiesLighthouseConfig } from "./commodities.config.js"
 import { commoditiesSelectLighthouseConfig } from './commodities-select.config.js'
 import {importReasonLighthouseConfig} from "./import-reason.config.js";
 import {commodityDetailsLighthouseConfig} from "./commodities-details.config.js";
+import { accompanyingDocumentsLighthouseConfig } from './accompanying-documents.config.js'
 import {additionalDetailsLighthouseConfig} from "./additional-details.config.js";
 import { animalsIdentificationDetailsLighthouseConfig } from "./animals-identification-details.config.js";
 import { addressesLighthouseConfig } from './addresses.config.js'
@@ -37,6 +38,7 @@ const pageConfigs = [
   commoditiesSelectLighthouseConfig,
   importReasonLighthouseConfig,
   commodityDetailsLighthouseConfig,
+  accompanyingDocumentsLighthouseConfig,
   additionalDetailsLighthouseConfig,
   animalsIdentificationDetailsLighthouseConfig,
   addressesLighthouseConfig,
