@@ -1,52 +1,22 @@
 import Joi from 'joi'
 
-const arrivalDayErrMsg = 'Enter a valid day'
-const arrivalMonthErrMsg = 'Enter a valid month'
-const arrivalYearErrMsg = 'Enter a valid year'
-const maxDays = 31
-const maxYear = 9999
-const maxMonth = 12
+const MIN_YEAR = 1000
+const MAX_YEAR = 9999
+
+const dateFieldNumber = (min, max, label) =>
+  Joi.number()
+    .integer()
+    .min(min)
+    .max(max)
+    .empty('')
+    .optional()
+    .allow(null)
+    .messages({ '*': `Enter a valid ${label}` })
 
 export const portOfEntrySchema = Joi.object({
   portOfEntry: Joi.string().optional().allow('', null),
-  'arrivalDate-day': Joi.number()
-    .integer()
-    .min(1)
-    .max(maxDays)
-    .empty('')
-    .optional()
-    .allow(null)
-    .messages({
-      'number.base': arrivalDayErrMsg,
-      'number.integer': arrivalDayErrMsg,
-      'number.min': arrivalDayErrMsg,
-      'number.max': arrivalDayErrMsg
-    }),
-  'arrivalDate-month': Joi.number()
-    .integer()
-    .min(1)
-    .max(maxMonth)
-    .empty('')
-    .optional()
-    .allow(null)
-    .messages({
-      'number.base': arrivalMonthErrMsg,
-      'number.integer': arrivalMonthErrMsg,
-      'number.min': arrivalMonthErrMsg,
-      'number.max': arrivalMonthErrMsg
-    }),
-  'arrivalDate-year': Joi.number()
-    .integer()
-    .min(1000)
-    .max(maxYear)
-    .empty('')
-    .optional()
-    .allow(null)
-    .messages({
-      'number.base': arrivalYearErrMsg,
-      'number.integer': arrivalYearErrMsg,
-      'number.min': arrivalYearErrMsg,
-      'number.max': arrivalYearErrMsg
-    }),
+  'arrivalDate-day': dateFieldNumber(1, 31, 'day'),
+  'arrivalDate-month': dateFieldNumber(1, 12, 'month'),
+  'arrivalDate-year': dateFieldNumber(MIN_YEAR, MAX_YEAR, 'year'),
   crumb: Joi.string().optional().allow('', null)
 })

@@ -1,28 +1,60 @@
-import { describe, expect, test, vi } from 'vitest'
+import { vi } from 'vitest'
 
 import { commodityDetailsController } from './controller.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
+import { createServer } from '../../server.js'
+import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
+import {
+  getSessionValue,
+  setSessionValue
+} from '../../common/helpers/session-helpers.js'
+import * as commodityHelpers from '../../common/helpers/commodity-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
+import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
 
-vi.mock('../../common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    info: vi.fn(),
-    error: vi.fn()
+vi.mock('../../../config/config.js', async (importOriginal) => {
+  const { mockAuthConfig } =
+    await import('../../common/test-helpers/mock-auth-config.js')
+  return mockAuthConfig(importOriginal)
+})
+
+vi.mock('../../common/helpers/session-helpers.js', () => ({
+  getSessionValue: vi.fn(),
+  setSessionValue: vi.fn()
+}))
+
+describe('#commodityDetailsController', () => {
+  let server
+
+  beforeAll(async () => {
+    server = await createServer()
+    await server.initialize()
   })
-}))
 
-describe('commodityDetailsController', () => {
+  afterAll(async () => {
+    await server.stop({ timeout: 0 })
+  })
+
+  beforeEach(() => {
+    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      referenceNumber: 'TEST-REF-123'
+    })
+    getSessionValue.mockReset()
+    setSessionValue.mockReset()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   describe('POST /commodities/details', () => {
-    test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
-      const set = vi.fn()
-      const get = vi.fn((key) => {
+    test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement, then submits notification and redirects', async () => {
+      getSessionValue.mockImplementation((_request, key) => {
         if (key === 'referenceNumber') return 'REF-123'
         if (key === 'commodity') {
           return {
@@ -41,7 +73,13 @@ describe('commodityDetailsController', () => {
         return null
       })
 
-      const request = {
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/commodities/details',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           'noOfAnimals-1586274': '2',
           'noOfAnimals-716661': '3',
@@ -49,17 +87,13 @@ describe('commodityDetailsController', () => {
           'noOfPackages-716661': '4',
           totalNoOfAnimals: '5',
           totalNoOfPackages: '5'
-        },
-        yar: { set, get }
-      }
+        }
+      })
 
-      const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
-      }
-
-      const response = await commodityDetailsController.post.handler(request, h)
-
-      expect(set).toHaveBeenCalledWith(
+      // Observable session-write side-effect: species rows are augmented with
+      // noOfAnimals/noOfPackages and totals are summed onto the complement.
+      expect(setSessionValue).toHaveBeenCalledWith(
+        expect.anything(),
         'commodity',
         expect.objectContaining({
           commodityComplement: [
@@ -83,27 +117,31 @@ describe('commodityDetailsController', () => {
         })
       )
 
+      // Observable network-boundary behaviour: the backend submission was
+      // triggered via notificationClient.submit (the fetch wrapper) with the
+      // same Hapi request that carried this test's POST payload. Asserting on
+      // the forwarded payload proves the seeded commodity flowed through the
+      // controller; the second arg is the traceId string from @defra/hapi-tracing.
       expect(notificationClient.submit).toHaveBeenCalledWith(
-        request,
-        'trace-123'
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            'noOfAnimals-1586274': '2',
+            'noOfAnimals-716661': '3',
+            'noOfPackages-1586274': '1',
+            'noOfPackages-716661': '4',
+            totalNoOfAnimals: '5',
+            totalNoOfPackages: '5'
+          })
+        }),
+        expect.any(String)
       )
-      expect(response).toEqual({
-        statusCode: 302,
-        location: '/commodities/identification'
-      })
+
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/commodities/identification')
     })
 
-    test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
-        Object.assign(new Error('Backend error'), {
-          status: 500,
-          statusText: 'Internal Server Error'
-        })
-      )
-
-      const set = vi.fn()
-      const get = vi.fn((key) => {
-        if (key === 'referenceNumber') return 'REF-123'
+    test('returns 500 when backend submit fails', async () => {
+      getSessionValue.mockImplementation((_request, key) => {
         if (key === 'commodity') {
           return {
             name: 'Fish',
@@ -117,35 +155,148 @@ describe('commodityDetailsController', () => {
         }
         return null
       })
+      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+        Object.assign(new Error('Backend error'), {
+          status: statusCodes.internalServerError,
+          statusText: 'Internal Server Error'
+        })
+      )
 
-      const request = {
+      const { statusCode, result, headers } = await server.inject({
+        method: 'POST',
+        url: '/commodities/details',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
         payload: {
           'noOfAnimals-1586274': '2',
           'noOfPackages-1586274': '1',
           totalNoOfAnimals: '2',
           totalNoOfPackages: '1'
-        },
-        yar: { set, get }
+        }
+      })
+
+      expect(setSessionValue).toHaveBeenCalledWith(
+        expect.anything(),
+        'commodity',
+        expect.objectContaining({
+          commodityComplement: [
+            expect.objectContaining({
+              totalNoOfAnimals: 2,
+              totalNoOfPackages: 1
+            })
+          ]
+        })
+      )
+
+      expect(statusCode).toBe(statusCodes.internalServerError)
+      expect(headers.location).toBeUndefined()
+      expect(result).toContain(SUBMISSION_FAILURE_MESSAGE)
+    })
+  })
+})
+
+describe('#commodityDetailsController (unit)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  describe('GET handler', () => {
+    test('renders view with referenceNumber, commodity, typeOfCommodity, species and totals from last selected species', () => {
+      const commodity = {
+        name: 'Fish',
+        commodityComplement: [
+          { typeOfCommodity: 'ignored', species: [{ value: 'old' }] },
+          {
+            typeOfCommodity: 'Domestic',
+            species: [
+              { value: '1586274', text: '1586274' },
+              { value: '716661', text: 'Bison bison' }
+            ],
+            totalNoOfAnimals: 5,
+            totalNoOfPackages: 5
+          }
+        ]
       }
 
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      getSessionValue.mockImplementation((_request, key) => {
+        if (key === 'referenceNumber') return 'REF-456'
+        if (key === 'commodity') return commodity
+        return null
+      })
+
+      const request = {}
       const h = {
-        view: vi.fn(() => ({ code: mockCode })),
-        redirect: vi.fn()
+        view: vi.fn((template, data) => ({ template, data }))
       }
 
-      await commodityDetailsController.post.handler(request, h)
+      const response = commodityDetailsController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith('commodities/details/index', {
+        pageTitle: 'Description of goods',
+        heading: 'Commodity',
+        referenceNumber: 'REF-456',
+        commodity,
+        typeOfCommodity: 'Domestic',
+        speciesLst: commodity.commodityComplement[1].species,
+        totalNoOfAnimals: 5,
+        totalNoOfPackages: 5,
+        commodityDetails: expect.objectContaining({
+          code: expect.any(String),
+          description: expect.any(String)
+        })
+      })
+
+      expect(response.template).toBe('commodities/details/index')
+    })
+
+    test('renders with empty species, no typeOfCommodity and zero totals when commodityComplement is empty', () => {
+      getSessionValue.mockImplementation((_request, key) => {
+        if (key === 'referenceNumber') return 'REF-1'
+        if (key === 'commodity') return { name: 'X', commodityComplement: [] }
+        return null
+      })
+
+      const request = {}
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      commodityDetailsController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith(
         'commodities/details/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          referenceNumber: 'REF-1',
+          typeOfCommodity: undefined,
+          speciesLst: [],
+          totalNoOfAnimals: 0,
+          totalNoOfPackages: 0
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
-      expect(h.redirect).not.toHaveBeenCalled()
+    })
+
+    test('renders with commodityDetails null when toCommodityDetails returns null', () => {
+      vi.spyOn(commodityHelpers, 'toCommodityDetails').mockReturnValueOnce(null)
+
+      getSessionValue.mockImplementation((_request, key) => {
+        if (key === 'referenceNumber') return 'REF-NULL'
+        if (key === 'commodity') return { name: 'X', commodityComplement: [] }
+        return null
+      })
+
+      const request = {}
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      commodityDetailsController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'commodities/details/index',
+        expect.objectContaining({
+          commodityDetails: null
+        })
+      )
     })
   })
 })

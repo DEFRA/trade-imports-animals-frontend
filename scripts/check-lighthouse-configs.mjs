@@ -8,12 +8,16 @@ const projectRoot = path.resolve(__dirname, '..')
 
 const lighthouseDir = path.join(projectRoot, 'tests', 'lighthouse')
 
-// Routes to ignore when checking for Lighthouse coverage
-// These paths are excluded from Lighthouse coverage because it does not represent
-// a standalone page target and is exercised indirectly via /addresses.
-const IGNORED_PATHS = new Set(['/health', '/addresses/consignors/select', '/addresses/destinations/select'])
+// Routes to ignore when checking for Lighthouse coverage:
+// - /accompanying-documents/status: JSON status polling endpoint, not a rendered page
+// - /accompanying-documents/{uploadId}/file: binary file stream, not a rendered page
+const IGNORED_PATHS = new Set(['/health', '/accompanying-documents/status'])
 const IGNORED_PREFIXES = ['/public/']
-const IGNORED_ROUTE_PATTERNS = ['/public/{param*}', '/favicon.ico']
+const IGNORED_ROUTE_PATTERNS = [
+  '/public/{param*}',
+  '/favicon.ico',
+  '/accompanying-documents/{uploadId}/file'
+]
 
 async function findFilesRecursively(dir, matcher) {
   const entries = await readdir(dir, { withFileTypes: true })
@@ -60,9 +64,8 @@ async function findServerPagePaths() {
 }
 
 async function findLighthouseConfigPaths() {
-  const configFiles = await findFilesRecursively(
-    lighthouseDir,
-    (name) => name.endsWith('.config.js')
+  const configFiles = await findFilesRecursively(lighthouseDir, (name) =>
+    name.endsWith('.config.js')
   )
 
   const paths = new Set()
@@ -76,7 +79,11 @@ async function findLighthouseConfigPaths() {
       if (exported && typeof exported === 'object' && exported.path) {
         paths.add(exported.path)
       }
-      if (exported && typeof exported === 'object' && Array.isArray(exported.paths)) {
+      if (
+        exported &&
+        typeof exported === 'object' &&
+        Array.isArray(exported.paths)
+      ) {
         exported.paths.forEach((routePath) => paths.add(routePath))
       }
     })
@@ -114,4 +121,3 @@ main().catch((err) => {
   console.error(err)
   process.exit(1)
 })
-

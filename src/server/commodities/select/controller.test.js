@@ -1,6 +1,16 @@
-import { describe, expect, test, vi } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { commoditiesSelectController } from './controller.js'
+import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 
@@ -21,6 +31,10 @@ describe('commoditiesSelectController', () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
+    })
+
+    beforeEach(() => {
+      vi.clearAllMocks()
     })
 
     afterAll(() => {
@@ -96,6 +110,10 @@ describe('commoditiesSelectController', () => {
       vi.spyOn(notificationClient, 'submit').mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
+    })
+
+    beforeEach(() => {
+      vi.clearAllMocks()
     })
 
     afterAll(() => {
@@ -205,7 +223,9 @@ describe('commoditiesSelectController', () => {
         }
       }
 
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const mockCode = vi.fn(() => ({
+        statusCode: statusCodes.internalServerError
+      }))
       const h = {
         view: vi.fn(() => ({ code: mockCode })),
         redirect: vi.fn()
@@ -216,12 +236,37 @@ describe('commoditiesSelectController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'commodities/select/index',
         expect.objectContaining({
+          referenceNumber: 'REF-123',
+          commodity: {
+            name: 'Fish',
+            commodityComplement: [
+              {
+                typeOfCommodity: 'Domestic',
+                species: [
+                  { value: '1586274', text: '1586274' },
+                  { value: '716661', text: 'Bison bison' }
+                ]
+              }
+            ]
+          },
+          typeOfCommodity: 'Domestic',
+          species: ['1586274', '716661'],
+          commodityDetails: expect.objectContaining({
+            code: expect.any(String),
+            description: expect.any(String)
+          }),
+          speciesDetails: expect.objectContaining({
+            data: expect.objectContaining({
+              types: expect.any(Array),
+              species: expect.any(Array)
+            })
+          }),
           errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#typeOfCommodity' }
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })

@@ -13,3 +13,4 @@ tsconfig.tsbuildinfo
 lighthouse-reports/
 chromewebdata**
 localhost**
+test-results/

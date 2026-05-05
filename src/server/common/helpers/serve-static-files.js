@@ -16,7 +16,7 @@ export const serveStaticFiles = {
           },
           method: 'GET',
           path: '/favicon.ico',
-          handler(_request, h) {
+          handler: (_request, h) => {
             return h.response().code(statusCodes.noContent).type('image/x-icon')
           }
         },

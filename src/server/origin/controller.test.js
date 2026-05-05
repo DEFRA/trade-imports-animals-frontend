@@ -2,11 +2,29 @@ import { vi } from 'vitest'
 
 import { notificationClient } from '../common/clients/notification-client.js'
 import { countriesClient } from '../common/clients/countries-client.js'
+import { originController } from './controller.js'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  fetchNotification: vi.fn().mockResolvedValue(null),
+  submitNotification: vi.fn().mockResolvedValue(undefined)
+}))
+
+vi.mock('../common/helpers/logging/logger.js', () => ({
+  createLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  })
+}))
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -199,10 +217,10 @@ describe('#originController', () => {
       expect(sessionCookie).toBeTruthy()
     })
 
-    test('Should show error page when backend submit fails', async () => {
-      notificationClient.submit.mockRejectedValueOnce(
+    test('Should return 500 when backend submit fails', async () => {
+      submitNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
-          status: 500,
+          status: statusCodes.internalServerError,
           statusText: 'Internal Server Error'
         })
       )
@@ -222,7 +240,36 @@ describe('#originController', () => {
 
       const { statusCode } = await server.inject(options)
 
-      expect(statusCode).toBe(500)
+      expect(statusCode).toBe(statusCodes.internalServerError)
+    })
+  })
+})
+
+describe('#originController (unit)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(countriesClient, 'getCountries').mockResolvedValue(mockCountries)
+  })
+
+  describe('GET handler', () => {
+    test('Should pass referenceNumber from notification API to the view', async () => {
+      fetchNotification.mockResolvedValueOnce({
+        referenceNumber: 'TEST-REF-123'
+      })
+
+      const get = vi.fn(() => null)
+      const request = { yar: { get } }
+      const h = {
+        view: vi.fn((template, viewContext) => ({ template, viewContext }))
+      }
+
+      const response = await originController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'origin/index',
+        expect.objectContaining({ referenceNumber: 'TEST-REF-123' })
+      )
+      expect(response.viewContext.referenceNumber).toBe('TEST-REF-123')
     })
   })
 })

@@ -2,13 +2,12 @@
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 
 {% block content %}
-  {% if referenceNumber %}
-    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-  {% endif %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   {{ govukBackLink({
     text: "Back",
@@ -34,7 +33,8 @@
         <span class="govuk-caption-xl">Description of the goods</span>
         <h1 class="govuk-heading-xl">Enter animal identification details</h1>
 
-        <span class="govuk-caption-m">You must enter all animal identification details into the notification before arrival at the port of entry</span>
+        <div class="govuk-hint">You must enter all animal identification details into the notification before arrival at the port of entry</div>
+        {% if commodityDetails %}
         <table class="govuk-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
@@ -47,14 +47,15 @@
           <tbody class="govuk-table__body">
           {% for species in speciesLst %}
             <tr class="govuk-table__row">
-              <td class="govuk-table__cell">0102</td>
-              <td class="govuk-table__cell">Live bovine animals</td>
+              <td class="govuk-table__cell">{{ commodityDetails.code }}</td>
+              <td class="govuk-table__cell">{{ commodityDetails.description }}</td>
               <td class="govuk-table__cell">{{ species.text }}, {{ typeOfCommodity }}</td>
               <td class="govuk-table__cell">{{ species.noOfAnimals }}</td>
             </tr>
           {% endfor %}
           </tbody>
         </table>
+        {% endif %}
 
         {% for species in speciesLst %}
           <span class="govuk-caption-m">{{ species.text }}, {{ typeOfCommodity }} identification details</span>
@@ -70,10 +71,26 @@
             <tr class="govuk-table__row">
               <td class="govuk-table__cell">{{ species.text }}, {{ typeOfCommodity }}</td>
               <td class="govuk-table__cell">
-                <input class="govuk-input" id="earTag-{{ species.value }}" name="earTag-{{ species.value }}" value="{{ species.earTag }}"/>
+                {{ govukInput({
+                  id: "earTag-" + species.value,
+                  name: "earTag-" + species.value,
+                  value: species.earTag,
+                  label: {
+                    text: "Ear tag",
+                    classes: "govuk-visually-hidden"
+                  }
+                }) }}
               </td>
               <td class="govuk-table__cell">
-                <input class="govuk-input" id="passport-{{ species.value }}" name="passport-{{ species.value }}" value="{{ species.passport }}"/>
+                {{ govukInput({
+                  id: "passport-" + species.value,
+                  name: "passport-" + species.value,
+                  value: species.passport,
+                  label: {
+                    text: "Passport",
+                    classes: "govuk-visually-hidden"
+                  }
+                }) }}
               </td>
             </tr>
             </tbody>

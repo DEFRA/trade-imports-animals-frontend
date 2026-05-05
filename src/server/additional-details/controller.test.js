@@ -1,11 +1,13 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { additionalDetailsController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
-}))
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -14,16 +16,22 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  fetchNotification: vi.fn().mockResolvedValue({ referenceNumber: 'REF-123' }),
+  submitNotification: vi.fn().mockResolvedValue(undefined)
+}))
+
 describe('additionalDetailsController', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   describe('GET /additional-details', () => {
-    test('renders view with session values and calls notificationClient.get when referenceNumber exists', () => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('renders view with session values and calls fetchNotification when referenceNumber exists', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
 
       const get = vi.fn((key) => {
         const values = {
           certifiedFor: 'approvedBodies',
-          unweanedAnimals: 'yes',
-          referenceNumber: 'REF-123'
+          unweanedAnimals: 'yes'
         }
         return values[key] ?? null
       })
@@ -33,12 +41,14 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = additionalDetailsController.get.handler(request, h)
+      const response = await additionalDetailsController.get.handler(request, h)
 
-      expect(notificationClient.get).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
-        'REF-123',
-        'trace-123'
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
       )
 
       expect(h.view).toHaveBeenCalledWith('additional-details/index', {
@@ -52,7 +62,9 @@ describe('additionalDetailsController', () => {
       expect(response.template).toBe('additional-details/index')
     })
 
-    test('defaults unweanedAnimals to "no" when not set in session', () => {
+    test('defaults unweanedAnimals to "no" when not set in session', async () => {
+      fetchNotification.mockResolvedValue(null)
+
       const get = vi.fn(() => null)
 
       const request = { yar: { get } }
@@ -60,7 +72,7 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      additionalDetailsController.get.handler(request, h)
+      await additionalDetailsController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith(
         'additional-details/index',
@@ -71,8 +83,8 @@ describe('additionalDetailsController', () => {
       )
     })
 
-    test('does not call notificationClient.get when no referenceNumber', () => {
-      const getSpy = vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('renders page with null referenceNumber when none in session', async () => {
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
 
@@ -81,18 +93,25 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      additionalDetailsController.get.handler(request, h)
+      await additionalDetailsController.get.handler(request, h)
 
-      expect(getSpy).not.toHaveBeenCalled()
+      expect(fetchNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
+
+      expect(h.view).toHaveBeenCalledWith(
+        'additional-details/index',
+        expect.objectContaining({ referenceNumber: undefined })
+      )
     })
   })
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
 
@@ -105,7 +124,10 @@ describe('additionalDetailsController', () => {
       }
 
       const h = {
-        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+        redirect: vi.fn((location) => ({
+          statusCode: statusCodes.redirectFound,
+          location
+        }))
       }
 
       const response = await additionalDetailsController.post.handler(
@@ -118,23 +140,21 @@ describe('additionalDetailsController', () => {
         'breedingAndOrProduction'
       )
       expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123'
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
       )
       expect(response).toEqual({
-        statusCode: 302,
-        location: '/addresses'
+        statusCode: statusCodes.redirectFound,
+        location: '/accompanying-documents'
       })
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
-        Object.assign(new Error('Backend error'), {
-          status: 500,
-          statusText: 'Internal Server Error'
-        })
-      )
+      submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -147,7 +167,9 @@ describe('additionalDetailsController', () => {
         yar: { set, get }
       }
 
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
+      const mockCode = vi.fn(() => ({
+        statusCode: statusCodes.internalServerError
+      }))
       const h = {
         view: vi.fn(() => ({ code: mockCode })),
         redirect: vi.fn()
@@ -158,12 +180,17 @@ describe('additionalDetailsController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'additional-details/index',
         expect.objectContaining({
+          pageTitle: 'Additional animal details',
+          heading: 'Additional animal details',
+          certifiedFor: null,
+          unweanedAnimals: 'no',
+          referenceNumber: null,
           errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#certifiedFor' }
           ]
         })
       )
-      expect(mockCode).toHaveBeenCalledWith(500)
+      expect(mockCode).toHaveBeenCalledWith(statusCodes.internalServerError)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })
