@@ -5,6 +5,8 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
   {{ govukBackLink({
     text: "Back",
     href: "/addresses"
@@ -21,9 +23,6 @@
           }) }}
         {% endif %}
 
-        {% if referenceNumber %}
-          <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-        {% endif %}
         <h1 class="govuk-heading-l">Add the County Parish Holding number (CPH)</h1>
 
         <form method="post" novalidate>
