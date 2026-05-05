@@ -6,64 +6,62 @@
 
 
 {% block content %}
-  {% if referenceNumber %}
-    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-  {% endif %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   {{ govukBackLink({
     text: "Back",
     href: "/commodities/select"
   }) }}
 
-<div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
-    <div class="govuk-body" data-testid="app-page-body">
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
 
-      {% if errorList %}
-        {{ govukErrorSummary({
-          titleText: "There is a problem",
-          errorList: errorList
-        }) }}
-      {% endif %}
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
 
-      <form method="post" novalidate>
-        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-        <div class="govuk-form-group">
-          <fieldset class="govuk-fieldset">
-            <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-              <span class="govuk-caption-xl">About the consignment</span>
-              <h1 class="govuk-heading-xl">What is the main reason for importing the animals?</h1>
-            </legend>
-            <div class="govuk-radios" data-module="govuk-radios">
-              <div class="govuk-radios__item">
-                <input class="govuk-radios__input" id="internalMarket" name="reasonForImport" type="radio" value="internalMarket" {% if reasonForImport == 'internalMarket' %}checked{% endif %}>
-                <label class="govuk-label govuk-radios__label" for="internalMarket">
-                  Internal Market
-                </label>
-                <div id="signIn-item-hint" class="govuk-hint govuk-radios__hint">
-                  The consignment is intended for sale or use in Great Britain (England, Scotland or Wales).
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                <span class="govuk-caption-xl">About the consignment</span>
+                <h1 class="govuk-heading-xl">What is the main reason for importing the animals?</h1>
+              </legend>
+              <div class="govuk-radios" data-module="govuk-radios">
+                <div class="govuk-radios__item">
+                  <input class="govuk-radios__input" id="internalMarket" name="reasonForImport" type="radio" value="internalMarket" aria-describedby="internal-market-item-hint" {% if reasonForImport == 'internalMarket' %}checked{% endif %}>
+                  <label class="govuk-label govuk-radios__label" for="internalMarket">
+                    Internal Market
+                  </label>
+                  <div id="internal-market-item-hint" class="govuk-hint govuk-radios__hint">
+                    The consignment is intended for sale or use in Great Britain (England, Scotland or Wales).
+                  </div>
+                </div>
+                <div class="govuk-radios__item">
+                  <input class="govuk-radios__input" id="reEntry" name="reasonForImport" type="radio" value="reEntry" aria-describedby="re-entry-item-hint" {% if reasonForImport == 'reEntry' %}checked{% endif %}>
+                  <label class="govuk-label govuk-radios__label" for="reEntry">
+                    Re-entry
+                  </label>
+                  <div id="re-entry-item-hint" class="govuk-hint govuk-radios__hint">
+                    The consignment is authorised for re-entry or includes rejected exports that are re-entering Great Britain.
+                  </div>
                 </div>
               </div>
-              <div class="govuk-radios__item">
-                <input class="govuk-radios__input" id="reEntry" name="reasonForImport" type="radio" value="reEntry" {% if reasonForImport == 'reEntry' %}checked{% endif %}>
-                <label class="govuk-label govuk-radios__label" for="reEntry">
-                  Re-entry
-                </label>
-                <div id="signIn-item-hint" class="govuk-hint govuk-radios__hint">
-                  The consignment is authorised for re-entry or includes rejected exports that are re-entering Great Britain.
-                </div>
-              </div>
-            </div>
-          </fieldset>
-        </div>
+            </fieldset>
+          </div>
 
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Save and continue
-        </button>
+          <button type="submit" class="govuk-button" data-module="govuk-button">
+            Save and continue
+          </button>
 
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
 {% endblock %}

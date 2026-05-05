@@ -6,39 +6,33 @@ import {
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { notificationClient } from '../../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
+import { submitNotification } from '../../common/helpers/notification-helpers.js'
+import { toCommodityDetails } from '../../common/helpers/commodity-helpers.js'
 
 const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-const commodityDetailsPath = path.join(dirname, 'mock-commodity-details.json')
+const commodityDetailsPath = path.join(
+  dirname,
+  '../../common/mock-data/mock-commodity-details.json'
+)
 const speciesDetailsPath = path.join(dirname, 'mock-species.json')
 const commodityDetailsList = JSON.parse(
   readFileSync(commodityDetailsPath, 'utf-8')
 )
 const speciesDetailsList = JSON.parse(readFileSync(speciesDetailsPath, 'utf-8'))
+const commodityDetails = toCommodityDetails(commodityDetailsList)
+const speciesDetails = toCommodityDetails(speciesDetailsList)
 
-function toJsonObject(detailsList) {
-  if (Array.isArray(detailsList)) {
-    if (detailsList.length === 0) {
-      return null
-    }
-
-    return detailsList[0]
-  }
-
-  if (detailsList && typeof detailsList === 'object') {
-    return detailsList
-  }
-
-  return null
-}
+const VIEW_NAME = 'commodities/select/index'
+const PAGE_TITLE = 'Select species of commodity'
+const HEADING = 'Commodity'
 
 export const commoditiesSelectController = {
   get: {
-    handler(_request, h) {
+    handler: (_request, h) => {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
@@ -54,27 +48,25 @@ export const commoditiesSelectController = {
         .filter(Boolean)
       const savedSpeciesValues = selectedSpecies.map((s) => s.value)
 
-      return h.view('commodities/select/index', {
-        pageTitle: 'Select species of commodity',
-        heading: 'Commodity',
+      return h.view(VIEW_NAME, {
+        pageTitle: PAGE_TITLE,
+        heading: HEADING,
         referenceNumber,
         commodity,
         typeOfCommodity,
         species,
         savedSpeciesValues,
-        commodityDetails: toJsonObject(commodityDetailsList),
-        speciesDetails: toJsonObject(speciesDetailsList)
+        commodityDetails,
+        speciesDetails
       })
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, 'commodity')}`
       )
 
-      const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const commodity = getSessionValue(_request, 'commodity')
       const existingCommodityComplement = (
         commodity?.commodityComplement ?? []
@@ -90,7 +82,6 @@ export const commoditiesSelectController = {
           ? [species]
           : []
 
-      const speciesDetails = toJsonObject(speciesDetailsList)
       const speciesByValue = new Map(
         (speciesDetails?.data?.species ?? []).map((s) => [s.value, s.text])
       )
@@ -130,37 +121,30 @@ export const commoditiesSelectController = {
       setSessionValue(_request, 'commodity', commodityJson)
 
       try {
-        // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-        const updatedCommodity = getSessionValue(_request, 'commodity')
-        const updatedComplement = (
-          updatedCommodity?.commodityComplement ?? []
-        ).at(-1)
-        const updatedSpecies = (updatedComplement?.species ?? [])
-          .map((s) => (typeof s === 'string' ? s : s?.value))
-          .filter(Boolean)
+        await submitNotification(_request, logger)
+      } catch (_error) {
+        logger.warn(
+          'submitNotification failed in commodity select POST; rendering error view'
+        )
         return h
-          .view('commodities/select/index', {
-            pageTitle: 'Select species of commodity',
-            heading: 'Commodity',
-            referenceNumber,
-            commodity: updatedCommodity,
-            typeOfCommodity: updatedComplement?.typeOfCommodity,
-            species: updatedSpecies,
-            savedSpeciesValues: updatedSpecies,
-            commodityDetails: toJsonObject(commodityDetailsList),
-            speciesDetails: toJsonObject(speciesDetailsList),
+          .view(VIEW_NAME, {
+            pageTitle: PAGE_TITLE,
+            heading: HEADING,
+            referenceNumber: getSessionValue(_request, 'referenceNumber'),
+            commodity: commodityJson,
+            typeOfCommodity: commodityComplement.typeOfCommodity,
+            species: speciesValues,
+            savedSpeciesValues: speciesValues,
+            commodityDetails,
+            speciesDetails,
             errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#typeOfCommodity' }
             ]
           })
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/import-reason', { referenceNumber })
+      return h.redirect('/import-reason')
     }
   }
 }

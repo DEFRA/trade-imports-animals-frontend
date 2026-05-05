@@ -3,27 +3,24 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 const logger = createLogger()
 
 export const additionalDetailsController = {
   get: {
-    handler(_request, h) {
+    handler: async (_request, h) => {
       const certifiedFor = getSessionValue(_request, 'certifiedFor')
       const unweanedAnimals =
         getSessionValue(_request, 'unweanedAnimals') ?? 'no'
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const notification = await fetchNotification(_request, logger)
+      const referenceNumber = notification?.referenceNumber
 
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',
@@ -35,21 +32,18 @@ export const additionalDetailsController = {
     }
   },
   post: {
-    async handler(_request, h) {
+    handler: async (_request, h) => {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
 
       const { certifiedFor, unweanedAnimals } = _request.payload
 
-      logger.info(`Additional details: ${referenceNumber}`)
+      logger.info(`Additional details: ${referenceNumber ?? 'new'}`)
       setSessionValue(_request, 'certifiedFor', certifiedFor)
       setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
       try {
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
+        await submitNotification(_request, logger)
+      } catch (_error) {
         return h
           .view('additional-details/index', {
             pageTitle: 'Additional animal details',
@@ -59,13 +53,13 @@ export const additionalDetailsController = {
               getSessionValue(_request, 'unweanedAnimals') ?? 'no',
             referenceNumber,
             errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#certifiedFor' }
             ]
           })
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/addresses', { referenceNumber })
+      return h.redirect('/accompanying-documents')
     }
   }
 }

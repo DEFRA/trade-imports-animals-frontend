@@ -4,13 +4,7 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
-  {% if referenceNumber %}
-    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-  {% endif %}
-
-  {{ appHeading({
-    text: heading
-  }) }}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
@@ -30,7 +24,7 @@
           id: "commodity",
           name: "commodity",
           label: {
-            text: "Select a commodity",
+            text: heading,
             classes: "govuk-label--l",
             isPageHeading: true
           },

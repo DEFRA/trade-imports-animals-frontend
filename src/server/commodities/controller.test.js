@@ -1,8 +1,10 @@
 import { vi } from 'vitest'
 
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
@@ -20,18 +22,21 @@ vi.mock('../../config/config.js', async (importOriginal) => {
 describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })
 
+  beforeEach(() => {
+    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    vi.spyOn(countriesClient, 'getCountries').mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   afterAll(async () => {
     await server.stop({ timeout: 0 })
-    vi.restoreAllMocks()
   })
 
   describe('GET /commodities', () => {
@@ -106,9 +111,58 @@ describe('#commoditiesController', () => {
         expect.stringContaining('Select the type of animal you are importing')
       )
     })
+
+    test('Should include referenceNumber from fetchNotification in rendered view', async () => {
+      vi.spyOn(notificationClient, 'get').mockResolvedValueOnce({
+        referenceNumber: 'TEST-REF-123'
+      })
+      // Origin POST submits via notificationClient.submit; without this mock
+      // the seed POST hits a real backend and fails in CI.
+      vi.spyOn(notificationClient, 'submit').mockResolvedValueOnce({
+        referenceNumber: 'TEST-REF-123'
+      })
+
+      // Seed the session with referenceNumber by posting to /origin first;
+      // the origin POST handler stores response.referenceNumber in session,
+      // which subsequently triggers notificationClient.get on GET /commodities.
+      const seedResponse = await server.inject({
+        method: 'POST',
+        url: '/origin',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: {
+          countryCode: 'FR',
+          requiresRegionCode: 'no'
+        }
+      })
+
+      const sessionCookie =
+        seedResponse.headers['set-cookie']?.[0]?.split(';')[0] ?? null
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/commodities',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: sessionCookie ? { cookie: sessionCookie } : undefined
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('TEST-REF-123'))
+    })
   })
 
   describe('POST /commodities', () => {
+    beforeEach(() => {
+      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+        referenceNumber: 'TEST-REF-123'
+      })
+    })
+
     test('Should save commodity to session and redirect', async () => {
       const options = {
         method: 'POST',
@@ -173,10 +227,10 @@ describe('#commoditiesController', () => {
       expect(sessionCookie).toBeTruthy()
     })
 
-    test('Should show error page when backend submit fails', async () => {
-      notificationClient.submit = vi.fn().mockRejectedValue(
+    test('Should return 500 when backend submit fails', async () => {
+      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
         Object.assign(new Error('Backend error'), {
-          status: 500,
+          status: statusCodes.internalServerError,
           statusText: 'Internal Server Error'
         })
       )
@@ -195,10 +249,8 @@ describe('#commoditiesController', () => {
 
       const { statusCode, result } = await server.inject(options)
 
-      expect(statusCode).toBe(500)
-      expect(result).toContain(
-        'Something went wrong, please contact the EUDP team'
-      )
+      expect(statusCode).toBe(statusCodes.internalServerError)
+      expect(result).toContain(SUBMISSION_FAILURE_MESSAGE)
     })
   })
 })

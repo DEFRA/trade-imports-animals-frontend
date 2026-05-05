@@ -3,63 +3,69 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 const logger = createLogger()
 
+const VIEW_NAME = 'import-reason/index'
+const PAGE_TITLE = 'Reason for import'
+const HEADING = PAGE_TITLE
+
 export const importReasonController = {
   get: {
-    handler(_request, h) {
-      const reasonForImport = getSessionValue(_request, 'reasonForImport')
+    handler: async (_request, h) => {
+      const reasonForImport = getSessionValue(
+        _request,
+        sessionKeys.reasonForImport
+      )
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const notification = await fetchNotification(_request, logger)
+      const referenceNumber = notification?.referenceNumber ?? null
 
-      return h.view('import-reason/index', {
-        pageTitle: 'Reason for import',
-        heading: 'Reason for import',
+      return h.view(VIEW_NAME, {
+        pageTitle: PAGE_TITLE,
+        heading: HEADING,
         reasonForImport,
         referenceNumber
       })
     }
   },
   post: {
-    async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
+    handler: async (_request, h) => {
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const { reasonForImport } = _request.payload
-      logger.info(`Reason for import: ${referenceNumber}`)
-      setSessionValue(_request, 'reasonForImport', reasonForImport)
+      logger.info(
+        `Reason for import: ${reasonForImport} (ref: ${referenceNumber})`
+      )
+      setSessionValue(_request, sessionKeys.reasonForImport, reasonForImport)
 
       try {
-        // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
+        await submitNotification(_request, logger)
+      } catch {
         return h
-          .view('import-reason/index', {
-            pageTitle: 'Reason for import',
-            heading: 'Reason for import',
-            reasonForImport: getSessionValue(_request, 'reasonForImport'),
+          .view(VIEW_NAME, {
+            pageTitle: PAGE_TITLE,
+            heading: HEADING,
+            reasonForImport,
             referenceNumber,
             errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
+              { text: SUBMISSION_FAILURE_MESSAGE, href: '#internalMarket' }
             ]
           })
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/commodities/details', { referenceNumber })
+      return h.redirect('/commodities/details')
     }
   }
 }

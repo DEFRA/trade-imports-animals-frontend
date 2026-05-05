@@ -1,7 +1,14 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
+
+const REFERENCE_NUMBER = 'REF-123'
+const CPH_NUMBER_PATH = '/cph-number'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -14,37 +21,78 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  fetchNotification: vi.fn().mockResolvedValue({ referenceNumber: 'REF-123' }),
+  submitNotification: vi.fn().mockResolvedValue(undefined)
+}))
+
+const makeYar = (values = {}) => ({
+  get: vi.fn((key) => values[key] ?? null),
+  set: vi.fn()
+})
+
+const makeViewToolkit = () => ({
+  view: vi.fn((template, data) => ({ template, data }))
+})
+
+const makeRedirectToolkit = () => ({
+  redirect: vi.fn((location) => ({
+    statusCode: statusCodes.redirectFound,
+    location
+  }))
+})
+
 describe('addressesController', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('GET /addresses', () => {
-    test('renders addresses search page using session referenceNumber', () => {
-      const get = vi.fn((key) => {
-        const values = {
-          referenceNumber: 'REF-123',
-          selectedConsignor: null,
-          selectedDestination: null
-        }
-        return values[key] ?? null
-      })
-      const set = vi.fn()
+    test('renders addresses page using fetchNotification for referenceNumber', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: REFERENCE_NUMBER })
 
-      const request = { query: {}, yar: { get, set } }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
+      const request = { query: {}, yar: makeYar({ commodity: 'Fish' }) }
+      const h = makeViewToolkit()
 
-      const response = addressesController.get.handler(request, h)
+      const response = await addressesController.get.handler(request, h)
 
+      expect(fetchNotification).toHaveBeenCalledWith(
+        request,
+        expect.any(Object)
+      )
       expect(h.view).toHaveBeenCalledWith('addresses/index', {
         pageTitle: 'Addresses',
         heading: 'Addresses',
-        referenceNumber: 'REF-123',
+        captionText: 'Notification details',
+        referenceNumber: REFERENCE_NUMBER,
         selectedConsignor: null,
         selectedDestination: null
       })
       expect(response.template).toBe('addresses/index')
     })
 
-    test('saves selected consignor from query and redirects to the address landing page', () => {
+    test('renders addresses page with no referenceNumber when fetchNotification returns null', async () => {
+      fetchNotification.mockResolvedValue(null)
+
+      const request = { query: {}, yar: makeYar({ commodity: 'Fish' }) }
+      const h = makeViewToolkit()
+
+      const response = await addressesController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith('addresses/index', {
+        pageTitle: 'Addresses',
+        heading: 'Addresses',
+        captionText: 'Notification details',
+        referenceNumber: undefined,
+        selectedConsignor: null,
+        selectedDestination: null
+      })
+      expect(response.template).toBe('addresses/index')
+    })
+
+    test('saves selected consignor and destination from query into session', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: REFERENCE_NUMBER })
+
       const selectedConsignor = {
         name: 'Astra Rosales',
         address: {
@@ -62,143 +110,72 @@ describe('addressesController', () => {
           country: 'United Kingdom'
         }
       }
-      const get = vi.fn((key) => {
-        const values = {
-          referenceNumber: 'REF-123',
-          consignor: selectedConsignor,
-          destination: selectedDestination
-        }
-        return values[key] ?? null
-      })
-      const set = vi.fn()
-
       const request = {
         query: { selectedConsignor: '0', selectedDestination: '0' },
-        yar: { get, set }
+        yar: makeYar({
+          consignor: selectedConsignor,
+          destination: selectedDestination
+        })
       }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
+      const h = makeViewToolkit()
 
-      addressesController.get.handler(request, h)
+      await addressesController.get.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('consignor', {
-        name: 'Astra Rosales',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
-          addressLine3: 'Quasoccaecat ut ear, 30055',
-          country: 'Switzerland'
-        }
-      })
-      expect(set).toHaveBeenCalledWith('destination', {
-        name: 'Tech Imports Ltd',
-        address: {
-          addressLine1: '643 Main Street',
-          addressLine2: 'Birmingham G1 3AZ',
-          country: 'United Kingdom'
-        }
-      })
+      expect(request.yar.set).toHaveBeenCalledWith(
+        'consignor',
+        selectedConsignor
+      )
+      expect(request.yar.set).toHaveBeenCalledWith(
+        'destination',
+        selectedDestination
+      )
       expect(h.view).toHaveBeenCalledWith(
         'addresses/index',
         expect.objectContaining({
-          selectedConsignor
+          selectedConsignor,
+          selectedDestination
         })
       )
     })
   })
 
-  test('redirects to cph-number when notification client throws', async () => {
-    vi.spyOn(notificationClient, 'submit').mockRejectedValue(
-      new Error('Backend error')
-    )
+  describe('POST /addresses', () => {
+    test('submits notification and redirects to /cph-number', async () => {
+      submitNotification.mockResolvedValue(undefined)
 
-    const get = createYarGet()
-
-    const request = { yar: { get } }
-    const redirect = createRedirect()
-    const h = {
-      redirect
-    }
-
-    const response = await addressesController.post.handler(request, h)
-
-    expect(notificationClient.submit).toHaveBeenCalledWith(request, 'trace-123')
-    expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
-      referenceNumber: 'REF-123'
-    })
-    expect(response).toEqual({
-      statusCode: 302,
-      location: '/cph-number',
-      opts: {
-        referenceNumber: 'REF-123'
-      }
-    })
-  })
-
-  describe('POST addresses', () => {
-    test('submit notification with selected consignor', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
-      const set = vi.fn()
-      const get = createYarGet()
-
-      const request = {
-        yar: { get, set }
-      }
-      const redirect = createRedirect()
-      const h = { redirect }
+      const request = {}
+      const h = makeRedirectToolkit()
 
       const response = await addressesController.post.handler(request, h)
 
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123'
+        expect.any(Object)
       )
-      expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
-        referenceNumber: 'REF-123'
-      })
+      expect(h.redirect).toHaveBeenCalledWith(CPH_NUMBER_PATH)
       expect(response).toEqual({
-        statusCode: 302,
-        location: '/cph-number',
-        opts: {
-          referenceNumber: 'REF-123'
-        }
+        statusCode: statusCodes.redirectFound,
+        location: CPH_NUMBER_PATH
       })
-      expect(set).not.toHaveBeenCalledWith(expect.anything())
+    })
+
+    test('still redirects to /cph-number when submitNotification throws', async () => {
+      submitNotification.mockRejectedValue(new Error('Backend error'))
+
+      const request = {}
+      const h = makeRedirectToolkit()
+
+      const response = await addressesController.post.handler(request, h)
+
+      expect(submitNotification).toHaveBeenCalledWith(
+        request,
+        expect.any(Object)
+      )
+      expect(h.redirect).toHaveBeenCalledWith(CPH_NUMBER_PATH)
+      expect(response).toEqual({
+        statusCode: statusCodes.redirectFound,
+        location: CPH_NUMBER_PATH
+      })
     })
   })
 })
-
-function createYarGet(overrides = {}) {
-  const values = {
-    referenceNumber: 'REF-123',
-    consignor: {
-      name: 'Astra Rosales',
-      address: {
-        addressLine1: '43 East Hague Extension',
-        country: 'Switzerland'
-      }
-    },
-    destination: {
-      name: 'Global Trading Co',
-      address: {
-        addressLine1: '945 Main Street',
-        addressLine2: 'London LS1 5AB',
-        country: 'United Kingdom'
-      }
-    },
-    ...overrides
-  }
-  return vi.fn((key) => values[key] ?? null)
-}
-
-function createRedirect() {
-  return vi.fn((location, opts) => ({
-    statusCode: 302,
-    location,
-    opts
-  }))
-}

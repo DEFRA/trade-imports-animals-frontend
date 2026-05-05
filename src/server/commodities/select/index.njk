@@ -6,9 +6,7 @@
 
 
 {% block content %}
-  {% if referenceNumber %}
-    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-  {% endif %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   {{ govukBackLink({
     text: "Back",
@@ -45,45 +43,42 @@
           {% if commodityDetails %}
             <tr class="govuk-table__row">
               <td class="govuk-table__cell">{{ commodityDetails.code }}</td>
-              <td class="govuk-table__cell">Cow</td>
+              <td class="govuk-table__cell">{{ commodity.name }}</td>
               <td class="govuk-table__cell">{{ commodityDetails.description }}</td>
             </tr>
           {% endif %}
           </tbody>
         </table>
 
-        <div class="govuk-form-group">
-          <fieldset class="govuk-fieldset" aria-describedby="waste-hint">
-            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-              <h1 class="govuk-fieldset__heading">
-                Type of commodity
-              </h1>
-            </legend>
-            <select class="govuk-select" id="typeOfCommodity" name="typeOfCommodity">
-              <option value="">Select type of commodity</option>
-              <option value="" disabled>────────────────────────</option>
-              {% for type in speciesDetails.data.types %}
-                <option value="{{ type.text }}" {% if typeOfCommodity == type.text %}selected{% endif %}>{{ type.text }}</option>
-              {% endfor %}
-            </select>
-          </fieldset>
-        </div>
+        {% set typeItems = [{ value: "", text: "Select type of commodity" }, { text: "────────────────────────", disabled: true }] %}
+        {% for type in speciesDetails.data.types %}
+          {% set typeItems = (typeItems.push({ value: type.text, text: type.text, selected: typeOfCommodity == type.text }), typeItems) %}
+        {% endfor %}
+        {{ govukSelect({
+          id: "typeOfCommodity",
+          name: "typeOfCommodity",
+          label: {
+            text: "Type of commodity",
+            classes: "govuk-label--m"
+          },
+          items: typeItems
+        }) }}
 
 
         <div class="govuk-form-group">
-          <fieldset class="govuk-fieldset" aria-describedby="waste-hint">
+          <fieldset class="govuk-fieldset" aria-describedby="species-hint">
             <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
               <h1 class="govuk-fieldset__heading">
                 Select species of commodity
               </h1>
             </legend>
-            <div id="waste-hint" class="govuk-hint">
+            <div id="species-hint" class="govuk-hint">
               Select all that apply.
             </div>
             <div class="govuk-checkboxes" data-module="govuk-checkboxes">
               {% for speciesItem in speciesDetails.data.species %}
                 <div class="govuk-checkboxes__item">
-                  <input class="govuk-checkboxes__input" id="{{ speciesItem.value }}-checkbox" name="species" id="species"
+                  <input class="govuk-checkboxes__input" id="{{ speciesItem.value }}-checkbox" name="species"
                          type="checkbox" value="{{ speciesItem.value }}" {% if speciesItem.value in savedSpeciesValues %}checked{% endif %}>
                   <label class="govuk-label govuk-checkboxes__label" for="{{ speciesItem.value }}-checkbox">
                     {{ speciesItem.text }}

@@ -1,14 +1,16 @@
-import { vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { notificationClient } from './notification-client.js'
 
 const mockLoggerError = vi.fn()
+const mockLoggerWarn = vi.fn()
 const mockGetSessionValue = vi.fn()
 const mockSetSessionValue = vi.fn()
 
 vi.mock('../helpers/logging/logger.js', () => ({
   createLogger: () => ({
     info: vi.fn(),
+    warn: (...args) => mockLoggerWarn(...args),
     error: (...args) => mockLoggerError(...args)
   })
 }))
@@ -37,6 +39,35 @@ vi.mock('../../../config/config.js', () => ({
 describe('#notificationClient', () => {
   const traceId = 'trace-123'
   const mockRequest = { session: {} }
+  const JSON_HEADERS = {
+    'Content-Type': 'application/json',
+    'x-trace-id': traceId
+  }
+  const notificationFixture = {
+    referenceNumber: 'REF-123',
+    origin: {
+      countryCode: 'GB',
+      requiresRegionCode: 'yes',
+      internalReference: 'TEST-001'
+    },
+    commodity: { name: 'Fish' },
+    reasonForImport: 'internalMarket',
+    consignor: {
+      name: 'Astra Rosales',
+      address: {
+        addressLine1: '43 East Hague Extension',
+        country: 'Switzerland'
+      }
+    },
+    destination: {
+      name: 'Tech Imports Ltd',
+      address: {
+        addressLine1: '643 Main Street',
+        country: 'United Kingdom'
+      }
+    },
+    cphNumber: '123456789'
+  }
   let originalFetch
 
   beforeEach(() => {
@@ -45,6 +76,7 @@ describe('#notificationClient', () => {
     mockGetSessionValue.mockClear()
     mockSetSessionValue.mockClear()
     mockLoggerError.mockClear()
+    mockLoggerWarn.mockClear()
   })
 
   afterEach(() => {
@@ -55,59 +87,11 @@ describe('#notificationClient', () => {
   describe('submit', () => {
     describe('When submit is called with session values', () => {
       test('Should build notification from session values and send POST request', async () => {
-        // Mock session values
         mockGetSessionValue.mockImplementation((req, key) => {
-          const sessionData = {
-            referenceNumber: 'REF-123',
-            countryCode: 'GB',
-            requiresRegionCode: 'yes',
-            internalReference: 'TEST-001',
-            commodity: { name: 'Fish' },
-            reasonForImport: 'internalMarket',
-            consignor: {
-              name: 'Astra Rosales',
-              address: {
-                addressLine1: '43 East Hague Extension',
-                country: 'Switzerland'
-              }
-            },
-            destination: {
-              name: 'Tech Imports Ltd',
-              address: {
-                addressLine1: '643 Main Street',
-                country: 'United Kingdom'
-              }
-            },
-            cphNumber: '123456789'
-          }
+          const { origin, ...rest } = notificationFixture
+          const sessionData = { ...rest, ...origin }
           return sessionData[key]
         })
-
-        const expectedNotification = {
-          referenceNumber: 'REF-123',
-          origin: {
-            countryCode: 'GB',
-            requiresRegionCode: 'yes',
-            internalReference: 'TEST-001'
-          },
-          commodity: { name: 'Fish' },
-          reasonForImport: 'internalMarket',
-          consignor: {
-            name: 'Astra Rosales',
-            address: {
-              addressLine1: '43 East Hague Extension',
-              country: 'Switzerland'
-            }
-          },
-          destination: {
-            name: 'Tech Imports Ltd',
-            address: {
-              addressLine1: '643 Main Street',
-              country: 'United Kingdom'
-            }
-          },
-          cphNumber: '123456789'
-        }
 
         const responseBody = { referenceNumber: 'REF-123' }
 
@@ -123,11 +107,8 @@ describe('#notificationClient', () => {
           'http://mock-backend/notifications',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-trace-id': traceId
-            },
-            body: JSON.stringify(expectedNotification)
+            headers: JSON_HEADERS,
+            body: JSON.stringify(notificationFixture)
           }
         )
 
@@ -135,11 +116,10 @@ describe('#notificationClient', () => {
       })
 
       test('Should handle partial session values', async () => {
-        // Mock only some session values
         mockGetSessionValue.mockImplementation((req, key) => {
           const sessionData = {
             countryCode: 'FR',
-            commodity: 'Cat'
+            commodity: { name: 'Cat' }
           }
           return sessionData[key]
         })
@@ -148,7 +128,7 @@ describe('#notificationClient', () => {
           origin: {
             countryCode: 'FR'
           },
-          commodity: 'Cat'
+          commodity: { name: 'Cat' }
         }
 
         fetch.mockResolvedValueOnce({
@@ -162,10 +142,7 @@ describe('#notificationClient', () => {
           'http://mock-backend/notifications',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-trace-id': traceId
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify(expectedNotification)
           }
         )
@@ -187,9 +164,50 @@ describe('#notificationClient', () => {
 
         await notificationClient.submit(mockRequest, traceId)
 
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          expect.objectContaining({
+            method: 'POST',
+            headers: JSON_HEADERS
+          })
+        )
+
         const body = JSON.parse(fetch.mock.calls[0][1].body)
         expect(body.transport.portOfEntry).toBe('ABERDEEN')
         expect(body.transport.arrivalDate).toBe('2026-03-05')
+      })
+
+      test('Should include additionalDetails when certifiedFor and unweanedAnimals are present', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            certifiedFor: 'breeding',
+            unweanedAnimals: 'yes'
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.submit(mockRequest, traceId)
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          expect.objectContaining({
+            method: 'POST',
+            headers: JSON_HEADERS
+          })
+        )
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.additionalDetails).toEqual({
+          certifiedFor: 'breeding',
+          unweanedAnimals: 'yes'
+        })
       })
 
       test('Should omit arrivalDate from transport when any part is missing', async () => {
@@ -207,6 +225,15 @@ describe('#notificationClient', () => {
         })
 
         await notificationClient.submit(mockRequest, traceId)
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          expect.objectContaining({
+            method: 'POST',
+            headers: JSON_HEADERS
+          })
+        )
 
         const body = JSON.parse(fetch.mock.calls[0][1].body)
         expect(body.transport.portOfEntry).toBe('EDINBURGH')
@@ -233,7 +260,9 @@ describe('#notificationClient', () => {
           statusText: 'Internal Server Error'
         })
 
-        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+        expect(mockLoggerError).toHaveBeenCalledWith(
+          'Failed to submit notification: status=500 statusText=Internal Server Error'
+        )
       })
     })
   })
@@ -243,31 +272,7 @@ describe('#notificationClient', () => {
 
     describe('When get is called with valid reference number', () => {
       test('Should send GET request and store all values in session', async () => {
-        const responseBody = {
-          referenceNumber: 'REF-123',
-          origin: {
-            countryCode: 'GB',
-            requiresRegionCode: 'yes',
-            internalReference: 'TEST-001'
-          },
-          commodity: { name: 'Fish' },
-          reasonForImport: 'internalMarket',
-          consignor: {
-            name: 'Astra Rosales',
-            address: {
-              addressLine1: '43 East Hague Extension',
-              country: 'Switzerland'
-            }
-          },
-          destination: {
-            name: 'Tech Imports Ltd',
-            address: {
-              addressLine1: '643 Main Street',
-              country: 'United Kingdom'
-            }
-          },
-          cphNumber: '123456789'
-        }
+        const responseBody = notificationFixture
 
         fetch.mockResolvedValueOnce({
           ok: true,
@@ -285,14 +290,10 @@ describe('#notificationClient', () => {
           'http://mock-backend/notifications/REF-123',
           {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-trace-id': traceId
-            }
+            headers: JSON_HEADERS
           }
         )
 
-        // Verify all values were stored in session
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
           'referenceNumber',
@@ -382,6 +383,68 @@ describe('#notificationClient', () => {
           { day: 5, month: 3, year: 2026 }
         )
       })
+
+      test('Should hydrate additionalDetails fields back into session', async () => {
+        const responseBody = {
+          additionalDetails: {
+            certifiedFor: 'breeding',
+            unweanedAnimals: 'yes'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'certifiedFor',
+          'breeding'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'unweanedAnimals',
+          'yes'
+        )
+      })
+
+      test('Should skip arrivalDate hydration and warn when value is not ISO yyyy-mm-dd', async () => {
+        const responseBody = {
+          referenceNumber: 'REF-XYZ',
+          transport: {
+            portOfEntry: 'ABERDEEN',
+            arrivalDate: 'not-a-date'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'portOfEntry',
+          'ABERDEEN'
+        )
+        expect(mockSetSessionValue).not.toHaveBeenCalledWith(
+          mockRequest,
+          'arrivalDate',
+          expect.anything()
+        )
+        expect(mockLoggerWarn).toHaveBeenCalledTimes(1)
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          expect.stringContaining('not-a-date')
+        )
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          expect.stringContaining('REF-XYZ')
+        )
+      })
     })
 
     describe('When get request fails', () => {
@@ -401,7 +464,9 @@ describe('#notificationClient', () => {
           statusText: 'Not Found'
         })
 
-        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+        expect(mockLoggerError).toHaveBeenCalledWith(
+          'Failed to get notification: status=404 statusText=Not Found'
+        )
       })
     })
   })

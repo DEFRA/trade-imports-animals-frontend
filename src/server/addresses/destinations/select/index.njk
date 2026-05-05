@@ -1,9 +1,7 @@
 {% extends 'layouts/page.njk' %}
 
 {% block content %}
-  {% if referenceNumber %}
-    <span class="govuk-caption-xl">{{ referenceNumber }}</span>
-  {% endif %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   {{ govukBackLink({
     text: "Back",

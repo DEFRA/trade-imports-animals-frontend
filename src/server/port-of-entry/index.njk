@@ -6,6 +6,8 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
   {{ govukBackLink({
     text: "Back",
     href: "/cph-number"
@@ -38,7 +40,8 @@
             value: portOfEntry if portOfEntry,
             errorMessage: fieldErrors["portOfEntry"] if fieldErrors,
             items: [
-              { value: "", text: "Entry port of entry" },
+              { value: "", text: "Select port of entry" },
+              { text: "──────────", disabled: true },
               { value: "ABERDEEN", text: "ABERDEEN" },
               { value: "EAST MIDLANDS AIRPORT", text: "EAST MIDLANDS AIRPORT" },
               { value: "EDINBURGH", text: "EDINBURGH" }

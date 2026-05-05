@@ -1,7 +1,12 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { importReasonController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+
+import {
+  fetchNotification,
+  submitNotification
+} from '../common/helpers/notification-helpers.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -14,15 +19,19 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  fetchNotification: vi.fn().mockResolvedValue({ referenceNumber: 'REF-123' }),
+  submitNotification: vi.fn().mockResolvedValue(undefined)
+}))
+
 describe('importReasonController', () => {
   describe('GET reason for import', () => {
-    test('renders view with reasonForImport and calls notificationClient.get when referenceNumber exists', () => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('renders view with reasonForImport and calls fetchNotification when referenceNumber exists', async () => {
+      fetchNotification.mockResolvedValue({ referenceNumber: 'REF-123' })
 
       const get = vi.fn((key) => {
         const values = {
-          reasonForImport: 'internalMarket',
-          referenceNumber: 'REF-123'
+          reasonForImport: 'internalMarket'
         }
         return values[key] ?? null
       })
@@ -32,12 +41,11 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = importReasonController.get.handler(request, h)
+      const response = await importReasonController.get.handler(request, h)
 
-      expect(notificationClient.get).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
-        'REF-123',
-        'trace-123'
+        expect.any(Object)
       )
 
       expect(h.view).toHaveBeenCalledWith('import-reason/index', {
@@ -51,13 +59,12 @@ describe('importReasonController', () => {
       expect(response.data.reasonForImport).toBe('internalMarket')
     })
 
-    test('renders view and does not call notificationClient.get when no referenceNumber', () => {
-      const getSpy = vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('renders view with null referenceNumber when fetchNotification returns null', async () => {
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
-          reasonForImport: 'reEntry',
-          referenceNumber: null
+          reasonForImport: 'reEntry'
         }
         return values[key] ?? null
       })
@@ -67,9 +74,12 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      importReasonController.get.handler(request, h)
+      await importReasonController.get.handler(request, h)
 
-      expect(getSpy).not.toHaveBeenCalled()
+      expect(fetchNotification).toHaveBeenCalledWith(
+        request,
+        expect.any(Object)
+      )
       expect(h.view).toHaveBeenCalledWith(
         'import-reason/index',
         expect.objectContaining({
@@ -82,9 +92,7 @@ describe('importReasonController', () => {
 
   describe('POST reason for import', () => {
     test('stores reasonForImport, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
+      submitNotification.mockResolvedValue(undefined)
 
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
@@ -101,9 +109,9 @@ describe('importReasonController', () => {
       const response = await importReasonController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith('reasonForImport', 'internalMarket')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'trace-123'
+        expect.any(Object)
       )
       expect(response).toEqual({
         statusCode: 302,
@@ -112,12 +120,7 @@ describe('importReasonController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
-        Object.assign(new Error('Backend error'), {
-          status: 500,
-          statusText: 'Internal Server Error'
-        })
-      )
+      submitNotification.mockRejectedValue(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
@@ -135,11 +138,13 @@ describe('importReasonController', () => {
 
       await importReasonController.post.handler(request, h)
 
+      expect(set).toHaveBeenCalledWith('reasonForImport', 'reEntry')
+
       expect(h.view).toHaveBeenCalledWith(
         'import-reason/index',
         expect.objectContaining({
           errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
+            { text: SUBMISSION_FAILURE_MESSAGE, href: '#internalMarket' }
           ]
         })
       )
