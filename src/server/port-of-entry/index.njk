@@ -6,6 +6,8 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
   {{ govukBackLink({
     text: "Back",
     href: "/cph-number"
