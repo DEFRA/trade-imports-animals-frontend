@@ -37,6 +37,15 @@ const updateRow = (row, scanStatus) => {
   }
 }
 
+const fetchStatuses = async () => {
+  const response = await fetch('/accompanying-documents/status', {
+    headers: { Accept: 'application/json' }
+  })
+  if (!response.ok) return null
+  const { documents } = await response.json()
+  return documents ?? null
+}
+
 const pollStatus = async (attempt = 0) => {
   if (attempt >= MAX_ATTEMPTS) {
     // Show the timed-out hint that the server-rendered template already includes
@@ -45,25 +54,15 @@ const pollStatus = async (attempt = 0) => {
     return
   }
 
+  const retry = () => setTimeout(() => pollStatus(attempt + 1), POLL_INTERVAL)
+
   let documents
   try {
-    const response = await fetch('/accompanying-documents/status', {
-      headers: { Accept: 'application/json' }
-    })
-    if (!response.ok) {
-      setTimeout(() => pollStatus(attempt + 1), POLL_INTERVAL)
-      return
-    }
-    ;({ documents } = await response.json())
+    documents = await fetchStatuses()
   } catch {
-    setTimeout(() => pollStatus(attempt + 1), POLL_INTERVAL)
-    return
+    return retry()
   }
-
-  if (!documents) {
-    setTimeout(() => pollStatus(attempt + 1), POLL_INTERVAL)
-    return
-  }
+  if (!documents) return retry()
 
   documents.forEach((doc) => {
     const row = document.querySelector(`[data-upload-id="${doc.uploadId}"]`)
@@ -76,7 +75,7 @@ const pollStatus = async (attempt = 0) => {
     (doc) => doc.scanStatus === SCAN_STATUS_PENDING
   )
   if (stillPending) {
-    setTimeout(() => pollStatus(attempt + 1), POLL_INTERVAL)
+    retry()
   } else {
     // Reload to get correct Save and continue state and any virus error messages
     window.location.reload()

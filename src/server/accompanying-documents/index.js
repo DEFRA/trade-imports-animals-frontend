@@ -1,4 +1,4 @@
-import { accompanyingDocumentsController } from './controller.js'
+import { accompanyingDocumentsController } from './controller/index.js'
 import { config } from '../../config/config.js'
 import { MAX_PAYLOAD_BYTES } from './document-upload-config.js'
 

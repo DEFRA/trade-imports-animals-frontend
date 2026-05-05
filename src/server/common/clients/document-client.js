@@ -7,111 +7,63 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
-const buildFetchError = (message, response) => {
-  const error = new Error(message)
-  error.status = response.status
-  error.statusText = response.statusText
-  return error
+const request = async (path, { method, traceId, body, errorMessage }) => {
+  const headers = { [tracingHeader]: traceId }
+  const init = { method, headers }
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+    init.body = JSON.stringify(body)
+  }
+
+  const response = await fetch(`${tradeImportsAnimalsBackendUrl}${path}`, init)
+
+  if (!response.ok) {
+    const error = new Error(errorMessage)
+    error.status = response.status
+    error.statusText = response.statusText
+    logger.error(`${errorMessage}: ${error.status} ${error.message}`)
+    throw error
+  }
+
+  return response
 }
 
 export const documentClient = {
-  async initiate(notificationRef, request, traceId) {
-    const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/notifications/${notificationRef}/document-uploads`,
+  async initiate(notificationRef, body, traceId) {
+    const response = await request(
+      `/notifications/${notificationRef}/document-uploads`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          [tracingHeader]: traceId
-        },
-        body: JSON.stringify(request)
+        traceId,
+        body,
+        errorMessage: 'Failed to initiate document upload'
       }
     )
-
-    if (!response.ok) {
-      const error = buildFetchError(
-        'Failed to initiate document upload',
-        response
-      )
-      logger.error(
-        `Failed to initiate document upload: ${error.status} ${error.message}`
-      )
-      throw error
-    }
-
     return response.json()
   },
 
   async delete(uploadId, traceId) {
-    const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          [tracingHeader]: traceId
-        }
-      }
-    )
-
-    if (!response.ok) {
-      const error = buildFetchError(
-        'Failed to delete document upload',
-        response
-      )
-      logger.error(
-        `Failed to delete document upload: ${error.status} ${error.message}`
-      )
-      throw error
-    }
+    await request(`/document-uploads/${uploadId}`, {
+      method: 'DELETE',
+      traceId,
+      errorMessage: 'Failed to delete document upload'
+    })
   },
 
   async getStatus(uploadId, traceId) {
-    const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}`,
-      {
-        method: 'GET',
-        headers: {
-          [tracingHeader]: traceId
-        }
-      }
-    )
-
-    if (!response.ok) {
-      const error = buildFetchError(
-        'Failed to get document upload status',
-        response
-      )
-      logger.error(
-        `Failed to get document upload status: ${error.status} ${error.message}`
-      )
-      throw error
-    }
-
+    const response = await request(`/document-uploads/${uploadId}`, {
+      method: 'GET',
+      traceId,
+      errorMessage: 'Failed to get document upload status'
+    })
     return response.json()
   },
 
   async streamFile(uploadId, traceId) {
-    const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}/file`,
-      {
-        method: 'GET',
-        headers: {
-          [tracingHeader]: traceId
-        }
-      }
-    )
-
-    if (!response.ok) {
-      const error = buildFetchError(
-        `Failed to stream file for upload ${uploadId}`,
-        response
-      )
-      logger.error(
-        `Failed to stream file for upload ${uploadId}: ${error.status} ${error.message}`
-      )
-      throw error
-    }
-
-    return response
+    return request(`/document-uploads/${uploadId}/file`, {
+      method: 'GET',
+      traceId,
+      errorMessage: `Failed to stream file for upload ${uploadId}`
+    })
   }
 }

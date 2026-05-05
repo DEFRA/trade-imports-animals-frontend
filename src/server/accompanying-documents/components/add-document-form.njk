@@ -1,0 +1,93 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
+
+<div data-testid="app-page-body">
+
+  <h2 class="govuk-heading-m">{{ 'Add another document' if documents and documents.length else 'Add a document' }}</h2>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}"/>
+
+    {{ govukSelect({
+      id: "documentType",
+      name: "documentType",
+      label: {
+        text: "Document type"
+      },
+      value: documentType,
+      errorMessage: fieldErrors.documentType if fieldErrors,
+      items: documentTypeSelectItems
+    }) }}
+
+    {{ govukInput({
+      label: {
+        text: "Document reference"
+      },
+      id: "documentReference",
+      name: "documentReference",
+      value: documentReference if documentReference,
+      errorMessage: fieldErrors.documentReference if fieldErrors,
+      attributes: { maxlength: maxDocumentReferenceLength }
+    }) }}
+
+    {%- set dateErrorMessage = fieldErrors["issueDate-day"] or fieldErrors["issueDate-month"] or fieldErrors["issueDate-year"] -%}
+    {{ govukDateInput({
+      id: "issueDate",
+      namePrefix: "issueDate",
+      fieldset: {
+        legend: {
+          text: "Date of issue"
+        }
+      },
+      hint: {
+        text: "For example, 27 3 2024"
+      },
+      errorMessage: dateErrorMessage if fieldErrors,
+      items: [
+        {
+          name: "day",
+          classes: ("govuk-input--error " if fieldErrors["issueDate-day"]) + "govuk-input--width-2",
+          value: issueDate_day if issueDate_day
+        },
+        {
+          name: "month",
+          classes: ("govuk-input--error " if fieldErrors["issueDate-month"]) + "govuk-input--width-2",
+          value: issueDate_month if issueDate_month
+        },
+        {
+          name: "year",
+          classes: ("govuk-input--error " if fieldErrors["issueDate-year"]) + "govuk-input--width-4",
+          value: issueDate_year if issueDate_year
+        }
+      ]
+    }) }}
+
+    {%- set fileHintHtml %}<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>smaller than 50MB</li><li>{{ allowedFileTypesHint }}</li><li>ZIP files are not allowed for security reasons</li></ul>{% endset -%}
+
+    {{ govukFileUpload({
+      id: "file",
+      name: "file",
+      label: {
+        text: "Attachment"
+      },
+      hint: {
+        html: fileHintHtml
+      },
+      attributes: {
+        accept: ".pdf,.doc,.docx,.jpeg,.jpg,.png,.xls,.xlsx"
+      },
+      errorMessage: fieldErrors.file if fieldErrors
+    }) }}
+
+    <div class="govuk-button-group">
+      {{ govukButton({
+        text: "Add attachment",
+        classes: "govuk-button--secondary"
+      }) }}
+    </div>
+  </form>
+
+</div>

@@ -14,7 +14,7 @@ import {
   MAX_DOCUMENTS,
   MAX_DOCUMENT_REFERENCE_LENGTH
 } from './document-upload-config.js'
-import { MAX_POLLING_ATTEMPTS } from './controller.js'
+import { MAX_POLLING_ATTEMPTS } from './controller/index.js'
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
