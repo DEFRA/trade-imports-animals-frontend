@@ -8,7 +8,9 @@ import {
   parseRemoveUploadId,
   extractFormFields,
   formatDateOfIssue,
-  persistDocument
+  persistDocument,
+  buildUploadDetails,
+  buildSessionDocument
 } from './payload.js'
 import { collectValidationErrors } from './validation.js'
 import { uploadDocument } from './upload.js'
@@ -19,7 +21,7 @@ import {
   uploadFailureView
 } from './views.js'
 
-const handleUpload = async (request, h, traceId) => {
+const loadUploadState = async (request, traceId) => {
   const fields = extractFormFields(request.payload)
   const attempt = getAttempt(request)
   const documents = getSessionValue(request, sessionKeys.documents) ?? []
@@ -28,42 +30,51 @@ const handleUpload = async (request, h, traceId) => {
     traceId,
     request.logger
   )
+  return { fields, attempt, documents, documentsWithStatus }
+}
 
-  if (documents.length >= MAX_DOCUMENTS) {
-    return capExceededView(h, documentsWithStatus)
-  }
-
-  const errors = collectValidationErrors(request.payload, fields.fileData)
-  if (errors.allErrors.length > 0) {
-    return validationErrorView(h, documentsWithStatus, attempt, fields, errors)
-  }
-
+const uploadAndPersist = async (request, h, state, traceId) => {
+  const { fields, attempt, documents, documentsWithStatus } = state
   const dateOfIssue = formatDateOfIssue(fields)
-  let uploadId
+
   try {
-    uploadId = await uploadDocument(
+    const uploadId = await uploadDocument(
       request,
       fields.fileData,
-      {
-        documentType: fields.documentType,
-        documentReference: fields.documentReference,
-        dateOfIssue
-      },
+      buildUploadDetails(fields, dateOfIssue),
       traceId
     )
+    persistDocument(
+      request,
+      documents,
+      buildSessionDocument(uploadId, fields, dateOfIssue)
+    )
+    return h.redirect('/accompanying-documents')
   } catch (err) {
     request.logger.error(`Failed to upload document: ${err.message}`)
     return uploadFailureView(h, documentsWithStatus, attempt, fields)
   }
+}
 
-  persistDocument(request, documents, {
-    uploadId,
-    filename: fields.fileData.filename ?? 'upload',
-    documentType: fields.documentType,
-    documentReference: fields.documentReference,
-    dateOfIssue
-  })
-  return h.redirect('/accompanying-documents')
+const handleUpload = async (request, h, traceId) => {
+  const state = await loadUploadState(request, traceId)
+
+  if (state.documents.length >= MAX_DOCUMENTS) {
+    return capExceededView(h, state.documentsWithStatus)
+  }
+
+  const errors = collectValidationErrors(request.payload, state.fields.fileData)
+  if (errors.allErrors.length > 0) {
+    return validationErrorView(
+      h,
+      state.documentsWithStatus,
+      state.attempt,
+      state.fields,
+      errors
+    )
+  }
+
+  return uploadAndPersist(request, h, state, traceId)
 }
 
 export const postHandler = async (request, h) => {

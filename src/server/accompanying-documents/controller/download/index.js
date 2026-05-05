@@ -15,9 +15,6 @@ const isOwnedBySession = (request, uploadId) => {
   return sessionDocuments.some((doc) => doc.uploadId === uploadId)
 }
 
-const streamBackendFile = (uploadId, traceId) =>
-  documentClient.streamFile(uploadId, traceId)
-
 const respondWithFile = (h, backendResponse) =>
   h
     .response(Readable.fromWeb(backendResponse.body))
@@ -48,7 +45,7 @@ export const download = {
       return h.response('Not Found').code(statusCodes.notFound)
     }
 
-    const backendResponse = await streamBackendFile(
+    const backendResponse = await documentClient.streamFile(
       uploadId,
       getTraceId() ?? ''
     )

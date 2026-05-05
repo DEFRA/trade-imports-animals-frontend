@@ -34,3 +34,17 @@ export const persistDocument = (request, documents, doc) => {
   documents.push(doc)
   setSessionValue(request, sessionKeys.documents, documents)
 }
+
+export const buildUploadDetails = (fields, dateOfIssue) => ({
+  documentType: fields.documentType,
+  documentReference: fields.documentReference,
+  dateOfIssue
+})
+
+export const buildSessionDocument = (uploadId, fields, dateOfIssue) => ({
+  uploadId,
+  filename: fields.fileData.filename ?? 'upload',
+  documentType: fields.documentType,
+  documentReference: fields.documentReference,
+  dateOfIssue
+})
