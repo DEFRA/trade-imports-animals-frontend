@@ -13,66 +13,73 @@ export const getAttempt = (request) => {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-export const getDocumentsWithStatus = async (documents, traceId, logger) =>
-  Promise.all(
-    documents.map(async (doc) => {
-      try {
-        const { scanStatus } = await documentClient.getStatus(
-          doc.uploadId,
-          traceId
-        )
-        return { ...doc, scanStatus }
-      } catch (err) {
-        logger.error(
-          `Failed to get scan status for uploadId=${doc.uploadId}: ${err.message}`
-        )
-        return { ...doc, scanStatus: 'PENDING' }
-      }
-    })
-  )
+const fetchScanStatus = async (doc, traceId, logger) => {
+  try {
+    const { scanStatus } = await documentClient.getStatus(doc.uploadId, traceId)
+    return { ...doc, scanStatus }
+  } catch (err) {
+    logger.error(
+      `Failed to get scan status for uploadId=${doc.uploadId}: ${err.message}`
+    )
+    return { ...doc, scanStatus: 'PENDING' }
+  }
+}
 
-export const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
-  const anyPending = documentsWithStatus.some(
-    (doc) => doc.scanStatus === 'PENDING'
-  )
-  const anyRejected = documentsWithStatus.some(
-    (doc) => doc.scanStatus === 'REJECTED'
-  )
-  const timedOut = anyPending && attempt >= MAX_POLLING_ATTEMPTS
+export const getDocumentsWithStatus = (documents, traceId, logger) =>
+  Promise.all(documents.map((doc) => fetchScanStatus(doc, traceId, logger)))
 
-  const rejectedErrors = documentsWithStatus
+const computeStatusFlags = (docs, attempt) => {
+  const anyPending = docs.some((doc) => doc.scanStatus === 'PENDING')
+  const anyRejected = docs.some((doc) => doc.scanStatus === 'REJECTED')
+  return {
+    anyPending,
+    anyRejected,
+    timedOut: anyPending && attempt >= MAX_POLLING_ATTEMPTS
+  }
+}
+
+const buildRejectedErrors = (docs) =>
+  docs
     .filter((doc) => doc.scanStatus === 'REJECTED')
     .map((doc) => ({
       href: '#documents-added',
       text: `${doc.filename} contains a virus. Remove it and try again with a different file.`
     }))
 
-  const mergedErrors = [...rejectedErrors, ...(extra.errorList ?? [])]
-
-  const documentsForView = documentsWithStatus.map((doc) => ({
+const decorateDocumentsForView = (docs) =>
+  docs.map((doc) => ({
     ...doc,
     documentTypeLabel: getDocumentTypeLabel(doc.documentType)
   }))
 
+const buildDocumentTypeSelectItems = () => [
+  { value: '', text: 'Select document type' },
+  {
+    text: '──────────',
+    disabled: true,
+    attributes: { 'aria-hidden': 'true' }
+  },
+  ...DOCUMENT_TYPE_OPTIONS
+]
+
+export const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
+  const flags = computeStatusFlags(documentsWithStatus, attempt)
+  const errorList = [
+    ...buildRejectedErrors(documentsWithStatus),
+    ...(extra.errorList ?? [])
+  ]
+
   return {
     pageTitle: 'Accompanying documents',
-    documents: documentsForView,
-    anyPending,
-    timedOut,
+    documents: decorateDocumentsForView(documentsWithStatus),
+    anyPending: flags.anyPending,
+    timedOut: flags.timedOut,
     nextAttempt: attempt + 1,
-    canContinue: !anyPending && !anyRejected,
+    canContinue: !flags.anyPending && !flags.anyRejected,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
-    documentTypeSelectItems: [
-      { value: '', text: 'Select document type' },
-      {
-        text: '──────────',
-        disabled: true,
-        attributes: { 'aria-hidden': 'true' }
-      },
-      ...DOCUMENT_TYPE_OPTIONS
-    ],
+    documentTypeSelectItems: buildDocumentTypeSelectItems(),
     ...extra,
-    errorList: mergedErrors.length ? mergedErrors : null
+    errorList: errorList.length ? errorList : null
   }
 }
