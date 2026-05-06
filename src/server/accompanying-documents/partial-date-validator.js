@@ -74,9 +74,9 @@ export const validatePartialDate = (payload) => {
     return { details }
   }
 
-  const dayInt = parseInt(day, 10)
-  const monthInt = parseInt(month, 10)
-  const yearInt = parseInt(year, 10)
+  const dayInt = Number.parseInt(day, 10)
+  const monthInt = Number.parseInt(month, 10)
+  const yearInt = Number.parseInt(year, 10)
   const date = new Date(yearInt, monthInt - 1, dayInt)
   if (
     date.getFullYear() !== yearInt ||

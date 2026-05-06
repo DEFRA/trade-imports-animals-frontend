@@ -98,7 +98,7 @@ const pollStatus = async (attempt = 0) => {
     retry()
   } else {
     // Reload to get correct Save and continue state and any virus error messages
-    window.location.reload()
+    globalThis.location.reload()
   }
 }
 

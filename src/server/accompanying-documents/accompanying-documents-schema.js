@@ -4,7 +4,6 @@ import {
   MAX_DOCUMENT_REFERENCE_LENGTH
 } from './document-upload-config.js'
 
-export { DOCUMENT_TYPES, MAX_DOCUMENT_REFERENCE_LENGTH }
 const MAX_DAY = 31
 const MAX_MONTH = 12
 const MIN_YEAR = 1900

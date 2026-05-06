@@ -1,7 +1,5 @@
-import {
-  accompanyingDocumentsSchema,
-  MAX_DOCUMENT_REFERENCE_LENGTH
-} from './accompanying-documents-schema.js'
+import { accompanyingDocumentsSchema } from './accompanying-documents-schema.js'
+import { MAX_DOCUMENT_REFERENCE_LENGTH } from './document-upload-config.js'
 
 describe('#accompanyingDocumentsSchema', () => {
   describe('valid payloads', () => {

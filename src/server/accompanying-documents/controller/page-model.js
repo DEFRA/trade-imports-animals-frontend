@@ -9,7 +9,7 @@ import {
 export const MAX_POLLING_ATTEMPTS = 10
 
 export const getAttempt = (request) => {
-  const parsed = parseInt(request.query.attempt ?? '0', 10)
+  const parsed = Number.parseInt(request.query.attempt ?? '0', 10)
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
