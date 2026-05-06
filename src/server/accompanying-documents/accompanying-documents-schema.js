@@ -8,15 +8,16 @@ export { DOCUMENT_TYPES, MAX_DOCUMENT_REFERENCE_LENGTH }
 const MAX_DAY = 31
 const MAX_MONTH = 12
 const MIN_YEAR = 1900
+const SELECT_DOCUMENT_TYPE_MESSAGE = 'Select a document type'
 
 export const accompanyingDocumentsSchema = Joi.object({
   documentType: Joi.string()
     .valid(...DOCUMENT_TYPES)
     .required()
     .messages({
-      'any.only': 'Select a document type',
-      'any.required': 'Select a document type',
-      'string.empty': 'Select a document type'
+      'any.only': SELECT_DOCUMENT_TYPE_MESSAGE,
+      'any.required': SELECT_DOCUMENT_TYPE_MESSAGE,
+      'string.empty': SELECT_DOCUMENT_TYPE_MESSAGE
     }),
   documentReference: Joi.string()
     .optional()

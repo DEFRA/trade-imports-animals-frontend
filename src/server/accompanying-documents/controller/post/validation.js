@@ -32,7 +32,9 @@ const validateDate = (payload) => {
 }
 
 const fileExtension = (filename) => {
-  if (!filename.includes('.')) return ''
+  if (!filename.includes('.')) {
+    return ''
+  }
   return `.${filename.split('.').pop().toLowerCase()}`
 }
 

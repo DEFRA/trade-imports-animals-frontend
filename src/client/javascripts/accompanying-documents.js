@@ -13,13 +13,17 @@ const getPendingRows = () =>
 
 const announceStatus = (message) => {
   const liveRegion = document.getElementById('js-scan-status-announcer')
-  if (liveRegion) liveRegion.textContent = message
+  if (liveRegion) {
+    liveRegion.textContent = message
+  }
 }
 
 const updateRow = (row, scanStatus) => {
   row.dataset.scanStatus = scanStatus
   const tag = row.querySelector('.govuk-tag')
-  if (!tag) return
+  if (!tag) {
+    return
+  }
 
   if (scanStatus === SCAN_STATUS_COMPLETE) {
     tag.textContent = 'Safe'
@@ -41,16 +45,36 @@ const fetchStatuses = async () => {
   const response = await fetch('/accompanying-documents/status', {
     headers: { Accept: 'application/json' }
   })
-  if (!response.ok) return null
+  if (!response.ok) {
+    return null
+  }
   const { documents } = await response.json()
   return documents ?? null
 }
 
+const showTimedOutHint = () => {
+  // Show the timed-out hint that the server-rendered template already includes
+  const timedOutHint = document.getElementById('js-timeout-message')
+  if (timedOutHint) {
+    timedOutHint.hidden = false
+  }
+}
+
+const applyStatusUpdates = (documents) => {
+  documents.forEach((doc) => {
+    const row = document.querySelector(`[data-upload-id="${doc.uploadId}"]`)
+    if (row && row.dataset.scanStatus !== doc.scanStatus) {
+      updateRow(row, doc.scanStatus)
+    }
+  })
+}
+
+const isStillPending = (documents) =>
+  documents.some((doc) => doc.scanStatus === SCAN_STATUS_PENDING)
+
 const pollStatus = async (attempt = 0) => {
   if (attempt >= MAX_ATTEMPTS) {
-    // Show the timed-out hint that the server-rendered template already includes
-    const timedOutHint = document.getElementById('js-timeout-message')
-    if (timedOutHint) timedOutHint.hidden = false
+    showTimedOutHint()
     return
   }
 
@@ -60,21 +84,17 @@ const pollStatus = async (attempt = 0) => {
   try {
     documents = await fetchStatuses()
   } catch {
-    return retry()
+    retry()
+    return
   }
-  if (!documents) return retry()
+  if (!documents) {
+    retry()
+    return
+  }
 
-  documents.forEach((doc) => {
-    const row = document.querySelector(`[data-upload-id="${doc.uploadId}"]`)
-    if (row && row.dataset.scanStatus !== doc.scanStatus) {
-      updateRow(row, doc.scanStatus)
-    }
-  })
+  applyStatusUpdates(documents)
 
-  const stillPending = documents.some(
-    (doc) => doc.scanStatus === SCAN_STATUS_PENDING
-  )
-  if (stillPending) {
+  if (isStillPending(documents)) {
     retry()
   } else {
     // Reload to get correct Save and continue state and any virus error messages
@@ -84,7 +104,9 @@ const pollStatus = async (attempt = 0) => {
 
 // Hide the non-JS refresh fallback
 const fallback = document.getElementById('js-refresh-fallback')
-if (fallback) fallback.hidden = true
+if (fallback) {
+  fallback.hidden = true
+}
 
 // Start polling if any docs are still being scanned
 if (getPendingRows().length > 0) {

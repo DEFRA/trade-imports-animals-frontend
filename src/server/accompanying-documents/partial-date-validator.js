@@ -1,3 +1,6 @@
+const REQUIRED_DATE_PARTS = 3
+const INCOMPLETE_DATE_TYPE = 'date.incomplete'
+
 const isEmpty = (value) => value === '' || value === null || value === undefined
 
 const buildDateError = (message, type, field) => ({
@@ -39,13 +42,13 @@ export const validatePartialDate = (payload) => {
     }
   }
 
-  if (filledCount < 3) {
+  if (filledCount < REQUIRED_DATE_PARTS) {
     const details = []
     if (isEmpty(day)) {
       details.push(
         buildDateError(
           'Date of issue must include a day',
-          'date.incomplete',
+          INCOMPLETE_DATE_TYPE,
           'issueDate-day'
         )
       )
@@ -54,7 +57,7 @@ export const validatePartialDate = (payload) => {
       details.push(
         buildDateError(
           'Date of issue must include a month',
-          'date.incomplete',
+          INCOMPLETE_DATE_TYPE,
           'issueDate-month'
         )
       )
@@ -63,7 +66,7 @@ export const validatePartialDate = (payload) => {
       details.push(
         buildDateError(
           'Date of issue must include a year',
-          'date.incomplete',
+          INCOMPLETE_DATE_TYPE,
           'issueDate-year'
         )
       )

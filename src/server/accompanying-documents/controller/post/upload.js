@@ -1,6 +1,7 @@
 import { getSessionValue } from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
 import { documentClient } from '../../../common/clients/document-client.js'
+import { statusCodes } from '../../../common/constants/status-codes.js'
 import { config } from '../../../../config/config.js'
 import {
   ALLOWED_TYPES,
@@ -47,7 +48,7 @@ const proxyFileToCdpUploader = async (uploadUrl, fileData) => {
   // cdp-uploader redirects (302) on success; Node.js fetch with
   // redirect:'manual' returns the actual redirect status, not status 0.
   // Local mock returns 200 directly. Fail only on 4xx/5xx.
-  if (response.status >= 400) {
+  if (response.status >= statusCodes.badRequest) {
     throw new Error(
       `cdp-uploader returned unexpected status ${response.status}`
     )

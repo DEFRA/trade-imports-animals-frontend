@@ -27,7 +27,9 @@ export const ALLOWED_TYPES = [
 // the first extension per MIME — to avoid showing both "JPEG" and "JPG".
 const seenMimes = new Set()
 const allowedTypeLabels = ALLOWED_TYPES.filter((type) => {
-  if (seenMimes.has(type.mime)) return false
+  if (seenMimes.has(type.mime)) {
+    return false
+  }
   seenMimes.add(type.mime)
   return true
 }).map((type) => type.ext.toUpperCase())
