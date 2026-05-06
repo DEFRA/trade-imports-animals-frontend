@@ -58,6 +58,60 @@ services:
     networks:
       - cdp-tenant
 
+  trade-imports-stub:
+    image: defradigital/trade-imports-stub:latest
+    ports:
+      - '8087:8087'
+    depends_on:
+      mongodb:
+        condition: service_started
+    environment:
+      PORT: 8087
+      SPRING_PROFILES_ACTIVE: local
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DATABASE: trade-imports-stub
+      AWS_REGION: eu-west-2
+      AWS_EMF_AGENT_ENDPOINT: http://localstack:4566
+      LOG_LEVEL: INFO
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8087/health" ]
+      interval: 5s
+      start_period: 30s
+      retries: 10
+    networks:
+      - cdp-tenant
+
+  trade-imports-reference-data:
+    image: defradigital/trade-imports-reference-data:latest
+    ports:
+      - '8086:8086'
+    depends_on:
+      mongodb:
+        condition: service_started
+      trade-imports-stub:
+        condition: service_healthy
+    environment:
+      PORT: 8086
+      SPRING_PROFILES_ACTIVE: local
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DATABASE: trade-imports-reference-data
+      AWS_REGION: eu-west-2
+      AWS_EMF_AGENT_ENDPOINT: http://localstack:4566
+      MDM_SERVICE_URL: http://trade-imports-stub:8087
+      TRADE_PLATFORM_AUTH_URL: http://trade-imports-stub:8087/tenant/oauth2/v2.0/token
+      TRADE_PLATFORM_CLIENT_ID: local-dev
+      TRADE_PLATFORM_CLIENT_SECRET: local-dev
+      TRADE_PLATFORM_SCOPE: local
+      TRADE_PLATFORM_SUBSCRIPTION_KEY: local-dev
+      LOG_LEVEL: INFO
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8086/health" ]
+      interval: 5s
+      start_period: 30s
+      retries: 10
+    networks:
+      - cdp-tenant
+
 ################################################################################
 
   trade-imports-animals-frontend:
@@ -75,6 +129,8 @@ services:
         condition: service_started
       trade-imports-defra-id-stub:
         condition: service_healthy
+      trade-imports-reference-data:
+        condition: service_healthy
     env_file:
       - 'compose/aws.env'
     extra_hosts:
@@ -85,6 +141,7 @@ services:
       REDIS_HOST: redis
       LOCALSTACK_ENDPOINT: http://localstack:4566
       USE_SINGLE_INSTANCE_CACHE: true
+      TRADE_IMPORTS_REFERENCE_DATA_URL: http://trade-imports-reference-data:8086
       # OIDC discovery URL must be reachable from inside the container.
       DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED: ${DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED}
       DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_TO: ${DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_TO}
