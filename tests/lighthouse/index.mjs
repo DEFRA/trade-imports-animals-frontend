@@ -22,6 +22,7 @@ import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
 import { destinationsSelectLighthouseConfig } from './destinations-select.config.js'
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
 import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
+import { transporterLighthouseConfig } from './transporter.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -43,7 +44,8 @@ const pageConfigs = [
   consignorsSelectLighthouseConfig,
   destinationsSelectLighthouseConfig,
   cphNumberLighthouseConfig,
-  portOfEntryLighthouseConfig
+  portOfEntryLighthouseConfig,
+  transporterLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'

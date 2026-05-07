@@ -88,7 +88,7 @@ describe('portOfEntryController', () => {
         request,
         'trace-abc'
       )
-      expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
+      expect(response).toEqual({ statusCode: 302, location: '/transporter' })
     })
 
     test('returns 400 with error list when arrival day is out of range', async () => {

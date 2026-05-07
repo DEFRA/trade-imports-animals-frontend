@@ -87,7 +87,7 @@ export const portOfEntryController = {
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/port-of-entry')
+      return h.redirect('/transporter', { referenceNumber })
     }
   }
 }
