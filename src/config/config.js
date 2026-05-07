@@ -333,12 +333,6 @@ export const config = convict({
       env: 'TRADE_IMPORTS_ANIMALS_BACKEND_URL'
     }
   },
-  cdpUploaderUrl: {
-    doc: 'CDP Uploader service base URL',
-    format: 'url',
-    default: 'http://localhost:7337',
-    env: 'CDP_UPLOADER_URL'
-  },
   frontendBaseUrl: {
     doc: 'Public base URL of this frontend service — used to construct absolute redirect URLs',
     format: 'url',
