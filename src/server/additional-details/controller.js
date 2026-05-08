@@ -65,7 +65,7 @@ export const additionalDetailsController = {
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/addresses', { referenceNumber })
+      return h.redirect('/accompanying-documents', { referenceNumber })
     }
   }
 }

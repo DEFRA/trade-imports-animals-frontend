@@ -1,0 +1,80 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/details/macro.njk" import govukDetails %}
+
+{% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/additional-details"
+  }) }}
+
+  {{ appHeading({
+    text: "Accompanying documents"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+
+      {% if errorList %}
+        {{ govukErrorSummary({
+          titleText: "There is a problem",
+          errorList: errorList
+        }) }}
+      {% endif %}
+
+      <p class="govuk-body">Where an ITAHC applies, you need to upload it for this notification. If you do not have it when you submit, you must add it to your notification once you receive it. You can also return to your notification later to upload any other documents you still need.</p>
+
+      <p class="govuk-body">If you already have documents, you can add them below. For example:</p>
+
+      <ul class="govuk-list govuk-list--bullet">
+        <li>ITAHC</li>
+        <li>import licences or authorisations</li>
+        <li>commercial documents or invoices</li>
+      </ul>
+
+      {%- set additionalDocsHtml -%}
+        <ul class="govuk-list govuk-list--bullet">
+          <li>for animals that do not need a health certificate, an exporter's declaration that they are fit to travel</li>
+          <li>for livestock transiting bluetongue restricted territories, a bluetongue declaration GBHC172</li>
+          <li>for rodents imported for research purposes, a RM39 licence and supplementary health certificate</li>
+        </ul>
+        <p class="govuk-body">
+          For details about required documents,
+          <a class="govuk-link" href="#" target="_blank" rel="noopener noreferrer">check the import rules you must follow on GOV.UK (opens in new tab)</a>.
+        </p>
+      {%- endset -%}
+
+      {{ govukDetails({
+        summaryText: "Check which additional documents you may need to upload",
+        html: additionalDocsHtml
+      }) }}
+
+      {% include "accompanying-documents/components/uploaded-documents.njk" %}
+
+      {% include "accompanying-documents/components/add-document-form.njk" %}
+
+      <div class="govuk-button-group">
+        {% set continueVerb = 'continue' %}
+        {% set continueText = ('Save and ' + continueVerb) if documents and documents.length else ((continueVerb | capitalize) + ' without documents') %}
+        {% if canContinue %}
+          {# Continue navigates directly — all document session state is written during the upload POST #}
+          {{ govukButton({ text: continueText, href: "/addresses" }) }}
+        {% else %}
+          {{ govukButton({ text: continueText, attributes: { 'aria-disabled': 'true', 'aria-describedby': 'cannot-continue-reason' } }) }}
+          <span class="govuk-visually-hidden" id="cannot-continue-reason">You cannot {{ continueVerb }} until all documents have been scanned or removed</span>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('accompanyingDocuments.js') }}"></script>
+{% endblock %}

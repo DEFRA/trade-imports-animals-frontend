@@ -25,6 +25,9 @@ export default {
     },
     commoditySubTotal: {
       import: './javascripts/commodity-subtotal-autocomplete.js'
+    },
+    accompanyingDocuments: {
+      import: './javascripts/accompanying-documents.js'
     }
   },
   experiments: {

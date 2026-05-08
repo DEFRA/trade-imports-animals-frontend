@@ -9,6 +9,7 @@ import { commodities } from './commodities/index.js'
 import { commoditiesSelect } from './commodities/select/index.js'
 import { commodityDetails } from './commodities/details/index.js'
 import { importReason } from './import-reason/index.js'
+import { accompanyingDocuments } from './accompanying-documents/index.js'
 import { additionalDetails } from './additional-details/index.js'
 import { animalsIdentificationDetails } from './commodities/identification/index.js'
 import { addresses } from './addresses/index.js'
@@ -39,6 +40,7 @@ export const router = {
         commodityDetails,
         animalsIdentificationDetails,
         additionalDetails,
+        accompanyingDocuments,
         addresses,
         cphNumber,
         portOfEntry,
