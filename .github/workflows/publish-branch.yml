@@ -1,0 +1,80 @@
+name: Publish Branch Image
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: "094954420758"
+  IMAGE_NAME: trade-imports-animals-frontend
+
+jobs:
+  publish-branch:
+    name: Publish branch-tagged image
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compute sanitised branch tag
+        id: tag
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          # Branch tag must mirror the workspace wrapper byte-for-byte.
+          # Rule: replace / with -, strip [^a-zA-Z0-9_.-], lowercase, trim leading [.-], cap at 128.
+          raw="${HEAD_REF:-$REF_NAME}"
+          t="${raw//\//-}"
+          t="$(printf '%s' "$t" | tr -cd 'a-zA-Z0-9_.-')"
+          t="$(printf '%s' "$t" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$t" == [.-]* ]]; do t="${t:1}"; done
+          t="${t:0:128}"
+          [ -n "$t" ] || { echo "Empty tag after sanitisation: '$raw'"; exit 1; }
+          echo "tag=$t" >> "$GITHUB_OUTPUT"
+          echo "Sanitised '$raw' -> '$t'"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-${{ env.IMAGE_NAME }}-build-role
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+
+      - name: Login to Docker Hub
+        uses: DEFRA/cdp-build-action/docker-login@main
+
+      - name: Build and push branch-tagged image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          provenance: false
+          sbom: false
+          no-cache: true
+          tags: |
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            defradigital/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+          labels: |
+            defra.cdp.git.repo.url=${{ github.server_url }}/${{ github.repository }}
+            defra.cdp.git.repo.name=${{ github.repository }}
+            defra.cdp.service.name=${{ env.IMAGE_NAME }}
+            defra.cdp.build.run_id=${{ github.run_id }}
+            defra.cdp.run_mode=service
+            git.hash=${{ github.sha }}
