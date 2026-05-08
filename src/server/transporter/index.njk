@@ -1,0 +1,60 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/port-of-entry"
+  }) }}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <div class="govuk-body" data-testid="app-page-body">
+
+      <span class="govuk-caption-l">Transport</span>
+      <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+
+      <form method="post" novalidate>
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <div class="govuk-form-group">
+          <div id="certifiedFor-hint" class="govuk-hint">
+            <p class="govuk-body">Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:</p>
+            <ul class="govuk-list govuk-list--bullet govuk-list--spaced">
+              <li>transporting any live vertebrate animals in, to, from or through Great Britain (GB)</li>
+              <li>travelling on journeys of over 65 km</li>
+              <li>transporting as part of an economic (commercial) activity</li>
+            </ul>
+          </div>
+          <div id="findOutHowLink">
+            <p class="govuk-body">
+              <a href="#" class="govuk-link" rel="noreferrer noopener" target="_blank">
+                Find out how to transport animals in connection with an economic activity (opens in new tab)</a>
+            </p>
+          </div>
+          <div>
+            <p class="govuk-body">Documents issued by DAERA are valid for use in GB.</p>
+            <p class="govuk-body">Documents issued in any EU Member State are not valid for use in GB.</p>
+          </div>
+        </div>
+        <div>
+          <p class="govuk-body">
+            {# TODO: Replace placeholder link with transporter select flow route when implemented. #}
+            <a href="#" class="govuk-link govuk-link--no-visited-state" id="addTransporter">Add a transporter</a>
+          </p>
+        </div>
+
+        <div class="govuk-button-group">
+          {{ govukButton({
+            text: "Save and continue"
+          }) }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
