@@ -337,7 +337,7 @@ export const config = convict({
     doc: 'Public base URL of this frontend service — used to construct absolute redirect URLs',
     format: 'url',
     default: 'http://localhost:3000',
-    env: 'FRONTEND_BASE_URL'
+    env: 'TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL'
   },
   tradeImportsReferenceDataApi: {
     baseUrl: {
