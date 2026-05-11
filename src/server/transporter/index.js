@@ -1,4 +1,5 @@
 import { transporterController } from './controller.js'
+import { transporterSelectController } from './select/controller.js'
 
 export const transporter = {
   plugin: {
@@ -9,6 +10,11 @@ export const transporter = {
           method: 'GET',
           path: '/transporter',
           ...transporterController.get
+        },
+        {
+          method: 'GET',
+          path: '/transporter/select',
+          ...transporterSelectController.get
         },
         {
           method: 'POST',
