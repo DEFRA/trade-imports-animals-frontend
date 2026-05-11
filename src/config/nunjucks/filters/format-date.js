@@ -1,7 +1,7 @@
 import { format, isDate, isValid, parseISO } from 'date-fns'
 
 export function formatDate(value, formattedDateStr = 'EEE do MMMM yyyy') {
-  if (value === null || value === undefined || value === '') {
+  if (!value || (typeof value !== 'string' && !isDate(value))) {
     return ''
   }
 
