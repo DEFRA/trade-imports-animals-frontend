@@ -30,6 +30,7 @@
           <input type="hidden" name="crumb" value="{{ crumb }}" />
 
           {{ govukRadios({
+            idPrefix: "certifiedFor",
             name: "certifiedFor",
             value: certifiedFor,
             fieldset: {
@@ -58,6 +59,7 @@
           }) }}
 
           {{ govukRadios({
+            idPrefix: "unweanedAnimals",
             name: "unweanedAnimals",
             value: unweanedAnimals,
             fieldset: {
