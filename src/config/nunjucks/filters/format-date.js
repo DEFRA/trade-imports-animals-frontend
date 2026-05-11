@@ -1,7 +1,15 @@
-import { format, isDate, parseISO } from 'date-fns'
+import { format, isDate, isValid, parseISO } from 'date-fns'
 
 export function formatDate(value, formattedDateStr = 'EEE do MMMM yyyy') {
+  if (value === null || value === undefined || value === '') {
+    return ''
+  }
+
   const date = isDate(value) ? value : parseISO(value)
+
+  if (!isValid(date)) {
+    return ''
+  }
 
   return format(date, formattedDateStr)
 }
