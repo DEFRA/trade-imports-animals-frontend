@@ -2,13 +2,11 @@ import { getSessionValue } from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
 import { documentClient } from '../../../common/clients/document-client.js'
 import { statusCodes } from '../../../common/constants/status-codes.js'
-import { config } from '../../../../config/config.js'
 import {
   ALLOWED_TYPES,
   MAX_FILE_SIZE_BYTES
 } from '../../document-upload-config.js'
 
-const frontendBaseUrl = config.get('frontendBaseUrl')
 const ALLOWED_MIME_TYPES = ALLOWED_TYPES.map((type) => type.mime)
 
 const initiateUpload = async (request, uploadDetails, traceId) => {
@@ -22,7 +20,6 @@ const initiateUpload = async (request, uploadDetails, traceId) => {
     notificationRef,
     {
       ...uploadDetails,
-      redirectUrl: `${frontendBaseUrl}/accompanying-documents`,
       maxFileSize: MAX_FILE_SIZE_BYTES,
       mimeTypes: ALLOWED_MIME_TYPES
     },
