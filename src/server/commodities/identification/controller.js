@@ -25,7 +25,7 @@ export const animalIdentificationDetailsController = {
 
       return h.view('commodities/identification/index', {
         pageTitle: 'Description of goods',
-        heading: 'Commodity',
+        heading: 'Enter animal identification details',
         referenceNumber,
         commodity,
         typeOfCommodity,
@@ -75,7 +75,7 @@ export const animalIdentificationDetailsController = {
         return h
           .view('commodities/identification/index', {
             pageTitle: 'Description of goods',
-            heading: 'Commodity',
+            heading: 'Enter animal identification details',
             referenceNumber,
             commodity: updatedCommodity,
             typeOfCommodity: updatedComplement?.typeOfCommodity,
