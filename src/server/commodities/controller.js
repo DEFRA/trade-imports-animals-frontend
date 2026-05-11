@@ -26,7 +26,7 @@ export const commoditiesController = {
 
       return h.view('commodities/index', {
         pageTitle: 'Commodities',
-        heading: 'Select a Commodity',
+        heading: 'Select a commodity',
         referenceNumber: getSessionValue(_request, 'referenceNumber'),
         commodity: getSessionValue(_request, 'commodity')
       })
@@ -50,7 +50,7 @@ export const commoditiesController = {
         return h
           .view('commodities/index', {
             pageTitle: 'Commodities',
-            heading: 'Select a Commodity',
+            heading: 'Select a commodity',
             referenceNumber: getSessionValue(_request, 'referenceNumber'),
             commodity: getSessionValue(_request, 'commodity'),
             errorList: [
