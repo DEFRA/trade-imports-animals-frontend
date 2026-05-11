@@ -28,32 +28,32 @@
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-          <div class="govuk-fieldset">
+          <div>
             <div class="govuk-form-group">
               <fieldset class="govuk-fieldset">
                 <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                   <h2 class="govuk-fieldset__heading">Consignor or exporter</h2>
                 </legend>
-                <div id="certifiedFor-hint" class="govuk-hint">
+                <div id="consignor-hint" class="govuk-hint">
                   This is the sender of the consignment.
                 </div>
                 {% if selectedConsignor %}
                   <table class="govuk-table govuk-table--small-text-until-tablet">
                     <thead class="govuk-table__head">
-                    <tr class="govuk-table__row">
-                      <th scope="col" class="govuk-table__header">Name</th>
-                      <th scope="col" class="govuk-table__header">Address</th>
-                      <th scope="col" class="govuk-table__header">Country</th>
-                    </tr>
+                      <tr class="govuk-table__row">
+                        <th scope="col" class="govuk-table__header">Name</th>
+                        <th scope="col" class="govuk-table__header">Address</th>
+                        <th scope="col" class="govuk-table__header">Country</th>
+                      </tr>
                     </thead>
                     <tbody class="govuk-table__body">
-                    <tr class="govuk-table__row">
-                      <td class="govuk-table__cell">{{ selectedConsignor.name }}</td>
-                      <td class="govuk-table__cell">
-                        {{ selectedConsignor.address.addressLine1 }}{% if selectedConsignor.address.addressLine2 %}, {{ selectedConsignor.address.addressLine2 }}{% endif %}{% if selectedConsignor.address.addressLine3 %}, {{ selectedConsignor.address.addressLine3 }}{% endif %}
-                      </td>
-                      <td class="govuk-table__cell">{{ selectedConsignor.address.country }}</td>
-                    </tr>
+                      <tr class="govuk-table__row">
+                        <td class="govuk-table__cell">{{ selectedConsignor.name }}</td>
+                        <td class="govuk-table__cell">
+                          {{ selectedConsignor.address.addressLine1 }}{% if selectedConsignor.address.addressLine2 %}, {{ selectedConsignor.address.addressLine2 }}{% endif %}{% if selectedConsignor.address.addressLine3 %}, {{ selectedConsignor.address.addressLine3 }}{% endif %}
+                        </td>
+                        <td class="govuk-table__cell">{{ selectedConsignor.address.country }}</td>
+                      </tr>
                     </tbody>
                   </table>
                 {% else %}
@@ -66,9 +66,35 @@
             <div class="govuk-form-group">
               <fieldset class="govuk-fieldset">
                 <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                  <h2 class="govuk-fieldset__heading">Consignee</h2>
+                </legend>
+                <div id="consignee-hint" class="govuk-hint">
+                  This is the receiver or buyer of the consignment being shipped or transported.
+                </div>
+                <p class="govuk-body">
+                  <a href="#" class="govuk-link govuk-link--no-visited-state" id="addConsignee">Add a consignee</a>
+                </p>
+              </fieldset>
+            </div>
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                  <h2 class="govuk-fieldset__heading">Importer</h2>
+                </legend>
+                <div id="importer-hint" class="govuk-hint">
+                  This is usually the same as the consignee. You can select a different person if needed.
+                </div>
+                <p class="govuk-body">
+                  <a href="#" class="govuk-link govuk-link--no-visited-state" id="addImporter">Add an importer</a>
+                </p>
+              </fieldset>
+            </div>
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                   <h2 class="govuk-fieldset__heading">Place of destination</h2>
                 </legend>
-                <div id="certifiedFor-hint" class="govuk-hint">
+                <div id="place-of-destination-hint" class="govuk-hint">
                   This is where the animals will be unloaded and accommodated for at least 48 hours. If a health certificate is required, it will show this address.
                 </div>
                 <div class="govuk-warning-text">
@@ -79,24 +105,24 @@
                   </strong>
                 </div>
                 {% if selectedDestination %}
-                <table class="govuk-table govuk-table--small-text-until-tablet">
-                  <thead class="govuk-table__head">
-                  <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header">Name</th>
-                    <th scope="col" class="govuk-table__header">Address</th>
-                    <th scope="col" class="govuk-table__header">Country</th>
-                  </tr>
-                  </thead>
-                  <tbody class="govuk-table__body">
-                  <tr class="govuk-table__row">
-                    <td class="govuk-table__cell">{{ selectedDestination.name }}</td>
-                    <td class="govuk-table__cell">
-                      {{ selectedDestination.address.addressLine1 }}{% if selectedDestination.address.addressLine2 %}, {{ selectedDestination.address.addressLine2 }}{% endif %}{% if selectedDestination.address.addressLine3 %}, {{ selectedDestination.address.addressLine3 }}{% endif %}
-                    </td>
-                    <td class="govuk-table__cell">{{ selectedDestination.address.country }}</td>
-                  </tr>
-                  </tbody>
-                </table>
+                  <table class="govuk-table govuk-table--small-text-until-tablet">
+                    <thead class="govuk-table__head">
+                      <tr class="govuk-table__row">
+                        <th scope="col" class="govuk-table__header">Name</th>
+                        <th scope="col" class="govuk-table__header">Address</th>
+                        <th scope="col" class="govuk-table__header">Country</th>
+                      </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                      <tr class="govuk-table__row">
+                        <td class="govuk-table__cell">{{ selectedDestination.name }}</td>
+                        <td class="govuk-table__cell">
+                          {{ selectedDestination.address.addressLine1 }}{% if selectedDestination.address.addressLine2 %}, {{ selectedDestination.address.addressLine2 }}{% endif %}{% if selectedDestination.address.addressLine3 %}, {{ selectedDestination.address.addressLine3 }}{% endif %}
+                        </td>
+                        <td class="govuk-table__cell">{{ selectedDestination.address.country }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 {% else %}
                   <p class="govuk-body">
                     <a href="/destinations/select" class="govuk-link govuk-link--no-visited-state" id="addPlaceOfDestination">Add a place of destination</a>
