@@ -16,6 +16,7 @@ import { addresses } from './addresses/index.js'
 import { cphNumber } from './cph-number/index.js'
 import { portOfEntry } from './port-of-entry/index.js'
 import { transporter } from './transporter/index.js'
+import { declaration } from './declaration/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
 
@@ -44,7 +45,8 @@ export const router = {
         addresses,
         cphNumber,
         portOfEntry,
-        transporter
+        transporter,
+        declaration
       ]
 
       if (authEnabled) {

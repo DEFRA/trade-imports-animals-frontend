@@ -195,6 +195,32 @@ export const notificationClient = {
   },
 
   /**
+   * Submits a notification, transitioning its status from DRAFT to SUBMITTED
+   */
+  async submitNotification(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/submit`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to submit notification')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to submit notification: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
    * Retrieves a notification from the backend and stores all values
    * in individual session keys
    */
