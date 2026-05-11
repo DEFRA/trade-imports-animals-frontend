@@ -35,7 +35,7 @@ export const download = {
       })
     }
   },
-  handler: async (request, h) => {
+  async handler(request, h) {
     const { uploadId } = request.params
 
     if (!isOwnedBySession(request, uploadId)) {
