@@ -1,15 +1,12 @@
 import { format, isDate, isValid, parseISO } from 'date-fns'
 
+function toDate(value) {
+  if (isDate(value)) return value
+  if (typeof value === 'string') return parseISO(value)
+  return null
+}
+
 export function formatDate(value, formattedDateStr = 'EEE do MMMM yyyy') {
-  if (!value || (typeof value !== 'string' && !isDate(value))) {
-    return ''
-  }
-
-  const date = isDate(value) ? value : parseISO(value)
-
-  if (!isValid(date)) {
-    return ''
-  }
-
-  return format(date, formattedDateStr)
+  const date = toDate(value)
+  return isValid(date) ? format(date, formattedDateStr) : ''
 }
