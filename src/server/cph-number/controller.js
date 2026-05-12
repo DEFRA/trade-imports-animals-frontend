@@ -53,7 +53,7 @@ export const cphNumberController = {
       logger.info(`CPH number saved: ${cphNumber}`)
 
       try {
-        await notificationClient.submit(_request, traceId)
+        await notificationClient.save(_request, traceId)
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)

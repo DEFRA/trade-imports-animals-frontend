@@ -1,0 +1,65 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/transporter"
+  }) }}
+
+  {{ appHeading({
+    text: pageTitle
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
+
+        <p class="govuk-body"><strong>I confirm I am responsible for this notification.</strong></p>
+
+        <p class="govuk-body">I am responsible from the submission of this notification to when it enters Great Britain.</p>
+
+        <p class="govuk-body">I am authorised as being accountable for these things if raising notifications on behalf of a third party.</p>
+
+        <p class="govuk-body">I can legally act on behalf of a third party in relation to the conditions of this declaration.</p>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          {{ govukCheckboxes({
+            name: "declaration",
+            errorMessage: fieldErrors["declaration"] if fieldErrors,
+            items: [
+              {
+                value: "confirmed",
+                text: "I declare that the information I have provided in this notification I am submitting is true and correct."
+              }
+            ]
+          }) }}
+
+          <p class="govuk-body">Date of declaration: {{ submissionDate }}</p>
+
+          <div class="govuk-button-group">
+            {{ govukButton({
+              text: "Submit notification"
+            }) }}
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

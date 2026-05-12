@@ -16,8 +16,7 @@ export const transporterController = {
   },
   post: {
     async handler(_request, h) {
-      // TODO: redirect to the intended next journey step once route is finalised.
-      return h.redirect('/transporter')
+      return h.redirect('/declaration')
     }
   }
 }

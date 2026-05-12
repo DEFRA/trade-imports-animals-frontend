@@ -63,7 +63,7 @@ describe('portOfEntryController', () => {
 
   describe('POST /port-of-entry', () => {
     test('saves portOfEntry and arrivalDate to session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({})
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -84,10 +84,7 @@ describe('portOfEntryController', () => {
         month: 3,
         year: 2026
       })
-      expect(notificationClient.submit).toHaveBeenCalledWith(
-        request,
-        'trace-abc'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
       expect(response).toEqual({ statusCode: 302, location: '/transporter' })
     })
 
@@ -124,7 +121,7 @@ describe('portOfEntryController', () => {
     })
 
     test('shows error when notification client throws', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+      vi.spyOn(notificationClient, 'save').mockRejectedValue(
         new Error('Backend error')
       )
 

@@ -24,6 +24,7 @@ import { destinationsSelectLighthouseConfig } from './destinations-select.config
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
 import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
 import { transporterLighthouseConfig } from './transporter.config.js'
+import { declarationLighthouseConfig } from './declaration.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -47,7 +48,8 @@ const pageConfigs = [
   destinationsSelectLighthouseConfig,
   cphNumberLighthouseConfig,
   portOfEntryLighthouseConfig,
-  transporterLighthouseConfig
+  transporterLighthouseConfig,
+  declarationLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
