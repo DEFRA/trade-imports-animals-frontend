@@ -25,7 +25,13 @@
 
         <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
 
-        <p class="govuk-body">Date of declaration: <strong>{{ submissionDate }}</strong></p>
+        <p class="govuk-body"><strong>I confirm I am responsible for this notification.</strong></p>
+
+        <p class="govuk-body">I am responsible from the submission of this notification to when it enters Great Britain.</p>
+
+        <p class="govuk-body">I am authorised as being accountable for these things if raising notifications on behalf of a third party.</p>
+
+        <p class="govuk-body">I can legally act on behalf of a third party in relation to the conditions of this declaration.</p>
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -36,14 +42,16 @@
             items: [
               {
                 value: "confirmed",
-                text: "I confirm that the information I have provided is true and correct and I am authorised to submit this notification"
+                text: "I declare that the information I have provided in this notification I am submitting is true and correct."
               }
             ]
           }) }}
 
+          <p class="govuk-body">Date of declaration: {{ submissionDate }}</p>
+
           <div class="govuk-button-group">
             {{ govukButton({
-              text: "Confirm and submit"
+              text: "Submit notification"
             }) }}
           </div>
         </form>
