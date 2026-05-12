@@ -82,7 +82,7 @@ describe('importReasonController', () => {
 
   describe('POST reason for import', () => {
     test('stores reasonForImport, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -101,7 +101,7 @@ describe('importReasonController', () => {
       const response = await importReasonController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith('reasonForImport', 'internalMarket')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(notificationClient.save).toHaveBeenCalledWith(
         request,
         'trace-123'
       )
@@ -112,7 +112,7 @@ describe('importReasonController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+      vi.spyOn(notificationClient, 'save').mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

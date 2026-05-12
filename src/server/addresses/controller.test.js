@@ -109,7 +109,7 @@ describe('addressesController', () => {
   })
 
   test('redirects to cph-number when notification client throws', async () => {
-    vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+    vi.spyOn(notificationClient, 'save').mockRejectedValue(
       new Error('Backend error')
     )
 
@@ -123,7 +123,7 @@ describe('addressesController', () => {
 
     const response = await addressesController.post.handler(request, h)
 
-    expect(notificationClient.submit).toHaveBeenCalledWith(request, 'trace-123')
+    expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
     expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
       referenceNumber: 'REF-123'
     })
@@ -138,7 +138,7 @@ describe('addressesController', () => {
 
   describe('POST addresses', () => {
     test('submit notification with selected consignor', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -153,7 +153,7 @@ describe('addressesController', () => {
 
       const response = await addressesController.post.handler(request, h)
 
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(notificationClient.save).toHaveBeenCalledWith(
         request,
         'trace-123'
       )

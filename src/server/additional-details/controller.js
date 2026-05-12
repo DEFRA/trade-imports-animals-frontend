@@ -46,7 +46,7 @@ export const additionalDetailsController = {
       setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
 
       try {
-        await notificationClient.submit(_request, traceId)
+        await notificationClient.save(_request, traceId)
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)

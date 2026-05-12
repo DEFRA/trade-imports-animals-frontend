@@ -89,7 +89,7 @@ describe('additionalDetailsController', () => {
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -118,7 +118,7 @@ describe('additionalDetailsController', () => {
         'breedingAndOrProduction'
       )
       expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(notificationClient.save).toHaveBeenCalledWith(
         request,
         'trace-123'
       )
@@ -129,7 +129,7 @@ describe('additionalDetailsController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+      vi.spyOn(notificationClient, 'save').mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

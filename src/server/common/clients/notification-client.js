@@ -164,9 +164,9 @@ function setNotificationSessionValues(request, notification) {
 export const notificationClient = {
   /**
    * Builds a complete notification object from all session values
-   * and submits it to the backend
+   * and saves it to the backend
    */
-  async submit(_request, traceId) {
+  async save(_request, traceId) {
     const notification = buildNotificationPayload(_request)
 
     const response = await fetch(

@@ -17,7 +17,7 @@ vi.mock('../../common/helpers/logging/logger.js', () => ({
 describe('commodityDetailsController', () => {
   describe('POST /commodities/details', () => {
     test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -83,7 +83,7 @@ describe('commodityDetailsController', () => {
         })
       )
 
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(notificationClient.save).toHaveBeenCalledWith(
         request,
         'trace-123'
       )
@@ -94,7 +94,7 @@ describe('commodityDetailsController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+      vi.spyOn(notificationClient, 'save').mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

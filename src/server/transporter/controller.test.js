@@ -20,7 +20,7 @@ describe('#transporterController', () => {
 
   beforeAll(async () => {
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+    vi.spyOn(notificationClient, 'save').mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 

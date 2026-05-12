@@ -18,7 +18,7 @@ describe('commoditiesSelectController', () => {
   describe('GET /commodities/select', () => {
     beforeAll(() => {
       vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
     })
@@ -93,7 +93,7 @@ describe('commoditiesSelectController', () => {
   describe('POST /commodities/select', () => {
     beforeAll(() => {
       vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
     })
@@ -183,7 +183,7 @@ describe('commoditiesSelectController', () => {
         statusText: 'Internal Server Error'
       })
 
-      notificationClient.submit.mockRejectedValue(submitError)
+      notificationClient.save.mockRejectedValue(submitError)
 
       const set = vi.fn()
       const get = vi.fn((key) => {

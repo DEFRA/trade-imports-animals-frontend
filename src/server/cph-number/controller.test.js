@@ -52,7 +52,7 @@ describe('cphNumberController', () => {
 
   describe('POST /cph-number', () => {
     test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({})
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -68,7 +68,7 @@ describe('cphNumberController', () => {
       const response = await cphNumberController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith('cphNumber', '123456789')
-      expect(notificationClient.submit).toHaveBeenCalledWith(
+      expect(notificationClient.save).toHaveBeenCalledWith(
         request,
         'trace-abc'
       )
@@ -76,7 +76,7 @@ describe('cphNumberController', () => {
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue({})
+      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -169,7 +169,7 @@ describe('cphNumberController', () => {
     })
 
     test('shows error page when notification client throws', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+      vi.spyOn(notificationClient, 'save').mockRejectedValue(
         new Error('Backend error')
       )
 

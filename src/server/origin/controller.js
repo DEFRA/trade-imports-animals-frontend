@@ -86,7 +86,7 @@ export const originController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        const response = await notificationClient.submit(_request, traceId)
+        const response = await notificationClient.save(_request, traceId)
 
         // Store reference number in session if returned (backend returns string directly)
         if (response?.referenceNumber) {
