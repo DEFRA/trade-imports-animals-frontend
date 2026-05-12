@@ -76,7 +76,7 @@ describe('commoditiesSelectController', () => {
           }),
           typeItems: [
             { value: '', text: 'Select type of commodity' },
-            { text: '────────────────────────', disabled: true },
+            { text: '──────────', disabled: true },
             { value: 'Domestic', text: 'Domestic' }
           ],
           speciesItems: [

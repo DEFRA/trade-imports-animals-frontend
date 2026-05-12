@@ -39,7 +39,7 @@ function toJsonObject(detailsList) {
 function buildTypeItems(speciesDetails) {
   return [
     { value: '', text: 'Select type of commodity' },
-    { text: '────────────────────────', disabled: true },
+    { text: '──────────', disabled: true },
     ...(speciesDetails?.data?.types ?? []).map((t) => ({
       value: t.text,
       text: t.text
