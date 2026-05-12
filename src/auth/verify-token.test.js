@@ -3,7 +3,7 @@ import { verifyToken } from './verify-token.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
-const jwkToPemMock = vi.hoisted(() => vi.fn())
+const createPublicKeyMock = vi.hoisted(() => vi.fn())
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
@@ -17,8 +17,8 @@ vi.mock('./get-oidc-config.js', () => ({
   getOidcConfig: getOidcConfigMock
 }))
 
-vi.mock('jwk-to-pem', () => ({
-  default: jwkToPemMock
+vi.mock('node:crypto', () => ({
+  createPublicKey: createPublicKeyMock
 }))
 
 vi.mock('@hapi/jwt', () => ({
@@ -61,7 +61,7 @@ describe('verifyToken', () => {
 
     getOidcConfigMock.mockResolvedValue({ jwks_uri: jwksUri })
     wreckGetMock.mockResolvedValue({ payload: { keys } })
-    jwkToPemMock.mockReturnValue(pem)
+    createPublicKeyMock.mockReturnValue({ export: vi.fn().mockReturnValue(pem) })
     jwtDecodeMock.mockReturnValue(decoded)
     jwtVerifyMock.mockReturnValue(true)
 
@@ -72,7 +72,7 @@ describe('verifyToken', () => {
       headers: { [tracingHeader]: traceId },
       json: true
     })
-    expect(jwkToPemMock).toHaveBeenCalledWith(jwk)
+    expect(createPublicKeyMock).toHaveBeenCalledWith({ key: jwk, format: 'jwk' })
     expect(jwtDecodeMock).toHaveBeenCalledWith(token)
     expect(jwtVerifyMock).toHaveBeenCalledWith(decoded, {
       key: pem,
@@ -95,7 +95,7 @@ describe('verifyToken', () => {
     })
     wreckGetMock.mockResolvedValue({ payload: { keys: [] } })
 
-    jwkToPemMock.mockImplementation(() => {
+    createPublicKeyMock.mockImplementation(() => {
       throw new Error('no jwk available')
     })
 
