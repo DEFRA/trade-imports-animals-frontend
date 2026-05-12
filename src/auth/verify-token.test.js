@@ -61,7 +61,9 @@ describe('verifyToken', () => {
 
     getOidcConfigMock.mockResolvedValue({ jwks_uri: jwksUri })
     wreckGetMock.mockResolvedValue({ payload: { keys } })
-    createPublicKeyMock.mockReturnValue({ export: vi.fn().mockReturnValue(pem) })
+    createPublicKeyMock.mockReturnValue({
+      export: vi.fn().mockReturnValue(pem)
+    })
     jwtDecodeMock.mockReturnValue(decoded)
     jwtVerifyMock.mockReturnValue(true)
 
@@ -72,7 +74,10 @@ describe('verifyToken', () => {
       headers: { [tracingHeader]: traceId },
       json: true
     })
-    expect(createPublicKeyMock).toHaveBeenCalledWith({ key: jwk, format: 'jwk' })
+    expect(createPublicKeyMock).toHaveBeenCalledWith({
+      key: jwk,
+      format: 'jwk'
+    })
     expect(jwtDecodeMock).toHaveBeenCalledWith(token)
     expect(jwtVerifyMock).toHaveBeenCalledWith(decoded, {
       key: pem,
