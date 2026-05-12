@@ -1,8 +1,12 @@
 import { format, isDate, isValid, parseISO } from 'date-fns'
 
 function toDate(value) {
-  if (isDate(value)) return value
-  if (typeof value === 'string') return parseISO(value)
+  if (isDate(value)) {
+    return value
+  }
+  if (typeof value === 'string') {
+    return parseISO(value)
+  }
   return null
 }
 
