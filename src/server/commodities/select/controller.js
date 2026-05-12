@@ -161,7 +161,6 @@ export const commoditiesSelectController = {
         const updatedSpecies = (updatedComplement?.species ?? [])
           .map((s) => (typeof s === 'string' ? s : s?.value))
           .filter(Boolean)
-        const speciesDetails = toJsonObject(speciesDetailsList)
         return h
           .view('commodities/select/index', {
             pageTitle: 'Select species of commodity',
