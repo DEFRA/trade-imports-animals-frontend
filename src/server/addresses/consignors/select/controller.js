@@ -20,7 +20,6 @@ export const consignorsSelectController = {
 
       return h.view('addresses/consignors/select/index', {
         pageTitle: 'Search for an existing consignor or exporter',
-        heading: 'Address',
         referenceNumber,
         consignors
       })

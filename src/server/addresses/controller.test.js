@@ -36,7 +36,6 @@ describe('addressesController', () => {
 
       expect(h.view).toHaveBeenCalledWith('addresses/index', {
         pageTitle: 'Addresses',
-        heading: 'Addresses',
         referenceNumber: 'REF-123',
         selectedConsignor: null,
         selectedDestination: null
