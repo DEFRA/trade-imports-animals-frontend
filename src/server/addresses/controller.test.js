@@ -153,10 +153,7 @@ describe('addressesController', () => {
 
       const response = await addressesController.post.handler(request, h)
 
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-123'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
         referenceNumber: 'REF-123'
       })

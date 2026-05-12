@@ -280,7 +280,11 @@ describe('#notificationClient', () => {
         })
 
         await expect(
-          notificationClient.submitNotification(mockRequest, referenceNumber, traceId)
+          notificationClient.submitNotification(
+            mockRequest,
+            referenceNumber,
+            traceId
+          )
         ).rejects.toMatchObject({
           message: 'Failed to submit notification',
           status: 404,

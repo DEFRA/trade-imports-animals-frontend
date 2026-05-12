@@ -68,10 +68,7 @@ describe('cphNumberController', () => {
       const response = await cphNumberController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith('cphNumber', '123456789')
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-abc'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
       expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
     })
 

@@ -83,10 +83,7 @@ describe('commodityDetailsController', () => {
         })
       )
 
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-123'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(response).toEqual({
         statusCode: 302,
         location: '/commodities/identification'

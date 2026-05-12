@@ -101,10 +101,7 @@ describe('importReasonController', () => {
       const response = await importReasonController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith('reasonForImport', 'internalMarket')
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-123'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(response).toEqual({
         statusCode: 302,
         location: '/commodities/details'

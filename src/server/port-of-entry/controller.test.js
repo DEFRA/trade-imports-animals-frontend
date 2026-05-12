@@ -84,10 +84,7 @@ describe('portOfEntryController', () => {
         month: 3,
         year: 2026
       })
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-abc'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
       expect(response).toEqual({ statusCode: 302, location: '/transporter' })
     })
 

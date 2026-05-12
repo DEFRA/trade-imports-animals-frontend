@@ -152,10 +152,7 @@ describe('animalIdentificationDetailsController', () => {
         })
       )
 
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-123'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(h.redirect).toHaveBeenCalledWith('/additional-details', {
         referenceNumber: 'REF-789'
       })

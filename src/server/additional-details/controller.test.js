@@ -118,10 +118,7 @@ describe('additionalDetailsController', () => {
         'breedingAndOrProduction'
       )
       expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
-      expect(notificationClient.save).toHaveBeenCalledWith(
-        request,
-        'trace-123'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(response).toEqual({
         statusCode: 302,
         location: '/accompanying-documents'
