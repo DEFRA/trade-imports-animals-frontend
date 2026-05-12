@@ -58,7 +58,6 @@ describe('commoditiesSelectController', () => {
         'commodities/select/index',
         expect.objectContaining({
           pageTitle: 'Select species of commodity',
-          heading: 'Commodity',
           referenceNumber: 'REF-123',
           commodity: {
             name: 'Fish',
@@ -75,12 +74,15 @@ describe('commoditiesSelectController', () => {
             code: expect.any(String),
             description: expect.any(String)
           }),
-          speciesDetails: expect.objectContaining({
-            data: expect.objectContaining({
-              types: expect.any(Array),
-              species: expect.any(Array)
+          typeItems: expect.arrayContaining([
+            { value: '', text: 'Select type of commodity' }
+          ]),
+          speciesItems: expect.arrayContaining([
+            expect.objectContaining({
+              value: '716661',
+              checked: true
             })
-          })
+          ])
         })
       )
 

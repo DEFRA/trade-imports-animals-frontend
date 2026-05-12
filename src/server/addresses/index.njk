@@ -69,13 +69,10 @@
               <div id="place-of-destination-hint" class="govuk-hint">
                 This is where the animals will be unloaded and accommodated for at least 48 hours. If a health certificate is required, it will show this address.
               </div>
-              <div class="govuk-warning-text">
-                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-                <strong class="govuk-warning-text__text">
-                  <span class="govuk-visually-hidden">Warning</span>
-                  Providing a false address is an act of fraud.
-                </strong>
-              </div>
+              {{ govukWarningText({
+                text: "Providing a false address is an act of fraud.",
+                iconFallbackText: "Warning"
+              }) }}
               {% if selectedDestination %}
                 <table class="govuk-table govuk-table--small-text-until-tablet">
                   <thead class="govuk-table__head">
