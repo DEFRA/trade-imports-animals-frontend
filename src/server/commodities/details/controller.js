@@ -25,7 +25,6 @@ export const commodityDetailsController = {
 
       return h.view('commodities/details/index', {
         pageTitle: 'Description of goods',
-        heading: 'Commodity',
         referenceNumber,
         commodity,
         typeOfCommodity,
@@ -80,7 +79,6 @@ export const commodityDetailsController = {
         return h
           .view('commodities/details/index', {
             pageTitle: 'Description of goods',
-            heading: 'Commodity',
             referenceNumber,
             commodity: updatedCommodity,
             typeOfCommodity: updatedComplement?.typeOfCommodity,
