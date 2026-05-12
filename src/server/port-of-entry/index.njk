@@ -24,8 +24,7 @@
           }) }}
         {% endif %}
 
-        <span class="govuk-caption-l">Transport</span>
-        <h1 class="govuk-heading-l">Entry point and arrival at destination</h1>
+        {{ appHeading({ caption: "Transport", text: "Entry point and arrival at destination" }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />

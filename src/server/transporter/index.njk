@@ -15,8 +15,7 @@
   <div class="govuk-grid-column-two-thirds">
     <div class="govuk-body" data-testid="app-page-body">
 
-      <span class="govuk-caption-l">Transport</span>
-      <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+      {{ appHeading({ caption: "Transport", text: pageTitle }) }}
 
       <form method="post" novalidate>
         <input type="hidden" name="crumb" value="{{ crumb }}" />

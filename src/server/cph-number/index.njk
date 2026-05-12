@@ -23,7 +23,7 @@
           }) }}
         {% endif %}
 
-        <h1 class="govuk-heading-l">Add the County Parish Holding number (CPH)</h1>
+        {{ appHeading({ text: "Add the County Parish Holding number (CPH)" }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />

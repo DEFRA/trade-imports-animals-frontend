@@ -27,8 +27,7 @@
       <form method="post" novalidate>
         <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-        <span class="govuk-caption-xl">Description of the goods</span>
-        <h1 class="govuk-heading-xl">Commodity</h1>
+        {{ appHeading({ caption: "Description of the goods", text: "Commodity" }) }}
 
         <table class="govuk-table" id="commodityDetails">
           <caption class="govuk-table__caption govuk-table__caption--m">Commodities</caption>

@@ -23,8 +23,7 @@
           }) }}
         {% endif %}
 
-        <span class="govuk-caption-l">Description of the goods</span>
-        <h1 class="govuk-heading-l">Additional animal details</h1>
+        {{ appHeading({ caption: "Description of the goods", text: "Additional animal details" }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />

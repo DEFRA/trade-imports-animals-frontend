@@ -22,8 +22,7 @@
           }) }}
         {% endif %}
 
-        <span class="govuk-caption-l">{{ heading }}</span>
-        <h1 class="govuk-heading-l">{{ heading }}</h1>
+        {{ appHeading({ caption: heading, text: heading }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
