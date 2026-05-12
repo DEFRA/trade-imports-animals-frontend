@@ -20,7 +20,7 @@ describe('#transporterController', () => {
 
   beforeAll(async () => {
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+    vi.spyOn(notificationClient, 'save').mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 
@@ -51,7 +51,7 @@ describe('#transporterController', () => {
   })
 
   describe('POST /transporter', () => {
-    test('redirects to /transporter', async () => {
+    test('redirects to /declaration', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/transporter',
@@ -63,10 +63,10 @@ describe('#transporterController', () => {
       })
 
       expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/transporter')
+      expect(headers.location).toBe('/declaration')
     })
 
-    test('redirects regardless when reference number is not in session', async () => {
+    test('redirects to /declaration regardless when reference number is not in session', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/transporter',
@@ -78,7 +78,7 @@ describe('#transporterController', () => {
       })
 
       expect(statusCode).toBe(302)
-      expect(headers.location).toBe('/transporter')
+      expect(headers.location).toBe('/declaration')
     })
   })
 })

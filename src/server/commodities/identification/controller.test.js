@@ -85,7 +85,7 @@ describe('animalIdentificationDetailsController', () => {
 
   describe('POST /commodities/identification', () => {
     test('Append animal identification details to the species, saves commodity and submits notification', async () => {
-      vi.spyOn(notificationClient, 'submit').mockResolvedValue(undefined)
+      vi.spyOn(notificationClient, 'save').mockResolvedValue(undefined)
 
       const set = vi.fn()
       const complement = {
@@ -151,10 +151,7 @@ describe('animalIdentificationDetailsController', () => {
         })
       )
 
-      expect(notificationClient.submit).toHaveBeenCalledWith(
-        request,
-        'trace-123'
-      )
+      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(h.redirect).toHaveBeenCalledWith('/additional-details', {
         referenceNumber: 'REF-789'
       })
@@ -166,7 +163,7 @@ describe('animalIdentificationDetailsController', () => {
     })
 
     test('shows error page when notification submit fails', async () => {
-      vi.spyOn(notificationClient, 'submit').mockRejectedValue(
+      vi.spyOn(notificationClient, 'save').mockRejectedValue(
         new Error('Backend error')
       )
 

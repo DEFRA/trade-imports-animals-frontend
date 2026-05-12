@@ -52,7 +52,7 @@ describe('#notificationClient', () => {
     vi.restoreAllMocks()
   })
 
-  describe('submit', () => {
+  describe('save', () => {
     describe('When submit is called with session values', () => {
       test('Should build notification from session values and send POST request', async () => {
         // Mock session values
@@ -116,7 +116,7 @@ describe('#notificationClient', () => {
           json: vi.fn().mockResolvedValue(responseBody)
         })
 
-        const result = await notificationClient.submit(mockRequest, traceId)
+        const result = await notificationClient.save(mockRequest, traceId)
 
         expect(fetch).toHaveBeenCalledTimes(1)
         expect(fetch).toHaveBeenCalledWith(
@@ -156,7 +156,7 @@ describe('#notificationClient', () => {
           json: vi.fn().mockResolvedValue({})
         })
 
-        await notificationClient.submit(mockRequest, traceId)
+        await notificationClient.save(mockRequest, traceId)
 
         expect(fetch).toHaveBeenCalledWith(
           'http://mock-backend/notifications',
@@ -185,7 +185,7 @@ describe('#notificationClient', () => {
           json: vi.fn().mockResolvedValue({})
         })
 
-        await notificationClient.submit(mockRequest, traceId)
+        await notificationClient.save(mockRequest, traceId)
 
         const body = JSON.parse(fetch.mock.calls[0][1].body)
         expect(body.transport.portOfEntry).toBe('ABERDEEN')
@@ -206,7 +206,7 @@ describe('#notificationClient', () => {
           json: vi.fn().mockResolvedValue({})
         })
 
-        await notificationClient.submit(mockRequest, traceId)
+        await notificationClient.save(mockRequest, traceId)
 
         const body = JSON.parse(fetch.mock.calls[0][1].body)
         expect(body.transport.portOfEntry).toBe('EDINBURGH')
@@ -214,8 +214,8 @@ describe('#notificationClient', () => {
       })
     })
 
-    describe('When submit request fails', () => {
-      test('Should throw an error when submit request fails', async () => {
+    describe('When save request fails', () => {
+      test('Should throw an error when save request fails', async () => {
         mockGetSessionValue.mockReturnValue(null)
 
         fetch.mockResolvedValueOnce({
@@ -226,11 +226,69 @@ describe('#notificationClient', () => {
         })
 
         await expect(
-          notificationClient.submit(mockRequest, traceId)
+          notificationClient.save(mockRequest, traceId)
         ).rejects.toMatchObject({
           message: 'Failed to submit notification',
           status: 500,
           statusText: 'Internal Server Error'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
+  describe('submitNotification', () => {
+    const referenceNumber = 'REF-123'
+
+    describe('When submitNotification is called with a valid reference number', () => {
+      test('Should send POST request to the submit endpoint and return the response', async () => {
+        const responseBody = { referenceNumber, status: 'SUBMITTED' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.submitNotification(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications/REF-123/submit',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            }
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When submitNotification request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        await expect(
+          notificationClient.submitNotification(
+            mockRequest,
+            referenceNumber,
+            traceId
+          )
+        ).rejects.toMatchObject({
+          message: 'Failed to submit notification',
+          status: 404,
+          statusText: 'Not Found'
         })
 
         expect(mockLoggerError).toHaveBeenCalledTimes(1)

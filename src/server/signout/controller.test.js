@@ -20,7 +20,7 @@ describe('GET /signout', () => {
   beforeAll(async () => {
     // Avoid any backend calls during server init/requests
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+    vi.spyOn(notificationClient, 'save').mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 

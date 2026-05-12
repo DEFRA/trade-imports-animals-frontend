@@ -17,7 +17,7 @@ describe('#homeController', () => {
   beforeAll(async () => {
     // Mock notification client to avoid backend calls
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+    vi.spyOn(notificationClient, 'save').mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 

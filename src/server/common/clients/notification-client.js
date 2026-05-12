@@ -164,9 +164,9 @@ function setNotificationSessionValues(request, notification) {
 export const notificationClient = {
   /**
    * Builds a complete notification object from all session values
-   * and submits it to the backend
+   * and saves it to the backend
    */
-  async submit(_request, traceId) {
+  async save(_request, traceId) {
     const notification = buildNotificationPayload(_request)
 
     const response = await fetch(
@@ -188,6 +188,32 @@ export const notificationClient = {
 
       logger.error(`Failed to submit notification: ${error.message}`)
 
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Submits a notification, transitioning its status from DRAFT to SUBMITTED
+   */
+  async submitNotification(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/submit`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to submit notification')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to submit notification: ${error.message}`)
       throw error
     }
 

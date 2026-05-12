@@ -150,7 +150,7 @@ export const commoditiesSelectController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        await notificationClient.submit(_request, traceId)
+        await notificationClient.save(_request, traceId)
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)

@@ -21,7 +21,7 @@ describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
     vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'submit').mockResolvedValue({
+    vi.spyOn(notificationClient, 'save').mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 
@@ -174,7 +174,7 @@ describe('#commoditiesController', () => {
     })
 
     test('Should show error page when backend submit fails', async () => {
-      notificationClient.submit = vi.fn().mockRejectedValue(
+      notificationClient.save = vi.fn().mockRejectedValue(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'
