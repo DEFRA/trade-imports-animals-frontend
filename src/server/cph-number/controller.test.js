@@ -27,7 +27,6 @@ describe('cphNumberController', () => {
 
       expect(h.view).toHaveBeenCalledWith('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
-        heading: 'Add the County Parish Holding number (CPH)',
         cphNumber: '123456789',
         referenceNumber: 'REF-123'
       })
@@ -43,7 +42,6 @@ describe('cphNumberController', () => {
 
       expect(h.view).toHaveBeenCalledWith('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
-        heading: 'Add the County Parish Holding number (CPH)',
         cphNumber: null,
         referenceNumber: null
       })
