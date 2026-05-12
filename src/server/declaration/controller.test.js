@@ -14,13 +14,25 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 }))
 
 describe('declarationController', () => {
+  function buildRequest(payload = {}) {
+    const get = vi.fn((key) =>
+      key === 'referenceNumber' ? 'DRAFT.IMP.2026.abc123' : null
+    )
+    return { payload, yar: { get } }
+  }
+
+  function buildErrorH() {
+    const mockCode = vi.fn((statusCode) => ({ statusCode }))
+    const h = {
+      view: vi.fn(() => ({ code: mockCode })),
+      redirect: vi.fn()
+    }
+    return { mockCode, h }
+  }
+
   describe('GET /declaration', () => {
     test('renders view with referenceNumber and submissionDate from session', () => {
-      const get = vi.fn((key) => {
-        if (key === 'referenceNumber') return 'DRAFT.IMP.2026.abc123'
-        return null
-      })
-      const request = { yar: { get } }
+      const request = buildRequest()
       const h = { view: vi.fn((template, data) => ({ template, data })) }
 
       const response = declarationController.get.handler(request, h)
@@ -56,14 +68,7 @@ describe('declarationController', () => {
     test('submits notification and redirects to /declaration on success', async () => {
       vi.spyOn(notificationClient, 'submitNotification').mockResolvedValue({})
 
-      const get = vi.fn((key) => {
-        if (key === 'referenceNumber') return 'DRAFT.IMP.2026.abc123'
-        return null
-      })
-      const request = {
-        payload: { declaration: 'confirmed' },
-        yar: { get }
-      }
+      const request = buildRequest({ declaration: 'confirmed' })
       const h = {
         view: vi.fn(),
         redirect: vi.fn((location) => ({ statusCode: 302, location }))
@@ -80,21 +85,8 @@ describe('declarationController', () => {
     })
 
     test('returns 400 with error summary when checkbox is not checked', async () => {
-      const get = vi.fn((key) => {
-        if (key === 'referenceNumber') return 'DRAFT.IMP.2026.abc123'
-        return null
-      })
-      const request = {
-        payload: {},
-        yar: { get }
-      }
-      const mockCode = vi.fn(function (statusCode) {
-        return { ...this, statusCode }
-      })
-      const h = {
-        view: vi.fn(() => ({ code: mockCode })),
-        redirect: vi.fn()
-      }
+      const request = buildRequest({})
+      const { h } = buildErrorH()
 
       const response = await declarationController.post.handler(request, h)
 
@@ -117,19 +109,8 @@ describe('declarationController', () => {
         new Error('Backend error')
       )
 
-      const get = vi.fn((key) => {
-        if (key === 'referenceNumber') return 'DRAFT.IMP.2026.abc123'
-        return null
-      })
-      const request = {
-        payload: { declaration: 'confirmed' },
-        yar: { get }
-      }
-      const mockCode = vi.fn(() => ({ statusCode: 500 }))
-      const h = {
-        view: vi.fn(() => ({ code: mockCode })),
-        redirect: vi.fn()
-      }
+      const request = buildRequest({ declaration: 'confirmed' })
+      const { mockCode, h } = buildErrorH()
 
       await declarationController.post.handler(request, h)
 
