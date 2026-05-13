@@ -212,6 +212,31 @@ describe('#notificationClient', () => {
         expect(body.transport.portOfEntry).toBe('EDINBURGH')
         expect(body.transport.arrivalDate).toBeUndefined()
       })
+
+      test('Should nest transporter under transport when transporter is set without port or date', async () => {
+        const transporter = {
+          name: 'Example Haulage',
+          approvalNumber: 'UK-1',
+          type: 'Haulier',
+          address: { addressLine1: '1 Road', country: 'GB' }
+        }
+        mockGetSessionValue.mockImplementation((req, key) => {
+          if (key === 'transporter') {
+            return transporter
+          }
+          return null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport).toEqual({ transporter })
+      })
     })
 
     describe('When save request fails', () => {
@@ -438,6 +463,77 @@ describe('#notificationClient', () => {
           mockRequest,
           'arrivalDate',
           { day: 5, month: 3, year: 2026 }
+        )
+      })
+
+      test('Should hydrate transporter from transport.transporter when nested', async () => {
+        const transporter = {
+          name: 'Nested Ltd',
+          approvalNumber: 'NEST-1',
+          type: 'Haulier',
+          address: { addressLine1: '2 Lane', country: 'ES' }
+        }
+        const responseBody = {
+          transport: {
+            portOfEntry: 'DOVER',
+            transporter
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'transporter',
+          transporter
+        )
+      })
+
+      test('Should hydrate transporter from root transporter when backend omits transport wrapper', async () => {
+        const transporter = {
+          name: 'Root Only Co',
+          approvalNumber: 'ROOT-1',
+          type: 'Haulier',
+          address: { addressLine1: '3 St', country: 'FR' }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({ transporter })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'transporter',
+          transporter
+        )
+      })
+
+      test('Should prefer transport.transporter over root transporter when both are present', async () => {
+        const nested = { name: 'Nested wins', approvalNumber: 'N-1' }
+        const root = { name: 'Root loses', approvalNumber: 'R-1' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            transporter: root,
+            transport: { transporter: nested }
+          })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          'transporter',
+          nested
         )
       })
     })
