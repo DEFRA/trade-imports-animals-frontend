@@ -1,4 +1,5 @@
 {% extends 'layouts/page.njk' %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
@@ -11,6 +12,13 @@
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     <div class="govuk-body" data-testid="app-page-body">
+
+      {% if errorList %}
+        {{ govukErrorSummary({
+          titleText: "There is a problem",
+          errorList: errorList
+        }) }}
+      {% endif %}
 
       {{ appHeading({ caption: "Transport", text: pageTitle }) }}
 
@@ -27,7 +35,7 @@
           </div>
           <div id="findOutHowLink">
             <p class="govuk-body">
-              <a href="#" class="govuk-link" rel="noreferrer noopener" target="_blank">
+              <a href="https://www.gov.uk/guidance/transporting-animals-in-great-britain" class="govuk-link" rel="noreferrer noopener" target="_blank">
                 Find out how to transport animals in connection with an economic activity (opens in new tab)</a>
             </p>
           </div>
@@ -37,10 +45,34 @@
           </div>
         </div>
         <div>
-          <p class="govuk-body">
-            {# TODO: Replace placeholder link with transporter select flow route when implemented. #}
-            <a href="#" class="govuk-link govuk-link--no-visited-state" id="addTransporter">Add a transporter</a>
-          </p>
+          {% if selectedTransporter %}
+            <table class="govuk-table govuk-table--small-text-until-tablet">
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header govuk-!-width-one-half">Name, address and country</th>
+                <th scope="col" class="govuk-table__header">Approval number</th>
+                <th scope="col" class="govuk-table__header">Type</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell">
+                  {{ selectedTransporter.name }}
+                  <p class="govuk-body">
+                    {{ selectedTransporter.address.addressLine1 }}{% if selectedTransporter.address.addressLine2 %}, {{ selectedTransporter.address.addressLine2 }}{% endif %}{% if selectedTransporter.address.addressLine3 %}, {{ selectedTransporter.address.addressLine3 }}{% endif %}
+                    {{ selectedTransporter.address.country }}
+                  </p>
+                </td>
+                <td class="govuk-table__cell">{{ selectedTransporter.approvalNumber }}</td>
+                <td class="govuk-table__cell">{{ selectedTransporter.type }}</td>
+              </tr>
+              </tbody>
+            </table>
+          {% else %}
+            <p class="govuk-body">
+              <a href="/transporter/select" class="govuk-link govuk-link--no-visited-state" id="addTransporter">Add a transporter</a>
+            </p>
+          {% endif %}
         </div>
 
         <div class="govuk-button-group">

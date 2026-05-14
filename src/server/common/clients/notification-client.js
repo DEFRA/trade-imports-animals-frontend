@@ -75,6 +75,16 @@ function setTransport(notification, request) {
   }
 }
 
+function setTransporter(notification, request) {
+  const transporter = getSessionValue(request, 'transporter')
+  if (transporter) {
+    if (!notification.transport) {
+      notification.transport = {}
+    }
+    notification.transport.transporter = transporter
+  }
+}
+
 function buildNotificationPayload(request) {
   const notification = {}
 
@@ -105,6 +115,8 @@ function buildNotificationPayload(request) {
 
   setTransport(notification, request)
 
+  setTransporter(notification, request)
+
   return notification
 }
 
@@ -134,30 +146,36 @@ function setTransportValues(request, transport) {
   }
 }
 
-function setNotificationSessionValues(request, notification) {
-  if (notification.referenceNumber) {
-    setSessionValue(request, 'referenceNumber', notification.referenceNumber)
+const NOTIFICATION_SESSION_KEYS = [
+  'referenceNumber',
+  'commodity',
+  'reasonForImport',
+  'consignor',
+  'destination',
+  'cphNumber'
+]
+
+function setNotificationSessionFields(request, notification) {
+  for (const key of NOTIFICATION_SESSION_KEYS) {
+    const value = notification[key]
+    if (value) {
+      setSessionValue(request, key, value)
+    }
   }
+}
+
+function setNotificationSessionValues(request, notification) {
+  setNotificationSessionFields(request, notification)
   if (notification.origin) {
     setOriginValues(request, notification.origin)
   }
-  if (notification.commodity) {
-    setSessionValue(request, 'commodity', notification.commodity)
-  }
-  if (notification.reasonForImport) {
-    setSessionValue(request, 'reasonForImport', notification.reasonForImport)
-  }
-  if (notification.consignor) {
-    setSessionValue(request, 'consignor', notification.consignor)
-  }
-  if (notification.destination) {
-    setSessionValue(request, 'destination', notification.destination)
-  }
-  if (notification.cphNumber) {
-    setSessionValue(request, 'cphNumber', notification.cphNumber)
-  }
   if (notification.transport) {
     setTransportValues(request, notification.transport)
+  }
+  const transporter =
+    notification.transport?.transporter ?? notification.transporter
+  if (transporter) {
+    setSessionValue(request, 'transporter', transporter)
   }
 }
 
