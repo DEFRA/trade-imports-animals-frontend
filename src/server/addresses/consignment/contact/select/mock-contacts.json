@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Animal and Plant Health Agency",
+    "address": {
+      "addressLine1": "Woodham Lane",
+      "addressLine2": "New Haw",
+      "addressLine3": "Addlestone",
+      "postcode": "KT15 3NB",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "EuroStore Services",
+    "address": {
+      "addressLine1": "8448 Gleason Creek",
+      "addressLine2": "Apt. 221",
+      "addressLine3": "Hyattmouth",
+      "postcode": "72183",
+      "country": "France"
+    }
+  },
+  {
+    "name": "Laiterie du Nord SARL",
+    "address": {
+      "addressLine1": "4295 Michele Courts",
+      "addressLine2": "Suite 479",
+      "addressLine3": "Kesslerbury",
+      "postcode": "528274",
+      "country": "Albania"
+    }
+  }
+]
