@@ -1,0 +1,72 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block content %}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/transporter"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        {{ appHeading({ caption: "Address", text: pageTitle }) }}
+
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
+
+        <p class="govuk-body">This is the contact address of the person responsible for the consignment from when it enters Great Britain until authorities complete their checks.</p>
+
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+          {% set radioItems = [] %}
+          {% for contact in contacts %}
+            {% set addressHtml %}
+            {% if contact.name %}<strong>{{ contact.name }}</strong><br>{% endif %}
+              {{ contact.address.addressLine1 }}<br>
+              {% if contact.address.addressLine2 %}{{ contact.address.addressLine2 }}<br>{% endif %}
+              {% if contact.address.addressLine3 %}{{ contact.address.addressLine3 }}<br>{% endif %}
+              {% if contact.address.postcode %}{{ contact.address.postcode }}<br>{% endif %}
+              {{ contact.address.country }}
+            {% endset %}
+            {% set _ = radioItems.push({
+              value: loop.index0,
+              html: addressHtml
+            }) %}
+          {% endfor %}
+
+          {{ govukRadios({
+            name: "contactAddress",
+            fieldset: {
+              legend: {
+                text: "Select an address",
+                classes: "govuk-fieldset__legend--m"
+              }
+            },
+            hint: {
+              html: 'If the correct address is not shown, <a href="#" class="govuk-link">add a new branch address</a>, then return to this page.'
+            },
+            errorMessage: fieldErrors.contactAddress if fieldErrors,
+            items: radioItems
+          }) }}
+
+          {{ govukButton({
+            text: "Save and continue"
+          }) }}
+
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
