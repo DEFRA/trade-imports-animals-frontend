@@ -1,7 +1,5 @@
 {% extends 'layouts/page.njk' %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 
@@ -29,8 +27,7 @@
         <input type="hidden" id="totalNoOfAnimals" name="totalNoOfAnimals" value="{{ totalNoOfAnimals }}" />
         <input type="hidden" id="totalNoOfPackages" name="totalNoOfPackages" value="{{ totalNoOfPackages }}" />
 
-          <span class="govuk-caption-xl">Description of the goods</span>
-          <h1 class="govuk-heading-xl">Commodity</h1>
+          {{ appHeading({ caption: "Description of the goods", text: "Commodity" }) }}
 
           <table class="govuk-table">
             <caption class="govuk-table__caption govuk-table__caption--m">Commodities</caption>
@@ -64,10 +61,28 @@
                   {{ species.text }}, {{ typeOfCommodity }}
                 </td>
                 <td class="govuk-table__cell">
-                  <input class="govuk-input" id="noOfAnimals-{{ species.value }}" name="noOfAnimals-{{ species.value }}" type="number" value="{{ species.noOfAnimals }}"/>
+                  {{ govukInput({
+                    id: "noOfAnimals-" + species.value,
+                    name: "noOfAnimals-" + species.value,
+                    value: species.noOfAnimals,
+                    type: "number",
+                    label: {
+                      text: "Number of animals for " + species.text,
+                      classes: "govuk-visually-hidden"
+                    }
+                  }) }}
                 </td>
                 <td class="govuk-table__cell">
-                  <input class="govuk-input" id="noOfPackages-{{ species.value }}" name="noOfPackages-{{ species.value }}" type="number" value="{{ species.noOfPackages }}"/>
+                  {{ govukInput({
+                    id: "noOfPackages-" + species.value,
+                    name: "noOfPackages-" + species.value,
+                    value: species.noOfPackages,
+                    type: "number",
+                    label: {
+                      text: "Number of packages for " + species.text,
+                      classes: "govuk-visually-hidden"
+                    }
+                  }) }}
                 </td>
               </tr>
             {% endfor %}

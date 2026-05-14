@@ -49,7 +49,6 @@ describe('animalIdentificationDetailsController', () => {
 
       expect(h.view).toHaveBeenCalledWith('commodities/identification/index', {
         pageTitle: 'Description of goods',
-        heading: 'Commodity',
         referenceNumber: 'REF-456',
         commodity,
         typeOfCommodity: 'Domestic',

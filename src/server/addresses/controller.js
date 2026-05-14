@@ -64,7 +64,6 @@ export const addressesController = {
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',
-        heading: 'Addresses',
         referenceNumber,
         selectedConsignor,
         selectedDestination

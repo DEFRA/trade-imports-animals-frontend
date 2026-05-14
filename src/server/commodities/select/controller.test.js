@@ -58,7 +58,6 @@ describe('commoditiesSelectController', () => {
         'commodities/select/index',
         expect.objectContaining({
           pageTitle: 'Select species of commodity',
-          heading: 'Commodity',
           referenceNumber: 'REF-123',
           commodity: {
             name: 'Fish',
@@ -75,12 +74,17 @@ describe('commoditiesSelectController', () => {
             code: expect.any(String),
             description: expect.any(String)
           }),
-          speciesDetails: expect.objectContaining({
-            data: expect.objectContaining({
-              types: expect.any(Array),
-              species: expect.any(Array)
-            })
-          })
+          typeItems: [
+            { value: '', text: 'Select type of commodity' },
+            { text: '──────────', disabled: true },
+            { value: 'Domestic', text: 'Domestic' }
+          ],
+          speciesItems: [
+            { value: '716661', text: 'Bison bison', checked: true },
+            { value: '1388624', text: 'Bos spp.', checked: false },
+            { value: '1148346', text: 'Bos taurus', checked: false },
+            { value: '749313', text: 'Bubalus bubalis', checked: false }
+          ]
         })
       )
 

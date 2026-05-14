@@ -47,7 +47,7 @@ describe('#commoditiesController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Commodities |'))
-      expect(result).toEqual(expect.stringContaining('Select a Commodity'))
+      expect(result).toEqual(expect.stringContaining('Select a commodity'))
     })
 
     test('Should display commodity select dropdown with Fish, Cat, Dog', async () => {

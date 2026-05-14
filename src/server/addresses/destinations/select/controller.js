@@ -25,7 +25,6 @@ export const destinationsSelectController = {
 
       return h.view('addresses/destinations/select/index', {
         pageTitle: 'Search for a place of destination',
-        heading: 'Address',
         referenceNumber,
         destinations
       })

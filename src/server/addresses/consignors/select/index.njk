@@ -1,6 +1,4 @@
 {% extends 'layouts/page.njk' %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 
 {% block content %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
@@ -14,8 +12,7 @@
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
 
-        <span class="govuk-caption-l">{{ heading }}</span>
-        <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+        {{ appHeading({ caption: "Address", text: pageTitle }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />

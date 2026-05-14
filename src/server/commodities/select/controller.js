@@ -36,6 +36,25 @@ function toJsonObject(detailsList) {
   return null
 }
 
+function buildTypeItems(speciesDetails) {
+  return [
+    { value: '', text: 'Select type of commodity' },
+    { text: '──────────', disabled: true },
+    ...(speciesDetails?.data?.types ?? []).map((t) => ({
+      value: t.text,
+      text: t.text
+    }))
+  ]
+}
+
+function buildSpeciesItems(speciesDetails, selectedValues) {
+  return (speciesDetails?.data?.species ?? []).map((s) => ({
+    value: s.value,
+    text: s.text,
+    checked: selectedValues.includes(s.value)
+  }))
+}
+
 export const commoditiesSelectController = {
   get: {
     handler(_request, h) {
@@ -52,18 +71,18 @@ export const commoditiesSelectController = {
       const species = selectedSpecies
         .map((s) => (typeof s === 'string' ? s : s?.value))
         .filter(Boolean)
-      const savedSpeciesValues = selectedSpecies.map((s) => s.value)
+
+      const speciesDetails = toJsonObject(speciesDetailsList)
 
       return h.view('commodities/select/index', {
         pageTitle: 'Select species of commodity',
-        heading: 'Commodity',
         referenceNumber,
         commodity,
         typeOfCommodity,
         species,
-        savedSpeciesValues,
         commodityDetails: toJsonObject(commodityDetailsList),
-        speciesDetails: toJsonObject(speciesDetailsList)
+        typeItems: buildTypeItems(speciesDetails),
+        speciesItems: buildSpeciesItems(speciesDetails, species)
       })
     }
   },
@@ -145,14 +164,13 @@ export const commoditiesSelectController = {
         return h
           .view('commodities/select/index', {
             pageTitle: 'Select species of commodity',
-            heading: 'Commodity',
             referenceNumber,
             commodity: updatedCommodity,
             typeOfCommodity: updatedComplement?.typeOfCommodity,
             species: updatedSpecies,
-            savedSpeciesValues: updatedSpecies,
             commodityDetails: toJsonObject(commodityDetailsList),
-            speciesDetails: toJsonObject(speciesDetailsList),
+            typeItems: buildTypeItems(speciesDetails),
+            speciesItems: buildSpeciesItems(speciesDetails, updatedSpecies),
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }
             ]

@@ -1,7 +1,5 @@
 {% extends 'layouts/page.njk' %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 
@@ -13,55 +11,52 @@
     href: "/commodities/select"
   }) }}
 
-<div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
-    <div class="govuk-body" data-testid="app-page-body">
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
 
-      {% if errorList %}
-        {{ govukErrorSummary({
-          titleText: "There is a problem",
-          errorList: errorList
-        }) }}
-      {% endif %}
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
 
-      <form method="post" novalidate>
-        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <form method="post" novalidate>
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-        <div class="govuk-form-group">
-          <fieldset class="govuk-fieldset">
-            <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-              <span class="govuk-caption-xl">About the consignment</span>
-              <h1 class="govuk-heading-xl">What is the main reason for importing the animals?</h1>
-            </legend>
-            <div class="govuk-radios" data-module="govuk-radios">
-              <div class="govuk-radios__item">
-                <input class="govuk-radios__input" id="internalMarket" name="reasonForImport" type="radio" value="internalMarket" {% if reasonForImport == 'internalMarket' %}checked{% endif %}>
-                <label class="govuk-label govuk-radios__label" for="internalMarket">
-                  Internal Market
-                </label>
-                <div id="signIn-item-hint" class="govuk-hint govuk-radios__hint">
-                  The consignment is intended for sale or use in Great Britain (England, Scotland or Wales).
-                </div>
-              </div>
-              <div class="govuk-radios__item">
-                <input class="govuk-radios__input" id="reEntry" name="reasonForImport" type="radio" value="reEntry" {% if reasonForImport == 'reEntry' %}checked{% endif %}>
-                <label class="govuk-label govuk-radios__label" for="reEntry">
-                  Re-entry
-                </label>
-                <div id="signIn-item-hint" class="govuk-hint govuk-radios__hint">
-                  The consignment is authorised for re-entry or includes rejected exports that are re-entering Great Britain.
-                </div>
-              </div>
-            </div>
-          </fieldset>
-        </div>
+          {{ govukRadios({
+            idPrefix: "reasonForImport",
+            name: "reasonForImport",
+            value: reasonForImport,
+            fieldset: {
+              legend: {
+                html: '<span class="govuk-caption-xl">About the consignment</span><h1 class="govuk-heading-xl">What is the main reason for importing the animals?</h1>',
+                classes: "govuk-fieldset__legend--l"
+              }
+            },
+            items: [
+              {
+                value: "internalMarket",
+                text: "Internal market",
+                hint: {
+                  text: "The consignment is intended for sale or use in Great Britain (England, Scotland or Wales)."
+                }
+              },
+              {
+                value: "reEntry",
+                text: "Re-entry",
+                hint: {
+                  text: "The consignment is authorised for re-entry or includes rejected exports that are re-entering Great Britain."
+                }
+              }
+            ]
+          }) }}
 
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Save and continue
-        </button>
+          {{ govukButton({ text: "Save and continue" }) }}
 
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
 {% endblock %}

@@ -1,8 +1,6 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
@@ -24,8 +22,7 @@
           }) }}
         {% endif %}
 
-        <span class="govuk-caption-l">Transport</span>
-        <h1 class="govuk-heading-l">Entry point and arrival at destination</h1>
+        {{ appHeading({ caption: "Transport", text: "Entry point and arrival at destination" }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -40,7 +37,8 @@
             value: portOfEntry if portOfEntry,
             errorMessage: fieldErrors["portOfEntry"] if fieldErrors,
             items: [
-              { value: "", text: "Entry port of entry" },
+              { value: "", text: "Select port of entry" },
+              { text: "──────────", disabled: true },
               { value: "ABERDEEN", text: "ABERDEEN" },
               { value: "EAST MIDLANDS AIRPORT", text: "EAST MIDLANDS AIRPORT" },
               { value: "EDINBURGH", text: "EDINBURGH" }

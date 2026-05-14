@@ -1,6 +1,4 @@
 {% extends 'layouts/page.njk' %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
@@ -22,8 +20,7 @@
         }) }}
       {% endif %}
 
-      <span class="govuk-caption-l">Transport</span>
-      <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+      {{ appHeading({ caption: "Transport", text: pageTitle }) }}
 
       <form method="post" novalidate>
         <input type="hidden" name="crumb" value="{{ crumb }}" />

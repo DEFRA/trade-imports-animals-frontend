@@ -19,7 +19,6 @@ export const cphNumberController = {
 
       return h.view('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
-        heading: 'Add the County Parish Holding number (CPH)',
         cphNumber,
         referenceNumber
       })
@@ -40,7 +39,6 @@ export const cphNumberController = {
         return h
           .view('cph-number/index', {
             pageTitle: 'Add the County Parish Holding number (CPH)',
-            heading: 'Add the County Parish Holding number (CPH)',
             cphNumber,
             referenceNumber,
             errorList: formattedErrors.errorList,
@@ -60,7 +58,6 @@ export const cphNumberController = {
         return h
           .view('cph-number/index', {
             pageTitle: 'Add the County Parish Holding number (CPH)',
-            heading: 'Add the County Parish Holding number (CPH)',
             cphNumber: getSessionValue(_request, 'cphNumber'),
             referenceNumber,
             errorList: [

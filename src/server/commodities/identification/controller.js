@@ -25,7 +25,6 @@ export const animalIdentificationDetailsController = {
 
       return h.view('commodities/identification/index', {
         pageTitle: 'Description of goods',
-        heading: 'Commodity',
         referenceNumber,
         commodity,
         typeOfCommodity,
@@ -75,7 +74,6 @@ export const animalIdentificationDetailsController = {
         return h
           .view('commodities/identification/index', {
             pageTitle: 'Description of goods',
-            heading: 'Commodity',
             referenceNumber,
             commodity: updatedCommodity,
             typeOfCommodity: updatedComplement?.typeOfCommodity,
