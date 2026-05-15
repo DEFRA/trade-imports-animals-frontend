@@ -9,24 +9,27 @@ const logger = createLogger()
 
 const buildRequestInit = (method, traceId, body, rawBody) => {
   const headers = { [tracingHeader]: traceId }
-  const init = { method, headers }
+  const fetchOptions = { method, headers }
   if (body !== undefined) {
     if (rawBody) {
-      init.body = body
+      fetchOptions.body = body
     } else {
       headers['Content-Type'] = 'application/json'
-      init.body = JSON.stringify(body)
+      fetchOptions.body = JSON.stringify(body)
     }
   }
-  return init
+  return fetchOptions
 }
 
 const request = async (
   path,
   { method, traceId, body, errorMessage, rawBody = false }
 ) => {
-  const init = buildRequestInit(method, traceId, body, rawBody)
-  const response = await fetch(`${tradeImportsAnimalsBackendUrl}${path}`, init)
+  const fetchOptions = buildRequestInit(method, traceId, body, rawBody)
+  const response = await fetch(
+    `${tradeImportsAnimalsBackendUrl}${path}`,
+    fetchOptions
+  )
 
   if (!response.ok) {
     const error = new Error(errorMessage)

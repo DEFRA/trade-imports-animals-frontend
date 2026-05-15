@@ -5,6 +5,17 @@ import { config } from '../config/config.js'
 const SERVER_SIDE_ENDPOINTS = ['token_endpoint', 'jwks_uri']
 const LOCAL_HOSTNAMES = new Set(['localhost', 'host.docker.internal'])
 
+function rewriteEndpointHostnames(payload, targetHostname) {
+  for (const key of SERVER_SIDE_ENDPOINTS) {
+    if (typeof payload[key] !== 'string') continue
+    const endpoint = new URL(payload[key])
+    if (endpoint.hostname !== targetHostname) {
+      endpoint.hostname = targetHostname
+      payload[key] = endpoint.toString()
+    }
+  }
+}
+
 async function getOidcConfig() {
   const discoveryUrl = config.get('defraId.oidcDiscoveryUrl')
   const { payload } = await Wreck.get(discoveryUrl, {
@@ -14,14 +25,7 @@ async function getOidcConfig() {
 
   const discoveryHostname = new URL(discoveryUrl).hostname
   if (LOCAL_HOSTNAMES.has(discoveryHostname)) {
-    for (const key of SERVER_SIDE_ENDPOINTS) {
-      if (typeof payload[key] !== 'string') continue
-      const endpoint = new URL(payload[key])
-      if (endpoint.hostname !== discoveryHostname) {
-        endpoint.hostname = discoveryHostname
-        payload[key] = endpoint.toString()
-      }
-    }
+    rewriteEndpointHostnames(payload, discoveryHostname)
   }
 
   return payload
