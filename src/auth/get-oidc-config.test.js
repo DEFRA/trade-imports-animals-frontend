@@ -43,8 +43,9 @@ describe('getOidcConfig', () => {
 
     wreckGetMock.mockResolvedValue({ payload })
 
-    await getOidcConfig()
+    const result = await getOidcConfig()
 
+    expect(result).toEqual(payload)
     expect(configGetMock).toHaveBeenCalledWith('defraId.oidcDiscoveryUrl')
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
