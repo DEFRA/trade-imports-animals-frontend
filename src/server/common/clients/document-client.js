@@ -7,7 +7,7 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
-const buildRequestInit = (method, traceId, body, rawBody) => {
+const buildRequestOptions = (method, traceId, body, rawBody) => {
   const headers = { [tracingHeader]: traceId }
   const fetchOptions = { method, headers }
   if (body !== undefined) {
@@ -25,7 +25,7 @@ const request = async (
   path,
   { method, traceId, body, errorMessage, rawBody = false }
 ) => {
-  const fetchOptions = buildRequestInit(method, traceId, body, rawBody)
+  const fetchOptions = buildRequestOptions(method, traceId, body, rawBody)
   const response = await fetch(
     `${tradeImportsAnimalsBackendUrl}${path}`,
     fetchOptions
