@@ -30,6 +30,8 @@
                   <th scope="col" class="govuk-table__header">Name</th>
                   <th scope="col" class="govuk-table__header">Address</th>
                   <th scope="col" class="govuk-table__header">Country</th>
+                  <th scope="col" class="govuk-table__header">Approval Number</th>
+                  <th scope="col" class="govuk-table__header">Type</th>
                   <th scope="col" class="govuk-table__header"></th>
                 </tr>
                 </thead>
@@ -41,6 +43,8 @@
                       {{ transporter.address.addressLine1 }}{% if transporter.address.addressLine2 %}, {{ transporter.address.addressLine2 }}{% endif %}{% if transporter.address.addressLine3 %}, {{ transporter.address.addressLine3 }}{% endif %}
                     </td>
                     <td class="govuk-table__cell">{{ transporter.address.country }}</td>
+                    <td class="govuk-table__cell">{{ transporter.approvalNumber }}</td>
+                    <td class="govuk-table__cell">{{ transporter.type }}</td>
                     <td class="govuk-table__cell">
                       <a href="/transporter?selectedTransporter={{ loop.index0 }}" class="govuk-link" id="selectedTransporter-{{ loop.index0 }}">Select</a>
                     </td>
