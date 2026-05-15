@@ -22,7 +22,7 @@ function sessionAuth(sessionId) {
   }
 }
 
-describe('#transporterController', () => {
+describe('#transportersController', () => {
   let server
 
   beforeAll(async () => {
@@ -40,11 +40,11 @@ describe('#transporterController', () => {
     vi.restoreAllMocks()
   })
 
-  describe('GET /transporter', () => {
-    test('renders transporter HTML page when no transporter is selected', async () => {
+  describe('GET /transporters', () => {
+    test('renders transporters HTML page when no transporter is selected', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporter',
+        url: '/transporters',
         auth: sessionAuth('transporter-get-default')
       })
 
@@ -57,7 +57,7 @@ describe('#transporterController', () => {
     test('stores transporter from selectedTransporter query and renders table', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporter?selectedTransporter=0',
+        url: '/transporters?selectedTransporter=0',
         auth: sessionAuth('transporter-get-selected-0')
       })
 
@@ -72,7 +72,7 @@ describe('#transporterController', () => {
     test('accepts third mock transporter index from query', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporter?selectedTransporter=2',
+        url: '/transporters?selectedTransporter=2',
         auth: sessionAuth('transporter-get-selected-2')
       })
 
@@ -84,7 +84,7 @@ describe('#transporterController', () => {
     test('ignores invalid selectedTransporter query values', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporter?selectedTransporter=not-a-number',
+        url: '/transporters?selectedTransporter=not-a-number',
         auth: sessionAuth('transporter-get-invalid-query')
       })
 
@@ -95,7 +95,7 @@ describe('#transporterController', () => {
     test('ignores out-of-range selectedTransporter index', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporter?selectedTransporter=99',
+        url: '/transporters?selectedTransporter=99',
         auth: sessionAuth('transporter-get-oob-index')
       })
 
@@ -104,7 +104,7 @@ describe('#transporterController', () => {
     })
   })
 
-  describe('POST /transporter', () => {
+  describe('POST /transporters', () => {
     beforeEach(() => {
       notificationClient.save.mockClear()
     })
@@ -112,7 +112,7 @@ describe('#transporterController', () => {
     test('calls notification save then redirects to /declaration', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
-        url: '/transporter',
+        url: '/transporters',
         auth: sessionAuth('transporter-post-submit'),
         payload: {}
       })
@@ -125,7 +125,7 @@ describe('#transporterController', () => {
     test('redirects to /declaration when reference number is not in session', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
-        url: '/transporter',
+        url: '/transporters',
         auth: sessionAuth('transporter-post-empty-session'),
         payload: {}
       })
@@ -135,12 +135,12 @@ describe('#transporterController', () => {
       expect(headers.location).toBe('/declaration')
     })
 
-    test('renders transporter page with error when notification save fails', async () => {
+    test('renders transporters page with error when notification save fails', async () => {
       notificationClient.save.mockRejectedValueOnce(new Error('Backend error'))
 
       const { statusCode, result, headers } = await server.inject({
         method: 'POST',
-        url: '/transporter',
+        url: '/transporters',
         auth: sessionAuth('transporter-post-submit-fail'),
         payload: {}
       })

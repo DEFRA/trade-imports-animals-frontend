@@ -46,7 +46,7 @@
                     <td class="govuk-table__cell">{{ transporter.approvalNumber }}</td>
                     <td class="govuk-table__cell">{{ transporter.type }}</td>
                     <td class="govuk-table__cell">
-                      <a href="/transporter?selectedTransporter={{ loop.index0 }}" class="govuk-link" id="selectedTransporter-{{ loop.index0 }}">Select</a>
+                      <a href="/transporters?selectedTransporter={{ loop.index0 }}" class="govuk-link" id="selectedTransporter-{{ loop.index0 }}">Select</a>
                     </td>
                   </tr>
                 {% endfor %}

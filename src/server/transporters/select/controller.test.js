@@ -43,10 +43,10 @@ describe('#transporterSelectController', () => {
     vi.restoreAllMocks()
   })
 
-  test('GET /transporter/select renders search page with mock transporters', async () => {
+  test('GET /transporters/select renders search page with mock transporters', async () => {
     const { result, statusCode } = await server.inject({
       method: 'GET',
-      url: '/transporter/select',
+      url: '/transporters/select',
       auth: sessionAuth('transporter-select-get')
     })
 
@@ -65,10 +65,10 @@ describe('#transporterSelectController', () => {
     expect(result).toContain('href="/transporter"')
   })
 
-  test('GET /transporter/select exposes Select links with correct indices', async () => {
+  test('GET /transporters/select exposes Select links with correct indices', async () => {
     const { result, statusCode } = await server.inject({
       method: 'GET',
-      url: '/transporter/select',
+      url: '/transporters/select',
       auth: sessionAuth('transporter-select-links')
     })
 
@@ -79,13 +79,13 @@ describe('#transporterSelectController', () => {
 
     expect(selectLinks.length).toBe(3)
     expect(selectLinks.eq(0).attr('href')).toBe(
-      '/transporter?selectedTransporter=0'
+      '/transporters?selectedTransporter=0'
     )
     expect(selectLinks.eq(1).attr('href')).toBe(
-      '/transporter?selectedTransporter=1'
+      '/transporters?selectedTransporter=1'
     )
     expect(selectLinks.eq(2).attr('href')).toBe(
-      '/transporter?selectedTransporter=2'
+      '/transporters?selectedTransporter=2'
     )
   })
 })
