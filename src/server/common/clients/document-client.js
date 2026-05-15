@@ -65,5 +65,24 @@ export const documentClient = {
       traceId,
       errorMessage: `Failed to stream file for upload ${uploadId}`
     })
+  },
+
+  async uploadFile(uploadId, formData, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}/file`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: { [tracingHeader]: traceId }
+        // Content-Type omitted intentionally — fetch sets multipart/form-data; boundary=...
+        // automatically from the FormData body.
+      }
+    )
+    if (!response.ok) {
+      const error = new Error(`Failed to upload file for upload ${uploadId}`)
+      error.status = response.status
+      error.statusText = response.statusText
+      throw error
+    }
   }
 }

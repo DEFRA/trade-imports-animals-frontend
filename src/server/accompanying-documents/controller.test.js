@@ -89,9 +89,9 @@ describe('#accompanyingDocumentsController', () => {
 
   beforeEach(() => {
     vi.spyOn(documentClient, 'initiate').mockResolvedValue({
-      uploadId: 'TEST-UPLOAD-ID',
-      uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
+      uploadId: 'TEST-UPLOAD-ID'
     })
+    vi.spyOn(documentClient, 'uploadFile').mockResolvedValue(undefined)
     getSessionValue.mockReset()
     setSessionValue.mockReset()
     // Default: no documents in session
@@ -801,15 +801,6 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should upload file, update session, and redirect on successful POST', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({ status: 0, type: 'opaqueredirect' })
-      )
-
-      documentClient.initiate.mockResolvedValue({
-        uploadId: 'TEST-UPLOAD-ID',
-        uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
-      })
       getSessionValue.mockImplementation((request, key) => {
         if (key === sessionKeys.documents) return []
         if (key === sessionKeys.referenceNumber) return 'REF-123'
@@ -841,9 +832,10 @@ describe('#accompanyingDocumentsController', () => {
         }),
         expect.any(String)
       )
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID',
-        expect.objectContaining({ method: 'POST' })
+      expect(documentClient.uploadFile).toHaveBeenCalledWith(
+        'TEST-UPLOAD-ID',
+        expect.any(FormData),
+        expect.any(String)
       )
       expect(setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
@@ -861,16 +853,10 @@ describe('#accompanyingDocumentsController', () => {
       expect(headers.location).toBe('/accompanying-documents')
     })
 
-    test('Should re-render with 500 and error message and NOT call setSessionValue when cdp-uploader returns error status', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({ status: 500, type: 'basic' })
+    test('Should re-render with 500 and error message and NOT call setSessionValue when upload returns error status', async () => {
+      vi.spyOn(documentClient, 'uploadFile').mockRejectedValueOnce(
+        Object.assign(new Error('Upload failed'), { status: 500 })
       )
-
-      documentClient.initiate.mockResolvedValue({
-        uploadId: 'TEST-UPLOAD-ID',
-        uploadUrl: 'http://cdp-uploader/upload-and-scan/TEST-UPLOAD-ID'
-      })
       getSessionValue.mockImplementation((request, key) => {
         if (key === sessionKeys.documents) return []
         if (key === sessionKeys.referenceNumber) return 'REF-123'
