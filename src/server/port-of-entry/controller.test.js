@@ -85,7 +85,7 @@ describe('portOfEntryController', () => {
         year: 2026
       })
       expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
-      expect(response).toEqual({ statusCode: 302, location: '/transporter' })
+      expect(response).toEqual({ statusCode: 302, location: '/transporters' })
     })
 
     test('returns 400 with error list when arrival day is out of range', async () => {

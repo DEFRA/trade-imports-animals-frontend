@@ -15,7 +15,7 @@ import { animalsIdentificationDetails } from './commodities/identification/index
 import { addresses } from './addresses/index.js'
 import { cphNumber } from './cph-number/index.js'
 import { portOfEntry } from './port-of-entry/index.js'
-import { transporter } from './transporter/index.js'
+import { transporter } from './transporters/index.js'
 import { declaration } from './declaration/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
