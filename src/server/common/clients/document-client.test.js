@@ -220,4 +220,73 @@ describe('#documentClient', () => {
       })
     })
   })
+
+  describe('uploadFile', () => {
+    const uploadId = 'upload-abc'
+    const formData = new FormData()
+
+    describe('When uploadFile is called with valid args', () => {
+      test('Should POST the FormData to the correct URL without Content-Type header', async () => {
+        global.fetch.mockResolvedValueOnce({
+          ok: true
+        })
+
+        await expect(
+          documentClient.uploadFile(uploadId, formData, traceId)
+        ).resolves.toBeUndefined()
+
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://mock-backend/document-uploads/upload-abc/file',
+          {
+            method: 'POST',
+            headers: {
+              'x-trace-id': traceId
+            },
+            body: formData
+          }
+        )
+      })
+
+      test('Should set the tracing header on the request', async () => {
+        global.fetch.mockResolvedValueOnce({
+          ok: true
+        })
+
+        await documentClient.uploadFile(uploadId, formData, 'my-trace-id')
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'x-trace-id': 'my-trace-id'
+            })
+          })
+        )
+      })
+    })
+
+    describe('When uploadFile request fails', () => {
+      test('Should throw an error when the response is not ok', async () => {
+        global.fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error'
+        })
+
+        await expect(
+          documentClient.uploadFile(uploadId, formData, traceId)
+        ).rejects.toMatchObject({
+          message: `Failed to upload file for upload ${uploadId}`,
+          status: 500,
+          statusText: 'Internal Server Error'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+        expect(mockLoggerError).toHaveBeenCalledWith(
+          expect.stringContaining('500')
+        )
+      })
+    })
+  })
 })

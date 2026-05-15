@@ -629,10 +629,6 @@ describe('#accompanyingDocumentsController', () => {
   })
 
   describe('POST /accompanying-documents — upload action', () => {
-    afterEach(() => {
-      vi.unstubAllGlobals()
-    })
-
     test('Should re-render with 400 when documentType is invalid', async () => {
       const { statusCode, result } = await server.inject({
         method: 'POST',

@@ -7,12 +7,19 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
-const request = async (path, { method, traceId, body, errorMessage }) => {
+const request = async (
+  path,
+  { method, traceId, body, errorMessage, rawBody = false }
+) => {
   const headers = { [tracingHeader]: traceId }
   const init = { method, headers }
   if (body !== undefined) {
-    headers['Content-Type'] = 'application/json'
-    init.body = JSON.stringify(body)
+    if (rawBody) {
+      init.body = body
+    } else {
+      headers['Content-Type'] = 'application/json'
+      init.body = JSON.stringify(body)
+    }
   }
 
   const response = await fetch(`${tradeImportsAnimalsBackendUrl}${path}`, init)
@@ -68,21 +75,12 @@ export const documentClient = {
   },
 
   async uploadFile(uploadId, formData, traceId) {
-    const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/document-uploads/${uploadId}/file`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: { [tracingHeader]: traceId }
-        // Content-Type omitted intentionally — fetch sets multipart/form-data; boundary=...
-        // automatically from the FormData body.
-      }
-    )
-    if (!response.ok) {
-      const error = new Error(`Failed to upload file for upload ${uploadId}`)
-      error.status = response.status
-      error.statusText = response.statusText
-      throw error
-    }
+    await request(`/document-uploads/${uploadId}/file`, {
+      method: 'POST',
+      traceId,
+      body: formData,
+      rawBody: true,
+      errorMessage: `Failed to upload file for upload ${uploadId}`
+    })
   }
 }
