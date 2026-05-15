@@ -7,15 +7,29 @@ const tradeImportsAnimalsBackendUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
-const request = async (path, { method, traceId, body, errorMessage }) => {
+const buildRequestOptions = (method, traceId, body, rawBody) => {
   const headers = { [tracingHeader]: traceId }
-  const init = { method, headers }
+  const fetchOptions = { method, headers }
   if (body !== undefined) {
-    headers['Content-Type'] = 'application/json'
-    init.body = JSON.stringify(body)
+    if (rawBody) {
+      fetchOptions.body = body
+    } else {
+      headers['Content-Type'] = 'application/json'
+      fetchOptions.body = JSON.stringify(body)
+    }
   }
+  return fetchOptions
+}
 
-  const response = await fetch(`${tradeImportsAnimalsBackendUrl}${path}`, init)
+const request = async (
+  path,
+  { method, traceId, body, errorMessage, rawBody = false }
+) => {
+  const fetchOptions = buildRequestOptions(method, traceId, body, rawBody)
+  const response = await fetch(
+    `${tradeImportsAnimalsBackendUrl}${path}`,
+    fetchOptions
+  )
 
   if (!response.ok) {
     const error = new Error(errorMessage)
@@ -64,6 +78,16 @@ export const documentClient = {
       method: 'GET',
       traceId,
       errorMessage: `Failed to stream file for upload ${uploadId}`
+    })
+  },
+
+  async uploadFile(uploadId, formData, traceId) {
+    await request(`/document-uploads/${uploadId}/file`, {
+      method: 'POST',
+      traceId,
+      body: formData,
+      rawBody: true,
+      errorMessage: `Failed to upload file for upload ${uploadId}`
     })
   }
 }

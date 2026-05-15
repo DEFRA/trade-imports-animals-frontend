@@ -1,7 +1,6 @@
 import { getSessionValue } from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
 import { documentClient } from '../../../common/clients/document-client.js'
-import { statusCodes } from '../../../common/constants/status-codes.js'
 import {
   ALLOWED_TYPES,
   MAX_FILE_SIZE_BYTES
@@ -36,37 +35,21 @@ const buildMultipartBody = (fileData) => {
   return formData
 }
 
-const proxyFileToCdpUploader = async (uploadUrl, fileData) => {
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    body: buildMultipartBody(fileData),
-    redirect: 'manual'
-  })
-  // cdp-uploader redirects (302) on success; Node.js fetch with
-  // redirect:'manual' returns the actual redirect status, not status 0.
-  // Local mock returns 200 directly. Fail only on 4xx/5xx.
-  if (response.status >= statusCodes.badRequest) {
-    throw new Error(
-      `cdp-uploader returned unexpected status ${response.status}`
-    )
-  }
-}
-
 export const uploadDocument = async (
   request,
   fileData,
   uploadDetails,
   traceId
 ) => {
-  const { uploadId, uploadUrl } = await initiateUpload(
-    request,
-    uploadDetails,
-    traceId
-  )
+  const { uploadId } = await initiateUpload(request, uploadDetails, traceId)
   request.logger.info(`Document upload initiated: uploadId=${uploadId}`)
 
-  await proxyFileToCdpUploader(uploadUrl, fileData)
-  request.logger.info(`File proxied to cdp-uploader: uploadId=${uploadId}`)
+  await documentClient.uploadFile(
+    uploadId,
+    buildMultipartBody(fileData),
+    traceId
+  )
+  request.logger.info(`File uploaded via backend: uploadId=${uploadId}`)
 
   return uploadId
 }

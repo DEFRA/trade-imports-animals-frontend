@@ -142,16 +142,16 @@ git config --global core.autocrlf false
 
 ## AUTHENTICATION (trade-imports-defra-id-stub)
 
-When spinning up trade-imports-defra-id-stub from the docker compose file add the below entry to your /etc/hosts file
+For local cross-service development the recommended path is the workspace
+docker stack at https://github.com/DEFRA/trade-imports-animals-workspace —
+it stands the stub up alongside the frontend with the right env wiring;
+no `/etc/hosts` edits required.
+
+If running this service standalone against the stub on `localhost:3007`,
+create an env file:
 
 ```
-127.0.0.1 host.docker.internal
-```
-
-Create an env file and add the below entries
-
-```
-DEFRA_ID_OIDC_CONFIGURATION_URL=http://host.docker.internal:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
+DEFRA_ID_OIDC_CONFIGURATION_URL=http://localhost:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
 DEFRA_ID_CLIENT_ID=8c5e0bd-8223-4908-a5aa-c9c1d7cddaac
 DEFRA_ID_CLIENT_SECRET=test_value
 DEFRA_ID_SERVICE_ID=aeaa0a80-15f3-48b2-8bd7-0e02874b3d32
