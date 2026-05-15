@@ -7,7 +7,9 @@ const LOCAL_HOSTNAMES = new Set(['localhost', 'host.docker.internal'])
 
 function rewriteEndpointHostnames(payload, targetHostname) {
   for (const key of SERVER_SIDE_ENDPOINTS) {
-    if (typeof payload[key] !== 'string') continue
+    if (typeof payload[key] !== 'string') {
+      continue
+    }
     const endpoint = new URL(payload[key])
     if (endpoint.hostname !== targetHostname) {
       endpoint.hostname = targetHostname
