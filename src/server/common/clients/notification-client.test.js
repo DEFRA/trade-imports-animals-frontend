@@ -559,4 +559,56 @@ describe('#notificationClient', () => {
       })
     })
   })
+
+  describe('findAll', () => {
+    test('Should send GET request and return notifications from the API', async () => {
+      const responseBody = {
+        notifications: [
+          {
+            referenceNumber: 'REF-123',
+            status: 'DRAFT',
+            createdAt: '2026-04-20T10:00:00.000Z',
+            origin: { countryName: 'Finland' },
+            commodity: { name: 'Cow', code: '0102' },
+            consignor: { name: 'Tampere Horse Transport' },
+            transport: { arrivalDate: '2026-04-20' }
+          }
+        ]
+      }
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue(responseBody)
+      })
+
+      const result = await notificationClient.findAll(mockRequest, traceId)
+
+      expect(fetch).toHaveBeenCalledWith('http://mock-backend/notifications', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trace-id': traceId
+        }
+      })
+      expect(result).toEqual(responseBody)
+    })
+
+    test('Should throw an error when findAll request fails', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable'
+      })
+
+      await expect(
+        notificationClient.findAll(mockRequest, traceId)
+      ).rejects.toMatchObject({
+        message: 'Failed to get notifications',
+        status: 503,
+        statusText: 'Service Unavailable'
+      })
+
+      expect(mockLoggerError).toHaveBeenCalledTimes(1)
+    })
+  })
 })
