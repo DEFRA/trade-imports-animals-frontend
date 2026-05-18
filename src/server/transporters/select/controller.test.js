@@ -62,7 +62,7 @@ describe('#transporterSelectController', () => {
     expect(result).toEqual(expect.stringContaining('Switzerland'))
     expect(result).toEqual(expect.stringContaining('Belgium'))
     expect(result).toEqual(expect.stringContaining('Back'))
-    expect(result).toContain('href="/transporter"')
+    expect(result).toContain('href="/transporters"')
   })
 
   test('GET /transporters/select exposes Select links with correct indices', async () => {
