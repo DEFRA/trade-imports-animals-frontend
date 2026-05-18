@@ -7,9 +7,9 @@ const logger = createLogger()
 const transporters = loadMockTransporters()
 
 const PAGE_TITLE = 'Search for an existing transporter'
-const VIEW = 'transporter/select/index'
+const VIEW = 'transporters/select/index'
 
-export const transporterSelectController = {
+export const transportersSelectController = {
   get: {
     handler(_request, h) {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')

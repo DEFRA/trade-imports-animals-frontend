@@ -23,7 +23,8 @@ import { consignorsSelectLighthouseConfig } from './consignors-select.config.js'
 import { destinationsSelectLighthouseConfig } from './destinations-select.config.js'
 import { cphNumberLighthouseConfig } from './cph-number.config.js'
 import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
-import { transporterLighthouseConfig } from './transporter.config.js'
+import { transportersLighthouseConfig } from './transporters.config.js'
+import { transportersSelectLighthouseConfig } from './transporters-select.config.js'
 import { declarationLighthouseConfig } from './declaration.config.js'
 
 const pageConfigs = [
@@ -48,7 +49,8 @@ const pageConfigs = [
   destinationsSelectLighthouseConfig,
   cphNumberLighthouseConfig,
   portOfEntryLighthouseConfig,
-  transporterLighthouseConfig,
+  transportersLighthouseConfig,
+  transportersSelectLighthouseConfig,
   declarationLighthouseConfig
 ]
 

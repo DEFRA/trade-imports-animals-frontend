@@ -11,11 +11,11 @@ import { loadMockTransporters } from './load-mock-transporters.js'
 const logger = createLogger()
 
 const PAGE_TITLE = 'Transporter'
-const VIEW = 'transporter/index'
+const VIEW = 'transporters/index'
 
 const transporters = loadMockTransporters()
 
-export const transporterController = {
+export const transportersController = {
   get: {
     handler(_request, h) {
       const referenceNumber = getSessionValue(_request, 'referenceNumber')
