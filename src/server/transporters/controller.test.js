@@ -109,7 +109,7 @@ describe('#transportersController', () => {
       notificationClient.save.mockClear()
     })
 
-    test('calls notification save then redirects to /declaration', async () => {
+    test('calls notification save then redirects to /consignment/contact/select', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/transporters',
@@ -119,10 +119,10 @@ describe('#transportersController', () => {
 
       expect(notificationClient.save).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.redirectFound)
-      expect(headers.location).toBe('/declaration')
+      expect(headers.location).toBe('/consignment/contact/select')
     })
 
-    test('redirects to /declaration when reference number is not in session', async () => {
+    test('redirects to /consignment/contact/select when reference number is not in session', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/transporters',
@@ -132,7 +132,7 @@ describe('#transportersController', () => {
 
       expect(notificationClient.save).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.redirectFound)
-      expect(headers.location).toBe('/declaration')
+      expect(headers.location).toBe('/consignment/contact/select')
     })
 
     test('renders transporters page with error when notification save fails', async () => {

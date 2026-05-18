@@ -1,6 +1,7 @@
 import { addressesController } from './controller.js'
 import { consignorsSelectController } from './consignors/select/controller.js'
 import { destinationsSelectController } from './destinations/select/controller.js'
+import { consignmentContactSelectController } from './consignment/contact/select/controller.js'
 
 export const addresses = {
   plugin: {
@@ -23,9 +24,19 @@ export const addresses = {
           ...destinationsSelectController.get
         },
         {
+          method: 'GET',
+          path: '/consignment/contact/select',
+          ...consignmentContactSelectController.get
+        },
+        {
           method: 'POST',
           path: '/addresses',
           ...addressesController.post
+        },
+        {
+          method: 'POST',
+          path: '/consignment/contact/select',
+          ...consignmentContactSelectController.post
         }
       ])
     }

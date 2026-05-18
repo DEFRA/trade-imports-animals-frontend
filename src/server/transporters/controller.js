@@ -70,7 +70,7 @@ export const transportersController = {
           })
           .code(statusCodes.internalServerError)
       }
-      return h.redirect('/declaration')
+      return h.redirect('/consignment/contact/select')
     }
   }
 }
