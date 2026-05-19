@@ -26,6 +26,7 @@ import { portOfEntryLighthouseConfig } from './port-of-entry.config.js'
 import { transportersLighthouseConfig } from './transporters.config.js'
 import { transportersSelectLighthouseConfig } from './transporters-select.config.js'
 import { declarationLighthouseConfig } from './declaration.config.js'
+import { consignmentContactSelectLighthouseConfig } from './consignment-contact-select.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -51,7 +52,8 @@ const pageConfigs = [
   portOfEntryLighthouseConfig,
   transportersLighthouseConfig,
   transportersSelectLighthouseConfig,
-  declarationLighthouseConfig
+  declarationLighthouseConfig,
+  consignmentContactSelectLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
