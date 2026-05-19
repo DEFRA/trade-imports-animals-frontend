@@ -3,6 +3,7 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { cphNumberSchema } from './cph-number-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -14,8 +15,11 @@ const logger = createLogger()
 export const cphNumberController = {
   get: {
     handler(_request, h) {
-      const cphNumber = getSessionValue(_request, 'cphNumber')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const cphNumber = getSessionValue(_request, sessionKeys.cphNumber)
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view('cph-number/index', {
         pageTitle: 'Add the County Parish Holding number (CPH)',
@@ -28,7 +32,10 @@ export const cphNumberController = {
     async handler(_request, h) {
       const { cphNumber } = _request.payload
       const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const { error } = cphNumberSchema.validate(_request.payload, {
         abortEarly: false
@@ -47,7 +54,7 @@ export const cphNumberController = {
           .code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, 'cphNumber', cphNumber)
+      setSessionValue(_request, sessionKeys.cphNumber, cphNumber)
       logger.info(`CPH number saved: ${cphNumber}`)
 
       try {
@@ -58,7 +65,7 @@ export const cphNumberController = {
         return h
           .view('cph-number/index', {
             pageTitle: 'Add the County Parish Holding number (CPH)',
-            cphNumber: getSessionValue(_request, 'cphNumber'),
+            cphNumber: getSessionValue(_request, sessionKeys.cphNumber),
             referenceNumber,
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }

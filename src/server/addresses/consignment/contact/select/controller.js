@@ -6,6 +6,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../../../common/constants/session-keys.js'
 import { statusCodes } from '../../../../common/constants/status-codes.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { notificationClient } from '../../../../common/clients/notification-client.js'
@@ -22,7 +23,10 @@ const PAGE_TITLE = 'Contact address for consignment'
 export const consignmentContactSelectController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Consignment contact selection page: ${referenceNumber}`)
 
       return h.view(VIEW, {
@@ -35,7 +39,10 @@ export const consignmentContactSelectController = {
   post: {
     async handler(_request, h) {
       const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const selectedContactId = Number.parseInt(
         _request.payload?.contactAddress,
         10
@@ -60,7 +67,11 @@ export const consignmentContactSelectController = {
           .code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, 'contactAddress', contacts[selectedContactId])
+      setSessionValue(
+        _request,
+        sessionKeys.contactAddress,
+        contacts[selectedContactId]
+      )
       logger.info(
         `${referenceNumber} consignment contact: ${contacts[selectedContactId]}`
       )

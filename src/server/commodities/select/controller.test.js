@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { commoditiesSelectController } from './controller.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -131,7 +132,7 @@ describe('commoditiesSelectController', () => {
       )
 
       expect(set).toHaveBeenCalledTimes(1)
-      expect(set).toHaveBeenCalledWith('commodity', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.commodity, {
         name: 'Fish',
         commodityComplement: [
           {
@@ -170,7 +171,7 @@ describe('commoditiesSelectController', () => {
       await commoditiesSelectController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledTimes(1)
-      expect(set).toHaveBeenCalledWith('commodity', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.commodity, {
         name: 'Fish',
         commodityComplement: [
           {

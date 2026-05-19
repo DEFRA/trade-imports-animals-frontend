@@ -5,6 +5,7 @@ import { statusCodes } from '../../../../common/constants/status-codes.js'
 import { notificationClient } from '../../../../common/clients/notification-client.js'
 import { mockOidcConfig } from '../../../../common/test-helpers/mock-oidc-config.js'
 import * as sessionHelpers from '../../../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../../../common/constants/session-keys.js'
 import contacts from './mock-contacts.json'
 
 vi.mock('../../../../../auth/get-oidc-config.js', () => ({
@@ -86,7 +87,7 @@ describe('#consignmentContactSelectController', () => {
 
       expect(sessionHelpers.setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
-        'contactAddress',
+        sessionKeys.contactAddress,
         contacts[0]
       )
       expect(notificationClient.save).toHaveBeenCalledTimes(1)

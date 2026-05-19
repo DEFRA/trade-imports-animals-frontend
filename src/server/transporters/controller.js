@@ -2,6 +2,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../common/helpers/logging/logger.js'
@@ -18,7 +19,10 @@ const transporters = loadMockTransporters()
 export const transportersController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Transporter: ${referenceNumber} landing page`)
 
       const selectedTransporterId = Number.parseInt(
@@ -32,12 +36,15 @@ export const transportersController = {
       ) {
         setSessionValue(
           _request,
-          'transporter',
+          sessionKeys.transporter,
           transporters[selectedTransporterId]
         )
       }
 
-      const selectedTransporter = getSessionValue(_request, 'transporter')
+      const selectedTransporter = getSessionValue(
+        _request,
+        sessionKeys.transporter
+      )
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -48,7 +55,10 @@ export const transportersController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Transporter: ${referenceNumber} landing page`)
 
       const traceId = getTraceId() ?? ''
@@ -58,7 +68,10 @@ export const transportersController = {
         logger.info('Notification saved successfully')
       } catch (err) {
         logger.error(`Failed to submit notification: ${err.message}`)
-        const selectedTransporter = getSessionValue(_request, 'transporter')
+        const selectedTransporter = getSessionValue(
+          _request,
+          sessionKeys.transporter
+        )
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,

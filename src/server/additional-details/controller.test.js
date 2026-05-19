@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { additionalDetailsController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -114,10 +115,10 @@ describe('additionalDetailsController', () => {
       )
 
       expect(set).toHaveBeenCalledWith(
-        'certifiedFor',
+        sessionKeys.certifiedFor,
         'breedingAndOrProduction'
       )
-      expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
+      expect(set).toHaveBeenCalledWith(sessionKeys.unweanedAnimals, 'no')
       expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(response).toEqual({
         statusCode: 302,

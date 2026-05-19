@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -78,8 +79,8 @@ describe('portOfEntryController', () => {
 
       const response = await portOfEntryController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('portOfEntry', 'ABERDEEN')
-      expect(set).toHaveBeenCalledWith('arrivalDate', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.portOfEntry, 'ABERDEEN')
+      expect(set).toHaveBeenCalledWith(sessionKeys.arrivalDate, {
         day: 27,
         month: 3,
         year: 2026

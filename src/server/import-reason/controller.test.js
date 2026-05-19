@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { importReasonController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -100,7 +101,10 @@ describe('importReasonController', () => {
 
       const response = await importReasonController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('reasonForImport', 'internalMarket')
+      expect(set).toHaveBeenCalledWith(
+        sessionKeys.reasonForImport,
+        'internalMarket'
+      )
       expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
       expect(response).toEqual({
         statusCode: 302,

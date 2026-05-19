@@ -1,4 +1,5 @@
 import { getSessionValue } from '../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { loadMockTransporters } from '../load-mock-transporters.js'
 
@@ -12,7 +13,10 @@ const VIEW = 'transporters/select/index'
 export const transportersSelectController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Transporter: ${referenceNumber} selection page`)
 
       return h.view(VIEW, {

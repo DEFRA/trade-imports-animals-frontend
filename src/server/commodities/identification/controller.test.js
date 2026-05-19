@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { animalIdentificationDetailsController } from './controller.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -130,7 +131,7 @@ describe('animalIdentificationDetailsController', () => {
       )
 
       expect(set).toHaveBeenCalledWith(
-        'commodity',
+        sessionKeys.commodity,
         expect.objectContaining({
           commodityComplement: [
             expect.objectContaining({

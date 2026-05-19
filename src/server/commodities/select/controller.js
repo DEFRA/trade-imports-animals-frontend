@@ -3,6 +3,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -59,11 +60,14 @@ export const commoditiesSelectController = {
   get: {
     handler(_request, h) {
       logger.info(
-        `Commodity in session: ${getSessionValue(_request, 'commodity')}`
+        `Commodity in session: ${getSessionValue(_request, sessionKeys.commodity)}`
       )
 
-      const commodity = getSessionValue(_request, 'commodity')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const commodity = getSessionValue(_request, sessionKeys.commodity)
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const selectedSpecies = commodityComplement?.species ?? []
       const typeOfCommodity = commodityComplement?.typeOfCommodity
@@ -89,12 +93,15 @@ export const commoditiesSelectController = {
   post: {
     async handler(_request, h) {
       logger.info(
-        `Commodity in session: ${getSessionValue(_request, 'commodity')}`
+        `Commodity in session: ${getSessionValue(_request, sessionKeys.commodity)}`
       )
 
       const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const commodity = getSessionValue(_request, 'commodity')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
+      const commodity = getSessionValue(_request, sessionKeys.commodity)
       const existingCommodityComplement = (
         commodity?.commodityComplement ?? []
       ).at(-1)
@@ -146,7 +153,7 @@ export const commoditiesSelectController = {
 
       const commodityJson = toObject(commodity, 'name')
       commodityJson.commodityComplement = [commodityComplement]
-      setSessionValue(_request, 'commodity', commodityJson)
+      setSessionValue(_request, sessionKeys.commodity, commodityJson)
 
       try {
         // Submit notification - client will build complete notification from all session values
@@ -154,7 +161,10 @@ export const commoditiesSelectController = {
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
-        const updatedCommodity = getSessionValue(_request, 'commodity')
+        const updatedCommodity = getSessionValue(
+          _request,
+          sessionKeys.commodity
+        )
         const updatedComplement = (
           updatedCommodity?.commodityComplement ?? []
         ).at(-1)

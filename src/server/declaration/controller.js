@@ -1,5 +1,6 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { getSessionValue } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { declarationSchema } from './declaration-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -22,7 +23,10 @@ function getSubmissionDate() {
 export const declarationController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -33,7 +37,10 @@ export const declarationController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const traceId = getTraceId() ?? ''
 
       const { error } = declarationSchema.validate(_request.payload, {

@@ -6,6 +6,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
@@ -31,9 +32,12 @@ export const addressesController = {
   get: {
     handler(_request, h) {
       logger.info(
-        `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
+        `Addresses: ${getSessionValue(_request, sessionKeys.commodity)} landing page`
       )
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const selectedConsignorId = Number.parseInt(
         _request.query?.selectedConsignor,
         10
@@ -46,7 +50,11 @@ export const addressesController = {
         Number.isInteger(selectedConsignorId) &&
         consignors[selectedConsignorId]
       ) {
-        setSessionValue(_request, 'consignor', consignors[selectedConsignorId])
+        setSessionValue(
+          _request,
+          sessionKeys.consignor,
+          consignors[selectedConsignorId]
+        )
       }
       if (
         Number.isInteger(selectedDestinationId) &&
@@ -54,13 +62,16 @@ export const addressesController = {
       ) {
         setSessionValue(
           _request,
-          'destination',
+          sessionKeys.destination,
           destinations[selectedDestinationId]
         )
       }
 
-      const selectedConsignor = getSessionValue(_request, 'consignor')
-      const selectedDestination = getSessionValue(_request, 'destination')
+      const selectedConsignor = getSessionValue(_request, sessionKeys.consignor)
+      const selectedDestination = getSessionValue(
+        _request,
+        sessionKeys.destination
+      )
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',
@@ -73,10 +84,13 @@ export const addressesController = {
   post: {
     async handler(_request, h) {
       logger.info(
-        `Addresses: ${getSessionValue(_request, 'commodity')} landing page`
+        `Addresses: ${getSessionValue(_request, sessionKeys.commodity)} landing page`
       )
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const traceId = getTraceId() ?? ''
 
       try {

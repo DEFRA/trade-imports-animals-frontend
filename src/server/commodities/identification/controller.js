@@ -3,6 +3,7 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 import { notificationClient } from '../../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../../common/constants/status-codes.js'
@@ -14,11 +15,14 @@ export const animalIdentificationDetailsController = {
   get: {
     handler(_request, h) {
       logger.info(
-        `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
+        `Commodity: ${getSessionValue(_request, sessionKeys.commodity)} - Animal identification details page`
       )
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const commodity = getSessionValue(_request, 'commodity')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
+      const commodity = getSessionValue(_request, sessionKeys.commodity)
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const speciesLst = commodityComplement?.species ?? []
       const typeOfCommodity = commodityComplement?.typeOfCommodity
@@ -35,12 +39,15 @@ export const animalIdentificationDetailsController = {
   post: {
     async handler(_request, h) {
       logger.info(
-        `Commodity: ${getSessionValue(_request, 'commodity')} - Animal identification details page`
+        `Commodity: ${getSessionValue(_request, sessionKeys.commodity)} - Animal identification details page`
       )
 
       const traceId = getTraceId() ?? ''
-      const commodity = getSessionValue(_request, 'commodity')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const commodity = getSessionValue(_request, sessionKeys.commodity)
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const speciesLst = commodityComplement?.species ?? []
@@ -60,14 +67,17 @@ export const animalIdentificationDetailsController = {
 
       const commodityJson = toObject(commodity, 'commodity')
       commodityJson.commodityComplement = [commodityComplement]
-      setSessionValue(_request, 'commodity', commodityJson)
+      setSessionValue(_request, sessionKeys.commodity, commodityJson)
 
       try {
         await notificationClient.save(_request, traceId)
         logger.info('Notification saved successfully')
       } catch (error) {
         logger.error(`Failed to submit notification: ${error.message}`)
-        const updatedCommodity = getSessionValue(_request, 'commodity')
+        const updatedCommodity = getSessionValue(
+          _request,
+          sessionKeys.commodity
+        )
         const updatedComplement = (
           updatedCommodity?.commodityComplement ?? []
         ).at(-1)

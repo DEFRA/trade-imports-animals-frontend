@@ -3,6 +3,7 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -12,11 +13,14 @@ const logger = createLogger()
 export const additionalDetailsController = {
   get: {
     handler(_request, h) {
-      const certifiedFor = getSessionValue(_request, 'certifiedFor')
+      const certifiedFor = getSessionValue(_request, sessionKeys.certifiedFor)
       const unweanedAnimals =
-        getSessionValue(_request, 'unweanedAnimals') ?? 'no'
+        getSessionValue(_request, sessionKeys.unweanedAnimals) ?? 'no'
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const traceId = getTraceId() ?? ''
       if (referenceNumber) {
         notificationClient.get(_request, referenceNumber, traceId)
@@ -36,14 +40,17 @@ export const additionalDetailsController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const traceId = getTraceId() ?? ''
 
       const { certifiedFor, unweanedAnimals } = _request.payload
 
       logger.info(`Additional details: ${referenceNumber}`)
-      setSessionValue(_request, 'certifiedFor', certifiedFor)
-      setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
+      setSessionValue(_request, sessionKeys.certifiedFor, certifiedFor)
+      setSessionValue(_request, sessionKeys.unweanedAnimals, unweanedAnimals)
 
       try {
         await notificationClient.save(_request, traceId)
@@ -54,9 +61,9 @@ export const additionalDetailsController = {
           .view('additional-details/index', {
             pageTitle: 'Additional animal details',
             heading: 'Additional animal details',
-            certifiedFor: getSessionValue(_request, 'certifiedFor'),
+            certifiedFor: getSessionValue(_request, sessionKeys.certifiedFor),
             unweanedAnimals:
-              getSessionValue(_request, 'unweanedAnimals') ?? 'no',
+              getSessionValue(_request, sessionKeys.unweanedAnimals) ?? 'no',
             referenceNumber,
             errorList: [
               { text: 'Something went wrong, please contact the EUDP team' }

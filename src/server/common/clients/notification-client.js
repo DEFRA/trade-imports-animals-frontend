@@ -1,6 +1,7 @@
 import { config } from '../../../config/config.js'
 import { createLogger } from '../helpers/logging/logger.js'
 import { getSessionValue, setSessionValue } from '../helpers/session-helpers.js'
+import { sessionKeys } from '../constants/session-keys.js'
 
 const tradeImportsAnimalsBackendUrl = config.get(
   'tradeImportsAnimalsBackendApi.baseUrl'
@@ -16,9 +17,15 @@ function getIsoArrivalDate(arrivalDate) {
 }
 
 function setOrigin(notification, request) {
-  const countryCode = getSessionValue(request, 'countryCode')
-  const requiresRegionCode = getSessionValue(request, 'requiresRegionCode')
-  const internalReference = getSessionValue(request, 'internalReference')
+  const countryCode = getSessionValue(request, sessionKeys.countryCode)
+  const requiresRegionCode = getSessionValue(
+    request,
+    sessionKeys.requiresRegionCode
+  )
+  const internalReference = getSessionValue(
+    request,
+    sessionKeys.internalReference
+  )
 
   if (countryCode || requiresRegionCode || internalReference) {
     notification.origin = {}
@@ -33,8 +40,8 @@ function setOrigin(notification, request) {
 }
 
 function setAdditionalDetails(notification, request) {
-  const certifiedFor = getSessionValue(request, 'certifiedFor')
-  const unweanedAnimals = getSessionValue(request, 'unweanedAnimals')
+  const certifiedFor = getSessionValue(request, sessionKeys.certifiedFor)
+  const unweanedAnimals = getSessionValue(request, sessionKeys.unweanedAnimals)
 
   if (certifiedFor || unweanedAnimals) {
     notification.additionalDetails = {}
@@ -48,8 +55,8 @@ function setAdditionalDetails(notification, request) {
 }
 
 function setAddresses(notification, request) {
-  const selectedConsignor = getSessionValue(request, 'consignor')
-  const selectedDestination = getSessionValue(request, 'destination')
+  const selectedConsignor = getSessionValue(request, sessionKeys.consignor)
+  const selectedDestination = getSessionValue(request, sessionKeys.destination)
   if (selectedConsignor) {
     notification.consignor = selectedConsignor
   }
@@ -59,9 +66,9 @@ function setAddresses(notification, request) {
 }
 
 function setTransport(notification, request) {
-  const portOfEntry = getSessionValue(request, 'portOfEntry')
+  const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
   const arrivalDateIso = getIsoArrivalDate(
-    getSessionValue(request, 'arrivalDate')
+    getSessionValue(request, sessionKeys.arrivalDate)
   )
 
   if (portOfEntry || arrivalDateIso) {
@@ -76,7 +83,7 @@ function setTransport(notification, request) {
 }
 
 function setTransporter(notification, request) {
-  const transporter = getSessionValue(request, 'transporter')
+  const transporter = getSessionValue(request, sessionKeys.transporter)
   if (transporter) {
     if (!notification.transport) {
       notification.transport = {}
@@ -88,19 +95,19 @@ function setTransporter(notification, request) {
 function buildNotificationPayload(request) {
   const notification = {}
 
-  const referenceNumber = getSessionValue(request, 'referenceNumber')
+  const referenceNumber = getSessionValue(request, sessionKeys.referenceNumber)
   if (referenceNumber) {
     notification.referenceNumber = referenceNumber
   }
 
   setOrigin(notification, request)
 
-  const commodity = getSessionValue(request, 'commodity')
+  const commodity = getSessionValue(request, sessionKeys.commodity)
   if (commodity) {
     notification.commodity = commodity
   }
 
-  const reasonForImport = getSessionValue(request, 'reasonForImport')
+  const reasonForImport = getSessionValue(request, sessionKeys.reasonForImport)
   if (reasonForImport) {
     notification.reasonForImport = reasonForImport
   }
@@ -108,7 +115,7 @@ function buildNotificationPayload(request) {
   setAdditionalDetails(notification, request)
   setAddresses(notification, request)
 
-  const cphNumber = getSessionValue(request, 'cphNumber')
+  const cphNumber = getSessionValue(request, sessionKeys.cphNumber)
   if (cphNumber) {
     notification.cphNumber = cphNumber
   }
@@ -122,23 +129,31 @@ function buildNotificationPayload(request) {
 
 function setOriginValues(request, origin) {
   if (origin.countryCode) {
-    setSessionValue(request, 'countryCode', origin.countryCode)
+    setSessionValue(request, sessionKeys.countryCode, origin.countryCode)
   }
   if (origin.requiresRegionCode) {
-    setSessionValue(request, 'requiresRegionCode', origin.requiresRegionCode)
+    setSessionValue(
+      request,
+      sessionKeys.requiresRegionCode,
+      origin.requiresRegionCode
+    )
   }
   if (origin.internalReference) {
-    setSessionValue(request, 'internalReference', origin.internalReference)
+    setSessionValue(
+      request,
+      sessionKeys.internalReference,
+      origin.internalReference
+    )
   }
 }
 
 function setTransportValues(request, transport) {
   if (transport.portOfEntry) {
-    setSessionValue(request, 'portOfEntry', transport.portOfEntry)
+    setSessionValue(request, sessionKeys.portOfEntry, transport.portOfEntry)
   }
   if (transport.arrivalDate) {
     const [y, m, d] = transport.arrivalDate.split('-')
-    setSessionValue(request, 'arrivalDate', {
+    setSessionValue(request, sessionKeys.arrivalDate, {
       day: Number(d),
       month: Number(m),
       year: Number(y)
@@ -147,12 +162,12 @@ function setTransportValues(request, transport) {
 }
 
 const NOTIFICATION_SESSION_KEYS = [
-  'referenceNumber',
-  'commodity',
-  'reasonForImport',
-  'consignor',
-  'destination',
-  'cphNumber'
+  sessionKeys.referenceNumber,
+  sessionKeys.commodity,
+  sessionKeys.reasonForImport,
+  sessionKeys.consignor,
+  sessionKeys.destination,
+  sessionKeys.cphNumber
 ]
 
 function setNotificationSessionFields(request, notification) {
@@ -175,7 +190,7 @@ function setNotificationSessionValues(request, notification) {
   const transporter =
     notification.transport?.transporter ?? notification.transporter
   if (transporter) {
-    setSessionValue(request, 'transporter', transporter)
+    setSessionValue(request, sessionKeys.transporter, transporter)
   }
 }
 

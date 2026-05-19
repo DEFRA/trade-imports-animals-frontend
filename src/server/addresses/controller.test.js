@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-123')
@@ -81,7 +82,7 @@ describe('addressesController', () => {
 
       addressesController.get.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('consignor', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.consignor, {
         name: 'Astra Rosales',
         address: {
           addressLine1: '43 East Hague Extension',
@@ -90,7 +91,7 @@ describe('addressesController', () => {
           country: 'Switzerland'
         }
       })
-      expect(set).toHaveBeenCalledWith('destination', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.destination, {
         name: 'Tech Imports Ltd',
         address: {
           addressLine1: '643 Main Street',

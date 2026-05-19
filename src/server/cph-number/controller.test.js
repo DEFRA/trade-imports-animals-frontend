@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn(() => 'trace-abc')
@@ -65,7 +66,7 @@ describe('cphNumberController', () => {
 
       const response = await cphNumberController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('cphNumber', '123456789')
+      expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '123456789')
       expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
       expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
     })
@@ -86,7 +87,7 @@ describe('cphNumberController', () => {
 
       await cphNumberController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('cphNumber', '012345678')
+      expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '012345678')
     })
 
     test('returns 400 with error list when cphNumber has fewer than 9 digits', async () => {
