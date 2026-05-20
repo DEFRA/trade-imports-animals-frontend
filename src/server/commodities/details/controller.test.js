@@ -17,10 +17,6 @@ vi.mock('../../common/helpers/logging/logger.js', () => ({
 describe('commodityDetailsController', () => {
   describe('POST /commodities/details', () => {
     test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement', async () => {
-      saveNotification.mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = vi.fn((key) => {
         if (key === 'referenceNumber') return 'REF-123'

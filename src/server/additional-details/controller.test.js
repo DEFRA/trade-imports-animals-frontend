@@ -20,8 +20,6 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 describe('additionalDetailsController', () => {
   describe('GET /additional-details', () => {
     test('renders view with session values and calls fetchNotification when referenceNumber exists', async () => {
-      fetchNotification.mockResolvedValue(null)
-
       const get = vi.fn((key) => {
         const values = {
           certifiedFor: 'approvedBodies',
@@ -58,8 +56,6 @@ describe('additionalDetailsController', () => {
     })
 
     test('defaults unweanedAnimals to "no" when not set in session', async () => {
-      fetchNotification.mockResolvedValue(null)
-
       const get = vi.fn(() => null)
 
       const request = { yar: { get } }
@@ -79,8 +75,6 @@ describe('additionalDetailsController', () => {
     })
 
     test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
-      fetchNotification.mockResolvedValue(null)
-
       const get = vi.fn(() => null)
 
       const request = { yar: { get } }
@@ -102,10 +96,6 @@ describe('additionalDetailsController', () => {
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      saveNotification.mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
 

@@ -20,16 +20,6 @@ vi.mock('../../../config/config.js', async (importOriginal) => {
 
 describe('commoditiesSelectController', () => {
   describe('GET /commodities/select', () => {
-    beforeAll(() => {
-      saveNotification.mockResolvedValue({
-        referenceNumber: 'TEST-REF-123'
-      })
-    })
-
-    afterAll(() => {
-      vi.restoreAllMocks()
-    })
-
     test('passes selected type and species from session to the view', async () => {
       const get = vi.fn((key) => {
         const values = {
@@ -98,16 +88,6 @@ describe('commoditiesSelectController', () => {
   })
 
   describe('POST /commodities/select', () => {
-    beforeAll(() => {
-      saveNotification.mockResolvedValue({
-        referenceNumber: 'TEST-REF-123'
-      })
-    })
-
-    afterAll(() => {
-      vi.restoreAllMocks()
-    })
-
     test('stores selected type and species array in session', async () => {
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'commodity' ? 'Fish' : null))

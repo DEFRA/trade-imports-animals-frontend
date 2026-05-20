@@ -63,8 +63,6 @@ describe('portOfEntryController', () => {
 
   describe('POST /port-of-entry', () => {
     test('saves portOfEntry and arrivalDate to session, submits notification, and redirects', async () => {
-      saveNotification.mockResolvedValue({})
-
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {

@@ -50,8 +50,6 @@ describe('cphNumberController', () => {
 
   describe('POST /cph-number', () => {
     test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
-      saveNotification.mockResolvedValue({})
-
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {
@@ -77,8 +75,6 @@ describe('cphNumberController', () => {
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
-      saveNotification.mockResolvedValue({})
-
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {

@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
 export const notificationClient = {
-  save: vi.fn(),
-  submitNotification: vi.fn(),
-  get: vi.fn()
+  save: vi.fn().mockResolvedValue({ referenceNumber: 'TEST-REF-123' }),
+  submitNotification: vi.fn().mockResolvedValue({}),
+  get: vi.fn().mockResolvedValue(null)
 }

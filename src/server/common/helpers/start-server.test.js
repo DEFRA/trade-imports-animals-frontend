@@ -1,7 +1,6 @@
 import { vi } from 'vitest'
 
 import hapi from '@hapi/hapi'
-import { notificationClient } from '../clients/notification-client.js'
 import { statusCodes } from '../constants/status-codes.js'
 
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
@@ -21,11 +20,6 @@ describe('#startServer', () => {
   beforeAll(async () => {
     vi.stubEnv('PORT', '3097')
     vi.resetModules()
-
-    notificationClient.get.mockResolvedValue(null)
-    notificationClient.save.mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
 
     createServerImport = await import('../../server.js')
     startServerImport = await import('./start-server.js')

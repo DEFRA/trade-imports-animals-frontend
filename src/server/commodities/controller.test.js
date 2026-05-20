@@ -6,10 +6,7 @@ import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 vi.mock('../common/helpers/notification-helpers.js')
 
@@ -26,11 +23,6 @@ vi.mock('../../config/config.js', async (importOriginal) => {
 describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
-    saveNotification.mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-    fetchNotification.mockResolvedValue(null)
-
     server = await createServer()
     await server.initialize()
   })

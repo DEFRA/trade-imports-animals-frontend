@@ -20,8 +20,6 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 describe('importReasonController', () => {
   describe('GET reason for import', () => {
     test('renders view with reasonForImport and calls fetchNotification', async () => {
-      fetchNotification.mockResolvedValue(null)
-
       const get = vi.fn((key) => {
         const values = {
           reasonForImport: 'internalMarket',
@@ -57,8 +55,6 @@ describe('importReasonController', () => {
     })
 
     test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
-      fetchNotification.mockResolvedValue(null)
-
       const get = vi.fn((key) => {
         const values = {
           reasonForImport: 'reEntry',
@@ -93,10 +89,6 @@ describe('importReasonController', () => {
 
   describe('POST reason for import', () => {
     test('stores reasonForImport, submits notification, and redirects', async () => {
-      saveNotification.mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
 

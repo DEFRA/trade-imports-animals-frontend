@@ -29,10 +29,6 @@ describe('#transportersController', () => {
   let server
 
   beforeAll(async () => {
-    saveNotification.mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })

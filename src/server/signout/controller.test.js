@@ -2,7 +2,6 @@ import { vi } from 'vitest'
 
 import { createServer } from '../server.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 
 vi.mock('../common/clients/notification-client.js')
 
@@ -20,11 +19,6 @@ describe('GET /signout', () => {
   let server
 
   beforeAll(async () => {
-    notificationClient.get.mockResolvedValue(null)
-    notificationClient.save.mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })

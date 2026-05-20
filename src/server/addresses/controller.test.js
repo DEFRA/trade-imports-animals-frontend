@@ -140,10 +140,6 @@ describe('addressesController', () => {
 
   describe('POST addresses', () => {
     test('submit notification with selected consignor', async () => {
-      saveNotification.mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = createYarGet()
 

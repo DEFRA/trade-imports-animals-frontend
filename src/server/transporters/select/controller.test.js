@@ -3,7 +3,6 @@ import { describe, expect, vi } from 'vitest'
 
 import { createServer } from '../../server.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 
 vi.mock('../../common/clients/notification-client.js')
@@ -29,11 +28,6 @@ describe('#transporterSelectController', () => {
   let server
 
   beforeAll(async () => {
-    notificationClient.get.mockResolvedValue(null)
-    notificationClient.save.mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })

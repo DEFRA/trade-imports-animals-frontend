@@ -85,8 +85,6 @@ describe('animalIdentificationDetailsController', () => {
 
   describe('POST /commodities/identification', () => {
     test('Append animal identification details to the species, saves commodity and submits notification', async () => {
-      saveNotification.mockResolvedValue(undefined)
-
       const set = vi.fn()
       const complement = {
         typeOfCommodity: 'Domestic',

@@ -6,10 +6,7 @@ import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 vi.mock('../common/helpers/notification-helpers.js')
 
@@ -36,10 +33,6 @@ const mockCountries = [
 describe('#originController', () => {
   let server
   beforeAll(async () => {
-    fetchNotification.mockResolvedValue(null)
-    saveNotification.mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
     vi.spyOn(countriesClient, 'getCountries').mockResolvedValue(mockCountries)
 
     server = await createServer()

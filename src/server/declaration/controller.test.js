@@ -65,8 +65,6 @@ describe('declarationController', () => {
 
   describe('POST /declaration', () => {
     test('submits notification and redirects to /declaration on success', async () => {
-      submitNotification.mockResolvedValue({})
-
       const request = buildRequest({ declaration: 'confirmed' })
       const h = {
         view: vi.fn(),
