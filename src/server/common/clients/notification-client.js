@@ -280,5 +280,31 @@ export const notificationClient = {
     setNotificationSessionValues(_request, notification)
 
     return notification
+  },
+
+  /**
+   * Retrieves all notifications from the backend.
+   */
+  async findAll(_request, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to get notifications')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to get notifications: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
   }
 }

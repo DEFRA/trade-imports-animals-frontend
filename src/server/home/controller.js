@@ -1,14 +1,42 @@
+import { getTraceId } from '@defra/hapi-tracing'
+import { notificationClient } from '../common/clients/notification-client.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
 import { resetSession } from '../common/helpers/session-helpers.js'
+import { statusCodes } from '../common/constants/status-codes.js'
+import { mapNotificationsToList } from '../common/helpers/notification-helper.js'
 
+const logger = createLogger()
+
+const PAGE_TITLE = 'Import notification service'
 /**
- * A GDS styled example home page controller.
- * Provided as an example, remove or modify as required.
+ * home page controller.
  */
 export const homeController = {
-  handler(_request, h) {
+  async handler(_request, h) {
+    const traceId = getTraceId() ?? ''
+    let notificationList = []
+
+    try {
+      const response = await notificationClient.findAll(_request, traceId)
+      notificationList = mapNotificationsToList(response)
+    } catch (err) {
+      logger.error(`Failed to load notifications: ${err.message}`)
+      return h
+        .view('home/index', {
+          pageTitle: PAGE_TITLE,
+          heading: PAGE_TITLE,
+          notifications: [],
+          errorList: [
+            { text: 'Something went wrong, please contact the EUDP team' }
+          ]
+        })
+        .code(statusCodes.internalServerError)
+    }
+
     return h.view('home/index', {
-      pageTitle: 'Import notification service',
-      heading: 'Import notification service'
+      pageTitle: PAGE_TITLE,
+      heading: PAGE_TITLE,
+      notifications: notificationList
     })
   }
 }

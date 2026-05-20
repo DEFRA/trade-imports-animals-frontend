@@ -1,5 +1,7 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
   {{ appHeading({
@@ -9,7 +11,12 @@
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
-        <p></p>
+        {% if errorList %}
+          {{ govukErrorSummary({
+            titleText: "There is a problem",
+            errorList: errorList
+          }) }}
+        {% endif %}
 
         <form method="post" action="/start-journey">
           <input type="hidden" name="crumb" value="{{ crumb }}"/>
@@ -18,6 +25,70 @@
               text: "Create an import notification"
             }) }}
           </div>
+
+          {% if not errorList %}
+            <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+
+            <label class="govuk-label govuk-label--s">{{ notifications | length }} Results</label>
+            {% for notification in notifications %}
+              <div class="govuk-summary-card notification-list">
+                <div class="govuk-summary-card__title-wrapper">
+                  <h2 class="govuk-summary-card__title">
+                    {{ notification.referenceNumber }}
+                  </h2>
+                </div>
+                <div class="govuk-summary-card__content">
+                  <div class="notification-list__grid-row">
+                    <div class="notification-list__grid-column-30">
+                      <dt class="notification-list__heading">Commodity</dt>
+                      <dd class="notification-list__value">{{ notification.commodity.name }}</dd>
+                    </div>
+                    <div class="notification-list__grid-column-30">
+                      <dt class="notification-list__heading">Origin</dt>
+                      <dd class="notification-list__value">{{ notification.origin.countryCode }}</dd>
+                    </div>
+                    <div class="notification-list__grid-column-30">
+                      <dt class="notification-list__heading">Arrival at destination</dt>
+                      <dd class="notification-list__value">{{ notification.arrivalAtDestination }}</dd>
+                    </div>
+                  </div>
+                  <div class="notification-list__grid-row">
+                    <div class="notification-list__grid-column-30">
+                      <dt class="notification-list__heading">Consignee</dt>
+                      {# TODO: Consignee value not defined — out of scope for EUDPA-69 #}
+                      <dd class="notification-list__value"></dd>
+                    </div>
+                    <div class="notification-list__grid-column-30">
+                      <dt class="notification-list__heading">Consignor</dt>
+                      <dd class="notification-list__value">{{ notification.consignor.name }}</dd>
+                    </div>
+                    <div class="notification-list__grid-column-30">
+                      <dt class="notification-list__heading">Status</dt>
+                      <dd class="notification-list__value">
+                        {% if notification.status == 'DRAFT' %}
+                          {{ govukTag({
+                            text: 'DRAFT',
+                            classes: 'govuk-tag--grey'
+                          }) }}
+                        {% else %}
+                          {{ govukTag({
+                            text: notification.status,
+                            classes: 'govuk-tag--blue'
+                          }) }}
+                        {% endif %}
+                      </dd>
+                    </div>
+                  </div>
+                  <div class="notification-list__grid-row">
+                    <div class="notification-list__grid-column-full">
+                      Date created: {{ notification.dateCreated }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+
         </form>
       </div>
     </div>

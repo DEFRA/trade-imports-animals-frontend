@@ -1,0 +1,63 @@
+@use "../../../../node_modules/govuk-frontend" as *;
+
+.notification-list {
+  margin-top: govuk-spacing(4);
+
+  &__grid-row {
+    display: grid;
+    grid-template-columns: 30% 25% 25% 20%;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(3);
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+
+  &__grid-column-30 {
+    grid-column: span 1;
+  }
+
+  &__grid-column-25 {
+    grid-column: span 1;
+  }
+
+  &__grid-column-20 {
+    grid-column: span 1;
+  }
+
+  &__grid-column-full {
+    grid-column: span 20;
+  }
+
+  &__heading {
+    @include govuk-font($size: 16, $weight: bold);
+    margin-bottom: govuk-spacing(1);
+  }
+
+  &__value {
+    @include govuk-font($size: 19);
+    margin: 0;
+    word-wrap: break-word;
+  }
+
+  &__links {
+    border-top: 1px solid $govuk-border-colour;
+    padding-top: govuk-spacing(3);
+    margin-top: govuk-spacing(3);
+
+    a {
+      margin-right: govuk-spacing(3);
+    }
+  }
+}
+
+// Responsive adjustments
+@include govuk-media-query($until: tablet) {
+  .notification-list {
+    &__grid-row {
+      grid-template-columns: 1fr;
+      gap: govuk-spacing(2);
+    }
+  }
+}
