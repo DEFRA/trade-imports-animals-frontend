@@ -8,8 +8,7 @@ import {
 } from '../../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../../common/constants/session-keys.js'
 import { statusCodes } from '../../../../common/constants/status-codes.js'
-import { getTraceId } from '@defra/hapi-tracing'
-import { notificationClient } from '../../../../common/clients/notification-client.js'
+import { saveNotification } from '../../../../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -38,7 +37,6 @@ export const consignmentContactSelectController = {
   },
   post: {
     async handler(_request, h) {
-      const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
@@ -76,10 +74,8 @@ export const consignmentContactSelectController = {
         `${referenceNumber} consignment contact: ${contacts[selectedContactId]}`
       )
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,

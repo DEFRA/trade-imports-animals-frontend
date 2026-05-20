@@ -1,9 +1,12 @@
 import { describe, expect, test, vi } from 'vitest'
 import { declarationController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
+const { mockSubmitNotification } = vi.hoisted(() => ({
+  mockSubmitNotification: vi.fn()
+}))
+
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  submitNotification: mockSubmitNotification
 }))
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
@@ -66,7 +69,7 @@ describe('declarationController', () => {
 
   describe('POST /declaration', () => {
     test('submits notification and redirects to /declaration on success', async () => {
-      vi.spyOn(notificationClient, 'submitNotification').mockResolvedValue({})
+      mockSubmitNotification.mockResolvedValue({})
 
       const request = buildRequest({ declaration: 'confirmed' })
       const h = {
@@ -76,10 +79,13 @@ describe('declarationController', () => {
 
       const response = await declarationController.post.handler(request, h)
 
-      expect(notificationClient.submitNotification).toHaveBeenCalledWith(
+      expect(mockSubmitNotification).toHaveBeenCalledWith(
         request,
-        'DRAFT.IMP.2026.abc123',
-        'trace-abc'
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        }),
+        'DRAFT.IMP.2026.abc123'
       )
       expect(response).toEqual({ statusCode: 302, location: '/declaration' })
     })
@@ -105,9 +111,7 @@ describe('declarationController', () => {
     })
 
     test('returns 500 with error message when submitNotification throws', async () => {
-      vi.spyOn(notificationClient, 'submitNotification').mockRejectedValue(
-        new Error('Backend error')
-      )
+      mockSubmitNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const request = buildRequest({ declaration: 'confirmed' })
       const { mockCode, h } = buildErrorH()

@@ -7,8 +7,7 @@ import {
   setSessionValue
 } from '../common/helpers/session-helpers.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -91,13 +90,11 @@ export const addressesController = {
         _request,
         sessionKeys.referenceNumber
       )
-      const traceId = getTraceId() ?? ''
 
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
+        // save failed — helper already logged; continue to redirect
       }
 
       return h.redirect('/cph-number', { referenceNumber })

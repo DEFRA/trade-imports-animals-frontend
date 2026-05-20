@@ -1,10 +1,13 @@
 import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
+const { mockSaveNotification } = vi.hoisted(() => ({
+  mockSaveNotification: vi.fn()
+}))
+
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  saveNotification: mockSaveNotification
 }))
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
@@ -64,7 +67,7 @@ describe('portOfEntryController', () => {
 
   describe('POST /port-of-entry', () => {
     test('saves portOfEntry and arrivalDate to session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
+      mockSaveNotification.mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -85,7 +88,13 @@ describe('portOfEntryController', () => {
         month: 3,
         year: 2026
       })
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
+      expect(mockSaveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({ statusCode: 302, location: '/transporters' })
     })
 
@@ -122,9 +131,7 @@ describe('portOfEntryController', () => {
     })
 
     test('shows error when notification client throws', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
-        new Error('Backend error')
-      )
+      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)

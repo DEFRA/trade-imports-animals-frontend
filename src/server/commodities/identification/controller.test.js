@@ -1,11 +1,14 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { animalIdentificationDetailsController } from './controller.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
+const { mockSaveNotification } = vi.hoisted(() => ({
+  mockSaveNotification: vi.fn()
+}))
+
+vi.mock('../../common/helpers/notification-helpers.js', () => ({
+  saveNotification: mockSaveNotification
 }))
 
 vi.mock('../../common/helpers/logging/logger.js', () => ({
@@ -86,7 +89,7 @@ describe('animalIdentificationDetailsController', () => {
 
   describe('POST /commodities/identification', () => {
     test('Append animal identification details to the species, saves commodity and submits notification', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue(undefined)
+      mockSaveNotification.mockResolvedValue(undefined)
 
       const set = vi.fn()
       const complement = {
@@ -152,7 +155,13 @@ describe('animalIdentificationDetailsController', () => {
         })
       )
 
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(mockSaveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(h.redirect).toHaveBeenCalledWith('/additional-details', {
         referenceNumber: 'REF-789'
       })
@@ -164,9 +173,7 @@ describe('animalIdentificationDetailsController', () => {
     })
 
     test('shows error page when notification submit fails', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
-        new Error('Backend error')
-      )
+      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const complement = {

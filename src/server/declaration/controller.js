@@ -4,8 +4,7 @@ import { sessionKeys } from '../common/constants/session-keys.js'
 import { declarationSchema } from './declaration-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { submitNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -41,7 +40,6 @@ export const declarationController = {
         _request,
         sessionKeys.referenceNumber
       )
-      const traceId = getTraceId() ?? ''
 
       const { error } = declarationSchema.validate(_request.payload, {
         abortEarly: false
@@ -61,14 +59,8 @@ export const declarationController = {
       }
 
       try {
-        await notificationClient.submitNotification(
-          _request,
-          referenceNumber,
-          traceId
-        )
-        logger.info(`Notification submitted: ${referenceNumber}`)
+        await submitNotification(_request, logger, referenceNumber)
       } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,

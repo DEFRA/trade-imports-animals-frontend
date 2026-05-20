@@ -4,10 +4,9 @@ import {
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../../common/constants/status-codes.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -42,7 +41,6 @@ export const animalIdentificationDetailsController = {
         `Commodity: ${getSessionValue(_request, sessionKeys.commodity)} - Animal identification details page`
       )
 
-      const traceId = getTraceId() ?? ''
       const commodity = getSessionValue(_request, sessionKeys.commodity)
       const referenceNumber = getSessionValue(
         _request,
@@ -70,10 +68,8 @@ export const animalIdentificationDetailsController = {
       setSessionValue(_request, sessionKeys.commodity, commodityJson)
 
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
         const updatedCommodity = getSessionValue(
           _request,
           sessionKeys.commodity

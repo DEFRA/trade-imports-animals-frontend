@@ -1,11 +1,14 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { commodityDetailsController } from './controller.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
+const { mockSaveNotification } = vi.hoisted(() => ({
+  mockSaveNotification: vi.fn()
+}))
+
+vi.mock('../../common/helpers/notification-helpers.js', () => ({
+  saveNotification: mockSaveNotification
 }))
 
 vi.mock('../../common/helpers/logging/logger.js', () => ({
@@ -18,7 +21,7 @@ vi.mock('../../common/helpers/logging/logger.js', () => ({
 describe('commodityDetailsController', () => {
   describe('POST /commodities/details', () => {
     test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
+      mockSaveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -84,7 +87,13 @@ describe('commodityDetailsController', () => {
         })
       )
 
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(mockSaveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({
         statusCode: 302,
         location: '/commodities/identification'
@@ -92,7 +101,7 @@ describe('commodityDetailsController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
+      mockSaveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

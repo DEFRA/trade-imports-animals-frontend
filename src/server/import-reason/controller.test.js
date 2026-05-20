@@ -1,11 +1,16 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { importReasonController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
+const { mockSaveNotification, mockFetchNotification } = vi.hoisted(() => ({
+  mockSaveNotification: vi.fn(),
+  mockFetchNotification: vi.fn()
+}))
+
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  saveNotification: mockSaveNotification,
+  fetchNotification: mockFetchNotification
 }))
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
@@ -17,8 +22,8 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 describe('importReasonController', () => {
   describe('GET reason for import', () => {
-    test('renders view with reasonForImport and calls notificationClient.get when referenceNumber exists', () => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('renders view with reasonForImport and calls fetchNotification', async () => {
+      mockFetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
@@ -33,12 +38,14 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = importReasonController.get.handler(request, h)
+      const response = await importReasonController.get.handler(request, h)
 
-      expect(notificationClient.get).toHaveBeenCalledWith(
+      expect(mockFetchNotification).toHaveBeenCalledWith(
         request,
-        'REF-123',
-        'trace-123'
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
       )
 
       expect(h.view).toHaveBeenCalledWith('import-reason/index', {
@@ -52,8 +59,8 @@ describe('importReasonController', () => {
       expect(response.data.reasonForImport).toBe('internalMarket')
     })
 
-    test('renders view and does not call notificationClient.get when no referenceNumber', () => {
-      const getSpy = vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
+    test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
+      mockFetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
@@ -68,9 +75,15 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      importReasonController.get.handler(request, h)
+      await importReasonController.get.handler(request, h)
 
-      expect(getSpy).not.toHaveBeenCalled()
+      expect(mockFetchNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(h.view).toHaveBeenCalledWith(
         'import-reason/index',
         expect.objectContaining({
@@ -83,7 +96,7 @@ describe('importReasonController', () => {
 
   describe('POST reason for import', () => {
     test('stores reasonForImport, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
+      mockSaveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -105,7 +118,13 @@ describe('importReasonController', () => {
         sessionKeys.reasonForImport,
         'internalMarket'
       )
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(mockSaveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({
         statusCode: 302,
         location: '/commodities/details'
@@ -113,7 +132,7 @@ describe('importReasonController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
+      mockSaveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

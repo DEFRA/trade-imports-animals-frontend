@@ -7,9 +7,12 @@ import { sessionKeys } from '../common/constants/session-keys.js'
 import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { countriesClient } from '../common/clients/countries-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import {
+  saveNotification,
+  fetchNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -29,17 +32,8 @@ export const originController = {
       logger.info(
         `Country of origin in session: ${getSessionValue(_request, sessionKeys.countryCode)}`
       )
-      const referenceNumber = getSessionValue(
-        _request,
-        sessionKeys.referenceNumber
-      )
       const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      await fetchNotification(_request, logger)
 
       const countryItems = await buildCountryItems(traceId)
 
@@ -101,7 +95,7 @@ export const originController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        const response = await notificationClient.save(_request, traceId)
+        const response = await saveNotification(_request, logger)
 
         // Store reference number in session if returned (backend returns string directly)
         if (response?.referenceNumber) {
@@ -112,10 +106,7 @@ export const originController = {
           )
           logger.info(`Reference number saved: ${response.referenceNumber}`)
         }
-
-        logger.info('Notification saved successfully')
       } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
         return h
           .view('origin/index', {
             pageTitle: 'Origin of the import',

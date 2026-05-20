@@ -4,15 +4,17 @@ import {
   getSessionValue
 } from '../common/helpers/session-helpers.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../common/constants/status-codes.js'
+import {
+  saveNotification,
+  fetchNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 export const additionalDetailsController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       const certifiedFor = getSessionValue(_request, sessionKeys.certifiedFor)
       const unweanedAnimals =
         getSessionValue(_request, sessionKeys.unweanedAnimals) ?? 'no'
@@ -21,13 +23,7 @@ export const additionalDetailsController = {
         _request,
         sessionKeys.referenceNumber
       )
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      await fetchNotification(_request, logger)
 
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',
@@ -44,7 +40,6 @@ export const additionalDetailsController = {
         _request,
         sessionKeys.referenceNumber
       )
-      const traceId = getTraceId() ?? ''
 
       const { certifiedFor, unweanedAnimals } = _request.payload
 
@@ -53,10 +48,8 @@ export const additionalDetailsController = {
       setSessionValue(_request, sessionKeys.unweanedAnimals, unweanedAnimals)
 
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
         return h
           .view('additional-details/index', {
             pageTitle: 'Additional animal details',

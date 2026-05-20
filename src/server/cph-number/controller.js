@@ -7,8 +7,7 @@ import { sessionKeys } from '../common/constants/session-keys.js'
 import { cphNumberSchema } from './cph-number-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -31,7 +30,6 @@ export const cphNumberController = {
   post: {
     async handler(_request, h) {
       const { cphNumber } = _request.payload
-      const traceId = getTraceId() ?? ''
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
@@ -58,10 +56,8 @@ export const cphNumberController = {
       logger.info(`CPH number saved: ${cphNumber}`)
 
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
         return h
           .view('cph-number/index', {
             pageTitle: 'Add the County Parish Holding number (CPH)',

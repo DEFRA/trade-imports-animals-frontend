@@ -3,11 +3,10 @@ import {
   setSessionValue
 } from '../common/helpers/session-helpers.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { loadMockTransporters } from './load-mock-transporters.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -61,13 +60,9 @@ export const transportersController = {
       )
       logger.info(`Transporter: ${referenceNumber} landing page`)
 
-      const traceId = getTraceId() ?? ''
-
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
         const selectedTransporter = getSessionValue(
           _request,
           sessionKeys.transporter

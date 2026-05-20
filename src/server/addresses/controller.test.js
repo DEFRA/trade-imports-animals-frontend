@@ -1,11 +1,14 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
+const { mockSaveNotification } = vi.hoisted(() => ({
+  mockSaveNotification: vi.fn()
+}))
+
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  saveNotification: mockSaveNotification
 }))
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
@@ -109,9 +112,7 @@ describe('addressesController', () => {
   })
 
   test('redirects to cph-number when notification client throws', async () => {
-    vi.spyOn(notificationClient, 'save').mockRejectedValue(
-      new Error('Backend error')
-    )
+    mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
     const get = createYarGet()
 
@@ -123,7 +124,13 @@ describe('addressesController', () => {
 
     const response = await addressesController.post.handler(request, h)
 
-    expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+    expect(mockSaveNotification).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({
+        info: expect.any(Function),
+        error: expect.any(Function)
+      })
+    )
     expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
       referenceNumber: 'REF-123'
     })
@@ -138,7 +145,7 @@ describe('addressesController', () => {
 
   describe('POST addresses', () => {
     test('submit notification with selected consignor', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
+      mockSaveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -153,7 +160,13 @@ describe('addressesController', () => {
 
       const response = await addressesController.post.handler(request, h)
 
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(mockSaveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
         referenceNumber: 'REF-123'
       })

@@ -1,10 +1,13 @@
 import { describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
+const { mockSaveNotification } = vi.hoisted(() => ({
+  mockSaveNotification: vi.fn()
+}))
+
+vi.mock('../common/helpers/notification-helpers.js', () => ({
+  saveNotification: mockSaveNotification
 }))
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
@@ -51,7 +54,7 @@ describe('cphNumberController', () => {
 
   describe('POST /cph-number', () => {
     test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
+      mockSaveNotification.mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -67,12 +70,18 @@ describe('cphNumberController', () => {
       const response = await cphNumberController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '123456789')
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
+      expect(mockSaveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
+      mockSaveNotification.mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -165,9 +174,7 @@ describe('cphNumberController', () => {
     })
 
     test('shows error page when notification client throws', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
-        new Error('Backend error')
-      )
+      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)

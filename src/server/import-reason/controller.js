@@ -4,31 +4,28 @@ import {
   getSessionValue
 } from '../common/helpers/session-helpers.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../common/constants/status-codes.js'
+import {
+  saveNotification,
+  fetchNotification
+} from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 export const importReasonController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       const reasonForImport = getSessionValue(
         _request,
         sessionKeys.reasonForImport
       )
 
+      await fetchNotification(_request, logger)
+
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
       )
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
 
       return h.view('import-reason/index', {
         pageTitle: 'Reason for import',
@@ -44,7 +41,6 @@ export const importReasonController = {
         _request,
         sessionKeys.referenceNumber
       )
-      const traceId = getTraceId() ?? ''
 
       const { reasonForImport } = _request.payload
       logger.info(`Reason for import: ${referenceNumber}`)
@@ -52,10 +48,8 @@ export const importReasonController = {
 
       try {
         // Submit notification - client will build complete notification from all session values
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
+        await saveNotification(_request, logger)
       } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
         return h
           .view('import-reason/index', {
             pageTitle: 'Reason for import',
