@@ -10,10 +10,7 @@ import { statusCodes } from '../common/constants/status-codes.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { countriesClient } from '../common/clients/countries-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -34,8 +31,6 @@ export const originController = {
         `Country of origin in session: ${getSessionValue(_request, sessionKeys.countryCode)}`
       )
       const traceId = getTraceId() ?? ''
-      await fetchNotification(_request, logger)
-
       const countryItems = await buildCountryItems(traceId)
 
       return h.view('origin/index', {

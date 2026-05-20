@@ -3,10 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { importReasonController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 vi.mock('../common/helpers/notification-helpers.js')
 
@@ -19,7 +16,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 describe('importReasonController', () => {
   describe('GET reason for import', () => {
-    test('renders view with reasonForImport and calls fetchNotification', async () => {
+    test('renders view with reasonForImport from session', () => {
       const get = vi.fn((key) => {
         const values = {
           reasonForImport: 'internalMarket',
@@ -33,15 +30,7 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = await importReasonController.get.handler(request, h)
-
-      expect(fetchNotification).toHaveBeenCalledWith(
-        request,
-        expect.objectContaining({
-          info: expect.any(Function),
-          error: expect.any(Function)
-        })
-      )
+      const response = importReasonController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith('import-reason/index', {
         pageTitle: 'Reason for import',
@@ -54,7 +43,7 @@ describe('importReasonController', () => {
       expect(response.data.reasonForImport).toBe('internalMarket')
     })
 
-    test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
+    test('renders view with null referenceNumber when session is empty', () => {
       const get = vi.fn((key) => {
         const values = {
           reasonForImport: 'reEntry',
@@ -68,15 +57,8 @@ describe('importReasonController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      await importReasonController.get.handler(request, h)
+      importReasonController.get.handler(request, h)
 
-      expect(fetchNotification).toHaveBeenCalledWith(
-        request,
-        expect.objectContaining({
-          info: expect.any(Function),
-          error: expect.any(Function)
-        })
-      )
       expect(h.view).toHaveBeenCalledWith(
         'import-reason/index',
         expect.objectContaining({

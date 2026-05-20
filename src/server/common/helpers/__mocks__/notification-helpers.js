@@ -4,4 +4,3 @@ export const saveNotification = vi.fn().mockResolvedValue({
   referenceNumber: 'TEST-REF-123'
 })
 export const submitNotification = vi.fn().mockResolvedValue({})
-export const fetchNotification = vi.fn().mockResolvedValue(null)

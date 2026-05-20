@@ -1,31 +1,20 @@
 import { vi } from 'vitest'
 
-import {
-  saveNotification,
-  submitNotification,
-  fetchNotification
-} from './notification-helpers.js'
+import { saveNotification, submitNotification } from './notification-helpers.js'
 
 const mockSave = vi.hoisted(() => vi.fn())
 const mockSubmitNotification = vi.hoisted(() => vi.fn())
-const mockGet = vi.hoisted(() => vi.fn())
 const mockGetTraceId = vi.hoisted(() => vi.fn())
-const mockGetSessionValue = vi.hoisted(() => vi.fn())
 
 vi.mock('../clients/notification-client.js', () => ({
   notificationClient: {
     save: mockSave,
-    submitNotification: mockSubmitNotification,
-    get: mockGet
+    submitNotification: mockSubmitNotification
   }
 }))
 
 vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: mockGetTraceId
-}))
-
-vi.mock('./session-helpers.js', () => ({
-  getSessionValue: mockGetSessionValue
 }))
 
 describe('#saveNotification', () => {
@@ -159,88 +148,6 @@ describe('#submitNotification', () => {
       await expect(
         submitNotification(mockRequest, mockLogger, referenceNumber)
       ).rejects.toThrow('server error')
-    })
-  })
-})
-
-describe('#fetchNotification', () => {
-  let mockLogger
-  const mockRequest = { yar: {} }
-  const traceId = 'trace-789'
-  const referenceNumber = 'REF-003'
-
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockLogger = { info: vi.fn(), error: vi.fn() }
-    mockGetTraceId.mockReturnValue(traceId)
-  })
-
-  describe('When referenceNumber is in session', () => {
-    const mockNotification = { referenceNumber: 'REF-003', status: 'DRAFT' }
-
-    beforeEach(() => {
-      mockGetSessionValue.mockReturnValue(referenceNumber)
-      mockGet.mockResolvedValue(mockNotification)
-    })
-
-    test('Should call notificationClient.get with correct args', async () => {
-      await fetchNotification(mockRequest, mockLogger)
-
-      expect(mockGet).toHaveBeenCalledWith(
-        mockRequest,
-        referenceNumber,
-        traceId
-      )
-    })
-
-    test('Should log retrieval message', async () => {
-      await fetchNotification(mockRequest, mockLogger)
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Notification retrieved from notification client: REF-003'
-      )
-    })
-
-    test('Should return the notification', async () => {
-      const result = await fetchNotification(mockRequest, mockLogger)
-
-      expect(result).toEqual(mockNotification)
-    })
-  })
-
-  describe('When referenceNumber is not in session', () => {
-    beforeEach(() => {
-      mockGetSessionValue.mockReturnValue(null)
-    })
-
-    test('Should return null without calling the client', async () => {
-      const result = await fetchNotification(mockRequest, mockLogger)
-
-      expect(result).toBeNull()
-      expect(mockGet).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('When get fails', () => {
-    const error = new Error('fetch failed')
-
-    beforeEach(() => {
-      mockGetSessionValue.mockReturnValue(referenceNumber)
-      mockGet.mockRejectedValue(error)
-    })
-
-    test('Should log error message', async () => {
-      await fetchNotification(mockRequest, mockLogger)
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to get notification: fetch failed'
-      )
-    })
-
-    test('Should return null', async () => {
-      const result = await fetchNotification(mockRequest, mockLogger)
-
-      expect(result).toBeNull()
     })
   })
 })

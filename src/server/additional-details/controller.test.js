@@ -3,10 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { additionalDetailsController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 vi.mock('../common/helpers/notification-helpers.js')
 
@@ -19,7 +16,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 describe('additionalDetailsController', () => {
   describe('GET /additional-details', () => {
-    test('renders view with session values and calls fetchNotification when referenceNumber exists', async () => {
+    test('renders view with session values', () => {
       const get = vi.fn((key) => {
         const values = {
           certifiedFor: 'approvedBodies',
@@ -34,15 +31,7 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      const response = await additionalDetailsController.get.handler(request, h)
-
-      expect(fetchNotification).toHaveBeenCalledWith(
-        request,
-        expect.objectContaining({
-          info: expect.any(Function),
-          error: expect.any(Function)
-        })
-      )
+      const response = additionalDetailsController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith('additional-details/index', {
         pageTitle: 'Additional animal details',
@@ -55,7 +44,7 @@ describe('additionalDetailsController', () => {
       expect(response.template).toBe('additional-details/index')
     })
 
-    test('defaults unweanedAnimals to "no" when not set in session', async () => {
+    test('defaults unweanedAnimals to "no" when not set in session', () => {
       const get = vi.fn(() => null)
 
       const request = { yar: { get } }
@@ -63,32 +52,13 @@ describe('additionalDetailsController', () => {
         view: vi.fn((template, data) => ({ template, data }))
       }
 
-      await additionalDetailsController.get.handler(request, h)
+      additionalDetailsController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith(
         'additional-details/index',
         expect.objectContaining({
           certifiedFor: null,
           unweanedAnimals: 'no'
-        })
-      )
-    })
-
-    test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
-      const get = vi.fn(() => null)
-
-      const request = { yar: { get } }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
-
-      await additionalDetailsController.get.handler(request, h)
-
-      expect(fetchNotification).toHaveBeenCalledWith(
-        request,
-        expect.objectContaining({
-          info: expect.any(Function),
-          error: expect.any(Function)
         })
       )
     })

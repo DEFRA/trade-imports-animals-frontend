@@ -6,21 +6,16 @@ import {
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 export const commoditiesController = {
   get: {
-    async handler(_request, h) {
+    handler(_request, h) {
       logger.info(
         `Commodity in session: ${getSessionValue(_request, sessionKeys.commodity)}`
       )
-      await fetchNotification(_request, logger)
-
       return h.view('commodities/index', {
         pageTitle: 'Commodities',
         heading: 'Select a commodity',

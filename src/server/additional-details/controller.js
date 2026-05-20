@@ -6,16 +6,13 @@ import {
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
-import {
-  saveNotification,
-  fetchNotification
-} from '../common/helpers/notification-helpers.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 export const additionalDetailsController = {
   get: {
-    async handler(_request, h) {
+    handler(_request, h) {
       const certifiedFor = getSessionValue(_request, sessionKeys.certifiedFor)
       const unweanedAnimals =
         getSessionValue(_request, sessionKeys.unweanedAnimals) ?? 'no'
@@ -24,8 +21,6 @@ export const additionalDetailsController = {
         _request,
         sessionKeys.referenceNumber
       )
-      await fetchNotification(_request, logger)
-
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',
         heading: 'Additional animal details',
