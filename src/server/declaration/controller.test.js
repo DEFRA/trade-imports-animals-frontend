@@ -15,7 +15,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 describe('declarationController', () => {
   function buildRequest(payload = {}) {
     const get = vi.fn((key) =>
-      key === 'referenceNumber' ? 'DRAFT.IMP.2026.abc123' : null
+      key === 'referenceNumber' ? 'GBN-AG-26-ABC123' : null
     )
     return { payload, yar: { get } }
   }
@@ -40,7 +40,7 @@ describe('declarationController', () => {
         'declaration/index',
         expect.objectContaining({
           pageTitle: 'Declaration',
-          referenceNumber: 'DRAFT.IMP.2026.abc123',
+          referenceNumber: 'GBN-AG-26-ABC123',
           submissionDate: expect.any(String)
         })
       )
@@ -79,7 +79,7 @@ describe('declarationController', () => {
           info: expect.any(Function),
           error: expect.any(Function)
         }),
-        'DRAFT.IMP.2026.abc123'
+        'GBN-AG-26-ABC123'
       )
       expect(response).toEqual({ statusCode: 302, location: '/declaration' })
     })
