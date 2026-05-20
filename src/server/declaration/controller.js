@@ -61,7 +61,7 @@ export const declarationController = {
 
       try {
         await submitNotification(_request, logger, referenceNumber)
-      } catch (err) {
+      } catch {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,

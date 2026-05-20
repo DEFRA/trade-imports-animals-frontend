@@ -76,7 +76,7 @@ export const consignmentContactSelectController = {
       )
       try {
         await saveNotification(_request, logger)
-      } catch (err) {
+      } catch {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,

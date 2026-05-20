@@ -157,7 +157,7 @@ export const commoditiesSelectController = {
       try {
         // Submit notification - client will build complete notification from all session values
         await saveNotification(_request, logger)
-      } catch (error) {
+      } catch {
         const updatedCommodity = getSessionValue(
           _request,
           sessionKeys.commodity

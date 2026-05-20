@@ -63,7 +63,7 @@ export const transportersController = {
 
       try {
         await saveNotification(_request, logger)
-      } catch (err) {
+      } catch {
         const selectedTransporter = getSessionValue(
           _request,
           sessionKeys.transporter

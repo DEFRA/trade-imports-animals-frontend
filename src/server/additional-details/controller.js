@@ -50,7 +50,7 @@ export const additionalDetailsController = {
 
       try {
         await saveNotification(_request, logger)
-      } catch (error) {
+      } catch {
         return h
           .view('additional-details/index', {
             pageTitle: 'Additional animal details',

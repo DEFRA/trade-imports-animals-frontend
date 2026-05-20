@@ -75,7 +75,7 @@ export const commodityDetailsController = {
 
       try {
         await saveNotification(_request, logger)
-      } catch (error) {
+      } catch {
         const updatedCommodity = getSessionValue(
           _request,
           sessionKeys.commodity

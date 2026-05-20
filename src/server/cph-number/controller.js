@@ -58,7 +58,7 @@ export const cphNumberController = {
 
       try {
         await saveNotification(_request, logger)
-      } catch (err) {
+      } catch {
         return h
           .view('cph-number/index', {
             pageTitle: 'Add the County Parish Holding number (CPH)',

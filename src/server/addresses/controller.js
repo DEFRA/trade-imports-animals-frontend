@@ -93,7 +93,7 @@ export const addressesController = {
 
       try {
         await saveNotification(_request, logger)
-      } catch (err) {
+      } catch {
         // save failed — helper already logged; continue to redirect
       }
 

@@ -40,7 +40,7 @@ export const commoditiesController = {
       try {
         // Submit notification - client will build complete notification from all session values
         await saveNotification(_request, logger)
-      } catch (error) {
+      } catch {
         return h
           .view('commodities/index', {
             pageTitle: 'Commodities',

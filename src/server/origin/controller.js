@@ -107,7 +107,7 @@ export const originController = {
           )
           logger.info(`Reference number saved: ${response.referenceNumber}`)
         }
-      } catch (error) {
+      } catch {
         return h
           .view('origin/index', {
             pageTitle: 'Origin of the import',
