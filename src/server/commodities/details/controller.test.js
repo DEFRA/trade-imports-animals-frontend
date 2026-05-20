@@ -3,14 +3,9 @@ import { describe, expect, test, vi } from 'vitest'
 import { commodityDetailsController } from './controller.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../../common/helpers/notification-helpers.js')
 
 vi.mock('../../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -22,7 +17,7 @@ vi.mock('../../common/helpers/logging/logger.js', () => ({
 describe('commodityDetailsController', () => {
   describe('POST /commodities/details', () => {
     test('stores noOfAnimals/noOfPackages against species and totals in commodityComplement', async () => {
-      mockSaveNotification.mockResolvedValue({
+      saveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -88,7 +83,7 @@ describe('commodityDetailsController', () => {
         })
       )
 
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -102,7 +97,7 @@ describe('commodityDetailsController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      mockSaveNotification.mockRejectedValueOnce(
+      saveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

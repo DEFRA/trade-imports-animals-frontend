@@ -3,16 +3,12 @@ import { describe, expect, test, vi } from 'vitest'
 import { importReasonController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import {
+  saveNotification,
+  fetchNotification
+} from '../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification, mockFetchNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn(),
-  mockFetchNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification,
-  fetchNotification: mockFetchNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -24,7 +20,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 describe('importReasonController', () => {
   describe('GET reason for import', () => {
     test('renders view with reasonForImport and calls fetchNotification', async () => {
-      mockFetchNotification.mockResolvedValue(null)
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
@@ -41,7 +37,7 @@ describe('importReasonController', () => {
 
       const response = await importReasonController.get.handler(request, h)
 
-      expect(mockFetchNotification).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -61,7 +57,7 @@ describe('importReasonController', () => {
     })
 
     test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
-      mockFetchNotification.mockResolvedValue(null)
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
@@ -78,7 +74,7 @@ describe('importReasonController', () => {
 
       await importReasonController.get.handler(request, h)
 
-      expect(mockFetchNotification).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -97,7 +93,7 @@ describe('importReasonController', () => {
 
   describe('POST reason for import', () => {
     test('stores reasonForImport, submits notification, and redirects', async () => {
-      mockSaveNotification.mockResolvedValue({
+      saveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -119,7 +115,7 @@ describe('importReasonController', () => {
         sessionKeys.reasonForImport,
         'internalMarket'
       )
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -133,7 +129,7 @@ describe('importReasonController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      mockSaveNotification.mockRejectedValueOnce(
+      saveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

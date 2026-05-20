@@ -7,14 +7,9 @@ import { mockOidcConfig } from '../../../../common/test-helpers/mock-oidc-config
 import * as sessionHelpers from '../../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../../common/constants/session-keys.js'
 import contacts from './mock-contacts.json'
+import { saveNotification } from '../../../../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../../../../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../../../../common/helpers/notification-helpers.js')
 
 vi.mock('../../../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -38,7 +33,7 @@ describe('#consignmentContactSelectController', () => {
   let server
 
   beforeAll(async () => {
-    mockSaveNotification.mockResolvedValue({
+    saveNotification.mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 
@@ -78,7 +73,7 @@ describe('#consignmentContactSelectController', () => {
 
   describe('POST /consignment/contact/select', () => {
     beforeEach(() => {
-      mockSaveNotification.mockClear()
+      saveNotification.mockClear()
       sessionHelpers.setSessionValue.mockClear()
     })
 
@@ -98,13 +93,13 @@ describe('#consignmentContactSelectController', () => {
         sessionKeys.contactAddress,
         contacts[0]
       )
-      expect(mockSaveNotification).toHaveBeenCalledTimes(1)
+      expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/declaration')
     })
 
     test('POST /consignment/contact/select renders page with error when notification save fails', async () => {
-      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const { statusCode, result, headers } = await server.inject({
         method: 'POST',
@@ -116,7 +111,7 @@ describe('#consignmentContactSelectController', () => {
         payload: { contactAddress: '0' }
       })
 
-      expect(mockSaveNotification).toHaveBeenCalledTimes(1)
+      expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(headers.location).toBeUndefined()
       expect(result).toEqual(

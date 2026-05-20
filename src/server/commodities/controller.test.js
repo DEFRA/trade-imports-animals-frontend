@@ -6,16 +6,12 @@ import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+import {
+  saveNotification,
+  fetchNotification
+} from '../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification, mockFetchNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn(),
-  mockFetchNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification,
-  fetchNotification: mockFetchNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -30,10 +26,10 @@ vi.mock('../../config/config.js', async (importOriginal) => {
 describe('#commoditiesController', () => {
   let server
   beforeAll(async () => {
-    mockSaveNotification.mockResolvedValue({
+    saveNotification.mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
-    mockFetchNotification.mockResolvedValue(null)
+    fetchNotification.mockResolvedValue(null)
 
     server = await createServer()
     await server.initialize()
@@ -184,7 +180,7 @@ describe('#commoditiesController', () => {
     })
 
     test('Should show error page when backend submit fails', async () => {
-      mockSaveNotification.mockRejectedValueOnce(
+      saveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

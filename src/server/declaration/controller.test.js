@@ -1,14 +1,9 @@
 import { describe, expect, test, vi } from 'vitest'
 import { declarationController } from './controller.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { submitNotification } from '../common/helpers/notification-helpers.js'
 
-const { mockSubmitNotification } = vi.hoisted(() => ({
-  mockSubmitNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  submitNotification: mockSubmitNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -70,7 +65,7 @@ describe('declarationController', () => {
 
   describe('POST /declaration', () => {
     test('submits notification and redirects to /declaration on success', async () => {
-      mockSubmitNotification.mockResolvedValue({})
+      submitNotification.mockResolvedValue({})
 
       const request = buildRequest({ declaration: 'confirmed' })
       const h = {
@@ -80,7 +75,7 @@ describe('declarationController', () => {
 
       const response = await declarationController.post.handler(request, h)
 
-      expect(mockSubmitNotification).toHaveBeenCalledWith(
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -112,7 +107,7 @@ describe('declarationController', () => {
     })
 
     test('returns 500 with error message when submitNotification throws', async () => {
-      mockSubmitNotification.mockRejectedValueOnce(new Error('Backend error'))
+      submitNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const request = buildRequest({ declaration: 'confirmed' })
       const { mockCode, h } = buildErrorH()

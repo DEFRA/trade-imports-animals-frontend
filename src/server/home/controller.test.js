@@ -7,6 +7,8 @@ import { startJourneyController } from './controller.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { config } from '../../config/config.js'
 
+vi.mock('../common/clients/notification-client.js')
+
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
@@ -15,9 +17,8 @@ describe('#homeController', () => {
   let server
 
   beforeAll(async () => {
-    // Mock notification client to avoid backend calls
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
+    notificationClient.get.mockResolvedValue(null)
+    notificationClient.save.mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 

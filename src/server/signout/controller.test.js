@@ -4,6 +4,8 @@ import { createServer } from '../server.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { notificationClient } from '../common/clients/notification-client.js'
 
+vi.mock('../common/clients/notification-client.js')
+
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
@@ -18,9 +20,8 @@ describe('GET /signout', () => {
   let server
 
   beforeAll(async () => {
-    // Avoid any backend calls during server init/requests
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
+    notificationClient.get.mockResolvedValue(null)
+    notificationClient.save.mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 

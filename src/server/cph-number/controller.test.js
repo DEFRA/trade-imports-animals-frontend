@@ -2,14 +2,9 @@ import { describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -55,7 +50,7 @@ describe('cphNumberController', () => {
 
   describe('POST /cph-number', () => {
     test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
-      mockSaveNotification.mockResolvedValue({})
+      saveNotification.mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -71,7 +66,7 @@ describe('cphNumberController', () => {
       const response = await cphNumberController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '123456789')
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -82,7 +77,7 @@ describe('cphNumberController', () => {
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
-      mockSaveNotification.mockResolvedValue({})
+      saveNotification.mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -175,7 +170,7 @@ describe('cphNumberController', () => {
     })
 
     test('shows error page when notification client throws', async () => {
-      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)

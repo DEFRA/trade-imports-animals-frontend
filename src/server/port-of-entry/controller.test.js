@@ -2,14 +2,9 @@ import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -68,7 +63,7 @@ describe('portOfEntryController', () => {
 
   describe('POST /port-of-entry', () => {
     test('saves portOfEntry and arrivalDate to session, submits notification, and redirects', async () => {
-      mockSaveNotification.mockResolvedValue({})
+      saveNotification.mockResolvedValue({})
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -89,7 +84,7 @@ describe('portOfEntryController', () => {
         month: 3,
         year: 2026
       })
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -132,7 +127,7 @@ describe('portOfEntryController', () => {
     })
 
     test('shows error when notification client throws', async () => {
-      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)

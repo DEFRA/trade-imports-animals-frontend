@@ -4,14 +4,9 @@ import { commoditiesSelectController } from './controller.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../../common/helpers/notification-helpers.js')
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -26,7 +21,7 @@ vi.mock('../../../config/config.js', async (importOriginal) => {
 describe('commoditiesSelectController', () => {
   describe('GET /commodities/select', () => {
     beforeAll(() => {
-      mockSaveNotification.mockResolvedValue({
+      saveNotification.mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
     })
@@ -104,7 +99,7 @@ describe('commoditiesSelectController', () => {
 
   describe('POST /commodities/select', () => {
     beforeAll(() => {
-      mockSaveNotification.mockResolvedValue({
+      saveNotification.mockResolvedValue({
         referenceNumber: 'TEST-REF-123'
       })
     })
@@ -194,7 +189,7 @@ describe('commoditiesSelectController', () => {
         statusText: 'Internal Server Error'
       })
 
-      mockSaveNotification.mockRejectedValueOnce(submitError)
+      saveNotification.mockRejectedValueOnce(submitError)
 
       const set = vi.fn()
       const get = vi.fn((key) => {

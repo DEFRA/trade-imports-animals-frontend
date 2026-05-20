@@ -6,6 +6,8 @@ import { statusCodes } from '../constants/status-codes.js'
 
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
 
+vi.mock('../clients/notification-client.js')
+
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
@@ -20,9 +22,8 @@ describe('#startServer', () => {
     vi.stubEnv('PORT', '3097')
     vi.resetModules()
 
-    // Avoid real network calls during server startup
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
+    notificationClient.get.mockResolvedValue(null)
+    notificationClient.save.mockResolvedValue({
       referenceNumber: 'TEST-REF-123'
     })
 

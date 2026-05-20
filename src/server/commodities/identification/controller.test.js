@@ -3,14 +3,9 @@ import { describe, expect, test, vi } from 'vitest'
 import { animalIdentificationDetailsController } from './controller.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../../common/helpers/notification-helpers.js')
 
 vi.mock('../../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -90,7 +85,7 @@ describe('animalIdentificationDetailsController', () => {
 
   describe('POST /commodities/identification', () => {
     test('Append animal identification details to the species, saves commodity and submits notification', async () => {
-      mockSaveNotification.mockResolvedValue(undefined)
+      saveNotification.mockResolvedValue(undefined)
 
       const set = vi.fn()
       const complement = {
@@ -156,7 +151,7 @@ describe('animalIdentificationDetailsController', () => {
         })
       )
 
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -174,7 +169,7 @@ describe('animalIdentificationDetailsController', () => {
     })
 
     test('shows error page when notification submit fails', async () => {
-      mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const complement = {

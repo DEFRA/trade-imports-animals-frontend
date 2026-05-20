@@ -3,16 +3,12 @@ import { describe, expect, test, vi } from 'vitest'
 import { additionalDetailsController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import {
+  saveNotification,
+  fetchNotification
+} from '../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification, mockFetchNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn(),
-  mockFetchNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification,
-  fetchNotification: mockFetchNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -24,7 +20,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 describe('additionalDetailsController', () => {
   describe('GET /additional-details', () => {
     test('renders view with session values and calls fetchNotification when referenceNumber exists', async () => {
-      mockFetchNotification.mockResolvedValue(null)
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn((key) => {
         const values = {
@@ -42,7 +38,7 @@ describe('additionalDetailsController', () => {
 
       const response = await additionalDetailsController.get.handler(request, h)
 
-      expect(mockFetchNotification).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -62,7 +58,7 @@ describe('additionalDetailsController', () => {
     })
 
     test('defaults unweanedAnimals to "no" when not set in session', async () => {
-      mockFetchNotification.mockResolvedValue(null)
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
 
@@ -83,7 +79,7 @@ describe('additionalDetailsController', () => {
     })
 
     test('calls fetchNotification even when no referenceNumber (helper handles guard)', async () => {
-      mockFetchNotification.mockResolvedValue(null)
+      fetchNotification.mockResolvedValue(null)
 
       const get = vi.fn(() => null)
 
@@ -94,7 +90,7 @@ describe('additionalDetailsController', () => {
 
       await additionalDetailsController.get.handler(request, h)
 
-      expect(mockFetchNotification).toHaveBeenCalledWith(
+      expect(fetchNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -106,7 +102,7 @@ describe('additionalDetailsController', () => {
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      mockSaveNotification.mockResolvedValue({
+      saveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -135,7 +131,7 @@ describe('additionalDetailsController', () => {
         'breedingAndOrProduction'
       )
       expect(set).toHaveBeenCalledWith(sessionKeys.unweanedAnimals, 'no')
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
@@ -149,7 +145,7 @@ describe('additionalDetailsController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      mockSaveNotification.mockRejectedValueOnce(
+      saveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

@@ -2,14 +2,9 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-const { mockSaveNotification } = vi.hoisted(() => ({
-  mockSaveNotification: vi.fn()
-}))
-
-vi.mock('../common/helpers/notification-helpers.js', () => ({
-  saveNotification: mockSaveNotification
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -112,7 +107,7 @@ describe('addressesController', () => {
   })
 
   test('redirects to cph-number when notification client throws', async () => {
-    mockSaveNotification.mockRejectedValueOnce(new Error('Backend error'))
+    saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
     const get = createYarGet()
 
@@ -124,7 +119,7 @@ describe('addressesController', () => {
 
     const response = await addressesController.post.handler(request, h)
 
-    expect(mockSaveNotification).toHaveBeenCalledWith(
+    expect(saveNotification).toHaveBeenCalledWith(
       request,
       expect.objectContaining({
         info: expect.any(Function),
@@ -145,7 +140,7 @@ describe('addressesController', () => {
 
   describe('POST addresses', () => {
     test('submit notification with selected consignor', async () => {
-      mockSaveNotification.mockResolvedValue({
+      saveNotification.mockResolvedValue({
         referenceNumber: 'REF-123'
       })
 
@@ -160,7 +155,7 @@ describe('addressesController', () => {
 
       const response = await addressesController.post.handler(request, h)
 
-      expect(mockSaveNotification).toHaveBeenCalledWith(
+      expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
           info: expect.any(Function),
