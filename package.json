@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build:frontend": "NODE_ENV=production webpack",
-    "dev": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:watch",
+    "dev": "AWS_EMF_ENVIRONMENT=Local run-p build:frontend frontend:watch server:watch",
     "dev:debug": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:debug",
     "docker:dev": "npm run dev",
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
