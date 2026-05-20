@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import { renderComponent } from '../../test-helpers/component-helpers.js'
 
-const REFERENCE_NUMBER = 'GBCHD2024.1234567'
+const REFERENCE_NUMBER = 'GBN-AG-26-ABC123'
 
 describe('Reference Number Caption Component', () => {
   describe('With a reference number', () => {
