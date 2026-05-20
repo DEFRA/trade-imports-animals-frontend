@@ -1,11 +1,11 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { additionalDetailsController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -16,9 +16,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 describe('additionalDetailsController', () => {
   describe('GET /additional-details', () => {
-    test('renders view with session values and calls notificationClient.get when referenceNumber exists', () => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-
+    test('renders view with session values', () => {
       const get = vi.fn((key) => {
         const values = {
           certifiedFor: 'approvedBodies',
@@ -34,12 +32,6 @@ describe('additionalDetailsController', () => {
       }
 
       const response = additionalDetailsController.get.handler(request, h)
-
-      expect(notificationClient.get).toHaveBeenCalledWith(
-        request,
-        'REF-123',
-        'trace-123'
-      )
 
       expect(h.view).toHaveBeenCalledWith('additional-details/index', {
         pageTitle: 'Additional animal details',
@@ -70,29 +62,10 @@ describe('additionalDetailsController', () => {
         })
       )
     })
-
-    test('does not call notificationClient.get when no referenceNumber', () => {
-      const getSpy = vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-
-      const get = vi.fn(() => null)
-
-      const request = { yar: { get } }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
-
-      additionalDetailsController.get.handler(request, h)
-
-      expect(getSpy).not.toHaveBeenCalled()
-    })
   })
 
   describe('POST /additional-details', () => {
     test('stores certifiedFor and unweanedAnimals in session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'referenceNumber' ? 'REF-123' : null))
 
@@ -114,11 +87,17 @@ describe('additionalDetailsController', () => {
       )
 
       expect(set).toHaveBeenCalledWith(
-        'certifiedFor',
+        sessionKeys.certifiedFor,
         'breedingAndOrProduction'
       )
-      expect(set).toHaveBeenCalledWith('unweanedAnimals', 'no')
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(set).toHaveBeenCalledWith(sessionKeys.unweanedAnimals, 'no')
+      expect(saveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({
         statusCode: 302,
         location: '/accompanying-documents'
@@ -126,7 +105,7 @@ describe('additionalDetailsController', () => {
     })
 
     test('shows error page when backend submit fails', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
+      saveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'
@@ -155,9 +134,7 @@ describe('additionalDetailsController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'additional-details/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

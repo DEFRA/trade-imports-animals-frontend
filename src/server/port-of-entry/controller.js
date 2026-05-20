@@ -3,11 +3,12 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { portOfEntrySchema } from './port-of-entry-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -17,9 +18,12 @@ const VIEW = 'port-of-entry/index'
 export const portOfEntryController = {
   get: {
     handler(_request, h) {
-      const portOfEntry = getSessionValue(_request, 'portOfEntry')
-      const arrivalDate = getSessionValue(_request, 'arrivalDate')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const portOfEntry = getSessionValue(_request, sessionKeys.portOfEntry)
+      const arrivalDate = getSessionValue(_request, sessionKeys.arrivalDate)
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -35,8 +39,10 @@ export const portOfEntryController = {
       const arrivalDay = _request.payload['arrivalDate-day']
       const arrivalMonth = _request.payload['arrivalDate-month']
       const arrivalYear = _request.payload['arrivalDate-year']
-      const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const { error } = portOfEntrySchema.validate(_request.payload, {
         abortEarly: false
@@ -65,24 +71,20 @@ export const portOfEntryController = {
         month: arrivalMonth,
         year: arrivalYear
       }
-      setSessionValue(_request, 'portOfEntry', portOfEntry)
-      setSessionValue(_request, 'arrivalDate', arrivalDate)
+      setSessionValue(_request, sessionKeys.portOfEntry, portOfEntry)
+      setSessionValue(_request, sessionKeys.arrivalDate, arrivalDate)
       logger.info(`Port of entry saved: ${portOfEntry}`)
 
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
+        await saveNotification(_request, logger)
+      } catch {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             portOfEntry,
             arrivalDate,
             referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

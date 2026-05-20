@@ -1,12 +1,14 @@
 import { vi } from 'vitest'
 
-import { notificationClient } from '../common/clients/notification-client.js'
 import { countriesClient } from '../common/clients/countries-client.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { load } from 'cheerio'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
+
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -31,10 +33,6 @@ const mockCountries = [
 describe('#originController', () => {
   let server
   beforeAll(async () => {
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
     vi.spyOn(countriesClient, 'getCountries').mockResolvedValue(mockCountries)
 
     server = await createServer()
@@ -200,7 +198,7 @@ describe('#originController', () => {
     })
 
     test('Should show error page when backend submit fails', async () => {
-      notificationClient.save.mockRejectedValueOnce(
+      saveNotification.mockRejectedValueOnce(
         Object.assign(new Error('Backend error'), {
           status: 500,
           statusText: 'Internal Server Error'

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
 import { createLogger } from '../../../common/helpers/logging/logger.js'
 import { getSessionValue } from '../../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../../common/constants/session-keys.js'
 
 const logger = createLogger()
 
@@ -19,9 +20,12 @@ export const destinationsSelectController = {
   get: {
     handler(_request, h) {
       logger.info(
-        `Places of destination: ${getSessionValue(_request, 'commodity')} selection page`
+        `Places of destination: ${getSessionValue(_request, sessionKeys.commodity)} selection page`
       )
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view('addresses/destinations/select/index', {
         pageTitle: 'Search for a place of destination',

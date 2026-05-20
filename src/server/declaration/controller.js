@@ -1,10 +1,11 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { getSessionValue } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { declarationSchema } from './declaration-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { submitNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -22,7 +23,10 @@ function getSubmissionDate() {
 export const declarationController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -33,8 +37,10 @@ export const declarationController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const { error } = declarationSchema.validate(_request.payload, {
         abortEarly: false
@@ -54,22 +60,14 @@ export const declarationController = {
       }
 
       try {
-        await notificationClient.submitNotification(
-          _request,
-          referenceNumber,
-          traceId
-        )
-        logger.info(`Notification submitted: ${referenceNumber}`)
-      } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
+        await submitNotification(_request, logger, referenceNumber)
+      } catch {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
             submissionDate: getSubmissionDate(),
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

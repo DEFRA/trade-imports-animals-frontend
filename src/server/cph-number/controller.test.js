@@ -1,10 +1,10 @@
 import { describe, expect, test, vi } from 'vitest'
 import { cphNumberController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -50,8 +50,6 @@ describe('cphNumberController', () => {
 
   describe('POST /cph-number', () => {
     test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
-
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {
@@ -65,14 +63,18 @@ describe('cphNumberController', () => {
 
       const response = await cphNumberController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('cphNumber', '123456789')
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
+      expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '123456789')
+      expect(saveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
-
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {
@@ -86,7 +88,7 @@ describe('cphNumberController', () => {
 
       await cphNumberController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('cphNumber', '012345678')
+      expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '012345678')
     })
 
     test('returns 400 with error list when cphNumber has fewer than 9 digits', async () => {
@@ -164,9 +166,7 @@ describe('cphNumberController', () => {
     })
 
     test('shows error page when notification client throws', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
-        new Error('Backend error')
-      )
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -185,9 +185,7 @@ describe('cphNumberController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'cph-number/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

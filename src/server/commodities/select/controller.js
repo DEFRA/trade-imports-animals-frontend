@@ -3,13 +3,14 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { notificationClient } from '../../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -59,11 +60,14 @@ export const commoditiesSelectController = {
   get: {
     handler(_request, h) {
       logger.info(
-        `Commodity in session: ${getSessionValue(_request, 'commodity')}`
+        `Commodity in session: ${getSessionValue(_request, sessionKeys.commodity)}`
       )
 
-      const commodity = getSessionValue(_request, 'commodity')
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const commodity = getSessionValue(_request, sessionKeys.commodity)
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const commodityComplement = (commodity?.commodityComplement ?? []).at(-1)
       const selectedSpecies = commodityComplement?.species ?? []
       const typeOfCommodity = commodityComplement?.typeOfCommodity
@@ -89,12 +93,14 @@ export const commoditiesSelectController = {
   post: {
     async handler(_request, h) {
       logger.info(
-        `Commodity in session: ${getSessionValue(_request, 'commodity')}`
+        `Commodity in session: ${getSessionValue(_request, sessionKeys.commodity)}`
       )
 
-      const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const commodity = getSessionValue(_request, 'commodity')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
+      const commodity = getSessionValue(_request, sessionKeys.commodity)
       const existingCommodityComplement = (
         commodity?.commodityComplement ?? []
       ).at(-1)
@@ -146,15 +152,16 @@ export const commoditiesSelectController = {
 
       const commodityJson = toObject(commodity, 'name')
       commodityJson.commodityComplement = [commodityComplement]
-      setSessionValue(_request, 'commodity', commodityJson)
+      setSessionValue(_request, sessionKeys.commodity, commodityJson)
 
       try {
         // Submit notification - client will build complete notification from all session values
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
-        const updatedCommodity = getSessionValue(_request, 'commodity')
+        await saveNotification(_request, logger)
+      } catch {
+        const updatedCommodity = getSessionValue(
+          _request,
+          sessionKeys.commodity
+        )
         const updatedComplement = (
           updatedCommodity?.commodityComplement ?? []
         ).at(-1)
@@ -171,9 +178,7 @@ export const commoditiesSelectController = {
             commodityDetails: toJsonObject(commodityDetailsList),
             typeItems: buildTypeItems(speciesDetails),
             speciesItems: buildSpeciesItems(speciesDetails, updatedSpecies),
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

@@ -1,11 +1,14 @@
 import { vi } from 'vitest'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
 import { startJourneyController } from './controller.js'
 
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { config } from '../../config/config.js'
+
+import { notificationClient } from '../common/clients/notification-client.js'
+
+vi.mock('../common/clients/notification-client.js')
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -36,13 +39,6 @@ describe('#homeController', () => {
   let server
 
   beforeAll(async () => {
-    // Mock notification client to avoid backend calls
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'findAll').mockResolvedValue([])
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })

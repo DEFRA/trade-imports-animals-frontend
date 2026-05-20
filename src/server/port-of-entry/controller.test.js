@@ -1,10 +1,10 @@
 import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -63,8 +63,6 @@ describe('portOfEntryController', () => {
 
   describe('POST /port-of-entry', () => {
     test('saves portOfEntry and arrivalDate to session, submits notification, and redirects', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({})
-
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {
@@ -78,13 +76,19 @@ describe('portOfEntryController', () => {
 
       const response = await portOfEntryController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('portOfEntry', 'ABERDEEN')
-      expect(set).toHaveBeenCalledWith('arrivalDate', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.portOfEntry, 'ABERDEEN')
+      expect(set).toHaveBeenCalledWith(sessionKeys.arrivalDate, {
         day: 27,
         month: 3,
         year: 2026
       })
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-abc')
+      expect(saveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(response).toEqual({ statusCode: 302, location: '/transporters' })
     })
 
@@ -121,9 +125,7 @@ describe('portOfEntryController', () => {
     })
 
     test('shows error when notification client throws', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
-        new Error('Backend error')
-      )
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const get = vi.fn(() => null)
@@ -142,9 +144,7 @@ describe('portOfEntryController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

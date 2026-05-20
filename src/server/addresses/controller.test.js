@@ -1,11 +1,10 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -81,7 +80,7 @@ describe('addressesController', () => {
 
       addressesController.get.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith('consignor', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.consignor, {
         name: 'Astra Rosales',
         address: {
           addressLine1: '43 East Hague Extension',
@@ -90,7 +89,7 @@ describe('addressesController', () => {
           country: 'Switzerland'
         }
       })
-      expect(set).toHaveBeenCalledWith('destination', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.destination, {
         name: 'Tech Imports Ltd',
         address: {
           addressLine1: '643 Main Street',
@@ -108,9 +107,7 @@ describe('addressesController', () => {
   })
 
   test('redirects to cph-number when notification client throws', async () => {
-    vi.spyOn(notificationClient, 'save').mockRejectedValue(
-      new Error('Backend error')
-    )
+    saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
     const get = createYarGet()
 
@@ -122,7 +119,13 @@ describe('addressesController', () => {
 
     const response = await addressesController.post.handler(request, h)
 
-    expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+    expect(saveNotification).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({
+        info: expect.any(Function),
+        error: expect.any(Function)
+      })
+    )
     expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
       referenceNumber: 'REF-123'
     })
@@ -137,10 +140,6 @@ describe('addressesController', () => {
 
   describe('POST addresses', () => {
     test('submit notification with selected consignor', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
-        referenceNumber: 'REF-123'
-      })
-
       const set = vi.fn()
       const get = createYarGet()
 
@@ -152,7 +151,13 @@ describe('addressesController', () => {
 
       const response = await addressesController.post.handler(request, h)
 
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(saveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
         referenceNumber: 'REF-123'
       })

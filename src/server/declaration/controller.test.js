@@ -1,10 +1,9 @@
 import { describe, expect, test, vi } from 'vitest'
 import { declarationController } from './controller.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { submitNotification } from '../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
-}))
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -66,8 +65,6 @@ describe('declarationController', () => {
 
   describe('POST /declaration', () => {
     test('submits notification and redirects to /declaration on success', async () => {
-      vi.spyOn(notificationClient, 'submitNotification').mockResolvedValue({})
-
       const request = buildRequest({ declaration: 'confirmed' })
       const h = {
         view: vi.fn(),
@@ -76,10 +73,13 @@ describe('declarationController', () => {
 
       const response = await declarationController.post.handler(request, h)
 
-      expect(notificationClient.submitNotification).toHaveBeenCalledWith(
+      expect(submitNotification).toHaveBeenCalledWith(
         request,
-        'DRAFT.IMP.2026.abc123',
-        'trace-abc'
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        }),
+        'DRAFT.IMP.2026.abc123'
       )
       expect(response).toEqual({ statusCode: 302, location: '/declaration' })
     })
@@ -105,9 +105,7 @@ describe('declarationController', () => {
     })
 
     test('returns 500 with error message when submitNotification throws', async () => {
-      vi.spyOn(notificationClient, 'submitNotification').mockRejectedValue(
-        new Error('Backend error')
-      )
+      submitNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const request = buildRequest({ declaration: 'confirmed' })
       const { mockCode, h } = buildErrorH()
@@ -117,9 +115,7 @@ describe('declarationController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'declaration/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

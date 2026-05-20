@@ -2,7 +2,11 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { commoditiesSelectController } from './controller.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
+
+vi.mock('../../common/helpers/notification-helpers.js')
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -16,17 +20,6 @@ vi.mock('../../../config/config.js', async (importOriginal) => {
 
 describe('commoditiesSelectController', () => {
   describe('GET /commodities/select', () => {
-    beforeAll(() => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
-        referenceNumber: 'TEST-REF-123'
-      })
-    })
-
-    afterAll(() => {
-      vi.restoreAllMocks()
-    })
-
     test('passes selected type and species from session to the view', async () => {
       const get = vi.fn((key) => {
         const values = {
@@ -95,17 +88,6 @@ describe('commoditiesSelectController', () => {
   })
 
   describe('POST /commodities/select', () => {
-    beforeAll(() => {
-      vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-      vi.spyOn(notificationClient, 'save').mockResolvedValue({
-        referenceNumber: 'TEST-REF-123'
-      })
-    })
-
-    afterAll(() => {
-      vi.restoreAllMocks()
-    })
-
     test('stores selected type and species array in session', async () => {
       const set = vi.fn()
       const get = vi.fn((key) => (key === 'commodity' ? 'Fish' : null))
@@ -131,7 +113,7 @@ describe('commoditiesSelectController', () => {
       )
 
       expect(set).toHaveBeenCalledTimes(1)
-      expect(set).toHaveBeenCalledWith('commodity', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.commodity, {
         name: 'Fish',
         commodityComplement: [
           {
@@ -170,7 +152,7 @@ describe('commoditiesSelectController', () => {
       await commoditiesSelectController.post.handler(request, h)
 
       expect(set).toHaveBeenCalledTimes(1)
-      expect(set).toHaveBeenCalledWith('commodity', {
+      expect(set).toHaveBeenCalledWith(sessionKeys.commodity, {
         name: 'Fish',
         commodityComplement: [
           {
@@ -187,7 +169,7 @@ describe('commoditiesSelectController', () => {
         statusText: 'Internal Server Error'
       })
 
-      notificationClient.save.mockRejectedValue(submitError)
+      saveNotification.mockRejectedValueOnce(submitError)
 
       const set = vi.fn()
       const get = vi.fn((key) => {
@@ -220,9 +202,7 @@ describe('commoditiesSelectController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'commodities/select/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

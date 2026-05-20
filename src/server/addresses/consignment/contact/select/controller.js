@@ -6,9 +6,10 @@ import {
   getSessionValue,
   setSessionValue
 } from '../../../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../../../common/constants/session-keys.js'
 import { statusCodes } from '../../../../common/constants/status-codes.js'
-import { getTraceId } from '@defra/hapi-tracing'
-import { notificationClient } from '../../../../common/clients/notification-client.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../../../common/constants/messages.js'
+import { saveNotification } from '../../../../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -22,7 +23,10 @@ const PAGE_TITLE = 'Contact address for consignment'
 export const consignmentContactSelectController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Consignment contact selection page: ${referenceNumber}`)
 
       return h.view(VIEW, {
@@ -34,8 +38,10 @@ export const consignmentContactSelectController = {
   },
   post: {
     async handler(_request, h) {
-      const traceId = getTraceId() ?? ''
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       const selectedContactId = Number.parseInt(
         _request.payload?.contactAddress,
         10
@@ -60,23 +66,23 @@ export const consignmentContactSelectController = {
           .code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, 'contactAddress', contacts[selectedContactId])
+      setSessionValue(
+        _request,
+        sessionKeys.contactAddress,
+        contacts[selectedContactId]
+      )
       logger.info(
         `${referenceNumber} consignment contact: ${contacts[selectedContactId]}`
       )
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
+        await saveNotification(_request, logger)
+      } catch {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
             contacts,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

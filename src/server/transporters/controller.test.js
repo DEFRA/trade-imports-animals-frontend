@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, vi } from 'vitest'
 
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
+
+vi.mock('../common/helpers/notification-helpers.js')
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -26,11 +29,6 @@ describe('#transportersController', () => {
   let server
 
   beforeAll(async () => {
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })
@@ -106,7 +104,7 @@ describe('#transportersController', () => {
 
   describe('POST /transporters', () => {
     beforeEach(() => {
-      notificationClient.save.mockClear()
+      saveNotification.mockClear()
     })
 
     test('calls notification save then redirects to /consignment/contact/select', async () => {
@@ -117,7 +115,7 @@ describe('#transportersController', () => {
         payload: {}
       })
 
-      expect(notificationClient.save).toHaveBeenCalledTimes(1)
+      expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/consignment/contact/select')
     })
@@ -130,13 +128,13 @@ describe('#transportersController', () => {
         payload: {}
       })
 
-      expect(notificationClient.save).toHaveBeenCalledTimes(1)
+      expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/consignment/contact/select')
     })
 
     test('renders transporters page with error when notification save fails', async () => {
-      notificationClient.save.mockRejectedValueOnce(new Error('Backend error'))
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const { statusCode, result, headers } = await server.inject({
         method: 'POST',
@@ -145,13 +143,11 @@ describe('#transportersController', () => {
         payload: {}
       })
 
-      expect(notificationClient.save).toHaveBeenCalledTimes(1)
+      expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(headers.location).toBeUndefined()
       expect(result).toEqual(
-        expect.stringContaining(
-          'Something went wrong, please contact the EUDP team'
-        )
+        expect.stringContaining(SUBMISSION_FAILURE_MESSAGE)
       )
     })
   })

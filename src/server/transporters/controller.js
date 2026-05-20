@@ -2,11 +2,12 @@ import {
   getSessionValue,
   setSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { loadMockTransporters } from './load-mock-transporters.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -18,7 +19,10 @@ const transporters = loadMockTransporters()
 export const transportersController = {
   get: {
     handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Transporter: ${referenceNumber} landing page`)
 
       const selectedTransporterId = Number.parseInt(
@@ -32,12 +36,15 @@ export const transportersController = {
       ) {
         setSessionValue(
           _request,
-          'transporter',
+          sessionKeys.transporter,
           transporters[selectedTransporterId]
         )
       }
 
-      const selectedTransporter = getSessionValue(_request, 'transporter')
+      const selectedTransporter = getSessionValue(
+        _request,
+        sessionKeys.transporter
+      )
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
@@ -48,25 +55,25 @@ export const transportersController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       logger.info(`Transporter: ${referenceNumber} landing page`)
 
-      const traceId = getTraceId() ?? ''
-
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (err) {
-        logger.error(`Failed to submit notification: ${err.message}`)
-        const selectedTransporter = getSessionValue(_request, 'transporter')
+        await saveNotification(_request, logger)
+      } catch {
+        const selectedTransporter = getSessionValue(
+          _request,
+          sessionKeys.transporter
+        )
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
             selectedTransporter,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

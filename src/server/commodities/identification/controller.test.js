@@ -1,11 +1,11 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { animalIdentificationDetailsController } from './controller.js'
-import { notificationClient } from '../../common/clients/notification-client.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
+import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-123')
-}))
+vi.mock('../../common/helpers/notification-helpers.js')
 
 vi.mock('../../common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -85,8 +85,6 @@ describe('animalIdentificationDetailsController', () => {
 
   describe('POST /commodities/identification', () => {
     test('Append animal identification details to the species, saves commodity and submits notification', async () => {
-      vi.spyOn(notificationClient, 'save').mockResolvedValue(undefined)
-
       const set = vi.fn()
       const complement = {
         typeOfCommodity: 'Domestic',
@@ -130,7 +128,7 @@ describe('animalIdentificationDetailsController', () => {
       )
 
       expect(set).toHaveBeenCalledWith(
-        'commodity',
+        sessionKeys.commodity,
         expect.objectContaining({
           commodityComplement: [
             expect.objectContaining({
@@ -151,7 +149,13 @@ describe('animalIdentificationDetailsController', () => {
         })
       )
 
-      expect(notificationClient.save).toHaveBeenCalledWith(request, 'trace-123')
+      expect(saveNotification).toHaveBeenCalledWith(
+        request,
+        expect.objectContaining({
+          info: expect.any(Function),
+          error: expect.any(Function)
+        })
+      )
       expect(h.redirect).toHaveBeenCalledWith('/additional-details', {
         referenceNumber: 'REF-789'
       })
@@ -163,9 +167,7 @@ describe('animalIdentificationDetailsController', () => {
     })
 
     test('shows error page when notification submit fails', async () => {
-      vi.spyOn(notificationClient, 'save').mockRejectedValue(
-        new Error('Backend error')
-      )
+      saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const set = vi.fn()
       const complement = {
@@ -202,9 +204,7 @@ describe('animalIdentificationDetailsController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'commodities/identification/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

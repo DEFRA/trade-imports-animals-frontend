@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import { notificationClient } from './notification-client.js'
+import { sessionKeys } from '../constants/session-keys.js'
 
 const mockLoggerError = vi.fn()
 const mockGetSessionValue = vi.fn()
@@ -378,39 +379,39 @@ describe('#notificationClient', () => {
         // Verify all values were stored in session
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'referenceNumber',
+          sessionKeys.referenceNumber,
           'REF-123'
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'countryCode',
+          sessionKeys.countryCode,
           'GB'
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'requiresRegionCode',
+          sessionKeys.requiresRegionCode,
           'yes'
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'internalReference',
+          sessionKeys.internalReference,
           'TEST-001'
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'commodity',
+          sessionKeys.commodity,
           {
             name: 'Fish'
           }
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'reasonForImport',
+          sessionKeys.reasonForImport,
           'internalMarket'
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'consignor',
+          sessionKeys.consignor,
           {
             name: 'Astra Rosales',
             address: {
@@ -421,7 +422,7 @@ describe('#notificationClient', () => {
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'destination',
+          sessionKeys.destination,
           {
             name: 'Tech Imports Ltd',
             address: {
@@ -432,7 +433,7 @@ describe('#notificationClient', () => {
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'cphNumber',
+          sessionKeys.cphNumber,
           '123456789'
         )
 
@@ -456,12 +457,12 @@ describe('#notificationClient', () => {
 
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'portOfEntry',
+          sessionKeys.portOfEntry,
           'ABERDEEN'
         )
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'arrivalDate',
+          sessionKeys.arrivalDate,
           { day: 5, month: 3, year: 2026 }
         )
       })
@@ -489,7 +490,7 @@ describe('#notificationClient', () => {
 
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'transporter',
+          sessionKeys.transporter,
           transporter
         )
       })
@@ -511,7 +512,7 @@ describe('#notificationClient', () => {
 
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'transporter',
+          sessionKeys.transporter,
           transporter
         )
       })
@@ -532,7 +533,7 @@ describe('#notificationClient', () => {
 
         expect(mockSetSessionValue).toHaveBeenCalledWith(
           mockRequest,
-          'transporter',
+          sessionKeys.transporter,
           nested
         )
       })

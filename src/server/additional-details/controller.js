@@ -3,28 +3,24 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 export const additionalDetailsController = {
   get: {
     handler(_request, h) {
-      const certifiedFor = getSessionValue(_request, 'certifiedFor')
+      const certifiedFor = getSessionValue(_request, sessionKeys.certifiedFor)
       const unweanedAnimals =
-        getSessionValue(_request, 'unweanedAnimals') ?? 'no'
+        getSessionValue(_request, sessionKeys.unweanedAnimals) ?? 'no'
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
-
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
       return h.view('additional-details/index', {
         pageTitle: 'Additional animal details',
         heading: 'Additional animal details',
@@ -36,31 +32,29 @@ export const additionalDetailsController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const { certifiedFor, unweanedAnimals } = _request.payload
 
       logger.info(`Additional details: ${referenceNumber}`)
-      setSessionValue(_request, 'certifiedFor', certifiedFor)
-      setSessionValue(_request, 'unweanedAnimals', unweanedAnimals)
+      setSessionValue(_request, sessionKeys.certifiedFor, certifiedFor)
+      setSessionValue(_request, sessionKeys.unweanedAnimals, unweanedAnimals)
 
       try {
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
+        await saveNotification(_request, logger)
+      } catch {
         return h
           .view('additional-details/index', {
             pageTitle: 'Additional animal details',
             heading: 'Additional animal details',
-            certifiedFor: getSessionValue(_request, 'certifiedFor'),
+            certifiedFor: getSessionValue(_request, sessionKeys.certifiedFor),
             unweanedAnimals:
-              getSessionValue(_request, 'unweanedAnimals') ?? 'no',
+              getSessionValue(_request, sessionKeys.unweanedAnimals) ?? 'no',
             referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

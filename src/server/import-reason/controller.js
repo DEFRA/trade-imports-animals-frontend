@@ -3,25 +3,25 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { getTraceId } from '@defra/hapi-tracing'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 export const importReasonController = {
   get: {
     handler(_request, h) {
-      const reasonForImport = getSessionValue(_request, 'reasonForImport')
+      const reasonForImport = getSessionValue(
+        _request,
+        sessionKeys.reasonForImport
+      )
 
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       return h.view('import-reason/index', {
         pageTitle: 'Reason for import',
@@ -33,28 +33,29 @@ export const importReasonController = {
   },
   post: {
     async handler(_request, h) {
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
-      const traceId = getTraceId() ?? ''
+      const referenceNumber = getSessionValue(
+        _request,
+        sessionKeys.referenceNumber
+      )
 
       const { reasonForImport } = _request.payload
       logger.info(`Reason for import: ${referenceNumber}`)
-      setSessionValue(_request, 'reasonForImport', reasonForImport)
+      setSessionValue(_request, sessionKeys.reasonForImport, reasonForImport)
 
       try {
         // Submit notification - client will build complete notification from all session values
-        await notificationClient.save(_request, traceId)
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
+        await saveNotification(_request, logger)
+      } catch {
         return h
           .view('import-reason/index', {
             pageTitle: 'Reason for import',
             heading: 'Reason for import',
-            reasonForImport: getSessionValue(_request, 'reasonForImport'),
+            reasonForImport: getSessionValue(
+              _request,
+              sessionKeys.reasonForImport
+            ),
             referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

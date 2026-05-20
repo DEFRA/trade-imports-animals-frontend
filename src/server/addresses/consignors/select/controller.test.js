@@ -2,8 +2,9 @@ import { vi } from 'vitest'
 
 import { createServer } from '../../../server.js'
 import { statusCodes } from '../../../common/constants/status-codes.js'
-import { notificationClient } from '../../../common/clients/notification-client.js'
 import { mockOidcConfig } from '../../../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../../../common/clients/notification-client.js')
 
 vi.mock('../../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -19,11 +20,6 @@ describe('#addressSelectController', () => {
   let server
 
   beforeAll(async () => {
-    vi.spyOn(notificationClient, 'get').mockResolvedValue(null)
-    vi.spyOn(notificationClient, 'save').mockResolvedValue({
-      referenceNumber: 'TEST-REF-123'
-    })
-
     server = await createServer()
     await server.initialize()
   })

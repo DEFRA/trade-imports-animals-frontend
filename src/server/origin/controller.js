@@ -3,12 +3,14 @@ import {
   setSessionValue,
   getSessionValue
 } from '../common/helpers/session-helpers.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
 import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { countriesClient } from '../common/clients/countries-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
@@ -26,27 +28,22 @@ export const originController = {
   get: {
     async handler(_request, h) {
       logger.info(
-        `Country of origin in session: ${getSessionValue(_request, 'countryCode')}`
+        `Country of origin in session: ${getSessionValue(_request, sessionKeys.countryCode)}`
       )
-      const referenceNumber = getSessionValue(_request, 'referenceNumber')
       const traceId = getTraceId() ?? ''
-      if (referenceNumber) {
-        notificationClient.get(_request, referenceNumber, traceId)
-        logger.info(
-          `Notification retrieved from notification client: ${referenceNumber}`
-        )
-      }
-
       const countryItems = await buildCountryItems(traceId)
 
       return h.view('origin/index', {
         pageTitle: 'Origin of the import',
         heading: 'Origin of the import',
-        referenceNumber: getSessionValue(_request, 'referenceNumber'),
-        countryCode: getSessionValue(_request, 'countryCode'),
+        referenceNumber: getSessionValue(_request, sessionKeys.referenceNumber),
+        countryCode: getSessionValue(_request, sessionKeys.countryCode),
         requiresRegionCode:
-          getSessionValue(_request, 'requiresRegionCode') || 'no',
-        internalReference: getSessionValue(_request, 'internalReference'),
+          getSessionValue(_request, sessionKeys.requiresRegionCode) || 'no',
+        internalReference: getSessionValue(
+          _request,
+          sessionKeys.internalReference
+        ),
         countryItems
       })
     }
@@ -80,36 +77,49 @@ export const originController = {
       }
 
       // Store values in session
-      setSessionValue(_request, 'countryCode', countryCode)
-      setSessionValue(_request, 'requiresRegionCode', requiresRegionCode)
-      setSessionValue(_request, 'internalReference', internalReference)
+      setSessionValue(_request, sessionKeys.countryCode, countryCode)
+      setSessionValue(
+        _request,
+        sessionKeys.requiresRegionCode,
+        requiresRegionCode
+      )
+      setSessionValue(
+        _request,
+        sessionKeys.internalReference,
+        internalReference
+      )
 
       try {
         // Submit notification - client will build complete notification from all session values
-        const response = await notificationClient.save(_request, traceId)
+        const response = await saveNotification(_request, logger)
 
         // Store reference number in session if returned (backend returns string directly)
         if (response?.referenceNumber) {
-          setSessionValue(_request, 'referenceNumber', response.referenceNumber)
+          setSessionValue(
+            _request,
+            sessionKeys.referenceNumber,
+            response.referenceNumber
+          )
           logger.info(`Reference number saved: ${response.referenceNumber}`)
         }
-
-        logger.info('Notification saved successfully')
-      } catch (error) {
-        logger.error(`Failed to submit notification: ${error.message}`)
+      } catch {
         return h
           .view('origin/index', {
             pageTitle: 'Origin of the import',
             heading: 'Origin of the import',
-            referenceNumber: getSessionValue(_request, 'referenceNumber'),
-            countryCode: getSessionValue(_request, 'countryCode'),
+            referenceNumber: getSessionValue(
+              _request,
+              sessionKeys.referenceNumber
+            ),
+            countryCode: getSessionValue(_request, sessionKeys.countryCode),
             requiresRegionCode:
-              getSessionValue(_request, 'requiresRegionCode') || 'no',
-            internalReference: getSessionValue(_request, 'internalReference'),
+              getSessionValue(_request, sessionKeys.requiresRegionCode) || 'no',
+            internalReference: getSessionValue(
+              _request,
+              sessionKeys.internalReference
+            ),
             countryItems,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }
