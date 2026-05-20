@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { commoditiesSelectController } from './controller.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 
 const { mockSaveNotification } = vi.hoisted(() => ({
   mockSaveNotification: vi.fn()
@@ -226,9 +227,7 @@ describe('commoditiesSelectController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'commodities/select/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

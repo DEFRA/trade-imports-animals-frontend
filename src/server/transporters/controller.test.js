@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, vi } from 'vitest'
 
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 
 const { mockSaveNotification } = vi.hoisted(() => ({
@@ -155,9 +156,7 @@ describe('#transportersController', () => {
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(headers.location).toBeUndefined()
       expect(result).toEqual(
-        expect.stringContaining(
-          'Something went wrong, please contact the EUDP team'
-        )
+        expect.stringContaining(SUBMISSION_FAILURE_MESSAGE)
       )
     })
   })

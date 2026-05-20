@@ -7,6 +7,7 @@ import { sessionKeys } from '../common/constants/session-keys.js'
 import { originSchema } from './origin-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { countriesClient } from '../common/clients/countries-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import {
@@ -123,9 +124,7 @@ export const originController = {
               sessionKeys.internalReference
             ),
             countryItems,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

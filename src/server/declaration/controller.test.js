@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 import { declarationController } from './controller.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 const { mockSubmitNotification } = vi.hoisted(() => ({
   mockSubmitNotification: vi.fn()
@@ -121,9 +122,7 @@ describe('declarationController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'declaration/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

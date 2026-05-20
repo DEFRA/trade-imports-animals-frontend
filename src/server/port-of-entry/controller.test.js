@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { portOfEntryController } from './controller.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 
 const { mockSaveNotification } = vi.hoisted(() => ({
   mockSaveNotification: vi.fn()
@@ -150,9 +151,7 @@ describe('portOfEntryController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
-          errorList: [
-            { text: 'Something went wrong, please contact the EUDP team' }
-          ]
+          errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)

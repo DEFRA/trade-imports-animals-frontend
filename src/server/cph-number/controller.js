@@ -7,6 +7,7 @@ import { sessionKeys } from '../common/constants/session-keys.js'
 import { cphNumberSchema } from './cph-number-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
@@ -63,9 +64,7 @@ export const cphNumberController = {
             pageTitle: 'Add the County Parish Holding number (CPH)',
             cphNumber: getSessionValue(_request, sessionKeys.cphNumber),
             referenceNumber,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

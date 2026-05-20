@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../common/constants/messages.js'
 import { toObject } from '../../common/helpers/object-helpers.js'
 import { saveNotification } from '../../common/helpers/notification-helpers.js'
 
@@ -177,9 +178,7 @@ export const commoditiesSelectController = {
             commodityDetails: toJsonObject(commodityDetailsList),
             typeItems: buildTypeItems(speciesDetails),
             speciesItems: buildSpeciesItems(speciesDetails, updatedSpecies),
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

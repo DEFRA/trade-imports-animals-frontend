@@ -5,6 +5,7 @@ import {
 import { sessionKeys } from '../common/constants/session-keys.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { loadMockTransporters } from './load-mock-transporters.js'
 import { saveNotification } from '../common/helpers/notification-helpers.js'
 
@@ -72,9 +73,7 @@ export const transportersController = {
             pageTitle: PAGE_TITLE,
             referenceNumber,
             selectedTransporter,
-            errorList: [
-              { text: 'Something went wrong, please contact the EUDP team' }
-            ]
+            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
       }

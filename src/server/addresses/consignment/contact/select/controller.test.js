@@ -2,6 +2,7 @@ import { describe, expect, vi } from 'vitest'
 
 import { createServer } from '../../../../server.js'
 import { statusCodes } from '../../../../common/constants/status-codes.js'
+import { SUBMISSION_FAILURE_MESSAGE } from '../../../../common/constants/messages.js'
 import { mockOidcConfig } from '../../../../common/test-helpers/mock-oidc-config.js'
 import * as sessionHelpers from '../../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../../common/constants/session-keys.js'
@@ -119,9 +120,7 @@ describe('#consignmentContactSelectController', () => {
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(headers.location).toBeUndefined()
       expect(result).toEqual(
-        expect.stringContaining(
-          'Something went wrong, please contact the EUDP team'
-        )
+        expect.stringContaining(SUBMISSION_FAILURE_MESSAGE)
       )
     })
 
