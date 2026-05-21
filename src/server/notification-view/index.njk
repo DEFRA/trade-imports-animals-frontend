@@ -1,0 +1,189 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+
+{% block content %}
+  {{ govukBackLink({
+    text: "Back",
+    href: "/"
+  }) }}
+
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+
+  {{ appHeading({ text: "Notification details" }) }}
+
+  {% if errorMessage %}
+    {{ govukInsetText({ text: errorMessage }) }}
+  {% else %}
+
+  <p class="govuk-body">Date created: <strong>{{ dateCreated }}</strong></p>
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+
+      {# ── Origin ────────────────────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Where is this consignment coming from?</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {{ govukSummaryList({
+            rows: [
+              { key: { text: "Country of origin" },             value: { text: origin.countryOfOrigin } },
+              { key: { text: "Region of consignment" },         value: { text: origin.regionOfConsignment } },
+              { key: { text: "Your internal reference number" }, value: { text: origin.internalReference } }
+            ]
+          }) }}
+        </div>
+      </div>
+
+      {# ── Commodities ───────────────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Your commodities</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          <p class="govuk-body"><strong>{{ commodity.name }}</strong></p>
+          {% if commodity.species and commodity.species.length %}
+            <table class="govuk-table">
+              <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                  <th scope="col" class="govuk-table__header">Animal name</th>
+                  <th scope="col" class="govuk-table__header">Ear tag</th>
+                  <th scope="col" class="govuk-table__header">Passport</th>
+                </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+                {% for animal in commodity.species %}
+                  <tr class="govuk-table__row">
+                    <td class="govuk-table__cell">{{ animal.name }}</td>
+                    <td class="govuk-table__cell">{{ animal.earTag }}</td>
+                    <td class="govuk-table__cell">{{ animal.passport }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Additional information ─────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Additional information details</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {{ govukSummaryList({
+            rows: [
+              { key: { text: "Certified for" },    value: { text: additionalDetails.certifiedFor } },
+              { key: { text: "Unweaned animals" }, value: { text: additionalDetails.unweanedAnimals } }
+            ]
+          }) }}
+        </div>
+      </div>
+
+      {# ── Reason for import ─────────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Reason for importing the animals</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {{ govukSummaryList({
+            rows: [
+              { key: { text: "Main reason for importing the animals" }, value: { text: reasonForImport } }
+            ]
+          }) }}
+        </div>
+      </div>
+
+      {# ── Addresses ─────────────────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Addresses</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {{ govukSummaryList({
+            rows: [
+              { key: { text: "Place of origin" },                value: { text: addresses.placeOfOrigin } },
+              { key: { text: "Consignor" },                      value: { html: addresses.consignor | nl2br } },
+              { key: { text: "Consignee" },                      value: { html: addresses.consignee | nl2br } },
+              { key: { text: "Importer" },                       value: { html: addresses.importer | nl2br } },
+              { key: { text: "Place of destination" },           value: { html: addresses.placeOfDestination | nl2br } },
+              { key: { text: "Contact details for consignment" }, value: { html: addresses.contactDetails | nl2br } }
+            ]
+          }) }}
+        </div>
+      </div>
+
+      {# ── CPH ───────────────────────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">County Parish Holding number (CPH)</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {{ govukSummaryList({
+            rows: [
+              { key: { text: "County Parish Holding number (CPH)" }, value: { text: cphNumber } }
+            ]
+          }) }}
+        </div>
+      </div>
+
+      {# ── Transport ─────────────────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Transport details</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {{ govukSummaryList({
+            rows: [
+              { key: { text: "Transporter name" },              value: { text: transport.transporterName } },
+              { key: { text: "Transporter address" },           value: { html: transport.transporterAddress | nl2br } },
+              { key: { text: "Type" },                          value: { text: transport.type } },
+              { key: { text: "Approval number" },               value: { text: transport.approvalNumber } },
+              { key: { text: "Port of entry" },                 value: { text: transport.portOfEntry } },
+              { key: { text: "Arrival date at destination" },   value: { text: transport.arrivalDate } }
+            ]
+          }) }}
+        </div>
+      </div>
+
+      {# ── Accompanying documents ────────────────────────────────────── #}
+      <div class="govuk-summary-card">
+        <div class="govuk-summary-card__title-wrapper">
+          <h2 class="govuk-summary-card__title">Accompanying documents</h2>
+        </div>
+        <div class="govuk-summary-card__content">
+          {% if documents and documents.length %}
+            <table class="govuk-table">
+              <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                  <th scope="col" class="govuk-table__header">Document type</th>
+                  <th scope="col" class="govuk-table__header">Document reference</th>
+                  <th scope="col" class="govuk-table__header">Valid until</th>
+                  <th scope="col" class="govuk-table__header">Attachments</th>
+                </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+                {% for doc in documents %}
+                  <tr class="govuk-table__row">
+                    <td class="govuk-table__cell">{{ doc.type }}</td>
+                    <td class="govuk-table__cell">{{ doc.reference }}</td>
+                    <td class="govuk-table__cell">{{ doc.validUntil }}</td>
+                    <td class="govuk-table__cell">{{ doc.attachments }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="govuk-body">Not yet added</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% endif %}
+{% endblock %}

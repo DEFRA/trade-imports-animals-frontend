@@ -27,6 +27,7 @@ import { transportersLighthouseConfig } from './transporters.config.js'
 import { transportersSelectLighthouseConfig } from './transporters-select.config.js'
 import { declarationLighthouseConfig } from './declaration.config.js'
 import { consignmentContactSelectLighthouseConfig } from './consignment-contact-select.config.js'
+import { notificationViewLighthouseConfig } from './notification-view.config.js'
 
 const pageConfigs = [
   signinLighthouseConfig,
@@ -53,7 +54,8 @@ const pageConfigs = [
   transportersLighthouseConfig,
   transportersSelectLighthouseConfig,
   declarationLighthouseConfig,
-  consignmentContactSelectLighthouseConfig
+  consignmentContactSelectLighthouseConfig,
+  notificationViewLighthouseConfig
 ]
 
 const baseUrl = process.env.LH_BASE_URL || 'http://localhost:3000'
