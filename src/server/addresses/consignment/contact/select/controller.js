@@ -29,10 +29,20 @@ export const consignmentContactSelectController = {
       )
       logger.info(`Consignment contact selection page: ${referenceNumber}`)
 
+      const selectedContact = getSessionValue(
+        _request,
+        sessionKeys.consignmentContactAddress
+      )
+      const matchedIndex = selectedContact
+        ? contacts.findIndex((c) => c.name === selectedContact.name)
+        : -1
+      const selectedContactId = matchedIndex >= 0 ? matchedIndex : undefined
+
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         referenceNumber,
-        contacts
+        contacts,
+        selectedContactId
       })
     }
   },
@@ -68,11 +78,11 @@ export const consignmentContactSelectController = {
 
       setSessionValue(
         _request,
-        sessionKeys.contactAddress,
+        sessionKeys.consignmentContactAddress,
         contacts[selectedContactId]
       )
       logger.info(
-        `${referenceNumber} consignment contact: ${contacts[selectedContactId]}`
+        `${referenceNumber} consignment contact: ${contacts[selectedContactId].name}`
       )
       try {
         await saveNotification(_request, logger)

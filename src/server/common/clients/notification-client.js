@@ -92,6 +92,19 @@ function setTransporter(notification, request) {
   }
 }
 
+function setConsignmentContactAddress(notification, request) {
+  const consignmentContactAddress = getSessionValue(
+    request,
+    sessionKeys.consignmentContactAddress
+  )
+  if (consignmentContactAddress) {
+    if (!notification.consignment) {
+      notification.consignment = {}
+    }
+    notification.consignment.contact = consignmentContactAddress
+  }
+}
+
 function buildNotificationPayload(request) {
   const notification = {}
 
@@ -123,6 +136,8 @@ function buildNotificationPayload(request) {
   setTransport(notification, request)
 
   setTransporter(notification, request)
+
+  setConsignmentContactAddress(notification, request)
 
   return notification
 }
@@ -191,6 +206,14 @@ function setNotificationSessionValues(request, notification) {
     notification.transport?.transporter ?? notification.transporter
   if (transporter) {
     setSessionValue(request, sessionKeys.transporter, transporter)
+  }
+  const consignmentContact = notification.consignment?.contact
+  if (consignmentContact) {
+    setSessionValue(
+      request,
+      sessionKeys.consignmentContactAddress,
+      consignmentContact
+    )
   }
 }
 
