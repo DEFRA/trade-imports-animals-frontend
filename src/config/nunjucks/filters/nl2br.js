@@ -6,12 +6,10 @@ import nunjucks from 'nunjucks'
  */
 export function nl2br(value) {
   if (!value) return ''
-  const escaped = nunjucks.runtime.SafeString
-    ? String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-    : String(value)
+  const escaped = String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
   return new nunjucks.runtime.SafeString(escaped.replace(/\n/g, '<br>'))
 }
