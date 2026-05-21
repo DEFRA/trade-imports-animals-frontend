@@ -29,8 +29,7 @@ module.exports = {
       },
       numberOfRuns: 1,
       settings: {
-        formFactor: 'desktop',
-        screenEmulation: { mobile: false, disabled: false }
+        preset: 'desktop'
       }
     },
     assert: {
