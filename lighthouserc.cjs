@@ -7,7 +7,6 @@ module.exports = {
         'http://localhost:3000/accompanying-documents',
         'http://localhost:3000/additional-details',
         'http://localhost:3000/addresses',
-        'http://localhost:3000/auth/organisation',
         'http://localhost:3000/commodities',
         'http://localhost:3000/commodities/details',
         'http://localhost:3000/commodities/identification',
@@ -29,8 +28,7 @@ module.exports = {
       },
       numberOfRuns: 1,
       settings: {
-        formFactor: 'desktop',
-        screenEmulation: { mobile: false, disabled: false }
+        preset: 'desktop'
       }
     },
     assert: {
