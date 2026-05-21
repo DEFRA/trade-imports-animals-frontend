@@ -5,7 +5,9 @@ import nunjucks from 'nunjucks'
  * Escapes HTML entities in the input first to prevent XSS.
  */
 export function nl2br(value) {
-  if (!value) return ''
+  if (!value) {
+    return ''
+  }
   const escaped = String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

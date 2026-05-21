@@ -21,15 +21,21 @@ const YES_NO_LABELS = {
 }
 
 function formatDetailDate(value) {
-  if (!value) return NOT_PROVIDED
+  if (!value) {
+    return NOT_PROVIDED
+  }
   const date = typeof value === 'string' ? parseISO(value) : value
   return isValid(date) ? format(date, DETAIL_DATE_FORMAT) : NOT_PROVIDED
 }
 
 function formatAddress(entity) {
-  if (!entity) return NOT_PROVIDED
+  if (!entity) {
+    return NOT_PROVIDED
+  }
   const { address } = entity
-  if (!address) return entity.name ?? NOT_PROVIDED
+  if (!address) {
+    return entity.name ?? NOT_PROVIDED
+  }
 
   const lines = [
     entity.name,
@@ -61,6 +67,21 @@ function mapOrigin(origin) {
   }
 }
 
+function mapSpeciesEntry(s) {
+  return {
+    name: s.text ?? s.value ?? NOT_PROVIDED,
+    earTag: s.earTag ?? NOT_PROVIDED,
+    passport: s.passport ?? NOT_PROVIDED
+  }
+}
+
+function mapComplementToSpecies(complement) {
+  if (!Array.isArray(complement.species)) {
+    return []
+  }
+  return complement.species.map(mapSpeciesEntry)
+}
+
 function mapCommodity(commodity) {
   if (!commodity) {
     return { name: NOT_PROVIDED, species: [] }
@@ -69,20 +90,9 @@ function mapCommodity(commodity) {
   const code = commodity.code ?? null
   const displayName = code ? `${name} (${code})` : name
 
-  const species = []
-  if (Array.isArray(commodity.commodityComplement)) {
-    for (const complement of commodity.commodityComplement) {
-      if (Array.isArray(complement.species)) {
-        for (const s of complement.species) {
-          species.push({
-            name: s.text ?? s.value ?? NOT_PROVIDED,
-            earTag: s.earTag ?? NOT_PROVIDED,
-            passport: s.passport ?? NOT_PROVIDED
-          })
-        }
-      }
-    }
-  }
+  const species = Array.isArray(commodity.commodityComplement)
+    ? commodity.commodityComplement.flatMap(mapComplementToSpecies)
+    : []
 
   return { name: displayName, species }
 }
@@ -104,7 +114,9 @@ function mapAdditionalDetails(additionalDetails) {
 }
 
 function mapReasonForImport(reasonForImport) {
-  if (!reasonForImport) return NOT_PROVIDED
+  if (!reasonForImport) {
+    return NOT_PROVIDED
+  }
   return REASON_FOR_IMPORT_LABELS[reasonForImport] ?? reasonForImport
 }
 
@@ -142,7 +154,9 @@ function mapTransport(transport) {
 }
 
 function mapDocuments(documents) {
-  if (!Array.isArray(documents) || documents.length === 0) return []
+  if (!Array.isArray(documents) || documents.length === 0) {
+    return []
+  }
   return documents.map((doc) => ({
     type: doc.type ? getDocumentTypeLabel(doc.type) : NOT_PROVIDED,
     reference: doc.reference ?? NOT_PROVIDED,
