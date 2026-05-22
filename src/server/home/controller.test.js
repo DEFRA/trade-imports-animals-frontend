@@ -111,6 +111,21 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('Submitted'))
     })
 
+    test('Should render a View link pointing to the notification-view page for each notification', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-view-link')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('href="/notification-view/REF-123"')
+      )
+      expect(result).toEqual(expect.stringContaining('View'))
+    })
+
     test('Should return 500 when findAll fails', async () => {
       notificationClient.findAll.mockRejectedValueOnce(
         new Error('Backend error')
