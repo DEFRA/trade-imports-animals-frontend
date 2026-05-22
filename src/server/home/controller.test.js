@@ -85,7 +85,7 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('20 Apr 2026'))
       expect(result).toEqual(expect.stringContaining('Tampere Horse Transport'))
       expect(result).toEqual(expect.stringContaining('govuk-tag--grey'))
-      expect(result).toEqual(expect.stringContaining('DRAFT'))
+      expect(result).toEqual(expect.stringContaining('Draft'))
     })
 
     test('Should render SUBMITTED notifications with a green status tag', async () => {
@@ -108,7 +108,7 @@ describe('#homeController', () => {
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('REF-456'))
       expect(result).toEqual(expect.stringContaining('govuk-tag--blue'))
-      expect(result).toEqual(expect.stringContaining('SUBMITTED'))
+      expect(result).toEqual(expect.stringContaining('Submitted'))
     })
 
     test('Should return 500 when findAll fails', async () => {

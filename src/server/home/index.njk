@@ -65,17 +65,9 @@
                     <div class="notification-list__grid-column-30">
                       <dt class="notification-list__heading">Status</dt>
                       <dd class="notification-list__value">
-                        {% if notification.status == 'DRAFT' %}
-                          {{ govukTag({
-                            text: 'DRAFT',
-                            classes: 'govuk-tag--grey'
-                          }) }}
-                        {% else %}
-                          {{ govukTag({
-                            text: notification.status,
-                            classes: 'govuk-tag--blue'
-                          }) }}
-                        {% endif %}
+                        <strong class="govuk-tag {{ 'govuk-tag--blue' if notification.status == 'SUBMITTED' else 'govuk-tag--grey' }}">
+                          {{ notification.status | title }}
+                        </strong>
                       </dd>
                     </div>
                   </div>
