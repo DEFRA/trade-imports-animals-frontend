@@ -306,4 +306,26 @@ describe('#mapNotificationToView', () => {
       ).toBe('Fish')
     })
   })
+
+  describe('formatAddress edge cases', () => {
+    test('Should return entity name when entity has no address property', () => {
+      expect(
+        mapNotificationToView({ consignor: { name: 'Simple Name' } }).addresses
+          .consignor
+      ).toBe('Simple Name')
+    })
+  })
+
+  describe('mapComplementToSpecies edge cases', () => {
+    test('Should return empty species when complement has no species array', () => {
+      expect(
+        mapNotificationToView({
+          commodity: {
+            name: 'Cow',
+            commodityComplement: [{ typeOfCommodity: 'Domestic' }]
+          }
+        }).commodity.species
+      ).toEqual([])
+    })
+  })
 })
