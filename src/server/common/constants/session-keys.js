@@ -12,6 +12,7 @@ export const sessionKeys = Object.freeze({
   arrivalDate: 'arrivalDate',
   commodity: 'commodity',
   contactAddress: 'contactAddress',
+  consignmentContactAddress: 'consignmentContactAddress',
   reasonForImport: 'reasonForImport',
   transporter: 'transporter',
   consignor: 'consignor',

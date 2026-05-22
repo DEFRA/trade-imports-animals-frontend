@@ -214,6 +214,32 @@ describe('#notificationClient', () => {
         expect(body.transport.arrivalDate).toBeUndefined()
       })
 
+      test('Should nest consignmentContactAddress under consignment.contact', async () => {
+        const consignmentContactAddress = {
+          name: 'Animal and Plant Health Agency',
+          address: {
+            addressLine1: 'Woodham Lane',
+            country: 'United Kingdom'
+          }
+        }
+        mockGetSessionValue.mockImplementation((req, key) => {
+          if (key === sessionKeys.consignmentContactAddress) {
+            return consignmentContactAddress
+          }
+          return null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.consignment).toEqual({ contact: consignmentContactAddress })
+      })
+
       test('Should nest transporter under transport when transporter is set without port or date', async () => {
         const transporter = {
           name: 'Example Haulage',
@@ -514,6 +540,29 @@ describe('#notificationClient', () => {
           mockRequest,
           sessionKeys.transporter,
           transporter
+        )
+      })
+
+      test('Should hydrate consignmentContactAddress from consignment.contact', async () => {
+        const contact = {
+          name: 'Animal and Plant Health Agency',
+          address: {
+            addressLine1: 'Woodham Lane',
+            country: 'United Kingdom'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({ consignment: { contact } })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.consignmentContactAddress,
+          contact
         )
       })
 

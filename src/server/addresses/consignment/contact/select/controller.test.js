@@ -1,4 +1,4 @@
-import { describe, expect, vi } from 'vitest'
+import { vi } from 'vitest'
 
 import { createServer } from '../../../../server.js'
 import { statusCodes } from '../../../../common/constants/status-codes.js'
@@ -25,7 +25,11 @@ vi.mock(
   '../../../../common/helpers/session-helpers.js',
   async (importOriginal) => {
     const actual = await importOriginal()
-    return { ...actual, setSessionValue: vi.fn(actual.setSessionValue) }
+    return {
+      ...actual,
+      setSessionValue: vi.fn(actual.setSessionValue),
+      getSessionValue: vi.fn(actual.getSessionValue)
+    }
   }
 )
 
@@ -43,6 +47,10 @@ describe('#consignmentContactSelectController', () => {
   })
 
   describe('GET /consignment/contact/select', () => {
+    afterEach(() => {
+      sessionHelpers.getSessionValue.mockReset()
+    })
+
     test('GET /consignment/contact/select renders page with contact addresses from json file', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -65,6 +73,27 @@ describe('#consignmentContactSelectController', () => {
       expect(result).toEqual(expect.stringContaining('United Kingdom'))
       expect(result).toEqual(expect.stringContaining('Select an address'))
     })
+
+    test('GET /consignment/contact/select pre-selects the radio matching the contact stored in session', async () => {
+      sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
+        if (key === sessionKeys.consignmentContactAddress) {
+          return contacts[1]
+        }
+        return null
+      })
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/consignment/contact/select',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringMatching(/value="1"[^>]*\bchecked\b/))
+    })
   })
 
   describe('POST /consignment/contact/select', () => {
@@ -86,7 +115,7 @@ describe('#consignmentContactSelectController', () => {
 
       expect(sessionHelpers.setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
-        sessionKeys.contactAddress,
+        sessionKeys.consignmentContactAddress,
         contacts[0]
       )
       expect(saveNotification).toHaveBeenCalledTimes(1)
@@ -107,6 +136,7 @@ describe('#consignmentContactSelectController', () => {
         payload: { contactAddress: '0' }
       })
 
+      expect(sessionHelpers.setSessionValue).toHaveBeenCalledTimes(1)
       expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(headers.location).toBeUndefined()
