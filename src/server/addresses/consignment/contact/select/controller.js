@@ -82,7 +82,7 @@ export const consignmentContactSelectController = {
         contacts[selectedContactId]
       )
       logger.info(
-        `${referenceNumber} consignment contact: ${contacts[selectedContactId].name}`
+        `About to save ${referenceNumber} consignment contact post request`
       )
       try {
         await saveNotification(_request, logger)
