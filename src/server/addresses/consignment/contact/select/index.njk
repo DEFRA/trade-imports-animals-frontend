@@ -40,6 +40,7 @@
             {% endset %}
             {% set _ = radioItems.push({
               value: loop.index0,
+              checked: loop.index0 == selectedContactId,
               html: addressHtml
             }) %}
           {% endfor %}
@@ -47,7 +48,6 @@
           {{ govukRadios({
             idPrefix: "contactAddress",
             name: "contactAddress",
-            value: selectedContactId,
             fieldset: {
               legend: {
                 text: "Select an address",

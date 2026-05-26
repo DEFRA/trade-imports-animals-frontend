@@ -4,8 +4,7 @@
     "address": {
       "addressLine1": "Woodham Lane",
       "addressLine2": "New Haw",
-      "addressLine3": "Addlestone",
-      "postcode": "KT15 3NB",
+      "addressLine3": "Addlestone, KT15 3NB",
       "country": "United Kingdom"
     }
   },
@@ -14,8 +13,7 @@
     "address": {
       "addressLine1": "8448 Gleason Creek",
       "addressLine2": "Apt. 221",
-      "addressLine3": "Hyattmouth",
-      "postcode": "72183",
+      "addressLine3": "Hyattmouth, 72183",
       "country": "France"
     }
   },
@@ -24,8 +22,7 @@
     "address": {
       "addressLine1": "4295 Michele Courts",
       "addressLine2": "Suite 479",
-      "addressLine3": "Kesslerbury",
-      "postcode": "528274",
+      "addressLine3": "Kesslerbury, 528272",
       "country": "Albania"
     }
   }
