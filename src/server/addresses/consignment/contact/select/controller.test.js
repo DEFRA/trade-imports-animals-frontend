@@ -94,6 +94,27 @@ describe('#consignmentContactSelectController', () => {
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringMatching(/value="1"[^>]*\bchecked\b/))
     })
+
+    test('GET /consignment/contact/select pre-selects the first radio when the stored contact is at index 0', async () => {
+      sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
+        if (key === sessionKeys.consignmentContactAddress) {
+          return contacts[0]
+        }
+        return null
+      })
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/consignment/contact/select',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE_ZERO' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringMatching(/value="0"[^>]*\bchecked\b/))
+    })
   })
 
   describe('POST /consignment/contact/select', () => {
