@@ -12,3 +12,11 @@ createAll(Checkboxes)
 createAll(ErrorSummary)
 createAll(Radios)
 createAll(SkipLink)
+
+document.querySelectorAll('[data-module="dashboard-sort"]').forEach((form) => {
+  form.addEventListener('change', (event) => {
+    if (event.target.matches('select')) {
+      form.submit()
+    }
+  })
+})

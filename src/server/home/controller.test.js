@@ -149,6 +149,90 @@ describe('#homeController', () => {
         )
       )
     })
+
+    describe('sorting', () => {
+      test('Should default to arrivalDate-desc when no sort query is given', async () => {
+        await server.inject({
+          method: 'GET',
+          url: '/',
+          auth: sessionAuth('home-get-sort-default')
+        })
+
+        expect(notificationClient.findAll).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(String),
+          { sort: 'arrivalDate-desc' }
+        )
+      })
+
+      test.each([
+        'arrivalDate-desc',
+        'arrivalDate-asc',
+        'createdDate-desc',
+        'createdDate-asc'
+      ])('Should forward known sort value %s', async (sort) => {
+        await server.inject({
+          method: 'GET',
+          url: `/?sort=${sort}`,
+          auth: sessionAuth(`home-get-sort-${sort}`)
+        })
+
+        expect(notificationClient.findAll).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(String),
+          { sort }
+        )
+      })
+
+      test('Should fall back to default for an unknown sort value', async () => {
+        await server.inject({
+          method: 'GET',
+          url: '/?sort=garbage',
+          auth: sessionAuth('home-get-sort-garbage')
+        })
+
+        expect(notificationClient.findAll).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(String),
+          { sort: 'arrivalDate-desc' }
+        )
+      })
+
+      test('Should render the sort select with the active option marked selected', async () => {
+        const { result } = await server.inject({
+          method: 'GET',
+          url: '/?sort=createdDate-asc',
+          auth: sessionAuth('home-get-sort-select-render')
+        })
+
+        expect(result).toEqual(expect.stringContaining('Sort by'))
+        expect(result).toEqual(
+          expect.stringContaining(
+            '<option value="createdDate-asc" selected>Date created (oldest to newest)</option>'
+          )
+        )
+      })
+
+      test('Should still render the sort select on the error path so the user can retry', async () => {
+        notificationClient.findAll.mockRejectedValueOnce(
+          new Error('Backend error')
+        )
+
+        const { result, statusCode } = await server.inject({
+          method: 'GET',
+          url: '/?sort=createdDate-desc',
+          auth: sessionAuth('home-get-sort-error-path')
+        })
+
+        expect(statusCode).toBe(statusCodes.internalServerError)
+        expect(result).toEqual(expect.stringContaining('Sort by'))
+        expect(result).toEqual(
+          expect.stringContaining(
+            '<option value="createdDate-desc" selected>Date created (newest to oldest)</option>'
+          )
+        )
+      })
+    })
   })
 
   test('Should provide expected response', async () => {

@@ -1,6 +1,7 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block content %}
@@ -25,12 +26,41 @@
               text: "Create an import notification"
             }) }}
           </div>
+        </form>
 
-          {% if not errorList %}
-            <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+        <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
 
-            <label class="govuk-label govuk-label--s">{{ notifications | length }} Results</label>
-            {% for notification in notifications %}
+        <div class="govuk-grid-row dashboard-results-header">
+          <div class="govuk-grid-column-one-half">
+            {% if not errorList %}
+              <label class="govuk-label govuk-label--s">{{ notifications | length }} Results</label>
+            {% endif %}
+          </div>
+          <div class="govuk-grid-column-one-half govuk-!-text-align-right">
+            <form method="get" action="/" class="dashboard-sort" data-module="dashboard-sort" data-testid="dashboard-sort-form">
+              {{ govukSelect({
+                id: "sort",
+                name: "sort",
+                classes: "govuk-!-display-inline-block",
+                label: {
+                  text: "Sort by:",
+                  classes: "govuk-label--s govuk-!-display-inline-block govuk-!-margin-right-2"
+                },
+                value: sort,
+                items: sortOptions
+              }) }}
+              <noscript>
+                {{ govukButton({
+                  text: "Sort",
+                  classes: "govuk-button--secondary"
+                }) }}
+              </noscript>
+            </form>
+          </div>
+        </div>
+
+        {% if not errorList %}
+          {% for notification in notifications %}
               <div class="govuk-summary-card notification-list">
                 <div class="govuk-summary-card__title-wrapper">
                   <h2 class="govuk-summary-card__title">
@@ -85,10 +115,8 @@
                   </div>
                 </div>
               </div>
-            {% endfor %}
-          {% endif %}
-
-        </form>
+          {% endfor %}
+        {% endif %}
       </div>
     </div>
   </div>

@@ -660,5 +660,27 @@ describe('#notificationClient', () => {
 
       expect(mockLoggerError).toHaveBeenCalledTimes(1)
     })
+
+    test.each([
+      ['arrivalDate-desc', 'sort=transport.arrivalDate&direction=desc'],
+      ['arrivalDate-asc', 'sort=transport.arrivalDate&direction=asc'],
+      ['createdDate-desc', 'sort=created&direction=desc'],
+      ['createdDate-asc', 'sort=created&direction=asc']
+    ])(
+      'Should forward sort alias %s as backend sort + direction params',
+      async (alias, expectedQuery) => {
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({ notifications: [] })
+        })
+
+        await notificationClient.findAll(mockRequest, traceId, { sort: alias })
+
+        expect(fetch).toHaveBeenCalledWith(
+          `http://mock-backend/notifications?${expectedQuery}`,
+          expect.any(Object)
+        )
+      }
+    )
   })
 })

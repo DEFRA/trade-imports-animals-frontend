@@ -2,6 +2,7 @@ import { config } from '../../../config/config.js'
 import { createLogger } from '../helpers/logging/logger.js'
 import { getSessionValue, setSessionValue } from '../helpers/session-helpers.js'
 import { sessionKeys } from '../constants/session-keys.js'
+import { toBackendSortParams } from '../helpers/notification-sort.js'
 
 const tradeImportsAnimalsBackendUrl = config.get(
   'tradeImportsAnimalsBackendApi.baseUrl'
@@ -307,18 +308,29 @@ export const notificationClient = {
 
   /**
    * Retrieves all notifications from the backend.
+   *
+   * @param {object} [options]
+   * @param {string} [options.sort] - sort alias (e.g. `arrivalDate-desc`).
+   *   Already validated by `parseSort`; mapped here to the backend's
+   *   `sort` + `direction` query params.
    */
-  async findAll(_request, traceId) {
-    const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/notifications`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          [tracingHeader]: traceId
-        }
+  async findAll(_request, traceId, { sort } = {}) {
+    const params = new URLSearchParams()
+    if (sort) {
+      const { sort: field, direction } = toBackendSortParams(sort)
+      params.set('sort', field)
+      params.set('direction', direction)
+    }
+    const qs = params.toString()
+    const url = `${tradeImportsAnimalsBackendUrl}/notifications${qs ? `?${qs}` : ''}`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        [tracingHeader]: traceId
       }
-    )
+    })
 
     if (!response.ok) {
       const error = new Error('Failed to get notifications')
