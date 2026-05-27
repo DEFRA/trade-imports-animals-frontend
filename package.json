@@ -36,7 +36,7 @@
   "author": "Defra DDTS",
   "license": "OGL-UK-3.0",
   "dependencies": {
-    "@defra/cdp-auditing": "0.6.0",
+    "@defra/cdp-auditing": "0.6.1",
     "@defra/cdp-metrics": "0.6.0",
     "@defra/hapi-secure-context": "0.4.0",
     "@defra/hapi-tracing": "1.30.0",
@@ -65,6 +65,7 @@
     "hapi-pino": "13.0.0",
     "hapi-pulse": "3.0.1",
     "ioredis": "5.11.0",
+    "joi": "18.0.2",
     "lodash": "4.18.1",
     "node-fetch": "3.3.2",
     "nunjucks": "3.2.4",
