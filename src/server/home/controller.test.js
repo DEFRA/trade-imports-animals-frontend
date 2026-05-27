@@ -22,7 +22,7 @@ function sessionAuth(sessionId) {
 }
 
 const mockFindAllApiResponse = {
-  notifications: [
+  content: [
     {
       referenceNumber: 'REF-123',
       status: 'DRAFT',
@@ -32,7 +32,11 @@ const mockFindAllApiResponse = {
       consignor: { name: 'Tampere Horse Transport' },
       transport: { arrivalDate: '2026-04-20' }
     }
-  ]
+  ],
+  page: 0,
+  size: 20,
+  totalElements: 1,
+  totalPages: 1
 }
 
 describe('#homeController', () => {
@@ -51,7 +55,13 @@ describe('#homeController', () => {
   describe('GET /', () => {
     beforeEach(() => {
       notificationClient.findAll.mockClear()
-      notificationClient.findAll.mockResolvedValue([])
+      notificationClient.findAll.mockResolvedValue({
+        content: [],
+        page: 0,
+        size: 20,
+        totalElements: 0,
+        totalPages: 1
+      })
     })
 
     test('Should call findAll and show zero results when no notifications', async () => {
@@ -90,13 +100,17 @@ describe('#homeController', () => {
 
     test('Should render SUBMITTED notifications with a green status tag', async () => {
       notificationClient.findAll.mockResolvedValueOnce({
-        notifications: [
+        content: [
           {
-            ...mockFindAllApiResponse.notifications[0],
+            ...mockFindAllApiResponse.content[0],
             referenceNumber: 'REF-456',
             status: 'SUBMITTED'
           }
-        ]
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
       })
 
       const { result, statusCode } = await server.inject({
@@ -147,6 +161,70 @@ describe('#homeController', () => {
         expect.stringContaining(
           'Something went wrong, please contact the EUDP team'
         )
+      )
+    })
+
+    test('Should display totalElements as the results count', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: mockFindAllApiResponse.content,
+        page: 0,
+        size: 20,
+        totalElements: 57,
+        totalPages: 3
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-total-elements')
+      })
+
+      expect(result).toEqual(expect.stringContaining('57 Results'))
+    })
+
+    test('Should render custom pagination when totalPages > 1', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: mockFindAllApiResponse.content,
+        page: 0,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-pagination')
+      })
+
+      expect(result).toEqual(expect.stringContaining('custom-pagination'))
+      expect(result).toEqual(expect.stringContaining('Next page'))
+      expect(result).toEqual(expect.stringContaining('2 of 3'))
+    })
+
+    test('Should not render pagination when totalPages is 1', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-no-pagination')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('custom-pagination'))
+    })
+
+    test('Should pass page query param to findAll', async () => {
+      await server.inject({
+        method: 'GET',
+        url: '/?page=2',
+        auth: sessionAuth('home-get-page-param')
+      })
+
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        { page: 2 }
       )
     })
   })

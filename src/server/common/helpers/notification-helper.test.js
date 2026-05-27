@@ -3,7 +3,9 @@ import { describe, expect, test } from 'vitest'
 import {
   mapNotificationToListView,
   mapNotificationsToList,
-  normalizeNotificationsResponse
+  normalizeNotificationsResponse,
+  mapPaginatedResponse,
+  buildPaginationLinks
 } from './notification-helper.js'
 
 describe('#notificationListView', () => {
@@ -146,6 +148,93 @@ describe('#notificationListView', () => {
 
     test('Should return empty array when response has no notifications', () => {
       expect(mapNotificationsToList({})).toEqual([])
+    })
+  })
+
+  describe('mapPaginatedResponse', () => {
+    test('Should map notifications and pagination metadata from NotificationPageResponse', () => {
+      const response = {
+        content: [
+          { referenceNumber: 'REF-1', status: 'DRAFT' },
+          { referenceNumber: 'REF-2', status: 'SUBMITTED' }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      }
+
+      const result = mapPaginatedResponse(response)
+
+      expect(result.notifications).toHaveLength(2)
+      expect(result.notifications[0].referenceNumber).toBe('REF-1')
+      expect(result.pagination).toEqual({
+        page: 1,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      })
+    })
+
+    test('Should default page counters and set size undefined when missing', () => {
+      const result = mapPaginatedResponse({ content: [] })
+
+      expect(result.notifications).toEqual([])
+      expect(result.pagination).toEqual({
+        page: 0,
+        size: undefined,
+        totalElements: 0,
+        totalPages: 1
+      })
+    })
+  })
+
+  describe('buildCustomPagination', () => {
+    test('Should return null when there is only one page', () => {
+      expect(
+        buildPaginationLinks({
+          page: 0,
+          totalPages: 1
+        })
+      ).toBeNull()
+    })
+
+    test('Should build previous and next links for a middle page', () => {
+      const result = buildPaginationLinks({
+        page: 1,
+        totalPages: 3
+      })
+
+      expect(result.previous).toEqual({
+        href: '/?page=0',
+        label: 'Previous page',
+        pageText: '1 of 3'
+      })
+      expect(result.next).toEqual({
+        href: '/?page=2',
+        label: 'Next page',
+        pageText: '3 of 3'
+      })
+    })
+
+    test('Should hide previous link on the first page', () => {
+      const result = buildPaginationLinks({
+        page: 0,
+        totalPages: 3
+      })
+
+      expect(result.previous).toBeUndefined()
+      expect(result.next.pageText).toBe('2 of 3')
+    })
+
+    test('Should hide next link on the last page', () => {
+      const result = buildPaginationLinks({
+        page: 2,
+        totalPages: 3
+      })
+
+      expect(result.next).toBeUndefined()
+      expect(result.previous.pageText).toBe('2 of 3')
     })
   })
 })

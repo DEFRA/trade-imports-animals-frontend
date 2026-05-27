@@ -3,41 +3,52 @@ import { notificationClient } from '../common/clients/notification-client.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { resetSession } from '../common/helpers/session-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { mapNotificationsToList } from '../common/helpers/notification-helper.js'
+import {
+  mapPaginatedResponse,
+  buildPaginationLinks
+} from '../common/helpers/notification-helper.js'
 
 const logger = createLogger()
 
 const PAGE_TITLE = 'Import notification service'
+
 /**
  * home page controller.
  */
 export const homeController = {
   async handler(_request, h) {
     const traceId = getTraceId() ?? ''
-    let notificationList = []
+    const page = Math.max(0, Number.parseInt(_request.query.page, 10) || 0)
 
     try {
-      const response = await notificationClient.findAll(_request, traceId)
-      notificationList = mapNotificationsToList(response)
+      const response = await notificationClient.findAll(_request, traceId, {
+        page
+      })
+      const { notifications, pagination } = mapPaginatedResponse(response)
+
+      return h.view('home/index', {
+        pageTitle: PAGE_TITLE,
+        heading: PAGE_TITLE,
+        notifications,
+        totalElements: pagination.totalElements,
+        pagination: buildPaginationLinks(pagination),
+        currentPage: page
+      })
     } catch (err) {
-      logger.error(`Failed to load notifications: ${err.message}`)
+      logger.error({ err, traceId, page }, 'Failed to load notifications')
       return h
         .view('home/index', {
           pageTitle: PAGE_TITLE,
           heading: PAGE_TITLE,
           notifications: [],
+          totalElements: 0,
+          currentPage: page,
           errorList: [
             { text: 'Something went wrong, please contact the EUDP team' }
           ]
         })
         .code(statusCodes.internalServerError)
     }
-
-    return h.view('home/index', {
-      pageTitle: PAGE_TITLE,
-      heading: PAGE_TITLE,
-      notifications: notificationList
-    })
   }
 }
 

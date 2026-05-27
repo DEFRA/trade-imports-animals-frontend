@@ -61,3 +61,56 @@ export function mapNotificationsToList(responseBody) {
     mapNotificationToListView
   )
 }
+
+/**
+ * Parses a NotificationPageResponse into mapped notifications and pagination metadata.
+ */
+export function mapPaginatedResponse(responseBody) {
+  const notifications = normalizeNotificationsResponse(responseBody).map(
+    mapNotificationToListView
+  )
+
+  return {
+    notifications,
+    pagination: {
+      page: responseBody?.page ?? 0,
+      size: responseBody?.size,
+      totalElements: responseBody?.totalElements ?? 0,
+      totalPages: responseBody?.totalPages ?? 1
+    }
+  }
+}
+
+/**
+ * Builds the view model for previous/next pagination links.
+ * Returns null when there is only a single page.
+ */
+export function buildPaginationLinks(pagination, baseUrl = '/') {
+  const { page, totalPages } = pagination
+
+  if (totalPages <= 1) {
+    return null
+  }
+
+  const model = {}
+
+  if (page > 0) {
+    const previousPage = page - 1
+    model.previous = {
+      href: `${baseUrl}?page=${previousPage}`,
+      label: 'Previous page',
+      pageText: `${previousPage + 1} of ${totalPages}`
+    }
+  }
+
+  if (page < totalPages - 1) {
+    const nextPage = page + 1
+    model.next = {
+      href: `${baseUrl}?page=${nextPage}`,
+      label: 'Next page',
+      pageText: `${nextPage + 1} of ${totalPages}`
+    }
+  }
+
+  return model
+}
