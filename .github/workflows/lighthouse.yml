@@ -1,0 +1,158 @@
+name: Lighthouse CI
+
+on:
+  workflow_run:
+    workflows: ["Publish Branch Image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch name to probe for service images (defaults to current branch)'
+        required: false
+        type: string
+
+concurrency:
+  group: lighthouse-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
+jobs:
+  pending-status:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report pending Lighthouse check on PR
+        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
+        with:
+          lighthouse-result: pending
+
+  lighthouse:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'pull_request')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    concurrency:
+      group: pages-${{ github.repository }}-lighthouse
+      cancel-in-progress: false
+    outputs:
+      report-url: ${{ steps.report-url.outputs.url }}
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/trade-imports-animals-workspace
+          ref: main
+
+      - name: Resolve branch tag
+        id: branch-tag
+        run: |
+          raw="${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}"
+          tag="${raw//\//-}"
+          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
+          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
+          tag="${tag:0:128}"
+          echo "sanitised=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Start stack
+        run: ./scripts/stack/run-stack.sh --branch "${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}"
+
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/trade-imports-animals-frontend
+          ref: ${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}
+          path: frontend
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run Lighthouse CI
+        id: lhci
+        run: npm run lighthouse
+        working-directory: frontend
+
+      - name: Generate report index
+        if: always() && steps.lhci.outcome != 'skipped'
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const cats = ['performance', 'accessibility', 'best-practices'];
+            const manifest = JSON.parse(fs.readFileSync('./frontend/lighthouse-report/manifest.json', 'utf8'));
+            const rows = manifest.filter(e => e.isRepresentativeRun).map(e => {
+              const file = path.basename(e.htmlPath);
+              const scores = cats.map(k => \`<td>\${Math.round(e.summary[k] * 100)}</td>\`).join('');
+              return \`<tr><td><a href=\"\${file}\">\${new URL(e.url).pathname}</a></td>\${scores}</tr>\`;
+            }).join('');
+            const html = \`<!DOCTYPE html>
+            <html><head><title>Lighthouse Report</title>
+            <style>body{font-family:sans-serif;margin:2rem}table{border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}</style>
+            </head><body><h1>Lighthouse Reports</h1>
+            <table><thead><tr><th>Page</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th></tr></thead>
+            <tbody>\${rows}</tbody></table></body></html>\`;
+            fs.writeFileSync('./frontend/lighthouse-report/index.html', html);
+          "
+
+      - name: Upload Lighthouse report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend/lighthouse-report/
+          retention-days: 14
+
+      - name: Deploy Lighthouse report to GitHub Pages
+        if: always() && steps.lhci.outcome != 'skipped'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/lighthouse-report
+          destination_dir: lighthouse/${{ steps.branch-tag.outputs.sanitised }}
+          keep_files: true
+
+      - name: Output report URL
+        id: report-url
+        if: always()
+        run: |
+          repo="${{ github.repository }}"
+          owner="${repo%%/*}"
+          name="${repo##*/}"
+          owner_lc="$(echo "$owner" | tr '[:upper:]' '[:lower:]')"
+          echo "url=https://${owner_lc}.github.io/${name}/lighthouse/${{ steps.branch-tag.outputs.sanitised }}/" >> "$GITHUB_OUTPUT"
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -p trade-imports-animals down
+
+  report-status:
+    needs: lighthouse
+    if: >
+      always() &&
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report Lighthouse check run on PR
+        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
+        with:
+          lighthouse-result: ${{ needs.lighthouse.result }}
+          report-url: ${{ needs.lighthouse.outputs.report-url }}

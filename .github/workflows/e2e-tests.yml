@@ -31,10 +31,6 @@ jobs:
         uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-e2e-status@main
         with:
           e2e-result: pending
-      - name: Report pending Lighthouse check on PR
-        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
-        with:
-          lighthouse-result: pending
 
   e2e:
     if: >
@@ -59,8 +55,3 @@ jobs:
         with:
           e2e-result: ${{ needs.e2e.result }}
           report-url: ${{ needs.e2e.outputs.report-url }}
-      - name: Report Lighthouse check run on PR
-        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
-        with:
-          lighthouse-result: ${{ needs.e2e.outputs.lighthouse-result }}
-          report-url: ${{ needs.e2e.outputs.lighthouse-report-url }}
