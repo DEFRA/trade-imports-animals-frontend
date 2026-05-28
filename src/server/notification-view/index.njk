@@ -42,6 +42,25 @@
     {{ govukInsetText({ text: errorMessage }) }}
   {% else %}
 
+  {% if status === 'DRAFT' or status === 'SUBMITTED' %}
+    <input type="hidden" id="crumb-value" value="{{ crumb }}">
+    {{ govukButton({
+      text: "Delete",
+      classes: "govuk-button--warning",
+      attributes: {
+        id: "delete-btn",
+        "data-reference-number": referenceNumber
+      }
+    }) }}
+
+    <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">
+      <h2 class="govuk-heading-m" id="dialog-title">Delete this notification?</h2>
+      <p class="govuk-body">This will remove the notification from your dashboard. You cannot undo this action.</p>
+      {{ govukButton({ text: "Yes, delete", classes: "govuk-button--warning", attributes: { id: "confirm-delete-btn" } }) }}
+      {{ govukButton({ text: "Cancel", classes: "govuk-button--secondary", attributes: { id: "cancel-delete-btn", autofocus: "true" } }) }}
+    </dialog>
+  {% endif %}
+
   <p class="govuk-body">Date created: <strong>{{ dateCreated }}</strong></p>
 
   <div class="govuk-grid-row">
@@ -209,25 +228,6 @@
 
     </div>
   </div>
-
-  {% if status === 'DRAFT' or status === 'SUBMITTED' %}
-    <input type="hidden" id="crumb-value" value="{{ crumb }}">
-    {{ govukButton({
-      text: "Delete",
-      classes: "govuk-button--warning",
-      attributes: {
-        id: "delete-btn",
-        "data-reference-number": referenceNumber
-      }
-    }) }}
-
-    <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">
-      <h2 class="govuk-heading-m" id="dialog-title">Delete this notification?</h2>
-      <p class="govuk-body">This will remove the notification from your dashboard. You cannot undo this action.</p>
-      {{ govukButton({ text: "Yes, delete", classes: "govuk-button--warning", attributes: { id: "confirm-delete-btn" } }) }}
-      {{ govukButton({ text: "Cancel", classes: "govuk-button--secondary", attributes: { id: "cancel-delete-btn", autofocus: "true" } }) }}
-    </dialog>
-  {% endif %}
 
   {% endif %}
 {% endblock %}
