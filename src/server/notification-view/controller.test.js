@@ -191,5 +191,59 @@ describe('#notificationViewController', () => {
 
       expect(statusCode).toBe(statusCodes.notFound)
     })
+
+    test('Should render delete button when notification is DRAFT', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-delete-draft')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('data-reference-number="IMP.GB.2026.1001401"')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('Delete this notification?')
+      )
+    })
+
+    test('Should render delete button when notification is SUBMITTED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-delete-submitted')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('data-reference-number="IMP.GB.2026.1001401"')
+      )
+    })
+
+    test('Should not render delete button when notification is DELETED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DELETED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-delete-deleted')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('data-reference-number="IMP.GB.2026.1001401"')
+      )
+    })
   })
 })

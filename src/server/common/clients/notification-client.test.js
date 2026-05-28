@@ -610,6 +610,60 @@ describe('#notificationClient', () => {
     })
   })
 
+  describe('softDelete', () => {
+    const referenceNumber = 'REF-123'
+
+    describe('When softDelete is called with a valid reference number', () => {
+      test('Should send POST request to the soft-delete endpoint and return the response', async () => {
+        const responseBody = { referenceNumber, status: 'DELETED' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.softDelete(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications/REF-123/soft-delete',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            }
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When softDelete request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        await expect(
+          notificationClient.softDelete(mockRequest, referenceNumber, traceId)
+        ).rejects.toMatchObject({
+          message: 'Failed to delete notification',
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
   describe('findAll', () => {
     test('Should send GET request and return notifications from the API', async () => {
       const responseBody = {

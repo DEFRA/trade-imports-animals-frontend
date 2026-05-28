@@ -28,6 +28,9 @@ export default {
     },
     accompanyingDocuments: {
       import: './javascripts/accompanying-documents.js'
+    },
+    notificationView: {
+      import: './javascripts/notification-view.js'
     }
   },
   experiments: {
