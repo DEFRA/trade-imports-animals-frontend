@@ -1,5 +1,6 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { resetSession } from '../common/helpers/session-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -22,19 +23,26 @@ export const homeController = {
     const page = Math.max(0, Number.parseInt(_request.query.page, 10) || 0)
 
     try {
-      const response = await notificationClient.findAll(_request, traceId, {
-        page
-      })
-      const { notifications, pagination } = mapPaginatedResponse(response)
+      const [response, countries] = await Promise.all([
+        notificationClient.findAll(_request, traceId, { page }),
+        countriesClient.getCountries(traceId).catch((err) => {
+          logger.error(`Failed to load countries: ${err.message}`)
+          return []
+        })
+      ])
+      const countryMap = Object.fromEntries(
+        countries.map((c) => [c.code, c.name])
+      )
+      const { notifications, pagination } = mapPaginatedResponse(
+        response,
+        countryMap
+      )
 
       return h.view('home/index', {
         pageTitle: PAGE_TITLE,
         heading: PAGE_TITLE,
         notifications,
-        resultsLabel: buildPageResultsRangeLabel(
-          pagination,
-          notifications.length
-        ),
+        resultsLabel: buildPageResultsRangeLabel(pagination, notifications.length),
         pagination: buildPaginationLinks(pagination),
         currentPage: pagination.page
       })

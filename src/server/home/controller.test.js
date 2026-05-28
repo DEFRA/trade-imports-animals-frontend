@@ -7,8 +7,10 @@ import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { config } from '../../config/config.js'
 
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 
 vi.mock('../common/clients/notification-client.js')
+vi.mock('../common/clients/countries-client.js')
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -52,6 +54,10 @@ describe('#homeController', () => {
     vi.restoreAllMocks()
   })
 
+  beforeEach(() => {
+    countriesClient.getCountries.mockResolvedValue([])
+  })
+
   describe('GET /', () => {
     beforeEach(() => {
       notificationClient.findAll.mockClear()
@@ -79,6 +85,9 @@ describe('#homeController', () => {
 
     test('Should render notification list when findAll returns notifications', async () => {
       notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+      countriesClient.getCountries.mockResolvedValueOnce([
+        { code: 'FI', name: 'Finland' }
+      ])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -91,11 +100,28 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('Showing 1 Results'))
       expect(result).toEqual(expect.stringContaining('REF-123'))
       expect(result).toEqual(expect.stringContaining('Cow'))
-      expect(result).toEqual(expect.stringContaining('FI'))
+      expect(result).toEqual(expect.stringContaining('Finland'))
       expect(result).toEqual(expect.stringContaining('20 Apr 2026'))
       expect(result).toEqual(expect.stringContaining('Tampere Horse Transport'))
       expect(result).toEqual(expect.stringContaining('govuk-tag--grey'))
       expect(result).toEqual(expect.stringContaining('Draft'))
+    })
+
+    test('Should show country code when countries client fails', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+      countriesClient.getCountries.mockRejectedValueOnce(
+        new Error('Reference data unavailable')
+      )
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-countries-fail')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('REF-123'))
+      expect(result).toEqual(expect.stringContaining('FI'))
     })
 
     test('Should render SUBMITTED notifications with a green status tag', async () => {

@@ -55,7 +55,7 @@
                     </div>
                     <div class="notification-list__grid-column-30">
                       <dt class="notification-list__heading">Origin</dt>
-                      <dd class="notification-list__value">{{ notification.origin.countryCode }}</dd>
+                      <dd class="notification-list__value">{{ notification.origin.countryName or notification.origin.countryCode }}</dd>
                     </div>
                     <div class="notification-list__grid-column-30">
                       <dt class="notification-list__heading">Arrival at destination</dt>
