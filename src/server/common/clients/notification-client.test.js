@@ -618,7 +618,7 @@ describe('#notificationClient', () => {
             referenceNumber: 'REF-123',
             status: 'DRAFT',
             createdAt: '2026-04-20T10:00:00.000Z',
-            origin: { countryName: 'Finland' },
+            origin: { countryCode: 'FI' },
             commodity: { name: 'Cow', code: '0102' },
             consignor: { name: 'Tampere Horse Transport' },
             transport: { arrivalDate: '2026-04-20' }
