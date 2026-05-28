@@ -50,7 +50,7 @@ function formatAddress(entity) {
   return lines.length ? lines.join('\n') : NOT_PROVIDED
 }
 
-function mapOrigin(origin) {
+function mapOrigin(origin, countryMap = {}) {
   if (!origin) {
     return {
       countryOfOrigin: NOT_PROVIDED,
@@ -59,7 +59,8 @@ function mapOrigin(origin) {
     }
   }
   return {
-    countryOfOrigin: origin.countryCode ?? NOT_PROVIDED,
+    countryOfOrigin:
+      countryMap[origin.countryCode] ?? origin.countryCode ?? NOT_PROVIDED,
     regionOfConsignment: origin.requiresRegionCode
       ? (YES_NO_LABELS[origin.requiresRegionCode] ?? origin.requiresRegionCode)
       : NOT_PROVIDED,
@@ -170,13 +171,13 @@ function mapDocuments(documents) {
 /**
  * Maps a backend notification object to a view model for the notification details page.
  */
-export function mapNotificationToView(notification) {
+export function mapNotificationToView(notification, countryMap = {}) {
   return {
     referenceNumber: notification.referenceNumber ?? NOT_PROVIDED,
     dateCreated: formatDetailDate(
       notification.createdAt ?? notification.dateCreated ?? notification.created
     ),
-    origin: mapOrigin(notification.origin),
+    origin: mapOrigin(notification.origin, countryMap),
     commodity: mapCommodity(notification.commodity),
     additionalDetails: mapAdditionalDetails(notification.additionalDetails),
     reasonForImport: mapReasonForImport(notification.reasonForImport),

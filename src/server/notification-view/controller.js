@@ -1,5 +1,6 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { mapNotificationToView } from '../common/helpers/notification-view-helper.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -14,12 +15,17 @@ export const notificationViewController = {
     const traceId = getTraceId() ?? ''
 
     try {
-      const notification = await notificationClient.get(
-        request,
-        referenceNumber,
-        traceId
+      const [notification, countries] = await Promise.all([
+        notificationClient.get(request, referenceNumber, traceId),
+        countriesClient.getCountries(traceId).catch((err) => {
+          logger.error(`Failed to load countries: ${err.message}`)
+          return []
+        })
+      ])
+      const countryMap = Object.fromEntries(
+        countries.map((c) => [c.code, c.name])
       )
-      const viewModel = mapNotificationToView(notification)
+      const viewModel = mapNotificationToView(notification, countryMap)
 
       return h.view('notification-view/index', {
         pageTitle: `${referenceNumber} - ${PAGE_TITLE}`,
