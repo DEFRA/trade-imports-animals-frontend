@@ -8,15 +8,9 @@ const crumbInput = document.getElementById('crumb-value')
 
 const REDIRECT_DELAY_MS = 3000
 
-if (
-  deleteBtn &&
-  dialog &&
-  confirmBtn &&
-  cancelBtn &&
-  successBanner &&
-  errorBanner &&
-  crumbInput
-) {
+const elementsPresent = deleteBtn && dialog && confirmBtn && cancelBtn
+
+if (elementsPresent && successBanner && errorBanner && crumbInput) {
   deleteBtn.addEventListener('click', () => {
     dialog.showModal()
   })
