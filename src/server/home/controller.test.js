@@ -22,7 +22,7 @@ function sessionAuth(sessionId) {
 }
 
 const mockFindAllApiResponse = {
-  notifications: [
+  content: [
     {
       referenceNumber: 'REF-123',
       status: 'DRAFT',
@@ -32,7 +32,11 @@ const mockFindAllApiResponse = {
       consignor: { name: 'Tampere Horse Transport' },
       transport: { arrivalDate: '2026-04-20' }
     }
-  ]
+  ],
+  page: 0,
+  size: 20,
+  totalElements: 1,
+  totalPages: 1
 }
 
 describe('#homeController', () => {
@@ -51,7 +55,13 @@ describe('#homeController', () => {
   describe('GET /', () => {
     beforeEach(() => {
       notificationClient.findAll.mockClear()
-      notificationClient.findAll.mockResolvedValue([])
+      notificationClient.findAll.mockResolvedValue({
+        content: [],
+        page: 0,
+        size: 20,
+        totalElements: 0,
+        totalPages: 1
+      })
     })
 
     test('Should call findAll and show zero results when no notifications', async () => {
@@ -63,7 +73,7 @@ describe('#homeController', () => {
 
       expect(notificationClient.findAll).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('0 Results'))
+      expect(result).toEqual(expect.stringContaining('No Results'))
       expect(result).not.toEqual(expect.stringContaining('govuk-summary-card'))
     })
 
@@ -78,7 +88,7 @@ describe('#homeController', () => {
 
       expect(notificationClient.findAll).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('1 Results'))
+      expect(result).toEqual(expect.stringContaining('Showing 1 Results'))
       expect(result).toEqual(expect.stringContaining('REF-123'))
       expect(result).toEqual(expect.stringContaining('Cow'))
       expect(result).toEqual(expect.stringContaining('FI'))
@@ -90,13 +100,17 @@ describe('#homeController', () => {
 
     test('Should render SUBMITTED notifications with a green status tag', async () => {
       notificationClient.findAll.mockResolvedValueOnce({
-        notifications: [
+        content: [
           {
-            ...mockFindAllApiResponse.notifications[0],
+            ...mockFindAllApiResponse.content[0],
             referenceNumber: 'REF-456',
             status: 'SUBMITTED'
           }
-        ]
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
       })
 
       const { result, statusCode } = await server.inject({
@@ -148,6 +162,101 @@ describe('#homeController', () => {
           'Something went wrong, please contact the EUDP team'
         )
       )
+    })
+
+    test('Should display totalElements as the results count', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: Array.from({ length: 20 }, (_, i) => ({
+          ...mockFindAllApiResponse.content[0],
+          referenceNumber: `REF-${i}`
+        })),
+        page: 0,
+        size: 20,
+        totalElements: 57,
+        totalPages: 3
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-total-elements')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('Showing 1 to 20 of 57 Results')
+      )
+    })
+
+    test('Should render custom pagination when totalPages > 1', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: mockFindAllApiResponse.content,
+        page: 0,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-pagination')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('notifications-pagination')
+      )
+      expect(result).toEqual(expect.stringContaining('Next page'))
+      expect(result).toEqual(expect.stringContaining('2 of 3'))
+    })
+
+    test('Should not render pagination when totalPages is 1', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-no-pagination')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('notifications-pagination')
+      )
+    })
+
+    test('Should pass page query param to findAll', async () => {
+      await server.inject({
+        method: 'GET',
+        url: '/?page=2',
+        auth: sessionAuth('home-get-page-param')
+      })
+
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        { page: 2 }
+      )
+    })
+
+    test('Should use backend-clamped page for view links when query page is too large', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: mockFindAllApiResponse.content,
+        page: 2,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/?page=999',
+        auth: sessionAuth('home-get-large-page')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('href="/notification-view/REF-123?page=2"')
+      )
+      expect(result).toEqual(expect.stringContaining('Previous page'))
+      expect(result).not.toEqual(expect.stringContaining('Next page'))
     })
   })
 

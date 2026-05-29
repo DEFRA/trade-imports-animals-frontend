@@ -1,0 +1,29 @@
+{% if pagination %}
+  <nav class="notifications-pagination" aria-label="Pagination">
+    {% if pagination.previous %}
+      <div class="notifications-pagination__item notifications-pagination__item--previous govuk-label--s">
+        <a class="govuk-link govuk-link--no-underline govuk-link--no-visited-state" href="{{ pagination.previous.href }}">
+          <span class="notifications-pagination__arrow" aria-hidden="true">&larr;</span> {{ pagination.previous.label }}
+        </a>
+        <p class="govuk-body govuk-!-margin-bottom-0">
+          <a class="govuk-link govuk-link--no-visited-state" href="{{ pagination.previous.href }}">
+            {{ pagination.previous.pageText }}
+          </a>
+        </p>
+      </div>
+    {% endif %}
+
+    {% if pagination.next %}
+      <div class="notifications-pagination__item notifications-pagination__item--next govuk-label--s">
+        <a class="govuk-link govuk-link--no-underline govuk-link--no-visited-state" href="{{ pagination.next.href }}">
+          <span class="notifications-pagination__arrow" aria-hidden="true">&rarr;</span> {{ pagination.next.label }}
+        </a>
+        <p class="govuk-body govuk-!-margin-bottom-0">
+          <a class="govuk-link govuk-link--no-visited-state" href="{{ pagination.next.href }}">
+            {{ pagination.next.pageText }}
+          </a>
+        </p>
+      </div>
+    {% endif %}
+  </nav>
+{% endif %}

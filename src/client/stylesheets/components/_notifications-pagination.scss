@@ -1,0 +1,41 @@
+@use "../../../../node_modules/govuk-frontend" as *;
+
+.notifications-pagination {
+  display: flex;
+  justify-content: space-between;
+  padding-top: govuk-spacing(4);
+  margin-top: govuk-spacing(6);
+  margin-bottom: govuk-spacing(2);
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(1);
+  }
+
+  &__item > .govuk-link {
+    font-weight: 700;
+  }
+
+  &__arrow {
+    font-size: 1.5em;
+    font-weight: 700;
+  }
+
+  &__item--next {
+    text-align: right;
+    margin-left: auto;
+  }
+}
+
+@include govuk-media-query($until: tablet) {
+  .custom-pagination {
+    flex-direction: column;
+    gap: govuk-spacing(3);
+
+    &__item--next {
+      text-align: left;
+      margin-left: 0;
+    }
+  }
+}
