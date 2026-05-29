@@ -3,8 +3,10 @@ import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { notificationClient } from '../common/clients/notification-client.js'
+import { countriesClient } from '../common/clients/countries-client.js'
 
 vi.mock('../common/clients/notification-client.js')
+vi.mock('../common/clients/countries-client.js')
 
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -64,6 +66,10 @@ describe('#notificationViewController', () => {
   afterAll(async () => {
     await server.stop({ timeout: 0 })
     vi.restoreAllMocks()
+  })
+
+  beforeEach(() => {
+    countriesClient.getCountries.mockResolvedValue([])
   })
 
   describe('GET /notification-view/{referenceNumber}', () => {
@@ -126,8 +132,11 @@ describe('#notificationViewController', () => {
       expect(result).toEqual(expect.stringContaining('Accompanying documents'))
     })
 
-    test('Should render notification data in the page', async () => {
+    test('Should render notification data in the page with country name', async () => {
       notificationClient.get.mockResolvedValueOnce(mockNotification)
+      countriesClient.getCountries.mockResolvedValueOnce([
+        { code: 'FI', name: 'Finland' }
+      ])
 
       const { result } = await server.inject({
         method: 'GET',
@@ -135,7 +144,7 @@ describe('#notificationViewController', () => {
         auth: sessionAuth('notification-view-data')
       })
 
-      expect(result).toEqual(expect.stringContaining('FI'))
+      expect(result).toEqual(expect.stringContaining('Finland'))
       expect(result).toEqual(expect.stringContaining('FIN-EXP-2026.449B'))
       expect(result).toEqual(expect.stringContaining('Cow (0102)'))
       expect(result).toEqual(expect.stringContaining('Internal market'))
@@ -145,6 +154,22 @@ describe('#notificationViewController', () => {
         expect.stringContaining('Nordic Livestock Haulage Oy')
       )
       expect(result).toEqual(expect.stringContaining('20 April 2026'))
+    })
+
+    test('Should show country code when countries client fails', async () => {
+      notificationClient.get.mockResolvedValueOnce(mockNotification)
+      countriesClient.getCountries.mockRejectedValueOnce(
+        new Error('Reference data unavailable')
+      )
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-countries-fail')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('FI'))
     })
 
     test('Should render Not provided for missing fields on a partial notification', async () => {

@@ -98,12 +98,26 @@ describe('#mapNotificationToView', () => {
       )
     })
 
-    test('Should map origin fields', () => {
-      expect(mapNotificationToView(notification).origin).toEqual({
-        countryOfOrigin: 'FI',
+    test('Should map origin fields with country name from countryMap', () => {
+      expect(
+        mapNotificationToView(notification, { FI: 'Finland' }).origin
+      ).toEqual({
+        countryOfOrigin: 'Finland',
         regionOfConsignment: 'No',
         internalReference: 'FIN-EXP-2026.449B'
       })
+    })
+
+    test('Should fall back to country code when code is not in countryMap', () => {
+      expect(
+        mapNotificationToView(notification, {}).origin.countryOfOrigin
+      ).toBe('FI')
+    })
+
+    test('Should fall back to country code when no countryMap is provided', () => {
+      expect(mapNotificationToView(notification).origin.countryOfOrigin).toBe(
+        'FI'
+      )
     })
 
     test('Should map commodity name with code', () => {

@@ -50,11 +50,15 @@ export function normalizeNotificationsResponse(responseBody) {
 /**
  * Maps a backend notification to a flat view model for the dashboard notification list.
  */
-export function mapNotificationToListView(notification) {
+export function mapNotificationToListView(notification, countryMap = {}) {
+  const rawOrigin = notification.origin ?? null
+  const origin = rawOrigin
+    ? { ...rawOrigin, countryName: countryMap[rawOrigin.countryCode] }
+    : null
   return {
     referenceNumber: notification.referenceNumber ?? '',
     commodity: formatCommodity(notification.commodity),
-    origin: notification.origin ?? null,
+    origin,
     arrivalAtDestination: formatDisplayDate(getArrivalDateIso(notification)),
     consignor: notification.consignor ?? null,
     status: notification.status ?? 'DRAFT',
@@ -64,18 +68,18 @@ export function mapNotificationToListView(notification) {
   }
 }
 
-export function mapNotificationsToList(responseBody) {
-  return normalizeNotificationsResponse(responseBody).map(
-    mapNotificationToListView
+export function mapNotificationsToList(responseBody, countryMap = {}) {
+  return normalizeNotificationsResponse(responseBody).map((n) =>
+    mapNotificationToListView(n, countryMap)
   )
 }
 
 /**
  * Parses a NotificationPageResponse into mapped notifications and pagination metadata.
  */
-export function mapPaginatedResponse(responseBody) {
-  const notifications = normalizeNotificationsResponse(responseBody).map(
-    mapNotificationToListView
+export function mapPaginatedResponse(responseBody, countryMap = {}) {
+  const notifications = normalizeNotificationsResponse(responseBody).map((n) =>
+    mapNotificationToListView(n, countryMap)
   )
   const totalPages = responseBody?.totalPages ?? 1
   const page = normalizePageNumber(responseBody?.page ?? 0, totalPages)

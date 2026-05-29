@@ -43,26 +43,52 @@ describe('#notificationListView', () => {
   describe('mapNotificationToListViewItem', () => {
     test('Should map notification fields for the home list', () => {
       const consignor = { name: 'Tampere Horse Transport' }
-      const origin = { countryName: 'Finland' }
+      const origin = { countryCode: 'FI' }
 
-      const viewItem = mapNotificationToListView({
-        referenceNumber: 'REF-123',
-        status: 'DRAFT',
-        createdAt: '2026-04-20T10:00:00.000Z',
-        origin,
-        commodity: { name: 'Cow', code: '0102' },
-        consignor,
-        transport: { arrivalDate: '2026-04-20' }
-      })
+      const viewItem = mapNotificationToListView(
+        {
+          referenceNumber: 'REF-123',
+          status: 'DRAFT',
+          createdAt: '2026-04-20T10:00:00.000Z',
+          origin,
+          commodity: { name: 'Cow', code: '0102' },
+          consignor,
+          transport: { arrivalDate: '2026-04-20' }
+        },
+        { FI: 'Finland' }
+      )
 
       expect(viewItem).toEqual({
         referenceNumber: 'REF-123',
         commodity: { name: 'Cow', code: '0102' },
-        origin,
+        origin: { countryCode: 'FI', countryName: 'Finland' },
         arrivalAtDestination: '20 Apr 2026',
         consignor,
         status: 'DRAFT',
         dateCreated: '20 Apr 2026'
+      })
+    })
+
+    test('Should set countryName to undefined when code is not in countryMap', () => {
+      const viewItem = mapNotificationToListView(
+        { origin: { countryCode: 'ZZ' } },
+        { FI: 'Finland' }
+      )
+
+      expect(viewItem.origin).toEqual({
+        countryCode: 'ZZ',
+        countryName: undefined
+      })
+    })
+
+    test('Should annotate origin with countryName when countryMap is empty', () => {
+      const viewItem = mapNotificationToListView({
+        origin: { countryCode: 'FI' }
+      })
+
+      expect(viewItem.origin).toEqual({
+        countryCode: 'FI',
+        countryName: undefined
       })
     })
 
@@ -131,20 +157,26 @@ describe('#notificationListView', () => {
 
   describe('mapNotificationsToListView', () => {
     test('Should map each notification in the response', () => {
-      const viewItems = mapNotificationsToList({
-        notifications: [
-          {
-            referenceNumber: 'REF-1',
-            commodity: { name: 'Fish' },
-            origin: { countryCode: 'GB' }
-          }
-        ]
-      })
+      const viewItems = mapNotificationsToList(
+        {
+          notifications: [
+            {
+              referenceNumber: 'REF-1',
+              commodity: { name: 'Fish' },
+              origin: { countryCode: 'GB' }
+            }
+          ]
+        },
+        { GB: 'United Kingdom' }
+      )
 
       expect(viewItems).toHaveLength(1)
       expect(viewItems[0].referenceNumber).toBe('REF-1')
       expect(viewItems[0].commodity).toEqual({ name: 'Fish' })
-      expect(viewItems[0].origin).toEqual({ countryCode: 'GB' })
+      expect(viewItems[0].origin).toEqual({
+        countryCode: 'GB',
+        countryName: 'United Kingdom'
+      })
     })
 
     test('Should return empty array when response has no notifications', () => {
