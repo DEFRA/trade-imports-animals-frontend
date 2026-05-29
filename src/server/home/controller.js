@@ -42,7 +42,10 @@ export const homeController = {
         pageTitle: PAGE_TITLE,
         heading: PAGE_TITLE,
         notifications,
-        resultsLabel: buildPageResultsRangeLabel(pagination, notifications.length),
+        resultsLabel: buildPageResultsRangeLabel(
+          pagination,
+          notifications.length
+        ),
         pagination: buildPaginationLinks(pagination),
         currentPage: pagination.page
       })
