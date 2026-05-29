@@ -665,9 +665,9 @@ describe('#notificationClient', () => {
   })
 
   describe('findAll', () => {
-    test('Should send GET request and return notifications from the API', async () => {
+    test('Should send GET request with default page param and return NotificationPageResponse', async () => {
       const responseBody = {
-        notifications: [
+        content: [
           {
             referenceNumber: 'REF-123',
             status: 'DRAFT',
@@ -677,7 +677,11 @@ describe('#notificationClient', () => {
             consignor: { name: 'Tampere Horse Transport' },
             transport: { arrivalDate: '2026-04-20' }
           }
-        ]
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
       }
 
       fetch.mockResolvedValueOnce({
@@ -687,13 +691,47 @@ describe('#notificationClient', () => {
 
       const result = await notificationClient.findAll(mockRequest, traceId)
 
-      expect(fetch).toHaveBeenCalledWith('http://mock-backend/notifications', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-trace-id': traceId
+      expect(fetch).toHaveBeenCalledWith(
+        'http://mock-backend/notifications?page=0',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-trace-id': traceId
+          }
         }
+      )
+      expect(result).toEqual(responseBody)
+    })
+
+    test('Should send GET request with custom page param', async () => {
+      const responseBody = {
+        content: [],
+        page: 2,
+        size: 20,
+        totalElements: 25,
+        totalPages: 3
+      }
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue(responseBody)
       })
+
+      const result = await notificationClient.findAll(mockRequest, traceId, {
+        page: 2
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        'http://mock-backend/notifications?page=2',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-trace-id': traceId
+          }
+        }
+      )
       expect(result).toEqual(responseBody)
     })
 

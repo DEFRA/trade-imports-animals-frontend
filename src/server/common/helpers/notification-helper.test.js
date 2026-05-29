@@ -3,7 +3,10 @@ import { describe, expect, test } from 'vitest'
 import {
   mapNotificationToListView,
   mapNotificationsToList,
-  normalizeNotificationsResponse
+  normalizeNotificationsResponse,
+  mapPaginatedResponse,
+  buildPaginationLinks,
+  buildPageResultsRangeLabel
 } from './notification-helper.js'
 
 describe('#notificationListView', () => {
@@ -146,6 +149,170 @@ describe('#notificationListView', () => {
 
     test('Should return empty array when response has no notifications', () => {
       expect(mapNotificationsToList({})).toEqual([])
+    })
+  })
+
+  describe('mapPaginatedResponse', () => {
+    test('Should map notifications and pagination metadata from NotificationPageResponse', () => {
+      const response = {
+        content: [
+          { referenceNumber: 'REF-1', status: 'DRAFT' },
+          { referenceNumber: 'REF-2', status: 'SUBMITTED' }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      }
+
+      const result = mapPaginatedResponse(response)
+
+      expect(result.notifications).toHaveLength(2)
+      expect(result.notifications[0].referenceNumber).toBe('REF-1')
+      expect(result.pagination).toEqual({
+        page: 1,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      })
+    })
+
+    test('Should default page counters and set size undefined when missing', () => {
+      const result = mapPaginatedResponse({ content: [] })
+
+      expect(result.notifications).toEqual([])
+      expect(result.pagination).toEqual({
+        page: 0,
+        size: undefined,
+        totalElements: 0,
+        totalPages: 1
+      })
+    })
+
+    test('Should default to last page page when manually set page to a large or invalid number', () => {
+      const result = mapPaginatedResponse({
+        content: [],
+        page: 99,
+        totalPages: 3
+      })
+
+      expect(result.pagination.page).toBe(2)
+      expect(result.pagination.totalPages).toBe(3)
+    })
+  })
+
+  describe('buildCustomPagination', () => {
+    test('Should return null when there is only one page', () => {
+      expect(
+        buildPaginationLinks({
+          page: 0,
+          totalPages: 1
+        })
+      ).toBeNull()
+    })
+
+    test('Should build previous and next links for a middle page', () => {
+      const result = buildPaginationLinks({
+        page: 1,
+        totalPages: 3
+      })
+
+      expect(result.previous).toEqual({
+        href: '/?page=0',
+        label: 'Previous page',
+        pageText: '1 of 3'
+      })
+      expect(result.next).toEqual({
+        href: '/?page=2',
+        label: 'Next page',
+        pageText: '3 of 3'
+      })
+    })
+
+    test('Should hide previous link on the first page', () => {
+      const result = buildPaginationLinks({
+        page: 0,
+        totalPages: 3
+      })
+
+      expect(result.previous).toBeUndefined()
+      expect(result.next.pageText).toBe('2 of 3')
+    })
+
+    test('Should hide next link on the last page', () => {
+      const result = buildPaginationLinks({
+        page: 2,
+        totalPages: 3
+      })
+
+      expect(result.next).toBeUndefined()
+      expect(result.previous.pageText).toBe('2 of 3')
+    })
+
+    test('Should default page before building links when page is too large', () => {
+      const result = buildPaginationLinks({
+        page: 99,
+        totalPages: 3
+      })
+
+      expect(result.next).toBeUndefined()
+      expect(result.previous.pageText).toBe('2 of 3')
+    })
+  })
+
+  describe('buildResultsRangeLabel', () => {
+    test('Should return No results when total is zero', () => {
+      expect(
+        buildPageResultsRangeLabel(
+          { page: 0, size: 20, totalElements: 0, totalPages: 1 },
+          0
+        )
+      ).toBe('No Results')
+    })
+
+    test('Should return singular label for one result', () => {
+      expect(
+        buildPageResultsRangeLabel(
+          { page: 0, size: 20, totalElements: 1, totalPages: 1 },
+          1
+        )
+      ).toBe('Showing 1 Results')
+    })
+
+    test('Should return range for first page', () => {
+      expect(
+        buildPageResultsRangeLabel(
+          { page: 0, size: 20, totalElements: 57, totalPages: 3 },
+          20
+        )
+      ).toBe('Showing 1 to 20 of 57 Results')
+    })
+
+    test('Should return range for middle page', () => {
+      expect(
+        buildPageResultsRangeLabel(
+          { page: 1, size: 20, totalElements: 57, totalPages: 3 },
+          20
+        )
+      ).toBe('Showing 21 to 40 of 57 Results')
+    })
+
+    test('Should return range for last partial page', () => {
+      expect(
+        buildPageResultsRangeLabel(
+          { page: 2, size: 20, totalElements: 57, totalPages: 3 },
+          17
+        )
+      ).toBe('Showing 41 to 57 of 57 Results')
+    })
+
+    test('Should return single-position label when only one item on page', () => {
+      expect(
+        buildPageResultsRangeLabel(
+          { page: 1, size: 20, totalElements: 57, totalPages: 3 },
+          1
+        )
+      ).toBe('Showing 21 of 57 Results')
     })
   })
 })
