@@ -7,6 +7,7 @@ describe('#mapNotificationToView', () => {
   describe('when given a fully populated notification', () => {
     const notification = {
       referenceNumber: 'IMP.GB.2026.1001401',
+      status: 'DRAFT',
       createdAt: '2026-04-15T10:00:00.000Z',
       origin: {
         countryCode: 'FI',
@@ -85,6 +86,10 @@ describe('#mapNotificationToView', () => {
       expect(mapNotificationToView(notification).referenceNumber).toBe(
         'IMP.GB.2026.1001401'
       )
+    })
+
+    test('Should map status', () => {
+      expect(mapNotificationToView(notification).status).toBe('DRAFT')
     })
 
     test('Should format dateCreated from createdAt', () => {
@@ -326,6 +331,14 @@ describe('#mapNotificationToView', () => {
           }
         }).commodity.species
       ).toEqual([])
+    })
+  })
+
+  describe('status field', () => {
+    test('Should return null when status is absent', () => {
+      expect(mapNotificationToView({ referenceNumber: 'REF-001' }).status).toBe(
+        null
+      )
     })
   })
 })

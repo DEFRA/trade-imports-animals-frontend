@@ -306,6 +306,32 @@ export const notificationClient = {
   },
 
   /**
+   * Soft-deletes a notification, transitioning its status to DELETED
+   */
+  async softDelete(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/soft-delete`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to delete notification')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to soft-delete notification: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
    * Retrieves a page of notifications from the backend (NotificationPageResponse).
    */
   async findAll(_request, traceId, { page = 0 } = {}) {

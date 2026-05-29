@@ -183,6 +183,7 @@ export function mapNotificationToView(notification) {
     addresses: mapAddresses(notification),
     cphNumber: notification.cphNumber ?? NOT_PROVIDED,
     transport: mapTransport(notification.transport),
-    documents: mapDocuments(notification.documents)
+    documents: mapDocuments(notification.documents),
+    status: notification.status ?? null
   }
 }

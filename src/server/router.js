@@ -17,6 +17,7 @@ import { cphNumber } from './cph-number/index.js'
 import { portOfEntry } from './port-of-entry/index.js'
 import { transporter } from './transporters/index.js'
 import { declaration } from './declaration/index.js'
+import { notificationDelete } from './notification-delete/index.js'
 import { notificationView } from './notification-view/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
@@ -48,6 +49,7 @@ export const router = {
         portOfEntry,
         transporter,
         declaration,
+        notificationDelete,
         notificationView
       ]
 

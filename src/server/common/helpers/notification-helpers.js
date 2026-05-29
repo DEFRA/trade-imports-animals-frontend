@@ -13,6 +13,22 @@ export const saveNotification = async (request, logger) => {
   }
 }
 
+export const deleteNotification = async (request, logger, referenceNumber) => {
+  const traceId = getTraceId() ?? ''
+  try {
+    const response = await notificationClient.softDelete(
+      request,
+      referenceNumber,
+      traceId
+    )
+    logger.info(`Notification soft-deleted: ${referenceNumber}`)
+    return response
+  } catch (err) {
+    logger.error(`Failed to delete notification: ${err.message}`)
+    throw err
+  }
+}
+
 export const submitNotification = async (request, logger, referenceNumber) => {
   const traceId = getTraceId() ?? ''
   try {
