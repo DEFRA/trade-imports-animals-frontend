@@ -123,7 +123,12 @@ describe('#consignmentContactSelectController', () => {
       sessionHelpers.setSessionValue.mockClear()
     })
 
-    test('POST /consignment/contact/select calls notification save then redirects to /declaration', async () => {
+    test('POST /consignment/contact/select calls notification save then redirects to notification view', async () => {
+      sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
+        if (key === sessionKeys.referenceNumber) return 'IMP.GB.2026.TEST'
+        return null
+      })
+
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/consignment/contact/select',
@@ -141,7 +146,7 @@ describe('#consignmentContactSelectController', () => {
       )
       expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.redirectFound)
-      expect(headers.location).toBe('/declaration')
+      expect(headers.location).toBe('/notification-view/IMP.GB.2026.TEST')
     })
 
     test('POST /consignment/contact/select renders page with error when notification save fails', async () => {

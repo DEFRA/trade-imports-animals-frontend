@@ -96,7 +96,7 @@ export const consignmentContactSelectController = {
           })
           .code(statusCodes.internalServerError)
       }
-      return h.redirect('/declaration')
+      return h.redirect(`/notification-view/${referenceNumber}`)
     }
   }
 }

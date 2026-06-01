@@ -270,5 +270,61 @@ describe('#notificationViewController', () => {
         expect.stringContaining('data-reference-number="IMP.GB.2026.1001401"')
       )
     })
+
+    test('Should render Change links and Confirm and submit button when notification is DRAFT', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-change-links-draft')
+      })
+
+      expect(result).toEqual(expect.stringContaining('href="/origin"'))
+      expect(result).toEqual(expect.stringContaining('href="/commodities"'))
+      expect(result).toEqual(
+        expect.stringContaining('href="/additional-details"')
+      )
+      expect(result).toEqual(expect.stringContaining('href="/import-reason"'))
+      expect(result).toEqual(expect.stringContaining('href="/addresses"'))
+      expect(result).toEqual(expect.stringContaining('href="/cph-number"'))
+      expect(result).toEqual(expect.stringContaining('href="/transporters"'))
+      expect(result).toEqual(
+        expect.stringContaining('href="/accompanying-documents"')
+      )
+      expect(result).toEqual(expect.stringContaining('Confirm and submit'))
+    })
+
+    test('Should not render Change links or Confirm and submit button when notification is SUBMITTED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-change-links-submitted')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('href="/origin"'))
+      expect(result).not.toEqual(expect.stringContaining('Confirm and submit'))
+    })
+
+    test('Should not render Change links or Confirm and submit button when notification has no status', async () => {
+      notificationClient.get.mockResolvedValueOnce(mockNotification)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-change-links-no-status')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('href="/origin"'))
+      expect(result).not.toEqual(expect.stringContaining('Confirm and submit'))
+    })
   })
 })
