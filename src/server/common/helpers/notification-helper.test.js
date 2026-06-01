@@ -214,7 +214,7 @@ describe('#notificationListView', () => {
 
       expect(result.notifications).toEqual([])
       expect(result.pagination).toEqual({
-        page: 0,
+        page: 1,
         size: undefined,
         totalElements: 0,
         totalPages: 1
@@ -228,7 +228,7 @@ describe('#notificationListView', () => {
         totalPages: 3
       })
 
-      expect(result.pagination.page).toBe(2)
+      expect(result.pagination.page).toBe(3)
       expect(result.pagination.totalPages).toBe(3)
     })
   })
@@ -237,7 +237,7 @@ describe('#notificationListView', () => {
     test('Should return null when there is only one page', () => {
       expect(
         buildPaginationLinks({
-          page: 0,
+          page: 1,
           totalPages: 1
         })
       ).toBeNull()
@@ -245,17 +245,17 @@ describe('#notificationListView', () => {
 
     test('Should build previous and next links for a middle page', () => {
       const result = buildPaginationLinks({
-        page: 1,
+        page: 2,
         totalPages: 3
       })
 
       expect(result.previous).toEqual({
-        href: '/?page=0',
+        href: '/',
         label: 'Previous page',
         pageText: '1 of 3'
       })
       expect(result.next).toEqual({
-        href: '/?page=2',
+        href: '/?page=3',
         label: 'Next page',
         pageText: '3 of 3'
       })
@@ -263,7 +263,7 @@ describe('#notificationListView', () => {
 
     test('Should hide previous link on the first page', () => {
       const result = buildPaginationLinks({
-        page: 0,
+        page: 1,
         totalPages: 3
       })
 
@@ -273,7 +273,7 @@ describe('#notificationListView', () => {
 
     test('Should hide next link on the last page', () => {
       const result = buildPaginationLinks({
-        page: 2,
+        page: 3,
         totalPages: 3
       })
 
@@ -296,7 +296,7 @@ describe('#notificationListView', () => {
     test('Should return No results when total is zero', () => {
       expect(
         buildPageResultsRangeLabel(
-          { page: 0, size: 20, totalElements: 0, totalPages: 1 },
+          { page: 1, size: 20, totalElements: 0, totalPages: 1 },
           0
         )
       ).toBe('No Results')
@@ -305,7 +305,7 @@ describe('#notificationListView', () => {
     test('Should return singular label for one result', () => {
       expect(
         buildPageResultsRangeLabel(
-          { page: 0, size: 20, totalElements: 1, totalPages: 1 },
+          { page: 1, size: 20, totalElements: 1, totalPages: 1 },
           1
         )
       ).toBe('Showing 1 Results')
@@ -314,7 +314,7 @@ describe('#notificationListView', () => {
     test('Should return range for first page', () => {
       expect(
         buildPageResultsRangeLabel(
-          { page: 0, size: 20, totalElements: 57, totalPages: 3 },
+          { page: 1, size: 20, totalElements: 57, totalPages: 3 },
           20
         )
       ).toBe('Showing 1 to 20 of 57 Results')
@@ -323,7 +323,7 @@ describe('#notificationListView', () => {
     test('Should return range for middle page', () => {
       expect(
         buildPageResultsRangeLabel(
-          { page: 1, size: 20, totalElements: 57, totalPages: 3 },
+          { page: 2, size: 20, totalElements: 57, totalPages: 3 },
           20
         )
       ).toBe('Showing 21 to 40 of 57 Results')
@@ -332,7 +332,7 @@ describe('#notificationListView', () => {
     test('Should return range for last partial page', () => {
       expect(
         buildPageResultsRangeLabel(
-          { page: 2, size: 20, totalElements: 57, totalPages: 3 },
+          { page: 3, size: 20, totalElements: 57, totalPages: 3 },
           17
         )
       ).toBe('Showing 41 to 57 of 57 Results')
@@ -341,7 +341,7 @@ describe('#notificationListView', () => {
     test('Should return single-position label when only one item on page', () => {
       expect(
         buildPageResultsRangeLabel(
-          { page: 1, size: 20, totalElements: 57, totalPages: 3 },
+          { page: 2, size: 20, totalElements: 57, totalPages: 3 },
           1
         )
       ).toBe('Showing 21 of 57 Results')

@@ -6,7 +6,7 @@ export const notificationClient = {
   get: vi.fn().mockResolvedValue(null),
   findAll: vi.fn().mockResolvedValue({
     content: [],
-    page: 0,
+    page: 1,
     size: 20,
     totalElements: 0,
     totalPages: 1

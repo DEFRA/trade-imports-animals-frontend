@@ -678,7 +678,7 @@ describe('#notificationClient', () => {
             transport: { arrivalDate: '2026-04-20' }
           }
         ],
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 1,
         totalPages: 1
@@ -691,16 +691,13 @@ describe('#notificationClient', () => {
 
       const result = await notificationClient.findAll(mockRequest, traceId)
 
-      expect(fetch).toHaveBeenCalledWith(
-        'http://mock-backend/notifications?page=0',
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-trace-id': traceId
-          }
+      expect(fetch).toHaveBeenCalledWith('http://mock-backend/notifications', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trace-id': traceId
         }
-      )
+      })
       expect(result).toEqual(responseBody)
     })
 
