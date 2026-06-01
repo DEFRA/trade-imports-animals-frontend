@@ -162,6 +162,23 @@ function setOriginValues(request, origin) {
   }
 }
 
+function setAdditionalDetailsValues(request, additionalDetails) {
+  if (additionalDetails.certifiedFor) {
+    setSessionValue(
+      request,
+      sessionKeys.certifiedFor,
+      additionalDetails.certifiedFor
+    )
+  }
+  if (additionalDetails.unweanedAnimals) {
+    setSessionValue(
+      request,
+      sessionKeys.unweanedAnimals,
+      additionalDetails.unweanedAnimals
+    )
+  }
+}
+
 function setTransportValues(request, transport) {
   if (transport.portOfEntry) {
     setSessionValue(request, sessionKeys.portOfEntry, transport.portOfEntry)
@@ -198,6 +215,9 @@ function setNotificationSessionValues(request, notification) {
   setNotificationSessionFields(request, notification)
   if (notification.origin) {
     setOriginValues(request, notification.origin)
+  }
+  if (notification.additionalDetails) {
+    setAdditionalDetailsValues(request, notification.additionalDetails)
   }
   if (notification.transport) {
     setTransportValues(request, notification.transport)

@@ -543,6 +543,31 @@ describe('#notificationClient', () => {
         )
       })
 
+      test('Should hydrate certifiedFor and unweanedAnimals from additionalDetails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            additionalDetails: {
+              certifiedFor: 'slaughter',
+              unweanedAnimals: 'yes'
+            }
+          })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.certifiedFor,
+          'slaughter'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.unweanedAnimals,
+          'yes'
+        )
+      })
+
       test('Should hydrate consignmentContactAddress from consignment.contact', async () => {
         const contact = {
           name: 'Animal and Plant Health Agency',
