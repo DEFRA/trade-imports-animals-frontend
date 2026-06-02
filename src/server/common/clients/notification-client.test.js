@@ -756,6 +756,60 @@ describe('#notificationClient', () => {
     })
   })
 
+  describe('copy', () => {
+    const referenceNumber = 'REF-123'
+
+    describe('When copy is called with a valid reference number', () => {
+      test('Should send POST request to the copy endpoint and return the new notification', async () => {
+        const responseBody = { referenceNumber: 'REF-456', status: 'DRAFT' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.copy(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            },
+            body: JSON.stringify({ sourceReferenceNumber: referenceNumber })
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When copy request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        await expect(
+          notificationClient.copy(mockRequest, referenceNumber, traceId)
+        ).rejects.toMatchObject({
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
   describe('findAll', () => {
     test('Should send GET request with default page param and return NotificationPageResponse', async () => {
       const responseBody = {

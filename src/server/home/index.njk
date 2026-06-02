@@ -25,8 +25,9 @@
               text: "Create an import notification"
             }) }}
           </div>
+        </form>
 
-          {% if not errorList %}
+        {% if not errorList %}
             <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
 
             <label class="govuk-label govuk-label--s">{{ resultsLabel }}</label>
@@ -37,6 +38,13 @@
                     {{ notification.referenceNumber }}
                   </h2>
                   <ul class="govuk-summary-card__actions">
+                    {% if notification.status == 'DRAFT' or notification.status == 'SUBMITTED' %}
+                    <li class="govuk-summary-card__action">
+                      <a class="govuk-link" href="/notification-copy/{{ notification.referenceNumber }}">
+                        Copy as new<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
+                      </a>
+                    </li>
+                    {% endif %}
                     <li class="govuk-summary-card__action">
                       <a
                         class="govuk-link"
@@ -92,8 +100,6 @@
 
             {% include "home/_pagination.njk" %}
           {% endif %}
-
-        </form>
       </div>
     </div>
   </div>
