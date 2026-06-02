@@ -1,15 +1,9 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {% block content %}
-  {{ govukBackLink({
-    text: "Back",
-    href: "/"
-  }) }}
-
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
   {{ appHeading({ text: "Notification details" }) }}
@@ -70,6 +64,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Where is this consignment coming from?</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/origin">Change<span class="govuk-visually-hidden"> where this consignment is coming from</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
@@ -86,6 +87,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Your commodities</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/commodities">Change<span class="govuk-visually-hidden"> your commodities</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           <p class="govuk-body"><strong>{{ commodity.name }}</strong></p>
@@ -116,6 +124,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Additional information details</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/additional-details">Change<span class="govuk-visually-hidden"> additional information details</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
@@ -131,6 +146,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Reason for importing the animals</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/import-reason">Change<span class="govuk-visually-hidden"> reason for importing the animals</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
@@ -145,6 +167,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Addresses</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/addresses">Change<span class="govuk-visually-hidden"> addresses</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
@@ -164,6 +193,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">County Parish Holding number (CPH)</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/cph-number">Change<span class="govuk-visually-hidden"> County Parish Holding number</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
@@ -178,6 +214,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Transport details</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/transporters">Change<span class="govuk-visually-hidden"> transport details</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
@@ -197,6 +240,13 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Accompanying documents</h2>
+          {% if status === 'DRAFT' %}
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="/accompanying-documents">Change<span class="govuk-visually-hidden"> accompanying documents</span></a>
+              </li>
+            </ul>
+          {% endif %}
         </div>
         <div class="govuk-summary-card__content">
           {% if documents and documents.length %}
@@ -228,6 +278,13 @@
 
     </div>
   </div>
+
+  {% if status === 'DRAFT' %}
+    {{ govukButton({
+      text: "Confirm and submit",
+      href: "/declaration"
+    }) }}
+  {% endif %}
 
   {% endif %}
 {% endblock %}

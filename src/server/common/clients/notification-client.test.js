@@ -172,6 +172,29 @@ describe('#notificationClient', () => {
         )
       })
 
+      test('Should include additionalDetails in payload when certifiedFor and unweanedAnimals are in session', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            certifiedFor: 'slaughter',
+            unweanedAnimals: 'yes'
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.additionalDetails).toEqual({
+          certifiedFor: 'slaughter',
+          unweanedAnimals: 'yes'
+        })
+      })
+
       test('Should send arrivalDate as ISO string when all parts are present', async () => {
         mockGetSessionValue.mockImplementation((req, key) => {
           const sessionData = {
@@ -540,6 +563,75 @@ describe('#notificationClient', () => {
           mockRequest,
           sessionKeys.transporter,
           transporter
+        )
+      })
+
+      test('Should hydrate certifiedFor and unweanedAnimals from additionalDetails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            additionalDetails: {
+              certifiedFor: 'slaughter',
+              unweanedAnimals: 'yes'
+            }
+          })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.certifiedFor,
+          'slaughter'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.unweanedAnimals,
+          'yes'
+        )
+      })
+
+      test('Should hydrate only certifiedFor when unweanedAnimals is absent', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            additionalDetails: { certifiedFor: 'slaughter' }
+          })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.certifiedFor,
+          'slaughter'
+        )
+        expect(mockSetSessionValue).not.toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.unweanedAnimals,
+          expect.anything()
+        )
+      })
+
+      test('Should hydrate only unweanedAnimals when certifiedFor is absent', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            additionalDetails: { unweanedAnimals: 'yes' }
+          })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.unweanedAnimals,
+          'yes'
+        )
+        expect(mockSetSessionValue).not.toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.certifiedFor,
+          expect.anything()
         )
       })
 
