@@ -25,10 +25,18 @@ function getArrivalDateIso(notification) {
 
 function normalizePageNumber(page, totalPages) {
   if (totalPages <= 0) {
-    return 0
+    return 1
   }
 
-  return Math.min(Math.max(page, 0), totalPages - 1)
+  return Math.min(Math.max(page, 1), totalPages)
+}
+
+function buildPageHref(baseUrl, pageNumber) {
+  if (pageNumber <= 1) {
+    return baseUrl
+  }
+
+  return `${baseUrl}?page=${pageNumber}`
 }
 
 export function normalizeNotificationsResponse(responseBody) {
@@ -82,7 +90,7 @@ export function mapPaginatedResponse(responseBody, countryMap = {}) {
     mapNotificationToListView(n, countryMap)
   )
   const totalPages = responseBody?.totalPages ?? 1
-  const page = normalizePageNumber(responseBody?.page ?? 0, totalPages)
+  const page = normalizePageNumber(responseBody?.page ?? 1, totalPages)
 
   return {
     notifications,
@@ -109,21 +117,21 @@ export function buildPaginationLinks(pagination, baseUrl = '/') {
 
   const model = {}
 
-  if (page > 0) {
+  if (page > 1) {
     const previousPage = page - 1
     model.previous = {
-      href: `${baseUrl}?page=${previousPage}`,
+      href: buildPageHref(baseUrl, previousPage),
       label: 'Previous page',
-      pageText: `${previousPage + 1} of ${totalPages}`
+      pageText: `${previousPage} of ${totalPages}`
     }
   }
 
-  if (page < totalPages - 1) {
+  if (page < totalPages) {
     const nextPage = page + 1
     model.next = {
-      href: `${baseUrl}?page=${nextPage}`,
+      href: buildPageHref(baseUrl, nextPage),
       label: 'Next page',
-      pageText: `${nextPage + 1} of ${totalPages}`
+      pageText: `${nextPage} of ${totalPages}`
     }
   }
 
@@ -135,14 +143,14 @@ export function buildPaginationLinks(pagination, baseUrl = '/') {
  * eg: "Showing 1 to 25 of 75 results".
  */
 export function buildPageResultsRangeLabel(
-  { page = 0, size, totalElements = 0, totalPages = 1 } = {},
+  { page = 1, size, totalElements = 0, totalPages = 1 } = {},
   itemCount = 0
 ) {
   if (totalElements === 0 || itemCount === 0) {
     return 'No Results'
   }
   const pageSize = size ?? itemCount
-  const start = page * pageSize + 1
+  const start = (page - 1) * pageSize + 1
   const end = Math.min(start + itemCount - 1, totalElements)
   if (totalElements === 1) {
     return 'Showing 1 Results'

@@ -35,7 +35,7 @@ const mockFindAllApiResponse = {
       transport: { arrivalDate: '2026-04-20' }
     }
   ],
-  page: 0,
+  page: 1,
   size: 20,
   totalElements: 1,
   totalPages: 1
@@ -63,7 +63,7 @@ describe('#homeController', () => {
       notificationClient.findAll.mockClear()
       notificationClient.findAll.mockResolvedValue({
         content: [],
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 0,
         totalPages: 1
@@ -133,7 +133,7 @@ describe('#homeController', () => {
             status: 'SUBMITTED'
           }
         ],
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 1,
         totalPages: 1
@@ -196,7 +196,7 @@ describe('#homeController', () => {
           ...mockFindAllApiResponse.content[0],
           referenceNumber: `REF-${i}`
         })),
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 57,
         totalPages: 3
@@ -216,7 +216,7 @@ describe('#homeController', () => {
     test('Should render custom pagination when totalPages > 1', async () => {
       notificationClient.findAll.mockResolvedValueOnce({
         content: mockFindAllApiResponse.content,
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 42,
         totalPages: 3
@@ -266,7 +266,7 @@ describe('#homeController', () => {
     test('Should use backend-clamped page for view links when query page is too large', async () => {
       notificationClient.findAll.mockResolvedValueOnce({
         content: mockFindAllApiResponse.content,
-        page: 2,
+        page: 3,
         size: 20,
         totalElements: 42,
         totalPages: 3
@@ -279,7 +279,7 @@ describe('#homeController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining('href="/notification-view/REF-123?page=2"')
+        expect.stringContaining('href="/notification-view/REF-123?page=3"')
       )
       expect(result).toEqual(expect.stringContaining('Previous page'))
       expect(result).not.toEqual(expect.stringContaining('Next page'))

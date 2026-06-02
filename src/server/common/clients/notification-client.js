@@ -354,9 +354,12 @@ export const notificationClient = {
   /**
    * Retrieves a page of notifications from the backend (NotificationPageResponse).
    */
-  async findAll(_request, traceId, { page = 0 } = {}) {
+  async findAll(_request, traceId, { page = 1 } = {}) {
     const url = new URL(`${tradeImportsAnimalsBackendUrl}/notifications`)
-    url.searchParams.set('page', page)
+
+    if (page > 1) {
+      url.searchParams.set('page', page)
+    }
 
     const response = await fetch(url.toString(), {
       method: 'GET',

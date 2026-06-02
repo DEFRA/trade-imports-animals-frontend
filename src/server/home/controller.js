@@ -20,7 +20,8 @@ const PAGE_TITLE = 'Import notification service'
 export const homeController = {
   async handler(_request, h) {
     const traceId = getTraceId() ?? ''
-    const page = Math.max(0, Number.parseInt(_request.query.page, 10) || 0)
+    const queryPage = Number.parseInt(_request.query.page, 10)
+    const page = Number.isNaN(queryPage) ? 1 : queryPage
 
     try {
       const [response, countries] = await Promise.all([
