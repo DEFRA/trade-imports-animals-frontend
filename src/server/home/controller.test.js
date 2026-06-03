@@ -190,7 +190,7 @@ describe('#homeController', () => {
             status: 'SUBMITTED'
           }
         ],
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 1,
         totalPages: 1
@@ -217,7 +217,7 @@ describe('#homeController', () => {
             status: 'DELETED'
           }
         ],
-        page: 0,
+        page: 1,
         size: 20,
         totalElements: 1,
         totalPages: 1
@@ -232,6 +232,7 @@ describe('#homeController', () => {
       expect(result).not.toEqual(
         expect.stringContaining('action="/notification-copy/REF-DEL"')
       )
+      expect(result).not.toEqual(expect.stringContaining('Copy as new'))
     })
 
     test('Should return 500 when findAll fails', async () => {
