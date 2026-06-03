@@ -776,14 +776,12 @@ describe('#notificationClient', () => {
 
         expect(fetch).toHaveBeenCalledTimes(1)
         expect(fetch).toHaveBeenCalledWith(
-          'http://mock-backend/notifications',
+          `http://mock-backend/notifications/${referenceNumber}/copy`,
           {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
               'x-trace-id': traceId
-            },
-            body: JSON.stringify({ sourceReferenceNumber: referenceNumber })
+            }
           }
         )
         expect(result).toEqual(responseBody)

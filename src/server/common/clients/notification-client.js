@@ -351,21 +351,14 @@ export const notificationClient = {
     return response.json()
   },
 
-  /**
-   * Copies a notification, returning the new DRAFT notification with a new reference number.
-   * POSTs to the notifications collection with the source reference in the body (REST-compliant
-   * resource creation — no verb in the URL path).
-   */
   async copy(_request, referenceNumber, traceId) {
     const response = await fetch(
-      `${tradeImportsAnimalsBackendUrl}/notifications`,
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/copy`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           [tracingHeader]: traceId
-        },
-        body: JSON.stringify({ sourceReferenceNumber: referenceNumber })
+        }
       }
     )
 
