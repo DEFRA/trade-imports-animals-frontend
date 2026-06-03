@@ -284,7 +284,9 @@ describe('#notificationViewController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining('action="/notification-copy/IMP.GB.2026.1001401"')
+        expect.stringContaining(
+          'action="/notification-copy/IMP.GB.2026.1001401"'
+        )
       )
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
@@ -302,7 +304,9 @@ describe('#notificationViewController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining('action="/notification-copy/IMP.GB.2026.1001401"')
+        expect.stringContaining(
+          'action="/notification-copy/IMP.GB.2026.1001401"'
+        )
       )
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
@@ -320,7 +324,9 @@ describe('#notificationViewController', () => {
       })
 
       expect(result).not.toEqual(
-        expect.stringContaining('action="/notification-copy/IMP.GB.2026.1001401"')
+        expect.stringContaining(
+          'action="/notification-copy/IMP.GB.2026.1001401"'
+        )
       )
     })
 

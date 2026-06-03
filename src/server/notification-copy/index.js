@@ -6,7 +6,7 @@ export const notificationCopy = {
     register(server) {
       server.route([
         {
-          method: 'GET',
+          method: 'POST',
           path: '/notification-copy/{referenceNumber}',
           ...notificationCopyController
         }

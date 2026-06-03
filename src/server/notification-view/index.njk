@@ -47,12 +47,10 @@
       }
     }) }}
 
-    {{ govukButton({
-      text: "Copy as new",
-      classes: "govuk-button--secondary",
-      href: "/notification-copy/" + referenceNumber,
-      attributes: { id: "copy-btn" }
-    }) }}
+    <form method="post" action="/notification-copy/{{ referenceNumber }}">
+      <input type="hidden" name="crumb" value="{{ crumb }}"/>
+      <button type="submit" class="govuk-link app-link-button">Copy as new</button>
+    </form>
 
     <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">
       <h2 class="govuk-heading-m" id="dialog-title">Delete this notification?</h2>

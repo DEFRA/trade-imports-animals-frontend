@@ -166,7 +166,7 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('View'))
     })
 
-    test('Should render Copy as new link for DRAFT notifications', async () => {
+    test('Should render Copy as new action for DRAFT notifications', async () => {
       notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
 
       const { result } = await server.inject({
@@ -176,12 +176,12 @@ describe('#homeController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining('href="/notification-copy/REF-123"')
+        expect.stringContaining('action="/notification-copy/REF-123"')
       )
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
 
-    test('Should render Copy as new link for SUBMITTED notifications', async () => {
+    test('Should render Copy as new action for SUBMITTED notifications', async () => {
       notificationClient.findAll.mockResolvedValueOnce({
         content: [
           {
@@ -203,7 +203,7 @@ describe('#homeController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining('href="/notification-copy/REF-789"')
+        expect.stringContaining('action="/notification-copy/REF-789"')
       )
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
