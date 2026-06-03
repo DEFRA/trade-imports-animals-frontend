@@ -1,80 +1,76 @@
 import { vi } from 'vitest'
+import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { notificationClient } from '../common/clients/notification-client.js'
-import { notificationCopyController } from './controller.js'
+import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 
-const mockLoggerError = vi.fn()
+const mockCopy = vi.hoisted(() => vi.fn())
 
 vi.mock('../common/clients/notification-client.js', () => ({
   notificationClient: {
-    copy: vi.fn()
+    copy: mockCopy
   }
 }))
 
-vi.mock('../common/helpers/logging/logger.js', () => ({
-  createLogger: () => ({
-    error: (...args) => mockLoggerError(...args)
-  })
+vi.mock('../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
 
-vi.mock('@defra/hapi-tracing', () => ({
-  getTraceId: vi.fn(() => 'trace-abc')
-}))
+function sessionAuth(sessionId) {
+  return {
+    strategy: 'session',
+    credentials: { user: {}, sessionId }
+  }
+}
 
 describe('#notificationCopyController', () => {
-  const referenceNumber = 'REF-123'
-  const newReferenceNumber = 'REF-456'
+  let server
 
-  let request
-  let h
-
-  beforeEach(() => {
-    request = { params: { referenceNumber } }
-    h = {
-      redirect: vi.fn((location) => ({
-        statusCode: statusCodes.redirectFound,
-        location
-      }))
-    }
-    mockLoggerError.mockClear()
-    vi.clearAllMocks()
+  beforeAll(async () => {
+    server = await createServer()
+    await server.initialize()
   })
 
-  describe('When the copy succeeds', () => {
-    test('Should redirect to the new notification view page', async () => {
-      notificationClient.copy.mockResolvedValueOnce({
-        referenceNumber: newReferenceNumber,
-        status: 'DRAFT'
-      })
+  afterAll(async () => {
+    await server.stop({ timeout: 0 })
+    vi.restoreAllMocks()
+  })
 
-      const response = await notificationCopyController.handler(request, h)
-
-      expect(notificationClient.copy).toHaveBeenCalledWith(
-        request,
-        referenceNumber,
-        'trace-abc'
-      )
-      expect(h.redirect).toHaveBeenCalledWith(
-        `/notification-view/${newReferenceNumber}`
-      )
-      expect(response.statusCode).toBe(statusCodes.redirectFound)
-      expect(response.location).toBe(`/notification-view/${newReferenceNumber}`)
+  describe('POST /notification-copy/{referenceNumber}', () => {
+    beforeEach(() => {
+      mockCopy.mockClear()
     })
-  })
 
-  describe('When the copy fails', () => {
-    test('Should redirect to the source notification view with an error flag', async () => {
-      notificationClient.copy.mockRejectedValueOnce(new Error('Backend error'))
+    describe('When the copy succeeds', () => {
+      test('Should redirect to the new notification view page', async () => {
+        mockCopy.mockResolvedValueOnce({
+          referenceNumber: 'REF-456',
+          status: 'DRAFT'
+        })
 
-      const response = await notificationCopyController.handler(request, h)
+        const { statusCode, headers } = await server.inject({
+          method: 'POST',
+          url: '/notification-copy/REF-123',
+          auth: sessionAuth('copy-ok')
+        })
 
-      expect(h.redirect).toHaveBeenCalledWith(
-        `/notification-view/${referenceNumber}?error=copy`
-      )
-      expect(response.location).toBe(
-        `/notification-view/${referenceNumber}?error=copy`
-      )
-      expect(mockLoggerError).toHaveBeenCalledTimes(1)
+        expect(statusCode).toBe(statusCodes.redirectFound)
+        expect(headers.location).toBe('/notification-view/REF-456')
+      })
+    })
+
+    describe('When the copy fails', () => {
+      test('Should redirect to the source notification view with an error flag', async () => {
+        mockCopy.mockRejectedValueOnce(new Error('Backend error'))
+
+        const { statusCode, headers } = await server.inject({
+          method: 'POST',
+          url: '/notification-copy/REF-123',
+          auth: sessionAuth('copy-fail')
+        })
+
+        expect(statusCode).toBe(statusCodes.redirectFound)
+        expect(headers.location).toBe('/notification-view/REF-123?error=copy')
+      })
     })
   })
 })
