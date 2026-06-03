@@ -208,6 +208,32 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
 
+    test('Should not render Copy as new action for DELETED notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'REF-DEL',
+            status: 'DELETED'
+          }
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-no-copy-deleted')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('action="/notification-copy/REF-DEL"')
+      )
+    })
+
     test('Should return 500 when findAll fails', async () => {
       notificationClient.findAll.mockRejectedValueOnce(
         new Error('Backend error')
