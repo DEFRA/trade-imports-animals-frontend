@@ -9,6 +9,10 @@ const copyBtn = document.getElementById('copy-btn')
 
 if (copyBtn && crumbInput) {
   copyBtn.addEventListener('click', () => {
+    if (!copyBtn.dataset.copyRef) {
+      return
+    }
+    copyBtn.disabled = true
     const form = document.createElement('form')
     form.method = 'post'
     form.action = `/notification-copy/${copyBtn.dataset.copyRef}`

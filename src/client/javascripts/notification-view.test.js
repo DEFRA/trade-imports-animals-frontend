@@ -152,6 +152,40 @@ describe('#notificationView', () => {
       expect(form.querySelector('input[name="crumb"]').value).toBe(CRUMB)
       expect(form.submit).toHaveBeenCalledTimes(1)
     })
+
+    test('Should disable the copy button on first click to prevent double-submit', async () => {
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+        if (node.tagName === 'FORM') {
+          node.submit = vi.fn()
+        }
+        return node
+      })
+
+      await import('./notification-view.js')
+      const btn = document.getElementById('copy-btn')
+      btn.click()
+
+      expect(btn.disabled).toBe(true)
+    })
+
+    test('Should not submit when data-copy-ref is absent', async () => {
+      document.body.innerHTML = `
+        <input type="hidden" id="crumb-value" value="${CRUMB}">
+        <button id="copy-btn">Copy as new</button>
+      `
+      const submitSpy = vi.fn()
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+        if (node.tagName === 'FORM') {
+          node.submit = submitSpy
+        }
+        return node
+      })
+
+      await import('./notification-view.js')
+      document.getElementById('copy-btn').click()
+
+      expect(submitSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('dialog close event', () => {
