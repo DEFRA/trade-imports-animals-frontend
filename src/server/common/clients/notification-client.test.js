@@ -780,6 +780,7 @@ describe('#notificationClient', () => {
           {
             method: 'POST',
             headers: {
+              'Content-Type': 'application/json',
               'x-trace-id': traceId
             }
           }
@@ -799,6 +800,7 @@ describe('#notificationClient', () => {
         await expect(
           notificationClient.copy(mockRequest, referenceNumber, traceId)
         ).rejects.toMatchObject({
+          message: 'Failed to copy notification',
           status: 404,
           statusText: 'Not Found'
         })
