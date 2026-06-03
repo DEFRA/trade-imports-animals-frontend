@@ -259,8 +259,51 @@ describe('#homeController', () => {
       expect(notificationClient.findAll).toHaveBeenCalledWith(
         expect.anything(),
         expect.any(String),
-        { page: 2 }
+        { page: 2, sort: 'arrivalDate,desc' }
       )
+    })
+
+    test('Should render sort by select and pass sort query to findAll', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/?sort=createdAt,asc',
+        auth: sessionAuth('home-get-sort')
+      })
+
+      expect(result).toEqual(expect.stringContaining('Sort by'))
+      expect(result).toEqual(expect.stringContaining('name="sort"'))
+      expect(result).toEqual(expect.stringContaining('Update sort'))
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        { page: 1, sort: 'createdAt,asc' }
+      )
+    })
+
+    test('Should preserve current page when sort changes on a paginated view', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: mockFindAllApiResponse.content,
+        page: 2,
+        size: 20,
+        totalElements: 42,
+        totalPages: 3
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/?page=2&sort=createdAt,asc',
+        auth: sessionAuth('home-get-sort-page-2')
+      })
+
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        { page: 2, sort: 'createdAt,asc' }
+      )
+      expect(result).toEqual(expect.stringContaining('name="page"'))
+      expect(result).toEqual(expect.stringContaining('value="2"'))
     })
 
     test('Should use backend-clamped page for view links when query page is too large', async () => {

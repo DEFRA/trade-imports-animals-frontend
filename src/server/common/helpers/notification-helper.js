@@ -31,12 +31,39 @@ function normalizePageNumber(page, totalPages) {
   return Math.min(Math.max(page, 1), totalPages)
 }
 
-function buildPageHref(baseUrl, pageNumber) {
-  if (pageNumber <= 1) {
-    return baseUrl
+export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
+
+export const NOTIFICATION_SORT_OPTIONS = [
+  { value: 'arrivalDate,desc', text: 'Arrival (newest to oldest)' },
+  { value: 'arrivalDate,asc', text: 'Arrival (oldest to newest)' },
+  { value: 'createdAt,desc', text: 'Date created (newest to oldest)' },
+  { value: 'createdAt,asc', text: 'Date created (oldest to newest)' }
+]
+
+export function parseNotificationSort(sortQuery) {
+  const isValidSortOption = NOTIFICATION_SORT_OPTIONS.some(
+    (option) => option.value === sortQuery
+  )
+
+  return isValidSortOption ? sortQuery : DEFAULT_NOTIFICATION_SORT
+}
+
+export function buildHomeListQueryString({
+  page = 1,
+  sort = DEFAULT_NOTIFICATION_SORT
+} = {}) {
+  const params = new URLSearchParams()
+
+  if (page > 1) {
+    params.set('page', String(page))
   }
 
-  return `${baseUrl}?page=${pageNumber}`
+  if (sort && sort !== DEFAULT_NOTIFICATION_SORT) {
+    params.set('sort', sort)
+  }
+
+  const query = params.toString()
+  return query ? `?${query}` : ''
 }
 
 export function normalizeNotificationsResponse(responseBody) {
@@ -107,7 +134,11 @@ export function mapPaginatedResponse(responseBody, countryMap = {}) {
  * Builds the view model for previous/next pagination links.
  * Returns null when there is only a single page.
  */
-export function buildPaginationLinks(pagination, baseUrl = '/') {
+export function buildPaginationLinks(
+  pagination,
+  baseUrl = '/',
+  sort = DEFAULT_NOTIFICATION_SORT
+) {
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
 
@@ -120,7 +151,7 @@ export function buildPaginationLinks(pagination, baseUrl = '/') {
   if (page > 1) {
     const previousPage = page - 1
     model.previous = {
-      href: buildPageHref(baseUrl, previousPage),
+      href: `${baseUrl}${buildHomeListQueryString({ page: previousPage, sort })}`,
       label: 'Previous page',
       pageText: `${previousPage} of ${totalPages}`
     }
@@ -129,7 +160,7 @@ export function buildPaginationLinks(pagination, baseUrl = '/') {
   if (page < totalPages) {
     const nextPage = page + 1
     model.next = {
-      href: buildPageHref(baseUrl, nextPage),
+      href: `${baseUrl}${buildHomeListQueryString({ page: nextPage, sort })}`,
       label: 'Next page',
       pageText: `${nextPage} of ${totalPages}`
     }

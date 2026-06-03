@@ -1,7 +1,34 @@
 @use "../../../../node_modules/govuk-frontend" as *;
 
 .notification-list {
-  margin-top: govuk-spacing(4);
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(4);
+  }
+
+  &__results {
+    margin: 0;
+  }
+
+  &__sort-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: govuk-spacing(3);
+    flex-shrink: 0;
+
+    .govuk-form-group {
+      margin-bottom: 0;
+    }
+
+    .govuk-button {
+      margin-bottom: 0;
+    }
+  }
 
   &__grid-row {
     display: grid;
@@ -55,6 +82,11 @@
 // Responsive adjustments
 @include govuk-media-query($until: tablet) {
   .notification-list {
+    &__toolbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
     &__grid-row {
       grid-template-columns: 1fr;
       gap: govuk-spacing(2);
