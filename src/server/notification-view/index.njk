@@ -49,7 +49,10 @@
 
     <form method="post" action="/notification-copy/{{ referenceNumber }}">
       <input type="hidden" name="crumb" value="{{ crumb }}"/>
-      <button type="submit" class="govuk-link app-link-button">Copy as new</button>
+      {{ govukButton({
+        text: "Copy as new",
+        classes: "govuk-button--secondary"
+      }) }}
     </form>
 
     <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">
