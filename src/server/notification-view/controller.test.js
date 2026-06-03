@@ -271,7 +271,7 @@ describe('#notificationViewController', () => {
       )
     })
 
-    test('Should render Copy as new action when notification is DRAFT', async () => {
+    test('Should render Copy as new button when notification is DRAFT', async () => {
       notificationClient.get.mockResolvedValueOnce({
         ...mockNotification,
         status: 'DRAFT'
@@ -284,14 +284,12 @@ describe('#notificationViewController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining(
-          'action="/notification-copy/IMP.GB.2026.1001401"'
-        )
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
       )
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
 
-    test('Should render Copy as new action when notification is SUBMITTED', async () => {
+    test('Should render Copy as new button when notification is SUBMITTED', async () => {
       notificationClient.get.mockResolvedValueOnce({
         ...mockNotification,
         status: 'SUBMITTED'
@@ -304,14 +302,12 @@ describe('#notificationViewController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining(
-          'action="/notification-copy/IMP.GB.2026.1001401"'
-        )
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
       )
       expect(result).toEqual(expect.stringContaining('Copy as new'))
     })
 
-    test('Should not render Copy as new action when notification is DELETED', async () => {
+    test('Should not render Copy as new button when notification is DELETED', async () => {
       notificationClient.get.mockResolvedValueOnce({
         ...mockNotification,
         status: 'DELETED'
@@ -324,9 +320,7 @@ describe('#notificationViewController', () => {
       })
 
       expect(result).not.toEqual(
-        expect.stringContaining(
-          'action="/notification-copy/IMP.GB.2026.1001401"'
-        )
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
       )
     })
 

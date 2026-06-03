@@ -8,6 +8,7 @@ const REF = 'IMP.GB.2026.1001401'
 const HTML = `
   <input type="hidden" id="crumb-value" value="${CRUMB}">
   <button id="delete-btn" data-reference-number="${REF}">Delete</button>
+  <button id="copy-btn" data-copy-ref="${REF}">Copy as new</button>
   <div id="success-banner" hidden></div>
   <div id="error-banner" hidden></div>
   <dialog id="delete-dialog">
@@ -126,6 +127,30 @@ describe('#notificationView', () => {
       await vi.runAllTimersAsync()
 
       expect(document.getElementById('error-banner').hidden).toBe(false)
+    })
+  })
+
+  describe('copy button', () => {
+    test('Should append a POST form with crumb to the body when clicked', async () => {
+      const appendedForms = []
+      const originalAppendChild = document.body.appendChild.bind(document.body)
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+        if (node.tagName === 'FORM') {
+          node.submit = vi.fn()
+          appendedForms.push(node)
+        }
+        return originalAppendChild(node)
+      })
+
+      await import('./notification-view.js')
+      document.getElementById('copy-btn').click()
+
+      expect(appendedForms).toHaveLength(1)
+      const form = appendedForms[0]
+      expect(form.method).toBe('post')
+      expect(form.action).toContain(`/notification-copy/${REF}`)
+      expect(form.querySelector('input[name="crumb"]').value).toBe(CRUMB)
+      expect(form.submit).toHaveBeenCalledTimes(1)
     })
   })
 

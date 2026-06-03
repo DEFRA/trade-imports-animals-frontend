@@ -39,6 +39,15 @@
   {% if status === 'DRAFT' or status === 'SUBMITTED' %}
     <input type="hidden" id="crumb-value" value="{{ crumb }}">
     {{ govukButton({
+      text: "Copy as new",
+      classes: "govuk-button--secondary",
+      attributes: {
+        id: "copy-btn",
+        "data-copy-ref": referenceNumber
+      }
+    }) }}
+
+    {{ govukButton({
       text: "Delete",
       classes: "govuk-button--warning",
       attributes: {
@@ -46,14 +55,6 @@
         "data-reference-number": referenceNumber
       }
     }) }}
-
-    <form method="post" action="/notification-copy/{{ referenceNumber }}">
-      <input type="hidden" name="crumb" value="{{ crumb }}"/>
-      {{ govukButton({
-        text: "Copy as new",
-        classes: "govuk-button--secondary"
-      }) }}
-    </form>
 
     <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">
       <h2 class="govuk-heading-m" id="dialog-title">Delete this notification?</h2>
