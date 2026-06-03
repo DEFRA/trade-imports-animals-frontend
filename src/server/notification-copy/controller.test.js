@@ -43,18 +43,18 @@ describe('#notificationCopyController', () => {
     describe('When the copy succeeds', () => {
       test('Should redirect to the new notification view page', async () => {
         mockCopy.mockResolvedValueOnce({
-          referenceNumber: 'REF-456',
+          referenceNumber: 'IMP.GB.2026.9999999',
           status: 'DRAFT'
         })
 
         const { statusCode, headers } = await server.inject({
           method: 'POST',
-          url: '/notification-copy/REF-123',
+          url: '/notification-copy/IMP.GB.2026.1001401',
           auth: sessionAuth('copy-ok')
         })
 
         expect(statusCode).toBe(statusCodes.redirectFound)
-        expect(headers.location).toBe('/notification-view/REF-456')
+        expect(headers.location).toBe('/notification-view/IMP.GB.2026.9999999')
       })
     })
 
@@ -64,12 +64,14 @@ describe('#notificationCopyController', () => {
 
         const { statusCode, headers } = await server.inject({
           method: 'POST',
-          url: '/notification-copy/REF-123',
+          url: '/notification-copy/IMP.GB.2026.1001401',
           auth: sessionAuth('copy-fail')
         })
 
         expect(statusCode).toBe(statusCodes.redirectFound)
-        expect(headers.location).toBe('/notification-view/REF-123?error=copy')
+        expect(headers.location).toBe(
+          '/notification-view/IMP.GB.2026.1001401?error=copy'
+        )
       })
     })
   })
