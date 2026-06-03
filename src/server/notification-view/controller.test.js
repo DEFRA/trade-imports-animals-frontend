@@ -324,6 +324,25 @@ describe('#notificationViewController', () => {
       )
     })
 
+    test('Should render copy error banner when ?error=copy is present', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401?error=copy',
+        auth: sessionAuth('notification-view-copy-error')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining(
+          'There was a problem copying this notification. Please try again.'
+        )
+      )
+    })
+
     test('Should render Change links and Confirm and submit button when notification is DRAFT', async () => {
       notificationClient.get.mockResolvedValueOnce({
         ...mockNotification,

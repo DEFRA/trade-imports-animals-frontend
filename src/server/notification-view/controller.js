@@ -29,6 +29,7 @@ export const notificationViewController = {
 
       return h.view('notification-view/index', {
         pageTitle: `${referenceNumber} - ${PAGE_TITLE}`,
+        copyError: request.query.error === 'copy',
         ...viewModel
       })
     } catch (err) {

@@ -34,8 +34,7 @@ describe('#notificationCopyController', () => {
       redirect: vi.fn((location) => ({
         statusCode: statusCodes.redirectFound,
         location
-      })),
-      response: vi.fn(() => ({ code: vi.fn().mockReturnThis() }))
+      }))
     }
     mockLoggerError.mockClear()
     vi.clearAllMocks()
@@ -63,40 +62,18 @@ describe('#notificationCopyController', () => {
     })
   })
 
-  describe('When the copy fails with a 404', () => {
-    test('Should return 404', async () => {
-      const err = new Error('Not found')
-      err.status = statusCodes.notFound
-      notificationClient.copy.mockRejectedValueOnce(err)
+  describe('When the copy fails', () => {
+    test('Should redirect to the source notification view with an error flag', async () => {
+      notificationClient.copy.mockRejectedValueOnce(new Error('Backend error'))
 
-      const codeStub = vi.fn().mockReturnThis()
-      h.response.mockReturnValue({ code: codeStub })
+      const response = await notificationCopyController.handler(request, h)
 
-      await notificationCopyController.handler(request, h)
-
-      expect(h.response).toHaveBeenCalledWith({
-        error: 'Failed to copy notification'
-      })
-      expect(codeStub).toHaveBeenCalledWith(statusCodes.notFound)
-      expect(mockLoggerError).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('When the copy fails with a 500', () => {
-    test('Should return 500', async () => {
-      const err = new Error('Backend error')
-      err.status = statusCodes.internalServerError
-      notificationClient.copy.mockRejectedValueOnce(err)
-
-      const codeStub = vi.fn().mockReturnThis()
-      h.response.mockReturnValue({ code: codeStub })
-
-      await notificationCopyController.handler(request, h)
-
-      expect(h.response).toHaveBeenCalledWith({
-        error: 'Failed to copy notification'
-      })
-      expect(codeStub).toHaveBeenCalledWith(statusCodes.internalServerError)
+      expect(h.redirect).toHaveBeenCalledWith(
+        `/notification-view/${referenceNumber}?error=copy`
+      )
+      expect(response.location).toBe(
+        `/notification-view/${referenceNumber}?error=copy`
+      )
       expect(mockLoggerError).toHaveBeenCalledTimes(1)
     })
   })
