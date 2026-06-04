@@ -9,7 +9,7 @@
   }) }}
 
   <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
+    <div class="govuk-grid-column-full">
       <div class="govuk-body" data-testid="app-page-body">
         {% if errorList %}
           {{ govukErrorSummary({
@@ -25,12 +25,36 @@
               text: "Create an import notification"
             }) }}
           </div>
+        </form>
 
-          {% if not errorList %}
-            <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+        {% if not errorList %}
+          <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
 
-            <label class="govuk-label govuk-label--s">{{ resultsLabel }}</label>
-            {% for notification in notifications %}
+          <div class="notification-list__toolbar">
+            <p class="govuk-label govuk-label--s notification-list__results">{{ resultsLabel }}</p>
+
+            <form method="get" action="/" class="notification-list__sort-form">
+              {% if currentPage > 1 %}
+                <input type="hidden" name="page" value="{{ currentPage }}">
+              {% endif %}
+              <div class="govuk-form-group govuk-!-width-auto">
+                <label class="govuk-label govuk-label--s" for="sort">Sort by</label>
+                <select class="govuk-select" id="sort" name="sort">
+                  {% for option in sortOptions %}
+                    <option
+                      value="{{ option.value }}"
+                      {% if option.value == sort %}selected{% endif %}>{{ option.text }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {{ govukButton({
+                text: "Update sort",
+                classes: "govuk-button--secondary"
+              }) }}
+            </form>
+          </div>
+
+          {% for notification in notifications %}
               <div class="govuk-summary-card notification-list">
                 <div class="govuk-summary-card__title-wrapper">
                   <h2 class="govuk-summary-card__title">
@@ -40,8 +64,7 @@
                     <li class="govuk-summary-card__action">
                       <a
                         class="govuk-link"
-                        href="/notification-view/{{ notification.referenceNumber }}{% if currentPage > 1 %}?page={{ currentPage }}{% endif %}"
-                      >
+                        href="/notification-view/{{ notification.referenceNumber }}{{ listQuerySuffix }}">
                         View<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
                       </a>
                     </li>
@@ -90,10 +113,8 @@
               </div>
             {% endfor %}
 
-            {% include "home/_pagination.njk" %}
-          {% endif %}
-
-        </form>
+          {% include "home/_pagination.njk" %}
+        {% endif %}
       </div>
     </div>
   </div>

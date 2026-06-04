@@ -6,7 +6,10 @@ import {
   normalizeNotificationsResponse,
   mapPaginatedResponse,
   buildPaginationLinks,
-  buildPageResultsRangeLabel
+  buildPageResultsRangeLabel,
+  buildHomeListQueryString,
+  parseNotificationSort,
+  DEFAULT_NOTIFICATION_SORT
 } from './notification-helper.js'
 
 describe('#notificationListView', () => {
@@ -289,6 +292,40 @@ describe('#notificationListView', () => {
 
       expect(result.next).toBeUndefined()
       expect(result.previous.pageText).toBe('2 of 3')
+    })
+
+    test('Should include sort in pagination links when not the default', () => {
+      const result = buildPaginationLinks(
+        { page: 2, totalPages: 3 },
+        '/',
+        'createdAt,desc'
+      )
+
+      expect(result.previous.href).toBe('/?sort=createdAt%2Cdesc')
+      expect(result.next.href).toBe('/?page=3&sort=createdAt%2Cdesc')
+    })
+  })
+
+  describe('parseNotificationSort', () => {
+    test('Should return default sort when query is missing or invalid', () => {
+      expect(parseNotificationSort()).toBe(DEFAULT_NOTIFICATION_SORT)
+      expect(parseNotificationSort('invalid')).toBe(DEFAULT_NOTIFICATION_SORT)
+    })
+
+    test('Should return requested sort when valid', () => {
+      expect(parseNotificationSort('createdAt,asc')).toBe('createdAt,asc')
+    })
+  })
+
+  describe('buildHomeListQueryString', () => {
+    test('Should omit query string when on first page with default sort', () => {
+      expect(buildHomeListQueryString()).toBe('')
+    })
+
+    test('Should include page and sort when provided', () => {
+      expect(
+        buildHomeListQueryString({ page: 2, sort: 'createdAt,desc' })
+      ).toBe('?page=2&sort=createdAt%2Cdesc')
     })
   })
 
