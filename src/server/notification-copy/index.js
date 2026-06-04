@@ -13,7 +13,7 @@ export const notificationCopy = {
             validate: {
               params: Joi.object({
                 referenceNumber: Joi.string()
-                  .pattern(/^[A-Z]+\.[A-Z]+\.\d{4}\.\d+$/)
+                  .pattern(/^GBN-AG-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/)
                   .required()
               })
             }
