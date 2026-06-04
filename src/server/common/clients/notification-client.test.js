@@ -878,6 +878,23 @@ describe('#notificationClient', () => {
       expect(result).toEqual(responseBody)
     })
 
+    test('Should send GET request with sort param when provided', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ content: [] })
+      })
+
+      await notificationClient.findAll(mockRequest, traceId, {
+        page: 1,
+        sort: 'createdAt,desc'
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        'http://mock-backend/notifications?sort=createdAt%2Cdesc',
+        expect.objectContaining({ method: 'GET' })
+      )
+    })
+
     test('Should throw an error when findAll request fails', async () => {
       fetch.mockResolvedValueOnce({
         ok: false,

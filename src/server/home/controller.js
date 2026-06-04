@@ -7,7 +7,10 @@ import { statusCodes } from '../common/constants/status-codes.js'
 import {
   mapPaginatedResponse,
   buildPaginationLinks,
-  buildPageResultsRangeLabel
+  buildPageResultsRangeLabel,
+  buildHomeListQueryString,
+  parseNotificationSort,
+  NOTIFICATION_SORT_OPTIONS
 } from '../common/helpers/notification-helper.js'
 
 const logger = createLogger()
@@ -22,10 +25,11 @@ export const homeController = {
     const traceId = getTraceId() ?? ''
     const queryPage = Number.parseInt(_request.query.page, 10)
     const page = Number.isNaN(queryPage) ? 1 : queryPage
+    const sort = parseNotificationSort(_request.query.sort)
 
     try {
       const [response, countries] = await Promise.all([
-        notificationClient.findAll(_request, traceId, { page }),
+        notificationClient.findAll(_request, traceId, { page, sort }),
         countriesClient.getCountries(traceId).catch((err) => {
           logger.error(`Failed to load countries: ${err.message}`)
           return []
@@ -47,8 +51,14 @@ export const homeController = {
           pagination,
           notifications.length
         ),
-        pagination: buildPaginationLinks(pagination),
-        currentPage: pagination.page
+        pagination: buildPaginationLinks(pagination, '/', sort),
+        currentPage: pagination.page,
+        sort,
+        sortOptions: NOTIFICATION_SORT_OPTIONS,
+        listQuerySuffix: buildHomeListQueryString({
+          page: pagination.page,
+          sort
+        })
       })
     } catch (err) {
       logger.error({ err, traceId, page }, 'Failed to load notifications')
