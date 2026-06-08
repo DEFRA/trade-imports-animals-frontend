@@ -60,7 +60,7 @@ describe('#originController', () => {
       expect(result).toEqual(expect.stringContaining('Origin of the Import'))
     })
 
-    test('Should display country select dropdown populated from the API for EU and EEA countries', async () => {
+    test('Should display country select dropdown populated from the API for GBNAG_SPS_EX block countries', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/origin',
@@ -81,8 +81,7 @@ describe('#originController', () => {
       expect(result).toEqual(expect.stringContaining('Germany'))
       expect(result).toEqual(expect.stringContaining('Spain'))
       expect(countriesClient.getCountries).toHaveBeenCalledWith('', [
-        'EU',
-        'EEA'
+        'GBNAG_SPS_EX'
       ])
     })
 
