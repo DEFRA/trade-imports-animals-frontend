@@ -5,6 +5,26 @@ const cancelBtn = document.getElementById('cancel-delete-btn')
 const successBanner = document.getElementById('success-banner')
 const errorBanner = document.getElementById('error-banner')
 const crumbInput = document.getElementById('crumb-value')
+const copyBtn = document.getElementById('copy-btn')
+
+if (copyBtn && crumbInput) {
+  copyBtn.addEventListener('click', () => {
+    if (!copyBtn.dataset.copyRef) {
+      return
+    }
+    copyBtn.disabled = true
+    const form = document.createElement('form')
+    form.method = 'post'
+    form.action = `/notification-copy/${copyBtn.dataset.copyRef}`
+    const hidden = document.createElement('input')
+    hidden.type = 'hidden'
+    hidden.name = 'crumb'
+    hidden.value = crumbInput.value
+    form.appendChild(hidden)
+    document.body.appendChild(form)
+    form.submit()
+  })
+}
 
 const REDIRECT_DELAY_MS = 3000
 

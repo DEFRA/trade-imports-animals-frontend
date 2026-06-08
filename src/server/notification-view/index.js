@@ -1,3 +1,4 @@
+import Joi from 'joi'
 import { notificationViewController } from './controller.js'
 
 /**
@@ -12,6 +13,13 @@ export const notificationView = {
         {
           method: 'GET',
           path: '/notification-view/{referenceNumber}',
+          options: {
+            validate: {
+              query: Joi.object({
+                error: Joi.string().valid('copy').optional()
+              })
+            }
+          },
           ...notificationViewController
         }
       ])

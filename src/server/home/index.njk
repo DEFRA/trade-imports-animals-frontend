@@ -61,6 +61,16 @@
                     {{ notification.referenceNumber }}
                   </h2>
                   <ul class="govuk-summary-card__actions">
+                    {% if notification.status == 'DRAFT' or notification.status == 'SUBMITTED' %}
+                    <li class="govuk-summary-card__action">
+                      <form method="post" action="/notification-copy/{{ notification.referenceNumber }}" class="app-form-inline">
+                        <input type="hidden" name="crumb" value="{{ crumb }}"/>
+                        <button type="submit" class="govuk-link app-link-button">
+                          Copy as new<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
+                        </button>
+                      </form>
+                    </li>
+                    {% endif %}
                     <li class="govuk-summary-card__action">
                       <a
                         class="govuk-link"

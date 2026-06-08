@@ -32,12 +32,33 @@
     </div>
   </div>
 
+  {% if copyError %}
+    <div class="govuk-notification-banner" role="alert"
+         aria-labelledby="copy-error-banner-title" data-module="govuk-notification-banner">
+      <div class="govuk-notification-banner__header">
+        <h2 class="govuk-notification-banner__title" id="copy-error-banner-title">Important</h2>
+      </div>
+      <div class="govuk-notification-banner__content">
+        <p class="govuk-body">There was a problem copying this notification. Please try again.</p>
+      </div>
+    </div>
+  {% endif %}
+
   {% if errorMessage %}
     {{ govukInsetText({ text: errorMessage }) }}
   {% else %}
 
   {% if status === 'DRAFT' or status === 'SUBMITTED' %}
     <input type="hidden" id="crumb-value" value="{{ crumb }}">
+    {{ govukButton({
+      text: "Copy as new",
+      classes: "govuk-button--secondary",
+      attributes: {
+        id: "copy-btn",
+        "data-copy-ref": referenceNumber
+      }
+    }) }}
+
     {{ govukButton({
       text: "Delete",
       classes: "govuk-button--warning",

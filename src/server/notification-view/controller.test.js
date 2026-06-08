@@ -271,6 +271,98 @@ describe('#notificationViewController', () => {
       )
     })
 
+    test('Should render Copy as new button when notification is DRAFT', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-copy-draft')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
+      )
+      expect(result).toEqual(expect.stringContaining('Copy as new'))
+    })
+
+    test('Should render Copy as new button when notification is SUBMITTED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-copy-submitted')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
+      )
+      expect(result).toEqual(expect.stringContaining('Copy as new'))
+    })
+
+    test('Should not render Copy as new button when notification is DELETED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DELETED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-copy-deleted')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
+      )
+      expect(result).not.toEqual(expect.stringContaining('Copy as new'))
+    })
+
+    test('Should render copy error banner when ?error=copy is present', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401?error=copy',
+        auth: sessionAuth('notification-view-copy-error')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining(
+          'There was a problem copying this notification. Please try again.'
+        )
+      )
+    })
+
+    test('Should not render copy error banner when ?error=copy is absent', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-copy-error')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining(
+          'There was a problem copying this notification. Please try again.'
+        )
+      )
+    })
+
     test('Should render Change links and Confirm and submit button when notification is DRAFT', async () => {
       notificationClient.get.mockResolvedValueOnce({
         ...mockNotification,

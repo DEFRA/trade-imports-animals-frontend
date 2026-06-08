@@ -166,6 +166,75 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('View'))
     })
 
+    test('Should render Copy as new action for DRAFT notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-copy-draft')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('action="/notification-copy/REF-123"')
+      )
+      expect(result).toEqual(expect.stringContaining('Copy as new'))
+    })
+
+    test('Should render Copy as new action for SUBMITTED notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'REF-789',
+            status: 'SUBMITTED'
+          }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-copy-submitted')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('action="/notification-copy/REF-789"')
+      )
+      expect(result).toEqual(expect.stringContaining('Copy as new'))
+    })
+
+    test('Should not render Copy as new action for DELETED notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'REF-DEL',
+            status: 'DELETED'
+          }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-no-copy-deleted')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('action="/notification-copy/REF-DEL"')
+      )
+      expect(result).not.toEqual(expect.stringContaining('Copy as new'))
+    })
+
     test('Should return 500 when findAll fails', async () => {
       notificationClient.findAll.mockRejectedValueOnce(
         new Error('Backend error')

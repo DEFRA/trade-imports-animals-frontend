@@ -352,6 +352,34 @@ export const notificationClient = {
   },
 
   /**
+   * Creates a copy of an existing notification as a new Draft
+   */
+  async copy(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/copy`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to copy notification')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(
+        `Failed to copy notification: ${response.status} ${error.message}`
+      )
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
    * Retrieves a page of notifications from the backend (NotificationPageResponse).
    */
   async findAll(_request, traceId, { page = 1, sort } = {}) {
