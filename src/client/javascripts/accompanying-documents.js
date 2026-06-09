@@ -155,6 +155,12 @@ const renderFieldError = (input, message) => {
   }
   group.classList.add('govuk-form-group--error')
   group.dataset.clientError = `${CLIENT_ERROR_MARKER}-group`
+  // Remove any server-rendered error block sharing this id so the
+  // client message owns it cleanly and aria-describedby stays unambiguous.
+  const existingError = group.querySelector(`#${input.id}-error`)
+  if (existingError) {
+    existingError.remove()
+  }
   const errorMessage = document.createElement('p')
   errorMessage.id = `${input.id}-error`
   errorMessage.className = 'govuk-error-message'
