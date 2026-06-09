@@ -835,6 +835,7 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
       expect(result).toEqual(
         expect.stringContaining('The selected file must be smaller than 10MB')
       )
