@@ -105,26 +105,29 @@ const pollStatus = async (attempt = 0) => {
   }
 }
 
+// querySelectorAll uses the kebab-case attribute selector; the dataset
+// reads/writes below are the camelCase equivalent on the same data-* slot.
+const clientErrorSelector = (suffix) =>
+  `[data-client-error="${CLIENT_ERROR_MARKER}-${suffix}"]`
+
 const clearPreviousClientErrors = (form) => {
-  document
-    .querySelectorAll(`[data-client-error="${CLIENT_ERROR_MARKER}-summary"]`)
-    .forEach((el) => el.remove())
-  form
-    .querySelectorAll(`[data-client-error="${CLIENT_ERROR_MARKER}-message"]`)
-    .forEach((el) => el.remove())
-  form
-    .querySelectorAll(`[data-client-error="${CLIENT_ERROR_MARKER}-group"]`)
-    .forEach((group) => {
-      group.classList.remove('govuk-form-group--error')
-      group.removeAttribute('data-client-error')
-    })
+  document.querySelectorAll(clientErrorSelector('summary')).forEach((el) => {
+    el.remove()
+  })
+  form.querySelectorAll(clientErrorSelector('message')).forEach((el) => {
+    el.remove()
+  })
+  form.querySelectorAll(clientErrorSelector('group')).forEach((group) => {
+    group.classList.remove('govuk-form-group--error')
+    delete group.dataset.clientError
+  })
 }
 
 const buildErrorSummary = (message, targetId) => {
   const summary = document.createElement('div')
   summary.className = 'govuk-error-summary'
-  summary.setAttribute('data-module', 'govuk-error-summary')
-  summary.setAttribute('data-client-error', `${CLIENT_ERROR_MARKER}-summary`)
+  summary.dataset.module = 'govuk-error-summary'
+  summary.dataset.clientError = `${CLIENT_ERROR_MARKER}-summary`
   const link = `<li><a href="#${targetId}">${message}</a></li>`
   summary.innerHTML =
     '<div role="alert">' +
@@ -141,14 +144,11 @@ const renderFieldError = (input, message) => {
     return
   }
   group.classList.add('govuk-form-group--error')
-  group.setAttribute('data-client-error', `${CLIENT_ERROR_MARKER}-group`)
+  group.dataset.clientError = `${CLIENT_ERROR_MARKER}-group`
   const errorMessage = document.createElement('p')
   errorMessage.id = `${input.id}-error`
   errorMessage.className = 'govuk-error-message'
-  errorMessage.setAttribute(
-    'data-client-error',
-    `${CLIENT_ERROR_MARKER}-message`
-  )
+  errorMessage.dataset.clientError = `${CLIENT_ERROR_MARKER}-message`
   errorMessage.innerHTML = `<span class="govuk-visually-hidden">Error:</span> ${message}`
   input.parentNode.insertBefore(errorMessage, input)
 }
