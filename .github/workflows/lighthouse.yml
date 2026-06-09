@@ -42,7 +42,7 @@ jobs:
     permissions:
       contents: write
     concurrency:
-      group: pages-${{ github.repository }}-lighthouse
+      group: pages-${{ github.repository }}
       cancel-in-progress: false
     outputs:
       report-url: ${{ steps.report-url.outputs.url }}
