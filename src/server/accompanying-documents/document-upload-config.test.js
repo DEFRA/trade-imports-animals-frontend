@@ -59,7 +59,7 @@ describe('document-upload-config', () => {
     })
 
     test('MAX_FILE_SIZE_LABEL is the user-facing label derived from MAX_FILE_SIZE_BYTES', () => {
-      expect(MAX_FILE_SIZE_LABEL).toBe('10MB')
+      expect(MAX_FILE_SIZE_LABEL).toBe('10 MB')
     })
 
     test('OVERSIZE_FILE_MESSAGE embeds the derived MAX_FILE_SIZE_LABEL', () => {

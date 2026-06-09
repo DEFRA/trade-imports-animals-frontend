@@ -44,7 +44,7 @@ export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
 // accurate and we stay ~485 KB clear of the CDP nginx ingress 10 MiB cap.
 const MAX_FILE_SIZE_MB = 10
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1000 * 1000
-export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`
+export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB} MB`
 export const OVERSIZE_FILE_MESSAGE = `The selected file must be smaller than ${MAX_FILE_SIZE_LABEL}`
 
 // Headroom added on top of MAX_FILE_SIZE_BYTES so the Hapi route payload limit

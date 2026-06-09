@@ -837,7 +837,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(statusCode).toBe(statusCodes.badRequest)
       expect(result).toEqual(expect.stringContaining('There is a problem'))
       expect(result).toEqual(
-        expect.stringContaining('The selected file must be smaller than 10MB')
+        expect.stringContaining('The selected file must be smaller than 10 MB')
       )
     })
 
@@ -876,7 +876,7 @@ describe('#accompanyingDocumentsController', () => {
       expect(statusCode).toBe(statusCodes.badRequest)
       expect(result).toEqual(expect.stringContaining('There is a problem'))
       expect(result).toEqual(
-        expect.stringContaining('The selected file must be smaller than 10MB')
+        expect.stringContaining('The selected file must be smaller than 10 MB')
       )
       // Existing documents must still be listed — the user has not lost state.
       expect(result).toEqual(expect.stringContaining('cert.pdf'))

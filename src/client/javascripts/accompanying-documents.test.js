@@ -204,7 +204,7 @@ describe('#accompanyingDocuments', () => {
   describe('client-side file-size preflight', () => {
     const FILE_INPUT_ID = 'file'
     const MAX_FILE_SIZE = 10 * 1000 * 1000
-    const OVERSIZE_MESSAGE = 'The selected file must be smaller than 10MB'
+    const OVERSIZE_MESSAGE = 'The selected file must be smaller than 10 MB'
     const buildUploadForm = () => `
       <div>
         <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}" data-oversize-error="${OVERSIZE_MESSAGE}">
@@ -284,7 +284,7 @@ describe('#accompanyingDocuments', () => {
       const summaryLink = summary.querySelector('a')
       expect(summaryLink.getAttribute('href')).toBe(`#${FILE_INPUT_ID}`)
       expect(summaryLink.textContent).toBe(
-        'The selected file must be smaller than 10MB'
+        'The selected file must be smaller than 10 MB'
       )
 
       const group = document.querySelector('.govuk-form-group')
@@ -296,7 +296,7 @@ describe('#accompanyingDocuments', () => {
       expect(inlineError).not.toBeNull()
       expect(inlineError.id).toBe(`${FILE_INPUT_ID}-error`)
       expect(inlineError.textContent).toContain(
-        'The selected file must be smaller than 10MB'
+        'The selected file must be smaller than 10 MB'
       )
     })
 
