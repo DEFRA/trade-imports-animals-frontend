@@ -120,6 +120,17 @@ const clearPreviousClientErrors = (form) => {
     group.classList.remove('govuk-form-group--error')
     delete group.dataset.clientError
   })
+  form.querySelectorAll(clientErrorSelector('input')).forEach((input) => {
+    input.classList.remove('govuk-file-upload--error')
+    const previous = input.dataset.clientErrorPrevDescribedby ?? ''
+    if (previous) {
+      input.setAttribute('aria-describedby', previous)
+    } else {
+      input.removeAttribute('aria-describedby')
+    }
+    delete input.dataset.clientError
+    delete input.dataset.clientErrorPrevDescribedby
+  })
 }
 
 const buildErrorSummary = (message, targetId) => {
@@ -150,6 +161,14 @@ const renderFieldError = (input, message) => {
   errorMessage.dataset.clientError = `${CLIENT_ERROR_MARKER}-message`
   errorMessage.innerHTML = `<span class="govuk-visually-hidden">Error:</span> ${message}`
   input.parentNode.insertBefore(errorMessage, input)
+  const previousDescribedby = input.getAttribute('aria-describedby') ?? ''
+  input.dataset.clientErrorPrevDescribedby = previousDescribedby
+  input.dataset.clientError = `${CLIENT_ERROR_MARKER}-input`
+  input.setAttribute(
+    'aria-describedby',
+    [previousDescribedby, errorMessage.id].filter(Boolean).join(' ')
+  )
+  input.classList.add('govuk-file-upload--error')
 }
 
 const onUploadSubmit = (form, maxFileSize, oversizeMessage) => (event) => {
