@@ -3,10 +3,10 @@
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
-  {{ appHeading({ text: "Notification details" }) }}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ heading: "Notification details" }) }}
 
   <div id="success-banner" hidden>
     <div class="govuk-notification-banner govuk-notification-banner--success" role="alert"
@@ -78,8 +78,7 @@
 
   <p class="govuk-body">Date created: <strong>{{ dateCreated }}</strong></p>
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-full">
+    <div class="govuk-body" data-testid="app-page-body">
 
       {# ── Origin ────────────────────────────────────────────────────── #}
       <div class="govuk-summary-card">
@@ -298,7 +297,6 @@
       </div>
 
     </div>
-  </div>
 
   {% if status === 'DRAFT' %}
     {{ govukButton({

@@ -3,16 +3,16 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/commodities/select"
   }) }}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ pageTitle: 'About the consignment', heading: 'What is the main reason for importing the animals?'}) }}
+
       <div class="govuk-body" data-testid="app-page-body">
 
         {% if errorList %}
@@ -31,8 +31,8 @@
             value: reasonForImport,
             fieldset: {
               legend: {
-                html: '<span class="govuk-caption-xl">About the consignment</span><h1 class="govuk-heading-xl">What is the main reason for importing the animals?</h1>',
-                classes: "govuk-fieldset__legend--l"
+                text: 'Choose the reason that applies to this consignment',
+                classes: "govuk-fieldset__legend--m"
               }
             },
             items: [
@@ -57,6 +57,4 @@
 
         </form>
       </div>
-    </div>
-  </div>
 {% endblock %}
