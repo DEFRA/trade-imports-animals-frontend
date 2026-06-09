@@ -110,12 +110,12 @@ const clientErrorSelector = (suffix) =>
   `[data-client-error="${CLIENT_ERROR_MARKER}-${suffix}"]`
 
 const clearPreviousClientErrors = (form) => {
-  document.querySelectorAll(clientErrorSelector('summary')).forEach((el) => {
-    el.remove()
-  })
-  form.querySelectorAll(clientErrorSelector('message')).forEach((el) => {
-    el.remove()
-  })
+  document
+    .querySelectorAll(clientErrorSelector('summary'))
+    .forEach((summary) => summary.remove())
+  form
+    .querySelectorAll(clientErrorSelector('message'))
+    .forEach((message) => message.remove())
   form.querySelectorAll(clientErrorSelector('group')).forEach((group) => {
     group.classList.remove('govuk-form-group--error')
     delete group.dataset.clientError
@@ -244,5 +244,4 @@ if (getPendingRows().length > 0) {
   setTimeout(() => pollStatus(0), POLL_INTERVAL)
 }
 
-// Attach client-side file-size preflight (no-op if the form is absent)
 initUploadForm()
