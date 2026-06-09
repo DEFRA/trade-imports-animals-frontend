@@ -204,9 +204,10 @@ describe('#accompanyingDocuments', () => {
   describe('client-side file-size preflight', () => {
     const FILE_INPUT_ID = 'file'
     const MAX_FILE_SIZE = 10 * 1000 * 1000
+    const OVERSIZE_MESSAGE = 'The selected file must be smaller than 10MB'
     const buildUploadForm = () => `
       <div>
-        <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}">
+        <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}" data-oversize-error="${OVERSIZE_MESSAGE}">
           <div class="govuk-form-group">
             <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
             <input id="${FILE_INPUT_ID}" name="file" type="file"/>
@@ -324,6 +325,67 @@ describe('#accompanyingDocuments', () => {
       document.body.innerHTML = '<div>No upload form here</div>'
 
       await expect(import('./accompanying-documents.js')).resolves.toBeDefined()
+    })
+
+    test('Should render the message supplied via data-oversize-error rather than a hard-coded copy', async () => {
+      const customMessage = 'Your file must be smaller than 5MB'
+      document.body.innerHTML = `
+        <div>
+          <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}" data-oversize-error="${customMessage}">
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
+              <input id="${FILE_INPUT_ID}" name="file" type="file"/>
+            </div>
+            <button type="submit">Add attachment</button>
+          </form>
+        </div>
+      `
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      form.dispatchEvent(
+        new Event('submit', { cancelable: true, bubbles: true })
+      )
+
+      const summary = document.querySelector(
+        '[data-client-error="file-size-summary"]'
+      )
+      expect(summary.querySelector('a').textContent).toBe(customMessage)
+      expect(
+        document.querySelector('[data-client-error="file-size-message"]')
+          .textContent
+      ).toContain(customMessage)
+    })
+
+    test('Should not attach the preflight when data-oversize-error is missing', async () => {
+      document.body.innerHTML = `
+        <div>
+          <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}">
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
+              <input id="${FILE_INPUT_ID}" name="file" type="file"/>
+            </div>
+            <button type="submit">Add attachment</button>
+          </form>
+        </div>
+      `
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = new Event('submit', {
+        cancelable: true,
+        bubbles: true
+      })
+      form.dispatchEvent(submitEvent)
+
+      expect(submitEvent.defaultPrevented).toBe(false)
+      expect(
+        document.querySelector('[data-client-error="file-size-summary"]')
+      ).toBeNull()
     })
   })
 

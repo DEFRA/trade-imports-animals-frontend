@@ -3,6 +3,8 @@ import {
   ALLOWED_FILE_TYPES_HINT,
   MAX_DOCUMENT_REFERENCE_LENGTH,
   MAX_FILE_SIZE_BYTES,
+  MAX_FILE_SIZE_LABEL,
+  OVERSIZE_FILE_MESSAGE,
   DOCUMENT_TYPE_OPTIONS,
   getDocumentTypeLabel
 } from '../document-upload-config.js'
@@ -80,6 +82,8 @@ export const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
     maxFileSize: MAX_FILE_SIZE_BYTES,
+    maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
+    oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
     documentTypeSelectItems: buildDocumentTypeSelectItems(),
     ...extra,
     errorList: errorList.length ? errorList : null

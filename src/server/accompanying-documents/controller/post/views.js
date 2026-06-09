@@ -1,14 +1,10 @@
-import { getTraceId } from '@defra/hapi-tracing'
-
 import { statusCodes } from '../../../common/constants/status-codes.js'
 import { formatValidationErrors } from '../../../common/helpers/validation-helpers.js'
-import { sessionKeys } from '../../../common/constants/session-keys.js'
-import { getSessionValue } from '../../../common/helpers/session-helpers.js'
 import {
   MAX_DOCUMENTS,
   OVERSIZE_FILE_MESSAGE
 } from '../../document-upload-config.js'
-import { buildPageModel, getDocumentsWithStatus } from '../page-model.js'
+import { buildPageModel } from '../page-model.js'
 
 const VIEW_PATH = 'accompanying-documents/index'
 
@@ -71,19 +67,8 @@ export const validationErrorView = (
     .code(statusCodes.badRequest)
 }
 
-// Hapi short-circuits an over-size multipart POST with Boom 413 before the
-// handler runs, so the controller's `loadUploadState` never executes — we
-// re-fetch the session documents here to keep the rendered list intact.
-export const oversizeFileView = async (request, h) => {
-  const traceId = getTraceId() ?? ''
-  const documents = getSessionValue(request, sessionKeys.documents) ?? []
-  const documentsWithStatus = await getDocumentsWithStatus(
-    documents,
-    traceId,
-    request.logger
-  )
-
-  return h
+export const oversizeFileView = (h, documentsWithStatus) =>
+  h
     .view(
       VIEW_PATH,
       buildPageModel(documentsWithStatus, 0, {
@@ -92,7 +77,6 @@ export const oversizeFileView = async (request, h) => {
       })
     )
     .code(statusCodes.badRequest)
-}
 
 export const uploadFailureView = (h, documentsWithStatus, attempt, fields) =>
   h

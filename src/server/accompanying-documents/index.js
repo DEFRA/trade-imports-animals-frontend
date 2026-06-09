@@ -1,21 +1,34 @@
+import { getTraceId } from '@defra/hapi-tracing'
+
 import { accompanyingDocumentsController } from './controller/index.js'
 import { config } from '../../config/config.js'
 import { MAX_PAYLOAD_BYTES } from './document-upload-config.js'
 import { statusCodes } from '../common/constants/status-codes.js'
+import { sessionKeys } from '../common/constants/session-keys.js'
+import { getSessionValue } from '../common/helpers/session-helpers.js'
 import { oversizeFileView } from './controller/post/views.js'
+import { getDocumentsWithStatus } from './controller/page-model.js'
+
+const isBoomOversize = (request) =>
+  request.response?.isBoom &&
+  request.response.output?.statusCode === statusCodes.payloadTooLarge
 
 // Safety net for users whose request bypasses the client-side preflight
 // (no-JS, scripted clients): Hapi rejects an over-size multipart with Boom
-// 413 before the handler runs, so we intercept here and render the upload
+// 413 before the handler runs, so the controller's `loadUploadState` never
+// executes — we re-fetch the session documents here and render the upload
 // page with an inline file-size error instead of returning a bare 413.
 const handleOversizePayload = async (request, h) => {
-  const isBoomOversize =
-    request.response?.isBoom &&
-    request.response.output?.statusCode === statusCodes.payloadTooLarge
-  if (!isBoomOversize) {
+  if (!isBoomOversize(request)) {
     return h.continue
   }
-  return oversizeFileView(request, h)
+  const documents = getSessionValue(request, sessionKeys.documents) ?? []
+  const documentsWithStatus = await getDocumentsWithStatus(
+    documents,
+    getTraceId() ?? '',
+    request.logger
+  )
+  return oversizeFileView(h, documentsWithStatus)
 }
 
 /**

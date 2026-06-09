@@ -4,7 +4,6 @@ const SCAN_STATUS_PENDING = 'PENDING'
 const SCAN_STATUS_COMPLETE = 'COMPLETE'
 const SCAN_STATUS_REJECTED = 'REJECTED'
 
-const OVERSIZE_FILE_MESSAGE = 'The selected file must be smaller than 10MB'
 const CLIENT_ERROR_MARKER = 'file-size'
 
 const getPendingRows = () =>
@@ -153,16 +152,17 @@ const renderFieldError = (input, message) => {
   input.parentNode.insertBefore(errorMessage, input)
 }
 
-const onUploadSubmit = (form, fileInput, maxFileSize) => (event) => {
+const onUploadSubmit = (form, maxFileSize, oversizeMessage) => (event) => {
   clearPreviousClientErrors(form)
-  const file = fileInput.files?.[0]
+  const fileInput = form.querySelector('input[type="file"]')
+  const file = fileInput?.files?.[0]
   if (!file || file.size <= maxFileSize) {
     return
   }
   event.preventDefault()
-  const summary = buildErrorSummary(OVERSIZE_FILE_MESSAGE, fileInput.id)
+  const summary = buildErrorSummary(oversizeMessage, fileInput.id)
   form.parentNode.insertBefore(summary, form)
-  renderFieldError(fileInput, OVERSIZE_FILE_MESSAGE)
+  renderFieldError(fileInput, oversizeMessage)
   summary.querySelector('.govuk-error-summary__title')?.focus()
 }
 
@@ -175,11 +175,14 @@ const initUploadForm = () => {
   if (!Number.isFinite(maxFileSize) || maxFileSize <= 0) {
     return
   }
-  const fileInput = form.querySelector('input[type="file"]')
-  if (!fileInput) {
+  const oversizeMessage = form.dataset.oversizeError
+  if (!oversizeMessage) {
     return
   }
-  form.addEventListener('submit', onUploadSubmit(form, fileInput, maxFileSize))
+  form.addEventListener(
+    'submit',
+    onUploadSubmit(form, maxFileSize, oversizeMessage)
+  )
 }
 
 // Hide the non-JS refresh fallback
