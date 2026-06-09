@@ -205,9 +205,16 @@ describe('#accompanyingDocuments', () => {
     const FILE_INPUT_ID = 'file'
     const MAX_FILE_SIZE = 10 * 1000 * 1000
     const OVERSIZE_MESSAGE = 'The selected file must be smaller than 10 MB'
-    const buildUploadForm = () => `
+    const buildUploadForm = ({
+      oversizeError = OVERSIZE_MESSAGE,
+      omitOversizeError = false
+    } = {}) => {
+      const oversizeAttr = omitOversizeError
+        ? ''
+        : ` data-oversize-error="${oversizeError}"`
+      return `
       <div>
-        <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}" data-oversize-error="${OVERSIZE_MESSAGE}">
+        <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}"${oversizeAttr}>
           <div class="govuk-form-group">
             <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
             <input id="${FILE_INPUT_ID}" name="file" type="file"/>
@@ -216,11 +223,18 @@ describe('#accompanyingDocuments', () => {
         </form>
       </div>
     `
+    }
 
     const attachFile = (input, sizeBytes) => {
       const file = new File(['x'], 'sample.pdf', { type: 'application/pdf' })
       Object.defineProperty(file, 'size', { value: sizeBytes })
       Object.defineProperty(input, 'files', { value: [file], writable: false })
+    }
+
+    const submitForm = (form) => {
+      const event = new Event('submit', { cancelable: true, bubbles: true })
+      form.dispatchEvent(event)
+      return event
     }
 
     test('Should not prevent submit when no file is attached', async () => {
@@ -229,11 +243,7 @@ describe('#accompanyingDocuments', () => {
       await import('./accompanying-documents.js')
 
       const form = document.querySelector('form')
-      const submitEvent = new Event('submit', {
-        cancelable: true,
-        bubbles: true
-      })
-      form.dispatchEvent(submitEvent)
+      const submitEvent = submitForm(form)
 
       expect(submitEvent.defaultPrevented).toBe(false)
       expect(
@@ -248,11 +258,7 @@ describe('#accompanyingDocuments', () => {
       await import('./accompanying-documents.js')
 
       const form = document.querySelector('form')
-      const submitEvent = new Event('submit', {
-        cancelable: true,
-        bubbles: true
-      })
-      form.dispatchEvent(submitEvent)
+      const submitEvent = submitForm(form)
 
       expect(submitEvent.defaultPrevented).toBe(false)
       expect(
@@ -267,11 +273,7 @@ describe('#accompanyingDocuments', () => {
       await import('./accompanying-documents.js')
 
       const form = document.querySelector('form')
-      const submitEvent = new Event('submit', {
-        cancelable: true,
-        bubbles: true
-      })
-      form.dispatchEvent(submitEvent)
+      const submitEvent = submitForm(form)
 
       expect(submitEvent.defaultPrevented).toBe(true)
 
@@ -307,10 +309,8 @@ describe('#accompanyingDocuments', () => {
       await import('./accompanying-documents.js')
 
       const form = document.querySelector('form')
-      const first = new Event('submit', { cancelable: true, bubbles: true })
-      form.dispatchEvent(first)
-      const second = new Event('submit', { cancelable: true, bubbles: true })
-      form.dispatchEvent(second)
+      submitForm(form)
+      const second = submitForm(form)
 
       expect(second.defaultPrevented).toBe(true)
       expect(
@@ -329,25 +329,15 @@ describe('#accompanyingDocuments', () => {
 
     test('Should render the message supplied via data-oversize-error rather than a hard-coded copy', async () => {
       const customMessage = 'Your file must be smaller than 5MB'
-      document.body.innerHTML = `
-        <div>
-          <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}" data-oversize-error="${customMessage}">
-            <div class="govuk-form-group">
-              <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
-              <input id="${FILE_INPUT_ID}" name="file" type="file"/>
-            </div>
-            <button type="submit">Add attachment</button>
-          </form>
-        </div>
-      `
+      document.body.innerHTML = buildUploadForm({
+        oversizeError: customMessage
+      })
       attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
 
       await import('./accompanying-documents.js')
 
       const form = document.querySelector('form')
-      form.dispatchEvent(
-        new Event('submit', { cancelable: true, bubbles: true })
-      )
+      submitForm(form)
 
       const summary = document.querySelector(
         '[data-client-error="file-size-summary"]'
@@ -360,27 +350,13 @@ describe('#accompanyingDocuments', () => {
     })
 
     test('Should not attach the preflight when data-oversize-error is missing', async () => {
-      document.body.innerHTML = `
-        <div>
-          <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}">
-            <div class="govuk-form-group">
-              <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
-              <input id="${FILE_INPUT_ID}" name="file" type="file"/>
-            </div>
-            <button type="submit">Add attachment</button>
-          </form>
-        </div>
-      `
+      document.body.innerHTML = buildUploadForm({ omitOversizeError: true })
       attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
 
       await import('./accompanying-documents.js')
 
       const form = document.querySelector('form')
-      const submitEvent = new Event('submit', {
-        cancelable: true,
-        bubbles: true
-      })
-      form.dispatchEvent(submitEvent)
+      const submitEvent = submitForm(form)
 
       expect(submitEvent.defaultPrevented).toBe(false)
       expect(
