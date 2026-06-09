@@ -138,13 +138,32 @@ const buildErrorSummary = (message, targetId) => {
   summary.className = 'govuk-error-summary'
   summary.dataset.module = 'govuk-error-summary'
   summary.dataset.clientError = `${CLIENT_ERROR_MARKER}-summary`
-  const link = `<li><a href="#${targetId}">${message}</a></li>`
-  summary.innerHTML =
-    '<div role="alert">' +
-    '<h2 class="govuk-error-summary__title" tabindex="-1">There is a problem</h2>' +
-    '<div class="govuk-error-summary__body">' +
-    `<ul class="govuk-list govuk-error-summary__list">${link}</ul>` +
-    '</div></div>'
+
+  const alert = document.createElement('div')
+  alert.setAttribute('role', 'alert')
+
+  const title = document.createElement('h2')
+  title.className = 'govuk-error-summary__title'
+  title.tabIndex = -1
+  title.textContent = 'There is a problem'
+
+  const body = document.createElement('div')
+  body.className = 'govuk-error-summary__body'
+
+  const list = document.createElement('ul')
+  list.className = 'govuk-list govuk-error-summary__list'
+
+  const item = document.createElement('li')
+  const link = document.createElement('a')
+  link.href = `#${targetId}`
+  link.textContent = message
+  item.appendChild(link)
+  list.appendChild(item)
+
+  body.appendChild(list)
+  alert.appendChild(title)
+  alert.appendChild(body)
+  summary.appendChild(alert)
   return summary
 }
 
@@ -165,7 +184,11 @@ const renderFieldError = (input, message) => {
   errorMessage.id = `${input.id}-error`
   errorMessage.className = 'govuk-error-message'
   errorMessage.dataset.clientError = `${CLIENT_ERROR_MARKER}-message`
-  errorMessage.innerHTML = `<span class="govuk-visually-hidden">Error:</span> ${message}`
+  const visuallyHidden = document.createElement('span')
+  visuallyHidden.className = 'govuk-visually-hidden'
+  visuallyHidden.textContent = 'Error:'
+  errorMessage.appendChild(visuallyHidden)
+  errorMessage.appendChild(document.createTextNode(` ${message}`))
   input.parentNode.insertBefore(errorMessage, input)
   const previousDescribedby = input.getAttribute('aria-describedby') ?? ''
   input.dataset.clientErrorPrevDescribedby = previousDescribedby
