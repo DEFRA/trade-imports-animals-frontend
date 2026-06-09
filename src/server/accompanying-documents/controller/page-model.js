@@ -2,6 +2,7 @@ import { documentClient } from '../../common/clients/document-client.js'
 import {
   ALLOWED_FILE_TYPES_HINT,
   MAX_DOCUMENT_REFERENCE_LENGTH,
+  MAX_FILE_SIZE_BYTES,
   DOCUMENT_TYPE_OPTIONS,
   getDocumentTypeLabel
 } from '../document-upload-config.js'
@@ -78,6 +79,7 @@ export const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     canContinue: !flags.anyPending && !flags.anyRejected,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
+    maxFileSize: MAX_FILE_SIZE_BYTES,
     documentTypeSelectItems: buildDocumentTypeSelectItems(),
     ...extra,
     errorList: errorList.length ? errorList : null

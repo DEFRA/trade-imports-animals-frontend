@@ -1,6 +1,22 @@
 import { accompanyingDocumentsController } from './controller/index.js'
 import { config } from '../../config/config.js'
 import { MAX_PAYLOAD_BYTES } from './document-upload-config.js'
+import { statusCodes } from '../common/constants/status-codes.js'
+import { oversizeFileView } from './controller/post/views.js'
+
+// Safety net for users whose request bypasses the client-side preflight
+// (no-JS, scripted clients): Hapi rejects an over-size multipart with Boom
+// 413 before the handler runs, so we intercept here and render the upload
+// page with an inline file-size error instead of returning a bare 413.
+const handleOversizePayload = async (request, h) => {
+  const isBoomOversize =
+    request.response?.isBoom &&
+    request.response.output?.statusCode === statusCodes.payloadTooLarge
+  if (!isBoomOversize) {
+    return h.continue
+  }
+  return oversizeFileView(request, h)
+}
 
 /**
  * Sets up the routes used in the accompanying documents page.
@@ -40,6 +56,9 @@ export const accompanyingDocuments = {
               maxBytes: MAX_PAYLOAD_BYTES,
               parse: true,
               multipart: { output: 'annotated' }
+            },
+            ext: {
+              onPreResponse: { method: handleOversizePayload }
             }
           }
         }

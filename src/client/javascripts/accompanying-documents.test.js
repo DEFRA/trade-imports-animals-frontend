@@ -201,6 +201,132 @@ describe('#accompanyingDocuments', () => {
     })
   })
 
+  describe('client-side file-size preflight', () => {
+    const FILE_INPUT_ID = 'file'
+    const MAX_FILE_SIZE = 10 * 1000 * 1000
+    const buildUploadForm = () => `
+      <div>
+        <form method="post" enctype="multipart/form-data" data-max-file-size="${MAX_FILE_SIZE}">
+          <div class="govuk-form-group">
+            <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
+            <input id="${FILE_INPUT_ID}" name="file" type="file"/>
+          </div>
+          <button type="submit">Add attachment</button>
+        </form>
+      </div>
+    `
+
+    const attachFile = (input, sizeBytes) => {
+      const file = new File(['x'], 'sample.pdf', { type: 'application/pdf' })
+      Object.defineProperty(file, 'size', { value: sizeBytes })
+      Object.defineProperty(input, 'files', { value: [file], writable: false })
+    }
+
+    test('Should not prevent submit when no file is attached', async () => {
+      document.body.innerHTML = buildUploadForm()
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = new Event('submit', {
+        cancelable: true,
+        bubbles: true
+      })
+      form.dispatchEvent(submitEvent)
+
+      expect(submitEvent.defaultPrevented).toBe(false)
+      expect(
+        document.querySelector('[data-client-error="file-size-summary"]')
+      ).toBeNull()
+    })
+
+    test('Should not prevent submit when file size is at the limit', async () => {
+      document.body.innerHTML = buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = new Event('submit', {
+        cancelable: true,
+        bubbles: true
+      })
+      form.dispatchEvent(submitEvent)
+
+      expect(submitEvent.defaultPrevented).toBe(false)
+      expect(
+        document.querySelector('[data-client-error="file-size-summary"]')
+      ).toBeNull()
+    })
+
+    test('Should prevent submit and render GDS error summary + inline message when file exceeds the limit', async () => {
+      document.body.innerHTML = buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = new Event('submit', {
+        cancelable: true,
+        bubbles: true
+      })
+      form.dispatchEvent(submitEvent)
+
+      expect(submitEvent.defaultPrevented).toBe(true)
+
+      const summary = document.querySelector(
+        '[data-client-error="file-size-summary"]'
+      )
+      expect(summary).not.toBeNull()
+      expect(summary.classList.contains('govuk-error-summary')).toBe(true)
+      expect(summary.textContent).toContain('There is a problem')
+      const summaryLink = summary.querySelector('a')
+      expect(summaryLink.getAttribute('href')).toBe(`#${FILE_INPUT_ID}`)
+      expect(summaryLink.textContent).toBe(
+        'The selected file must be smaller than 10MB'
+      )
+
+      const group = document.querySelector('.govuk-form-group')
+      expect(group.classList.contains('govuk-form-group--error')).toBe(true)
+
+      const inlineError = document.querySelector(
+        '[data-client-error="file-size-message"]'
+      )
+      expect(inlineError).not.toBeNull()
+      expect(inlineError.id).toBe(`${FILE_INPUT_ID}-error`)
+      expect(inlineError.textContent).toContain(
+        'The selected file must be smaller than 10MB'
+      )
+    })
+
+    test('Should not duplicate errors when an oversize submit is attempted twice', async () => {
+      document.body.innerHTML = buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const first = new Event('submit', { cancelable: true, bubbles: true })
+      form.dispatchEvent(first)
+      const second = new Event('submit', { cancelable: true, bubbles: true })
+      form.dispatchEvent(second)
+
+      expect(second.defaultPrevented).toBe(true)
+      expect(
+        document.querySelectorAll('[data-client-error="file-size-summary"]')
+      ).toHaveLength(1)
+      expect(
+        document.querySelectorAll('[data-client-error="file-size-message"]')
+      ).toHaveLength(1)
+    })
+
+    test('Should remain inert when no form with data-max-file-size is present', async () => {
+      document.body.innerHTML = '<div>No upload form here</div>'
+
+      await expect(import('./accompanying-documents.js')).resolves.toBeDefined()
+    })
+  })
+
   describe('polling — timeout', () => {
     test('Should show #js-timeout-message and stop polling after 10 attempts', async () => {
       document.body.innerHTML =

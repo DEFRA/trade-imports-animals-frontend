@@ -4,6 +4,9 @@ const SCAN_STATUS_PENDING = 'PENDING'
 const SCAN_STATUS_COMPLETE = 'COMPLETE'
 const SCAN_STATUS_REJECTED = 'REJECTED'
 
+const OVERSIZE_FILE_MESSAGE = 'The selected file must be smaller than 10MB'
+const CLIENT_ERROR_MARKER = 'file-size'
+
 const getPendingRows = () =>
   Array.from(
     document.querySelectorAll(
@@ -102,6 +105,83 @@ const pollStatus = async (attempt = 0) => {
   }
 }
 
+const clearPreviousClientErrors = (form) => {
+  document
+    .querySelectorAll(`[data-client-error="${CLIENT_ERROR_MARKER}-summary"]`)
+    .forEach((el) => el.remove())
+  form
+    .querySelectorAll(`[data-client-error="${CLIENT_ERROR_MARKER}-message"]`)
+    .forEach((el) => el.remove())
+  form
+    .querySelectorAll(`[data-client-error="${CLIENT_ERROR_MARKER}-group"]`)
+    .forEach((group) => {
+      group.classList.remove('govuk-form-group--error')
+      group.removeAttribute('data-client-error')
+    })
+}
+
+const buildErrorSummary = (message, targetId) => {
+  const summary = document.createElement('div')
+  summary.className = 'govuk-error-summary'
+  summary.setAttribute('data-module', 'govuk-error-summary')
+  summary.setAttribute('data-client-error', `${CLIENT_ERROR_MARKER}-summary`)
+  const link = `<li><a href="#${targetId}">${message}</a></li>`
+  summary.innerHTML =
+    '<div role="alert">' +
+    '<h2 class="govuk-error-summary__title" tabindex="-1">There is a problem</h2>' +
+    '<div class="govuk-error-summary__body">' +
+    `<ul class="govuk-list govuk-error-summary__list">${link}</ul>` +
+    '</div></div>'
+  return summary
+}
+
+const renderFieldError = (input, message) => {
+  const group = input.closest('.govuk-form-group')
+  if (!group) {
+    return
+  }
+  group.classList.add('govuk-form-group--error')
+  group.setAttribute('data-client-error', `${CLIENT_ERROR_MARKER}-group`)
+  const errorMessage = document.createElement('p')
+  errorMessage.id = `${input.id}-error`
+  errorMessage.className = 'govuk-error-message'
+  errorMessage.setAttribute(
+    'data-client-error',
+    `${CLIENT_ERROR_MARKER}-message`
+  )
+  errorMessage.innerHTML = `<span class="govuk-visually-hidden">Error:</span> ${message}`
+  input.parentNode.insertBefore(errorMessage, input)
+}
+
+const onUploadSubmit = (form, fileInput, maxFileSize) => (event) => {
+  clearPreviousClientErrors(form)
+  const file = fileInput.files?.[0]
+  if (!file || file.size <= maxFileSize) {
+    return
+  }
+  event.preventDefault()
+  const summary = buildErrorSummary(OVERSIZE_FILE_MESSAGE, fileInput.id)
+  form.parentNode.insertBefore(summary, form)
+  renderFieldError(fileInput, OVERSIZE_FILE_MESSAGE)
+  summary.querySelector('.govuk-error-summary__title')?.focus()
+}
+
+const initUploadForm = () => {
+  const form = document.querySelector('form[data-max-file-size]')
+  if (!form) {
+    return
+  }
+  const maxFileSize = Number.parseInt(form.dataset.maxFileSize, 10)
+  if (!Number.isFinite(maxFileSize) || maxFileSize <= 0) {
+    return
+  }
+  const fileInput = form.querySelector('input[type="file"]')
+  if (!fileInput) {
+    return
+  }
+  form.addEventListener('submit', onUploadSubmit(form, fileInput, maxFileSize))
+}
+
 // Hide the non-JS refresh fallback
 const fallback = document.getElementById('js-refresh-fallback')
 if (fallback) {
@@ -112,3 +192,6 @@ if (fallback) {
 if (getPendingRows().length > 0) {
   setTimeout(() => pollStatus(0), POLL_INTERVAL)
 }
+
+// Attach client-side file-size preflight (no-op if the form is absent)
+initUploadForm()

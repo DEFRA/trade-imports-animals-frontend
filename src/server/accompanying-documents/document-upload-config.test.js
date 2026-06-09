@@ -42,8 +42,13 @@ describe('document-upload-config', () => {
   })
 
   describe('size limits', () => {
-    test('MAX_FILE_SIZE_BYTES is exactly 50 MB', () => {
-      expect(MAX_FILE_SIZE_BYTES).toBe(52_428_800)
+    test('MAX_FILE_SIZE_BYTES is exactly 10 MB (decimal)', () => {
+      expect(MAX_FILE_SIZE_BYTES).toBe(10_000_000)
+    })
+
+    test('MAX_FILE_SIZE_BYTES stays clear of the 10 MiB CDP nginx ingress cap', () => {
+      const TEN_MIB_BYTES = 10 * 1024 * 1024
+      expect(MAX_FILE_SIZE_BYTES).toBeLessThan(TEN_MIB_BYTES)
     })
 
     test('MAX_PAYLOAD_BYTES leaves headroom above MAX_FILE_SIZE_BYTES for the multipart envelope', () => {

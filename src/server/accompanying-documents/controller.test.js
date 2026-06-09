@@ -12,7 +12,9 @@ import {
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import {
   MAX_DOCUMENTS,
-  MAX_DOCUMENT_REFERENCE_LENGTH
+  MAX_DOCUMENT_REFERENCE_LENGTH,
+  MAX_FILE_SIZE_BYTES,
+  MAX_PAYLOAD_BYTES
 } from './document-upload-config.js'
 import { MAX_POLLING_ATTEMPTS } from './controller/index.js'
 
@@ -792,8 +794,119 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.badRequest)
       expect(result).toEqual(expect.stringContaining('There is a problem'))
-      expect(result).toEqual(expect.stringContaining('Select a document type'))
-      expect(documentClient.initiate).not.toHaveBeenCalled()
+      const occurrences = (result.match(/Select a document type/g) ?? []).length
+      // Error-summary item + field-error message = 2. Three would mean the
+      // duplicate Joi error has regressed (Bug 3).
+      expect(occurrences).toBe(2)
+    })
+
+    test('Should re-render upload page with 400 and inline file-size error when file exceeds MAX_FILE_SIZE_BYTES but fits under the Hapi route cap', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === sessionKeys.documents) return []
+        if (key === sessionKeys.referenceNumber) return 'REF-WINDOW'
+        return null
+      })
+
+      const boundary = '----TestBoundaryAppCap'
+      const fileBody = Buffer.alloc(MAX_FILE_SIZE_BYTES + 1, 0x41).toString(
+        'binary'
+      )
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentType"',
+        '',
+        'ITAHC',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentReference"',
+        '',
+        'REF001',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-day"',
+        '',
+        '10',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-month"',
+        '',
+        '3',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="issueDate-year"',
+        '',
+        '2024',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="file"; filename="just-over.pdf"',
+        'Content-Type: application/pdf',
+        '',
+        fileBody,
+        `--${boundary}--`
+      ].join('\r\n')
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(
+        expect.stringContaining('The selected file must be smaller than 10MB')
+      )
+    })
+
+    test('Should re-render upload page with 400 and inline file-size error when payload exceeds MAX_PAYLOAD_BYTES', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
+        return null
+      })
+      vi.spyOn(documentClient, 'getStatus').mockResolvedValue({
+        scanStatus: 'COMPLETE'
+      })
+
+      const boundary = '----TestBoundaryOversize'
+      const oversizePadding = Buffer.alloc(
+        MAX_PAYLOAD_BYTES + 1024,
+        0x41
+      ).toString('binary')
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="documentType"',
+        '',
+        'ITAHC',
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="file"; filename="huge.pdf"',
+        'Content-Type: application/pdf',
+        '',
+        oversizePadding,
+        `--${boundary}--`
+      ].join('\r\n')
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(
+        expect.stringContaining('The selected file must be smaller than 10MB')
+      )
+      // Existing documents must still be listed — the user has not lost state.
+      expect(result).toEqual(expect.stringContaining('cert.pdf'))
+      expect(result).toEqual(expect.stringContaining('REF-001'))
     })
 
     test('Should upload file, update session, and redirect on successful POST', async () => {
