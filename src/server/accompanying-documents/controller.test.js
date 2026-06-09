@@ -41,8 +41,14 @@ const DEFAULT_MULTIPART_FIELDS = [
   ['issueDate-year', '2024']
 ]
 
-const buildMultipartBody = (boundary, fields = DEFAULT_MULTIPART_FIELDS) => {
-  const fileContent = Buffer.from('fake pdf content')
+const buildMultipartBody = (
+  boundary,
+  fields = DEFAULT_MULTIPART_FIELDS,
+  { fileBody, filename = 'test.pdf' } = {}
+) => {
+  // 'binary' (Latin-1) is safe here: test file content is ASCII-only; real binary files are handled by the multipart boundary
+  const filePart =
+    fileBody ?? Buffer.from('fake pdf content').toString('binary')
   return [
     ...fields.flatMap(([name, value]) => [
       `--${boundary}`,
@@ -51,11 +57,10 @@ const buildMultipartBody = (boundary, fields = DEFAULT_MULTIPART_FIELDS) => {
       value
     ]),
     `--${boundary}`,
-    'Content-Disposition: form-data; name="file"; filename="test.pdf"',
+    `Content-Disposition: form-data; name="file"; filename="${filename}"`,
     'Content-Type: application/pdf',
     '',
-    // 'binary' (Latin-1) is safe here: test file content is ASCII-only; real binary files are handled by the multipart boundary
-    fileContent.toString('binary'),
+    filePart,
     `--${boundary}--`
   ].join('\r\n')
 }
@@ -811,34 +816,10 @@ describe('#accompanyingDocumentsController', () => {
       const fileBody = Buffer.alloc(MAX_FILE_SIZE_BYTES + 1, 0x41).toString(
         'binary'
       )
-      const body = [
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentType"',
-        '',
-        'ITAHC',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentReference"',
-        '',
-        'REF001',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-day"',
-        '',
-        '10',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-month"',
-        '',
-        '3',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="issueDate-year"',
-        '',
-        '2024',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="file"; filename="just-over.pdf"',
-        'Content-Type: application/pdf',
-        '',
+      const body = buildMultipartBody(boundary, DEFAULT_MULTIPART_FIELDS, {
         fileBody,
-        `--${boundary}--`
-      ].join('\r\n')
+        filename: 'just-over.pdf'
+      })
 
       const { statusCode, result } = await server.inject({
         method: 'POST',
@@ -873,18 +854,10 @@ describe('#accompanyingDocumentsController', () => {
         MAX_PAYLOAD_BYTES + 1024,
         0x41
       ).toString('binary')
-      const body = [
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="documentType"',
-        '',
-        'ITAHC',
-        `--${boundary}`,
-        'Content-Disposition: form-data; name="file"; filename="huge.pdf"',
-        'Content-Type: application/pdf',
-        '',
-        oversizePadding,
-        `--${boundary}--`
-      ].join('\r\n')
+      const body = buildMultipartBody(boundary, [['documentType', 'ITAHC']], {
+        fileBody: oversizePadding,
+        filename: 'huge.pdf'
+      })
 
       const { statusCode, result } = await server.inject({
         method: 'POST',
