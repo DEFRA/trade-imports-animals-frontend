@@ -33,6 +33,9 @@ vi.mock('../common/helpers/session-helpers.js', () => ({
   setSessionValue: vi.fn()
 }))
 
+// Printable ASCII filler — keeps test buffers human-inspectable when dumped
+const FILLER_BYTE = 0x41 // 'A'
+
 const DEFAULT_MULTIPART_FIELDS = [
   ['documentType', 'ITAHC'],
   ['documentReference', 'REF001'],
@@ -813,9 +816,10 @@ describe('#accompanyingDocumentsController', () => {
       })
 
       const boundary = '----TestBoundaryAppCap'
-      const fileBody = Buffer.alloc(MAX_FILE_SIZE_BYTES + 1, 0x41).toString(
-        'binary'
-      )
+      const fileBody = Buffer.alloc(
+        MAX_FILE_SIZE_BYTES + 1,
+        FILLER_BYTE
+      ).toString('binary')
       const body = buildMultipartBody(boundary, DEFAULT_MULTIPART_FIELDS, {
         fileBody,
         filename: 'just-over.pdf'
@@ -853,7 +857,7 @@ describe('#accompanyingDocumentsController', () => {
       const boundary = '----TestBoundaryOversize'
       const oversizePadding = Buffer.alloc(
         MAX_PAYLOAD_BYTES + 1024,
-        0x41
+        FILLER_BYTE
       ).toString('binary')
       const body = buildMultipartBody(boundary, [['documentType', 'ITAHC']], {
         fileBody: oversizePadding,
