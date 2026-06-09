@@ -28,6 +28,10 @@ const handleOversizePayload = async (request, h) => {
     getTraceId() ?? '',
     request.logger
   )
+  request.logger.warn(
+    { contentLength: request.headers['content-length'] },
+    'Oversize multipart upload rejected by route maxBytes'
+  )
   return oversizeFileView(h, documentsWithStatus)
 }
 
