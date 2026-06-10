@@ -1,3 +1,5 @@
+import { ErrorSummary } from 'govuk-frontend'
+
 const MAX_ATTEMPTS = 10
 const POLL_INTERVAL = 3000
 const SCAN_STATUS_PENDING = 'PENDING'
@@ -185,6 +187,21 @@ const buildErrorSummary = (message, targetId) => {
   return summary
 }
 
+// createAll(ErrorSummary) in application.js ran at page load, so a summary
+// inserted after that is never initialised. Instantiate it directly so the
+// summary link focuses the file input and scrolls its label into view.
+// Auto-focus stays disabled — the title focus in onUploadSubmit handles the
+// announcement for both the inserted and appended-to paths.
+const initialiseErrorSummary = (summary) => {
+  try {
+    return new ErrorSummary(summary, { disableAutoFocus: true })
+  } catch {
+    // Unsupported browser (no `govuk-frontend-supported` class on <body>):
+    // the summary link falls back to default fragment navigation.
+    return null
+  }
+}
+
 const renderFieldError = (input, message) => {
   const group = input.closest('.govuk-form-group')
   if (!group) {
@@ -239,6 +256,7 @@ const onUploadSubmit = (form, maxFileSize, oversizeMessage) => (event) => {
   ) {
     summary = buildErrorSummary(oversizeMessage, fileInput.id)
     form.parentNode.insertBefore(summary, form)
+    initialiseErrorSummary(summary)
   }
   renderFieldError(fileInput, oversizeMessage)
   const title = summary.querySelector('.govuk-error-summary__title')
