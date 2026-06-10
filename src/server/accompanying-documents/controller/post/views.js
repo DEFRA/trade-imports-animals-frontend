@@ -67,11 +67,12 @@ export const validationErrorView = (
     .code(statusCodes.badRequest)
 }
 
-export const oversizeFileView = (h, documentsWithStatus) =>
+export const oversizeFileView = (h, documentsWithStatus, crumb) =>
   h
     .view(
       VIEW_PATH,
       buildPageModel(documentsWithStatus, 0, {
+        crumb,
         errorList: [{ href: '#file', text: OVERSIZE_FILE_MESSAGE }],
         fieldErrors: { file: { text: OVERSIZE_FILE_MESSAGE } }
       })

@@ -32,7 +32,7 @@ const handleOversizePayload = async (request, h) => {
     { contentLength: request.headers['content-length'] },
     'Oversize multipart upload rejected by route maxBytes'
   )
-  return oversizeFileView(h, documentsWithStatus)
+  return oversizeFileView(h, documentsWithStatus, request.state.crumb)
 }
 
 /**
