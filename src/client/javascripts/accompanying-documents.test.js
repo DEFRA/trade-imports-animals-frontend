@@ -300,6 +300,15 @@ describe('#accompanyingDocuments', () => {
       expect(inlineError.textContent).toContain(
         'The selected file must be smaller than 10 MB'
       )
+
+      // Accessibility wiring: focus moves to the summary title and the
+      // input is described by the inline error message
+      const summaryTitle = summary.querySelector('.govuk-error-summary__title')
+      expect(document.activeElement).toBe(summaryTitle)
+      const input = document.getElementById(FILE_INPUT_ID)
+      expect(input.getAttribute('aria-describedby')).toContain(
+        `${FILE_INPUT_ID}-error`
+      )
     })
 
     test('Should not duplicate errors when an oversize submit is attempted twice', async () => {
@@ -319,6 +328,11 @@ describe('#accompanyingDocuments', () => {
       expect(
         document.querySelectorAll('[data-client-error="file-size-message"]')
       ).toHaveLength(1)
+      // aria-describedby must not accumulate duplicate error-id tokens
+      // across repeated submits
+      expect(
+        document.getElementById(FILE_INPUT_ID).getAttribute('aria-describedby')
+      ).toBe(`${FILE_INPUT_ID}-error`)
     })
 
     test('Should append to an existing server-rendered error summary rather than insert a second one', async () => {
