@@ -15,8 +15,9 @@ import { saveNotification } from '../common/helpers/notification-helpers.js'
 const logger = createLogger()
 
 async function buildCountryItems(traceId) {
-  const classifiers = ['EU', 'EEA']
-  const countries = await countriesClient.getCountries(traceId, classifiers)
+  const countries = await countriesClient.getCountries(traceId, [
+    'GBNAG_SPS_EX'
+  ])
   return [
     { value: '', text: 'Select a country' },
     { text: '──────────', disabled: true },

@@ -10,14 +10,14 @@ const logger = createLogger()
 export const countriesClient = {
   /**
    * Retrieves a list of countries from the reference data API,
-   * optionally filtered by one or more classifiers
+   * optionally filtered by one or more blocks
    */
-  async getCountries(traceId, classifiers) {
+  async getCountries(traceId, blocks) {
     const url = new URL(`${tradeImportsReferenceDataUrl}/countries`)
 
-    if (classifiers?.length) {
-      for (const classifier of classifiers) {
-        url.searchParams.append('classifier', classifier)
+    if (blocks?.length) {
+      for (const block of blocks) {
+        url.searchParams.append('blocks', block)
       }
     }
 
