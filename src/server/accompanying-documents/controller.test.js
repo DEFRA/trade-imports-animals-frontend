@@ -844,6 +844,9 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(
         expect.stringContaining('The selected file must be smaller than 10 MB')
       )
+      // Only validationErrorView replays submitted fields — the onPreResponse
+      // 413 fallback does not, so this pins the validateFile window path.
+      expect(result).toEqual(expect.stringContaining('REF001'))
     })
 
     test('Should re-render upload page with 400 and inline file-size error when payload exceeds MAX_PAYLOAD_BYTES', async () => {
