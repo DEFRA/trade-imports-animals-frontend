@@ -43,7 +43,7 @@ describe('#countriesClient', () => {
   })
 
   describe('getCountries', () => {
-    describe('When called without classifiers', () => {
+    describe('When called without blocks', () => {
       test('Should send GET request to /countries with no query params', async () => {
         const responseBody = [{ code: 'GB', name: 'United Kingdom' }]
 
@@ -70,8 +70,8 @@ describe('#countriesClient', () => {
       })
     })
 
-    describe('When called with classifiers', () => {
-      test('Should append each classifier as a query param', async () => {
+    describe('When called with blocks', () => {
+      test('Should append each block as a query param', async () => {
         const responseBody = [{ code: 'FR', name: 'France' }]
 
         fetch.mockResolvedValueOnce({
@@ -80,13 +80,13 @@ describe('#countriesClient', () => {
         })
 
         const result = await countriesClient.getCountries(traceId, [
-          'origin',
-          'destination'
+          'GBNAG_SPS_EX',
+          'OTHER'
         ])
 
         expect(fetch).toHaveBeenCalledTimes(1)
         expect(fetch).toHaveBeenCalledWith(
-          'http://mock-reference-data/countries?classifier=origin&classifier=destination',
+          'http://mock-reference-data/countries?blocks=GBNAG_SPS_EX&blocks=OTHER',
           {
             method: 'GET',
             headers: {
@@ -99,21 +99,21 @@ describe('#countriesClient', () => {
         expect(result).toEqual(responseBody)
       })
 
-      test('Should handle a single classifier', async () => {
+      test('Should handle a single block', async () => {
         fetch.mockResolvedValueOnce({
           ok: true,
           json: vi.fn().mockResolvedValue([])
         })
 
-        await countriesClient.getCountries(traceId, ['origin'])
+        await countriesClient.getCountries(traceId, ['GBNAG_SPS_EX'])
 
         expect(fetch).toHaveBeenCalledWith(
-          'http://mock-reference-data/countries?classifier=origin',
+          'http://mock-reference-data/countries?blocks=GBNAG_SPS_EX',
           expect.any(Object)
         )
       })
 
-      test('Should not append query params for an empty classifiers array', async () => {
+      test('Should not append query params for an empty blocks array', async () => {
         fetch.mockResolvedValueOnce({
           ok: true,
           json: vi.fn().mockResolvedValue([])

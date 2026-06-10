@@ -5,9 +5,11 @@ on:
     types: [closed]
   schedule:
     - cron: '0 3 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   cleanup:
