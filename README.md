@@ -6,6 +6,8 @@
 
 Core delivery platform Node.js Frontend Template.
 
+<!-- EUDPA-199 verification: this PR is intentionally trivial. It exists to verify the prune-and-truncate cleanup workflow drops the e2e/<tag>/ subdir and orphan-resets gh-pages on close. -->
+
 - [Requirements](#requirements)
   - [Node.js](#nodejs)
 - [Server-side Caching](#server-side-caching)
