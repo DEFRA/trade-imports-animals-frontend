@@ -806,6 +806,7 @@ describe('#accompanyingDocumentsController', () => {
       // Error-summary item + field-error message = 2. Three would mean the
       // duplicate Joi error has regressed (Bug 3).
       expect(occurrences).toBe(2)
+      expect(documentClient.initiate).not.toHaveBeenCalled()
     })
 
     test('Should re-render upload page with 400 and inline file-size error when file exceeds MAX_FILE_SIZE_BYTES but fits under the Hapi route cap', async () => {
