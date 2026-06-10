@@ -32,7 +32,12 @@ const handleOversizePayload = async (request, h) => {
     { contentLength: request.headers['content-length'] },
     'Oversize multipart upload rejected by route maxBytes'
   )
-  return oversizeFileView(h, documentsWithStatus, request.state.crumb)
+  // The 413 is thrown during payload parsing, before crumb's onPostAuth
+  // runs, so a client without a crumb cookie has no token yet — mint one so
+  // the re-rendered form's hidden crumb field passes validation on re-submit.
+  const crumb =
+    request.state.crumb ?? request.server.plugins.crumb.generate(request, h)
+  return oversizeFileView(h, documentsWithStatus, crumb)
 }
 
 /**

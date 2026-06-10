@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import { documentClient } from '../common/clients/document-client.js'
+import { config } from '../../config/config.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { sessionKeys } from '../common/constants/session-keys.js'
@@ -889,6 +890,123 @@ describe('#accompanyingDocumentsController', () => {
       // Existing documents must still be listed — the user has not lost state.
       expect(result).toEqual(expect.stringContaining('cert.pdf'))
       expect(result).toEqual(expect.stringContaining('REF-001'))
+    })
+
+    test('Should keep the CSRF crumb on the oversize re-render so a corrected re-submit passes validation when csrf is enabled', async () => {
+      config.set('csrf.enabled', true)
+      try {
+        getSessionValue.mockImplementation((request, key) => {
+          if (key === sessionKeys.documents) return []
+          if (key === sessionKeys.referenceNumber) return 'REF-CSRF'
+          return null
+        })
+
+        const crumbToken = 'csrf-test-crumb-token'
+        const boundary = '----TestBoundaryOversizeCrumb'
+        const oversizePadding = Buffer.alloc(
+          MAX_PAYLOAD_BYTES + 1024,
+          FILLER_BYTE
+        ).toString('binary')
+        const oversizeBody = buildMultipartBody(
+          boundary,
+          [['documentType', 'ITAHC']],
+          { fileBody: oversizePadding, filename: 'huge.pdf' }
+        )
+
+        const oversizeResponse = await server.inject({
+          method: 'POST',
+          url: '/accompanying-documents',
+          auth: {
+            strategy: 'session',
+            credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+          },
+          headers: {
+            'content-type': `multipart/form-data; boundary=${boundary}`,
+            cookie: `crumb=${crumbToken}`
+          },
+          payload: Buffer.from(oversizeBody, 'binary')
+        })
+
+        expect(oversizeResponse.statusCode).toBe(statusCodes.badRequest)
+        // The re-rendered form must replay the crumb — an empty hidden crumb
+        // input would 403 the no-JS user's corrected re-submit.
+        expect(oversizeResponse.result).toEqual(
+          expect.stringContaining(`name="crumb" value="${crumbToken}"`)
+        )
+
+        const retryBoundary = '----TestBoundaryCrumbRetry'
+        const retryBody = buildMultipartBody(retryBoundary, [
+          ...DEFAULT_MULTIPART_FIELDS,
+          ['crumb', crumbToken]
+        ])
+
+        const retryResponse = await server.inject({
+          method: 'POST',
+          url: '/accompanying-documents',
+          auth: {
+            strategy: 'session',
+            credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+          },
+          headers: {
+            'content-type': `multipart/form-data; boundary=${retryBoundary}`,
+            cookie: `crumb=${crumbToken}`
+          },
+          payload: Buffer.from(retryBody, 'binary')
+        })
+
+        expect(retryResponse.statusCode).toBe(statusCodes.redirectFound)
+        expect(retryResponse.headers.location).toBe('/accompanying-documents')
+      } finally {
+        config.set('csrf.enabled', false)
+      }
+    })
+
+    test('Should mint a CSRF crumb on the oversize re-render when the request has no crumb cookie and csrf is enabled', async () => {
+      config.set('csrf.enabled', true)
+      try {
+        getSessionValue.mockImplementation((request, key) => {
+          if (key === sessionKeys.documents) return []
+          return null
+        })
+
+        const boundary = '----TestBoundaryOversizeNoCrumb'
+        const oversizePadding = Buffer.alloc(
+          MAX_PAYLOAD_BYTES + 1024,
+          FILLER_BYTE
+        ).toString('binary')
+        const body = buildMultipartBody(boundary, [['documentType', 'ITAHC']], {
+          fileBody: oversizePadding,
+          filename: 'huge.pdf'
+        })
+
+        const { statusCode, result, headers } = await server.inject({
+          method: 'POST',
+          url: '/accompanying-documents',
+          auth: {
+            strategy: 'session',
+            credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+          },
+          headers: {
+            'content-type': `multipart/form-data; boundary=${boundary}`
+          },
+          payload: Buffer.from(body, 'binary')
+        })
+
+        expect(statusCode).toBe(statusCodes.badRequest)
+        expect(result).not.toEqual(
+          expect.stringContaining('name="crumb" value=""')
+        )
+        // The minted crumb must be set as a cookie AND replayed in the form,
+        // so the corrected re-submit's payload matches the cookie.
+        const setCookie = [headers['set-cookie']].flat().join(';')
+        const mintedCrumb = setCookie.match(/crumb=([^;]+)/)?.[1]
+        expect(mintedCrumb).toBeTruthy()
+        expect(result).toEqual(
+          expect.stringContaining(`name="crumb" value="${mintedCrumb}"`)
+        )
+      } finally {
+        config.set('csrf.enabled', false)
+      }
     })
 
     test('Should accept a file of exactly MAX_FILE_SIZE_BYTES and redirect', async () => {
