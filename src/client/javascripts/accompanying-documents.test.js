@@ -321,6 +321,42 @@ describe('#accompanyingDocuments', () => {
       ).toHaveLength(1)
     })
 
+    test('Should append to an existing server-rendered error summary rather than insert a second one', async () => {
+      const serverSummary = `
+        <div class="govuk-error-summary" data-module="govuk-error-summary">
+          <div role="alert">
+            <h2 class="govuk-error-summary__title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+              <ul class="govuk-list govuk-error-summary__list">
+                <li><a href="#documents">The selected file contains a virus</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      `
+      document.body.innerHTML = serverSummary + buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      submitForm(form)
+      // Submit twice — the client item must not duplicate in the shared list
+      submitForm(form)
+
+      expect(document.querySelectorAll('.govuk-error-summary')).toHaveLength(1)
+      const items = document.querySelectorAll('.govuk-error-summary__list li')
+      expect(items).toHaveLength(2)
+      expect(items[0].textContent).toBe('The selected file contains a virus')
+      const clientItem = document.querySelector(
+        '[data-client-error="file-size-summary"]'
+      )
+      expect(clientItem.querySelector('a').getAttribute('href')).toBe(
+        `#${FILE_INPUT_ID}`
+      )
+      expect(clientItem.querySelector('a').textContent).toBe(OVERSIZE_MESSAGE)
+    })
+
     test('Should remain inert when no form with data-max-file-size is present', async () => {
       document.body.innerHTML = '<div>No upload form here</div>'
 

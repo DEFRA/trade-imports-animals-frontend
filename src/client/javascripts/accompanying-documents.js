@@ -133,6 +133,30 @@ const clearPreviousClientErrors = (form) => {
   })
 }
 
+const buildErrorSummaryItem = (message, targetId) => {
+  const item = document.createElement('li')
+  const link = document.createElement('a')
+  link.href = `#${targetId}`
+  link.textContent = message
+  item.appendChild(link)
+  return item
+}
+
+// GDS requires a single error summary at the top of the page — a
+// server-rendered one (for example virus-rejected documents) may already
+// be present, so append the client item to its list instead of
+// inserting a second summary.
+const appendToExistingSummary = (summary, message, targetId) => {
+  const list = summary.querySelector('.govuk-error-summary__list')
+  if (!list) {
+    return false
+  }
+  const item = buildErrorSummaryItem(message, targetId)
+  item.dataset.clientError = `${CLIENT_ERROR_MARKER}-summary`
+  list.appendChild(item)
+  return true
+}
+
 const buildErrorSummary = (message, targetId) => {
   const summary = document.createElement('div')
   summary.className = 'govuk-error-summary'
@@ -152,13 +176,7 @@ const buildErrorSummary = (message, targetId) => {
 
   const list = document.createElement('ul')
   list.className = 'govuk-list govuk-error-summary__list'
-
-  const item = document.createElement('li')
-  const link = document.createElement('a')
-  link.href = `#${targetId}`
-  link.textContent = message
-  item.appendChild(link)
-  list.appendChild(item)
+  list.appendChild(buildErrorSummaryItem(message, targetId))
 
   body.appendChild(list)
   alert.appendChild(title)
@@ -214,10 +232,21 @@ const onUploadSubmit = (form, maxFileSize, oversizeMessage) => (event) => {
     return
   }
   event.preventDefault()
-  const summary = buildErrorSummary(oversizeMessage, fileInput.id)
-  form.parentNode.insertBefore(summary, form)
+  let summary = document.querySelector('.govuk-error-summary')
+  if (
+    !summary ||
+    !appendToExistingSummary(summary, oversizeMessage, fileInput.id)
+  ) {
+    summary = buildErrorSummary(oversizeMessage, fileInput.id)
+    form.parentNode.insertBefore(summary, form)
+  }
   renderFieldError(fileInput, oversizeMessage)
-  summary.querySelector('.govuk-error-summary__title')?.focus()
+  const title = summary.querySelector('.govuk-error-summary__title')
+  if (title) {
+    // Server-rendered titles are not focusable by default
+    title.tabIndex = -1
+    title.focus()
+  }
 }
 
 const initUploadForm = () => {
