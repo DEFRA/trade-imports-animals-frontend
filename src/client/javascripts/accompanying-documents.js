@@ -190,7 +190,13 @@ const renderFieldError = (input, message) => {
   errorMessage.appendChild(visuallyHidden)
   errorMessage.appendChild(document.createTextNode(` ${message}`))
   input.parentNode.insertBefore(errorMessage, input)
-  const previousDescribedby = input.getAttribute('aria-describedby') ?? ''
+  // Strip the error id token: any server-rendered error element with the
+  // same id was removed above, so keeping its token would duplicate the
+  // join below and leave a dangling idref after the client error clears.
+  const previousDescribedby = (input.getAttribute('aria-describedby') ?? '')
+    .split(/\s+/)
+    .filter((token) => token && token !== errorMessage.id)
+    .join(' ')
   input.dataset.clientErrorPrevDescribedby = previousDescribedby
   input.dataset.clientError = `${CLIENT_ERROR_MARKER}-input`
   input.setAttribute(
