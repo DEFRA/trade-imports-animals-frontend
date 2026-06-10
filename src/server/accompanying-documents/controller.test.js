@@ -891,6 +891,43 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('REF-001'))
     })
 
+    test('Should accept a file of exactly MAX_FILE_SIZE_BYTES and redirect', async () => {
+      getSessionValue.mockImplementation((request, key) => {
+        if (key === sessionKeys.documents) return []
+        if (key === sessionKeys.referenceNumber) return 'REF-EXACT'
+        return null
+      })
+
+      const boundary = '----TestBoundaryExactMax'
+      const fileBody = Buffer.alloc(MAX_FILE_SIZE_BYTES, FILLER_BYTE).toString(
+        'binary'
+      )
+      const body = buildMultipartBody(boundary, DEFAULT_MULTIPART_FIELDS, {
+        fileBody,
+        filename: 'exactly-max.pdf'
+      })
+
+      const { statusCode, headers } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`
+        },
+        payload: Buffer.from(body, 'binary')
+      })
+
+      // Proves the multipart-envelope headroom (MAX_PAYLOAD_BYTES) admits an
+      // exactly-max file and validateFile's strict > comparison accepts it —
+      // a > to >= regression would 400 here instead of redirecting.
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+      expect(documentClient.uploadFile).toHaveBeenCalled()
+    })
+
     test('Should upload file, update session, and redirect on successful POST', async () => {
       getSessionValue.mockImplementation((request, key) => {
         if (key === sessionKeys.documents) return []
