@@ -32,20 +32,15 @@ jobs:
         with:
           lighthouse-result: pending
 
-  lighthouse:
+  lighthouse-test:
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'pull_request')
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: write
-    concurrency:
-      group: pages-${{ github.repository }}
-      cancel-in-progress: false
     outputs:
-      report-url: ${{ steps.report-url.outputs.url }}
+      tag: ${{ steps.branch-tag.outputs.sanitised }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v4
@@ -120,31 +115,50 @@ jobs:
           path: frontend/lighthouse-report/
           retention-days: 14
 
+      - name: Tear down stack
+        if: always()
+        run: docker compose -p trade-imports-animals down
+
+  lighthouse-publish:
+    needs: lighthouse-test
+    if: >
+      always() &&
+      needs.lighthouse-test.result != 'skipped' &&
+      needs.lighthouse-test.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: pages-${{ github.repository }}
+      cancel-in-progress: false
+    outputs:
+      report-url: ${{ steps.report-url.outputs.url }}
+    steps:
+      - name: Download Lighthouse report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report/
+
       - name: Deploy Lighthouse report to GitHub Pages
-        if: always() && steps.lhci.outcome != 'skipped'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/lighthouse-report
-          destination_dir: lighthouse/${{ steps.branch-tag.outputs.sanitised }}
+          publish_dir: ./lighthouse-report
+          destination_dir: lighthouse/${{ needs.lighthouse-test.outputs.tag }}
           keep_files: true
 
       - name: Output report URL
         id: report-url
-        if: always()
         run: |
           repo="${{ github.repository }}"
           owner="${repo%%/*}"
           name="${repo##*/}"
           owner_lc="$(echo "$owner" | tr '[:upper:]' '[:lower:]')"
-          echo "url=https://${owner_lc}.github.io/${name}/lighthouse/${{ steps.branch-tag.outputs.sanitised }}/" >> "$GITHUB_OUTPUT"
-
-      - name: Tear down stack
-        if: always()
-        run: docker compose -p trade-imports-animals down
+          echo "url=https://${owner_lc}.github.io/${name}/lighthouse/${{ needs.lighthouse-test.outputs.tag }}/" >> "$GITHUB_OUTPUT"
 
   report-status:
-    needs: lighthouse
+    needs: [lighthouse-test, lighthouse-publish]
     if: >
       always() &&
       github.event_name == 'workflow_run' &&
@@ -154,5 +168,5 @@ jobs:
       - name: Report Lighthouse check run on PR
         uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
         with:
-          lighthouse-result: ${{ needs.lighthouse.result }}
-          report-url: ${{ needs.lighthouse.outputs.report-url }}
+          lighthouse-result: ${{ needs.lighthouse-test.result }}
+          report-url: ${{ needs.lighthouse-publish.outputs.report-url }}
