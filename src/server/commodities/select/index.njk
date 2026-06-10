@@ -12,73 +12,73 @@
   }) }}
 
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
-  {{ appHeading({ heading: "Commodity" }) }}
+  {{ appHeading({ pageTitle: "Description of the goods", heading: 'Commodity' }) }}
 
-    <div class="govuk-body" data-testid="app-page-body">
+  <div class="govuk-body" data-testid="app-page-body">
 
-      {% if errorList %}
-        {{ govukErrorSummary({
-          titleText: "There is a problem",
-          errorList: errorList
-        }) }}
-      {% endif %}
+    {% if errorList %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: errorList
+      }) }}
+    {% endif %}
 
-      <form method="post" novalidate>
-        <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-        <table class="govuk-table" id="commodityDetails">
-          <caption class="govuk-table__caption govuk-table__caption--m">Commodities</caption>
-          <thead class="govuk-table__head">
+      <table class="govuk-table" id="commodityDetails">
+        <caption class="govuk-table__caption govuk-table__caption--m">Commodities</caption>
+        <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Commodity code</th>
+          <th scope="col" class="govuk-table__header">Common name</th>
+          <th scope="col" class="govuk-table__header">Description</th>
+        </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+        {% if commodityDetails %}
           <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">Commodity code</th>
-            <th scope="col" class="govuk-table__header">Common name</th>
-            <th scope="col" class="govuk-table__header">Description</th>
+            <td class="govuk-table__cell">{{ commodityDetails.code }}</td>
+            <td class="govuk-table__cell">Cow</td>
+            <td class="govuk-table__cell">{{ commodityDetails.description }}</td>
           </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          {% if commodityDetails %}
-            <tr class="govuk-table__row">
-              <td class="govuk-table__cell">{{ commodityDetails.code }}</td>
-              <td class="govuk-table__cell">Cow</td>
-              <td class="govuk-table__cell">{{ commodityDetails.description }}</td>
-            </tr>
-          {% endif %}
-          </tbody>
-        </table>
+        {% endif %}
+        </tbody>
+      </table>
 
-        {{ govukSelect({
-          id: "typeOfCommodity",
-          name: "typeOfCommodity",
-          label: {
-            text: "Type of commodity",
-            classes: "govuk-label--m"
-          },
-          value: typeOfCommodity,
-          items: typeItems
+      {{ govukSelect({
+        id: "typeOfCommodity",
+        name: "typeOfCommodity",
+        label: {
+          text: "Type of commodity",
+          classes: "govuk-label--m"
+        },
+        value: typeOfCommodity,
+        items: typeItems
+      }) }}
+
+      {{ govukCheckboxes({
+        name: "species",
+        idPrefix: "species",
+        fieldset: {
+          legend: {
+            text: "Select species of commodity",
+            classes: "govuk-fieldset__legend--m"
+          }
+        },
+        hint: {
+          text: "Select all that apply."
+        },
+        items: speciesItems
+      }) }}
+
+      <div class="govuk-button-group">
+        {{ govukButton({
+          text: "Save and continue"
         }) }}
+      </div>
 
-        {{ govukCheckboxes({
-          name: "species",
-          idPrefix: "species",
-          fieldset: {
-            legend: {
-              text: "Select species of commodity",
-              classes: "govuk-fieldset__legend--m"
-            }
-          },
-          hint: {
-            text: "Select all that apply."
-          },
-          items: speciesItems
-        }) }}
-
-        <div class="govuk-button-group">
-          {{ govukButton({
-            text: "Save and continue"
-          }) }}
-        </div>
-
-      </form>
-    </div>
+    </form>
+  </div>
 
 {% endblock %}
