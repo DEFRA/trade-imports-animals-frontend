@@ -2,11 +2,9 @@
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
-{% block content %}
+{% block pageContent %}
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
 
         {% if errorList %}
@@ -47,7 +45,5 @@
           </div>
         </form>
       </div>
-    </div>
-  </div>
 
 {% endblock %}

@@ -3,16 +3,16 @@
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/commodities/details"
   }) }}
 
-<div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ pageTitle: "Description of the goods", heading: "Enter animal identification details" }) }}
+
     <div class="govuk-body" data-testid="app-page-body">
 
       {% if errorList %}
@@ -26,8 +26,6 @@
         <input type="hidden" name="crumb" value="{{ crumb }}" />
         <input type="hidden" id="totalNoOfAnimals" name="totalNoOfAnimals" value="{{ totalNoOfAnimals }}" />
         <input type="hidden" id="totalNoOfPackages" name="totalNoOfPackages" value="{{ totalNoOfPackages }}" />
-
-        {{ appHeading({ caption: "Description of the goods", text: "Enter animal identification details" }) }}
 
         <div class="govuk-hint">You must enter all animal identification details into the notification before arrival at the port of entry</div>
         <table class="govuk-table">
@@ -98,7 +96,5 @@
         </div>
       </form>
     </div>
-  </div>
-</div>
 
 {% endblock %}

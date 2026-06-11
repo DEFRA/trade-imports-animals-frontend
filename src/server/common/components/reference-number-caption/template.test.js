@@ -24,6 +24,15 @@ describe('Reference Number Caption Component', () => {
         $component('[data-testid="app-reference-number-caption"]').text().trim()
       ).toBe(REFERENCE_NUMBER)
     })
+
+    test('Should wrap the caption in a styled paragraph', () => {
+      const $wrapper = $component('p.govuk-body')
+      expect($wrapper).toHaveLength(1)
+      expect($wrapper.attr('class')).toContain('govuk-!-margin-bottom-6')
+      expect(
+        $wrapper.find('[data-testid="app-reference-number-caption"]')
+      ).toHaveLength(1)
+    })
   })
 
   describe('Without a reference number', () => {
@@ -37,6 +46,10 @@ describe('Reference Number Caption Component', () => {
       expect(
         $component('[data-testid="app-reference-number-caption"]')
       ).toHaveLength(0)
+    })
+
+    test('Should not render a paragraph wrapper', () => {
+      expect($component('p')).toHaveLength(0)
     })
   })
 })

@@ -2,16 +2,16 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/addresses"
   }) }}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ heading: "Add the County Parish Holding number (CPH)" }) }}
+
       <div class="govuk-body" data-testid="app-page-body">
 
         {% if errorList %}
@@ -20,8 +20,6 @@
             errorList: errorList
           }) }}
         {% endif %}
-
-        {{ appHeading({ text: "Add the County Parish Holding number (CPH)" }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -32,6 +30,7 @@
             },
             id: "cphNumber",
             name: "cphNumber",
+            classes: "govuk-!-width-two-thirds",
             value: cphNumber if cphNumber,
             inputmode: "numeric",
             spellcheck: false,
@@ -49,6 +48,4 @@
         </form>
 
       </div>
-    </div>
-  </div>
 {% endblock %}

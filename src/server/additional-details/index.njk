@@ -2,16 +2,16 @@
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/commodities/identification"
   }) }}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ pageTitle: "Description of the goods", heading: "Additional animal details" }) }}
+
       <div class="govuk-body" data-testid="app-page-body">
 
         {% if errorList %}
@@ -20,8 +20,6 @@
             errorList: errorList
           }) }}
         {% endif %}
-
-        {{ appHeading({ caption: "Description of the goods", text: "Additional animal details" }) }}
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -86,6 +84,4 @@
 
         </form>
       </div>
-    </div>
-  </div>
 {% endblock %}
