@@ -4,20 +4,16 @@
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/notification-view/" + referenceNumber
   }) }}
 
-  {{ appHeading({
-    text: pageTitle
-  }) }}
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ heading: pageTitle }) }}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
 
         {% if errorList %}
@@ -59,7 +55,5 @@
         </form>
 
       </div>
-    </div>
-  </div>
 
 {% endblock %}

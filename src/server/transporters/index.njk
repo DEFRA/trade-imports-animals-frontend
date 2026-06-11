@@ -1,16 +1,16 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/port-of-entry"
   }) }}
 
-<div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ pageTitle: "Transport", heading: pageTitle }) }}
+
     <div class="govuk-body" data-testid="app-page-body">
 
       {% if errorList %}
@@ -19,8 +19,6 @@
           errorList: errorList
         }) }}
       {% endif %}
-
-      {{ appHeading({ caption: "Transport", text: pageTitle }) }}
 
       <form method="post" novalidate>
         <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -82,7 +80,5 @@
         </div>
       </form>
     </div>
-  </div>
-</div>
 
 {% endblock %}

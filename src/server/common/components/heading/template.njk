@@ -1,11 +1,13 @@
-<div class="govuk-grid-row app-heading" data-testid="app-heading">
-  <div class="govuk-grid-column-two-thirds">
-    <h1 class="govuk-heading-xl govuk-!-margin-bottom-2"
-        data-testid="app-heading-title">{{ params.text }}</h1>
+<div class="app-heading govuk-!-margin-bottom-6" data-testid="app-heading">
+  <h1 class="govuk-heading-xl govuk-!-margin-bottom-2" data-testid="app-heading-title">
+    {% if params.pageTitle %}
+      <span class="govuk-caption-l">{{ params.pageTitle }}</span>
+    {% endif %}
+    {{ params.heading }}
 
     {% if params.caption %}
-      <span class="govuk-caption-m"
+      <span class="govuk-caption-m govuk-!-margin-bottom-4"
             data-testid="app-heading-caption">{{ params.caption }}</span>
     {% endif %}
-  </div>
+  </h1>
 </div>

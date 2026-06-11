@@ -1,18 +1,16 @@
 {% extends 'layouts/page.njk' %}
 
-{% block content %}
-  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+{% block pageContent %}
 
   {{ govukBackLink({
     text: "Back",
     href: "/addresses"
   }) }}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-two-thirds">
-      <div class="govuk-body" data-testid="app-page-body">
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ pageTitle: "Address", heading: "Search for an existing consignor or exporter" }) }}
 
-        {{ appHeading({ caption: "Address", text: pageTitle }) }}
+      <div class="govuk-body" data-testid="app-page-body">
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -49,6 +47,4 @@
           </div>
         </form>
       </div>
-    </div>
-  </div>
 {% endblock %}

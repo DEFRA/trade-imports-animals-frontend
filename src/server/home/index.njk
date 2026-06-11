@@ -3,13 +3,10 @@
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
-{% block content %}
-  {{ appHeading({
-    text: heading
-  }) }}
+{% block pageContent %}
 
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-full">
+  {{ appHeading({ heading: heading }) }}
+
       <div class="govuk-body" data-testid="app-page-body">
         {% if errorList %}
           {{ govukErrorSummary({
@@ -126,7 +123,5 @@
           {% include "home/_pagination.njk" %}
         {% endif %}
       </div>
-    </div>
-  </div>
 
 {% endblock %}
