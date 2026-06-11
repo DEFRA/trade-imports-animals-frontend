@@ -23,6 +23,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/sonar-analyze.sh",
+            "timeout": 120
+          }
+        ]
+      }
     ]
   }
 }
