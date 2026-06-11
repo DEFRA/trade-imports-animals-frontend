@@ -208,17 +208,29 @@ describe('#accompanyingDocuments', () => {
     const buildUploadForm = ({
       oversizeError = OVERSIZE_MESSAGE,
       omitOversizeError = false,
-      maxFileSize = MAX_FILE_SIZE
+      maxFileSize = MAX_FILE_SIZE,
+      withServerError = false
     } = {}) => {
       const oversizeAttr = omitOversizeError
         ? ''
         : ` data-oversize-error="${oversizeError}"`
+      const hint = withServerError
+        ? `<div id="${FILE_INPUT_ID}-hint" class="govuk-hint">PDF, PNG or JPG</div>`
+        : ''
+      const serverError = withServerError
+        ? `<p id="${FILE_INPUT_ID}-error" class="govuk-error-message">The selected file contains a virus</p>`
+        : ''
+      const describedbyAttr = withServerError
+        ? ` aria-describedby="${FILE_INPUT_ID}-hint ${FILE_INPUT_ID}-error"`
+        : ''
       return `
       <div>
         <form method="post" enctype="multipart/form-data" data-max-file-size="${maxFileSize}"${oversizeAttr}>
           <div class="govuk-form-group">
             <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
-            <input id="${FILE_INPUT_ID}" name="file" type="file"/>
+            ${hint}
+            ${serverError}
+            <input id="${FILE_INPUT_ID}" name="file" type="file"${describedbyAttr}/>
           </div>
           <button type="submit">Add attachment</button>
         </form>
@@ -377,6 +389,29 @@ describe('#accompanyingDocuments', () => {
       const title = document.querySelector('.govuk-error-summary__title')
       expect(title.tabIndex).toBe(-1)
       expect(document.activeElement).toBe(title)
+    })
+
+    test('Should replace a server-rendered error block without duplicating its aria-describedby token', async () => {
+      document.body.innerHTML = buildUploadForm({ withServerError: true })
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      submitForm(form)
+
+      // The server-rendered #file-error block is removed and the client
+      // message owns the id — exactly one error element remains
+      const errors = document.querySelectorAll(`#${FILE_INPUT_ID}-error`)
+      expect(errors).toHaveLength(1)
+      expect(errors[0].dataset.clientError).toBe('file-size-message')
+      expect(errors[0].textContent).toContain(OVERSIZE_MESSAGE)
+
+      // The pre-existing error-id token is stripped before the join, so
+      // aria-describedby keeps the hint and gains the error id exactly once
+      expect(
+        document.getElementById(FILE_INPUT_ID).getAttribute('aria-describedby')
+      ).toBe(`${FILE_INPUT_ID}-hint ${FILE_INPUT_ID}-error`)
     })
 
     test('Should remain inert when no form with data-max-file-size is present', async () => {
