@@ -370,6 +370,13 @@ describe('#accompanyingDocuments', () => {
         `#${FILE_INPUT_ID}`
       )
       expect(clientItem.querySelector('a').textContent).toBe(OVERSIZE_MESSAGE)
+
+      // Accessibility wiring on the appended path: the server-rendered
+      // title (no tabindex in the fixture) must be made focusable and
+      // focused so the error is announced
+      const title = document.querySelector('.govuk-error-summary__title')
+      expect(title.tabIndex).toBe(-1)
+      expect(document.activeElement).toBe(title)
     })
 
     test('Should remain inert when no form with data-max-file-size is present', async () => {
