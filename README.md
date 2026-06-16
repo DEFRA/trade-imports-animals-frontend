@@ -22,7 +22,7 @@ Core delivery platform Node.js Frontend Template.
 - [Docker](#docker)
   - [Development image](#development-image)
   - [Production image](#production-image)
-  - [Docker Compose](#docker-compose)
+  - [Local stack](#local-stack)
   - [Dependabot](#dependabot)
   - [SonarCloud](#sonarcloud)
 - [Lighthouse performance testing](#lighthouse)
@@ -192,18 +192,17 @@ Run:
 docker run -p 3000:3000 trade-imports-animals-frontend
 ```
 
-### Docker Compose
+### Local stack
 
-A local environment with:
-
-- Localstack for AWS services (S3, SQS)
-- Redis
-- MongoDB
-- This service.
-- A commented out backend example.
+The full local environment (MongoDB, Localstack, Redis, the stubs, and every
+trade-imports-animals service including this one) is the workspace stack in
+[DEFRA/trade-imports-animals-workspace](https://github.com/DEFRA/trade-imports-animals-workspace):
 
 ```bash
-docker compose up --build -d
+# from the workspace root
+./scripts/stack/run-stack.sh             # full stack from published images
+./scripts/stack/run-stack.sh -d          # built from local source under repos/
+./scripts/stack/run-stack.sh -e frontend # everything except this service (run it via npm run dev)
 ```
 
 ## Lighthouse
