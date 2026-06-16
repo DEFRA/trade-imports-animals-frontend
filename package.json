@@ -47,7 +47,7 @@
     "@hapi/cookie": "^12.0.1",
     "@hapi/crumb": "^9.0.1",
     "@hapi/hapi": "21.4.8",
-    "@hapi/inert": "7.1.0",
+    "@hapi/inert": "7.1.1",
     "@hapi/jwt": "^3.2.3",
     "@hapi/scooter": "^8.0.0",
     "@hapi/validate": "^2.0.1",
@@ -105,9 +105,17 @@
     "webpack-cli": "7.0.2"
   },
   "overrides": {
-    "tmp": "0.2.6",
+    "tmp": "0.2.7",
     "uuid": "11.1.1",
     "serialize-javascript": "7.0.5",
-    "flatted": "^3.4.0"
+    "flatted": "^3.4.0",
+    "vite": "6.4.3",
+    "esbuild": "0.28.1",
+    "lighthouse": {
+      "ws": "7.5.11"
+    },
+    "puppeteer-core": {
+      "ws": "8.21.0"
+    }
   }
 }
