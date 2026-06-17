@@ -8,6 +8,8 @@ const SCAN_STATUS_REJECTED = 'REJECTED'
 
 const CLIENT_ERROR_MARKER = 'file-size'
 
+const ARIA_DESCRIBEDBY = 'aria-describedby'
+
 const getPendingRows = () =>
   Array.from(
     document.querySelectorAll(
@@ -126,9 +128,9 @@ const clearPreviousClientErrors = (form) => {
     input.classList.remove('govuk-file-upload--error')
     const previous = input.dataset.clientErrorPrevDescribedby ?? ''
     if (previous) {
-      input.setAttribute('aria-describedby', previous)
+      input.setAttribute(ARIA_DESCRIBEDBY, previous)
     } else {
-      input.removeAttribute('aria-describedby')
+      input.removeAttribute(ARIA_DESCRIBEDBY)
     }
     delete input.dataset.clientError
     delete input.dataset.clientErrorPrevDescribedby
@@ -228,14 +230,14 @@ const renderFieldError = (input, message) => {
   // Strip the error id token: any server-rendered error element with the
   // same id was removed above, so keeping its token would duplicate the
   // join below and leave a dangling idref after the client error clears.
-  const previousDescribedby = (input.getAttribute('aria-describedby') ?? '')
+  const previousDescribedby = (input.getAttribute(ARIA_DESCRIBEDBY) ?? '')
     .split(/\s+/)
     .filter((token) => token && token !== errorMessage.id)
     .join(' ')
   input.dataset.clientErrorPrevDescribedby = previousDescribedby
   input.dataset.clientError = `${CLIENT_ERROR_MARKER}-input`
   input.setAttribute(
-    'aria-describedby',
+    ARIA_DESCRIBEDBY,
     [previousDescribedby, errorMessage.id].filter(Boolean).join(' ')
   )
   input.classList.add('govuk-file-upload--error')
