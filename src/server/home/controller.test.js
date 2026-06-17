@@ -235,6 +235,100 @@ describe('#homeController', () => {
       expect(result).not.toEqual(expect.stringContaining('Copy as new'))
     })
 
+    test('Should render Amend action for SUBMITTED notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'REF-AMD',
+            status: 'SUBMITTED'
+          }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-amend-submitted')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('action="/notification-amend/REF-AMD"')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('Amend<span class="govuk-visually-hidden">')
+      )
+    })
+
+    test('Should not render Amend action for DRAFT notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce(mockFindAllApiResponse)
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-no-amend-draft')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('action="/notification-amend/REF-123"')
+      )
+    })
+
+    test('Should not render Amend action for AMEND notifications', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'REF-AMENDED',
+            status: 'AMEND'
+          }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-no-amend-amend')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('action="/notification-amend/REF-AMENDED"')
+      )
+    })
+
+    test('Should render AMEND notifications with a yellow status tag', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'REF-AMENDED-TAG',
+            status: 'AMEND'
+          }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/',
+        auth: sessionAuth('home-get-amend-tag')
+      })
+
+      expect(result).toEqual(expect.stringContaining('govuk-tag--yellow'))
+      expect(result).toEqual(expect.stringContaining('Amend'))
+    })
+
     test('Should return 500 when findAll fails', async () => {
       notificationClient.findAll.mockRejectedValueOnce(
         new Error('Backend error')

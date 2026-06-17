@@ -44,3 +44,19 @@ export const submitNotification = async (request, logger, referenceNumber) => {
     throw err
   }
 }
+
+export const amendNotification = async (request, logger, referenceNumber) => {
+  const traceId = getTraceId() ?? ''
+  try {
+    const response = await notificationClient.amend(
+      request,
+      referenceNumber,
+      traceId
+    )
+    logger.info(`Notification moved to amend: ${referenceNumber}`)
+    return response
+  } catch (err) {
+    logger.error(`Failed to amend notification: ${err.message}`)
+    throw err
+  }
+}

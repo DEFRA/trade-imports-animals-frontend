@@ -418,5 +418,145 @@ describe('#notificationViewController', () => {
       expect(result).not.toEqual(expect.stringContaining('href="/origin"'))
       expect(result).not.toEqual(expect.stringContaining('Confirm and submit'))
     })
+
+    test('Should render Amend button when notification is SUBMITTED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-amend-btn-submitted')
+      })
+
+      expect(result).toEqual(expect.stringContaining('id="amend-btn"'))
+      expect(result).toEqual(
+        expect.stringContaining(
+          'action="/notification-amend/IMP.GB.2026.1001401"'
+        )
+      )
+    })
+
+    test('Should not render Amend button when notification is DRAFT', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-amend-btn-draft')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('id="amend-btn"'))
+    })
+
+    test('Should not render Amend button when notification is AMEND', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'AMEND'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-amend-btn-already-amend')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('id="amend-btn"'))
+    })
+
+    test('Should render Change links, Amend status pill and Save Amendments button when notification is AMEND', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'AMEND'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-amend-change-links')
+      })
+
+      expect(result).toEqual(expect.stringContaining('href="/origin"'))
+      expect(result).toEqual(expect.stringContaining('href="/commodities"'))
+      expect(result).toEqual(
+        expect.stringContaining('href="/additional-details"')
+      )
+      expect(result).toEqual(expect.stringContaining('href="/import-reason"'))
+      expect(result).toEqual(expect.stringContaining('href="/addresses"'))
+      expect(result).toEqual(expect.stringContaining('href="/cph-number"'))
+      expect(result).toEqual(expect.stringContaining('href="/transporters"'))
+      expect(result).toEqual(
+        expect.stringContaining('href="/accompanying-documents"')
+      )
+      expect(result).toEqual(expect.stringContaining('govuk-tag--yellow'))
+      expect(result).toEqual(expect.stringContaining('Amend'))
+      expect(result).toEqual(
+        expect.stringContaining('id="save-amendments-btn"')
+      )
+      expect(result).toEqual(expect.stringContaining('Confirm and submit'))
+    })
+
+    test('Should not render Save Amendments button when notification is DRAFT', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-save-amendments-draft')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('id="save-amendments-btn"')
+      )
+    })
+
+    test('Should not render Save Amendments button when notification is SUBMITTED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-save-amendments-submitted')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('id="save-amendments-btn"')
+      )
+    })
+
+    test('Should render Copy as new and Delete buttons when notification is AMEND', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'AMEND'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-amend-buttons')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('data-copy-ref="IMP.GB.2026.1001401"')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('data-reference-number="IMP.GB.2026.1001401"')
+      )
+      expect(result).toEqual(expect.stringContaining('Copy as new'))
+      expect(result).toEqual(
+        expect.stringContaining('Delete this notification?')
+      )
+    })
   })
 })

@@ -297,6 +297,32 @@ export const notificationClient = {
   },
 
   /**
+   * Moves a SUBMITTED notification into AMEND so the trader can edit it.
+   */
+  async amend(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/amend`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to amend notification')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to amend notification: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
    * Retrieves a notification from the backend and stores all values
    * in individual session keys
    */

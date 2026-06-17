@@ -3,19 +3,22 @@ import { vi } from 'vitest'
 import {
   saveNotification,
   submitNotification,
-  deleteNotification
+  deleteNotification,
+  amendNotification
 } from './notification-helpers.js'
 
 const mockSave = vi.hoisted(() => vi.fn())
 const mockSubmitNotification = vi.hoisted(() => vi.fn())
 const mockSoftDelete = vi.hoisted(() => vi.fn())
+const mockAmend = vi.hoisted(() => vi.fn())
 const mockGetTraceId = vi.hoisted(() => vi.fn())
 
 vi.mock('../clients/notification-client.js', () => ({
   notificationClient: {
     save: mockSave,
     submitNotification: mockSubmitNotification,
-    softDelete: mockSoftDelete
+    softDelete: mockSoftDelete,
+    amend: mockAmend
   }
 }))
 
@@ -227,6 +230,79 @@ describe('#deleteNotification', () => {
       await expect(
         deleteNotification(mockRequest, mockLogger, referenceNumber)
       ).rejects.toThrow('delete error')
+    })
+  })
+})
+
+describe('#amendNotification', () => {
+  let mockLogger
+  const mockRequest = { yar: {} }
+  const traceId = 'trace-amd'
+  const referenceNumber = 'REF-AMD-1'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockLogger = { info: vi.fn(), error: vi.fn() }
+    mockGetTraceId.mockReturnValue(traceId)
+  })
+
+  describe('When amend succeeds', () => {
+    const mockResponse = { status: 'AMEND' }
+
+    beforeEach(() => {
+      mockAmend.mockResolvedValue(mockResponse)
+    })
+
+    test('Should call notificationClient.amend with correct args', async () => {
+      await amendNotification(mockRequest, mockLogger, referenceNumber)
+
+      expect(mockAmend).toHaveBeenCalledWith(
+        mockRequest,
+        referenceNumber,
+        traceId
+      )
+    })
+
+    test('Should log the amended reference number', async () => {
+      await amendNotification(mockRequest, mockLogger, referenceNumber)
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Notification moved to amend: REF-AMD-1'
+      )
+    })
+
+    test('Should return the response', async () => {
+      const result = await amendNotification(
+        mockRequest,
+        mockLogger,
+        referenceNumber
+      )
+
+      expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe('When amend fails', () => {
+    const error = new Error('amend error')
+
+    beforeEach(() => {
+      mockAmend.mockRejectedValue(error)
+    })
+
+    test('Should log error message', async () => {
+      await expect(
+        amendNotification(mockRequest, mockLogger, referenceNumber)
+      ).rejects.toThrow()
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to amend notification: amend error'
+      )
+    })
+
+    test('Should re-throw the error', async () => {
+      await expect(
+        amendNotification(mockRequest, mockLogger, referenceNumber)
+      ).rejects.toThrow('amend error')
     })
   })
 })

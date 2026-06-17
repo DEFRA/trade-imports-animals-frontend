@@ -58,6 +58,16 @@
                     {{ notification.referenceNumber }}
                   </h2>
                   <ul class="govuk-summary-card__actions">
+                    {% if notification.status == 'SUBMITTED' %}
+                    <li class="govuk-summary-card__action">
+                      <form method="post" action="/notification-amend/{{ notification.referenceNumber }}" class="app-form-inline">
+                        <input type="hidden" name="crumb" value="{{ crumb }}"/>
+                        <button type="submit" class="govuk-link app-link-button">
+                          Amend<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
+                        </button>
+                      </form>
+                    </li>
+                    {% endif %}
                     {% if notification.status == 'DRAFT' or notification.status == 'SUBMITTED' %}
                     <li class="govuk-summary-card__action">
                       <form method="post" action="/notification-copy/{{ notification.referenceNumber }}" class="app-form-inline">
@@ -105,7 +115,14 @@
                     <div class="notification-list__grid-column-30">
                       <dt class="notification-list__heading">Status</dt>
                       <dd class="notification-list__value">
-                        <strong class="govuk-tag {{ 'govuk-tag--blue' if notification.status == 'SUBMITTED' else 'govuk-tag--grey' }}">
+                        {% if notification.status == 'SUBMITTED' %}
+                          {% set statusTagClass = 'govuk-tag--blue' %}
+                        {% elif notification.status == 'AMEND' %}
+                          {% set statusTagClass = 'govuk-tag--yellow' %}
+                        {% else %}
+                          {% set statusTagClass = 'govuk-tag--grey' %}
+                        {% endif %}
+                        <strong class="govuk-tag {{ statusTagClass }}">
                           {{ notification.status | title }}
                         </strong>
                       </dd>
