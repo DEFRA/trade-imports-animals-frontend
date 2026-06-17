@@ -10,16 +10,22 @@ const CLIENT_ERROR_MARKER = 'file-size'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
 
-const createEl = (tag, props = {}, ...children) => {
+const createEl = (
+  tag,
+  { className, text, attrs = {}, dataset, children = [] } = {}
+) => {
   const el = document.createElement(tag)
-  for (const [key, value] of Object.entries(props)) {
-    if (key === 'className' || key === 'textContent') {
-      el[key] = value
-    } else if (key === 'dataset') {
-      Object.assign(el.dataset, value)
-    } else {
-      el.setAttribute(key, value)
-    }
+  if (className) {
+    el.className = className
+  }
+  if (text != null) {
+    el.textContent = text
+  }
+  if (dataset) {
+    Object.assign(el.dataset, dataset)
+  }
+  for (const [key, value] of Object.entries(attrs)) {
+    el.setAttribute(key, value)
   }
   children.forEach((child) => el.appendChild(child))
   return el
@@ -157,11 +163,11 @@ const clearPreviousClientErrors = (form) => {
 }
 
 const buildErrorSummaryItem = (message, targetId) =>
-  createEl(
-    'li',
-    {},
-    createEl('a', { href: `#${targetId}`, textContent: message })
-  )
+  createEl('li', {
+    children: [
+      createEl('a', { attrs: { href: `#${targetId}` }, text: message })
+    ]
+  })
 
 const appendSummaryItem = (list, message, targetId) => {
   const item = buildErrorSummaryItem(message, targetId)
@@ -170,33 +176,33 @@ const appendSummaryItem = (list, message, targetId) => {
 }
 
 const buildErrorSummary = (message, targetId) => {
-  const list = createEl(
-    'ul',
-    { className: 'govuk-list govuk-error-summary__list' },
-    buildErrorSummaryItem(message, targetId)
-  )
+  const list = createEl('ul', {
+    className: 'govuk-list govuk-error-summary__list',
+    children: [buildErrorSummaryItem(message, targetId)]
+  })
   const title = createEl('h2', {
     className: 'govuk-error-summary__title',
-    textContent: 'There is a problem'
+    text: 'There is a problem'
   })
   title.tabIndex = -1
-  const alert = createEl(
-    'div',
-    { role: 'alert' },
-    title,
-    createEl('div', { className: 'govuk-error-summary__body' }, list)
-  )
-  return createEl(
-    'div',
-    {
-      className: 'govuk-error-summary',
-      dataset: {
-        module: 'govuk-error-summary',
-        clientError: `${CLIENT_ERROR_MARKER}-summary`
-      }
+  const alert = createEl('div', {
+    attrs: { role: 'alert' },
+    children: [
+      title,
+      createEl('div', {
+        className: 'govuk-error-summary__body',
+        children: [list]
+      })
+    ]
+  })
+  return createEl('div', {
+    className: 'govuk-error-summary',
+    dataset: {
+      module: 'govuk-error-summary',
+      clientError: `${CLIENT_ERROR_MARKER}-summary`
     },
-    alert
-  )
+    children: [alert]
+  })
 }
 
 // createAll(ErrorSummary) in application.js ran at page load, so a summary
@@ -233,18 +239,14 @@ const getOrCreateSummary = (form, message, targetId) => {
 }
 
 const buildErrorMessageEl = (id, message) => {
-  const errorMessage = createEl(
-    'p',
-    {
-      id,
-      className: 'govuk-error-message',
-      dataset: { clientError: `${CLIENT_ERROR_MARKER}-message` }
-    },
-    createEl('span', {
-      className: 'govuk-visually-hidden',
-      textContent: 'Error:'
-    })
-  )
+  const errorMessage = createEl('p', {
+    attrs: { id },
+    className: 'govuk-error-message',
+    dataset: { clientError: `${CLIENT_ERROR_MARKER}-message` },
+    children: [
+      createEl('span', { className: 'govuk-visually-hidden', text: 'Error:' })
+    ]
+  })
   errorMessage.appendChild(document.createTextNode(` ${message}`))
   return errorMessage
 }
