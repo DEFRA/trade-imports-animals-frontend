@@ -10,8 +10,6 @@ const CLIENT_ERROR_MARKER = 'file-size'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
 
-// Small declarative element builder: className/textContent/dataset are handled
-// specially, everything else is set as an attribute, and children are appended.
 const createEl = (tag, props = {}, ...children) => {
   const el = document.createElement(tag)
   for (const [key, value] of Object.entries(props)) {
