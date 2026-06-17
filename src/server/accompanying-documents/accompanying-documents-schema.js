@@ -10,10 +10,7 @@ const MIN_YEAR = 1900
 const SELECT_DOCUMENT_TYPE_MESSAGE = 'Select a document type'
 
 export const accompanyingDocumentsSchema = Joi.object({
-  // Without `.empty('')`, submitting the empty placeholder option fires
-  // both `string.empty` and `any.only`, each mapped to the same message,
-  // so the GDS error summary lists "Select a document type" twice.
-  // `.empty('')` coerces '' to `undefined` so only `any.required` fires.
+  // `.empty('')` collapses the placeholder's duplicate string.empty + any.only into one any.required.
   documentType: Joi.string()
     .empty('')
     .valid(...DOCUMENT_TYPES)

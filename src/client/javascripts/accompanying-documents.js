@@ -10,6 +10,23 @@ const CLIENT_ERROR_MARKER = 'file-size'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
 
+// Small declarative element builder: className/textContent/dataset are handled
+// specially, everything else is set as an attribute, and children are appended.
+const createEl = (tag, props = {}, ...children) => {
+  const el = document.createElement(tag)
+  for (const [key, value] of Object.entries(props)) {
+    if (key === 'className' || key === 'textContent') {
+      el[key] = value
+    } else if (key === 'dataset') {
+      Object.assign(el.dataset, value)
+    } else {
+      el.setAttribute(key, value)
+    }
+  }
+  children.forEach((child) => el.appendChild(child))
+  return el
+}
+
 const getPendingRows = () =>
   Array.from(
     document.querySelectorAll(
@@ -113,6 +130,23 @@ const pollStatus = async (attempt = 0) => {
 const clientErrorSelector = (suffix) =>
   `[data-client-error="${CLIENT_ERROR_MARKER}-${suffix}"]`
 
+const restoreInputState = (input) => {
+  input.classList.remove('govuk-file-upload--error')
+  const previous = input.dataset.clientErrorPrevDescribedby ?? ''
+  if (previous) {
+    input.setAttribute(ARIA_DESCRIBEDBY, previous)
+  } else {
+    input.removeAttribute(ARIA_DESCRIBEDBY)
+  }
+  delete input.dataset.clientError
+  delete input.dataset.clientErrorPrevDescribedby
+}
+
+const clearGroupError = (group) => {
+  group.classList.remove('govuk-form-group--error')
+  delete group.dataset.clientError
+}
+
 const clearPreviousClientErrors = (form) => {
   document
     .querySelectorAll(clientErrorSelector('summary'))
@@ -120,73 +154,51 @@ const clearPreviousClientErrors = (form) => {
   form
     .querySelectorAll(clientErrorSelector('message'))
     .forEach((message) => message.remove())
-  form.querySelectorAll(clientErrorSelector('group')).forEach((group) => {
-    group.classList.remove('govuk-form-group--error')
-    delete group.dataset.clientError
-  })
-  form.querySelectorAll(clientErrorSelector('input')).forEach((input) => {
-    input.classList.remove('govuk-file-upload--error')
-    const previous = input.dataset.clientErrorPrevDescribedby ?? ''
-    if (previous) {
-      input.setAttribute(ARIA_DESCRIBEDBY, previous)
-    } else {
-      input.removeAttribute(ARIA_DESCRIBEDBY)
-    }
-    delete input.dataset.clientError
-    delete input.dataset.clientErrorPrevDescribedby
-  })
+  form.querySelectorAll(clientErrorSelector('group')).forEach(clearGroupError)
+  form.querySelectorAll(clientErrorSelector('input')).forEach(restoreInputState)
 }
 
-const buildErrorSummaryItem = (message, targetId) => {
-  const item = document.createElement('li')
-  const link = document.createElement('a')
-  link.href = `#${targetId}`
-  link.textContent = message
-  item.appendChild(link)
-  return item
-}
+const buildErrorSummaryItem = (message, targetId) =>
+  createEl(
+    'li',
+    {},
+    createEl('a', { href: `#${targetId}`, textContent: message })
+  )
 
-// GDS requires a single error summary at the top of the page — a
-// server-rendered one (for example virus-rejected documents) may already
-// be present, so append the client item to its list instead of
-// inserting a second summary.
-const appendToExistingSummary = (summary, message, targetId) => {
-  const list = summary.querySelector('.govuk-error-summary__list')
-  if (!list) {
-    return false
-  }
+const appendSummaryItem = (list, message, targetId) => {
   const item = buildErrorSummaryItem(message, targetId)
   item.dataset.clientError = `${CLIENT_ERROR_MARKER}-summary`
   list.appendChild(item)
-  return true
 }
 
 const buildErrorSummary = (message, targetId) => {
-  const summary = document.createElement('div')
-  summary.className = 'govuk-error-summary'
-  summary.dataset.module = 'govuk-error-summary'
-  summary.dataset.clientError = `${CLIENT_ERROR_MARKER}-summary`
-
-  const alert = document.createElement('div')
-  alert.setAttribute('role', 'alert')
-
-  const title = document.createElement('h2')
-  title.className = 'govuk-error-summary__title'
+  const list = createEl(
+    'ul',
+    { className: 'govuk-list govuk-error-summary__list' },
+    buildErrorSummaryItem(message, targetId)
+  )
+  const title = createEl('h2', {
+    className: 'govuk-error-summary__title',
+    textContent: 'There is a problem'
+  })
   title.tabIndex = -1
-  title.textContent = 'There is a problem'
-
-  const body = document.createElement('div')
-  body.className = 'govuk-error-summary__body'
-
-  const list = document.createElement('ul')
-  list.className = 'govuk-list govuk-error-summary__list'
-  list.appendChild(buildErrorSummaryItem(message, targetId))
-
-  body.appendChild(list)
-  alert.appendChild(title)
-  alert.appendChild(body)
-  summary.appendChild(alert)
-  return summary
+  const alert = createEl(
+    'div',
+    { role: 'alert' },
+    title,
+    createEl('div', { className: 'govuk-error-summary__body' }, list)
+  )
+  return createEl(
+    'div',
+    {
+      className: 'govuk-error-summary',
+      dataset: {
+        module: 'govuk-error-summary',
+        clientError: `${CLIENT_ERROR_MARKER}-summary`
+      }
+    },
+    alert
+  )
 }
 
 // createAll(ErrorSummary) in application.js ran at page load, so a summary
@@ -204,6 +216,58 @@ const initialiseErrorSummary = (summary) => {
   }
 }
 
+// GDS requires a single error summary at the top of the page — a
+// server-rendered one (for example virus-rejected documents) may already
+// be present, so append the client item to its list instead of inserting a
+// second summary. Returns the summary element either way.
+const getOrCreateSummary = (form, message, targetId) => {
+  const existingList = document.querySelector(
+    '.govuk-error-summary .govuk-error-summary__list'
+  )
+  if (existingList) {
+    appendSummaryItem(existingList, message, targetId)
+    return existingList.closest('.govuk-error-summary')
+  }
+  const summary = buildErrorSummary(message, targetId)
+  form.parentNode.insertBefore(summary, form)
+  initialiseErrorSummary(summary)
+  return summary
+}
+
+const buildErrorMessageEl = (id, message) => {
+  const errorMessage = createEl(
+    'p',
+    {
+      id,
+      className: 'govuk-error-message',
+      dataset: { clientError: `${CLIENT_ERROR_MARKER}-message` }
+    },
+    createEl('span', {
+      className: 'govuk-visually-hidden',
+      textContent: 'Error:'
+    })
+  )
+  errorMessage.appendChild(document.createTextNode(` ${message}`))
+  return errorMessage
+}
+
+const applyInputErrorState = (input, errorId) => {
+  // Strip the error id token: any server-rendered error element with the
+  // same id was removed above, so keeping its token would duplicate the
+  // join below and leave a dangling idref after the client error clears.
+  const previousDescribedby = (input.getAttribute(ARIA_DESCRIBEDBY) ?? '')
+    .split(/\s+/)
+    .filter((token) => token && token !== errorId)
+    .join(' ')
+  input.dataset.clientErrorPrevDescribedby = previousDescribedby
+  input.dataset.clientError = `${CLIENT_ERROR_MARKER}-input`
+  input.setAttribute(
+    ARIA_DESCRIBEDBY,
+    [previousDescribedby, errorId].filter(Boolean).join(' ')
+  )
+  input.classList.add('govuk-file-upload--error')
+}
+
 const renderFieldError = (input, message) => {
   const group = input.closest('.govuk-form-group')
   if (!group) {
@@ -211,36 +275,21 @@ const renderFieldError = (input, message) => {
   }
   group.classList.add('govuk-form-group--error')
   group.dataset.clientError = `${CLIENT_ERROR_MARKER}-group`
-  // Remove any server-rendered error block sharing this id so the
-  // client message owns it cleanly and aria-describedby stays unambiguous.
-  const existingError = group.querySelector(`#${input.id}-error`)
-  if (existingError) {
-    existingError.remove()
-  }
-  const errorMessage = document.createElement('p')
-  errorMessage.id = `${input.id}-error`
-  errorMessage.className = 'govuk-error-message'
-  errorMessage.dataset.clientError = `${CLIENT_ERROR_MARKER}-message`
-  const visuallyHidden = document.createElement('span')
-  visuallyHidden.className = 'govuk-visually-hidden'
-  visuallyHidden.textContent = 'Error:'
-  errorMessage.appendChild(visuallyHidden)
-  errorMessage.appendChild(document.createTextNode(` ${message}`))
+  // Remove any server-rendered error block sharing this id so the client
+  // message owns it cleanly and aria-describedby stays unambiguous.
+  group.querySelector(`#${input.id}-error`)?.remove()
+  const errorMessage = buildErrorMessageEl(`${input.id}-error`, message)
   input.parentNode.insertBefore(errorMessage, input)
-  // Strip the error id token: any server-rendered error element with the
-  // same id was removed above, so keeping its token would duplicate the
-  // join below and leave a dangling idref after the client error clears.
-  const previousDescribedby = (input.getAttribute(ARIA_DESCRIBEDBY) ?? '')
-    .split(/\s+/)
-    .filter((token) => token && token !== errorMessage.id)
-    .join(' ')
-  input.dataset.clientErrorPrevDescribedby = previousDescribedby
-  input.dataset.clientError = `${CLIENT_ERROR_MARKER}-input`
-  input.setAttribute(
-    ARIA_DESCRIBEDBY,
-    [previousDescribedby, errorMessage.id].filter(Boolean).join(' ')
-  )
-  input.classList.add('govuk-file-upload--error')
+  applyInputErrorState(input, errorMessage.id)
+}
+
+const focusSummaryTitle = (summary) => {
+  const title = summary.querySelector('.govuk-error-summary__title')
+  if (title) {
+    // Server-rendered titles are not focusable by default
+    title.tabIndex = -1
+    title.focus()
+  }
 }
 
 const onUploadSubmit = (form, maxFileSize, oversizeMessage) => (event) => {
@@ -251,22 +300,9 @@ const onUploadSubmit = (form, maxFileSize, oversizeMessage) => (event) => {
     return
   }
   event.preventDefault()
-  let summary = document.querySelector('.govuk-error-summary')
-  if (
-    !summary ||
-    !appendToExistingSummary(summary, oversizeMessage, fileInput.id)
-  ) {
-    summary = buildErrorSummary(oversizeMessage, fileInput.id)
-    form.parentNode.insertBefore(summary, form)
-    initialiseErrorSummary(summary)
-  }
+  const summary = getOrCreateSummary(form, oversizeMessage, fileInput.id)
   renderFieldError(fileInput, oversizeMessage)
-  const title = summary.querySelector('.govuk-error-summary__title')
-  if (title) {
-    // Server-rendered titles are not focusable by default
-    title.tabIndex = -1
-    title.focus()
-  }
+  focusSummaryTitle(summary)
 }
 
 const initUploadForm = () => {
