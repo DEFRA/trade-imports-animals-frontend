@@ -1,6 +1,10 @@
 import { accompanyingDocumentsSchema } from '../../accompanying-documents-schema.js'
 import { validatePartialDate } from '../../partial-date-validator.js'
-import { ALLOWED_TYPES } from '../../document-upload-config.js'
+import {
+  ALLOWED_TYPES,
+  MAX_FILE_SIZE_BYTES,
+  OVERSIZE_FILE_MESSAGE
+} from '../../document-upload-config.js'
 
 const ALLOWED_EXTENSIONS = new Set(ALLOWED_TYPES.map((type) => `.${type.ext}`))
 
@@ -42,6 +46,13 @@ export const validateFile = (fileData) => {
   const hasFile = fileData?.payload?.length > 0
   if (!hasFile) {
     return [buildFileError('Select a file to upload', 'any.required')]
+  }
+  // Catch files in the window between MAX_FILE_SIZE_BYTES and the Hapi
+  // route-level MAX_PAYLOAD_BYTES — the Boom 413 hook only fires above the
+  // route cap, so without this we'd accept anything in the multipart-envelope
+  // headroom (which is also the no-JS gap above the client preflight).
+  if (fileData.payload.length > MAX_FILE_SIZE_BYTES) {
+    return [buildFileError(OVERSIZE_FILE_MESSAGE, 'any.invalid')]
   }
   if (!ALLOWED_EXTENSIONS.has(fileExtension(fileData?.filename ?? ''))) {
     return [

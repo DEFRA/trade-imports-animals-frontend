@@ -10,13 +10,14 @@ const MIN_YEAR = 1900
 const SELECT_DOCUMENT_TYPE_MESSAGE = 'Select a document type'
 
 export const accompanyingDocumentsSchema = Joi.object({
+  // `.empty('')` collapses the placeholder's duplicate string.empty + any.only into one any.required.
   documentType: Joi.string()
+    .empty('')
     .valid(...DOCUMENT_TYPES)
     .required()
     .messages({
       'any.only': SELECT_DOCUMENT_TYPE_MESSAGE,
-      'any.required': SELECT_DOCUMENT_TYPE_MESSAGE,
-      'string.empty': SELECT_DOCUMENT_TYPE_MESSAGE
+      'any.required': SELECT_DOCUMENT_TYPE_MESSAGE
     }),
   documentReference: Joi.string()
     .optional()

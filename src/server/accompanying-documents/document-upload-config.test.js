@@ -4,6 +4,8 @@ import {
   ALLOWED_TYPES,
   ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_BYTES,
+  MAX_FILE_SIZE_LABEL,
+  OVERSIZE_FILE_MESSAGE,
   MAX_PAYLOAD_BYTES,
   MAX_DOCUMENTS,
   MAX_DOCUMENT_REFERENCE_LENGTH,
@@ -42,13 +44,28 @@ describe('document-upload-config', () => {
   })
 
   describe('size limits', () => {
-    test('MAX_FILE_SIZE_BYTES is exactly 50 MB', () => {
-      expect(MAX_FILE_SIZE_BYTES).toBe(52_428_800)
+    test('MAX_FILE_SIZE_BYTES is exactly 10 MB (decimal)', () => {
+      expect(MAX_FILE_SIZE_BYTES).toBe(10_000_000)
+    })
+
+    test('MAX_FILE_SIZE_BYTES stays clear of the 10 MiB CDP nginx ingress cap', () => {
+      const TEN_MIB_BYTES = 10 * 1024 * 1024
+      expect(MAX_FILE_SIZE_BYTES).toBeLessThan(TEN_MIB_BYTES)
     })
 
     test('MAX_PAYLOAD_BYTES leaves headroom above MAX_FILE_SIZE_BYTES for the multipart envelope', () => {
       expect(MAX_PAYLOAD_BYTES).toBeGreaterThan(MAX_FILE_SIZE_BYTES)
       expect(MAX_PAYLOAD_BYTES).toBe(MAX_FILE_SIZE_BYTES + 1024)
+    })
+
+    test('MAX_FILE_SIZE_LABEL is the user-facing label derived from MAX_FILE_SIZE_BYTES', () => {
+      expect(MAX_FILE_SIZE_LABEL).toBe('10 MB')
+    })
+
+    test('OVERSIZE_FILE_MESSAGE embeds the derived MAX_FILE_SIZE_LABEL', () => {
+      expect(OVERSIZE_FILE_MESSAGE).toBe(
+        `The selected file must be smaller than ${MAX_FILE_SIZE_LABEL}`
+      )
     })
   })
 

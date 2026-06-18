@@ -33,20 +33,32 @@ describe('#accompanyingDocumentsSchema', () => {
       expect(error.details[0].message).toBe('Select a document type')
     })
 
-    test('Should fail when documentType is empty string', () => {
-      const { error } = accompanyingDocumentsSchema.validate({
-        documentType: ''
-      })
+    test('Should fail exactly once when documentType is empty string', () => {
+      const { error } = accompanyingDocumentsSchema.validate(
+        { documentType: '' },
+        { abortEarly: false }
+      )
       expect(error).toBeDefined()
-      expect(error.details[0].message).toBe('Select a document type')
+      const documentTypeErrors = error.details.filter(
+        (detail) => detail.path[0] === 'documentType'
+      )
+      expect(documentTypeErrors).toHaveLength(1)
+      expect(documentTypeErrors[0].message).toBe('Select a document type')
+      expect(documentTypeErrors[0].type).toBe('any.required')
     })
 
     test('Should fail with custom message when documentType is not in allowed list', () => {
-      const { error } = accompanyingDocumentsSchema.validate({
-        documentType: 'INVALID'
-      })
+      const { error } = accompanyingDocumentsSchema.validate(
+        { documentType: 'INVALID' },
+        { abortEarly: false }
+      )
       expect(error).toBeDefined()
-      expect(error.details[0].message).toBe('Select a document type')
+      const documentTypeErrors = error.details.filter(
+        (detail) => detail.path[0] === 'documentType'
+      )
+      expect(documentTypeErrors).toHaveLength(1)
+      expect(documentTypeErrors[0].message).toBe('Select a document type')
+      expect(documentTypeErrors[0].type).toBe('any.only')
     })
   })
 

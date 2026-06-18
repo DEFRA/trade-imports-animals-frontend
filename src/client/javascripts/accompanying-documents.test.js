@@ -201,6 +201,281 @@ describe('#accompanyingDocuments', () => {
     })
   })
 
+  describe('client-side file-size preflight', () => {
+    const FILE_INPUT_ID = 'file'
+    const MAX_FILE_SIZE = 10 * 1000 * 1000
+    const OVERSIZE_MESSAGE = 'The selected file must be smaller than 10 MB'
+    const buildUploadForm = ({
+      oversizeError = OVERSIZE_MESSAGE,
+      omitOversizeError = false,
+      maxFileSize = MAX_FILE_SIZE,
+      withServerError = false
+    } = {}) => {
+      const oversizeAttr = omitOversizeError
+        ? ''
+        : ` data-oversize-error="${oversizeError}"`
+      const hint = withServerError
+        ? `<div id="${FILE_INPUT_ID}-hint" class="govuk-hint">PDF, PNG or JPG</div>`
+        : ''
+      const serverError = withServerError
+        ? `<p id="${FILE_INPUT_ID}-error" class="govuk-error-message">The selected file contains a virus</p>`
+        : ''
+      const describedbyAttr = withServerError
+        ? ` aria-describedby="${FILE_INPUT_ID}-hint ${FILE_INPUT_ID}-error"`
+        : ''
+      return `
+      <div>
+        <form method="post" enctype="multipart/form-data" data-max-file-size="${maxFileSize}"${oversizeAttr}>
+          <div class="govuk-form-group">
+            <label class="govuk-label" for="${FILE_INPUT_ID}">Attachment</label>
+            ${hint}
+            ${serverError}
+            <input id="${FILE_INPUT_ID}" name="file" type="file"${describedbyAttr}/>
+          </div>
+          <button type="submit">Add attachment</button>
+        </form>
+      </div>
+    `
+    }
+
+    const attachFile = (input, sizeBytes) => {
+      const file = new File(['x'], 'sample.pdf', { type: 'application/pdf' })
+      Object.defineProperty(file, 'size', { value: sizeBytes })
+      Object.defineProperty(input, 'files', { value: [file], writable: false })
+    }
+
+    const submitForm = (form) => {
+      const event = new Event('submit', { cancelable: true, bubbles: true })
+      form.dispatchEvent(event)
+      return event
+    }
+
+    test('Should not prevent submit when no file is attached', async () => {
+      document.body.innerHTML = buildUploadForm()
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = submitForm(form)
+
+      expect(submitEvent.defaultPrevented).toBe(false)
+      expect(
+        document.querySelector('[data-client-error="file-size-summary"]')
+      ).toBeNull()
+    })
+
+    test('Should not prevent submit when file size is at the limit', async () => {
+      document.body.innerHTML = buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = submitForm(form)
+
+      expect(submitEvent.defaultPrevented).toBe(false)
+      expect(
+        document.querySelector('[data-client-error="file-size-summary"]')
+      ).toBeNull()
+    })
+
+    test('Should prevent submit and render GDS error summary + inline message when file exceeds the limit', async () => {
+      document.body.innerHTML = buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = submitForm(form)
+
+      expect(submitEvent.defaultPrevented).toBe(true)
+
+      const summary = document.querySelector(
+        '[data-client-error="file-size-summary"]'
+      )
+      expect(summary).not.toBeNull()
+      expect(summary.classList.contains('govuk-error-summary')).toBe(true)
+      expect(summary.textContent).toContain('There is a problem')
+      const summaryLink = summary.querySelector('a')
+      expect(summaryLink.getAttribute('href')).toBe(`#${FILE_INPUT_ID}`)
+      expect(summaryLink.textContent).toBe(
+        'The selected file must be smaller than 10 MB'
+      )
+
+      const group = document.querySelector('.govuk-form-group')
+      expect(group.classList.contains('govuk-form-group--error')).toBe(true)
+
+      const inlineError = document.querySelector(
+        '[data-client-error="file-size-message"]'
+      )
+      expect(inlineError).not.toBeNull()
+      expect(inlineError.id).toBe(`${FILE_INPUT_ID}-error`)
+      expect(inlineError.textContent).toContain(
+        'The selected file must be smaller than 10 MB'
+      )
+
+      // Accessibility wiring: focus moves to the summary title and the
+      // input is described by the inline error message
+      const summaryTitle = summary.querySelector('.govuk-error-summary__title')
+      expect(document.activeElement).toBe(summaryTitle)
+      const input = document.getElementById(FILE_INPUT_ID)
+      expect(input.getAttribute('aria-describedby')).toContain(
+        `${FILE_INPUT_ID}-error`
+      )
+    })
+
+    test('Should not duplicate errors when an oversize submit is attempted twice', async () => {
+      document.body.innerHTML = buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      submitForm(form)
+      const second = submitForm(form)
+
+      expect(second.defaultPrevented).toBe(true)
+      expect(
+        document.querySelectorAll('[data-client-error="file-size-summary"]')
+      ).toHaveLength(1)
+      expect(
+        document.querySelectorAll('[data-client-error="file-size-message"]')
+      ).toHaveLength(1)
+      // aria-describedby must not accumulate duplicate error-id tokens
+      // across repeated submits
+      expect(
+        document.getElementById(FILE_INPUT_ID).getAttribute('aria-describedby')
+      ).toBe(`${FILE_INPUT_ID}-error`)
+    })
+
+    test('Should append to an existing server-rendered error summary rather than insert a second one', async () => {
+      const serverSummary = `
+        <div class="govuk-error-summary" data-module="govuk-error-summary">
+          <div role="alert">
+            <h2 class="govuk-error-summary__title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+              <ul class="govuk-list govuk-error-summary__list">
+                <li><a href="#documents">The selected file contains a virus</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      `
+      document.body.innerHTML = serverSummary + buildUploadForm()
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      submitForm(form)
+      // Submit twice — the client item must not duplicate in the shared list
+      submitForm(form)
+
+      expect(document.querySelectorAll('.govuk-error-summary')).toHaveLength(1)
+      const items = document.querySelectorAll('.govuk-error-summary__list li')
+      expect(items).toHaveLength(2)
+      expect(items[0].textContent).toBe('The selected file contains a virus')
+      const clientItem = document.querySelector(
+        '[data-client-error="file-size-summary"]'
+      )
+      expect(clientItem.querySelector('a').getAttribute('href')).toBe(
+        `#${FILE_INPUT_ID}`
+      )
+      expect(clientItem.querySelector('a').textContent).toBe(OVERSIZE_MESSAGE)
+
+      // Accessibility wiring on the appended path: the server-rendered
+      // title (no tabindex in the fixture) must be made focusable and
+      // focused so the error is announced
+      const title = document.querySelector('.govuk-error-summary__title')
+      expect(title.tabIndex).toBe(-1)
+      expect(document.activeElement).toBe(title)
+    })
+
+    test('Should replace a server-rendered error block without duplicating its aria-describedby token', async () => {
+      document.body.innerHTML = buildUploadForm({ withServerError: true })
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      submitForm(form)
+
+      // The server-rendered #file-error block is removed and the client
+      // message owns the id — exactly one error element remains
+      const errors = document.querySelectorAll(`#${FILE_INPUT_ID}-error`)
+      expect(errors).toHaveLength(1)
+      expect(errors[0].dataset.clientError).toBe('file-size-message')
+      expect(errors[0].textContent).toContain(OVERSIZE_MESSAGE)
+
+      // The pre-existing error-id token is stripped before the join, so
+      // aria-describedby keeps the hint and gains the error id exactly once
+      expect(
+        document.getElementById(FILE_INPUT_ID).getAttribute('aria-describedby')
+      ).toBe(`${FILE_INPUT_ID}-hint ${FILE_INPUT_ID}-error`)
+    })
+
+    test('Should remain inert when no form with data-max-file-size is present', async () => {
+      document.body.innerHTML = '<div>No upload form here</div>'
+
+      await expect(import('./accompanying-documents.js')).resolves.toBeDefined()
+    })
+
+    test('Should render the message supplied via data-oversize-error rather than a hard-coded copy', async () => {
+      const customMessage = 'Your file must be smaller than 5MB'
+      document.body.innerHTML = buildUploadForm({
+        oversizeError: customMessage
+      })
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      submitForm(form)
+
+      const summary = document.querySelector(
+        '[data-client-error="file-size-summary"]'
+      )
+      expect(summary.querySelector('a').textContent).toBe(customMessage)
+      expect(
+        document.querySelector('[data-client-error="file-size-message"]')
+          .textContent
+      ).toContain(customMessage)
+    })
+
+    test('Should not attach the preflight when data-oversize-error is missing', async () => {
+      document.body.innerHTML = buildUploadForm({ omitOversizeError: true })
+      attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+      await import('./accompanying-documents.js')
+
+      const form = document.querySelector('form')
+      const submitEvent = submitForm(form)
+
+      expect(submitEvent.defaultPrevented).toBe(false)
+      expect(
+        document.querySelector('[data-client-error="file-size-summary"]')
+      ).toBeNull()
+    })
+
+    test.each(['not-a-number', '0'])(
+      'Should not attach the preflight when data-max-file-size is "%s"',
+      async (maxFileSize) => {
+        document.body.innerHTML = buildUploadForm({ maxFileSize })
+        attachFile(document.getElementById(FILE_INPUT_ID), MAX_FILE_SIZE + 1)
+
+        await import('./accompanying-documents.js')
+
+        const form = document.querySelector('form')
+        const submitEvent = submitForm(form)
+
+        expect(submitEvent.defaultPrevented).toBe(false)
+        expect(
+          document.querySelector('[data-client-error="file-size-summary"]')
+        ).toBeNull()
+      }
+    )
+  })
+
   describe('polling — timeout', () => {
     test('Should show #js-timeout-message and stop polling after 10 attempts', async () => {
       document.body.innerHTML =

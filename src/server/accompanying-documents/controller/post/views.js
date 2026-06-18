@@ -1,6 +1,9 @@
 import { statusCodes } from '../../../common/constants/status-codes.js'
 import { formatValidationErrors } from '../../../common/helpers/validation-helpers.js'
-import { MAX_DOCUMENTS } from '../../document-upload-config.js'
+import {
+  MAX_DOCUMENTS,
+  OVERSIZE_FILE_MESSAGE
+} from '../../document-upload-config.js'
 import { buildPageModel } from '../page-model.js'
 
 const VIEW_PATH = 'accompanying-documents/index'
@@ -63,6 +66,18 @@ export const validationErrorView = (
     )
     .code(statusCodes.badRequest)
 }
+
+export const oversizeFileView = (h, documentsWithStatus, crumb) =>
+  h
+    .view(
+      VIEW_PATH,
+      buildPageModel(documentsWithStatus, 0, {
+        crumb,
+        errorList: [{ href: '#file', text: OVERSIZE_FILE_MESSAGE }],
+        fieldErrors: { file: { text: OVERSIZE_FILE_MESSAGE } }
+      })
+    )
+    .code(statusCodes.badRequest)
 
 export const uploadFailureView = (h, documentsWithStatus, attempt, fields) =>
   h
