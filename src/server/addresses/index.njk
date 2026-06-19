@@ -9,7 +9,7 @@
   }) }}
 
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
-  {{ appHeading({ pageTitle: "Addresses", heading: "Addresses" }) }}
+  {{ appHeading({ pageTitle: "Consignment addresses", heading: "Consignment addresses" }) }}
 
       <div class="govuk-body" data-testid="app-page-body">
 
@@ -23,13 +23,18 @@
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
 
+          {{ govukWarningText({
+            text: "Providing a false address is an act of fraud",
+            iconFallbackText: "Warning"
+          }) }}
+
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                 <h2 class="govuk-fieldset__heading">Place of origin</h2>
               </legend>
               <div id="place-of-origin-hint" class="govuk-hint">
-                This is where the consignment originates from.
+                The address where the animals begin their journey to Great Britain
               </div>
               {% if selectedPlaceOfOrigin %}
                 <table class="govuk-table govuk-table--small-text-until-tablet">
@@ -105,7 +110,7 @@
                 <h2 class="govuk-fieldset__heading">Consignee</h2>
               </legend>
               <div id="consignee-hint" class="govuk-hint">
-                This is the receiver of the consignment.
+                This is the receiver or buyer of the consignment being shipped or transported.
               </div>
               {% if selectedConsignee %}
                 <table class="govuk-table govuk-table--small-text-until-tablet">
@@ -143,7 +148,7 @@
                 <h2 class="govuk-fieldset__heading">Importer</h2>
               </legend>
               <div id="importer-hint" class="govuk-hint">
-                This is the person or organisation responsible for importing the consignment into Great Britain.
+                This is usually the same as the consignee. You can select a different person if needed.
               </div>
               {% if selectedImporter %}
                 <table class="govuk-table govuk-table--small-text-until-tablet">
@@ -183,10 +188,6 @@
               <div id="place-of-destination-hint" class="govuk-hint">
                 This is where the animals will be unloaded and accommodated for at least 48 hours. If a health certificate is required, it will show this address.
               </div>
-              {{ govukWarningText({
-                text: "Providing a false address is an act of fraud.",
-                iconFallbackText: "Warning"
-              }) }}
               {% if selectedDestination %}
                 <table class="govuk-table govuk-table--small-text-until-tablet">
                   <thead class="govuk-table__head">
@@ -220,10 +221,10 @@
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <h2 class="govuk-fieldset__heading">County Parish Holding (CPH)</h2>
+                <h2 class="govuk-fieldset__heading">County Parish Holding number (CPH)</h2>
               </legend>
               <div id="cph-hint" class="govuk-hint">
-                The County Parish Holding number for the consignment.
+                The County Parish Holding (CPH) number identifies the holding where the animals will be kept.
               </div>
               {% if selectedCphNumber %}
                 <p class="govuk-body">{{ selectedCphNumber }}</p>
