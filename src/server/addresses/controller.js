@@ -66,17 +66,28 @@ export const addressesController = {
         )
       }
 
+      const selectedPlaceOfOrigin = getSessionValue(
+        _request,
+        sessionKeys.placeOfOrigin
+      )
       const selectedConsignor = getSessionValue(_request, sessionKeys.consignor)
+      const selectedConsignee = getSessionValue(_request, sessionKeys.consignee)
+      const selectedImporter = getSessionValue(_request, sessionKeys.importer)
       const selectedDestination = getSessionValue(
         _request,
         sessionKeys.destination
       )
+      const selectedCphNumber = getSessionValue(_request, sessionKeys.cphNumber)
 
       return h.view('addresses/index', {
         pageTitle: 'Addresses',
         referenceNumber,
+        selectedPlaceOfOrigin,
         selectedConsignor,
-        selectedDestination
+        selectedConsignee,
+        selectedImporter,
+        selectedDestination,
+        selectedCphNumber
       })
     }
   },
@@ -97,7 +108,7 @@ export const addressesController = {
         // save failed — helper already logged; continue to redirect
       }
 
-      return h.redirect('/cph-number', { referenceNumber })
+      return h.redirect('/port-of-entry', { referenceNumber })
     }
   }
 }

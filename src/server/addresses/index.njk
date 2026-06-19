@@ -26,6 +26,44 @@
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <h2 class="govuk-fieldset__heading">Place of origin</h2>
+              </legend>
+              <div id="place-of-origin-hint" class="govuk-hint">
+                This is where the consignment originates from.
+              </div>
+              {% if selectedPlaceOfOrigin %}
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <thead class="govuk-table__head">
+                    <tr class="govuk-table__row">
+                      <th scope="col" class="govuk-table__header">Name</th>
+                      <th scope="col" class="govuk-table__header">Address</th>
+                      <th scope="col" class="govuk-table__header">Country</th>
+                    </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                      <td class="govuk-table__cell">{{ selectedPlaceOfOrigin.name }}</td>
+                      <td class="govuk-table__cell">
+                        {{ selectedPlaceOfOrigin.address.addressLine1 }}{% if selectedPlaceOfOrigin.address.addressLine2 %}, {{ selectedPlaceOfOrigin.address.addressLine2 }}{% endif %}{% if selectedPlaceOfOrigin.address.addressLine3 %}, {{ selectedPlaceOfOrigin.address.addressLine3 }}{% endif %}
+                      </td>
+                      <td class="govuk-table__cell">{{ selectedPlaceOfOrigin.address.country }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="govuk-body">
+                  <a href="/place-of-origin/select" class="govuk-link" id="changePlaceOfOrigin" aria-describedby="place-of-origin-hint">Change place of origin</a>
+                </p>
+              {% else %}
+                <p class="govuk-body">
+                  <a href="/place-of-origin/select" class="govuk-link govuk-link--no-visited-state" id="addPlaceOfOrigin" aria-describedby="place-of-origin-hint">Add a place of origin</a>
+                </p>
+              {% endif %}
+            </fieldset>
+          </div>
+
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                 <h2 class="govuk-fieldset__heading">Consignor or exporter</h2>
               </legend>
               <div id="consignor-hint" class="govuk-hint">
@@ -50,6 +88,9 @@
                     </tr>
                   </tbody>
                 </table>
+                <p class="govuk-body">
+                  <a href="/consignors/select" class="govuk-link" id="changeConsignorOrExporter" aria-describedby="consignor-hint">Change consignor or exporter</a>
+                </p>
               {% else %}
                 <p class="govuk-body">
                   <a href="/consignors/select" class="govuk-link govuk-link--no-visited-state" id="addConsignorOrExporter" aria-describedby="consignor-hint">Add a consignor or exporter</a>
@@ -57,6 +98,83 @@
               {% endif %}
             </fieldset>
           </div>
+
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <h2 class="govuk-fieldset__heading">Consignee</h2>
+              </legend>
+              <div id="consignee-hint" class="govuk-hint">
+                This is the receiver of the consignment.
+              </div>
+              {% if selectedConsignee %}
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <thead class="govuk-table__head">
+                    <tr class="govuk-table__row">
+                      <th scope="col" class="govuk-table__header">Name</th>
+                      <th scope="col" class="govuk-table__header">Address</th>
+                      <th scope="col" class="govuk-table__header">Country</th>
+                    </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                      <td class="govuk-table__cell">{{ selectedConsignee.name }}</td>
+                      <td class="govuk-table__cell">
+                        {{ selectedConsignee.address.addressLine1 }}{% if selectedConsignee.address.addressLine2 %}, {{ selectedConsignee.address.addressLine2 }}{% endif %}{% if selectedConsignee.address.addressLine3 %}, {{ selectedConsignee.address.addressLine3 }}{% endif %}
+                      </td>
+                      <td class="govuk-table__cell">{{ selectedConsignee.address.country }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="govuk-body">
+                  <a href="/consignees/select" class="govuk-link" id="changeConsignee" aria-describedby="consignee-hint">Change consignee</a>
+                </p>
+              {% else %}
+                <p class="govuk-body">
+                  <a href="/consignees/select" class="govuk-link govuk-link--no-visited-state" id="addConsignee" aria-describedby="consignee-hint">Add a consignee</a>
+                </p>
+              {% endif %}
+            </fieldset>
+          </div>
+
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <h2 class="govuk-fieldset__heading">Importer</h2>
+              </legend>
+              <div id="importer-hint" class="govuk-hint">
+                This is the person or organisation responsible for importing the consignment into Great Britain.
+              </div>
+              {% if selectedImporter %}
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <thead class="govuk-table__head">
+                    <tr class="govuk-table__row">
+                      <th scope="col" class="govuk-table__header">Name</th>
+                      <th scope="col" class="govuk-table__header">Address</th>
+                      <th scope="col" class="govuk-table__header">Country</th>
+                    </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                      <td class="govuk-table__cell">{{ selectedImporter.name }}</td>
+                      <td class="govuk-table__cell">
+                        {{ selectedImporter.address.addressLine1 }}{% if selectedImporter.address.addressLine2 %}, {{ selectedImporter.address.addressLine2 }}{% endif %}{% if selectedImporter.address.addressLine3 %}, {{ selectedImporter.address.addressLine3 }}{% endif %}
+                      </td>
+                      <td class="govuk-table__cell">{{ selectedImporter.address.country }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="govuk-body">
+                  <a href="/importers/select" class="govuk-link" id="changeImporter" aria-describedby="importer-hint">Change importer</a>
+                </p>
+              {% else %}
+                <p class="govuk-body">
+                  <a href="/importers/select" class="govuk-link govuk-link--no-visited-state" id="addImporter" aria-describedby="importer-hint">Add an importer</a>
+                </p>
+              {% endif %}
+            </fieldset>
+          </div>
+
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
@@ -88,9 +206,33 @@
                     </tr>
                   </tbody>
                 </table>
+                <p class="govuk-body">
+                  <a href="/destinations/select" class="govuk-link" id="changePlaceOfDestination" aria-describedby="place-of-destination-hint">Change place of destination</a>
+                </p>
               {% else %}
                 <p class="govuk-body">
                   <a href="/destinations/select" class="govuk-link govuk-link--no-visited-state" id="addPlaceOfDestination" aria-describedby="place-of-destination-hint">Add a place of destination</a>
+                </p>
+              {% endif %}
+            </fieldset>
+          </div>
+
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <h2 class="govuk-fieldset__heading">County Parish Holding (CPH)</h2>
+              </legend>
+              <div id="cph-hint" class="govuk-hint">
+                The County Parish Holding number for the consignment.
+              </div>
+              {% if selectedCphNumber %}
+                <p class="govuk-body">{{ selectedCphNumber }}</p>
+                <p class="govuk-body">
+                  <a href="/cph-number" class="govuk-link" id="changeCphNumber" aria-describedby="cph-hint">Change CPH number</a>
+                </p>
+              {% else %}
+                <p class="govuk-body">
+                  <a href="/cph-number" class="govuk-link govuk-link--no-visited-state" id="addCphNumber" aria-describedby="cph-hint">Add a CPH number</a>
                 </p>
               {% endif %}
             </fieldset>
