@@ -34,9 +34,11 @@
     display: grid;
     grid-template-columns: 30% 25% 25% 20%;
     gap: govuk-spacing(3);
+    // Reset the user-agent <dl> top margin; rows are a mix of <dl> and <div>.
+    margin-top: 0;
     margin-bottom: govuk-spacing(3);
 
-    &:last-of-type {
+    &:last-child {
       margin-bottom: 0;
     }
   }
