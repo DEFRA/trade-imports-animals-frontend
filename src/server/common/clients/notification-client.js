@@ -64,7 +64,9 @@ function setAddresses(notification, request) {
   ]
   for (const key of addressKeys) {
     const value = getSessionValue(request, key)
-    if (value) notification[key] = value
+    if (value) {
+      notification[key] = value
+    }
   }
 }
 
