@@ -1,0 +1,37 @@
+<div class="govuk-form-group">
+  <fieldset class="govuk-fieldset">
+    <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+      <h2 class="govuk-fieldset__heading">{{ params.heading }}</h2>
+    </legend>
+    <div id="{{ params.key }}-hint" class="govuk-hint">
+      {{ params.hint }}
+    </div>
+    {% if params.selected %}
+      <table class="govuk-table govuk-table--small-text-until-tablet">
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Name</th>
+            <th scope="col" class="govuk-table__header">Address</th>
+            <th scope="col" class="govuk-table__header">Country</th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">{{ params.selected.name }}</td>
+            <td class="govuk-table__cell">
+              {{ params.selected.address.addressLine1 }}{% if params.selected.address.addressLine2 %}, {{ params.selected.address.addressLine2 }}{% endif %}{% if params.selected.address.addressLine3 %}, {{ params.selected.address.addressLine3 }}{% endif %}
+            </td>
+            <td class="govuk-table__cell">{{ params.selected.address.country }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="govuk-body">
+        <a href="{{ params.href }}" class="govuk-link" id="{{ params.changeId }}" aria-describedby="{{ params.key }}-hint">Change {{ params.heading | lower }}</a>
+      </p>
+    {% else %}
+      <p class="govuk-body">
+        <a href="{{ params.href }}" class="govuk-link govuk-link--no-visited-state" id="{{ params.addId }}" aria-describedby="{{ params.key }}-hint">Add a {{ params.heading | lower }}</a>
+      </p>
+    {% endif %}
+  </fieldset>
+</div>

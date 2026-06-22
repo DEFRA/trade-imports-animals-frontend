@@ -15,12 +15,16 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 describe('addressesController', () => {
   describe('GET /addresses', () => {
-    test('renders addresses search page using session referenceNumber', () => {
+    test('renders addresses page with null session values when nothing selected', () => {
       const get = vi.fn((key) => {
         const values = {
           referenceNumber: 'REF-123',
-          selectedConsignor: null,
-          selectedDestination: null
+          placeOfOrigin: null,
+          consignor: null,
+          consignee: null,
+          importer: null,
+          destination: null,
+          cphNumber: null
         }
         return values[key] ?? null
       })
@@ -36,13 +40,82 @@ describe('addressesController', () => {
       expect(h.view).toHaveBeenCalledWith('addresses/index', {
         pageTitle: 'Addresses',
         referenceNumber: 'REF-123',
+        selectedPlaceOfOrigin: null,
         selectedConsignor: null,
-        selectedDestination: null
+        selectedConsignee: null,
+        selectedImporter: null,
+        selectedDestination: null,
+        selectedCphNumber: null
       })
       expect(response.template).toBe('addresses/index')
     })
 
-    test('saves selected consignor from query and redirects to the address landing page', () => {
+    test('passes all selected operator session values to view', () => {
+      const placeOfOrigin = {
+        name: 'Origin Farm',
+        address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
+      }
+      const consignor = {
+        name: 'Astra Rosales',
+        address: {
+          addressLine1: '43 East Hague Extension',
+          addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
+          addressLine3: 'Quasoccaecat ut ear, 30055',
+          country: 'Switzerland'
+        }
+      }
+      const consignee = {
+        name: 'Consignee Ltd',
+        address: { addressLine1: '10 Main Street', country: 'United Kingdom' }
+      }
+      const importer = {
+        name: 'Import Co',
+        address: { addressLine1: '20 Trade Road', country: 'United Kingdom' }
+      }
+      const destination = {
+        name: 'Tech Imports Ltd',
+        address: {
+          addressLine1: '643 Main Street',
+          addressLine2: 'Birmingham G1 3AZ',
+          country: 'United Kingdom'
+        }
+      }
+      const cphNumber = '123456789'
+
+      const get = vi.fn((key) => {
+        const values = {
+          referenceNumber: 'REF-123',
+          placeOfOrigin,
+          consignor,
+          consignee,
+          importer,
+          destination,
+          cphNumber
+        }
+        return values[key] ?? null
+      })
+      const set = vi.fn()
+
+      const request = { query: {}, yar: { get, set } }
+      const h = {
+        view: vi.fn((template, data) => ({ template, data }))
+      }
+
+      addressesController.get.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith('addresses/index', {
+        pageTitle: 'Addresses',
+        referenceNumber: 'REF-123',
+        selectedPlaceOfOrigin: placeOfOrigin,
+        selectedConsignor: consignor,
+        selectedConsignee: consignee,
+        selectedImporter: importer,
+        selectedDestination: destination,
+        selectedCphNumber: cphNumber
+      })
+    })
+
+    test('saves selected consignor from query param into session', () => {
       const selectedConsignor = {
         name: 'Astra Rosales',
         address: {
@@ -106,7 +179,7 @@ describe('addressesController', () => {
     })
   })
 
-  test('redirects to cph-number when notification client throws', async () => {
+  test('redirects to port-of-entry when notification client throws', async () => {
     saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
     const get = createYarGet()
@@ -126,20 +199,20 @@ describe('addressesController', () => {
         error: expect.any(Function)
       })
     )
-    expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
+    expect(h.redirect).toHaveBeenCalledWith('/port-of-entry', {
       referenceNumber: 'REF-123'
     })
     expect(response).toEqual({
       statusCode: 302,
-      location: '/cph-number',
+      location: '/port-of-entry',
       opts: {
         referenceNumber: 'REF-123'
       }
     })
   })
 
-  describe('POST addresses', () => {
-    test('submit notification with selected consignor', async () => {
+  describe('POST /addresses', () => {
+    test('saves notification and redirects to port-of-entry', async () => {
       const set = vi.fn()
       const get = createYarGet()
 
@@ -158,12 +231,12 @@ describe('addressesController', () => {
           error: expect.any(Function)
         })
       )
-      expect(h.redirect).toHaveBeenCalledWith('/cph-number', {
+      expect(h.redirect).toHaveBeenCalledWith('/port-of-entry', {
         referenceNumber: 'REF-123'
       })
       expect(response).toEqual({
         statusCode: 302,
-        location: '/cph-number',
+        location: '/port-of-entry',
         opts: {
           referenceNumber: 'REF-123'
         }
