@@ -78,7 +78,7 @@
                   </ul>
                 </div>
                 <div class="govuk-summary-card__content">
-                  <div class="notification-list__grid-row">
+                  <dl class="notification-list__grid-row">
                     <div class="notification-list__grid-column-30">
                       <dt class="notification-list__heading">Commodity</dt>
                       <dd class="notification-list__value">{{ notification.commodity.name }}</dd>
@@ -91,8 +91,8 @@
                       <dt class="notification-list__heading">Arrival at destination</dt>
                       <dd class="notification-list__value">{{ notification.arrivalAtDestination }}</dd>
                     </div>
-                  </div>
-                  <div class="notification-list__grid-row">
+                  </dl>
+                  <dl class="notification-list__grid-row">
                     <div class="notification-list__grid-column-30">
                       <dt class="notification-list__heading">Consignee</dt>
                       {# TODO: Consignee value not defined — out of scope for EUDPA-69 #}
@@ -110,7 +110,7 @@
                         </strong>
                       </dd>
                     </div>
-                  </div>
+                  </dl>
                   <div class="notification-list__grid-row">
                     <div class="notification-list__grid-column-full">
                       Date created: {{ notification.dateCreated }}
