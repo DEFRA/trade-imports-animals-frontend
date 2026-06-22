@@ -128,7 +128,7 @@ function mapAddresses(notification) {
     consignee: formatAddress(notification.consignee),
     importer: formatAddress(notification.importer),
     placeOfDestination: formatAddress(notification.destination),
-    contactDetails: formatAddress(notification.contactAddress)
+    contactDetails: formatAddress(notification.consignment)
   }
 }
 

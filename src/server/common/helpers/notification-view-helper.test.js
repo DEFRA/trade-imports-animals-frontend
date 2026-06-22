@@ -179,6 +179,18 @@ describe('#mapNotificationToView', () => {
       )
     })
 
+    test('Should map contactDetails from flat consignment field', () => {
+      const consignment = {
+        name: 'Animal and Plant Health Agency',
+        address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+      }
+      const { addresses } = mapNotificationToView({ consignment })
+      expect(addresses.contactDetails).toContain(
+        'Animal and Plant Health Agency'
+      )
+      expect(addresses.contactDetails).toContain('United Kingdom')
+    })
+
     test('Should map cphNumber', () => {
       expect(mapNotificationToView(notification).cphNumber).toBe('12/343/R783')
     })
