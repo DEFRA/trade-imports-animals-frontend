@@ -1,0 +1,43 @@
+{% extends "govuk/template.njk" %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+
+{% block head %}
+  <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
+{% endblock %}
+
+{% block pageTitle %}Saved quotes | Car insurance prototypes{% endblock %}
+
+{% block beforeContent %}
+  {{ govukBackLink({ text: "Back", href: "/prototype" }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      <h1 class="govuk-heading-xl">Saved quotes</h1>
+
+      <p class="govuk-body">Everything in the prototype JSON datastore.</p>
+
+      {% if rows.length %}
+        {{ govukTable({
+          head: [
+            { text: "Reference" },
+            { text: "Variant" },
+            { text: "Name" },
+            { text: "Cover" },
+            { text: "Premium" },
+            { text: "Status" }
+          ],
+          rows: rows
+        }) }}
+      {% else %}
+        <p class="govuk-body">No quotes saved yet.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="{{ getAssetPath('application.js') }}"></script>
+{% endblock %}

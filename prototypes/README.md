@@ -1,24 +1,41 @@
 # Prototypes
 
-Throwaway, **non-functional** prototype layouts for spiking GDS journeys.
+Throwaway, **non-functional** prototype journeys for spiking GDS layouts and
+flow. Deliberately **separate from and parallel to** the real application under
+[`../src/`](../src).
 
-This directory is deliberately **separate from and parallel to** the real
-application under [`../src/`](../src). Nothing in here is wired into the live
-service:
+Each journey variant is its own self-contained folder. They all implement the
+same example **car insurance quote** journey and share a common core, differing
+only in how the user moves between questions.
 
-- It is **not** registered in `src/server/router.js`.
-- It has **no** controllers, validation, session or persistence.
-- It is **not** part of the webpack build or the Docker image.
-- It exists purely to play with page layouts and journey flow using the
-  GOV.UK Design System.
+```
+prototypes/
+  shared/                        car insurance domain shared by every variant
+    store.js                       JSON-file "database" (array of quotes)
+    quote.js                       options + formatting helpers
+    premium.js                     illustrative price calculation
+    sections.js                    the questions: collect / isComplete / rows
+    section-controller.js          GET/POST factory for one question section
+    endings.js                     quote summary -> check answers -> confirmation
+    partials/                      GDS field markup, one per section
+    *.njk                          shared dynamic-layout templates
+    data/quotes.json               the datastore (gitignored, runtime-written)
+  linear/                        one question per page, "Save and continue"
+  task-list/                     a hub lists every section; do them in any order
+  task-list-with-linear-tasks/   a hub of tasks, each a short linear run
+  index.js                       aggregate plugin + chooser + saved-quotes view
+  chooser.njk / quotes.njk       landing + datastore views
+```
 
-> ⚠️ Prototype code only. Do not import anything in here from `src/`, and do
-> not import anything here into `src/`. When a layout is ready to become real,
-> rebuild it properly inside `src/server/<feature>/` with controllers, routes
-> and tests.
+## How it is wired
 
-## Prototypes
+Off by default in production. Enabled via `config.features.prototypes.enabled`
+(`FEATURES_PROTOTYPES_ENABLED`, default on outside production). When enabled,
+`src/server/router.js` registers `prototypes/index.js`, and
+`src/config/nunjucks/nunjucks.js` adds `prototypes/` to the template paths.
 
-| Folder | Journey |
-|--------|---------|
-| [`car-insurance/`](car-insurance) | Example car insurance quote journey (spike — EUDPA-249) |
+Run it with `npm run prototype`, then open `/prototype` to choose a variant.
+
+> ⚠️ Prototype code only. No real backend, no auth, no validation. Do not import
+> between `src/` and `prototypes/`. When a layout is ready to become real,
+> rebuild it properly under `src/server/<feature>/`.

@@ -13,6 +13,8 @@
     "dev": "AWS_EMF_ENVIRONMENT=Local run-p build:frontend frontend:watch server:watch",
     "dev:debug": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:debug",
     "docker:dev": "npm run dev",
+    "prototype": "FEATURES_PROTOTYPES_ENABLED=true AUTH_ENABLED=false npm run dev",
+    "prototype:reset": "node -e \"require('node:fs').writeFileSync('prototypes/shared/data/quotes.json','[]\\n')\"",
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "frontend:watch": "NODE_ENV=development webpack --watch",

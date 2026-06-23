@@ -1,0 +1,14 @@
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ section.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% include "shared/partials/" + section.slug + ".njk" %}
+
+    {{ govukButton({ text: submitText or "Save and continue" }) }}
+  </form>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "task-list-with-linear-tasks/layout.njk" %}
+{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">Get a car insurance quote</h1>
+
+  <p class="govuk-body">
+    You have completed {{ completedCount }} of {{ totalCount }} tasks.
+  </p>
+
+  {{ govukTaskList({ items: items }) }}
+{% endblock %}

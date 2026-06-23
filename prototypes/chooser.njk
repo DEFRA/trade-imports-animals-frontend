@@ -1,0 +1,58 @@
+{% extends "govuk/template.njk" %}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+
+{% block head %}
+  <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
+{% endblock %}
+
+{% block pageTitle %}Prototypes | Car insurance{% endblock %}
+
+{% block beforeContent %}
+  {{ govukPhaseBanner({
+    tag: { text: "Prototype" },
+    html: 'Non-functional prototypes — not a real service.'
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <h1 class="govuk-heading-xl">Car insurance journey prototypes</h1>
+
+      <p class="govuk-body">
+        Three takes on the same car insurance quote journey. They share the same
+        questions and a JSON-file datastore, and differ only in how you move
+        between the questions.
+      </p>
+
+      <ul class="govuk-list">
+        <li>
+          <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype/linear">Linear journey</a>
+          </h2>
+          <p class="govuk-body">One question per page, chained with "Save and continue".</p>
+        </li>
+        <li>
+          <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype/task-list">Task list journey</a>
+          </h2>
+          <p class="govuk-body">A hub page lists every section; complete them in any order.</p>
+        </li>
+        <li>
+          <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype/task-list-with-linear-tasks">Task list with linear tasks</a>
+          </h2>
+          <p class="govuk-body">A hub of tasks, where each task is a short linear run of questions.</p>
+        </li>
+      </ul>
+
+      <p class="govuk-body">
+        <a class="govuk-link" href="/prototype/quotes">View saved quotes</a>
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="{{ getAssetPath('application.js') }}"></script>
+{% endblock %}

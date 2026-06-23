@@ -1,0 +1,42 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+
+{{ govukInput({
+  label: { text: "Registration number" },
+  id: "registration",
+  name: "registration",
+  classes: "govuk-input--width-10",
+  value: quote.registration
+}) }}
+
+{{ govukInput({
+  label: { text: "Make" },
+  id: "make",
+  name: "make",
+  value: quote.make
+}) }}
+
+{{ govukInput({
+  label: { text: "Model" },
+  id: "model",
+  name: "model",
+  value: quote.model
+}) }}
+
+{{ govukInput({
+  label: { text: "Year of manufacture" },
+  id: "year",
+  name: "year",
+  classes: "govuk-input--width-4",
+  inputmode: "numeric",
+  value: quote.year
+}) }}
+
+{{ govukInput({
+  label: { text: "Estimated value" },
+  id: "estimatedValue",
+  name: "estimatedValue",
+  classes: "govuk-input--width-5",
+  prefix: { text: "£" },
+  inputmode: "numeric",
+  value: quote.estimatedValue
+}) }}

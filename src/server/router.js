@@ -21,6 +21,7 @@ import { notificationCopy } from './notification-copy/index.js'
 import { notificationDelete } from './notification-delete/index.js'
 import { notificationView } from './notification-view/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
+import { prototypes } from '../../prototypes/index.js'
 import { config } from '../config/config.js'
 
 export const router = {
@@ -57,6 +58,11 @@ export const router = {
 
       if (authEnabled) {
         routes.push(signout)
+      }
+
+      // Throwaway prototype journeys — off in production (see config.features.prototypes)
+      if (config.get('features.prototypes.enabled')) {
+        routes.push(prototypes)
       }
 
       await server.register(routes)

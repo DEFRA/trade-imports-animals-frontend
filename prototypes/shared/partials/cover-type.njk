@@ -1,0 +1,12 @@
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+
+{{ govukRadios({
+  name: "coverType",
+  fieldset: {
+    legend: {
+      text: "Which cover do you want?",
+      classes: "govuk-fieldset__legend--m"
+    }
+  },
+  items: items
+}) }}

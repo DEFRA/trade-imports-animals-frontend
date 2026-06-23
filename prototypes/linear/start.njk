@@ -1,0 +1,21 @@
+{% extends "linear/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">Get a car insurance quote</h1>
+
+  <p class="govuk-body">Use this service to get an illustrative car insurance quote.</p>
+  <p class="govuk-body">You will be asked about:</p>
+  <ul class="govuk-list govuk-list--bullet">
+    <li>you and your contact details</li>
+    <li>your vehicle</li>
+    <li>your driving history</li>
+    <li>the cover and extras you want</li>
+  </ul>
+  <p class="govuk-body">It takes around 2 minutes.</p>
+
+  <form method="post" action="/prototype/linear/start" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: "Start now", isStartButton: true }) }}
+  </form>
+{% endblock %}

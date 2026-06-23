@@ -15,3 +15,6 @@ lighthouse-report/
 chromewebdata**
 localhost**
 test-results/
+
+# Prototype JSON datastore — written at runtime
+prototypes/shared/data/quotes.json

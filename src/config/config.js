@@ -252,6 +252,16 @@ export const config = convict({
       env: 'AUTH_ENABLED'
     }
   },
+  features: {
+    prototypes: {
+      enabled: {
+        doc: 'Enable throwaway prototype journeys (on for local dev only)',
+        format: Boolean,
+        default: !isProduction && !isTest,
+        env: 'FEATURES_PROTOTYPES_ENABLED'
+      }
+    }
+  },
   redis: {
     host: {
       doc: 'Redis cache host',

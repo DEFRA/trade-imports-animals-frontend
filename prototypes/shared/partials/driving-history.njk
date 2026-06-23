@@ -1,0 +1,29 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+
+{{ govukInput({
+  label: { text: "Years of no-claims discount" },
+  id: "yearsNoClaims",
+  name: "yearsNoClaims",
+  classes: "govuk-input--width-3",
+  inputmode: "numeric",
+  value: quote.yearsNoClaims
+}) }}
+
+{{ govukRadios({
+  name: "hadClaims",
+  fieldset: { legend: { text: "Have you had any claims in the last 5 years?" } },
+  items: [
+    { value: "yes", text: "Yes", checked: quote.hadClaims === "yes" },
+    { value: "no", text: "No", checked: quote.hadClaims === "no" }
+  ]
+}) }}
+
+{{ govukInput({
+  label: { text: "Penalty points" },
+  id: "penaltyPoints",
+  name: "penaltyPoints",
+  classes: "govuk-input--width-3",
+  inputmode: "numeric",
+  value: quote.penaltyPoints
+}) }}
