@@ -1,6 +1,7 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 
@@ -22,6 +23,13 @@
   {{ govukPhaseBanner({
     tag: { text: "Prototype" },
     html: 'Linear journey — a non-functional prototype, not a real service.'
+  }) }}
+  {{ govukBreadcrumbs({
+    items: breadcrumbs if breadcrumbs else [
+      { text: "Prototypes", href: "/prototype" },
+      { text: "Linear journey", href: "/prototype/linear" },
+      { text: pageTitle }
+    ]
   }) }}
   {% if backLink %}
     {{ govukBackLink({ text: "Back", href: backLink }) }}

@@ -28,15 +28,29 @@ export const extrasOptions = [
   { value: 'windscreen', text: 'Windscreen cover' }
 ]
 
+export const claimTypeOptions = [
+  { value: 'accident', text: 'Accident' },
+  { value: 'theft', text: 'Theft' },
+  { value: 'windscreen', text: 'Windscreen' },
+  { value: 'other', text: 'Something else' }
+]
+
 const coverTypeText = new Map(
   coverTypeOptions.map((option) => [option.value, option.text])
 )
 const extrasText = new Map(
   extrasOptions.map((option) => [option.value, option.text])
 )
+const claimTypeText = new Map(
+  claimTypeOptions.map((option) => [option.value, option.text])
+)
 
 export function coverTypeLabel(value) {
   return coverTypeText.get(value) ?? 'Not provided'
+}
+
+export function claimTypeLabel(value) {
+  return claimTypeText.get(value) ?? 'Not provided'
 }
 
 export function extrasLabels(values = []) {

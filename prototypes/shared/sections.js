@@ -1,7 +1,9 @@
 import {
   coverTypeOptions,
   extrasOptions,
+  claimTypeOptions,
   coverTypeLabel,
+  claimTypeLabel,
   extrasLabels,
   formatDateOfBirth
 } from './quote.js'
@@ -12,8 +14,12 @@ import {
  *   - how its form payload maps to a quote patch (collect)
  *   - whether it has been answered (isComplete) — drives task-list statuses
  *   - how it renders on the check-answers page (rows)
+ *   - optionally, whether it applies at all (appliesWhen) — conditional questions
  *
- * Variants differ only in how they navigate between these sections.
+ * Variants differ only in how they navigate between these sections. A section
+ * with no `appliesWhen` always applies; one with `appliesWhen` only applies when
+ * the predicate is true for the current answers (e.g. claim details only appear
+ * once you say you have had a claim).
  */
 
 /** Checkboxes post a single value as a string and many as an array. */
@@ -87,6 +93,30 @@ export const sections = [
     ]
   },
   {
+    // Conditional: only applies when the driver said they have had a claim.
+    slug: 'claim-details',
+    title: 'Tell us about your claim',
+    appliesWhen: (quote) => quote.hadClaims === 'yes',
+    collect: (payload) => ({
+      claimType: payload.claimType,
+      claimAmount: payload.claimAmount
+    }),
+    isComplete: (quote) => Boolean(quote.claimType),
+    items: (quote) =>
+      claimTypeOptions.map((option) => ({
+        value: option.value,
+        text: option.text,
+        checked: quote.claimType === option.value
+      })),
+    rows: (quote) => [
+      { key: 'Claim type', value: claimTypeLabel(quote.claimType) },
+      {
+        key: 'Claim amount',
+        value: quote.claimAmount ? `£${quote.claimAmount}` : 'Not provided'
+      }
+    ]
+  },
+  {
     slug: 'cover-type',
     title: 'Choose your cover',
     collect: (payload) => ({ coverType: payload.coverType }),
@@ -125,13 +155,23 @@ export const sections = [
 
 export const sectionBySlug = new Map(sections.map((s) => [s.slug, s]))
 
-export function allSectionsComplete(quote) {
-  return sections.every((section) => section.isComplete(quote))
+/** Whether a section applies for the current answers (no predicate = always). */
+export function applies(section, quote) {
+  return !section.appliesWhen || section.appliesWhen(quote)
 }
 
-/** Flatten every section's rows for the check-your-answers summary list. */
+/** The sections that currently apply, in order — the live journey. */
+export function applicableSections(quote) {
+  return sections.filter((section) => applies(section, quote))
+}
+
+export function allSectionsComplete(quote) {
+  return applicableSections(quote).every((section) => section.isComplete(quote))
+}
+
+/** Flatten every applicable section's rows for the check-your-answers list. */
 export function answerRows(quote) {
-  return sections.flatMap((section) =>
+  return applicableSections(quote).flatMap((section) =>
     section.rows(quote).map((row) => ({ ...row, slug: section.slug }))
   )
 }

@@ -1,5 +1,5 @@
 import { createDraft } from '../shared/store.js'
-import { sections } from '../shared/sections.js'
+import { sections, applicableSections } from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
 import { endingRoutes } from '../shared/endings.js'
 
@@ -7,17 +7,22 @@ const BASE = '/prototype/linear'
 const LAYOUT = 'linear/layout.njk'
 const open = { auth: false }
 
-const order = sections.map((section) => section.slug)
 const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
+
+// The live order skips conditional sections that don't apply to this quote, so
+// answering "no" to claims jumps straight past the claim-details page.
+const liveOrder = (quote) => applicableSections(quote).map((s) => s.slug)
 
 const makeHandlers = sectionHandlers({
   layout: LAYOUT,
   baseRedirect: BASE,
   backLinkFor(quote, section) {
+    const order = liveOrder(quote)
     const index = order.indexOf(section.slug)
     return index <= 0 ? BASE : sectionPath(quote.id, order[index - 1])
   },
   onSaved(quote, section) {
+    const order = liveOrder(quote)
     const next = order[order.indexOf(section.slug) + 1]
     return next
       ? sectionPath(quote.id, next)
@@ -70,14 +75,16 @@ export const linearPrototype = {
           options: open,
           handler(_request, h) {
             const draft = createDraft('linear')
-            return h.redirect(sectionPath(draft.id, order[0]))
+            return h.redirect(sectionPath(draft.id, sections[0].slug))
           }
         },
         ...sectionRoutes(),
         ...endingRoutes({
           basePath: BASE,
           layout: LAYOUT,
-          summaryBackPath: (id) => sectionPath(id, order[order.length - 1])
+          // Last section (optional-extras) always applies, so this is stable.
+          summaryBackPath: (id) =>
+            sectionPath(id, sections[sections.length - 1].slug)
         })
       ])
     }

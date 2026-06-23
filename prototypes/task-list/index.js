@@ -1,5 +1,9 @@
 import { createDraft, findQuote } from '../shared/store.js'
-import { sections, allSectionsComplete } from '../shared/sections.js'
+import {
+  sections,
+  applicableSections,
+  allSectionsComplete
+} from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
 import { endingRoutes } from '../shared/endings.js'
 
@@ -11,7 +15,8 @@ const hubPath = (id) => `${BASE}/${id}`
 const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
 
 function hubItems(quote) {
-  const items = sections.map((section) => ({
+  // Conditional sections (e.g. claim details) only appear once they apply.
+  const items = applicableSections(quote).map((section) => ({
     title: { text: section.title },
     href: sectionPath(quote.id, section.slug),
     status: section.isComplete(quote)
@@ -99,14 +104,15 @@ export const taskListPrototype = {
             if (!quote) {
               return h.redirect(BASE)
             }
-            const completedCount = sections.filter((section) =>
+            const live = applicableSections(quote)
+            const completedCount = live.filter((section) =>
               section.isComplete(quote)
             ).length
             return h.view('task-list/hub', {
               pageTitle: 'Get a car insurance quote',
               items: hubItems(quote),
               completedCount,
-              totalCount: sections.length
+              totalCount: live.length
             })
           }
         },

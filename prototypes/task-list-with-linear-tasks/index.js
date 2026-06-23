@@ -2,6 +2,7 @@ import { createDraft, findQuote } from '../shared/store.js'
 import {
   sections,
   sectionBySlug,
+  applies,
   allSectionsComplete
 } from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
@@ -14,7 +15,8 @@ const open = { auth: false }
 const hubPath = (id) => `${BASE}/${id}`
 const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
 
-// Each task is a short linear run through a group of sections.
+// Each task is a short linear run through a group of sections. claim-details is
+// conditional, so it only forms part of the driving task when it applies.
 const groups = [
   {
     title: 'About you and your vehicle',
@@ -22,28 +24,39 @@ const groups = [
   },
   {
     title: 'Your driving and cover',
-    sectionSlugs: ['driving-history', 'cover-type', 'optional-extras']
+    sectionSlugs: [
+      'driving-history',
+      'claim-details',
+      'cover-type',
+      'optional-extras'
+    ]
   }
 ]
 
+/** The group's sections that currently apply, in order. */
+function liveGroupSlugs(group, quote) {
+  return group.sectionSlugs.filter((slug) =>
+    applies(sectionBySlug.get(slug), quote)
+  )
+}
+
 function locate(slug) {
   for (const group of groups) {
-    const idx = group.sectionSlugs.indexOf(slug)
-    if (idx !== -1) {
-      return { group, idx }
+    if (group.sectionSlugs.includes(slug)) {
+      return { group }
     }
   }
   return null
 }
 
 function groupStatus(group, quote) {
-  const groupSections = group.sectionSlugs.map((slug) =>
+  const live = liveGroupSlugs(group, quote).map((slug) =>
     sectionBySlug.get(slug)
   )
-  if (groupSections.every((section) => section.isComplete(quote))) {
+  if (live.every((section) => section.isComplete(quote))) {
     return { text: 'Completed' }
   }
-  if (groupSections.some((section) => section.isComplete(quote))) {
+  if (live.some((section) => section.isComplete(quote))) {
     return { tag: { text: 'In progress', classes: 'govuk-tag--light-blue' } }
   }
   return { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
@@ -53,7 +66,7 @@ function hubItems(quote) {
   const items = groups.map((group) => ({
     title: { text: group.title },
     hint: {
-      text: group.sectionSlugs
+      text: liveGroupSlugs(group, quote)
         .map((slug) => sectionBySlug.get(slug).title)
         .join(', ')
     },
@@ -80,14 +93,15 @@ const makeHandlers = sectionHandlers({
   layout: LAYOUT,
   baseRedirect: BASE,
   backLinkFor(quote, section) {
-    const { group, idx } = locate(section.slug)
-    return idx === 0
-      ? hubPath(quote.id)
-      : sectionPath(quote.id, group.sectionSlugs[idx - 1])
+    const { group } = locate(section.slug)
+    const live = liveGroupSlugs(group, quote)
+    const idx = live.indexOf(section.slug)
+    return idx <= 0 ? hubPath(quote.id) : sectionPath(quote.id, live[idx - 1])
   },
   onSaved(quote, section) {
-    const { group, idx } = locate(section.slug)
-    const next = group.sectionSlugs[idx + 1]
+    const { group } = locate(section.slug)
+    const live = liveGroupSlugs(group, quote)
+    const next = live[live.indexOf(section.slug) + 1]
     return next ? sectionPath(quote.id, next) : hubPath(quote.id)
   }
 })
@@ -150,7 +164,7 @@ export const taskListWithLinearTasksPrototype = {
               return h.redirect(BASE)
             }
             const completedCount = groups.filter((group) =>
-              group.sectionSlugs.every((slug) =>
+              liveGroupSlugs(group, quote).every((slug) =>
                 sectionBySlug.get(slug).isComplete(quote)
               )
             ).length
