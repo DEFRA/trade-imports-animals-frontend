@@ -325,6 +325,18 @@ describe('#notificationViewController', () => {
       expect(result).not.toEqual(expect.stringContaining('Copy as new'))
     })
 
+    test('Should return 200 when list query params (sort, page) are present', async () => {
+      notificationClient.get.mockResolvedValueOnce(mockNotification)
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401?sort=arrivalDate%2Casc&page=2',
+        auth: sessionAuth('notification-view-list-params')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+    })
+
     test('Should render copy error banner when ?error=copy is present', async () => {
       notificationClient.get.mockResolvedValueOnce({
         ...mockNotification,
