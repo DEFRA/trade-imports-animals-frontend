@@ -5,6 +5,7 @@ import {
   allSectionsComplete
 } from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
+import { claimsRoutes } from '../shared/claims-routes.js'
 import { endingRoutes } from '../shared/endings.js'
 
 const BASE = '/prototype/task-list'
@@ -48,23 +49,26 @@ const makeHandlers = sectionHandlers({
 })
 
 function sectionRoutes() {
-  return sections.flatMap((section) => {
-    const handlers = makeHandlers(section)
-    return [
-      {
-        method: 'GET',
-        path: sectionPath('{id}', section.slug),
-        options: open,
-        ...handlers.get
-      },
-      {
-        method: 'POST',
-        path: sectionPath('{id}', section.slug),
-        options: open,
-        ...handlers.post
-      }
-    ]
-  })
+  // Loop sections (claims) have their own routes, not the generic section page.
+  return sections
+    .filter((section) => !section.loop)
+    .flatMap((section) => {
+      const handlers = makeHandlers(section)
+      return [
+        {
+          method: 'GET',
+          path: sectionPath('{id}', section.slug),
+          options: open,
+          ...handlers.get
+        },
+        {
+          method: 'POST',
+          path: sectionPath('{id}', section.slug),
+          options: open,
+          ...handlers.post
+        }
+      ]
+    })
 }
 
 /**
@@ -117,6 +121,12 @@ export const taskListPrototype = {
           }
         },
         ...sectionRoutes(),
+        ...claimsRoutes({
+          basePath: BASE,
+          layout: LAYOUT,
+          claimsBack: (id) => hubPath(id),
+          afterClaims: (id) => hubPath(id)
+        }),
         ...endingRoutes({
           basePath: BASE,
           layout: LAYOUT,

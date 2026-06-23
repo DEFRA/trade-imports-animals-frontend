@@ -6,6 +6,7 @@ import {
   allSectionsComplete
 } from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
+import { claimsRoutes } from '../shared/claims-routes.js'
 import { endingRoutes } from '../shared/endings.js'
 
 const BASE = '/prototype/task-list-with-linear-tasks'
@@ -15,8 +16,8 @@ const open = { auth: false }
 const hubPath = (id) => `${BASE}/${id}`
 const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
 
-// Each task is a short linear run through a group of sections. claim-details is
-// conditional, so it only forms part of the driving task when it applies.
+// Each task is a short linear run through a group of sections. The claims loop
+// is conditional, so it only forms part of the driving task when it applies.
 const groups = [
   {
     title: 'About you and your vehicle',
@@ -24,12 +25,7 @@ const groups = [
   },
   {
     title: 'Your driving and cover',
-    sectionSlugs: [
-      'driving-history',
-      'claim-details',
-      'cover-type',
-      'optional-extras'
-    ]
+    sectionSlugs: ['driving-history', 'claims', 'cover-type', 'optional-extras']
   }
 ]
 
@@ -107,23 +103,26 @@ const makeHandlers = sectionHandlers({
 })
 
 function sectionRoutes() {
-  return sections.flatMap((section) => {
-    const handlers = makeHandlers(section)
-    return [
-      {
-        method: 'GET',
-        path: sectionPath('{id}', section.slug),
-        options: open,
-        ...handlers.get
-      },
-      {
-        method: 'POST',
-        path: sectionPath('{id}', section.slug),
-        options: open,
-        ...handlers.post
-      }
-    ]
-  })
+  // Loop sections (claims) have their own routes, not the generic section page.
+  return sections
+    .filter((section) => !section.loop)
+    .flatMap((section) => {
+      const handlers = makeHandlers(section)
+      return [
+        {
+          method: 'GET',
+          path: sectionPath('{id}', section.slug),
+          options: open,
+          ...handlers.get
+        },
+        {
+          method: 'POST',
+          path: sectionPath('{id}', section.slug),
+          options: open,
+          ...handlers.post
+        }
+      ]
+    })
 }
 
 /**
@@ -177,6 +176,13 @@ export const taskListWithLinearTasksPrototype = {
           }
         },
         ...sectionRoutes(),
+        ...claimsRoutes({
+          basePath: BASE,
+          layout: LAYOUT,
+          // The loop sits inside the driving task's linear run.
+          claimsBack: (id) => sectionPath(id, 'driving-history'),
+          afterClaims: (id) => sectionPath(id, 'cover-type')
+        }),
         ...endingRoutes({
           basePath: BASE,
           layout: LAYOUT,

@@ -1,0 +1,14 @@
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">Add a claim</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% include "shared/partials/claim-details.njk" %}
+
+    {{ govukButton({ text: "Add claim" }) }}
+  </form>
+{% endblock %}

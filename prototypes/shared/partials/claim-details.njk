@@ -1,10 +1,6 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 
-<p class="govuk-body">
-  You told us you have had a claim in the last 5 years, so we need a few details.
-</p>
-
 {{ govukRadios({
   name: "claimType",
   fieldset: {
@@ -22,6 +18,5 @@
   name: "claimAmount",
   classes: "govuk-input--width-5",
   prefix: { text: "£" },
-  inputmode: "numeric",
-  value: quote.claimAmount
+  inputmode: "numeric"
 }) }}

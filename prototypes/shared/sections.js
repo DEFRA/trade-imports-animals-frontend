@@ -1,7 +1,6 @@
 import {
   coverTypeOptions,
   extrasOptions,
-  claimTypeOptions,
   coverTypeLabel,
   claimTypeLabel,
   extrasLabels,
@@ -93,28 +92,26 @@ export const sections = [
     ]
   },
   {
-    // Conditional: only applies when the driver said they have had a claim.
-    slug: 'claim-details',
-    title: 'Tell us about your claim',
+    // Conditional sub-loop: applies when the driver said they have had a claim.
+    // Its pages are the add-another loop (shared/claims-routes.js), not the
+    // generic section page, so it is flagged `loop` and skipped by sectionRoutes.
+    slug: 'claims',
+    title: 'Your claims',
+    loop: true,
     appliesWhen: (quote) => quote.hadClaims === 'yes',
-    collect: (payload) => ({
-      claimType: payload.claimType,
-      claimAmount: payload.claimAmount
-    }),
-    isComplete: (quote) => Boolean(quote.claimType),
-    items: (quote) =>
-      claimTypeOptions.map((option) => ({
-        value: option.value,
-        text: option.text,
-        checked: quote.claimType === option.value
-      })),
-    rows: (quote) => [
-      { key: 'Claim type', value: claimTypeLabel(quote.claimType) },
-      {
-        key: 'Claim amount',
-        value: quote.claimAmount ? `£${quote.claimAmount}` : 'Not provided'
+    isComplete: (quote) => quote.claimsDone === true,
+    rows: (quote) => {
+      const claims = quote.claims ?? []
+      if (!claims.length) {
+        return [{ key: 'Claims', value: 'None added' }]
       }
-    ]
+      return claims.map((claim, index) => ({
+        key: `Claim ${index + 1}`,
+        value:
+          claimTypeLabel(claim.claimType) +
+          (claim.claimAmount ? ` — £${claim.claimAmount}` : '')
+      }))
+    }
   },
   {
     slug: 'cover-type',
