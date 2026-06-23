@@ -69,7 +69,7 @@ export const cphNumberController = {
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/port-of-entry')
+      return h.redirect('/addresses')
     }
   }
 }

@@ -49,7 +49,7 @@ describe('cphNumberController', () => {
   })
 
   describe('POST /cph-number', () => {
-    test('saves cphNumber to session, submits notification, and redirects to /port-of-entry', async () => {
+    test('saves cphNumber to session, submits notification, and redirects to /addresses', async () => {
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {
@@ -71,7 +71,7 @@ describe('cphNumberController', () => {
           error: expect.any(Function)
         })
       )
-      expect(response).toEqual({ statusCode: 302, location: '/port-of-entry' })
+      expect(response).toEqual({ statusCode: 302, location: '/addresses' })
     })
 
     test('accepts a cphNumber starting with a leading zero', async () => {
