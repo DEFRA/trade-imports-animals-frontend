@@ -3,6 +3,7 @@ import {
   extrasOptions,
   coverTypeLabel,
   claimTypeLabel,
+  countryLabel,
   extrasLabels,
   formatDateOfBirth
 } from './quote.js'
@@ -41,6 +42,9 @@ export const sections = [
     collect: (payload) => ({
       fullName: payload.fullName,
       email: payload.email,
+      phone: payload.phone,
+      postcode: payload.postcode,
+      country: payload.country,
       dateOfBirth: {
         day: payload['dateOfBirth-day'],
         month: payload['dateOfBirth-month'],
@@ -51,6 +55,9 @@ export const sections = [
     rows: (quote) => [
       { key: 'Name', value: quote.fullName ?? 'Not provided' },
       { key: 'Email', value: quote.email ?? 'Not provided' },
+      { key: 'Telephone', value: quote.phone ?? 'Not provided' },
+      { key: 'Postcode', value: quote.postcode ?? 'Not provided' },
+      { key: 'Country', value: countryLabel(quote.country) },
       { key: 'Date of birth', value: formatDateOfBirth(quote.dateOfBirth) }
     ]
   },
@@ -121,7 +128,11 @@ export const sections = [
   {
     slug: 'cover-type',
     title: 'Choose your cover',
-    collect: (payload) => ({ coverType: payload.coverType }),
+    collect: (payload) => ({
+      coverType: payload.coverType,
+      voluntaryExcess: payload.voluntaryExcess,
+      excessAmount: payload.excessAmount
+    }),
     isComplete: (quote) => Boolean(quote.coverType),
     items: (quote) =>
       coverTypeOptions.map((option) => ({
@@ -130,7 +141,16 @@ export const sections = [
         hint: { text: option.hint },
         checked: quote.coverType === option.value
       })),
-    rows: (quote) => [{ key: 'Cover', value: coverTypeLabel(quote.coverType) }]
+    rows: (quote) => [
+      { key: 'Cover', value: coverTypeLabel(quote.coverType) },
+      {
+        key: 'Voluntary excess',
+        value:
+          quote.voluntaryExcess === 'yes'
+            ? `£${quote.excessAmount || '0'}`
+            : 'None'
+      }
+    ]
   },
   {
     slug: 'optional-extras',

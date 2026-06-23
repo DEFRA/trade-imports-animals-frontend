@@ -1,5 +1,6 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
 
 {{ govukInput({
   label: { text: "Full name" },
@@ -15,6 +16,37 @@
   type: "email",
   spellcheck: false,
   value: quote.email
+}) }}
+
+{{ govukInput({
+  label: { text: "UK telephone number" },
+  id: "phone",
+  name: "phone",
+  type: "tel",
+  classes: "govuk-input--width-20",
+  hint: { text: "For international numbers include the country code" },
+  value: quote.phone
+}) }}
+
+{{ govukInput({
+  label: { text: "Postcode" },
+  id: "postcode",
+  name: "postcode",
+  classes: "govuk-input--width-10",
+  value: quote.postcode
+}) }}
+
+{{ govukSelect({
+  id: "country",
+  name: "country",
+  label: { text: "Country of residence" },
+  items: [
+    { value: "", text: "Choose…" },
+    { value: "england", text: "England", selected: quote.country == "england" },
+    { value: "scotland", text: "Scotland", selected: quote.country == "scotland" },
+    { value: "wales", text: "Wales", selected: quote.country == "wales" },
+    { value: "northern-ireland", text: "Northern Ireland", selected: quote.country == "northern-ireland" }
+  ]
 }) }}
 
 {{ govukDateInput({

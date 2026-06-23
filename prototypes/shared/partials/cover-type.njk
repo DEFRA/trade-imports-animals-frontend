@@ -1,4 +1,5 @@
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 
 {{ govukRadios({
   name: "coverType",
@@ -9,4 +10,32 @@
     }
   },
   items: items
+}) }}
+
+{% set excessHtml %}
+  {{ govukInput({
+    label: { text: "Voluntary excess amount" },
+    id: "excessAmount",
+    name: "excessAmount",
+    classes: "govuk-input--width-5",
+    prefix: { text: "£" },
+    inputmode: "numeric",
+    value: quote.excessAmount
+  }) }}
+{% endset %}
+
+{# Conditional reveal: choosing "Yes" reveals the amount input #}
+{{ govukRadios({
+  name: "voluntaryExcess",
+  fieldset: {
+    legend: {
+      text: "Do you want to add a voluntary excess?",
+      classes: "govuk-fieldset__legend--m"
+    }
+  },
+  hint: { text: "Paying a voluntary excess can lower your premium" },
+  items: [
+    { value: "yes", text: "Yes", checked: quote.voluntaryExcess == "yes", conditional: { html: excessHtml } },
+    { value: "no", text: "No", checked: quote.voluntaryExcess == "no" }
+  ]
 }) }}

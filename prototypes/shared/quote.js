@@ -35,6 +35,13 @@ export const claimTypeOptions = [
   { value: 'other', text: 'Something else' }
 ]
 
+export const countryOptions = [
+  { value: 'england', text: 'England' },
+  { value: 'scotland', text: 'Scotland' },
+  { value: 'wales', text: 'Wales' },
+  { value: 'northern-ireland', text: 'Northern Ireland' }
+]
+
 const coverTypeText = new Map(
   coverTypeOptions.map((option) => [option.value, option.text])
 )
@@ -44,6 +51,9 @@ const extrasText = new Map(
 const claimTypeText = new Map(
   claimTypeOptions.map((option) => [option.value, option.text])
 )
+const countryText = new Map(
+  countryOptions.map((option) => [option.value, option.text])
+)
 
 export function coverTypeLabel(value) {
   return coverTypeText.get(value) ?? 'Not provided'
@@ -51,6 +61,10 @@ export function coverTypeLabel(value) {
 
 export function claimTypeLabel(value) {
   return claimTypeText.get(value) ?? 'Not provided'
+}
+
+export function countryLabel(value) {
+  return countryText.get(value) ?? 'Not provided'
 }
 
 export function extrasLabels(values = []) {

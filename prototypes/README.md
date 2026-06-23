@@ -23,7 +23,6 @@ prototypes/
   linear/                        one question per page, "Save and continue"
   task-list/                     a hub lists every section; do them in any order
   task-list-with-linear-tasks/   a hub of tasks, each a short linear run
-  input-types/                   reference journey exercising every GDS input
   index.js                       aggregate plugin + chooser + saved-quotes view
   chooser.njk / quotes.njk       landing + datastore views
 ```

@@ -2,8 +2,7 @@
  * A tiny field-spec engine. A field spec is plain data describing one GDS form
  * input; `fieldsToView` turns a list of specs + the current answers into ready
  * GOV.UK macro arguments, which shared/partials/fields.njk renders. This keeps
- * pages data-driven and is reused by the add-on subtasks and the input-types
- * reference journey.
+ * pages data-driven; the add-on subtask steps are built from field specs.
  *
  * Spec shape: { kind, name, label, hint?, options?, maxlength? }
  * kinds: text email tel number currency postcode textarea date radios
