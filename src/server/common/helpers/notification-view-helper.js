@@ -123,7 +123,7 @@ function mapReasonForImport(reasonForImport) {
 
 function mapAddresses(notification) {
   return {
-    placeOfOrigin: notification.origin?.place ?? NOT_PROVIDED,
+    placeOfOrigin: formatAddress(notification.placeOfOrigin),
     consignor: formatAddress(notification.consignor),
     consignee: formatAddress(notification.consignee),
     importer: formatAddress(notification.importer),
