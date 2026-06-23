@@ -371,6 +371,60 @@ describe('#notificationClient', () => {
     })
   })
 
+  describe('amend', () => {
+    const referenceNumber = 'REF-AMD-1'
+
+    describe('When amend is called with a valid reference number', () => {
+      test('Should send POST request to the amend endpoint and return the response', async () => {
+        const responseBody = { referenceNumber, status: 'AMEND' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.amend(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications/REF-AMD-1/amend',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            }
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When amend request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request'
+        })
+
+        await expect(
+          notificationClient.amend(mockRequest, referenceNumber, traceId)
+        ).rejects.toMatchObject({
+          message: 'Failed to amend notification',
+          status: 400,
+          statusText: 'Bad Request'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
   describe('get', () => {
     const referenceNumber = 'REF-123'
 

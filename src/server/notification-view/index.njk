@@ -2,6 +2,7 @@
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
 
 {% block pageContent %}
 
@@ -48,25 +49,42 @@
     {{ govukInsetText({ text: errorMessage }) }}
   {% else %}
 
-  {% if status === 'DRAFT' or status === 'SUBMITTED' %}
+  {% if status === 'DRAFT' or status === 'SUBMITTED' or status === 'AMEND' %}
     <input type="hidden" id="crumb-value" value="{{ crumb }}">
-    {{ govukButton({
-      text: "Copy as new",
-      classes: "govuk-button--secondary",
-      attributes: {
-        id: "copy-btn",
-        "data-copy-ref": referenceNumber
-      }
-    }) }}
 
-    {{ govukButton({
-      text: "Delete",
-      classes: "govuk-button--warning",
-      attributes: {
-        id: "delete-btn",
-        "data-reference-number": referenceNumber
-      }
-    }) }}
+    <div class="govuk-button-group">
+      {% if status === 'SUBMITTED' %}
+        <form method="post" action="/notification-amend/{{ referenceNumber }}" class="app-form-inline">
+          <input type="hidden" name="crumb" value="{{ crumb }}">
+          {{ govukButton({
+            text: "Amend this notification",
+            classes: "govuk-button--secondary",
+            attributes: {
+              id: "amend-btn",
+              "data-reference-number": referenceNumber
+            }
+          }) }}
+        </form>
+      {% endif %}
+
+      {{ govukButton({
+        text: "Copy as new",
+        classes: "govuk-button--secondary",
+        attributes: {
+          id: "copy-btn",
+          "data-copy-ref": referenceNumber
+        }
+      }) }}
+
+      {{ govukButton({
+        text: "Delete",
+        classes: "govuk-button--warning",
+        attributes: {
+          id: "delete-btn",
+          "data-reference-number": referenceNumber
+        }
+      }) }}
+    </div>
 
     <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">
       <h2 class="govuk-heading-m" id="dialog-title">Delete this notification?</h2>
@@ -74,6 +92,10 @@
       {{ govukButton({ text: "Yes, delete", classes: "govuk-button--warning", attributes: { id: "confirm-delete-btn" } }) }}
       {{ govukButton({ text: "Cancel", classes: "govuk-button--secondary", attributes: { id: "cancel-delete-btn", autofocus: "true" } }) }}
     </dialog>
+  {% endif %}
+
+  {% if status === 'AMEND' %}
+    <p class="govuk-body">Status: {{ govukTag({ text: "Amend", classes: "govuk-tag--yellow" }) }}</p>
   {% endif %}
 
   <p class="govuk-body">Date created: <strong>{{ dateCreated }}</strong></p>
@@ -84,7 +106,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Where is this consignment coming from?</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/origin">Change<span class="govuk-visually-hidden"> where this consignment is coming from</span></a>
@@ -107,7 +129,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Your commodities</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/commodities">Change<span class="govuk-visually-hidden"> your commodities</span></a>
@@ -144,7 +166,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Additional information details</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/additional-details">Change<span class="govuk-visually-hidden"> additional information details</span></a>
@@ -166,7 +188,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Reason for importing the animals</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/import-reason">Change<span class="govuk-visually-hidden"> reason for importing the animals</span></a>
@@ -187,7 +209,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Addresses</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/addresses">Change<span class="govuk-visually-hidden"> addresses</span></a>
@@ -213,7 +235,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">County Parish Holding number (CPH)</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/cph-number">Change<span class="govuk-visually-hidden"> County Parish Holding number</span></a>
@@ -234,7 +256,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Transport details</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/transporters">Change<span class="govuk-visually-hidden"> transport details</span></a>
@@ -260,7 +282,7 @@
       <div class="govuk-summary-card">
         <div class="govuk-summary-card__title-wrapper">
           <h2 class="govuk-summary-card__title">Accompanying documents</h2>
-          {% if status === 'DRAFT' %}
+          {% if status === 'DRAFT' or status === 'AMEND' %}
             <ul class="govuk-summary-card__actions">
               <li class="govuk-summary-card__action">
                 <a class="govuk-link" href="/accompanying-documents">Change<span class="govuk-visually-hidden"> accompanying documents</span></a>
@@ -305,12 +327,20 @@
     }) }}
   {% endif %}
 
+  {% if status === 'AMEND' %}
+    {{ govukButton({
+      text: "Confirm and submit",
+      href: "/declaration",
+      attributes: { id: "save-amendments-btn" }
+    }) }}
+  {% endif %}
+
   {% endif %}
 {% endblock %}
 
 {% block bodyEnd %}
   {{ super() }}
-  {% if status === 'DRAFT' or status === 'SUBMITTED' %}
+  {% if status === 'DRAFT' or status === 'SUBMITTED' or status === 'AMEND' %}
     <script type="module" src="{{ getAssetPath('notificationView.js') }}"></script>
   {% endif %}
 {% endblock %}
