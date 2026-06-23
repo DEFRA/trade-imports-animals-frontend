@@ -5,18 +5,6 @@ non-functional — same rules as the rest of [`prototypes/`](./README.md).
 
 ## To add
 
-### Select 1-to-N options, each opening its own independent subtasks
-
-Let the user pick **one or more** options from a list (checkboxes), where each
-chosen option then has **its own set of subtasks** to complete, independent of
-the others. Picking an option adds it to a task list / hub; each one can be
-worked, part-finished and returned to on its own, in any order, and its
-completion status is tracked separately.
-
-Distinct from the claim loop above: that adds many of the **same** thing one
-after another; this fans out into **different** branches of questions, one per
-selected option, each its own mini-journey.
-
 ### A journey covering every input type
 
 A journey (or section) whose questions deliberately exercise as many GDS

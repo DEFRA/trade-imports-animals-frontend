@@ -3,10 +3,13 @@ import {
   sections,
   sectionBySlug,
   applies,
+  hasOwnRoutes,
   allSectionsComplete
 } from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
 import { claimsRoutes } from '../shared/claims-routes.js'
+import { addonsRoutes } from '../shared/addons-routes.js'
+import { addonByValue, addonHubItems } from '../shared/addons.js'
 import { endingRoutes } from '../shared/endings.js'
 
 const BASE = '/prototype/task-list-with-linear-tasks'
@@ -15,6 +18,8 @@ const open = { auth: false }
 
 const hubPath = (id) => `${BASE}/${id}`
 const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
+const addonStepPath = (id, value, slug) =>
+  `${BASE}/${id}/addons/${value}/${slug}`
 
 // Each task is a short linear run through a group of sections. The claims loop
 // is conditional, so it only forms part of the driving task when it applies.
@@ -70,6 +75,17 @@ function hubItems(quote) {
     status: groupStatus(group, quote)
   }))
 
+  // Add-ons: a selection task, then one independent task per chosen add-on.
+  const addonsSection = sectionBySlug.get('addons')
+  items.push({
+    title: { text: addonsSection.title },
+    href: `${BASE}/${quote.id}/addons`,
+    status: addonsSection.isComplete(quote)
+      ? { text: 'Completed' }
+      : { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
+  })
+  items.push(...addonHubItems(quote, addonStepPath))
+
   const ready = allSectionsComplete(quote)
   items.push({
     title: { text: 'Get your quote' },
@@ -103,9 +119,9 @@ const makeHandlers = sectionHandlers({
 })
 
 function sectionRoutes() {
-  // Loop sections (claims) have their own routes, not the generic section page.
+  // Loops and subtask fan-outs own their routes, not the generic section page.
   return sections
-    .filter((section) => !section.loop)
+    .filter((section) => !hasOwnRoutes(section))
     .flatMap((section) => {
       const handlers = makeHandlers(section)
       return [
@@ -182,6 +198,27 @@ export const taskListWithLinearTasksPrototype = {
           // The loop sits inside the driving task's linear run.
           claimsBack: (id) => sectionPath(id, 'driving-history'),
           afterClaims: (id) => sectionPath(id, 'cover-type')
+        }),
+        ...addonsRoutes({
+          basePath: BASE,
+          layout: LAYOUT,
+          selectionBack: (id) => hubPath(id),
+          afterSelection: (quote) => hubPath(quote.id),
+          // Each add-on is its own task: steps run linearly, then back to the hub.
+          stepBack: (quote, value, stepIndex) =>
+            stepIndex === 0
+              ? hubPath(quote.id)
+              : addonStepPath(
+                  quote.id,
+                  value,
+                  addonByValue.get(value).steps[stepIndex - 1].slug
+                ),
+          afterStep(quote, value, stepIndex) {
+            const next = addonByValue.get(value).steps[stepIndex + 1]
+            return next
+              ? addonStepPath(quote.id, value, next.slug)
+              : hubPath(quote.id)
+          }
         }),
         ...endingRoutes({
           basePath: BASE,

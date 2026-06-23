@@ -2,10 +2,13 @@ import { createDraft, findQuote } from '../shared/store.js'
 import {
   sections,
   applicableSections,
+  hasOwnRoutes,
   allSectionsComplete
 } from '../shared/sections.js'
 import { sectionHandlers } from '../shared/section-controller.js'
 import { claimsRoutes } from '../shared/claims-routes.js'
+import { addonsRoutes } from '../shared/addons-routes.js'
+import { addonByValue, addonHubItems } from '../shared/addons.js'
 import { endingRoutes } from '../shared/endings.js'
 
 const BASE = '/prototype/task-list'
@@ -14,6 +17,8 @@ const open = { auth: false }
 
 const hubPath = (id) => `${BASE}/${id}`
 const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
+const addonStepPath = (id, value, slug) =>
+  `${BASE}/${id}/addons/${value}/${slug}`
 
 function hubItems(quote) {
   // Conditional sections (e.g. claim details) only appear once they apply.
@@ -24,6 +29,9 @@ function hubItems(quote) {
       ? { text: 'Completed' }
       : { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
   }))
+
+  // Each chosen add-on becomes its own independent task.
+  items.push(...addonHubItems(quote, addonStepPath))
 
   const ready = allSectionsComplete(quote)
   items.push({
@@ -49,9 +57,9 @@ const makeHandlers = sectionHandlers({
 })
 
 function sectionRoutes() {
-  // Loop sections (claims) have their own routes, not the generic section page.
+  // Loops and subtask fan-outs own their routes, not the generic section page.
   return sections
-    .filter((section) => !section.loop)
+    .filter((section) => !hasOwnRoutes(section))
     .flatMap((section) => {
       const handlers = makeHandlers(section)
       return [
@@ -126,6 +134,27 @@ export const taskListPrototype = {
           layout: LAYOUT,
           claimsBack: (id) => hubPath(id),
           afterClaims: (id) => hubPath(id)
+        }),
+        ...addonsRoutes({
+          basePath: BASE,
+          layout: LAYOUT,
+          selectionBack: (id) => hubPath(id),
+          afterSelection: (quote) => hubPath(quote.id),
+          // Each add-on is its own task: steps run linearly, then back to the hub.
+          stepBack: (quote, value, stepIndex) =>
+            stepIndex === 0
+              ? hubPath(quote.id)
+              : addonStepPath(
+                  quote.id,
+                  value,
+                  addonByValue.get(value).steps[stepIndex - 1].slug
+                ),
+          afterStep(quote, value, stepIndex) {
+            const next = addonByValue.get(value).steps[stepIndex + 1]
+            return next
+              ? addonStepPath(quote.id, value, next.slug)
+              : hubPath(quote.id)
+          }
         }),
         ...endingRoutes({
           basePath: BASE,

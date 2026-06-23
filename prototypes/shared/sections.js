@@ -6,6 +6,11 @@ import {
   extrasLabels,
   formatDateOfBirth
 } from './quote.js'
+import {
+  addonByValue,
+  addonComplete,
+  allSelectedAddonsComplete
+} from './addons.js'
 
 /**
  * The questions that make up a car insurance quote, defined once and reused by
@@ -147,10 +152,34 @@ export const sections = [
         }
       ]
     }
+  },
+  {
+    // Subtasks fan-out: pick 0-to-N add-ons, each with its own mini-journey.
+    // Its pages live in shared/addons-routes.js, so sectionRoutes skips it.
+    slug: 'addons',
+    title: 'Add to your policy',
+    subtasks: true,
+    isComplete: (quote) =>
+      quote.selectedAddons !== undefined && allSelectedAddonsComplete(quote),
+    rows: (quote) => {
+      const selected = quote.selectedAddons ?? []
+      if (!selected.length) {
+        return [{ key: 'Added to policy', value: 'None' }]
+      }
+      return selected.map((value) => ({
+        key: addonByValue.get(value).title,
+        value: addonComplete(quote, value) ? 'Added' : 'Incomplete'
+      }))
+    }
   }
 ]
 
 export const sectionBySlug = new Map(sections.map((s) => [s.slug, s]))
+
+/** Sections that own their own routes (loops, subtask fan-outs). */
+export function hasOwnRoutes(section) {
+  return Boolean(section.loop || section.subtasks)
+}
 
 /** Whether a section applies for the current answers (no predicate = always). */
 export function applies(section, quote) {
