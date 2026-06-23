@@ -1,9 +1,9 @@
 {
-  "watch": ["./src"],
+  "watch": ["./src", "./prototypes"],
   "env": {
     "NODE_ENV": "development"
   },
   "ignore": ["**/*.test.*", "./src/server/common/test-helpers", "./src/client"],
-  "ext": "cjs,js,json",
+  "ext": "cjs,js,json,njk",
   "signal": "SIGINT"
 }

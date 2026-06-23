@@ -5,18 +5,6 @@ non-functional — same rules as the rest of [`prototypes/`](./README.md).
 
 ## To add
 
-### Make `npm run prototype` pick up prototype changes immediately
-
-`npm run prototype` (→ `dev` → nodemon) only watches `./src` — see
-`nodemon.json`. Edits under `prototypes/` (controllers, `sections.js`,
-`.njk` templates) don't restart the server or reload, so you have to restart
-by hand to see a change. Add `./prototypes` to the nodemon `watch` list (and
-make sure `.njk` is in `ext`) so prototype changes are picked up live.
-
-This needs doing **first**: the Playwright demo suite below re-runs the
-journeys after every iteration, and without live reload the tests will hit
-stale pages and struggle.
-
 ### Playwright demo suite — a sweep across every journey, one video each
 
 A sweep across all the journeys: a Playwright test suite whose purpose is to
