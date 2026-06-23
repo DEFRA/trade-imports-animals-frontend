@@ -33,9 +33,12 @@ export function addonsRoutes(config) {
     selectionBack,
     afterSelection,
     stepBack,
-    afterStep
+    afterStep,
+    breadcrumbs
   } = config
   const open = { auth: false }
+  const crumbs = (quote, title) =>
+    breadcrumbs ? breadcrumbs(quote, title) : undefined
 
   const locateStep = (params) => {
     const addon = addonByValue.get(params.addon)
@@ -60,7 +63,8 @@ export function addonsRoutes(config) {
           layout,
           pageTitle: 'Add to your policy',
           items: selectionItems(quote),
-          backLink: selectionBack(quote.id)
+          backLink: selectionBack(quote.id),
+          breadcrumbs: crumbs(quote, 'Add to your policy')
         })
       }
     },
@@ -99,7 +103,8 @@ export function addonsRoutes(config) {
             found.step.fields,
             getAddonData(quote, found.addon.value)
           ),
-          backLink: stepBack(quote, found.addon.value, found.index)
+          backLink: stepBack(quote, found.addon.value, found.index),
+          breadcrumbs: crumbs(quote, found.step.title)
         })
       }
     },

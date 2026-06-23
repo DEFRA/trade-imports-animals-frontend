@@ -20,6 +20,15 @@ const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
 const addonStepPath = (id, value, slug) =>
   `${BASE}/${id}/addons/${value}/${slug}`
 
+// Every page links back to the per-quote hub, so the user can jump sideways out
+// of any task or sub-task without walking back through the journey.
+const breadcrumbs = (quote, title) => [
+  { text: 'Prototypes', href: '/prototype' },
+  { text: 'Task list journey', href: BASE },
+  { text: 'Your application', href: hubPath(quote.id) },
+  { text: title }
+]
+
 function hubItems(quote) {
   // Conditional sections (e.g. claim details) only appear once they apply.
   const items = applicableSections(quote).map((section) => ({
@@ -53,7 +62,8 @@ const makeHandlers = sectionHandlers({
   layout: LAYOUT,
   baseRedirect: BASE,
   backLinkFor: (quote) => hubPath(quote.id),
-  onSaved: (quote) => hubPath(quote.id)
+  onSaved: (quote) => hubPath(quote.id),
+  breadcrumbs
 })
 
 function sectionRoutes() {
@@ -124,7 +134,12 @@ export const taskListPrototype = {
               pageTitle: 'Get a car insurance quote',
               items: hubItems(quote),
               completedCount,
-              totalCount: live.length
+              totalCount: live.length,
+              breadcrumbs: [
+                { text: 'Prototypes', href: '/prototype' },
+                { text: 'Task list journey', href: BASE },
+                { text: 'Your application' }
+              ]
             })
           }
         },
@@ -133,7 +148,8 @@ export const taskListPrototype = {
           basePath: BASE,
           layout: LAYOUT,
           claimsBack: (id) => hubPath(id),
-          afterClaims: (id) => hubPath(id)
+          afterClaims: (id) => hubPath(id),
+          breadcrumbs
         }),
         ...addonsRoutes({
           basePath: BASE,
@@ -154,12 +170,14 @@ export const taskListPrototype = {
             return next
               ? addonStepPath(quote.id, value, next.slug)
               : hubPath(quote.id)
-          }
+          },
+          breadcrumbs
         }),
         ...endingRoutes({
           basePath: BASE,
           layout: LAYOUT,
-          summaryBackPath: (id) => hubPath(id)
+          summaryBackPath: (id) => hubPath(id),
+          breadcrumbs
         })
       ])
     }

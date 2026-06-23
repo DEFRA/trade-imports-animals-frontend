@@ -21,6 +21,15 @@ const sectionPath = (id, slug) => `${BASE}/${id}/${slug}`
 const addonStepPath = (id, value, slug) =>
   `${BASE}/${id}/addons/${value}/${slug}`
 
+// Every page links back to the per-quote hub, so the user can jump sideways out
+// of any task or sub-task without walking back through the journey.
+const breadcrumbs = (quote, title) => [
+  { text: 'Prototypes', href: '/prototype' },
+  { text: 'Task list with linear tasks', href: BASE },
+  { text: 'Your application', href: hubPath(quote.id) },
+  { text: title }
+]
+
 // Each task is a short linear run through a group of sections. The claims loop
 // is conditional, so it only forms part of the driving task when it applies.
 const groups = [
@@ -115,7 +124,8 @@ const makeHandlers = sectionHandlers({
     const live = liveGroupSlugs(group, quote)
     const next = live[live.indexOf(section.slug) + 1]
     return next ? sectionPath(quote.id, next) : hubPath(quote.id)
-  }
+  },
+  breadcrumbs
 })
 
 function sectionRoutes() {
@@ -187,7 +197,12 @@ export const taskListWithLinearTasksPrototype = {
               pageTitle: 'Get a car insurance quote',
               items: hubItems(quote),
               completedCount,
-              totalCount: groups.length
+              totalCount: groups.length,
+              breadcrumbs: [
+                { text: 'Prototypes', href: '/prototype' },
+                { text: 'Task list with linear tasks', href: BASE },
+                { text: 'Your application' }
+              ]
             })
           }
         },
@@ -197,7 +212,8 @@ export const taskListWithLinearTasksPrototype = {
           layout: LAYOUT,
           // The loop sits inside the driving task's linear run.
           claimsBack: (id) => sectionPath(id, 'driving-history'),
-          afterClaims: (id) => sectionPath(id, 'cover-type')
+          afterClaims: (id) => sectionPath(id, 'cover-type'),
+          breadcrumbs
         }),
         ...addonsRoutes({
           basePath: BASE,
@@ -218,12 +234,14 @@ export const taskListWithLinearTasksPrototype = {
             return next
               ? addonStepPath(quote.id, value, next.slug)
               : hubPath(quote.id)
-          }
+          },
+          breadcrumbs
         }),
         ...endingRoutes({
           basePath: BASE,
           layout: LAYOUT,
-          summaryBackPath: (id) => hubPath(id)
+          summaryBackPath: (id) => hubPath(id),
+          breadcrumbs
         })
       ])
     }

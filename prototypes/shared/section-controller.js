@@ -11,10 +11,18 @@ import { findQuote, updateQuote } from './store.js'
  * @param {(quote: object, section: object) => string} config.backLinkFor
  * @param {(quote: object, section: object) => string} config.onSaved
  * @param {string} [config.submitText]
+ * @param {(quote: object, title: string) => Array} [config.breadcrumbs]
  * @returns {(section: object) => { get: object, post: object }}
  */
 export function sectionHandlers(config) {
-  const { layout, baseRedirect, backLinkFor, onSaved, submitText } = config
+  const {
+    layout,
+    baseRedirect,
+    backLinkFor,
+    onSaved,
+    submitText,
+    breadcrumbs
+  } = config
 
   return (section) => ({
     get: {
@@ -30,6 +38,9 @@ export function sectionHandlers(config) {
           quote,
           items: section.items ? section.items(quote) : undefined,
           backLink: backLinkFor(quote, section),
+          breadcrumbs: breadcrumbs
+            ? breadcrumbs(quote, section.title)
+            : undefined,
           submitText
         })
       }

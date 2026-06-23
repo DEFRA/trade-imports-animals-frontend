@@ -15,9 +15,16 @@ import { coverTypeLabel, extrasLabels, makeReference } from './quote.js'
  * @param {(id: string) => string} config.summaryBackPath - Back link on summary
  * @returns {Array<object>} Hapi route definitions (auth disabled by caller)
  */
-export function endingRoutes({ basePath, layout, summaryBackPath }) {
+export function endingRoutes({
+  basePath,
+  layout,
+  summaryBackPath,
+  breadcrumbs
+}) {
   const open = { auth: false }
   const at = (id, slug) => `${basePath}/${id}/${slug}`
+  const crumbs = (quote, title) =>
+    breadcrumbs ? breadcrumbs(quote, title) : undefined
 
   const guard = (request, h) => findQuote(request.params.id)
 
@@ -41,7 +48,8 @@ export function endingRoutes({ basePath, layout, summaryBackPath }) {
           premium,
           coverLabel: coverTypeLabel(updated.coverType),
           extras: extrasLabels(updated.extras),
-          backLink: summaryBackPath(updated.id)
+          backLink: summaryBackPath(updated.id),
+          breadcrumbs: crumbs(updated, 'Your quote')
         })
       }
     },
@@ -84,7 +92,8 @@ export function endingRoutes({ basePath, layout, summaryBackPath }) {
           quote,
           premium: quote.premium,
           rows,
-          backLink: at(quote.id, 'quote-summary')
+          backLink: at(quote.id, 'quote-summary'),
+          breadcrumbs: crumbs(quote, 'Check your answers')
         })
       }
     },
@@ -118,7 +127,8 @@ export function endingRoutes({ basePath, layout, summaryBackPath }) {
           pageTitle: 'Quote confirmed',
           quote,
           reference: quote.reference,
-          premium: quote.premium
+          premium: quote.premium,
+          breadcrumbs: crumbs(quote, 'Quote confirmed')
         })
       }
     }

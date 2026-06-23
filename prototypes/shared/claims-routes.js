@@ -22,9 +22,17 @@ import {
  * @param {(id: string) => string} config.claimsBack - Back link on the list
  * @param {(id: string) => string} config.afterClaims - where Continue leaves to
  */
-export function claimsRoutes({ basePath, layout, claimsBack, afterClaims }) {
+export function claimsRoutes({
+  basePath,
+  layout,
+  claimsBack,
+  afterClaims,
+  breadcrumbs
+}) {
   const open = { auth: false }
   const at = (id, suffix) => `${basePath}/${id}/${suffix}`
+  const crumbs = (quote, title) =>
+    breadcrumbs ? breadcrumbs(quote, title) : undefined
 
   const guard = (request, h) => findQuote(request.params.id)
 
@@ -56,7 +64,8 @@ export function claimsRoutes({ basePath, layout, claimsBack, afterClaims }) {
           pageTitle: 'Claims you have added',
           quote,
           rows,
-          backLink: claimsBack(quote.id)
+          backLink: claimsBack(quote.id),
+          breadcrumbs: crumbs(quote, 'Your claims')
         })
       }
     },
@@ -90,7 +99,8 @@ export function claimsRoutes({ basePath, layout, claimsBack, afterClaims }) {
           pageTitle: 'Add a claim',
           quote,
           items: claimTypeItems(),
-          backLink: at(quote.id, 'claims')
+          backLink: at(quote.id, 'claims'),
+          breadcrumbs: crumbs(quote, 'Add a claim')
         })
       }
     },
