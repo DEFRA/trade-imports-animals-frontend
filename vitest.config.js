@@ -5,6 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
+    // Playwright prototype specs are run by Playwright, not vitest.
+    exclude: [...configDefaults.exclude, 'prototypes/e2e/**'],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',
