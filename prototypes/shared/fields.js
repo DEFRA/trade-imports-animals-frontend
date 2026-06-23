@@ -168,7 +168,21 @@ function fieldToView(field, data) {
 }
 
 export function fieldsToView(fields, data = {}) {
-  return fields.map((field) => fieldToView(field, data))
+  return fields.map((field) => {
+    const view = fieldToView(field, data)
+    // Every GOV.UK input macro accepts errorMessage, so attach it uniformly.
+    if (field.error) {
+      view.args.errorMessage = { text: field.error }
+    }
+    return view
+  })
+}
+
+/** Build a govukErrorSummary item list from any specs carrying an `error`. */
+export function errorSummaryList(fields) {
+  return fields
+    .filter((field) => field.error)
+    .map((field) => ({ text: field.error, href: `#${field.name}` }))
 }
 
 /** Read submitted values for a list of specs back into a quote patch. */

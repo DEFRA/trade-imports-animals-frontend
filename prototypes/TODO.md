@@ -5,40 +5,6 @@ non-functional — same rules as the rest of [`prototypes/`](./README.md).
 
 ## To add
 
-### A journey covering every input type
-
-A journey (or section) whose questions deliberately exercise as many GDS
-input components as sensibly possible — a reference of how each looks and
-behaves. Take the [GOV.UK Design System](https://design-system.service.gov.uk/components/)
-as inspiration. Cover at least:
-
-- **Free-form text** — single-line text input (e.g. full name).
-- **Multi-line text** — textarea, ideally with character count (e.g. "describe
-  the goods").
-- **Date** — the 3-field day/month/year date input (e.g. date of birth).
-- **Radios (single select)** — pick exactly one (e.g. cover type).
-- **Boolean** — yes/no, as two radios (e.g. "Have you had any claims?").
-- **Checkboxes (multi select)** — pick zero-to-many (e.g. optional extras).
-- **Select / dropdown** — long single-choice list (e.g. country).
-- **Number** — numeric input with `inputmode` (e.g. vehicle year, no. of
-  passengers).
-- **Currency / money** — £-prefixed amount (e.g. estimated value).
-- **Formatted / patterned strings** — inputs with a known shape and hint:
-  - National Insurance number (`QQ 12 34 56 C`)
-  - UK postcode
-  - Phone number (`tel` input)
-  - Email address (`email` input)
-  - Reference number / vehicle registration
-- **Conditional reveal** — a radio/checkbox that reveals a follow-up input
-  when chosen (e.g. "Other — please specify").
-- **Autocomplete** — accessible autocomplete over a long list (e.g. make of
-  vehicle).
-- **File upload** — single file (e.g. supporting document).
-
-Show realistic validation hints and error messages for each so the prototype
-doubles as a "how each input type should be labelled, hinted and validated"
-worked example.
-
 ### Breadcrumbs on every page
 
 Show a breadcrumb trail on every page so the user can jump back out to other
