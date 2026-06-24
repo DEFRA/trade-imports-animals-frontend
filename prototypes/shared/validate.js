@@ -229,45 +229,63 @@ function trim(value) {
 }
 
 /**
- * Integer-years field: required whole number within [min, max]. Used for
+ * Integer-years field: whole number within [min, max]. Used for
  * `yearsNoClaims` and `ncdYears`. Two friendly strings — `enterMessage`
  * (action phrasing for the required case, e.g. "Enter how many years…") and
  * `noun` (subject phrasing for the range case, e.g. "Years must be…") — so
  * the wording reads naturally for both errors.
+ *
+ * `required: true` (default) keeps the old behaviour. `required: false`
+ * swaps `.required()` for `.empty('')` so an unfilled box passes through —
+ * format / range checks still fire on anything the user actually typed.
  */
-export function integerYearsSchema({ name, enterMessage, noun, min, max }) {
+export function integerYearsSchema({
+  name,
+  enterMessage,
+  noun,
+  min,
+  max,
+  required = true
+}) {
   const range = `${noun} must be a whole number between ${min} and ${max}`
-  return Joi.object({
-    [name]: Joi.number().integer().min(min).max(max).required().messages({
-      'any.required': enterMessage,
-      'number.base': range,
-      'number.integer': range,
-      'number.min': range,
-      'number.max': range
-    })
-  }).unknown(true)
+  const base = Joi.number().integer().min(min).max(max)
+  const field = (required ? base.required() : base.empty('')).messages({
+    'any.required': enterMessage,
+    'number.base': range,
+    'number.integer': range,
+    'number.min': range,
+    'number.max': range
+  })
+  return Joi.object({ [name]: field }).unknown(true)
 }
 
 /**
- * Vehicle-year field: required four-digit year between 1900 and `currentYear()+1`.
+ * Vehicle-year field: four-digit year between 1900 and `currentYear()+1`.
  * Computed at validate time so the prototype doesn't go stale next January.
+ *
+ * Same `required` semantics as `integerYearsSchema` — pass `required: false`
+ * to skip validation when the user leaves the box empty.
  */
-export function vehicleYearSchema({ name, enterMessage, noun, currentYear }) {
+export function vehicleYearSchema({
+  name,
+  enterMessage,
+  noun,
+  currentYear,
+  required = true
+}) {
   const year = currentYear ?? new Date().getFullYear()
-  return Joi.object({
-    [name]: Joi.number()
-      .integer()
-      .min(1900)
-      .max(year + 1)
-      .required()
-      .messages({
-        'any.required': enterMessage,
-        'number.base': `${noun} must be a number`,
-        'number.integer': `${noun} must be a whole number`,
-        'number.min': `${noun} must be between 1900 and ${year + 1}`,
-        'number.max': `${noun} must be between 1900 and ${year + 1}`
-      })
-  }).unknown(true)
+  const base = Joi.number()
+    .integer()
+    .min(1900)
+    .max(year + 1)
+  const field = (required ? base.required() : base.empty('')).messages({
+    'any.required': enterMessage,
+    'number.base': `${noun} must be a number`,
+    'number.integer': `${noun} must be a whole number`,
+    'number.min': `${noun} must be between 1900 and ${year + 1}`,
+    'number.max': `${noun} must be between 1900 and ${year + 1}`
+  })
+  return Joi.object({ [name]: field }).unknown(true)
 }
 
 /**

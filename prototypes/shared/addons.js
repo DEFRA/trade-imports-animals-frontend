@@ -20,7 +20,7 @@ export const addonOptions = [
         slug: 'who',
         title: 'Named driver',
         key: 'driverName',
-        schema: dobSchema('driverDob', 'Date of birth'),
+        schema: dobSchema('driverDob', 'Date of birth', { required: false }),
         fields: [
           { kind: 'text', name: 'driverName', label: 'Full name' },
           {
@@ -102,7 +102,8 @@ export const addonOptions = [
           enterMessage: 'Enter how many years you want to protect',
           noun: 'Years to protect',
           min: 0,
-          max: 99
+          max: 99,
+          required: false
         }),
         fields: [
           {

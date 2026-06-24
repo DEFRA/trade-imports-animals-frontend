@@ -289,6 +289,43 @@ describe('vehicleYearSchema', () => {
   })
 })
 
+describe('vehicleYearSchema (optional)', () => {
+  const schema = vehicleYearSchema({
+    name: 'year',
+    enterMessage: 'never used',
+    noun: 'Year of manufacture',
+    required: false
+  })
+
+  test('an empty submission passes', () => {
+    const { errors } = validatePayload(schema, { year: '' })
+    expect(errors).toBeNull()
+  })
+
+  test('a missing field passes', () => {
+    const { errors } = validatePayload(schema, {})
+    expect(errors).toBeNull()
+  })
+
+  test('still validates format when a value is entered', () => {
+    const { errors } = validatePayload(schema, { year: 'abc' })
+    expect(errors.year).toBe('Year of manufacture must be a number')
+  })
+
+  test('still validates range when a value is entered', () => {
+    const { errors } = validatePayload(schema, { year: '1899' })
+    expect(errors.year).toBe(
+      `Year of manufacture must be between 1900 and ${currentYear + 1}`
+    )
+  })
+
+  test('a valid value still passes and coerces to Number', () => {
+    const { value, errors } = validatePayload(schema, { year: '2018' })
+    expect(errors).toBeNull()
+    expect(value.year).toBe(2018)
+  })
+})
+
 describe('integerYearsSchema', () => {
   const schema = integerYearsSchema({
     name: 'yearsNoClaims',
@@ -330,6 +367,47 @@ describe('integerYearsSchema', () => {
     expect(errors.yearsNoClaims).toBe(
       'Years of no-claims discount must be a whole number between 0 and 99'
     )
+  })
+})
+
+describe('integerYearsSchema (optional)', () => {
+  const schema = integerYearsSchema({
+    name: 'yearsNoClaims',
+    enterMessage: 'never used',
+    noun: 'Years of no-claims discount',
+    min: 0,
+    max: 99,
+    required: false
+  })
+
+  test('an empty submission passes', () => {
+    const { errors } = validatePayload(schema, { yearsNoClaims: '' })
+    expect(errors).toBeNull()
+  })
+
+  test('a missing field passes', () => {
+    const { errors } = validatePayload(schema, {})
+    expect(errors).toBeNull()
+  })
+
+  test('still validates format when a value is entered', () => {
+    const { errors } = validatePayload(schema, { yearsNoClaims: '-1' })
+    expect(errors.yearsNoClaims).toBe(
+      'Years of no-claims discount must be a whole number between 0 and 99'
+    )
+  })
+
+  test('still validates the max', () => {
+    const { errors } = validatePayload(schema, { yearsNoClaims: '100' })
+    expect(errors.yearsNoClaims).toBe(
+      'Years of no-claims discount must be a whole number between 0 and 99'
+    )
+  })
+
+  test('a valid value still passes and coerces to Number', () => {
+    const { value, errors } = validatePayload(schema, { yearsNoClaims: '5' })
+    expect(errors).toBeNull()
+    expect(value.yearsNoClaims).toBe(5)
   })
 })
 
@@ -660,5 +738,61 @@ describe('currencySchema composes with vehicleYearSchema', () => {
     expect(errors).toBeNull()
     expect(value.year).toBe(2018)
     expect(value.estimatedValue).toBeUndefined()
+  })
+})
+
+describe('the live Your-vehicle composition (both optional)', () => {
+  const yourVehicle = vehicleYearSchema({
+    name: 'year',
+    enterMessage: 'never used',
+    noun: 'Year of manufacture',
+    required: false
+  }).concat(
+    currencySchema({
+      name: 'estimatedValue',
+      enterMessage: 'never used',
+      formatMessage: 'estimated value bad'
+    })
+  )
+
+  test('a fully blank submission passes — no field is required', () => {
+    const { value, errors } = validatePayload(yourVehicle, {})
+    expect(errors).toBeNull()
+    expect(value.year).toBeUndefined()
+    expect(value.estimatedValue).toBeUndefined()
+  })
+
+  test('year alone passes — estimatedValue is not validated when empty', () => {
+    const { value, errors } = validatePayload(yourVehicle, {
+      year: '2018',
+      estimatedValue: ''
+    })
+    expect(errors).toBeNull()
+    expect(value.year).toBe(2018)
+    expect(value.estimatedValue).toBeUndefined()
+  })
+
+  test('estimatedValue alone passes — year is not validated when empty', () => {
+    const { value, errors } = validatePayload(yourVehicle, {
+      year: '',
+      estimatedValue: '5000'
+    })
+    expect(errors).toBeNull()
+    expect(value.year).toBeUndefined()
+    expect(value.estimatedValue).toBe(5000)
+  })
+
+  test('a bad year alone still fails — only the entered field is validated', () => {
+    const { errors } = validatePayload(yourVehicle, { year: 'abc' })
+    expect(errors.year).toBeDefined()
+    expect(errors.estimatedValue).toBeUndefined()
+  })
+
+  test('a bad estimatedValue alone still fails — only the entered field is validated', () => {
+    const { errors } = validatePayload(yourVehicle, {
+      estimatedValue: '5000.50'
+    })
+    expect(errors.estimatedValue).toBe('estimated value bad')
+    expect(errors.year).toBeUndefined()
   })
 })

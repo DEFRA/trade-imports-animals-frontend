@@ -100,7 +100,8 @@ export const sections = [
     schema: vehicleYearSchema({
       name: 'year',
       enterMessage: 'Enter the year your vehicle was made',
-      noun: 'Year of manufacture'
+      noun: 'Year of manufacture',
+      required: false
     }).concat(
       currencySchema({
         name: 'estimatedValue',
@@ -141,7 +142,8 @@ export const sections = [
       enterMessage: 'Enter how many years of no-claims discount you have',
       noun: 'Years of no-claims discount',
       min: 0,
-      max: 99
+      max: 99,
+      required: false
     }),
     collect: (payload) => {
       const patch = {
