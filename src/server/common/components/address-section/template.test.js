@@ -48,6 +48,16 @@ describe('Address Section Component', () => {
     test('does not render a table', () => {
       expect($component('table')).toHaveLength(0)
     })
+
+    test('uses addText override for the add link when provided', () => {
+      const $overrideComponent = renderComponent('address-section', {
+        ...defaultParams,
+        addText: 'Add an importer'
+      })
+      expect($overrideComponent('#addPlaceOfOrigin').text().trim()).toBe(
+        'Add an importer'
+      )
+    })
   })
 
   describe('when an operator is selected', () => {
