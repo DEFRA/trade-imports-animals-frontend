@@ -9,8 +9,10 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './prototypes/e2e',
   testMatch: '**/*.spec.js',
-  fullyParallel: false,
-  workers: 1,
+  // Journeys are independent (each owns its own quote id) and the JSON store is
+  // synchronous, so they can run in parallel even though each is slow.
+  fullyParallel: true,
+  workers: 4,
   timeout: 240_000,
   expect: { timeout: 15_000 },
   reporter: [['html', { open: 'never' }], ['list']],
