@@ -12,7 +12,15 @@ import {
   addonComplete,
   allSelectedAddonsComplete
 } from './addons.js'
-import { dobSchema, integerYearsSchema, vehicleYearSchema } from './validate.js'
+import {
+  dobSchema,
+  integerYearsSchema,
+  phoneSchema,
+  vehicleYearSchema
+} from './validate.js'
+
+const PHONE_EXAMPLES =
+  'Enter a telephone number, like 01632 960 001, 07700 900 982 or +44 808 157 0192'
 
 /**
  * The questions that make up a car insurance quote, defined once and reused by
@@ -40,7 +48,13 @@ export const sections = [
   {
     slug: 'about-you',
     title: 'About you',
-    schema: dobSchema('dateOfBirth', 'Date of birth'),
+    schema: dobSchema('dateOfBirth', 'Date of birth').concat(
+      phoneSchema({
+        name: 'phone',
+        enterMessage: 'Enter a UK telephone number',
+        formatMessage: PHONE_EXAMPLES
+      })
+    ),
     collect: (payload) => ({
       fullName: payload.fullName,
       email: payload.email,

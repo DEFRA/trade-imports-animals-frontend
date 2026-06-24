@@ -23,9 +23,11 @@
   id: "phone",
   name: "phone",
   type: "tel",
+  autocomplete: "tel",
   classes: "govuk-input--width-20",
   hint: { text: "For international numbers include the country code" },
-  value: quote.phone
+  value: quote.phone,
+  errorMessage: { text: errors.phone } if errors and errors.phone
 }) }}
 
 {{ govukInput({

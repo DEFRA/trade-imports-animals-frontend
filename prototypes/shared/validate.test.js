@@ -3,6 +3,7 @@ import {
   dobSchema,
   vehicleYearSchema,
   integerYearsSchema,
+  phoneSchema,
   MIN_DRIVING_AGE,
   MAX_AGE
 } from './validate.js'
@@ -237,5 +238,113 @@ describe('integerYearsSchema', () => {
     expect(errors.yearsNoClaims).toBe(
       'Years of no-claims discount must be a whole number between 0 and 99'
     )
+  })
+})
+
+describe('phoneSchema (required)', () => {
+  const enterMessage = 'Enter a UK telephone number'
+  const formatMessage =
+    'Enter a telephone number, like 01632 960 001, 07700 900 982 or +44 808 157 0192'
+  const schema = phoneSchema({ name: 'phone', enterMessage, formatMessage })
+
+  test.each([
+    ['UK landline with spaces', '01632 960 001'],
+    ['UK landline grouped', '020 7946 0958'],
+    ['UK mobile', '07700 900 982'],
+    ['international with country code', '+44 808 157 0192'],
+    ['compact international', '+15551234567'],
+    ['extension separated by ext', '020 7946 0958 ext 123'],
+    ['extension separated by x', '020 7946 0958 x123'],
+    ['parentheses around area code', '(0118) 496 0123'],
+    ['hyphen-separated', '555-123-4567'],
+    ['surrounded by whitespace', '  07700 900 982  ']
+  ])('accepts a valid %s', (_, input) => {
+    const { value, errors } = validatePayload(schema, { phone: input })
+    expect(errors).toBeNull()
+    expect(value.phone).toBe(input.trim())
+  })
+
+  test('rejects an empty submission with the enter message', () => {
+    const { errors } = validatePayload(schema, { phone: '' })
+    expect(errors.phone).toBe(enterMessage)
+  })
+
+  test('rejects a missing field with the enter message', () => {
+    const { errors } = validatePayload(schema, {})
+    expect(errors.phone).toBe(enterMessage)
+  })
+
+  test('rejects letters outside the extension allow-list', () => {
+    const { errors } = validatePayload(schema, { phone: 'call me maybe' })
+    expect(errors.phone).toBe(formatMessage)
+  })
+
+  test('rejects too few digits', () => {
+    const { errors } = validatePayload(schema, { phone: '12345' })
+    expect(errors.phone).toBe(formatMessage)
+  })
+
+  test('rejects too many digits (E.164 cap is 15)', () => {
+    const { errors } = validatePayload(schema, { phone: '1234567890123456' })
+    expect(errors.phone).toBe(formatMessage)
+  })
+
+  test('rejects punctuation-only input with no digits', () => {
+    const { errors } = validatePayload(schema, { phone: '()-+ ext' })
+    expect(errors.phone).toBe(formatMessage)
+  })
+})
+
+describe('phoneSchema (optional)', () => {
+  const schema = phoneSchema({
+    name: 'phone',
+    enterMessage: 'never used',
+    formatMessage: 'wrong format',
+    required: false
+  })
+
+  test('accepts an empty string when not required', () => {
+    const { value, errors } = validatePayload(schema, { phone: '' })
+    expect(errors).toBeNull()
+    expect(value.phone).toBe('')
+  })
+
+  test('still rejects garbage characters when not required', () => {
+    const { errors } = validatePayload(schema, { phone: 'abc' })
+    expect(errors.phone).toBe('wrong format')
+  })
+})
+
+describe('phoneSchema composes with dobSchema via .concat()', () => {
+  const combined = dobSchema('dateOfBirth', 'Date of birth').concat(
+    phoneSchema({
+      name: 'phone',
+      enterMessage: 'Enter a UK telephone number',
+      formatMessage: 'wrong format'
+    })
+  )
+
+  test('reports both DOB and phone errors in one pass', () => {
+    const { errors, errorSummary } = validatePayload(combined, {})
+    expect(errors).toMatchObject({
+      'dateOfBirth-day': 'Date of birth must include a day',
+      'dateOfBirth-month': 'Date of birth must include a month',
+      'dateOfBirth-year': 'Date of birth must include a year',
+      phone: 'Enter a UK telephone number'
+    })
+    expect(errorSummary.map((row) => row.href)).toEqual([
+      '#dateOfBirth-day',
+      '#dateOfBirth-month',
+      '#dateOfBirth-year',
+      '#phone'
+    ])
+  })
+
+  test('passes a fully valid About-you submission', () => {
+    const { errors } = validatePayload(combined, {
+      ...yearsAgoDob(30),
+      phone: '07700 900 982'
+    })
+    expect(errors).toBeNull()
   })
 })

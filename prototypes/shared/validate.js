@@ -12,9 +12,9 @@ import Joi from 'joi'
  * For day/month/year date inputs the per-part error keys are joined with the
  * input's prefix (e.g. `dateOfBirth-day`), matching the macro's id convention.
  *
- * `dobSchema(prefix, label)` and `integerYearsSchema(opts)` are the factories
- * used by sections.js / addons.js so canonical DOB and integer-year rules are
- * declared once.
+ * `dobSchema`, `integerYearsSchema`, `vehicleYearSchema` and `phoneSchema`
+ * are the factories used by sections.js / addons.js so each field's canonical
+ * rules are declared once and composed with `Joi.object().concat(...)`.
  */
 
 export const MAX_AGE = 120
@@ -179,6 +179,64 @@ export function vehicleYearSchema({ name, enterMessage, noun, currentYear }) {
         'number.max': `${noun} must be between 1900 and ${year + 1}`
       })
   }).unknown(true)
+}
+
+/**
+ * GDS-lenient telephone number schema.
+ *
+ * Follows the Design System guidance: accept the messy variety of phone
+ * formats users actually submit rather than enforcing a strict regex. The
+ * sanity checks are:
+ *   - allow-list of characters (digits, spaces, `+`, `-`, `(`, `)`,
+ *     `.,;` and the letters used in extension labels like `ext` and `x`);
+ *   - the digit count, after stripping non-digits, must be between
+ *     `minDigits` and `maxDigits` (defaults 7..15 — E.164 max is 15).
+ *
+ * Both invalid-format and digit-count failures share `formatMessage` because
+ * the GDS hint exposes the accepted formats with one example string; users
+ * don't need to distinguish "bad characters" from "wrong length".
+ */
+export const PHONE_ALLOWED = /^[0-9+()\-.,;\sextEXT]+$/
+const PHONE_DEFAULT_MIN_DIGITS = 7
+const PHONE_DEFAULT_MAX_DIGITS = 15
+
+export function phoneSchema({
+  name,
+  enterMessage,
+  formatMessage,
+  required = true,
+  minDigits = PHONE_DEFAULT_MIN_DIGITS,
+  maxDigits = PHONE_DEFAULT_MAX_DIGITS
+}) {
+  let field = Joi.string()
+    .trim()
+    .allow('')
+    .pattern(PHONE_ALLOWED)
+    .custom((value, helpers) => {
+      if (!value) {
+        return value
+      }
+      const digitCount = value.replace(/\D/g, '').length
+      if (digitCount < minDigits || digitCount > maxDigits) {
+        return helpers.error('phone.length')
+      }
+      return value
+    }, 'phone digit count')
+    .messages({
+      'string.pattern.base': formatMessage,
+      'phone.length': formatMessage
+    })
+  if (required) {
+    // `.empty('')` plus `.required()` lets the partial post an empty string
+    // (the user typed nothing) without tripping the more generic
+    // `string.empty` message — `enterMessage` covers it via `any.required`.
+    field = field.empty('').required().messages({
+      'any.required': enterMessage,
+      'string.pattern.base': formatMessage,
+      'phone.length': formatMessage
+    })
+  }
+  return Joi.object({ [name]: field }).unknown(true)
 }
 
 function capitalise(str) {
