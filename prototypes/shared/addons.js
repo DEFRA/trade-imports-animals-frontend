@@ -1,4 +1,5 @@
 import { updateQuote } from './store.js'
+import { dobSchema, integerYearsSchema } from './validate.js'
 
 /**
  * The "select 1-to-N options, each opening its own subtasks" pattern. The driver
@@ -19,6 +20,7 @@ export const addonOptions = [
         slug: 'who',
         title: 'Named driver',
         key: 'driverName',
+        schema: dobSchema('driverDob', 'Date of birth'),
         fields: [
           { kind: 'text', name: 'driverName', label: 'Full name' },
           {
@@ -89,6 +91,13 @@ export const addonOptions = [
         slug: 'years',
         title: 'Protect your no-claims discount',
         key: 'ncdYears',
+        schema: integerYearsSchema({
+          name: 'ncdYears',
+          enterMessage: 'Enter how many years you want to protect',
+          noun: 'Years to protect',
+          min: 0,
+          max: 99
+        }),
         fields: [
           {
             kind: 'number',

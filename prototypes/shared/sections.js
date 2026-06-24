@@ -12,6 +12,7 @@ import {
   addonComplete,
   allSelectedAddonsComplete
 } from './addons.js'
+import { dobSchema, integerYearsSchema, vehicleYearSchema } from './validate.js'
 
 /**
  * The questions that make up a car insurance quote, defined once and reused by
@@ -39,6 +40,7 @@ export const sections = [
   {
     slug: 'about-you',
     title: 'About you',
+    schema: dobSchema('dateOfBirth', 'Date of birth'),
     collect: (payload) => ({
       fullName: payload.fullName,
       email: payload.email,
@@ -64,6 +66,11 @@ export const sections = [
   {
     slug: 'your-vehicle',
     title: 'Your vehicle',
+    schema: vehicleYearSchema({
+      name: 'year',
+      enterMessage: 'Enter the year your vehicle was made',
+      noun: 'Year of manufacture'
+    }),
     collect: (payload) => ({
       registration: payload.registration,
       make: payload.make,
@@ -91,6 +98,13 @@ export const sections = [
   {
     slug: 'driving-history',
     title: 'Driving history',
+    schema: integerYearsSchema({
+      name: 'yearsNoClaims',
+      enterMessage: 'Enter how many years of no-claims discount you have',
+      noun: 'Years of no-claims discount',
+      min: 0,
+      max: 99
+    }),
     collect: (payload) => {
       const patch = {
         yearsNoClaims: payload.yearsNoClaims,

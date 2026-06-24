@@ -1,4 +1,5 @@
 import { findQuote, updateQuote } from './store.js'
+import { validatePayload } from './validate.js'
 
 /**
  * Builds GET/POST handlers for a single question section, shared by every
@@ -28,6 +29,21 @@ export function sectionHandlers(config) {
   // round-trip straight back to CYA instead of re-walking the journey.
   const cyaPath = (id) => `${baseRedirect}/${id}/check-your-answers`
 
+  const viewModel = (quote, section, request, extras = {}) => {
+    const change = Boolean(request.query.change)
+    return {
+      layout,
+      pageTitle: section.title,
+      section,
+      quote,
+      items: section.items ? section.items(quote) : undefined,
+      backLink: change ? cyaPath(quote.id) : backLinkFor(quote, section),
+      breadcrumbs: breadcrumbs ? breadcrumbs(quote, section.title) : undefined,
+      submitText,
+      ...extras
+    }
+  }
+
   return (section) => ({
     get: {
       handler(request, h) {
@@ -35,19 +51,7 @@ export function sectionHandlers(config) {
         if (!quote) {
           return h.redirect(baseRedirect)
         }
-        const change = Boolean(request.query.change)
-        return h.view('shared/section-page', {
-          layout,
-          pageTitle: section.title,
-          section,
-          quote,
-          items: section.items ? section.items(quote) : undefined,
-          backLink: change ? cyaPath(quote.id) : backLinkFor(quote, section),
-          breadcrumbs: breadcrumbs
-            ? breadcrumbs(quote, section.title)
-            : undefined,
-          submitText
-        })
+        return h.view('shared/section-page', viewModel(quote, section, request))
       }
     },
     post: {
@@ -56,7 +60,27 @@ export function sectionHandlers(config) {
         if (!quote) {
           return h.redirect(baseRedirect)
         }
-        const updated = updateQuote(quote.id, section.collect(request.payload))
+        const { value, errors, errorSummary } = validatePayload(
+          section.schema,
+          request.payload
+        )
+        if (errors) {
+          // Re-render with the user's typed values overlaid onto the saved
+          // quote — `section.collect` already knows how to reshape the payload
+          // into the section's stored shape, so the partial keeps reading
+          // `quote.<field>` uniformly. `errors` drives per-field errorMessage
+          // and `errorSummary` drives the page-top govukErrorSummary.
+          const renderQuote = { ...quote, ...section.collect(request.payload) }
+          return h.view(
+            'shared/section-page',
+            viewModel(renderQuote, section, request, {
+              errors,
+              errorSummary,
+              values: request.payload
+            })
+          )
+        }
+        const updated = updateQuote(quote.id, section.collect(value))
         return h.redirect(
           request.query.change ? cyaPath(updated.id) : onSaved(updated, section)
         )

@@ -1,5 +1,6 @@
 import { findQuote } from './store.js'
 import { fieldsToView, collectFields } from './fields.js'
+import { validatePayload } from './validate.js'
 import {
   addonByValue,
   getAddonData,
@@ -49,6 +50,42 @@ export function addonsRoutes(config) {
     return index === -1 ? null : { addon, step: addon.steps[index], index }
   }
 
+  // Single view-model builder shared by GET and the POST re-render branch.
+  // `extras` carries the validation outputs (errors/errorSummary/values) when
+  // re-rendering after a failed submit; `values` (when present) overrides the
+  // saved per-add-on data so the form shows what the user typed.
+  function stepViewModel(quote, found, stepBack, crumbs, layout, extras = {}) {
+    const data = extras.values
+      ? coalesceStepValues(found.step.fields, extras.values)
+      : getAddonData(quote, found.addon.value)
+    return {
+      layout,
+      pageTitle: found.step.title,
+      fields: fieldsToView(found.step.fields, data, extras.errors ?? null),
+      backLink: stepBack(quote, found.addon.value, found.index),
+      breadcrumbs: crumbs(quote, found.step.title),
+      ...extras
+    }
+  }
+
+  // Reshape the raw POST payload into the data structure addon partials
+  // expect — date fields back into { day, month, year }, others passed through.
+  function coalesceStepValues(fields, payload) {
+    const data = {}
+    for (const field of fields) {
+      if (field.kind === 'date') {
+        data[field.name] = {
+          day: payload[`${field.name}-day`],
+          month: payload[`${field.name}-month`],
+          year: payload[`${field.name}-year`]
+        }
+      } else {
+        data[field.name] = payload[field.name]
+      }
+    }
+    return data
+  }
+
   return [
     {
       method: 'GET',
@@ -96,16 +133,10 @@ export function addonsRoutes(config) {
         if (!found) {
           return h.redirect(`${basePath}/${quote.id}/addons`)
         }
-        return h.view('shared/addon-step', {
-          layout,
-          pageTitle: found.step.title,
-          fields: fieldsToView(
-            found.step.fields,
-            getAddonData(quote, found.addon.value)
-          ),
-          backLink: stepBack(quote, found.addon.value, found.index),
-          breadcrumbs: crumbs(quote, found.step.title)
-        })
+        return h.view(
+          'shared/addon-step',
+          stepViewModel(quote, found, stepBack, crumbs, layout)
+        )
       }
     },
     {
@@ -121,10 +152,24 @@ export function addonsRoutes(config) {
         if (!found) {
           return h.redirect(`${basePath}/${quote.id}/addons`)
         }
+        const { value, errors, errorSummary } = validatePayload(
+          found.step.schema,
+          request.payload
+        )
+        if (errors) {
+          return h.view(
+            'shared/addon-step',
+            stepViewModel(quote, found, stepBack, crumbs, layout, {
+              errors,
+              errorSummary,
+              values: request.payload
+            })
+          )
+        }
         const updated = saveAddonStep(
           quote,
           found.addon.value,
-          collectFields(found.step.fields, request.payload)
+          collectFields(found.step.fields, value)
         )
         return h.redirect(afterStep(updated, found.addon.value, found.index))
       }

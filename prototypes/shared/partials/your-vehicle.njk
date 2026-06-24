@@ -40,7 +40,8 @@
   name: "year",
   classes: "govuk-input--width-4",
   inputmode: "numeric",
-  value: quote.year
+  value: quote.year,
+  errorMessage: { text: errors.year } if errors and errors.year
 }) }}
 
 {{ govukInput({

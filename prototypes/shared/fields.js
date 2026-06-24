@@ -166,22 +166,52 @@ function fieldToView(field, data) {
   }
 }
 
-export function fieldsToView(fields, data = {}) {
+/**
+ * Build view-ready GOV.UK macro args from a list of field specs + the current
+ * answers + an optional error map.
+ *
+ * `errors` is the `{ fieldName: 'message' }` map returned by `validatePayload`.
+ * For date inputs the error keys are the per-part names (e.g. `dateOfBirth-day`);
+ * the first such message is shown as the combined `errorMessage` and each
+ * erroring part gets the GOV.UK `govuk-input--error` class.
+ */
+export function fieldsToView(fields, data = {}, errors = null) {
   return fields.map((field) => {
     const view = fieldToView(field, data)
-    // Every GOV.UK input macro accepts errorMessage, so attach it uniformly.
-    if (field.error) {
-      view.args.errorMessage = { text: field.error }
+    if (errors) {
+      attachError(view, field, errors)
     }
     return view
   })
 }
 
-/** Build a govukErrorSummary item list from any specs carrying an `error`. */
-export function errorSummaryList(fields) {
-  return fields
-    .filter((field) => field.error)
-    .map((field) => ({ text: field.error, href: `#${field.name}` }))
+function attachError(view, field, errors) {
+  if (field.kind === 'date') {
+    const partKeys = [
+      `${field.name}-day`,
+      `${field.name}-month`,
+      `${field.name}-year`
+    ]
+    const firstMessage = partKeys
+      .map((key) => errors[key])
+      .find((message) => message)
+    if (firstMessage) {
+      view.args.errorMessage = { text: firstMessage }
+      view.args.items = view.args.items.map((item) =>
+        errors[`${field.name}-${item.name}`]
+          ? {
+              ...item,
+              classes: `${item.classes ?? ''} govuk-input--error`.trim()
+            }
+          : item
+      )
+    }
+    return
+  }
+  const message = errors[field.name]
+  if (message) {
+    view.args.errorMessage = { text: message }
+  }
 }
 
 /** Read submitted values for a list of specs back into a quote patch. */

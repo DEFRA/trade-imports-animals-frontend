@@ -7,7 +7,8 @@
   name: "yearsNoClaims",
   classes: "govuk-input--width-3",
   inputmode: "numeric",
-  value: quote.yearsNoClaims
+  value: quote.yearsNoClaims,
+  errorMessage: { text: errors.yearsNoClaims } if errors and errors.yearsNoClaims
 }) }}
 
 {{ govukRadios({

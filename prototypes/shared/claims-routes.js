@@ -1,4 +1,5 @@
 import { findQuote } from './store.js'
+import { validatePayload } from './validate.js'
 import {
   getClaims,
   addClaim,
@@ -7,6 +8,11 @@ import {
   claimTypeItems,
   claimLabel
 } from './claims.js'
+
+// Optional schema for the add-a-claim form. None today (no claim-date field
+// in this iteration) — the import exists so a follow-up can add e.g.
+// `claimsAddSchema` and re-export it without touching the route file.
+const claimsAddSchema = undefined
 
 /**
  * The add-another claims loop as ready-to-register Hapi routes, shared by every
@@ -113,7 +119,24 @@ export function claimsRoutes({
         if (!quote) {
           return h.redirect(basePath)
         }
-        addClaim(quote, request.payload)
+        const { value, errors, errorSummary } = validatePayload(
+          claimsAddSchema,
+          request.payload
+        )
+        if (errors) {
+          return h.view('shared/claims-add', {
+            layout,
+            pageTitle: 'Add a claim',
+            quote,
+            items: claimTypeItems(),
+            backLink: at(quote.id, 'claims'),
+            breadcrumbs: crumbs(quote, 'Add a claim'),
+            errors,
+            errorSummary,
+            values: request.payload
+          })
+        }
+        addClaim(quote, value)
         return h.redirect(at(quote.id, 'claims'))
       }
     },

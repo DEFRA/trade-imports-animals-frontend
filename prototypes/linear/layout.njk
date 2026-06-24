@@ -10,7 +10,7 @@
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block pageTitle %}{{ pageTitle }} | Car insurance (linear prototype){% endblock %}
+{% block pageTitle %}{% if errorSummary %}Error: {% endif %}{{ pageTitle }} | Car insurance (linear prototype){% endblock %}
 
 {% block govukServiceNavigation %}
   {{ govukServiceNavigation({

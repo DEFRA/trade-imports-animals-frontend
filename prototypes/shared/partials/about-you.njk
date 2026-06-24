@@ -49,14 +49,16 @@
   ]
 }) }}
 
+{% set dobError = (errors['dateOfBirth-day'] or errors['dateOfBirth-month'] or errors['dateOfBirth-year']) if errors %}
 {{ govukDateInput({
   id: "dateOfBirth",
   namePrefix: "dateOfBirth",
   fieldset: { legend: { text: "Date of birth" } },
   hint: { text: "For example, 27 3 1985" },
+  errorMessage: { text: dobError } if dobError,
   items: [
-    { name: "day", classes: "govuk-input--width-2", value: quote.dateOfBirth.day if quote.dateOfBirth },
-    { name: "month", classes: "govuk-input--width-2", value: quote.dateOfBirth.month if quote.dateOfBirth },
-    { name: "year", classes: "govuk-input--width-4", value: quote.dateOfBirth.year if quote.dateOfBirth }
+    { name: "day", classes: "govuk-input--width-2" + (" govuk-input--error" if errors and errors['dateOfBirth-day']), value: quote.dateOfBirth.day if quote.dateOfBirth },
+    { name: "month", classes: "govuk-input--width-2" + (" govuk-input--error" if errors and errors['dateOfBirth-month']), value: quote.dateOfBirth.month if quote.dateOfBirth },
+    { name: "year", classes: "govuk-input--width-4" + (" govuk-input--error" if errors and errors['dateOfBirth-year']), value: quote.dateOfBirth.year if quote.dateOfBirth }
   ]
 }) }}
