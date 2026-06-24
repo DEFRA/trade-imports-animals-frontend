@@ -1,5 +1,5 @@
 import { updateQuote } from './store.js'
-import { dobSchema, integerYearsSchema } from './validate.js'
+import { currencySchema, dobSchema, integerYearsSchema } from './validate.js'
 
 /**
  * The "select 1-to-N options, each opening its own subtasks" pattern. The driver
@@ -73,6 +73,12 @@ export const addonOptions = [
         slug: 'value',
         title: 'Value of the modifications',
         key: 'modValue',
+        schema: currencySchema({
+          name: 'modValue',
+          enterMessage: 'Enter the approximate value',
+          formatMessage:
+            'Modification value must be a whole number of pounds greater than 0, like 1500'
+        }),
         fields: [
           {
             kind: 'currency',

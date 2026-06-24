@@ -10,10 +10,11 @@ import { claimTypeOptions, claimTypeLabel } from './quote.js'
 
 export const getClaims = (quote) => quote.claims ?? []
 
-export function claimTypeItems() {
+export function claimTypeItems(selected) {
   return claimTypeOptions.map((option) => ({
     value: option.value,
-    text: option.text
+    text: option.text,
+    checked: option.value === selected
   }))
 }
 

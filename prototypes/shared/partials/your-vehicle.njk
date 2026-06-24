@@ -51,7 +51,8 @@
   classes: "govuk-input--width-5",
   prefix: { text: "£" },
   inputmode: "numeric",
-  value: quote.estimatedValue
+  value: quote.estimatedValue,
+  errorMessage: { text: errors.estimatedValue } if errors and errors.estimatedValue
 }) }}
 
 {{ govukFileUpload({

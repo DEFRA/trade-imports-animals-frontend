@@ -1,5 +1,5 @@
 import { findQuote } from './store.js'
-import { validatePayload } from './validate.js'
+import { currencySchema, validatePayload } from './validate.js'
 import {
   getClaims,
   addClaim,
@@ -9,10 +9,14 @@ import {
   claimLabel
 } from './claims.js'
 
-// Optional schema for the add-a-claim form. None today (no claim-date field
-// in this iteration) — the import exists so a follow-up can add e.g.
-// `claimsAddSchema` and re-export it without touching the route file.
-const claimsAddSchema = undefined
+// Optional schema for the add-a-claim form. Today: just the currency amount.
+// `claimType` (radio) is unvalidated for now — covered by a later iteration.
+const claimsAddSchema = currencySchema({
+  name: 'claimAmount',
+  enterMessage: 'Enter the approximate claim amount',
+  formatMessage:
+    'Claim amount must be a whole number of pounds greater than 0, like 1500'
+})
 
 /**
  * The add-another claims loop as ready-to-register Hapi routes, shared by every
@@ -128,7 +132,7 @@ export function claimsRoutes({
             layout,
             pageTitle: 'Add a claim',
             quote,
-            items: claimTypeItems(),
+            items: claimTypeItems(request.payload.claimType),
             backLink: at(quote.id, 'claims'),
             breadcrumbs: crumbs(quote, 'Add a claim'),
             errors,

@@ -4,6 +4,7 @@ import {
   vehicleYearSchema,
   integerYearsSchema,
   phoneSchema,
+  currencySchema,
   MIN_DRIVING_AGE,
   MAX_AGE
 } from './validate.js'
@@ -503,5 +504,161 @@ describe('optional DOB + optional phone (the live About-you composition)', () =>
     const { errors } = validatePayload(combined, { phone: 'call me' })
     expect(errors.phone).toBe('wrong format')
     expect(errors['dateOfBirth-day']).toBeUndefined()
+  })
+})
+
+describe('currencySchema (optional)', () => {
+  const formatMessage =
+    'Estimated value must be a whole number of pounds greater than 0, like 5000'
+  const schema = currencySchema({
+    name: 'estimatedValue',
+    enterMessage: 'never used',
+    formatMessage
+  })
+
+  test('an empty submission passes with the value undefined', () => {
+    const { value, errors } = validatePayload(schema, { estimatedValue: '' })
+    expect(errors).toBeNull()
+    expect(value.estimatedValue).toBeUndefined()
+  })
+
+  test('a missing field passes', () => {
+    const { value, errors } = validatePayload(schema, {})
+    expect(errors).toBeNull()
+    expect(value.estimatedValue).toBeUndefined()
+  })
+
+  test('only strip-chars (£,,, ) is treated as empty', () => {
+    const { value, errors } = validatePayload(schema, {
+      estimatedValue: '£,,, '
+    })
+    expect(errors).toBeNull()
+    expect(value.estimatedValue).toBeUndefined()
+  })
+
+  test.each([
+    ['plain integer string', '5000', 5000],
+    ['with leading pound sign', '£5000', 5000],
+    ['with thousands separator', '5,000', 5000],
+    ['with pound + separator', '£5,000', 5000],
+    ['with surrounding whitespace', '  5000  ', 5000],
+    ['with embedded whitespace', '5 000', 5000]
+  ])('accepts %s as a Number', (_, input, expected) => {
+    const { value, errors } = validatePayload(schema, { estimatedValue: input })
+    expect(errors).toBeNull()
+    expect(value.estimatedValue).toBe(expected)
+  })
+
+  test('rejects a decimal value', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '5000.50' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+
+  test('rejects exponential notation', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '5e3' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+
+  test('rejects a negative value', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '-100' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+
+  test('rejects an explicit positive sign', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '+100' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+
+  test('rejects zero (must be > 0)', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '0' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+
+  test('rejects non-numeric input', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: 'abc' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+
+  test('rejects pound-prefixed garbage', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '£abc' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+})
+
+describe('currencySchema (required)', () => {
+  const enterMessage = 'Enter the estimated value'
+  const formatMessage = 'wrong format'
+  const schema = currencySchema({
+    name: 'estimatedValue',
+    enterMessage,
+    formatMessage,
+    required: true
+  })
+
+  test('an empty submission triggers the enter message', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '' })
+    expect(errors.estimatedValue).toBe(enterMessage)
+  })
+
+  test('strip-chars only also triggers the enter message in required mode', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '£, ' })
+    expect(errors.estimatedValue).toBe(enterMessage)
+  })
+
+  test('a valid value still passes and coerces to Number', () => {
+    const { value, errors } = validatePayload(schema, {
+      estimatedValue: '5000'
+    })
+    expect(errors).toBeNull()
+    expect(value.estimatedValue).toBe(5000)
+  })
+
+  test('zero still fails the format check in required mode', () => {
+    const { errors } = validatePayload(schema, { estimatedValue: '0' })
+    expect(errors.estimatedValue).toBe(formatMessage)
+  })
+})
+
+describe('currencySchema composes with vehicleYearSchema', () => {
+  const combined = vehicleYearSchema({
+    name: 'year',
+    enterMessage: 'Enter the year your vehicle was made',
+    noun: 'Year of manufacture'
+  }).concat(
+    currencySchema({
+      name: 'estimatedValue',
+      enterMessage: 'never used',
+      formatMessage: 'estimated value bad'
+    })
+  )
+
+  test('reports both year and estimatedValue errors together', () => {
+    const { errors, errorSummary } = validatePayload(combined, {
+      year: 'abc',
+      estimatedValue: '5000.50'
+    })
+    expect(errors.year).toBeDefined()
+    expect(errors.estimatedValue).toBe('estimated value bad')
+    expect(errorSummary.map((row) => row.href)).toEqual([
+      '#year',
+      '#estimatedValue'
+    ])
+  })
+
+  test('passes a valid year + estimatedValue and yields two Numbers', () => {
+    const { value, errors } = validatePayload(combined, {
+      year: '2018',
+      estimatedValue: '£5,000'
+    })
+    expect(errors).toBeNull()
+    expect(value.year).toBe(2018)
+    expect(value.estimatedValue).toBe(5000)
+  })
+
+  test('allows blank estimatedValue when year is valid (optional currency)', () => {
+    const { value, errors } = validatePayload(combined, { year: '2018' })
+    expect(errors).toBeNull()
+    expect(value.year).toBe(2018)
+    expect(value.estimatedValue).toBeUndefined()
   })
 })

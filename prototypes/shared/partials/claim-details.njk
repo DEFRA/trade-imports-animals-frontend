@@ -18,5 +18,7 @@
   name: "claimAmount",
   classes: "govuk-input--width-5",
   prefix: { text: "£" },
-  inputmode: "numeric"
+  inputmode: "numeric",
+  value: values.claimAmount if values,
+  errorMessage: { text: errors.claimAmount } if errors and errors.claimAmount
 }) }}

@@ -13,6 +13,7 @@ import {
   allSelectedAddonsComplete
 } from './addons.js'
 import {
+  currencySchema,
   dobSchema,
   integerYearsSchema,
   phoneSchema,
@@ -100,7 +101,14 @@ export const sections = [
       name: 'year',
       enterMessage: 'Enter the year your vehicle was made',
       noun: 'Year of manufacture'
-    }),
+    }).concat(
+      currencySchema({
+        name: 'estimatedValue',
+        enterMessage: 'Enter the estimated value',
+        formatMessage:
+          'Estimated value must be a whole number of pounds greater than 0, like 5000'
+      })
+    ),
     collect: (payload) => ({
       registration: payload.registration,
       make: payload.make,
@@ -181,6 +189,12 @@ export const sections = [
   {
     slug: 'cover-type',
     title: 'Choose your cover',
+    schema: currencySchema({
+      name: 'excessAmount',
+      enterMessage: 'Enter the voluntary excess amount',
+      formatMessage:
+        'Voluntary excess must be a whole number of pounds greater than 0, like 250'
+    }),
     collect: (payload) => ({
       coverType: payload.coverType,
       voluntaryExcess: payload.voluntaryExcess,
