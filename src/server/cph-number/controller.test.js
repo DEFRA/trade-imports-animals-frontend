@@ -74,6 +74,52 @@ describe('cphNumberController', () => {
       expect(response).toEqual({ statusCode: 302, location: '/addresses' })
     })
 
+    test('strips forward slashes before saving — 123/456/789 is stored as 123456789', async () => {
+      const set = vi.fn()
+      const get = vi.fn(() => null)
+      const request = {
+        payload: { cphNumber: '123/456/789' },
+        yar: { set, get }
+      }
+      const h = {
+        view: vi.fn(),
+        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+      }
+
+      const response = await cphNumberController.post.handler(request, h)
+
+      expect(set).toHaveBeenCalledWith(sessionKeys.cphNumber, '123456789')
+      expect(response).toEqual({ statusCode: 302, location: '/addresses' })
+    })
+
+    test('preserves original input with slashes in the error view when stripped value is invalid', async () => {
+      const set = vi.fn()
+      const get = vi.fn(() => null)
+      const request = {
+        payload: { cphNumber: '12/345' },
+        yar: { set, get }
+      }
+      const h = {
+        view: vi.fn((template, data) => ({
+          template,
+          data,
+          code: vi.fn(function (statusCode) {
+            return { ...this, statusCode }
+          })
+        })),
+        redirect: vi.fn()
+      }
+
+      const response = await cphNumberController.post.handler(request, h)
+
+      expect(set).not.toHaveBeenCalled()
+      expect(h.view).toHaveBeenCalledWith(
+        'cph-number/index',
+        expect.objectContaining({ cphNumber: '12/345' })
+      )
+      expect(response.statusCode).toBe(400)
+    })
+
     test('accepts a cphNumber starting with a leading zero', async () => {
       const set = vi.fn()
       const get = vi.fn(() => null)
