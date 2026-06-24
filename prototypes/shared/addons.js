@@ -97,13 +97,17 @@ export const addonOptions = [
         slug: 'years',
         title: 'Protect your no-claims discount',
         key: 'ncdYears',
+        // The user only reaches this step after selecting "Protect your
+        // no-claims discount" on the add-ons hub, so saying yes implies they
+        // must specify how many years (and zero would defeat the purpose of
+        // the add-on). Required, minimum 1.
         schema: integerYearsSchema({
           name: 'ncdYears',
           enterMessage: 'Enter how many years you want to protect',
           noun: 'Years to protect',
-          min: 0,
+          min: 1,
           max: 99,
-          required: false
+          required: true
         }),
         fields: [
           {

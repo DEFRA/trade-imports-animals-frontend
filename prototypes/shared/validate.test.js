@@ -741,6 +741,60 @@ describe('currencySchema composes with vehicleYearSchema', () => {
   })
 })
 
+describe('the live Protect-NCD years step (required, ncdYears > 0)', () => {
+  const ncdYears = integerYearsSchema({
+    name: 'ncdYears',
+    enterMessage: 'Enter how many years you want to protect',
+    noun: 'Years to protect',
+    min: 1,
+    max: 99,
+    required: true
+  })
+
+  test('an empty submission triggers the enter message', () => {
+    const { errors } = validatePayload(ncdYears, { ncdYears: '' })
+    expect(errors.ncdYears).toBe('Enter how many years you want to protect')
+  })
+
+  test('a missing field triggers the enter message', () => {
+    const { errors } = validatePayload(ncdYears, {})
+    expect(errors.ncdYears).toBe('Enter how many years you want to protect')
+  })
+
+  test('zero is rejected — protecting 0 years defeats the add-on', () => {
+    const { errors } = validatePayload(ncdYears, { ncdYears: '0' })
+    expect(errors.ncdYears).toBe(
+      'Years to protect must be a whole number between 1 and 99'
+    )
+  })
+
+  test('a negative value is rejected', () => {
+    const { errors } = validatePayload(ncdYears, { ncdYears: '-1' })
+    expect(errors.ncdYears).toBe(
+      'Years to protect must be a whole number between 1 and 99'
+    )
+  })
+
+  test('a decimal value is rejected', () => {
+    const { errors } = validatePayload(ncdYears, { ncdYears: '1.5' })
+    expect(errors.ncdYears).toBe(
+      'Years to protect must be a whole number between 1 and 99'
+    )
+  })
+
+  test('1 passes (the minimum)', () => {
+    const { value, errors } = validatePayload(ncdYears, { ncdYears: '1' })
+    expect(errors).toBeNull()
+    expect(value.ncdYears).toBe(1)
+  })
+
+  test('a normal value (5) passes and coerces to Number', () => {
+    const { value, errors } = validatePayload(ncdYears, { ncdYears: '5' })
+    expect(errors).toBeNull()
+    expect(value.ncdYears).toBe(5)
+  })
+})
+
 describe('the live Driving-history composition (yearsNoClaims + penaltyPoints, both optional)', () => {
   const drivingHistory = integerYearsSchema({
     name: 'yearsNoClaims',
