@@ -152,6 +152,97 @@ describe('dobSchema', () => {
   })
 })
 
+describe('dobSchema (optional)', () => {
+  const optionalDob = dobSchema('dateOfBirth', 'Date of birth', {
+    required: false
+  })
+
+  test('an empty submission passes with day undefined in the value', () => {
+    const { value, errors } = validatePayload(optionalDob, {})
+    expect(errors).toBeNull()
+    expect(value['dateOfBirth-day']).toBeUndefined()
+  })
+
+  test('a fully blank trio passes (all three boxes left empty)', () => {
+    const { errors } = validatePayload(optionalDob, {
+      'dateOfBirth-day': '',
+      'dateOfBirth-month': '',
+      'dateOfBirth-year': ''
+    })
+    expect(errors).toBeNull()
+  })
+
+  test('a single filled part fails with the "include a day, month and year" message', () => {
+    const { errors, errorSummary } = validatePayload(optionalDob, {
+      'dateOfBirth-day': '15',
+      'dateOfBirth-month': '',
+      'dateOfBirth-year': ''
+    })
+    expect(errors['dateOfBirth-day']).toBe(
+      'Date of birth must include a day, month and year'
+    )
+    expect(errorSummary.map((row) => row.href)).toEqual(['#dateOfBirth-day'])
+  })
+
+  test('two filled parts also fail with the partial message', () => {
+    const { errors } = validatePayload(optionalDob, {
+      'dateOfBirth-day': '15',
+      'dateOfBirth-month': '3',
+      'dateOfBirth-year': ''
+    })
+    expect(errors['dateOfBirth-day']).toBe(
+      'Date of birth must include a day, month and year'
+    )
+  })
+
+  test('passes for a plausible adult DOB and coerces day to a number', () => {
+    const { value, errors } = validatePayload(optionalDob, yearsAgoDob(30))
+    expect(errors).toBeNull()
+    expect(typeof value['dateOfBirth-day']).toBe('number')
+  })
+
+  test('still rejects an impossible calendar date', () => {
+    const { errors } = validatePayload(optionalDob, {
+      'dateOfBirth-day': '31',
+      'dateOfBirth-month': '2',
+      'dateOfBirth-year': '1990'
+    })
+    expect(errors['dateOfBirth-day']).toBe('Date of birth must be a real date')
+  })
+
+  test('still rejects an age below the minimum', () => {
+    const { errors } = validatePayload(
+      optionalDob,
+      yearsAgoDob(MIN_DRIVING_AGE - 1)
+    )
+    expect(errors['dateOfBirth-day']).toBe(
+      `You must be at least ${MIN_DRIVING_AGE} years old`
+    )
+  })
+
+  test('still rejects a future DOB', () => {
+    const future = new Date()
+    future.setFullYear(future.getFullYear() + 1)
+    const { errors } = validatePayload(optionalDob, {
+      'dateOfBirth-day': String(future.getDate()),
+      'dateOfBirth-month': String(future.getMonth() + 1),
+      'dateOfBirth-year': String(future.getFullYear())
+    })
+    expect(errors['dateOfBirth-day']).toBe('Date of birth must be in the past')
+  })
+
+  test('rejects an out-of-range day', () => {
+    const { errors } = validatePayload(optionalDob, {
+      'dateOfBirth-day': '32',
+      'dateOfBirth-month': '3',
+      'dateOfBirth-year': '1990'
+    })
+    expect(errors['dateOfBirth-day']).toBe(
+      'Day must be a number between 1 and 31'
+    )
+  })
+})
+
 describe('vehicleYearSchema', () => {
   const schema = vehicleYearSchema({
     name: 'year',
@@ -303,10 +394,24 @@ describe('phoneSchema (optional)', () => {
     required: false
   })
 
-  test('accepts an empty string when not required', () => {
+  test('accepts an empty string when not required (collapsed to undefined)', () => {
     const { value, errors } = validatePayload(schema, { phone: '' })
     expect(errors).toBeNull()
-    expect(value.phone).toBe('')
+    expect(value.phone).toBeUndefined()
+  })
+
+  test('accepts a missing field when not required', () => {
+    const { value, errors } = validatePayload(schema, {})
+    expect(errors).toBeNull()
+    expect(value.phone).toBeUndefined()
+  })
+
+  test('still validates a non-empty value', () => {
+    const { value, errors } = validatePayload(schema, {
+      phone: '07700 900 982'
+    })
+    expect(errors).toBeNull()
+    expect(value.phone).toBe('07700 900 982')
   })
 
   test('still rejects garbage characters when not required', () => {
@@ -346,5 +451,57 @@ describe('phoneSchema composes with dobSchema via .concat()', () => {
       phone: '07700 900 982'
     })
     expect(errors).toBeNull()
+  })
+})
+
+describe('optional DOB + optional phone (the live About-you composition)', () => {
+  const combined = dobSchema('dateOfBirth', 'Date of birth', {
+    required: false
+  }).concat(
+    phoneSchema({
+      name: 'phone',
+      enterMessage: 'Enter a UK telephone number',
+      formatMessage: 'wrong format',
+      required: false
+    })
+  )
+
+  test('an empty submission passes — neither field is required', () => {
+    const { errors, value } = validatePayload(combined, {})
+    expect(errors).toBeNull()
+    expect(value['dateOfBirth-day']).toBeUndefined()
+    expect(value.phone).toBeUndefined()
+  })
+
+  test('answering only the DOB is fine', () => {
+    const { errors, value } = validatePayload(combined, yearsAgoDob(30))
+    expect(errors).toBeNull()
+    expect(typeof value['dateOfBirth-day']).toBe('number')
+    expect(value.phone).toBeUndefined()
+  })
+
+  test('answering only the phone is fine', () => {
+    const { errors, value } = validatePayload(combined, {
+      phone: '07700 900 982'
+    })
+    expect(errors).toBeNull()
+    expect(value.phone).toBe('07700 900 982')
+    expect(value['dateOfBirth-day']).toBeUndefined()
+  })
+
+  test('a partial DOB is still rejected even when phone is omitted', () => {
+    const { errors } = validatePayload(combined, {
+      'dateOfBirth-day': '15'
+    })
+    expect(errors['dateOfBirth-day']).toBe(
+      'Date of birth must include a day, month and year'
+    )
+    expect(errors.phone).toBeUndefined()
+  })
+
+  test('a bad phone is still rejected even when DOB is omitted', () => {
+    const { errors } = validatePayload(combined, { phone: 'call me' })
+    expect(errors.phone).toBe('wrong format')
+    expect(errors['dateOfBirth-day']).toBeUndefined()
   })
 })

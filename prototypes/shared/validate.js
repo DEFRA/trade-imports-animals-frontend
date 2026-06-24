@@ -49,17 +49,25 @@ export function validatePayload(schema, payload) {
 /**
  * GDS-canonical DOB schema for a `${prefix}-day|-month|-year` triple.
  *
- * Each part is required and numeric in its sensible range. The cross-field
- * checks (real calendar date, not in the future, age 17-120) hang off the
- * `-day` key so their Joi path is `[`${prefix}-day`]` and the error renders
- * against the date input as one combined message, anchored at #${prefix}-day.
- * The check short-circuits unless all three parts are themselves valid, so
- * per-part errors take precedence.
+ * Required mode (default): every part must be present and numeric in its
+ * sensible range; the cross-field checks (real calendar date, not in the
+ * future, age 17-120) hang off the `-day` key so the message renders against
+ * the date input anchored at #${prefix}-day.
+ *
+ * Optional mode (`required: false`): a fully blank submission passes, so the
+ * field can sit alongside other questions the user chooses to answer. If any
+ * of the three boxes is filled, all three are required; the same calendar /
+ * age rules then apply. All errors land on `${prefix}-day` so the error
+ * summary links to the first box of the date input.
  *
  * @param {string} prefix the date input's namePrefix, e.g. 'dateOfBirth'
  * @param {string} label friendly label used in error messages, e.g. 'Date of birth'
+ * @param {{ required?: boolean }} [options]
  */
-export function dobSchema(prefix, label) {
+export function dobSchema(prefix, label, { required = true } = {}) {
+  if (!required) {
+    return optionalDobSchema(prefix, label)
+  }
   const dayKey = `${prefix}-day`
   const monthKey = `${prefix}-month`
   const yearKey = `${prefix}-year`
@@ -139,6 +147,87 @@ export function dobSchema(prefix, label) {
   }).unknown(true)
 }
 
+// All errors land on `-day` so the summary link points at the first box, and
+// the partials' per-part `govuk-input--error` logic highlights the day input.
+// The custom is the single source of truth for the DOB — it gates blank vs
+// partial vs full and coerces all three parts to Number on success.
+function optionalDobSchema(prefix, label) {
+  const dayKey = `${prefix}-day`
+  const monthKey = `${prefix}-month`
+  const yearKey = `${prefix}-year`
+  return Joi.object({
+    [dayKey]: Joi.any()
+      .custom((rawDay, helpers) => {
+        const siblings = helpers.state.ancestors[0] ?? {}
+        const day = trim(rawDay)
+        const month = trim(siblings[monthKey])
+        const year = trim(siblings[yearKey])
+        const filled = [day, month, year].filter((part) => part !== '').length
+        if (filled === 0) {
+          return undefined
+        }
+        if (filled < 3) {
+          return helpers.error('dob.partial')
+        }
+        const dayNum = Number(day)
+        const monthNum = Number(month)
+        const yearNum = Number(year)
+        if (
+          !Number.isInteger(dayNum) ||
+          !Number.isInteger(monthNum) ||
+          !Number.isInteger(yearNum)
+        ) {
+          return helpers.error('dob.partial')
+        }
+        if (dayNum < 1 || dayNum > 31) {
+          return helpers.error('dob.dayRange')
+        }
+        if (monthNum < 1 || monthNum > 12) {
+          return helpers.error('dob.monthRange')
+        }
+        if (yearNum < 1000 || yearNum > 9999) {
+          return helpers.error('dob.yearRange')
+        }
+        const date = new Date(yearNum, monthNum - 1, dayNum)
+        const realDate =
+          date.getFullYear() === yearNum &&
+          date.getMonth() === monthNum - 1 &&
+          date.getDate() === dayNum
+        if (!realDate) {
+          return helpers.error('date.real')
+        }
+        const now = new Date()
+        if (date.getTime() > now.getTime()) {
+          return helpers.error('date.future')
+        }
+        const age = ageInYears(date, now)
+        if (age < MIN_DRIVING_AGE) {
+          return helpers.error('date.tooYoung')
+        }
+        if (age > MAX_AGE) {
+          return helpers.error('date.tooOld')
+        }
+        return dayNum
+      }, 'optional DOB')
+      .messages({
+        'dob.partial': `${label} must include a day, month and year`,
+        'dob.dayRange': 'Day must be a number between 1 and 31',
+        'dob.monthRange': 'Month must be a number between 1 and 12',
+        'dob.yearRange': 'Year must be a real year',
+        'date.real': `${label} must be a real date`,
+        'date.future': `${label} must be in the past`,
+        'date.tooYoung': `You must be at least ${MIN_DRIVING_AGE} years old`,
+        'date.tooOld': `Enter a ${label.toLowerCase()} less than ${MAX_AGE} years ago`
+      }),
+    [monthKey]: Joi.any(),
+    [yearKey]: Joi.any()
+  }).unknown(true)
+}
+
+function trim(value) {
+  return String(value ?? '').trim()
+}
+
 /**
  * Integer-years field: required whole number within [min, max]. Used for
  * `yearsNoClaims` and `ncdYears`. Two friendly strings — `enterMessage`
@@ -208,14 +297,14 @@ export function phoneSchema({
   minDigits = PHONE_DEFAULT_MIN_DIGITS,
   maxDigits = PHONE_DEFAULT_MAX_DIGITS
 }) {
+  // `.empty('')` collapses a typed-then-cleared input to undefined so the
+  // store never carries an empty-string phone — keeps the rows() output and
+  // the on-page error UX consistent in both required and optional modes.
   let field = Joi.string()
     .trim()
-    .allow('')
+    .empty('')
     .pattern(PHONE_ALLOWED)
     .custom((value, helpers) => {
-      if (!value) {
-        return value
-      }
       const digitCount = value.replace(/\D/g, '').length
       if (digitCount < minDigits || digitCount > maxDigits) {
         return helpers.error('phone.length')
@@ -227,10 +316,7 @@ export function phoneSchema({
       'phone.length': formatMessage
     })
   if (required) {
-    // `.empty('')` plus `.required()` lets the partial post an empty string
-    // (the user typed nothing) without tripping the more generic
-    // `string.empty` message — `enterMessage` covers it via `any.required`.
-    field = field.empty('').required().messages({
+    field = field.required().messages({
       'any.required': enterMessage,
       'string.pattern.base': formatMessage,
       'phone.length': formatMessage

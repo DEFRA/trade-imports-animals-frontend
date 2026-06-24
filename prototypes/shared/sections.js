@@ -48,25 +48,41 @@ export const sections = [
   {
     slug: 'about-you',
     title: 'About you',
-    schema: dobSchema('dateOfBirth', 'Date of birth').concat(
+    // Both DOB and phone are optional in the prototype — the user can save the
+    // page blank and come back later. When they do fill them in, the canonical
+    // GDS rules still apply (real date / 17-120 age / lenient phone format).
+    schema: dobSchema('dateOfBirth', 'Date of birth', {
+      required: false
+    }).concat(
       phoneSchema({
         name: 'phone',
         enterMessage: 'Enter a UK telephone number',
-        formatMessage: PHONE_EXAMPLES
+        formatMessage: PHONE_EXAMPLES,
+        required: false
       })
     ),
-    collect: (payload) => ({
-      fullName: payload.fullName,
-      email: payload.email,
-      phone: payload.phone,
-      postcode: payload.postcode,
-      country: payload.country,
-      dateOfBirth: {
-        day: payload['dateOfBirth-day'],
-        month: payload['dateOfBirth-month'],
-        year: payload['dateOfBirth-year']
+    collect: (payload) => {
+      // Called twice — once on success (post-Joi `value`, day already a
+      // Number) and once via the error-re-render path in section-controller
+      // (raw `request.payload` strings). The presence check spans both shapes
+      // so we keep typed primitives when validated and preserve the user's
+      // typed strings when re-rendering after a failed submit.
+      const day = payload['dateOfBirth-day']
+      const month = payload['dateOfBirth-month']
+      const year = payload['dateOfBirth-year']
+      const anyPart = [day, month, year].some(
+        (part) => part !== undefined && String(part).trim() !== ''
+      )
+      const dateOfBirth = anyPart ? { day, month, year } : undefined
+      return {
+        fullName: payload.fullName,
+        email: payload.email,
+        phone: payload.phone,
+        postcode: payload.postcode,
+        country: payload.country,
+        dateOfBirth
       }
-    }),
+    },
     isComplete: (quote) => Boolean(quote.fullName),
     rows: (quote) => [
       { key: 'Name', value: quote.fullName ?? 'Not provided' },
