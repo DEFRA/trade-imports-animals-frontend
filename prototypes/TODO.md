@@ -5,4 +5,18 @@ non-functional — same rules as the rest of [`prototypes/`](./README.md).
 
 ## To add
 
-_Nothing right now — add new ideas here._
+### Change links that round-trip via Check Your Answers
+
+From Check Your Answers, a "Change" link should jump to **that one question**
+and, on save, return **straight back to CYA** — not re-walk the rest of the
+journey. Confirm the current journeys behave this way and demo it (the GDS
+change-answer pattern, where the question page knows it was reached from CYA
+and sends you back there).
+
+### Editing an earlier answer invalidates later sections
+
+When changing an earlier answer makes a later section no longer apply, that
+section should **drop out of the journey and out of CYA**. Worked example:
+change "Have you had any claims?" from yes → no and the add-another-claims
+sub-loop (and its rows) disappear. The subtle but important integrity
+pattern — answers that are no longer reachable must not linger.
