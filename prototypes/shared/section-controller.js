@@ -24,6 +24,10 @@ export function sectionHandlers(config) {
     breadcrumbs
   } = config
 
+  // When reached from check-your-answers (?change=1), Back and Save both
+  // round-trip straight back to CYA instead of re-walking the journey.
+  const cyaPath = (id) => `${baseRedirect}/${id}/check-your-answers`
+
   return (section) => ({
     get: {
       handler(request, h) {
@@ -31,13 +35,14 @@ export function sectionHandlers(config) {
         if (!quote) {
           return h.redirect(baseRedirect)
         }
+        const change = Boolean(request.query.change)
         return h.view('shared/section-page', {
           layout,
           pageTitle: section.title,
           section,
           quote,
           items: section.items ? section.items(quote) : undefined,
-          backLink: backLinkFor(quote, section),
+          backLink: change ? cyaPath(quote.id) : backLinkFor(quote, section),
           breadcrumbs: breadcrumbs
             ? breadcrumbs(quote, section.title)
             : undefined,
@@ -52,7 +57,9 @@ export function sectionHandlers(config) {
           return h.redirect(baseRedirect)
         }
         const updated = updateQuote(quote.id, section.collect(request.payload))
-        return h.redirect(onSaved(updated, section))
+        return h.redirect(
+          request.query.change ? cyaPath(updated.id) : onSaved(updated, section)
+        )
       }
     }
   })

@@ -1,6 +1,6 @@
 import { findQuote, updateQuote } from './store.js'
 import { calculatePremium } from './premium.js'
-import { answerRows } from './sections.js'
+import { answerRows, sectionBySlug, hasOwnRoutes } from './sections.js'
 import { coverTypeLabel, extrasLabels, makeReference } from './quote.js'
 
 /**
@@ -73,13 +73,20 @@ export function endingRoutes({
         if (!quote) {
           return h.redirect(basePath)
         }
+        // Simple question pages round-trip back to CYA via ?change=1; loops and
+        // subtask fan-outs link to their own pages and return via their flow.
+        const changeHref = (slug) => {
+          const section = sectionBySlug.get(slug)
+          const base = at(quote.id, slug)
+          return section && hasOwnRoutes(section) ? base : `${base}?change=1`
+        }
         const rows = answerRows(quote).map((row) => ({
           key: { text: row.key },
           value: { text: row.value },
           actions: {
             items: [
               {
-                href: at(quote.id, row.slug),
+                href: changeHref(row.slug),
                 text: 'Change',
                 visuallyHiddenText: row.key.toLowerCase()
               }

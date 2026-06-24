@@ -62,6 +62,14 @@ test('linear journey — start to confirmation', async ({ page }) => {
   await click(page, 'Accept and continue')
 
   await heading(page, 'Check your answers')
+
+  // GDS change-answer round-trip: edit one answer and return straight to CYA.
+  await page.getByRole('link', { name: 'Change telephone' }).click()
+  await heading(page, 'About you')
+  await page.getByLabel('UK telephone number').fill('07700 900999')
+  await click(page, j.SAVE)
+  await heading(page, 'Check your answers')
+
   await click(page, 'Accept and get quote')
 
   await heading(page, 'Quote confirmed')
