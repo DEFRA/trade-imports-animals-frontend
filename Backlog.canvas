@@ -1,0 +1,38 @@
+{
+	"nodes":[
+		{"id":"a172780a25466a80","type":"text","text":"Confirm all 3 journeys are consistent","x":-295,"y":-317,"width":250,"height":50},
+		{"id":"85cf77b65ec9d2c4","type":"text","text":"Design Decisions\n\nModel shouldn't couple to rendering engine - e.g. should be boolean field, NOT at a radio button\n\n\"Journey\" is a thing.\n\nModel/Journey should work for Live Animals and Car Insurance\n\nSomeway to surface the model without the associated UI\n\n","x":400,"y":-404,"width":220,"height":429},
+		{"id":"6092d60b77e21569","type":"text","text":"First pass of *a* model ","x":-460,"y":-230,"width":250,"height":55},
+		{"id":"532b42348e86411f","type":"text","text":"Multiple model options","x":-145,"y":-140,"width":250,"height":50},
+		{"id":"8e5d3f0ef80208c2","type":"text","text":"First pass of a rule/state engine","x":-145,"y":-225,"width":250,"height":50},
+		{"id":"2dd5a5d2faad9cd6","type":"text","text":"First pass of unit tests","x":120,"y":-230,"width":250,"height":55},
+		{"id":"a196274375d8ca76","type":"text","text":"Skeleton journey replica","x":-5,"y":40,"width":250,"height":50},
+		{"id":"4634fe38b782ba41","type":"text","text":"Field config comparison","x":-145,"y":120,"width":250,"height":50},
+		{"id":"e28d01aefaf49634","type":"text","text":"Feature flags","x":-5,"y":220,"width":250,"height":50},
+		{"id":"8705b3a2959841b9","type":"text","text":"Versioning","x":-270,"y":220,"width":250,"height":50},
+		{"id":"7e8a7094de7f7616","type":"text","text":"Horrible UI driven purely by config as a proof/base","x":-295,"y":40,"width":250,"height":50},
+		{"id":"a8448560f780aa6b","type":"text","text":"Architecture  design contact","x":-145,"y":-40,"width":250,"height":50},
+		{"id":"c81fc722fbaf4094","type":"text","text":"Interaction design contact","x":-145,"y":-454,"width":250,"height":50},
+		{"id":"aeb3f380ad6b55ef","type":"text","text":"Confirm all pages are correct in terms of a date field is a date field etc etc","x":-5,"y":-329,"width":250,"height":75}
+	],
+	"edges":[
+		{"id":"7675caf25d541f71","fromNode":"c81fc722fbaf4094","fromSide":"bottom","toNode":"aeb3f380ad6b55ef","toSide":"top"},
+		{"id":"04a47b5313c3ea2f","fromNode":"c81fc722fbaf4094","fromSide":"bottom","toNode":"a172780a25466a80","toSide":"top"},
+		{"id":"67138c9d598b2ab5","fromNode":"a172780a25466a80","fromSide":"bottom","toNode":"8e5d3f0ef80208c2","toSide":"top"},
+		{"id":"2ac7ea811f01f33d","fromNode":"a172780a25466a80","fromSide":"bottom","toNode":"6092d60b77e21569","toSide":"top"},
+		{"id":"0c6ba2e39078fa31","fromNode":"a172780a25466a80","fromSide":"bottom","toNode":"2dd5a5d2faad9cd6","toSide":"top"},
+		{"id":"992b00a503544780","fromNode":"aeb3f380ad6b55ef","fromSide":"bottom","toNode":"6092d60b77e21569","toSide":"top"},
+		{"id":"e20f8c9f7a0d0e21","fromNode":"aeb3f380ad6b55ef","fromSide":"bottom","toNode":"8e5d3f0ef80208c2","toSide":"top"},
+		{"id":"095feec307810c3d","fromNode":"aeb3f380ad6b55ef","fromSide":"bottom","toNode":"2dd5a5d2faad9cd6","toSide":"top"},
+		{"id":"cb6360e283fff3e4","fromNode":"6092d60b77e21569","fromSide":"bottom","toNode":"532b42348e86411f","toSide":"top"},
+		{"id":"9598836f10020e48","fromNode":"8e5d3f0ef80208c2","fromSide":"bottom","toNode":"532b42348e86411f","toSide":"top"},
+		{"id":"e6b79395894a0f41","fromNode":"2dd5a5d2faad9cd6","fromSide":"bottom","toNode":"532b42348e86411f","toSide":"top"},
+		{"id":"c4b07bef5f614823","fromNode":"532b42348e86411f","fromSide":"bottom","toNode":"a8448560f780aa6b","toSide":"top"},
+		{"id":"9d0eefaf4df59356","fromNode":"a8448560f780aa6b","fromSide":"bottom","toNode":"7e8a7094de7f7616","toSide":"top"},
+		{"id":"6f6e117d608bdb3a","fromNode":"a8448560f780aa6b","fromSide":"bottom","toNode":"a196274375d8ca76","toSide":"top"},
+		{"id":"dca02934144b55fe","fromNode":"a196274375d8ca76","fromSide":"bottom","toNode":"4634fe38b782ba41","toSide":"top"},
+		{"id":"14defe69c2dfe949","fromNode":"7e8a7094de7f7616","fromSide":"bottom","toNode":"4634fe38b782ba41","toSide":"top"},
+		{"id":"4c795373628c89fa","fromNode":"4634fe38b782ba41","fromSide":"bottom","toNode":"8705b3a2959841b9","toSide":"top"},
+		{"id":"060dc7c44bae63e9","fromNode":"4634fe38b782ba41","fromSide":"bottom","toNode":"e28d01aefaf49634","toSide":"top"}
+	]
+}
