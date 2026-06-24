@@ -25,7 +25,9 @@ export async function fillVehicle(page) {
 
 export async function fillDriving(page, { hadClaims }) {
   await page.getByLabel('Years of no-claims discount').fill('5')
-  await page.getByLabel(hadClaims ? 'Yes' : 'No').check()
+  await page
+    .getByRole('radio', { name: hadClaims ? 'Yes' : 'No', exact: true })
+    .check()
   await page.getByLabel('Penalty points').fill('0')
 }
 
@@ -76,6 +78,29 @@ export async function fillModificationsValue(page) {
 
 export const SAVE = 'Save and continue'
 export const CONTINUE = 'Continue'
+
+/** Walk the linear journey up to (and stopping on) check-your-answers. */
+export async function walkLinearToCheckAnswers(page, { hadClaims }) {
+  const click = (name) => page.getByRole('button', { name }).click()
+  await page.goto('/prototype/linear')
+  await click('Start now')
+  await fillAboutYou(page)
+  await click(SAVE)
+  await fillVehicle(page)
+  await click(SAVE)
+  await fillDriving(page, { hadClaims })
+  await click(SAVE)
+  if (hadClaims) {
+    await addOneClaim(page)
+    await click(CONTINUE)
+  }
+  await fillCoverType(page)
+  await click(SAVE)
+  await fillExtras(page)
+  await click(SAVE)
+  await click(CONTINUE) // add-ons selection — choose none
+  await click('Accept and continue') // quote summary
+}
 
 // Demo pacing: how long to dwell on each page so the video is watchable.
 // Override with DEMO_PACE_MS (e.g. DEMO_PACE_MS=0 for a fast run).

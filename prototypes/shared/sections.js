@@ -91,11 +91,20 @@ export const sections = [
   {
     slug: 'driving-history',
     title: 'Driving history',
-    collect: (payload) => ({
-      yearsNoClaims: payload.yearsNoClaims,
-      hadClaims: payload.hadClaims,
-      penaltyPoints: payload.penaltyPoints
-    }),
+    collect: (payload) => {
+      const patch = {
+        yearsNoClaims: payload.yearsNoClaims,
+        hadClaims: payload.hadClaims,
+        penaltyPoints: payload.penaltyPoints
+      }
+      // Switching away from "yes" makes the claims sub-loop no longer apply —
+      // clear its answers so they cannot linger in the store or reappear.
+      if (payload.hadClaims !== 'yes') {
+        patch.claims = []
+        patch.claimsDone = false
+      }
+      return patch
+    },
     isComplete: (quote) => Boolean(quote.hadClaims),
     rows: (quote) => [
       { key: 'Years no claims', value: quote.yearsNoClaims ?? 'Not provided' },
