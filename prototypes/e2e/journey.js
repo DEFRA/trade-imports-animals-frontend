@@ -76,3 +76,10 @@ export async function fillModificationsValue(page) {
 
 export const SAVE = 'Save and continue'
 export const CONTINUE = 'Continue'
+
+// Demo pacing: how long to dwell on each page so the video is watchable.
+// Override with DEMO_PACE_MS (e.g. DEMO_PACE_MS=0 for a fast run).
+export const PACE =
+  process.env.DEMO_PACE_MS !== undefined
+    ? Number(process.env.DEMO_PACE_MS)
+    : 1500

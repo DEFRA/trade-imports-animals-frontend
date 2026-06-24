@@ -11,13 +11,21 @@ export default defineConfig({
   testMatch: '**/*.spec.js',
   fullyParallel: false,
   workers: 1,
-  timeout: 90_000,
+  timeout: 240_000,
   expect: { timeout: 15_000 },
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
     baseURL: 'http://localhost:3000',
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
+    // Slow each action down so the demo video is watchable. Override with
+    // DEMO_SLOWMO (e.g. DEMO_SLOWMO=0 for a fast run).
+    launchOptions: {
+      slowMo:
+        process.env.DEMO_SLOWMO !== undefined
+          ? Number(process.env.DEMO_SLOWMO)
+          : 600
+    },
     // Retain a video for every run (not just failures) — these are the demo.
     video: 'on',
     trace: 'on',

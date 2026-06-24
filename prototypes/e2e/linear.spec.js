@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
 import * as j from './journey.js'
 
-const heading = (page, name) =>
-  expect(page.getByRole('heading', { name })).toBeVisible()
+const heading = async (page, name) => {
+  await expect(page.getByRole('heading', { name })).toBeVisible()
+  await page.waitForTimeout(j.PACE) // dwell so the demo video is watchable
+}
 const click = (page, name) => page.getByRole('button', { name }).click()
 
 test('linear journey — start to confirmation', async ({ page }) => {
