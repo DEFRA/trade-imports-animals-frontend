@@ -144,7 +144,16 @@ export const sections = [
       min: 0,
       max: 99,
       required: false
-    }),
+    }).concat(
+      integerYearsSchema({
+        name: 'penaltyPoints',
+        enterMessage: 'Enter how many penalty points you have',
+        noun: 'Penalty points',
+        min: 0,
+        max: 12,
+        required: false
+      })
+    ),
     collect: (payload) => {
       const patch = {
         yearsNoClaims: payload.yearsNoClaims,

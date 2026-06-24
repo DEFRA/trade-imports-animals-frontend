@@ -741,6 +741,96 @@ describe('currencySchema composes with vehicleYearSchema', () => {
   })
 })
 
+describe('the live Driving-history composition (yearsNoClaims + penaltyPoints, both optional)', () => {
+  const drivingHistory = integerYearsSchema({
+    name: 'yearsNoClaims',
+    enterMessage: 'never used',
+    noun: 'Years of no-claims discount',
+    min: 0,
+    max: 99,
+    required: false
+  }).concat(
+    integerYearsSchema({
+      name: 'penaltyPoints',
+      enterMessage: 'never used',
+      noun: 'Penalty points',
+      min: 0,
+      max: 12,
+      required: false
+    })
+  )
+
+  test('a fully blank submission passes — nothing is validated', () => {
+    const { value, errors } = validatePayload(drivingHistory, {})
+    expect(errors).toBeNull()
+    expect(value.yearsNoClaims).toBeUndefined()
+    expect(value.penaltyPoints).toBeUndefined()
+  })
+
+  test('yearsNoClaims alone passes — penaltyPoints is not validated when empty', () => {
+    const { value, errors } = validatePayload(drivingHistory, {
+      yearsNoClaims: '5',
+      penaltyPoints: ''
+    })
+    expect(errors).toBeNull()
+    expect(value.yearsNoClaims).toBe(5)
+    expect(value.penaltyPoints).toBeUndefined()
+  })
+
+  test('penaltyPoints alone passes — yearsNoClaims is not validated when empty', () => {
+    const { value, errors } = validatePayload(drivingHistory, {
+      yearsNoClaims: '',
+      penaltyPoints: '3'
+    })
+    expect(errors).toBeNull()
+    expect(value.yearsNoClaims).toBeUndefined()
+    expect(value.penaltyPoints).toBe(3)
+  })
+
+  test('penaltyPoints above the legal threshold (12) is rejected', () => {
+    const { errors } = validatePayload(drivingHistory, { penaltyPoints: '13' })
+    expect(errors.penaltyPoints).toBe(
+      'Penalty points must be a whole number between 0 and 12'
+    )
+    expect(errors.yearsNoClaims).toBeUndefined()
+  })
+
+  test('a decimal penaltyPoints is rejected', () => {
+    const { errors } = validatePayload(drivingHistory, { penaltyPoints: '1.5' })
+    expect(errors.penaltyPoints).toBe(
+      'Penalty points must be a whole number between 0 and 12'
+    )
+  })
+
+  test('a negative penaltyPoints is rejected', () => {
+    const { errors } = validatePayload(drivingHistory, { penaltyPoints: '-1' })
+    expect(errors.penaltyPoints).toBe(
+      'Penalty points must be a whole number between 0 and 12'
+    )
+  })
+
+  test('zero penaltyPoints passes — clean licence', () => {
+    const { value, errors } = validatePayload(drivingHistory, {
+      penaltyPoints: '0'
+    })
+    expect(errors).toBeNull()
+    expect(value.penaltyPoints).toBe(0)
+  })
+
+  test('both fields bad — both errors are surfaced', () => {
+    const { errors } = validatePayload(drivingHistory, {
+      yearsNoClaims: '-1',
+      penaltyPoints: '100'
+    })
+    expect(errors.yearsNoClaims).toBe(
+      'Years of no-claims discount must be a whole number between 0 and 99'
+    )
+    expect(errors.penaltyPoints).toBe(
+      'Penalty points must be a whole number between 0 and 12'
+    )
+  })
+})
+
 describe('the live Your-vehicle composition (both optional)', () => {
   const yourVehicle = vehicleYearSchema({
     name: 'year',
