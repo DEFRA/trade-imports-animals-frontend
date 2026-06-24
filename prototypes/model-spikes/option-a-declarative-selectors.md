@@ -127,6 +127,26 @@ the existing `njk` + `shared/fields.js`. The hub/grouped task-status badges are
 produced by mapping the contract's `status` enum to GDS tags **in the variant's
 view adapter**, never in the model.
 
+## Validation & portability
+
+See [`validation.md`](./validation.md) for the shared design. Option A is the
+natural fit for "model is portable data": the model is the showcase artifact.
+
+- **Author the model as `journey.yml` (or `.json`), not a `.js` module.** The JS
+  shapes above are for readability only — there must be **no closures**.
+  `appliesWhen` is already a condition object; `isComplete` is gone (derived from
+  `required`); the only thing tempting you back to code is anything `appliesWhen`
+  can't express — note it as a finding.
+- **Validation adapter: derive Joi from the declared constraints.** A small
+  `validation/compile.js` walks a step's `fields` and emits a Joi schema (type +
+  `required`/`min`/`max`/`pattern`/`options`). Page-slice = that step's fields,
+  partial; `assembleQuote` = all applicable fields required + the declarative
+  business rules. **Do not hand-author Joi** beside the model.
+- **Business rules** (e.g. `driverAge >= 17`, `excessAmount <= estimatedValue`)
+  live as declarative cross-field rules in the model data; the compiler maps them
+  to Joi `.custom()` / `.when()`. Name any rule that won't go declarative.
+- **Try both shape strategies** (two-shape vs one-shape) and record the trade-off.
+
 ## TODO checklist (ordered)
 
 1. Scaffold `prototypes/model-spikes/spike-a/` per the folder convention in the

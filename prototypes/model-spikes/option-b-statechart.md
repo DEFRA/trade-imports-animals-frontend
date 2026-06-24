@@ -98,6 +98,25 @@ Each variant's controller renders via the existing `njk` + `shared/fields.js`;
 the GDS tag mapping for hub/grouped status lives in the variant adapter, not the
 machine.
 
+## Validation & portability
+
+See [`validation.md`](./validation.md) for the shared design.
+
+- **Keep the machine portable data.** XState machine config is JSON-serialisable
+  and guards are condition objects — so author `machine.yml`/`.json`, no closures.
+  If you use the XState library, the _definition_ must still dump cleanly to JSON
+  in `dump.js`; guard/action _functions_ belong to the interpreter (the adapter),
+  not the model.
+- **Where validation hangs naturally:** page-slice validation is an **entry/exit
+  action** or a guard on the `SUBMIT` transition (block the transition if the
+  page is invalid); the full-object `assembleQuote` is the **guard on the
+  transition into the `final` state** — you literally cannot reach `done` unless
+  the assembled quote validates. That's an elegant fit; show it off.
+- **Validation adapter: derive Joi** from the state's declared `fields` +
+  `context.fields` constraints (same compile-from-data rule as the others). The
+  holistic business rules become the `final`-transition guard.
+- **Try both shape strategies** (two-shape vs one-shape) and record the trade-off.
+
 ## TODO checklist (ordered)
 
 1. Scaffold `prototypes/model-spikes/spike-b/`; register `/prototype/spike-b/...`

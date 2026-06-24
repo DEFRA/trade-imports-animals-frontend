@@ -101,6 +101,26 @@ Render via existing `njk` + `shared/fields.js`. A nice demo affordance (optional
 but cheap here): surface the `because` reason on the hub next to a required-but-
 incomplete task, since the engine already produces it.
 
+## Validation & portability
+
+See [`validation.md`](./validation.md) for the shared design. Option C is the
+natural fit for the **business-rule** half of validation — the rules engine
+_is_ the cross-field/conditional validation layer.
+
+- **Author `fields.yml` + `rules.yml` as data**, no closures. `when` is a
+  condition object; `reason` is a string. The engine (adapter) interprets them.
+- **Two rule kinds, one engine:** _required-when_ rules (already the paradigm)
+  drive `missingRequired`; add _assertion_ rules (`driverAge >= 17`,
+  `excessAmount <= estimatedValue`) that the engine evaluates at `assembleQuote`
+  with provenance reasons. This is where C shines vs the others — the holistic
+  business rules are declarative data with built-in "because".
+- **Intrinsic field constraints** (type/format/pattern) are separate from rules —
+  declared on `fields`, compiled to **Joi** for the page-slice (same
+  derive-from-data rule). Don't fold format-checks into the rules engine; keep
+  "is this a valid postcode string" (intrinsic) apart from "is this required /
+  consistent" (rules).
+- **Try both shape strategies** (two-shape vs one-shape) and record the trade-off.
+
 ## TODO checklist (ordered)
 
 1. Scaffold `prototypes/model-spikes/spike-c/`; register `/prototype/spike-c/...`

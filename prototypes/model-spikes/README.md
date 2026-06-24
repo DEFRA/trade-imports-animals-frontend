@@ -23,16 +23,39 @@ existing prototype journeys ([`linear`](../linear), [`task-list`](../task-list),
 [`task-list-with-linear-tasks`](../task-list-with-linear-tasks)), which today
 differ only in navigation and task-status presentation.
 
+## The model is portable data, not code
+
+The strongest version of "decoupled from rendering" is: **the model is plain,
+declarative data (JSON / YAML) with _no embedded code_ at all.** Everything that
+_executes_ — the flow/status/completeness functions **and** the validation — is
+a **runtime adapter** that _reads_ the model. The JavaScript runtime in this repo
+is one such adapter; in theory the same model file could drive a different
+consumer entirely (a Python CLI, a different frontend) and still answer "what's
+next / what's complete / what's required and why". This is an aspiration, not a
+hard requirement for the spikes — but it's the abstraction level we're aiming
+for, and it's a **comparison-rubric dimension** ("portability").
+
+Concrete rules this implies for every spike:
+
+- **Author the model as a `.yml` / `.json` file, not a `.js` module.** If a
+  concept can only be expressed as a function/closure, that is a **finding** —
+  write it down in the spike's self-scoring notes.
+- `appliesWhen`, required-when, field constraints, the journey shape — all must
+  be expressible as **data** (condition objects, not predicates).
+- **Validation is a separate, decoupled adapter** (see
+  [`validation.md`](./validation.md)). Joi / Zod / JSON-Schema are _wrappers that
+  consume the model's declared constraints_ — never part of the model itself.
+
 We don't yet know the best paradigm, so we spike **four** genuinely different
 ones behind **one common contract** so they can be compared head-to-head and run
 side by side.
 
-| Option | Paradigm                                                     | Backlog                                                                  |
-| ------ | ------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| A      | Declarative config + selectors (evolve `sections.js`)        | [option-a-declarative-selectors.md](./option-a-declarative-selectors.md) |
-| B      | Statechart / FSM (states + guarded transitions)              | [option-b-statechart.md](./option-b-statechart.md)                       |
-| C      | Requirement-graph rules engine (data + derived requirements) | [option-c-rules-engine.md](./option-c-rules-engine.md)                   |
-| D      | Schema-first (Zod / JSON-Schema as source of truth)          | [option-d-schema-first.md](./option-d-schema-first.md)                   |
+| Option | Paradigm                                                      | Backlog                                                                  |
+| ------ | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| A      | Declarative config + selectors (evolve `sections.js`)         | [option-a-declarative-selectors.md](./option-a-declarative-selectors.md) |
+| B      | Statechart / FSM (states + guarded transitions)               | [option-b-statechart.md](./option-b-statechart.md)                       |
+| C      | Requirement-graph rules engine (data + derived requirements)  | [option-c-rules-engine.md](./option-c-rules-engine.md)                   |
+| D      | Schema-first (JSON Schema as portable constraints + adapters) | [option-d-schema-first.md](./option-d-schema-first.md)                   |
 
 Scope for this round: **car-insurance journey only**. The
 [`Backlog.canvas`](../../Backlog.canvas) cross-domain bar ("works for Live
@@ -92,9 +115,10 @@ navigation / status / constraints from the model.
    GDS tag colours in the model or the pure functions. Rendering hints (if any)
    live in a **separate adapter/annotation layer** keyed by field/step.
 
-3. **Common contract.** Every spike implements the same function surface, so the
-   four are swappable and comparable. `answers` is the plain quote-state object;
-   `shape` is the descriptor above.
+3. **Common contract.** The model is data; this is the **runtime interface** a
+   spike's adapter implements by _interpreting_ that data. Every spike exposes
+   the same surface, so the four are swappable and comparable. `answers` is the
+   plain quote-state object; `shape` is the descriptor above.
 
    ```js
    applicableSteps(answers)                 -> [stepId]
@@ -105,13 +129,16 @@ navigation / status / constraints from the model.
    missingRequired(answers)                 -> [{ stepId, fieldId, because: [provenance] }]
    applyAnswer(answers, stepId, payload)    -> answers'   // cascade-clears newly-inapplicable steps
    fieldsFor(stepId)                        -> [{ id, type, constraints }]
-   validate(stepId, payload)                -> { ok, errors: [{ fieldId, message }] }
+   validate(stepId, payload)                -> { ok, errors: [{ fieldId, message }] }   // page-slice
+   assembleQuote(answers)                   -> { ok, quote, errors }   // full-object: validate + transform
    ```
 
    - `type` is render-agnostic and covers at least: date, radio, multi-select,
      free text, boolean, number/currency, formatted-string (e.g. registration).
-   - `constraints` are declarative (required, min/max, length, pattern, options)
-     and `validate` is **derived** from them — no per-page validators by hand.
+   - `constraints` are declarative **data** (required, min/max, length, pattern,
+     options). `validate` (page-slice) and `assembleQuote` (full object) are the
+     **validation adapter** reading those constraints — never a hand-written
+     parallel schema. See [`validation.md`](./validation.md) for the full design.
 
 4. **Conditional + provenance proof.** Express the existing conditional
    (`claims` applies iff `hadClaims === 'yes'`) in the model. `missingRequired`
@@ -133,7 +160,13 @@ navigation / status / constraints from the model.
    - `applyAnswer` cascade: set `hadClaims:'no'` ⇒ `claims` gone + data cleared
    - `missingRequired` includes a `because` provenance entry for a conditional.
 
-7. **Integration proof.** The existing **Playwright demo suite** must pass when
+7. **Validation** (see [`validation.md`](./validation.md)). Page-slice validation
+   derived from the model's declared constraints (field-anchored errors, incl. a
+   within-page conditional); `assembleQuote` assembles + transforms + validates
+   the full domain object incl. one holistic business rule; soft-on-load /
+   hard-on-submit wired on Check Your Answers; both shape strategies tried.
+
+8. **Integration proof.** The existing **Playwright demo suite** must pass when
    pointed at the spike's three rewired variants — proving the model drives the
    live journeys, not just the tests.
 
@@ -146,17 +179,20 @@ navigation / status / constraints from the model.
 
 ```
 prototypes/model-spikes/<slug>/
-  model/               the model definition + pure functions (the spike's IP)
+  model/
+    journey.yml|json   the model — PORTABLE DATA, no code (the spike's IP)
+  runtime/             the adapter that interprets the model (the contract fns)
+  validation/          the validation adapter (page-slice + assembleQuote)
   variants/            three thin wirings: linear, hub, grouped
   routes.js            registers /prototype/spike-<slug>/... (reuses shared njk)
   dump.js              headless "surface without UI" proof
-  *.test.js            pure-function unit tests
+  *.test.js            unit tests for runtime + validation
   README.md            what this spike is, how to run it, self-scoring notes
 ```
 
 Reuse, do not fork: the existing `njk` templates, `shared/fields.js`,
-`shared/store.js`, and the GDS partials. Only the model + pure functions + glue
-are new.
+`shared/store.js`, and the GDS partials. New per spike: the model **data file**,
+the **runtime** adapter, the **validation** adapter, and the thin variant glue.
 
 ## How to run side by side
 
@@ -168,19 +204,21 @@ distinct base path.
 
 Score each spike **1–5** per dimension, with a one-line note:
 
-| Dimension                 | What we're judging                           |
-| ------------------------- | -------------------------------------------- |
-| Decoupling purity         | Any rendering leak into the model?           |
-| Conditional + provenance  | How cleanly does "X.3 because X.1" fall out? |
-| Navigation rigour         | next/prev correctness; no dead-ends          |
-| Constraint/type modelling | The canvas "field config comparison"         |
-| Add a new question        | Effort + blast radius                        |
-| Add a new conditional     | Effort + blast radius                        |
-| Add a new journey shape   | Effort to add a 4th shape                    |
-| Testability               | Ergonomics of the pure-function tests        |
-| Glue size per variant     | Lines of variant-specific code               |
-| Headless usability        | The JSON-dump ergonomics                     |
-| Readability / onboarding  | Could a new dev follow it?                   |
+| Dimension                 | What we're judging                                        |
+| ------------------------- | --------------------------------------------------------- |
+| Decoupling purity         | Any rendering leak into the model?                        |
+| Portability               | Is the model pure data (no code)? Could a non-JS read it? |
+| Conditional + provenance  | How cleanly does "X.3 because X.1" fall out?              |
+| Navigation rigour         | next/prev correctness; no dead-ends                       |
+| Constraint/type modelling | The canvas "field config comparison"                      |
+| Validation ergonomics     | Page-slice + full-object reuse; business-rule fit         |
+| Add a new question        | Effort + blast radius                                     |
+| Add a new conditional     | Effort + blast radius                                     |
+| Add a new journey shape   | Effort to add a 4th shape                                 |
+| Testability               | Ergonomics of the pure-function tests                     |
+| Glue size per variant     | Lines of variant-specific code                            |
+| Headless usability        | The JSON-dump ergonomics                                  |
+| Readability / onboarding  | Could a new dev follow it?                                |
 
 ## Mapping to `Backlog.canvas`
 
