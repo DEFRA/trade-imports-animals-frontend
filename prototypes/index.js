@@ -6,6 +6,7 @@ import { taskListWithLinearTasksPrototype } from './task-list-with-linear-tasks/
 import { spikeA } from './model-spikes/spike-a/routes.js'
 import { spikeB } from './model-spikes/spike-b/routes.js'
 import { spikeC } from './model-spikes/spike-c/routes.js'
+import { spikeD } from './model-spikes/spike-d/routes.js'
 
 const open = { auth: false }
 
@@ -53,7 +54,8 @@ export const prototypes = {
         // /prototype/spike-<slug>/... so they run side by side with the above.
         spikeA,
         spikeB,
-        spikeC
+        spikeC,
+        spikeD
       ])
     }
   }

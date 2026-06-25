@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Option D — the single source of truth for the quote's constraints, as PORTABLE JSON Schema (no JS, no Zod). Validated here by a tiny self-contained adapter, but this file is standard draft-07: ajv-, Zod- or Pydantic-loadable. Shaped over the FORM answers the journey collects (strings, 'yes'/'no', arrays); the transform to the domain object is the adapter's job. Conditional requirements are if/then (value-based) so they fire on the answer, not mere presence. See ../README.md.",
+  "type": "object",
+  "properties": {
+    "fullName": { "type": "string", "minLength": 1 },
+    "email": { "type": "string" },
+    "phone": { "type": "string" },
+    "postcode": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$"
+    },
+    "country": { "enum": ["england", "scotland", "wales", "northern-ireland"] },
+    "dateOfBirth": {
+      "type": "object",
+      "properties": {
+        "day": { "type": "string" },
+        "month": { "type": "string" },
+        "year": { "type": "string" }
+      }
+    },
+    "registration": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2}\\d{2}\\s?[A-Za-z]{3}$"
+    },
+    "make": { "type": "string" },
+    "model": { "type": "string" },
+    "year": { "type": "string", "pattern": "^\\d{4}$" },
+    "estimatedValue": { "type": "string", "pattern": "^\\d+$" },
+    "yearsNoClaims": { "type": "string", "pattern": "^\\d+$" },
+    "hadClaims": { "enum": ["yes", "no"] },
+    "penaltyPoints": { "type": "string", "pattern": "^\\d+$" },
+    "coverType": {
+      "enum": ["comprehensive", "third-party-fire-theft", "third-party"]
+    },
+    "voluntaryExcess": { "enum": ["yes", "no"] },
+    "excessAmount": { "type": "string", "pattern": "^\\d+$" },
+    "extras": {
+      "type": "array",
+      "items": {
+        "enum": ["breakdown", "courtesy-car", "legal", "windscreen"]
+      }
+    },
+    "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" } }
+  },
+  "required": ["fullName", "registration", "hadClaims", "coverType", "extras"],
+  "allOf": [
+    {
+      "$comment": "claims required iff hadClaims = yes",
+      "if": {
+        "properties": { "hadClaims": { "const": "yes" } },
+        "required": ["hadClaims"]
+      },
+      "then": {
+        "required": ["claims"],
+        "properties": { "claims": { "minItems": 1 } }
+      }
+    },
+    {
+      "$comment": "excessAmount required iff voluntaryExcess = yes (value-based, unlike dependentRequired)",
+      "if": {
+        "properties": { "voluntaryExcess": { "const": "yes" } },
+        "required": ["voluntaryExcess"]
+      },
+      "then": { "required": ["excessAmount"] }
+    }
+  ],
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "properties": {
+        "claimType": {
+          "enum": ["accident", "theft", "windscreen", "other"]
+        },
+        "claimAmount": {}
+      },
+      "required": ["claimType"]
+    }
+  }
+}

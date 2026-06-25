@@ -1,0 +1,114 @@
+{
+  "$comment": "Option D — render-agnostic flow metadata (also data). JSON Schema owns WHAT IS VALID; this owns WHICH STEP a field belongs to, ordering, grouping, type hints and the loop/subtask step kinds. No colours or macros. See ../README.md.",
+  "steps": [
+    "about-you",
+    "your-vehicle",
+    "driving-history",
+    "claims",
+    "cover-type",
+    "optional-extras",
+    "addons"
+  ],
+  "titles": {
+    "about-you": "About you",
+    "your-vehicle": "Your vehicle",
+    "driving-history": "Driving history",
+    "claims": "Your claims",
+    "cover-type": "Choose your cover",
+    "optional-extras": "Optional extras",
+    "addons": "Add to your policy"
+  },
+  "stepMeta": {
+    "claims": { "kind": "loop", "done": "claimsDone", "arrayKey": "claims" },
+    "cover-type": { "itemsFrom": "coverType" },
+    "optional-extras": { "itemsFrom": "extras" },
+    "addons": { "kind": "subtasks" }
+  },
+  "fieldStep": {
+    "fullName": "about-you",
+    "email": "about-you",
+    "phone": "about-you",
+    "postcode": "about-you",
+    "country": "about-you",
+    "dateOfBirth": "about-you",
+    "registration": "your-vehicle",
+    "make": "your-vehicle",
+    "model": "your-vehicle",
+    "year": "your-vehicle",
+    "estimatedValue": "your-vehicle",
+    "yearsNoClaims": "driving-history",
+    "hadClaims": "driving-history",
+    "penaltyPoints": "driving-history",
+    "claims": "claims",
+    "coverType": "cover-type",
+    "voluntaryExcess": "cover-type",
+    "excessAmount": "cover-type",
+    "extras": "optional-extras"
+  },
+  "fieldType": {
+    "fullName": "text",
+    "email": "email",
+    "phone": "tel",
+    "postcode": "formatted",
+    "country": "select",
+    "dateOfBirth": "date",
+    "registration": "formatted",
+    "make": "text",
+    "model": "text",
+    "year": "number",
+    "estimatedValue": "currency",
+    "yearsNoClaims": "number",
+    "hadClaims": "boolean",
+    "penaltyPoints": "number",
+    "coverType": "radio",
+    "voluntaryExcess": "boolean",
+    "excessAmount": "currency",
+    "extras": "multi-select"
+  },
+  "options": {
+    "coverType": [
+      {
+        "value": "comprehensive",
+        "text": "Comprehensive",
+        "hint": "Covers you, your car and other people"
+      },
+      {
+        "value": "third-party-fire-theft",
+        "text": "Third party, fire and theft",
+        "hint": "Covers other people, plus fire and theft of your car"
+      },
+      {
+        "value": "third-party",
+        "text": "Third party only",
+        "hint": "Covers other people only"
+      }
+    ],
+    "extras": [
+      { "value": "breakdown", "text": "Breakdown cover" },
+      { "value": "courtesy-car", "text": "Courtesy car" },
+      { "value": "legal", "text": "Motor legal protection" },
+      { "value": "windscreen", "text": "Windscreen cover" }
+    ]
+  },
+  "businessRules": [
+    {
+      "id": "driver-min-age",
+      "kind": "min-age",
+      "field": "dateOfBirth",
+      "min": 17,
+      "stepId": "about-you",
+      "fieldId": "dateOfBirth",
+      "reason": "The main driver must be at least 17 years old"
+    },
+    {
+      "id": "excess-within-value",
+      "kind": "lte",
+      "left": "excessAmount",
+      "right": "estimatedValue",
+      "when": { "field": "voluntaryExcess", "eq": "yes" },
+      "stepId": "cover-type",
+      "fieldId": "excessAmount",
+      "reason": "Voluntary excess cannot be more than the vehicle's estimated value"
+    }
+  ]
+}
