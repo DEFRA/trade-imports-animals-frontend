@@ -1,0 +1,38 @@
+{
+  "$comment": "Option C — the rules layer (separate from the data model). `require` rules derive conditional requirements with an AUTHORED reason (the paradigm's signature — `because` is a first-class output, not synthesised). `assert` rules (kind) are the holistic business rules, also with reasons. `appliesStep` marks a loop/subtask step live. See ../README.md.",
+  "rules": [
+    {
+      "id": "claims-required-when-had-claims",
+      "kind": "require",
+      "when": { "field": "hadClaims", "eq": "yes" },
+      "appliesStep": "claims",
+      "reason": "You said you have had a claim in the last 5 years"
+    },
+    {
+      "id": "excess-amount-when-voluntary",
+      "kind": "require",
+      "when": { "field": "voluntaryExcess", "eq": "yes" },
+      "require": ["excessAmount"],
+      "reason": "You chose to pay a voluntary excess"
+    },
+    {
+      "id": "driver-min-age",
+      "kind": "min-age",
+      "field": "dateOfBirth",
+      "min": 17,
+      "stepId": "about-you",
+      "fieldId": "dateOfBirth",
+      "reason": "The main driver must be at least 17 years old"
+    },
+    {
+      "id": "excess-within-value",
+      "kind": "lte",
+      "left": "excessAmount",
+      "right": "estimatedValue",
+      "when": { "field": "voluntaryExcess", "eq": "yes" },
+      "stepId": "cover-type",
+      "fieldId": "excessAmount",
+      "reason": "Voluntary excess cannot be more than the vehicle's estimated value"
+    }
+  ]
+}

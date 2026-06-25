@@ -5,6 +5,7 @@ import { taskListPrototype } from './task-list/index.js'
 import { taskListWithLinearTasksPrototype } from './task-list-with-linear-tasks/index.js'
 import { spikeA } from './model-spikes/spike-a/routes.js'
 import { spikeB } from './model-spikes/spike-b/routes.js'
+import { spikeC } from './model-spikes/spike-c/routes.js'
 
 const open = { auth: false }
 
@@ -51,7 +52,8 @@ export const prototypes = {
         // Journey-model spikes — each registers its own three variants under
         // /prototype/spike-<slug>/... so they run side by side with the above.
         spikeA,
-        spikeB
+        spikeB,
+        spikeC
       ])
     }
   }

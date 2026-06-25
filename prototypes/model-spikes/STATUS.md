@@ -8,7 +8,7 @@ starts.
 
 - [x] Option A — declarative config + selectors (`spike-a`)
 - [x] Option B — statechart / FSM (`spike-b`)
-- [ ] Option C — requirement-graph rules engine (`spike-c`)
+- [x] Option C — requirement-graph rules engine (`spike-c`)
 - [ ] Option D — schema-first (JSON Schema) (`spike-d`)
 
 ## How the variants map to the existing demo journeys

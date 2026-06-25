@@ -1,0 +1,118 @@
+{
+  "$comment": "Option C — the typed answer-data model (no flow, no rendering). Flat fields, each with a type + constraints + which step presents it. `required: always` is the only unconditional requirement; conditional requirements live in rules.json. Loop/subtask steps own their routes, so their item fields are not modelled here. See ../README.md.",
+  "steps": [
+    { "id": "about-you", "title": "About you" },
+    { "id": "your-vehicle", "title": "Your vehicle" },
+    { "id": "driving-history", "title": "Driving history" },
+    {
+      "id": "claims",
+      "title": "Your claims",
+      "kind": "loop",
+      "done": "claimsDone",
+      "arrayKey": "claims"
+    },
+    {
+      "id": "cover-type",
+      "title": "Choose your cover",
+      "itemsFrom": "coverType"
+    },
+    {
+      "id": "optional-extras",
+      "title": "Optional extras",
+      "itemsFrom": "extras"
+    },
+    { "id": "addons", "title": "Add to your policy", "kind": "subtasks" }
+  ],
+  "fields": {
+    "fullName": { "step": "about-you", "type": "text", "required": "always" },
+    "email": { "step": "about-you", "type": "email" },
+    "phone": { "step": "about-you", "type": "tel" },
+    "postcode": {
+      "step": "about-you",
+      "type": "formatted",
+      "pattern": "postcode"
+    },
+    "country": {
+      "step": "about-you",
+      "type": "select",
+      "options": [
+        { "value": "england", "text": "England" },
+        { "value": "scotland", "text": "Scotland" },
+        { "value": "wales", "text": "Wales" },
+        { "value": "northern-ireland", "text": "Northern Ireland" }
+      ]
+    },
+    "dateOfBirth": { "step": "about-you", "type": "date" },
+    "registration": {
+      "step": "your-vehicle",
+      "type": "formatted",
+      "required": "always",
+      "pattern": "registration"
+    },
+    "make": { "step": "your-vehicle", "type": "text" },
+    "model": { "step": "your-vehicle", "type": "text" },
+    "year": {
+      "step": "your-vehicle",
+      "type": "number",
+      "min": 1900,
+      "max": 2100
+    },
+    "estimatedValue": { "step": "your-vehicle", "type": "currency" },
+    "yearsNoClaims": {
+      "step": "driving-history",
+      "type": "number",
+      "min": 0,
+      "max": 99
+    },
+    "hadClaims": {
+      "step": "driving-history",
+      "type": "boolean",
+      "required": "always"
+    },
+    "penaltyPoints": {
+      "step": "driving-history",
+      "type": "number",
+      "min": 0,
+      "max": 12
+    },
+    "coverType": {
+      "step": "cover-type",
+      "type": "radio",
+      "required": "always",
+      "options": [
+        {
+          "value": "comprehensive",
+          "text": "Comprehensive",
+          "hint": "Covers you, your car and other people"
+        },
+        {
+          "value": "third-party-fire-theft",
+          "text": "Third party, fire and theft",
+          "hint": "Covers other people, plus fire and theft of your car"
+        },
+        {
+          "value": "third-party",
+          "text": "Third party only",
+          "hint": "Covers other people only"
+        }
+      ]
+    },
+    "voluntaryExcess": { "step": "cover-type", "type": "boolean" },
+    "excessAmount": { "step": "cover-type", "type": "currency" },
+    "extras": {
+      "step": "optional-extras",
+      "type": "multi-select",
+      "required": "always",
+      "options": [
+        { "value": "breakdown", "text": "Breakdown cover" },
+        { "value": "courtesy-car", "text": "Courtesy car" },
+        { "value": "legal", "text": "Motor legal protection" },
+        { "value": "windscreen", "text": "Windscreen cover" }
+      ]
+    }
+  },
+  "patterns": {
+    "postcode": "^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$",
+    "registration": "^[A-Za-z]{2}\\d{2}\\s?[A-Za-z]{3}$"
+  }
+}
