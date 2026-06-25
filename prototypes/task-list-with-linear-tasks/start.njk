@@ -9,7 +9,7 @@
     short set of questions, then returns you to this list.
   </p>
 
-  <form method="post" action="/prototype/task-list-with-linear-tasks/start" novalidate>
+  <form method="post" action="{{ startAction or '/prototype/task-list-with-linear-tasks/start' }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     {{ govukButton({ text: "Start now", isStartButton: true }) }}
   </form>

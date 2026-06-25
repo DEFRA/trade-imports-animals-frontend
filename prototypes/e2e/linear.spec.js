@@ -8,7 +8,7 @@ const heading = async (page, name) => {
 const click = (page, name) => page.getByRole('button', { name }).click()
 
 test('linear journey — start to confirmation', async ({ page }) => {
-  await page.goto('/prototype/linear')
+  await page.goto(j.base.linear)
   await click(page, 'Start now')
 
   await heading(page, 'About you')

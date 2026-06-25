@@ -3,6 +3,7 @@ import { coverTypeLabel } from './shared/quote.js'
 import { linearPrototype } from './linear/index.js'
 import { taskListPrototype } from './task-list/index.js'
 import { taskListWithLinearTasksPrototype } from './task-list-with-linear-tasks/index.js'
+import { spikeA } from './model-spikes/spike-a/routes.js'
 
 const open = { auth: false }
 
@@ -45,7 +46,10 @@ export const prototypes = {
       await server.register([
         linearPrototype,
         taskListPrototype,
-        taskListWithLinearTasksPrototype
+        taskListWithLinearTasksPrototype,
+        // Journey-model spikes — each registers its own three variants under
+        // /prototype/spike-<slug>/... so they run side by side with the above.
+        spikeA
       ])
     }
   }

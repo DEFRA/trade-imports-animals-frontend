@@ -6,7 +6,7 @@ adapter, all three variants wired, `dump.js`, unit tests, the Playwright demo
 suite green against its variants, and self-scoring notes — before the next one
 starts.
 
-- [ ] Option A — declarative config + selectors (`spike-a`)
+- [x] Option A — declarative config + selectors (`spike-a`)
 - [ ] Option B — statechart / FSM (`spike-b`)
 - [ ] Option C — requirement-graph rules engine (`spike-c`)
 - [ ] Option D — schema-first (JSON Schema) (`spike-d`)

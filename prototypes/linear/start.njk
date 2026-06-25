@@ -14,7 +14,7 @@
   </ul>
   <p class="govuk-body">It takes around 2 minutes.</p>
 
-  <form method="post" action="/prototype/linear/start" novalidate>
+  <form method="post" action="{{ startAction or '/prototype/linear/start' }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     {{ govukButton({ text: "Start now", isStartButton: true }) }}
   </form>

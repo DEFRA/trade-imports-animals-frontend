@@ -1,0 +1,17 @@
+{
+  "fullName": "Alex Driver",
+  "email": "alex@example.com",
+  "postcode": "SW1A 1AA",
+  "dateOfBirth": { "day": "27", "month": "3", "year": "1985" },
+  "registration": "AB12 CDE",
+  "estimatedValue": "8000",
+  "yearsNoClaims": "5",
+  "hadClaims": "yes",
+  "claims": [{ "claimType": "accident", "claimAmount": "500" }],
+  "claimsDone": true,
+  "coverType": "comprehensive",
+  "voluntaryExcess": "yes",
+  "excessAmount": "250",
+  "extras": ["breakdown", "courtesy-car"],
+  "selectedAddons": []
+}

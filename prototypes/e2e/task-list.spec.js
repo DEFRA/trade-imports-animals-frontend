@@ -9,7 +9,7 @@ const click = (page, name) => page.getByRole('button', { name }).click()
 const task = (page, name) => page.getByRole('link', { name }).click()
 
 test('task list journey — start to confirmation', async ({ page }) => {
-  await page.goto('/prototype/task-list')
+  await page.goto(j.base.taskList)
   await click(page, 'Start now')
   await heading(page, 'Get a car insurance quote')
 

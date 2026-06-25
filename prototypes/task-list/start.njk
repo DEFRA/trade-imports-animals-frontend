@@ -8,7 +8,7 @@
     You can complete the sections in any order. Your progress is saved as you go.
   </p>
 
-  <form method="post" action="/prototype/task-list/start" novalidate>
+  <form method="post" action="{{ startAction or '/prototype/task-list/start' }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     {{ govukButton({ text: "Start now", isStartButton: true }) }}
   </form>

@@ -2,7 +2,19 @@
  * Shared helpers for the prototype demo specs. Each `fill*` fills the fields on
  * the page it is given (it does not submit); the spec drives navigation so the
  * same helpers work for the linear and task-list shaped journeys.
+ *
+ * The suite is reusable across the model-spikes: set `SPIKE_BASE` (e.g.
+ * `/spike-a`) to point every journey at a spike's three variants, which are
+ * named to mirror the hand-written journeys. Default (unset) exercises the
+ * original journeys, so both must stay green.
  */
+const SPIKE_BASE = process.env.SPIKE_BASE ?? ''
+
+export const base = {
+  linear: `/prototype${SPIKE_BASE}/linear`,
+  taskList: `/prototype${SPIKE_BASE}/task-list`,
+  grouped: `/prototype${SPIKE_BASE}/task-list-with-linear-tasks`
+}
 
 export async function fillAboutYou(page) {
   await page.getByLabel('Full name').fill('Alex Driver')
@@ -82,7 +94,7 @@ export const CONTINUE = 'Continue'
 /** Walk the linear journey up to (and stopping on) check-your-answers. */
 export async function walkLinearToCheckAnswers(page, { hadClaims }) {
   const click = (name) => page.getByRole('button', { name }).click()
-  await page.goto('/prototype/linear')
+  await page.goto(base.linear)
   await click('Start now')
   await fillAboutYou(page)
   await click(SAVE)

@@ -11,7 +11,7 @@ const task = (page, name) => page.getByRole('link', { name }).click()
 test('task list with linear tasks — start to confirmation', async ({
   page
 }) => {
-  await page.goto('/prototype/task-list-with-linear-tasks')
+  await page.goto(j.base.grouped)
   await click(page, 'Start now')
   await heading(page, 'Get a car insurance quote')
 
