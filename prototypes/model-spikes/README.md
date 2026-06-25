@@ -220,6 +220,53 @@ Score each spike **1–5** per dimension, with a one-line note:
 | Headless usability        | The JSON-dump ergonomics                                  |
 | Readability / onboarding  | Could a new dev follow it?                                |
 
+## Spike comparison (scored)
+
+All four spikes are built, run side by side, and pass the same acceptance bar:
+one model → all three journeys, the existing Playwright demo suite green against
+each (`SPIKE_BASE=/spike-<x>`). They differ only in **paradigm**. Scores are each
+spike's self-assessment (see its `README.md`); 1–5, higher is better.
+
+| Dimension                 | A (selectors) | B (statechart) | C (rules engine) | D (schema-first) |
+| ------------------------- | :-----------: | :------------: | :--------------: | :--------------: |
+| Decoupling purity         |       5       |       5        |        5         |        5         |
+| Portability               |       4       |       4        |        4         |      **5**       |
+| Conditional + provenance  |       4       |       3        |      **5**       |        2         |
+| Navigation rigour         |       4       |     **5**      |        3         |        3         |
+| Constraint/type modelling |       4       |       4        |        4         |      **5**       |
+| Validation ergonomics     |       4       |       4        |        5         |        5         |
+| Add a new question        |       5       |       4        |        4         |        4         |
+| Add a new conditional     |       5       |       4        |        5         |        3         |
+| Add a new journey shape   |       3       |       3        |        3         |        3         |
+| Testability               |       5       |       5        |        5         |        5         |
+| Glue size per variant     |       5       |       5        |        5         |        5         |
+| Headless usability        |       5       |       5        |        5         |        5         |
+| Readability / onboarding  |       5       |       3        |        4         |        3         |
+| **Total**                 |    **58**     |     **54**     |      **55**      |      **53**      |
+
+One-line headline each:
+
+- **A — declarative selectors.** Lowest-risk, closest to today's `sections.js`,
+  most readable, the natural "model is portable data" showcase. Weakest exactly
+  where the brief is hardest (first-class flow, authored provenance, portable
+  constraints) — which is why B/C/D exist.
+- **B — statechart / FSM.** Navigation champion: flow is first-class and `prev`
+  is principled (reverse index + guard re-check). Cost: status & provenance
+  aren't native to FSMs, so you build them on top, and there's more to learn.
+- **C — rules engine.** Provenance & business-rule champion: "X.3 because X.1" is
+  **authored** data, not reconstructed; the rules layer _is_ the cross-field
+  validation. Navigation is a softer, derived consequence.
+- **D — schema-first.** Portability & constraint-modelling champion: a standard,
+  language-neutral JSON Schema with native page-slice/full-object reuse. Pays
+  with the weakest provenance (reconstructed) and flow/business-rules outside the
+  schema.
+
+The totals are close on purpose — there is **no runaway winner**; the right
+choice depends on which dimension the team weights most (onboarding → A; rigorous
+navigation → B; explainable requirements/business rules → C; portable,
+language-neutral constraints → D). **Picking a paradigm is a human decision** and
+is deliberately left open.
+
 ## Mapping to `Backlog.canvas`
 
 These spikes implement the canvas nodes: **Multiple model options** (the four
