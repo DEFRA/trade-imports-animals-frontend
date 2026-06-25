@@ -1,7 +1,7 @@
 {
 	"nodes":[
 		{"id":"a172780a25466a80","type":"text","text":"Confirm all 3 journeys are consistent","x":-295,"y":-317,"width":250,"height":50},
-		{"id":"85cf77b65ec9d2c4","type":"text","text":"Design Decisions\n\nModel shouldn't couple to rendering engine - e.g. should be boolean field, NOT at a radio button\n\n\"Journey\" is a thing.\n\nModel/Journey should work for Live Animals and Car Insurance\n\nSomeway to surface the model without the associated UI\n\n","x":400,"y":-404,"width":220,"height":429},
+		{"id":"85cf77b65ec9d2c4","type":"text","text":"Design Decisions\n\nModel shouldn't couple to rendering engine - e.g. should be boolean field, NOT at a radio button\n\n\"Journey\" is a thing.\n\nModel/Journey should work for Live Animals and Car Insurance\n\nSomeway to surface the model without the associated UI\n\nWhere does constraints/validation live? Examples - a relative date, a valid licence plate\n\nArch request - Like some convenient way to scrutinise journey for correctness\n\nCommonality - let it emerge, idea is not to have needless variation across journeys, how that's achieved is unknowable at this point\n\n","x":380,"y":-424,"width":220,"height":704},
 		{"id":"6092d60b77e21569","type":"text","text":"First pass of *a* model ","x":-460,"y":-230,"width":250,"height":55},
 		{"id":"532b42348e86411f","type":"text","text":"Multiple model options","x":-145,"y":-140,"width":250,"height":50},
 		{"id":"8e5d3f0ef80208c2","type":"text","text":"First pass of a rule/state engine","x":-145,"y":-225,"width":250,"height":50},
