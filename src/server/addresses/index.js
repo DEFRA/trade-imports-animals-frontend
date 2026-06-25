@@ -2,6 +2,9 @@ import { addressesController } from './controller.js'
 import { consignorsSelectController } from './consignors/select/controller.js'
 import { destinationsSelectController } from './destinations/select/controller.js'
 import { consignmentContactSelectController } from './consignment/contact/select/controller.js'
+import { placeOfOriginSelectController } from './place-of-origin/select/controller.js'
+import { consigneesSelectController } from './consignees/select/controller.js'
+import { importersSelectController } from './importers/select/controller.js'
 
 export const addresses = {
   plugin: {
@@ -27,6 +30,36 @@ export const addresses = {
           method: 'GET',
           path: '/consignment/contact/select',
           ...consignmentContactSelectController.get
+        },
+        {
+          method: 'GET',
+          path: '/place-of-origin/select',
+          ...placeOfOriginSelectController.get
+        },
+        {
+          method: 'POST',
+          path: '/place-of-origin/select',
+          ...placeOfOriginSelectController.post
+        },
+        {
+          method: 'GET',
+          path: '/consignees/select',
+          ...consigneesSelectController.get
+        },
+        {
+          method: 'POST',
+          path: '/consignees/select',
+          ...consigneesSelectController.post
+        },
+        {
+          method: 'GET',
+          path: '/importers/select',
+          ...importersSelectController.get
+        },
+        {
+          method: 'POST',
+          path: '/importers/select',
+          ...importersSelectController.post
         },
         {
           method: 'POST',

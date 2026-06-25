@@ -220,12 +220,12 @@
         <div class="govuk-summary-card__content">
           {{ govukSummaryList({
             rows: [
-              { key: { text: "Place of origin" },                value: { text: addresses.placeOfOrigin } },
+              { key: { text: "Place of origin" },                value: { html: addresses.placeOfOrigin | nl2br } },
               { key: { text: "Consignor" },                      value: { html: addresses.consignor | nl2br } },
               { key: { text: "Consignee" },                      value: { html: addresses.consignee | nl2br } },
               { key: { text: "Importer" },                       value: { html: addresses.importer | nl2br } },
               { key: { text: "Place of destination" },           value: { html: addresses.placeOfDestination | nl2br } },
-              { key: { text: "Contact details for consignment" }, value: { html: addresses.contactDetails | nl2br } }
+              { key: { text: "Contact details for consignment" }, value: { html: addresses.consignment | nl2br } }
             ]
           }) }}
         </div>
