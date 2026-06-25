@@ -7,7 +7,7 @@ suite green against its variants, and self-scoring notes — before the next one
 starts.
 
 - [x] Option A — declarative config + selectors (`spike-a`)
-- [ ] Option B — statechart / FSM (`spike-b`)
+- [x] Option B — statechart / FSM (`spike-b`)
 - [ ] Option C — requirement-graph rules engine (`spike-c`)
 - [ ] Option D — schema-first (JSON Schema) (`spike-d`)
 

@@ -1,0 +1,164 @@
+{
+  "$comment": "Option B model — a statechart as PORTABLE DATA (no closures). States + guarded transitions over a shared answer context. The interpreter (../runtime/interpreter.js) is the only thing that executes. context.fields is the single field schema (type + constraints); each state lists which fields it owns. Guards/requiredWhen are condition objects, so they double as provenance. See ../README.md.",
+  "initial": "about-you",
+  "context": {
+    "fields": {
+      "fullName": { "type": "text", "required": true },
+      "email": { "type": "email" },
+      "phone": { "type": "tel" },
+      "postcode": { "type": "formatted", "pattern": "postcode" },
+      "country": {
+        "type": "select",
+        "options": [
+          { "value": "england", "text": "England" },
+          { "value": "scotland", "text": "Scotland" },
+          { "value": "wales", "text": "Wales" },
+          { "value": "northern-ireland", "text": "Northern Ireland" }
+        ]
+      },
+      "dateOfBirth": { "type": "date" },
+      "registration": {
+        "type": "formatted",
+        "required": true,
+        "pattern": "registration"
+      },
+      "make": { "type": "text" },
+      "model": { "type": "text" },
+      "year": { "type": "number", "min": 1900, "max": 2100 },
+      "estimatedValue": { "type": "currency" },
+      "yearsNoClaims": { "type": "number", "min": 0, "max": 99 },
+      "hadClaims": { "type": "boolean", "required": true },
+      "penaltyPoints": { "type": "number", "min": 0, "max": 12 },
+      "claimType": {
+        "type": "radio",
+        "required": true,
+        "options": [
+          { "value": "accident", "text": "Accident" },
+          { "value": "theft", "text": "Theft" },
+          { "value": "windscreen", "text": "Windscreen" },
+          { "value": "other", "text": "Something else" }
+        ]
+      },
+      "claimAmount": { "type": "currency" },
+      "coverType": {
+        "type": "radio",
+        "required": true,
+        "options": [
+          {
+            "value": "comprehensive",
+            "text": "Comprehensive",
+            "hint": "Covers you, your car and other people"
+          },
+          {
+            "value": "third-party-fire-theft",
+            "text": "Third party, fire and theft",
+            "hint": "Covers other people, plus fire and theft of your car"
+          },
+          {
+            "value": "third-party",
+            "text": "Third party only",
+            "hint": "Covers other people only"
+          }
+        ]
+      },
+      "voluntaryExcess": { "type": "boolean" },
+      "excessAmount": {
+        "type": "currency",
+        "requiredWhen": { "field": "voluntaryExcess", "eq": "yes" }
+      },
+      "extras": {
+        "type": "multi-select",
+        "required": true,
+        "options": [
+          { "value": "breakdown", "text": "Breakdown cover" },
+          { "value": "courtesy-car", "text": "Courtesy car" },
+          { "value": "legal", "text": "Motor legal protection" },
+          { "value": "windscreen", "text": "Windscreen cover" }
+        ]
+      }
+    }
+  },
+  "states": {
+    "about-you": {
+      "title": "About you",
+      "fields": [
+        "fullName",
+        "email",
+        "phone",
+        "postcode",
+        "country",
+        "dateOfBirth"
+      ],
+      "on": { "SUBMIT": [{ "target": "your-vehicle" }] }
+    },
+    "your-vehicle": {
+      "title": "Your vehicle",
+      "fields": ["registration", "make", "model", "year", "estimatedValue"],
+      "on": { "SUBMIT": [{ "target": "driving-history" }] }
+    },
+    "driving-history": {
+      "title": "Driving history",
+      "fields": ["yearsNoClaims", "hadClaims", "penaltyPoints"],
+      "on": {
+        "SUBMIT": [
+          {
+            "target": "claims",
+            "guard": { "field": "hadClaims", "eq": "yes" }
+          },
+          { "target": "cover-type" }
+        ]
+      }
+    },
+    "claims": {
+      "title": "Your claims",
+      "kind": "loop",
+      "done": "claimsDone",
+      "arrayKey": "claims",
+      "item": { "fields": ["claimType", "claimAmount"] },
+      "on": { "CONTINUE": [{ "target": "cover-type" }] }
+    },
+    "cover-type": {
+      "title": "Choose your cover",
+      "itemsFrom": "coverType",
+      "fields": ["coverType", "voluntaryExcess", "excessAmount"],
+      "on": { "SUBMIT": [{ "target": "optional-extras" }] }
+    },
+    "optional-extras": {
+      "title": "Optional extras",
+      "itemsFrom": "extras",
+      "fields": ["extras"],
+      "on": { "SUBMIT": [{ "target": "addons" }] }
+    },
+    "addons": {
+      "title": "Add to your policy",
+      "kind": "subtasks",
+      "on": { "SUBMIT": [{ "target": "summary" }] }
+    },
+    "summary": { "type": "final" }
+  },
+  "rules": [
+    {
+      "id": "driver-min-age",
+      "kind": "min-age",
+      "field": "dateOfBirth",
+      "min": 17,
+      "stepId": "about-you",
+      "fieldId": "dateOfBirth",
+      "reason": "The main driver must be at least 17 years old"
+    },
+    {
+      "id": "excess-within-value",
+      "kind": "lte",
+      "left": "excessAmount",
+      "right": "estimatedValue",
+      "when": { "field": "voluntaryExcess", "eq": "yes" },
+      "stepId": "cover-type",
+      "fieldId": "excessAmount",
+      "reason": "Voluntary excess cannot be more than the vehicle's estimated value"
+    }
+  ],
+  "patterns": {
+    "postcode": "^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$",
+    "registration": "^[A-Za-z]{2}\\d{2}\\s?[A-Za-z]{3}$"
+  }
+}
