@@ -1,6 +1,7 @@
 {
   "$comment": "Option D — render-agnostic flow metadata (also data). JSON Schema owns WHAT IS VALID; this owns WHICH STEP a field belongs to, ordering, grouping, type hints and the loop/subtask step kinds. No colours or macros. See ../README.md.",
   "steps": [
+    "email",
     "about-you",
     "your-vehicle",
     "driving-history",
@@ -10,6 +11,7 @@
     "addons"
   ],
   "titles": {
+    "email": "Give us your email to begin",
     "about-you": "About you",
     "your-vehicle": "Your vehicle",
     "driving-history": "Driving history",
@@ -26,7 +28,7 @@
   },
   "fieldStep": {
     "fullName": "about-you",
-    "email": "about-you",
+    "email": "email",
     "phone": "about-you",
     "postcode": "about-you",
     "country": "about-you",

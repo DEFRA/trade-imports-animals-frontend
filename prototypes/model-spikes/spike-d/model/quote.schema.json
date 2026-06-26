@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "fullName": { "type": "string", "minLength": 1 },
-    "email": { "type": "string" },
+    "email": { "type": "string", "minLength": 1 },
     "phone": { "type": "string" },
     "postcode": {
       "type": "string",
@@ -43,7 +43,14 @@
     },
     "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" } }
   },
-  "required": ["fullName", "registration", "hadClaims", "coverType", "extras"],
+  "required": [
+    "email",
+    "fullName",
+    "registration",
+    "hadClaims",
+    "coverType",
+    "extras"
+  ],
   "allOf": [
     {
       "$comment": "claims required iff hadClaims = yes",

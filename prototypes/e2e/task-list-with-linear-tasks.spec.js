@@ -13,6 +13,24 @@ test('task list with linear tasks — start to confirmation', async ({
 }) => {
   await page.goto(j.base.grouped)
   await click(page, 'Start now')
+
+  // Email gate: the hand-written prototype redirects straight to it after
+  // Start now; the spikes show 'Email' as the first hub task. Either way the
+  // user must complete it before any other task is reachable.
+  const emailHeading = page.getByRole('heading', {
+    name: 'Give us your email to begin'
+  })
+  const hubHeading = page.getByRole('heading', {
+    name: 'Get a car insurance quote'
+  })
+  await emailHeading.or(hubHeading).first().waitFor()
+  if (await hubHeading.isVisible()) {
+    await heading(page, 'Get a car insurance quote')
+    await task(page, 'Email')
+  }
+  await heading(page, 'Give us your email to begin')
+  await j.fillEmail(page)
+  await click(page, j.SAVE)
   await heading(page, 'Get a car insurance quote')
 
   // Task 1 is a short linear run of two sections, then back to the hub.

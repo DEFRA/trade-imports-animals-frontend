@@ -1,10 +1,10 @@
 {
   "$comment": "Option B model — a statechart as PORTABLE DATA (no closures). States + guarded transitions over a shared answer context. The interpreter (../runtime/interpreter.js) is the only thing that executes. context.fields is the single field schema (type + constraints); each state lists which fields it owns. Guards/requiredWhen are condition objects, so they double as provenance. See ../README.md.",
-  "initial": "about-you",
+  "initial": "email",
   "context": {
     "fields": {
       "fullName": { "type": "text", "required": true },
-      "email": { "type": "email" },
+      "email": { "type": "email", "required": true },
       "phone": { "type": "tel" },
       "postcode": { "type": "formatted", "pattern": "postcode" },
       "country": {
@@ -79,16 +79,14 @@
     }
   },
   "states": {
+    "email": {
+      "title": "Give us your email to begin",
+      "fields": ["email"],
+      "on": { "SUBMIT": [{ "target": "about-you" }] }
+    },
     "about-you": {
       "title": "About you",
-      "fields": [
-        "fullName",
-        "email",
-        "phone",
-        "postcode",
-        "country",
-        "dateOfBirth"
-      ],
+      "fields": ["fullName", "phone", "postcode", "country", "dateOfBirth"],
       "on": { "SUBMIT": [{ "target": "your-vehicle" }] }
     },
     "your-vehicle": {

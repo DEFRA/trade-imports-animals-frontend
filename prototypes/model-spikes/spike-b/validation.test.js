@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { contract } from './runtime/contract.js'
 
 const complete = {
+  email: 'alex@example.com',
   fullName: 'Alex Driver',
   postcode: 'SW1A 1AA',
   dateOfBirth: { day: '27', month: '3', year: '1985' },

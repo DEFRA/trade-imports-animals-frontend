@@ -17,6 +17,10 @@ export const SHAPES = {
     kind: 'grouped',
     groups: [
       {
+        title: 'Email',
+        stepIds: ['email']
+      },
+      {
         title: 'About you and your vehicle',
         stepIds: ['about-you', 'your-vehicle']
       },

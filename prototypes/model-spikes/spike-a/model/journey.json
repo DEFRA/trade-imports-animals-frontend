@@ -2,11 +2,15 @@
   "$comment": "Option A model — PORTABLE DATA, no closures. A runtime adapter (../runtime) interprets this; a non-JS consumer could read the same file. Field ids match the shared njk partial input names so rendering is reused verbatim. See ../README.md.",
   "steps": [
     {
+      "id": "email",
+      "title": "Give us your email to begin",
+      "fields": [{ "id": "email", "type": "email", "required": true }]
+    },
+    {
       "id": "about-you",
       "title": "About you",
       "fields": [
         { "id": "fullName", "type": "text", "required": true },
-        { "id": "email", "type": "email" },
         { "id": "phone", "type": "tel" },
         { "id": "postcode", "type": "formatted", "pattern": "postcode" },
         {

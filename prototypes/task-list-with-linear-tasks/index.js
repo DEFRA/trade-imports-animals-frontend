@@ -128,10 +128,43 @@ const makeHandlers = sectionHandlers({
   breadcrumbs
 })
 
+// The email gate lives outside the task groups: no group navigation, no hub
+// breadcrumb (the user can't reach the hub yet). After save it routes to the
+// hub; `?change=1` (from CYA) is handled by sectionHandlers, returning to CYA.
+const emailHandlers = sectionHandlers({
+  layout: LAYOUT,
+  baseRedirect: BASE,
+  backLinkFor: () => BASE,
+  onSaved: (quote) => hubPath(quote.id),
+  breadcrumbs: (_quote, title) => [
+    { text: 'Prototypes', href: '/prototype' },
+    { text: 'Task list with linear tasks', href: BASE },
+    { text: title }
+  ]
+})(sectionBySlug.get('email'))
+
+function emailRoutes() {
+  return [
+    {
+      method: 'GET',
+      path: sectionPath('{id}', 'email'),
+      options: open,
+      ...emailHandlers.get
+    },
+    {
+      method: 'POST',
+      path: sectionPath('{id}', 'email'),
+      options: open,
+      ...emailHandlers.post
+    }
+  ]
+}
+
 function sectionRoutes() {
   // Loops and subtask fan-outs own their routes, not the generic section page.
+  // The email gate also owns its own routes (registered separately, below).
   return sections
-    .filter((section) => !hasOwnRoutes(section))
+    .filter((section) => !hasOwnRoutes(section) && !section.preHub)
     .flatMap((section) => {
       const handlers = makeHandlers(section)
       return [
@@ -176,7 +209,8 @@ export const taskListWithLinearTasksPrototype = {
           options: open,
           handler(_request, h) {
             const draft = createDraft('task-list-with-linear-tasks')
-            return h.redirect(hubPath(draft.id))
+            // Send the user to the pre-hub email gate, not straight to the hub.
+            return h.redirect(sectionPath(draft.id, 'email'))
           }
         },
         {
@@ -187,6 +221,11 @@ export const taskListWithLinearTasksPrototype = {
             const quote = findQuote(request.params.id)
             if (!quote) {
               return h.redirect(BASE)
+            }
+            // Pre-hub gate: the hub is unreachable until the user has given us
+            // an email address. Anyone deep-linking here gets sent to /email.
+            if (!quote.email) {
+              return h.redirect(sectionPath(quote.id, 'email'))
             }
             const completedCount = groups.filter((group) =>
               liveGroupSlugs(group, quote).every((slug) =>
@@ -206,6 +245,7 @@ export const taskListWithLinearTasksPrototype = {
             })
           }
         },
+        ...emailRoutes(),
         ...sectionRoutes(),
         ...claimsRoutes({
           basePath: BASE,

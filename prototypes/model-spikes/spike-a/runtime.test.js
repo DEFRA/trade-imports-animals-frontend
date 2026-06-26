@@ -44,9 +44,9 @@ describe('spike-a runtime contract — status', () => {
   })
 
   it('is partial when an optional field is answered but a required one is not', () => {
-    expect(contract.status({ email: 'a@b.com' }, 'about-you', grouped)).toBe(
-      'partial'
-    )
+    expect(
+      contract.status({ phone: '07700 900123' }, 'about-you', grouped)
+    ).toBe('partial')
   })
 
   it('is not-applicable for a conditional step that does not apply', () => {

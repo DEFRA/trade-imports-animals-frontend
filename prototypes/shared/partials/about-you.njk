@@ -6,16 +6,8 @@
   label: { text: "Full name" },
   id: "fullName",
   name: "fullName",
-  value: quote.fullName
-}) }}
-
-{{ govukInput({
-  label: { text: "Email address" },
-  id: "email",
-  name: "email",
-  type: "email",
-  spellcheck: false,
-  value: quote.email
+  value: quote.fullName,
+  errorMessage: { text: errors.fullName } if errors and errors.fullName
 }) }}
 
 {{ govukInput({

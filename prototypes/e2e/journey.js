@@ -12,9 +12,12 @@ export const base = {
   grouped: `/prototype${SPIKE_BASE}/task-list-with-linear-tasks`
 }
 
+export async function fillEmail(page) {
+  await page.getByLabel('Email address').fill('alex@example.com')
+}
+
 export async function fillAboutYou(page) {
   await page.getByLabel('Full name').fill('Alex Driver')
-  await page.getByLabel('Email address').fill('alex@example.com')
   await page.getByLabel('UK telephone number').fill('07700 900123')
   await page.getByLabel('Postcode').fill('SW1A 1AA')
   await page.getByLabel('Country of residence').selectOption('england')
@@ -94,6 +97,22 @@ export async function walkGroupedToCheckAnswers(page, { hadClaims }) {
 
   await page.goto(base.grouped)
   await click('Start now')
+
+  // Email gate. The hand-written prototype redirects here automatically after
+  // Start now; the spikes show 'Email' as the first hub task. Race the two
+  // possible headings, then dispatch.
+  const emailHeading = page.getByRole('heading', {
+    name: 'Give us your email to begin'
+  })
+  const hubHeading = page.getByRole('heading', {
+    name: 'Get a car insurance quote'
+  })
+  await emailHeading.or(hubHeading).first().waitFor()
+  if (await hubHeading.isVisible()) {
+    await task('Email')
+  }
+  await fillEmail(page)
+  await click(SAVE)
 
   await task('About you and your vehicle')
   await fillAboutYou(page)

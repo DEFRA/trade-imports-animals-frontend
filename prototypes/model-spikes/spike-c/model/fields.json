@@ -1,6 +1,7 @@
 {
   "$comment": "Option C — the typed answer-data model (no flow, no rendering). Flat fields, each with a type + constraints + which step presents it. `required: always` is the only unconditional requirement; conditional requirements live in rules.json. Loop/subtask steps own their routes, so their item fields are not modelled here. See ../README.md.",
   "steps": [
+    { "id": "email", "title": "Give us your email to begin" },
     { "id": "about-you", "title": "About you" },
     { "id": "your-vehicle", "title": "Your vehicle" },
     { "id": "driving-history", "title": "Driving history" },
@@ -25,7 +26,7 @@
   ],
   "fields": {
     "fullName": { "step": "about-you", "type": "text", "required": "always" },
-    "email": { "step": "about-you", "type": "email" },
+    "email": { "step": "email", "type": "email", "required": "always" },
     "phone": { "step": "about-you", "type": "tel" },
     "postcode": {
       "step": "about-you",

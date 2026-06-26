@@ -15,8 +15,10 @@ import {
 import {
   currencySchema,
   dobSchema,
+  emailSchema,
   integerYearsSchema,
   phoneSchema,
+  requiredTextSchema,
   vehicleYearSchema
 } from './validate.js'
 
@@ -47,21 +49,37 @@ function toArray(value) {
 
 export const sections = [
   {
+    // Pre-hub gate: the user must enter a valid email before they reach the
+    // task-list hub. The variant owns the routing for this; sectionRoutes /
+    // hubItems skip sections flagged `preHub`.
+    slug: 'email',
+    title: 'Give us your email to begin',
+    preHub: true,
+    schema: emailSchema({ required: true }),
+    collect: (payload) => ({ email: payload.email }),
+    isComplete: (quote) => Boolean(quote.email),
+    rows: (quote) => [{ key: 'Email', value: quote.email ?? 'Not provided' }]
+  },
+  {
     slug: 'about-you',
     title: 'About you',
-    // Both DOB and phone are optional in the prototype — the user can save the
-    // page blank and come back later. When they do fill them in, the canonical
-    // GDS rules still apply (real date / 17-120 age / lenient phone format).
-    schema: dobSchema('dateOfBirth', 'Date of birth', {
-      required: false
-    }).concat(
-      phoneSchema({
-        name: 'phone',
-        enterMessage: 'Enter a UK telephone number',
-        formatMessage: PHONE_EXAMPLES,
-        required: false
-      })
-    ),
+    // Full name is mandatory at save; DOB and phone are optional — the user can
+    // save the page with just the name and come back later. When DOB or phone
+    // is filled the canonical GDS rules still apply (real date / 17-120 age /
+    // lenient phone format).
+    schema: requiredTextSchema({
+      name: 'fullName',
+      enterMessage: 'Enter your full name'
+    })
+      .concat(dobSchema('dateOfBirth', 'Date of birth', { required: false }))
+      .concat(
+        phoneSchema({
+          name: 'phone',
+          enterMessage: 'Enter a UK telephone number',
+          formatMessage: PHONE_EXAMPLES,
+          required: false
+        })
+      ),
     collect: (payload) => {
       // Called twice — once on success (post-Joi `value`, day already a
       // Number) and once via the error-re-render path in section-controller
@@ -77,7 +95,6 @@ export const sections = [
       const dateOfBirth = anyPart ? { day, month, year } : undefined
       return {
         fullName: payload.fullName,
-        email: payload.email,
         phone: payload.phone,
         postcode: payload.postcode,
         country: payload.country,
@@ -87,7 +104,6 @@ export const sections = [
     isComplete: (quote) => Boolean(quote.fullName),
     rows: (quote) => [
       { key: 'Name', value: quote.fullName ?? 'Not provided' },
-      { key: 'Email', value: quote.email ?? 'Not provided' },
       { key: 'Telephone', value: quote.phone ?? 'Not provided' },
       { key: 'Postcode', value: quote.postcode ?? 'Not provided' },
       { key: 'Country', value: countryLabel(quote.country) },
