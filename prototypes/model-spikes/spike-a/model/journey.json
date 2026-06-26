@@ -11,6 +11,7 @@
       "title": "About you",
       "fields": [
         { "id": "fullName", "type": "text", "required": true },
+        { "id": "preferredName", "type": "text" },
         { "id": "phone", "type": "tel" },
         { "id": "postcode", "type": "formatted", "pattern": "postcode" },
         {

@@ -57,3 +57,25 @@ test('About you blocks Save and continue when Full name is blank', async ({
     page.getByRole('heading', { name: 'Your vehicle' })
   ).toBeVisible()
 })
+
+test('About you progresses with only Full name — preferredName is optional', async ({
+  page
+}) => {
+  await reachAboutYou(page)
+
+  // Fill only the one mandatory field; deliberately leave preferredName,
+  // phone, postcode, country and DOB blank. The section's isComplete check
+  // (hand-written) and the model's required-field check (spikes) both turn
+  // on fullName alone, so save & continue must route forward to the next
+  // section in the group.
+  await page.getByLabel('Full name').fill('Alex Driver')
+  await expect(page.getByLabel('What should we call you?')).toHaveValue('')
+  await click(page, j.SAVE)
+
+  // Forward navigation IS the e2e signal that the section is considered
+  // complete enough to leave — if preferredName were required-at-save we'd
+  // be re-rendering About you with an error here, not arriving at Your vehicle.
+  await expect(
+    page.getByRole('heading', { name: 'Your vehicle' })
+  ).toBeVisible()
+})

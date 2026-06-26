@@ -95,6 +95,7 @@ export const sections = [
       const dateOfBirth = anyPart ? { day, month, year } : undefined
       return {
         fullName: payload.fullName,
+        preferredName: payload.preferredName,
         phone: payload.phone,
         postcode: payload.postcode,
         country: payload.country,
@@ -104,6 +105,7 @@ export const sections = [
     isComplete: (quote) => Boolean(quote.fullName),
     rows: (quote) => [
       { key: 'Name', value: quote.fullName ?? 'Not provided' },
+      { key: 'Preferred name', value: quote.preferredName ?? 'Not provided' },
       { key: 'Telephone', value: quote.phone ?? 'Not provided' },
       { key: 'Postcode', value: quote.postcode ?? 'Not provided' },
       { key: 'Country', value: countryLabel(quote.country) },

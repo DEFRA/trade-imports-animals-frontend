@@ -28,6 +28,7 @@
   },
   "fieldStep": {
     "fullName": "about-you",
+    "preferredName": "about-you",
     "email": "email",
     "phone": "about-you",
     "postcode": "about-you",
@@ -49,6 +50,7 @@
   },
   "fieldType": {
     "fullName": "text",
+    "preferredName": "text",
     "email": "email",
     "phone": "tel",
     "postcode": "formatted",

@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "fullName": { "type": "string", "minLength": 1 },
+    "preferredName": { "type": "string" },
     "email": { "type": "string", "minLength": 1 },
     "phone": { "type": "string" },
     "postcode": {

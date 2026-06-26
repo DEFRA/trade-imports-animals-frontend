@@ -18,6 +18,7 @@ export async function fillEmail(page) {
 
 export async function fillAboutYou(page) {
   await page.getByLabel('Full name').fill('Alex Driver')
+  await page.getByLabel('What should we call you?').fill('Al')
   await page.getByLabel('UK telephone number').fill('07700 900123')
   await page.getByLabel('Postcode').fill('SW1A 1AA')
   await page.getByLabel('Country of residence').selectOption('england')

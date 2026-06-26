@@ -26,6 +26,7 @@
   ],
   "fields": {
     "fullName": { "step": "about-you", "type": "text", "required": "always" },
+    "preferredName": { "step": "about-you", "type": "text" },
     "email": { "step": "email", "type": "email", "required": "always" },
     "phone": { "step": "about-you", "type": "tel" },
     "postcode": {

@@ -4,6 +4,7 @@
   "context": {
     "fields": {
       "fullName": { "type": "text", "required": true },
+      "preferredName": { "type": "text" },
       "email": { "type": "email", "required": true },
       "phone": { "type": "tel" },
       "postcode": { "type": "formatted", "pattern": "postcode" },
@@ -86,7 +87,14 @@
     },
     "about-you": {
       "title": "About you",
-      "fields": ["fullName", "phone", "postcode", "country", "dateOfBirth"],
+      "fields": [
+        "fullName",
+        "preferredName",
+        "phone",
+        "postcode",
+        "country",
+        "dateOfBirth"
+      ],
       "on": { "SUBMIT": [{ "target": "your-vehicle" }] }
     },
     "your-vehicle": {
