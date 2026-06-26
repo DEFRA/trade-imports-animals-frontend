@@ -49,11 +49,7 @@ const answers = loadFixture(process.argv[2])
 
 const out = {
   fixture: process.argv[2] ?? '(empty)',
-  shapes: {
-    linear: shapeView(answers, SHAPES.linear),
-    hub: shapeView(answers, SHAPES.hub),
-    grouped: shapeView(answers, SHAPES.grouped)
-  },
+  shape: shapeView(answers, SHAPES.grouped),
   missingRequired: contract.missingRequired(answers),
   allComplete: contract.allComplete(answers),
   assembleQuote: contract.assembleQuote(answers)

@@ -82,37 +82,21 @@ function liveGroupSteps(shape, stepId, answers) {
 }
 
 function next(answers, stepId, shape) {
-  if (shape.kind === 'hub') {
+  const live = liveGroupSteps(shape, stepId, answers)
+  if (!live) {
     return { terminal: 'hub' }
   }
-  if (shape.kind === 'grouped') {
-    const live = liveGroupSteps(shape, stepId, answers)
-    if (!live) {
-      return { terminal: 'hub' }
-    }
-    const nextStep = live[live.indexOf(stepId) + 1]
-    return nextStep ?? { terminal: 'hub' }
-  }
-  const live = applicableStepIds(answers)
   const nextStep = live[live.indexOf(stepId) + 1]
-  return nextStep ?? { terminal: 'summary' }
+  return nextStep ?? { terminal: 'hub' }
 }
 
 function prev(answers, stepId, shape) {
-  if (shape.kind === 'hub') {
+  const live = liveGroupSteps(shape, stepId, answers)
+  if (!live) {
     return { terminal: 'hub' }
   }
-  if (shape.kind === 'grouped') {
-    const live = liveGroupSteps(shape, stepId, answers)
-    if (!live) {
-      return { terminal: 'hub' }
-    }
-    const prevStep = live[live.indexOf(stepId) - 1]
-    return prevStep ?? { terminal: 'hub' }
-  }
-  const live = applicableStepIds(answers)
   const prevStep = live[live.indexOf(stepId) - 1]
-  return prevStep ?? { terminal: 'start' }
+  return prevStep ?? { terminal: 'hub' }
 }
 
 function missingRequired(answers) {

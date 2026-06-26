@@ -17,6 +17,7 @@
     "prototype:serve": "npm run build:frontend && FEATURES_PROTOTYPES_ENABLED=true AUTH_ENABLED=false NODE_ENV=development node .",
     "prototype:reset": "node -e \"require('node:fs').writeFileSync('prototypes/shared/data/quotes.json','[]\\n')\"",
     "test:prototype": "playwright test",
+    "test:prototype:all": "npm run test:prototype && SPIKE_BASE=/spike-a npm run test:prototype && SPIKE_BASE=/spike-b npm run test:prototype && SPIKE_BASE=/spike-c npm run test:prototype && SPIKE_BASE=/spike-d npm run test:prototype",
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "frontend:watch": "NODE_ENV=development webpack --watch",

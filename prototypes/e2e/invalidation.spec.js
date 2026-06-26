@@ -14,7 +14,7 @@ test('changing claims to no removes the claims section from the answers', async 
     .filter({ hasText: 'Claim 1' })
 
   // Reach check-your-answers having declared a claim.
-  await j.walkLinearToCheckAnswers(page, { hadClaims: true })
+  await j.walkGroupedToCheckAnswers(page, { hadClaims: true })
   await cya(page)
   await expect(claimKey).toBeVisible()
   await page.waitForTimeout(j.PACE)

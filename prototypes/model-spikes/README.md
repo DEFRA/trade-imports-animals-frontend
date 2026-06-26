@@ -18,10 +18,15 @@ the model can answer:
 The hand-written `njk` pages and controllers **stay hand-written**. The model
 **informs / navigates / constrains** them — it does not generate them.
 
-**Decoupling proof:** one model + one set of pure functions must power all three
-existing prototype journeys ([`linear`](../linear), [`task-list`](../task-list),
-[`task-list-with-linear-tasks`](../task-list-with-linear-tasks)), which today
-differ only in navigation and task-status presentation.
+**Decoupling proof:** one model + one set of pure functions must power the
+prototype journey
+([`task-list-with-linear-tasks`](../task-list-with-linear-tasks)) — a hub of
+tasks where each task is a short linear run. The historical three-variant proof
+(linear / task-list / task-list-with-linear-tasks) was met by all four spikes
+before the other two variants were retired; the dispatcher in
+[`shared/nav.js`](./shared/nav.js) is kept as a single-element registry so
+future shape work (e.g. multi-journey composition) re-introduces dispatch
+without re-plumbing every spike.
 
 ## The model is portable data, not code
 
@@ -68,7 +73,7 @@ chosen.
 sections, each with `collect` / `isComplete` / `rows` / optional `appliesWhen` +
 `loop` / `subtasks` flags, plus pure selectors `applicableSections`,
 `allSectionsComplete`, `applies`, `hasOwnRoutes`, `answerRows`, `sectionBySlug`.
-It already drives all three variants.
+It already drives the prototype journey.
 
 What is **not** yet modelled or decoupled — the gap each spike closes:
 
@@ -99,17 +104,17 @@ comparison. Spikes **reuse the existing rendering** (the `njk` templates and
 **owns** is: the model + the pure functions + the thin glue that drives
 navigation / status / constraints from the model.
 
-1. **One model powers all three variants.** The three journeys differ **only**
-   in a small **journey-shape descriptor** passed into the pure functions:
+1. **One model powers the journey** via a **journey-shape descriptor** passed
+   into the pure functions:
 
    ```js
-   { kind: 'linear' }
-   { kind: 'hub' }
    { kind: 'grouped', groups: [{ title, stepIds: [...] }, ...] }
    ```
 
    All flow, status, completeness, applicability and constraint logic comes from
-   the shared model.
+   the shared model. The descriptor is kept as a single-entry registry in
+   [`shared/nav.js`](./shared/nav.js) — future shape work (e.g. multi-journey
+   composition) re-introduces dispatch there.
 
 2. **Zero rendering in the model.** No `njk` paths, macro args, CSS classes, or
    GDS tag colours in the model or the pure functions. Rendering hints (if any)
@@ -148,14 +153,14 @@ navigation / status / constraints from the model.
 
 5. **Surface the model without its UI.** A headless `node` script —
    `prototypes/model-spikes/<slug>/dump.js` — that, given an answers fixture,
-   prints the journey state as JSON for each shape: applicable steps, per-step
-   status, `next` / `prev`, and `missingRequired` with reasons. Proves the model
-   is usable with no rendering at all. (The `Backlog.canvas` "surface the model
+   prints the journey state as JSON: applicable steps, per-step status,
+   `next` / `prev`, and `missingRequired` with reasons. Proves the model is
+   usable with no rendering at all. (The `Backlog.canvas` "surface the model
    without the associated UI" node.)
 
 6. **Unit tests** on the pure functions — behaviour in/out, no server. Examples:
-   - `next({ hadClaims: 'yes' }, 'driving-history', linear)` → `'claims'`
-   - `next({ hadClaims: 'no' }, 'driving-history', linear)` → `'cover-type'`
+   - `next({ hadClaims: 'yes' }, 'driving-history', grouped)` → `'claims'`
+   - `next({ hadClaims: 'no' }, 'driving-history', grouped)` → `'cover-type'`
    - status transitions not-started → partial → complete
    - `applyAnswer` cascade: set `hadClaims:'no'` ⇒ `claims` gone + data cleared
    - `missingRequired` includes a `because` provenance entry for a conditional.
@@ -167,8 +172,8 @@ navigation / status / constraints from the model.
    hard-on-submit wired on Check Your Answers; both shape strategies tried.
 
 8. **Integration proof.** The existing **Playwright demo suite** must pass when
-   pointed at the spike's three rewired variants — proving the model drives the
-   live journeys, not just the tests.
+   pointed at the spike's rewired variant — proving the model drives the live
+   journey, not just the tests.
 
 > **Stretch (optional)** — the canvas "horrible UI driven purely by config"
 > node: a bare page auto-rendered entirely off `fieldsFor` / `status`, as extra
@@ -183,8 +188,7 @@ prototypes/model-spikes/<slug>/
     journey.yml|json   the model — PORTABLE DATA, no code (the spike's IP)
   runtime/             the adapter that interprets the model (the contract fns)
   validation/          the validation adapter (page-slice + assembleQuote)
-  variants/            three thin wirings: linear, hub, grouped
-  routes.js            registers /prototype/spike-<slug>/... (reuses shared njk)
+  routes.js            builds the variant + registers /prototype/spike-<slug>/...
   dump.js              headless "surface without UI" proof
   *.test.js            unit tests for runtime + validation
   README.md            what this spike is, how to run it, self-scoring notes
@@ -223,7 +227,7 @@ Score each spike **1–5** per dimension, with a one-line note:
 ## Spike comparison (scored)
 
 All four spikes are built, run side by side, and pass the same acceptance bar:
-one model → all three journeys, the existing Playwright demo suite green against
+one model → the prototype journey, the existing Playwright demo suite green against
 each (`SPIKE_BASE=/spike-<x>`). They differ only in **paradigm**. Scores are each
 spike's self-assessment (see its `README.md`); 1–5, higher is better.
 

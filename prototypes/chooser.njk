@@ -20,24 +20,11 @@
       <h1 class="govuk-heading-xl">Car insurance journey prototypes</h1>
 
       <p class="govuk-body">
-        Three takes on the same car insurance quote journey. They share the same
-        questions and a JSON-file datastore, and differ only in how you move
-        between the questions.
+        A car insurance quote journey shaped as a hub of tasks, where each task
+        is a short linear run of questions. Backed by a JSON-file datastore.
       </p>
 
       <ul class="govuk-list">
-        <li>
-          <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
-            <a class="govuk-link" href="/prototype/linear">Linear journey</a>
-          </h2>
-          <p class="govuk-body">One question per page, chained with "Save and continue".</p>
-        </li>
-        <li>
-          <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
-            <a class="govuk-link" href="/prototype/task-list">Task list journey</a>
-          </h2>
-          <p class="govuk-body">A hub page lists every section; complete them in any order.</p>
-        </li>
         <li>
           <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
             <a class="govuk-link" href="/prototype/task-list-with-linear-tasks">Task list with linear tasks</a>
@@ -54,7 +41,7 @@
 
       <h2 class="govuk-heading-l govuk-!-margin-top-8">Journey-model spikes</h2>
       <p class="govuk-body">
-        Each spike drives the same three journeys from one render-agnostic model.
+        Each spike drives the same journey from one render-agnostic model.
         See <code>prototypes/model-spikes/README.md</code>.
       </p>
 
@@ -62,32 +49,24 @@
         <li>
           <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option A — declarative config + selectors</h3>
           <p class="govuk-body govuk-!-margin-bottom-1">
-            <a class="govuk-link" href="/prototype/spike-a/linear">Linear</a> ·
-            <a class="govuk-link" href="/prototype/spike-a/task-list">Task list</a> ·
             <a class="govuk-link" href="/prototype/spike-a/task-list-with-linear-tasks">Task list with linear tasks</a>
           </p>
         </li>
         <li>
           <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option B — statechart / FSM</h3>
           <p class="govuk-body govuk-!-margin-bottom-1">
-            <a class="govuk-link" href="/prototype/spike-b/linear">Linear</a> ·
-            <a class="govuk-link" href="/prototype/spike-b/task-list">Task list</a> ·
             <a class="govuk-link" href="/prototype/spike-b/task-list-with-linear-tasks">Task list with linear tasks</a>
           </p>
         </li>
         <li>
           <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option C — requirement-graph rules engine</h3>
           <p class="govuk-body govuk-!-margin-bottom-1">
-            <a class="govuk-link" href="/prototype/spike-c/linear">Linear</a> ·
-            <a class="govuk-link" href="/prototype/spike-c/task-list">Task list</a> ·
             <a class="govuk-link" href="/prototype/spike-c/task-list-with-linear-tasks">Task list with linear tasks</a>
           </p>
         </li>
         <li>
           <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option D — schema-first (JSON Schema)</h3>
           <p class="govuk-body govuk-!-margin-bottom-1">
-            <a class="govuk-link" href="/prototype/spike-d/linear">Linear</a> ·
-            <a class="govuk-link" href="/prototype/spike-d/task-list">Task list</a> ·
             <a class="govuk-link" href="/prototype/spike-d/task-list-with-linear-tasks">Task list with linear tasks</a>
           </p>
         </li>

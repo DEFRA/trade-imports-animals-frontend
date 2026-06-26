@@ -135,27 +135,13 @@ function liveGroupSteps(shape, stepId, answers) {
 
 // Thin sequencer — JSON Schema has no ordering, so this adds it over annotations.
 function next(answers, stepId, shape) {
-  if (shape.kind === 'hub') {
-    return { terminal: 'hub' }
-  }
-  if (shape.kind === 'grouped') {
-    const live = liveGroupSteps(shape, stepId, answers)
-    return live?.[live.indexOf(stepId) + 1] ?? { terminal: 'hub' }
-  }
-  const live = applicableSteps(answers)
-  return live[live.indexOf(stepId) + 1] ?? { terminal: 'summary' }
+  const live = liveGroupSteps(shape, stepId, answers)
+  return live?.[live.indexOf(stepId) + 1] ?? { terminal: 'hub' }
 }
 
 function prev(answers, stepId, shape) {
-  if (shape.kind === 'hub') {
-    return { terminal: 'hub' }
-  }
-  if (shape.kind === 'grouped') {
-    const live = liveGroupSteps(shape, stepId, answers)
-    return live?.[live.indexOf(stepId) - 1] ?? { terminal: 'hub' }
-  }
-  const live = applicableSteps(answers)
-  return live[live.indexOf(stepId) - 1] ?? { terminal: 'start' }
+  const live = liveGroupSteps(shape, stepId, answers)
+  return live?.[live.indexOf(stepId) - 1] ?? { terminal: 'hub' }
 }
 
 function collect(stepId, payload) {

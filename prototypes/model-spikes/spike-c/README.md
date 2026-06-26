@@ -54,7 +54,7 @@ SPIKE_BASE=/spike-c npm run test:prototype
 | Add a new conditional     |   5   | Add a `require` rule with a reason — provenance included free.    |
 | Add a new journey shape   |   3   | Shapes in the shared harness; a 4th means new cases there.        |
 | Testability               |   5   | `evaluate` is pure; snapshot asserts cleanly.                     |
-| Glue size per variant     |   5   | `variants/*.js` ~3 lines.                                         |
+| Glue size per variant     |   5   | Wiring is inline in `routes.js` (~10 lines).                      |
 | Headless usability        |   5   | `dump.js` leads with `missingRequired` + reasons.                 |
 | Readability / onboarding  |   4   | "fields + rules + reasons" reads well; the fixpoint idea is new.  |
 

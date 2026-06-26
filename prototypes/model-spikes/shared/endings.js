@@ -173,18 +173,9 @@ export function spikeEndings({ contract, base, layout, shape, breadcrumbs }) {
   ]
 }
 
-// Back link from the quote summary: the last applicable step before the
-// terminal, resolved through the shape (hub variants return to the hub).
-function summaryBack(contract, base, quote, shape) {
-  if (shape.kind !== 'linear') {
-    return `${base}/${quote.id}`
-  }
-  const live = contract.applicableSteps(quote)
-  const last = live[live.length - 1]
-  if (contract.stepKind(last) === 'subtasks') {
-    return `${base}/${quote.id}/addons`
-  }
-  return `${base}/${quote.id}/${last}`
+// Back link from the quote summary
+function summaryBack(_contract, base, quote, _shape) {
+  return `${base}/${quote.id}`
 }
 
 function provenanceText(because) {

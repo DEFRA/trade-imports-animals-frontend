@@ -28,10 +28,10 @@ describe('spike-d contract — applicability from the active if/then', () => {
 
   it('navigates around the conditional step', () => {
     expect(
-      contract.next({ hadClaims: 'yes' }, 'driving-history', SHAPES.linear)
+      contract.next({ hadClaims: 'yes' }, 'driving-history', SHAPES.grouped)
     ).toBe('claims')
     expect(
-      contract.next({ hadClaims: 'no' }, 'driving-history', SHAPES.linear)
+      contract.next({ hadClaims: 'no' }, 'driving-history', SHAPES.grouped)
     ).toBe('cover-type')
   })
 

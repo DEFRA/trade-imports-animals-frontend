@@ -22,14 +22,13 @@ runtime/               the adapter implementing the common contract
 validation/            the decoupled validation adapter
   compile.js           page-slice Joi *derived from* the model constraints
   assemble.js          assembleQuote: assemble→transform→validate (domain)
-variants/              three thin wirings (linear / hub / grouped)
-routes.js              registers /prototype/spike-a/...
+routes.js              builds the variant + registers /prototype/spike-a/...
 dump.js                headless JSON proof (surface the model without its UI)
 fixtures/              sample answer sets for dump.js + by-hand exploration
 *.test.js              unit tests for runtime + validation
 ```
 
-The three variants reuse the existing njk, `shared/fields.js`, `shared/store.js`,
+The variant reuses the existing njk, `shared/fields.js`, `shared/store.js`,
 and the model-agnostic harness in [`../shared`](../shared) (controller,
 navigation, endings). Only the **contract** differs between spikes, so the four
 are compared apples-to-apples.
@@ -37,14 +36,14 @@ are compared apples-to-apples.
 ## Run it
 
 ```bash
-# headless state for a fixture, all three shapes + the assembled quote
+# headless state for a fixture (applicable steps, status, nav, missingRequired) + the assembled quote
 node prototypes/model-spikes/spike-a/dump.js with-claims
 node prototypes/model-spikes/spike-a/dump.js no-claims-partial
 
 # unit tests (runtime + validation), no server
 npm test
 
-# the demo suite, pointed at spike-a's three variants
+# the demo suite, pointed at spike-a's variant
 SPIKE_BASE=/spike-a npm run test:prototype
 ```
 
@@ -109,7 +108,7 @@ checks, a pricing service). Those stay adapter code by design.
 | Add a new conditional     |   5   | Add an `appliesWhen` / `requiredWhen` object — provenance included.                 |
 | Add a new journey shape   |   3   | Shapes live in the shared harness; a 4th means new `next`/`prev` cases there.       |
 | Testability               |   5   | Pure functions, plain in/out; no server needed (see `*.test.js`).                   |
-| Glue size per variant     |   5   | Each `variants/*.js` is ~3 lines; all flow is the contract.                         |
+| Glue size per variant     |   5   | Wiring is inline in `routes.js` (~10 lines); all flow is the contract.              |
 | Headless usability        |   5   | `dump.js` prints applicable/status/next/prev/missingRequired + the domain quote.    |
 | Readability / onboarding  |   5   | Closest to today's `sections.js`; a new dev reads it as "config + selectors".       |
 

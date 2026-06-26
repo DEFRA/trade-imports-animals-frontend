@@ -9,10 +9,10 @@
  * the wiring below is deliberately shared so the comparison is apples-to-apples.
  */
 
-/** The three journey shapes from the acceptance bar, shared by every spike. */
+// Single-element registry. Kept as a registry (rather than inlined) so future
+// shape work — e.g. multi-journey composition — can re-introduce dispatch
+// without re-plumbing every spike. See prototypes/model-spikes/README.md.
 export const SHAPES = {
-  linear: { kind: 'linear' },
-  hub: { kind: 'hub' },
   grouped: {
     kind: 'grouped',
     groups: [

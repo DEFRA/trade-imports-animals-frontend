@@ -47,11 +47,7 @@ const out = {
   fixture: process.argv[2] ?? '(empty)',
   partialValidation: check(answers),
   missingRequired: contract.missingRequired(answers),
-  shapes: {
-    linear: shapeView(answers, SHAPES.linear),
-    hub: shapeView(answers, SHAPES.hub),
-    grouped: shapeView(answers, SHAPES.grouped)
-  },
+  shape: shapeView(answers, SHAPES.grouped),
   allComplete: contract.allComplete(answers),
   assembleQuote: contract.assembleQuote(answers)
 }

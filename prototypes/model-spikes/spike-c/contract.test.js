@@ -21,20 +21,22 @@ const complete = {
 describe('spike-c contract — navigation + status', () => {
   it('routes around the conditional claims step', () => {
     expect(
-      contract.next({ hadClaims: 'yes' }, 'driving-history', SHAPES.linear)
+      contract.next({ hadClaims: 'yes' }, 'driving-history', SHAPES.grouped)
     ).toBe('claims')
     expect(
-      contract.next({ hadClaims: 'no' }, 'driving-history', SHAPES.linear)
+      contract.next({ hadClaims: 'no' }, 'driving-history', SHAPES.grouped)
     ).toBe('cover-type')
   })
 
   it('derives status from currently-required fields', () => {
-    expect(contract.status({}, 'cover-type', SHAPES.linear)).toBe('not-started')
+    expect(contract.status({}, 'cover-type', SHAPES.grouped)).toBe(
+      'not-started'
+    )
     expect(
       contract.status(
         { coverType: 'comprehensive' },
         'cover-type',
-        SHAPES.linear
+        SHAPES.grouped
       )
     ).toBe('complete')
   })

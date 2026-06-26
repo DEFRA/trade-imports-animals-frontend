@@ -1,18 +1,14 @@
 /**
  * Shared helpers for the prototype demo specs. Each `fill*` fills the fields on
- * the page it is given (it does not submit); the spec drives navigation so the
- * same helpers work for the linear and task-list shaped journeys.
+ * the page it is given (it does not submit); the spec drives navigation.
  *
  * The suite is reusable across the model-spikes: set `SPIKE_BASE` (e.g.
- * `/spike-a`) to point every journey at a spike's three variants, which are
- * named to mirror the hand-written journeys. Default (unset) exercises the
- * original journeys, so both must stay green.
+ * `/spike-a`) to point the journey at a spike's variant. Default (unset)
+ * exercises the original hand-written journey, so both must stay green.
  */
 const SPIKE_BASE = process.env.SPIKE_BASE ?? ''
 
 export const base = {
-  linear: `/prototype${SPIKE_BASE}/linear`,
-  taskList: `/prototype${SPIKE_BASE}/task-list`,
   grouped: `/prototype${SPIKE_BASE}/task-list-with-linear-tasks`
 }
 
@@ -91,15 +87,21 @@ export async function fillModificationsValue(page) {
 export const SAVE = 'Save and continue'
 export const CONTINUE = 'Continue'
 
-/** Walk the linear journey up to (and stopping on) check-your-answers. */
-export async function walkLinearToCheckAnswers(page, { hadClaims }) {
+/** Walk the grouped journey up to (and stopping on) check-your-answers. */
+export async function walkGroupedToCheckAnswers(page, { hadClaims }) {
   const click = (name) => page.getByRole('button', { name }).click()
-  await page.goto(base.linear)
+  const task = (name) => page.getByRole('link', { name }).click()
+
+  await page.goto(base.grouped)
   await click('Start now')
+
+  await task('About you and your vehicle')
   await fillAboutYou(page)
   await click(SAVE)
   await fillVehicle(page)
   await click(SAVE)
+
+  await task('Your driving and cover')
   await fillDriving(page, { hadClaims })
   await click(SAVE)
   if (hadClaims) {
@@ -110,8 +112,12 @@ export async function walkLinearToCheckAnswers(page, { hadClaims }) {
   await click(SAVE)
   await fillExtras(page)
   await click(SAVE)
-  await click(CONTINUE) // add-ons selection — choose none
-  await click('Accept and continue') // quote summary
+
+  await task('Add to your policy')
+  await click(CONTINUE) // choose no addons
+
+  await task('Get your quote')
+  await click('Accept and continue') // quote-summary → check-your-answers
 }
 
 // Demo pacing: how long to dwell on each page so the video is watchable.

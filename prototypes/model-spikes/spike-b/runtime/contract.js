@@ -83,33 +83,21 @@ const groupOf = (shape, stepId) =>
   shape.groups?.find((group) => group.stepIds.includes(stepId))
 
 function next(answers, stepId, shape) {
-  if (shape.kind === 'hub') {
-    return { terminal: 'hub' }
-  }
   const target = transition(machine, stepId, answers)
   // A transition into the machine's `final` state means the journey is over.
   const atEnd = !target || machine.states[target]?.type === 'final'
-  if (shape.kind === 'grouped') {
-    const group = groupOf(shape, stepId)
-    return !atEnd && group?.stepIds.includes(target)
-      ? target
-      : { terminal: 'hub' }
-  }
-  return atEnd ? { terminal: 'summary' } : target
+  const group = groupOf(shape, stepId)
+  return !atEnd && group?.stepIds.includes(target)
+    ? target
+    : { terminal: 'hub' }
 }
 
 function prev(answers, stepId, shape) {
-  if (shape.kind === 'hub') {
-    return { terminal: 'hub' }
-  }
   const source = prevState(machine, stepId, answers, REVERSE)
-  if (shape.kind === 'grouped') {
-    const group = groupOf(shape, stepId)
-    return source && group?.stepIds.includes(source)
-      ? source
-      : { terminal: 'hub' }
-  }
-  return source ?? { terminal: 'start' }
+  const group = groupOf(shape, stepId)
+  return source && group?.stepIds.includes(source)
+    ? source
+    : { terminal: 'hub' }
 }
 
 const provenanceForStep = (stepId, answers) =>

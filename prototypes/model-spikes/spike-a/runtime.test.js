@@ -2,78 +2,64 @@ import { describe, it, expect } from 'vitest'
 import { contract } from './runtime/selectors.js'
 import { SHAPES } from '../shared/nav.js'
 
-const linear = SHAPES.linear
 const grouped = SHAPES.grouped
 
 describe('spike-a runtime contract — navigation', () => {
   it('routes driving-history to the claims loop when a claim was declared', () => {
-    expect(contract.next({ hadClaims: 'yes' }, 'driving-history', linear)).toBe(
-      'claims'
-    )
+    expect(
+      contract.next({ hadClaims: 'yes' }, 'driving-history', grouped)
+    ).toBe('claims')
   })
 
   it('skips the claims loop when no claim was declared', () => {
-    expect(contract.next({ hadClaims: 'no' }, 'driving-history', linear)).toBe(
+    expect(contract.next({ hadClaims: 'no' }, 'driving-history', grouped)).toBe(
       'cover-type'
     )
   })
 
-  it('returns the summary terminal off the end of the linear journey', () => {
-    expect(contract.next({}, 'addons', linear)).toEqual({ terminal: 'summary' })
-  })
-
-  it('returns the start terminal before the first step', () => {
-    expect(contract.prev({}, 'about-you', linear)).toEqual({
-      terminal: 'start'
-    })
-  })
-
-  it('hub shape always returns to the hub', () => {
-    expect(contract.next({}, 'about-you', SHAPES.hub)).toEqual({
-      terminal: 'hub'
-    })
-  })
-
-  it('grouped shape navigates within a group, then returns to the hub', () => {
+  it('returns to the hub at the end of a task group', () => {
     expect(contract.next({ hadClaims: 'no' }, 'your-vehicle', grouped)).toEqual(
       {
         terminal: 'hub'
       }
     )
-    expect(contract.next({ hadClaims: 'no' }, 'driving-history', grouped)).toBe(
-      'cover-type'
-    )
+  })
+
+  it('returns to the hub before the first step of a task group', () => {
+    expect(contract.prev({}, 'about-you', grouped)).toEqual({
+      terminal: 'hub'
+    })
   })
 })
 
 describe('spike-a runtime contract — status', () => {
   it('is not-started with no answers', () => {
-    expect(contract.status({}, 'about-you', linear)).toBe('not-started')
+    expect(contract.status({}, 'about-you', grouped)).toBe('not-started')
   })
 
   it('is complete once the required field is satisfied', () => {
-    expect(contract.status({ fullName: 'Alex' }, 'about-you', linear)).toBe(
+    expect(contract.status({ fullName: 'Alex' }, 'about-you', grouped)).toBe(
       'complete'
     )
   })
 
   it('is partial when an optional field is answered but a required one is not', () => {
-    expect(contract.status({ email: 'a@b.com' }, 'about-you', linear)).toBe(
+    expect(contract.status({ email: 'a@b.com' }, 'about-you', grouped)).toBe(
       'partial'
     )
   })
 
   it('is not-applicable for a conditional step that does not apply', () => {
-    expect(contract.status({ hadClaims: 'no' }, 'claims', linear)).toBe(
+    expect(contract.status({ hadClaims: 'no' }, 'claims', grouped)).toBe(
       'not-applicable'
     )
   })
 
   it('treats the claims loop as complete only once it is marked done', () => {
     const withClaim = { hadClaims: 'yes', claims: [{ claimType: 'accident' }] }
-    expect(contract.status(withClaim, 'claims', linear)).toBe('partial')
+    expect(contract.status(withClaim, 'claims', grouped)).toBe('partial')
     expect(
-      contract.status({ ...withClaim, claimsDone: true }, 'claims', linear)
+      contract.status({ ...withClaim, claimsDone: true }, 'claims', grouped)
     ).toBe('complete')
   })
 })

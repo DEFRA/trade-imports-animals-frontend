@@ -2,31 +2,26 @@ import { describe, it, expect } from 'vitest'
 import { contract } from './runtime/contract.js'
 import { SHAPES } from '../shared/nav.js'
 
-const linear = SHAPES.linear
 const grouped = SHAPES.grouped
 
 describe('spike-b contract — navigation falls out of the machine', () => {
   it('routes driving-history to claims when a claim was declared', () => {
-    expect(contract.next({ hadClaims: 'yes' }, 'driving-history', linear)).toBe(
-      'claims'
-    )
+    expect(
+      contract.next({ hadClaims: 'yes' }, 'driving-history', grouped)
+    ).toBe('claims')
   })
 
   it('skips claims when none declared', () => {
-    expect(contract.next({ hadClaims: 'no' }, 'driving-history', linear)).toBe(
+    expect(contract.next({ hadClaims: 'no' }, 'driving-history', grouped)).toBe(
       'cover-type'
     )
   })
 
-  it('reaches the summary terminal at the end', () => {
-    expect(contract.next({}, 'addons', linear)).toEqual({ terminal: 'summary' })
-  })
-
   it('prev uses the reverse index (claims vs driving-history into cover-type)', () => {
-    expect(contract.prev({ hadClaims: 'yes' }, 'cover-type', linear)).toBe(
+    expect(contract.prev({ hadClaims: 'yes' }, 'cover-type', grouped)).toBe(
       'claims'
     )
-    expect(contract.prev({ hadClaims: 'no' }, 'cover-type', linear)).toBe(
+    expect(contract.prev({ hadClaims: 'no' }, 'cover-type', grouped)).toBe(
       'driving-history'
     )
   })
@@ -42,14 +37,14 @@ describe('spike-b contract — navigation falls out of the machine', () => {
 
 describe('spike-b contract — status, cascade, provenance', () => {
   it('derives status from the required fields of a reachable state', () => {
-    expect(contract.status({}, 'about-you', linear)).toBe('not-started')
-    expect(contract.status({ fullName: 'Alex' }, 'about-you', linear)).toBe(
+    expect(contract.status({}, 'about-you', grouped)).toBe('not-started')
+    expect(contract.status({ fullName: 'Alex' }, 'about-you', grouped)).toBe(
       'complete'
     )
   })
 
   it('marks an unreachable state not-applicable', () => {
-    expect(contract.status({ hadClaims: 'no' }, 'claims', linear)).toBe(
+    expect(contract.status({ hadClaims: 'no' }, 'claims', grouped)).toBe(
       'not-applicable'
     )
   })

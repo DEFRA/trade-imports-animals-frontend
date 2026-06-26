@@ -4,13 +4,11 @@ import { answerRows, sectionBySlug, hasOwnRoutes } from './sections.js'
 import { coverTypeLabel, extrasLabels, makeReference } from './quote.js'
 
 /**
- * The three closing pages every variant shares — quote summary, check your
- * answers and confirmation — as ready-to-register Hapi routes. All variants use
- * the same `${basePath}/{id}/<slug>` URL scheme, so only the base path, layout
- * and "back from summary" target differ.
+ * The three closing pages — quote summary, check your answers and confirmation
+ * — as ready-to-register Hapi routes. Uses a`${basePath}/{id}/<slug>` URL scheme.
  *
  * @param {object} config
- * @param {string} config.basePath - e.g. /prototype/linear
+ * @param {string} config.basePath - e.g. /prototype/task-list-with-linear-tasks
  * @param {string} config.layout - variant layout template path
  * @param {(id: string) => string} config.summaryBackPath - Back link on summary
  * @returns {Array<object>} Hapi route definitions (auth disabled by caller)

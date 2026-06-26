@@ -63,7 +63,7 @@ SPIKE_BASE=/spike-d npm run test:prototype
 | Add a new conditional     |   3   | `if/then` works but is verbose; value-based gotcha.               |
 | Add a new journey shape   |   3   | Shapes in the shared harness; a 4th means new cases there.        |
 | Testability               |   5   | Pure `check`; missing/invalid asserts cleanly.                    |
-| Glue size per variant     |   5   | `variants/*.js` ~3 lines.                                         |
+| Glue size per variant     |   5   | Wiring is inline in `routes.js` (~10 lines).                      |
 | Headless usability        |   5   | `dump.js` shows partial validation + status + nav.                |
 | Readability / onboarding  |   3   | JSON Schema `if/then/allOf` + a separate annotations file is more |
 |                           |       | to hold in your head than A's config.                             |

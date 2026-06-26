@@ -1,16 +1,21 @@
-import { linear } from './variants/linear.js'
-import { hub } from './variants/hub.js'
-import { grouped } from './variants/grouped.js'
+import { contract } from './runtime/contract.js'
+import { buildVariant } from '../shared/variant.js'
+
+const grouped = buildVariant({
+  slug: 'spike-c',
+  shapeName: 'grouped',
+  contract
+})
 
 /**
- * Option C spike — requirement-graph rules engine. Registers all three variants
- * under `/prototype/spike-c/{linear,task-list,task-list-with-linear-tasks}`.
+ * Option C spike — requirement-graph rules engine. Registers the variant
+ * under `/prototype/spike-c/task-list-with-linear-tasks`.
  */
 export const spikeC = {
   plugin: {
     name: 'spike-c',
     async register(server) {
-      await server.register([linear, hub, grouped])
+      await server.register([grouped])
     }
   }
 }

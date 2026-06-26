@@ -1,7 +1,5 @@
 import { listQuotes } from './shared/store.js'
 import { coverTypeLabel } from './shared/quote.js'
-import { linearPrototype } from './linear/index.js'
-import { taskListPrototype } from './task-list/index.js'
 import { taskListWithLinearTasksPrototype } from './task-list-with-linear-tasks/index.js'
 import { spikeA } from './model-spikes/spike-a/routes.js'
 import { spikeB } from './model-spikes/spike-b/routes.js'
@@ -47,11 +45,8 @@ export const prototypes = {
       ])
 
       await server.register([
-        linearPrototype,
-        taskListPrototype,
         taskListWithLinearTasksPrototype,
-        // Journey-model spikes — each registers its own three variants under
-        // /prototype/spike-<slug>/... so they run side by side with the above.
+        // Journey-model spikes — each registers the journey under /prototype/spike-<slug>/... so all four run side by side.
         spikeA,
         spikeB,
         spikeC,
