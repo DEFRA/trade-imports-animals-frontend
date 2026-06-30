@@ -4,7 +4,7 @@
 > are settled; several are open (see §What's still open). Update this file as
 > the concept evolves.
 >
-> **Last updated:** 2026-06-29
+> **Last updated:** 2026-06-30
 
 ## Context
 
@@ -31,6 +31,34 @@ the journey. The obligation itself is **pure data** — light and JSON-encodable
 All applicability/optionality logic lives in a separate **evaluation engine**
 (sync, pure, deterministic) wrapped by an **orchestrator** that handles I/O
 (see §The evaluation engine).
+
+### Terminology
+
+A consistent vocabulary across the discussion and the data model:
+
+- **Obligation** — a discrete unit the user can or must satisfy to complete
+  the journey. Defined declaratively in `obligations.json`.
+- **Obligation id** — the `id` field on the obligation definition. Stable
+  across users, journeys, and sessions.
+- **Fulfilment** — an entry/record holding one filling-in of an obligation
+  by a user (or by the system, for system-handled obligations). A
+  single-cardinality obligation has at most one fulfilment; an
+  indexed-cardinality obligation has zero or more.
+- **FulfilmentId** — identifier of a specific fulfilment within an indexed
+  obligation's collection. Per-user, scoped to one obligation. (The
+  obligation id and the fulfilmentId together uniquely address a single
+  fulfilment.)
+- **Fulfil** (verb) — the user (or the system) fulfils an obligation by
+  providing the canonical data. Fulfilments can be incomplete (partially
+  answered), complete, or stale.
+
+Note: the existing prototype code uses `answers` / `quote` for its state
+bag. That's a legacy hand-written convention; the obligations model uses
+**fulfilments**. They're related but the abstractions are different — a
+future implementation aligned with the obligations model would converge
+on one vocabulary.
+
+### Two broad shapes
 
 Obligations come in two broad shapes:
 
@@ -87,7 +115,7 @@ _how_ user-facing obligations are presented — those are all handled elsewhere.
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Identity**                                                         | Yes — every obligation has a stable `id`; can be referenced from multiple places.                                                                                                                                                                                                        |
 | **Type**                                                             | A single data type (the type of what gets produced). Open type space — `date`, `string`, `email`, `file`, `boolean`, `address`, `payment-receipt`, `sub-journey-receipt`, `lookup-result`, etc.                                                                                          |
-| **Cardinality**                                                      | `single` (one canonical value per user, e.g. date of birth) or `indexed` (a collection of instances, e.g. address history, multi-select with per-item follow-ups). See §Single vs indexed obligations.                                                                                   |
+| **Cardinality**                                                      | `single` (one fulfilment per user, e.g. date of birth) or `indexed` (a collection of fulfilments, e.g. address history, multi-select with per-item follow-ups). See §Single vs indexed obligations.                                                                                      |
 | **Scoping (in-scope / out-of-scope, mandatory / optional, reasons)** | NOT on the obligation. Computed by the evaluation engine — see §The evaluation engine.                                                                                                                                                                                                   |
 | **Effective status when multiple reasons fire**                      | "Most restrictive wins" — if any reason says mandatory, the obligation is mandatory for journey completion.                                                                                                                                                                              |
 | **Status flip while in scope**                                       | An obligation can move between mandatory and optional based on later answers, without leaving scope. Data is preserved across status flips.                                                                                                                                              |
@@ -128,7 +156,7 @@ Output, per obligation:
   inScope: boolean,
   status?: 'mandatory' | 'optional',     // only meaningful if inScope
   reasons?: Array<{ text: string }>,     // authored, multi-reason provenance
-  instances?: Array<InstanceState>       // only for indexed cardinality
+  fulfilments?: Array<FulfilmentState>   // only for indexed cardinality
 }
 ```
 
@@ -166,11 +194,11 @@ can't — at least not without significant cost. The cases that broke it:
   cover the last 5 years with no gaps". This is interval algebra, not a
   query. A pure rule language either can't express it or only does so by
   reinventing programming-language primitives.
-- **Indexed sub-obligation templating.** E.g. "the user selected K modifications;
-  for each selected modification a `cost[item]` sub-obligation is mandatory
-  and a `professionallyFitted[item]` becomes mandatory only if cost > £500".
-  The obligation list itself needs to be **projected** from state — not a
-  query, a template.
+- **Indexed sub-obligation templating.** E.g. "the user selected K
+  modifications; for each selected modification a `cost[item]` fulfilment
+  is mandatory and a `professionallyFitted[item]` becomes mandatory only if
+  cost > £500". The fulfilment set itself needs to be **projected** from
+  state — not a query, a template.
 - **External state.** Reference-data lookups, historical-policy checks,
   fraud-flag signals from upstream services.
 
@@ -221,7 +249,7 @@ A `single` obligation produces one canonical value:
 // → answers.dateOfBirth = '1985-03-27'
 ```
 
-An `indexed` obligation produces a collection of instances:
+An `indexed` obligation produces a collection of fulfilments:
 
 ```jsonc
 {
@@ -237,22 +265,94 @@ An `indexed` obligation produces a collection of instances:
 //   ]
 ```
 
-Indexed obligations introduce two extra design points:
+### The `indexedBy` shape — source × mutability
 
-- **Controller mechanism** — what determines how many instances exist?
-  Could be user-driven (the user clicks "add another address"); could be
-  derived from another obligation (the user selected K items from a
-  multi-select, instantiate one sub-obligation per selection); could be
-  externally seeded (e.g. each modifier on the policy spawns instances).
-  The `indexedBy` shape is still open.
-- **Cross-instance and within-instance scoping.** Within an instance you can
-  have the same activation logic as single obligations. Across instances you
-  can have quantifier-shaped rules ("any address with country ≠ UK") that
-  are part of why scoping needs to be a function.
+Where the index keys come from and who can change them are two independent
+dimensions; together they describe every realistic pattern. All three of
+the patterns interaction design needs (user-driven, derived from another
+obligation, externally seeded) are combinations of these dimensions.
 
-The existing prototype's `addons` step (`kind: 'subtasks'`) is the only
-indexed-obligation pattern shipped today, and it's hacked in as a special
-case rather than modelled generically.
+| Dimension      | Values                                                                                                                                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **source**     | `user` (user creates fulfilmentIds via add/remove; starts empty) / `derived` (fulfilmentIds come from another obligation's answer) / `seeded` (initial fulfilmentIds come from an external system at bootstrap; user may then mutate per `mutability`) |
+| **mutability** | `read-only` / `add-only` / `add-and-remove` (and possibly `add-remove-and-reorder` for ordered collections)                                                                                                                                            |
+
+| Pattern                                 | Example                                          | `source`  | `mutability`                                                  |
+| --------------------------------------- | ------------------------------------------------ | --------- | ------------------------------------------------------------- |
+| **1 — user-driven**                     | address history, additional drivers (new policy) | `user`    | `add-and-remove`                                              |
+| **2 — derived from another obligation** | per-modification cost (after a multi-select)     | `derived` | `read-only` (mutating the controller drives all changes)      |
+| **3 — externally seeded**               | renewal endorsements; broker-quote handoff       | `seeded`  | `add-and-remove` (typical renewal: edit, remove old, add new) |
+
+Sketch:
+
+```jsonc
+{
+  "id": "addresses",
+  "type": "address",
+  "cardinality": "indexed",
+  "indexedBy": { "source": "user", "mutability": "add-and-remove" }
+}
+
+{
+  "id": "modCost",
+  "type": "currency",
+  "cardinality": "indexed",
+  "indexedBy": {
+    "source": "derived",
+    "controllingObligation": "modifications",
+    "mutability": "read-only"
+  }
+}
+
+{
+  "id": "drivers",
+  "type": "driver",
+  "cardinality": "indexed",
+  "indexedBy": {
+    "source": "seeded",
+    "seedHandler": "rollover-drivers-v1",
+    "mutability": "add-and-remove"
+  }
+}
+```
+
+### Seeded = orchestrator-handled obligation (settled)
+
+Pattern 3 (seeded) doesn't need new machinery: fetching initial
+fulfilmentIds / data from an external system is structurally identical to a
+lookup-result or sub-journey-receipt. The orchestrator fires the
+`seedHandler` at journey start (or whenever the obligation enters scope);
+the callback writes the seed values into state. From the evaluator's
+perspective the seeded obligation just becomes "fulfilments exist; some are
+satisfied" the way any other indexed obligation would.
+
+### Lifecycle for derived (pattern 2) — settled
+
+When the controlling obligation's answer changes:
+
+- **FulfilmentId added** (e.g. user adds `suspension` to the modifications
+  selection) → a fresh blank fulfilment of the derived obligation comes
+  into scope.
+- **FulfilmentId removed** (e.g. user removes `alloys`) → that fulfilment
+  drops out of scope; its data is wiped, consistent with the existing
+  scope-exit rule.
+- **FulfilmentId re-added** after a previous remove → fresh blank again
+  (no rehydration), consistent with the canvas "delete conditional data"
+  steer and the yes→no→yes round-trip spec already in the e2e suite.
+
+### Cross-fulfilment and within-fulfilment scoping
+
+Within a fulfilment you can have the same activation logic as single
+obligations. Across fulfilments you can have quantifier-shaped rules ("any
+address with country ≠ UK") that are part of why scoping needs to be a
+function (see §The evaluation engine).
+
+### Existing precedent in the prototype
+
+The prototype's `claims` loop and `addons` subtasks are respectively a
+hacked-in pattern 1 (user-driven, via `arrayKey: 'claims'` +
+`done: 'claimsDone'`) and pattern 2 (derived from the addons multi-select).
+Neither is generalised; both would map cleanly onto this `indexedBy` shape.
 
 ## Staleness
 
@@ -383,18 +483,22 @@ obligation callbacks) is new to all four.
 
 ## What's still open
 
-### H. Controller mechanism for indexed obligations
+### H. Controller mechanism for indexed obligations — fulfilmentIds + hybrids
 
-What does `indexedBy` actually express? Likely candidates:
+The structural part of this question is settled — see §The `indexedBy`
+shape — source × mutability. Two sub-questions remain:
 
-- **User-driven** — the user can click "add another" / "remove"; the
-  controller value is the array length.
-- **Controlled by another obligation** — a multi-select obligation supplies
-  the keys; indexed sub-obligations are instantiated one per key.
-- **Externally seeded** — instances arrive from outside (e.g. each
-  underwriter rider attaches an indexed obligation).
-
-How (and whether) to make this declarative is still open.
+- **H.1 FulfilmentId identity** — opaque (UUIDs) vs meaningful (strings
+  like `'turbo'`) vs source-provided (whatever the seed returns). Probably
+  varies by `source` value (`user` → opaque, generated by the
+  orchestrator; `derived` → meaningful, comes from the controlling
+  obligation's answer; `seeded` → whatever the source returns). Cross-
+  cutting properties to confirm: stable across re-renders / reloads,
+  unique within an obligation's fulfilment set, string-typed and URL-safe,
+  exposed in the answers state. In discussion.
+- **H.2 Hybrid source/mutability combinations** — `seeded + read-only`
+  (audit data), `derived + user-can-add-extras`, user-driven with min/max
+  constraints. Deferred until H.1 is settled.
 
 ### I. Configuration shape
 
