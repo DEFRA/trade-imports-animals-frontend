@@ -1105,6 +1105,100 @@ was an enforcement mechanism; if you retire it, plan its replacement.
   per Flow). Comparison should target the canonical fulfilment _values_,
   not per-Flow identifiers.
 
+## Stretch goals — tooling
+
+A two-stage code-generation pipeline could substantially speed up
+Service bootstrap once the obligation model is stable. Captured here
+as an aspiration — not part of the core model, no commitment to build
+it, but worth keeping in mind because the layered architecture is
+deliberately friendly to it.
+
+### Stage 1 — Obligations → skeleton Flow
+
+**Input**: an `obligations.json` for a Service.
+**Output**: a skeleton `flow.json` that delivers those obligations in
+a simple, usable journey, plus generated tests.
+
+This stage is **judgement-heavy** — how to group obligations into
+Sections, what ordering makes sense, which mandates are hard vs soft,
+draft copy and labels. A purely-deterministic generator can produce a
+trivial baseline ("one Page per obligation, alphabetical, all soft")
+but a _usable_ skeleton needs:
+
+- Pattern-matching against good GDS journey conventions
+- Clustering related fields (name + email + DOB → "About you")
+- Detecting conditional groups
+- Drafting sensible copy
+
+**Likely tooling**: an AI skill (e.g. a Claude Code skill) pointed at
+a **reference implementation** — a previously-built Service end-to-end
+serving as a style / convention exemplar. The skill produces files
+matching the reference's patterns for the new Service.
+
+### Stage 2 — Flow → HTML scaffold
+
+**Input**: a `flow.json` + `obligations.json`.
+**Output**: HTML templates (one per Page), form-input wiring, basic
+validation, generated tests.
+
+This stage is **mostly mechanical**:
+
+- Each Page → one template file
+- Each `presents` entry → one form input (type derived from the
+  obligation's type)
+- `mandate: 'hard'` entries → required-attribute + form-level
+  validation wiring
+- `presentsForEach` → a template loop
+
+**Likely tooling**: a deterministic template-based generator. Same
+Flow in → same HTML out. Testable, predictable, fast. Maintenance
+cost bounded to the template library. An AI polish layer could
+optionally refine copy, layout micro-decisions, and a11y nuances —
+but the structural code generation stays deterministic.
+
+### Why cross-Flow Engine equivalence tests matter here
+
+If AI generates a skeleton Flow alongside a hand-curated polished
+Flow, the cross-Flow Engine equivalence tests (see §Tests) become the
+**behavioural oracle** that catches divergence:
+
+- One set of scripts in obligation-language
+- Replayed against the AI-generated skeleton AND handcrafted polished
+  Flows
+- Engine state at the end must be identical
+
+If the AI's skeleton produces different Engine state, the divergence
+is caught immediately by a deterministic test that doesn't depend on
+rendering. This makes AI-assisted Stage 1 **safe to iterate on** —
+there's a fast oracle for correctness, even though the AI's output is
+non-deterministic.
+
+### Hybrid recommendation summary
+
+| Concern              | Determinism             | Tooling                                |
+| -------------------- | ----------------------- | -------------------------------------- |
+| Obligations → Flow   | Fuzzy / judgement-heavy | AI skill with reference implementation |
+| Flow → HTML scaffold | Mechanical              | Deterministic template generator       |
+| HTML polish          | Fuzzy / GDS expertise   | AI assist + human review               |
+| Tests                | Must be deterministic   | Generated with hard-coded expectations |
+
+### Future-work concerns to revisit
+
+- **Regenerability**: if a Service's obligations change, does the
+  tooling regenerate the Flow / HTML, or is the change hand-applied?
+  Affects whether the tools are one-shot scaffolders vs ongoing build
+  steps.
+- **Quality bar**: AI-generated copy needs human polish before going
+  user-facing. Skeleton might be OK as-is; polished isn't.
+- **Reference-implementation availability**: the first Service has to
+  be built without AI tooling (or with hand-crafted templates).
+  Subsequent Services use it as a template.
+- **Alternatives to AI for Stage 1**: deterministic template generator
+  with interactive wizard prompts; annotation-driven generator
+  (obligations carry hints); generated YAML stub + human edits + JSON
+  conversion. Worth comparing if AI quality / determinism doesn't hold
+  up.
+
 ## What's still open
 
 ### H. Controller mechanism for indexed obligations — hybrids
@@ -1251,11 +1345,14 @@ state)`, `isFulfilled(container, state)`, etc.). Matches the
   (deep-link to where you left off), or stop at the first level (so
   the user drills into SubSections themselves)?
 
-- **P.5 Skeleton Flow shape.** Does the model require at least one
-  Section (a skeleton uses a single anonymous Section wrapping all
-  Pages), or does it permit a top-level `pages: [...]` alternative
-  shape with no Sections at all? Most uniform: always wrap in a
-  Section, suppress the Task List in the renderer if there's only one.
+- **P.5 Skeleton Flow shape.** Settled. A Flow always has at least
+  one top-level Section — no flat top-level `pages: [...]`
+  alternative. Skeleton Flows are typically simpler in structure than
+  polished (often a single Section with a flat list of Pages,
+  sometimes more — they may use SubSections too), but they use the
+  same shape as polished Flows. The renderer may suppress Task List
+  affordances when only one Section exists; that's a renderer choice,
+  not a model choice.
 
 - **P.6 Task List rendering of nested SubSections.** Deferred — a
   possible extension point. Doesn't block other progress; the
