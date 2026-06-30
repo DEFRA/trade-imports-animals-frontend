@@ -15,21 +15,21 @@ export function setSelectedAddons(quote, values) {
   return updateQuote(quote.id, { selectedAddons: values })
 }
 
-export function saveAddonStep(quote, value, data) {
-  const merged = { ...getAddonData(quote, value), ...data }
+export function saveAddonStep(quote, value, answers) {
+  const merged = { ...getAddonData(quote, value), ...answers }
   return updateQuote(quote.id, {
     addonData: { ...(quote.addonData ?? {}), [value]: merged }
   })
 }
 
-export function stepComplete(step, data) {
-  return Boolean(data[step.key])
+export function stepComplete(step, answers) {
+  return Boolean(answers[step.key])
 }
 
 export function addonComplete(quote, value) {
   const addon = addonByValue.get(value)
-  const data = getAddonData(quote, value)
-  return addon.steps.every((step) => stepComplete(step, data))
+  const answers = getAddonData(quote, value)
+  return addon.steps.every((step) => stepComplete(step, answers))
 }
 
 export function allSelectedAddonsComplete(quote) {

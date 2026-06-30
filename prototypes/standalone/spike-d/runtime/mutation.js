@@ -1,25 +1,38 @@
 import { fieldsFor, stepMeta } from './step-meta.js'
 import { applicableSteps } from './applicability.js'
 
+const FIELD_TYPE = { DATE: 'date', MULTI_SELECT: 'multi-select' }
+const STEP_KIND_LOOP = 'loop'
+const DATE_PARTS = ['day', 'month', 'year']
+
+const collectDateField = (field, payload) => {
+  const parts = DATE_PARTS.map((part) => payload[`${field.id}-${part}`])
+  const anyPart = parts.some(
+    (part) => part !== undefined && String(part).trim() !== ''
+  )
+  const [day, month, year] = parts
+  return anyPart ? { day, month, year } : undefined
+}
+
+const collectMultiSelectField = (field, payload) => {
+  const raw = payload[field.id]
+  return raw === undefined ? [] : [].concat(raw)
+}
+
+const collectScalarField = (field, payload) => payload[field.id]
+
+const collectors = {
+  [FIELD_TYPE.DATE]: collectDateField,
+  [FIELD_TYPE.MULTI_SELECT]: collectMultiSelectField
+}
+
+const collectFor = (field, payload) =>
+  (collectors[field.type] ?? collectScalarField)(field, payload)
+
 export function collect(stepId, payload) {
-  const patch = {}
-  for (const field of fieldsFor(stepId)) {
-    if (field.type === 'date') {
-      const day = payload[`${field.id}-day`]
-      const month = payload[`${field.id}-month`]
-      const year = payload[`${field.id}-year`]
-      const anyPart = [day, month, year].some(
-        (part) => part !== undefined && String(part).trim() !== ''
-      )
-      patch[field.id] = anyPart ? { day, month, year } : undefined
-    } else if (field.type === 'multi-select') {
-      const raw = payload[field.id]
-      patch[field.id] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      patch[field.id] = payload[field.id]
-    }
-  }
-  return patch
+  return Object.fromEntries(
+    fieldsFor(stepId).map((field) => [field.id, collectFor(field, payload)])
+  )
 }
 
 function clearStep(answers, stepId) {
@@ -27,7 +40,7 @@ function clearStep(answers, stepId) {
     answers[field.id] = undefined
   }
   const meta = stepMeta[stepId] ?? {}
-  if (meta.kind === 'loop') {
+  if (meta.kind === STEP_KIND_LOOP) {
     answers[meta.done] = false
     answers[meta.arrayKey] = []
   }

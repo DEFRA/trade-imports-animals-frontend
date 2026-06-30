@@ -29,7 +29,7 @@ export function addClaim(quote, payload) {
 
 export function removeClaim(quote, index) {
   return updateQuote(quote.id, {
-    claims: getClaims(quote).filter((_, i) => i !== index)
+    claims: getClaims(quote).filter((_, position) => position !== index)
   })
 }
 

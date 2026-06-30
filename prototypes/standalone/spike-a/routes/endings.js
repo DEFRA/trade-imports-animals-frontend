@@ -14,14 +14,23 @@ import { BASE, LAYOUT, breadcrumbs } from '../journey/config.js'
  * Per-row value formatting is reused from the presentation layer (lib/sections).
  */
 
+const STATUS_QUOTED = 'quoted'
+
 const open = { auth: false }
-const at = (id, slug) => `${BASE}/${id}/${slug}`
+const stepPath = (id, slug) => `${BASE}/${id}/${slug}`
+
+// Load the quote once and short-circuit to BASE when it is missing, so each
+// handler receives a resolved quote and never repeats the guard.
+const withQuote = (handler) => (request, h) => {
+  const quote = findQuote(request.params.id)
+  return quote ? handler(quote, request, h) : h.redirect(BASE)
+}
 
 // Simple question pages round-trip via ?change=1; loops / fan-outs link to their
 // own first page and return through their own flow.
 const changeHref = (quote, stepId) => {
-  const sub = at(quote.id, stepId)
-  return contract.stepKind(stepId) ? sub : `${sub}?change=1`
+  const basePath = stepPath(quote.id, stepId)
+  return contract.stepKind(stepId) ? basePath : `${basePath}?change=1`
 }
 
 const answerRows = (quote) =>
@@ -31,7 +40,7 @@ const answerRows = (quote) =>
       return []
     }
     const href = hasOwnRoutes(section)
-      ? at(quote.id, stepId)
+      ? stepPath(quote.id, stepId)
       : changeHref(quote, stepId)
     return section.rows(quote).map((row) => ({
       key: { text: row.key },
@@ -46,12 +55,29 @@ const answerRows = (quote) =>
 
 // Soft prompts: each still-missing required field, with its provenance reason.
 const softPrompts = (quote) =>
-  contract.missingRequired(quote).map((miss) => ({
-    stepId: miss.stepId,
-    text: contract.stepTitle(miss.stepId),
-    because: provenanceText(miss.because),
-    href: changeHref(quote, miss.stepId)
+  contract.missingRequired(quote).map((missing) => ({
+    stepId: missing.stepId,
+    text: contract.stepTitle(missing.stepId),
+    because: provenanceText(missing.because),
+    href: changeHref(quote, missing.stepId)
   }))
+
+const errorRows = (result, quote) =>
+  result.errors.map((error) => ({
+    text: error.message,
+    href: changeHref(quote, error.stepId)
+  }))
+
+const markQuoted = (quote) =>
+  updateQuote(quote.id, {
+    status: STATUS_QUOTED,
+    reference: makeReference(quote.id)
+  })
+
+const priceQuote = (quote) => {
+  const premium = calculatePremium(quote)
+  return { premium, updated: updateQuote(quote.id, { premium }) }
+}
 
 const renderCya = (quote, h, extras = {}) =>
   h.view('standalone/spike-a/templates/check-your-answers', {
@@ -61,10 +87,56 @@ const renderCya = (quote, h, extras = {}) =>
     premium: quote.premium,
     rows: answerRows(quote),
     incomplete: softPrompts(quote),
-    backLink: at(quote.id, 'quote-summary'),
+    backLink: stepPath(quote.id, 'quote-summary'),
     breadcrumbs: breadcrumbs(quote, 'Check your answers'),
     ...extras
   })
+
+const renderQuoteSummary = (quote, premium, h) =>
+  h.view('standalone/spike-a/templates/quote-summary', {
+    layout: LAYOUT,
+    pageTitle: 'Your quote',
+    quote,
+    premium,
+    coverLabel: coverTypeLabel(quote.coverType),
+    extras: extrasLabels(quote.extras),
+    backLink: `${BASE}/${quote.id}`,
+    breadcrumbs: breadcrumbs(quote, 'Your quote')
+  })
+
+const getQuoteSummary = (quote, request, h) => {
+  const { premium, updated } = priceQuote(quote)
+  return renderQuoteSummary(updated, premium, h)
+}
+
+const submitQuoteSummary = (quote, request, h) =>
+  h.redirect(stepPath(quote.id, 'check-your-answers'))
+
+const getCheckYourAnswers = (quote, request, h) => renderCya(quote, h)
+
+const submitCheckYourAnswers = (quote, request, h) => {
+  // Hard gate: assemble + transform + validate the full quote object.
+  const result = contract.assembleQuote(quote)
+  if (!result.ok) {
+    return renderCya(quote, h, { errorSummary: errorRows(result, quote) })
+  }
+  markQuoted(quote)
+  return h.redirect(stepPath(quote.id, 'confirmation'))
+}
+
+const getConfirmation = (quote, request, h) => {
+  if (quote.status !== STATUS_QUOTED) {
+    return h.redirect(BASE)
+  }
+  return h.view('standalone/spike-a/templates/confirmation', {
+    layout: LAYOUT,
+    pageTitle: 'Quote confirmed',
+    quote,
+    reference: quote.reference,
+    premium: quote.premium,
+    breadcrumbs: breadcrumbs(quote, 'Quote confirmed')
+  })
+}
 
 export function endingsRoutes() {
   return [
@@ -72,91 +144,31 @@ export function endingsRoutes() {
       method: 'GET',
       path: `${BASE}/{id}/quote-summary`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const premium = calculatePremium(quote)
-        const updated = updateQuote(quote.id, { premium })
-        return h.view('standalone/spike-a/templates/quote-summary', {
-          layout: LAYOUT,
-          pageTitle: 'Your quote',
-          quote: updated,
-          premium,
-          coverLabel: coverTypeLabel(updated.coverType),
-          extras: extrasLabels(updated.extras),
-          backLink: `${BASE}/${updated.id}`,
-          breadcrumbs: breadcrumbs(updated, 'Your quote')
-        })
-      }
+      handler: withQuote(getQuoteSummary)
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/quote-summary`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        return quote
-          ? h.redirect(at(quote.id, 'check-your-answers'))
-          : h.redirect(BASE)
-      }
+      handler: withQuote(submitQuoteSummary)
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/check-your-answers`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        return renderCya(quote, h)
-      }
+      handler: withQuote(getCheckYourAnswers)
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/check-your-answers`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        // Hard gate: assemble + transform + validate the full quote object.
-        const result = contract.assembleQuote(quote)
-        if (!result.ok) {
-          const errorSummary = result.errors.map((error) => ({
-            text: error.message,
-            href: changeHref(quote, error.stepId)
-          }))
-          return renderCya(quote, h, { errorSummary })
-        }
-        updateQuote(quote.id, {
-          status: 'quoted',
-          reference: makeReference(quote.id)
-        })
-        return h.redirect(at(quote.id, 'confirmation'))
-      }
+      handler: withQuote(submitCheckYourAnswers)
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/confirmation`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote || quote.status !== 'quoted') {
-          return h.redirect(BASE)
-        }
-        return h.view('standalone/spike-a/templates/confirmation', {
-          layout: LAYOUT,
-          pageTitle: 'Quote confirmed',
-          quote,
-          reference: quote.reference,
-          premium: quote.premium,
-          breadcrumbs: breadcrumbs(quote, 'Quote confirmed')
-        })
-      }
+      handler: withQuote(getConfirmation)
     }
   ]
 }

@@ -11,37 +11,50 @@ import { isEmpty } from '../lib/fieldutil.js'
  * @returns {{ missing: object[], invalid: object[] }} Missing entries carry the
  *   if/then `because` provenance; invalid entries carry the first error message.
  */
+const baseMissing = (answers) =>
+  schema.required
+    .filter((key) => isEmpty(answers[key]))
+    .map((key) => ({ path: key, because: [] }))
+
+const baseInvalid = (answers) =>
+  Object.entries(schema.properties)
+    .filter(([key]) => !isEmpty(answers[key]))
+    .map(([key, propertySchema]) => ({
+      path: key,
+      errors: validateValue(propertySchema, answers[key], key)
+    }))
+    .filter(({ errors }) => errors.length)
+    .map(({ path, errors }) => ({ path, message: errors[0] }))
+
+const branchMissing = (answers) =>
+  activeBranches(answers).flatMap((branch) =>
+    (branch.then.required ?? [])
+      .filter((requiredKey) => isEmpty(answers[requiredKey]))
+      .map((requiredKey) => ({
+        path: requiredKey,
+        because: ifProvenance(branch.if)
+      }))
+  )
+
+const branchInvalid = (answers) =>
+  activeBranches(answers).flatMap((branch) =>
+    Object.entries(branch.then.properties ?? {})
+      .filter(([key]) => !isEmpty(answers[key]))
+      .map(([key, subSchema]) => ({
+        path: key,
+        errors: validateValue(
+          { ...resolve(schema.properties[key]), ...subSchema },
+          answers[key],
+          key
+        )
+      }))
+      .filter(({ errors }) => errors.length)
+      .map(({ path, errors }) => ({ path, message: errors[0] }))
+  )
+
 export function check(answers) {
-  const missing = []
-  const invalid = []
-  for (const key of schema.required) {
-    if (isEmpty(answers[key])) {
-      missing.push({ path: key, because: [] })
-    }
+  return {
+    missing: [...baseMissing(answers), ...branchMissing(answers)],
+    invalid: [...baseInvalid(answers), ...branchInvalid(answers)]
   }
-  for (const [key, node] of Object.entries(schema.properties)) {
-    if (!isEmpty(answers[key])) {
-      const errors = validateValue(node, answers[key], key)
-      if (errors.length) {
-        invalid.push({ path: key, message: errors[0] })
-      }
-    }
-  }
-  for (const branch of activeBranches(answers)) {
-    for (const req of branch.then.required ?? []) {
-      if (isEmpty(answers[req])) {
-        missing.push({ path: req, because: ifProvenance(branch.if) })
-      }
-    }
-    for (const [key, sub] of Object.entries(branch.then.properties ?? {})) {
-      if (!isEmpty(answers[key])) {
-        const merged = { ...resolve(schema.properties[key]), ...sub }
-        const errors = validateValue(merged, answers[key], key)
-        if (errors.length) {
-          invalid.push({ path: key, message: errors[0] })
-        }
-      }
-    }
-  }
-  return { missing, invalid }
 }

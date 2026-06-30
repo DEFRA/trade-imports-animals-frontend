@@ -35,8 +35,8 @@ export function humanize(id) {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-export function ageInYears(dob, now = new Date()) {
-  const birth = toDate(dob)
+export function ageInYears(dateOfBirth, now = new Date()) {
+  const birth = toDate(dateOfBirth)
   if (!birth) {
     return undefined
   }
@@ -48,15 +48,15 @@ export function ageInYears(dob, now = new Date()) {
   return age
 }
 
-function toDate(dob) {
-  if (!dob) {
+function toDate(dateOfBirth) {
+  if (!dateOfBirth) {
     return undefined
   }
-  if (typeof dob === 'string') {
-    const parsed = new Date(dob)
+  if (typeof dateOfBirth === 'string') {
+    const parsed = new Date(dateOfBirth)
     return Number.isNaN(parsed.getTime()) ? undefined : parsed
   }
-  const { day, month, year } = dob
+  const { day, month, year } = dateOfBirth
   if (!day || !month || !year) {
     return undefined
   }

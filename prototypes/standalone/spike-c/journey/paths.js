@@ -9,6 +9,15 @@ import { BASE, grouped } from './config.js'
  * URL; `navBack`/`navNext` resolve it for a stored quote.
  */
 
+const STEP_KIND_LOOP = 'loop'
+const STEP_KIND_SUBTASKS = 'subtasks'
+const TERMINAL_SUMMARY = 'summary'
+const TERMINAL_HUB = 'hub'
+const TERMINAL_START = 'start'
+const SEGMENT_CLAIMS = 'claims'
+const SEGMENT_ADDONS = 'addons'
+const SEGMENT_QUOTE_SUMMARY = 'quote-summary'
+
 export const hubPath = (id) => `${BASE}/${id}`
 export const addonStepPath = (id, value, stepSlug) =>
   `${BASE}/${id}/addons/${value}/${stepSlug}`
@@ -22,15 +31,13 @@ export function breadcrumbs(quote, title) {
   ]
 }
 
-// Loops and the add-on fan-out own their own routes; everything else is a
-// generic section page at {base}/{id}/{stepId}.
 export function pathForStep(quote, stepId) {
   const kind = contract.stepKind(stepId)
-  if (kind === 'loop') {
-    return `${BASE}/${quote.id}/claims`
+  if (kind === STEP_KIND_LOOP) {
+    return `${BASE}/${quote.id}/${SEGMENT_CLAIMS}`
   }
-  if (kind === 'subtasks') {
-    return `${BASE}/${quote.id}/addons`
+  if (kind === STEP_KIND_SUBTASKS) {
+    return `${BASE}/${quote.id}/${SEGMENT_ADDONS}`
   }
   return `${BASE}/${quote.id}/${stepId}`
 }
@@ -41,11 +48,11 @@ export function resolveNav(quote, result) {
     return pathForStep(quote, result)
   }
   switch (result.terminal) {
-    case 'summary':
-      return `${BASE}/${quote.id}/quote-summary`
-    case 'hub':
+    case TERMINAL_SUMMARY:
+      return `${BASE}/${quote.id}/${SEGMENT_QUOTE_SUMMARY}`
+    case TERMINAL_HUB:
       return hubPath(quote.id)
-    case 'start':
+    case TERMINAL_START:
     default:
       return BASE
   }

@@ -11,6 +11,14 @@ import { allSelectedAddonsComplete } from '../lib/addons/index.js'
  * each step's required fields.
  */
 
+const STATUS = {
+  notApplicable: 'not-applicable',
+  complete: 'complete',
+  partial: 'partial',
+  notStarted: 'not-started'
+}
+const STEP_KIND = { loop: 'loop', subtasks: 'subtasks' }
+
 function requiredFields(stepId, answers) {
   return fieldsFor(stepId).filter(
     (field) =>
@@ -19,37 +27,51 @@ function requiredFields(stepId, answers) {
   )
 }
 
-export function status(answers, stepId) {
-  if (!applicableSteps(answers).includes(stepId)) {
-    return 'not-applicable'
+const loopStatus = (state, answers) => {
+  if (answers[state.done] === true) {
+    return STATUS.complete
   }
-  const state = machine.states[stepId]
-  if (state.kind === 'loop') {
-    if (answers[state.done] === true) {
-      return 'complete'
-    }
-    return (answers[state.arrayKey] ?? []).length ? 'partial' : 'not-started'
+  return (answers[state.arrayKey] ?? []).length
+    ? STATUS.partial
+    : STATUS.notStarted
+}
+
+const subtasksStatus = (answers) => {
+  if (answers.selectedAddons === undefined) {
+    return STATUS.notStarted
   }
-  if (state.kind === 'subtasks') {
-    if (answers.selectedAddons === undefined) {
-      return 'not-started'
-    }
-    return allSelectedAddonsComplete(answers) ? 'complete' : 'partial'
-  }
+  return allSelectedAddonsComplete(answers) ? STATUS.complete : STATUS.partial
+}
+
+const fieldsStatus = (stepId, answers) => {
   const required = requiredFields(stepId, answers)
   const allRequired = required.every((field) =>
     isSatisfied(field, answers[field.id])
   )
   if (required.length && allRequired) {
-    return 'complete'
+    return STATUS.complete
   }
   const anyAnswered = fieldsFor(stepId).some((field) =>
     isSatisfied(field, answers[field.id])
   )
-  return anyAnswered ? 'partial' : 'not-started'
+  return anyAnswered ? STATUS.partial : STATUS.notStarted
+}
+
+export function status(answers, stepId) {
+  if (!applicableSteps(answers).includes(stepId)) {
+    return STATUS.notApplicable
+  }
+  const state = machine.states[stepId]
+  if (state.kind === STEP_KIND.loop) {
+    return loopStatus(state, answers)
+  }
+  if (state.kind === STEP_KIND.subtasks) {
+    return subtasksStatus(answers)
+  }
+  return fieldsStatus(stepId, answers)
 }
 
 export const allComplete = (answers) =>
   applicableSteps(answers).every(
-    (stepId) => status(answers, stepId) === 'complete'
+    (stepId) => status(answers, stepId) === STATUS.complete
   )

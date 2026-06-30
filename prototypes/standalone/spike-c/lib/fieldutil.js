@@ -3,6 +3,9 @@
  * humanising and age. No model knowledge; each spike passes plain field specs.
  */
 
+// A GDS date object is empty when it has no day part.
+const isEmptyDateObject = (value) => !value.day
+
 export function isEmpty(value) {
   if (value === undefined || value === null) {
     return true
@@ -11,7 +14,7 @@ export function isEmpty(value) {
     return value.length === 0
   }
   if (typeof value === 'object') {
-    return !value.day
+    return isEmptyDateObject(value)
   }
   return String(value).trim() === ''
 }

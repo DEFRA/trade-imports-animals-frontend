@@ -23,6 +23,9 @@ import Joi from 'joi'
 export const PHONE_ALLOWED = /^[0-9+()\-.,;\sextEXT]+$/
 const PHONE_DEFAULT_MIN_DIGITS = 7
 const PHONE_DEFAULT_MAX_DIGITS = 15
+const EMAIL_MIN_DOMAIN_SEGMENTS = 2
+
+const countDigits = (value) => value.replace(/\D/g, '').length
 
 export function phoneSchema({
   name,
@@ -40,7 +43,7 @@ export function phoneSchema({
     .empty('')
     .pattern(PHONE_ALLOWED)
     .custom((value, helpers) => {
-      const digitCount = value.replace(/\D/g, '').length
+      const digitCount = countDigits(value)
       if (digitCount < minDigits || digitCount > maxDigits) {
         return helpers.error('phone.length')
       }
@@ -75,7 +78,10 @@ export function emailSchema({
 } = {}) {
   const base = Joi.string()
     .trim()
-    .email({ minDomainSegments: 2, tlds: { allow: false } })
+    .email({
+      minDomainSegments: EMAIL_MIN_DOMAIN_SEGMENTS,
+      tlds: { allow: false }
+    })
   const schema = required
     ? base.required().messages({
         'string.empty': enterMessage,

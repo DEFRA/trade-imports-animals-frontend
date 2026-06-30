@@ -62,6 +62,14 @@ export function addonSummary(quote, value) {
   return addonComplete(quote, value) ? 'Added' : 'Started'
 }
 
+const addonHintText = (addon) =>
+  addon.steps.map((step) => step.title).join(', ')
+
+const addonStatusBadge = (quote, value) =>
+  addonComplete(quote, value)
+    ? { text: 'Completed' }
+    : { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
+
 /**
  * One task-list item per selected add-on, each linking to its own first step —
  * the fan-out, as independent tasks. `firstStepPath(id, value, slug)` builds the
@@ -72,11 +80,9 @@ export function addonHubItems(quote, firstStepPath) {
     const addon = addonByValue.get(value)
     return {
       title: { text: addon.title },
-      hint: { text: addon.steps.map((step) => step.title).join(', ') },
+      hint: { text: addonHintText(addon) },
       href: firstStepPath(quote.id, value, addon.steps[0].slug),
-      status: addonComplete(quote, value)
-        ? { text: 'Completed' }
-        : { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
+      status: addonStatusBadge(quote, value)
     }
   })
 }

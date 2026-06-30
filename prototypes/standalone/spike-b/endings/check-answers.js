@@ -8,14 +8,30 @@ import { BASE, LAYOUT, breadcrumbs } from '../journey/index.js'
  * list itself reuses each section's per-row value formatting (lib/sections).
  */
 
+const CHANGE_LABEL = 'Change'
+const CHANGE_QUERY = '?change=1'
+
 export const at = (id, slug) => `${BASE}/${id}/${slug}`
 
 // Simple question pages round-trip via ?change=1; loops / fan-outs link to their
 // own first page and return through their own flow.
 export const changeHref = (quote, stepId) => {
-  const sub = at(quote.id, stepId)
-  return contract.stepKind(stepId) ? sub : `${sub}?change=1`
+  const stepUrl = at(quote.id, stepId)
+  return contract.stepKind(stepId) ? stepUrl : `${stepUrl}${CHANGE_QUERY}`
 }
+
+const rowHref = (quote, section, stepId) =>
+  hasOwnRoutes(section) ? at(quote.id, stepId) : changeHref(quote, stepId)
+
+const toSummaryRow = (href, row) => ({
+  key: { text: row.key },
+  value: { text: row.value },
+  actions: {
+    items: [
+      { href, text: CHANGE_LABEL, visuallyHiddenText: row.key.toLowerCase() }
+    ]
+  }
+})
 
 const answerRows = (quote) =>
   contract.applicableSteps(quote).flatMap((stepId) => {
@@ -23,18 +39,8 @@ const answerRows = (quote) =>
     if (!section) {
       return []
     }
-    const href = hasOwnRoutes(section)
-      ? at(quote.id, stepId)
-      : changeHref(quote, stepId)
-    return section.rows(quote).map((row) => ({
-      key: { text: row.key },
-      value: { text: row.value },
-      actions: {
-        items: [
-          { href, text: 'Change', visuallyHiddenText: row.key.toLowerCase() }
-        ]
-      }
-    }))
+    const href = rowHref(quote, section, stepId)
+    return section.rows(quote).map((row) => toSummaryRow(href, row))
   })
 
 // Soft prompts: each still-missing required field, with its provenance reason.
@@ -46,8 +52,8 @@ const softPrompts = (quote) =>
     href: changeHref(quote, miss.stepId)
   }))
 
-export const renderCya = (quote, h, extras = {}) =>
-  h.view('standalone/spike-b/templates/check-your-answers', {
+export const renderCya = (quote, responseToolkit, extras = {}) =>
+  responseToolkit.view('standalone/spike-b/templates/check-your-answers', {
     layout: LAYOUT,
     pageTitle: 'Check your answers',
     quote,

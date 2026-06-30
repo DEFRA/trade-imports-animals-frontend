@@ -1,5 +1,15 @@
 import Joi from 'joi'
 
+const MIN_VEHICLE_YEAR = 1900
+
+const cleanCurrencyInput = (raw) =>
+  String(raw ?? '')
+    .trim()
+    .replace(/[£,\s]/g, '')
+
+const parsePositiveWholePounds = (cleaned) =>
+  /^\d+$/.test(cleaned) ? Number(cleaned) : NaN
+
 /**
  * Integer-years field: whole number within [min, max]. Used for
  * `yearsNoClaims` and `ncdYears`. Two friendly strings — `enterMessage`
@@ -49,19 +59,20 @@ export function vehicleYearSchema({
   required = true
 }) {
   const year = currentYear ?? new Date().getFullYear()
+  const maxYear = year + 1
   // `.empty('')` ahead of `.required()` so a blank submit fires `any.required`
   // (enterMessage) instead of being coerced to 0 and tripping the range error.
   const base = Joi.number()
     .integer()
-    .min(1900)
-    .max(year + 1)
+    .min(MIN_VEHICLE_YEAR)
+    .max(maxYear)
     .empty('')
   const field = (required ? base.required() : base).messages({
     'any.required': enterMessage,
     'number.base': `${noun} must be a number`,
     'number.integer': `${noun} must be a whole number`,
-    'number.min': `${noun} must be between 1900 and ${year + 1}`,
-    'number.max': `${noun} must be between 1900 and ${year + 1}`
+    'number.min': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${maxYear}`,
+    'number.max': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${maxYear}`
   })
   return Joi.object({ [name]: field }).unknown(true)
 }
@@ -90,23 +101,18 @@ export function currencySchema({
   return Joi.object({
     [name]: Joi.any()
       .custom((raw, helpers) => {
-        const cleaned = String(raw ?? '')
-          .trim()
-          .replace(/[£,\s]/g, '')
+        const cleaned = cleanCurrencyInput(raw)
         if (cleaned === '') {
           if (required) {
             return helpers.error('any.required')
           }
           return undefined
         }
-        if (!/^\d+$/.test(cleaned)) {
+        const amount = parsePositiveWholePounds(cleaned)
+        if (!Number.isInteger(amount) || amount <= 0) {
           return helpers.error('currency.format')
         }
-        const n = Number(cleaned)
-        if (n <= 0) {
-          return helpers.error('currency.format')
-        }
-        return n
+        return amount
       }, 'currency')
       .messages({
         'any.required': enterMessage,

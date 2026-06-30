@@ -32,7 +32,7 @@ describe('spike-a assembleQuote (full-object validate + transform)', () => {
   it('reports missing required fields with step provenance', () => {
     const result = assembleQuote({})
     expect(result.ok).toBe(false)
-    const fullName = result.errors.find((e) => e.fieldId === 'fullName')
+    const fullName = result.errors.find((error) => error.fieldId === 'fullName')
     expect(fullName.stepId).toBe('about-you')
   })
 
@@ -43,9 +43,9 @@ describe('spike-a assembleQuote (full-object validate + transform)', () => {
     }
     const result = assembleQuote(tooYoung)
     expect(result.ok).toBe(false)
-    expect(result.errors.some((e) => e.message.includes('at least 17'))).toBe(
-      true
-    )
+    expect(
+      result.errors.some((error) => error.message.includes('at least 17'))
+    ).toBe(true)
   })
 
   it('fires the excess-within-value business rule', () => {
@@ -56,14 +56,16 @@ describe('spike-a assembleQuote (full-object validate + transform)', () => {
     }
     const result = assembleQuote(overValue)
     expect(result.ok).toBe(false)
-    expect(result.errors.some((e) => e.fieldId === 'excessAmount')).toBe(true)
+    expect(
+      result.errors.some((error) => error.fieldId === 'excessAmount')
+    ).toBe(true)
   })
 
   it('reports the claims loop as missing with provenance', () => {
     const noClaim = { ...completeAnswers, claims: [], claimsDone: false }
     const result = assembleQuote(noClaim)
     expect(result.ok).toBe(false)
-    const claims = result.errors.find((e) => e.stepId === 'claims')
+    const claims = result.errors.find((error) => error.stepId === 'claims')
     expect(claims.because).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'hadClaims', eq: 'yes' })

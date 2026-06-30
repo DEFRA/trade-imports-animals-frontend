@@ -8,25 +8,39 @@ import { fieldsFor } from './view.js'
  * answers make no longer applicable.
  */
 
-export function collect(stepId, payload) {
-  const patch = {}
-  for (const field of fieldsFor(stepId)) {
-    if (field.type === 'date') {
-      const day = payload[`${field.id}-day`]
-      const month = payload[`${field.id}-month`]
-      const year = payload[`${field.id}-year`]
-      const anyPart = [day, month, year].some(
-        (part) => part !== undefined && String(part).trim() !== ''
-      )
-      patch[field.id] = anyPart ? { day, month, year } : undefined
-    } else if (field.type === 'multi-select') {
-      const raw = payload[field.id]
-      patch[field.id] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      patch[field.id] = payload[field.id]
-    }
+const FIELD_TYPE_DATE = 'date'
+const FIELD_TYPE_MULTI_SELECT = 'multi-select'
+const DATE_PARTS = ['day', 'month', 'year']
+
+const collectDateField = (field, payload) => {
+  const parts = Object.fromEntries(
+    DATE_PARTS.map((part) => [part, payload[`${field.id}-${part}`]])
+  )
+  const anyPart = Object.values(parts).some(
+    (part) => part !== undefined && String(part).trim() !== ''
+  )
+  return anyPart ? parts : undefined
+}
+
+const collectMultiSelectField = (field, payload) => {
+  const raw = payload[field.id]
+  return raw === undefined ? [] : [].concat(raw)
+}
+
+const collectField = (field, payload) => {
+  if (field.type === FIELD_TYPE_DATE) {
+    return collectDateField(field, payload)
   }
-  return patch
+  if (field.type === FIELD_TYPE_MULTI_SELECT) {
+    return collectMultiSelectField(field, payload)
+  }
+  return payload[field.id]
+}
+
+export function collect(stepId, payload) {
+  return Object.fromEntries(
+    fieldsFor(stepId).map((field) => [field.id, collectField(field, payload)])
+  )
 }
 
 function clearStep(answers, stepId) {

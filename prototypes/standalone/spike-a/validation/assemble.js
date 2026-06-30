@@ -14,6 +14,16 @@ import { getSelectedAddons, allSelectedAddonsComplete } from '../lib/addons.js'
  * one shape throughout) can be unit-tested and compared — see ../README.md.
  */
 
+const FIELD_TYPE = Object.freeze({
+  DATE: 'date',
+  BOOLEAN: 'boolean',
+  NUMBER: 'number',
+  CURRENCY: 'currency'
+})
+const STEP_KIND = Object.freeze({ LOOP: 'loop', SUBTASKS: 'subtasks' })
+const RULE_KIND = Object.freeze({ MIN_AGE: 'min-age', LTE: 'lte' })
+const YES = 'yes'
+
 const applicableSteps = (answers) =>
   model.steps.filter((step) => evalCondition(step.appliesWhen, answers))
 
@@ -36,120 +46,145 @@ function isoDate(dob) {
   return `${dob.year}-${pad(dob.month)}-${pad(dob.day)}`
 }
 
-/** Form answers → domain quote object (ISO dates, booleans, numbers, enums). */
-export function toDomain(answers) {
-  const quote = {}
-  for (const step of applicableSteps(answers)) {
-    for (const field of step.fields ?? []) {
-      const value = answers[field.id]
-      if (value === undefined) {
-        continue
-      }
-      quote[field.id] = transformField(field, value)
-    }
-  }
-  if (answers.hadClaims === 'yes') {
-    quote.claims = (answers.claims ?? []).map((claim) => ({
-      claimType: claim.claimType,
-      claimAmount:
-        claim.claimAmount === undefined ? undefined : Number(claim.claimAmount)
-    }))
-  }
-  quote.selectedAddons = getSelectedAddons(answers)
-  return quote
-}
-
 function transformField(field, value) {
   switch (field.type) {
-    case 'date':
+    case FIELD_TYPE.DATE:
       return isoDate(value)
-    case 'boolean':
-      return value === 'yes'
-    case 'number':
-    case 'currency':
+    case FIELD_TYPE.BOOLEAN:
+      return value === YES
+    case FIELD_TYPE.NUMBER:
+    case FIELD_TYPE.CURRENCY:
       return value === '' ? undefined : Number(value)
     default:
       return value
   }
 }
 
-export function missingRequiredErrors(answers) {
-  const errors = []
-  for (const step of applicableSteps(answers)) {
-    if (step.kind === 'loop') {
-      if (!(answers[step.arrayKey] ?? []).length) {
-        errors.push({
+const transformFields = (answers) =>
+  Object.fromEntries(
+    applicableSteps(answers).flatMap((step) =>
+      (step.fields ?? [])
+        .filter((field) => answers[field.id] !== undefined)
+        .map((field) => [field.id, transformField(field, answers[field.id])])
+    )
+  )
+
+const transformClaims = (answers) =>
+  (answers.claims ?? []).map((claim) => ({
+    claimType: claim.claimType,
+    claimAmount:
+      claim.claimAmount === undefined ? undefined : Number(claim.claimAmount)
+  }))
+
+/** Form answers → domain quote object (ISO dates, booleans, numbers, enums). */
+export function toDomain(answers) {
+  return {
+    ...transformFields(answers),
+    ...(answers.hadClaims === YES ? { claims: transformClaims(answers) } : {}),
+    selectedAddons: getSelectedAddons(answers)
+  }
+}
+
+const loopStepErrors = (step, answers) =>
+  (answers[step.arrayKey] ?? []).length
+    ? []
+    : [
+        {
           stepId: step.id,
           fieldId: step.arrayKey,
           message: 'Add at least one claim',
           because: provenance(step.appliesWhen).map(reasonFor)
-        })
-      }
-      continue
-    }
-    if (step.kind === 'subtasks') {
-      if (!allSelectedAddonsComplete(answers)) {
-        errors.push({
+        }
+      ]
+
+const subtasksStepErrors = (step, answers) =>
+  allSelectedAddonsComplete(answers)
+    ? []
+    : [
+        {
           stepId: step.id,
           fieldId: 'selectedAddons',
           message: 'Finish every add-on you selected',
           because: []
-        })
-      }
-      continue
-    }
-    for (const field of step.fields ?? []) {
-      const required =
-        field.required ||
-        (field.requiredWhen && evalCondition(field.requiredWhen, answers))
-      if (required && !isSatisfied(field, answers[field.id])) {
-        const because = [
-          ...provenance(step.appliesWhen),
-          ...provenance(field.requiredWhen)
-        ].map(reasonFor)
-        errors.push({
-          stepId: step.id,
-          fieldId: field.id,
-          message: `${humanize(field.id)} is required`,
-          because
-        })
-      }
-    }
+        }
+      ]
+
+const isRequired = (field, answers) =>
+  field.required ||
+  (field.requiredWhen && evalCondition(field.requiredWhen, answers))
+
+const requiredFieldErrors = (step, answers) =>
+  (step.fields ?? [])
+    .filter(
+      (field) =>
+        isRequired(field, answers) && !isSatisfied(field, answers[field.id])
+    )
+    .map((field) => ({
+      stepId: step.id,
+      fieldId: field.id,
+      message: `${humanize(field.id)} is required`,
+      because: [
+        ...provenance(step.appliesWhen),
+        ...provenance(field.requiredWhen)
+      ].map(reasonFor)
+    }))
+
+const stepErrors = (step, answers) => {
+  if (step.kind === STEP_KIND.LOOP) {
+    return loopStepErrors(step, answers)
   }
-  return errors
+  if (step.kind === STEP_KIND.SUBTASKS) {
+    return subtasksStepErrors(step, answers)
+  }
+  return requiredFieldErrors(step, answers)
+}
+
+export function missingRequiredErrors(answers) {
+  return applicableSteps(answers).flatMap((step) => stepErrors(step, answers))
+}
+
+const minAgeError = (rule, answers) => {
+  const age = ageInYears(answers[rule.field])
+  if (age === undefined || age >= rule.min) {
+    return null
+  }
+  return {
+    stepId: rule.stepId,
+    fieldId: rule.fieldId,
+    message: rule.reason,
+    because: []
+  }
+}
+
+const lteError = (rule, answers) => {
+  const left = Number(answers[rule.left])
+  const right = Number(answers[rule.right])
+  if (Number.isNaN(left) || Number.isNaN(right) || left <= right) {
+    return null
+  }
+  return {
+    stepId: rule.stepId,
+    fieldId: rule.fieldId,
+    message: rule.reason,
+    because: []
+  }
+}
+
+const ruleEvaluators = {
+  [RULE_KIND.MIN_AGE]: minAgeError,
+  [RULE_KIND.LTE]: lteError
+}
+
+const ruleError = (rule, answers) => {
+  const evaluate = ruleEvaluators[rule.kind]
+  return evaluate ? evaluate(rule, answers) : null
 }
 
 function businessRuleErrors(answers) {
-  const errors = []
-  for (const rule of model.rules ?? []) {
-    if (rule.when && !evalCondition(rule.when, answers)) {
-      continue
-    }
-    if (rule.kind === 'min-age') {
-      const age = ageInYears(answers[rule.field])
-      if (age !== undefined && age < rule.min) {
-        errors.push({
-          stepId: rule.stepId,
-          fieldId: rule.fieldId,
-          message: rule.reason,
-          because: []
-        })
-      }
-    }
-    if (rule.kind === 'lte') {
-      const left = Number(answers[rule.left])
-      const right = Number(answers[rule.right])
-      if (!Number.isNaN(left) && !Number.isNaN(right) && left > right) {
-        errors.push({
-          stepId: rule.stepId,
-          fieldId: rule.fieldId,
-          message: rule.reason,
-          because: []
-        })
-      }
-    }
-  }
-  return errors
+  return (model.rules ?? [])
+    .filter((rule) => !rule.when || evalCondition(rule.when, answers))
+    .map((rule) => ruleError(rule, answers))
+    .filter(Boolean)
 }
 
 export function assembleQuote(answers) {

@@ -16,32 +16,38 @@ import { grouped } from './journey.js'
  */
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
-function loadFixture(arg) {
-  if (!arg) {
+function loadFixture(fixtureNameOrPath) {
+  if (!fixtureNameOrPath) {
     return {}
   }
-  const candidate = fs.existsSync(arg)
-    ? arg
-    : path.join(dirname, 'fixtures', `${arg}.json`)
+  const candidate = fs.existsSync(fixtureNameOrPath)
+    ? fixtureNameOrPath
+    : path.join(dirname, 'fixtures', `${fixtureNameOrPath}.json`)
   return JSON.parse(fs.readFileSync(candidate, 'utf8'))
 }
+
+const buildStatusMap = (answers, shape, live) =>
+  Object.fromEntries(
+    live.map((stepId) => [stepId, contract.status(answers, stepId, shape)])
+  )
+
+const buildNavigationMap = (answers, shape, live) =>
+  Object.fromEntries(
+    live.map((stepId) => [
+      stepId,
+      {
+        next: contract.next(answers, stepId, shape),
+        prev: contract.prev(answers, stepId, shape)
+      }
+    ])
+  )
 
 function shapeView(answers, shape) {
   const live = contract.applicableSteps(answers)
   return {
     applicableSteps: live,
-    status: Object.fromEntries(
-      live.map((stepId) => [stepId, contract.status(answers, stepId, shape)])
-    ),
-    navigation: Object.fromEntries(
-      live.map((stepId) => [
-        stepId,
-        {
-          next: contract.next(answers, stepId, shape),
-          prev: contract.prev(answers, stepId, shape)
-        }
-      ])
-    )
+    status: buildStatusMap(answers, shape, live),
+    navigation: buildNavigationMap(answers, shape, live)
   }
 }
 

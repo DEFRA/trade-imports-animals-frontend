@@ -7,7 +7,9 @@ import { sections } from './definitions.js'
 
 export { sections }
 
-export const sectionBySlug = new Map(sections.map((s) => [s.slug, s]))
+export const sectionBySlug = new Map(
+  sections.map((section) => [section.slug, section])
+)
 
 /** Sections that own their own routes (loops, subtask fan-outs). */
 export function hasOwnRoutes(section) {

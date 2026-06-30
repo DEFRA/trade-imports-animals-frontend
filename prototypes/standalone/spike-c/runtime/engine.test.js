@@ -51,7 +51,9 @@ describe('spike-c provenance — because is AUTHORED, not synthesised', () => {
   })
 
   it('an unconditional requirement has no because reason', () => {
-    const fullName = missingRequired({}).find((e) => e.fieldId === 'fullName')
+    const fullName = missingRequired({}).find(
+      (entry) => entry.fieldId === 'fullName'
+    )
     expect(fullName.because).toEqual([])
   })
 })

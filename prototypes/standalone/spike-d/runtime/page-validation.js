@@ -2,6 +2,58 @@ import { schema, validateValue, ifHolds } from '../validation/index.js'
 import { humanize, isEmpty } from '../lib/fieldutil.js'
 import { fieldType, stepFields } from './step-meta.js'
 
+const OBJECT_TYPE = 'object'
+const MULTI_SELECT = 'multi-select'
+
+const coerceFieldValue = (field, payload) =>
+  fieldType[field] === MULTI_SELECT
+    ? [].concat(payload[field] ?? [])
+    : payload[field]
+
+const validateField = (field, payload, addError) => {
+  const fieldSchema = schema.properties[field]
+  if (!fieldSchema || fieldSchema.type === OBJECT_TYPE) {
+    return
+  }
+  const value = coerceFieldValue(field, payload)
+  if (schema.required.includes(field) && isEmpty(value)) {
+    addError(field, `${humanize(field)} is required`)
+    return
+  }
+  if (!isEmpty(value)) {
+    const fieldErrors = validateValue(fieldSchema, value, field)
+    if (fieldErrors.length) {
+      addError(field, fieldErrors[0])
+    }
+  }
+}
+
+const applyConditionalBranch = (branch, fields, payload, addError) => {
+  const conditionFields = Object.keys(branch.if.properties ?? {})
+  if (!conditionFields.every((field) => fields.includes(field))) {
+    return
+  }
+  if (!ifHolds(branch.if, payload)) {
+    return
+  }
+  for (const requiredField of branch.then.required ?? []) {
+    if (fields.includes(requiredField) && isEmpty(payload[requiredField])) {
+      addError(requiredField, `${humanize(requiredField)} is required`)
+    }
+  }
+}
+
+const validateConditionalBranches = (fields, payload, addError) => {
+  for (const branch of schema.allOf ?? []) {
+    applyConditionalBranch(branch, fields, payload, addError)
+  }
+}
+
+const buildResult = (payload, errors, errorSummary) =>
+  errorSummary.length === 0
+    ? { ok: true, value: payload }
+    : { ok: false, errors, errorSummary }
+
 // Page-slice: pick the step's fields, validate the raw payload, plus the
 // within-page if/then (excessAmount required when voluntaryExcess = yes).
 export function validateStep(stepId, payload = {}) {
@@ -15,37 +67,8 @@ export function validateStep(stepId, payload = {}) {
     }
   }
   for (const field of fields) {
-    const node = schema.properties[field]
-    if (!node || node.type === 'object') {
-      continue
-    }
-    const value =
-      fieldType[field] === 'multi-select'
-        ? [].concat(payload[field] ?? [])
-        : payload[field]
-    if (schema.required.includes(field) && isEmpty(value)) {
-      addError(field, `${humanize(field)} is required`)
-    } else if (!isEmpty(value)) {
-      const errs = validateValue(node, value, field)
-      if (errs.length) {
-        addError(field, errs[0])
-      }
-    }
+    validateField(field, payload, addError)
   }
-  for (const branch of schema.allOf ?? []) {
-    const condFields = Object.keys(branch.if.properties ?? {})
-    if (!condFields.every((field) => fields.includes(field))) {
-      continue
-    }
-    if (ifHolds(branch.if, payload)) {
-      for (const req of branch.then.required ?? []) {
-        if (fields.includes(req) && isEmpty(payload[req])) {
-          addError(req, `${humanize(req)} is required`)
-        }
-      }
-    }
-  }
-  return errorSummary.length === 0
-    ? { ok: true, value: payload }
-    : { ok: false, errors, errorSummary }
+  validateConditionalBranches(fields, payload, addError)
+  return buildResult(payload, errors, errorSummary)
 }

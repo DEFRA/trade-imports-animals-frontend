@@ -19,6 +19,19 @@ export { PHONE_ALLOWED, phoneSchema } from './phone.js'
 export { requiredTextSchema, emailSchema } from './text.js'
 export { currencySchema } from './currency.js'
 
+const collectFieldErrors = (details) => {
+  const errors = {}
+  const errorSummary = []
+  for (const detail of details) {
+    const name = detail.path[0]
+    if (errors[name] === undefined) {
+      errors[name] = detail.message
+      errorSummary.push({ text: detail.message, href: `#${name}` })
+    }
+  }
+  return { errors, errorSummary }
+}
+
 export function validatePayload(schema, payload) {
   if (!schema) {
     return { value: payload, errors: null, errorSummary: null }
@@ -33,14 +46,5 @@ export function validatePayload(schema, payload) {
   if (!result.error) {
     return { value: result.value, errors: null, errorSummary: null }
   }
-  const errors = {}
-  const errorSummary = []
-  for (const detail of result.error.details) {
-    const name = detail.path[0]
-    if (errors[name] === undefined) {
-      errors[name] = detail.message
-      errorSummary.push({ text: detail.message, href: `#${name}` })
-    }
-  }
-  return { value: result.value, errors, errorSummary }
+  return { value: result.value, ...collectFieldErrors(result.error.details) }
 }

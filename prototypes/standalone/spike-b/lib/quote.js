@@ -42,6 +42,8 @@ export const countryOptions = [
   { value: 'northern-ireland', text: 'Northern Ireland' }
 ]
 
+const NOT_PROVIDED = 'Not provided'
+
 const coverTypeText = new Map(
   coverTypeOptions.map((option) => [option.value, option.text])
 )
@@ -56,15 +58,15 @@ const countryText = new Map(
 )
 
 export function coverTypeLabel(value) {
-  return coverTypeText.get(value) ?? 'Not provided'
+  return coverTypeText.get(value) ?? NOT_PROVIDED
 }
 
 export function claimTypeLabel(value) {
-  return claimTypeText.get(value) ?? 'Not provided'
+  return claimTypeText.get(value) ?? NOT_PROVIDED
 }
 
 export function countryLabel(value) {
-  return countryText.get(value) ?? 'Not provided'
+  return countryText.get(value) ?? NOT_PROVIDED
 }
 
 export function extrasLabels(values = []) {
@@ -73,7 +75,7 @@ export function extrasLabels(values = []) {
 
 export function formatDateOfBirth(dob) {
   if (!dob || !dob.day) {
-    return 'Not provided'
+    return NOT_PROVIDED
   }
   return `${dob.day}/${dob.month}/${dob.year}`
 }

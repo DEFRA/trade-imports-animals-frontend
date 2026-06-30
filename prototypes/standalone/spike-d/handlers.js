@@ -31,53 +31,65 @@ function viewModel(quote, stepId, request, extras = {}) {
   }
 }
 
-function getHandler(stepId) {
-  return (request, h) => {
-    const quote = findQuote(request.params.id)
-    if (!quote) {
-      return h.redirect(BASE)
-    }
-    return h.view(SECTION_PAGE, viewModel(quote, stepId, request))
+// Resolve the quote once and short-circuit to BASE when it is missing, so each
+// handler starts from a quote that is known to exist.
+const withQuote = (handler) => (request, responseToolkit) => {
+  const quote = findQuote(request.params.id)
+  if (!quote) {
+    return responseToolkit.redirect(BASE)
   }
+  return handler(quote, request, responseToolkit)
+}
+
+// Overlay the typed values onto the saved quote so the partial keeps reading
+// quote.<field>; collect normalises without the cascade.
+const renderInvalid = (quote, stepId, request, extras, responseToolkit) => {
+  const renderQuote = { ...quote, ...contract.collect(stepId, request.payload) }
+  return responseToolkit.view(
+    SECTION_PAGE,
+    viewModel(renderQuote, stepId, request, {
+      ...extras,
+      values: request.payload
+    })
+  )
+}
+
+const persistAnswer = (quote, stepId, payload) =>
+  updateQuote(quote.id, contract.applyAnswer(quote, stepId, payload))
+
+const redirectAfterSave = (updated, stepId, request, responseToolkit) => {
+  if (request.query.change) {
+    return responseToolkit.redirect(cyaPath(updated.id))
+  }
+  return responseToolkit.redirect(
+    resolveNav(updated, contract.next(updated, stepId, grouped))
+  )
+}
+
+function getHandler(stepId) {
+  return withQuote((quote, request, responseToolkit) =>
+    responseToolkit.view(SECTION_PAGE, viewModel(quote, stepId, request))
+  )
 }
 
 function postHandler(stepId) {
-  return (request, h) => {
-    const quote = findQuote(request.params.id)
-    if (!quote) {
-      return h.redirect(BASE)
-    }
+  return withQuote((quote, request, responseToolkit) => {
     const { ok, errors, errorSummary } = contract.validate(
       stepId,
       request.payload
     )
     if (!ok) {
-      // Overlay the typed values onto the saved quote so the partial keeps
-      // reading quote.<field>; collect normalises without the cascade.
-      const renderQuote = {
-        ...quote,
-        ...contract.collect(stepId, request.payload)
-      }
-      return h.view(
-        SECTION_PAGE,
-        viewModel(renderQuote, stepId, request, {
-          errors,
-          errorSummary,
-          values: request.payload
-        })
+      return renderInvalid(
+        quote,
+        stepId,
+        request,
+        { errors, errorSummary },
+        responseToolkit
       )
     }
-    const updated = updateQuote(
-      quote.id,
-      contract.applyAnswer(quote, stepId, request.payload)
-    )
-    if (request.query.change) {
-      return h.redirect(cyaPath(updated.id))
-    }
-    return h.redirect(
-      resolveNav(updated, contract.next(updated, stepId, grouped))
-    )
-  }
+    const updated = persistAnswer(quote, stepId, request.payload)
+    return redirectAfterSave(updated, stepId, request, responseToolkit)
+  })
 }
 
 /** GET/POST routes for every plain question step in the model. */

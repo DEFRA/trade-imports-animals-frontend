@@ -20,150 +20,146 @@ function inputArgs(field, value, extra) {
   }
 }
 
-function fieldToView(field, data) {
-  const value = data[field.name]
+const hintArg = (field) => (field.hint ? { text: field.hint } : undefined)
 
-  switch (field.kind) {
-    case 'text':
-      return { type: 'input', args: inputArgs(field, value) }
-    case 'email':
-      return {
-        type: 'input',
-        args: inputArgs(field, value, { type: 'email', spellcheck: false })
-      }
-    case 'tel':
-      return {
-        type: 'input',
-        args: inputArgs(field, value, {
-          type: 'tel',
-          classes: 'govuk-input--width-20'
-        })
-      }
-    case 'number':
-      return {
-        type: 'input',
-        args: inputArgs(field, value, {
-          inputmode: 'numeric',
-          classes: 'govuk-input--width-5'
-        })
-      }
-    case 'currency':
-      return {
-        type: 'input',
-        args: inputArgs(field, value, {
-          inputmode: 'numeric',
-          prefix: { text: '£' },
-          classes: 'govuk-input--width-5'
-        })
-      }
-    case 'postcode':
-      return {
-        type: 'input',
-        args: inputArgs(field, value, { classes: 'govuk-input--width-10' })
-      }
-    case 'textarea':
-      return field.maxlength
-        ? {
-            type: 'charactercount',
-            args: {
-              id: field.name,
-              name: field.name,
-              label: { text: field.label },
-              hint: field.hint ? { text: field.hint } : undefined,
-              maxlength: field.maxlength,
-              value
-            }
-          }
-        : {
-            type: 'textarea',
-            args: {
-              id: field.name,
-              name: field.name,
-              label: { text: field.label },
-              hint: field.hint ? { text: field.hint } : undefined,
-              value
-            }
-          }
-    case 'date': {
-      const date = value ?? {}
-      return {
-        type: 'date',
-        args: {
-          id: field.name,
-          namePrefix: field.name,
-          fieldset: { legend: { text: field.label } },
-          hint: field.hint ? { text: field.hint } : undefined,
-          items: [
-            { name: 'day', classes: 'govuk-input--width-2', value: date.day },
-            {
-              name: 'month',
-              classes: 'govuk-input--width-2',
-              value: date.month
-            },
-            { name: 'year', classes: 'govuk-input--width-4', value: date.year }
-          ]
-        }
-      }
-    }
-    case 'radios':
-      return {
-        type: 'radios',
-        args: {
-          name: field.name,
-          fieldset: {
-            legend: {
-              text: field.label,
-              classes: 'govuk-fieldset__legend--m'
-            }
-          },
-          hint: field.hint ? { text: field.hint } : undefined,
-          items: field.options.map((option) => ({
-            value: option.value,
-            text: option.text,
-            checked: value === option.value
-          }))
-        }
-      }
-    case 'checkboxes':
-      return {
-        type: 'checkboxes',
-        args: {
-          name: field.name,
-          fieldset: {
-            legend: {
-              text: field.label,
-              classes: 'govuk-fieldset__legend--m'
-            }
-          },
-          hint: field.hint ? { text: field.hint } : undefined,
-          items: field.options.map((option) => ({
-            value: option.value,
-            text: option.text,
-            checked: (value ?? []).includes(option.value)
-          }))
-        }
-      }
-    case 'select':
-      return {
-        type: 'select',
-        args: {
-          id: field.name,
-          name: field.name,
-          label: { text: field.label },
-          hint: field.hint ? { text: field.hint } : undefined,
-          items: [
-            { value: '', text: 'Choose…' },
-            ...field.options.map((option) => ({
-              value: option.value,
-              text: option.text,
-              selected: value === option.value
-            }))
-          ]
-        }
-      }
-    default:
-      return { type: 'input', args: inputArgs(field, value) }
+const legendArg = (field) => ({
+  legend: { text: field.label, classes: 'govuk-fieldset__legend--m' }
+})
+
+const textInputView = (field, value) => ({
+  type: 'input',
+  args: inputArgs(field, value)
+})
+
+const emailInputView = (field, value) => ({
+  type: 'input',
+  args: inputArgs(field, value, { type: 'email', spellcheck: false })
+})
+
+const telInputView = (field, value) => ({
+  type: 'input',
+  args: inputArgs(field, value, {
+    type: 'tel',
+    classes: 'govuk-input--width-20'
+  })
+})
+
+const numberInputView = (field, value) => ({
+  type: 'input',
+  args: inputArgs(field, value, {
+    inputmode: 'numeric',
+    classes: 'govuk-input--width-5'
+  })
+})
+
+const currencyInputView = (field, value) => ({
+  type: 'input',
+  args: inputArgs(field, value, {
+    inputmode: 'numeric',
+    prefix: { text: '£' },
+    classes: 'govuk-input--width-5'
+  })
+})
+
+const postcodeInputView = (field, value) => ({
+  type: 'input',
+  args: inputArgs(field, value, { classes: 'govuk-input--width-10' })
+})
+
+const textareaView = (field, value) => {
+  const base = {
+    id: field.name,
+    name: field.name,
+    label: { text: field.label },
+    hint: hintArg(field),
+    value
   }
+  return field.maxlength
+    ? { type: 'charactercount', args: { ...base, maxlength: field.maxlength } }
+    : { type: 'textarea', args: base }
+}
+
+const dateView = (field, value) => {
+  const date = value ?? {}
+  return {
+    type: 'date',
+    args: {
+      id: field.name,
+      namePrefix: field.name,
+      fieldset: { legend: { text: field.label } },
+      hint: hintArg(field),
+      items: [
+        { name: 'day', classes: 'govuk-input--width-2', value: date.day },
+        { name: 'month', classes: 'govuk-input--width-2', value: date.month },
+        { name: 'year', classes: 'govuk-input--width-4', value: date.year }
+      ]
+    }
+  }
+}
+
+const radiosView = (field, value) => ({
+  type: 'radios',
+  args: {
+    name: field.name,
+    fieldset: legendArg(field),
+    hint: hintArg(field),
+    items: field.options.map((option) => ({
+      value: option.value,
+      text: option.text,
+      checked: value === option.value
+    }))
+  }
+})
+
+const checkboxesView = (field, value) => ({
+  type: 'checkboxes',
+  args: {
+    name: field.name,
+    fieldset: legendArg(field),
+    hint: hintArg(field),
+    items: field.options.map((option) => ({
+      value: option.value,
+      text: option.text,
+      checked: (value ?? []).includes(option.value)
+    }))
+  }
+})
+
+const selectView = (field, value) => ({
+  type: 'select',
+  args: {
+    id: field.name,
+    name: field.name,
+    label: { text: field.label },
+    hint: hintArg(field),
+    items: [
+      { value: '', text: 'Choose…' },
+      ...field.options.map((option) => ({
+        value: option.value,
+        text: option.text,
+        selected: value === option.value
+      }))
+    ]
+  }
+})
+
+const VIEW_BUILDERS = {
+  text: textInputView,
+  email: emailInputView,
+  tel: telInputView,
+  number: numberInputView,
+  currency: currencyInputView,
+  postcode: postcodeInputView,
+  textarea: textareaView,
+  date: dateView,
+  radios: radiosView,
+  checkboxes: checkboxesView,
+  select: selectView
+}
+
+function fieldToView(field, answers) {
+  const builder = VIEW_BUILDERS[field.kind] ?? textInputView
+  return builder(field, answers[field.name])
 }
 
 /**
@@ -175,9 +171,9 @@ function fieldToView(field, data) {
  * the first such message is shown as the combined `errorMessage` and each
  * erroring part gets the GOV.UK `govuk-input--error` class.
  */
-export function fieldsToView(fields, data = {}, errors = null) {
+export function fieldsToView(fields, answers = {}, errors = null) {
   return fields.map((field) => {
-    const view = fieldToView(field, data)
+    const view = fieldToView(field, answers)
     if (errors) {
       attachError(view, field, errors)
     }
@@ -185,27 +181,29 @@ export function fieldsToView(fields, data = {}, errors = null) {
   })
 }
 
+function attachDateError(view, field, errors) {
+  const partKeys = [
+    `${field.name}-day`,
+    `${field.name}-month`,
+    `${field.name}-year`
+  ]
+  const firstMessage = partKeys
+    .map((key) => errors[key])
+    .find((message) => message)
+  if (!firstMessage) {
+    return
+  }
+  view.args.errorMessage = { text: firstMessage }
+  view.args.items = view.args.items.map((item) =>
+    errors[`${field.name}-${item.name}`]
+      ? { ...item, classes: `${item.classes ?? ''} govuk-input--error`.trim() }
+      : item
+  )
+}
+
 function attachError(view, field, errors) {
   if (field.kind === 'date') {
-    const partKeys = [
-      `${field.name}-day`,
-      `${field.name}-month`,
-      `${field.name}-year`
-    ]
-    const firstMessage = partKeys
-      .map((key) => errors[key])
-      .find((message) => message)
-    if (firstMessage) {
-      view.args.errorMessage = { text: firstMessage }
-      view.args.items = view.args.items.map((item) =>
-        errors[`${field.name}-${item.name}`]
-          ? {
-              ...item,
-              classes: `${item.classes ?? ''} govuk-input--error`.trim()
-            }
-          : item
-      )
-    }
+    attachDateError(view, field, errors)
     return
   }
   const message = errors[field.name]
@@ -214,22 +212,24 @@ function attachError(view, field, errors) {
   }
 }
 
-/** Read submitted values for a list of specs back into a quote patch. */
-export function collectFields(fields, payload) {
-  const data = {}
-  for (const field of fields) {
-    if (field.kind === 'date') {
-      data[field.name] = {
-        day: payload[`${field.name}-day`],
-        month: payload[`${field.name}-month`],
-        year: payload[`${field.name}-year`]
-      }
-    } else if (field.kind === 'checkboxes') {
-      const raw = payload[field.name]
-      data[field.name] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      data[field.name] = payload[field.name]
+const collectFieldValue = (field, payload) => {
+  if (field.kind === 'date') {
+    return {
+      day: payload[`${field.name}-day`],
+      month: payload[`${field.name}-month`],
+      year: payload[`${field.name}-year`]
     }
   }
-  return data
+  if (field.kind === 'checkboxes') {
+    const raw = payload[field.name]
+    return raw === undefined ? [] : [].concat(raw)
+  }
+  return payload[field.name]
+}
+
+/** Read submitted values for a list of specs back into a quote patch. */
+export function collectFields(fields, payload) {
+  return Object.fromEntries(
+    fields.map((field) => [field.name, collectFieldValue(field, payload)])
+  )
 }

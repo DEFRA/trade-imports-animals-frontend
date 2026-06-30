@@ -1,6 +1,67 @@
 import { resolve } from './schema-document.js'
 import { humanize, isEmpty } from '../lib/fieldutil.js'
 
+const TYPE_STRING = 'string'
+const TYPE_ARRAY = 'array'
+const TYPE_OBJECT = 'object'
+
+const enumErrors = (node, value, label) =>
+  node.enum && !node.enum.includes(value)
+    ? [`Select a valid ${humanize(label).toLowerCase()}`]
+    : []
+
+const stringErrors = (node, value, label) => {
+  if (node.type !== TYPE_STRING) {
+    return []
+  }
+  if (typeof value !== 'string') {
+    return [`${humanize(label)} is not valid`]
+  }
+  const errors = []
+  if (node.pattern && !new RegExp(node.pattern).test(value)) {
+    errors.push(`Enter a valid ${humanize(label).toLowerCase()}`)
+  }
+  if (node.minLength !== undefined && value.length < node.minLength) {
+    errors.push(`${humanize(label)} is required`)
+  }
+  return errors
+}
+
+const arrayErrors = (node, value, label) => {
+  if (node.type !== TYPE_ARRAY) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    return [`${humanize(label)} is not valid`]
+  }
+  const errors = []
+  if (node.minItems !== undefined && value.length < node.minItems) {
+    errors.push(`${humanize(label)} needs at least ${node.minItems}`)
+  }
+  if (node.items) {
+    errors.push(
+      ...value.flatMap((element) => validateValue(node.items, element, label))
+    )
+  }
+  return errors
+}
+
+const objectErrors = (node, value) => {
+  if (node.type !== TYPE_OBJECT) {
+    return []
+  }
+  const missingRequired = (node.required ?? [])
+    .filter((requiredKey) => isEmpty(value?.[requiredKey]))
+    .map((requiredKey) => `${humanize(requiredKey)} is required`)
+  const childErrors = Object.entries(node.properties ?? {}).flatMap(
+    ([key, childSchema]) =>
+      value && !isEmpty(value[key])
+        ? validateValue(childSchema, value[key], key)
+        : []
+  )
+  return [...missingRequired, ...childErrors]
+}
+
 /**
  * Validate one already-present value against a schema node. Supports the subset
  * the model uses: type/enum/pattern/minLength, array+items+minItems,
@@ -13,47 +74,10 @@ import { humanize, isEmpty } from '../lib/fieldutil.js'
  */
 export function validateValue(rawNode, value, label = 'value') {
   const node = resolve(rawNode)
-  const errors = []
-  if (node.enum && !node.enum.includes(value)) {
-    errors.push(`Select a valid ${humanize(label).toLowerCase()}`)
-  }
-  if (node.type === 'string') {
-    if (typeof value !== 'string') {
-      errors.push(`${humanize(label)} is not valid`)
-    } else {
-      if (node.pattern && !new RegExp(node.pattern).test(value)) {
-        errors.push(`Enter a valid ${humanize(label).toLowerCase()}`)
-      }
-      if (node.minLength !== undefined && value.length < node.minLength) {
-        errors.push(`${humanize(label)} is required`)
-      }
-    }
-  }
-  if (node.type === 'array') {
-    if (!Array.isArray(value)) {
-      errors.push(`${humanize(label)} is not valid`)
-    } else {
-      if (node.minItems !== undefined && value.length < node.minItems) {
-        errors.push(`${humanize(label)} needs at least ${node.minItems}`)
-      }
-      if (node.items) {
-        for (const item of value) {
-          errors.push(...validateValue(node.items, item, label))
-        }
-      }
-    }
-  }
-  if (node.type === 'object') {
-    for (const req of node.required ?? []) {
-      if (isEmpty(value?.[req])) {
-        errors.push(`${humanize(req)} is required`)
-      }
-    }
-    for (const [key, sub] of Object.entries(node.properties ?? {})) {
-      if (value && !isEmpty(value[key])) {
-        errors.push(...validateValue(sub, value[key], key))
-      }
-    }
-  }
-  return errors
+  return [
+    ...enumErrors(node, value, label),
+    ...stringErrors(node, value, label),
+    ...arrayErrors(node, value, label),
+    ...objectErrors(node, value)
+  ]
 }

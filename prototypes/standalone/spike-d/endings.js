@@ -15,13 +15,14 @@ import { BASE, LAYOUT, breadcrumbs } from './journey.js'
  */
 
 const open = { auth: false }
+const STATUS_QUOTED = 'quoted'
 const at = (id, slug) => `${BASE}/${id}/${slug}`
 
 // Simple question pages round-trip via ?change=1; loops / fan-outs link to their
 // own first page and return through their own flow.
 const changeHref = (quote, stepId) => {
-  const sub = at(quote.id, stepId)
-  return contract.stepKind(stepId) ? sub : `${sub}?change=1`
+  const stepHref = at(quote.id, stepId)
+  return contract.stepKind(stepId) ? stepHref : `${stepHref}?change=1`
 }
 
 const answerRows = (quote) =>
@@ -46,15 +47,15 @@ const answerRows = (quote) =>
 
 // Soft prompts: each still-missing required field, with its provenance reason.
 const softPrompts = (quote) =>
-  contract.missingRequired(quote).map((miss) => ({
-    stepId: miss.stepId,
-    text: contract.stepTitle(miss.stepId),
-    because: provenanceText(miss.because),
-    href: changeHref(quote, miss.stepId)
+  contract.missingRequired(quote).map((missingField) => ({
+    stepId: missingField.stepId,
+    text: contract.stepTitle(missingField.stepId),
+    because: provenanceText(missingField.because),
+    href: changeHref(quote, missingField.stepId)
   }))
 
-const renderCya = (quote, h, extras = {}) =>
-  h.view('standalone/spike-d/templates/check-your-answers', {
+const renderCya = (quote, responseToolkit, extras = {}) =>
+  responseToolkit.view('standalone/spike-d/templates/check-your-answers', {
     layout: LAYOUT,
     pageTitle: 'Check your answers',
     quote,
@@ -66,97 +67,112 @@ const renderCya = (quote, h, extras = {}) =>
     ...extras
   })
 
+// Resolve the quote once and short-circuit to BASE when it is missing.
+const withQuote = (handler) => (request, responseToolkit) => {
+  const quote = findQuote(request.params.id)
+  if (!quote) {
+    return responseToolkit.redirect(BASE)
+  }
+  return handler(quote, request, responseToolkit)
+}
+
+// Computing the premium persists it back to the store (a write during the GET).
+const priceQuote = (quote) =>
+  updateQuote(quote.id, { premium: calculatePremium(quote) })
+
+const renderQuoteSummary = (quote, responseToolkit) =>
+  responseToolkit.view('standalone/spike-d/templates/quote-summary', {
+    layout: LAYOUT,
+    pageTitle: 'Your quote',
+    quote,
+    premium: quote.premium,
+    coverLabel: coverTypeLabel(quote.coverType),
+    extras: extrasLabels(quote.extras),
+    backLink: `${BASE}/${quote.id}`,
+    breadcrumbs: breadcrumbs(quote, 'Your quote')
+  })
+
+const buildErrorSummary = (quote, errors) =>
+  errors.map((error) => ({
+    text: error.message,
+    href: changeHref(quote, error.stepId)
+  }))
+
+const confirmQuote = (quote) =>
+  updateQuote(quote.id, {
+    status: STATUS_QUOTED,
+    reference: makeReference(quote.id)
+  })
+
+const quoteSummaryGet = withQuote((quote, request, responseToolkit) =>
+  renderQuoteSummary(priceQuote(quote), responseToolkit)
+)
+
+const quoteSummaryPost = withQuote((quote, request, responseToolkit) =>
+  responseToolkit.redirect(at(quote.id, 'check-your-answers'))
+)
+
+const checkYourAnswersGet = withQuote((quote, request, responseToolkit) =>
+  renderCya(quote, responseToolkit)
+)
+
+const checkYourAnswersPost = withQuote((quote, request, responseToolkit) => {
+  // Hard gate: assemble + transform + validate the full quote object.
+  const result = contract.assembleQuote(quote)
+  if (!result.ok) {
+    return renderCya(quote, responseToolkit, {
+      errorSummary: buildErrorSummary(quote, result.errors)
+    })
+  }
+  confirmQuote(quote)
+  return responseToolkit.redirect(at(quote.id, 'confirmation'))
+})
+
+const confirmationGet = withQuote((quote, request, responseToolkit) => {
+  if (quote.status !== STATUS_QUOTED) {
+    return responseToolkit.redirect(BASE)
+  }
+  return responseToolkit.view('standalone/spike-d/templates/confirmation', {
+    layout: LAYOUT,
+    pageTitle: 'Quote confirmed',
+    quote,
+    reference: quote.reference,
+    premium: quote.premium,
+    breadcrumbs: breadcrumbs(quote, 'Quote confirmed')
+  })
+})
+
 export function endingsRoutes() {
   return [
     {
       method: 'GET',
       path: `${BASE}/{id}/quote-summary`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const premium = calculatePremium(quote)
-        const updated = updateQuote(quote.id, { premium })
-        return h.view('standalone/spike-d/templates/quote-summary', {
-          layout: LAYOUT,
-          pageTitle: 'Your quote',
-          quote: updated,
-          premium,
-          coverLabel: coverTypeLabel(updated.coverType),
-          extras: extrasLabels(updated.extras),
-          backLink: `${BASE}/${updated.id}`,
-          breadcrumbs: breadcrumbs(updated, 'Your quote')
-        })
-      }
+      handler: quoteSummaryGet
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/quote-summary`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        return quote
-          ? h.redirect(at(quote.id, 'check-your-answers'))
-          : h.redirect(BASE)
-      }
+      handler: quoteSummaryPost
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/check-your-answers`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        return renderCya(quote, h)
-      }
+      handler: checkYourAnswersGet
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/check-your-answers`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        // Hard gate: assemble + transform + validate the full quote object.
-        const result = contract.assembleQuote(quote)
-        if (!result.ok) {
-          const errorSummary = result.errors.map((error) => ({
-            text: error.message,
-            href: changeHref(quote, error.stepId)
-          }))
-          return renderCya(quote, h, { errorSummary })
-        }
-        updateQuote(quote.id, {
-          status: 'quoted',
-          reference: makeReference(quote.id)
-        })
-        return h.redirect(at(quote.id, 'confirmation'))
-      }
+      handler: checkYourAnswersPost
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/confirmation`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote || quote.status !== 'quoted') {
-          return h.redirect(BASE)
-        }
-        return h.view('standalone/spike-d/templates/confirmation', {
-          layout: LAYOUT,
-          pageTitle: 'Quote confirmed',
-          quote,
-          reference: quote.reference,
-          premium: quote.premium,
-          breadcrumbs: breadcrumbs(quote, 'Quote confirmed')
-        })
-      }
+      handler: confirmationGet
     }
   ]
 }

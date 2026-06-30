@@ -16,9 +16,9 @@ import { fieldToView, attachError } from './to-view.js'
  * the first such message is shown as the combined `errorMessage` and each
  * erroring part gets the GOV.UK `govuk-input--error` class.
  */
-export function fieldsToView(fields, data = {}, errors = null) {
+export function fieldsToView(fields, answers = {}, errors = null) {
   return fields.map((field) => {
-    const view = fieldToView(field, data)
+    const view = fieldToView(field, answers)
     if (errors) {
       attachError(view, field, errors)
     }
@@ -26,22 +26,30 @@ export function fieldsToView(fields, data = {}, errors = null) {
   })
 }
 
+const FIELD_KIND = { date: 'date', checkboxes: 'checkboxes' }
+const DATE_PARTS = ['day', 'month', 'year']
+
+const collectDateField = (field, payload) =>
+  Object.fromEntries(
+    DATE_PARTS.map((part) => [part, payload[`${field.name}-${part}`]])
+  )
+
+const collectCheckboxesField = (field, payload) =>
+  payload[field.name] === undefined ? [] : [].concat(payload[field.name])
+
+const collectField = (field, payload) => {
+  if (field.kind === FIELD_KIND.date) {
+    return collectDateField(field, payload)
+  }
+  if (field.kind === FIELD_KIND.checkboxes) {
+    return collectCheckboxesField(field, payload)
+  }
+  return payload[field.name]
+}
+
 /** Read submitted values for a list of specs back into a quote patch. */
 export function collectFields(fields, payload) {
-  const data = {}
-  for (const field of fields) {
-    if (field.kind === 'date') {
-      data[field.name] = {
-        day: payload[`${field.name}-day`],
-        month: payload[`${field.name}-month`],
-        year: payload[`${field.name}-year`]
-      }
-    } else if (field.kind === 'checkboxes') {
-      const raw = payload[field.name]
-      data[field.name] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      data[field.name] = payload[field.name]
-    }
-  }
-  return data
+  return Object.fromEntries(
+    fields.map((field) => [field.name, collectField(field, payload)])
+  )
 }

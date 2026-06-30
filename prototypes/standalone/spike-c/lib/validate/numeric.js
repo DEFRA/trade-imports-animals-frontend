@@ -7,6 +7,16 @@ import Joi from 'joi'
  * submit fires the friendly `enterMessage` rather than coercing to 0.
  */
 
+const MIN_VEHICLE_YEAR = 1900
+
+// `.empty('')` collapses an empty input string to undefined *before* `.required()`
+// runs, so a blank submit fires `any.required` (enterMessage) rather than
+// `Number('')` coercing to 0 and tripping a misleading range error.
+const requireWhen = (base, required) => (required ? base.required() : base)
+
+const singleFieldObject = (name, field) =>
+  Joi.object({ [name]: field }).unknown(true)
+
 /**
  * Integer-years field: whole number within [min, max]. Used for
  * `yearsNoClaims` and `ncdYears`. Two friendly strings — `enterMessage`
@@ -27,18 +37,15 @@ export function integerYearsSchema({
   required = true
 }) {
   const range = `${noun} must be a whole number between ${min} and ${max}`
-  // `.empty('')` collapses an empty input string to undefined *before* `.required()`
-  // runs, so a blank submit fires `any.required` (enterMessage) rather than
-  // `Number('')` coercing to 0 and tripping a misleading range error.
   const base = Joi.number().integer().min(min).max(max).empty('')
-  const field = (required ? base.required() : base).messages({
+  const field = requireWhen(base, required).messages({
     'any.required': enterMessage,
     'number.base': range,
     'number.integer': range,
     'number.min': range,
     'number.max': range
   })
-  return Joi.object({ [name]: field }).unknown(true)
+  return singleFieldObject(name, field)
 }
 
 /**
@@ -56,19 +63,17 @@ export function vehicleYearSchema({
   required = true
 }) {
   const year = currentYear ?? new Date().getFullYear()
-  // `.empty('')` ahead of `.required()` so a blank submit fires `any.required`
-  // (enterMessage) instead of being coerced to 0 and tripping the range error.
   const base = Joi.number()
     .integer()
-    .min(1900)
+    .min(MIN_VEHICLE_YEAR)
     .max(year + 1)
     .empty('')
-  const field = (required ? base.required() : base).messages({
+  const field = requireWhen(base, required).messages({
     'any.required': enterMessage,
     'number.base': `${noun} must be a number`,
     'number.integer': `${noun} must be a whole number`,
-    'number.min': `${noun} must be between 1900 and ${year + 1}`,
-    'number.max': `${noun} must be between 1900 and ${year + 1}`
+    'number.min': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${year + 1}`,
+    'number.max': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${year + 1}`
   })
-  return Joi.object({ [name]: field }).unknown(true)
+  return singleFieldObject(name, field)
 }

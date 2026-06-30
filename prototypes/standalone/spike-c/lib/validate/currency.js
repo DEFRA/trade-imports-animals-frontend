@@ -1,5 +1,12 @@
 import Joi from 'joi'
 
+const cleanCurrencyInput = (raw) =>
+  String(raw ?? '')
+    .trim()
+    .replace(/[£,\s]/g, '')
+
+const isWholeNumberString = (value) => /^\d+$/.test(value)
+
 /**
  * Whole-pounds currency schema for fields like `estimatedValue`,
  * `excessAmount`, `claimAmount` and `modValue`.
@@ -24,23 +31,15 @@ export function currencySchema({
   return Joi.object({
     [name]: Joi.any()
       .custom((raw, helpers) => {
-        const cleaned = String(raw ?? '')
-          .trim()
-          .replace(/[£,\s]/g, '')
+        const cleaned = cleanCurrencyInput(raw)
         if (cleaned === '') {
-          if (required) {
-            return helpers.error('any.required')
-          }
-          return undefined
+          return required ? helpers.error('any.required') : undefined
         }
-        if (!/^\d+$/.test(cleaned)) {
+        if (!isWholeNumberString(cleaned)) {
           return helpers.error('currency.format')
         }
-        const n = Number(cleaned)
-        if (n <= 0) {
-          return helpers.error('currency.format')
-        }
-        return n
+        const amount = Number(cleaned)
+        return amount <= 0 ? helpers.error('currency.format') : amount
       }, 'currency')
       .messages({
         'any.required': enterMessage,

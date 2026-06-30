@@ -78,7 +78,11 @@ export function formatDateOfBirth(dob) {
   return `${dob.day}/${dob.month}/${dob.year}`
 }
 
+const REFERENCE_PREFIX = 'CI-'
+const REFERENCE_LENGTH = 6
+
 /** Build a human-readable reference once a quote is confirmed, e.g. CI-3F9A2B. */
 export function makeReference(id) {
-  return `CI-${id.replace(/-/g, '').slice(0, 6).toUpperCase()}`
+  const body = id.replace(/-/g, '').slice(0, REFERENCE_LENGTH).toUpperCase()
+  return `${REFERENCE_PREFIX}${body}`
 }

@@ -1,6 +1,65 @@
 import Joi from 'joi'
 import { MAX_AGE, MIN_DRIVING_AGE } from './run-payload.js'
 
+const MIN_DAY = 1
+const MAX_DAY = 31
+const MIN_MONTH = 1
+const MAX_MONTH = 12
+const MIN_YEAR = 1000
+const MAX_YEAR = 9999
+
+const isRealDate = (day, month, year) => {
+  const date = new Date(year, month - 1, day)
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+// Shared realness + future + age-bounds check; raises the same four error codes
+// from both required and optional DOB modes. Returns the numeric day on success.
+const checkCalendarAndAge = (day, month, year, helpers) => {
+  if (!isRealDate(day, month, year)) {
+    return helpers.error('date.real')
+  }
+  const date = new Date(year, month - 1, day)
+  const now = new Date()
+  if (date.getTime() > now.getTime()) {
+    return helpers.error('date.future')
+  }
+  const age = ageInYears(date, now)
+  if (age < MIN_DRIVING_AGE) {
+    return helpers.error('date.tooYoung')
+  }
+  if (age > MAX_AGE) {
+    return helpers.error('date.tooOld')
+  }
+  return day
+}
+
+const countFilledParts = (day, month, year) =>
+  [day, month, year].filter((part) => part !== '').length
+
+const parseParts = (day, month, year) => ({
+  dayNum: Number(day),
+  monthNum: Number(month),
+  yearNum: Number(year)
+})
+
+const checkPartRanges = (day, month, year, helpers) => {
+  if (day < MIN_DAY || day > MAX_DAY) {
+    return helpers.error('dob.dayRange')
+  }
+  if (month < MIN_MONTH || month > MAX_MONTH) {
+    return helpers.error('dob.monthRange')
+  }
+  if (year < MIN_YEAR || year > MAX_YEAR) {
+    return helpers.error('dob.yearRange')
+  }
+  return undefined
+}
+
 /**
  * GDS-canonical DOB schema for a `${prefix}-day|-month|-year` triple.
  *
@@ -43,7 +102,7 @@ export function dobSchema(prefix, label, { required = true } = {}) {
       })
 
   return Joi.object({
-    [dayKey]: part('day', 1, 31)
+    [dayKey]: part('day', MIN_DAY, MAX_DAY)
       .custom((dayValue, helpers) => {
         const siblings = helpers.state.ancestors[0] ?? {}
         // Siblings may not have been validated yet when this custom runs, so
@@ -59,26 +118,7 @@ export function dobSchema(prefix, label, { required = true } = {}) {
         ) {
           return dayValue
         }
-        const date = new Date(year, month - 1, dayValue)
-        const realDate =
-          date.getFullYear() === year &&
-          date.getMonth() === month - 1 &&
-          date.getDate() === dayValue
-        if (!realDate) {
-          return helpers.error('date.real')
-        }
-        const now = new Date()
-        if (date.getTime() > now.getTime()) {
-          return helpers.error('date.future')
-        }
-        const age = ageInYears(date, now)
-        if (age < MIN_DRIVING_AGE) {
-          return helpers.error('date.tooYoung')
-        }
-        if (age > MAX_AGE) {
-          return helpers.error('date.tooOld')
-        }
-        return dayValue
+        return checkCalendarAndAge(dayValue, month, year, helpers)
       }, 'real DOB')
       .messages({
         'date.real': `${label} must be a real date`,
@@ -86,11 +126,11 @@ export function dobSchema(prefix, label, { required = true } = {}) {
         'date.tooYoung': `You must be at least ${MIN_DRIVING_AGE} years old`,
         'date.tooOld': `Enter a ${label.toLowerCase()} less than ${MAX_AGE} years ago`
       }),
-    [monthKey]: part('month', 1, 12),
+    [monthKey]: part('month', MIN_MONTH, MAX_MONTH),
     [yearKey]: Joi.number()
       .integer()
-      .min(1000)
-      .max(9999)
+      .min(MIN_YEAR)
+      .max(MAX_YEAR)
       .required()
       .messages({
         'any.required': `${label} must include a year`,
@@ -117,52 +157,22 @@ function optionalDobSchema(prefix, label) {
         const day = trim(rawDay)
         const month = trim(siblings[monthKey])
         const year = trim(siblings[yearKey])
-        const filled = [day, month, year].filter((part) => part !== '').length
+        const filled = countFilledParts(day, month, year)
         if (filled === 0) {
           return undefined
         }
         if (filled < 3) {
           return helpers.error('dob.partial')
         }
-        const dayNum = Number(day)
-        const monthNum = Number(month)
-        const yearNum = Number(year)
-        if (
-          !Number.isInteger(dayNum) ||
-          !Number.isInteger(monthNum) ||
-          !Number.isInteger(yearNum)
-        ) {
+        const { dayNum, monthNum, yearNum } = parseParts(day, month, year)
+        if (![dayNum, monthNum, yearNum].every(Number.isInteger)) {
           return helpers.error('dob.partial')
         }
-        if (dayNum < 1 || dayNum > 31) {
-          return helpers.error('dob.dayRange')
+        const rangeError = checkPartRanges(dayNum, monthNum, yearNum, helpers)
+        if (rangeError) {
+          return rangeError
         }
-        if (monthNum < 1 || monthNum > 12) {
-          return helpers.error('dob.monthRange')
-        }
-        if (yearNum < 1000 || yearNum > 9999) {
-          return helpers.error('dob.yearRange')
-        }
-        const date = new Date(yearNum, monthNum - 1, dayNum)
-        const realDate =
-          date.getFullYear() === yearNum &&
-          date.getMonth() === monthNum - 1 &&
-          date.getDate() === dayNum
-        if (!realDate) {
-          return helpers.error('date.real')
-        }
-        const now = new Date()
-        if (date.getTime() > now.getTime()) {
-          return helpers.error('date.future')
-        }
-        const age = ageInYears(date, now)
-        if (age < MIN_DRIVING_AGE) {
-          return helpers.error('date.tooYoung')
-        }
-        if (age > MAX_AGE) {
-          return helpers.error('date.tooOld')
-        }
-        return dayNum
+        return checkCalendarAndAge(dayNum, monthNum, yearNum, helpers)
       }, 'optional DOB')
       .messages({
         'dob.partial': `${label} must include a day, month and year`,

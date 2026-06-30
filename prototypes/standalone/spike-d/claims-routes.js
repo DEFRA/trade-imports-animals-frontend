@@ -28,7 +28,87 @@ const claimsAddSchema = currencySchema({
     'Claim amount must be a whole number of pounds greater than 0, like 1500'
 })
 
-const at = (id, suffix) => `${BASE}/${id}/${suffix}`
+const ACTION_ADD = 'add'
+
+const claimsPath = (id, suffix) => `${BASE}/${id}/${suffix}`
+
+// Resolve the quote once and short-circuit to BASE when it is missing.
+const withQuote = (handler) => (request, responseToolkit) => {
+  const quote = findQuote(request.params.id)
+  if (!quote) {
+    return responseToolkit.redirect(BASE)
+  }
+  return handler(quote, request, responseToolkit)
+}
+
+const removeAction = (quoteId, index) => ({
+  href: claimsPath(quoteId, `claims/${index}/remove`),
+  text: 'Remove',
+  visuallyHiddenText: `claim ${index + 1}`
+})
+
+const claimRows = (quote) =>
+  getClaims(quote).map((claim, index) => ({
+    key: { text: `Claim ${index + 1}` },
+    value: { text: claimLabel(claim) },
+    actions: { items: [removeAction(quote.id, index)] }
+  }))
+
+const renderAddForm = (responseToolkit, quote, extras = {}) =>
+  responseToolkit.view('standalone/spike-d/templates/claims-add', {
+    layout: LAYOUT,
+    pageTitle: 'Add a claim',
+    quote,
+    items: claimTypeItems(extras.claimType),
+    backLink: claimsPath(quote.id, 'claims'),
+    breadcrumbs: breadcrumbs(quote, 'Add a claim'),
+    ...extras
+  })
+
+const listClaims = withQuote((quote, request, responseToolkit) =>
+  responseToolkit.view('standalone/spike-d/templates/claims-list', {
+    layout: LAYOUT,
+    pageTitle: 'Claims you have added',
+    quote,
+    rows: claimRows(quote),
+    backLink: navBack(quote.id, 'claims'),
+    breadcrumbs: breadcrumbs(quote, 'Your claims')
+  })
+)
+
+const submitClaims = withQuote((quote, request, responseToolkit) => {
+  if (request.payload.action === ACTION_ADD) {
+    return responseToolkit.redirect(claimsPath(quote.id, 'claims/add'))
+  }
+  markClaimsDone(quote)
+  return responseToolkit.redirect(navNext(quote.id, 'claims'))
+})
+
+const showAddClaim = withQuote((quote, request, responseToolkit) =>
+  renderAddForm(responseToolkit, quote)
+)
+
+const submitAddClaim = withQuote((quote, request, responseToolkit) => {
+  const { value, errors, errorSummary } = validatePayload(
+    claimsAddSchema,
+    request.payload
+  )
+  if (errors) {
+    return renderAddForm(responseToolkit, quote, {
+      claimType: request.payload.claimType,
+      errors,
+      errorSummary,
+      values: request.payload
+    })
+  }
+  addClaim(quote, value)
+  return responseToolkit.redirect(claimsPath(quote.id, 'claims'))
+})
+
+const removeClaimAt = withQuote((quote, request, responseToolkit) => {
+  removeClaim(quote, Number(request.params.index))
+  return responseToolkit.redirect(claimsPath(quote.id, 'claims'))
+})
 
 export function claimsRoutes() {
   const open = { auth: false }
@@ -37,111 +117,31 @@ export function claimsRoutes() {
       method: 'GET',
       path: `${BASE}/{id}/claims`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const rows = getClaims(quote).map((claim, index) => ({
-          key: { text: `Claim ${index + 1}` },
-          value: { text: claimLabel(claim) },
-          actions: {
-            items: [
-              {
-                href: at(quote.id, `claims/${index}/remove`),
-                text: 'Remove',
-                visuallyHiddenText: `claim ${index + 1}`
-              }
-            ]
-          }
-        }))
-        return h.view('standalone/spike-d/templates/claims-list', {
-          layout: LAYOUT,
-          pageTitle: 'Claims you have added',
-          quote,
-          rows,
-          backLink: navBack(quote.id, 'claims'),
-          breadcrumbs: breadcrumbs(quote, 'Your claims')
-        })
-      }
+      handler: listClaims
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/claims`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        if (request.payload.action === 'add') {
-          return h.redirect(at(quote.id, 'claims/add'))
-        }
-        markClaimsDone(quote)
-        return h.redirect(navNext(quote.id, 'claims'))
-      }
+      handler: submitClaims
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/claims/add`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        return h.view('standalone/spike-d/templates/claims-add', {
-          layout: LAYOUT,
-          pageTitle: 'Add a claim',
-          quote,
-          items: claimTypeItems(),
-          backLink: at(quote.id, 'claims'),
-          breadcrumbs: breadcrumbs(quote, 'Add a claim')
-        })
-      }
+      handler: showAddClaim
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/claims/add`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const { value, errors, errorSummary } = validatePayload(
-          claimsAddSchema,
-          request.payload
-        )
-        if (errors) {
-          return h.view('standalone/spike-d/templates/claims-add', {
-            layout: LAYOUT,
-            pageTitle: 'Add a claim',
-            quote,
-            items: claimTypeItems(request.payload.claimType),
-            backLink: at(quote.id, 'claims'),
-            breadcrumbs: breadcrumbs(quote, 'Add a claim'),
-            errors,
-            errorSummary,
-            values: request.payload
-          })
-        }
-        addClaim(quote, value)
-        return h.redirect(at(quote.id, 'claims'))
-      }
+      handler: submitAddClaim
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/claims/{index}/remove`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        removeClaim(quote, Number(request.params.index))
-        return h.redirect(at(quote.id, 'claims'))
-      }
+      handler: removeClaimAt
     }
   ]
 }

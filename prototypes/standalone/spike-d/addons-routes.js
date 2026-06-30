@@ -19,6 +19,8 @@ import { BASE, LAYOUT, breadcrumbs, hubPath, addonStepPath } from './journey.js'
  */
 
 const at = (id, suffix) => `${BASE}/${id}/${suffix}`
+const ADDON_STEP_VIEW = 'standalone/spike-d/templates/addon-step'
+const ADDONS_SELECT_VIEW = 'standalone/spike-d/templates/addons-select'
 
 // Where Back / Continue go for the grouped journey: selection and each add-on
 // task return to the hub; within an add-on you step back to the previous step.
@@ -49,34 +51,103 @@ function locateStep(params) {
 // Reshape a raw POST payload into the structure the add-on partials expect —
 // date fields back into { day, month, year }, others passed through.
 function coalesceStepValues(fields, payload) {
-  const data = {}
+  const stepValues = {}
   for (const field of fields) {
     if (field.kind === 'date') {
-      data[field.name] = {
+      stepValues[field.name] = {
         day: payload[`${field.name}-day`],
         month: payload[`${field.name}-month`],
         year: payload[`${field.name}-year`]
       }
     } else {
-      data[field.name] = payload[field.name]
+      stepValues[field.name] = payload[field.name]
     }
   }
-  return data
+  return stepValues
 }
 
 function stepViewModel(quote, found, extras = {}) {
-  const data = extras.values
+  const currentValues = extras.values
     ? coalesceStepValues(found.step.fields, extras.values)
     : getAddonData(quote, found.addon.value)
   return {
     layout: LAYOUT,
     pageTitle: found.step.title,
-    fields: fieldsToView(found.step.fields, data, extras.errors ?? null),
+    fields: fieldsToView(
+      found.step.fields,
+      currentValues,
+      extras.errors ?? null
+    ),
     backLink: stepBack(quote, found.addon.value, found.index),
     breadcrumbs: breadcrumbs(quote, found.step.title),
     ...extras
   }
 }
+
+// Resolve the quote once and short-circuit to BASE when it is missing.
+const withQuote = (handler) => (request, responseToolkit) => {
+  const quote = findQuote(request.params.id)
+  if (!quote) {
+    return responseToolkit.redirect(BASE)
+  }
+  return handler(quote, request, responseToolkit)
+}
+
+const persistAndAdvance = (quote, found, value) => {
+  const updated = saveAddonStep(
+    quote,
+    found.addon.value,
+    collectFields(found.step.fields, value)
+  )
+  return afterStep(updated, found.addon.value, found.index)
+}
+
+const getAddonsSelect = withQuote((quote, request, responseToolkit) =>
+  responseToolkit.view(ADDONS_SELECT_VIEW, {
+    layout: LAYOUT,
+    pageTitle: 'Add to your policy',
+    items: selectionItems(quote),
+    backLink: selectionBack(quote.id),
+    breadcrumbs: breadcrumbs(quote, 'Add to your policy')
+  })
+)
+
+const postAddonsSelect = withQuote((quote, request, responseToolkit) => {
+  const raw = request.payload.addons
+  const values = raw === undefined ? [] : [].concat(raw)
+  const updated = setSelectedAddons(quote, values)
+  return responseToolkit.redirect(afterSelection(updated))
+})
+
+const getAddonStep = withQuote((quote, request, responseToolkit) => {
+  const found = locateStep(request.params)
+  if (!found) {
+    return responseToolkit.redirect(at(quote.id, 'addons'))
+  }
+  return responseToolkit.view(ADDON_STEP_VIEW, stepViewModel(quote, found))
+})
+
+const postAddonStep = withQuote((quote, request, responseToolkit) => {
+  const found = locateStep(request.params)
+  if (!found) {
+    return responseToolkit.redirect(at(quote.id, 'addons'))
+  }
+  const { value, errors, errorSummary } = validatePayload(
+    found.step.schema,
+    request.payload
+  )
+  if (errors) {
+    return responseToolkit.view(
+      ADDON_STEP_VIEW,
+      stepViewModel(quote, found, {
+        errors,
+        errorSummary,
+        values: request.payload
+      })
+    )
+  }
+  return responseToolkit.redirect(persistAndAdvance(quote, found, value))
+})
 
 export function addonsRoutes() {
   const open = { auth: false }
@@ -85,88 +156,25 @@ export function addonsRoutes() {
       method: 'GET',
       path: `${BASE}/{id}/addons`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        return h.view('standalone/spike-d/templates/addons-select', {
-          layout: LAYOUT,
-          pageTitle: 'Add to your policy',
-          items: selectionItems(quote),
-          backLink: selectionBack(quote.id),
-          breadcrumbs: breadcrumbs(quote, 'Add to your policy')
-        })
-      }
+      handler: getAddonsSelect
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/addons`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const raw = request.payload.addons
-        const values = raw === undefined ? [] : [].concat(raw)
-        const updated = setSelectedAddons(quote, values)
-        return h.redirect(afterSelection(updated))
-      }
+      handler: postAddonsSelect
     },
     {
       method: 'GET',
       path: `${BASE}/{id}/addons/{addon}/{step}`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const found = locateStep(request.params)
-        if (!found) {
-          return h.redirect(at(quote.id, 'addons'))
-        }
-        return h.view(
-          'standalone/spike-d/templates/addon-step',
-          stepViewModel(quote, found)
-        )
-      }
+      handler: getAddonStep
     },
     {
       method: 'POST',
       path: `${BASE}/{id}/addons/{addon}/{step}`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        const found = locateStep(request.params)
-        if (!found) {
-          return h.redirect(at(quote.id, 'addons'))
-        }
-        const { value, errors, errorSummary } = validatePayload(
-          found.step.schema,
-          request.payload
-        )
-        if (errors) {
-          return h.view(
-            'standalone/spike-d/templates/addon-step',
-            stepViewModel(quote, found, {
-              errors,
-              errorSummary,
-              values: request.payload
-            })
-          )
-        }
-        const updated = saveAddonStep(
-          quote,
-          found.addon.value,
-          collectFields(found.step.fields, value)
-        )
-        return h.redirect(afterStep(updated, found.addon.value, found.index))
-      }
+      handler: postAddonStep
     }
   ]
 }

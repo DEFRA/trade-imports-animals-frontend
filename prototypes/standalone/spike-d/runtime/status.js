@@ -8,6 +8,14 @@ import {
   applicableSteps
 } from './applicability.js'
 
+const STATUS = {
+  NOT_APPLICABLE: 'not-applicable',
+  COMPLETE: 'complete',
+  PARTIAL: 'partial',
+  NOT_STARTED: 'not-started'
+}
+const STEP_KIND = { LOOP: 'loop', SUBTASKS: 'subtasks' }
+
 export function fieldPresentAndValid(fieldId, answers) {
   if (isEmpty(answers[fieldId])) {
     return false
@@ -18,23 +26,23 @@ export function fieldPresentAndValid(fieldId, answers) {
   )
 }
 
-export function status(answers, stepId) {
-  if (!applicableSteps(answers).includes(stepId)) {
-    return 'not-applicable'
+const loopStatus = (meta, answers) => {
+  if (answers[meta.done] === true) {
+    return STATUS.COMPLETE
   }
-  const meta = stepMeta[stepId] ?? {}
-  if (meta.kind === 'loop') {
-    if (answers[meta.done] === true) {
-      return 'complete'
-    }
-    return (answers[meta.arrayKey] ?? []).length ? 'partial' : 'not-started'
+  return (answers[meta.arrayKey] ?? []).length
+    ? STATUS.PARTIAL
+    : STATUS.NOT_STARTED
+}
+
+const subtasksStatus = (answers) => {
+  if (answers.selectedAddons === undefined) {
+    return STATUS.NOT_STARTED
   }
-  if (meta.kind === 'subtasks') {
-    if (answers.selectedAddons === undefined) {
-      return 'not-started'
-    }
-    return allSelectedAddonsComplete(answers) ? 'complete' : 'partial'
-  }
+  return allSelectedAddonsComplete(answers) ? STATUS.COMPLETE : STATUS.PARTIAL
+}
+
+const fieldStatus = (stepId, answers) => {
   const required = requiredNow(answers)
   const requiredOfStep = stepFields(stepId).filter((field) =>
     required.has(field)
@@ -43,47 +51,69 @@ export function status(answers, stepId) {
     fieldPresentAndValid(field, answers)
   )
   if (requiredOfStep.length && allOk) {
-    return 'complete'
+    return STATUS.COMPLETE
   }
   const anyAnswered = stepFields(stepId).some(
     (field) => !isEmpty(answers[field])
   )
-  return anyAnswered ? 'partial' : 'not-started'
+  return anyAnswered ? STATUS.PARTIAL : STATUS.NOT_STARTED
+}
+
+export function status(answers, stepId) {
+  if (!applicableSteps(answers).includes(stepId)) {
+    return STATUS.NOT_APPLICABLE
+  }
+  const meta = stepMeta[stepId] ?? {}
+  if (meta.kind === STEP_KIND.LOOP) {
+    return loopStatus(meta, answers)
+  }
+  if (meta.kind === STEP_KIND.SUBTASKS) {
+    return subtasksStatus(answers)
+  }
+  return fieldStatus(stepId, answers)
 }
 
 export const allComplete = (answers) =>
-  applicableSteps(answers).every((id) => status(answers, id) === 'complete')
+  applicableSteps(answers).every(
+    (id) => status(answers, id) === STATUS.COMPLETE
+  )
 
-export function missingRequired(answers) {
-  const out = []
-  for (const stepId of applicableSteps(answers)) {
-    const meta = stepMeta[stepId] ?? {}
-    if (meta.kind === 'loop') {
-      if (answers[meta.done] !== true) {
-        out.push({
+const loopMissing = (stepId, meta, answers) =>
+  answers[meta.done] !== true
+    ? [
+        {
           stepId,
           fieldId: meta.arrayKey,
           because: requiredBecause(meta.arrayKey, answers)
-        })
-      }
-      continue
+        }
+      ]
+    : []
+
+const subtasksMissing = (stepId, answers) =>
+  !allSelectedAddonsComplete(answers)
+    ? [{ stepId, fieldId: 'selectedAddons', because: [] }]
+    : []
+
+const fieldsMissing = (stepId, answers) => {
+  const required = requiredNow(answers)
+  return stepFields(stepId)
+    .filter((fieldId) => required.has(fieldId) && isEmpty(answers[fieldId]))
+    .map((fieldId) => ({
+      stepId,
+      fieldId,
+      because: requiredBecause(fieldId, answers)
+    }))
+}
+
+export function missingRequired(answers) {
+  return applicableSteps(answers).flatMap((stepId) => {
+    const meta = stepMeta[stepId] ?? {}
+    if (meta.kind === STEP_KIND.LOOP) {
+      return loopMissing(stepId, meta, answers)
     }
-    if (meta.kind === 'subtasks') {
-      if (!allSelectedAddonsComplete(answers)) {
-        out.push({ stepId, fieldId: 'selectedAddons', because: [] })
-      }
-      continue
+    if (meta.kind === STEP_KIND.SUBTASKS) {
+      return subtasksMissing(stepId, answers)
     }
-    const required = requiredNow(answers)
-    for (const fieldId of stepFields(stepId)) {
-      if (required.has(fieldId) && isEmpty(answers[fieldId])) {
-        out.push({
-          stepId,
-          fieldId,
-          because: requiredBecause(fieldId, answers)
-        })
-      }
-    }
-  }
-  return out
+    return fieldsMissing(stepId, answers)
+  })
 }

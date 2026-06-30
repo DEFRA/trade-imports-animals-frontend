@@ -16,38 +16,47 @@ import { grouped } from './journey/index.js'
  */
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
-function loadFixture(arg) {
-  if (!arg) {
+function loadFixture(fixtureArg) {
+  if (!fixtureArg) {
     return {}
   }
-  const candidate = fs.existsSync(arg)
-    ? arg
-    : path.join(dirname, 'fixtures', `${arg}.json`)
+  const candidate = fs.existsSync(fixtureArg)
+    ? fixtureArg
+    : path.join(dirname, 'fixtures', `${fixtureArg}.json`)
   return JSON.parse(fs.readFileSync(candidate, 'utf8'))
 }
 
+const statusByStep = (answers, applicableSteps, shape) =>
+  Object.fromEntries(
+    applicableSteps.map((stepId) => [
+      stepId,
+      contract.status(answers, stepId, shape)
+    ])
+  )
+
+const navigationByStep = (answers, applicableSteps, shape) =>
+  Object.fromEntries(
+    applicableSteps.map((stepId) => [
+      stepId,
+      {
+        next: contract.next(answers, stepId, shape),
+        prev: contract.prev(answers, stepId, shape)
+      }
+    ])
+  )
+
 function shapeView(answers, shape) {
-  const live = contract.applicableSteps(answers)
+  const applicableSteps = contract.applicableSteps(answers)
   return {
-    applicableSteps: live,
-    status: Object.fromEntries(
-      live.map((stepId) => [stepId, contract.status(answers, stepId, shape)])
-    ),
-    navigation: Object.fromEntries(
-      live.map((stepId) => [
-        stepId,
-        {
-          next: contract.next(answers, stepId, shape),
-          prev: contract.prev(answers, stepId, shape)
-        }
-      ])
-    )
+    applicableSteps,
+    status: statusByStep(answers, applicableSteps, shape),
+    navigation: navigationByStep(answers, applicableSteps, shape)
   }
 }
 
 const answers = loadFixture(process.argv[2])
 
-const out = {
+const report = {
   fixture: process.argv[2] ?? '(empty)',
   shape: shapeView(answers, grouped),
   missingRequired: contract.missingRequired(answers),
@@ -55,4 +64,4 @@ const out = {
   assembleQuote: contract.assembleQuote(answers)
 }
 
-process.stdout.write(`${JSON.stringify(out, null, 2)}\n`)
+process.stdout.write(`${JSON.stringify(report, null, 2)}\n`)

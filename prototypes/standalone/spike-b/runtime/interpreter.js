@@ -14,17 +14,20 @@ export function advancingEvent(state) {
 
 const isFinal = (state) => state.type === 'final' || !state.on
 
-/** The next state id from `stateId` under the current answers, or null at the end. */
-export function transition(machine, stateId, answers) {
+/** The realised transition def out of `stateId` under the current answers, if any. */
+const chosenTransition = (machine, stateId, answers) => {
   const state = machine.states[stateId]
   const event = advancingEvent(state)
-  if (!event) {
-    return null
-  }
-  const chosen = machine.states[stateId].on[event].find((t) =>
-    evalCondition(t.guard, answers)
-  )
-  return chosen ? chosen.target : null
+  return event
+    ? state.on[event].find((candidate) =>
+        evalCondition(candidate.guard, answers)
+      )
+    : undefined
+}
+
+/** The next state id from `stateId` under the current answers, or null at the end. */
+export function transition(machine, stateId, answers) {
+  return chosenTransition(machine, stateId, answers)?.target ?? null
 }
 
 /** Non-final states on the realised path from `initial` to the final state. */
@@ -48,11 +51,11 @@ export function reverseIndex(machine) {
     if (!event) {
       continue
     }
-    for (const t of state.on[event]) {
-      if (!index.has(t.target)) {
-        index.set(t.target, [])
+    for (const candidate of state.on[event]) {
+      if (!index.has(candidate.target)) {
+        index.set(candidate.target, [])
       }
-      index.get(t.target).push(sourceId)
+      index.get(candidate.target).push(sourceId)
     }
   }
   return index
@@ -84,9 +87,7 @@ export function incomingGuard(machine, stateId, answers, index) {
   if (!source) {
     return undefined
   }
-  const event = advancingEvent(machine.states[source])
-  const chosen = machine.states[source].on[event].find(
-    (t) => t.target === stateId && evalCondition(t.guard, answers)
-  )
-  return chosen?.guard
+  // prevState already guarantees source's realised transition targets stateId,
+  // so the chosen transition out of source is the incoming one.
+  return chosenTransition(machine, source, answers)?.guard
 }

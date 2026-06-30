@@ -68,16 +68,21 @@ export function addonSummary(quote, value) {
  * the fan-out, as independent tasks. `firstStepPath(id, value, slug)` builds the
  * variant's URL.
  */
+const addonHint = (addon) => addon.steps.map((step) => step.title).join(', ')
+
+const addonStatusTag = (quote, value) =>
+  addonComplete(quote, value)
+    ? { text: 'Completed' }
+    : { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
+
 export function addonHubItems(quote, firstStepPath) {
   return getSelectedAddons(quote).map((value) => {
     const addon = addonByValue.get(value)
     return {
       title: { text: addon.title },
-      hint: { text: addon.steps.map((step) => step.title).join(', ') },
+      hint: { text: addonHint(addon) },
       href: firstStepPath(quote.id, value, addon.steps[0].slug),
-      status: addonComplete(quote, value)
-        ? { text: 'Completed' }
-        : { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
+      status: addonStatusTag(quote, value)
     }
   })
 }

@@ -25,6 +25,21 @@ import {
 const PHONE_EXAMPLES =
   'Enter a telephone number, like 01632 960 001, 07700 900 982 or +44 808 157 0192'
 
+// Derive the dateOfBirth object from the separate day/month/year payload parts.
+// Called twice — once on success (post-Joi `value`, day already a Number) and
+// once via the error re-render path (raw `request.payload` strings) — so the
+// presence check spans both shapes, keeping typed primitives when validated and
+// the user's typed strings when re-rendering after a failed submit.
+const dateOfBirthFromParts = (payload) => {
+  const day = payload['dateOfBirth-day']
+  const month = payload['dateOfBirth-month']
+  const year = payload['dateOfBirth-year']
+  const anyPart = [day, month, year].some(
+    (part) => part !== undefined && String(part).trim() !== ''
+  )
+  return anyPart ? { day, month, year } : undefined
+}
+
 /**
  * The questions that make up a car insurance quote, defined once and reused by
  * every variant. Each section owns:
@@ -80,28 +95,14 @@ export const sections = [
           required: false
         })
       ),
-    collect: (payload) => {
-      // Called twice — once on success (post-Joi `value`, day already a
-      // Number) and once via the error-re-render path in section-controller
-      // (raw `request.payload` strings). The presence check spans both shapes
-      // so we keep typed primitives when validated and preserve the user's
-      // typed strings when re-rendering after a failed submit.
-      const day = payload['dateOfBirth-day']
-      const month = payload['dateOfBirth-month']
-      const year = payload['dateOfBirth-year']
-      const anyPart = [day, month, year].some(
-        (part) => part !== undefined && String(part).trim() !== ''
-      )
-      const dateOfBirth = anyPart ? { day, month, year } : undefined
-      return {
-        fullName: payload.fullName,
-        preferredName: payload.preferredName,
-        phone: payload.phone,
-        postcode: payload.postcode,
-        country: payload.country,
-        dateOfBirth
-      }
-    },
+    collect: (payload) => ({
+      fullName: payload.fullName,
+      preferredName: payload.preferredName,
+      phone: payload.phone,
+      postcode: payload.postcode,
+      country: payload.country,
+      dateOfBirth: dateOfBirthFromParts(payload)
+    }),
     isComplete: (quote) => Boolean(quote.fullName),
     rows: (quote) => [
       { key: 'Name', value: quote.fullName ?? 'Not provided' },

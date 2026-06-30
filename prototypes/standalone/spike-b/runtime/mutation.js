@@ -8,25 +8,37 @@ import { applicableSteps } from './navigation.js'
  * drops out of the realised path as a result (so stale answers cannot linger).
  */
 
-export function collect(stepId, payload) {
-  const patch = {}
-  for (const field of fieldsFor(stepId)) {
-    if (field.type === 'date') {
-      const day = payload[`${field.id}-day`]
-      const month = payload[`${field.id}-month`]
-      const year = payload[`${field.id}-year`]
-      const anyPart = [day, month, year].some(
-        (part) => part !== undefined && String(part).trim() !== ''
-      )
-      patch[field.id] = anyPart ? { day, month, year } : undefined
-    } else if (field.type === 'multi-select') {
-      const raw = payload[field.id]
-      patch[field.id] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      patch[field.id] = payload[field.id]
-    }
+const FIELD_TYPE_DATE = 'date'
+const FIELD_TYPE_MULTI_SELECT = 'multi-select'
+const STEP_KIND_LOOP = 'loop'
+
+const collectDateValue = (field, payload) => {
+  const day = payload[`${field.id}-day`]
+  const month = payload[`${field.id}-month`]
+  const year = payload[`${field.id}-year`]
+  const anyPart = [day, month, year].some(
+    (part) => part !== undefined && String(part).trim() !== ''
+  )
+  return anyPart ? { day, month, year } : undefined
+}
+
+const collectMultiSelectValue = (field, payload) =>
+  payload[field.id] === undefined ? [] : [].concat(payload[field.id])
+
+const valueForField = (field, payload) => {
+  if (field.type === FIELD_TYPE_DATE) {
+    return collectDateValue(field, payload)
   }
-  return patch
+  if (field.type === FIELD_TYPE_MULTI_SELECT) {
+    return collectMultiSelectValue(field, payload)
+  }
+  return payload[field.id]
+}
+
+export function collect(stepId, payload) {
+  return Object.fromEntries(
+    fieldsFor(stepId).map((field) => [field.id, valueForField(field, payload)])
+  )
 }
 
 function clearStep(answers, stepId) {
@@ -34,7 +46,7 @@ function clearStep(answers, stepId) {
   for (const fieldId of state.fields ?? []) {
     answers[fieldId] = undefined
   }
-  if (state.kind === 'loop') {
+  if (state.kind === STEP_KIND_LOOP) {
     answers[state.done] = false
     answers[state.arrayKey] = []
   }

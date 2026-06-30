@@ -10,6 +10,19 @@
  * For day/month/year date inputs the per-part error keys are joined with the
  * input's prefix (e.g. `dateOfBirth-day`), matching the macro's id convention.
  */
+const buildFieldErrors = (details) => {
+  const errors = {}
+  const errorSummary = []
+  for (const detail of details) {
+    const name = detail.path[0]
+    if (errors[name] === undefined) {
+      errors[name] = detail.message
+      errorSummary.push({ text: detail.message, href: `#${name}` })
+    }
+  }
+  return { errors, errorSummary }
+}
+
 export function validatePayload(schema, payload) {
   if (!schema) {
     return { value: payload, errors: null, errorSummary: null }
@@ -24,14 +37,5 @@ export function validatePayload(schema, payload) {
   if (!result.error) {
     return { value: result.value, errors: null, errorSummary: null }
   }
-  const errors = {}
-  const errorSummary = []
-  for (const detail of result.error.details) {
-    const name = detail.path[0]
-    if (errors[name] === undefined) {
-      errors[name] = detail.message
-      errorSummary.push({ text: detail.message, href: `#${name}` })
-    }
-  }
-  return { value: result.value, errors, errorSummary }
+  return { value: result.value, ...buildFieldErrors(result.error.details) }
 }

@@ -1,5 +1,12 @@
 import Joi from 'joi'
 
+const MIN_VEHICLE_YEAR = 1900
+
+const applyRequired = (base, required) => (required ? base.required() : base)
+
+const singleFieldObject = (name, field) =>
+  Joi.object({ [name]: field }).unknown(true)
+
 /**
  * Integer-years field: whole number within [min, max]. Used for
  * `yearsNoClaims` and `ncdYears`. Two friendly strings — `enterMessage`
@@ -24,14 +31,14 @@ export function integerYearsSchema({
   // runs, so a blank submit fires `any.required` (enterMessage) rather than
   // `Number('')` coercing to 0 and tripping a misleading range error.
   const base = Joi.number().integer().min(min).max(max).empty('')
-  const field = (required ? base.required() : base).messages({
+  const field = applyRequired(base, required).messages({
     'any.required': enterMessage,
     'number.base': range,
     'number.integer': range,
     'number.min': range,
     'number.max': range
   })
-  return Joi.object({ [name]: field }).unknown(true)
+  return singleFieldObject(name, field)
 }
 
 /**
@@ -53,15 +60,15 @@ export function vehicleYearSchema({
   // (enterMessage) instead of being coerced to 0 and tripping the range error.
   const base = Joi.number()
     .integer()
-    .min(1900)
+    .min(MIN_VEHICLE_YEAR)
     .max(year + 1)
     .empty('')
-  const field = (required ? base.required() : base).messages({
+  const field = applyRequired(base, required).messages({
     'any.required': enterMessage,
     'number.base': `${noun} must be a number`,
     'number.integer': `${noun} must be a whole number`,
-    'number.min': `${noun} must be between 1900 and ${year + 1}`,
-    'number.max': `${noun} must be between 1900 and ${year + 1}`
+    'number.min': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${year + 1}`,
+    'number.max': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${year + 1}`
   })
-  return Joi.object({ [name]: field }).unknown(true)
+  return singleFieldObject(name, field)
 }

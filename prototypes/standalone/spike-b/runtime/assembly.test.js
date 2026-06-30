@@ -59,8 +59,8 @@ describe('spike-b assembleQuote — the guard into the final state', () => {
       dateOfBirth: { day: '1', month: '1', year: '2015' }
     })
     expect(result.ok).toBe(false)
-    expect(result.errors.some((e) => e.message.includes('at least 17'))).toBe(
-      true
-    )
+    expect(
+      result.errors.some((error) => error.message.includes('at least 17'))
+    ).toBe(true)
   })
 })

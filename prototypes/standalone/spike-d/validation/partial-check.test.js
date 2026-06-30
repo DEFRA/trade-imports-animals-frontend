@@ -10,22 +10,22 @@ describe('spike-d partial validation — missing vs invalid', () => {
       extras: ['breakdown'],
       postcode: 'NOPE'
     })
-    expect(result.missing.map((m) => m.path)).toContain('fullName')
-    expect(result.invalid.map((i) => i.path)).toContain('postcode')
+    expect(result.missing.map((entry) => entry.path)).toContain('fullName')
+    expect(result.invalid.map((entry) => entry.path)).toContain('postcode')
   })
 
   it('makes claims required (missing) only when hadClaims = yes', () => {
-    expect(check({ hadClaims: 'yes' }).missing.map((m) => m.path)).toContain(
-      'claims'
-    )
-    expect(check({ hadClaims: 'no' }).missing.map((m) => m.path)).not.toContain(
-      'claims'
-    )
+    expect(
+      check({ hadClaims: 'yes' }).missing.map((entry) => entry.path)
+    ).toContain('claims')
+    expect(
+      check({ hadClaims: 'no' }).missing.map((entry) => entry.path)
+    ).not.toContain('claims')
   })
 
   it('reconstructs provenance from the if/then that fired', () => {
     const claims = check({ hadClaims: 'yes' }).missing.find(
-      (m) => m.path === 'claims'
+      (entry) => entry.path === 'claims'
     )
     expect(claims.because).toEqual([{ field: 'hadClaims', eq: 'yes' }])
   })

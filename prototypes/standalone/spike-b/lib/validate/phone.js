@@ -19,6 +19,13 @@ export const PHONE_ALLOWED = /^[0-9+()\-.,;\sextEXT]+$/
 const PHONE_DEFAULT_MIN_DIGITS = 7
 const PHONE_DEFAULT_MAX_DIGITS = 15
 
+const countDigits = (value) => value.replace(/\D/g, '').length
+
+const digitCountValidator = (minDigits, maxDigits) => (value, helpers) =>
+  countDigits(value) < minDigits || countDigits(value) > maxDigits
+    ? helpers.error('phone.length')
+    : value
+
 export function phoneSchema({
   name,
   enterMessage,
@@ -34,13 +41,7 @@ export function phoneSchema({
     .trim()
     .empty('')
     .pattern(PHONE_ALLOWED)
-    .custom((value, helpers) => {
-      const digitCount = value.replace(/\D/g, '').length
-      if (digitCount < minDigits || digitCount > maxDigits) {
-        return helpers.error('phone.length')
-      }
-      return value
-    }, 'phone digit count')
+    .custom(digitCountValidator(minDigits, maxDigits), 'phone digit count')
     .messages({
       'string.pattern.base': formatMessage,
       'phone.length': formatMessage

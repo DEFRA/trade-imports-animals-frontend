@@ -1,19 +1,30 @@
+const FIELD_KIND_DATE = 'date'
+const FIELD_KIND_CHECKBOXES = 'checkboxes'
+const DATE_PARTS = ['day', 'month', 'year']
+
+const collectDate = (name, payload) =>
+  Object.fromEntries(
+    DATE_PARTS.map((part) => [part, payload[`${name}-${part}`]])
+  )
+
+const collectCheckboxes = (name, payload) => {
+  const raw = payload[name]
+  return raw === undefined ? [] : [].concat(raw)
+}
+
+const collectField = (field, payload) => {
+  if (field.kind === FIELD_KIND_DATE) {
+    return collectDate(field.name, payload)
+  }
+  if (field.kind === FIELD_KIND_CHECKBOXES) {
+    return collectCheckboxes(field.name, payload)
+  }
+  return payload[field.name]
+}
+
 /** Read submitted values for a list of specs back into a quote patch. */
 export function collectFields(fields, payload) {
-  const data = {}
-  for (const field of fields) {
-    if (field.kind === 'date') {
-      data[field.name] = {
-        day: payload[`${field.name}-day`],
-        month: payload[`${field.name}-month`],
-        year: payload[`${field.name}-year`]
-      }
-    } else if (field.kind === 'checkboxes') {
-      const raw = payload[field.name]
-      data[field.name] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      data[field.name] = payload[field.name]
-    }
-  }
-  return data
+  return Object.fromEntries(
+    fields.map((field) => [field.name, collectField(field, payload)])
+  )
 }

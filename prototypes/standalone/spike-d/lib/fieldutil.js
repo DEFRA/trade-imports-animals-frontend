@@ -3,6 +3,10 @@
  * humanising and age. No model knowledge; each spike passes plain field specs.
  */
 
+// Date-part objects ({ day, month, year }) count as empty until a day is given;
+// the day box is the anchor the partials key their presence UX off.
+const isEmptyDateParts = (parts) => !parts.day
+
 export function isEmpty(value) {
   if (value === undefined || value === null) {
     return true
@@ -11,7 +15,7 @@ export function isEmpty(value) {
     return value.length === 0
   }
   if (typeof value === 'object') {
-    return !value.day
+    return isEmptyDateParts(value)
   }
   return String(value).trim() === ''
 }

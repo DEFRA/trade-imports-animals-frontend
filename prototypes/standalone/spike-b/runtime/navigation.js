@@ -17,28 +17,29 @@ import { provenance } from '../lib/conditions.js'
  */
 
 const REVERSE = reverseIndex(machine)
+const HUB_TERMINAL = { terminal: 'hub' }
+const FINAL_STATE_TYPE = 'final'
 
 export const applicableSteps = (answers) => realizedPath(machine, answers)
 
 const groupOf = (shape, stepId) =>
   shape.groups?.find((group) => group.stepIds.includes(stepId))
 
+const isJourneyOver = (target) =>
+  !target || machine.states[target]?.type === FINAL_STATE_TYPE
+
 export function next(answers, stepId, shape) {
   const target = transition(machine, stepId, answers)
-  // A transition into the machine's `final` state means the journey is over.
-  const atEnd = !target || machine.states[target]?.type === 'final'
   const group = groupOf(shape, stepId)
-  return !atEnd && group?.stepIds.includes(target)
+  return !isJourneyOver(target) && group?.stepIds.includes(target)
     ? target
-    : { terminal: 'hub' }
+    : HUB_TERMINAL
 }
 
 export function prev(answers, stepId, shape) {
   const source = prevState(machine, stepId, answers, REVERSE)
   const group = groupOf(shape, stepId)
-  return source && group?.stepIds.includes(source)
-    ? source
-    : { terminal: 'hub' }
+  return source && group?.stepIds.includes(source) ? source : HUB_TERMINAL
 }
 
 export const provenanceForStep = (stepId, answers) =>

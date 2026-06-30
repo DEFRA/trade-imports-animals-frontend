@@ -9,6 +9,8 @@ import { hubViewModel } from './journey/hub-view.js'
  * the task-list view model for a stored quote.
  */
 
+const PAGE_TITLE = 'Get a car insurance quote'
+
 /** The start page and the hub (task list) — the journey's two shell pages. */
 export function shellRoutes() {
   const open = { auth: false }
@@ -17,9 +19,9 @@ export function shellRoutes() {
       method: 'GET',
       path: BASE,
       options: open,
-      handler(_request, h) {
-        return h.view(`${TEMPLATES}/start`, {
-          pageTitle: 'Get a car insurance quote',
+      handler(_request, toolkit) {
+        return toolkit.view(`${TEMPLATES}/start`, {
+          pageTitle: PAGE_TITLE,
           startAction: `${BASE}/start`
         })
       }
@@ -28,22 +30,22 @@ export function shellRoutes() {
       method: 'POST',
       path: `${BASE}/start`,
       options: open,
-      handler(_request, h) {
+      handler(_request, toolkit) {
         const draft = createDraft('spike-c')
-        return h.redirect(hubPath(draft.id))
+        return toolkit.redirect(hubPath(draft.id))
       }
     },
     {
       method: 'GET',
       path: `${BASE}/{id}`,
       options: open,
-      handler(request, h) {
+      handler(request, toolkit) {
         const quote = findQuote(request.params.id)
         if (!quote) {
-          return h.redirect(BASE)
+          return toolkit.redirect(BASE)
         }
-        return h.view(`${TEMPLATES}/hub`, {
-          pageTitle: 'Get a car insurance quote',
+        return toolkit.view(`${TEMPLATES}/hub`, {
+          pageTitle: PAGE_TITLE,
           ...hubViewModel(quote),
           breadcrumbs: [
             { text: 'Prototypes', href: '/prototype-standalone' },

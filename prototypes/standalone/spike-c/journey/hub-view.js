@@ -51,30 +51,51 @@ function getYourQuoteItem(quote) {
   }
 }
 
-export function hubViewModel(quote) {
-  const live = contract.applicableSteps(quote)
-  const items = grouped.groups.map((group) => {
-    const liveIds = group.stepIds.filter((id) => live.includes(id))
-    const statuses = liveIds.map((id) => contract.status(quote, id, grouped))
-    return {
+const liveStepIds = (group, live) =>
+  group.stepIds.filter((stepId) => live.includes(stepId))
+
+const isGroupComplete = (statuses) =>
+  statuses.every((status) => status === 'complete')
+
+const addonsSelectionItem = (quote) => ({
+  title: { text: contract.stepTitle('addons') },
+  href: `${BASE}/${quote.id}/addons`,
+  status: statusTag(contract.status(quote, 'addons', grouped))
+})
+
+// Build one group's task-list item and capture its per-step statuses so the
+// completed-group count and the group tag come from the same derivation.
+const groupView = (quote, group, live) => {
+  const liveIds = liveStepIds(group, live)
+  const statuses = liveIds.map((stepId) =>
+    contract.status(quote, stepId, grouped)
+  )
+  return {
+    statuses,
+    item: {
       title: { text: group.title },
-      hint: { text: liveIds.map((id) => contract.stepTitle(id)).join(', ') },
+      hint: {
+        text: liveIds.map((stepId) => contract.stepTitle(stepId)).join(', ')
+      },
       href: `${BASE}/${quote.id}/${group.stepIds[0]}`,
       status: groupTag(statuses)
     }
-  })
-  // Add-ons sit outside the groups: a selection task plus one task per chosen add-on.
-  items.push({
-    title: { text: contract.stepTitle('addons') },
-    href: `${BASE}/${quote.id}/addons`,
-    status: statusTag(contract.status(quote, 'addons', grouped))
-  })
-  items.push(...addonHubItems(quote, addonStepPath))
-  items.push(getYourQuoteItem(quote))
-  const completedCount = grouped.groups.filter((group) =>
-    group.stepIds
-      .filter((id) => live.includes(id))
-      .every((id) => contract.status(quote, id, grouped) === 'complete')
+  }
+}
+
+export function hubViewModel(quote) {
+  const live = contract.applicableSteps(quote)
+  const groupViews = grouped.groups.map((group) =>
+    groupView(quote, group, live)
+  )
+  const items = [
+    ...groupViews.map((view) => view.item),
+    addonsSelectionItem(quote),
+    ...addonHubItems(quote, addonStepPath),
+    getYourQuoteItem(quote)
+  ]
+  const completedCount = groupViews.filter((view) =>
+    isGroupComplete(view.statuses)
   ).length
   return { items, completedCount, totalCount: grouped.groups.length }
 }

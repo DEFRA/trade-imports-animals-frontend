@@ -9,6 +9,55 @@ import Joi from 'joi'
 export const MAX_AGE = 120
 export const MIN_DRIVING_AGE = 17
 
+const DAY_MIN = 1
+const DAY_MAX = 31
+const MONTH_MIN = 1
+const MONTH_MAX = 12
+const YEAR_MIN = 1000
+const YEAR_MAX = 9999
+
+const dateKeys = (prefix) => ({
+  dayKey: `${prefix}-day`,
+  monthKey: `${prefix}-month`,
+  yearKey: `${prefix}-year`
+})
+
+const isRealDate = (year, month, day) => {
+  const date = new Date(year, month - 1, day)
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+}
+
+// The calendar / not-future / age rules shared by both factories: returns a Joi
+// error for the first rule that fails, or null when the date is acceptable.
+const checkDobConstraints = (year, month, day, now, helpers) => {
+  if (!isRealDate(year, month, day)) {
+    return helpers.error('date.real')
+  }
+  const date = new Date(year, month - 1, day)
+  if (date.getTime() > now.getTime()) {
+    return helpers.error('date.future')
+  }
+  const age = ageInYears(date, now)
+  if (age < MIN_DRIVING_AGE) {
+    return helpers.error('date.tooYoung')
+  }
+  if (age > MAX_AGE) {
+    return helpers.error('date.tooOld')
+  }
+  return null
+}
+
+const dobMessages = (label) => ({
+  'date.real': `${label} must be a real date`,
+  'date.future': `${label} must be in the past`,
+  'date.tooYoung': `You must be at least ${MIN_DRIVING_AGE} years old`,
+  'date.tooOld': `Enter a ${label.toLowerCase()} less than ${MAX_AGE} years ago`
+})
+
 /**
  * GDS-canonical DOB schema for a `${prefix}-day|-month|-year` triple.
  *
@@ -31,9 +80,7 @@ export function dobSchema(prefix, label, { required = true } = {}) {
   if (!required) {
     return optionalDobSchema(prefix, label)
   }
-  const dayKey = `${prefix}-day`
-  const monthKey = `${prefix}-month`
-  const yearKey = `${prefix}-year`
+  const { dayKey, monthKey, yearKey } = dateKeys(prefix)
   const partRange = (kind, min, max) =>
     `${capitalise(kind)} must be a number between ${min} and ${max}`
   const part = (kind, min, max) =>
@@ -51,7 +98,7 @@ export function dobSchema(prefix, label, { required = true } = {}) {
       })
 
   return Joi.object({
-    [dayKey]: part('day', 1, 31)
+    [dayKey]: part('day', DAY_MIN, DAY_MAX)
       .custom((dayValue, helpers) => {
         const siblings = helpers.state.ancestors[0] ?? {}
         // Siblings may not have been validated yet when this custom runs, so
@@ -67,38 +114,17 @@ export function dobSchema(prefix, label, { required = true } = {}) {
         ) {
           return dayValue
         }
-        const date = new Date(year, month - 1, dayValue)
-        const realDate =
-          date.getFullYear() === year &&
-          date.getMonth() === month - 1 &&
-          date.getDate() === dayValue
-        if (!realDate) {
-          return helpers.error('date.real')
-        }
-        const now = new Date()
-        if (date.getTime() > now.getTime()) {
-          return helpers.error('date.future')
-        }
-        const age = ageInYears(date, now)
-        if (age < MIN_DRIVING_AGE) {
-          return helpers.error('date.tooYoung')
-        }
-        if (age > MAX_AGE) {
-          return helpers.error('date.tooOld')
-        }
-        return dayValue
+        return (
+          checkDobConstraints(year, month, dayValue, new Date(), helpers) ??
+          dayValue
+        )
       }, 'real DOB')
-      .messages({
-        'date.real': `${label} must be a real date`,
-        'date.future': `${label} must be in the past`,
-        'date.tooYoung': `You must be at least ${MIN_DRIVING_AGE} years old`,
-        'date.tooOld': `Enter a ${label.toLowerCase()} less than ${MAX_AGE} years ago`
-      }),
-    [monthKey]: part('month', 1, 12),
+      .messages(dobMessages(label)),
+    [monthKey]: part('month', MONTH_MIN, MONTH_MAX),
     [yearKey]: Joi.number()
       .integer()
-      .min(1000)
-      .max(9999)
+      .min(YEAR_MIN)
+      .max(YEAR_MAX)
       .required()
       .messages({
         'any.required': `${label} must include a year`,
@@ -110,22 +136,47 @@ export function dobSchema(prefix, label, { required = true } = {}) {
   }).unknown(true)
 }
 
+const readParts = (rawDay, siblings, monthKey, yearKey) => ({
+  day: trim(rawDay),
+  month: trim(siblings[monthKey]),
+  year: trim(siblings[yearKey])
+})
+
+const countFilled = (parts) => parts.filter((part) => part !== '').length
+
+const allIntegers = (...numbers) =>
+  numbers.every((value) => Number.isInteger(value))
+
+const checkPartRanges = (dayNum, monthNum, yearNum, helpers) => {
+  if (dayNum < DAY_MIN || dayNum > DAY_MAX) {
+    return helpers.error('dob.dayRange')
+  }
+  if (monthNum < MONTH_MIN || monthNum > MONTH_MAX) {
+    return helpers.error('dob.monthRange')
+  }
+  if (yearNum < YEAR_MIN || yearNum > YEAR_MAX) {
+    return helpers.error('dob.yearRange')
+  }
+  return null
+}
+
 // All errors land on `-day` so the summary link points at the first box, and
 // the partials' per-part `govuk-input--error` logic highlights the day input.
 // The custom is the single source of truth for the DOB — it gates blank vs
 // partial vs full and coerces all three parts to Number on success.
 function optionalDobSchema(prefix, label) {
-  const dayKey = `${prefix}-day`
-  const monthKey = `${prefix}-month`
-  const yearKey = `${prefix}-year`
+  const { dayKey, monthKey, yearKey } = dateKeys(prefix)
   return Joi.object({
     [dayKey]: Joi.any()
       .custom((rawDay, helpers) => {
         const siblings = helpers.state.ancestors[0] ?? {}
-        const day = trim(rawDay)
-        const month = trim(siblings[monthKey])
-        const year = trim(siblings[yearKey])
-        const filled = [day, month, year].filter((part) => part !== '').length
+        const { day, month, year } = readParts(
+          rawDay,
+          siblings,
+          monthKey,
+          yearKey
+        )
+        const filled = countFilled([day, month, year])
         if (filled === 0) {
           return undefined
         }
@@ -135,52 +186,21 @@ function optionalDobSchema(prefix, label) {
         const dayNum = Number(day)
         const monthNum = Number(month)
         const yearNum = Number(year)
-        if (
-          !Number.isInteger(dayNum) ||
-          !Number.isInteger(monthNum) ||
-          !Number.isInteger(yearNum)
-        ) {
+        if (!allIntegers(dayNum, monthNum, yearNum)) {
           return helpers.error('dob.partial')
         }
-        if (dayNum < 1 || dayNum > 31) {
-          return helpers.error('dob.dayRange')
-        }
-        if (monthNum < 1 || monthNum > 12) {
-          return helpers.error('dob.monthRange')
-        }
-        if (yearNum < 1000 || yearNum > 9999) {
-          return helpers.error('dob.yearRange')
-        }
-        const date = new Date(yearNum, monthNum - 1, dayNum)
-        const realDate =
-          date.getFullYear() === yearNum &&
-          date.getMonth() === monthNum - 1 &&
-          date.getDate() === dayNum
-        if (!realDate) {
-          return helpers.error('date.real')
-        }
-        const now = new Date()
-        if (date.getTime() > now.getTime()) {
-          return helpers.error('date.future')
-        }
-        const age = ageInYears(date, now)
-        if (age < MIN_DRIVING_AGE) {
-          return helpers.error('date.tooYoung')
-        }
-        if (age > MAX_AGE) {
-          return helpers.error('date.tooOld')
-        }
-        return dayNum
+        return (
+          checkPartRanges(dayNum, monthNum, yearNum, helpers) ??
+          checkDobConstraints(yearNum, monthNum, dayNum, new Date(), helpers) ??
+          dayNum
+        )
       }, 'optional DOB')
       .messages({
         'dob.partial': `${label} must include a day, month and year`,
         'dob.dayRange': 'Day must be a number between 1 and 31',
         'dob.monthRange': 'Month must be a number between 1 and 12',
         'dob.yearRange': 'Year must be a real year',
-        'date.real': `${label} must be a real date`,
-        'date.future': `${label} must be in the past`,
-        'date.tooYoung': `You must be at least ${MIN_DRIVING_AGE} years old`,
-        'date.tooOld': `Enter a ${label.toLowerCase()} less than ${MAX_AGE} years ago`
+        ...dobMessages(label)
       }),
     [monthKey]: Joi.any(),
     [yearKey]: Joi.any()

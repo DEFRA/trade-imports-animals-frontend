@@ -32,53 +32,53 @@ function viewModel(quote, stepId, request, extras = {}) {
   }
 }
 
+// Load the quote once and short-circuit to BASE when it is missing, so each
+// handler receives a resolved quote and never repeats the guard.
+const withQuote = (render) => (request, h) => {
+  const quote = findQuote(request.params.id)
+  return quote ? render(quote, request, h) : h.redirect(BASE)
+}
+
+// Overlay the typed values onto the saved quote so the partial keeps reading
+// quote.<field>; collect normalises without the cascade.
+const renderInvalid = (quote, stepId, request, h, { errors, errorSummary }) => {
+  const renderQuote = { ...quote, ...contract.collect(stepId, request.payload) }
+  return h.view(
+    SECTION_PAGE,
+    viewModel(renderQuote, stepId, request, {
+      errors,
+      errorSummary,
+      values: request.payload
+    })
+  )
+}
+
+const redirectAfterSave = (updated, stepId, request, h) =>
+  request.query.change
+    ? h.redirect(cyaPath(updated.id))
+    : h.redirect(resolveNav(updated, contract.next(updated, stepId, grouped)))
+
 function getHandler(stepId) {
-  return (request, h) => {
-    const quote = findQuote(request.params.id)
-    if (!quote) {
-      return h.redirect(BASE)
-    }
-    return h.view(SECTION_PAGE, viewModel(quote, stepId, request))
-  }
+  return withQuote((quote, request, h) =>
+    h.view(SECTION_PAGE, viewModel(quote, stepId, request))
+  )
 }
 
 function postHandler(stepId) {
-  return (request, h) => {
-    const quote = findQuote(request.params.id)
-    if (!quote) {
-      return h.redirect(BASE)
-    }
+  return withQuote((quote, request, h) => {
     const { ok, errors, errorSummary } = contract.validate(
       stepId,
       request.payload
     )
     if (!ok) {
-      // Overlay the typed values onto the saved quote so the partial keeps
-      // reading quote.<field>; collect normalises without the cascade.
-      const renderQuote = {
-        ...quote,
-        ...contract.collect(stepId, request.payload)
-      }
-      return h.view(
-        SECTION_PAGE,
-        viewModel(renderQuote, stepId, request, {
-          errors,
-          errorSummary,
-          values: request.payload
-        })
-      )
+      return renderInvalid(quote, stepId, request, h, { errors, errorSummary })
     }
     const updated = updateQuote(
       quote.id,
       contract.applyAnswer(quote, stepId, request.payload)
     )
-    if (request.query.change) {
-      return h.redirect(cyaPath(updated.id))
-    }
-    return h.redirect(
-      resolveNav(updated, contract.next(updated, stepId, grouped))
-    )
-  }
+    return redirectAfterSave(updated, stepId, request, h)
+  })
 }
 
 /** GET/POST routes for every plain question step in the model. */

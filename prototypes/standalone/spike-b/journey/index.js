@@ -22,6 +22,36 @@ export {
 } from './links.js'
 export { addonByValue } from '../lib/addons/index.js'
 
+const PAGE_TITLE = 'Get a car insurance quote'
+const JOURNEY_KEY = 'spike-b'
+
+const hubBreadcrumbs = [
+  { text: 'Prototypes', href: '/prototype-standalone' },
+  { text: 'Spike B (standalone)', href: BASE },
+  { text: 'Your application' }
+]
+
+const startPageHandler = (_request, responseToolkit) =>
+  responseToolkit.view(`${TEMPLATES}/start`, {
+    pageTitle: PAGE_TITLE,
+    startAction: `${BASE}/start`
+  })
+
+const startSubmitHandler = (_request, responseToolkit) =>
+  responseToolkit.redirect(hubPath(createDraft(JOURNEY_KEY).id))
+
+const hubPageHandler = (request, responseToolkit) => {
+  const quote = findQuote(request.params.id)
+  if (!quote) {
+    return responseToolkit.redirect(BASE)
+  }
+  return responseToolkit.view(`${TEMPLATES}/hub`, {
+    pageTitle: PAGE_TITLE,
+    ...hubViewModel(quote),
+    breadcrumbs: hubBreadcrumbs
+  })
+}
+
 /** The start page and the hub (task list) — the journey's two shell pages. */
 export function shellRoutes() {
   const open = { auth: false }
@@ -30,41 +60,19 @@ export function shellRoutes() {
       method: 'GET',
       path: BASE,
       options: open,
-      handler(_request, h) {
-        return h.view(`${TEMPLATES}/start`, {
-          pageTitle: 'Get a car insurance quote',
-          startAction: `${BASE}/start`
-        })
-      }
+      handler: startPageHandler
     },
     {
       method: 'POST',
       path: `${BASE}/start`,
       options: open,
-      handler(_request, h) {
-        const draft = createDraft('spike-b')
-        return h.redirect(hubPath(draft.id))
-      }
+      handler: startSubmitHandler
     },
     {
       method: 'GET',
       path: `${BASE}/{id}`,
       options: open,
-      handler(request, h) {
-        const quote = findQuote(request.params.id)
-        if (!quote) {
-          return h.redirect(BASE)
-        }
-        return h.view(`${TEMPLATES}/hub`, {
-          pageTitle: 'Get a car insurance quote',
-          ...hubViewModel(quote),
-          breadcrumbs: [
-            { text: 'Prototypes', href: '/prototype-standalone' },
-            { text: 'Spike B (standalone)', href: BASE },
-            { text: 'Your application' }
-          ]
-        })
-      }
+      handler: hubPageHandler
     }
   ]
 }

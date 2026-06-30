@@ -1,5 +1,7 @@
 import { applicableSteps } from './applicability.js'
 
+const HUB_TERMINAL = { terminal: 'hub' }
+
 const groupOf = (shape, stepId) =>
   shape.groups?.find((group) => group.stepIds.includes(stepId))
 
@@ -15,10 +17,10 @@ function liveGroupSteps(shape, stepId, answers) {
 // Thin sequencer — JSON Schema has no ordering, so this adds it over annotations.
 export function next(answers, stepId, shape) {
   const live = liveGroupSteps(shape, stepId, answers)
-  return live?.[live.indexOf(stepId) + 1] ?? { terminal: 'hub' }
+  return live?.[live.indexOf(stepId) + 1] ?? HUB_TERMINAL
 }
 
 export function prev(answers, stepId, shape) {
   const live = liveGroupSteps(shape, stepId, answers)
-  return live?.[live.indexOf(stepId) - 1] ?? { terminal: 'hub' }
+  return live?.[live.indexOf(stepId) - 1] ?? HUB_TERMINAL
 }

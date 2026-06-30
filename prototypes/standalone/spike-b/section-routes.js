@@ -20,70 +20,91 @@ import {
 const SECTION_PAGE = 'standalone/spike-b/templates/section-page'
 const cyaPath = (id) => `${BASE}/${id}/check-your-answers`
 
-function viewModel(quote, stepId, request, extras = {}) {
-  const change = Boolean(request.query.change)
-  const backLink = change
+const backLinkFor = (quote, stepId, change) =>
+  change
     ? cyaPath(quote.id)
     : resolveNav(quote, contract.prev(quote, stepId, grouped))
+
+function viewModel(quote, stepId, request, extras = {}) {
+  const change = Boolean(request.query.change)
+  const title = contract.stepTitle(stepId)
   return {
     layout: LAYOUT,
-    pageTitle: contract.stepTitle(stepId),
-    section: { slug: stepId, title: contract.stepTitle(stepId) },
+    pageTitle: title,
+    section: { slug: stepId, title },
     quote,
     items: contract.viewItems(stepId, quote),
-    backLink,
-    breadcrumbs: breadcrumbs(quote, contract.stepTitle(stepId)),
+    backLink: backLinkFor(quote, stepId, change),
+    breadcrumbs: breadcrumbs(quote, title),
     ...extras
   }
 }
 
-function getHandler(stepId) {
-  return (request, h) => {
-    const quote = findQuote(request.params.id)
-    if (!quote) {
-      return h.redirect(BASE)
-    }
-    return h.view(SECTION_PAGE, viewModel(quote, stepId, request))
+const withQuote = (handler) => (request, responseToolkit) => {
+  const quote = findQuote(request.params.id)
+  if (!quote) {
+    return responseToolkit.redirect(BASE)
   }
+  return handler(request, responseToolkit, quote)
+}
+
+const renderValidationErrors = (
+  stepId,
+  request,
+  quote,
+  { errors, errorSummary },
+  responseToolkit
+) => {
+  // Overlay the typed values onto the saved quote so the partial keeps
+  // reading quote.<field>; collect normalises without the cascade.
+  const renderQuote = {
+    ...quote,
+    ...contract.collect(stepId, request.payload)
+  }
+  return responseToolkit.view(
+    SECTION_PAGE,
+    viewModel(renderQuote, stepId, request, {
+      errors,
+      errorSummary,
+      values: request.payload
+    })
+  )
+}
+
+const redirectAfterSave = (updated, stepId, request, responseToolkit) =>
+  request.query.change
+    ? responseToolkit.redirect(cyaPath(updated.id))
+    : responseToolkit.redirect(
+        resolveNav(updated, contract.next(updated, stepId, grouped))
+      )
+
+function getHandler(stepId) {
+  return withQuote((request, responseToolkit, quote) =>
+    responseToolkit.view(SECTION_PAGE, viewModel(quote, stepId, request))
+  )
 }
 
 function postHandler(stepId) {
-  return (request, h) => {
-    const quote = findQuote(request.params.id)
-    if (!quote) {
-      return h.redirect(BASE)
-    }
+  return withQuote((request, responseToolkit, quote) => {
     const { ok, errors, errorSummary } = contract.validate(
       stepId,
       request.payload
     )
     if (!ok) {
-      // Overlay the typed values onto the saved quote so the partial keeps
-      // reading quote.<field>; collect normalises without the cascade.
-      const renderQuote = {
-        ...quote,
-        ...contract.collect(stepId, request.payload)
-      }
-      return h.view(
-        SECTION_PAGE,
-        viewModel(renderQuote, stepId, request, {
-          errors,
-          errorSummary,
-          values: request.payload
-        })
+      return renderValidationErrors(
+        stepId,
+        request,
+        quote,
+        { errors, errorSummary },
+        responseToolkit
       )
     }
     const updated = updateQuote(
       quote.id,
       contract.applyAnswer(quote, stepId, request.payload)
     )
-    if (request.query.change) {
-      return h.redirect(cyaPath(updated.id))
-    }
-    return h.redirect(
-      resolveNav(updated, contract.next(updated, stepId, grouped))
-    )
-  }
+    return redirectAfterSave(updated, stepId, request, responseToolkit)
+  })
 }
 
 /** GET/POST routes for every plain question step in the model. */

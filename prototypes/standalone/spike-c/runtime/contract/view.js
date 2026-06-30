@@ -5,12 +5,32 @@ import { fields, rules, stepById } from '../model.js'
  * rule-derived `requiredWhen`) and the option lists a step renders.
  */
 
+const RULE_REQUIRE = 'require'
+const REQUIRED_ALWAYS = 'always'
+const TYPE_MULTI_SELECT = 'multi-select'
+
 // A `require` rule's `when` becomes a field's requiredWhen, so the shared
 // page-slice validator enforces the within-page conditional from the same data.
 const requiredWhenFor = (fieldId) =>
   rules.find(
-    (rule) => rule.kind === 'require' && (rule.require ?? []).includes(fieldId)
+    (rule) =>
+      rule.kind === RULE_REQUIRE && (rule.require ?? []).includes(fieldId)
   )?.when
+
+const checkboxItems = (field, selected) =>
+  field.options.map((option) => ({
+    value: option.value,
+    text: option.text,
+    checked: selected.includes(option.value)
+  }))
+
+const radioItems = (field, answer) =>
+  field.options.map((option) => ({
+    value: option.value,
+    text: option.text,
+    hint: option.hint ? { text: option.hint } : undefined,
+    checked: answer === option.value
+  }))
 
 export function fieldsFor(stepId) {
   return Object.entries(fields)
@@ -22,7 +42,7 @@ export function fieldsFor(stepId) {
       max: field.max,
       pattern: field.pattern,
       options: field.options,
-      required: field.required === 'always',
+      required: field.required === REQUIRED_ALWAYS,
       requiredWhen: requiredWhenFor(id)
     }))
 }
@@ -33,18 +53,7 @@ export function viewItems(stepId, answers = {}) {
     return undefined
   }
   const field = fields[step.itemsFrom]
-  if (field.type === 'multi-select') {
-    const selected = answers[step.itemsFrom] ?? []
-    return field.options.map((option) => ({
-      value: option.value,
-      text: option.text,
-      checked: selected.includes(option.value)
-    }))
-  }
-  return field.options.map((option) => ({
-    value: option.value,
-    text: option.text,
-    hint: option.hint ? { text: option.hint } : undefined,
-    checked: answers[step.itemsFrom] === option.value
-  }))
+  return field.type === TYPE_MULTI_SELECT
+    ? checkboxItems(field, answers[step.itemsFrom] ?? [])
+    : radioItems(field, answers[step.itemsFrom])
 }

@@ -9,27 +9,37 @@ import { addonStepPath } from './links.js'
  * add-ons appended as their own tasks.
  */
 
+const STATUS_COMPLETE = 'complete'
+const STATUS_PARTIAL = 'partial'
+const STATUS_NOT_STARTED = 'not-started'
+const STATUS_CANNOT_START = 'cannot-start'
+const ADDONS_STEP = 'addons'
+
 function statusTag(status) {
-  if (status === 'complete') {
+  if (status === STATUS_COMPLETE) {
     return { text: 'Completed' }
   }
-  if (status === 'cannot-start') {
+  if (status === STATUS_CANNOT_START) {
     return {
       text: 'Cannot start yet',
       classes: 'govuk-task-list__status--cannot-start-yet'
     }
   }
-  if (status === 'not-started') {
+  if (status === STATUS_NOT_STARTED) {
     return { tag: { text: 'Not started', classes: 'govuk-tag--blue' } }
   }
   return { tag: { text: 'Incomplete', classes: 'govuk-tag--blue' } }
 }
 
 function groupTag(statuses) {
-  if (statuses.every((s) => s === 'complete')) {
+  if (statuses.every((status) => status === STATUS_COMPLETE)) {
     return { text: 'Completed' }
   }
-  if (statuses.some((s) => s === 'complete' || s === 'partial')) {
+  if (
+    statuses.some(
+      (status) => status === STATUS_COMPLETE || status === STATUS_PARTIAL
+    )
+  ) {
     return { tag: { text: 'In progress', classes: 'govuk-tag--light-blue' } }
   }
   return { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
@@ -49,30 +59,50 @@ function getYourQuoteItem(quote) {
   }
 }
 
+const liveStepIds = (group, live) =>
+  group.stepIds.filter((stepId) => live.includes(stepId))
+
+const liveStatuses = (quote, live, group) =>
+  liveStepIds(group, live).map((stepId) =>
+    contract.status(quote, stepId, grouped)
+  )
+
+const groupItem = (group, quote, live) => ({
+  title: { text: group.title },
+  hint: {
+    text: liveStepIds(group, live)
+      .map((stepId) => contract.stepTitle(stepId))
+      .join(', ')
+  },
+  href: `${BASE}/${quote.id}/${group.stepIds[0]}`,
+  status: groupTag(liveStatuses(quote, live, group))
+})
+
+// Add-ons sit outside the groups: a selection task plus one task per chosen add-on.
+const addonsSelectionItem = (quote) => ({
+  title: { text: contract.stepTitle(ADDONS_STEP) },
+  href: `${BASE}/${quote.id}/addons`,
+  status: statusTag(contract.status(quote, ADDONS_STEP, grouped))
+})
+
+const completedGroupCount = (quote, live) =>
+  grouped.groups.filter((group) =>
+    liveStatuses(quote, live, group).every(
+      (status) => status === STATUS_COMPLETE
+    )
+  ).length
+
 export function hubViewModel(quote) {
   const live = contract.applicableSteps(quote)
-  const items = grouped.groups.map((group) => {
-    const liveIds = group.stepIds.filter((id) => live.includes(id))
-    const statuses = liveIds.map((id) => contract.status(quote, id, grouped))
-    return {
-      title: { text: group.title },
-      hint: { text: liveIds.map((id) => contract.stepTitle(id)).join(', ') },
-      href: `${BASE}/${quote.id}/${group.stepIds[0]}`,
-      status: groupTag(statuses)
-    }
-  })
-  // Add-ons sit outside the groups: a selection task plus one task per chosen add-on.
-  items.push({
-    title: { text: contract.stepTitle('addons') },
-    href: `${BASE}/${quote.id}/addons`,
-    status: statusTag(contract.status(quote, 'addons', grouped))
-  })
-  items.push(...addonHubItems(quote, addonStepPath))
-  items.push(getYourQuoteItem(quote))
-  const completedCount = grouped.groups.filter((group) =>
-    group.stepIds
-      .filter((id) => live.includes(id))
-      .every((id) => contract.status(quote, id, grouped) === 'complete')
-  ).length
-  return { items, completedCount, totalCount: grouped.groups.length }
+  const items = [
+    ...grouped.groups.map((group) => groupItem(group, quote, live)),
+    addonsSelectionItem(quote),
+    ...addonHubItems(quote, addonStepPath),
+    getYourQuoteItem(quote)
+  ]
+  return {
+    items,
+    completedCount: completedGroupCount(quote, live),
+    totalCount: grouped.groups.length
+  }
 }

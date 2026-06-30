@@ -8,34 +8,66 @@ import { allSelectedAddonsComplete } from '../../lib/addons/index.js'
  * the current answers, and whether the whole live journey is complete.
  */
 
-export function status(answers, stepId) {
-  if (!applicableSteps(answers).includes(stepId)) {
-    return 'not-applicable'
+const STATUS = {
+  notApplicable: 'not-applicable',
+  complete: 'complete',
+  partial: 'partial',
+  notStarted: 'not-started'
+}
+
+const STEP_KIND = { loop: 'loop', subtasks: 'subtasks' }
+
+const loopStepStatus = (step, answers) => {
+  if (answers[step.done] === true) {
+    return STATUS.complete
   }
-  const step = stepById.get(stepId)
-  if (step.kind === 'loop') {
-    if (answers[step.done] === true) {
-      return 'complete'
-    }
-    return (answers[step.arrayKey] ?? []).length ? 'partial' : 'not-started'
+  return (answers[step.arrayKey] ?? []).length
+    ? STATUS.partial
+    : STATUS.notStarted
+}
+
+const subtasksStepStatus = (answers) => {
+  if (answers.selectedAddons === undefined) {
+    return STATUS.notStarted
   }
-  if (step.kind === 'subtasks') {
-    if (answers.selectedAddons === undefined) {
-      return 'not-started'
-    }
-    return allSelectedAddonsComplete(answers) ? 'complete' : 'partial'
-  }
+  return allSelectedAddonsComplete(answers) ? STATUS.complete : STATUS.partial
+}
+
+const allRequiredSatisfied = (required, snapshot) =>
+  required.length > 0 &&
+  required.every((fieldId) => snapshot.satisfied.has(fieldId))
+
+const anyFieldAnswered = (stepId, answers) =>
+  Object.keys(fields).some(
+    (fieldId) =>
+      fields[fieldId].step === stepId &&
+      isSatisfied(fields[fieldId], answers[fieldId])
+  )
+
+const fieldStepStatus = (stepId, answers) => {
   const snapshot = evaluate(answers)
   const required = requiredFieldsOfStep(stepId, snapshot)
-  const allRequired = required.every((id) => snapshot.satisfied.has(id))
-  if (required.length && allRequired) {
-    return 'complete'
+  if (allRequiredSatisfied(required, snapshot)) {
+    return STATUS.complete
   }
-  const anyAnswered = Object.keys(fields).some(
-    (id) => fields[id].step === stepId && isSatisfied(fields[id], answers[id])
-  )
-  return anyAnswered ? 'partial' : 'not-started'
+  return anyFieldAnswered(stepId, answers) ? STATUS.partial : STATUS.notStarted
+}
+
+export function status(answers, stepId) {
+  if (!applicableSteps(answers).includes(stepId)) {
+    return STATUS.notApplicable
+  }
+  const step = stepById.get(stepId)
+  if (step.kind === STEP_KIND.loop) {
+    return loopStepStatus(step, answers)
+  }
+  if (step.kind === STEP_KIND.subtasks) {
+    return subtasksStepStatus(answers)
+  }
+  return fieldStepStatus(stepId, answers)
 }
 
 export const allComplete = (answers) =>
-  applicableSteps(answers).every((id) => status(answers, id) === 'complete')
+  applicableSteps(answers).every(
+    (stepId) => status(answers, stepId) === STATUS.complete
+  )

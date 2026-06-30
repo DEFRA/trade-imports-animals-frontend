@@ -61,6 +61,8 @@ describe('spike-d assembleQuote', () => {
       estimatedValue: '100'
     })
     expect(result.ok).toBe(false)
-    expect(result.errors.some((e) => e.fieldId === 'excessAmount')).toBe(true)
+    expect(
+      result.errors.some((error) => error.fieldId === 'excessAmount')
+    ).toBe(true)
   })
 })

@@ -25,6 +25,13 @@ export const PHONE_ALLOWED = /^[0-9+()\-.,;\sextEXT]+$/
 const PHONE_DEFAULT_MIN_DIGITS = 7
 const PHONE_DEFAULT_MAX_DIGITS = 15
 
+const countDigits = (value) => value.replace(/\D/g, '').length
+
+const withinDigitRange = (min, max) => (value, helpers) =>
+  countDigits(value) < min || countDigits(value) > max
+    ? helpers.error('phone.length')
+    : value
+
 export function phoneSchema({
   name,
   enterMessage,
@@ -33,6 +40,10 @@ export function phoneSchema({
   minDigits = PHONE_DEFAULT_MIN_DIGITS,
   maxDigits = PHONE_DEFAULT_MAX_DIGITS
 }) {
+  const formatMessages = {
+    'string.pattern.base': formatMessage,
+    'phone.length': formatMessage
+  }
   // `.empty('')` collapses a typed-then-cleared input to undefined so the
   // store never carries an empty-string phone — keeps the rows() output and
   // the on-page error UX consistent in both required and optional modes.
@@ -40,22 +51,12 @@ export function phoneSchema({
     .trim()
     .empty('')
     .pattern(PHONE_ALLOWED)
-    .custom((value, helpers) => {
-      const digitCount = value.replace(/\D/g, '').length
-      if (digitCount < minDigits || digitCount > maxDigits) {
-        return helpers.error('phone.length')
-      }
-      return value
-    }, 'phone digit count')
-    .messages({
-      'string.pattern.base': formatMessage,
-      'phone.length': formatMessage
-    })
+    .custom(withinDigitRange(minDigits, maxDigits), 'phone digit count')
+    .messages(formatMessages)
   if (required) {
     field = field.required().messages({
       'any.required': enterMessage,
-      'string.pattern.base': formatMessage,
-      'phone.length': formatMessage
+      ...formatMessages
     })
   }
   return Joi.object({ [name]: field }).unknown(true)

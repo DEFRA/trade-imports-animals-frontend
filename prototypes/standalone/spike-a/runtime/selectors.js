@@ -13,6 +13,16 @@ import { assembleQuote, missingRequiredErrors } from '../validation/assemble.js'
  * `required`), and `appliesWhen` is a condition object so provenance falls out.
  */
 
+const STATUS = Object.freeze({
+  NOT_APPLICABLE: 'not-applicable',
+  COMPLETE: 'complete',
+  PARTIAL: 'partial',
+  NOT_STARTED: 'not-started'
+})
+const STEP_KIND = Object.freeze({ LOOP: 'loop', SUBTASKS: 'subtasks' })
+const FIELD_TYPE = Object.freeze({ DATE: 'date', MULTI_SELECT: 'multi-select' })
+const HUB_TERMINAL = Object.freeze({ terminal: 'hub' })
+
 const stepKind = (id) => stepById.get(id)?.kind
 const stepTitle = (id) => stepById.get(id)?.title
 
@@ -30,39 +40,53 @@ function requiredFields(step, answers) {
   )
 }
 
-function status(answers, stepId) {
-  if (!applicableStepIds(answers).includes(stepId)) {
-    return 'not-applicable'
+function loopStatus(step, answers) {
+  if (answers[step.done] === true) {
+    return STATUS.COMPLETE
   }
-  const step = stepById.get(stepId)
-  if (step.kind === 'loop') {
-    if (answers[step.done] === true) {
-      return 'complete'
-    }
-    return (answers[step.arrayKey] ?? []).length ? 'partial' : 'not-started'
+  return (answers[step.arrayKey] ?? []).length
+    ? STATUS.PARTIAL
+    : STATUS.NOT_STARTED
+}
+
+function subtasksStatus(answers) {
+  if (answers.selectedAddons === undefined) {
+    return STATUS.NOT_STARTED
   }
-  if (step.kind === 'subtasks') {
-    if (answers.selectedAddons === undefined) {
-      return 'not-started'
-    }
-    return allSelectedAddonsComplete(answers) ? 'complete' : 'partial'
-  }
+  return allSelectedAddonsComplete(answers) ? STATUS.COMPLETE : STATUS.PARTIAL
+}
+
+function fieldStatus(step, answers) {
   const required = requiredFields(step, answers)
   const allRequired = required.every((field) =>
     isSatisfied(field, answers[field.id])
   )
   if (required.length && allRequired) {
-    return 'complete'
+    return STATUS.COMPLETE
   }
   const anyAnswered = (step.fields ?? []).some((field) =>
     isSatisfied(field, answers[field.id])
   )
-  return anyAnswered ? 'partial' : 'not-started'
+  return anyAnswered ? STATUS.PARTIAL : STATUS.NOT_STARTED
+}
+
+function status(answers, stepId) {
+  if (!applicableStepIds(answers).includes(stepId)) {
+    return STATUS.NOT_APPLICABLE
+  }
+  const step = stepById.get(stepId)
+  if (step.kind === STEP_KIND.LOOP) {
+    return loopStatus(step, answers)
+  }
+  if (step.kind === STEP_KIND.SUBTASKS) {
+    return subtasksStatus(answers)
+  }
+  return fieldStatus(step, answers)
 }
 
 function allComplete(answers) {
   return applicableStepIds(answers).every(
-    (stepId) => status(answers, stepId) === 'complete'
+    (stepId) => status(answers, stepId) === STATUS.COMPLETE
   )
 }
 
@@ -81,19 +105,19 @@ function liveGroupSteps(shape, stepId, answers) {
 function next(answers, stepId, shape) {
   const live = liveGroupSteps(shape, stepId, answers)
   if (!live) {
-    return { terminal: 'hub' }
+    return HUB_TERMINAL
   }
   const nextStep = live[live.indexOf(stepId) + 1]
-  return nextStep ?? { terminal: 'hub' }
+  return nextStep ?? HUB_TERMINAL
 }
 
 function prev(answers, stepId, shape) {
   const live = liveGroupSteps(shape, stepId, answers)
   if (!live) {
-    return { terminal: 'hub' }
+    return HUB_TERMINAL
   }
   const prevStep = live[live.indexOf(stepId) - 1]
-  return prevStep ?? { terminal: 'hub' }
+  return prevStep ?? HUB_TERMINAL
 }
 
 function missingRequired(answers) {
@@ -104,34 +128,44 @@ function missingRequired(answers) {
   }))
 }
 
+function collectDate(field, payload) {
+  const day = payload[`${field.id}-day`]
+  const month = payload[`${field.id}-month`]
+  const year = payload[`${field.id}-year`]
+  const anyPart = [day, month, year].some(
+    (part) => part !== undefined && String(part).trim() !== ''
+  )
+  return anyPart ? { day, month, year } : undefined
+}
+
+function collectMultiSelect(field, payload) {
+  const raw = payload[field.id]
+  return raw === undefined ? [] : [].concat(raw)
+}
+
+function collectField(field, payload) {
+  if (field.type === FIELD_TYPE.DATE) {
+    return collectDate(field, payload)
+  }
+  if (field.type === FIELD_TYPE.MULTI_SELECT) {
+    return collectMultiSelect(field, payload)
+  }
+  return payload[field.id]
+}
+
 /** Normalise a step's own fields from the raw form payload (no cascade). */
 function collect(stepId, payload) {
   const step = stepById.get(stepId)
-  const patch = {}
-  for (const field of step.fields ?? []) {
-    if (field.type === 'date') {
-      const day = payload[`${field.id}-day`]
-      const month = payload[`${field.id}-month`]
-      const year = payload[`${field.id}-year`]
-      const anyPart = [day, month, year].some(
-        (part) => part !== undefined && String(part).trim() !== ''
-      )
-      patch[field.id] = anyPart ? { day, month, year } : undefined
-    } else if (field.type === 'multi-select') {
-      const raw = payload[field.id]
-      patch[field.id] = raw === undefined ? [] : [].concat(raw)
-    } else {
-      patch[field.id] = payload[field.id]
-    }
-  }
-  return patch
+  return Object.fromEntries(
+    (step.fields ?? []).map((field) => [field.id, collectField(field, payload)])
+  )
 }
 
 function clearStep(answers, step) {
   for (const field of step.fields ?? []) {
     answers[field.id] = undefined
   }
-  if (step.kind === 'loop') {
+  if (step.kind === STEP_KIND.LOOP) {
     answers[step.done] = false
     answers[step.arrayKey] = []
   }
@@ -164,29 +198,36 @@ function fieldsFor(stepId) {
   }))
 }
 
-function viewItems(stepId, answers = {}) {
-  const step = stepById.get(stepId)
-  if (!step?.itemsFrom) {
-    return undefined
-  }
-  const field = (step.fields ?? []).find((f) => f.id === step.itemsFrom)
-  if (!field) {
-    return undefined
-  }
-  if (field.type === 'multi-select') {
-    const selected = answers[field.id] ?? []
-    return field.options.map((option) => ({
-      value: option.value,
-      text: option.text,
-      checked: selected.includes(option.value)
-    }))
-  }
+function multiSelectItems(field, answers) {
+  const selected = answers[field.id] ?? []
+  return field.options.map((option) => ({
+    value: option.value,
+    text: option.text,
+    checked: selected.includes(option.value)
+  }))
+}
+
+function singleSelectItems(field, answers) {
   return field.options.map((option) => ({
     value: option.value,
     text: option.text,
     hint: option.hint ? { text: option.hint } : undefined,
     checked: answers[field.id] === option.value
   }))
+}
+
+function viewItems(stepId, answers = {}) {
+  const step = stepById.get(stepId)
+  if (!step?.itemsFrom) {
+    return undefined
+  }
+  const field = (step.fields ?? []).find((field) => field.id === step.itemsFrom)
+  if (!field) {
+    return undefined
+  }
+  return field.type === FIELD_TYPE.MULTI_SELECT
+    ? multiSelectItems(field, answers)
+    : singleSelectItems(field, answers)
 }
 
 export const contract = {

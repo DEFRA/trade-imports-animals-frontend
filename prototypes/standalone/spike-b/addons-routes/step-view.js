@@ -44,32 +44,34 @@ export function locateStep(params) {
   return index === -1 ? null : { addon, step: addon.steps[index], index }
 }
 
+const DATE_KIND = 'date'
+const DATE_PARTS = ['day', 'month', 'year']
+
+const splitDateField = (name, payload) =>
+  Object.fromEntries(
+    DATE_PARTS.map((part) => [part, payload[`${name}-${part}`]])
+  )
+
 // Reshape a raw POST payload into the structure the add-on partials expect —
 // date fields back into { day, month, year }, others passed through.
-function coalesceStepValues(fields, payload) {
-  const data = {}
-  for (const field of fields) {
-    if (field.kind === 'date') {
-      data[field.name] = {
-        day: payload[`${field.name}-day`],
-        month: payload[`${field.name}-month`],
-        year: payload[`${field.name}-year`]
-      }
-    } else {
-      data[field.name] = payload[field.name]
-    }
-  }
-  return data
-}
+const coalesceField = (field, payload) => [
+  field.name,
+  field.kind === DATE_KIND
+    ? splitDateField(field.name, payload)
+    : payload[field.name]
+]
+
+const coalesceStepValues = (fields, payload) =>
+  Object.fromEntries(fields.map((field) => coalesceField(field, payload)))
 
 export function stepViewModel(quote, found, extras = {}) {
-  const data = extras.values
+  const fieldValues = extras.values
     ? coalesceStepValues(found.step.fields, extras.values)
     : getAddonData(quote, found.addon.value)
   return {
     layout: LAYOUT,
     pageTitle: found.step.title,
-    fields: fieldsToView(found.step.fields, data, extras.errors ?? null),
+    fields: fieldsToView(found.step.fields, fieldValues, extras.errors ?? null),
     backLink: stepBack(quote, found.addon.value, found.index),
     breadcrumbs: breadcrumbs(quote, found.step.title),
     ...extras

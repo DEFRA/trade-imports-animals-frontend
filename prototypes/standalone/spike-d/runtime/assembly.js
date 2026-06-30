@@ -21,75 +21,93 @@ const transformer = makeAssembler({
   rules: []
 })
 
-function businessRuleErrors(answers) {
-  const out = []
-  for (const rule of annotations.businessRules ?? []) {
-    if (rule.when && !evalCondition(rule.when, answers)) {
-      continue
-    }
-    if (rule.kind === 'min-age') {
-      const age = ageInYears(answers[rule.field])
-      if (age !== undefined && age < rule.min) {
-        out.push({
-          stepId: rule.stepId,
-          fieldId: rule.fieldId,
-          message: rule.reason,
-          because: []
-        })
-      }
-    }
-    if (rule.kind === 'lte') {
-      const left = Number(answers[rule.left])
-      const right = Number(answers[rule.right])
-      if (!Number.isNaN(left) && !Number.isNaN(right) && left > right) {
-        out.push({
-          stepId: rule.stepId,
-          fieldId: rule.fieldId,
-          message: rule.reason,
-          because: []
-        })
-      }
-    }
-  }
-  return out
+const HAD_CLAIMS_YES = 'yes'
+
+const toError = (rule, message) => ({
+  stepId: rule.stepId,
+  fieldId: rule.fieldId,
+  message,
+  because: []
+})
+
+const minAgeError = (rule, answers) => {
+  const age = ageInYears(answers[rule.field])
+  return age !== undefined && age < rule.min
+    ? toError(rule, rule.reason)
+    : undefined
 }
+
+const lteError = (rule, answers) => {
+  const left = Number(answers[rule.left])
+  const right = Number(answers[rule.right])
+  return !Number.isNaN(left) && !Number.isNaN(right) && left > right
+    ? toError(rule, rule.reason)
+    : undefined
+}
+
+const ruleEvaluators = { 'min-age': minAgeError, lte: lteError }
+
+const ruleApplies = (answers) => (rule) =>
+  !rule.when || evalCondition(rule.when, answers)
+
+function businessRuleErrors(answers) {
+  return (annotations.businessRules ?? [])
+    .filter(ruleApplies(answers))
+    .flatMap((rule) => ruleEvaluators[rule.kind]?.(rule, answers) ?? [])
+}
+
+const requiredErrors = (missing) =>
+  missing
+    .filter((entry) => entry.path !== 'claims') // the loop owns its own completeness
+    .map((entry) => ({
+      stepId: fieldStep[entry.path] ?? entry.path,
+      fieldId: entry.path,
+      message: `${humanize(entry.path)} is required`,
+      because: entry.because
+    }))
+
+const invalidErrors = (invalid) =>
+  invalid.map((entry) => ({
+    stepId: fieldStep[entry.path] ?? entry.path,
+    fieldId: entry.path,
+    message: entry.message,
+    because: []
+  }))
+
+const addonErrors = (answers) =>
+  allSelectedAddonsComplete(answers)
+    ? []
+    : [
+        {
+          stepId: 'addons',
+          fieldId: 'selectedAddons',
+          message: 'Finish every add-on you selected',
+          because: []
+        }
+      ]
+
+// hadClaims = yes still needs at least one claim (schema minItems on the array)
+const claimsErrors = (answers) =>
+  answers.hadClaims === HAD_CLAIMS_YES && !(answers.claims ?? []).length
+    ? [
+        {
+          stepId: 'claims',
+          fieldId: 'claims',
+          message: 'Add at least one claim',
+          because: requiredBecause('claims', answers)
+        }
+      ]
+    : []
 
 export function assembleQuote(answers) {
   const { missing, invalid } = check(answers)
   const errors = [
-    ...missing
-      .filter((entry) => entry.path !== 'claims') // the loop owns its own completeness
-      .map((entry) => ({
-        stepId: fieldStep[entry.path] ?? entry.path,
-        fieldId: entry.path,
-        message: `${humanize(entry.path)} is required`,
-        because: entry.because
-      })),
-    ...invalid.map((entry) => ({
-      stepId: fieldStep[entry.path] ?? entry.path,
-      fieldId: entry.path,
-      message: entry.message,
-      because: []
-    })),
-    ...businessRuleErrors(answers)
+    ...requiredErrors(missing),
+    ...invalidErrors(invalid),
+    ...businessRuleErrors(answers),
+    ...addonErrors(answers),
+    ...claimsErrors(answers)
   ]
-  if (!allSelectedAddonsComplete(answers)) {
-    errors.push({
-      stepId: 'addons',
-      fieldId: 'selectedAddons',
-      message: 'Finish every add-on you selected',
-      because: []
-    })
-  }
-  // hadClaims = yes still needs at least one claim (schema minItems on the array)
-  if (answers.hadClaims === 'yes' && !(answers.claims ?? []).length) {
-    errors.push({
-      stepId: 'claims',
-      fieldId: 'claims',
-      message: 'Add at least one claim',
-      because: requiredBecause('claims', answers)
-    })
-  }
   return {
     ok: errors.length === 0,
     quote: transformer.toDomain(answers),

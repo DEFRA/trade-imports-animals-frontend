@@ -2,6 +2,9 @@ import { evalCondition, provenance } from './conditions.js'
 import { isSatisfied, humanize, ageInYears } from './fieldutil.js'
 import { getSelectedAddons, allSelectedAddonsComplete } from './addons/index.js'
 
+const BOOLEAN_TRUE = 'yes'
+const DATE_PART_WIDTH = 2
+
 /**
  * Whole-object validation + transform (validation.md moment 4), shared by the
  * derive-Joi spikes. The caller supplies a small **model view** so the same
@@ -21,12 +24,19 @@ export function makeAssembler(view) {
     reason: `You answered "${entry.eq}" for ${humanize(entry.field)}`
   })
 
+  const ruleToError = (rule) => ({
+    stepId: rule.stepId,
+    fieldId: rule.fieldId,
+    message: rule.reason,
+    because: []
+  })
+
   function transformField(field, value) {
     switch (field.type) {
       case 'date':
         return isoDate(value)
       case 'boolean':
-        return value === 'yes'
+        return value === BOOLEAN_TRUE
       case 'number':
       case 'currency':
         return value === '' ? undefined : Number(value)
@@ -35,24 +45,29 @@ export function makeAssembler(view) {
     }
   }
 
+  const transformFields = (step, answers) =>
+    Object.fromEntries(
+      (step.fields ?? [])
+        .filter((field) => answers[field.id] !== undefined)
+        .map((field) => [field.id, transformField(field, answers[field.id])])
+    )
+
+  const transformClaimItem = (item) => ({
+    ...item,
+    claimAmount:
+      item.claimAmount === undefined ? undefined : Number(item.claimAmount)
+  })
+
+  const transformLoopItems = (step, answers) =>
+    (answers[step.arrayKey] ?? []).map(transformClaimItem)
+
   function toDomain(answers) {
     const quote = {}
     for (const stepId of view.getApplicableSteps(answers)) {
       const step = view.getStep(stepId)
-      for (const field of step.fields ?? []) {
-        const value = answers[field.id]
-        if (value !== undefined) {
-          quote[field.id] = transformField(field, value)
-        }
-      }
+      Object.assign(quote, transformFields(step, answers))
       if (step.kind === 'loop') {
-        quote[step.arrayKey] = (answers[step.arrayKey] ?? []).map((item) => ({
-          ...item,
-          claimAmount:
-            item.claimAmount === undefined
-              ? undefined
-              : Number(item.claimAmount)
-        }))
+        quote[step.arrayKey] = transformLoopItems(step, answers)
       }
       if (step.kind === 'subtasks') {
         quote.selectedAddons = getSelectedAddons(answers)
@@ -61,84 +76,85 @@ export function makeAssembler(view) {
     return quote
   }
 
-  function missingRequiredErrors(answers) {
-    const errors = []
-    for (const stepId of view.getApplicableSteps(answers)) {
-      const step = view.getStep(stepId)
-      const stepBecause = view.provenanceForStep(stepId, answers).map(reasonFor)
-      if (step.kind === 'loop') {
-        if (!(answers[step.arrayKey] ?? []).length) {
-          errors.push({
+  const loopRequiredError = (step, stepId, stepBecause, answers) =>
+    (answers[step.arrayKey] ?? []).length
+      ? []
+      : [
+          {
             stepId,
             fieldId: step.arrayKey,
             message: 'Add at least one claim',
             because: stepBecause
-          })
-        }
-        continue
-      }
-      if (step.kind === 'subtasks') {
-        if (!allSelectedAddonsComplete(answers)) {
-          errors.push({
+          }
+        ]
+
+  const subtasksRequiredError = (stepId, answers) =>
+    allSelectedAddonsComplete(answers)
+      ? []
+      : [
+          {
             stepId,
             fieldId: 'selectedAddons',
             message: 'Finish every add-on you selected',
             because: []
-          })
-        }
-        continue
-      }
-      for (const field of step.fields ?? []) {
+          }
+        ]
+
+  const fieldRequiredErrors = (step, stepId, stepBecause, answers) =>
+    (step.fields ?? [])
+      .filter((field) => {
         const required =
           field.required ||
           (field.requiredWhen && evalCondition(field.requiredWhen, answers))
-        if (required && !isSatisfied(field, answers[field.id])) {
-          errors.push({
-            stepId,
-            fieldId: field.id,
-            message: `${humanize(field.id)} is required`,
-            because: [
-              ...stepBecause,
-              ...provenance(field.requiredWhen).map(reasonFor)
-            ]
-          })
-        }
-      }
+        return required && !isSatisfied(field, answers[field.id])
+      })
+      .map((field) => ({
+        stepId,
+        fieldId: field.id,
+        message: `${humanize(field.id)} is required`,
+        because: [
+          ...stepBecause,
+          ...provenance(field.requiredWhen).map(reasonFor)
+        ]
+      }))
+
+  const errorsForStep = (stepId, answers) => {
+    const step = view.getStep(stepId)
+    const stepBecause = view.provenanceForStep(stepId, answers).map(reasonFor)
+    if (step.kind === 'loop') {
+      return loopRequiredError(step, stepId, stepBecause, answers)
     }
-    return errors
+    if (step.kind === 'subtasks') {
+      return subtasksRequiredError(stepId, answers)
+    }
+    return fieldRequiredErrors(step, stepId, stepBecause, answers)
   }
 
+  function missingRequiredErrors(answers) {
+    return view
+      .getApplicableSteps(answers)
+      .flatMap((stepId) => errorsForStep(stepId, answers))
+  }
+
+  const minAgeError = (rule, answers) => {
+    const age = ageInYears(answers[rule.field])
+    return age !== undefined && age < rule.min ? ruleToError(rule) : undefined
+  }
+
+  const lteError = (rule, answers) => {
+    const left = Number(answers[rule.left])
+    const right = Number(answers[rule.right])
+    return !Number.isNaN(left) && !Number.isNaN(right) && left > right
+      ? ruleToError(rule)
+      : undefined
+  }
+
+  const ruleEvaluators = { 'min-age': minAgeError, lte: lteError }
+
   function businessRuleErrors(answers) {
-    const errors = []
-    for (const rule of view.rules ?? []) {
-      if (rule.when && !evalCondition(rule.when, answers)) {
-        continue
-      }
-      if (rule.kind === 'min-age') {
-        const age = ageInYears(answers[rule.field])
-        if (age !== undefined && age < rule.min) {
-          errors.push({
-            stepId: rule.stepId,
-            fieldId: rule.fieldId,
-            message: rule.reason,
-            because: []
-          })
-        }
-      }
-      if (rule.kind === 'lte') {
-        const left = Number(answers[rule.left])
-        const right = Number(answers[rule.right])
-        if (!Number.isNaN(left) && !Number.isNaN(right) && left > right) {
-          errors.push({
-            stepId: rule.stepId,
-            fieldId: rule.fieldId,
-            message: rule.reason,
-            because: []
-          })
-        }
-      }
-    }
-    return errors
+    return (view.rules ?? [])
+      .filter((rule) => !rule.when || evalCondition(rule.when, answers))
+      .flatMap((rule) => ruleEvaluators[rule.kind]?.(rule, answers) ?? [])
   }
 
   return {
@@ -155,7 +171,7 @@ export function makeAssembler(view) {
 }
 
 function pad(value) {
-  return String(value).padStart(2, '0')
+  return String(value).padStart(DATE_PART_WIDTH, '0')
 }
 
 function isoDate(dob) {

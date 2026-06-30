@@ -3,13 +3,10 @@ import { steps, stepMeta, stepFields } from './step-meta.js'
 
 // The set of fields required right now: schema.required + active if/then.required.
 export function requiredNow(answers) {
-  const set = new Set(schema.required)
-  for (const branch of activeBranches(answers)) {
-    for (const req of branch.then.required ?? []) {
-      set.add(req)
-    }
-  }
-  return set
+  const branchRequired = activeBranches(answers).flatMap(
+    (branch) => branch.then.required ?? []
+  )
+  return new Set([...schema.required, ...branchRequired])
 }
 
 // Why a field is required now: [] if base-required, else the if-condition that fired.

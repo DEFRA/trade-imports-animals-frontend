@@ -6,6 +6,13 @@ import Joi from 'joi'
  * field's canonical rules once so they compose with `Joi.object().concat(...)`.
  */
 
+const MIN_VEHICLE_YEAR = 1900
+
+const stripCurrencyFormatting = (raw) =>
+  String(raw ?? '')
+    .trim()
+    .replace(/[£,\s]/g, '')
+
 /**
  * Integer-years field: whole number within [min, max]. Used for
  * `yearsNoClaims` and `ncdYears`. Two friendly strings — `enterMessage`
@@ -59,15 +66,15 @@ export function vehicleYearSchema({
   // (enterMessage) instead of being coerced to 0 and tripping the range error.
   const base = Joi.number()
     .integer()
-    .min(1900)
+    .min(MIN_VEHICLE_YEAR)
     .max(year + 1)
     .empty('')
   const field = (required ? base.required() : base).messages({
     'any.required': enterMessage,
     'number.base': `${noun} must be a number`,
     'number.integer': `${noun} must be a whole number`,
-    'number.min': `${noun} must be between 1900 and ${year + 1}`,
-    'number.max': `${noun} must be between 1900 and ${year + 1}`
+    'number.min': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${year + 1}`,
+    'number.max': `${noun} must be between ${MIN_VEHICLE_YEAR} and ${year + 1}`
   })
   return Joi.object({ [name]: field }).unknown(true)
 }
@@ -96,9 +103,7 @@ export function currencySchema({
   return Joi.object({
     [name]: Joi.any()
       .custom((raw, helpers) => {
-        const cleaned = String(raw ?? '')
-          .trim()
-          .replace(/[£,\s]/g, '')
+        const cleaned = stripCurrencyFormatting(raw)
         if (cleaned === '') {
           if (required) {
             return helpers.error('any.required')
@@ -108,11 +113,11 @@ export function currencySchema({
         if (!/^\d+$/.test(cleaned)) {
           return helpers.error('currency.format')
         }
-        const n = Number(cleaned)
-        if (n <= 0) {
+        const amount = Number(cleaned)
+        if (amount <= 0) {
           return helpers.error('currency.format')
         }
-        return n
+        return amount
       }, 'currency')
       .messages({
         'any.required': enterMessage,

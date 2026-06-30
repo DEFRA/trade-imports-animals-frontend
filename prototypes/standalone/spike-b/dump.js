@@ -26,22 +26,28 @@ function loadFixture(arg) {
   return JSON.parse(fs.readFileSync(candidate, 'utf8'))
 }
 
+const stepStatuses = (answers, live, shape) =>
+  Object.fromEntries(
+    live.map((stepId) => [stepId, contract.status(answers, stepId, shape)])
+  )
+
+const stepNavigation = (answers, live, shape) =>
+  Object.fromEntries(
+    live.map((stepId) => [
+      stepId,
+      {
+        next: contract.next(answers, stepId, shape),
+        prev: contract.prev(answers, stepId, shape)
+      }
+    ])
+  )
+
 function shapeView(answers, shape) {
   const live = contract.applicableSteps(answers)
   return {
     applicableSteps: live,
-    status: Object.fromEntries(
-      live.map((stepId) => [stepId, contract.status(answers, stepId, shape)])
-    ),
-    navigation: Object.fromEntries(
-      live.map((stepId) => [
-        stepId,
-        {
-          next: contract.next(answers, stepId, shape),
-          prev: contract.prev(answers, stepId, shape)
-        }
-      ])
-    )
+    status: stepStatuses(answers, live, shape),
+    navigation: stepNavigation(answers, live, shape)
   }
 }
 
