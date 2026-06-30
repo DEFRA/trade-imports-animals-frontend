@@ -107,6 +107,11 @@ jobs:
             fs.writeFileSync('./frontend/lighthouse-report/index.html', html);
           "
 
+      - name: Flag simple findings
+        if: always() && steps.lhci.outcome != 'skipped'
+        run: node scripts/lighthouse/flag-simple-findings.cjs
+        working-directory: frontend
+
       - name: Upload Lighthouse report artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -165,8 +170,17 @@ jobs:
       github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Download Lighthouse report artifact
+        if: needs.lighthouse-test.result == 'success' || needs.lighthouse-test.result == 'failure'
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report/
+        continue-on-error: true
+
       - name: Report Lighthouse check run on PR
         uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
         with:
           lighthouse-result: ${{ needs.lighthouse-test.result }}
           report-url: ${{ needs.lighthouse-publish.outputs.report-url }}
+          flagged-audits-path: lighthouse-report/flagged-audits.json
