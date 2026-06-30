@@ -640,6 +640,40 @@ any indexed source (`user`, `derived`, `seeded`).
 A page can mix `presents` and `presentsForEach` — a static header plus a
 dynamic per-fulfilment section.
 
+#### Read-only Pages
+
+A Page may have an empty `presents` (or omit it entirely) — that's the
+read-only case, used for intro pages, summaries, "what you'll need"
+interstitials, etc. The Page is part of the natural narrative order and
+is shown to the user in declared sequence; it just has no inputs to
+submit and no in-scope obligations to fulfil, so its status is always
+**Not Applicable**.
+
+```jsonc
+// flow.json — read-only intro page
+{ "page": "what-youll-need" }
+```
+
+Read-only-ness is **intrinsic** — derived from the absence of `presents`
+and `presentsForEach`. The schema deliberately doesn't carry a separate
+`readOnly` flag (avoids the contradiction-waiting-to-happen of a flag
+and a non-empty `presents` together). The runtime may expose a derived
+helper for code clarity:
+
+```ts
+function isReadOnly(page: Page): boolean {
+  return (page.presents?.length ?? 0) === 0 && !page.presentsForEach
+}
+```
+
+Navigation logic uses the status taxonomy (NA), not a read-only check
+directly — see §Navigation and status.
+
+A Page with `presentsForEach` is **dynamic**: it may resolve to zero
+in-scope fulfilments in current state but isn't structurally read-only,
+because state changes can populate it. Its status will be Not Applicable
+while empty.
+
 #### Per-pair mandate — soft default, explicit hard
 
 Each page entry carries an optional `mandate` flag:
@@ -840,10 +874,24 @@ Given an Engine state and a Container tree:
    link. Sections with status Not Applicable are hidden by default
    (the Flow may optionally signpost them as "coming up" — see open
    question Q).
-2. **Entering a Section**: navigate to the first applicable
-   non-Fulfilled descendant Page (depth-first traversal). Whether the
-   entry-Page is the first applicable, or the first applicable
-   _incomplete_, is configurable per Flow — see §What's still open.
+2. **Entering a Section** (default): navigate to the **first Page in
+   declared order** (depth-first into the Container tree), regardless
+   of status. Read-only Pages (those with no `presents`) appear in the
+   walk like any other Page — they're part of the narrative. The user
+   can then move forward, backward, or back to the Task List from each
+   Page.
+
+   An **optional "Continue / Resume" shortcut** may also be exposed
+   (typically on the Task List when a Section is In Progress, or via
+   another renderer-level affordance) that jumps directly to the first
+   applicable Page with status **Not Started** or **In Progress** —
+   "where the user has work to do". This naturally skips Pages with
+   status Not Applicable (including all read-only Pages) and Pages
+   already Fulfilled, via the existing status taxonomy — no separate
+   read-only filter needed. For a fully Fulfilled Section the shortcut
+   has nothing to find and gracefully degrades to default first-Page
+   behaviour.
+
 3. **On Page POST**: validate hard mandates; on success, write the
    submitted fulfilments to the Journey state; **recalculate the Engine**
    from the new state; then walk to the next applicable non-Fulfilled
@@ -1183,11 +1231,19 @@ state)`, `isFulfilled(container, state)`, etc.). Matches the
   async blockers become obligations whose dependents are NA until
   fulfilled). See §Navigation and status / §Status-propagation rules.
 
-- **P.3 First-Page vs first-incomplete-Page on Section entry.** When
-  the user enters a Section, does the runtime jump to the first
-  applicable Page, or the first applicable Page that isn't yet
-  Fulfilled? Probably the latter (resume where you left off), but
-  worth being a Flow-level configurable.
+- **P.3 First-Page vs first-incomplete-Page on Section entry.**
+  Settled. **Default**: first Page in declared order, regardless of
+  status (so read-only intro Pages are seen on the first walk).
+  **Optional "Continue / Resume" shortcut**: first applicable Page with
+  status Not Started or In Progress, which naturally skips read-only
+  (NA) and Fulfilled Pages via the existing status taxonomy. Read-only
+  Pages are derived from empty `presents` (no separate flag). See
+  §Navigation algorithm step 2 and §Read-only Pages.
+
+  Sub-question that remains open: where / when the UI exposes the
+  Resume shortcut (Task List for In Progress Sections? A power-user
+  keyboard shortcut? Per-Section opt-in?) — left as a renderer / UX
+  concern.
 
 - **P.4 First-incomplete navigation for deeply nested containers.**
   When entering a Section, does the runtime walk depth-first through
