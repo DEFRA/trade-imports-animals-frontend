@@ -1,5 +1,5 @@
 import { stepById } from '../model.js'
-import { applicableSteps } from '../engine.js'
+import { applicableSteps } from '../engine/index.js'
 import { fieldsFor } from './view.js'
 
 /**

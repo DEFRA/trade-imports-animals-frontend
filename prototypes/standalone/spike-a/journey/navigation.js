@@ -1,5 +1,5 @@
 import { findQuote } from '../lib/store.js'
-import { contract } from '../runtime/selectors.js'
+import { contract } from '../runtime/selectors/index.js'
 import { BASE, grouped, hubPath } from './config.js'
 
 /**

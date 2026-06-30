@@ -1,5 +1,5 @@
 import { steps, stepById } from '../model.js'
-import { applicableSteps, missingRequired } from '../engine.js'
+import { applicableSteps, missingRequired } from '../engine/index.js'
 import { getSelectedAddons } from '../../lib/addons/index.js'
 import { fieldsFor, viewItems } from './view.js'
 import { status, allComplete } from './status.js'

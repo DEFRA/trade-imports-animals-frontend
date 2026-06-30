@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { assembleQuote, toDomain } from './assemble.js'
+import { assembleQuote, toDomain } from './assemble/index.js'
 
 const completeAnswers = {
   fullName: 'Alex Driver',

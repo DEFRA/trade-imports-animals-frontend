@@ -4,7 +4,7 @@
  * family (date / numeric / text), so call sites keep one import path.
  */
 export { validatePayload } from './run.js'
-export { dobSchema, MAX_AGE, MIN_DRIVING_AGE } from './date.js'
+export { dobSchema, MAX_AGE, MIN_DRIVING_AGE } from './date/index.js'
 export {
   integerYearsSchema,
   vehicleYearSchema,

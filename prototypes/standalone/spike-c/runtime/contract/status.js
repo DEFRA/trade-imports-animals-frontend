@@ -1,5 +1,9 @@
 import { fields, stepById } from '../model.js'
-import { evaluate, applicableSteps, requiredFieldsOfStep } from '../engine.js'
+import {
+  evaluate,
+  applicableSteps,
+  requiredFieldsOfStep
+} from '../engine/index.js'
 import { isSatisfied } from '../../lib/fieldutil.js'
 import { allSelectedAddonsComplete } from '../../lib/addons/index.js'
 

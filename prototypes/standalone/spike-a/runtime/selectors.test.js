@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { contract } from './selectors.js'
+import { contract } from './selectors/index.js'
 import { grouped } from '../journey/config.js'
 
 describe('spike-a runtime contract — navigation', () => {

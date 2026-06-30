@@ -1,5 +1,5 @@
-import { addonHubItems } from '../lib/addons.js'
-import { contract } from '../runtime/selectors.js'
+import { addonHubItems } from '../lib/addons/index.js'
+import { contract } from '../runtime/selectors/index.js'
 import { BASE, grouped, addonStepPath } from './config.js'
 
 /**

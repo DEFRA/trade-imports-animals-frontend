@@ -1,4 +1,4 @@
-import { applicableSteps } from '../engine.js'
+import { applicableSteps } from '../engine/index.js'
 
 /**
  * Grouped navigation: next/prev are a thin consequence of step order within the

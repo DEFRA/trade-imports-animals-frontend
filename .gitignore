@@ -24,3 +24,6 @@ prototypes/standalone/*/lib/data/quotes.json
 playwright-report/
 blob-report/
 .playwright/
+
+# Superseded originals parked during the prototype-spike refactor (throwaway)
+prototypes/standalone/_quarantine/

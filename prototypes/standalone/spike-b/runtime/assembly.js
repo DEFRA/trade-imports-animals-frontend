@@ -1,8 +1,8 @@
 import { machine } from './model.js'
 import { applicableSteps, provenanceForStep } from './navigation.js'
 import { getStep, fieldsFor } from './steps.js'
-import { makePageValidator } from '../lib/page-validator.js'
-import { makeAssembler } from '../lib/assembler.js'
+import { makePageValidator } from '../lib/page-validator/index.js'
+import { makeAssembler } from '../lib/assembler/index.js'
 
 /**
  * Whole-object wiring — builds the assembler and the page-slice validator once

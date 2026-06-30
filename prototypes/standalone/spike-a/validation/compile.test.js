@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateStep } from './compile.js'
+import { validateStep } from './compile/index.js'
 
 describe('spike-a page-slice validation (derived from the model)', () => {
   it('rejects a missing required field with a field-anchored error', () => {

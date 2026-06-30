@@ -4,7 +4,7 @@ import {
   applicableSteps,
   missingRequired,
   assertionErrors
-} from './engine.js'
+} from './engine/index.js'
 import { contract } from './contract/index.js'
 
 describe('spike-c rules engine — required-ness is rule-derived', () => {

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { contract } from './runtime/selectors.js'
+import { contract } from './runtime/selectors/index.js'
 import { grouped } from './journey/config.js'
 
 /**

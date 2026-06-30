@@ -11,7 +11,7 @@ import {
   addonByValue,
   addonComplete,
   allSelectedAddonsComplete
-} from '../addons.js'
+} from '../addons/index.js'
 import {
   currencySchema,
   dobSchema,

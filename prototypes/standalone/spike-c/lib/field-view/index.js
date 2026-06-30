@@ -1,4 +1,4 @@
-import { fieldToView } from './to-view.js'
+import { fieldToView } from './to-view/index.js'
 import { attachError } from './errors.js'
 
 /**

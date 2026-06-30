@@ -1,8 +1,8 @@
 import { shellRoutes } from './routes/shell.js'
 import { sectionRoutes } from './routes/section.js'
 import { claimsRoutes } from './routes/claims.js'
-import { addonsRoutes } from './routes/addons.js'
-import { endingsRoutes } from './routes/endings.js'
+import { addonsRoutes } from './routes/addons/index.js'
+import { endingsRoutes } from './routes/endings/index.js'
 
 /**
  * Spike A (standalone) — the whole journey as one Hapi plugin, assembled from

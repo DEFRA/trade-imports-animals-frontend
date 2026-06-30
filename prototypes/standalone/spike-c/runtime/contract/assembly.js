@@ -3,9 +3,9 @@ import {
   applicableSteps,
   missingRequiredErrors,
   assertionErrors
-} from '../engine.js'
-import { makePageValidator } from '../../lib/page-validator.js'
-import { makeAssembler } from '../../lib/assembler.js'
+} from '../engine/index.js'
+import { makePageValidator } from '../../lib/page-validator/index.js'
+import { makeAssembler } from '../../lib/assembler/index.js'
 import { fieldsFor } from './view.js'
 
 /**

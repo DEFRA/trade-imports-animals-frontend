@@ -1,5 +1,5 @@
 export { validatePayload } from './run-payload.js'
-export { dobSchema } from './date-schema.js'
+export { dobSchema } from './date/index.js'
 export {
   integerYearsSchema,
   vehicleYearSchema,

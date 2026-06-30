@@ -1,6 +1,6 @@
 import { shellRoutes } from './journey/index.js'
 import { sectionRoutes } from './section-routes.js'
-import { claimsRoutes } from './claims-routes.js'
+import { claimsRoutes } from './claims-routes/index.js'
 import { addonsRoutes } from './addons-routes/index.js'
 import { endingsRoutes } from './endings/index.js'
 

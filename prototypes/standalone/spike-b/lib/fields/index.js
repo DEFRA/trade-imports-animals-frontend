@@ -1,4 +1,4 @@
-import { fieldToView, attachError } from './to-view.js'
+import { fieldToView, attachError } from './to-view/index.js'
 
 /**
  * A tiny field-spec engine. A field spec is plain data describing one GDS form

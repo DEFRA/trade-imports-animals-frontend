@@ -7,7 +7,7 @@
  * The model itself still lives in model/journey.json and is interpreted by
  * runtime/ (the `contract`); this config only describes the journey shell.
  */
-export { addonByValue } from '../lib/addons.js'
+export { addonByValue } from '../lib/addons/index.js'
 
 export const BASE = '/prototype-standalone/spike-a/task-list-with-linear-tasks'
 export const LAYOUT = 'standalone/spike-a/templates/layout.njk'

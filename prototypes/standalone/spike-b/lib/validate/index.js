@@ -13,7 +13,7 @@
  * input's prefix (e.g. `dateOfBirth-day`), matching the macro's id convention.
  */
 
-export { MAX_AGE, MIN_DRIVING_AGE, dobSchema } from './date.js'
+export { MAX_AGE, MIN_DRIVING_AGE, dobSchema } from './date/index.js'
 export { integerYearsSchema, vehicleYearSchema } from './number.js'
 export { PHONE_ALLOWED, phoneSchema } from './phone.js'
 export { requiredTextSchema, emailSchema } from './text.js'
