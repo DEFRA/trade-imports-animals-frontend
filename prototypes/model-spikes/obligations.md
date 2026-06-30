@@ -686,6 +686,151 @@ combination already approximates Layer 1.5 (the pure evaluator) more than
 the others. The orchestrator layer (fixed-point loop, system-handled
 obligation callbacks) is new to all four.
 
+## Tests
+
+The layered architecture enables (and to some extent requires) tests at
+several distinct levels. They differ in what they verify, what
+infrastructure they need, and when they earn their keep.
+
+### Test classes
+
+| Layer                 | Test class                                                                                                                                                           | Inputs                                             | Style                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------- |
+| Static — model only   | **Static reachability** — every obligation is presented by at least one Flow page                                                                                    | Obligations + Flow                                 | Pure JSON walk                     |
+| Static — model + HTML | **Model ↔ HTML alignment** — page model and HTML templates agree (multiple sub-checks)                                                                               | Flow + HTML templates                              | HTML parse + comparison            |
+| Dynamic — runtime     | **Dynamic reachability / completability** — for any plausible Engine state, the navigation algorithm yields pages that present every in-scope unfulfilled obligation | Obligations + Flow + Engine + navigation algorithm | Property-based / state enumeration |
+| Cross-Flow            | **Engine-equivalence across Flows** — given identical answers + config, all Flows of a Service leave the Engine in the same state                                    | Obligations + ≥2 Flows + Engine + scripted answers | Fixture-driven                     |
+| Browser               | **End-to-end happy-path** — the rendered service actually works                                                                                                      | Live app                                           | Playwright / similar               |
+
+The first two are CI-fast (fixture-only). The third needs the Engine and
+navigation algorithm but no browser. The fourth needs ≥2 Flows. The fifth
+is the existing prototype Playwright suite.
+
+### Model ↔ HTML alignment — sub-checks
+
+All four run from the same inputs (Flow + HTML); one walker per page
+entry asserts alignment.
+
+- **Forward alignment** — every `presents` entry on a page has a matching
+  HTML input. Hard-mandate variant is a strict case: a hard mandate with
+  no input means the user is provably stuck.
+- **Reverse alignment** — every HTML input has a matching `presents`
+  entry (catches orphan form fields not in the model).
+- **Type alignment** — the HTML widget can produce values that satisfy
+  the obligation's type (`date` obligation → date input or three-part
+  widget; `email` → `type="email"`).
+- **A11y / required-attribute alignment** — for `mandate: 'hard'`
+  entries, the HTML signals "required" appropriately (`aria-required`,
+  error-message id wiring, etc.).
+
+### Dynamic reachability — sub-checks
+
+- **State-aware reachability** — for property-generated (answers, config)
+  combinations, the Engine produces a state and the navigation algorithm
+  yields a page-path the user can navigate to satisfy every in-scope
+  unfulfilled obligation.
+- **Hard-mandate-on-never-applicable** — for every page entry with
+  `mandate: 'hard'`, is the obligation in scope in any plausible Engine
+  state when this page is reached? Otherwise the constraint is dead code.
+
+(The plain "every obligation has a page" check lives in the static-
+reachability row above, since it doesn't need the Engine.)
+
+### Cross-Flow Engine equivalence — the central architectural assertion
+
+This is the formal proof of the architectural claim: **Obligations are
+the data contract; Flows are interchangeable presentations**. Without it,
+the claim is aspirational.
+
+**How it works.** Scripts are written at the **obligation level**, not
+the page level:
+
+```ts
+const basicScript = [
+  { obligation: 'email', value: 'alex@example.com' },
+  { obligation: 'fullName', value: 'Alex Driver' },
+  { obligation: 'dateOfBirth', value: '1985-03-27' }
+  // ...
+]
+
+for (const flow of [skeletonFlow, polishedFlow, mobileFlow]) {
+  const engineState = runScript(basicScript, flow)
+  expect(engineState).toEqualSnapshotForScript(basicScript)
+}
+```
+
+The script-runner uses the navigation algorithm to walk each Flow,
+delivering the user's intent to whichever pages present which
+obligations. Engine state at the end is the single point of comparison.
+
+**Value**:
+
+- Skeleton Flow becomes a regression oracle for the polished Flow.
+- Free coverage for any new Flow added to the Service — replay the same
+  scripts.
+- Refactor-safety: rework the polished Flow and prove the data is
+  unchanged.
+- Migration safety: users hopping Flows mid-flight don't suffer state
+  corruption.
+- A/B integrity: an experiment varies presentation, not behaviour.
+- Multi-channel coherence: web + mobile + CRM Flows produce identical
+  results from identical inputs.
+- Surfaces "Flow has snuck in business logic" smells: failure usually
+  means presentation is doing too much.
+
+**When they're necessary vs optional**:
+
+| Scenario                                                   | Cross-Flow scripts needed?         |
+| ---------------------------------------------------------- | ---------------------------------- |
+| Multiple Flows live in production simultaneously           | Yes — active correctness check     |
+| Active A/B experiments                                     | Yes — experiment integrity         |
+| Mid-flight Flow migration                                  | Yes — data-safety proof            |
+| Skeleton Flow alongside polished Flow during development   | Yes — oracle for the polished work |
+| Single mature Flow in production, no A/B, no multi-channel | No — nothing to compare against    |
+
+**Infrastructure vs scripts**:
+
+- **Infrastructure** (script runner, snapshot machinery, obligation-
+  language script format): build once during the prototypes / first
+  productionisation. Reusable across all Services. Cheap to keep around.
+- **Per-Service scripts**: written per Service and only worth
+  maintaining if the Service has multiple Flows to compare. Retire
+  scripts when a Service goes single-Flow; resurrect them when it
+  goes multi-Flow again.
+
+### A note on architectural-invariant tests
+
+Cross-Flow Engine equivalence is an **architectural invariant test** —
+it proves the layering claim holds. During the prototypes and early
+productionisation it's how you discover that the architecture is sound
+(and where it isn't).
+
+Once trust is established, you can scale these tests down for single-Flow
+Services — but plan a replacement to keep the architecture from drifting:
+
+- **Static / lint-style checks** that flag Flow code accessing things it
+  shouldn't (e.g. Flow trying to do scoping logic that belongs in the
+  Engine).
+- **Code-review discipline** with the layering docs at hand.
+- **Periodic spot-checks** when touching the architecture, even if not
+  on every CI run.
+
+Without one of those, the layering can rot quietly. The cross-Flow test
+was an enforcement mechanism; if you retire it, plan its replacement.
+
+### Honest caveats
+
+- Cross-Flow tests only test what the scripts cover. A discipline of
+  script coverage is separate.
+- They depend on the navigation algorithm being correct. A bug in nav =
+  the test fails for the wrong reason. So dynamic-reachability tests
+  should land first.
+- Snapshot comparison is fiddly — Engine output includes provenance
+  reasons and fulfilmentIds that differ per Flow for indexed obligations
+  (because `user`-source fulfilmentIds are orchestrator-generated UUIDs
+  per Flow). Comparison should target the canonical fulfilment _values_,
+  not per-Flow identifiers.
+
 ## What's still open
 
 ### H. Controller mechanism for indexed obligations — hybrids
