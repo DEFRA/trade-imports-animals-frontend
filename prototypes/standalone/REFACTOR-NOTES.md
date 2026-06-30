@@ -1,155 +1,153 @@
 # Standalone journey-model spikes — structural refactor notes
 
-This was a pure structural refactor of four self-contained journey-model prototypes
+This is a pure structural refactor of four self-contained journey-model prototypes
 (`spike-a` … `spike-d`), each demonstrating a different way to drive the same GOV.UK
-"get a quote" journey. No behaviour changed: every spike still exports the same Hapi
-plugin, the same `contract` surface, the same mount paths and the same template view
-names. The only moves were splitting god-files into concern-sized modules, grouping
-route builders, renaming files for what they do, and colocating tests beside the code
-they exercise. Behaviour identity is proven by the full suite staying green — **788
-unit tests across 85 test files** and **45 end-to-end specs** — with the superseded
-originals parked under `_quarantine/` (excluded from the vitest run) rather than deleted.
+"get a quote" journey. No behaviour changed at any point: every spike still exports the
+same Hapi plugin, the same `contract` surface, the same mount paths and the same template
+view names.
+
+It happened in three passes, each its own commit, each proven green end to end
+(**788 unit tests across 85 files** and **45 end-to-end specs**):
+
+1. **Structural split** — group route builders, split god-files, colocate `*.test.js`,
+   rename files for what they do.
+2. **Function decomposition** — apply the 16-rule style guide's "do one thing" and
+   "small composed functions" to every file: break multi-purpose functions into small
+   named helpers, turn large switches into `kind → builder` dispatch tables, collapse fat
+   route factories into flat declarative route tables, name every callback parameter.
+3. **File split** — break every remaining logic file over ~150 lines into concern-sized
+   folder-modules behind thin `index.js` barrels.
+
+The end state: **every logic file is ≤ 147 lines**, every function does one thing, and the
+only large files left are the flat `sections` data catalogues (~290 lines, one-thing by
+design). Superseded originals are parked under `_quarantine/` (gitignored, excluded from
+the vitest run) rather than deleted.
 
 ## spike-a — declarative config + selectors
 
 **Paradigm.** A declarative journey model (`model/journey.json`) interpreted by pure
 selector functions, with derived validation and thin Hapi route wrappers.
 
-**Structure chosen.** The paradigm core was left completely untouched: `runtime/`
-(the selector contract) and `validation/` (compile + assemble) were already exemplary,
-so nothing in them moved. All the work was in the harness around the selectors — the
-five route builders were grouped under a thin `routes/` folder (separating Hapi plugin
-assembly from route definitions), the `journey.js` god-file split into
-`journey/{config,navigation,hub-view-model}` plus `routes/shell.js`, the 454-line
-`lib/validate.js` became a `lib/validate/` folder grouped by field family behind a
-barrel, and `lib/sections.js` separated its catalogue from its query helpers. Vague
-names were made literal (`handlers.js` → `routes/section.js`).
+**Structure.** The runtime contract became a folder-module
+`runtime/selectors/{constants,status,navigation,mutation,view,index}` — `status` is a
+small dispatcher over `loopStatus`/`subtasksStatus`/`fieldStatus`, and `index.js` exports
+the unchanged `contract`. Validation split into `validation/compile/*` and
+`validation/assemble/*`; the DOB schema into `lib/validate/date/{calendar,constraints,
+required-schema,optional-schema}`; add-ons into `lib/addons/{catalogue,selection,
+completion,views}`; the field-view engine into `lib/fields/{input-views,block-views,
+choice-views,registry,errors,collect}`. Route factories collapsed to flat
+`{method,path,handler}` tables under `routes/<name>/{handlers,view-models,index}`.
 
-**Why it fits.** In a declarative paradigm the model and the selectors over it _are_
-the IP, and here they needed zero change — which is exactly why spike-a was the
-lightest touch of the four. The two files that stay large (the ~290-line section
-catalogue and the 235-line field-view engine) were deliberately left whole: each is a
-single cohesive concern, and fragmenting a declarative catalogue would betray the very
-paradigm the spike demonstrates.
+**Why it fits.** The model and the selectors over it are the IP; decomposing the selectors
+into navigation / status / mutation / view modules mirrors the declarative-derivation
+philosophy directly. The section catalogue stays whole — fragmenting a declarative data
+list would betray the paradigm.
 
 ## spike-b — statechart / FSM
 
 **Paradigm.** A portable-data state machine (`model/machine.json`) executed by a
-journey-agnostic interpreter; navigation falls out of guarded transitions rather than
-being hand-coded.
+journey-agnostic interpreter; navigation falls out of guarded transitions.
 
-**Structure chosen.** `runtime/` earned the deepest by-concern decomposition:
-`model.js` and `interpreter.js` stayed untouched, while the 211-line `contract.js`
-glue split into `steps / navigation / status / mutation / view / assembly` behind a
-thin `contract.js` index that still exports the same 17 keys. The journey shell became
-`journey/{config,links,hub}` behind an index that owns the two shell routes. The
-oversized lib files became folder-modules with barrels, and two misnamed files were
-renamed for what they do — `lib/joi.js` → `lib/page-validator.js` and `lib/domain.js`
-→ `lib/assembler.js`.
+**Structure.** `runtime/` keeps `model.js` and `interpreter.js` whole and splits the glue
+into `steps / navigation / status / mutation / view / assembly` behind a thin
+`contract.js`. The validators became folder-modules: `lib/validate/date/*`,
+`lib/assembler/{transform,errors}`, `lib/page-validator/{schemas,date-rules}`,
+`lib/fields/to-view/{inputs,choices,registry,errors,hint}`. The journey shell is
+`journey/{config,links,hub}`; route files that mixed concerns became
+`claims-routes/*`, `addons-routes/*` and `endings/*` folder-modules.
 
-**Why it fits.** The decomposition deliberately separates "where the machine says to go
-next" (`runtime/navigation.js`, derived from guarded transitions and the reverse index)
-from "what URL that maps to" (`journey/links.js`) — the clearest way to show the
-statechart driving the journey. Depth tracks real complexity: multi-concern route files
-(`addons-routes`, `endings`) became folder-modules, single-concern ones
-(`claims-routes`, `section-routes`) stayed flat.
+**Why it fits.** It keeps "where the machine says to go next" (`runtime/navigation.js`,
+derived from guarded transitions) separate from "what URL that is" (`journey/links.js`) —
+the clearest way to show the statechart driving the journey.
 
 ## spike-c — requirement-graph rules engine
 
 **Paradigm.** A typed answer model (`model/fields.json`) plus a rules layer
 (`model/rules.json`) with authored reasons, evaluated by a requirement-graph engine.
 
-**Structure chosen.** A principled asymmetry: `runtime/engine.js` was kept **whole**
-(the README-declared "part worth reading"; its WeakMap memo must stay single-identity),
-while the thin `runtime/contract.js` glue was decomposed into
-`runtime/contract/{view,navigation,status,mutation,assembly,index}`. The 454-line
-`lib/validate.js` grab-bag fragmented into a runner plus per-field-family schema
-modules; `sections`, `fields` and `addons` each became folder-modules behind barrels.
-Route registrars were regularised onto the `-routes.js` convention
-(`handlers` → `section-routes`, `endings` → `endings-routes`, `shellRoutes` →
-`shell-routes.js`), and `lib/joi.js` / `lib/domain.js` were renamed to
-`page-validator` / `assembler`.
+**Structure.** A principled asymmetry, preserved and deepened: the engine became
+`runtime/engine/{evaluation,missing-required,assertions,index}` (decomposed by concern but
+kept as the readable core, with its memo intact), while the thin contract glue is
+`runtime/contract/{view,navigation,status,mutation,assembly,index}`. Validators split into
+`lib/validate/date-of-birth/*`, `lib/page-validator/*`, `lib/assembler/{transform,errors,
+business-rules}`, `lib/field-view/to-view/*`; route registrars into `endings-routes/*`,
+`addons-routes/*`, `claims-routes/*`.
 
-**Why it fits.** The decompose-the-glue / preserve-the-core asymmetry is the whole
-point: the engine is the legible IP and must stay one unit, whereas the contract is
-explicitly "glue" and benefits from being split into the named concerns. This is the
-one spike whose plan intentionally nests `runtime/contract/*` one directory deeper —
-see Caveats.
+**Why it fits.** The decompose-the-glue / readable-core asymmetry is the whole point of
+this paradigm — the engine (where required-ness and authored `because` are derived) reads
+as one story, the contract is plumbing.
 
 ## spike-d — schema-first (JSON Schema)
 
-**Paradigm.** Validity lives in a portable JSON Schema (`model/quote.schema.json`) read
-by an adapter, while ordering/grouping live in separate flow annotations
+**Paradigm.** Validity lives in a portable JSON Schema (`model/quote.schema.json`) read by
+an adapter, while ordering/grouping live in separate flow annotations
 (`model/annotations.json`).
 
-**Structure chosen.** This needed the heaviest surgery. The 399-line `runtime/contract.js`
-god-module (nine-plus concerns) was dissolved into a `runtime/` folder decomposed strictly
-by concern — `step-meta`, `applicability`, `status`, `navigation`, `mutation`,
-`view-items`, `page-validation`, `assembly` — behind a thin `runtime/index.js` that
-re-exports the unchanged `contract` surface. The schema adapter `validation/schema.js`
-split into `schema-document / validate-value / conditionals / partial-check` behind a
-barrel. The misnamed `runtime/model.js` was renamed `runtime/annotations.js` to correct
-an inversion: in this paradigm the real _model_ is the JSON Schema in `validation/`, and
-that file only loads flow annotations. `lib/validate`, `lib/sections` and `lib/addons`
-became folder-modules; genuinely single-concern files (`lib/fields.js`, `lib/domain.js`)
-were left whole even when long.
+**Structure.** This started as the heaviest case — a 399-line `runtime/contract.js`
+god-module — and ended fully decomposed: `runtime/{step-meta,applicability,status,
+navigation,mutation,view-items,page-validation,assembly,annotations,index}`, with the
+schema adapter as `validation/{schema-document,validate-value,conditionals,partial-check,
+index}`. The Joi factories split into `lib/validate/{date,number,text}-schema/*`; the
+mixed journey file into `journey-shape.js` / `nav.js` / `shell-routes.js` /
+`status-tags.js`. `runtime/model.js` was renamed `runtime/annotations.js` to correct an
+inversion — the real _model_ here is the JSON Schema in `validation/`.
 
 **Why it fits.** The structure now reads top-down — schema → adapter → runtime concerns →
-thin contract → routes — matching the schema-first mental model, with the adapter (the
-star of this paradigm) given its own decomposed folder so it reads as the comparison
-signal versus the others.
+thin contract → routes — matching the schema-first mental model.
 
 ## Cross-model comparison (real on-disk metrics)
 
 Basis is identical across all four: **code files** = `.js` under the spike excluding
-`_quarantine/` and `*.test.js`; **max file** excludes the generated `lib/data/quotes.json`;
-**max depth** counts directory nesting below the spike root (a spike-root file = 0,
-`lib/x.js` = 1, `lib/validate/x.js` = 2).
+`_quarantine/` and `*.test.js`; **max logic file** excludes the generated
+`lib/data/quotes.json` and the `lib/sections` data catalogue; **max depth** counts
+directory nesting below the spike root (`lib/x.js` = 1, `lib/validate/date/x.js` = 3).
 
-| Paradigm                                 | Code files | Max file (lines)                    | Max depth | Quarantined | Unit tests |
-| ---------------------------------------- | ---------- | ----------------------------------- | --------- | ----------- | ---------- |
-| spike-a — declarative config + selectors | 29         | 291 (`lib/sections/definitions.js`) | 2         | 9           | 25         |
-| spike-b — statechart / FSM               | 43         | 293 (`lib/sections/data.js`)        | 2         | 13          | 18         |
-| spike-c — requirement-graph rules engine | 44         | 291 (`lib/sections/definitions.js`) | 2         | 13          | 11         |
-| spike-d — schema-first (JSON Schema)     | 39         | 291 (`lib/sections/registry.js`)    | 2         | 8           | 10         |
+| Paradigm                                 | Code files | Max logic file (lines) | Max data file | Max depth | Quarantined | Unit tests |
+| ---------------------------------------- | ---------- | ---------------------- | ------------- | --------- | ----------- | ---------- |
+| spike-a — declarative config + selectors | 64         | 145                    | 291           | 3         | 8           | 25         |
+| spike-b — statechart / FSM               | 59         | 141                    | 296           | 3         | 5           | 18         |
+| spike-c — requirement-graph rules engine | 67         | 128                    | 291           | 3         | 8           | 11         |
+| spike-d — schema-first (JSON Schema)     | 63         | 147                    | 292           | 3         | 5           | 10         |
 
-In every spike the largest remaining code file is the declarative section catalogue
-(~290 lines) — a single cohesive data registry that is deliberately kept whole. Max
-depth is a uniform 2 everywhere; no paradigm needed deeper nesting.
+The largest file in every spike is now the declarative `sections` catalogue (~290 lines) —
+a single cohesive data registry, deliberately kept whole. Every _logic_ file is ≤ 147
+lines; max depth is a uniform 3 (folder-modules one level deeper than the original layout).
 
 ## Which productionised cleanest
 
-**Winner: spike-a (declarative config + selectors).** It needed the lightest touch by
-a clear margin — the paradigm IP (`runtime/` selectors and `validation/`) was left
-_entirely_ untouched, so the refactor was pure harness tidy-up: group the routes, split
-two genuine god-files, rename for clarity. It also carries the fewest code files (29)
-and the fewest quarantined originals (9), and the result reads as a clean three-layer
-story (model → selectors → routes) without any paradigm surgery. When the core of a
-paradigm survives a structural refactor with zero edits, that is the strongest signal
-it is production-ready.
+The striking result of pushing decomposition all the way is that **all four paradigms
+converge to a very similar end shape** — 59–67 small single-concern files, max logic file
+128–147, depth 3. The differentiator is not the destination but **how much surgery each
+paradigm needed to get there**.
 
-**Runner-up: spike-c (rules engine).** Its decompose-the-glue / preserve-the-core
-asymmetry is the most principled outcome among the three that did need surgery —
-`engine.js` (the IP) stayed whole and only the thin contract glue was split. It loses
-to spike-a only because it carries the most quarantined originals and the widest
-import-graph rewiring, and because its intentional `runtime/contract/*` nesting is the
-one structure that trips the naive isolation grep.
+**Cleanest: spike-a (declarative config + selectors).** Its paradigm core (the selector
+contract and derived validation) was already correct in the original spike — it survived
+the first structural pass with zero edits, and only later passes (shared by all spikes)
+touched it. The least conceptual work to productionise.
 
-**Heaviest: spike-d (schema-first),** which had to dissolve a 399-line god-module and
-correct a misnamed core file — the most invasive of the four, and the clearest counter-
-example to spike-a's light touch.
+**Runner-up: spike-c (rules engine).** The decompose-the-glue / keep-the-engine-readable
+asymmetry held through all three passes and ended with the smallest max logic file (128).
+
+**Heaviest: spike-d (schema-first).** It carried the worst starting point — a 399-line
+god-module and a misnamed core file — and needed the most invasive work across all three
+passes, even though it lands in the same place as the others.
+
+The honest summary: **a schema-first or rules-engine model is not harder to productionise
+than a declarative one — it just starts further from it.** Once decomposed, every paradigm
+reads cleanly; the cost is paid up front in how tangled the prototype glue was.
 
 ## Caveats
 
 - These remain **gated throwaway prototypes**, not production code. They live behind the
   standalone prototype harness and exist to compare paradigms, not to ship.
-- `_quarantine/` holds **only** the superseded original files. No code imports from it
-  (it is excluded from the vitest run via `vitest.config.js`), and the user should
-  delete it once the comparison is settled.
-- The literal isolation grep
-  (`from '(\.\./\.\.|\.\./shared|prototypes/(shared|model-spikes))'`) **over-matches
-  spike-c**: its approved plan nests `runtime/contract/*` one directory deeper, so files
-  there legitimately import `'../../lib/...'` / `'../../journey/...'`. Those `../../`
-  specifiers resolve to the _spike-c root_ (depth-2 dir + `../../` = spike root), i.e.
-  they stay in-spike — every one was verified to resolve to an existing in-spike file.
-  The other three spikes return zero grep hits. No spike imports anything outside itself.
+- `_quarantine/` holds **only** superseded originals. No code imports from it (it is
+  gitignored and excluded from the vitest run via `vitest.config.js`), and it can be
+  deleted once the comparison is settled.
+- **Isolation** is verified by a depth-correct import resolver, not a grep: every relative
+  import in all four spikes resolves to an existing in-spike file and none escapes the
+  spike. (A naive `../../`-style grep now over-matches in every spike, because the
+  folder-modules legitimately import up to the spike root from depth-3 files — those
+  specifiers stay in-spike.)
+- The only single-letter identifier left is the Hapi response-toolkit `h`, kept because it
+  is the repo-wide framework idiom; renaming it in the prototypes alone would diverge from
+  every other handler in the codebase.
