@@ -1257,11 +1257,45 @@ state)`, `isFulfilled(container, state)`, etc.). Matches the
   shape with no Sections at all? Most uniform: always wrap in a
   Section, suppress the Task List in the renderer if there's only one.
 
-- **P.6 Task List rendering of nested SubSections.** UX choice that
-  may need Flow-level declaration: render flat with indentation;
-  show only top-level Sections and reveal SubSections on drill-in;
-  show SubSections as "tasks within tasks" on a sub-hub. Mostly a
-  renderer concern but the Flow may want to express hints.
+- **P.6 Task List rendering of nested SubSections.** Deferred — a
+  possible extension point. Doesn't block other progress; the
+  Container tree, status taxonomy, navigation algorithm, and tests
+  are all unchanged by the eventual resolution. Revisit when a real
+  journey has nested SubSections that need rendering decisions.
+
+  **Rendering patterns considered:**
+  - **A — Flat Task List**: only top-level Sections visible;
+    SubSections are invisible organisational structure; the Page walk
+    crosses SubSection boundaries transparently.
+  - **B — Indented Task List**: full Container tree visible, each
+    Group showing its own status. Scales poorly past ~3 levels.
+  - **C — Drill-in hubs (recursive Task Lists)**: top Task List shows
+    top-level Sections; clicking into a Section with SubSections opens
+    a sub-hub. Scales to any depth at the cost of more clicks.
+  - **D — Linear walk with Section headings**: linear page walk like
+    A, but with visible Section / SubSection headings as the user
+    crosses boundaries.
+
+  **Model-side options if/when this lands:**
+  - **Convention only** (likely default): top-level Sections appear
+    on the Task List; SubSections appear only on drill-in views. No
+    new Flow vocabulary needed.
+  - **Per-Group `taskListVisible` hint**: optional boolean override to
+    promote a SubSection onto the Task List or demote a top-level
+    Section off it. Used sparingly.
+  - **Flow-level `displayPattern: 'flat' | 'indented' | 'drill-in'`**:
+    Flow declares a global rendering pattern preference; otherwise
+    renderer picks based on tree shape.
+
+  **Suggested approach when revisited**: convention + optional
+  `taskListVisible` per Group override. Pattern choice stays a
+  renderer concern unless real journeys want explicit control.
+
+  **Cross-cutting questions that resurface at the same time:** sub-hub
+  back-navigation (e.g. drilled in two levels — does Back go to
+  parent sub-hub or top Task List?); status display at drill-in vs
+  top-level; whether deep nesting (≥ 3 levels) is a realistic shape
+  for the journeys we anticipate.
 
 ### Q. Signposting Not Applicable Sections in the Task List
 
