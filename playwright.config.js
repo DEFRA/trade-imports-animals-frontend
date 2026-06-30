@@ -12,7 +12,6 @@ export default defineConfig({
   // Journeys are independent (each owns its own quote id) and the JSON store is
   // synchronous, so they can run in parallel even though each is slow.
   fullyParallel: true,
-  workers: 4,
   timeout: 240_000,
   expect: { timeout: 15_000 },
   reporter: [['html', { open: 'never' }], ['list']],

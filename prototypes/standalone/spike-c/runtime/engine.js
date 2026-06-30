@@ -1,7 +1,7 @@
 import { steps, fields, rules, stepById } from './model.js'
 import { evalCondition } from '../lib/conditions.js'
 import { isSatisfied, humanize, ageInYears } from '../lib/fieldutil.js'
-import { allSelectedAddonsComplete } from '../lib/addons.js'
+import { allSelectedAddonsComplete } from '../lib/addons/index.js'
 
 /**
  * The requirement-graph engine. `evaluate(answers)` derives, from the data model

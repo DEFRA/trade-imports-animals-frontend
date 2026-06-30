@@ -1,14 +1,20 @@
 import { findQuote } from './lib/store.js'
-import { fieldsToView, collectFields } from './lib/fields.js'
-import { validatePayload } from './lib/validate.js'
+import { fieldsToView, collectFields } from './lib/field-view/index.js'
+import { validatePayload } from './lib/validate/index.js'
 import {
   addonByValue,
   getAddonData,
   setSelectedAddons,
   saveAddonStep,
   selectionItems
-} from './lib/addons.js'
-import { BASE, LAYOUT, breadcrumbs, hubPath, addonStepPath } from './journey.js'
+} from './lib/addons/index.js'
+import {
+  BASE,
+  LAYOUT,
+  breadcrumbs,
+  hubPath,
+  addonStepPath
+} from './journey/index.js'
 
 /**
  * "Add to your policy" — pick 0..N add-ons (checkboxes); each chosen add-on then

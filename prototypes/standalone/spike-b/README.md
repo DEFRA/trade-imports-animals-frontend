@@ -15,24 +15,35 @@ steps); only the structure differs.
 - `model/machine.json` — the model: a statechart (states + guarded transitions)
   as portable data, no code (unchanged from the original).
 - `runtime/` — the adapter that interprets the machine (the paradigm's IP — the
-  part worth reading):
+  part worth reading), split by concern:
   - `interpreter.js` — a tiny, journey-agnostic statechart interpreter
     (`transition`, `realizedPath`, `reverseIndex`, `prevState`). Navigation falls
     out of the machine rather than being hand-coded.
-  - `contract.js` — the common contract built on the interpreter; `next`/`prev`
-    are machine transitions, status/validation are layered on `context.fields`.
   - `model.js` — loads `machine.json`.
-- `journey.js` — the journey shell: base path, layout, the literal task groups,
-  navigation, and the start + hub pages (replaces the shared variant builder).
-- `handlers.js` — the generic question pages (GET/POST per step).
-- `claims-routes.js` / `addons-routes.js` — the claims loop and the add-on fan-out.
-- `endings.js` — quote summary, check your answers, confirmation.
+  - `steps.js` — step metadata (kind/title/field specs).
+  - `navigation.js` — machine-derived `next`/`prev`/`applicableSteps` + the
+    module-level reverse index.
+  - `status.js` — per-step + journey status, layered on `context.fields`.
+  - `mutation.js` — answer mutation + the applicability cascade.
+  - `view.js` — per-step option-list view model.
+  - `assembly.js` — whole-object wiring (`validate`, `assembleQuote`,
+    `missingRequired`).
+  - `contract.js` — thin assembler composing the above into the one `contract`.
+- `journey/` — the journey shell: `config.js` (base path, layout, the literal
+  task groups), `links.js` (URL/nav resolution), `hub.js` (task-list view model)
+  and `index.js` (barrel + the start + hub routes).
+- `section-routes.js` — the generic question pages (GET/POST per step).
+- `claims-routes.js` / `addons-routes/` — the claims loop and the add-on fan-out
+  (`addons-routes/step-view.js` holds its step helpers).
+- `endings/` — quote summary, check your answers, confirmation
+  (`endings/check-answers.js` holds the CYA view builders).
 - `routes.js` — assembles everything into one Hapi plugin.
-- `lib/` — duplicated helpers (store, premium, quote, validate, fields, claims,
-  addons, sections) plus this spike's inlined validation — `joi.js`
-  (`makePageValidator`, page-slice) and `domain.js` (`makeAssembler`, whole-object)
-  — and `conditions.js` / `fieldutil.js`. Each is pointed at this folder; `lib/data/`
-  is this spike's own quote store.
+- `lib/` — duplicated helpers (store, premium, quote, claims, conditions,
+  fieldutil) plus folder-modules with barrels for the larger catalogues
+  (`validate/`, `sections/`, `fields/`, `addons/`) and this spike's inlined
+  validation — `page-validator.js` (`makePageValidator`, page-slice) and
+  `assembler.js` (`makeAssembler`, whole-object). Each is pointed at this folder;
+  `lib/data/` is this spike's own quote store.
 - `templates/` — this spike's own njk (layout, start, hub, section-page, endings,
   claims, add-ons, partials).
 - `dump.js` — headless JSON dump of the journey state for a fixture.

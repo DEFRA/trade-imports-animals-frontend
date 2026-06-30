@@ -12,18 +12,28 @@ steps); only the structure differs.
 
 ## Layout
 
-- `model/journey.json` — the model: portable data, no code (unchanged from the original).
-- `runtime/` — the adapter that interprets the model (the `contract`). This is the
-  paradigm's IP — the part worth reading.
-- `validation/` — page-slice (`compile.js`) + whole-object (`assemble.js`) validation.
-- `journey.js` — the journey shell: base path, layout, the literal task groups,
-  navigation, and the start + hub pages (replaces the shared variant builder).
-- `handlers.js` — the generic question pages (GET/POST per step).
+- `model/fields.json` + `model/rules.json` — the model: the typed answer-data
+  model and the rules layer (require / min-age / lte with authored reasons).
+  Portable data, no code.
+- `runtime/` — the adapter that interprets the model. This is the paradigm's IP —
+  the part worth reading. `model.js` loads the JSON; `engine.js` is the
+  requirement-graph engine (kept whole); `contract/` decomposes the thin reads
+  over the engine snapshot into `view` / `status` / `navigation` / `mutation` /
+  `assembly`, re-assembled behind `contract/index.js`.
+- `journey/` — the journey shell: `config.js` (base path, layout, the literal
+  task groups), `paths.js` (URL building + nav resolution), `hub-view.js` (the
+  hub task-list view model), behind `journey/index.js`.
+- `shell-routes.js` — the start + hub pages (replaces the shared variant builder).
+- `section-routes.js` — the generic question pages (GET/POST per step).
 - `claims-routes.js` / `addons-routes.js` — the claims loop and the add-on fan-out.
-- `endings.js` — quote summary, check your answers, confirmation.
+- `endings-routes.js` — quote summary, check your answers, confirmation.
 - `routes.js` — assembles everything into one Hapi plugin.
-- `lib/` — duplicated helpers (store, premium, quote, validate, fields, claims,
-  addons, sections), each pointed at this folder. `lib/data/` is this spike's own
+- `lib/` — duplicated helpers (store, premium, quote, claims, fieldutil,
+  conditions), plus folder-as-module helpers: `validate/` (the runner +
+  per-field-family schema factories), `field-view/` (spec → GOV.UK macro),
+  `addons/` (catalog + state + view), `sections/` (the question registry +
+  queries), `page-validator.js` (page-slice validation) and `assembler.js`
+  (whole-object transform + validation). `lib/data/` is this spike's own
   quote store.
 - `templates/` — this spike's own njk (layout, start, hub, section-page, endings,
   claims, add-ons, partials).

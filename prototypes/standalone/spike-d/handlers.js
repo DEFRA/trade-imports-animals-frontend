@@ -1,5 +1,5 @@
 import { findQuote, updateQuote } from './lib/store.js'
-import { contract } from './runtime/contract.js'
+import { contract } from './runtime/index.js'
 import { BASE, LAYOUT, breadcrumbs, resolveNav, grouped } from './journey.js'
 
 /**

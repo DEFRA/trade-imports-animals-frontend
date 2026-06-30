@@ -27,12 +27,20 @@ report in `playwright-report/` — both gitignored.
 
 ## Pacing the demo
 
-The runs are deliberately slowed so the videos are watchable (~45s each):
+`npm run test:prototype` runs as fast as possible (no pauses) for a quick
+pass/fail. `npm run test:prototype:demo` slows the runs so the videos are
+watchable for recording. Both pin their pacing via two env vars:
 
-- `DEMO_SLOWMO` — ms before each action (default `600`)
-- `DEMO_PACE_MS` — ms to dwell on each page (default `1500`)
+- `DEMO_SLOWMO` — ms before each action (`test:prototype` `0`, `:demo` `600`)
+- `DEMO_PACE_MS` — ms to dwell on each page (`test:prototype` `0`, `:demo` `1500`)
 
 ```bash
-DEMO_SLOWMO=1000 DEMO_PACE_MS=2500 npm run test:prototype   # slower
-DEMO_SLOWMO=0 DEMO_PACE_MS=0 npm run test:prototype          # fast (no pauses)
+npm run test:prototype                                       # fast (no pauses)
+npm run test:prototype:demo                                  # recording pace (600 / 1500)
+DEMO_SLOWMO=1000 DEMO_PACE_MS=2500 npx playwright test       # custom pacing
 ```
+
+The two npm scripts set `DEMO_*` inline, so to override the pacing run
+`playwright` directly (as above) rather than prefixing the npm script — an
+inline assignment in the script shadows a command-line env prefix. With no
+`DEMO_*` set, the code defaults are `600` / `1500`.

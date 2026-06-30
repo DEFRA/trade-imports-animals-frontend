@@ -1,5 +1,5 @@
 import { findQuote } from './lib/store.js'
-import { currencySchema, validatePayload } from './lib/validate.js'
+import { currencySchema, validatePayload } from './lib/validate/index.js'
 import {
   getClaims,
   addClaim,

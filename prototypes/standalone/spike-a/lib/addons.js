@@ -1,5 +1,9 @@
 import { updateQuote } from './store.js'
-import { currencySchema, dobSchema, integerYearsSchema } from './validate.js'
+import {
+  currencySchema,
+  dobSchema,
+  integerYearsSchema
+} from './validate/index.js'
 
 /**
  * The "select 1-to-N options, each opening its own subtasks" pattern. The driver

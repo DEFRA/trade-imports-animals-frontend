@@ -6,7 +6,12 @@ export default defineConfig({
     environment: 'node',
     clearMocks: true,
     // Playwright prototype specs are run by Playwright, not vitest.
-    exclude: [...configDefaults.exclude, 'prototypes/e2e/**'],
+    // _quarantine holds superseded prototype-refactor originals; never run them.
+    exclude: [
+      ...configDefaults.exclude,
+      'prototypes/e2e/**',
+      '**/_quarantine/**'
+    ],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',

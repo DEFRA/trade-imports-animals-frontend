@@ -1,5 +1,5 @@
 import { findQuote } from './lib/store.js'
-import { currencySchema, validatePayload } from './lib/validate.js'
+import { currencySchema, validatePayload } from './lib/validate/index.js'
 import {
   getClaims,
   addClaim,
@@ -8,7 +8,7 @@ import {
   claimTypeItems,
   claimLabel
 } from './lib/claims.js'
-import { BASE, LAYOUT, breadcrumbs, navBack, navNext } from './journey.js'
+import { BASE, LAYOUT, breadcrumbs, navBack, navNext } from './journey/index.js'
 
 /**
  * The "add another" claims loop, as plain routes for this journey. Driving

@@ -1,8 +1,8 @@
-import { shellRoutes } from './journey.js'
-import { sectionRoutes } from './handlers.js'
-import { claimsRoutes } from './claims-routes.js'
-import { addonsRoutes } from './addons-routes.js'
-import { endingsRoutes } from './endings.js'
+import { shellRoutes } from './routes/shell.js'
+import { sectionRoutes } from './routes/section.js'
+import { claimsRoutes } from './routes/claims.js'
+import { addonsRoutes } from './routes/addons.js'
+import { endingsRoutes } from './routes/endings.js'
 
 /**
  * Spike A (standalone) — the whole journey as one Hapi plugin, assembled from

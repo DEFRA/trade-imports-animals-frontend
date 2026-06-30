@@ -1,8 +1,8 @@
-import { shellRoutes } from './journey.js'
-import { sectionRoutes } from './handlers.js'
+import { shellRoutes } from './shell-routes.js'
+import { sectionRoutes } from './section-routes.js'
 import { claimsRoutes } from './claims-routes.js'
 import { addonsRoutes } from './addons-routes.js'
-import { endingsRoutes } from './endings.js'
+import { endingsRoutes } from './endings-routes.js'
 
 /**
  * Spike C (standalone) — the whole journey as one Hapi plugin, assembled from

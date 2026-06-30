@@ -1,8 +1,8 @@
 import { findQuote, updateQuote } from './lib/store.js'
 import { calculatePremium } from './lib/premium.js'
 import { coverTypeLabel, extrasLabels, makeReference } from './lib/quote.js'
-import { sectionBySlug, hasOwnRoutes } from './lib/sections.js'
-import { contract } from './runtime/contract.js'
+import { sectionBySlug, hasOwnRoutes } from './lib/sections/index.js'
+import { contract } from './runtime/index.js'
 import { BASE, LAYOUT, breadcrumbs } from './journey.js'
 
 /**

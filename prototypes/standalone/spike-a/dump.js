@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { contract } from './runtime/selectors.js'
-import { grouped } from './journey.js'
+import { grouped } from './journey/config.js'
 
 /**
  * Headless "surface the model without its UI" proof.

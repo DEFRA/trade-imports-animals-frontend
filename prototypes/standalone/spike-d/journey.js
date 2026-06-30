@@ -1,6 +1,6 @@
 import { createDraft, findQuote } from './lib/store.js'
-import { addonByValue, addonHubItems } from './lib/addons.js'
-import { contract } from './runtime/contract.js'
+import { addonByValue, addonHubItems } from './lib/addons/index.js'
+import { contract } from './runtime/index.js'
 
 /**
  * Spike D — standalone, flattened. This file is the whole journey shell for the
