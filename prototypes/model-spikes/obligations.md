@@ -750,18 +750,46 @@ Task List and which drives the navigation rules.
 ### Per-Container status taxonomy
 
 Every Container (Page, SubSection, Section) has a status, computed from
-the Engine output. The same five states apply at every level:
+the Engine output. The same four states apply at every level:
 
-| Status               | Meaning                                                                                                                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Not Applicable**   | Container has no in-scope mandatory obligations — either none of its obligations apply, or all are served elsewhere in the Flow. Effectively skipped by the navigation algorithm. |
-| **Cannot start yet** | Applicable but prerequisites unmet (some obligation it depends on is unsatisfied elsewhere; falls out of the Engine's `appliesWhen` / `requiredWhen` logic).                      |
-| **Not Started**      | Applicable, no fulfilments yet.                                                                                                                                                   |
-| **In Progress**      | Some fulfilments present, not all required ones done.                                                                                                                             |
-| **Fulfilled**        | All in-scope mandatory obligations satisfied (recursive — see below).                                                                                                             |
+| Status             | Meaning                                                                                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Not Applicable** | Container has no in-scope mandatory obligations — either none of its obligations apply yet, or all are served elsewhere in the Flow. Effectively skipped by the navigation algorithm. |
+| **Not Started**    | Applicable, no fulfilments yet.                                                                                                                                                       |
+| **In Progress**    | Some fulfilments present, not all required ones done.                                                                                                                                 |
+| **Fulfilled**      | All in-scope mandatory obligations satisfied (recursive — see below).                                                                                                                 |
 
 The same vocabulary applies to the Journey as a whole, with **Fulfilled**
 meaning every top-level Section is Fulfilled.
+
+#### Why "Cannot start yet" isn't a distinct status
+
+An earlier draft of the model included a fifth state, **Cannot start
+yet**, for Containers that were in scope but blocked from being started
+(e.g. waiting on a prerequisite). Working through realistic cases
+revealed that:
+
+- Most "blocked" Sections are conditional in the Engine sense — they
+  shouldn't be in scope until their trigger is met. These collapse to
+  `appliesWhen` rules → **Not Applicable** until triggered, then
+  **Not Started**.
+- The genuine async/external blockers (waiting for a sub-journey
+  callback, a third-party approval, an external reference-data
+  lookup) can be modelled as **obligations themselves** — typically
+  system-handled obligations that the orchestrator manages. The
+  dependent Container's `appliesWhen` references the readiness
+  obligation, so the dependent Container is Not Applicable until the
+  lookup / approval / sub-journey completes, then becomes Not Started.
+
+Collapsing the CSY case into NA simplifies the status-propagation
+rules (removes three mixed-state combinations) and aligns with the
+rest of the design — everything that affects applicability is an
+obligation.
+
+The UX value the CSY state would have had (signposting upcoming work
+the user will need to do) is preserved as a separate concern — a
+renderer-level hint on the Container — left as an open question
+(§Q in §What's still open).
 
 ### Recursive Fulfilled definition
 
@@ -779,28 +807,39 @@ displays Section-level status; users drill in for the granular view.
 
 ### Status-propagation rules
 
-For Groups, status is derived from their children. Sketch of the
-propagation (with "Not Applicable" treated as filtered-out):
+For Groups, status is derived from their children. The propagation
+(with "Not Applicable" treated as filtered-out):
 
-- All children Not Applicable → parent is **Not Applicable**.
-- All applicable children Fulfilled → parent is **Fulfilled**.
-- All applicable children Cannot start yet → parent is **Cannot start
-  yet**.
-- All applicable children Not Started, no Fulfilled, no Cannot start
-  yet → parent is **Not Started**.
-- Any applicable child In Progress; or any mix of Fulfilled with Not
-  Started / Cannot start yet → parent is **In Progress**.
+- **All children Not Applicable** → parent is **Not Applicable**.
+- **All applicable children Fulfilled** → parent is **Fulfilled**.
+- **All applicable children Not Started** → parent is **Not Started**.
+- **Otherwise** (any In Progress, or Fulfilled mixed with Not Started)
+  → parent is **In Progress**.
 
-The mixed-state cases (especially Cannot start yet vs Not Started vs In
-Progress in combination) need fully specifying; see §What's still open.
+Truth table over the three applicable-child-state booleans (after
+filtering Not Applicable):
+
+| hasF | hasIP | hasNS | Group state |
+| :--: | :---: | :---: | :---------- |
+|  ✓   |   —   |   —   | Fulfilled   |
+|  —   |   —   |   ✓   | Not Started |
+|  —   |   ✓   |   —   | In Progress |
+|  ✓   |   —   |   ✓   | In Progress |
+|  ✓   |   ✓   |   —   | In Progress |
+|  —   |   ✓   |   ✓   | In Progress |
+|  ✓   |   ✓   |   ✓   | In Progress |
+
+Pattern: All-F → F; any IP, or F mixed with anything non-F → IP;
+otherwise NS (or NA if everything was filtered out).
 
 ### Navigation algorithm
 
 Given an Engine state and a Container tree:
 
 1. **Task List**: render each top-level Section with its status and a
-   link. Sections with status Not Applicable are hidden; status Cannot
-   start yet are shown but their link is disabled.
+   link. Sections with status Not Applicable are hidden by default
+   (the Flow may optionally signpost them as "coming up" — see open
+   question Q).
 2. **Entering a Section**: navigate to the first applicable
    non-Fulfilled descendant Page (depth-first traversal). Whether the
    entry-Page is the first applicable, or the first applicable
@@ -1101,22 +1140,48 @@ including the Container tree, recursive Fulfilled definition, status
 taxonomy, the recalc-then-route rule, CYA round-trip, and contextual
 back navigation. Several sub-questions remain:
 
-- **P.1 Container model — distinct types or unified?** Two design
-  options for the Flow schema:
-  - (a) **Three distinct types** — `Section`, `SubSection`, `Page` as
-    schema-level discriminants. Explicit; more types to define.
+- **P.1 Container model — schema and runtime.** Two related sub-
+  questions: the on-disk schema, and the in-memory runtime
+  representation in Node. They don't have to use the same shape.
+
+  **Schema (the JSON the model author writes):**
+  - (a) **Three distinct schema types** — `Section`, `SubSection`,
+    `Page` as separate `kind` discriminants. Explicit; more types to
+    define.
   - (b) **Unified recursive `Container`** — every node has `id`,
     `title`, EITHER `children: [Container]` (Group form) OR `presents:
 [...]` (Page form). Composes naturally with arbitrary nesting.
 
-  Leaning (b) for clean recursion; (a) might surface useful
-  distinctions (e.g. "top-level Sections show on Task List by default;
-  deeper Groups don't").
+  Leaning (b) for clean recursion and JSON-portability; (a) might
+  surface useful distinctions (e.g. "top-level Sections show on Task
+  List by default; deeper Groups don't").
+
+  **Runtime (the in-memory representation in Node):** open for
+  discussion with a Node-expert colleague. Three viable patterns:
+  - **Discriminated union + pure selector functions.** Plain data keyed
+    by `kind`; behaviour in standalone functions (`status(container,
+state)`, `isFulfilled(container, state)`, etc.). Matches the
+    evaluator's pure-function style; JSON-portable end-to-end; no
+    hydration step. Most aligned with the rest of the design.
+  - **Abstract `Container` class with concrete `Page` / `Section` /
+    `SubSection` subclasses.** Classical OOP "common trait + concrete
+    classes". Logic co-located with data; reads naturally as
+    `container.status(state)`. Requires hydration from JSON at startup;
+    instances aren't directly JSON-serialisable without a `toJSON()`
+    method.
+  - **Factory + closures** (functional middle ground). Behaviour-like
+    API on plain objects without `class` machinery; flexible
+    composition; some memory overhead from per-instance closures.
+
+  Schema choice doesn't constrain runtime choice — schema (b) paired
+  with classes is a perfectly viable combination if hydration cost is
+  acceptable.
 
 - **P.2 Status-propagation rules for mixed-state Group children.**
-  The §Navigation and status table is sketched but not pinned. The
-  trickier mixed cases (Fulfilled + Cannot start yet, Not Started +
-  Cannot start yet, etc.) need a precise truth table.
+  Settled — the truth table simplified after collapsing the CSY case
+  into NA (most "blocked" Sections become NA via `appliesWhen`; genuine
+  async blockers become obligations whose dependents are NA until
+  fulfilled). See §Navigation and status / §Status-propagation rules.
 
 - **P.3 First-Page vs first-incomplete-Page on Section entry.** When
   the user enters a Section, does the runtime jump to the first
@@ -1141,6 +1206,32 @@ back navigation. Several sub-questions remain:
   show only top-level Sections and reveal SubSections on drill-in;
   show SubSections as "tasks within tasks" on a sub-hub. Mostly a
   renderer concern but the Flow may want to express hints.
+
+### Q. Signposting Not Applicable Sections in the Task List
+
+The Flow author may want to signpost Sections that are currently Not
+Applicable but are almost certain to apply in a successful Journey —
+e.g. Payment, Confirmation. The signposted Section shows on the Task
+List as "coming up" rather than being hidden.
+
+This is a **presentation concern** that doesn't belong in the Engine
+or status taxonomy. Likely shape (not formalised in the model yet):
+
+- A `signpost` property on a Section (boolean for default treatment;
+  object with `label` / `hint` for custom copy).
+- The Engine still reports the Section as Not Applicable; the renderer
+  reads the `signpost` hint and decides whether to show the Section.
+
+The "Cannot start yet" UX label that the previous 5-state taxonomy
+would have provided is the main reason to formalise signposting. Worth
+implementing once a real journey has a concrete need (it has known
+shape but no agreed copy / behaviour yet).
+
+Edge case worth bearing in mind: a Section that was previously visited
+(had fulfilments) but is now Not Applicable because the user changed
+an upstream answer (its data was wiped per scope-exit rule). Should
+the signpost render differently for "visited before but reset" vs
+"never visited"? Defer until the renderer needs to differentiate.
 
 ### M. Failure policies per orchestrator-handled obligation
 
