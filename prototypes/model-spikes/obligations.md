@@ -74,6 +74,25 @@ A consistent vocabulary across the discussion and the data model:
   has its own id. Multiple Journeys can coexist for the same user (e.g.
   different browser tabs), each isolated; "user" and "session" are
   explicitly NOT the uniqueness scope.
+- **Page** — a leaf container in a Flow. Has an ordered list of
+  `presents` entries (obligations + mandate) that it asks the user
+  about. Maps 1:1 to an HTML artefact in the implementation.
+- **Section / SubSection** — a Group container in a Flow. Has an
+  ordered list of child Containers (Pages or further SubSections).
+  Sections and SubSections nest arbitrarily; top-level Sections are
+  what appear on the Task List by default.
+- **Container** — collective term for Pages and Groups (Sections /
+  SubSections). A Flow's content is a tree of Containers.
+- **Fulfilled** — applied recursively across the Container tree. A
+  Page is Fulfilled iff every in-scope mandatory obligation it presents
+  is fulfilled. A Group is Fulfilled iff every applicable child
+  Container is Fulfilled. A Journey is Fulfilled iff every top-level
+  Section is Fulfilled — at which point the user can Submit on the CYA
+  page.
+- **Submitted** — the Journey has been finalised: the user has clicked
+  Submit on CYA. No further changes. We deliberately avoid "Complete"
+  as a separate term — it overlapped Fulfilled and Submitted
+  confusingly.
 
 ```
 Service (e.g. car-insurance-quote)
@@ -537,12 +556,47 @@ layer.
   id; isolated from other Journeys. **Zero-many Journeys per Flow per user
   at any moment** (multi-tab → multiple concurrent Journeys).
 
+### The Flow's container hierarchy
+
+A Flow's content is a tree of **Containers**. Two shapes:
+
+- **Group** — a Section or SubSection. Has an ordered list of child
+  Containers (Pages or further SubSections).
+- **Page** — a leaf. Has an ordered list of `presents` entries (the
+  page model — next subsection).
+
+Arbitrary nesting is supported. A Section can contain SubSections that
+contain further SubSections that contain Pages, in any combination.
+**Each Group declares its own ordered child list; there is no
+Flow-global Page ordering.**
+
+```
+Flow
+├── Section "About you and your vehicle"
+│   ├── Page "email"
+│   ├── Page "about-you"
+│   └── Page "your-vehicle"
+├── Section "Add-ons" (with nested SubSections)
+│   ├── Page "addon-selection"
+│   ├── SubSection "Named driver"
+│   │   ├── Page "named-driver-who"
+│   │   └── Page "named-driver-relationship"
+│   └── SubSection "Vehicle modifications"
+│       ├── Page "modifications-describe"
+│       └── Page "modifications-value"
+├── Section "Your driving and cover"
+│   └── ...
+└── CheckYourAnswers   (special; not a Section)
+```
+
+A skeleton Flow may have a flat ordered list of Pages with no Groups at
+all — the model needs to support both Sectioned and pure-linear shapes.
+See §What's still open for the precise skeleton-shape question.
+
 ### The Flow's page model
 
-A Flow declares a set of **pages**. Each page declares which obligations
-it presents. The page is the unit of composition for the user-facing
-delivery of the Service; pages map 1:1 to HTML artefacts in the
-implementation.
+A Page declares which obligations it presents. Pages are the unit of
+HTML composition; pages map 1:1 to HTML artefacts in the implementation.
 
 #### Static page membership (the common case)
 
@@ -685,6 +739,139 @@ journey split today. C is closest because its engine + authored-reasons
 combination already approximates Layer 1.5 (the pure evaluator) more than
 the others. The orchestrator layer (fixed-point loop, system-handled
 obligation callbacks) is new to all four.
+
+## Navigation and status
+
+The Flow's Container tree says **what content exists**; the navigation
+algorithm says **what page to show next given the current Engine state**.
+Both hand off to the **status taxonomy**, which the user sees on the
+Task List and which drives the navigation rules.
+
+### Per-Container status taxonomy
+
+Every Container (Page, SubSection, Section) has a status, computed from
+the Engine output. The same five states apply at every level:
+
+| Status               | Meaning                                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Not Applicable**   | Container has no in-scope mandatory obligations — either none of its obligations apply, or all are served elsewhere in the Flow. Effectively skipped by the navigation algorithm. |
+| **Cannot start yet** | Applicable but prerequisites unmet (some obligation it depends on is unsatisfied elsewhere; falls out of the Engine's `appliesWhen` / `requiredWhen` logic).                      |
+| **Not Started**      | Applicable, no fulfilments yet.                                                                                                                                                   |
+| **In Progress**      | Some fulfilments present, not all required ones done.                                                                                                                             |
+| **Fulfilled**        | All in-scope mandatory obligations satisfied (recursive — see below).                                                                                                             |
+
+The same vocabulary applies to the Journey as a whole, with **Fulfilled**
+meaning every top-level Section is Fulfilled.
+
+### Recursive Fulfilled definition
+
+"Fulfilled" applies at every level of the Container tree, with the same
+recursive rule:
+
+- A **Page** is Fulfilled iff every in-scope mandatory obligation it
+  presents is fulfilled (leaf rule).
+- A **Group** (Section or SubSection) is Fulfilled iff every applicable
+  child Container is Fulfilled.
+- A **Journey** is Fulfilled iff every top-level Section is Fulfilled.
+
+The recursion lets parents trust children's status. The Task List
+displays Section-level status; users drill in for the granular view.
+
+### Status-propagation rules
+
+For Groups, status is derived from their children. Sketch of the
+propagation (with "Not Applicable" treated as filtered-out):
+
+- All children Not Applicable → parent is **Not Applicable**.
+- All applicable children Fulfilled → parent is **Fulfilled**.
+- All applicable children Cannot start yet → parent is **Cannot start
+  yet**.
+- All applicable children Not Started, no Fulfilled, no Cannot start
+  yet → parent is **Not Started**.
+- Any applicable child In Progress; or any mix of Fulfilled with Not
+  Started / Cannot start yet → parent is **In Progress**.
+
+The mixed-state cases (especially Cannot start yet vs Not Started vs In
+Progress in combination) need fully specifying; see §What's still open.
+
+### Navigation algorithm
+
+Given an Engine state and a Container tree:
+
+1. **Task List**: render each top-level Section with its status and a
+   link. Sections with status Not Applicable are hidden; status Cannot
+   start yet are shown but their link is disabled.
+2. **Entering a Section**: navigate to the first applicable
+   non-Fulfilled descendant Page (depth-first traversal). Whether the
+   entry-Page is the first applicable, or the first applicable
+   _incomplete_, is configurable per Flow — see §What's still open.
+3. **On Page POST**: validate hard mandates; on success, write the
+   submitted fulfilments to the Journey state; **recalculate the Engine**
+   from the new state; then walk to the next applicable non-Fulfilled
+   Container in the current Section's subtree. If none, return to the
+   Task List.
+4. **At any point** the user can navigate back to the Task List (it's
+   always reachable from the page header).
+5. **CYA is reachable** earlier than Fulfilled — the page renders with
+   soft prompts for missing items, so the user sees current state and
+   can navigate to fill the gaps. The Submit button on CYA is enabled
+   iff the Journey is Fulfilled.
+6. **On CYA Submit**: the Engine re-checks Journey-Fulfilled; if yes,
+   transition to Submitted. If no, re-render CYA with the missing
+   items called out.
+
+The runtime never asks "what's the next page" in a hard-coded way; it
+always asks "what's the next applicable, non-Fulfilled descendant Page
+in the current Container subtree, given the current Engine state".
+This makes navigation **correct by construction** under structural Flow
+changes — add or remove a Page, change an obligation's `appliesWhen`,
+and the navigation adapts without code changes.
+
+### CYA and Change-link round-trip
+
+CYA lists every Fulfilment with values + a Change link. With multiple
+Pages presenting the same obligation, the Change link goes to **the
+first matching Page in depth-first Flow traversal** (settled — option
+(a) of the amend-link question).
+
+The Change flow uses the `?change=1` pattern from the existing
+prototype:
+
+- User clicks Change → page is rendered in change mode.
+- On submit, the runtime returns to CYA instead of advancing to the
+  next Page in the Section.
+
+This is a runtime-level behaviour; the Flow doesn't declare it per
+page.
+
+### Back navigation and breadcrumbs
+
+Back is **contextual**:
+
+- If the user arrived at this Page from the Task List or CYA, Back
+  returns there.
+- Otherwise (arrived from another Page in the same Section), Back
+  returns to the previous Page in the Section.
+
+Breadcrumbs (optional, per Flow design) offer additional applicable
+navigation across Sections / Pages. Best treated as a renderer concern
+informed by the Container tree, not a separate model concept.
+
+### Fulfilled → Submitted lifecycle
+
+For the Journey as a whole:
+
+- **Not Started** — user has reached the Flow but has no fulfilments.
+- **In Progress** — some Sections have In Progress / Fulfilled status.
+- **Fulfilled** — all top-level Sections are Fulfilled; CYA Submit is
+  enabled.
+- **Submitted** — user clicked Submit on CYA. Journey is final; no
+  further changes. The system might surface a receipt / confirmation
+  page, but the fulfilments are immutable.
+
+A Journey can move between In Progress and Fulfilled freely (e.g. the
+user fulfils everything, then goes back to amend, dropping back to In
+Progress, then fulfils again). Only Submitted is a one-way transition.
 
 ## Tests
 
@@ -907,17 +1094,53 @@ Two natural homes for the results of system-handled obligations:
 
 Leaning (b) for an extensible model, but not pinned.
 
-### P. Navigation algorithm
+### P. Navigation algorithm — sub-questions
 
-How the runtime turns (Engine output + current page + Flow definition)
-into "next page" or "Journey complete". Sketched but not pinned. Working
-theory: the Flow declares an ordered set of pages with obligation
-references; the runtime walks the ordering and picks "the next page that
-presents at least one in-scope unfulfilled obligation". Hub-and-spoke
-patterns may need additional Flow declarations (groupings into "tasks";
-hub-render rules) on top of the linear case. The "what makes a Journey
-done" rule (all Engine-mandatory obligations satisfied AND the user has
-posted the completion gate) also needs formalising.
+The core navigation algorithm is now sketched in §Navigation and status,
+including the Container tree, recursive Fulfilled definition, status
+taxonomy, the recalc-then-route rule, CYA round-trip, and contextual
+back navigation. Several sub-questions remain:
+
+- **P.1 Container model — distinct types or unified?** Two design
+  options for the Flow schema:
+  - (a) **Three distinct types** — `Section`, `SubSection`, `Page` as
+    schema-level discriminants. Explicit; more types to define.
+  - (b) **Unified recursive `Container`** — every node has `id`,
+    `title`, EITHER `children: [Container]` (Group form) OR `presents:
+[...]` (Page form). Composes naturally with arbitrary nesting.
+
+  Leaning (b) for clean recursion; (a) might surface useful
+  distinctions (e.g. "top-level Sections show on Task List by default;
+  deeper Groups don't").
+
+- **P.2 Status-propagation rules for mixed-state Group children.**
+  The §Navigation and status table is sketched but not pinned. The
+  trickier mixed cases (Fulfilled + Cannot start yet, Not Started +
+  Cannot start yet, etc.) need a precise truth table.
+
+- **P.3 First-Page vs first-incomplete-Page on Section entry.** When
+  the user enters a Section, does the runtime jump to the first
+  applicable Page, or the first applicable Page that isn't yet
+  Fulfilled? Probably the latter (resume where you left off), but
+  worth being a Flow-level configurable.
+
+- **P.4 First-incomplete navigation for deeply nested containers.**
+  When entering a Section, does the runtime walk depth-first through
+  the tree to find the first incomplete Page anywhere in the subtree
+  (deep-link to where you left off), or stop at the first level (so
+  the user drills into SubSections themselves)?
+
+- **P.5 Skeleton Flow shape.** Does the model require at least one
+  Section (a skeleton uses a single anonymous Section wrapping all
+  Pages), or does it permit a top-level `pages: [...]` alternative
+  shape with no Sections at all? Most uniform: always wrap in a
+  Section, suppress the Task List in the renderer if there's only one.
+
+- **P.6 Task List rendering of nested SubSections.** UX choice that
+  may need Flow-level declaration: render flat with indentation;
+  show only top-level Sections and reveal SubSections on drill-in;
+  show SubSections as "tasks within tasks" on a sub-hub. Mostly a
+  renderer concern but the Flow may want to express hints.
 
 ### M. Failure policies per orchestrator-handled obligation
 
