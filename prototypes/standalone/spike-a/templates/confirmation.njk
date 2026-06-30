@@ -1,0 +1,21 @@
+{% extends layout %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+
+{% block journeyContent %}
+  {{ govukPanel({
+    titleText: "Quote confirmed",
+    html: "Your reference number<br><strong>" + reference + "</strong>"
+  }) }}
+
+  <p class="govuk-body">We have saved your quote of <strong>£{{ premium }}</strong> per year.</p>
+
+  <h2 class="govuk-heading-m">What happens next</h2>
+  <p class="govuk-body">
+    Nothing — this is a prototype. Your answers were saved to a local JSON file
+    so you can see the journey persist data.
+  </p>
+
+  <p class="govuk-body">
+    <a class="govuk-link" href="/prototype-standalone">Return to the standalone prototype list</a>
+  </p>
+{% endblock %}

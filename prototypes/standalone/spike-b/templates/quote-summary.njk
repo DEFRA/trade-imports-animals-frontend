@@ -1,0 +1,26 @@
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">Your quote</h1>
+
+  <p class="govuk-body-l">
+    Estimated annual premium:
+    <strong class="govuk-!-font-size-36">£{{ premium }}</strong>
+  </p>
+
+  {{ govukSummaryList({
+    rows: [
+      { key: { text: "Cover" }, value: { text: coverLabel } },
+      { key: { text: "Optional extras" }, value: { text: extras | join(", ") if extras.length else "None" } }
+    ]
+  }) }}
+
+  <p class="govuk-body">This is an illustrative price for a prototype. It is not a real quote.</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: "Accept and continue" }) }}
+  </form>
+{% endblock %}

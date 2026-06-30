@@ -1,0 +1,61 @@
+{% extends "govuk/template.njk" %}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+
+{% block head %}
+  <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
+{% endblock %}
+
+{% block pageTitle %}Standalone prototypes | Car insurance{% endblock %}
+
+{% block beforeContent %}
+  {{ govukPhaseBanner({
+    tag: { text: "Prototype" },
+    html: 'Non-functional prototypes — not a real service.'
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <h1 class="govuk-heading-xl">Standalone journey-model spikes</h1>
+
+      <p class="govuk-body">
+        A second copy of the journey-model spikes where each model is fully
+        self-contained and flattened — no shared variant builder, no cross-spike
+        re-use — so each one can be read end to end. Same car-insurance journey
+        as the originals under <code>/prototype</code>.
+      </p>
+
+      <ul class="govuk-list">
+        <li>
+          <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option A — declarative config + selectors</h3>
+          <p class="govuk-body govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype-standalone/spike-a/task-list-with-linear-tasks">Task list with linear tasks</a>
+          </p>
+        </li>
+        <li>
+          <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option B — statechart / FSM</h3>
+          <p class="govuk-body govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype-standalone/spike-b/task-list-with-linear-tasks">Task list with linear tasks</a>
+          </p>
+        </li>
+        <li>
+          <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option C — requirement-graph rules engine</h3>
+          <p class="govuk-body govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype-standalone/spike-c/task-list-with-linear-tasks">Task list with linear tasks</a>
+          </p>
+        </li>
+        <li>
+          <h3 class="govuk-heading-m govuk-!-margin-bottom-1">Option D — schema-first (JSON Schema)</h3>
+          <p class="govuk-body govuk-!-margin-bottom-1">
+            <a class="govuk-link" href="/prototype-standalone/spike-d/task-list-with-linear-tasks">Task list with linear tasks</a>
+          </p>
+        </li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="{{ getAssetPath('application.js') }}"></script>
+{% endblock %}

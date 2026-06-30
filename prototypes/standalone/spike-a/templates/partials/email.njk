@@ -1,0 +1,14 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+
+{{ govukInput({
+  label: { text: "Email address", classes: "govuk-label--m" },
+  hint: { text: "We use this so you can save your quote and come back to it later." },
+  id: "email",
+  name: "email",
+  type: "email",
+  spellcheck: false,
+  autocomplete: "email",
+  classes: "govuk-input--width-20",
+  value: values.email if values else quote.email,
+  errorMessage: { text: errors.email } if errors and errors.email
+}) }}

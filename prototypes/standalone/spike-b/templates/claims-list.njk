@@ -1,0 +1,28 @@
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">Claims you have added</h1>
+
+  {% if rows.length %}
+    {{ govukSummaryList({ rows: rows }) }}
+  {% else %}
+    <p class="govuk-body">You have not added any claims yet.</p>
+  {% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukButton({
+      text: "Add another claim" if rows.length else "Add a claim",
+      classes: "govuk-button--secondary",
+      name: "action",
+      value: "add"
+    }) }}
+
+    <div class="govuk-button-group">
+      {{ govukButton({ text: "Continue", name: "action", value: "continue" }) }}
+    </div>
+  </form>
+{% endblock %}

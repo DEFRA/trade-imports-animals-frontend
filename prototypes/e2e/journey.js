@@ -2,15 +2,64 @@
  * Shared helpers for the prototype demo specs. Each `fill*` fills the fields on
  * the page it is given (it does not submit); the spec drives navigation.
  *
- * The suite is reusable across the model-spikes: set `SPIKE_BASE` (e.g.
- * `/spike-a`) to point the journey at a spike's variant. Default (unset)
- * exercises the original hand-written journey, so both must stay green.
+ * The suite is data-driven: the same specs walk every journey in `JOURNEYS`, so
+ * the hand-written prototype, the model-spikes and the flattened standalone
+ * copies are all proven behaviourally identical. Playwright discovers one test
+ * per journey and runs them in parallel against a single server — there is no
+ * per-run SPIKE_BASE env var.
  */
-const SPIKE_BASE = process.env.SPIKE_BASE ?? ''
+const groupedPath = (tree, spike) =>
+  `/${tree}${spike ? `/${spike}` : ''}/task-list-with-linear-tasks`
 
-export const base = {
-  grouped: `/prototype${SPIKE_BASE}/task-list-with-linear-tasks`
-}
+export const JOURNEYS = [
+  {
+    id: 'base',
+    label: 'base (hand-written)',
+    grouped: groupedPath('prototype')
+  },
+  // Model-spikes — one shared variant builder, four paradigms.
+  {
+    id: 'spike-a',
+    label: 'spike-a (declarative selectors)',
+    grouped: groupedPath('prototype', 'spike-a')
+  },
+  {
+    id: 'spike-b',
+    label: 'spike-b (statechart / FSM)',
+    grouped: groupedPath('prototype', 'spike-b')
+  },
+  {
+    id: 'spike-c',
+    label: 'spike-c (rules engine)',
+    grouped: groupedPath('prototype', 'spike-c')
+  },
+  {
+    id: 'spike-d',
+    label: 'spike-d (schema-first)',
+    grouped: groupedPath('prototype', 'spike-d')
+  },
+  // Standalone — each model flattened into its own self-contained copy.
+  {
+    id: 'standalone-spike-a',
+    label: 'standalone spike-a (declarative selectors)',
+    grouped: groupedPath('prototype-standalone', 'spike-a')
+  },
+  {
+    id: 'standalone-spike-b',
+    label: 'standalone spike-b (statechart / FSM)',
+    grouped: groupedPath('prototype-standalone', 'spike-b')
+  },
+  {
+    id: 'standalone-spike-c',
+    label: 'standalone spike-c (rules engine)',
+    grouped: groupedPath('prototype-standalone', 'spike-c')
+  },
+  {
+    id: 'standalone-spike-d',
+    label: 'standalone spike-d (schema-first)',
+    grouped: groupedPath('prototype-standalone', 'spike-d')
+  }
+]
 
 export async function fillEmail(page) {
   await page.getByLabel('Email address').fill('alex@example.com')
@@ -92,11 +141,11 @@ export const SAVE = 'Save and continue'
 export const CONTINUE = 'Continue'
 
 /** Walk the grouped journey up to (and stopping on) check-your-answers. */
-export async function walkGroupedToCheckAnswers(page, { hadClaims }) {
+export async function walkGroupedToCheckAnswers(page, grouped, { hadClaims }) {
   const click = (name) => page.getByRole('button', { name }).click()
   const task = (name) => page.getByRole('link', { name }).click()
 
-  await page.goto(base.grouped)
+  await page.goto(grouped)
   await click('Start now')
 
   // Email gate. The hand-written prototype redirects here automatically after

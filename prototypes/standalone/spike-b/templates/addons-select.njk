@@ -1,0 +1,25 @@
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">Add to your policy</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukCheckboxes({
+      name: "addons",
+      fieldset: {
+        legend: {
+          text: "What would you like to add?",
+          classes: "govuk-fieldset__legend--m"
+        }
+      },
+      hint: { text: "Select all that apply. Each one you choose adds its own set of questions." },
+      items: items
+    }) }}
+
+    {{ govukButton({ text: "Continue" }) }}
+  </form>
+{% endblock %}

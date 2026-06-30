@@ -18,6 +18,7 @@ test-results/
 
 # Prototype JSON datastore — written at runtime
 prototypes/shared/data/quotes.json
+prototypes/standalone/*/lib/data/quotes.json
 
 # Playwright demo suite output (videos + report)
 playwright-report/

@@ -1,0 +1,24 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+
+{{ govukRadios({
+  name: "claimType",
+  fieldset: {
+    legend: {
+      text: "What type of claim was it?",
+      classes: "govuk-fieldset__legend--m"
+    }
+  },
+  items: items
+}) }}
+
+{{ govukInput({
+  label: { text: "Approximate claim amount" },
+  id: "claimAmount",
+  name: "claimAmount",
+  classes: "govuk-input--width-5",
+  prefix: { text: "£" },
+  inputmode: "numeric",
+  value: values.claimAmount if values,
+  errorMessage: { text: errors.claimAmount } if errors and errors.claimAmount
+}) }}

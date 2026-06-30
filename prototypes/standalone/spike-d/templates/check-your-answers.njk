@@ -1,0 +1,42 @@
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+
+{% block journeyContent %}
+  {% if errorSummary %}
+    {{ govukErrorSummary({ titleText: "There is a problem", errorList: errorSummary }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">Check your answers</h1>
+
+  {% if incomplete.length %}
+    {% set stillNeededHtml %}
+      <h3 class="govuk-notification-banner__heading">You still need to complete some sections</h3>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for item in incomplete %}
+          <li>
+            <a class="govuk-notification-banner__link" href="{{ item.href }}">{{ item.text }}</a>
+            {% if item.because %}— {{ item.because }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endset %}
+    {{ govukNotificationBanner({ html: stillNeededHtml }) }}
+  {% endif %}
+
+  {{ govukSummaryList({ rows: rows }) }}
+
+  {% if premium %}
+    <p class="govuk-body-l">Estimated annual premium: <strong>£{{ premium }}</strong></p>
+  {% endif %}
+
+  <h2 class="govuk-heading-m">Now send your application</h2>
+  <p class="govuk-body">By accepting, you confirm the details above are correct.</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: "Accept and get quote" }) }}
+  </form>
+{% endblock %}

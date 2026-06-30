@@ -1,0 +1,44 @@
+/**
+ * Illustrative-only premium calculation, shared across prototype variants.
+ *
+ * Pure and deterministic, but the numbers are made up — this is a prototype,
+ * not an underwriting engine. Returns an annual premium in whole pounds.
+ */
+
+const BASE_PREMIUM = 480
+
+const coverTypeMultiplier = {
+  comprehensive: 1,
+  'third-party-fire-theft': 0.85,
+  'third-party': 0.7
+}
+
+const extraCost = {
+  breakdown: 60,
+  'courtesy-car': 35,
+  legal: 25,
+  windscreen: 20
+}
+
+export function calculatePremium(quote = {}) {
+  const multiplier = coverTypeMultiplier[quote.coverType] ?? 1
+
+  const valueLoading = Math.round((Number(quote.estimatedValue) || 0) * 0.01)
+  const noClaimsDiscount = (Number(quote.yearsNoClaims) || 0) * 25
+  const pointsLoading = (Number(quote.penaltyPoints) || 0) * 15
+  const claimsLoading = quote.hadClaims === 'yes' ? 120 : 0
+
+  const extras = (quote.extras ?? []).reduce(
+    (total, extra) => total + (extraCost[extra] ?? 0),
+    0
+  )
+
+  const premium =
+    Math.round((BASE_PREMIUM + valueLoading) * multiplier) +
+    claimsLoading +
+    pointsLoading -
+    noClaimsDiscount +
+    extras
+
+  return Math.max(premium, 150)
+}

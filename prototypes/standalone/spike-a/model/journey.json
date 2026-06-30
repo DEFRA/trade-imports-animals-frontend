@@ -1,0 +1,163 @@
+{
+  "$comment": "Option A model — PORTABLE DATA, no closures. A runtime adapter (../runtime) interprets this; a non-JS consumer could read the same file. Field ids match the shared njk partial input names so rendering is reused verbatim. See ../README.md.",
+  "steps": [
+    {
+      "id": "email",
+      "title": "Give us your email to begin",
+      "fields": [{ "id": "email", "type": "email", "required": true }]
+    },
+    {
+      "id": "about-you",
+      "title": "About you",
+      "fields": [
+        { "id": "fullName", "type": "text", "required": true },
+        { "id": "preferredName", "type": "text" },
+        { "id": "phone", "type": "tel" },
+        { "id": "postcode", "type": "formatted", "pattern": "postcode" },
+        {
+          "id": "country",
+          "type": "select",
+          "options": [
+            { "value": "england", "text": "England" },
+            { "value": "scotland", "text": "Scotland" },
+            { "value": "wales", "text": "Wales" },
+            { "value": "northern-ireland", "text": "Northern Ireland" }
+          ]
+        },
+        { "id": "dateOfBirth", "type": "date" }
+      ]
+    },
+    {
+      "id": "your-vehicle",
+      "title": "Your vehicle",
+      "fields": [
+        {
+          "id": "registration",
+          "type": "formatted",
+          "required": true,
+          "pattern": "registration"
+        },
+        { "id": "make", "type": "text" },
+        { "id": "model", "type": "text" },
+        { "id": "year", "type": "number", "min": 1900, "max": 2100 },
+        { "id": "estimatedValue", "type": "currency" }
+      ]
+    },
+    {
+      "id": "driving-history",
+      "title": "Driving history",
+      "fields": [
+        { "id": "yearsNoClaims", "type": "number", "min": 0, "max": 99 },
+        { "id": "hadClaims", "type": "boolean", "required": true },
+        { "id": "penaltyPoints", "type": "number", "min": 0, "max": 12 }
+      ]
+    },
+    {
+      "id": "claims",
+      "title": "Your claims",
+      "kind": "loop",
+      "appliesWhen": { "field": "hadClaims", "eq": "yes" },
+      "done": "claimsDone",
+      "arrayKey": "claims",
+      "item": {
+        "fields": [
+          {
+            "id": "claimType",
+            "type": "radio",
+            "required": true,
+            "options": [
+              { "value": "accident", "text": "Accident" },
+              { "value": "theft", "text": "Theft" },
+              { "value": "windscreen", "text": "Windscreen" },
+              { "value": "other", "text": "Something else" }
+            ]
+          },
+          { "id": "claimAmount", "type": "currency" }
+        ]
+      }
+    },
+    {
+      "id": "cover-type",
+      "title": "Choose your cover",
+      "itemsFrom": "coverType",
+      "fields": [
+        {
+          "id": "coverType",
+          "type": "radio",
+          "required": true,
+          "options": [
+            {
+              "value": "comprehensive",
+              "text": "Comprehensive",
+              "hint": "Covers you, your car and other people"
+            },
+            {
+              "value": "third-party-fire-theft",
+              "text": "Third party, fire and theft",
+              "hint": "Covers other people, plus fire and theft of your car"
+            },
+            {
+              "value": "third-party",
+              "text": "Third party only",
+              "hint": "Covers other people only"
+            }
+          ]
+        },
+        { "id": "voluntaryExcess", "type": "boolean" },
+        {
+          "id": "excessAmount",
+          "type": "currency",
+          "requiredWhen": { "field": "voluntaryExcess", "eq": "yes" }
+        }
+      ]
+    },
+    {
+      "id": "optional-extras",
+      "title": "Optional extras",
+      "itemsFrom": "extras",
+      "fields": [
+        {
+          "id": "extras",
+          "type": "multi-select",
+          "required": true,
+          "options": [
+            { "value": "breakdown", "text": "Breakdown cover" },
+            { "value": "courtesy-car", "text": "Courtesy car" },
+            { "value": "legal", "text": "Motor legal protection" },
+            { "value": "windscreen", "text": "Windscreen cover" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "title": "Add to your policy",
+      "kind": "subtasks"
+    }
+  ],
+  "rules": [
+    {
+      "id": "driver-min-age",
+      "kind": "min-age",
+      "field": "dateOfBirth",
+      "min": 17,
+      "stepId": "about-you",
+      "fieldId": "dateOfBirth",
+      "reason": "The main driver must be at least 17 years old"
+    },
+    {
+      "id": "excess-within-value",
+      "kind": "lte",
+      "left": "excessAmount",
+      "right": "estimatedValue",
+      "when": { "field": "voluntaryExcess", "eq": "yes" },
+      "stepId": "cover-type",
+      "fieldId": "excessAmount",
+      "reason": "Voluntary excess cannot be more than the vehicle's estimated value"
+    }
+  ],
+  "patterns": {
+    "postcode": "^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$",
+    "registration": "^[A-Za-z]{2}\\d{2}\\s?[A-Za-z]{3}$"
+  }
+}

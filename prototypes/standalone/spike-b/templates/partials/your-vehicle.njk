@@ -1,0 +1,63 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
+
+{{ govukInput({
+  label: { text: "Registration number" },
+  id: "registration",
+  name: "registration",
+  classes: "govuk-input--width-10",
+  value: quote.registration
+}) }}
+
+{# Autocomplete via a native datalist — no extra JS dependency #}
+{{ govukInput({
+  label: { text: "Make" },
+  hint: { text: "Start typing to see suggestions" },
+  id: "make",
+  name: "make",
+  value: quote.make,
+  attributes: { list: "vehicleMakes", autocomplete: "off" }
+}) }}
+<datalist id="vehicleMakes">
+  <option value="Audi"></option>
+  <option value="BMW"></option>
+  <option value="Ford"></option>
+  <option value="Nissan"></option>
+  <option value="Toyota"></option>
+  <option value="Volkswagen"></option>
+</datalist>
+
+{{ govukInput({
+  label: { text: "Model" },
+  id: "model",
+  name: "model",
+  value: quote.model
+}) }}
+
+{{ govukInput({
+  label: { text: "Year of manufacture" },
+  id: "year",
+  name: "year",
+  classes: "govuk-input--width-4",
+  inputmode: "numeric",
+  value: quote.year,
+  errorMessage: { text: errors.year } if errors and errors.year
+}) }}
+
+{{ govukInput({
+  label: { text: "Estimated value" },
+  id: "estimatedValue",
+  name: "estimatedValue",
+  classes: "govuk-input--width-5",
+  prefix: { text: "£" },
+  inputmode: "numeric",
+  value: quote.estimatedValue,
+  errorMessage: { text: errors.estimatedValue } if errors and errors.estimatedValue
+}) }}
+
+{{ govukFileUpload({
+  id: "vehiclePhoto",
+  name: "vehiclePhoto",
+  label: { text: "Upload a photo of your vehicle (optional)" },
+  hint: { text: "This is a prototype, so the file is not saved" }
+}) }}

@@ -1,0 +1,16 @@
+{% extends "standalone/spike-c/templates/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">Get a car insurance quote</h1>
+
+  <p class="govuk-body">
+    The application is grouped into a few tasks. Each task takes you through a
+    short set of questions, then returns you to this list.
+  </p>
+
+  <form method="post" action="{{ startAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: "Start now", isStartButton: true }) }}
+  </form>
+{% endblock %}

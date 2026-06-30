@@ -8,74 +8,80 @@ const heading = async (page, name) => {
 const click = (page, name) => page.getByRole('button', { name }).click()
 const task = (page, name) => page.getByRole('link', { name }).click()
 
-test('task list with linear tasks — start to confirmation', async ({
-  page
-}) => {
-  await page.goto(j.base.grouped)
-  await click(page, 'Start now')
+// Same walk, every journey: the hand-written prototype, the model-spikes and
+// the flattened standalone copies must all behave identically.
+for (const journey of j.JOURNEYS) {
+  test.describe(journey.label, () => {
+    test('task list with linear tasks — start to confirmation', async ({
+      page
+    }) => {
+      await page.goto(journey.grouped)
+      await click(page, 'Start now')
 
-  // Email gate: the hand-written prototype redirects straight to it after
-  // Start now; the spikes show 'Email' as the first hub task. Either way the
-  // user must complete it before any other task is reachable.
-  const emailHeading = page.getByRole('heading', {
-    name: 'Give us your email to begin'
+      // Email gate: the hand-written prototype redirects straight to it after
+      // Start now; the spikes show 'Email' as the first hub task. Either way the
+      // user must complete it before any other task is reachable.
+      const emailHeading = page.getByRole('heading', {
+        name: 'Give us your email to begin'
+      })
+      const hubHeading = page.getByRole('heading', {
+        name: 'Get a car insurance quote'
+      })
+      await emailHeading.or(hubHeading).first().waitFor()
+      if (await hubHeading.isVisible()) {
+        await heading(page, 'Get a car insurance quote')
+        await task(page, 'Email')
+      }
+      await heading(page, 'Give us your email to begin')
+      await j.fillEmail(page)
+      await click(page, j.SAVE)
+      await heading(page, 'Get a car insurance quote')
+
+      // Task 1 is a short linear run of two sections, then back to the hub.
+      await task(page, 'About you and your vehicle')
+      await heading(page, 'About you')
+      await j.fillAboutYou(page)
+      await click(page, j.SAVE)
+      await heading(page, 'Your vehicle')
+      await j.fillVehicle(page)
+      await click(page, j.SAVE)
+
+      // Task 2 runs driving history, the claims loop, cover and extras.
+      await task(page, 'Your driving and cover')
+      await heading(page, 'Driving history')
+      await j.fillDriving(page, { hadClaims: true })
+      await click(page, j.SAVE)
+      await heading(page, 'Claims you have added')
+      await j.addOneClaim(page)
+      await click(page, j.CONTINUE)
+      await heading(page, 'Choose your cover')
+      await j.fillCoverType(page)
+      await click(page, j.SAVE)
+      await heading(page, 'Optional extras')
+      await j.fillExtras(page)
+      await click(page, j.SAVE)
+
+      await task(page, 'Add to your policy')
+      await j.selectAddons(page)
+      await click(page, j.CONTINUE)
+
+      await task(page, 'Add a named driver')
+      await j.fillNamedDriverWho(page)
+      await click(page, j.SAVE)
+      await j.pickRelationship(page)
+      await click(page, j.SAVE)
+
+      await task(page, 'Declare vehicle modifications')
+      await j.fillModificationsDescribe(page)
+      await click(page, j.SAVE)
+      await j.fillModificationsValue(page)
+      await click(page, j.SAVE)
+
+      await task(page, 'Get your quote')
+      await heading(page, 'Your quote')
+      await click(page, 'Accept and continue')
+      await click(page, 'Accept and get quote')
+      await heading(page, 'Quote confirmed')
+    })
   })
-  const hubHeading = page.getByRole('heading', {
-    name: 'Get a car insurance quote'
-  })
-  await emailHeading.or(hubHeading).first().waitFor()
-  if (await hubHeading.isVisible()) {
-    await heading(page, 'Get a car insurance quote')
-    await task(page, 'Email')
-  }
-  await heading(page, 'Give us your email to begin')
-  await j.fillEmail(page)
-  await click(page, j.SAVE)
-  await heading(page, 'Get a car insurance quote')
-
-  // Task 1 is a short linear run of two sections, then back to the hub.
-  await task(page, 'About you and your vehicle')
-  await heading(page, 'About you')
-  await j.fillAboutYou(page)
-  await click(page, j.SAVE)
-  await heading(page, 'Your vehicle')
-  await j.fillVehicle(page)
-  await click(page, j.SAVE)
-
-  // Task 2 runs driving history, the claims loop, cover and extras.
-  await task(page, 'Your driving and cover')
-  await heading(page, 'Driving history')
-  await j.fillDriving(page, { hadClaims: true })
-  await click(page, j.SAVE)
-  await heading(page, 'Claims you have added')
-  await j.addOneClaim(page)
-  await click(page, j.CONTINUE)
-  await heading(page, 'Choose your cover')
-  await j.fillCoverType(page)
-  await click(page, j.SAVE)
-  await heading(page, 'Optional extras')
-  await j.fillExtras(page)
-  await click(page, j.SAVE)
-
-  await task(page, 'Add to your policy')
-  await j.selectAddons(page)
-  await click(page, j.CONTINUE)
-
-  await task(page, 'Add a named driver')
-  await j.fillNamedDriverWho(page)
-  await click(page, j.SAVE)
-  await j.pickRelationship(page)
-  await click(page, j.SAVE)
-
-  await task(page, 'Declare vehicle modifications')
-  await j.fillModificationsDescribe(page)
-  await click(page, j.SAVE)
-  await j.fillModificationsValue(page)
-  await click(page, j.SAVE)
-
-  await task(page, 'Get your quote')
-  await heading(page, 'Your quote')
-  await click(page, 'Accept and continue')
-  await click(page, 'Accept and get quote')
-  await heading(page, 'Quote confirmed')
-})
+}

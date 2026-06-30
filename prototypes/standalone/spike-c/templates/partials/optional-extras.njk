@@ -1,0 +1,13 @@
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+
+{{ govukCheckboxes({
+  name: "extras",
+  fieldset: {
+    legend: {
+      text: "Add any optional extras",
+      classes: "govuk-fieldset__legend--m"
+    }
+  },
+  hint: { text: "Select all that apply" },
+  items: items
+}) }}

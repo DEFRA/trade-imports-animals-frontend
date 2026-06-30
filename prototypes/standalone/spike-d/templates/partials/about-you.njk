@@ -1,0 +1,66 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+
+{{ govukInput({
+  label: { text: "Full name" },
+  id: "fullName",
+  name: "fullName",
+  value: quote.fullName,
+  errorMessage: { text: errors.fullName } if errors and errors.fullName
+}) }}
+
+{{ govukInput({
+  label: { text: "What should we call you?" },
+  hint: { text: "Optional. We'll use this when we contact you." },
+  id: "preferredName",
+  name: "preferredName",
+  value: quote.preferredName
+}) }}
+
+{{ govukInput({
+  label: { text: "UK telephone number" },
+  id: "phone",
+  name: "phone",
+  type: "tel",
+  autocomplete: "tel",
+  classes: "govuk-input--width-20",
+  hint: { text: "For international numbers include the country code" },
+  value: quote.phone,
+  errorMessage: { text: errors.phone } if errors and errors.phone
+}) }}
+
+{{ govukInput({
+  label: { text: "Postcode" },
+  id: "postcode",
+  name: "postcode",
+  classes: "govuk-input--width-10",
+  value: quote.postcode
+}) }}
+
+{{ govukSelect({
+  id: "country",
+  name: "country",
+  label: { text: "Country of residence" },
+  items: [
+    { value: "", text: "Choose…" },
+    { value: "england", text: "England", selected: quote.country == "england" },
+    { value: "scotland", text: "Scotland", selected: quote.country == "scotland" },
+    { value: "wales", text: "Wales", selected: quote.country == "wales" },
+    { value: "northern-ireland", text: "Northern Ireland", selected: quote.country == "northern-ireland" }
+  ]
+}) }}
+
+{% set dobError = (errors['dateOfBirth-day'] or errors['dateOfBirth-month'] or errors['dateOfBirth-year']) if errors %}
+{{ govukDateInput({
+  id: "dateOfBirth",
+  namePrefix: "dateOfBirth",
+  fieldset: { legend: { text: "Date of birth" } },
+  hint: { text: "For example, 27 3 1985" },
+  errorMessage: { text: dobError } if dobError,
+  items: [
+    { name: "day", classes: "govuk-input--width-2" + (" govuk-input--error" if errors and errors['dateOfBirth-day']), value: quote.dateOfBirth.day if quote.dateOfBirth },
+    { name: "month", classes: "govuk-input--width-2" + (" govuk-input--error" if errors and errors['dateOfBirth-month']), value: quote.dateOfBirth.month if quote.dateOfBirth },
+    { name: "year", classes: "govuk-input--width-4" + (" govuk-input--error" if errors and errors['dateOfBirth-year']), value: quote.dateOfBirth.year if quote.dateOfBirth }
+  ]
+}) }}
