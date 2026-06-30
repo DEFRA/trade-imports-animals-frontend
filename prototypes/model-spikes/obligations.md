@@ -537,16 +537,107 @@ layer.
   id; isolated from other Journeys. **Zero-many Journeys per Flow per user
   at any moment** (multi-tab → multiple concurrent Journeys).
 
-### Pages reference obligations (settled)
+### The Flow's page model
+
+A Flow declares a set of **pages**. Each page declares which obligations
+it presents. The page is the unit of composition for the user-facing
+delivery of the Service; pages map 1:1 to HTML artefacts in the
+implementation.
+
+#### Static page membership (the common case)
+
+Most pages present a fixed set of obligations:
 
 ```jsonc
-// flow.json — example
-{ "page": "dob-page", "presents": ["dob"] }
+// flow.json — typical page entry
+{
+  "page": "about-you",
+  "presents": [
+    { "obligation": "fullName", "mandate": "hard" },
+    { "obligation": "preferredName" }, // soft (default)
+    { "obligation": "phone" }, // soft
+    { "obligation": "dateOfBirth" } // soft
+  ]
+}
 ```
 
-A page in a Flow declares which obligations it asks about. The obligation
-has no notion of where it's shown. Pages are the composition unit;
-obligations are the contract.
+#### Dynamic page membership (when needed)
+
+For indexed obligations whose fulfilments are projected from state
+(e.g. per-modification cost), the same page model presents a variable
+number of obligation slots — one per fulfilment of the indexed
+obligation:
+
+```jsonc
+{
+  "page": "modification-cost",
+  "presentsForEach": {
+    "obligation": "modificationCost", // indexed obligation
+    "fulfilment": "*", // expand to every in-scope fulfilment
+    "mandate": "hard" // applies per-fulfilment
+  }
+}
+```
+
+The runtime expands `presentsForEach` to one virtual page-presentation
+per in-scope fulfilment of the indexed obligation. Same shape works for
+any indexed source (`user`, `derived`, `seeded`).
+
+A page can mix `presents` and `presentsForEach` — a static header plus a
+dynamic per-fulfilment section.
+
+#### Per-pair mandate — soft default, explicit hard
+
+Each page entry carries an optional `mandate` flag:
+
+- `hard` — at Save and continue, if this obligation is in scope and
+  unfulfilled at submit, the page re-renders with errors and the user
+  can't advance. The `fullName-on-the-email-gate` pattern.
+- `soft` (default; can be omitted) — Save and continue is allowed even
+  if the obligation is in scope and unfulfilled. The Engine keeps it on
+  the still-to-do list; the user encounters it again elsewhere.
+
+Soft default + explicit hard. Skips the "I forgot to opt out" footgun
+and matches the expected distribution — most page entries are not
+hard-blocking.
+
+#### Two-mandate composition
+
+The Flow's page-level mandate and the Engine's Journey-completion
+mandate compose orthogonally:
+
+| Page-level       | Engine-level | Effect at this page                                                                                                |
+| ---------------- | ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `hard`           | mandatory    | Must fill here AND required for Journey completion. Most restrictive.                                              |
+| `hard`           | optional     | Must fill on this page (UX choice) even though the Journey doesn't strictly need it.                               |
+| `soft` (default) | mandatory    | Can skip on this page; Engine keeps the obligation in scope; needed before Journey can complete. **The 90% case.** |
+| `soft` (default) | optional     | No constraint at either level.                                                                                     |
+
+Enforcement:
+
+- **On page POST** — every page entry with `mandate: 'hard'` that is in
+  scope and unfulfilled blocks Save and continue. The page re-renders
+  with a GDS error summary + per-field errors.
+- **On Journey completion attempt** (POST /check-your-answers or
+  equivalent) — the Engine's output is the source of truth; any
+  unfulfilled Engine-mandatory obligation blocks completion regardless
+  of how individual pages declared their mandates.
+- **On Save and continue from a page with unfilled non-hard
+  obligations** — partial state is saved; navigation advances per the
+  navigation algorithm (still open — see §What's still open, P).
+
+#### Consistency tests this enables
+
+- **Hard-mandate without rendering** — if a page hard-mandates obligation
+  X but the actual HTML template doesn't have an input for X, the user
+  is stuck. Static check on the (page entry, HTML template) pair.
+- **Hard-mandate on never-applicable obligation** — if a page hard-
+  mandates X but X can't plausibly be in scope when this page is
+  reached, the constraint is dead code. Warning-level static check.
+- **Cross-Flow Engine equivalence** — given identical answers + config,
+  all Flows of a Service should leave the Engine in the same state at
+  the end. The skeleton Flow becomes a reference oracle for the polished
+  Flow.
 
 ### Acquisition methods are Flow-side
 
@@ -556,21 +647,6 @@ obligation** — the obligation just sees a typed value arrive in its field.
 Acquisition methods and their UI mechanisms are entirely Flow-layer
 composition. Provenance ("which method was used") becomes Flow-side
 metadata, not an obligation concept.
-
-### Two distinct "mandatory" concepts
-
-These are independent:
-
-1. **Mandatory at save and continue** — a page-level constraint that blocks
-   the form submission until the field is filled (the existing prototype's
-   `fullName` pattern). Lives on the page in the journey layer.
-2. **Mandatory for journey completion** — the obligation-level mandate
-   returned by the evaluator. The journey can't complete (e.g. can't get
-   the quote) until satisfied, but pages presenting it can be soft (let the
-   user skip and come back) or hard (block save).
-
-A single mandatory obligation can have hard presentations and soft
-presentations in different parts of the same journey.
 
 ### "Kinds" collapse
 
@@ -685,6 +761,18 @@ Two natural homes for the results of system-handled obligations:
   but the audit/serialisation/privacy story is cleaner.
 
 Leaning (b) for an extensible model, but not pinned.
+
+### P. Navigation algorithm
+
+How the runtime turns (Engine output + current page + Flow definition)
+into "next page" or "Journey complete". Sketched but not pinned. Working
+theory: the Flow declares an ordered set of pages with obligation
+references; the runtime walks the ordering and picks "the next page that
+presents at least one in-scope unfulfilled obligation". Hub-and-spoke
+patterns may need additional Flow declarations (groupings into "tasks";
+hub-render rules) on top of the linear case. The "what makes a Journey
+done" rule (all Engine-mandatory obligations satisfied AND the user has
+posted the completion gate) also needs formalising.
 
 ### M. Failure policies per orchestrator-handled obligation
 
