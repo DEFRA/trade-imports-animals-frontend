@@ -914,6 +914,110 @@ This makes navigation **correct by construction** under structural Flow
 changes — add or remove a Page, change an obligation's `appliesWhen`,
 and the navigation adapts without code changes.
 
+### Runtime navigation primitives
+
+The model exposes three pure functions over the Container tree. All are
+depth-first and rooted-traversal (can be invoked at the Flow root, a
+Section, or a SubSection). All are deterministic given identical
+inputs.
+
+```ts
+// Status-blind: depth-first to the first Page in declared order
+// (read-only Pages included). Used for default Section entry.
+function firstApplicablePage(root: Container): Page | null
+
+// Status-filtered: depth-first to the first Page with status NS or IP.
+// Read-only (NA) and Fulfilled (F) Pages are skipped naturally via
+// the status filter. Used for Resume / Continue and similar shortcuts.
+function firstUnfulfilledPage(root: Container, state: EngineState): Page | null
+
+// Locate by obligation reference: depth-first to the first Page whose
+// `presents` includes the given obligation id. Used for CYA Change links.
+function firstPagePresentingObligation(
+  flow: Flow,
+  obligationId: string
+): Page | null
+```
+
+The three primitives together cover every "where do I navigate to?"
+question the runtime needs to answer. Each is independently unit-
+testable — no browser, no orchestrator, no Engine state beyond what's
+passed in.
+
+### Section-entry configuration
+
+The Flow declares which primitive resolves a default Section click:
+
+```jsonc
+// flow.json
+{
+  "id": "polished-flow",
+  "sectionEntryMode": "firstApplicablePage", // or "firstUnfulfilledPage"
+  "sections": [
+    {
+      "kind": "section",
+      "id": "review-section",
+      "entryMode": "firstApplicablePage", // optional per-Section override
+      "children": [...]
+    }
+  ]
+}
+```
+
+**Default for `sectionEntryMode` is `firstApplicablePage`** — safer
+(read-only intro Pages aren't accidentally skipped on first-time
+entry). Per-Section override available when a Section wants a
+different default. The renderer reads the resolved mode and invokes
+the matching primitive — no fork in renderer logic.
+
+The Flow / Renderer can also expose **multiple navigation widgets in
+parallel** — e.g. a default Section click using `firstApplicablePage`
+PLUS a "Continue" affordance using `firstUnfulfilledPage`. The model
+supports any combination of primitives surfaced to users; the choice
+of which widgets to render is a Flow / renderer decision.
+
+### Navigation triggers
+
+| Trigger                                                           | Primitive invoked                                                                                        | Configurable?                                   |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Task List click on a Section**                                  | `firstApplicablePage` OR `firstUnfulfilledPage`, per Flow `sectionEntryMode` (with per-Section override) | Yes — Flow-level default + per-Section override |
+| **Sub-hub click on a SubSection** (Pattern C drill-in renderings) | Same as Section click, rooted at the SubSection                                                          | Inherited                                       |
+| **Resume / Continue affordance** (when offered alongside default) | `firstUnfulfilledPage`                                                                                   | No — always status-filtered                     |
+| **CYA Change link** for an obligation                             | `firstPagePresentingObligation`                                                                          | No                                              |
+| **Special widget — jump to a specific Container**                 | `firstApplicablePage` or `firstUnfulfilledPage` rooted at the target Container                           | Renderer chooses mode per widget UX             |
+| **Special widget — jump to a specific Page**                      | Direct navigation — no traversal                                                                         | N/A                                             |
+
+Note: when `sectionEntryMode = firstUnfulfilledPage`, the default click
+and a Resume affordance do the same thing. The renderer may choose to
+hide the Resume affordance in that case, or keep it for consistency
+across Flows — that's a renderer choice. The model just exposes both
+primitives.
+
+### Primitive tests (sub-list of §Tests / Dynamic reachability)
+
+Each primitive is its own unit-testable function. Cases worth covering:
+
+- **`firstApplicablePage`** — flat Section; Section with SubSections;
+  multi-level nesting; only SubSections (no top-level Pages); single-
+  Page Section; empty Section returns null; rooted at any Container in
+  the tree.
+- **`firstUnfulfilledPage`** — all children Fulfilled returns null (so
+  callers can fall back to `firstApplicablePage` or to CYA); one IP
+  among Fulfilled returns the IP; mixed F + NS + IP across SubSections
+  returns first NS / IP in depth-first order; NA Pages (read-only or
+  dynamically empty) skipped via the filter; deep nesting with
+  incomplete leaf found correctly; Fulfilled SubSection ahead of an
+  incomplete one skipped wholesale.
+- **`firstPagePresentingObligation`** — single match; multiple matches
+  return first in depth-first traversal; nested deep match; no match
+  returns null (defensive — in-scope obligations should always have
+  ≥ 1 matching Page).
+- **Integration / equivalence** — `firstApplicablePage(section) ===
+firstUnfulfilledPage(section, state)` when state has no fulfilments
+  yet; the choice of `sectionEntryMode` doesn't affect final Engine
+  state given identical scripted answers (specialisation of the
+  cross-Flow equivalence test).
+
 ### CYA and Change-link round-trip
 
 CYA lists every Fulfilment with values + a Change link. With multiple
@@ -1340,10 +1444,13 @@ state)`, `isFulfilled(container, state)`, etc.). Matches the
   concern.
 
 - **P.4 First-incomplete navigation for deeply nested containers.**
-  When entering a Section, does the runtime walk depth-first through
-  the tree to find the first incomplete Page anywhere in the subtree
-  (deep-link to where you left off), or stop at the first level (so
-  the user drills into SubSections themselves)?
+  Settled — depth-first. The model exposes both
+  `firstApplicablePage(root)` and `firstUnfulfilledPage(root, state)`
+  as pure runtime primitives; the Flow's `sectionEntryMode` (with
+  per-Section override) declares which the default Section click
+  invokes. Both can be exposed simultaneously via different widgets
+  (e.g. default click + Resume affordance). See §Navigation algorithm
+  / §Runtime navigation primitives and §Section-entry configuration.
 
 - **P.5 Skeleton Flow shape.** Settled. A Flow always has at least
   one top-level Section — no flat top-level `pages: [...]`
