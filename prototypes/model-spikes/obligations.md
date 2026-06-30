@@ -58,15 +58,32 @@ A consistent vocabulary across the discussion and the data model:
 - **Fulfil** (verb) — the user (or the system) fulfils an obligation by
   providing the canonical data. Fulfilments can be incomplete (partially
   answered), complete, or stale.
-- **Journey** — the scope within which a set of fulfilments exists. Each
-  journey owns a **fulfilments map** keyed by obligation id. Multiple
-  journeys can coexist for the same user (e.g. different browser tabs),
-  each isolated from the others; "user" or "session" are explicitly NOT
-  the uniqueness scope. _Terminology note_: "journey" is currently used
-  ambiguously for both the _definition_ (the per-implementation file
-  describing presentation, ordering, etc.) and the _runtime instance_
-  (one user's specific navigation, with its own id and fulfilments).
-  Pinning this down is open — see §What's still open.
+- **Service** — the thing the user is trying to do (e.g. "get a car
+  insurance quote", "file an animal-trade notification"). A Service has
+  exactly **one** Obligations definition (the data contract) and **one
+  or more** Flows (presentations/orchestrations of that contract).
+- **Flow** — a static description of how a Service is delivered to the
+  user: which pages exist, in what order, how obligations are grouped,
+  per-page hard/soft mandate, copy/labels/hints, acquisition mechanisms.
+  Multiple Flows can coexist for the same Service — e.g. a skeleton Flow
+  for rapid validation alongside a polished Flow for production, or a
+  re-working of the polished Flow in development. All Flows of a Service
+  reference the same underlying Obligations.
+- **Journey** — a runtime instance of **one Flow** being navigated by a
+  user. Owns the **fulfilments map** keyed by obligation id. Each Journey
+  has its own id. Multiple Journeys can coexist for the same user (e.g.
+  different browser tabs), each isolated; "user" and "session" are
+  explicitly NOT the uniqueness scope.
+
+```
+Service (e.g. car-insurance-quote)
+├── Obligations          ← one per service; the data contract
+└── Flows                ← one or more; each a presentation /
+                         │  orchestration of the same obligations
+    └── Journey          ← zero-many runtime instances per Flow per
+                         │  user (multi-tab → multiple Journeys in flight)
+        └── fulfilments  ← scoped to the Journey
+```
 
 Note: the existing prototype code uses `answers` / `quote` for its state
 bag. That's a legacy hand-written convention; the obligations model uses
@@ -477,59 +494,68 @@ stored answer fails the rule, the obligation re-enters the "needs satisfying"
 state. The orchestrator then either re-fires (for system-handled types) or
 re-presents (for user-facing types). Open question — see §What's still open.
 
-## The journey-agnostic insight
+## Service architecture — Obligations, Flows, Journeys
 
-The obligations model is **journey-agnostic**. Multiple journeys of different
-types — internal CRM, polished public web, mobile, quick prototype, fully
-designed customer journey — should all be able to **satisfy the same
-obligations** with different presentation layers. Two journey implementations
-can coexist over the same obligations (e.g. a skeleton for quick validation
-alongside a polished version), which doubles as a regression-check.
+The Obligations model is **Flow-agnostic**. Multiple Flows for the same
+Service — internal CRM, polished public web, mobile, quick prototype, fully
+designed customer-facing — all reference the same Obligations. Two (or
+more) Flows can coexist over the same Obligations definition (e.g. a
+skeleton Flow for rapid validation alongside a polished Flow for
+production, or a re-working of the polished Flow in development), which
+doubles as a regression-check: if both Flows satisfy the same Obligations,
+they're behaviourally equivalent at the data-contract level.
 
-The converse rule: **anything the user submits on a form (excluding auth and
-other cross-cutting concerns) should map to an obligation.**
+The converse rule: **anything the user submits on a form (excluding auth
+and other cross-cutting concerns) should map to an obligation.**
 Pure-presentational pages (start screens, "what you'll need", confirmation,
 error pages, hub views) and non-data UI affordances (language toggles,
-accessibility controls) are journey furniture and live entirely in the
-journey layer.
+accessibility controls) are Flow furniture and live entirely in the Flow
+layer.
 
 ### Layering
 
-- **Layer 1 — Obligations** (`obligations.json` or similar): journey-agnostic
-  data. Identity, type, cardinality, constraints. Knows nothing about pages
-  or how data is acquired. Fully portable.
+- **Layer 1 — Obligations** (`obligations.json` or similar): Service-level
+  data contract. Identity, type, cardinality, constraints. Knows nothing
+  about pages, Flows, or how data is acquired. Fully portable. **One per
+  Service.**
 - **Layer 1.5 — Engine + orchestrator** (`evaluator.js` + a runtime, or
   per-language equivalents): the evaluator is pure
-  `(obligations, answers, config) → per-obligation state`. The orchestrator
-  is the side-effecting wrapper that triggers system-handled obligations,
-  collects callbacks, writes to `answers`, and re-runs the evaluator.
-  Implementation-language code; not portable across languages, but each
-  language consumer ships its own pair.
-- **Layer 2 — Journey** (one per journey implementation): references
-  obligations by id. Declares pages, ordering, grouping, per-page hard/soft
-  mandate, copy/labels/hints, acquisition mechanisms for user-facing
-  obligations (form input, file upload, etc.). Multiple journeys can coexist
-  over the same obligations + engine.
+  `(obligations, answers, config) → per-obligation state`. The
+  orchestrator is the side-effecting wrapper that triggers system-handled
+  obligations, collects callbacks, writes to `answers`, and re-runs the
+  evaluator. Implementation-language code; not portable across languages,
+  but each language consumer ships its own pair. **One per implementation
+  language.**
+- **Layer 2 — Flow** (e.g. `flow.json`): a static definition of how the
+  Service is delivered to the user. References obligations by id; declares
+  pages, ordering, grouping, per-page hard/soft mandate, copy/labels/hints,
+  acquisition mechanisms for user-facing obligations (form input, file
+  upload, etc.). **One or more Flows per Service** — skeleton, polished,
+  re-working, etc.
+- **Layer 3 — Journey** (runtime): a specific user navigating a specific
+  Flow. Owns the fulfilments map (see §Fulfilments storage). Has its own
+  id; isolated from other Journeys. **Zero-many Journeys per Flow per user
+  at any moment** (multi-tab → multiple concurrent Journeys).
 
 ### Pages reference obligations (settled)
 
 ```jsonc
-// journey.json — example
+// flow.json — example
 { "page": "dob-page", "presents": ["dob"] }
 ```
 
-A page declares which obligations it asks about. The obligation has no notion
-of where it's shown. Pages are the composition unit; obligations are the
-contract.
+A page in a Flow declares which obligations it asks about. The obligation
+has no notion of where it's shown. Pages are the composition unit;
+obligations are the contract.
 
-### Acquisition methods are journey-side
+### Acquisition methods are Flow-side
 
 A single obligation might be acquired multiple ways (manual DOB entry vs
-NI-lookup-then-extract). **These ways are NOT properties of the obligation** —
-the obligation just sees a typed value arrive in its field. Acquisition
-methods and their UI mechanisms are entirely journey-layer composition.
-Provenance ("which method was used") becomes journey-side metadata, not an
-obligation concept.
+NI-lookup-then-extract). **These ways are NOT properties of the
+obligation** — the obligation just sees a typed value arrive in its field.
+Acquisition methods and their UI mechanisms are entirely Flow-layer
+composition. Provenance ("which method was used") becomes Flow-side
+metadata, not an obligation concept.
 
 ### Two distinct "mandatory" concepts
 
@@ -612,13 +638,6 @@ fulfilment needs to point at a specific driver fulfilment. Two stances:
 The second is simpler and consistent with the "scoping is a function"
 position. The first is more structured if integrity needs to be enforced
 generically. Defer until a concrete cross-reference case emerges.
-
-### O. Journey terminology disambiguation
-
-"Journey" currently denotes both the per-implementation _definition_
-file and the _runtime instance_ that owns the fulfilments map. Needs
-disambiguating — see the terminology note in §Working definition /
-Terminology. Active discussion.
 
 ### I. Configuration shape
 
