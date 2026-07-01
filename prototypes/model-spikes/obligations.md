@@ -93,6 +93,16 @@ A consistent vocabulary across the discussion and the data model:
   Submit on CYA. No further changes. We deliberately avoid "Complete"
   as a separate term — it overlapped Fulfilled and Submitted
   confusingly.
+- **ObligationEvaluator** — the pure, sync function that operates on
+  the Obligations layer. Given `(Obligations, Fulfilments, config)`
+  returns per-obligation state (in-scope, mandatory, fulfilled,
+  remaining, authored reasons). Service-scoped; knows nothing about
+  Flows. Single-call function.
+- **JourneyEvaluator** — a collection of pure, sync functions that
+  operate on the Flow layer. Each is a small primitive answering a
+  specific question about the Flow's state given the
+  ObligationEvaluator's output. Flow-scoped; uses ObligationEvaluator
+  output as an input.
 
 ```
 Service (e.g. car-insurance-quote)
@@ -182,29 +192,48 @@ _how_ user-facing obligations are presented — those are all handled elsewhere.
 
 ## The evaluation engine
 
-The system has two cooperating components: a pure **evaluator** and a
-side-effecting **orchestrator**.
+The system has **three cooperating components** — two pure evaluators
+covering different layers of the model, and a side-effecting
+orchestrator that wraps them and handles I/O:
 
-### The evaluator (pure, sync, deterministic)
+- **ObligationEvaluator** — pure, sync. Answers Service-layer
+  questions: given Obligations, Fulfilments and config, what's the
+  state of each obligation? Service-scoped; knows nothing about Flows.
+  Single-call function.
+- **JourneyEvaluator** — pure, sync. Answers Flow-layer questions:
+  what's the status of this Container? What's the first applicable
+  Page? Which Page presents this obligation? A collection of small
+  pure functions rather than a single call. Flow-scoped; uses
+  ObligationEvaluator output as an input.
+- **Orchestrator** — side-effecting. Triggers system-handled
+  obligations (sub-journey callbacks, external lookups); collects
+  callbacks; writes results into Fulfilments; re-runs the evaluators
+  in a fixed-point loop until state is stable.
+
+Both evaluators are pure sync — all async is concentrated in the
+orchestrator, upstream of the evaluators. Both are independently
+unit-testable with plain fixture in / plain output out.
+
+### The ObligationEvaluator (Service layer)
 
 ```ts
-function evaluate(
+function evaluateObligations(
   obligations: Obligation[],
-  answers: AnswersState,
+  fulfilments: FulfilmentsMap,
   config: Config
 ): PerObligationState
 ```
 
 Inputs:
 
-1. **Obligations** — the journey-agnostic data file above.
-2. **Answers** — the live state of what's been collected so far. Includes
-   user inputs AND the results of system-handled obligations (lookup results,
-   sub-journey receipts).
+1. **Obligations** — the Service-level data contract (`obligations.json`).
+2. **Fulfilments** — the Journey's current fulfilments map. Includes
+   user inputs AND the results of system-handled obligations (lookup
+   results, sub-journey receipts).
 3. **Configuration** — environment-specific behaviours (feature flags,
    versioning, A/B variants, statute version, regional rules, etc.).
 
-Output, per obligation:
+Output, per obligation id:
 
 ```ts
 {
@@ -215,8 +244,45 @@ Output, per obligation:
 }
 ```
 
-The evaluator never performs I/O. Given the same inputs it always returns the
-same output. Trivially testable; replayable; auditable.
+The ObligationEvaluator never performs I/O. Given the same inputs it
+always returns the same output. Trivially testable; replayable;
+auditable. **Provenance / reasons are authored here** — the single
+source of truth for "why is this obligation required?"; other
+components surface reasons but don't author their own.
+
+### The JourneyEvaluator (Flow layer)
+
+Modelled as a **collection of small pure functions**, each answering
+one specific question about the Flow's state given the
+ObligationEvaluator's output plus the current Fulfilments and Flow
+definition. Not a single `evaluate()` call — callers invoke the
+primitive they need.
+
+Primitives already captured elsewhere in this doc:
+
+- `firstApplicablePage(root)` — depth-first to first Page in declared
+  order, status-blind. See §Runtime navigation primitives.
+- `firstUnfulfilledPage(root, obligationState)` — depth-first to first
+  Page with status Not Started or In Progress. See §Runtime navigation
+  primitives.
+- `firstPagePresentingObligation(flow, obligationId)` — the CYA
+  Change-link primitive. See §Runtime navigation primitives.
+- `containerStatus(container, obligationState)` — returns Not
+  Applicable / Not Started / In Progress / Fulfilled per the
+  propagation rules. See §Status-propagation rules.
+- `journeyState(flow, obligationState, submitted)` — returns Not
+  Started / In Progress / Fulfilled / Submitted for the Journey as a
+  whole. See §Fulfilled → Submitted lifecycle.
+
+More primitives may emerge as new Flow behaviours are needed. The
+common shape is "small pure function; takes (Flow subtree,
+obligationState) plus any extras; returns a specific answer". Add
+primitives freely as concrete needs emerge — no monolithic
+`evaluate()` for the Flow layer.
+
+The JourneyEvaluator can be tested against a fake ObligationEvaluator
+output — you don't need to run the real ObligationEvaluator to test
+Flow logic. Handy for isolating test failures.
 
 ### The orchestrator (side-effecting)
 
@@ -267,8 +333,9 @@ the lookup obligation in-scope and the orchestrator fires the call).
 
 ### What this buys
 
-- **Engine stays trivially testable.** Property-based testing is feasible
-  (generate random answer/config combinations and assert the result shape).
+- **Both evaluators stay trivially testable.** Property-based testing
+  is feasible (generate random answer/config combinations and assert
+  the result shape).
 - **Caching is implicit.** System-handler results live in `answers`. No
   separate cache layer with its own freshness policy.
 - **Replay is straightforward.** Replay the recorded answers + config through
@@ -288,12 +355,13 @@ the lookup obligation in-scope and the orchestrator fires the call).
 
 ### Trade-off accepted
 
-The evaluator is **not portable across languages** in the way the obligations
-data is. A non-JS consumer (Python validator, mobile native runtime) needs
-its own evaluator implementation. What stays portable is the **contract** —
-the obligations data file describes what data must exist, with what type and
-cardinality; each runtime decides when and why, and orchestrates its own
-async.
+The evaluators are **not portable across languages** in the way the
+obligations data is. A non-JS consumer (Python validator, mobile
+native runtime) needs its own ObligationEvaluator + JourneyEvaluator
+implementations. What stays portable is the **contract** — the
+obligations and flow data files describe what data must exist and how
+it's presented; each runtime decides when and why, and orchestrates
+its own async.
 
 ## Single vs indexed obligations
 
@@ -1285,6 +1353,59 @@ non-deterministic.
 | Flow → HTML scaffold | Mechanical              | Deterministic template generator       |
 | HTML polish          | Fuzzy / GDS expertise   | AI assist + human review               |
 | Tests                | Must be deterministic   | Generated with hard-coded expectations |
+
+### Model surface and tooling for interrogation
+
+The evaluators + static models being pure data / pure functions makes
+several interrogation-tooling levels naturally available. Investment
+is roughly in ascending order:
+
+1. **Node module APIs (free with the design).** The ObligationEvaluator
+   and JourneyEvaluator primitives are exported functions in a Node
+   module. Interrogate directly from a REPL or a unit test:
+
+   ```
+   $ node
+   > const { evaluateObligations } = require('./obligations/evaluator')
+   > const { firstUnfulfilledPage } = require('./flow/evaluator')
+   > const obligations = require('./service/obligations.json')
+   > const fulfilments = { fullName: 'Alex' }
+   > evaluateObligations(obligations, fulfilments, {})
+   ```
+
+   Zero incremental work if the modules are exported cleanly. Best for
+   one-off exploration and unit tests.
+
+2. **CLI tools in the repo.** Wrap the module functions in `tim` (the
+   workspace's existing CLI, per the workspace `CLAUDE.md`) or a
+   dedicated `obligations` / `journey` binary. Scripted use,
+   fixture-driven experiments, batch operations over many fixtures.
+
+   ```
+   $ tim obligations evaluate --service car-insurance --fulfilments fixtures/basic.json
+   $ tim journey status --flow polished --container about-you --fulfilments fixtures/basic.json
+   ```
+
+   Modest work to build the wrapping.
+
+3. **Static model surface — serve the JSON directly.** `obligations.json`
+   and each `flow.json` served at well-known endpoints (e.g.
+   `/schema/obligations/:serviceId.json`, `/schema/flows/:flowId.json`)
+   or shipped as static assets in the frontend build. Cheap; makes the
+   models externally inspectable; enables external tooling (linters,
+   visualisers, diff-viewers) to consume them directly.
+
+4. **Config-gated introspection API on the frontend service.** Routes
+   like `/dev/obligations/:serviceId/evaluate` and
+   `/dev/journey/:flowId/evaluate` behind a config flag (e.g.
+   `EXPOSE_EVALUATOR=true`, off in production). Query live Journey
+   state via HTTP; useful for debugging real user sessions in dev /
+   staging environments. Production safety story required; highest
+   effort.
+
+Level 1 is essentially free if the module structure is right. Levels 2
+and 3 are cheap early adds. Level 4 waits for a real debugging need
+with the appropriate safety controls.
 
 ### Future-work concerns to revisit
 
