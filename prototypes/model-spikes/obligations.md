@@ -783,6 +783,48 @@ persistence layer can't meaningfully start until it's resolved.
 Needs decision-maker input and possibly Defra-wide guidance on
 data-store standards for services of this classification.
 
+### Submit lifecycle
+
+When the user clicks Submit on the CYA page, the Journey transitions
+from Fulfilled to Submitted. At the persisted-document level:
+
+- `status` flips from `in-progress` to `submitted`.
+- `submittedAt` timestamp is set.
+- **Fulfilments become immutable.** Storage layer must block writes
+  to documents with `status: "submitted"`.
+
+The only post-submit user-facing surface is a **read-only CYA page**.
+The user cannot navigate elsewhere in the Journey. Renderers observe
+`journeyState = Submitted` and constrain routes accordingly.
+
+**Everything else is a possible extension point** — not part of the
+core MVP:
+
+- **Post-submit navigation.** Re-viewing individual pages beyond CYA.
+- **Downloads.** PDF receipt or confirmation document.
+- **Amendment workflow.** Post-submit corrections. Typical shape: a
+  new Journey with a reference back to the original; the original
+  stays immutable. Model doesn't provide amendment machinery today.
+- **Withdrawal workflow.** Pre-processing withdraw (status flip to
+  Withdrawn). Not currently in the state taxonomy.
+- **Downstream events.** External systems that care about submissions
+  — e.g. case-management (Dynamics), notification service
+  (confirmation email / SMS), audit log, metrics. The orchestrator
+  can fire a well-defined event on Submit; exact payload, subscription
+  mechanism, and delivery guarantees are service and infrastructure
+  concerns.
+- **Reference-number generation.** Common GDS pattern — service-
+  provided function called at Submit; stored on the Journey document;
+  shown on the read-only CYA. Format is service-specific.
+- **Submit atomicity.** How to handle partial failure across
+  downstream events (fail-fast / best-effort / two-phase). Choice
+  interacts with the datastore (native transactions vs application-
+  level guarantees), so defers with the datastore decision.
+
+**Adopt any of these when a concrete service needs them.** The MVP
+Submit is: state flip, timestamp, immutability, read-only CYA. Nothing
+more.
+
 ### Deferred persistence concerns
 
 - **Concurrency (multi-tab, multi-device).** Optimistic locking is
@@ -1355,8 +1397,12 @@ For the Journey as a whole:
 - **Fulfilled** — all top-level Sections are Fulfilled; CYA Submit is
   enabled.
 - **Submitted** — user clicked Submit on CYA. Journey is final; no
-  further changes. The system might surface a receipt / confirmation
-  page, but the fulfilments are immutable.
+  further changes. The only post-submit user-facing surface is a
+  **read-only CYA page**; the user cannot navigate elsewhere in the
+  Journey. Anything richer (PDF download, per-page re-view,
+  amendments, withdrawal, downstream event emission, reference-number
+  generation) is a possible extension point — see §Persistence →
+  Submit lifecycle.
 
 A Journey can move between In Progress and Fulfilled freely (e.g. the
 user fulfils everything, then goes back to amend, dropping back to In
