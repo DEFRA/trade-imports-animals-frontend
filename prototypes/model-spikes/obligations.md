@@ -1496,20 +1496,22 @@ could be:
 
 The second is probably cleaner for a real system.
 
-### K. Staleness mechanism
+### K. Staleness mechanism (deferred — needs colleague discussion)
 
-Staleness needs to be **uniform** across user-entered answers and
-system-handled results (lookups, sub-journey receipts). Two natural shapes:
+Staleness needs to be **uniform** across user-entered fulfilments and
+system-handled results (lookups, sub-journey receipts). Two natural
+shapes considered so far:
 
-- **Per-obligation TTL** in the data — orchestrator invalidates the stored
-  answer when TTL expires; the obligation re-enters in-scope-but-unsatisfied
-  state.
-- **Activation predicate over freshness** — the evaluator declares "in scope
-  if missing OR older than N"; collapses staleness into the existing
-  activation machinery.
+- **Per-obligation TTL** in the data — orchestrator invalidates the
+  stored fulfilment when TTL expires; the obligation re-enters
+  in-scope-but-unsatisfied state.
+- **Activation predicate over freshness** — the evaluator declares
+  "in scope if missing OR older than N"; collapses staleness into the
+  existing activation machinery.
 
-The second is more uniform with how everything else is decided, but probably
-harder to author. Worth pinning when we have a concrete staleness case.
+The second is more uniform with how everything else is decided, but
+probably harder to author. Deferred pending a discussion with a
+colleague and, ideally, a concrete staleness case to reason against.
 
 ### L. Where lookup results live in state
 
