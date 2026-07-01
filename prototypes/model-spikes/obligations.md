@@ -240,10 +240,16 @@ Output, per obligation id:
 {
   inScope: boolean,
   status?: 'mandatory' | 'optional',     // only meaningful if inScope
-  reasons?: Array<{ text: string }>,     // authored, multi-reason provenance
+  reasons?: Array<{
+    code: string,                        // e.g. "obligation.modification.type.applicable.reason.hasModification"
+    explanation?: string,                // freeform, developer-facing; not shown to end users
+    values?: object,                     // interpolation values for the resolved UI message
+  }>,
   fulfilments?: Array<FulfilmentState>   // only for indexed cardinality
 }
 ```
+
+See §J for the reason shape rationale and naming convention.
 
 The ObligationEvaluator never performs I/O. Given the same inputs it
 always returns the same output. Trivially testable; replayable;
@@ -1484,17 +1490,49 @@ Recorded-snapshot fidelity: whatever the constructed evaluator closes
 over becomes part of the recorded context for a Journey so replays
 are deterministic. Details defer until replay is a concrete need.
 
-### J. Where authored reasons are authored
+### J. Where authored reasons are authored (settled)
 
-Under the function-based model, reasons come back from the evaluator. They
-could be:
+Reasons come back from the ObligationEvaluator as **coded records** — a
+machine-readable code plus an optional developer-facing explanation
+and optional interpolation values:
 
-- **Inline string literals in the function** — simplest, but spreads the
-  user-facing copy across implementation code.
-- **Looked up from a separate copy file** (`reasons.json`) by key — keeps
-  copy centralised, translatable, reviewable by content design.
+```ts
+{ reasons: [{ code: string, explanation?: string, values?: object }] }
+```
 
-The second is probably cleaner for a real system.
+**The code** follows a dot-separated naming convention that keeps it
+readable and predictable — e.g.
+`obligation.modification.type.applicable.reason.hasModification`. The
+code doubles as the i18n message key: the frontend's existing i18n
+mechanism (English + Welsh) resolves it to display text.
+
+**The explanation** is a freeform developer-facing string. Not shown
+to end users. Travels with the reason so anyone reading evaluator
+output (logs, debug UIs, tests, replay traces) can understand what
+the reason means without cross-referencing i18n files.
+
+**The values** are interpolation params for the resolved UI message
+(e.g. `{ amount: 500 }` for a template like
+"Modifications costing over £{amount} must be professionally fitted").
+
+**Rationale.** Welsh support is a statutory requirement for Defra
+services, so inline English literals in evaluator functions were
+never viable — the reason surface has to be locale-agnostic. Coded
+reasons with i18n resolution downstream keep the evaluator
+locale-free and reuse whatever i18n machinery the frontend already
+has. The explanation field preserves in-code readability without
+paying the cost of embedded UI copy.
+
+**Where the translated strings live** is a frontend concern —
+wherever the app keeps its other translated copy (e.g.
+`locales/en.json`, `locales/cy.json`). Not something the model layer
+pins.
+
+**Possible extension (not required today).** Obligation records could
+declare a `reasonCodes: string[]` field naming the codes the
+obligation might emit, for content-design reviewability and
+unused-code linting. Introduce only if content-design or QA asks for
+it.
 
 ### K. Staleness mechanism (deferred — needs colleague discussion)
 
