@@ -219,8 +219,7 @@ unit-testable with plain fixture in / plain output out.
 ```ts
 function evaluateObligations(
   obligations: Obligation[],
-  fulfilments: FulfilmentsMap,
-  config: Config
+  fulfilments: FulfilmentsMap
 ): PerObligationState
 ```
 
@@ -230,8 +229,10 @@ Inputs:
 2. **Fulfilments** — the Journey's current fulfilments map. Includes
    user inputs AND the results of system-handled obligations (lookup
    results, sub-journey receipts).
-3. **Configuration** — environment-specific behaviours (feature flags,
-   versioning, A/B variants, statute version, regional rules, etc.).
+
+Configuration is a foreseen extension point — see §I. Deliberately not
+modelled today; the signature above is bare because we have no config
+to inject yet.
 
 Output, per obligation id:
 
@@ -290,14 +291,14 @@ The runtime around the evaluator manages everything async:
 
 ```
 loop:
-  state = evaluate(obligations, answers, config)
+  state = evaluate(obligations, fulfilments)
   for each in-scope obligation in state:
     if user-facing: render in the journey UI; await user input
     if system-handled (sub-journey / lookup / …):
       trigger if not already in flight
-      on callback: write result into answers
+      on callback: write result into fulfilments
   if no progress possible (waiting for user OR for callbacks): yield
-  if answers / config changed since last evaluate: goto loop
+  if fulfilments changed since last evaluate: goto loop
 done when no in-scope obligation remains unsatisfied
 ```
 
@@ -1453,12 +1454,35 @@ The second is simpler and consistent with the "scoping is a function"
 position. The first is more structured if integrity needs to be enforced
 generically. Defer until a concrete cross-reference case emerges.
 
-### I. Configuration shape
+### I. Configuration shape (settled)
 
-The evaluator takes configuration as one of its inputs. What is the shape of
-configuration? Likely a flat key-value bag (feature flags), but could be
-richer (statute version, regional rules, A/B cohort). Worth pinning down
-once we have a concrete journey that uses it.
+No current requirements for evaluator configuration. Anticipated
+candidates over time include feature flags, statute / rule version,
+regional rules, A/B cohorts, and environment tier — none pinned until
+a concrete journey needs them.
+
+**Deliberately not modelled today.** The evaluators currently take no
+config; the shape stays a foreseen extension point rather than
+something we commit to speculatively.
+
+**When config becomes needed** it will be injected at construction
+time, not passed as a function argument:
+
+```ts
+const evaluator = createObligationEvaluator({ config })
+evaluator.evaluate(obligations, fulfilments)
+```
+
+This preserves the pure-function property — the constructed evaluator
+remains same-in / same-out for `(obligations, fulfilments)` — while
+letting tests vary behaviour by constructing with different configs.
+The same pattern extends to any other evaluator dependency that
+becomes injectable (`now`, `randomSeed`, logger, metrics, …), for
+both the ObligationEvaluator and the JourneyEvaluator.
+
+Recorded-snapshot fidelity: whatever the constructed evaluator closes
+over becomes part of the recorded context for a Journey so replays
+are deterministic. Details defer until replay is a concrete need.
 
 ### J. Where authored reasons are authored
 
