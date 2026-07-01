@@ -28,6 +28,14 @@ if (copyBtn && crumbInput) {
 
 const REDIRECT_DELAY_MS = 3000
 
+const amendCancelledBanner = document.getElementById('amend-cancelled-banner')
+if (amendCancelledBanner && !amendCancelledBanner.hidden) {
+  const referenceNumber = amendCancelledBanner.dataset.referenceNumber
+  setTimeout(() => {
+    globalThis.location.href = `/notification-view/${referenceNumber}`
+  }, REDIRECT_DELAY_MS)
+}
+
 const elementsPresent = deleteBtn && dialog && confirmBtn && cancelBtn
 
 if (elementsPresent && successBanner && errorBanner && crumbInput) {
@@ -61,7 +69,7 @@ if (elementsPresent && successBanner && errorBanner && crumbInput) {
       if (response.ok) {
         successBanner.hidden = false
         setTimeout(() => {
-          window.location.href = '/'
+          globalThis.location.href = '/'
         }, REDIRECT_DELAY_MS)
       } else {
         errorBanner.hidden = false

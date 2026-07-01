@@ -570,5 +570,63 @@ describe('#notificationViewController', () => {
         expect.stringContaining('Delete this notification?')
       )
     })
+
+    test('Should render Cancel amendment button when notification is AMEND', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'AMEND'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-cancel-amend-btn')
+      })
+
+      expect(result).toEqual(expect.stringContaining('id="cancel-amend-btn"'))
+      expect(result).toEqual(expect.stringContaining('Cancel amendment'))
+      expect(result).toEqual(
+        expect.stringContaining(
+          '/notification-cancel-amend/IMP.GB.2026.1001401'
+        )
+      )
+    })
+
+    test('Should not render Cancel amendment button when notification is SUBMITTED', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-no-cancel-amend-btn')
+      })
+
+      expect(result).not.toEqual(
+        expect.stringContaining('id="cancel-amend-btn"')
+      )
+    })
+
+    test('Should show amendment cancelled banner when cancelled query param is set', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'SUBMITTED'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401?cancelled=1',
+        auth: sessionAuth('notification-view-amend-cancelled-banner')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('The amendment has been cancelled')
+      )
+      expect(result).toEqual(
+        expect.stringContaining('id="amend-cancelled-banner"')
+      )
+    })
   })
 })
