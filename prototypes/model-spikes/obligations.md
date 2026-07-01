@@ -1817,8 +1817,33 @@ shapes considered so far:
   existing activation machinery.
 
 The second is more uniform with how everything else is decided, but
-probably harder to author. Deferred pending a discussion with a
-colleague and, ideally, a concrete staleness case to reason against.
+probably harder to author.
+
+**Per-fulfilment metadata is entangled with staleness.** Whichever
+staleness shape lands, it likely wants per-fulfilment metadata that
+today's storage doesn't carry. Candidate fields to flesh out
+alongside the staleness mechanism:
+
+- `fetchedAt` / `enteredAt` — when the value landed in state (needed
+  by any TTL or "older than N" rule).
+- `sourceRef` — reference to the external system's record id (for
+  lookup results and sub-journey receipts; useful for re-fetching,
+  audit, and idempotency).
+- `raw` — original response body before mapping (audit / debugging
+  when a lookup or receipt shape drifts).
+- `versionStamp` — the rule / model version the fulfilment was
+  captured under (for rule-version invalidation, see the canvas
+  notes; distinct from cosmetic-rename tolerance which the uid
+  handles).
+
+None of these are needed by the current MVP (silent tolerate-and-
+amend covers cosmetic drift; nothing else in scope reads freshness
+or version metadata). Pinning any of them speculatively risks
+choosing wrong when the concrete staleness case arrives.
+
+Deferred pending a discussion with a colleague and, ideally, a
+concrete staleness case to reason against. Metadata shape should
+be resolved as part of the same discussion, not separately.
 
 ### L. Where lookup results live in state (settled)
 
