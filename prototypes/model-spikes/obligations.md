@@ -1674,20 +1674,24 @@ an upstream answer (its data was wiped per scope-exit rule). Should
 the signpost render differently for "visited before but reset" vs
 "never visited"? Defer until the renderer needs to differentiate.
 
-### M. Failure policies per orchestrator-handled obligation
+### M. Failure policies per orchestrator-handled obligation (deferred)
 
 When a system-handled obligation fails (lookup times out, sub-journey
-errors), the orchestrator needs a policy declared per-obligation:
+errors), the orchestrator needs a policy declared per-obligation.
+Candidate shapes considered so far:
 
 - **block** — journey can't proceed; show an error; retry.
-- **degrade** — treat as unsatisfied; surface a fallback path ("we couldn't
-  verify; please upload proof manually").
-- **default** — pretend the call returned a known default value; journey
-  continues.
+- **degrade** — treat as unsatisfied; surface a fallback path ("we
+  couldn't verify; please upload proof manually").
+- **default** — pretend the call returned a known default value;
+  journey continues.
 - **stale-ok** — use the last known good value with a marker.
 
-Encoded in the obligation, executed by the orchestrator, opaque to the
-evaluator.
+Direction of travel: encoded in the obligation, executed by the
+orchestrator, opaque to the evaluator. Deferred pending a concrete
+failing-lookup case (and likely colleague input on operational
+policy) — no value in pinning the shape before we know which
+failure modes we actually need to handle.
 
 ## Cross-reference
 
