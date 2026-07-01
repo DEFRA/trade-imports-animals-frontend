@@ -770,6 +770,12 @@ layer):
   not blocking model design. Deferred.
 - **Config snapshot per Journey.** Config itself is a foreseen
   extension (§I). Snapshotting deferred with it.
+- **Retention policy.** How long journeys are stored before deletion —
+  distinct policies likely apply to abandoned in-progress journeys,
+  submitted journeys, and backups. Statute-driven for most Defra
+  services; probably wants Defra-wide guidance rather than a
+  model-level decision. Deferred pending that guidance and a concrete
+  service context.
 
 ## Service architecture — Obligations, Flows, Journeys
 
