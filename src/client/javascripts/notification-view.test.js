@@ -201,4 +201,36 @@ describe('#notificationView', () => {
       expect(focusSpy).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('amend cancelled banner', () => {
+    test('Should not redirect when the banner is hidden', async () => {
+      document.body.innerHTML = `
+        <div id="amend-cancelled-banner" hidden data-reference-number="${REF}"></div>
+      `
+      Object.defineProperty(window, 'location', {
+        value: { href: '' },
+        writable: true
+      })
+
+      await import('./notification-view.js')
+      await vi.runAllTimersAsync()
+
+      expect(window.location.href).toBe('')
+    })
+
+    test('Should redirect to notification view after 3 seconds when banner is visible', async () => {
+      document.body.innerHTML = `
+        <div id="amend-cancelled-banner" data-reference-number="${REF}"></div>
+      `
+      Object.defineProperty(window, 'location', {
+        value: { href: '' },
+        writable: true
+      })
+
+      await import('./notification-view.js')
+      await vi.runAllTimersAsync()
+
+      expect(window.location.href).toBe(`/notification-view/${REF}`)
+    })
+  })
 })
