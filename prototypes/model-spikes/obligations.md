@@ -194,7 +194,7 @@ _how_ user-facing obligations are presented — those are all handled elsewhere.
 | **Cardinality**                                                      | `single` (one fulfilment per user, e.g. date of birth) or `indexed` (a collection of fulfilments, e.g. address history, multi-select with per-item follow-ups). See §Single vs indexed obligations.                                                                                      |
 | **Scoping (in-scope / out-of-scope, mandatory / optional, reasons)** | NOT on the obligation. Computed by the evaluation engine — see §The evaluation engine.                                                                                                                                                                                                   |
 | **Effective status when multiple reasons fire**                      | "Most restrictive wins" — if any reason says mandatory, the obligation is mandatory for journey completion.                                                                                                                                                                              |
-| **Status flip while in scope**                                       | An obligation can move between mandatory and optional based on later answers, without leaving scope. Data is preserved across status flips.                                                                                                                                              |
+| **Status flip while in scope**                                       | An obligation can move between mandatory and optional based on later fulfilments, without leaving scope. Data is preserved across status flips.                                                                                                                                          |
 | **Scope exit**                                                       | When the obligation is fully out of scope, its data is **actively cleared** (consistent with the canvas "delete conditional data" steer).                                                                                                                                                |
 | **Convergent obligations**                                           | A single obligation can be brought into scope for multiple reasons. The data remains unitary — edits from one presentation propagate to others. There are NOT two obligations on the same field; there's one obligation that the scoping function activates for several reasons.         |
 | **Completion policy**                                                | Three modes need supporting per journey: silently-skipped / must-address / gate-collected at end. Resolved per-journey default with per-obligation override.                                                                                                                             |
@@ -208,9 +208,10 @@ covering different layers of the model, and a side-effecting
 orchestrator that wraps them and handles I/O:
 
 - **ObligationEvaluator** — pure, sync. Answers Service-layer
-  questions: given Obligations, Fulfilments and config, what's the
-  state of each obligation? Service-scoped; knows nothing about Flows.
-  Single-call function.
+  questions: given Obligations and Fulfilments, what's the state of
+  each obligation? Service-scoped; knows nothing about Flows.
+  Single-call function. (Configuration is a foreseen extension —
+  see §I.)
 - **JourneyEvaluator** — pure, sync. Answers Flow-layer questions:
   what's the status of this Container? What's the first applicable
   Page? Which Page presents this obligation? A collection of small
@@ -361,18 +362,20 @@ initially treated as "scoping needs to be async", but the cleaner answer is:
 **scoping stays sync; async lives in the orchestrator**. The external state
 arrives via the system-handled-obligation callback pattern, identical to how
 sub-journey receipts arrive. By the time the evaluator runs, the state it
-needs is already in `answers` (or absent, in which case the engine declares
-the lookup obligation in-scope and the orchestrator fires the call).
+needs is already in `fulfilments` (or absent, in which case the evaluator
+declares the lookup obligation in-scope and the orchestrator fires the
+call).
 
 ### What this buys
 
 - **Both evaluators stay trivially testable.** Property-based testing
-  is feasible (generate random answer/config combinations and assert
-  the result shape).
-- **Caching is implicit.** System-handler results live in `answers`. No
-  separate cache layer with its own freshness policy.
-- **Replay is straightforward.** Replay the recorded answers + config through
-  the engine to reconstruct what the user saw at any point.
+  is feasible (generate random fulfilment combinations and assert the
+  result shape).
+- **Caching is implicit.** System-handler results live in `fulfilments`.
+  No separate cache layer with its own freshness policy.
+- **Replay is straightforward.** Replay the recorded fulfilments
+  through the evaluators to reconstruct what the user saw at any
+  point.
 - **Failure handling is uniform.** A failed lookup is just an unsatisfied
   lookup-obligation. The orchestrator can retry, surface to the user, fall
   back to defaults — same patterns as any other obligation that's stuck.
@@ -401,25 +404,34 @@ its own async.
 A `single` obligation produces one canonical value:
 
 ```jsonc
-{ "id": "dob", "name": "dateOfBirth", "type": "date", "cardinality": "single" }
-// → answers.dateOfBirth = '1985-03-27'
+{
+  "uid": "…uuid…",
+  "id": "dateOfBirth",
+  "type": "date",
+  "cardinality": "single"
+}
+// → fulfilments.dateOfBirth = '1985-03-27'
 ```
 
 An `indexed` obligation produces a collection of fulfilments:
 
 ```jsonc
 {
-  "id": "addr",
-  "name": "address",
+  "uid": "…uuid…",
+  "id": "address",
   "type": "address",
   "cardinality": "indexed",
-  "indexedBy": "..."
+  "indexedBy": { "source": "user", "mutability": "add-and-remove" }
 }
-// → answers.addresses = [
-//     { from: '...', to: '...', country: 'UK', ... },
-//     { from: '...', to: '...', country: 'FR', ... },
-//   ]
+// → fulfilments.address = {
+//     "01H8XK7M5RW6QYJ2AB": { "value": { "from": "…", "to": "…", "country": "UK" } },
+//     "01H8XK9P3T8WBZN4DE": { "value": { "from": "…", "to": "…", "country": "FR" } },
+//   }
 ```
+
+Examples in this doc show obligation `id` values as outer keys of
+the fulfilments map for readability; real storage uses obligation
+`uid` (see §Persistence → Dual ids).
 
 ### The `indexedBy` shape — source × mutability
 
@@ -501,13 +513,16 @@ When the controlling obligation's answer changes:
 Fulfilments live in a **journey-scoped map**. The journey is the
 uniqueness scope (not the user, not the session — a single user might have
 several journeys open simultaneously, e.g. in different browser tabs).
-Within a journey, the **fulfilments map** is keyed by obligation id. Each
-entry is either a single value (for single-cardinality obligations) or a
-nested map of fulfilmentId → value (for indexed obligations).
+Within a journey, the **fulfilments map** is keyed by obligation `uid`
+(see §Persistence → Dual ids). Each entry is either a single value
+(for single-cardinality obligations) or a nested map of fulfilmentId
+→ value (for indexed obligations). Examples in this section show
+obligation `id` values as outer keys for readability; real storage
+uses `uid`.
 
-A single-cardinality obligation needs no separate per-instance identifier:
-`fulfilmentId === obligationId` by convention, and the obligation id alone
-addresses the (at most one) fulfilment.
+A single-cardinality obligation needs no separate per-instance
+identifier: `fulfilmentId === obligationUid` by convention, and the
+obligation `uid` alone addresses the (at most one) fulfilment.
 
 For indexed obligations, the inner map's keys are per-fulfilment
 identifiers whose shape varies by `source`. Three illustrative shapes:
@@ -1062,10 +1077,10 @@ Enforcement:
 - **Hard-mandate on never-applicable obligation** — if a page hard-
   mandates X but X can't plausibly be in scope when this page is
   reached, the constraint is dead code. Warning-level static check.
-- **Cross-Flow Engine equivalence** — given identical answers + config,
-  all Flows of a Service should leave the Engine in the same state at
-  the end. The skeleton Flow becomes a reference oracle for the polished
-  Flow.
+- **Cross-Flow evaluator equivalence** — given identical fulfilments,
+  all Flows of a Service should leave the ObligationEvaluator in the
+  same state at the end. The skeleton Flow becomes a reference oracle
+  for the polished Flow.
 
 ### Acquisition methods are Flow-side
 
@@ -1087,11 +1102,11 @@ cleaner model most collapse into either **data types** on the obligation or
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **question**         | Not a kind — just the default UI mechanism (any obligation can be acquired via a form input).                                                                                                                       |
 | **file-upload**      | If the canonical data IS the file: obligation type is `file` (or `file-set`). If the canonical data is something extracted from a file: obligation type is whatever's extracted; "upload" is a journey-side method. |
-| **sub-journey**      | An orchestrator-handled obligation type (`sub-journey-receipt`); the orchestrator fires the sub-journey, awaits the callback, writes the receipt id into `answers`. The evaluator treats it as ordinary input.      |
+| **sub-journey**      | An orchestrator-handled obligation type (`sub-journey-receipt`); the orchestrator fires the sub-journey, awaits the callback, writes the receipt id into `fulfilments`. The evaluator treats it as ordinary input.  |
 | **agreement** (T&Cs) | Probably an obligation with `type: boolean` (or `consent`). The UI mechanism (a checkbox after content) is journey-side.                                                                                            |
 | **payment**          | Probably its own obligation with `type: payment-receipt` (the canonical data is the receipt / confirmation id), satisfied by a journey-side payment flow.                                                           |
 | **schedule**         | Obligation type is `time-slot` or similar. UI mechanism (calendar picker, list, …) is journey-side.                                                                                                                 |
-| **lookup**           | An orchestrator-handled obligation type (`lookup-result`); the orchestrator makes the external call, awaits the response, writes the result into `answers`. Same mechanism as sub-journeys.                         |
+| **lookup**           | An orchestrator-handled obligation type (`lookup-result`); the orchestrator makes the external call, awaits the response, writes the result into `fulfilments`. Same mechanism as sub-journeys.                     |
 
 The obligation's **type** becomes the only discriminant, and the type space
 stays open. The journey-layer translates each user-facing type into a
@@ -1108,11 +1123,11 @@ orchestrator handlers; the obligation file is unchanged.
 | **B — statechart**            | Awkward. A statechart IS a journey by construction; "multiple journeys over one obligation set" means one statechart per journey, all reading shared obligations. The statechart paradigm doesn't make obligations primary; it makes flow primary.                                                                                                                                                                                           |
 | **D — schema-first**          | [`annotations.json`](./spike-d/model/annotations.json) was always the journey layer over the schema. The schema could become the type/constraint layer of obligations; the annotations the journey layer. But D's other weaknesses (no native provenance, value-blind conditionals) don't go away — and the evaluator function is alien to the schema-first paradigm.                                                                        |
 
-None of the four spikes ships the obligations / evaluator / orchestrator /
+None of the four spikes ships the obligations / evaluators / orchestrator /
 journey split today. C is closest because its engine + authored-reasons
-combination already approximates Layer 1.5 (the pure evaluator) more than
-the others. The orchestrator layer (fixed-point loop, system-handled
-obligation callbacks) is new to all four.
+combination already approximates Layer 1.5 (the pure evaluators — mainly
+the ObligationEvaluator role) more than the others. The orchestrator layer
+(fixed-point loop, system-handled obligation callbacks) is new to all four.
 
 ## Navigation and status
 
@@ -1269,7 +1284,10 @@ function firstApplicablePage(root: Container): Page | null
 // Status-filtered: depth-first to the first Page with status NS or IP.
 // Read-only (NA) and Fulfilled (F) Pages are skipped naturally via
 // the status filter. Used for Resume / Continue and similar shortcuts.
-function firstUnfulfilledPage(root: Container, state: EngineState): Page | null
+function firstUnfulfilledPage(
+  root: Container,
+  state: ObligationState
+): Page | null
 
 // Locate by obligation reference: depth-first to the first Page whose
 // `presents` includes the given obligation id. Used for CYA Change links.
@@ -1354,9 +1372,9 @@ Each primitive is its own unit-testable function. Cases worth covering:
   ≥ 1 matching Page).
 - **Integration / equivalence** — `firstApplicablePage(section) ===
 firstUnfulfilledPage(section, state)` when state has no fulfilments
-  yet; the choice of `sectionEntryMode` doesn't affect final Engine
-  state given identical scripted answers (specialisation of the
-  cross-Flow equivalence test).
+  yet; the choice of `sectionEntryMode` doesn't affect final
+  ObligationEvaluator state given identical scripted fulfilment
+  sequences (specialisation of the cross-Flow equivalence test).
 
 ### CYA and Change-link round-trip
 
@@ -1416,13 +1434,13 @@ infrastructure they need, and when they earn their keep.
 
 ### Test classes
 
-| Layer                 | Test class                                                                                                                                                           | Inputs                                             | Style                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------- |
-| Static — model only   | **Static reachability** — every obligation is presented by at least one Flow page                                                                                    | Obligations + Flow                                 | Pure JSON walk                     |
-| Static — model + HTML | **Model ↔ HTML alignment** — page model and HTML templates agree (multiple sub-checks)                                                                               | Flow + HTML templates                              | HTML parse + comparison            |
-| Dynamic — runtime     | **Dynamic reachability / completability** — for any plausible Engine state, the navigation algorithm yields pages that present every in-scope unfulfilled obligation | Obligations + Flow + Engine + navigation algorithm | Property-based / state enumeration |
-| Cross-Flow            | **Engine-equivalence across Flows** — given identical answers + config, all Flows of a Service leave the Engine in the same state                                    | Obligations + ≥2 Flows + Engine + scripted answers | Fixture-driven                     |
-| Browser               | **End-to-end happy-path** — the rendered service actually works                                                                                                      | Live app                                           | Playwright / similar               |
+| Layer                 | Test class                                                                                                                                                           | Inputs                                                     | Style                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------- |
+| Static — model only   | **Static reachability** — every obligation is presented by at least one Flow page                                                                                    | Obligations + Flow                                         | Pure JSON walk                     |
+| Static — model + HTML | **Model ↔ HTML alignment** — page model and HTML templates agree (multiple sub-checks)                                                                               | Flow + HTML templates                                      | HTML parse + comparison            |
+| Dynamic — runtime     | **Dynamic reachability / completability** — for any plausible Engine state, the navigation algorithm yields pages that present every in-scope unfulfilled obligation | Obligations + Flow + Engine + navigation algorithm         | Property-based / state enumeration |
+| Cross-Flow            | **Evaluator-equivalence across Flows** — given identical fulfilments, all Flows of a Service leave the ObligationEvaluator in the same state                         | Obligations + ≥2 Flows + evaluators + scripted fulfilments | Fixture-driven                     |
+| Browser               | **End-to-end happy-path** — the rendered service actually works                                                                                                      | Live app                                                   | Playwright / similar               |
 
 The first two are CI-fast (fixture-only). The third needs the Engine and
 navigation algorithm but no browser. The fourth needs ≥2 Flows. The fifth
@@ -1447,10 +1465,10 @@ entry asserts alignment.
 
 ### Dynamic reachability — sub-checks
 
-- **State-aware reachability** — for property-generated (answers, config)
-  combinations, the Engine produces a state and the navigation algorithm
-  yields a page-path the user can navigate to satisfy every in-scope
-  unfulfilled obligation.
+- **State-aware reachability** — for property-generated fulfilment
+  combinations, the ObligationEvaluator produces a state and the
+  navigation algorithm yields a page-path the user can navigate to
+  satisfy every in-scope unfulfilled obligation.
 - **Hard-mandate-on-never-applicable** — for every page entry with
   `mandate: 'hard'`, is the obligation in scope in any plausible Engine
   state when this page is reached? Otherwise the constraint is dead code.
