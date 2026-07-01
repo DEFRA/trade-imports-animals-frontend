@@ -1820,18 +1820,36 @@ The second is more uniform with how everything else is decided, but
 probably harder to author. Deferred pending a discussion with a
 colleague and, ideally, a concrete staleness case to reason against.
 
-### L. Where lookup results live in state
+### L. Where lookup results live in state (settled)
 
-Two natural homes for the results of system-handled obligations:
+**Unified fulfilments map.** System-handled fulfilments (lookup
+results, sub-journey receipts) live in the same fulfilments map as
+user-provided ones, keyed by obligation `uid`. Distinguished not by
+storage location but by the obligation's declared `type`
+(`lookup-result`, `sub-journey-receipt`) and `source` (`user`,
+`derived`, `seeded`).
 
-- **In `answers` alongside user inputs** — the evaluator sees one unified
-  state bag. Consistent and simple, but mixes user data with system-derived
-  data (might affect privacy, serialisation, access control).
-- **In a separate `systemState` / `derivedAnswers`** — explicit separation;
-  user answers stay clean. Evaluator reads from both. Slightly more ceremony
-  but the audit/serialisation/privacy story is cleaner.
+**Rationale.** System-handled obligations are first-class obligations
+in the model — same declaration surface, same scope evaluation, same
+tolerate-and-amend behaviour. Storage partitioning would contradict
+that consistency for no real gain:
 
-Leaning (b) for an extensible model, but not pinned.
+- Privacy is per-field, not per-source (a looked-up address is PII
+  just as much as a user-typed address).
+- Access control is per-field / per-role, not per-source.
+- Serialisation to different downstream targets is a projection
+  concern, not a storage concern.
+
+**Provenance travels via the obligation model, not the storage
+location.** Any consumer that needs to know "did the user or the
+system provide this?" reads the obligation's `type` / `source`
+fields.
+
+**No per-fulfilment metadata for MVP.** Candidate fields like
+`fetchedAt` (staleness), `sourceRef` (external system record id),
+and `raw` (original response for audit) will likely be needed when
+K (staleness mechanism) or M (failure policies) lands. Revisit
+then rather than pinning speculatively today.
 
 ### P. Navigation algorithm — sub-questions
 
