@@ -760,6 +760,29 @@ layer):
   version-stamped Flows. Flow renames are rare; deferred until it
   matters.
 
+### Datastore choice — open and urgent
+
+Which datastore backs the Journey document is **not yet decided**.
+MongoDB — the workspace's default — may not be viable for this data;
+Redis or another store may be required. Deferred because we can't
+pin the choice today, but **flagged urgent**: implementation of the
+persistence layer can't meaningfully start until it's resolved.
+
+**Why the choice matters.** It materially constrains:
+
+- Schema style (document store vs key / value vs relational).
+- Query capability (indexed lookups, joins, aggregations, secondary
+  indexes for "find all Journeys for this user").
+- Concurrency semantics (native transactions vs application-level
+  optimistic locking).
+- Retention operations (native TTL support vs scheduled cleanup).
+- Backup / restore and disaster-recovery story.
+- Every other deferred persistence concern below is downstream of
+  this decision.
+
+Needs decision-maker input and possibly Defra-wide guidance on
+data-store standards for services of this classification.
+
 ### Deferred persistence concerns
 
 - **Concurrency (multi-tab, multi-device).** Optimistic locking is
