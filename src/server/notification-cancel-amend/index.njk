@@ -1,0 +1,37 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+
+{% block pageContent %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/notification-view/" + referenceNumber
+  }) }}
+
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ heading: pageTitle }) }}
+
+  {% if errorMessage %}
+    {{ govukInsetText({ text: errorMessage }) }}
+  {% endif %}
+
+  <p class="govuk-body">Are you sure you want to cancel this amendment?</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    <div class="govuk-button-group">
+      {{ govukButton({
+        text: "Yes, cancel amendment"
+      }) }}
+      {{ govukButton({
+        text: "No, return to notification",
+        href: "/notification-view/" + referenceNumber,
+        classes: "govuk-button--secondary"
+      }) }}
+    </div>
+  </form>
+
+{% endblock %}

@@ -21,6 +21,20 @@
     </div>
   </div>
 
+  {% if amendCancelled %}
+  <div id="amend-cancelled-banner" data-reference-number="{{ referenceNumber }}">
+    <div class="govuk-notification-banner govuk-notification-banner--success" role="alert"
+         aria-labelledby="amend-cancelled-banner-title" data-module="govuk-notification-banner">
+      <div class="govuk-notification-banner__header">
+        <h2 class="govuk-notification-banner__title" id="amend-cancelled-banner-title">Success</h2>
+      </div>
+      <div class="govuk-notification-banner__content">
+        <p class="govuk-body">The amendment has been cancelled</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div id="error-banner" hidden>
     <div class="govuk-notification-banner" role="alert"
          aria-labelledby="error-banner-title" data-module="govuk-notification-banner">
@@ -84,6 +98,15 @@
           "data-reference-number": referenceNumber
         }
       }) }}
+
+      {% if status === 'AMEND' %}
+        {{ govukButton({
+          text: "Cancel amendment",
+          href: "/notification-cancel-amend/" + referenceNumber,
+          classes: "govuk-button--secondary",
+          attributes: { id: "cancel-amend-btn" }
+        }) }}
+      {% endif %}
     </div>
 
     <dialog id="delete-dialog" aria-labelledby="dialog-title" aria-modal="true">

@@ -476,6 +476,60 @@ describe('#notificationClient', () => {
     })
   })
 
+  describe('cancelAmend', () => {
+    const referenceNumber = 'REF-CAN-1'
+
+    describe('When cancelAmend is called with a valid reference number', () => {
+      test('Should send POST request to the cancel-amend endpoint and return the response', async () => {
+        const responseBody = { referenceNumber, status: 'SUBMITTED' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.cancelAmend(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications/REF-CAN-1/cancel-amend',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            }
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When cancelAmend request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        await expect(
+          notificationClient.cancelAmend(mockRequest, referenceNumber, traceId)
+        ).rejects.toMatchObject({
+          message: 'Failed to cancel amendment',
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
   describe('get', () => {
     const referenceNumber = 'REF-123'
 
