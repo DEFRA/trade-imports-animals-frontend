@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Report pending Lighthouse check on PR
-        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@feature/EUDPA-194-flag-lighthouse-findings
+        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
         with:
           lighthouse-result: pending
 
@@ -179,7 +179,7 @@ jobs:
         continue-on-error: true
 
       - name: Report Lighthouse check run on PR
-        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@feature/EUDPA-194-flag-lighthouse-findings
+        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-lighthouse-status@main
         with:
           lighthouse-result: ${{ needs.lighthouse-test.result }}
           report-url: ${{ needs.lighthouse-publish.outputs.report-url }}
