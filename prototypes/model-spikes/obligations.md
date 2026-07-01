@@ -166,7 +166,7 @@ Current sketch of the data shape:
     "name": "address",
     "type": "address",
     "cardinality": "indexed",
-    "indexedBy": { "source": "user", "mutability": "add-and-remove" }
+    "indexedBy": { "source": "user", "mutability": "edit-add-remove" }
   },
   {
     "id": "…uuid…",
@@ -185,11 +185,6 @@ Current sketch of the data shape:
 ]
 ```
 
-The obligation declares **what data is canonical** (id, name, type,
-cardinality, optional system-handler reference). It does **not** declare
-_when_ it's in scope, _whether_ it's mandatory, _which_ pages present it, or
-_how_ user-facing obligations are presented — those are all handled elsewhere.
-
 ### Key properties (settled)
 
 | Property                                                             | Decision                                                                                                                                                                                                                                                                                                          |
@@ -206,6 +201,38 @@ _how_ user-facing obligations are presented — those are all handled elsewhere.
 | **Completion policy**                                                | Three modes need supporting per journey: silently-skipped / must-address / gate-collected at end. Resolved per-journey default with per-obligation override.                                                                                                                                                      |
 | **Sub-journey result fan-out**                                       | Closed (was open question G). A sub-journey integrates via a callback that returns a single lookup id. The obligation's canonical data IS the id; the orchestrator dereferences when needed. There is no multi-field fan-out at the obligation level — one sub-journey = one obligation.                          |
 | **Kind taxonomy**                                                    | Open / extensible. New kinds (agreement, payment, identity-verification, schedule, third-party-action …) can be added without changing the obligation's outer shape — they appear as new `type` values.                                                                                                           |
+
+### Evaluation is external to the Obligation model
+
+The obligation declares **what data is canonical** (id, name, type,
+cardinality, optional system-handler reference). It does **not** declare
+_when_ it's in scope, _whether_ it's mandatory, _which_ pages present it, or
+_how_ user-facing obligations are presented — those are all handled elsewhere.
+
+A separate thought-experiment exercise tested whether scoping could stay
+purely declarative (JSON conditions or a rule language like JSON Logic). It
+can't — at least not without significant cost. The cases that broke it:
+
+- **Algorithm-shaped rules.** E.g. "the union of address date ranges must
+  cover the last 5 years with no gaps". This is interval algebra, not a
+  query. A pure rule language either can't express it or only does so by
+  reinventing programming-language primitives.
+- **Indexed sub-obligation templating.** E.g. "the user selected K
+  modifications; for each selected modification a `cost[item]` fulfilment
+  is mandatory and a `professionallyFitted[item]` becomes mandatory only if
+  cost > £500". The fulfilment set itself needs to be **projected** from
+  state — not a query, a template.
+- **External state.** Reference-data lookups, historical-policy checks,
+  fraud-flag signals from upstream services.
+
+The first two pushed scoping into a function. The third — async I/O — was
+initially treated as "scoping needs to be async", but the cleaner answer is:
+**scoping stays sync; async lives in the orchestrator**. The external state
+arrives via the system-handled-obligation callback pattern, identical to how
+sub-journey receipts arrive. By the time the evaluator runs, the state it
+needs is already in `fulfilments` (or absent, in which case the evaluator
+declares the lookup obligation in-scope and the orchestrator fires the
+call).
 
 ## The evaluation engine
 
@@ -281,13 +308,16 @@ auditable. **Provenance / reasons are authored here** — the single
 source of truth for "why is this obligation required?"; other
 components surface reasons but don't author their own.
 
-**Tolerate-and-amend.** The current Obligations model may have
-changed since the stored fulfilments were written (renames, removals,
-cardinality changes, etc.). The evaluator silently drops fulfilments
-that don't map to any current obligation, passes through the rest,
-and returns the amended set as part of its output. The orchestrator
-persists the amended set — it becomes the new source of truth. On
-subsequent runs the amendment is idempotent (converges in one step).
+**Tolerate-and-amend.** We can amend the obligation model and deploy
+a new version of the service at any time while a Journey is ongoing.
+Thus, the current Obligations model may have changed since the stored
+fulfilments were written (renames, removals, cardinality changes, etc).
+The evaluator silently drops fulfilments that don't map to any current
+obligation, passes through the rest, and returns the amended set as
+part of its output. The orchestrator persists the amended set — it
+becomes the new source of truth. On subsequent runs the amendment is
+idempotent (converges in one step).
+
 See §Persistence for the model-versioning rationale.
 
 ### The JourneyEvaluator (Flow layer)
@@ -298,7 +328,7 @@ ObligationEvaluator's output plus the current Fulfilments and Flow
 definition. Not a single `evaluate()` call — callers invoke the
 primitive they need.
 
-Primitives already captured elsewhere in this doc:
+Functions already captured elsewhere in this doc:
 
 - `firstApplicablePage(root)` — depth-first to first Page in declared
   order, status-blind. See §Runtime navigation primitives.
@@ -314,13 +344,11 @@ Primitives already captured elsewhere in this doc:
   Started / In Progress / Fulfilled / Submitted for the Journey as a
   whole. See §Fulfilled → Submitted lifecycle.
 
-More primitives may emerge as new Flow behaviours are needed. The
-common shape is "small pure function; takes (Flow subtree,
-obligationState) plus any extras; returns a specific answer". Add
-primitives freely as concrete needs emerge — no monolithic
-`evaluate()` for the Flow layer.
+More functions will likely emerge over time. The common shape is
+"small pure function; takes (Flow subtree, obligationState) plus any
+extras; returns a specific answer".
 
-The JourneyEvaluator can be tested against a fake ObligationEvaluator
+The JourneyEvaluator can be tested against an arbitrary ObligationEvaluator
 output — you don't need to run the real ObligationEvaluator to test
 Flow logic. Handy for isolating test failures.
 
@@ -341,36 +369,11 @@ loop:
 done when no in-scope obligation remains unsatisfied
 ```
 
+TODO review the above sketch with Sam ^^
+
 This is a **fixed-point computation** — re-evaluate until the result is
 stable. Same pattern as React Suspense, Redux-saga, Elixir GenServer trees,
 Bazel's action graph.
-
-### Why this split
-
-A separate thought-experiment exercise tested whether scoping could stay
-purely declarative (JSON conditions or a rule language like JSON Logic). It
-can't — at least not without significant cost. The cases that broke it:
-
-- **Algorithm-shaped rules.** E.g. "the union of address date ranges must
-  cover the last 5 years with no gaps". This is interval algebra, not a
-  query. A pure rule language either can't express it or only does so by
-  reinventing programming-language primitives.
-- **Indexed sub-obligation templating.** E.g. "the user selected K
-  modifications; for each selected modification a `cost[item]` fulfilment
-  is mandatory and a `professionallyFitted[item]` becomes mandatory only if
-  cost > £500". The fulfilment set itself needs to be **projected** from
-  state — not a query, a template.
-- **External state.** Reference-data lookups, historical-policy checks,
-  fraud-flag signals from upstream services.
-
-The first two pushed scoping into a function. The third — async I/O — was
-initially treated as "scoping needs to be async", but the cleaner answer is:
-**scoping stays sync; async lives in the orchestrator**. The external state
-arrives via the system-handled-obligation callback pattern, identical to how
-sub-journey receipts arrive. By the time the evaluator runs, the state it
-needs is already in `fulfilments` (or absent, in which case the evaluator
-declares the lookup obligation in-scope and the orchestrator fires the
-call).
 
 ### What this buys
 
@@ -427,7 +430,7 @@ An `indexed` obligation produces a collection of fulfilments:
   "name": "address",
   "type": "address",
   "cardinality": "indexed",
-  "indexedBy": { "source": "user", "mutability": "add-and-remove" }
+  "indexedBy": { "source": "user", "mutability": "edit-add-remove" }
 }
 // → fulfilments.address = {
 //     "01H8XK7M5RW6QYJ2AB": { "value": { "from": "…", "to": "…", "country": "UK" } },
@@ -446,16 +449,16 @@ dimensions; together they describe every realistic pattern. All three of
 the patterns interaction design needs (user-driven, derived from another
 obligation, externally seeded) are combinations of these dimensions.
 
-| Dimension      | Values                                                                                                                                                                                                                                                 |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **source**     | `user` (user creates fulfilmentIds via add/remove; starts empty) / `derived` (fulfilmentIds come from another obligation's answer) / `seeded` (initial fulfilmentIds come from an external system at bootstrap; user may then mutate per `mutability`) |
-| **mutability** | `read-only` / `add-only` / `add-and-remove` (and possibly `add-remove-and-reorder` for ordered collections)                                                                                                                                            |
+| Dimension      | Values                                                                                                                                                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **source**     | `user` (user creates fulfilmentIds via add/remove; starts empty) / `derived` (fulfilmentIds come from another obligation's answer) / `seeded` (initial fulfilmentIds come from an external system at bootstrap; user may then mutate per `mutability`)                    |
+| **mutability** | `edit-only` (user can edit values within a fixed collection shape; can't add or remove indices) / `edit-add-remove` (user can edit values, add new indices, remove existing ones). Extend if intermediate cases (e.g. `edit-add`, `edit-add-remove-reorder`) become real. |
 
-| Pattern                                 | Example                                          | `source`  | `mutability`                                                  |
-| --------------------------------------- | ------------------------------------------------ | --------- | ------------------------------------------------------------- |
-| **1 — user-driven**                     | address history, additional drivers (new policy) | `user`    | `add-and-remove`                                              |
-| **2 — derived from another obligation** | per-modification cost (after a multi-select)     | `derived` | `read-only` (mutating the controller drives all changes)      |
-| **3 — externally seeded**               | renewal endorsements; broker-quote handoff       | `seeded`  | `add-and-remove` (typical renewal: edit, remove old, add new) |
+| Pattern                                 | Example                                          | `source`  | `mutability`                                                   |
+| --------------------------------------- | ------------------------------------------------ | --------- | -------------------------------------------------------------- |
+| **1 — user-driven**                     | address history, additional drivers (new policy) | `user`    | `edit-add-remove`                                              |
+| **2 — derived from another obligation** | per-modification cost (after a multi-select)     | `derived` | `edit-only` (mutating the controller drives all shape changes) |
+| **3 — externally seeded**               | renewal endorsements; broker-quote handoff       | `seeded`  | `edit-add-remove` (typical renewal: edit, remove old, add new) |
 
 Sketch:
 
@@ -465,7 +468,7 @@ Sketch:
   "name": "addresses",
   "type": "address",
   "cardinality": "indexed",
-  "indexedBy": { "source": "user", "mutability": "add-and-remove" }
+  "indexedBy": { "source": "user", "mutability": "edit-add-remove" }
 }
 
 {
@@ -476,7 +479,7 @@ Sketch:
   "indexedBy": {
     "source": "derived",
     "controllingObligation": "modifications",
-    "mutability": "read-only"
+    "mutability": "edit-only"
   }
 }
 
@@ -488,7 +491,7 @@ Sketch:
   "indexedBy": {
     "source": "seeded",
     "seedHandler": "rollover-drivers-v1",
-    "mutability": "add-and-remove"
+    "mutability": "edit-add-remove"
   }
 }
 ```
@@ -1738,7 +1741,7 @@ The structural part of this question and the per-source fulfilmentId
 shapes are now settled — see §The `indexedBy` shape — source × mutability
 and §Fulfilments storage. One sub-question remains:
 
-- **H.2 Hybrid source/mutability combinations** — `seeded + read-only`
+- **H.2 Hybrid source/mutability combinations** — `seeded + edit-only`
   (audit data), `derived + user-can-add-extras`, user-driven with min/max
   constraints. Deferred until a concrete journey makes a hybrid case real.
 
