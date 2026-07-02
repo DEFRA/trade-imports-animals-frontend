@@ -8,7 +8,12 @@ import {
   hasNamedDriver,
   namedDriverName,
   licenseType,
-  licenseCountryIssued
+  licenseCountryIssued,
+  hasClaims,
+  claimType,
+  claimAmount,
+  claimGroup,
+  groups
 } from './obligations.js'
 
 // The evaluator is stateless once constructed — one instance suffices for the
@@ -49,6 +54,14 @@ const licenseCountryIssuedMandatory = {
     }
   ]
 }
+const claimTypeApplicableReason = {
+  code: 'obligation.claimType.applicable.becauseHasClaims',
+  explanation: 'claimType applies when hasClaims is true'
+}
+const claimAmountApplicableReason = {
+  code: 'obligation.claimAmount.applicable.becauseHasClaims',
+  explanation: 'claimAmount applies when hasClaims is true'
+}
 
 describe('ObligationEvaluator', () => {
   describe('return-shape mechanics', () => {
@@ -64,7 +77,10 @@ describe('ObligationEvaluator', () => {
         [hasNamedDriver.id]: mandatory,
         [namedDriverName.id]: outOfScope, // appliesWhen — no named driver set
         [licenseType.id]: mandatory,
-        [licenseCountryIssued.id]: optional // mandatoryWhen — licenseType unset
+        [licenseCountryIssued.id]: optional, // mandatoryWhen — licenseType unset
+        [hasClaims.id]: mandatory,
+        [claimType.id]: outOfScope, // group member — hasClaims not set
+        [claimAmount.id]: outOfScope // group member — hasClaims not set
       })
     })
 
@@ -225,6 +241,129 @@ describe('ObligationEvaluator', () => {
     })
   })
 
+  describe('appliesWhen + indexed (claim group) — gated by hasClaims; user-driven; shared fulfilmentIds across members', () => {
+    const firstClaimId = '01H8XK7M5RW6QYJ2AB'
+    const secondClaimId = '01H8XK9P3T8WBZN4DE'
+
+    const claimTypeApplicable = (fulfilmentIds) => ({
+      inScope: true,
+      reasons: [claimTypeApplicableReason],
+      fulfilments: fulfilmentIds.map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    })
+    const claimAmountApplicable = (fulfilmentIds) => ({
+      inScope: true,
+      reasons: [claimAmountApplicableReason],
+      fulfilments: fulfilmentIds.map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    })
+
+    it('hasClaims = true + empty collections → both members in-scope with empty fulfilments arrays; no keys in amended', () => {
+      const result = evaluator.evaluate({ [hasClaims.id]: true })
+
+      expect(result.obligations[claimType.id]).toEqual(claimTypeApplicable([]))
+      expect(result.obligations[claimAmount.id]).toEqual(
+        claimAmountApplicable([])
+      )
+      expect(result.fulfilments).not.toHaveProperty(claimType.id)
+      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
+    })
+
+    it('hasClaims = true + one claim (shared fulfilmentId) → both members show one per-fulfilment entry; values retained', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: { [firstClaimId]: 'accident' },
+        [claimAmount.id]: { [firstClaimId]: '1200' }
+      })
+
+      expect(result.obligations[claimType.id]).toEqual(
+        claimTypeApplicable([firstClaimId])
+      )
+      expect(result.obligations[claimAmount.id]).toEqual(
+        claimAmountApplicable([firstClaimId])
+      )
+      expect(result.fulfilments[claimType.id]).toEqual({
+        [firstClaimId]: 'accident'
+      })
+      expect(result.fulfilments[claimAmount.id]).toEqual({
+        [firstClaimId]: '1200'
+      })
+    })
+
+    it('hasClaims = true + two claims (shared fulfilmentIds) → both members show two entries; values pass through', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: {
+          [firstClaimId]: 'accident',
+          [secondClaimId]: 'theft'
+        },
+        [claimAmount.id]: {
+          [firstClaimId]: '1200',
+          [secondClaimId]: '500'
+        }
+      })
+
+      expect(result.obligations[claimType.id]).toEqual(
+        claimTypeApplicable([firstClaimId, secondClaimId])
+      )
+      expect(result.obligations[claimAmount.id]).toEqual(
+        claimAmountApplicable([firstClaimId, secondClaimId])
+      )
+      expect(result.fulfilments[claimType.id]).toEqual({
+        [firstClaimId]: 'accident',
+        [secondClaimId]: 'theft'
+      })
+      expect(result.fulfilments[claimAmount.id]).toEqual({
+        [firstClaimId]: '1200',
+        [secondClaimId]: '500'
+      })
+    })
+
+    it('hasClaims = false + stored claim fulfilments → both members out-of-scope; both collections PURGED', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: false,
+        [claimType.id]: { [firstClaimId]: 'accident' },
+        [claimAmount.id]: { [firstClaimId]: '1200' }
+      })
+
+      expect(result.obligations[claimType.id]).toEqual(outOfScope)
+      expect(result.obligations[claimAmount.id]).toEqual(outOfScope)
+      expect(result.fulfilments).not.toHaveProperty(claimType.id)
+      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
+    })
+
+    it('hasClaims absent → both members out-of-scope; no keys in amended', () => {
+      const result = evaluator.evaluate({
+        [claimType.id]: { [firstClaimId]: 'accident' },
+        [claimAmount.id]: { [firstClaimId]: '1200' }
+      })
+
+      expect(result.obligations[claimType.id]).toEqual(outOfScope)
+      expect(result.obligations[claimAmount.id]).toEqual(outOfScope)
+      expect(result.fulfilments).not.toHaveProperty(claimType.id)
+      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
+    })
+  })
+
+  describe('claim group — metadata', () => {
+    it('claimGroup declares its members', () => {
+      expect(claimGroup.members).toEqual([claimType, claimAmount])
+    })
+
+    it('claim group members back-reference the group by name', () => {
+      expect(claimType.group).toBe('claim')
+      expect(claimAmount.group).toBe('claim')
+    })
+
+    it('groups export lists the claim group', () => {
+      expect(groups).toContain(claimGroup)
+    })
+  })
+
   describe('reason-shape sanity', () => {
     it('appliesWhen reason shape matches §J → { code, explanation }', () => {
       const result = evaluator.evaluate({ [hasVoluntaryExcess.id]: true })
@@ -250,9 +389,12 @@ describe('ObligationEvaluator', () => {
       expect(result.obligations[hasVoluntaryExcess.id].reasons).toBeUndefined()
       expect(result.obligations[hasNamedDriver.id].reasons).toBeUndefined()
       expect(result.obligations[licenseType.id].reasons).toBeUndefined()
+      expect(result.obligations[hasClaims.id].reasons).toBeUndefined()
       // Out-of-scope obligations have no reasons either.
       expect(result.obligations[excessAmount.id].reasons).toBeUndefined()
       expect(result.obligations[namedDriverName.id].reasons).toBeUndefined()
+      expect(result.obligations[claimType.id].reasons).toBeUndefined()
+      expect(result.obligations[claimAmount.id].reasons).toBeUndefined()
       // Optional (mandatoryWhen with condition false) has no reasons.
       expect(
         result.obligations[licenseCountryIssued.id].reasons
@@ -262,6 +404,9 @@ describe('ObligationEvaluator', () => {
 
   describe('full journey scenario', () => {
     it('all obligations fulfilled with all conditions triggering → holistic state check', () => {
+      const firstClaimId = '01H8XK7M5RW6QYJ2AB'
+      const secondClaimId = '01H8XK9P3T8WBZN4DE'
+
       const fulfilments = {
         [fullName.id]: 'Alex Driver',
         [dateOfBirth.id]: '1985-03-27',
@@ -270,7 +415,16 @@ describe('ObligationEvaluator', () => {
         [hasNamedDriver.id]: true,
         [namedDriverName.id]: 'Sam Passenger',
         [licenseType.id]: 'other',
-        [licenseCountryIssued.id]: 'Germany'
+        [licenseCountryIssued.id]: 'Germany',
+        [hasClaims.id]: true,
+        [claimType.id]: {
+          [firstClaimId]: 'accident',
+          [secondClaimId]: 'theft'
+        },
+        [claimAmount.id]: {
+          [firstClaimId]: '1200',
+          [secondClaimId]: '500'
+        }
       }
 
       const result = evaluator.evaluate(fulfilments)
@@ -284,7 +438,24 @@ describe('ObligationEvaluator', () => {
         [hasNamedDriver.id]: mandatory,
         [namedDriverName.id]: namedDriverNameApplicable,
         [licenseType.id]: mandatory,
-        [licenseCountryIssued.id]: licenseCountryIssuedMandatory
+        [licenseCountryIssued.id]: licenseCountryIssuedMandatory,
+        [hasClaims.id]: mandatory,
+        [claimType.id]: {
+          inScope: true,
+          reasons: [claimTypeApplicableReason],
+          fulfilments: [
+            { fulfilmentId: firstClaimId, status: 'mandatory' },
+            { fulfilmentId: secondClaimId, status: 'mandatory' }
+          ]
+        },
+        [claimAmount.id]: {
+          inScope: true,
+          reasons: [claimAmountApplicableReason],
+          fulfilments: [
+            { fulfilmentId: firstClaimId, status: 'mandatory' },
+            { fulfilmentId: secondClaimId, status: 'mandatory' }
+          ]
+        }
       })
     })
   })

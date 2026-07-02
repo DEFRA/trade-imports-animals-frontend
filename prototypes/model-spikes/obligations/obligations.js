@@ -2,7 +2,7 @@
  * Obligations — the single source of truth for the Service.
  *
  * Each obligation is declared as its own named const, carrying identifiers
- * (id, name), data-contract fields (type, cardinality), and the
+ * (id, name), data-contract fields (cardinality, indexedBy, group), and the
  * applicability function (`evaluate`) together. Cross-obligation references
  * inside an `evaluate` are direct symbol lookups — e.g.
  * `fulfilments[hasVoluntaryExcess.id]` — so ESLint can catch orphan
@@ -11,12 +11,19 @@
  *
  * Per §Conditional obligation patterns in
  * prototypes/model-spikes/obligations.md, `evaluate` returns
- * `{ inScope, status?, reasons? }`. The two patterns (mandatoryWhen /
- * appliesWhen) are enacted by the return-shape choice, not by any field on
- * the record.
+ * `{ inScope, status?, reasons?, fulfilments? }`. The two patterns
+ * (mandatoryWhen / appliesWhen) are enacted by the return-shape choice, not
+ * by any field on the record.
  *
  * The `obligations` array at the bottom is the manifest — reordering it
  * does not move the definitions above.
+ *
+ * Obligation groups (see §Obligation groups) tie atomic obligations
+ * together as a compound-record concept — e.g. `claimType` + `claimAmount`
+ * as members of the `claim` group. Members are ordinary atomic
+ * obligations (one per form field, per HTML-alignment convention); the
+ * group is metadata declaring which obligations describe the same
+ * real-world event and share a fulfilmentId space.
  *
  * A generator over this array can emit a data-only "data dictionary" JSON
  * for portability / documentation / cross-language consumers — see §Stretch
@@ -130,6 +137,102 @@ export const licenseCountryIssued = {
   }
 }
 
+export const hasClaims = {
+  id: 'b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e',
+  name: 'hasClaims',
+  cardinality: 'single',
+  evaluate: () => ({ inScope: true, status: 'mandatory' })
+}
+
+// appliesWhen + indexed: claimType belongs to the `claim` group (see below).
+// Only in-scope when the user has said they've had claims. Each fulfilmentId
+// represents one claim event; the value under it is the claim's type
+// ('accident' | 'theft' | 'windscreen' | 'other'). The same fulfilmentId
+// appears under `claimAmount` — the two members share the group's
+// fulfilmentId space by convention (orchestrator-enforced in a real
+// service; test fixtures enforce it here).
+export const claimType = {
+  id: 'e8f7d6c5-b4a3-4291-8074-6c5b4a392817',
+  name: 'claimType',
+  group: 'claim',
+  cardinality: 'indexed',
+  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
+  evaluate: (fulfilments) => {
+    if (fulfilments[hasClaims.id] !== true) {
+      return { inScope: false }
+    }
+    const collection = fulfilments[claimType.id] ?? {}
+    return {
+      inScope: true,
+      reasons: [
+        {
+          code: 'obligation.claimType.applicable.becauseHasClaims',
+          explanation: 'claimType applies when hasClaims is true'
+        }
+      ],
+      fulfilments: Object.keys(collection).map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    }
+  }
+}
+
+// appliesWhen + indexed: claimAmount belongs to the `claim` group. Same
+// applicability gate as claimType; shares fulfilmentIds with claimType so
+// each pair (type, amount) describes one claim event.
+export const claimAmount = {
+  id: 'a9b8c7d6-e5f4-4312-8091-6c5b4a392817',
+  name: 'claimAmount',
+  group: 'claim',
+  cardinality: 'indexed',
+  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
+  evaluate: (fulfilments) => {
+    if (fulfilments[hasClaims.id] !== true) {
+      return { inScope: false }
+    }
+    const collection = fulfilments[claimAmount.id] ?? {}
+    return {
+      inScope: true,
+      reasons: [
+        {
+          code: 'obligation.claimAmount.applicable.becauseHasClaims',
+          explanation: 'claimAmount applies when hasClaims is true'
+        }
+      ],
+      fulfilments: Object.keys(collection).map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    }
+  }
+}
+
+/**
+ * Obligation groups.
+ *
+ * A group is a declarative tie between atomic obligations that together
+ * describe one compound record — e.g. a `claim` event has a type and an
+ * amount. Members are ordinary atomic obligations (one per form field, so
+ * HTML alignment tests still map 1:1). Under an indexed group, members
+ * share the group's fulfilmentId space by convention.
+ *
+ * For iteration 4 the group is metadata only — the evaluator processes
+ * members as ordinary indexed obligations and doesn't do anything special
+ * with the group record. Future iterations can add group-level scope
+ * inheritance (member scope = group scope) and group-level completeness
+ * ("this claim is complete if all members have a fulfilment for its id").
+ *
+ * See §Obligation groups in obligations.md.
+ */
+export const claimGroup = {
+  id: 'f5e4d3c2-b1a0-4987-8654-3210fedcba98',
+  name: 'claim',
+  cardinality: 'indexed',
+  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
+  members: [claimType, claimAmount]
+}
+
 export const obligations = [
   fullName,
   dateOfBirth,
@@ -138,5 +241,10 @@ export const obligations = [
   hasNamedDriver,
   namedDriverName,
   licenseType,
-  licenseCountryIssued
+  licenseCountryIssued,
+  hasClaims,
+  claimType,
+  claimAmount
 ]
+
+export const groups = [claimGroup]

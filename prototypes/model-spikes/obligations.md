@@ -714,6 +714,112 @@ hacked-in pattern 1 (user-driven, via `arrayKey: 'claims'` +
 `done: 'claimsDone'`) and pattern 2 (derived from the addons multi-select).
 Neither is generalised; both would map cleanly onto this `indexedBy` shape.
 
+### Obligation groups — compound records without compound values
+
+A GDS form input is atomic — one `<input name="…">` per canonical data
+element. But some real-world concepts are compound: a **claim** has a
+type _and_ an amount; an **address** has a line, town, postcode, country;
+a **driver** has a name, licence type, date of birth. In multi-page
+journeys these compound records get spread across pages — one field per
+page — so a "claim is complete when both its type and amount are done"
+question crosses page boundaries.
+
+Modelling a compound record as **one obligation with a compound value**
+(e.g. `{ claimType, claimAmount }` under a single `claim.id`) breaks two
+things:
+
+- **Per-page completeness** can't be evaluated without introspecting
+  the value shape (which the obligation model is deliberately opaque
+  about).
+- **HTML alignment** (§Tests → Model ↔ HTML alignment) fails — form
+  input names would have to encode compound keys (`claim.claimType`
+  etc.), which doesn't match GDS conventions of one `name` per field.
+
+**Groups solve this without giving up atomicity.** Each field of the
+compound record is its own atomic obligation (satisfies HTML
+alignment; per-page completeness works). A **group** ties them
+together as a semantic record.
+
+**Shape:**
+
+```jsonc
+// Members — atomic obligations declaring which group they belong to.
+{
+  id: "…claimType uuid…",
+  name: "claimType",
+  group: "claim",              // back-reference to the group by name
+  cardinality: "indexed",
+  indexedBy: { source: "user", mutability: "edit-add-remove" },
+  evaluate: (fulfilments) => { /* per-fulfilment state */ }
+}
+
+{
+  id: "…claimAmount uuid…",
+  name: "claimAmount",
+  group: "claim",
+  cardinality: "indexed",
+  indexedBy: { source: "user", mutability: "edit-add-remove" },
+  evaluate: (fulfilments) => { /* per-fulfilment state */ }
+}
+
+// Group — declarative metadata declaring the members.
+{
+  id: "…group uuid…",
+  name: "claim",
+  cardinality: "indexed",
+  indexedBy: { source: "user", mutability: "edit-add-remove" },
+  members: [claimType, claimAmount]
+}
+```
+
+**Shared fulfilmentId space.** For an indexed group, member
+obligations share the group's fulfilmentIds by convention. Each
+fulfilmentId represents one instance of the compound record (one
+"claim event"); each member holds one field of it. Storage:
+
+```jsonc
+fulfilments = {
+  [claimType.id]: {
+    "01H8XK7M5RW6QYJ2AB": "accident",
+    "01H8XK9P3T8WBZN4DE": "theft"
+  },
+  [claimAmount.id]: {
+    "01H8XK7M5RW6QYJ2AB": "1200",
+    "01H8XK9P3T8WBZN4DE": "500"
+  }
+}
+```
+
+The same opaque ULID/UUID appears under both members. Adding a claim
+= new group fulfilmentId + blank member slots. Removing =
+propagates to all members. The **orchestrator** manages the shared
+id space; the evaluator sees each member as an ordinary indexed
+obligation and doesn't need to know about the group at evaluation
+time.
+
+**Group is metadata (for iteration 4).** The evaluator processes
+members as ordinary indexed obligations — group scope, group
+completeness, and cross-member pairing are consumer concerns (CYA
+rendering, HTML alignment tests, Task List completeness). Future
+iterations can layer on:
+
+- **Group-level scope inheritance** — declare scope once on the
+  group; members inherit. Removes the current duplication where
+  each member re-checks the same `appliesWhen` condition.
+- **Group-level completeness** — "this claim is complete iff every
+  member has a fulfilment for its id".
+- **Cross-member rules** — algorithm-shaped constraints spanning
+  members of the same group (e.g. "claimAmount ≤ vehicleValue").
+
+**Not every compound concept needs to be a group.** If two fields
+are genuinely independent (e.g. `email` and `phone`), model them as
+separate obligations without a group tie. Groups are for fields that
+describe **one event, one record, one thing** — where losing the
+pairing would lose meaning.
+
+**Nested indexing is an extension point** — see §S in
+§What's still open for the shape of the concern.
+
 ## Staleness
 
 Answers — both user-entered and system-handled — can go stale. This is
@@ -2204,6 +2310,46 @@ orchestrator, opaque to the evaluator. Deferred pending a concrete
 failing-lookup case (and likely colleague input on operational
 policy) — no value in pinning the shape before we know which
 failure modes we actually need to handle.
+
+### S. Nested indexing (extension point)
+
+Compound records modelled as groups (§Obligation groups) work
+naturally when a group's members are all single-cardinality per
+group-fulfilmentId — e.g. one type and one amount per claim.
+
+**Nested indexing** would let a group member itself be an indexed
+obligation whose fulfilmentIds are scoped **within** the outer
+group's fulfilmentId. Contrived exemplar (do not build): each
+claim could have its own indexed list of "other parties involved" —
+a nested collection scoped by the outer claim's id.
+
+Fulfilment storage under nested indexing would need something like
+either:
+
+- **Hierarchical keys** — `fulfilments[otherParty.id][outerClaimId][innerPartyId] = value`. Fixed depth per obligation; matches the nesting structure.
+- **Tuple keys** — `fulfilments[otherParty.id][(outerClaimId, innerPartyId)] = value`. Flatter storage; the tuple encodes the nesting.
+
+Evaluator complexity grows: each nested-indexed member's
+`evaluate` needs to know the outer fulfilmentIds; scope-exit
+purges cascade recursively; cross-member rules can span nested
+levels.
+
+**Design questions to resolve when this is picked up:**
+
+- Which storage shape (hierarchical vs. tuple keys). Persistence
+  layer implications differ.
+- Whether nested groups compose (group-within-group), and how deep
+  the nesting can go before the model becomes too heavy.
+- Whether the doc's fulfilmentId conventions (source × mutability)
+  apply at each nesting level or only the outermost.
+- Interaction with derived-pattern controllers (an outer derived
+  group whose members are inner user-driven groups, etc.).
+
+Most real journeys can be flattened — e.g. "additional drivers,
+each with their own claims" becomes two flat indexed groups
+(`driver`, `driverClaim`) with cross-reference obligations tying
+each driverClaim to a driver by fulfilmentId. Deferred until a
+concrete case demands true nesting.
 
 ### R. Submission-block / Cannot Submit Journey state (extension point)
 
