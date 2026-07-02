@@ -2076,6 +2076,89 @@ failing-lookup case (and likely colleague input on operational
 policy) — no value in pinning the shape before we know which
 failure modes we actually need to handle.
 
+### R. Submission-block / Cannot Submit Journey state (extension point)
+
+A new requirement has surfaced: certain **combinations of answers**
+should prevent Submit, even when every in-scope obligation is
+fulfilled. Real GDS examples: an insurance quote where a driver
+under 17 makes the quote unquotable; an animal-import notification
+where a specific species-from-country combination is prohibited; a
+loan application where an income + credit-score combination doesn't
+meet a threshold. The exact consequences are still to be figured
+out, but for now the shape is: **user can continue with the Journey
+but cannot Submit unless the answers change**.
+
+This is distinct from an unfulfilled obligation — the block is
+about **submission eligibility across the whole set of answers**,
+not "provide this data to move forward".
+
+**Direction of travel** (subject to iteration once implications are
+clearer):
+
+- Extend the ObligationEvaluator return type with a top-level
+  `submissionBlocks` field, parallel to per-obligation state and
+  reusing the reason-code shape from §J:
+
+  ```ts
+  {
+    fulfilments: FulfilmentsMap,
+    obligations: { [id]: { inScope, status, reasons, ... } },
+    submissionBlocks: Array<{
+      code: string,
+      explanation?: string,
+      values?: object,
+    }>
+  }
+  ```
+
+- Extend the Journey state taxonomy with a **Cannot Submit** state,
+  mutually exclusive with Fulfilled:
+  - **Fulfilled** — all in-scope obligations fulfilled AND
+    `submissionBlocks` is empty; Submit enabled.
+  - **Cannot Submit** — all in-scope obligations fulfilled AND
+    `submissionBlocks` is non-empty; Submit disabled; blocks shown
+    to the user; user can navigate back to change answers via CYA
+    Change links; each save re-runs the evaluator and re-evaluates
+    blocks. Once a block clears, the Journey flips to Fulfilled and
+    Submit re-enables.
+
+- `journeyState()` primitive returns Cannot Submit when the
+  above conditions hold.
+
+- Renderer: CYA shows the submission-block reasons (i18n-resolved
+  via the codes) and disables Submit.
+
+- Submission-block rules live **inside the ObligationEvaluator
+  implementation** (they're algorithm-shaped, like `mandatoryWhen` —
+  see §Evaluation is external to the Obligation model). Not a
+  declarative JSON list.
+
+**Sub-questions to resolve when this is picked up:**
+
+- Final name for the state — "Cannot Submit" is direct; "Blocked",
+  "Ineligible", "Requires Review" are alternatives.
+- Whether submission-block rules are Service-scoped (co-located
+  with the ObligationEvaluator, applied to every Flow) or
+  Flow-scoped (some blocks apply only to certain acquisition
+  paths). Default lean: Service-scoped, matching where the
+  ObligationEvaluator sits.
+- Interaction with system-handled obligations — can a lookup result
+  (e.g. a fraud check) directly emit a submission-block, or does
+  the block always come from the ObligationEvaluator reading the
+  lookup's fulfilment value?
+- Whether the "Cannot Submit" state carries over to §Persistence →
+  Submit lifecycle constraints — specifically, whether it should
+  block the read-only-CYA MVP surface or whether it fits alongside
+  status transitions.
+- Whether we ever want a "submit anyway with acknowledgement" path
+  (e.g. user sees the block, ticks "I understand this is unusual",
+  submits with the block on record). Probably out of scope for MVP
+  but worth flagging.
+
+Captured as an **extension point** — not implemented today. Revisit
+when the exact consequences are figured out (interaction design +
+service-specific policy) and a concrete case demands it.
+
 ## Cross-reference
 
 - The five implementations live under `prototypes/`. See
