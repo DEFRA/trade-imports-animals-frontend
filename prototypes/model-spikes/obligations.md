@@ -1811,6 +1811,35 @@ Level 1 is essentially free if the module structure is right. Levels 2
 and 3 are cheap early adds. Level 4 waits for a real debugging need
 with the appropriate safety controls.
 
+### Data-dictionary generation from the obligations model
+
+The obligations model is authored in JS (data + applicability logic
+per obligation — see `obligations.js` in the spike). A separate
+generator can walk the array and emit a **data-only JSON artifact** —
+`{ id, name, type, cardinality, indexedBy? }` per obligation — with
+the `evaluate` functions stripped out. Uses:
+
+- **Documentation for downstream consumers** — a machine-readable
+  answer to "what does this Service ask users?" for portal pages,
+  README embeds, or design-review handouts.
+- **Portability to non-JS runtimes** — each language ships its own
+  applicability logic; the data contract is shared as JSON. Reaffirms
+  the §Trade-off accepted stance (contract portable; evaluator
+  language-specific).
+- **Tooling / lint / static analysis over the pure data** — e.g.
+  "every obligation reachable from at least one Flow", "no orphan
+  obligations", schema-compatibility diffs between Service versions.
+
+The generator itself is trivial — a JS `map` selecting the data-only
+fields plus `JSON.stringify`. Not built today; captured as an
+anticipated need when a concrete cross-language or documentation case
+surfaces.
+
+The reverse — reading a data-only obligations JSON to reconstruct a
+partial JS model — is **not** meaningful: without the applicability
+functions, the runtime can't evaluate anything. The data-dictionary
+output is a one-way export, not a serialisation.
+
 ### Future-work concerns to revisit
 
 - **Regenerability**: if a Service's obligations change, does the
