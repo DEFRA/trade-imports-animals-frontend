@@ -10,14 +10,14 @@ import { obligations as defaultObligations } from './obligations.js'
  * to the constructor options object as they become needed — see §I.
  *
  * Obligations are the source of truth for both data and applicability logic
- * (see `obligations.js`). Each obligation carries its own `evaluate` method
- * inline, so this factory reduces to pure orchestration:
+ * (see `obligations.js`). Each obligation carries its own `applyTo` method
+ * inline, which returns that obligation's **implication** for the current
+ * fulfilments. This factory reduces to pure orchestration:
  *
  *   1. remove spurious fulfilments (ones whose id doesn't match any current
  *      obligation — the "tolerate-and-amend" rule; see §Persistence →
  *      Model versioning).
- *   2. compute per-obligation state by calling each obligation's own
- *      `evaluate`.
+ *   2. compute each obligation's implication by calling its own `applyTo`.
  *   3. remove out-of-scope fulfilments (the appliesWhen scope-exit purge;
  *      see §Key properties → Scope exit).
  */
@@ -39,13 +39,65 @@ export function createObligationEvaluator({
     return result
   }
 
-  // Drop fulfilments for obligations that came out of scope in the current
-  // evaluation pass (per-obligation `evaluate` returned `inScope: false`).
-  const removeOutOfScopeFulfilments = (fulfilments, perObligationState) => {
+  // Scope-exit purge: remove entries from the fulfilments map that no
+  // longer reflect the implication each obligation returned from its
+  // applyTo.
+  //
+  // The fulfilments map has two levels:
+  //   - single-cardinality obligation → its value lives directly under
+  //     the obligation's id
+  //   - indexed obligation → a nested map lives under the obligation's
+  //     id, keyed by fulfilmentId (e.g. one per user-added claim, or one
+  //     per selected modification)
+  //
+  // Two rules, applied per obligation:
+  //
+  //   1. If the obligation's implication has inScope: false, drop its
+  //      top-level entry from the fulfilments map.
+  //
+  //   2. If the obligation is indexed and in-scope (its implication
+  //      includes a `fulfilments` array of per-fulfilment entries), that
+  //      array is the authoritative list of fulfilmentIds that should
+  //      exist. Any stored fulfilmentId not in that list is stale and
+  //      gets dropped from the nested map.
+  //
+  //      Example: modificationCost has stored
+  //        { turbo: '800', alloys: '200' }
+  //      but the user has just removed 'alloys' from the modifications
+  //      controller. The derived applyTo now returns
+  //        { inScope: true, fulfilments: [{ fulfilmentId: 'turbo', ... }] }
+  //      This pass drops 'alloys' from the stored map, leaving
+  //        { turbo: '800' }
+  //
+  // The second rule is what powers the derived lifecycle. When the user
+  // removes a controller value, the derived obligation's applyTo stops
+  // including that fulfilmentId in its returned array — this pass then
+  // removes it from storage. For user-driven indexed obligations the
+  // second rule is a no-op: their applyTo returns one entry for every
+  // fulfilmentId already in storage, so nothing is ever stale.
+  const removeOutOfScopeFulfilments = (
+    fulfilments,
+    implicationsByObligation
+  ) => {
     const result = { ...fulfilments }
-    for (const [id, state] of Object.entries(perObligationState)) {
-      if (state.inScope === false) {
-        delete result[id]
+    for (const [obligationId, implication] of Object.entries(
+      implicationsByObligation
+    )) {
+      if (implication.inScope === false) {
+        delete result[obligationId]
+        continue
+      }
+      if (implication.fulfilments && result[obligationId]) {
+        const validFulfilmentIds = new Set(
+          implication.fulfilments.map((f) => f.fulfilmentId)
+        )
+        const storedFulfilments = { ...result[obligationId] }
+        for (const fulfilmentId of Object.keys(storedFulfilments)) {
+          if (!validFulfilmentIds.has(fulfilmentId)) {
+            delete storedFulfilments[fulfilmentId]
+          }
+        }
+        result[obligationId] = storedFulfilments
       }
     }
     return result
@@ -55,23 +107,24 @@ export function createObligationEvaluator({
     evaluate(fulfilments) {
       const recognisedFulfilments = removeSpuriousFulfilments(fulfilments)
 
-      // Single-pass per-obligation evaluation. Fixed-point behaviour lives
-      // in the orchestrator per §The evaluation engine.
-      const perObligationState = {}
+      // Single-pass per-obligation evaluation — collect each obligation's
+      // implication for the current fulfilments. Fixed-point behaviour
+      // lives in the orchestrator per §The evaluation engine.
+      const implicationsByObligation = {}
       for (const obligation of obligations) {
-        perObligationState[obligation.id] = obligation.evaluate(
+        implicationsByObligation[obligation.id] = obligation.applyTo(
           recognisedFulfilments
         )
       }
 
       const amendedFulfilments = removeOutOfScopeFulfilments(
         recognisedFulfilments,
-        perObligationState
+        implicationsByObligation
       )
 
       return {
         fulfilments: amendedFulfilments,
-        obligations: perObligationState
+        obligations: implicationsByObligation
       }
     }
   }

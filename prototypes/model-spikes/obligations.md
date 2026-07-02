@@ -284,28 +284,38 @@ same-in / same-out for `(fulfilments)` — while letting tests vary
 behaviour by constructing with different obligations, configs, or
 other dependencies. See §I for the extension pattern.
 
-Output — a single result object with **amended fulfilments** plus
-per-obligation state:
+Output — a single result object with **amended fulfilments** plus a
+map of **per-obligation implications**:
 
 ```ts
 {
   fulfilments: FulfilmentsMap,             // amended: pruned to fit the current model
   obligations: {
-    [obligationId: string]: {
-      inScope: boolean,
-      status?: 'mandatory' | 'optional',   // only meaningful if inScope
-      reasons?: Array<{
-        code: string,                      // e.g. "obligation.modification.type.applicable.reason.hasModification"
-        explanation?: string,              // freeform, developer-facing; not shown to end users
-        values?: object,                   // interpolation values for the resolved UI message
-      }>,
-      fulfilments?: Array<FulfilmentState> // only for indexed cardinality
-    }
+    [obligationId: string]: Implication    // one per obligation — see below
   }
 }
 ```
 
-See §J for the reason shape rationale and naming convention.
+Where `Implication` is the return value of an obligation's own
+`applyTo(fulfilments)` method:
+
+```ts
+type Implication = {
+  inScope: boolean
+  status?: 'mandatory' | 'optional' // only meaningful if inScope
+  reasons?: Array<{
+    code: string // e.g. "obligation.excessAmount.applicable.becauseVoluntaryExcess"
+    explanation?: string // freeform, developer-facing; not shown to end users
+    values?: object // interpolation values for the resolved UI message
+  }>
+  fulfilments?: Array<FulfilmentState> // only for indexed cardinality
+}
+```
+
+Each obligation carries its own `applyTo` function inline in
+`obligations.js`; the top-level evaluator's `evaluate` calls each
+obligation's `applyTo` and collects the implications into the map
+above. See §J for the reason shape rationale and naming convention.
 
 The ObligationEvaluator never performs I/O. Given the same inputs it
 always returns the same output. Trivially testable; replayable;
@@ -627,6 +637,18 @@ When the controlling obligation's answer changes:
   (no rehydration), consistent with the canvas "delete conditional data"
   steer and the yes→no→yes round-trip spec already in the e2e suite.
 
+**Implemented in the spike** (iteration 6). The derived obligation's own
+`applyTo` reads the controller's array value and emits one per-fulfilment
+entry per controller value. The evaluator's scope-exit purge is extended
+with a **per-fulfilmentId purge**: any inner key in the stored fulfilments
+map that isn't in the derived obligation's implication `fulfilments` list
+is stale and gets dropped. This gives the "no rehydration" behaviour for
+free — the evaluator has no memory of the prior value, so re-adding a
+controller value produces a fresh blank slot. User-driven indexed
+obligations aren't affected: their `applyTo` emits an entry for every
+key already in the collection, so nothing is ever stale from their own
+perspective.
+
 ### Fulfilments storage — the journey-scoped map
 
 Fulfilments live in a **journey-scoped map**. The journey is the
@@ -773,7 +795,7 @@ together as a semantic record.
   group: "claim",              // back-reference to the group by name
   cardinality: "indexed",
   indexedBy: { source: "user", mutability: "edit-add-remove" },
-  evaluate: (fulfilments) => { /* per-fulfilment state */ }
+  applyTo: (fulfilments) => { /* returns per-fulfilment implication */ }
 }
 
 {
@@ -782,7 +804,7 @@ together as a semantic record.
   group: "claim",
   cardinality: "indexed",
   indexedBy: { source: "user", mutability: "edit-add-remove" },
-  evaluate: (fulfilments) => { /* per-fulfilment state */ }
+  applyTo: (fulfilments) => { /* returns per-fulfilment implication */ }
 }
 
 // Group — declarative metadata declaring the members.

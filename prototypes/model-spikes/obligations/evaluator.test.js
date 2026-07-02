@@ -11,6 +11,9 @@ import {
   namedDriverRelationship,
   licenseType,
   licenseCountryIssued,
+  hasModifications,
+  modifications,
+  modificationCost,
   hasClaims,
   claimType,
   claimAmount,
@@ -66,6 +69,20 @@ const namedDriverRelationshipApplicable = {
     }
   ]
 }
+const modificationsApplicable = {
+  inScope: true,
+  status: 'mandatory',
+  reasons: [
+    {
+      code: 'obligation.modifications.applicable.becauseHasModifications',
+      explanation: 'modifications applies when hasModifications is true'
+    }
+  ]
+}
+const modificationCostApplicableReason = {
+  code: 'obligation.modificationCost.applicable.becauseHasModifications',
+  explanation: 'modificationCost applies when hasModifications is true'
+}
 const claimTypeApplicableReason = {
   code: 'obligation.claimType.applicable.becauseHasClaims',
   explanation: 'claimType applies when hasClaims is true'
@@ -92,6 +109,9 @@ describe('ObligationEvaluator', () => {
         [namedDriverRelationship.id]: outOfScope, // optional-when-applicable — no named driver set
         [licenseType.id]: mandatory,
         [licenseCountryIssued.id]: optional, // mandatoryWhen — licenseType unset
+        [hasModifications.id]: mandatory,
+        [modifications.id]: outOfScope, // appliesWhen — no modifications opt-in
+        [modificationCost.id]: outOfScope, // derived; gated by hasModifications
         [hasClaims.id]: mandatory,
         [claimType.id]: outOfScope, // group member — hasClaims not set
         [claimAmount.id]: outOfScope // group member — hasClaims not set
@@ -312,6 +332,137 @@ describe('ObligationEvaluator', () => {
     })
   })
 
+  describe('appliesWhen + derived indexing (modifications / modificationCost) — gated by hasModifications', () => {
+    it('hasModifications = true + no controller value → modifications in-scope with reason; derived in-scope with empty fulfilments', () => {
+      const result = evaluator.evaluate({ [hasModifications.id]: true })
+
+      expect(result.obligations[modifications.id]).toEqual(
+        modificationsApplicable
+      )
+      expect(result.obligations[modificationCost.id]).toEqual({
+        inScope: true,
+        reasons: [modificationCostApplicableReason],
+        fulfilments: []
+      })
+      expect(result.fulfilments).not.toHaveProperty(modifications.id)
+      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+    })
+
+    it('controller with one value + no cost stored → derived has one fresh blank slot; nothing in amended', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo']
+      })
+
+      expect(result.obligations[modificationCost.id]).toEqual({
+        inScope: true,
+        reasons: [modificationCostApplicableReason],
+        fulfilments: [{ fulfilmentId: 'turbo', status: 'mandatory' }]
+      })
+      expect(result.fulfilments[modifications.id]).toEqual(['turbo'])
+      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+    })
+
+    it('controller with values + cost values stored → derived reflects controller; values pass through', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'alloys'],
+        [modificationCost.id]: { turbo: '800', alloys: '200' }
+      })
+
+      expect(result.obligations[modificationCost.id]).toEqual({
+        inScope: true,
+        reasons: [modificationCostApplicableReason],
+        fulfilments: [
+          { fulfilmentId: 'turbo', status: 'mandatory' },
+          { fulfilmentId: 'alloys', status: 'mandatory' }
+        ]
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({
+        turbo: '800',
+        alloys: '200'
+      })
+    })
+
+    it('controller value removed → corresponding cost fulfilment PURGED (derived lifecycle)', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo'], // user removed 'alloys'
+        [modificationCost.id]: { turbo: '800', alloys: '200' } // stale 'alloys' still stored
+      })
+
+      expect(result.obligations[modificationCost.id]).toEqual({
+        inScope: true,
+        reasons: [modificationCostApplicableReason],
+        fulfilments: [{ fulfilmentId: 'turbo', status: 'mandatory' }]
+      })
+      // 'alloys' cost purged; 'turbo' retained.
+      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
+    })
+
+    it('controller emptied + stale cost values → all cost fulfilments purged', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: [],
+        [modificationCost.id]: { turbo: '800', alloys: '200' }
+      })
+
+      expect(result.obligations[modificationCost.id]).toEqual({
+        inScope: true,
+        reasons: [modificationCostApplicableReason],
+        fulfilments: []
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({})
+    })
+
+    it('re-adding a controller value after removal → fresh blank (no rehydration; evaluator has no memory)', () => {
+      // First: user has 'turbo' + 'alloys' with costs. Then user removes 'alloys'.
+      // Then user re-adds 'alloys'. Under our stateless evaluator, the "re-add"
+      // is just the current state — 'alloys' present in controller, no cost
+      // stored. Cost fulfilment is a fresh blank.
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'alloys'], // re-added
+        [modificationCost.id]: { turbo: '800' } // no 'alloys' cost (it was purged on remove)
+      })
+
+      expect(result.obligations[modificationCost.id]).toEqual({
+        inScope: true,
+        reasons: [modificationCostApplicableReason],
+        fulfilments: [
+          { fulfilmentId: 'turbo', status: 'mandatory' },
+          { fulfilmentId: 'alloys', status: 'mandatory' } // fresh blank slot
+        ]
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
+    })
+
+    it('hasModifications = false + stored controller + costs → both purged (gate flips false)', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: false,
+        [modifications.id]: ['turbo', 'alloys'],
+        [modificationCost.id]: { turbo: '800', alloys: '200' }
+      })
+
+      expect(result.obligations[modifications.id]).toEqual(outOfScope)
+      expect(result.obligations[modificationCost.id]).toEqual(outOfScope)
+      expect(result.fulfilments).not.toHaveProperty(modifications.id)
+      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+    })
+
+    it('hasModifications absent → both out-of-scope; no keys in amended', () => {
+      const result = evaluator.evaluate({
+        [modifications.id]: ['turbo'],
+        [modificationCost.id]: { turbo: '800' }
+      })
+
+      expect(result.obligations[modifications.id]).toEqual(outOfScope)
+      expect(result.obligations[modificationCost.id]).toEqual(outOfScope)
+      expect(result.fulfilments).not.toHaveProperty(modifications.id)
+      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+    })
+  })
+
   describe('appliesWhen + indexed (claim group) — gated by hasClaims; user-driven; shared fulfilmentIds across members', () => {
     const firstClaimId = '01H8XK7M5RW6QYJ2AB'
     const secondClaimId = '01H8XK9P3T8WBZN4DE'
@@ -489,6 +640,9 @@ describe('ObligationEvaluator', () => {
         [namedDriverRelationship.id]: 'spouse',
         [licenseType.id]: 'other',
         [licenseCountryIssued.id]: 'Germany',
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'alloys'],
+        [modificationCost.id]: { turbo: '800', alloys: '200' },
         [hasClaims.id]: true,
         [claimType.id]: {
           [firstClaimId]: 'accident',
@@ -514,6 +668,16 @@ describe('ObligationEvaluator', () => {
         [namedDriverRelationship.id]: namedDriverRelationshipApplicable,
         [licenseType.id]: mandatory,
         [licenseCountryIssued.id]: licenseCountryIssuedMandatory,
+        [hasModifications.id]: mandatory,
+        [modifications.id]: modificationsApplicable,
+        [modificationCost.id]: {
+          inScope: true,
+          reasons: [modificationCostApplicableReason],
+          fulfilments: [
+            { fulfilmentId: 'turbo', status: 'mandatory' },
+            { fulfilmentId: 'alloys', status: 'mandatory' }
+          ]
+        },
         [hasClaims.id]: mandatory,
         [claimType.id]: {
           inScope: true,

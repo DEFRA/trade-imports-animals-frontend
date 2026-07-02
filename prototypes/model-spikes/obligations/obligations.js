@@ -3,14 +3,15 @@
  *
  * Each obligation is declared as its own named const, carrying identifiers
  * (id, name), data-contract fields (cardinality, indexedBy, group), and the
- * applicability function (`evaluate`) together. Cross-obligation references
- * inside an `evaluate` are direct symbol lookups — e.g.
+ * applicability function (`applyTo`) together. Cross-obligation references
+ * inside an `applyTo` are direct symbol lookups — e.g.
  * `fulfilments[hasVoluntaryExcess.id]` — so ESLint can catch orphan
  * declarations that the previous name-keyed dynamic dispatch would have
  * silently allowed.
  *
  * Per §Conditional obligation patterns in
- * prototypes/model-spikes/obligations.md, `evaluate` returns
+ * prototypes/model-spikes/obligations.md, `applyTo(fulfilments)` returns
+ * the obligation's **implication** for the current fulfilments —
  * `{ inScope, status?, reasons?, fulfilments? }`. The two patterns
  * (mandatoryWhen / appliesWhen) are enacted by the return-shape choice, not
  * by any field on the record.
@@ -34,7 +35,7 @@ export const fullName = {
   id: 'e5a1c4d8-3f9b-4e2a-9d7c-1f6b8e0a2c4d',
   name: 'fullName',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 // Always-optional: preferredName is always shown to the user but never
@@ -46,21 +47,21 @@ export const preferredName = {
   id: '4d7c1f6b-8e0a-2c4d-9d7c-1f6b8e0a2c4d',
   name: 'preferredName',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'optional' })
+  applyTo: () => ({ inScope: true, status: 'optional' })
 }
 
 export const dateOfBirth = {
   id: 'b7d3e5f1-9a2c-4b8d-8e0f-3c5a7b9d1e2f',
   name: 'dateOfBirth',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 export const hasVoluntaryExcess = {
   id: '3a5c7e9b-1d4f-4a6c-8e0f-2b4c6d8e0f2a',
   name: 'hasVoluntaryExcess',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 // appliesWhen: excessAmount only applies (in-scope) when the user has
@@ -69,7 +70,7 @@ export const excessAmount = {
   id: 'f1e2d3c4-b5a6-4978-8697-1a2b3c4d5e6f',
   name: 'excessAmount',
   cardinality: 'single',
-  evaluate: (fulfilments) => {
+  applyTo: (fulfilments) => {
     if (fulfilments[hasVoluntaryExcess.id] === true) {
       return {
         inScope: true,
@@ -90,7 +91,7 @@ export const hasNamedDriver = {
   id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
   name: 'hasNamedDriver',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 // appliesWhen: namedDriverName only applies when the user has a named
@@ -99,7 +100,7 @@ export const namedDriverName = {
   id: 'd1e2f345-6789-4abc-8def-012345678901',
   name: 'namedDriverName',
   cardinality: 'single',
-  evaluate: (fulfilments) => {
+  applyTo: (fulfilments) => {
     if (fulfilments[hasNamedDriver.id] === true) {
       return {
         inScope: true,
@@ -125,7 +126,7 @@ export const namedDriverRelationship = {
   id: '8e0f1a2b-3c4d-4e5f-6a7b-8c9d0e1f2a3b',
   name: 'namedDriverRelationship',
   cardinality: 'single',
-  evaluate: (fulfilments) => {
+  applyTo: (fulfilments) => {
     if (fulfilments[hasNamedDriver.id] === true) {
       return {
         inScope: true,
@@ -147,7 +148,7 @@ export const licenseType = {
   id: '9f8e7d6c-5b4a-4392-8175-6c5b4a392817',
   name: 'licenseType',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 // mandatoryWhen: licenseCountryIssued is always in-scope (meaningful for
@@ -158,7 +159,7 @@ export const licenseCountryIssued = {
   id: 'c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f',
   name: 'licenseCountryIssued',
   cardinality: 'single',
-  evaluate: (fulfilments) => {
+  applyTo: (fulfilments) => {
     if (fulfilments[licenseType.id] === 'other') {
       return {
         inScope: true,
@@ -176,11 +177,94 @@ export const licenseCountryIssued = {
   }
 }
 
+// Gate for the modifications sub-journey — matches the prototype's
+// "declare vehicle modifications" opt-in. The user answers yes/no; if
+// yes, they enter the modifications flow (multi-select + per-mod cost).
+export const hasModifications = {
+  id: '1a2b3c4d-5e6f-4708-8091-2a3b4c5d6e7f',
+  name: 'hasModifications',
+  cardinality: 'single',
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
+}
+
+// appliesWhen: modifications multi-select is only in-scope when the user
+// has said they have modifications. Value is an array of strings — e.g.
+// ['turbo', 'alloys']. Scope-exit purges the array.
+export const modifications = {
+  id: '2b3c4d5e-6f78-4a9b-8c0d-1e2f3a4b5c6d',
+  name: 'modifications',
+  cardinality: 'single',
+  applyTo: (fulfilments) => {
+    if (fulfilments[hasModifications.id] !== true) {
+      return { inScope: false }
+    }
+    return {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [
+        {
+          code: 'obligation.modifications.applicable.becauseHasModifications',
+          explanation: 'modifications applies when hasModifications is true'
+        }
+      ]
+    }
+  }
+}
+
+// Derived indexed: modificationCost is derived from the modifications
+// multi-select. Each selected modification value becomes a fulfilmentId
+// under this obligation; the user then fills in the cost per modification.
+//
+// Also gated on hasModifications — if the user hasn't opted in, the
+// derived collection is out-of-scope entirely (not just empty). Otherwise
+// modificationCost could see a stale controller value that hasn't yet
+// been purged in the current pass. Gating both obligations independently
+// mirrors iteration 4b's claimType / claimAmount pattern.
+//
+// Lifecycle (per §Lifecycle for derived):
+//   - controller adds a value → fresh blank cost fulfilment for that key
+//   - controller removes a value → cost fulfilment for that key is purged
+//     (via the evaluator's per-fulfilmentId purge — see evaluator.js)
+//   - controller re-adds a value → fresh blank (no rehydration; the
+//     evaluator has no memory of the prior value)
+//
+// Mutability is `edit-only` — the user edits cost values within the
+// fixed collection shape; add/remove happens via the controller.
+export const modificationCost = {
+  id: '3c4d5e6f-7890-4a1b-8c2d-3e4f5a6b7c8d',
+  name: 'modificationCost',
+  cardinality: 'indexed',
+  indexedBy: {
+    source: 'derived',
+    controllingObligation: 'modifications',
+    mutability: 'edit-only'
+  },
+  applyTo: (fulfilments) => {
+    if (fulfilments[hasModifications.id] !== true) {
+      return { inScope: false }
+    }
+    const selectedModificationIds = fulfilments[modifications.id] ?? []
+    return {
+      inScope: true,
+      reasons: [
+        {
+          code: 'obligation.modificationCost.applicable.becauseHasModifications',
+          explanation: 'modificationCost applies when hasModifications is true'
+        }
+      ],
+      fulfilments: selectedModificationIds.map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    }
+  }
+}
+
 export const hasClaims = {
   id: 'b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e',
   name: 'hasClaims',
   cardinality: 'single',
-  evaluate: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 // appliesWhen + indexed: claimType belongs to the `claim` group (see below).
@@ -196,7 +280,7 @@ export const claimType = {
   group: 'claim',
   cardinality: 'indexed',
   indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  evaluate: (fulfilments) => {
+  applyTo: (fulfilments) => {
     if (fulfilments[hasClaims.id] !== true) {
       return { inScope: false }
     }
@@ -226,7 +310,7 @@ export const claimAmount = {
   group: 'claim',
   cardinality: 'indexed',
   indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  evaluate: (fulfilments) => {
+  applyTo: (fulfilments) => {
     if (fulfilments[hasClaims.id] !== true) {
       return { inScope: false }
     }
@@ -283,6 +367,9 @@ export const obligations = [
   namedDriverRelationship,
   licenseType,
   licenseCountryIssued,
+  hasModifications,
+  modifications,
+  modificationCost,
   hasClaims,
   claimType,
   claimAmount
