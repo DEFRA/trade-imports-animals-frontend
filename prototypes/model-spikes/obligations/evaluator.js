@@ -13,9 +13,13 @@ import { obligations as defaultObligations } from './obligations.js'
  * (see `obligations.js`). Each obligation carries its own `evaluate` method
  * inline, so this factory reduces to pure orchestration:
  *
- *   1. tolerate-and-amend (drop fulfilments for unknown obligation ids)
- *   2. per-obligation state (call each obligation's own `evaluate`)
- *   3. scope-exit purge (drop fulfilments for obligations now out-of-scope)
+ *   1. remove spurious fulfilments (ones whose id doesn't match any current
+ *      obligation — the "tolerate-and-amend" rule; see §Persistence →
+ *      Model versioning).
+ *   2. compute per-obligation state by calling each obligation's own
+ *      `evaluate`.
+ *   3. remove out-of-scope fulfilments (the appliesWhen scope-exit purge;
+ *      see §Key properties → Scope exit).
  */
 
 export function createObligationEvaluator({
@@ -23,35 +27,47 @@ export function createObligationEvaluator({
 } = {}) {
   const obligationIds = new Set(obligations.map((o) => o.id))
 
+  // Drop fulfilments whose id doesn't match any current obligation.
+  // For example, we might have amended the obligation model since the user last saved progress.
+  const removeSpuriousFulfilments = (fulfilments) => {
+    const result = {}
+    for (const [id, value] of Object.entries(fulfilments)) {
+      if (obligationIds.has(id)) {
+        result[id] = value
+      }
+    }
+    return result
+  }
+
+  // Drop fulfilments for obligations that came out of scope in the current
+  // evaluation pass (per-obligation `evaluate` returned `inScope: false`).
+  const removeOutOfScopeFulfilments = (fulfilments, perObligationState) => {
+    const result = { ...fulfilments }
+    for (const [id, state] of Object.entries(perObligationState)) {
+      if (state.inScope === false) {
+        delete result[id]
+      }
+    }
+    return result
+  }
+
   return {
     evaluate(fulfilments) {
-      // 1. Tolerate-and-amend: drop fulfilments whose id isn't in the
-      //    current obligations model.
-      const toleranceAmended = {}
-      for (const [id, value] of Object.entries(fulfilments)) {
-        if (obligationIds.has(id)) {
-          toleranceAmended[id] = value
-        }
-      }
+      const recognisedFulfilments = removeSpuriousFulfilments(fulfilments)
 
-      // 2. Per-obligation state — each obligation is its own evaluator.
-      //    Single-pass; fixed-point behaviour lives in the orchestrator per
-      //    §The evaluation engine.
+      // Single-pass per-obligation evaluation. Fixed-point behaviour lives
+      // in the orchestrator per §The evaluation engine.
       const perObligationState = {}
       for (const obligation of obligations) {
-        perObligationState[obligation.id] =
-          obligation.evaluate(toleranceAmended)
+        perObligationState[obligation.id] = obligation.evaluate(
+          recognisedFulfilments
+        )
       }
 
-      // 3. Scope-exit purge: drop fulfilments for obligations now
-      //    out-of-scope. Matches §Fulfilments storage scope-exit rule and
-      //    the Scope-exit row in §Key properties.
-      const amendedFulfilments = { ...toleranceAmended }
-      for (const [id, state] of Object.entries(perObligationState)) {
-        if (state.inScope === false) {
-          delete amendedFulfilments[id]
-        }
-      }
+      const amendedFulfilments = removeOutOfScopeFulfilments(
+        recognisedFulfilments,
+        perObligationState
+      )
 
       return {
         fulfilments: amendedFulfilments,
