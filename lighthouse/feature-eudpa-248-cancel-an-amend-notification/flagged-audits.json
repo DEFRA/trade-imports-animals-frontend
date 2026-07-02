@@ -1,0 +1,100 @@
+{
+  "generatedAt": "2026-07-01T15:11:09.396Z",
+  "pages": [
+    {
+      "pageUrl": "/",
+      "requestedUrl": "http://localhost:3000/",
+      "audits": []
+    },
+    {
+      "pageUrl": "/about",
+      "requestedUrl": "http://localhost:3000/about",
+      "audits": []
+    },
+    {
+      "pageUrl": "/accompanying-documents",
+      "requestedUrl": "http://localhost:3000/accompanying-documents",
+      "audits": []
+    },
+    {
+      "pageUrl": "/additional-details",
+      "requestedUrl": "http://localhost:3000/additional-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/addresses",
+      "requestedUrl": "http://localhost:3000/addresses",
+      "audits": []
+    },
+    {
+      "pageUrl": "/commodities",
+      "requestedUrl": "http://localhost:3000/commodities",
+      "audits": []
+    },
+    {
+      "pageUrl": "/commodities/details",
+      "requestedUrl": "http://localhost:3000/commodities/details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/commodities/identification",
+      "requestedUrl": "http://localhost:3000/commodities/identification",
+      "audits": []
+    },
+    {
+      "pageUrl": "/commodities/select",
+      "requestedUrl": "http://localhost:3000/commodities/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/consignment/contact/select",
+      "requestedUrl": "http://localhost:3000/consignment/contact/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/consignors/select",
+      "requestedUrl": "http://localhost:3000/consignors/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/cph-number",
+      "requestedUrl": "http://localhost:3000/cph-number",
+      "audits": []
+    },
+    {
+      "pageUrl": "/declaration",
+      "requestedUrl": "http://localhost:3000/declaration",
+      "audits": []
+    },
+    {
+      "pageUrl": "/destinations/select",
+      "requestedUrl": "http://localhost:3000/destinations/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/import-reason",
+      "requestedUrl": "http://localhost:3000/import-reason",
+      "audits": []
+    },
+    {
+      "pageUrl": "/origin",
+      "requestedUrl": "http://localhost:3000/origin",
+      "audits": []
+    },
+    {
+      "pageUrl": "/port-of-entry",
+      "requestedUrl": "http://localhost:3000/port-of-entry",
+      "audits": []
+    },
+    {
+      "pageUrl": "/transporters",
+      "requestedUrl": "http://localhost:3000/transporters",
+      "audits": []
+    },
+    {
+      "pageUrl": "/transporters/select",
+      "requestedUrl": "http://localhost:3000/transporters/select",
+      "audits": []
+    }
+  ]
+}

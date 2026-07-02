@@ -1,0 +1,149 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/transporters.spec.ts >> Transporter >> shows expected page content
+- Location: tests/e2e/pages/transporters.spec.ts:20:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('span.govuk-caption-l').filter({ hasText: 'Transport' })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('span.govuk-caption-l').filter({ hasText: 'Transport' })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Animals":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Home":
+            - /url: /
+        - listitem:
+          - link "About":
+            - /url: /about
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /signout
+- main:
+  - text: GBN-AG-26-RTP5DX
+  - link "Back":
+    - /url: /port-of-entry
+  - heading "Transporter" [level=1]
+  - text: Transport
+  - paragraph: "Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:"
+  - list:
+    - listitem: transporting any live vertebrate animals in, to, from or through Great Britain (GB)
+    - listitem: travelling on journeys of over 65 km
+    - listitem: transporting as part of an economic (commercial) activity
+  - paragraph:
+    - link "Find out how to transport animals in connection with an economic activity (opens in new tab)":
+      - /url: https://www.gov.uk/guidance/transporting-animals-in-great-britain
+  - paragraph: Documents issued by DAERA are valid for use in GB.
+  - paragraph: Documents issued in any EU Member State are not valid for use in GB.
+  - paragraph:
+    - link "Add a transporter":
+      - /url: /transporters/select
+  - button "Save and continue"
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Transporter', () => {
+  4  |   test.beforeEach(async ({ journeys }) => {
+  5  |     await journeys.toTransporter();
+  6  |   });
+  7  | 
+  8  |   test('shows system-generated notification id (draft)', async ({ journeyContext, pages }) => {
+  9  |     const notificationId = await pages.transporter.notificationId.textContent();
+  10 |     expect(notificationId).toMatch(/^GBN-AG-\d{2}-[0-9A-Z]{6}$/);
+  11 |     expect(journeyContext.notificationId).toBe(notificationId);
+  12 |   });
+  13 | 
+  14 |   test('can navigate back to entry point', async ({ pages }) => {
+  15 |     await pages.transporter.linkBack.click();
+  16 |     await expect(pages.page).toHaveURL(pages.entryPoint.expectedUrl);
+  17 |     await expect(pages.entryPoint.heading).toBeVisible();
+  18 |   });
+  19 | 
+  20 |   test('shows expected page content', async ({ pages }) => {
+> 21 |     await expect(pages.transporter.captionTransport).toBeVisible();
+     |                                                      ^ Error: expect(locator).toBeVisible() failed
+  22 |     await expect(pages.transporter.heading).toBeVisible();
+  23 |     await expect(pages.transporter.linkAddTransporter).toBeVisible();
+  24 |     await expect(pages.transporter.linkTransportGuidance).toBeVisible();
+  25 |     await expect(pages.transporter.linkTransportGuidance).toHaveAttribute('target', '_blank');
+  26 |     await expect(pages.transporter.btnSaveAndContinue).toBeVisible();
+  27 |   });
+  28 | 
+  29 |   test('opens transport guidance link in a new tab with the expected URL', { tag: '@compose' }, async ({ context, pages }) => {
+  30 |     const pagePromise = context.waitForEvent('page');
+  31 |     await pages.transporter.linkTransportGuidance.click();
+  32 |     const guidanceTab = await pagePromise;
+  33 | 
+  34 |     try {
+  35 |       await guidanceTab.waitForLoadState('domcontentloaded');
+  36 |       await expect(guidanceTab).toHaveURL('https://www.gov.uk/guidance/transporting-animals-in-great-britain');
+  37 |     } finally {
+  38 |       await guidanceTab.close();
+  39 |     }
+  40 |   });
+  41 | 
+  42 |   test('can navigate to transporter selection', async ({ pages }) => {
+  43 |     await pages.transporter.linkAddTransporter.click();
+  44 |     await expect(pages.page).toHaveURL(pages.transporterSelection.expectedUrl);
+  45 |     await expect(pages.transporterSelection.heading).toBeVisible();
+  46 |   });
+  47 | 
+  48 |   test('continues to contact address after saving transporter', async ({ pages }) => {
+  49 |     await pages.transporter.linkAddTransporter.click();
+  50 |     await pages.transporterSelection.linkSelectTransporter(0).click();
+  51 |     await pages.transporter.btnSaveAndContinue.click();
+  52 |     await expect(pages.page).toHaveURL(pages.contactAddress.expectedUrl);
+  53 |     await expect(pages.contactAddress.heading).toBeVisible();
+  54 |   });
+  55 | });
+  56 | 
+```
