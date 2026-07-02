@@ -1,4 +1,6 @@
 {% extends 'layouts/page.njk' %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block pageContent %}
 
@@ -8,43 +10,59 @@
   }) }}
 
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
-  {{ appHeading({ pageTitle: "Address", heading: pageTitle }) }}
+  {{ appHeading({ heading: pageTitle }) }}
 
   <div class="govuk-body" data-testid="app-page-body">
+
+    {% if errorList %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: errorList
+      }) }}
+    {% endif %}
 
     <form method="post" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-      <div class="govuk-fieldset">
-        <div class="govuk-form-group">
-          <fieldset class="govuk-fieldset">
-            <table class="govuk-table govuk-table--small-text-until-tablet">
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Name</th>
-                <th scope="col" class="govuk-table__header">Address</th>
-                <th scope="col" class="govuk-table__header">Country</th>
-                <th scope="col" class="govuk-table__header"></th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              {% for destination in destinations %}
-                <tr class="govuk-table__row">
-                  <th scope="row" class="govuk-table__header">{{ destination.name }}</th>
-                  <td class="govuk-table__cell">
-                    {{ destination.address.addressLine1 }}{% if destination.address.addressLine2 %}, {{ destination.address.addressLine2 }}{% endif %}{% if destination.address.addressLine3 %}, {{ destination.address.addressLine3 }}{% endif %}
-                  </td>
-                  <td class="govuk-table__cell">{{ destination.address.country }}</td>
-                  <td class="govuk-table__cell">
-                    <a href="/addresses?selectedDestination={{ loop.index0 }}" id="selectedDestination-{{ loop.index0 }}">Select<span class="govuk-visually-hidden"> {{ destination.name }}</span></a>
-                  </td>
-                </tr>
-              {% endfor %}
-              </tbody>
-            </table>
-          </fieldset>
-        </div>
+      {% set radioItems = [] %}
+      {% for destination in destinations %}
+        {% set addressHtml %}
+          {% if destination.name %}<strong>{{ destination.name }}</strong><br>{% endif %}
+          {{ destination.address.addressLine1 }}<br>
+          {% if destination.address.addressLine2 %}{{ destination.address.addressLine2 }}<br>{% endif %}
+          {% if destination.address.addressLine3 %}{{ destination.address.addressLine3 }}<br>{% endif %}
+          {% if destination.address.postcode %}{{ destination.address.postcode }}<br>{% endif %}
+          {{ destination.address.country }}
+        {% endset %}
+        {% set _ = radioItems.push({
+          value: loop.index0,
+          checked: loop.index0 == selectedDestinationId,
+          html: addressHtml
+        }) %}
+      {% endfor %}
+
+      {{ govukRadios({
+        idPrefix: "destination",
+        name: "destination",
+        fieldset: {
+          legend: {
+            text: "Select a place of destination",
+            classes: "govuk-fieldset__legend--m"
+          }
+        },
+        hint: {
+          html: 'If the correct address is not shown, <a href="#" class="govuk-link">add a new address</a>, then return to this page.'
+        },
+        errorMessage: fieldErrors.destination if fieldErrors,
+        items: radioItems
+      }) }}
+
+      <div class="govuk-button-group">
+        {{ govukButton({
+          text: "Save and continue"
+        }) }}
       </div>
+
     </form>
   </div>
 {% endblock %}
