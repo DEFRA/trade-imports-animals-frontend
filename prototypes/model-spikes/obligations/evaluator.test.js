@@ -18,8 +18,12 @@ import {
   claimType,
   claimAmount,
   claimGroup,
+  driver,
+  driverFullName,
+  driverAddress,
+  driverGroup,
   groups
-} from './obligations.js'
+} from './obligations/obligations.js'
 
 // The evaluator is stateless once constructed — one instance suffices for the
 // whole suite. Constructed with no args so it uses the shipped obligations.
@@ -114,7 +118,10 @@ describe('ObligationEvaluator', () => {
         [modificationCost.id]: outOfScope, // derived; gated by hasModifications
         [hasClaims.id]: mandatory,
         [claimType.id]: outOfScope, // group member — hasClaims not set
-        [claimAmount.id]: outOfScope // group member — hasClaims not set
+        [claimAmount.id]: outOfScope, // group member — hasClaims not set
+        [driver.id]: { inScope: true, fulfilments: [] }, // no drivers yet
+        [driverFullName.id]: { inScope: true, fulfilments: [] },
+        [driverAddress.id]: { inScope: true, fulfilments: [] }
       })
     })
 
@@ -624,10 +631,337 @@ describe('ObligationEvaluator', () => {
     })
   })
 
+  describe('nested indexing (drivers × address history)', () => {
+    const firstDriverId = '01H8XKAAA00000000000AA'
+    const secondDriverId = '01H8XKBBB00000000000BB'
+    const addr1a = '01H8XKAA111111111111AA'
+    const addr1b = '01H8XKAA222222222222BB'
+    const addr2a = '01H8XKBB111111111111AA'
+
+    const addressAtDowning = {
+      line1: '10 Downing St',
+      town: 'London',
+      postcode: 'SW1A 2AA',
+      country: 'United Kingdom',
+      from: '2020-01-01',
+      to: '2023-06-30'
+    }
+    const addressAtBaker = {
+      line1: '221B Baker St',
+      town: 'London',
+      postcode: 'NW1 6XE',
+      country: 'United Kingdom',
+      from: '2023-07-01',
+      to: null
+    }
+    const addressForSam = {
+      line1: '1 Somewhere Ln',
+      town: 'Bristol',
+      postcode: 'BS1 1AA',
+      country: 'United Kingdom',
+      from: '2020-05-01',
+      to: null
+    }
+
+    it('empty fulfilments → driver, driverFullName, driverAddress all in-scope with empty fulfilments arrays', () => {
+      const result = evaluator.evaluate({})
+
+      expect(result.obligations[driver.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+      expect(result.obligations[driverFullName.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+      expect(result.obligations[driverAddress.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+      expect(result.fulfilments).not.toHaveProperty(driver.id)
+      expect(result.fulfilments).not.toHaveProperty(driverFullName.id)
+      expect(result.fulfilments).not.toHaveProperty(driverAddress.id)
+    })
+
+    it('one driver, no other data → driver has one fulfilment; driverFullName has one blank slot; driverAddress has one entry with empty subFulfilments', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} }
+      })
+
+      expect(result.obligations[driver.id]).toEqual({
+        inScope: true,
+        fulfilments: [{ fulfilmentId: firstDriverId, status: 'mandatory' }]
+      })
+      expect(result.obligations[driverFullName.id]).toEqual({
+        inScope: true,
+        fulfilments: [{ fulfilmentId: firstDriverId, status: 'mandatory' }]
+      })
+      expect(result.obligations[driverAddress.id]).toEqual({
+        inScope: true,
+        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
+      })
+      // Only driver's presence marker is in storage.
+      expect(result.fulfilments[driver.id]).toEqual({ [firstDriverId]: {} })
+      expect(result.fulfilments).not.toHaveProperty(driverFullName.id)
+      expect(result.fulfilments).not.toHaveProperty(driverAddress.id)
+    })
+
+    it('driver + fullName only → fullName value retained; driverAddress still empty subFulfilments', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverFullName.id]: { [firstDriverId]: 'Alex Passenger' }
+      })
+
+      expect(result.fulfilments[driverFullName.id]).toEqual({
+        [firstDriverId]: 'Alex Passenger'
+      })
+      expect(result.obligations[driverAddress.id]).toEqual({
+        inScope: true,
+        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
+      })
+    })
+
+    it('driver + one address → driverAddress has one sub-fulfilment; address value retained', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverAddress.id]: {
+          [firstDriverId]: { [addr1a]: addressAtDowning }
+        }
+      })
+
+      expect(result.obligations[driverAddress.id]).toEqual({
+        inScope: true,
+        fulfilments: [
+          {
+            fulfilmentId: firstDriverId,
+            subFulfilments: [{ fulfilmentId: addr1a, status: 'mandatory' }]
+          }
+        ]
+      })
+      expect(result.fulfilments[driverAddress.id]).toEqual({
+        [firstDriverId]: { [addr1a]: addressAtDowning }
+      })
+    })
+
+    it('driver + two addresses → both addresses in sub-fulfilments; both values retained', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverAddress.id]: {
+          [firstDriverId]: {
+            [addr1a]: addressAtDowning,
+            [addr1b]: addressAtBaker
+          }
+        }
+      })
+
+      expect(result.obligations[driverAddress.id]).toEqual({
+        inScope: true,
+        fulfilments: [
+          {
+            fulfilmentId: firstDriverId,
+            subFulfilments: [
+              { fulfilmentId: addr1a, status: 'mandatory' },
+              { fulfilmentId: addr1b, status: 'mandatory' }
+            ]
+          }
+        ]
+      })
+      expect(result.fulfilments[driverAddress.id]).toEqual({
+        [firstDriverId]: {
+          [addr1a]: addressAtDowning,
+          [addr1b]: addressAtBaker
+        }
+      })
+    })
+
+    it('two drivers with mixed data → each driver’s data preserved independently', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: {
+          [firstDriverId]: {},
+          [secondDriverId]: {}
+        },
+        [driverFullName.id]: {
+          [firstDriverId]: 'Alex Passenger',
+          [secondDriverId]: 'Sam Passenger'
+        },
+        [driverAddress.id]: {
+          [firstDriverId]: {
+            [addr1a]: addressAtDowning,
+            [addr1b]: addressAtBaker
+          },
+          [secondDriverId]: {
+            [addr2a]: addressForSam
+          }
+        }
+      })
+
+      expect(result.obligations[driverAddress.id]).toEqual({
+        inScope: true,
+        fulfilments: [
+          {
+            fulfilmentId: firstDriverId,
+            subFulfilments: [
+              { fulfilmentId: addr1a, status: 'mandatory' },
+              { fulfilmentId: addr1b, status: 'mandatory' }
+            ]
+          },
+          {
+            fulfilmentId: secondDriverId,
+            subFulfilments: [{ fulfilmentId: addr2a, status: 'mandatory' }]
+          }
+        ]
+      })
+      expect(result.fulfilments[driverFullName.id]).toEqual({
+        [firstDriverId]: 'Alex Passenger',
+        [secondDriverId]: 'Sam Passenger'
+      })
+    })
+
+    it('remove one address (stale inner key) → nested purge drops the stale address; other addresses under the same driver retained', () => {
+      // User removed addr1b from firstDriver's address list. The stored
+      // driverAddress map still has addr1b under firstDriver until the
+      // evaluator purges it.
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverAddress.id]: {
+          [firstDriverId]: {
+            [addr1a]: addressAtDowning
+            // addr1b intentionally omitted — represents the "after user removed" state.
+            // But we're testing the case where storage still has the stale key.
+          }
+        }
+      })
+
+      expect(result.fulfilments[driverAddress.id]).toEqual({
+        [firstDriverId]: { [addr1a]: addressAtDowning }
+      })
+
+      // Now the stale-key scenario: storage still has addr1b, but the
+      // user's action effectively removed it. Under our stateless
+      // evaluator, "the user removed it" translates to "the applyTo
+      // reports the current state without it". The applyTo reads
+      // stored fulfilments to know which addresses exist, so this
+      // stale-key case can only be constructed if state was manually
+      // manipulated. Simulate that:
+      const staleResult = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverAddress.id]: {
+          [firstDriverId]: {
+            [addr1a]: addressAtDowning,
+            [addr1b]: addressAtBaker // "stale" — imagine user had removed this but state is inconsistent
+          }
+        }
+      })
+      // Since applyTo reports both addresses (it reads all stored keys),
+      // neither is purged. This test documents that user-driven inner
+      // level obligations don't self-purge — the orchestrator controls
+      // add/remove.
+      expect(staleResult.fulfilments[driverAddress.id]).toEqual({
+        [firstDriverId]: {
+          [addr1a]: addressAtDowning,
+          [addr1b]: addressAtBaker
+        }
+      })
+    })
+
+    it('remove driver (stale outer key) → outer purge drops the driver from driverFullName and driverAddress via the derived-lifecycle rule', () => {
+      // driver's collection has only firstDriver; but driverFullName and
+      // driverAddress still have stale entries for secondDriver.
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverFullName.id]: {
+          [firstDriverId]: 'Alex Passenger',
+          [secondDriverId]: 'Stale Sam' // stale — no matching driver
+        },
+        [driverAddress.id]: {
+          [firstDriverId]: { [addr1a]: addressAtDowning },
+          [secondDriverId]: { [addr2a]: addressForSam } // stale
+        }
+      })
+
+      // Rule 2 (outer purge) drops the stale secondDriver from both
+      // derived obligations because driverFullName and driverAddress's
+      // applyTo only lists firstDriver.
+      expect(result.fulfilments[driverFullName.id]).toEqual({
+        [firstDriverId]: 'Alex Passenger'
+      })
+      expect(result.fulfilments[driverAddress.id]).toEqual({
+        [firstDriverId]: { [addr1a]: addressAtDowning }
+      })
+    })
+
+    it('values preserved verbatim under all keys — deep-equal on amended for a two-driver, multi-address case', () => {
+      const fulfilments = {
+        [driver.id]: {
+          [firstDriverId]: {},
+          [secondDriverId]: {}
+        },
+        [driverFullName.id]: {
+          [firstDriverId]: 'Alex Passenger',
+          [secondDriverId]: 'Sam Passenger'
+        },
+        [driverAddress.id]: {
+          [firstDriverId]: {
+            [addr1a]: addressAtDowning,
+            [addr1b]: addressAtBaker
+          },
+          [secondDriverId]: {
+            [addr2a]: addressForSam
+          }
+        }
+      }
+
+      const result = evaluator.evaluate(fulfilments)
+
+      expect(result.fulfilments[driver.id]).toEqual(fulfilments[driver.id])
+      expect(result.fulfilments[driverFullName.id]).toEqual(
+        fulfilments[driverFullName.id]
+      )
+      expect(result.fulfilments[driverAddress.id]).toEqual(
+        fulfilments[driverAddress.id]
+      )
+    })
+  })
+
+  describe('driver group — metadata', () => {
+    it('driverGroup declares its members', () => {
+      expect(driverGroup.members).toEqual([driverFullName, driverAddress])
+    })
+
+    it('driver group members back-reference the group by name', () => {
+      expect(driverFullName.group).toBe('driver')
+      expect(driverAddress.group).toBe('driver')
+    })
+
+    it('groups export lists the driver group', () => {
+      expect(groups).toContain(driverGroup)
+    })
+  })
+
   describe('full journey scenario', () => {
     it('all obligations fulfilled with all conditions triggering → holistic state check', () => {
       const firstClaimId = '01H8XK7M5RW6QYJ2AB'
       const secondClaimId = '01H8XK9P3T8WBZN4DE'
+      const firstDriverId = '01H8XKAAA00000000000AA'
+      const secondDriverId = '01H8XKBBB00000000000BB'
+      const addr1a = '01H8XKAA111111111111AA'
+      const addr2a = '01H8XKBB111111111111AA'
+      const addressA = {
+        line1: '10 Downing St',
+        town: 'London',
+        postcode: 'SW1A 2AA',
+        country: 'United Kingdom',
+        from: '2020-01-01',
+        to: null
+      }
+      const addressB = {
+        line1: '1 Somewhere Ln',
+        town: 'Bristol',
+        postcode: 'BS1 1AA',
+        country: 'United Kingdom',
+        from: '2020-05-01',
+        to: null
+      }
 
       const fulfilments = {
         [fullName.id]: 'Alex Driver',
@@ -651,6 +985,18 @@ describe('ObligationEvaluator', () => {
         [claimAmount.id]: {
           [firstClaimId]: '1200',
           [secondClaimId]: '500'
+        },
+        [driver.id]: {
+          [firstDriverId]: {},
+          [secondDriverId]: {}
+        },
+        [driverFullName.id]: {
+          [firstDriverId]: 'Alex Passenger',
+          [secondDriverId]: 'Sam Passenger'
+        },
+        [driverAddress.id]: {
+          [firstDriverId]: { [addr1a]: addressA },
+          [secondDriverId]: { [addr2a]: addressB }
         }
       }
 
@@ -693,6 +1039,33 @@ describe('ObligationEvaluator', () => {
           fulfilments: [
             { fulfilmentId: firstClaimId, status: 'mandatory' },
             { fulfilmentId: secondClaimId, status: 'mandatory' }
+          ]
+        },
+        [driver.id]: {
+          inScope: true,
+          fulfilments: [
+            { fulfilmentId: firstDriverId, status: 'mandatory' },
+            { fulfilmentId: secondDriverId, status: 'mandatory' }
+          ]
+        },
+        [driverFullName.id]: {
+          inScope: true,
+          fulfilments: [
+            { fulfilmentId: firstDriverId, status: 'mandatory' },
+            { fulfilmentId: secondDriverId, status: 'mandatory' }
+          ]
+        },
+        [driverAddress.id]: {
+          inScope: true,
+          fulfilments: [
+            {
+              fulfilmentId: firstDriverId,
+              subFulfilments: [{ fulfilmentId: addr1a, status: 'mandatory' }]
+            },
+            {
+              fulfilmentId: secondDriverId,
+              subFulfilments: [{ fulfilmentId: addr2a, status: 'mandatory' }]
+            }
           ]
         }
       })

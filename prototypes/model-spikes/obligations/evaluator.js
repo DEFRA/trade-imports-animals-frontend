@@ -1,4 +1,4 @@
-import { obligations as defaultObligations } from './obligations.js'
+import { obligations as defaultObligations } from './obligations/obligations.js'
 
 /**
  * ObligationEvaluator.
@@ -43,14 +43,18 @@ export function createObligationEvaluator({
   // longer reflect the implication each obligation returned from its
   // applyTo.
   //
-  // The fulfilments map has two levels:
+  // The fulfilments map can have up to three levels:
   //   - single-cardinality obligation → its value lives directly under
   //     the obligation's id
-  //   - indexed obligation → a nested map lives under the obligation's
-  //     id, keyed by fulfilmentId (e.g. one per user-added claim, or one
-  //     per selected modification)
+  //   - indexed obligation → a map lives under the obligation's id,
+  //     keyed by fulfilmentId (one per user-added claim, one per
+  //     selected modification, etc.)
+  //   - nested-indexed obligation → a two-level nested map lives under
+  //     the obligation's id; outer keyed by outer fulfilmentId, inner
+  //     keyed by inner fulfilmentId (e.g. driverAddress: outer = driver
+  //     id, inner = address id per driver)
   //
-  // Two rules, applied per obligation:
+  // Three rules, applied per obligation:
   //
   //   1. If the obligation's implication has inScope: false, drop its
   //      top-level entry from the fulfilments map.
@@ -58,8 +62,8 @@ export function createObligationEvaluator({
   //   2. If the obligation is indexed and in-scope (its implication
   //      includes a `fulfilments` array of per-fulfilment entries), that
   //      array is the authoritative list of fulfilmentIds that should
-  //      exist. Any stored fulfilmentId not in that list is stale and
-  //      gets dropped from the nested map.
+  //      exist at the outer level. Any stored outer key not in that list
+  //      is stale and gets dropped.
   //
   //      Example: modificationCost has stored
   //        { turbo: '800', alloys: '200' }
@@ -69,12 +73,28 @@ export function createObligationEvaluator({
   //      This pass drops 'alloys' from the stored map, leaving
   //        { turbo: '800' }
   //
-  // The second rule is what powers the derived lifecycle. When the user
-  // removes a controller value, the derived obligation's applyTo stops
-  // including that fulfilmentId in its returned array — this pass then
-  // removes it from storage. For user-driven indexed obligations the
-  // second rule is a no-op: their applyTo returns one entry for every
-  // fulfilmentId already in storage, so nothing is ever stale.
+  //   3. If any entry in the implication's `fulfilments` includes a
+  //      `subFulfilments` array (nested indexing), that array is the
+  //      authoritative list of inner fulfilmentIds under that outer key.
+  //      Any stored inner key not in the list is stale and gets dropped.
+  //
+  //      Example: driverAddress has stored
+  //        { 'driver-1': { 'addr-a': {...}, 'addr-b': {...} } }
+  //      but the user has removed 'addr-b' from driver-1's address list.
+  //      applyTo returns
+  //        { inScope: true, fulfilments: [{
+  //            fulfilmentId: 'driver-1',
+  //            subFulfilments: [{ fulfilmentId: 'addr-a', ... }]
+  //          }] }
+  //      This pass drops 'addr-b' from the nested map, leaving
+  //        { 'driver-1': { 'addr-a': {...} } }
+  //
+  // Rule 2 powers the derived lifecycle for single-level indexed
+  // obligations. Rule 3 extends the same idea to nested indexed
+  // obligations. For user-driven indexed obligations both rules are
+  // effectively no-ops: their applyTo emits one entry for every
+  // fulfilmentId already in storage, so nothing is ever stale from
+  // their own perspective.
   const removeOutOfScopeFulfilments = (
     fulfilments,
     implicationsByObligation
@@ -88,16 +108,33 @@ export function createObligationEvaluator({
         continue
       }
       if (implication.fulfilments && result[obligationId]) {
-        const validFulfilmentIds = new Set(
+        // Rule 2: outer-level purge.
+        const validOuterIds = new Set(
           implication.fulfilments.map((f) => f.fulfilmentId)
         )
-        const storedFulfilments = { ...result[obligationId] }
-        for (const fulfilmentId of Object.keys(storedFulfilments)) {
-          if (!validFulfilmentIds.has(fulfilmentId)) {
-            delete storedFulfilments[fulfilmentId]
+        const storedOuter = { ...result[obligationId] }
+        for (const outerKey of Object.keys(storedOuter)) {
+          if (!validOuterIds.has(outerKey)) {
+            delete storedOuter[outerKey]
           }
         }
-        result[obligationId] = storedFulfilments
+        // Rule 3: nested (inner-level) purge for entries with
+        // subFulfilments.
+        for (const entry of implication.fulfilments) {
+          if (entry.subFulfilments && storedOuter[entry.fulfilmentId]) {
+            const validInnerIds = new Set(
+              entry.subFulfilments.map((sf) => sf.fulfilmentId)
+            )
+            const storedInner = { ...storedOuter[entry.fulfilmentId] }
+            for (const innerKey of Object.keys(storedInner)) {
+              if (!validInnerIds.has(innerKey)) {
+                delete storedInner[innerKey]
+              }
+            }
+            storedOuter[entry.fulfilmentId] = storedInner
+          }
+        }
+        result[obligationId] = storedOuter
       }
     }
     return result

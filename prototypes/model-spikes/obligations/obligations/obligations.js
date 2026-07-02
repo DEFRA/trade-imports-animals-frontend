@@ -356,6 +356,114 @@ export const claimGroup = {
   members: [claimType, claimAmount]
 }
 
+// -------------------------------------------------------------------------
+// Nested indexing exemplar: named drivers, each with a full name and an
+// indexed collection of addresses.
+//
+// Structure (see §S. Nested indexing in obligations.md):
+//   - driver — outer collection (indexed, user-driven). Each fulfilment is
+//     one driver; the value under the driver's id is a presence marker
+//     (empty object).
+//   - driverFullName — one string per driver. Derived from driver:
+//     fulfilmentIds are the driver ids.
+//   - driverAddress — nested indexed. Outer keyed by driver fulfilmentId
+//     (derived from driver); inner keyed by opaque address fulfilmentId
+//     (user-driven at the inner level).
+//   - driverGroup — metadata declaring the members (mirrors claimGroup).
+//
+// This iteration doesn't enforce 5-year address-coverage; that's a
+// cross-fulfilment quantifier rule captured as a follow-up. Address values
+// are opaque to the evaluator; tests use realistic shapes like
+// { line1, town, postcode, country, from, to } but the model doesn't
+// interpret them.
+// -------------------------------------------------------------------------
+export const driver = {
+  id: '5a6b7c8d-9e0f-4123-8456-789abcdef012',
+  name: 'driver',
+  cardinality: 'indexed',
+  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
+  applyTo: (fulfilments) => {
+    const collection = fulfilments[driver.id] ?? {}
+    return {
+      inScope: true,
+      fulfilments: Object.keys(collection).map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    }
+  }
+}
+
+// Derived from driver: one full-name entry per driver. FulfilmentIds are
+// the driver ids themselves.
+export const driverFullName = {
+  id: '6b7c8d9e-0f12-4234-8567-89abcdef0123',
+  name: 'driverFullName',
+  group: 'driver',
+  cardinality: 'indexed',
+  indexedBy: {
+    source: 'derived',
+    controllingObligation: 'driver',
+    mutability: 'edit-only'
+  },
+  applyTo: (fulfilments) => {
+    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
+    return {
+      inScope: true,
+      fulfilments: driverIds.map((fulfilmentId) => ({
+        fulfilmentId,
+        status: 'mandatory'
+      }))
+    }
+  }
+}
+
+// Nested indexed: outer keyed by driver id (derived from driver); inner
+// keyed by opaque address id (user-driven at the inner level). Each
+// entry in the implication's `fulfilments` carries `subFulfilments`
+// listing that driver's addresses.
+export const driverAddress = {
+  id: '7c8d9e0f-1234-4345-8678-9abcdef01234',
+  name: 'driverAddress',
+  group: 'driver',
+  cardinality: 'indexed',
+  indexedBy: {
+    source: 'derived',
+    controllingObligation: 'driver',
+    mutability: 'edit-only', // outer: bound to driver membership
+    nested: {
+      // inner level: user adds/removes addresses freely
+      source: 'user',
+      mutability: 'edit-add-remove'
+    }
+  },
+  applyTo: (fulfilments) => {
+    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
+    const stored = fulfilments[driverAddress.id] ?? {}
+    return {
+      inScope: true,
+      fulfilments: driverIds.map((driverFulfilmentId) => {
+        const perDriver = stored[driverFulfilmentId] ?? {}
+        return {
+          fulfilmentId: driverFulfilmentId,
+          subFulfilments: Object.keys(perDriver).map((addressId) => ({
+            fulfilmentId: addressId,
+            status: 'mandatory'
+          }))
+        }
+      })
+    }
+  }
+}
+
+export const driverGroup = {
+  id: '8d9e0f12-3456-4456-8789-abcdef012345',
+  name: 'driver',
+  cardinality: 'indexed',
+  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
+  members: [driverFullName, driverAddress]
+}
+
 export const obligations = [
   fullName,
   preferredName,
@@ -372,7 +480,10 @@ export const obligations = [
   modificationCost,
   hasClaims,
   claimType,
-  claimAmount
+  claimAmount,
+  driver,
+  driverFullName,
+  driverAddress
 ]
 
-export const groups = [claimGroup]
+export const groups = [claimGroup, driverGroup]

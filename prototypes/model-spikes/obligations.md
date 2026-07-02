@@ -310,7 +310,20 @@ type Implication = {
   }>
   fulfilments?: Array<FulfilmentState> // only for indexed cardinality
 }
+
+type FulfilmentState = {
+  fulfilmentId: string
+  status?: 'mandatory' | 'optional'
+  reasons?: Array<Reason>
+  subFulfilments?: Array<FulfilmentState> // for nested indexing (see §S)
+}
 ```
+
+`FulfilmentState` is recursive: entries in the outer `fulfilments`
+array can carry a `subFulfilments` array for **nested indexed**
+obligations — a group member whose fulfilmentIds are scoped within
+an outer fulfilmentId (e.g. address history per driver). See §S for
+the depth-1 exemplar and the storage shape.
 
 Each obligation carries its own `applyTo` function inline in
 `obligations.js`; the top-level evaluator's `evaluate` calls each
@@ -862,8 +875,14 @@ separate obligations without a group tie. Groups are for fields that
 describe **one event, one record, one thing** — where losing the
 pairing would lose meaning.
 
-**Nested indexing is an extension point** — see §S in
-§What's still open for the shape of the concern.
+**Nested indexing is supported.** A group member can itself be an
+indexed obligation whose fulfilmentIds are scoped **within** an outer
+fulfilmentId — e.g. the `driver` group's `driverAddress` member is
+nested indexed (each driver has their own indexed collection of
+addresses). See §S for the exemplar, the storage shape
+(hierarchical), and the evaluator's third purge rule. The claim
+group (§Obligation groups exemplar above) is depth-0; the driver
+group is depth-1.
 
 ## Staleness
 
@@ -2356,45 +2375,124 @@ failing-lookup case (and likely colleague input on operational
 policy) — no value in pinning the shape before we know which
 failure modes we actually need to handle.
 
-### S. Nested indexing (extension point)
+### S. Nested indexing — implemented pattern
 
 Compound records modelled as groups (§Obligation groups) work
 naturally when a group's members are all single-cardinality per
 group-fulfilmentId — e.g. one type and one amount per claim.
 
-**Nested indexing** would let a group member itself be an indexed
+**Nested indexing** lets a group member itself be an indexed
 obligation whose fulfilmentIds are scoped **within** the outer
-group's fulfilmentId. Contrived exemplar (do not build): each
-claim could have its own indexed list of "other parties involved" —
-a nested collection scoped by the outer claim's id.
+group's fulfilmentId. Concrete exemplar in the spike:
 
-Fulfilment storage under nested indexing would need something like
-either:
+- `driver` — outer collection (indexed, user-driven). Each
+  fulfilment is one driver.
+- `driverFullName` — member; one string per driver (derived from
+  `driver`).
+- `driverAddress` — **nested indexed** member: outer keyed by
+  driver fulfilmentId; inner keyed by opaque address fulfilmentId.
+  Each driver has their own indexed collection of addresses.
 
-- **Hierarchical keys** — `fulfilments[otherParty.id][outerClaimId][innerPartyId] = value`. Fixed depth per obligation; matches the nesting structure.
-- **Tuple keys** — `fulfilments[otherParty.id][(outerClaimId, innerPartyId)] = value`. Flatter storage; the tuple encodes the nesting.
+**Storage shape** — **hierarchical** (chosen over tuple keys —
+mirrors the nesting; the evaluator's per-fulfilmentId purge extends
+naturally):
 
-Evaluator complexity grows: each nested-indexed member's
-`evaluate` needs to know the outer fulfilmentIds; scope-exit
-purges cascade recursively; cross-member rules can span nested
-levels.
+```jsonc
+fulfilments[driverAddress.id] = {
+  "driver-1-uuid": {
+    "addr-1a-uuid": {
+      line1: "10 Downing St",
+      town: "London",
+      postcode: "SW1A 2AA",
+      country: "United Kingdom",
+      from: "2020-01-01",
+      to: "2023-06-30"
+    },
+    "addr-1b-uuid": {
+      /* … */
+    }
+  },
+  "driver-2-uuid": {
+    "addr-2a-uuid": {
+      /* … */
+    }
+  }
+}
+```
 
-**Design questions to resolve when this is picked up:**
+**Nested `indexedBy`.** A nested-indexed obligation declares
+`indexedBy.nested` for the inner level's source × mutability:
 
-- Which storage shape (hierarchical vs. tuple keys). Persistence
-  layer implications differ.
-- Whether nested groups compose (group-within-group), and how deep
-  the nesting can go before the model becomes too heavy.
-- Whether the doc's fulfilmentId conventions (source × mutability)
-  apply at each nesting level or only the outermost.
-- Interaction with derived-pattern controllers (an outer derived
-  group whose members are inner user-driven groups, etc.).
+```jsonc
+{
+  "cardinality": "indexed",
+  "indexedBy": {
+    "source": "derived", // outer level: derived from driver
+    "controllingObligation": "driver",
+    "mutability": "edit-only",
+    "nested": {
+      // inner level: user-driven address list
+      "source": "user",
+      "mutability": "edit-add-remove"
+    }
+  }
+}
+```
 
-Most real journeys can be flattened — e.g. "additional drivers,
-each with their own claims" becomes two flat indexed groups
-(`driver`, `driverClaim`) with cross-reference obligations tying
-each driverClaim to a driver by fulfilmentId. Deferred until a
-concrete case demands true nesting.
+**Implication shape.** Entries in the outer `fulfilments` array
+carry `subFulfilments` listing the inner fulfilmentIds. See
+`FulfilmentState` in §The ObligationEvaluator for the recursive
+type.
+
+```ts
+{
+  inScope: true,
+  fulfilments: [
+    {
+      fulfilmentId: "driver-1-uuid",
+      subFulfilments: [
+        { fulfilmentId: "addr-1a-uuid", status: "mandatory" },
+        { fulfilmentId: "addr-1b-uuid", status: "mandatory" }
+      ]
+    }
+  ]
+}
+```
+
+**Evaluator purge extension.** `removeOutOfScopeFulfilments` now
+has a third rule: for each outer entry whose implication carries
+`subFulfilments`, the inner keys of the stored nested map are
+purged against the sub-list. This is what makes removing an
+address from a driver's history purge just that address (rather
+than needing coordinated storage writes elsewhere). See the code
+comment on the function for the full three-rule structure and a
+before/after example.
+
+**Depth-1 today.** The exemplar has exactly one level of
+sub-indexing (driver → addresses). `FulfilmentState.subFulfilments`
+is typed recursively, so composing depth ≥ 2 is expressible; the
+evaluator's purge would need to be extended to recurse further.
+Not currently needed; most real journeys can be flattened.
+
+**Non-goals for the exemplar:**
+
+- **5-year address-coverage rule** — a cross-fulfilment quantifier
+  rule ("union of from-to periods covers 5 years without gaps").
+  Would live inside `driverAddress.applyTo` (or at a group-level
+  completeness check when that lands). Deferred until a concrete
+  service needs it.
+- **Value-shape validation** — address values are opaque to the
+  evaluator. Tests use realistic shapes but nothing checks the
+  fields. Consistent with the stance that validation is a separate
+  future concern.
+
+**Design decisions still open** (revisit as more nested cases
+surface):
+
+- Whether nested groups can compose (group-within-group). Today
+  members are declared individually; a group is metadata only.
+- Interactions with pure derived-pattern controllers where the
+  outer is derived and inner is derived from a different source.
 
 ### R. Submission-block / Cannot Submit Journey state (extension point)
 
