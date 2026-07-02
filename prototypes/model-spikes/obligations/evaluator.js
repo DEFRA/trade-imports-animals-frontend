@@ -22,12 +22,12 @@ import { fileURLToPath } from 'node:url'
  */
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-const shippedObligations = JSON.parse(
+const parsedObligations = JSON.parse(
   fs.readFileSync(path.join(dirname, 'obligations.json'), 'utf8')
 )
 
 export function createObligationEvaluator({
-  obligations = shippedObligations
+  obligations = parsedObligations
 } = {}) {
   const idByName = new Map(obligations.map((o) => [o.name, o.id]))
   const obligationIds = new Set(obligations.map((o) => o.id))

@@ -20,7 +20,7 @@
   {
     "id": "f1e2d3c4-b5a6-4978-8697-1a2b3c4d5e6f",
     "name": "excessAmount",
-    "type": "currency",
+    "type": "monetaryAmount",
     "cardinality": "single"
   }
 ]

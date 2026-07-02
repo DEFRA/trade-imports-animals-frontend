@@ -95,7 +95,7 @@ describe('ObligationEvaluator', () => {
         [fullNameId]: 'Alex Driver',
         [dateOfBirthId]: '1985-03-27',
         [hasVoluntaryExcessId]: true,
-        [excessAmountId]: 250
+        [excessAmountId]: '250'
       }
 
       const first = evaluator.evaluate(fulfilments)
@@ -111,7 +111,7 @@ describe('ObligationEvaluator', () => {
         [fullNameId]: 'Alex Driver',
         [dateOfBirthId]: '1985-03-27',
         [hasVoluntaryExcessId]: true,
-        [excessAmountId]: 250
+        [excessAmountId]: '250.50'
       }
 
       const result = evaluator.evaluate(fulfilments)
