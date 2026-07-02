@@ -195,8 +195,8 @@ Current sketch of the data shape:
 | **Cardinality**                                                      | `single` (one fulfilment per user, e.g. date of birth) or `indexed` (a collection of fulfilments, e.g. address history, multi-select with per-item follow-ups). See §Single vs indexed obligations.                                                                                                               |
 | **Scoping (in-scope / out-of-scope, mandatory / optional, reasons)** | NOT on the obligation. Computed by the evaluation engine — see §The evaluation engine.                                                                                                                                                                                                                            |
 | **Effective status when multiple reasons fire**                      | "Most restrictive wins" — if any reason says mandatory, the obligation is mandatory for journey completion.                                                                                                                                                                                                       |
-| **Status flip while in scope**                                       | An obligation can move between mandatory and optional based on later fulfilments, without leaving scope. Data is preserved across status flips.                                                                                                                                                                   |
-| **Scope exit**                                                       | When the obligation is fully out of scope, its data is **actively cleared** (consistent with the canvas "delete conditional data" steer).                                                                                                                                                                         |
+| **Status flip while in scope**                                       | An obligation can move between mandatory and optional based on later fulfilments, without leaving scope. Data is preserved across status flips. This is the `mandatoryWhen` pattern — see §Conditional obligation patterns.                                                                                       |
+| **Scope exit**                                                       | When the obligation is fully out of scope, its data is **actively cleared** (consistent with the canvas "delete conditional data" steer). This is the `appliesWhen` pattern — see §Conditional obligation patterns. Purges are silent by design; no audit hook required.                                          |
 | **Convergent obligations**                                           | A single obligation can be brought into scope for multiple reasons. The data remains unitary — edits from one presentation propagate to others. There are NOT two obligations on the same field; there's one obligation that the scoping function activates for several reasons.                                  |
 | **Completion policy**                                                | Three modes need supporting per journey: silently-skipped / must-address / gate-collected at end. Resolved per-journey default with per-obligation override.                                                                                                                                                      |
 | **Sub-journey result fan-out**                                       | Closed (was open question G). A sub-journey integrates via a callback that returns a single lookup id. The obligation's canonical data IS the id; the orchestrator dereferences when needed. There is no multi-field fan-out at the obligation level — one sub-journey = one obligation.                          |
@@ -325,6 +325,80 @@ idempotent (converges in one step).
 
 See §Persistence for the model-versioning rationale.
 
+### Conditional obligation patterns — `mandatoryWhen` and `appliesWhen`
+
+Per-obligation evaluator functions author two distinct kinds of
+conditional logic, referred to throughout this doc as
+**`mandatoryWhen`** and **`appliesWhen`**. Both flow through the same
+per-obligation return shape (`{ inScope, status?, reasons? }`); they
+differ in which field is conditional and what happens to a stored
+fulfilment when the condition flips false.
+
+**`mandatoryWhen`** — the obligation is **always in-scope**; its
+`status` flips between `'mandatory'` and `'optional'` based on other
+fulfilments. The field is structurally present regardless of the
+condition. **Value is retained** even when the requirement lifts.
+Corresponds to the "Status flip while in scope" row in §Key
+properties.
+
+```ts
+// Author return-shape when the condition holds:
+{ inScope: true, status: 'mandatory', reasons: [{ code: '...', explanation: '...' }] }
+// Author return-shape when the condition does not hold:
+{ inScope: true, status: 'optional' }
+```
+
+**`appliesWhen`** — the obligation is **in-scope only when the
+condition holds**. When false, the obligation is out-of-scope; **any
+stored fulfilment is purged** from the amended fulfilments (scope-exit
+rule from §Key properties and §Fulfilments storage). The field
+effectively disappears from the model when the condition is false.
+
+```ts
+// Author return-shape when the condition holds:
+{ inScope: true, status: 'mandatory', reasons: [{ code: '...', explanation: '...' }] }
+// Author return-shape when the condition does not hold:
+{ inScope: false }
+```
+
+**Choosing between them.** Use `appliesWhen` when the field is
+_meaningless_ without the trigger condition — e.g. `excessAmount`
+only makes sense when the user has opted for voluntary excess. Use
+`mandatoryWhen` when the field is meaningful regardless of the
+trigger, but only _required_ when the trigger holds — e.g.
+`licenseCountryIssued` is meaningful for anyone (defaults to UK for
+standard licenses) but only _required_ when the license type is
+non-standard.
+
+The distinction matters for UX and audit: `appliesWhen` fields
+disappear on scope exit and their prior values vanish; `mandatoryWhen`
+fields stay visible and the user's answer is preserved.
+
+**Purges are silent by design.** The evaluator emits no audit hook
+or log when a fulfilment is dropped from the amended set — neither
+for the scope-exit purge here nor for the tolerate-and-amend drop
+in §Model versioning. No such requirement is anticipated. If
+service-specific audit needs surface later, the **orchestrator** is
+the intended log point (evaluator purity is more valuable than
+convenience). Don't add logging to per-obligation evaluator
+functions.
+
+**Reason-code convention** (per §J):
+
+- `mandatoryWhen` codes carry a `.mandatory.` segment — e.g.
+  `obligation.<name>.mandatory.becauseX`.
+- `appliesWhen` codes carry an `.applicable.` segment — e.g.
+  `obligation.<name>.applicable.becauseX`.
+
+Both patterns are per-obligation authoring choices made **in the
+evaluator function**, not in the obligation record. The obligation
+record stays purely data (identifiers, type, cardinality); the
+pattern is enacted by the evaluator function's returned shape. This
+keeps the `obligations.json` model portable and language-agnostic
+per §Trade-off accepted, while pushing the conditional decisions into
+the evaluator implementation where algorithm-shaped rules live
+(§Evaluation is external to the Obligation model).
+
 ### The JourneyEvaluator (Flow layer)
 
 Modelled as a **collection of small pure functions**, each answering
@@ -443,9 +517,14 @@ An `indexed` obligation produces a collection of fulfilments:
 //   }
 ```
 
-Examples in this doc show obligation `name` values as outer keys of
-the fulfilments map for readability; real storage uses obligation
-`id` (see §Persistence → Obligation identifiers).
+**Note on fulfilment map keys.** Examples in this doc — including the
+sketches immediately above and every fulfilments-map illustration in
+§Fulfilments storage — show obligation `name` values as outer keys
+for readability. **Real storage always uses obligation `id`** (the
+persistent UUID); see §Persistence → Obligation identifiers for the
+rationale. Any tests or code that constructs a fulfilments map must
+use `id` — see the "fulfilments are keyed by stable id, not by name"
+guard test in the ObligationEvaluator spike (`evaluator.test.js`).
 
 ### The `indexedBy` shape — source × mutability
 
@@ -533,9 +612,7 @@ several journeys open simultaneously, e.g. in different browser tabs).
 Within a journey, the **fulfilments map** is keyed by obligation `id`
 (see §Persistence → Obligation identifiers). Each entry is either a
 single value (for single-cardinality obligations) or a nested map of
-fulfilmentId → value (for indexed obligations). Examples in this
-section show obligation `name` values as outer keys for readability;
-real storage uses `id`.
+fulfilmentId → value (for indexed obligations).
 
 A single-cardinality obligation needs no separate per-instance
 identifier: `fulfilmentId === obligationId` by convention, and the
@@ -544,12 +621,19 @@ obligation `id` alone addresses the (at most one) fulfilment.
 For indexed obligations, the inner map's keys are per-fulfilment
 identifiers whose shape varies by `source`. Three illustrative shapes:
 
-**Source = `user`** — opaque ids generated by the orchestrator each time
-the user adds a fulfilment (e.g. ULID/UUID):
+**Source = `user`** — opaque ids generated by the orchestrator each
+time the user adds a fulfilment (e.g. ULID/UUID). The first example
+below shows the **actual storage shape** with the outer key as the
+obligation's UUID `id`; subsequent examples use `name` values as
+outer keys for readability, but real storage always uses `id`.
 
 ```jsonc
 journey.fulfilments = {
-  "address": {
+  // Outer key is the `address` obligation's `id` (UUID from
+  // `obligations.json`). Every example that follows in this section
+  // shows `name` as the outer key for readability; the underlying
+  // storage always uses `id` like this.
+  "9a1f2b3c-4d5e-4f60-8a91-2c3d4e5f6a7b": {
     "01H8XK7M5RW6QYJ2AB": {
       "value": { "from": "2020-01-01", "to": "2023-06-30", "country": "UK" }
     },
@@ -560,13 +644,15 @@ journey.fulfilments = {
 }
 ```
 
-The keys are meaningless to the user but stable for the orchestrator.
-Survive reorder, delete, reload.
+The inner keys (`01H8XK…`) are meaningless to the user but stable for
+the orchestrator. Survive reorder, delete, reload.
 
 **Source = `derived`** — the controlling obligation's answer values
 themselves are the keys; meaningful and semantic:
 
 ```jsonc
+// Outer keys shown as `name` for readability — real storage uses `id`,
+// as demonstrated in the source=`user` example above.
 journey.fulfilments = {
   "modifications": { "value": ["turbo", "alloys"] }, // controller (single)
   "modificationCost": {
@@ -586,6 +672,7 @@ Adding `"suspension"` to the controller spawns a fresh blank
 ids, policy reference numbers, domain codes):
 
 ```jsonc
+// Outer key shown as `name` for readability — real storage uses `id`.
 journey.fulfilments = {
   "driver": {
     "POL-2024-DRV-001": { "value": { "name": "Alex Driver", "...": "..." } },
@@ -600,6 +687,7 @@ provided ids; user-added fulfilments get orchestrator-generated opaque
 ids:
 
 ```jsonc
+// Outer key shown as `name` for readability — real storage uses `id`.
 journey.fulfilments = {
   "driver": {
     "POL-2024-DRV-001": { "value": { "name": "Alex Driver", "...": "..." } }, // seeded
