@@ -1,0 +1,3 @@
+{
+  "$comment": "Baseline walker fixture — a brand-new journey with nothing answered, the alignment walker's default neutral context. Values are keyed by obligation NAME (indexed obligations pre-shaped as { fulfilmentId: { value } }); tests/helpers/render-page.js translates to id-keyed fulfilments the way dump.js does."
+}

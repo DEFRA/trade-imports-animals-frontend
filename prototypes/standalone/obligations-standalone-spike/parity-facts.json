@@ -1,0 +1,573 @@
+{
+  "$comment": "Parity baseline extracted from prototypes/standalone/spike-a (model/journey.json is the source of truth) plus prototypes/e2e/{journey.js, task-list-with-linear-tasks.spec.js, mandatory-fields.spec.js, invalidation.spec.js}. The new obligations spike must match this behaviour in the browser.",
+  "base_path": "/prototype-standalone/spike-a/task-list-with-linear-tasks",
+  "pages": [
+    {
+      "id": "email",
+      "url": "{BASE}/{id}/email",
+      "title": "Give us your email to begin",
+      "kind": "section",
+      "fields": [
+        {
+          "name": "email",
+          "label": "Email address",
+          "type": "email",
+          "required_at_save": true,
+          "validation": "Joi string.email (tlds off), required — blank blocks POST with 'Email is required'; bad format 'Enter a valid Email' (model/journey.json:7, validation/compile/field-schemas.js:10-15,81-91)"
+        }
+      ]
+    },
+    {
+      "id": "about-you",
+      "url": "{BASE}/{id}/about-you",
+      "title": "About you",
+      "kind": "section",
+      "fields": [
+        {
+          "name": "fullName",
+          "label": "Full name",
+          "type": "text",
+          "required_at_save": true
+        },
+        {
+          "name": "preferredName",
+          "label": "What should we call you?",
+          "type": "text",
+          "required_at_save": false
+        },
+        {
+          "name": "phone",
+          "label": "UK telephone number",
+          "type": "tel",
+          "required_at_save": false,
+          "validation": "model type 'tel' falls through to textSchema with no pattern — any string accepted (field-schemas.js:67-79)"
+        },
+        {
+          "name": "postcode",
+          "label": "Postcode",
+          "type": "formatted",
+          "pattern": "^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$",
+          "required_at_save": false,
+          "validation": "pattern-checked only when filled ('Enter a valid Postcode')"
+        },
+        {
+          "name": "country",
+          "label": "Country of residence",
+          "type": "select",
+          "options": ["england", "scotland", "wales", "northern-ireland"],
+          "required_at_save": false
+        },
+        {
+          "name": "dateOfBirth",
+          "label": "Date of birth (day/month/year triple, namePrefix dateOfBirth)",
+          "type": "date",
+          "required_at_save": false,
+          "validation": "0 parts filled passes; 1-2 parts or an impossible date blocks with 'Date of birth must be a real date', error keyed dateOfBirth-day (validation/compile/date-field.js:19-37). min-age-17 business rule fires only at CYA submit (journey.json:140-147)"
+        }
+      ]
+    },
+    {
+      "id": "your-vehicle",
+      "url": "{BASE}/{id}/your-vehicle",
+      "title": "Your vehicle",
+      "kind": "section",
+      "fields": [
+        {
+          "name": "registration",
+          "label": "Registration number",
+          "type": "formatted",
+          "pattern": "^[A-Za-z]{2}\\d{2}\\s?[A-Za-z]{3}$",
+          "required_at_save": true,
+          "validation": "required + pattern ('Registration is required' / 'Enter a valid Registration')"
+        },
+        {
+          "name": "make",
+          "label": "Make",
+          "type": "text",
+          "required_at_save": false,
+          "notes": "native datalist suggestions (Audi/BMW/Ford/Nissan/Toyota/Volkswagen)"
+        },
+        {
+          "name": "model",
+          "label": "Model",
+          "type": "text",
+          "required_at_save": false
+        },
+        {
+          "name": "year",
+          "label": "Year of manufacture",
+          "type": "number",
+          "min": 1900,
+          "max": 2100,
+          "required_at_save": false,
+          "validation": "integer 1900-2100 when filled ('Year must be a whole number' / 'Year is out of range')"
+        },
+        {
+          "name": "estimatedValue",
+          "label": "Estimated value",
+          "type": "currency",
+          "required_at_save": false,
+          "validation": "positive number when filled"
+        },
+        {
+          "name": "vehiclePhoto",
+          "label": "Upload a photo of your vehicle (optional)",
+          "type": "file",
+          "required_at_save": false,
+          "notes": "render-only; not in journey.json, never saved"
+        }
+      ]
+    },
+    {
+      "id": "driving-history",
+      "url": "{BASE}/{id}/driving-history",
+      "title": "Driving history",
+      "kind": "section",
+      "fields": [
+        {
+          "name": "yearsNoClaims",
+          "label": "Years of no-claims discount",
+          "type": "number",
+          "min": 0,
+          "max": 99,
+          "required_at_save": false
+        },
+        {
+          "name": "hadClaims",
+          "label": "Have you had any claims in the last 5 years? (radios yes/no)",
+          "type": "boolean",
+          "required_at_save": true,
+          "validation": "'Had claims is required' on blank submit"
+        },
+        {
+          "name": "penaltyPoints",
+          "label": "Penalty points",
+          "type": "number",
+          "min": 0,
+          "max": 12,
+          "required_at_save": false
+        }
+      ]
+    },
+    {
+      "id": "claims",
+      "kind": "loop",
+      "appliesWhen": { "field": "hadClaims", "eq": "yes" },
+      "arrayKey": "claims",
+      "done_flag": "claimsDone",
+      "pages": [
+        {
+          "url": "{BASE}/{id}/claims",
+          "title": "Claims you have added",
+          "notes": "Manage list: summary rows 'Claim N' with Remove action; buttons 'Add a claim' (or 'Add another claim' once rows exist, secondary, name=action value=add) and 'Continue' (action=continue → markClaimsDone + navNext to cover-type)."
+        },
+        {
+          "url": "{BASE}/{id}/claims/add",
+          "title": "Add a claim",
+          "fields": [
+            {
+              "name": "claimType",
+              "label": "What type of claim was it?",
+              "type": "radio",
+              "options": ["accident", "theft", "windscreen", "other"],
+              "required_at_save": false,
+              "notes": "journey.json item.fields declares claimType required (journey.json:64-74) but the runtime never enforces it — routes/claims.js validates only claimsAddSchema (claimAmount currency); a typeless claim renders as 'Not provided'"
+            },
+            {
+              "name": "claimAmount",
+              "label": "Approximate claim amount",
+              "type": "currency",
+              "required_at_save": false,
+              "validation": "optional; when filled must be whole pounds > 0 ('Claim amount must be a whole number of pounds greater than 0, like 1500') — routes/claims.js:29-34"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cover-type",
+      "url": "{BASE}/{id}/cover-type",
+      "title": "Choose your cover",
+      "kind": "section",
+      "fields": [
+        {
+          "name": "coverType",
+          "label": "Which cover do you want?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "comprehensive",
+              "hint": "Covers you, your car and other people"
+            },
+            {
+              "value": "third-party-fire-theft",
+              "hint": "Covers other people, plus fire and theft of your car"
+            },
+            { "value": "third-party", "hint": "Covers other people only" }
+          ],
+          "required_at_save": true
+        },
+        {
+          "name": "voluntaryExcess",
+          "label": "Do you want to add a voluntary excess? (radios yes/no)",
+          "type": "boolean",
+          "required_at_save": false
+        },
+        {
+          "name": "excessAmount",
+          "label": "Voluntary excess amount",
+          "type": "currency",
+          "required_at_save": "conditional",
+          "requiredWhen": { "field": "voluntaryExcess", "eq": "yes" },
+          "validation": "conditional reveal under Yes; when voluntaryExcess=yes and blank, POST blocked with 'Excess amount is required' (validation/compile/index.js:40-48, journey.json:107-111). lte excessAmount<=estimatedValue is a CYA-submit business rule only (journey.json:148-157)"
+        }
+      ]
+    },
+    {
+      "id": "optional-extras",
+      "url": "{BASE}/{id}/optional-extras",
+      "title": "Optional extras",
+      "kind": "section",
+      "fields": [
+        {
+          "name": "extras",
+          "label": "Add any optional extras (checkboxes)",
+          "type": "multi-select",
+          "options": ["breakdown", "courtesy-car", "legal", "windscreen"],
+          "required_at_save": true,
+          "validation": "model marks required (journey.json:118-129); unchecked checkboxes post no key so Joi any.required blocks with 'Extras is required' — at save you must tick at least one. For hub completeness however an answered-but-empty array counts as satisfied (runtime/util.js:23-28)"
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "kind": "subtasks",
+      "title": "Add to your policy",
+      "pages": [
+        {
+          "url": "{BASE}/{id}/addons",
+          "title": "Add to your policy",
+          "fields": [
+            {
+              "name": "addons",
+              "label": "What would you like to add? (checkboxes)",
+              "type": "multi-select",
+              "options": ["named-driver", "modifications", "protected-ncd"],
+              "required_at_save": false,
+              "notes": "0..N allowed; empty submit saves selectedAddons=[] and redirects to hub (routes/addons/handlers.js:29-34)"
+            }
+          ]
+        },
+        {
+          "url": "{BASE}/{id}/addons/named-driver/who",
+          "title": "Named driver",
+          "completion_key": "driverName",
+          "fields": [
+            {
+              "name": "driverName",
+              "label": "Full name",
+              "type": "text",
+              "required_at_save": false,
+              "notes": "not validated at save, but the step only counts complete once truthy (lib/addons/completion.js:4-6)"
+            },
+            {
+              "name": "driverDob",
+              "label": "Date of birth",
+              "type": "date",
+              "required_at_save": false,
+              "validation": "dobSchema required:false — format checked only when filled"
+            }
+          ]
+        },
+        {
+          "url": "{BASE}/{id}/addons/named-driver/relationship",
+          "title": "Relationship to you",
+          "completion_key": "relationship",
+          "fields": [
+            {
+              "name": "relationship",
+              "label": "What is their relationship to you?",
+              "type": "radio",
+              "options": ["spouse", "child", "parent", "other"],
+              "required_at_save": false,
+              "notes": "no schema — validatePayload passes any payload through (lib/validate/run.js:29-32)"
+            }
+          ]
+        },
+        {
+          "url": "{BASE}/{id}/addons/modifications/describe",
+          "title": "Describe the modifications",
+          "completion_key": "modDescription",
+          "fields": [
+            {
+              "name": "modDescription",
+              "label": "Describe the modifications",
+              "type": "textarea",
+              "maxlength": 200,
+              "required_at_save": false
+            }
+          ]
+        },
+        {
+          "url": "{BASE}/{id}/addons/modifications/value",
+          "title": "Value of the modifications",
+          "completion_key": "modValue",
+          "fields": [
+            {
+              "name": "modValue",
+              "label": "Approximate value added",
+              "type": "currency",
+              "required_at_save": false,
+              "validation": "optional format check; 'Modification value must be a whole number of pounds greater than 0, like 1500' when malformed"
+            }
+          ]
+        },
+        {
+          "url": "{BASE}/{id}/addons/protected-ncd/years",
+          "title": "Protect your no-claims discount",
+          "completion_key": "ncdYears",
+          "fields": [
+            {
+              "name": "ncdYears",
+              "label": "How many years do you want to protect?",
+              "type": "number",
+              "min": 1,
+              "max": 99,
+              "required_at_save": true,
+              "validation": "integerYearsSchema required:true — blank blocks with 'Enter how many years you want to protect' (lib/addons/catalogue.js:107-114)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quote-summary",
+      "url": "{BASE}/{id}/quote-summary",
+      "title": "Your quote",
+      "kind": "ending",
+      "fields": [],
+      "notes": "No inputs; button 'Accept and continue' POSTs and redirects to check-your-answers with no state change beyond the premium already persisted on GET."
+    },
+    {
+      "id": "check-your-answers",
+      "url": "{BASE}/{id}/check-your-answers",
+      "title": "Check your answers",
+      "kind": "ending",
+      "fields": [],
+      "notes": "Button 'Accept and get quote'. See cya block."
+    },
+    {
+      "id": "confirmation",
+      "url": "{BASE}/{id}/confirmation",
+      "title": "Quote confirmed",
+      "kind": "ending",
+      "fields": []
+    }
+  ],
+  "hub": {
+    "url": "{BASE}/{id}",
+    "heading": "Get a car insurance quote",
+    "progress_line": "You have completed {completedCount} of {totalCount} tasks — totalCount is the 3 groups only; add-ons and Get your quote are excluded (journey/hub-view-model.js:89-92, templates/hub.njk:7-9)",
+    "rows_in_order": [
+      {
+        "row": 1,
+        "title": "Email",
+        "hint": "Give us your email to begin",
+        "link": "always live → {BASE}/{id}/email",
+        "status": "group tag"
+      },
+      {
+        "row": 2,
+        "title": "About you and your vehicle",
+        "hint": "About you, Your vehicle",
+        "link": "always live → {BASE}/{id}/about-you (first step of group)",
+        "status": "group tag"
+      },
+      {
+        "row": 3,
+        "title": "Your driving and cover",
+        "hint": "live step titles joined, e.g. 'Driving history, Your claims, Choose your cover, Optional extras' (claims dropped from hint when hadClaims != yes)",
+        "link": "always live → {BASE}/{id}/driving-history",
+        "status": "group tag"
+      },
+      {
+        "row": 4,
+        "title": "Add to your policy",
+        "link": "always live → {BASE}/{id}/addons",
+        "status": "step tag via statusTag()"
+      },
+      {
+        "row": "4+n",
+        "title": "one row per selected add-on, in catalogue order (named-driver, modifications, protected-ncd filtered to selection)",
+        "hint": "its step titles joined",
+        "link": "always live → {BASE}/{id}/addons/{value}/{firstStepSlug}",
+        "status": "'Completed' plain text or blue 'Incomplete' tag (lib/addons/views.js:31-43); rows appear on selection and disappear when deselected"
+      },
+      {
+        "row": "last",
+        "title": "Get your quote",
+        "link": "live ONLY when contract.allComplete(quote); otherwise no href",
+        "status": "ready → blue tag 'Not started'; not ready → plain text 'Cannot start yet' with class govuk-task-list__status--cannot-start-yet (journey/hub-view-model.js:47-59)"
+      }
+    ],
+    "group_status_derivation": "per-step status from the contract, restricted to applicable steps: COMPLETE = every required(-when) field satisfied (steps with no required fields can never be COMPLETE... n/a here, every group step has one); PARTIAL = any field answered; NOT_STARTED otherwise. loop: claimsDone=true → COMPLETE, any claims → PARTIAL, else NOT_STARTED. subtasks: selectedAddons undefined → NOT_STARTED, all selected complete (incl. empty selection) → COMPLETE, else PARTIAL (runtime/selectors/status.js).",
+    "group_tag_rendering": "all steps COMPLETE → plain text 'Completed' (no tag); any COMPLETE or PARTIAL → tag 'In progress' govuk-tag--light-blue; else tag 'Not started' govuk-tag--grey (hub-view-model.js:33-45)",
+    "step_tag_rendering_addons_row": "complete → text 'Completed'; not-started → tag 'Not started' govuk-tag--blue; partial → tag 'Incomplete' govuk-tag--blue ('Cannot start yet' branch unreachable for addons) (hub-view-model.js:17-31)",
+    "get_your_quote_gating": "contract.allComplete = every APPLICABLE step's status === COMPLETE: email, about-you (fullName), your-vehicle (registration), driving-history (hadClaims), claims loop only when hadClaims=yes (claimsDone=true — note 0 claims + Continue still counts COMPLETE on the hub), cover-type (coverType + excessAmount if voluntaryExcess=yes), optional-extras (extras answered), addons (selectedAddons defined and every selected add-on's steps have truthy completion keys). Gating is presentational only — the quote-summary URL itself is not guarded.",
+    "task_link_liveness": "every group row and add-on row is always a live link regardless of status; only 'Get your quote' toggles between link and plain 'Cannot start yet' text"
+  },
+  "email_gate": {
+    "mechanics": "NOT a redirect in spike-a. POST {BASE}/start creates a draft (status 'draft', no answers) and redirects straight to the hub (routes/shell.js:29-36). Email is the first hub task — its own single-step group 'Email' (journey/config.js:20). The user opens it like any task; email.email is required at save with a GDS error on blank/invalid.",
+    "spec_accommodation": "The shared specs race two headings after 'Start now' — 'Give us your email to begin' (hand-written prototype redirects pre-hub) vs 'Get a car insurance quote' (spikes land on the hub and click the 'Email' task) — prototypes/e2e/journey.js:151-166. A spike must therefore land on the hub with Email as a clickable task.",
+    "fulfilment_effect": "Saving a valid email sets quote.email, flips the Email step status to complete → the 'Email' group row renders plain-text 'Completed', completedCount increments (1 of 3), and the step counts toward contract.allComplete (so it is one of the preconditions of the 'Get your quote' link). It changes NO journey-level status field — quote.status stays 'draft' until CYA submit. It does not unlock other tasks: every other task row is a live link from the moment the hub first renders."
+  },
+  "claims": {
+    "storage": "quote.claims — an array of { claimType, claimAmount } items on the quote record; plus quote.claimsDone boolean (lib/claims.js:21-41)",
+    "add": "POST {BASE}/{id}/claims/add validates only claimAmount (optional currency format); appends the claim and redirects back to the list. Remove is GET {BASE}/{id}/claims/{index}/remove (filters by index).",
+    "list": "GET {BASE}/{id}/claims renders summary rows 'Claim N' → '<Type label> — £<amount>' with a Remove action each. POST with action=add → add form; otherwise sets claimsDone=true and continues to cover-type (routes/claims.js:80-86).",
+    "entry": "The loop only applies when hadClaims === 'yes' (journey.json:59). Saving driving-history with hadClaims=yes routes next → claims list (group navigation over applicable steps).",
+    "wipe_mechanics": "Flipping hadClaims to 'no' (from driving-history, incl. via CYA ?change=1) runs contract.applyAnswer: it diffs applicableStepIds before/after the merge and clearStep()s any step that stopped applying — for the loop that sets claims=[] and claimsDone=false in the SAME persisted patch (runtime/selectors/mutation.js:38-57). The data is destroyed, not hidden, so a later yes → no → yes round-trip CANNOT rehydrate old claims — the loop returns NOT_STARTED and the list is empty. Verified by prototypes/e2e/invalidation.spec.js (both tests: claim row count 0 after down-flip and after re-flip).",
+    "cya_note": "hub COMPLETE (claimsDone=true) is possible with 0 claims, but CYA then shows soft prompt / blocks submit with 'Add at least one claim' (validation/assemble/required-errors.js:16-26)"
+  },
+  "quote": {
+    "inputs": [
+      "coverType",
+      "estimatedValue",
+      "yearsNoClaims",
+      "penaltyPoints",
+      "hadClaims",
+      "extras"
+    ],
+    "formula": "premium = max( round((480 + round(estimatedValue*0.01)) * coverMultiplier) + (hadClaims==='yes' ? 120 : 0) + penaltyPoints*15 - yearsNoClaims*25 + sum(extraCosts), 150 )",
+    "constants": {
+      "BASE_PREMIUM": 480,
+      "VALUE_LOADING_RATE": 0.01,
+      "coverTypeMultiplier": {
+        "comprehensive": 1,
+        "third-party-fire-theft": 0.85,
+        "third-party": 0.7,
+        "default": 1
+      },
+      "RECENT_CLAIMS_LOADING": 120,
+      "PENALTY_POINT_LOADING": 15,
+      "NO_CLAIMS_DISCOUNT_PER_YEAR": 25,
+      "extraCost": {
+        "breakdown": 60,
+        "courtesy-car": 35,
+        "legal": 25,
+        "windscreen": 20
+      },
+      "MINIMUM_PREMIUM": 150
+    },
+    "addons_do_not_affect_premium": true,
+    "persistence": "Premium is computed and persisted onto the quote record (quote.premium) on every GET of quote-summary (routes/endings/quote-summary.js:7-10). Store is spike-a's OWN lib/data/quotes.json — a single JSON array file read/written synchronously (lib/store.js); the standalone spike does NOT share prototypes/shared/data/quotes.json (that file belongs to the /prototype tree).",
+    "per_journey_isolation": "createDraft('spike-a') mints a randomUUID id and tags variant:'spike-a'; every route addresses one quote by {id} path param, so parallel journeys/specs never collide. All lookups are findQuote(id) over the array.",
+    "quote_summary_page_shows": "h1 'Your quote'; 'Estimated annual premium: £{premium}'; summary list rows Cover (label) and Optional extras (labels joined or 'None'); disclaimer 'This is an illustrative price for a prototype. It is not a real quote.'; button 'Accept and continue'; back link → hub",
+    "confirmation_page_shows": "govukPanel titled 'Quote confirmed' with 'Your reference number <reference>'; 'We have saved your quote of £{premium} per year.'; 'What happens next — Nothing, this is a prototype…'; link back to /prototype-standalone. reference = 'CI-' + first 6 hex of the uuid, uppercased (lib/quote.js:82-84) — deterministic per quote id."
+  },
+  "cya": {
+    "rows": "For every APPLICABLE step in model order, the matching section's rows() from lib/sections/definitions.js: Email; Name / Preferred name / Telephone / Postcode / Country / Date of birth (dd/mm/yyyy or 'Not provided'); Registration / Vehicle (make model year joined) / Estimated value (£n); Years no claims / Recent claims (Yes|No) / Penalty points (default '0'); Claim 1..N ('<type> — £<amount>') or 'Claims: None added' (only when hadClaims=yes); Cover / Voluntary excess (£n or 'None'); Optional extras (labels or 'None'); one row per selected add-on ('Added'|'Incomplete') or 'Added to policy: None'.",
+    "change_links": "Every row gets a Change action. Plain question steps → {BASE}/{id}/{stepId}?change=1 (GET shows CYA as back link; successful POST redirects straight back to CYA instead of next-in-group — routes/section.js:56-59). Loop (claims) and subtasks (addons) rows link to their own page WITHOUT ?change=1 and return through their own flow (routes/endings/helpers.js:19-22).",
+    "soft_prompts_on_load": "contract.missingRequired renders a notification banner 'You still need to complete some sections' listing each missing step with a provenance reason (e.g. 'You answered \"yes\" for Had claims').",
+    "submit": "POST 'Accept and get quote' runs contract.assembleQuote — hard gate: every applicable required field, 'Add at least one claim' for an empty applicable loop, 'Finish every add-on you selected', plus the two business rules (driver-min-age 17; excessAmount <= estimatedValue when voluntaryExcess=yes). Failures re-render CYA with a GDS error summary linking each error to its change href. Success → updateQuote(status:'quoted', reference:makeReference(id)) → redirect to confirmation (routes/endings/check-your-answers.js:52-81).",
+    "post_submit": "NOTHING is frozen. status:'quoted' is only ever read by the confirmation guard. Hub, every section page, claims, addons, quote-summary and CYA all remain reachable and editable after submission; re-submitting CYA just re-stamps the same deterministic reference. The three shared specs all END at the 'Quote confirmed' heading (task-list-with-linear-tasks.spec.js:83-84) and never navigate afterwards, so a post-submit freeze would be UNOBSERVED by the specs — but it would still diverge from spike-a's real browser behaviour, which is freely navigable."
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/prototype-standalone",
+      "notes": "chooser page listing the spikes (standalone/index.js) — outside the spike plugin"
+    },
+    {
+      "method": "GET",
+      "path": "{BASE}",
+      "notes": "start page, 'Start now' start-button form"
+    },
+    {
+      "method": "POST",
+      "path": "{BASE}/start",
+      "notes": "creates draft → 302 to {BASE}/{id} (hub)"
+    },
+    {
+      "method": "GET",
+      "path": "{BASE}/{id}",
+      "notes": "hub (task list); unknown id → 302 {BASE}"
+    },
+    { "method": "GET|POST", "path": "{BASE}/{id}/email" },
+    { "method": "GET|POST", "path": "{BASE}/{id}/about-you" },
+    { "method": "GET|POST", "path": "{BASE}/{id}/your-vehicle" },
+    { "method": "GET|POST", "path": "{BASE}/{id}/driving-history" },
+    { "method": "GET|POST", "path": "{BASE}/{id}/cover-type" },
+    { "method": "GET|POST", "path": "{BASE}/{id}/optional-extras" },
+    {
+      "method": "GET|POST",
+      "path": "{BASE}/{id}/claims",
+      "notes": "loop manage list; POST action=add → 302 claims/add, else marks done → 302 next (cover-type)"
+    },
+    {
+      "method": "GET|POST",
+      "path": "{BASE}/{id}/claims/add",
+      "notes": "POST ok → 302 back to {BASE}/{id}/claims"
+    },
+    {
+      "method": "GET",
+      "path": "{BASE}/{id}/claims/{index}/remove",
+      "notes": "removes then 302 back to list"
+    },
+    {
+      "method": "GET|POST",
+      "path": "{BASE}/{id}/addons",
+      "notes": "selection; POST always 302 → hub"
+    },
+    {
+      "method": "GET|POST",
+      "path": "{BASE}/{id}/addons/{addon}/{step}",
+      "notes": "addon∈{named-driver:[who,relationship], modifications:[describe,value], protected-ncd:[years]}; unknown addon/step → 302 {BASE}/{id}/addons; last step of an addon → 302 hub; step back at index 0 → hub"
+    },
+    {
+      "method": "GET|POST",
+      "path": "{BASE}/{id}/quote-summary",
+      "notes": "GET prices + persists premium; POST → 302 check-your-answers"
+    },
+    {
+      "method": "GET|POST",
+      "path": "{BASE}/{id}/check-your-answers",
+      "notes": "POST ok → 302 confirmation; invalid → re-render with error summary"
+    },
+    {
+      "method": "GET",
+      "path": "{BASE}/{id}/confirmation",
+      "notes": "guarded: quote.status !== 'quoted' → 302 {BASE}"
+    },
+    {
+      "redirects": "every {id}-bearing route redirects to {BASE} when the quote id is unknown (withQuote guards); ?change=1 on section POST redirects to check-your-answers instead of next step; all routes are auth:false"
+    }
+  ],
+  "rulings": [
+    {
+      "question": "(a) Is post-submit navigation frozen in spike-a or freely navigable?",
+      "answer": "Freely navigable. After 'Accept and get quote' sets status:'quoted' + reference, no route checks status except GET confirmation. Hub, all section pages, claims, addons, quote-summary and CYA remain reachable and editable; re-submitting CYA re-runs assembleQuote and re-stamps the same deterministic reference. The shared specs end at the 'Quote confirmed' heading, so a freeze in the new spike would pass the specs unobserved — but it would break browser parity with spike-a, which does not freeze.",
+      "evidence": "routes/endings/check-your-answers.js:52-56,73-81 (only status/reference written, nothing gated); routes/endings/confirmation.js:5-7 (the single status check); routes/shell.js:38-56 and routes/section.js:61-82 (no status guards); prototypes/e2e/task-list-with-linear-tasks.spec.js:83-84 (spec ends at 'Quote confirmed')"
+    },
+    {
+      "question": "(b) Is direct-URL access to CYA/later pages guarded or open?",
+      "answer": "Open, with exactly two exceptions: (1) every {id} route 302s to the start page when the quote id does not exist (withQuote), and (2) GET confirmation 302s to the start page unless quote.status === 'quoted'. Quote-summary and CYA can be loaded by URL at any point of an incomplete journey — quote-summary happily prices a half-empty quote, CYA shows soft 'you still need to…' prompts, and the hard gate is only on CYA POST. The 'Get your quote' gating is presentational (link withheld), not a route guard.",
+      "evidence": "routes/endings/helpers.js:12-15 (withQuote is the only guard); routes/endings/quote-summary.js:24-27 (no completeness check on GET); routes/endings/check-your-answers.js:71 (GET renders regardless); routes/endings/confirmation.js:5-7 (status guard)"
+    },
+    {
+      "question": "(c) How exactly is 'Get your quote' gated?",
+      "answer": "The hub row only receives an href (and a blue 'Not started' tag) when contract.allComplete(quote) is true — i.e. every APPLICABLE step's derived status is 'complete': email answered; fullName; registration; hadClaims; the claims loop claimsDone=true when hadClaims=yes (0 claims still counts on the hub); coverType (+ excessAmount when voluntaryExcess=yes); extras answered; selectedAddons defined AND every selected add-on's completion keys truthy. Otherwise the row is plain text 'Cannot start yet' with class govuk-task-list__status--cannot-start-yet and no link. The URL itself is never blocked.",
+      "evidence": "journey/hub-view-model.js:47-59 (getYourQuoteItem); runtime/selectors/status.js:57-75 (status + allComplete over applicableStepIds); runtime/selectors/status.js:27-41 (loop/subtasks status)"
+    },
+    {
+      "question": "(d) Are modifications modelled as a collection or fixed fields?",
+      "answer": "Fixed fields. 'Declare vehicle modifications' is one add-on with a fixed 2-step linear mini-journey — describe (modDescription textarea, maxlength 200) then value (modValue currency) — whose answers merge into the single object quote.addonData['modifications']. There is no array, no add-another, no per-modification items; completion is simply both keys truthy. The only collection in spike-a is the claims loop.",
+      "evidence": "lib/addons/catalogue.js:57-94 (two steps, keys modDescription/modValue); lib/addons/selection.js:11-16 (saveAddonStep merges into addonData[value] object); lib/addons/completion.js:8-12 (every step key truthy)"
+    },
+    {
+      "question": "(e) Does completing Email change any journey-level status?",
+      "answer": "No journey-level status changes. Saving a valid email only sets quote.email (quote.status stays 'draft' until CYA submit). Derived effects: the Email step's status becomes 'complete', so its single-step group row renders plain-text 'Completed', completedCount goes 0→1 (of 3), and one precondition of allComplete/'Get your quote' is met. It gates nothing else — all other task rows were already live links.",
+      "evidence": "routes/section.js:67-82 (POST just merges collected answers — { email } — via applyAnswer/updateQuote); lib/store.js:39-53 (status set only at createDraft) and routes/endings/check-your-answers.js:52-56 (the only other status write); journey/hub-view-model.js:61-92 (Completed tag + completedCount are derived, not stored)"
+    }
+  ]
+}

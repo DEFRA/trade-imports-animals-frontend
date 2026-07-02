@@ -1,0 +1,242 @@
+{
+  "$comment": "Obligations catalogue — PORTABLE DATA, no code (obligations.md:196 — no scoping, no mandate status, no page membership, no presentation on the record; all of those are computed elsewhere). 30 records: the 29 user-submitted fields of the mirrored car-insurance journey plus the system-handled `premium`. Each record: committed UUID `id` (the sole persistence key — frozen forever, stable across renames of `name`), unique meaningful `name` (the code/template/i18n binding string), open `type` (every type used must have a companion in the engine's type-companion registry), `cardinality` single|indexed with `indexedBy` {source, mutability} for indexed records, `constraints`, and bundled static option VALUE domains (option labels are presentation and live in flow.json). PROVISIONAL settlements carried by this file: (1) `indexedBy.controllingValue` is an invented schema extension realising FULF-18 pattern-2 — a derived obligation whose single fulfilment id IS the named controlling value, spawned/wiped by the orchestrator as the controller's answer includes/excludes it (open-for-human item 4); (2) `claimType` and `claimAmount` are two user-source indexed obligations sharing the fulfilment ids the orchestrator mints per added claim — one id per claim indexes both maps; (3) system-handled provenance is the scalar `handler` companion field on the record. Cross-references (controllingObligation) use UUID ids so renames never break them.",
+  "obligations": [
+    {
+      "id": "a3b5036a-9782-49fd-b549-973c4201a940",
+      "name": "email",
+      "type": "email",
+      "cardinality": "single"
+    },
+    {
+      "id": "cbf19f34-9d24-4492-88ae-7390232a2d90",
+      "name": "fullName",
+      "type": "text",
+      "cardinality": "single"
+    },
+    {
+      "id": "4edb3df9-040e-415e-81e6-af2c1d28526f",
+      "name": "preferredName",
+      "type": "text",
+      "cardinality": "single"
+    },
+    {
+      "id": "2afdfce3-c458-4b4d-a7d8-f476db3993cf",
+      "name": "phone",
+      "type": "tel",
+      "cardinality": "single"
+    },
+    {
+      "id": "40c881d4-0217-460a-99c3-b81b7c26dfa3",
+      "name": "postcode",
+      "type": "formatted",
+      "cardinality": "single",
+      "constraints": {
+        "pattern": "^[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s*\\d[A-Za-z]{2}$"
+      }
+    },
+    {
+      "id": "ce04398c-e386-4f7d-aeb0-d2d39ff354f3",
+      "name": "country",
+      "type": "select",
+      "cardinality": "single",
+      "options": ["england", "scotland", "wales", "northern-ireland"]
+    },
+    {
+      "id": "07746fd9-80e0-46aa-bd0d-8ba8a4e610ac",
+      "name": "dateOfBirth",
+      "type": "date",
+      "cardinality": "single"
+    },
+    {
+      "id": "b9d88c19-e5ac-4bfe-bbbd-9e41f541a319",
+      "name": "registration",
+      "type": "formatted",
+      "cardinality": "single",
+      "constraints": {
+        "pattern": "^[A-Za-z]{2}\\d{2}\\s?[A-Za-z]{3}$"
+      }
+    },
+    {
+      "id": "2ad86ddf-e60f-4e8f-a1a3-838960597eb0",
+      "name": "make",
+      "type": "text",
+      "cardinality": "single"
+    },
+    {
+      "id": "be0e9365-0e50-410b-acb0-8536d818d7e2",
+      "name": "model",
+      "type": "text",
+      "cardinality": "single"
+    },
+    {
+      "id": "a20e1c38-9881-44fd-a7e5-9e15c4539f1f",
+      "name": "year",
+      "type": "number",
+      "cardinality": "single",
+      "constraints": { "min": 1900, "max": 2100 }
+    },
+    {
+      "id": "f81cabff-5a69-4351-800e-98ad0aa502b6",
+      "name": "estimatedValue",
+      "type": "currency",
+      "cardinality": "single"
+    },
+    {
+      "id": "b002a938-ab80-48e7-b0f9-4bffa60a9793",
+      "$comment": "Render-only in the mirrored journey: the file input is presented but no fulfilment is ever written (spike-a parity — the upload is never saved).",
+      "name": "vehiclePhoto",
+      "type": "file",
+      "cardinality": "single"
+    },
+    {
+      "id": "68f8ba7a-e1ac-4311-9d9f-f51dc33e8bb4",
+      "name": "yearsNoClaims",
+      "type": "number",
+      "cardinality": "single",
+      "constraints": { "min": 0, "max": 99 }
+    },
+    {
+      "id": "c840afdc-1d10-4dd4-9266-aa936ac20c7f",
+      "name": "hadClaims",
+      "type": "boolean",
+      "cardinality": "single"
+    },
+    {
+      "id": "8afda217-b536-4203-823e-5c4b09213a74",
+      "name": "penaltyPoints",
+      "type": "number",
+      "cardinality": "single",
+      "constraints": { "min": 0, "max": 12 }
+    },
+    {
+      "id": "7ab088f8-dadc-4dd2-899e-530888fbcde3",
+      "name": "claimType",
+      "type": "radio",
+      "cardinality": "indexed",
+      "indexedBy": { "source": "user", "mutability": "edit-add-remove" },
+      "options": ["accident", "theft", "windscreen", "other"]
+    },
+    {
+      "id": "20d2f2a7-7951-487b-b2fa-739f2a4d1ba3",
+      "name": "claimAmount",
+      "type": "currency",
+      "cardinality": "indexed",
+      "indexedBy": { "source": "user", "mutability": "edit-add-remove" }
+    },
+    {
+      "id": "25e06dfe-9058-4dc3-a3eb-a7f25484d63e",
+      "name": "coverType",
+      "type": "radio",
+      "cardinality": "single",
+      "options": ["comprehensive", "third-party-fire-theft", "third-party"]
+    },
+    {
+      "id": "9905c109-3de7-4ed0-8b2c-633a99e158e9",
+      "name": "voluntaryExcess",
+      "type": "boolean",
+      "cardinality": "single"
+    },
+    {
+      "id": "4a3f6b53-4cf9-4ef6-8817-3606600e06d1",
+      "name": "excessAmount",
+      "type": "currency",
+      "cardinality": "single"
+    },
+    {
+      "id": "781e275d-4cf4-4d79-87b4-0e6682dc0607",
+      "name": "extras",
+      "type": "multi-select",
+      "cardinality": "single",
+      "options": ["breakdown", "courtesy-car", "legal", "windscreen"]
+    },
+    {
+      "id": "c749f616-505f-412b-8632-b2118c27c041",
+      "name": "addons",
+      "type": "multi-select",
+      "cardinality": "single",
+      "options": ["named-driver", "modifications", "protected-ncd"]
+    },
+    {
+      "id": "d20a9e81-d556-4cec-bcc7-6bfbf03356ee",
+      "name": "driverName",
+      "type": "text",
+      "cardinality": "indexed",
+      "indexedBy": {
+        "source": "derived",
+        "controllingObligation": "c749f616-505f-412b-8632-b2118c27c041",
+        "controllingValue": "named-driver",
+        "mutability": "edit-only"
+      }
+    },
+    {
+      "id": "c4194580-d49d-4465-a281-2dfb7fdb0d67",
+      "name": "driverDob",
+      "type": "date",
+      "cardinality": "indexed",
+      "indexedBy": {
+        "source": "derived",
+        "controllingObligation": "c749f616-505f-412b-8632-b2118c27c041",
+        "controllingValue": "named-driver",
+        "mutability": "edit-only"
+      }
+    },
+    {
+      "id": "3b4f6b9f-fa8e-434e-99ff-bbca0fb72fa7",
+      "name": "relationship",
+      "type": "radio",
+      "cardinality": "indexed",
+      "indexedBy": {
+        "source": "derived",
+        "controllingObligation": "c749f616-505f-412b-8632-b2118c27c041",
+        "controllingValue": "named-driver",
+        "mutability": "edit-only"
+      },
+      "options": ["spouse", "child", "parent", "other"]
+    },
+    {
+      "id": "5f6b561e-30c7-4f8e-bf7e-330d44dab053",
+      "name": "modDescription",
+      "type": "textarea",
+      "cardinality": "indexed",
+      "indexedBy": {
+        "source": "derived",
+        "controllingObligation": "c749f616-505f-412b-8632-b2118c27c041",
+        "controllingValue": "modifications",
+        "mutability": "edit-only"
+      },
+      "constraints": { "maxLength": 200 }
+    },
+    {
+      "id": "4a836fc9-a544-4847-bc7a-5cb91ec4146c",
+      "name": "modValue",
+      "type": "currency",
+      "cardinality": "indexed",
+      "indexedBy": {
+        "source": "derived",
+        "controllingObligation": "c749f616-505f-412b-8632-b2118c27c041",
+        "controllingValue": "modifications",
+        "mutability": "edit-only"
+      }
+    },
+    {
+      "id": "a2d2077e-150f-4733-a9d3-67d1b6df36dd",
+      "name": "ncdYears",
+      "type": "number",
+      "cardinality": "indexed",
+      "indexedBy": {
+        "source": "derived",
+        "controllingObligation": "c749f616-505f-412b-8632-b2118c27c041",
+        "controllingValue": "protected-ncd",
+        "mutability": "edit-only"
+      },
+      "constraints": { "min": 1, "max": 99 }
+    },
+    {
+      "id": "b7a2b5d6-9b1e-40e1-8105-7f8361dcf1d1",
+      "name": "premium",
+      "type": "quote",
+      "cardinality": "single",
+      "handler": "quote"
+    }
+  ]
+}

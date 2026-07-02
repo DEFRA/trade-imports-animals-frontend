@@ -1,0 +1,13 @@
+{# Task-list hub — pure pass-through over the hub view-model
+   ({ heading, progressLine, items }); no CYA row is ever appended and
+   'Cannot start yet' arrives as plain status text on an inert row. #}
+{% extends "standalone/obligations-standalone-spike/templates/layout.njk" %}
+{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+
+  <p class="govuk-body">{{ progressLine }}</p>
+
+  {{ govukTaskList({ items: items }) }}
+{% endblock %}

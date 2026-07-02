@@ -1,0 +1,169 @@
+{
+  "$comment": "Skeleton Flow — a single-Section, near-flat ordering of the SAME obligations as flow.json, in the same Container schema. Data-only fixture for the cross-Flow evaluator-equivalence harness (tests/flow-equivalence.test.js): identical fulfilments must leave the ObligationEvaluator in the same end state under either Flow (obligations.md:1494-1555, TEST-4/16-30). Never mounted as routes and never rendered, so entries carry no presentation copy — just obligation refs, per-entry mandates (fullName the only hard, matching the polished Flow exactly) and the same closed appliesWhen names. sectionEntryMode deliberately differs from the polished Flow to exercise the mode-invariance property (TEST-24).",
+  "id": "car-insurance-quote-skeleton-flow",
+  "service": "car-insurance-quote",
+  "sectionEntryMode": "firstUnfulfilledPage",
+  "sections": [
+    {
+      "kind": "group",
+      "id": "everything",
+      "title": "Everything",
+      "children": [
+        {
+          "kind": "page",
+          "id": "email",
+          "slug": "email",
+          "presents": [{ "obligation": "a3b5036a-9782-49fd-b549-973c4201a940" }]
+        },
+        {
+          "kind": "page",
+          "id": "about-you",
+          "slug": "about-you",
+          "presents": [
+            {
+              "obligation": "cbf19f34-9d24-4492-88ae-7390232a2d90",
+              "mandate": "hard"
+            },
+            { "obligation": "4edb3df9-040e-415e-81e6-af2c1d28526f" },
+            { "obligation": "2afdfce3-c458-4b4d-a7d8-f476db3993cf" },
+            { "obligation": "40c881d4-0217-460a-99c3-b81b7c26dfa3" },
+            { "obligation": "ce04398c-e386-4f7d-aeb0-d2d39ff354f3" },
+            { "obligation": "07746fd9-80e0-46aa-bd0d-8ba8a4e610ac" }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "your-vehicle",
+          "slug": "your-vehicle",
+          "presents": [
+            { "obligation": "b9d88c19-e5ac-4bfe-bbbd-9e41f541a319" },
+            { "obligation": "2ad86ddf-e60f-4e8f-a1a3-838960597eb0" },
+            { "obligation": "be0e9365-0e50-410b-acb0-8536d818d7e2" },
+            { "obligation": "a20e1c38-9881-44fd-a7e5-9e15c4539f1f" },
+            { "obligation": "f81cabff-5a69-4351-800e-98ad0aa502b6" },
+            { "obligation": "b002a938-ab80-48e7-b0f9-4bffa60a9793" }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "driving-history",
+          "slug": "driving-history",
+          "presents": [
+            { "obligation": "68f8ba7a-e1ac-4311-9d9f-f51dc33e8bb4" },
+            { "obligation": "c840afdc-1d10-4dd4-9266-aa936ac20c7f" },
+            { "obligation": "8afda217-b536-4203-823e-5c4b09213a74" }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "claims",
+          "slug": "claims",
+          "appliesWhen": "hadClaimsIsYes",
+          "presentsForEach": [
+            {
+              "obligation": "7ab088f8-dadc-4dd2-899e-530888fbcde3",
+              "fulfilment": "*"
+            },
+            {
+              "obligation": "20d2f2a7-7951-487b-b2fa-739f2a4d1ba3",
+              "fulfilment": "*"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "cover-type",
+          "slug": "cover-type",
+          "presents": [
+            { "obligation": "25e06dfe-9058-4dc3-a3eb-a7f25484d63e" },
+            { "obligation": "9905c109-3de7-4ed0-8b2c-633a99e158e9" },
+            { "obligation": "4a3f6b53-4cf9-4ef6-8817-3606600e06d1" }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "optional-extras",
+          "slug": "optional-extras",
+          "presents": [{ "obligation": "781e275d-4cf4-4d79-87b4-0e6682dc0607" }]
+        },
+        {
+          "kind": "page",
+          "id": "addons",
+          "slug": "addons",
+          "presents": [{ "obligation": "c749f616-505f-412b-8632-b2118c27c041" }]
+        },
+        {
+          "kind": "page",
+          "id": "named-driver-who",
+          "slug": "addons/named-driver/who",
+          "appliesWhen": "addonSelected:named-driver",
+          "presentsForEach": [
+            {
+              "obligation": "d20a9e81-d556-4cec-bcc7-6bfbf03356ee",
+              "fulfilment": "*"
+            },
+            {
+              "obligation": "c4194580-d49d-4465-a281-2dfb7fdb0d67",
+              "fulfilment": "*"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "named-driver-relationship",
+          "slug": "addons/named-driver/relationship",
+          "appliesWhen": "addonSelected:named-driver",
+          "presentsForEach": [
+            {
+              "obligation": "3b4f6b9f-fa8e-434e-99ff-bbca0fb72fa7",
+              "fulfilment": "*"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "modifications-describe",
+          "slug": "addons/modifications/describe",
+          "appliesWhen": "addonSelected:modifications",
+          "presentsForEach": [
+            {
+              "obligation": "5f6b561e-30c7-4f8e-bf7e-330d44dab053",
+              "fulfilment": "*"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "modifications-value",
+          "slug": "addons/modifications/value",
+          "appliesWhen": "addonSelected:modifications",
+          "presentsForEach": [
+            {
+              "obligation": "4a836fc9-a544-4847-bc7a-5cb91ec4146c",
+              "fulfilment": "*"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "protected-ncd-years",
+          "slug": "addons/protected-ncd/years",
+          "appliesWhen": "addonSelected:protected-ncd",
+          "presentsForEach": [
+            {
+              "obligation": "a2d2077e-150f-4733-a9d3-67d1b6df36dd",
+              "fulfilment": "*"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "quote-summary",
+          "slug": "quote-summary",
+          "appliesWhen": "quoteReady",
+          "presents": [{ "obligation": "b7a2b5d6-9b1e-40e1-8105-7f8361dcf1d1" }]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{# Confirmation ending — the govukPanel 'Quote confirmed' heading every
+   shared spec ends on, plus the deterministic reference and saved
+   premium. Copy passes through from flow.json `confirmation`; the
+   {premium} token is interpolated here. Context: { confirmation,
+   reference, premium }. #}
+{% extends layout %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+
+{% block journeyContent %}
+  {{ govukPanel({
+    titleText: confirmation.panelTitle,
+    html: confirmation.referenceLead + "<br><strong>" + reference + "</strong>"
+  }) }}
+
+  <p class="govuk-body">{{ confirmation.savedBody | replace("{premium}", premium) }}</p>
+
+  <h2 class="govuk-heading-m">{{ confirmation.nextHeading }}</h2>
+  <p class="govuk-body">{{ confirmation.nextBody }}</p>
+
+  <p class="govuk-body">
+    <a class="govuk-link" href="{{ confirmation.returnLinkHref }}">{{ confirmation.returnLinkText }}</a>
+  </p>
+{% endblock %}

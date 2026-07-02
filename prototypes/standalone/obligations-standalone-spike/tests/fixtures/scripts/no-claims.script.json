@@ -1,0 +1,13 @@
+{
+  "$comment": "Minimal-path script exercising the NA branch of equivalence: hadClaims no keeps the claims loop Not Applicable in both flows, and the answered-but-EMPTY extras and addons selections satisfy their engine mandates (spike-a parity: answered-empty counts). Every unconditionally engine-mandatory obligation is answered, so both flows end journeyState fulfilled.",
+  "name": "no-claims",
+  "steps": [
+    { "answers": { "email": "sam@example.com" } },
+    { "answers": { "fullName": "Sam Farrington" } },
+    { "answers": { "registration": "AB12 CDE" } },
+    { "answers": { "hadClaims": "no" } },
+    { "answers": { "coverType": "third-party" } },
+    { "answers": { "extras": [] } },
+    { "answers": { "addons": [] } }
+  ]
+}

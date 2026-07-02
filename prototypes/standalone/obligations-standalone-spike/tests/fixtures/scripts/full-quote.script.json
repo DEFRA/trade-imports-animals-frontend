@@ -1,0 +1,66 @@
+{
+  "$comment": "Happy-path obligation-level script covering EVERY user-submitted obligation (vehiclePhoto is render-only and never written, spike-a parity). Steps address obligations by NAME; the script runner locates each flow's OWN presenting page per answer, so the same script drives model/flow.json and model/skeleton-flow.json. Ordering matters: controllers (hadClaims, addons) are answered before the data they bring into scope, or the fixed-point wipe would delete it.",
+  "name": "full-quote",
+  "steps": [
+    { "answers": { "email": "sam@example.com" } },
+    {
+      "answers": {
+        "fullName": "Sam Farrington",
+        "preferredName": "Sam",
+        "phone": "01234 567890",
+        "postcode": "SW1A 1AA",
+        "country": "england",
+        "dateOfBirth": { "day": "27", "month": "3", "year": "1985" }
+      }
+    },
+    {
+      "answers": {
+        "registration": "AB12 CDE",
+        "make": "Ford",
+        "model": "Focus",
+        "year": "2015",
+        "estimatedValue": "12000"
+      }
+    },
+    {
+      "answers": {
+        "yearsNoClaims": "5",
+        "hadClaims": "yes",
+        "penaltyPoints": "3"
+      }
+    },
+    {
+      "add": {
+        "names": ["claimType", "claimAmount"],
+        "values": { "claimType": "accident", "claimAmount": "900" }
+      }
+    },
+    {
+      "answers": {
+        "coverType": "comprehensive",
+        "voluntaryExcess": "yes",
+        "excessAmount": "250"
+      }
+    },
+    { "answers": { "extras": ["breakdown", "legal"] } },
+    {
+      "answers": {
+        "addons": ["named-driver", "modifications", "protected-ncd"]
+      }
+    },
+    {
+      "answers": {
+        "driverName": "Alex Driver",
+        "driverDob": { "day": "1", "month": "2", "year": "1990" }
+      }
+    },
+    { "answers": { "relationship": "spouse" } },
+    {
+      "answers": {
+        "modDescription": "Alloy wheels and a remapped engine",
+        "modValue": "1500"
+      }
+    },
+    { "answers": { "ncdYears": "5" } }
+  ]
+}

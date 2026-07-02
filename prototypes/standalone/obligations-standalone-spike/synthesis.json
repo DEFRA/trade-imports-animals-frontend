@@ -1,0 +1,1408 @@
+{
+  "themes": [
+    {
+      "theme": "Portable declarative obligations catalogue (pure minimal data)",
+      "essence": "One obligations.json per Service: pure JSON-portable data holding identity, type, cardinality and constraints only — no scoping, mandate status, page membership, presentation or acquisition (those are computed or Flow-side). Static reference data is bundled in; the type taxonomy stays open; one sub-journey maps to one obligation; every user-submitted form field maps to an obligation; a schema-first (spike-D-style) record is rejected in favour of a bespoke minimal envelope.",
+      "scope": "implement",
+      "scope_why": "This is the core paradigm claim under comparison and maps directly onto the standalone-spike convention of portable JSON model files under model/. The record-shape discipline costs nothing extra since the catalogue must be authored anyway; faking it invalidates the comparison.",
+      "obligation_ids": [
+        "DEF-2",
+        "DEF-5",
+        "SHAPE-5",
+        "ARCH-1",
+        "ARCH-8",
+        "EVAL-43",
+        "SHAPE-27",
+        "SHAPE-15",
+        "SHAPE-26",
+        "SHAPE-25",
+        "FLOW-28",
+        "FLOW-16",
+        "FLOW-X2_1",
+        "ARCH-4",
+        "FLOW-X1_2"
+      ]
+    },
+    {
+      "theme": "Dual identifiers: opaque UUID id vs meaningful name",
+      "essence": "Every obligation carries a stable, opaque, tooling-generated UUID id (the sole persistence key, never rendered to users) and a unique meaningful name (the single string spanning HTML form input names, Pages, code, tests, i18n and templates). Storage never keys on name, so cosmetic renames need no data migration; name uniqueness is asserted at model load; Container ids and flowId are meaningful-only and never persistence keys.",
+      "scope": "implement",
+      "scope_why": "Load-bearing novel machinery that is cheap to model fully: author UUIDs in the model JSON, key the in-memory store by id, and pin rename-survival with a unit test that renames a name while fulfilments stay keyed by UUID. The id-generation tooling half reduces to pre-generated committed UUIDs.",
+      "obligation_ids": [
+        "DEF-6",
+        "DEF-9",
+        "SHAPE-6",
+        "SHAPE-11",
+        "SHAPE-X2_1",
+        "PERSIST-23",
+        "PERSIST-24",
+        "PERSIST-25",
+        "PERSIST-31",
+        "DEF-10",
+        "SHAPE-X1_2",
+        "FULF-5",
+        "FULF-15",
+        "PERSIST-30",
+        "PERSIST-33",
+        "PERSIST-34",
+        "SHAPE-10",
+        "DEF-7",
+        "INDEX-3",
+        "FULF-3",
+        "PERSIST-8",
+        "SHAPE-12",
+        "DEF-11",
+        "PERSIST-27",
+        "PERSIST-26",
+        "DEF-8",
+        "PERSIST-29"
+      ]
+    },
+    {
+      "theme": "Service / Flow / Journey layering and data portability",
+      "essence": "A Service owns exactly one Obligations definition and one-or-more coexisting Flows that reference obligations by id; a Journey is one user running one Flow at runtime with its own id, fulfilments map and isolation. The data files stay portable across runtimes; evaluators are accepted as non-portable, one set per implementation language per Service; the Service layer is a pattern each application implements.",
+      "scope": "reduce",
+      "scope_why": "Ship one Service, one Flow, one JS evaluator set with session-keyed in-memory Journeys. Multi-Flow coexistence and cross-language portability are demonstrated structurally (obligations referenced by id, evaluators parameterised on (model, state)) rather than by shipping a second Flow or second-language evaluator.",
+      "obligation_ids": [
+        "DEF-17",
+        "DEF-18",
+        "DEF-19",
+        "DEF-20",
+        "ARCH-13",
+        "ARCH-14",
+        "ARCH-15",
+        "ARCH-X1_4",
+        "DEF-1",
+        "ARCH-2",
+        "ARCH-6",
+        "ARCH-12",
+        "ARCH-X1_1",
+        "EVAL-44",
+        "EVAL-45",
+        "OPEN2-3"
+      ]
+    },
+    {
+      "theme": "Container tree schema and runtime representation",
+      "essence": "Flow content is a recursive tree of Containers — Group (Section/SubSection, ordered children) xor Page (leaf, ordered presents, 1:1 with a template) — with at least one top-level Section (skeletons are a single Section, same schema; no flat top-level pages array) and CheckYourAnswers as a top-level construct outside the tree. The on-disk schema, in-memory representation, skeleton shape and advance algorithm are open questions the spike answers provisionally (unified recursive Container JSON, plain objects + pure selector functions).",
+      "scope": "implement",
+      "scope_why": "The tree directly generates the hub’s six task links and each linear task’s page order, all pinned by the behavioural-parity contract; the spike cannot serve model/ JSON without committing, so it takes the doc’s stated leans and records each choice as provisional evidence, not a settlement.",
+      "obligation_ids": [
+        "DEF-23",
+        "DEF-24",
+        "DEF-25",
+        "DEF-27",
+        "ARCH-17",
+        "ARCH-18",
+        "ARCH-19",
+        "ARCH-20",
+        "ARCH-21",
+        "ARCH-23",
+        "OPEN2-14",
+        "OPEN2-15",
+        "OPEN2-X1_1",
+        "OPEN2-1",
+        "OPEN2-2",
+        "ARCH-22",
+        "FLOW-11",
+        "OPEN2-X1_2"
+      ]
+    },
+    {
+      "theme": "Page presents model and presentsForEach projection",
+      "essence": "A Page declares a fixed ordered presents array of { obligation, mandate? } and/or a presentsForEach block projecting one input slot per current fulfilment of an indexed obligation, identically for any source, with mandates evaluated per expanded slot — including per-item mandates conditioned on sibling per-item values. A page with no presents/presentsForEach is intrinsically read-only; there is no readOnly flag.",
+      "scope": "implement",
+      "scope_why": "presents drives every form page and presentsForEach the claims loop, both on the parity path; read-only-by-absence covers the start, hub and confirmation pages. The value-conditional per-item mandate (professionallyFitted-when-cost-over-£500 style) has no parity surface, so it lives in the schema plus evaluator unit tests only.",
+      "obligation_ids": [
+        "ARCH-24",
+        "ARCH-25",
+        "ARCH-27",
+        "ARCH-28",
+        "ARCH-29",
+        "ARCH-31",
+        "OPEN2-9",
+        "SHAPE-30",
+        "SHAPE-X2_2",
+        "ARCH-X1_2"
+      ]
+    },
+    {
+      "theme": "Two-dimensional mandates, save-time enforcement and completion policy",
+      "essence": "Page-level hard/soft mandates (default soft, hard is explicit opt-in) compose with engine-level mandatory/optional per a four-row table. On POST, hard-mandated in-scope unfulfilled obligations block Save and continue with GDS error-summary markup; soft mandates pass through but the engine keeps the obligation on the to-do surface. Most-restrictive-wins when multiple reasons carry different mandates; mandate can flip without leaving scope; a per-journey completion policy governs unanswered optionals (silently-skipped / must-address / gate-collected).",
+      "scope": "implement",
+      "scope_why": "The parity rule \"only fullName required-at-save on About you\" is exactly hard-page + soft-elsewhere, so the composition machinery is on the critical path. Unexercised table rows, multi-reason mandate resolution and the must-address/gate-collected policies are proven in unit tests, since the journey only exhibits silently-skipped.",
+      "obligation_ids": [
+        "DEF-X1_1",
+        "FLOW-1",
+        "FLOW-2",
+        "FLOW-3",
+        "FLOW-4",
+        "FLOW-5",
+        "FLOW-6",
+        "ARCH-37",
+        "SHAPE-23",
+        "ARCH-35",
+        "ARCH-36",
+        "FLOW-7",
+        "FLOW-8",
+        "STATUS-29",
+        "SHAPE-16",
+        "SHAPE-17",
+        "SHAPE-22"
+      ]
+    },
+    {
+      "theme": "EvaluationResult contract and authored reason codes (i18n-resolved)",
+      "essence": "The evaluator returns per-obligation state keyed by id — inScope, mandate status, per-fulfilment states for indexed obligations only, and the input fulfilments pruned to fit the current model — plus reasons authored solely in the ObligationEvaluator as dotted locale-agnostic codes with dev-only explanations and interpolation values. Codes double as i18n message keys resolved by the frontend (Welsh is the statutory driver); one field is always one obligation with reasons stacking on it.",
+      "scope": "implement",
+      "scope_why": "This is the runtime contract surface the thin Hapi routes consume, and authored reasons are a headline differentiator of the paradigm. The mechanism ships with an in-spike English message catalogue; actual Welsh translations add nothing to a parity-pinned throwaway.",
+      "obligation_ids": [
+        "EVAL-10",
+        "EVAL-11",
+        "EVAL-12",
+        "EVAL-13",
+        "EVAL-14",
+        "EVAL-15",
+        "EVAL-16",
+        "OPEN1-8",
+        "OPEN1-9",
+        "OPEN1-11",
+        "OPEN1-12",
+        "SHAPE-20",
+        "EVAL-18",
+        "OPEN1-10",
+        "OPEN1-13",
+        "OPEN1-14",
+        "OPEN1-X1_1"
+      ]
+    },
+    {
+      "theme": "Cardinality and fulfilment identity",
+      "essence": "Cardinality is single (at most one fulfilment; fulfilmentId === obligationId by convention; the map entry is the canonical value) or indexed (zero-or-more fulfilments in a nested map keyed by per-source fulfilmentIds). Each indexed instance gets an orchestrator-generated opaque id that is stable across reorder, sibling deletion and reload — never array-index identity.",
+      "scope": "implement",
+      "scope_why": "Both cardinalities are exercised by the pinned journey (scalar fields everywhere; the claims collection), the fulfilments-map shape is the persistence heart of the model, and stable per-row ids are cheap insurance against index-shift bugs the parity specs would catch.",
+      "obligation_ids": [
+        "DEF-12",
+        "DEF-13",
+        "DEF-14",
+        "SHAPE-14",
+        "INDEX-1",
+        "INDEX-2",
+        "FULF-4",
+        "FULF-6",
+        "FULF-7",
+        "FULF-9"
+      ]
+    },
+    {
+      "theme": "indexedBy taxonomy: source × mutability",
+      "essence": "Every indexed obligation declares indexedBy with two independent dimensions: source (user: orchestrator-generated opaque ids via add/remove; derived: semantic keys from a named controllingObligation, shape mutated only via the controller; seeded: ids from an external seedHandler) and mutability (edit-only vs edit-add-remove), with per-source fulfilmentId semantics.",
+      "scope": "reduce",
+      "scope_why": "Source user is implemented fully (the claims loop demands it) and derived with edit-only mutability (the modifications/addons follow-ups and derived-key pruning demand it). Source seeded has no external system in a self-contained throwaway: it stays a validated schema value with a unit-level fake seed, not a wired runtime path.",
+      "obligation_ids": [
+        "INDEX-4",
+        "SHAPE-7",
+        "INDEX-5",
+        "INDEX-6",
+        "INDEX-7",
+        "INDEX-8",
+        "INDEX-9",
+        "INDEX-11",
+        "INDEX-12",
+        "INDEX-13",
+        "INDEX-14",
+        "INDEX-15",
+        "FULF-10",
+        "FULF-13",
+        "FULF-14",
+        "FULF-18"
+      ]
+    },
+    {
+      "theme": "Indexed and derived fulfilment lifecycle (spawn, wipe, no rehydration)",
+      "essence": "The runtime mints opaque ids (ULID/UUID) per user-added fulfilment and expands presentsForEach into one virtual presentation per in-scope fulfilment. For derived obligations, a controller answer gaining a fulfilmentId spawns a fresh blank fulfilment and losing one drops it and wipes its data; scope exit actively deletes data so re-entry never rehydrates. Mandatory/optional flips while in scope preserve data, and Save-and-continue persists partial state for unfilled soft obligations.",
+      "scope": "implement",
+      "scope_why": "This cluster realises the mandatory parity behaviours: the Add a claim / Add another claim loop, hadClaims=Yes gating, the No-flip wipe guaranteeing Yes-No-Yes does not rehydrate, and only-fullName-blocking partial saves on About you.",
+      "obligation_ids": [
+        "FULF-8",
+        "FULF-11",
+        "FULF-12",
+        "INDEX-19",
+        "INDEX-20",
+        "ARCH-26",
+        "INDEX-21",
+        "SHAPE-18",
+        "SHAPE-19",
+        "FLOW-10"
+      ]
+    },
+    {
+      "theme": "Open type space and kind-collapse (type as sole discriminant)",
+      "essence": "Every obligation has exactly one data type describing the canonical data produced; the type space is open-ended (no closed enum) and type is the sole discriminant between varieties. Former kinds (question, upload, agreement, payment, scheduling) collapse into a data type or a Flow-side acquisition mechanism; fulfilments store canonical form, never a presentation-specific one.",
+      "scope": "reduce",
+      "scope_why": "The principle is implemented (type field, no enum validation, canonical-form storage, acquisition declared Flow-side) using only the handful of types the quote journey needs; the payment-receipt/file/time-slot examples are illustrative speculation with no parity surface — logged, not built.",
+      "obligation_ids": [
+        "SHAPE-13",
+        "FLOW-26",
+        "FLOW-17",
+        "FLOW-18",
+        "FLOW-19",
+        "FLOW-20",
+        "FLOW-22",
+        "FLOW-23",
+        "FLOW-24",
+        "DEF-X2_2"
+      ]
+    },
+    {
+      "theme": "Unified fulfilments store and vocabulary",
+      "essence": "One fulfilments map (the state bag is named fulfilments; status vocabulary uses Fulfilled/Submitted, never Complete) holds user and system answers alike with no per-source partitioning and no separate cache layer — fulfilments ARE the cache; sub-journey receipts store only a lookup id. Convergent obligations presented in multiple contexts keep a single underlying value so edits propagate everywhere; MVP fulfilments carry no per-record metadata; lookups are reserved for genuinely dynamic data.",
+      "scope": "implement",
+      "scope_why": "Vocabulary and store-shape rules cost only naming discipline and are load-bearing for claims invalidation and CYA change propagation. With no genuinely dynamic data in the journey, everything is modelled as user obligations with bundled option lists, and the dereference indirection is not built with nothing real to dereference.",
+      "obligation_ids": [
+        "DEF-38",
+        "DEF-32",
+        "OPEN1-22",
+        "OPEN1-23",
+        "OPEN1-25",
+        "EVAL-X1_3",
+        "EVAL-38",
+        "OPEN1-20",
+        "SHAPE-X1_3",
+        "SHAPE-21"
+      ]
+    },
+    {
+      "theme": "System-handled obligations: provenance-via-model and orchestrator callbacks",
+      "essence": "Sub-journey receipts, external lookups and readiness markers are one unified mechanism: orchestrator-handled obligation types whose callback writes a value into the shared fulfilments map, with in-flight deduplication and normally no rendering (a transient checking indicator is permitted). The evaluator declares absent lookups in-scope to trigger the orchestrator and stays sync; consumers learn who provided a value only from the obligation’s declared type/source fields, never from storage location; sub-journey-receipt and lookup-result types carry subJourneyRef/lookupRef companions.",
+      "scope": "reduce",
+      "scope_why": "Demonstrated with one in-process, synchronously-resolved system-handled obligation (the computed quote recorded into the shared map), proving single-store plus provenance-via-model and the handler-registry contract at unit level. Real sub-journeys, external lookups, async third-party blockers and any visible checking state have no counterpart in a parity-pinned self-contained spike.",
+      "obligation_ids": [
+        "DEF-16",
+        "SHAPE-1",
+        "SHAPE-8",
+        "SHAPE-9",
+        "EVAL-8",
+        "OPEN1-21",
+        "OPEN1-24",
+        "STATUS-8",
+        "SHAPE-3",
+        "SHAPE-4",
+        "SHAPE-24",
+        "SHAPE-33",
+        "SHAPE-34",
+        "EVAL-32",
+        "EVAL-42",
+        "FLOW-21",
+        "FLOW-25",
+        "FLOW-X1_1",
+        "SHAPE-X1_1"
+      ]
+    },
+    {
+      "theme": "Pure two-evaluator engine plus side-effecting orchestrator",
+      "essence": "Exactly three cooperating components: a pure, sync, deterministic, zero-I/O, Service-scoped ObligationEvaluator (evaluateObligations(obligations, fulfilments) → EvaluationResult, no other inputs today, Flow-ignorant); a JourneyEvaluator of small pure primitives over the Container tree that consumes ObligationEvaluator output and never recomputes it (Flow depends on Obligations, never the reverse); and one side-effecting orchestrator owning all async and I/O, writing fulfilments and re-running the evaluators. Scoping is functions, not a declarative rule language; any future dependency (config, clock, seed, logger) enters by constructor injection; each layer is testable on plain fixtures.",
+      "scope": "implement",
+      "scope_why": "The two-evaluator split with purity guarantees is the engine the whole prototype pivots on and every other theme hangs off this boundary; it maps directly onto the spike’s concern-sized folder-modules with colocated deterministic vitest tests. No-config is implemented by abstention.",
+      "obligation_ids": [
+        "DEF-X2_1",
+        "OPEN1-X2_1",
+        "DEF-36",
+        "SHAPE-28",
+        "EVAL-5",
+        "EVAL-6",
+        "EVAL-17",
+        "EVAL-29",
+        "EVAL-30",
+        "PERSIST-3",
+        "TOOL-20",
+        "OPEN1-3",
+        "OPEN1-5",
+        "OPEN1-6",
+        "DEF-3",
+        "DEF-4",
+        "EVAL-1",
+        "SHAPE-32",
+        "ARCH-11",
+        "ARCH-7",
+        "EVAL-4",
+        "DEF-33",
+        "DEF-35",
+        "EVAL-2",
+        "EVAL-7",
+        "ARCH-9",
+        "DEF-37",
+        "EVAL-3",
+        "EVAL-23",
+        "ARCH-10"
+      ]
+    },
+    {
+      "theme": "Scoping-rule expressiveness: algorithms, external state, quantifiers",
+      "essence": "Scope rules can run arbitrary algorithms over state (interval algebra such as address ranges covering five years), consume external state (reference data, historical policies, fraud flags), and express within-fulfilment activation logic plus quantifier-shaped cross-fulfilment rules (\"any address with country != UK\"). A failed external lookup is represented uniformly as an unsatisfied lookup-obligation, not a special error path.",
+      "scope": "reduce",
+      "scope_why": "Scoping-as-named-predicate-functions (journey state plus an injected external-state object) gives all of this by construction, but the parity journey exposes no address-history rule, quantifier rule or upstream service — so the cluster is proven with an in-memory external-state fixture and colocated unit tests, not browser behaviour.",
+      "obligation_ids": [
+        "SHAPE-29",
+        "SHAPE-31",
+        "EVAL-40",
+        "FULF-16",
+        "FULF-17"
+      ]
+    },
+    {
+      "theme": "Model-change tolerance: reconcile-on-load pruning with logged drops",
+      "essence": "The model can redeploy mid-journey; persisted journeys carry no version stamp and evaluators always run against the current model. On every evaluation, stored fulfilments that no longer map are silently dropped (logged server-side), clean ones pass through, and the amended set is returned and persisted as the new source of truth — idempotent, converging in one step. Semantic changes to an obligation’s meaning need migration or fall back to the silent drop; the runtime must tolerate a model update between two save-and-continues.",
+      "scope": "implement",
+      "scope_why": "The pruning rule is part of the evaluator output contract being built anyway and is what implements the pinned Yes-No-Yes clearing; the mechanism ships thin (filter to known obligation ids, write back, log drops) against one model version — no migration tooling or multi-deploy simulation.",
+      "obligation_ids": [
+        "DEF-34",
+        "PERSIST-15",
+        "PERSIST-16",
+        "PERSIST-17",
+        "EVAL-19",
+        "EVAL-21",
+        "PERSIST-13",
+        "PERSIST-18",
+        "PERSIST-19",
+        "PERSIST-20",
+        "EVAL-20",
+        "EVAL-22",
+        "PERSIST-28",
+        "PERSIST-14"
+      ]
+    },
+    {
+      "theme": "Journey document and store: minimal envelope, derived state recomputed, journey-scoped isolation",
+      "essence": "The persisted Journey is exactly {journeyId, flowId, status, createdAt, updatedAt, submittedAt|null, fulfilments} — no serviceId, Container ids, current-page pointer or cached statuses; every piece of derived state is recomputed on load by running the evaluators, with resume position derived via firstUnfulfilledPage. The journey (not the user or session) is the uniqueness scope, with journeyId generated at start and zero-to-many concurrent Journeys per user; database choice, encryption, retention and backup stay outside the model.",
+      "scope": "implement",
+      "scope_why": "The seeded-vs-derived split is the paradigm’s central persistence claim and the document shape is small and fully specified, so it is implemented verbatim behind a thin repository with an in-memory Map. Multi-tab isolation is reduced to a cookie-carried journeyId (URL parity forbids id-in-path) and concurrent-journey addressing is deferred — both logged reductions.",
+      "obligation_ids": [
+        "FULF-1",
+        "DEF-21",
+        "FULF-2",
+        "DEF-22",
+        "PERSIST-5",
+        "PERSIST-1",
+        "PERSIST-2",
+        "PERSIST-4",
+        "PERSIST-6",
+        "PERSIST-7",
+        "PERSIST-9",
+        "PERSIST-X2_1",
+        "PERSIST-32",
+        "PERSIST-X1_1",
+        "ARCH-16",
+        "PERSIST-12"
+      ]
+    },
+    {
+      "theme": "Submit lifecycle and post-submit freeze",
+      "essence": "Submit on CYA triggers a server-side re-check of Journey-Fulfilled (never trusting button state); on pass, status flips in-progress → submitted with submittedAt set, the storage layer thereafter rejects all writes, and every journey route resolves to a read-only CYA — the only post-submit surface. Any unfulfilled Engine-mandatory obligation blocks completion regardless of page-level mandates. The MVP submit is exactly this state flip + timestamp + immutability + frozen read-only CYA; every richer capability is an extension point adopted only on concrete demand.",
+      "scope": "implement",
+      "scope_why": "Required for the Accept-and-get-quote → Quote-confirmed end of the parity journey; the storage write-block and route freeze are a few lines each and are the flagship browser-observable novelties. The scope fence (nothing speculative post-submit) is implemented by abstention.",
+      "obligation_ids": [
+        "SUBMIT-4",
+        "SUBMIT-5",
+        "SUBMIT-6",
+        "SUBMIT-7",
+        "SUBMIT-18",
+        "STATUS-35",
+        "DEF-31",
+        "NAV-36",
+        "FLOW-9",
+        "SUBMIT-9",
+        "NAV-37",
+        "SUBMIT-8",
+        "SUBMIT-10",
+        "SUBMIT-X1_1"
+      ]
+    },
+    {
+      "theme": "Journey lifecycle states and Submit gating",
+      "essence": "The Journey has its own lifecycle — Not Started (reached the Flow, no fulfilments), In Progress, Fulfilled (every top-level Section Fulfilled; the only state enabling Submit) — with free, repeatable movement between In Progress and Fulfilled; only Submitted is one-way. Exposed via a journeyState(flow, obligationState, submitted) contract function.",
+      "scope": "implement",
+      "scope_why": "Maps directly onto observable behaviour: Accept-and-get-quote gating, Quote confirmed as the terminal state, and the reversible Fulfilled boundary exercised by the claims flip. Submitted is an in-memory flag — no datastore needed.",
+      "obligation_ids": [
+        "NAV-33",
+        "NAV-34",
+        "NAV-35",
+        "DEF-30",
+        "STATUS-X1_4",
+        "EVAL-28",
+        "NAV-39"
+      ]
+    },
+    {
+      "theme": "Check your answers: change links, gating and soft prompts",
+      "essence": "CYA lists every fulfilment with its values and a Change link resolved deterministically via firstPagePresentingObligation (reusing the ?change=1 pattern); a page submitted in change mode returns to CYA instead of advancing linearly — change mode is runtime behaviour, not per-page Flow declaration. CYA is reachable before the Journey is Fulfilled, rendering soft prompts for missing items; the Submit control is enabled iff Fulfilled, with a stale-recheck re-render (missing items called out) as the fallback.",
+      "scope": "implement",
+      "scope_why": "CYA is a parity page (heading and Accept-and-get-quote button pinned) and the Change round trip is the flagship novel navigation primitive; the pre-Fulfilled and stale-recheck branches reuse the same rendering path. Whether early direct-URL access is inside the parity contract is an open human call.",
+      "obligation_ids": [
+        "STATUS-33",
+        "NAV-16",
+        "NAV-27",
+        "NAV-29",
+        "NAV-26",
+        "NAV-28",
+        "STATUS-34",
+        "STATUS-X1_3",
+        "STATUS-X1_5",
+        "NAV-30"
+      ]
+    },
+    {
+      "theme": "Deterministic navigation primitives over the Container tree",
+      "essence": "Exactly three pure depth-first rooted traversal functions answer every navigation question: firstApplicablePage (status-blind, includes read-only pages), firstUnfulfilledPage (first Not Started/In Progress page, null when all Fulfilled so callers fall back), and firstPagePresentingObligation (defensive null when absent). Navigation is always a query over Engine state — the runtime never hard-codes next-page; everything affecting applicability is itself an obligation; all skipping flows through the status taxonomy, never a read-only check; every in-scope obligation has at least one presenting Page; each primitive carries an enumerated structural/status/fallback unit-test case list.",
+      "scope": "implement",
+      "scope_why": "These primitives are the heart of the paradigm — hub entry, resume, change links and post-POST advance are all defined in terms of them — and they are small pure functions ideal for colocated vitest tests and the contract surface the Hapi route tables consume.",
+      "obligation_ids": [
+        "EVAL-24",
+        "EVAL-25",
+        "EVAL-26",
+        "STATUS-4",
+        "ARCH-33",
+        "NAV-1",
+        "NAV-2",
+        "NAV-4",
+        "NAV-5",
+        "NAV-6",
+        "OPEN2-11",
+        "STATUS-1",
+        "STATUS-9",
+        "STATUS-36",
+        "NAV-3",
+        "NAV-11",
+        "NAV-23",
+        "NAV-X2_1",
+        "NAV-X1_1",
+        "NAV-X2_2",
+        "STATUS-28",
+        "NAV-7",
+        "NAV-20",
+        "NAV-21",
+        "NAV-22",
+        "NAV-24"
+      ]
+    },
+    {
+      "theme": "Section entry modes (declared narrative order, configurable)",
+      "essence": "Clicking a Section on the hub resolves through a configurable sectionEntryMode (Flow-level default firstApplicablePage, per-Section override to firstUnfulfilledPage); the renderer just invokes the resolved mode with no forked logic. Read-only pages are never skipped on the linear walk — they occupy their declared place in the narrative sequence despite permanent NA status.",
+      "scope": "implement",
+      "scope_why": "Both primitives are small pure functions and the hub-task click target is parity-constrained browser behaviour; the config value is set to whichever mode reproduces the existing journey’s re-entry behaviour, with the override mechanism covered at unit level.",
+      "obligation_ids": [
+        "NAV-8",
+        "NAV-9",
+        "OPEN2-12",
+        "STATUS-23",
+        "OPEN2-7",
+        "NAV-10",
+        "NAV-13",
+        "STATUS-24",
+        "ARCH-X1_3"
+      ]
+    },
+    {
+      "theme": "POST lifecycle and page advancement",
+      "essence": "On successful page POST the runtime writes the submitted fulfilments into journey state, recalculates the Engine, and walks to the next applicable non-Fulfilled Container in the current Section’s subtree, returning to the Task List when the subtree is exhausted; the journey is done only when no in-scope obligation remains unsatisfied.",
+      "scope": "implement",
+      "scope_why": "This is the per-request heartbeat of every Save and continue and the end-of-task exit to the hub — core observable parity behaviour and the primary consumer of the traversal primitives.",
+      "obligation_ids": [
+        "STATUS-30",
+        "EVAL-31",
+        "EVAL-34",
+        "STATUS-31",
+        "STATUS-X1_1"
+      ]
+    },
+    {
+      "theme": "Fixed-point orchestration loop",
+      "essence": "Evaluation is a fixed-point computation: the orchestrator re-evaluates whenever fulfilments change, yields when no progress is possible (waiting on user input or callbacks), and loops until stable. The doc flags this layer as net-new work in every paradigm.",
+      "scope": "reduce",
+      "scope_why": "In a stateless request/response Hapi app with no live async obligations the loop converges immediately: the loop shape is implemented (re-evaluate until stable) with yield reinterpreted as render-the-response-and-end-the-request; no long-lived process or real callback waiting.",
+      "obligation_ids": ["EVAL-33", "EVAL-36", "FLOW-33"]
+    },
+    {
+      "theme": "Rendering dispatch and presentation containment",
+      "essence": "The journey layer owns rendering: each user-facing obligation type dispatches to a govuk-frontend template mechanism while system-handled types dispatch to orchestrator handlers; an isReadOnly(page) helper may be derived. Start pages, confirmation, hub views and all non-data UI affordances are Flow furniture, never Obligations; NA signposting is renderer-side, and future SubSection-rendering choices must leave the tree, status taxonomy, navigation algorithm and tests untouched.",
+      "scope": "implement",
+      "scope_why": "The type-to-renderer dispatch is exactly the thin route-table + template surface the spike conventions demand, and every parity heading/label/button flows through it; the containment boundary rules are implemented by abstention and pinned by unit tests.",
+      "obligation_ids": [
+        "SHAPE-2",
+        "FLOW-27",
+        "ARCH-32",
+        "ARCH-5",
+        "OPEN2-20",
+        "OPEN2-X1_3"
+      ]
+    },
+    {
+      "theme": "Task List hub rendering, NA visibility and signposting",
+      "essence": "The hub renders each top-level Section as a row with its rolled-up status and a link in, trusting child recursion and never inspecting leaf state. NA Sections hide by default, but a Flow may attach a signpost hint rendering them as \"coming up\" — the eventual home of the UX affordance the dropped Cannot-start-yet state would have provided.",
+      "scope": "implement",
+      "scope_why": "The hub with six exact task links and engine-driven statuses is a hard parity requirement. The hide/signpost branch is implemented with unit tests but cannot be exercised on the parity path (all six links always show); the CSY-label signpost hint additionally waits on signposting being formalised.",
+      "obligation_ids": [
+        "DEF-26",
+        "STATUS-14",
+        "STATUS-21",
+        "STATUS-22",
+        "OPEN2-X2_1",
+        "OPEN2-X2_2"
+      ]
+    },
+    {
+      "theme": "Status taxonomy, Fulfilled derivation and propagation",
+      "essence": "Exactly four statuses — Not Applicable, Not Started, In Progress, Fulfilled (fifth Cannot-start-yet state rejected) — computed uniformly by containerStatus(container, obligationState). Fulfilled is recursive: Page iff every in-scope mandatory presented obligation is fulfilled; Group iff every applicable (non-NA) child is Fulfilled; Journey iff every top-level Section is. Group roll-up is pinned by an exhaustive seven-row truth table after NA-filtering. Read-only pages are permanently NA by construction; a presentsForEach page with zero fulfilments is dynamic-empty NA (distinct from structural read-only), and NA also covers Containers whose in-scope obligations are wholly served elsewhere.",
+      "scope": "implement",
+      "scope_why": "Hub tags, page skipping and Submit gating all derive from this small pure module, unit-tested against the truth table; the served-elsewhere NA trigger has no parity surface so it is proven against a synthetic model only.",
+      "obligation_ids": [
+        "STATUS-2",
+        "STATUS-3",
+        "STATUS-6",
+        "EVAL-27",
+        "DEF-28",
+        "STATUS-11",
+        "DEF-29",
+        "STATUS-12",
+        "DEF-X1_2",
+        "STATUS-5",
+        "STATUS-13",
+        "STATUS-15",
+        "STATUS-16",
+        "STATUS-17",
+        "STATUS-18",
+        "STATUS-19",
+        "STATUS-20",
+        "OPEN2-4",
+        "ARCH-30",
+        "STATUS-X1_2",
+        "ARCH-34",
+        "STATUS-X2_1"
+      ]
+    },
+    {
+      "theme": "Blocked-work-as-Not-Applicable (appliesWhen and blocker obligations)",
+      "essence": "There is no blocked status: gated Sections carry appliesWhen conditions and report Not Applicable until triggered, then Not Started; genuine asynchronous blockers are modelled as obligations whose dependent Containers stay NA until the blocker is fulfilled.",
+      "scope": "reduce",
+      "scope_why": "The appliesWhen-to-NA mechanism is implemented fully (email gate, claims loop, Get-your-quote gating), but the journey has no genuine async blockers, so those are demonstrated with synchronous stand-ins plus engine unit tests rather than real async orchestration.",
+      "obligation_ids": ["STATUS-7", "OPEN2-5", "OPEN2-6"]
+    },
+    {
+      "theme": "Staleness: fulfilment freshness states settled, mechanism deferred",
+      "essence": "Fulfilments have three states — incomplete, complete, stale — and a stale answer re-enters needs-satisfying (system-handled re-fired, user-facing re-presented). Staleness applies uniformly to user-entered and system-handled answers alike, but the mechanism (per-obligation TTL vs freshness predicate) and the per-fulfilment metadata it needs (fetchedAt, sourceRef, raw, versionStamp) are explicitly deferred to a colleague discussion with a concrete case.",
+      "scope": "reduce",
+      "scope_why": "The engine’s fulfilment record supports the stale state and re-entry transition via unit tests, but the doc itself forbids pinning the mechanism speculatively, MVP fulfilments carry no metadata, and the journey has no concrete staleness case — the store shape merely avoids precluding later metadata.",
+      "obligation_ids": [
+        "DEF-15",
+        "FULF-X1_1",
+        "FULF-19",
+        "FULF-20",
+        "OPEN1-16",
+        "OPEN1-19",
+        "OPEN1-17",
+        "FULF-21",
+        "OPEN1-18",
+        "PERSIST-11"
+      ]
+    },
+    {
+      "theme": "Escape routes and contextual Back navigation",
+      "essence": "From every page the user can move forward, backward, or return to the always-reachable Task List; Back is contextual by arrival source (back to hub/CYA if arrived from there, otherwise the previous page in the Section); breadcrumbs are excluded for this journey.",
+      "scope": "reduce",
+      "scope_why": "Affordances must match the existing journey’s DOM exactly, so hub and Back links appear only where the existing pages have them, and source tracking is simplified to a change-mode/source query parameter rather than full referrer history.",
+      "obligation_ids": ["STATUS-25", "STATUS-32", "NAV-31"]
+    },
+    {
+      "theme": "Resume shortcut and parallel navigation widgets",
+      "essence": "An optional Resume/Continue affordance always binds to firstUnfulfilledPage, skipping NA and Fulfilled pages purely via the status taxonomy; the model supports exposing multiple widgets in parallel (default Section click plus Resume), and rendering or hiding a redundant Resume is a renderer choice, not a model concern.",
+      "scope": "reduce",
+      "scope_why": "The existing journey has no Resume affordance and structural parity forbids new hub chrome, so the widget stays deliberately unrendered; the primitive and its status-driven skipping are implemented and tested at the contract level.",
+      "obligation_ids": [
+        "STATUS-26",
+        "OPEN2-8",
+        "STATUS-27",
+        "NAV-15",
+        "NAV-12",
+        "OPEN2-13",
+        "NAV-19"
+      ]
+    },
+    {
+      "theme": "Layered browserless test tiers plus the browser happy-path suite",
+      "essence": "CI-fast tiers below Playwright: static fixture-only reachability (every obligation presented by at least one page), a per-page model-to-template alignment walker (forward: every presents entry has an input, hard-mandate-without-input a strict failure; reverse: no orphan inputs; type alignment; required/aria error-id wiring), and dynamic completability/dead-mandate checks over generated fulfilment combinations using the Engine and navigation but never a browser. The existing shared Playwright suite is retained as the proof the rendered service works.",
+      "scope": "implement",
+      "scope_why": "These map one-to-one onto the spike’s colocated vitest conventions and the browser suite is the acceptance criterion itself. Reductions inside: the walker renders Nunjucks/govuk macros with a neutral context (or reads declared widgets) rather than parsing raw HTML, and completability uses bounded enumeration over the small state space instead of a PBT framework.",
+      "obligation_ids": [
+        "TEST-6",
+        "TEST-15",
+        "TEST-X1_1",
+        "TEST-1",
+        "TEST-2",
+        "TEST-7",
+        "TEST-8",
+        "TEST-9",
+        "FLOW-12",
+        "TEST-10",
+        "TEST-11",
+        "TEST-12",
+        "TEST-3",
+        "TEST-13",
+        "TEST-14",
+        "FLOW-13",
+        "EVAL-37",
+        "TEST-5"
+      ]
+    },
+    {
+      "theme": "Cross-Flow evaluator-equivalence harness and its applications",
+      "essence": "Obligation-level scripts ({ obligation, value }, never page-level) replayed by a navigation-driven script-runner across every Flow of a Service, with the Engine end-state compared on canonical fulfilment values only (provenance reasons and generated fulfilmentIds legitimately differ). This makes skeleton Flows reference oracles, buys free coverage for new Flows, guards refactors, mid-flight migration, A/B integrity and multi-channel coherence, and serves as the deterministic oracle for AI-generated Flows. Applies only while multiple Flows exist; prerequisite is the dynamic-reachability tier.",
+      "scope": "reduce",
+      "scope_why": "The formal proof needs coexisting Flows the single-Flow parity brief forbids, so it reduces to a minimal data-only skeleton-Flow test fixture plus a vitest script-runner diffing canonical values — the headline claim demonstrated structurally, not proven — with the shared e2e specs doubling as the browser-level equivalence check and the downstream applications logged for the production track.",
+      "obligation_ids": [
+        "ARCH-3",
+        "FLOW-14",
+        "TEST-4",
+        "TEST-17",
+        "TEST-18",
+        "TEST-30",
+        "NAV-25",
+        "FLOW-15",
+        "TEST-19",
+        "TEST-20",
+        "TEST-21",
+        "TOOL-17",
+        "TOOL-18",
+        "TEST-16",
+        "TEST-22",
+        "TEST-23",
+        "TEST-25",
+        "TEST-26",
+        "TEST-27",
+        "TEST-28",
+        "TEST-29",
+        "TEST-24"
+      ]
+    },
+    {
+      "theme": "Datastore decision and operational persistence policies",
+      "essence": "The datastore choice is the urgent upstream constraint on all persistence design — schema style, submit atomicity, multi-device concurrency, in-place flip vs copy-to-archive, retention and userId ownership are downstream of it — must not default to workspace-standard MongoDB, and needs decision-makers plus Defra-wide input.",
+      "scope": "reduce",
+      "scope_why": "A throwaway cannot and should not pre-empt it: the spike demonstrates the Journey-document shape behind a thin repository contract with an in-memory Map explicitly framed as a non-precedential stand-in, with every operational policy logged as deferred behind that contract.",
+      "obligation_ids": [
+        "SUBMIT-2",
+        "SUBMIT-X2_1",
+        "SUBMIT-X2_2",
+        "SUBMIT-1",
+        "SUBMIT-3",
+        "SUBMIT-17",
+        "SUBMIT-19",
+        "SUBMIT-20",
+        "SUBMIT-22",
+        "PERSIST-10"
+      ]
+    },
+    {
+      "theme": "Post-submit lifecycle extensions",
+      "essence": "Everything richer than the frozen read-only CYA is a named deferred extension point: per-page re-viewing, PDF receipt downloads, amendment via a new Journey referencing the immutable original, a Withdrawn state, downstream Submit events to case management/email/audit, and reference-number generation.",
+      "scope": "defer",
+      "scope_why": "All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme.",
+      "obligation_ids": [
+        "SUBMIT-11",
+        "SUBMIT-12",
+        "SUBMIT-13",
+        "SUBMIT-14",
+        "SUBMIT-15",
+        "SUBMIT-16",
+        "NAV-38"
+      ]
+    },
+    {
+      "theme": "Audit trail and deterministic replay",
+      "essence": "Every satisfaction — system-handled and user-answer alike — is a first-class recordable audit event, and recorded fulfilments plus whatever context constructed evaluators close over must be replayable to reconstruct exactly what the user saw; the recorded-context mechanism is itself deferred until replay is a concrete need.",
+      "scope": "defer",
+      "scope_why": "Production compliance tooling with no browser-observable surface in this journey; the pure recompute-on-load design keeps replay architecturally possible, so the deferral is logged rather than an event log built into a throwaway.",
+      "obligation_ids": ["EVAL-39", "EVAL-41", "EVAL-X1_2", "OPEN1-7"]
+    },
+    {
+      "theme": "Model evolution and identifier-rename open items",
+      "essence": "What happens to in-flight journeys when the authored model changes is held open: notifying users of dropped answers, per-obligation migrate(old)→new hooks inside the ObligationEvaluator, bookmark breakage if URLs embed Container ids (a routing-layer problem), and Flow renames orphaning resumed journeys’ flowId binding.",
+      "scope": "defer",
+      "scope_why": "A gated throwaway has one hand-authored model version and no live users, so no rename or migration event can occur; the spike simply keeps Container/Flow ids stable and unexposed so the deferral costs nothing.",
+      "obligation_ids": ["PERSIST-21", "PERSIST-22", "PERSIST-35", "PERSIST-36"]
+    },
+    {
+      "theme": "Deferred evaluator and record extension points",
+      "essence": "Foreseen but deliberately unmodelled capabilities with introduce-only-on-demand gates: configuration injection into the ObligationEvaluator (constructor-shaped when it arrives; signature stays bare until real config exists), per-Journey config snapshots, a declared reasonCodes: string[] field for content-design lintability, and recorded-snapshot fidelity for deterministic replay.",
+      "scope": "defer",
+      "scope_why": "The doc’s own instruction is to keep these off the record and out of the evaluator signature until a concrete need arrives; the insurance journey supplies none, and adding them would pollute the portable model JSON with speculative fields.",
+      "obligation_ids": [
+        "EVAL-9",
+        "SUBMIT-21",
+        "OPEN1-15",
+        "OPEN1-X2_2",
+        "OPEN1-4"
+      ]
+    },
+    {
+      "theme": "Deferred indexed-obligation machinery: seeding, recovery, hybrids, references",
+      "essence": "seedHandler-driven seeding at journey start or scope entry (evaluator stays seeding-agnostic), uniform stuck-obligation recovery (retry / surface / default), intermediate mutability values, hybrid source × mutability combinations, min/max counts, and cross-obligation fulfilment references (plain-data foreign keys handled by the evaluator) all await a concrete journey that needs them.",
+      "scope": "defer",
+      "scope_why": "Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary.",
+      "obligation_ids": [
+        "INDEX-10",
+        "OPEN1-1",
+        "OPEN1-2",
+        "INDEX-16",
+        "INDEX-17",
+        "INDEX-18",
+        "EVAL-X1_1"
+      ]
+    },
+    {
+      "theme": "Deferred renderer/UX affordances and navigation generality",
+      "essence": "Renderer-level options gated on a real journey needing them: NA \"coming up\" signposting variants (including visited-then-reset), Task-List rendering of nested SubSections (four patterns plus taskListVisible override), drill-in back-navigation questions, Resume placement, Pattern C sub-hub clicks, container-rooted and direct page-jump widgets, renderer-derived breadcrumbs, and hub suppression for single-Section Flows.",
+      "scope": "defer",
+      "scope_why": "The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free.",
+      "obligation_ids": [
+        "STATUS-10",
+        "OPEN2-21",
+        "OPEN2-22",
+        "OPEN2-17",
+        "OPEN2-18",
+        "OPEN2-19",
+        "OPEN2-10",
+        "NAV-14",
+        "NAV-17",
+        "NAV-18",
+        "NAV-32",
+        "OPEN2-16"
+      ]
+    },
+    {
+      "theme": "Orchestrator failure policies for system-handled obligations",
+      "essence": "When a system-executed obligation fails (lookup timeout, sub-journey error) the orchestrator needs a per-obligation failure policy — candidates block / degrade / default / stale-ok — living on the obligation record, executed by the orchestrator, opaque to the evaluator; deferred pending a concrete failing-lookup case and operational input.",
+      "scope": "defer",
+      "scope_why": "The spike’s only system-computed step (the quote) runs in-process with nothing that can fail, so the stated precondition — real failure modes to reason against — is absent; the evaluator/orchestrator split stays clean so a policy field can slot in opaquely later.",
+      "obligation_ids": ["OPEN2-23", "OPEN2-24"]
+    },
+    {
+      "theme": "Code-generation pipeline and generator-shaped template conventions",
+      "essence": "An uncommitted two-stage pipeline: Stage 1 (judgement-heavy, likely an AI skill pointed at a reference implementation) turns obligations.json into a skeleton flow.json plus tests; Stage 2 is a deterministic template-based generator emitting HTML, wiring, validation and tests. Structural generation stays deterministic with AI polish optional; generated tests carry hard-coded expectations; AI copy needs human polish; the first Service is built by hand. The mechanical mapping conventions — one template per Page, one logical input per presents entry with type-derived widgets, hard mandates wired to validation, presentsForEach as template loops — are what a generator would apply.",
+      "scope": "reduce",
+      "scope_why": "No generator or AI skill is built (the spike is arguably the hand-built reference implementation TOOL-28 requires), but the hand-written templates and routes obey the mapping conventions so the output stays generator-shaped — with the required-attribute detail yielding to the parity contract’s server-side GDS error round trip.",
+      "obligation_ids": [
+        "TOOL-1",
+        "TOOL-2",
+        "TOOL-16",
+        "TOOL-19",
+        "TOOL-27",
+        "TOOL-28",
+        "TOOL-3",
+        "TOOL-4",
+        "TOOL-5",
+        "TOOL-6",
+        "TOOL-7",
+        "TOOL-8",
+        "TOOL-9",
+        "TOOL-11",
+        "TOOL-12",
+        "TOOL-13",
+        "TOOL-14",
+        "TOOL-10",
+        "TOOL-15",
+        "TOOL-26",
+        "TOOL-29"
+      ]
+    },
+    {
+      "theme": "Interrogation ladder: module API, schema endpoints, CLI, dev routes",
+      "essence": "Four staged interrogation levels with a fixed investment order: Level 1 — evaluator primitives as plain exported Node module functions, callable from a REPL or test with zero incremental work; Level 3 — obligations.json/flow.json served at well-known endpoints for linters/visualisers/diff-viewers; Level 2 — a CLI wrap; Level 4 — config-gated live /dev evaluate routes requiring a production safety story.",
+      "scope": "implement",
+      "scope_why": "Level 1 coincides exactly with the spike’s folder-module + barrel conventions (essentially free), Level 3 is one or two auth-free GET routes returning the model JSON verbatim; Levels 2 and 4 are deferred per TOOL-25’s own sequencing and because a tim-CLI wrap would breach spike self-containment.",
+      "obligation_ids": ["TOOL-21", "TOOL-23", "TOOL-22", "TOOL-24", "TOOL-25"]
+    },
+    {
+      "theme": "Spike A-D retrofit commentary",
+      "essence": "The doc’s assessment of how each existing spike (A declarative selectors, B statechart, C rules engine, D schema-first) would map onto the obligations vision — comparative analysis of other codebases, not requirements on the new model.",
+      "scope": "defer",
+      "scope_why": "Nothing to build: the new spike is a fresh self-contained implementation, so retrofit paths are documentation context only, retained as rationale for design choices such as keeping spike C’s authored-reasons pattern.",
+      "obligation_ids": ["FLOW-29", "FLOW-30", "FLOW-31", "FLOW-32"]
+    },
+    {
+      "theme": "Meta-goals and human review checkpoints",
+      "essence": "The spec-precision meta-goal (precise enough to judge paradigm fit, retrofit existing spikes, and stand as the journey-agnostic core) and the outstanding TODO to review the orchestrator-loop pseudocode with Sam — activities that consume the spike rather than modules within it.",
+      "scope": "defer",
+      "scope_why": "Neither yields code: the spike as a whole is the evidence artifact for paradigm-fit judgement, its orchestrator should be flagged as implementing the unreviewed sketch so the Sam review treats it as input, and friction met while building is exactly the paradigm-fit data requested.",
+      "obligation_ids": ["DEF-X2_3", "EVAL-35"]
+    }
+  ],
+  "duplicates": [
+    {
+      "keep": "SHAPE-11",
+      "dups": ["DEF-9"],
+      "why": "Both state name uniqueness and the form-input -> Page -> Obligation mapping rationale; SHAPE-11 is the settled restatement."
+    },
+    {
+      "keep": "SHAPE-6",
+      "dups": ["PERSIST-23"],
+      "why": "Both state the two-identifier rule; SHAPE-6 additionally names the persistence-key and code/i18n roles."
+    },
+    {
+      "keep": "PERSIST-24",
+      "dups": ["DEF-6"],
+      "why": "Both state the id is an opaque UUID stable across renames; PERSIST-24 adds its storage persistence-key role."
+    },
+    {
+      "keep": "PERSIST-25",
+      "dups": ["SHAPE-X2_1"],
+      "why": "Both state the meaningful name is the binding surface for code, templates and i18n; PERSIST-25 is broader."
+    },
+    {
+      "keep": "ARCH-13",
+      "dups": ["DEF-18"],
+      "why": "Near-verbatim definitions of a Flow’s static contents; ARCH-13 adds obligations referenced by id."
+    },
+    {
+      "keep": "DEF-19",
+      "dups": ["ARCH-14"],
+      "why": "Both state one-or-more Flows per Service; DEF-19 adds that all Flows reference the same Obligations."
+    },
+    {
+      "keep": "ARCH-15",
+      "dups": ["DEF-20"],
+      "why": "Both define a Journey as a runtime instance of one Flow with its own id; ARCH-15 adds fulfilments-map ownership and isolation."
+    },
+    {
+      "keep": "ARCH-23",
+      "dups": ["DEF-24"],
+      "why": "DEF-24’s page-to-HTML 1:1 correspondence is wholly contained in ARCH-23."
+    },
+    {
+      "keep": "ARCH-8",
+      "dups": ["DEF-5"],
+      "why": "DEF-5’s dedicated obligations.json declarative artefact is subsumed by ARCH-8’s fuller Layer-1 description."
+    },
+    {
+      "keep": "ARCH-31",
+      "dups": ["OPEN2-9"],
+      "why": "Both settle read-only as intrinsic (empty presents) with no flag; ARCH-31 carries the rationale."
+    },
+    {
+      "keep": "NAV-8",
+      "dups": ["OPEN2-12"],
+      "why": "OPEN2-12 restates NAV-8’s Flow-level sectionEntryMode and NAV-9’s per-Section override in settled summary form."
+    },
+    {
+      "keep": "ARCH-37",
+      "dups": ["FLOW-6"],
+      "why": "Both state the page mandate defaults to soft when undeclared; ARCH-37 carries the footgun rationale."
+    },
+    {
+      "keep": "FULF-6",
+      "dups": ["DEF-13"],
+      "why": "Both state the fulfilmentId === obligationId convention for single-cardinality obligations."
+    },
+    {
+      "keep": "FULF-7",
+      "dups": ["DEF-14"],
+      "why": "Both state that indexed fulfilment-id shape depends on the obligation’s source."
+    },
+    {
+      "keep": "OPEN1-8",
+      "dups": ["EVAL-13"],
+      "why": "EVAL-13’s reasons-array shape and dotted code convention restate the settled reason record of OPEN1-8."
+    },
+    {
+      "keep": "OPEN1-11",
+      "dups": ["EVAL-14"],
+      "why": "Both state explanation is freeform developer-facing text never shown to end users."
+    },
+    {
+      "keep": "OPEN1-12",
+      "dups": ["EVAL-15"],
+      "why": "Both state values holds interpolation params substituted into the UI message resolved from the code."
+    },
+    {
+      "keep": "OPEN1-21",
+      "dups": ["OPEN1-24"],
+      "why": "Both state provenance is read from the obligation’s declared type/source fields, never storage location."
+    },
+    {
+      "keep": "INDEX-4",
+      "dups": ["SHAPE-7"],
+      "why": "Both declare the indexedBy object with independent source and mutability dimensions; INDEX-4 states the taxonomy in full."
+    },
+    {
+      "keep": "EVAL-5",
+      "dups": ["PERSIST-3", "TOOL-20"],
+      "why": "All three restate evaluators-are-pure-sync; EVAL-5 is the fullest (adds where async lives)."
+    },
+    {
+      "keep": "FULF-20",
+      "dups": ["OPEN1-16"],
+      "why": "Both mandate a staleness mechanism uniform across user-entered and system-handled answers."
+    },
+    {
+      "keep": "OPEN1-13",
+      "dups": ["OPEN1-X1_1"],
+      "why": "Both quote the same lines: Welsh is statutory so the reason surface is locale-agnostic."
+    },
+    {
+      "keep": "SUBMIT-10",
+      "dups": ["SUBMIT-X1_1"],
+      "why": "The adopt-extension-points-only-on-demand corollary is already implicit in SUBMIT-10’s MVP boundary."
+    },
+    {
+      "keep": "DEF-10",
+      "dups": ["SHAPE-X1_2"],
+      "why": "Both pin the same-string cross-layer name contract; DEF-10 enumerates every usage site."
+    },
+    {
+      "keep": "ARCH-12",
+      "dups": ["EVAL-44"],
+      "why": "Both state evaluators are not cross-language portable; ARCH-12 adds the cardinality."
+    },
+    {
+      "keep": "TEST-6",
+      "dups": ["TEST-X1_1"],
+      "why": "TEST-X1_1 quotes a subset of TEST-6; the Engine-but-no-browser requirement is already in TEST-6."
+    },
+    {
+      "keep": "TEST-16",
+      "dups": ["TEST-26"],
+      "why": "Both declare cross-Flow Engine equivalence the formal proof of the layering claim."
+    },
+    {
+      "keep": "EVAL-2",
+      "dups": ["DEF-33", "ARCH-9"],
+      "why": "All three state the ObligationEvaluator is a pure sync function over (obligations, fulfilments); EVAL-2 is fullest."
+    },
+    {
+      "keep": "EVAL-3",
+      "dups": ["DEF-37", "ARCH-10"],
+      "why": "All three state the JourneyEvaluator is a set of pure sync Flow-layer primitives consuming ObligationEvaluator output."
+    },
+    {
+      "keep": "ARCH-11",
+      "dups": ["DEF-4", "EVAL-4"],
+      "why": "All three define the orchestrator as the sole side-effecting wrapper; ARCH-11 is most complete."
+    },
+    {
+      "keep": "PERSIST-17",
+      "dups": ["DEF-34"],
+      "why": "DEF-34 restates the reconciliation trio’s amended-fulfilments output clause."
+    },
+    {
+      "keep": "INDEX-19",
+      "dups": ["FULF-11"],
+      "why": "Both state a controller answer gaining a fulfilmentId spawns a fresh blank derived fulfilment."
+    },
+    {
+      "keep": "INDEX-20",
+      "dups": ["FULF-12"],
+      "why": "Both state removing a controller value drops the derived fulfilment and wipes its data."
+    },
+    {
+      "keep": "NAV-1",
+      "dups": ["OPEN2-11"],
+      "why": "OPEN2-11’s two primitives and depth-first traversal are fully covered by NAV-1 plus NAV-2."
+    },
+    {
+      "keep": "EVAL-42",
+      "dups": ["SHAPE-3"],
+      "why": "Both state sub-journey receipts and external lookups are one orchestrator-handled callback mechanism."
+    },
+    {
+      "keep": "SHAPE-10",
+      "dups": ["DEF-7", "INDEX-3", "FULF-3", "PERSIST-8"],
+      "why": "All five state fulfilments are keyed by the obligation’s stable UUID id, not name."
+    },
+    {
+      "keep": "PERSIST-27",
+      "dups": ["DEF-11", "SHAPE-12"],
+      "why": "All three state names may be renamed between deployments because persistence keys on id."
+    },
+    {
+      "keep": "FULF-1",
+      "dups": ["DEF-21"],
+      "why": "Both state the Journey owns the fulfilments map."
+    },
+    {
+      "keep": "FULF-2",
+      "dups": ["DEF-22"],
+      "why": "Both state user/session is not the uniqueness scope; concurrent journeys must be isolated."
+    },
+    {
+      "keep": "PERSIST-18",
+      "dups": ["EVAL-21"],
+      "why": "Verbatim-identical quote: the orchestrator persists the amended set as the new source of truth."
+    },
+    {
+      "keep": "DEF-31",
+      "dups": ["NAV-36"],
+      "why": "Both state Submitted is terminal with no further changes after Submit."
+    },
+    {
+      "keep": "PERSIST-32",
+      "dups": ["PERSIST-X1_1"],
+      "why": "Same lines; PERSIST-32 already includes the no-current-page-pointer rule and firstUnfulfilledPage resume derivation."
+    },
+    {
+      "keep": "OPEN1-17",
+      "dups": ["FULF-21"],
+      "why": "Both leave the staleness/freshness mechanism open; OPEN1-17 is the canonical open item."
+    },
+    {
+      "keep": "SUBMIT-11",
+      "dups": ["NAV-38"],
+      "why": "NAV-38 is a one-line roll-up restating SUBMIT-11..16 as deferred extension points."
+    },
+    {
+      "keep": "OPEN2-21",
+      "dups": ["STATUS-10"],
+      "why": "Both hold NA-section signposting open as a renderer-level Container hint; OPEN2-21 is the actual open item."
+    },
+    {
+      "keep": "STATUS-23",
+      "dups": ["OPEN2-7"],
+      "why": "OPEN2-7 is the settled restatement of STATUS-23’s default Section-entry rule."
+    },
+    {
+      "keep": "STATUS-24",
+      "dups": ["ARCH-X1_3"],
+      "why": "Both state read-only/NA Pages remain in the declared narrative sequence."
+    },
+    {
+      "keep": "STATUS-26",
+      "dups": ["OPEN2-8"],
+      "why": "OPEN2-8 restates the optional Continue/Resume shortcut jumping to the first Not Started/In Progress Page."
+    },
+    {
+      "keep": "NAV-12",
+      "dups": ["OPEN2-13"],
+      "why": "OPEN2-13 is the settled-question form of NAV-12’s parallel-navigation-widgets rule."
+    },
+    {
+      "keep": "STATUS-31",
+      "dups": ["STATUS-X1_1"],
+      "why": "STATUS-X1_1 extracts only the return-to-Task-List branch already inside STATUS-31."
+    },
+    {
+      "keep": "STATUS-11",
+      "dups": ["DEF-28"],
+      "why": "Identical Page-Fulfilled leaf rule stated twice."
+    },
+    {
+      "keep": "STATUS-12",
+      "dups": ["DEF-29"],
+      "why": "Same Group-Fulfilled recursion with NA-children exclusion stated twice."
+    },
+    {
+      "keep": "STATUS-13",
+      "dups": ["DEF-X1_2", "STATUS-5"],
+      "why": "All three state Journey Fulfilled iff every top-level Section is Fulfilled; STATUS-13 is the bare form."
+    },
+    {
+      "keep": "DEF-30",
+      "dups": ["NAV-35"],
+      "why": "NAV-35 restates the union of DEF-30 (Submit enabled only on Journey Fulfilled) and STATUS-13."
+    },
+    {
+      "keep": "STATUS-20",
+      "dups": ["STATUS-16", "STATUS-17", "STATUS-18", "STATUS-19", "OPEN2-4"],
+      "why": "STATUS-20’s exhaustive seven-row truth table subsumes the individual propagation rows; OPEN2-4 records the same table as settled."
+    },
+    {
+      "keep": "STATUS-7",
+      "dups": ["OPEN2-5"],
+      "why": "Both say blocked Sections are modelled as NA-until-triggered via appliesWhen."
+    },
+    {
+      "keep": "STATUS-X1_2",
+      "dups": ["ARCH-30"],
+      "why": "Both give read-only Pages a permanent NA status; STATUS-X1_2 supplies the mechanism."
+    },
+    {
+      "keep": "TEST-4",
+      "dups": ["ARCH-3", "FLOW-14"],
+      "why": "All three state the same cross-Flow evaluator-equivalence invariant; TEST-4 is the concrete test-class spec."
+    },
+    {
+      "keep": "TEST-19",
+      "dups": ["FLOW-15"],
+      "why": "Both say verbatim the skeleton Flow becomes a reference/regression oracle for the polished Flow."
+    },
+    {
+      "keep": "TEST-9",
+      "dups": ["FLOW-12"],
+      "why": "Both define the strict hard-mandate-without-template-input failure."
+    },
+    {
+      "keep": "TEST-14",
+      "dups": ["FLOW-13"],
+      "why": "Both define the dead-constraint (never-in-scope hard mandate) warning-level check."
+    },
+    {
+      "keep": "TEST-3",
+      "dups": ["TEST-13"],
+      "why": "TEST-13 is the expanded specification of exactly the test class TEST-3 declares."
+    },
+    {
+      "keep": "TOOL-17",
+      "dups": ["TOOL-18"],
+      "why": "TOOL-18’s rendering-independent divergence catch is a property of the same AI-Flow oracle TOOL-17 defines."
+    },
+    {
+      "keep": "DEF-8",
+      "dups": ["PERSIST-29"],
+      "why": "Both mandate tooling-generated obligation ids authors never type; DEF-8 adds the never-displayed constraint."
+    },
+    {
+      "keep": "ARCH-35",
+      "dups": ["FLOW-7", "STATUS-29"],
+      "why": "All three state the same POST-time hard-mandate blocking rule; ARCH-35 gives the fullest semantics."
+    },
+    {
+      "keep": "SHAPE-30",
+      "dups": ["SHAPE-X2_2"],
+      "why": "SHAPE-X2_2’s quote is a strict subset of SHAPE-30’s range and its conditional mandate is already in SHAPE-30’s summary."
+    }
+  ],
+  "e2e_edges": [
+    {
+      "rank": 1,
+      "behaviour": "Post-submit freeze: after \"Accept and get quote\" lands on Quote confirmed, directly navigating (GET) to the hub, any task/question page, or a CYA Change link yields only the read-only CYA/confirmation surface — no editable forms — and re-POSTing a form to the submitted journey alters nothing.",
+      "obligation_ids": [
+        "SUBMIT-8",
+        "SUBMIT-9",
+        "NAV-37",
+        "SUBMIT-7",
+        "SUBMIT-18",
+        "SUBMIT-4",
+        "SUBMIT-5",
+        "DEF-31",
+        "STATUS-X1_4",
+        "NAV-39"
+      ],
+      "why_new": "Every existing shared spec ends at Quote confirmed and never navigates or posts after submission; the one-way Submitted transition, storage-layer write block and route freeze are only observable by trying to go back and change something."
+    },
+    {
+      "rank": 2,
+      "behaviour": "Mid-task resume via recompute-on-load: complete only the first page of a multi-page task, leave via the hub (or reload), re-enter the task link — the browser lands on the first unfulfilled page (e.g. Your vehicle, not About you) with earlier answers pre-populated and blank optionals persisted as blank, demonstrating there is no persisted current-page pointer.",
+      "obligation_ids": [
+        "NAV-5",
+        "NAV-2",
+        "NAV-11",
+        "NAV-20",
+        "NAV-21",
+        "STATUS-36",
+        "NAV-X2_1",
+        "PERSIST-2",
+        "PERSIST-32",
+        "FLOW-10"
+      ],
+      "why_new": "The shared happy path walks each task linearly in one pass and never abandons/re-enters a task, so firstUnfulfilledPage’s skip-and-resume semantics and derived (not stored) resume position have no existing coverage."
+    },
+    {
+      "rank": 3,
+      "behaviour": "CYA Change-link round trip: from Check your answers, Change on a non-claims row (e.g. fullName) lands on the first depth-first page presenting that obligation in ?change=1 mode; Save and continue returns straight to CYA (not the next linear page) and the CYA row shows the updated value.",
+      "obligation_ids": [
+        "NAV-16",
+        "NAV-26",
+        "NAV-27",
+        "NAV-28",
+        "NAV-29",
+        "NAV-30",
+        "SHAPE-21"
+      ],
+      "why_new": "The claims-invalidation spec only exercises the hadClaims change path; generic obligation-name change-link resolution, the return-to-CYA-instead-of-advance rule and unitary-value propagation are asserted for no other field."
+    },
+    {
+      "rank": 4,
+      "behaviour": "CYA completion gate with server-side re-check: reaching or POSTing Check your answers while an Engine-mandatory obligation is unfulfilled never reaches Quote confirmed — CYA renders soft prompts/callouts for the missing items and the Submit control is available only once the Journey is Fulfilled (including the stale-recheck branch where state is invalidated between render and POST).",
+      "obligation_ids": [
+        "FLOW-9",
+        "EVAL-34",
+        "STATUS-35",
+        "DEF-30",
+        "STATUS-34",
+        "STATUS-X1_3",
+        "STATUS-X1_5"
+      ],
+      "why_new": "Existing specs only submit a fully-complete journey; the blocked path where Engine output overrides page-level mandates and the not-trusting-the-button server re-check are distinct failure paths no shared spec exercises."
+    },
+    {
+      "rank": 5,
+      "behaviour": "Mandate composition end-to-end: leaving a soft-mandated field blank saves with no error summary (only hard-mandated fullName blocks at save), yet the engine-mandate side is visible afterwards — a task completes on the hub with only its engine-mandatory items filled, skipped optional tasks never block \"Get your quote\", and an engine-mandatory gap keeps the quote blocked until filled.",
+      "obligation_ids": [
+        "FLOW-1",
+        "FLOW-4",
+        "FLOW-6",
+        "SHAPE-23",
+        "ARCH-36",
+        "SHAPE-22",
+        "STATUS-11",
+        "SHAPE-17"
+      ],
+      "why_new": "Existing specs pin only save-time validation on About you; the completion-side consequences of the four-row page×engine mandate table (task status, quote gating, silently-skipped optionals) are never exercised and must first be confirmed against the existing journey to stay within parity."
+    },
+    {
+      "rank": 6,
+      "behaviour": "Hub status roll-up mid-journey: complete only the first page of a multi-page task and return to the hub — that task shows In Progress while untouched tasks show Not Started and a finished task shows Completed, exercising the NA-filtered recursive status propagation a browser can read from task tags.",
+      "obligation_ids": [
+        "STATUS-14",
+        "STATUS-21",
+        "STATUS-15",
+        "STATUS-19",
+        "EVAL-27",
+        "NAV-34"
+      ],
+      "why_new": "The happy path walks each task to completion and asserts Completed tags only at the end; no shared spec abandons a section mid-way and asserts the intermediate mixed-state propagation."
+    },
+    {
+      "rank": 7,
+      "behaviour": "Deep-link guard: GETting a later page URL directly (the hub or a task page before the email gate is fulfilled, or \"Your quote\" before prerequisites) produces an Engine-driven redirect to the first applicable page rather than a rendered form or a 500 — navigation is a query over Engine state, never a hard-coded route.",
+      "obligation_ids": ["STATUS-36", "STATUS-9", "NAV-3"],
+      "why_new": "Shared specs only navigate via in-page links in order; direct-URL access against unfulfilled gating obligations is never attempted, yet it is the clearest browser-observable proof of query-driven navigation."
+    },
+    {
+      "rank": 8,
+      "behaviour": "Completed-task re-entry: clicking a fully completed task’s hub link neither errors nor dead-ends — firstUnfulfilledPage returns null and entry degrades to the configured entry mode (first page in declared order with saved values pre-populated), matching whatever the existing journey does.",
+      "obligation_ids": [
+        "STATUS-23",
+        "NAV-10",
+        "NAV-13",
+        "NAV-24",
+        "NAV-25",
+        "STATUS-28",
+        "NAV-X1_1",
+        "NAV-8",
+        "NAV-9"
+      ],
+      "why_new": "Existing specs never revisit a completed task link after finishing it; the null-fallback branch and the sectionEntryMode resolution on completed sections are browser-observable behaviours with no current coverage."
+    },
+    {
+      "rank": 9,
+      "behaviour": "Blocked-as-NA gating flips to startable: \"Get your quote\" (and the hub behind the email gate) is not startable while prerequisite obligations are unfulfilled — shown per the existing journey’s gating style (inert/signposted vs absent) — and becomes a live link the moment the prerequisites are Fulfilled.",
+      "obligation_ids": [
+        "STATUS-7",
+        "OPEN2-6",
+        "STATUS-1",
+        "STATUS-22",
+        "OPEN2-X2_1"
+      ],
+      "why_new": "Existing specs always complete tasks in the intended order and never inspect the blocked state before prerequisites are met nor the exact flip when the appliesWhen condition fires; only valid if the modelling matches the existing journey’s gating (open question)."
+    },
+    {
+      "rank": 10,
+      "behaviour": "Derived-collection reconciliation with semantic keys: changing the modifications/addons multi-select adds/removes the corresponding derived per-item entries and CYA rows via the controlling obligation only; deselecting one item wipes only that value’s derived data (siblings survive) and re-selecting it yields a fresh blank entry, never rehydrated.",
+      "obligation_ids": [
+        "INDEX-6",
+        "INDEX-12",
+        "INDEX-14",
+        "FULF-10",
+        "INDEX-19",
+        "INDEX-20",
+        "ARCH-26",
+        "FULF-18"
+      ],
+      "why_new": "Existing specs pin only the boolean hadClaims controller wiping the whole claims collection; per-fulfilmentId spawn/wipe on a multi-select controller with semantic keys is a finer-grained mechanism with no coverage — applicable only if the spike models per-modification detail (open question)."
+    },
+    {
+      "rank": 11,
+      "behaviour": "presentsForEach slot projection: a page presenting an indexed obligation renders exactly one input slot per current fulfilment, and the slot count tracks the collection after add/remove (claims) or controller-answer change (modifications), identically for user-sourced and derived collections.",
+      "obligation_ids": ["ARCH-25", "ARCH-27", "ARCH-28"],
+      "why_new": "The happy-path walk fills claims but never asserts the slot-count-tracks-collection invariant nor that the same projection mechanism serves both sources."
+    },
+    {
+      "rank": 12,
+      "behaviour": "Claim-row identity stability: add two claims, delete the first, reload — the surviving claim keeps its own data and its edit/remove links still target it correctly (no index-shift where the survivor inherits the deleted row’s identity).",
+      "obligation_ids": ["FULF-9"],
+      "why_new": "Shared claims specs cover invalidation and no-rehydration but never sibling deletion followed by reload, which is exactly what stable per-instance ids exist to survive."
+    },
+    {
+      "rank": 13,
+      "behaviour": "Contextual Back: Back from a page opened via a CYA Change link returns to CYA, while Back from the same page reached mid-task returns to the previous page in the section — the same page’s Back destination differs by arrival source.",
+      "obligation_ids": ["NAV-31", "STATUS-25"],
+      "why_new": "No existing spec asserts Back-link targets at all, let alone source-dependent destinations."
+    },
+    {
+      "rank": 14,
+      "behaviour": "Authored reason codes resolve, never leak: trigger the fullName validation error (and any surfaced requirement text) and assert the copy inside the govuk-error-summary is i18n-resolved human text sourced from the obligation’s authored reason, with no raw dotted reason codes anywhere in the DOM.",
+      "obligation_ids": ["EVAL-18", "OPEN1-10", "OPEN1-13", "DEF-35"],
+      "why_new": "Existing specs assert GDS error markup structure only; nothing asserts the evaluator-code-to-i18n resolution pipeline actually fired, which is new machinery in this spike."
+    },
+    {
+      "rank": 15,
+      "behaviour": "Journey isolation: two independent browser sessions/contexts on the spike hold disjoint fulfilments — answers entered in one never appear in the other’s pages or CYA.",
+      "obligation_ids": ["ARCH-X1_4", "ARCH-15", "FULF-2"],
+      "why_new": "All existing specs run a single session; journey-scoped (not session-global) state is only observable with two concurrent contexts, testable to the degree the cookie-carried-journeyId reduction permits."
+    },
+    {
+      "rank": 16,
+      "behaviour": "System-handled fulfilment surfacing: after \"Accept and get quote\", the system-recorded quote-result fulfilment (written by the runtime, not a form) appears on the confirmation page and persists on revisit within the same session — same store as user input.",
+      "obligation_ids": ["DEF-16", "EVAL-8", "OPEN1-21"],
+      "why_new": "The happy path asserts the Quote confirmed heading only; that the quote value lives in the shared fulfilments store and survives navigation is a new observable consequence of the single-store model."
+    },
+    {
+      "rank": 17,
+      "behaviour": "Model portability endpoints: GET the spike-served obligations.json/flow.json schema routes and assert 200 with valid JSON matching the on-disk model/ files.",
+      "obligation_ids": ["TOOL-23"],
+      "why_new": "Existing specs only walk the user journey; a machine-readable model endpoint is a new browser/HTTP-observable surface this spike adds."
+    },
+    {
+      "rank": 18,
+      "behaviour": "Pre-submit hard-mandate wiring: the fullName field renders with required/aria signalling and #fullName-error scaffolding conventions present in the initial markup, before any failed submit.",
+      "obligation_ids": ["TEST-12", "TEST-9"],
+      "why_new": "Existing specs assert GDS error markup only after a failed submit; a pre-submit assertion on required/aria wiring is the browser-visible face of the hard-mandate concept and is not currently checked."
+    },
+    {
+      "rank": 19,
+      "behaviour": "Id opacity: across all rendered pages (hub, section pages, CYA, confirmation), no obligation UUID from the model file appears anywhere in the served HTML — visible text, element ids, names, hrefs or hidden inputs.",
+      "obligation_ids": ["DEF-8"],
+      "why_new": "Existing specs assert what IS present; this negative check is only meaningful under the obligations paradigm where UUIDs exist in the model at all."
+    }
+  ],
+  "open_for_human": [
+    "Parity ruling needed on post-submit behaviour: the model freezes the journey behind a read-only CYA, but the existing journeys’ post-Quote-confirmed behaviour is unspecified in the parity contract — is post-submit inside or outside the identity contract? (SUBMIT-8, SUBMIT-9, NAV-37, SUBMIT-11, SUBMIT-14, NAV-38)",
+    "Parity ruling needed on early CYA access: soft prompts and enabled-iff-Fulfilled Submit are structure, and whether the existing journey even allows reaching CYA incomplete is unstated — decide whether direct-URL CYA access is in parity scope (STATUS-33, STATUS-34, STATUS-X1_3)",
+    "How is \"Get your quote\" gated on the hub — always-applicable, hidden-NA, or signposted \"coming up\"? Default NA-hiding would remove a required task link; which option reproduces the existing journey is unspecified (STATUS-22, OPEN2-X2_1, STATUS-9, STATUS-1)",
+    "The engine-mandatory set for every car-insurance obligation must be reverse-engineered from existing journey completion behaviour before flow.json can be authored — the parity contract fixes only fullName’s page mandate (FLOW-2, FLOW-3, FLOW-4, FLOW-5, FLOW-9)",
+    "Should modifications/addons be modelled as derived indexed obligations at all? The doc’s worked example implies per-modification detail pages the parity page-heading list does not contain (FULF-11, INDEX-19, INDEX-20, ARCH-26, INDEX-6)",
+    "Datastore decision is flagged urgent yet deferred to decision-makers and Defra-wide guidance; the spike’s in-memory store must be explicitly framed as non-precedential so the reduction does not defuse the urgency (SUBMIT-1, SUBMIT-2, SUBMIT-3, SUBMIT-X2_1, SUBMIT-X2_2)",
+    "Multi-tab journey isolation conflicts with the fixed parity URLs (no journeyId segment) — a cookie-carried journeyId collapses isolation to per-browser — and STATUS-X1_5’s stale-submit scenario presupposes tabs SHARE state; the doc holds both positions (FULF-2, DEF-22, ARCH-16, STATUS-X1_5)",
+    "Staleness is mandated-uniform but mechanism-less by design, and the MVP forbids the per-record metadata any mechanism needs — currently unimplementable; store shape must merely avoid precluding it (FULF-19, FULF-20, OPEN1-16, OPEN1-19, OPEN1-25)",
+    "Container schema, runtime representation, skeleton-Flow shape and the advance algorithm are formally open yet unavoidable — the spike’s picks (unified recursive Container, plain objects + pure selectors) must be labelled provisional, not settlements (OPEN2-1, OPEN2-2, ARCH-22, FLOW-11, OPEN2-X1_2)",
+    "The central obligations-as-data-contract claim cannot be PROVEN single-Flow: TEST-23’s applicability matrix says there is nothing to compare, so the spike demonstrates the architecture structurally via a fixture skeleton Flow — the writeup must say so (ARCH-2, TEST-16, TEST-23, TEST-26, ARCH-3)",
+    "\"Same state\" cross-Flow equivalence is impossible strictly — provenance reasons and generated fulfilmentIds legitimately differ — so the harness needs a defined canonical fulfilment-value projection (TEST-30 wins over FLOW-14/TEST-4 wording)",
+    "Portable-JSON model vs scoping-as-function: the spike needs an explicit split (JSON declares structure; appliesWhen predicates are named functions in evaluator code referenced from the JSON) or it silently violates one of the three constraints (DEF-1, SHAPE-28, EVAL-45, SHAPE-5)",
+    "No obligation says which component owns name-to-id resolution or at which boundary the translation happens — the spike must pick a home for it; relatedly true-UUIDs vs readable generated ids is underdetermined for prototype scope (FULF-5, FULF-15, DEF-10, PERSIST-30)",
+    "presentsForEach vs name-uniqueness: how form field names encode fulfilmentIds (semantic derived keys and opaque generated ids) when one obligation name yields multiple inputs is unspecified (SHAPE-11, ARCH-25, FULF-10, INDEX-5)",
+    "Provenance rule incomplete for scalar system-handled obligations: source exists only inside indexedBy, so a single-cardinality lookup-result (the quote) has no source field — exactly the case the spike demonstrates (OPEN1-21, OPEN1-24, SHAPE-7)",
+    "Open type space vs type-conditional required companion fields (subJourneyRef/lookupRef): a pure-data schema cannot enforce per-type required fields on open types without a registry convention — the model validator must pick a stance (FLOW-26, SHAPE-8, SHAPE-9, SHAPE-5)",
+    "CYA needs a Flow-schema slot outside the Container tree AND the hub must render it as an ordinary-looking task row — neither the schema shape nor the rendering rule is specified by any obligation (ARCH-20, OPEN2-14)",
+    "ARCH-21’s flat groupless skeleton is superseded by the settled at-least-one-Section reading; the spike should follow OPEN2-14/15 and treat ARCH-21 as superseded (ARCH-21, OPEN2-14, OPEN2-15)",
+    "Post-POST advance targets the next applicable NON-Fulfilled Container, which bounces a user who re-entered a completed section to the Task List instead of the next page — a forward rule for already-Fulfilled pages is needed that the catalogue does not supply (STATUS-23, STATUS-25, STATUS-31)",
+    "Status taxonomy ambiguity: a Page presenting only optional in-scope obligations is simultaneously NA (no in-scope mandatory) and vacuously Fulfilled — the choice is observable in propagation; STATUS-6’s \"in scope yet NA\" phrasing also conflicts with the NA definition as written (STATUS-3, STATUS-11, STATUS-6, STATUS-7)",
+    "The fulfilment-state vocabulary (incomplete/complete/stale) has no stated mapping onto container statuses — whether a stale fulfilment counts as unfulfilled in Fulfilled derivation must be pinned (DEF-15, FULF-X1_1)",
+    "Whether the email gate obligation counts towards journey state: fulfilling it arguably moves the journey to In Progress under NAV-33 while NAV-34 defines In Progress over Section statuses, which would exclude a hub-level obligation (NAV-33, NAV-34, OPEN2-6)",
+    "Submitted-document write block vs reconcile-on-load write-back: if a model amendment lands and a submitted journey is loaded to render read-only CYA, the amend-persist is blocked — skip amendment for submitted journeys or carve an internal exception? (SUBMIT-7, PERSIST-18, EVAL-19)",
+    "Audit-trail obligations have no persistence home: an event trail cannot live in the specified minimal Journey document, so it must be out-of-band and the doc never says where (PERSIST-1, PERSIST-4, EVAL-39, EVAL-41, PERSIST-20)",
+    "Replay contradiction: no model-version stamp + latest-model-wins + silent drops make the pre-amendment user view unreconstructable from the document alone, contradicting the deterministic-replay ambition (EVAL-39, OPEN1-7, PERSIST-13, PERSIST-19, PERSIST-18)",
+    "Two data-deletion regimes (model-change silent drop vs state-descoping wipe) overlap without a stated boundary, and migration-vs-drop for semantic changes is explicitly unresolved (EVAL-20, EVAL-22, PERSIST-28, INDEX-21)",
+    "Fixed-point loop \"yield\" semantics presume a long-lived orchestrator; in stateless request/response Hapi, yield must be reinterpreted as render-and-end-request — a mapping the doc never spells out (EVAL-33, EVAL-36)",
+    "Determinism vs id-minting: DEF-3’s deterministic engine and FULF-8’s orchestrator-minted ULIDs are consistent only if id generation stays strictly orchestrator-side — worth an explicit rule that evaluator outputs never embed freshly-minted ids (DEF-3, FULF-8)",
+    "Mandate gating is mechanically inconsistent across surfaces (form pages re-render with GDS errors; CYA gates via an enabled-iff-Fulfilled control) and a disabled govuk-button still submits — \"enabled iff Fulfilled\" should mean omit-or-guard given the server re-check exists (ARCH-35, STATUS-34, STATUS-X1_5)",
+    "TOOL-13’s required attribute triggers browser-native validation bubbles that would prevent the server round-trip producing the mandated GDS error markup — implement hard mandates as server-side wiring only (TOOL-13, ARCH-35)",
+    "TOOL-22’s tim-CLI wrap cannot be honoured inside a fully self-contained spike folder even though TOOL-25 calls Levels 2-3 cheap early adds; only Level 3 is realisable in-spike (TOOL-22, TOOL-25)",
+    "The alignment-walker tests assume statically parseable HTML, but the spike’s templates are Nunjucks + govuk-frontend macros — render-with-neutral-context or declarative widget fields needed, a step the doc never addresses; they also depend on model fields (types, mandate:hard) owned by other groups (TEST-2, TEST-7, TEST-8, TEST-10, TEST-11, TEST-12)",
+    "The \"e2e\" catalogue category is mislabelled: almost everything in it is unit/static/property testing; only TEST-5 is a true browser test — planning it as Playwright work would misallocate effort (TEST-1..TEST-4, TEST-7..TEST-14, NAV-7, NAV-20..NAV-25, TEST-5)",
+    "NAV-25’s sectionEntryMode-invariance check is only testable if the Flow model actually exposes the option; if entry behaviour is modelled differently it silently becomes untestable rather than failing (NAV-25, NAV-8)",
+    "TEST-24’s equivalence infrastructure is dated \"during the prototypes / first productionisation\" — ambiguous whether the obligation-language script format is in prototype scope; scoped here as reduce (reuse shared specs) rather than build (TEST-24)",
+    "SHAPE-4/SHAPE-X1_1’s permitted transient \"checking…\" rendering conflicts with behavioural parity — only the not-rendered path is usable in this spike (SHAPE-4, SHAPE-X1_1)",
+    "The orchestrator-loop pseudocode carries a \"TODO review with Sam\" marker the spike will pre-empt by implementing it — tag the implementation as realising the unreviewed sketch so the review treats it as input, not fait accompli (EVAL-35, DEF-X2_3)",
+    "EVAL-16 (scalars omit the per-fulfilment states array) and FULF-6 (scalars have a nominal fulfilmentId) are consistent only by convention — pin the contract surface with one explicit unit test (EVAL-16, FULF-6, DEF-13)",
+    "Whether the reconcile-on-load amend-persist counts as an update touching updatedAt is undefined — affects any test asserting timestamp behaviour (PERSIST-X2_1, PERSIST-18)",
+    "The visited-then-reset signpost edge case the doc defers is actually reachable in this journey via the claims Yes→No→Yes flow, though only within a task — the closest concrete case the doc says it is waiting for (OPEN2-22, OPEN2-21, INDEX-21)"
+  ]
+}

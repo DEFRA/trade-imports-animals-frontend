@@ -1,0 +1,12 @@
+{
+  "$comment": "Walker fixture bringing every conditional page in scope: hadClaims yes puts the claims loop in scope with one stored claim, all three addons are selected so every addon page projects its derived fulfilment, and voluntaryExcess yes brings the excessAmount reveal into engine scope. Keyed by obligation NAME, dump.js-style.",
+  "hadClaims": "yes",
+  "voluntaryExcess": "yes",
+  "addons": ["named-driver", "modifications", "protected-ncd"],
+  "claimType": {
+    "claim-1": { "value": "accident" }
+  },
+  "claimAmount": {
+    "claim-1": { "value": "900" }
+  }
+}

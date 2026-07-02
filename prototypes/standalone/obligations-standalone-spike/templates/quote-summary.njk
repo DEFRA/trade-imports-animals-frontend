@@ -1,0 +1,31 @@
+{# Quote-summary ending — read-only presentation of the system-handled
+   quote result. Context: { heading, premium, coverLabel, extras,
+   quoteCopy, buttonText }; copy passes through from the Flow page's
+   `quoteCopy`. Renders happily for a half-empty journey (Rulings
+   item 2 — open access): a blank premium/cover/extras never throws. #}
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <p class="govuk-body-l">
+    {{ quoteCopy.premiumLead }}
+    <strong class="govuk-!-font-size-36">£{{ premium }}</strong>
+  </p>
+
+  {{ govukSummaryList({
+    rows: [
+      { key: { text: quoteCopy.coverRowKey }, value: { text: coverLabel } },
+      { key: { text: quoteCopy.extrasRowKey }, value: { text: extras | join(", ") if extras.length else quoteCopy.noneText } }
+    ]
+  }) }}
+
+  <p class="govuk-body">{{ quoteCopy.disclaimer }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: buttonText }) }}
+  </form>
+{% endblock %}

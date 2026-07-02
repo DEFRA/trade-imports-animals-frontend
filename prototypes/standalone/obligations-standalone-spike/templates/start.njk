@@ -1,0 +1,15 @@
+{# Start page — read-only Flow furniture, copy passed through from
+   flow.json `start` ({ heading, body, buttonText }). #}
+{% extends "standalone/obligations-standalone-spike/templates/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ start.heading }}</h1>
+
+  <p class="govuk-body">{{ start.body }}</p>
+
+  <form method="post" action="{{ startAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: start.buttonText, isStartButton: true }) }}
+  </form>
+{% endblock %}

@@ -1,0 +1,4898 @@
+[
+  {
+    "id": "DEF-1",
+    "title": "Treat Obligations as the journey-agnostic core",
+    "scope": "reduce",
+    "handled_by": [
+      "engine/evaluate.js",
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js"
+    ],
+    "test": "tests/flow-equivalence.test.js",
+    "note": "Reduced: one Service, one polished Flow. Journey-agnosticism is realised architecturally — the ObligationEvaluator is parameterised on (model, state) and Flow-ignorant, and the cross-Flow equivalence harness replays every script against flow.json AND the model/skeleton-flow.json fixture to prove the same obligations core drives two different journey adapters. Multi-Service layering stays a README honesty-ledger row."
+  },
+  {
+    "id": "DEF-2",
+    "title": "Obligation is pure JSON-encodable data",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/load-model.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-3",
+    "title": "Isolate applicability logic in a sync pure deterministic evaluation engine",
+    "scope": "implement",
+    "handled_by": [
+      "engine/scope/journey-rules.js",
+      "engine/evaluate.js",
+      "orchestrator/fulfilment-ids.js",
+      "tests/README.md"
+    ],
+    "test": "engine/scope/journey-rules.test.js"
+  },
+  {
+    "id": "DEF-4",
+    "title": "Wrap the engine in an I/O-handling orchestrator",
+    "scope": "implement",
+    "handled_by": [
+      "engine/scope/journey-rules.js",
+      "engine/evaluate.js",
+      "orchestrator/fixed-point.js",
+      "orchestrator/index.js"
+    ],
+    "test": "engine/scope/journey-rules.test.js"
+  },
+  {
+    "id": "DEF-5",
+    "title": "Define obligations declaratively in obligations.json",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-6",
+    "title": "Give each obligation a persistent opaque UUID id",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-7",
+    "title": "Use obligation id as the persistence key for fulfilments",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-8",
+    "title": "Never display ids; generate them with tooling at authoring time",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-9",
+    "title": "Make obligation name unique within the Obligations model",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/identifiers.js",
+      "engine/load-model.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-10",
+    "title": "Use the obligation name everywhere developers touch obligations",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-11",
+    "title": "Allow renaming obligation names between deployments",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-12",
+    "title": "Model fulfilments with single or indexed cardinality",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/load-model.js",
+      "engine/evaluate.js",
+      "orchestrator/apply-answers.js",
+      "contract/mutation.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "DEF-13",
+    "title": "Set fulfilmentId equal to obligationId for single-cardinality",
+    "scope": "implement",
+    "handled_by": [
+      "engine/load-model.js",
+      "engine/evaluate.js",
+      "orchestrator/apply-answers.js"
+    ],
+    "test": "engine/load-model.test.js"
+  },
+  {
+    "id": "DEF-14",
+    "title": "Give indexed fulfilments per-fulfilment ids whose shape depends on source",
+    "scope": "implement",
+    "handled_by": [
+      "engine/load-model.js",
+      "orchestrator/fulfilment-ids.js",
+      "orchestrator/apply-answers.js"
+    ],
+    "test": "engine/load-model.test.js"
+  },
+  {
+    "id": "DEF-15",
+    "title": "Support incomplete, complete, and stale fulfilment states",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "DEF-16",
+    "title": "Support system-handled obligations",
+    "scope": "reduce",
+    "handled_by": [
+      "lib/quote/premium.js",
+      "lib/quote/index.js",
+      "orchestrator/system-handlers.js",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "lib/quote/premium.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "DEF-17",
+    "title": "Bind each Service to one Obligations definition and one-or-more Flows",
+    "scope": "reduce",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "DEF-18",
+    "title": "Define Flow as a static presentation description",
+    "scope": "reduce",
+    "handled_by": [
+      "model/flow.json",
+      "model/skeleton-flow.json",
+      "journey/config.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "DEF-19",
+    "title": "Allow multiple coexisting Flows referencing the same Obligations",
+    "scope": "reduce",
+    "handled_by": ["model/flow.json", "model/skeleton-flow.json"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "DEF-20",
+    "title": "Model Journey as a runtime instance of one Flow with its own id",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json", "journey/journey-context.js"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "DEF-21",
+    "title": "Scope the fulfilments map to the Journey, keyed by obligation id",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "orchestrator/apply-answers.js",
+      "journey/journey-context.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "DEF-22",
+    "title": "Isolate concurrent Journeys; user/session is not the uniqueness scope",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "store/index.js",
+      "journey/journey-context.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "DEF-23",
+    "title": "Give each Page an ordered presents list of obligations plus mandate",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "flow-eval/presents.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "DEF-24",
+    "title": "Map each Page 1:1 to an HTML artefact",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "DEF-25",
+    "title": "Allow Sections and SubSections to nest arbitrarily",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "DEF-26",
+    "title": "Show top-level Sections on the Task List by default",
+    "scope": "implement",
+    "handled_by": [
+      "journey/config.js",
+      "journey/hub-view.js",
+      "contract/view.js",
+      "templates/hub.njk",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "journey/config.test.js"
+  },
+  {
+    "id": "DEF-27",
+    "title": "Structure a Flow's content as a tree of Containers",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "DEF-28",
+    "title": "Derive Page Fulfilled from in-scope mandatory obligations",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "DEF-29",
+    "title": "Derive Group Fulfilled recursively from applicable children",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "DEF-30",
+    "title": "Enable Submit on CYA only when the Journey is Fulfilled",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/journey-state.js",
+      "contract/status.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "DEF-31",
+    "title": "Freeze the Journey after Submit",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "routes/endings/submit.js",
+      "routes/guard.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "DEF-32",
+    "title": "Avoid the term Complete in the vocabulary",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "DEF-33",
+    "title": "Implement ObligationEvaluator as a pure sync single-call function",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "DEF-34",
+    "title": "Have ObligationEvaluator prune fulfilments to fit the current model",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "DEF-35",
+    "title": "Return per-obligation state including authored reasons",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "DEF-36",
+    "title": "Keep ObligationEvaluator Service-scoped and Flow-agnostic",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "DEF-37",
+    "title": "Implement JourneyEvaluator as small pure Flow-layer primitives",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "flow-eval/container-status.js",
+      "flow-eval/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "DEF-38",
+    "title": "Converge future implementations on fulfilments vocabulary",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "orchestrator/apply-answers.js",
+      "contract/status.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "DEF-X1_1",
+    "title": "Support hard and soft per-page mandates in the Flow",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "DEF-X1_2",
+    "title": "Derive Journey Fulfilled from top-level Sections",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "DEF-X2_1",
+    "title": "Layer JourneyEvaluator on ObligationEvaluator output",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "engine/index.js",
+      "flow-eval/presents.js",
+      "flow-eval/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "DEF-X2_2",
+    "title": "Fulfilments hold the canonical data",
+    "scope": "reduce",
+    "handled_by": [
+      "model/obligations.json",
+      "validation/format-checks.js",
+      "lib/quote/premium.js"
+    ],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "DEF-X2_3",
+    "title": "Spec must be precise enough to judge paradigm fit and retrofit spikes",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Meta-goals and human review checkpoints): Neither yields code: the spike as a whole is the evidence artifact for paradigm-fit judgement, its orchestrator should be flagged as implementing the unreviewed sketch so the Sam review treats it as input, and friction met while building is exactly the paradigm-fit data requested. Logged in the README defer log."
+  },
+  {
+    "id": "SHAPE-1",
+    "title": "Support two broad obligation shapes",
+    "scope": "reduce",
+    "handled_by": ["lib/quote/premium.js", "orchestrator/system-handlers.js"],
+    "test": "lib/quote/premium.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-2",
+    "title": "Render user-facing obligations via the journey layer",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "lib/fields/registry.js",
+      "lib/fields/input-views.js",
+      "lib/fields/block-views.js",
+      "lib/fields/choice-views.js",
+      "lib/fields/index.js",
+      "contract/view.js",
+      "templates/page.njk",
+      "templates/claims-list.njk",
+      "templates/quote-summary.njk",
+      "templates/check-your-answers.njk",
+      "templates/partials/fields.njk",
+      "routes/page.js",
+      "routes/endings/quote-summary.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "SHAPE-3",
+    "title": "Satisfy system-handled obligations via a runtime callback",
+    "scope": "reduce",
+    "handled_by": ["lib/quote/premium.js", "orchestrator/system-handlers.js"],
+    "test": "lib/quote/premium.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-4",
+    "title": "Do not render system-handled obligations; orchestrator writes results to state",
+    "scope": "reduce",
+    "handled_by": ["lib/quote/premium.js", "orchestrator/system-handlers.js"],
+    "test": "lib/quote/premium.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-5",
+    "title": "Keep obligations.json pure JSON-portable data",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/load-model.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-6",
+    "title": "Carry both a persistent id and a meaningful name on every obligation",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-7",
+    "title": "Carry indexedBy metadata on indexed obligations",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "SHAPE-8",
+    "title": "Reference sub-journeys via subJourneyRef on sub-journey-receipt obligations",
+    "scope": "reduce",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "orchestrator/system-handlers.js"
+    ],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-9",
+    "title": "Reference external lookups via lookupRef on lookup-result obligations",
+    "scope": "reduce",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "orchestrator/system-handlers.js"
+    ],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-10",
+    "title": "Use a stable opaque UUID id as the persistence key",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-11",
+    "title": "Enforce name uniqueness within the Obligations model",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "model/flow.test.js",
+      "engine/identifiers.js",
+      "engine/load-model.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-12",
+    "title": "Allow obligation names to be renamed between deployments",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-13",
+    "title": "Give each obligation a single type from an open type space",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "lib/fields/registry.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "SHAPE-14",
+    "title": "Support single and indexed cardinality",
+    "scope": "implement",
+    "handled_by": ["engine/load-model.js", "orchestrator/apply-answers.js"],
+    "test": "engine/load-model.test.js"
+  },
+  {
+    "id": "SHAPE-15",
+    "title": "Keep scoping and mandate status off the obligation record",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/scope/registry.js",
+      "engine/scope/journey-rules.js",
+      "engine/scope/index.js",
+      "engine/load-model.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-16",
+    "title": "Apply most-restrictive-wins when multiple reasons fire",
+    "scope": "implement",
+    "handled_by": [
+      "engine/scope/registry.js",
+      "engine/scope/journey-rules.js",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/scope/registry.test.js"
+  },
+  {
+    "id": "SHAPE-17",
+    "title": "Allow mandatory/optional flips while an obligation stays in scope",
+    "scope": "implement",
+    "handled_by": [
+      "engine/scope/journey-rules.js",
+      "engine/scope/expressiveness.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/scope/journey-rules.test.js"
+  },
+  {
+    "id": "SHAPE-18",
+    "title": "Preserve data across mandatory/optional status flips",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/scope-exit-wipe.js",
+      "routes/page.js",
+      "routes/claims.js"
+    ],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "SHAPE-19",
+    "title": "Actively clear data when an obligation exits scope",
+    "scope": "implement",
+    "handled_by": ["orchestrator/scope-exit-wipe.js", "routes/claims.js"],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "SHAPE-20",
+    "title": "Model convergent obligations as one obligation activated for several reasons",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/reasons.js",
+      "engine/scope/registry.js",
+      "engine/scope/journey-rules.js",
+      "engine/evaluate.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "SHAPE-21",
+    "title": "Keep convergent obligation data unitary with propagating edits",
+    "scope": "implement",
+    "handled_by": ["orchestrator/apply-answers.js", "contract/status.js"],
+    "test": "orchestrator/apply-answers.test.js"
+  },
+  {
+    "id": "SHAPE-22",
+    "title": "Support three completion-policy modes for unanswered optional obligations",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "templates/check-your-answers.njk",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "SHAPE-23",
+    "title": "Resolve completion policy as per-journey default with per-obligation override",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "SHAPE-24",
+    "title": "Integrate sub-journeys via a callback returning a single lookup id",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-25",
+    "title": "Disallow multi-field fan-out from a sub-journey",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-26",
+    "title": "Keep the kind taxonomy open — new kinds are new type values",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-27",
+    "title": "Restrict the obligation to declaring canonical data only",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/scope/registry.js",
+      "engine/load-model.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-28",
+    "title": "Implement scoping as a function, not a declarative rule language",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "flow-eval/applies-when.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "SHAPE-29",
+    "title": "Support algorithm-shaped scoping rules (address date-range coverage)",
+    "scope": "reduce",
+    "handled_by": ["engine/scope/expressiveness.js", "tests/README.md"],
+    "test": "engine/scope/expressiveness.test.js",
+    "note": "Reduced: real predicates over injected in-memory external-state fixtures, unit-only (engine/scope/expressiveness.js); never registered against journey obligations."
+  },
+  {
+    "id": "SHAPE-30",
+    "title": "Support indexed sub-obligation templating projected from state",
+    "scope": "implement",
+    "handled_by": ["flow-eval/presents.js"],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "SHAPE-31",
+    "title": "Support external state as an input to scoping",
+    "scope": "reduce",
+    "handled_by": ["engine/scope/expressiveness.js", "tests/README.md"],
+    "test": "engine/scope/expressiveness.test.js",
+    "note": "Reduced: real predicates over injected in-memory external-state fixtures, unit-only (engine/scope/expressiveness.js); never registered against journey obligations."
+  },
+  {
+    "id": "SHAPE-32",
+    "title": "Keep scoping synchronous; async lives in the orchestrator",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "orchestrator/fixed-point.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "SHAPE-33",
+    "title": "Deliver external state via the system-handled-obligation callback pattern",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-34",
+    "title": "Evaluator declares absent lookups in-scope; orchestrator fires the call",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-X1_1",
+    "title": "Allow an optional \"checking…\" interim rendering for system-handled obligations",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "SHAPE-X1_2",
+    "title": "Use the obligation name as the single string mapping HTML form input → logical Page → Obligation",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-X1_3",
+    "title": "Persist the sub-journey lookup id as the obligation's canonical data; orchestrator dereferences on demand",
+    "scope": "implement",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js"
+  },
+  {
+    "id": "SHAPE-X2_1",
+    "title": "Use the obligation name as the template and i18n surface",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "SHAPE-X2_2",
+    "title": "Support value-dependent per-item mandates inside indexed templates",
+    "scope": "implement",
+    "handled_by": ["flow-eval/presents.js"],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "EVAL-1",
+    "title": "Build three cooperating evaluation components",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "orchestrator/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-2",
+    "title": "Implement ObligationEvaluator as pure sync single-call Service-layer function",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-3",
+    "title": "Implement JourneyEvaluator as pure sync Flow-layer evaluator over ObligationEvaluator output",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "flow-eval/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-4",
+    "title": "Implement side-effecting orchestrator for system-handled obligations",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "orchestrator/system-handlers.js",
+      "orchestrator/fixed-point.js",
+      "orchestrator/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-5",
+    "title": "Concentrate all async in the orchestrator",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "orchestrator/fixed-point.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-6",
+    "title": "Keep both evaluators independently unit-testable with plain fixtures",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "flow-eval/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-7",
+    "title": "Define evaluateObligations(obligations, fulfilments) signature",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-8",
+    "title": "Fulfilments map holds both user inputs and system results",
+    "scope": "reduce",
+    "handled_by": [
+      "lib/quote/premium.js",
+      "orchestrator/system-handlers.js",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "lib/quote/premium.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "EVAL-9",
+    "title": "Defer configuration injection as a foreseen extension",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred evaluator and record extension points): The doc’s own instruction is to keep these off the record and out of the evaluator signature until a concrete need arrives; the insurance journey supplies none, and adding them would pollute the portable model JSON with speculative fields. Logged in the README defer log."
+  },
+  {
+    "id": "EVAL-10",
+    "title": "Return amended fulfilments pruned to the current model",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "engine/evaluate.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "EVAL-11",
+    "title": "Expose per-obligation inScope boolean",
+    "scope": "implement",
+    "handled_by": ["engine/scope/journey-rules.js", "engine/evaluate.js"],
+    "test": "engine/scope/journey-rules.test.js"
+  },
+  {
+    "id": "EVAL-12",
+    "title": "Make mandatory/optional status meaningful only when in scope",
+    "scope": "implement",
+    "handled_by": ["engine/scope/journey-rules.js", "engine/evaluate.js"],
+    "test": "engine/scope/journey-rules.test.js"
+  },
+  {
+    "id": "EVAL-13",
+    "title": "Shape reasons as coded records with a dotted naming convention",
+    "scope": "implement",
+    "handled_by": [
+      "engine/reasons.js",
+      "engine/evaluate.js",
+      "i18n/resolve.js"
+    ],
+    "test": "engine/reasons.test.js"
+  },
+  {
+    "id": "EVAL-14",
+    "title": "Keep reason explanation developer-facing only",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/reasons.js",
+      "i18n/resolve.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "EVAL-15",
+    "title": "Carry interpolation values on reasons for resolved UI messages",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/reasons.js",
+      "i18n/resolve.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "EVAL-16",
+    "title": "Return per-fulfilment state only for indexed cardinality",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/evaluate.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "EVAL-17",
+    "title": "Keep ObligationEvaluator deterministic with zero I/O",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "orchestrator/fulfilment-ids.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-18",
+    "title": "Author all reasons in the ObligationEvaluator only",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "engine/reasons.js",
+      "engine/scope/registry.js",
+      "engine/scope/journey-rules.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "EVAL-19",
+    "title": "Support amending the obligation model mid-Journey (tolerate-and-amend)",
+    "scope": "implement",
+    "handled_by": [
+      "engine/prune.js",
+      "orchestrator/fixed-point.js",
+      "orchestrator/index.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "EVAL-20",
+    "title": "Silently drop fulfilments that map to no current obligation",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "EVAL-21",
+    "title": "Persist the amended fulfilment set as the new source of truth",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "EVAL-22",
+    "title": "Make model-change amendment idempotent, converging in one step",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "EVAL-23",
+    "title": "Expose JourneyEvaluator as individual primitives, not one evaluate() call",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "flow-eval/navigation/index.js",
+      "flow-eval/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-24",
+    "title": "Implement firstApplicablePage as status-blind depth-first search",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "contract/status.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "EVAL-25",
+    "title": "Implement firstUnfulfilledPage over obligation state",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js"
+  },
+  {
+    "id": "EVAL-26",
+    "title": "Implement firstPagePresentingObligation for CYA change links",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-page-presenting-obligation.test.js"
+  },
+  {
+    "id": "EVAL-27",
+    "title": "Implement containerStatus with four-value propagation",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "EVAL-28",
+    "title": "Implement journeyState including the Submitted lifecycle state",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js", "contract/status.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "EVAL-29",
+    "title": "Follow the common shape for future JourneyEvaluator primitives",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "flow-eval/navigation/next-after.js",
+      "flow-eval/journey-state.js",
+      "flow-eval/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-30",
+    "title": "Test JourneyEvaluator against arbitrary hand-built obligation output",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "flow-eval/presents.js",
+      "flow-eval/applies-when.js",
+      "flow-eval/container-status.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "EVAL-31",
+    "title": "Render user-facing in-scope obligations and await input",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/apply-answers.js",
+      "orchestrator/index.js",
+      "contract/view.js",
+      "contract/mutation.js",
+      "routes/page.js"
+    ],
+    "test": "orchestrator/apply-answers.test.js"
+  },
+  {
+    "id": "EVAL-32",
+    "title": "Trigger system-handled obligations once and write callbacks into fulfilments",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "EVAL-33",
+    "title": "Yield when blocked and re-evaluate when fulfilments change",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/fixed-point.js"],
+    "test": "orchestrator/fixed-point.test.js",
+    "note": "Reduced: loop shape kept but degenerate (one sync handler ⇒ immediate convergence); 'yield' reinterpreted as render-and-end-request; EVAL-35 unreviewed-sketch header tag."
+  },
+  {
+    "id": "EVAL-34",
+    "title": "Terminate the loop when all in-scope obligations are satisfied",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/fixed-point.js",
+      "contract/mutation.js",
+      "routes/page.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "orchestrator/fixed-point.test.js"
+  },
+  {
+    "id": "EVAL-35",
+    "title": "Review the orchestrator loop sketch with Sam",
+    "scope": "defer",
+    "handled_by": ["orchestrator/fixed-point.js"],
+    "test": "orchestrator/fixed-point.test.js",
+    "note": "Deferred (theme: Meta-goals and human review checkpoints): Neither yields code: the spike as a whole is the evidence artifact for paradigm-fit judgement, its orchestrator should be flagged as implementing the unreviewed sketch so the Sam review treats it as input, and friction met while building is exactly the paradigm-fit data requested. Referenced by the listed file(s) (pending spec / observing test); no dedicated build."
+  },
+  {
+    "id": "EVAL-36",
+    "title": "Run evaluation as a fixed-point computation",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/fixed-point.js"],
+    "test": "orchestrator/fixed-point.test.js",
+    "note": "Reduced: loop shape kept but degenerate (one sync handler ⇒ immediate convergence); 'yield' reinterpreted as render-and-end-request; EVAL-35 unreviewed-sketch header tag."
+  },
+  {
+    "id": "EVAL-37",
+    "title": "Support property-based testing of the evaluators",
+    "scope": "implement",
+    "handled_by": [
+      "tests/completability.test.js",
+      "tests/helpers/enumerate-states.js"
+    ],
+    "test": "tests/completability.test.js"
+  },
+  {
+    "id": "EVAL-38",
+    "title": "Use fulfilments as the only cache for system-handler results",
+    "scope": "implement",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js"
+  },
+  {
+    "id": "EVAL-39",
+    "title": "Support replaying recorded fulfilments to reconstruct past state",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Audit trail and deterministic replay): Production compliance tooling with no browser-observable surface in this journey; the pure recompute-on-load design keeps replay architecturally possible, so the deferral is logged rather than an event log built into a throwaway. Logged in the README defer log."
+  },
+  {
+    "id": "EVAL-40",
+    "title": "Treat lookup failures as unsatisfied obligations",
+    "scope": "reduce",
+    "handled_by": ["engine/scope/expressiveness.js", "tests/README.md"],
+    "test": "engine/scope/expressiveness.test.js",
+    "note": "Reduced: real predicates over injected in-memory external-state fixtures, unit-only (engine/scope/expressiveness.js); never registered against journey obligations."
+  },
+  {
+    "id": "EVAL-41",
+    "title": "Record each system-handled satisfaction as an audit event",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Audit trail and deterministic replay): Production compliance tooling with no browser-observable surface in this journey; the pure recompute-on-load design keeps replay architecturally possible, so the deferral is logged rather than an event log built into a throwaway. Logged in the README defer log."
+  },
+  {
+    "id": "EVAL-42",
+    "title": "Unify sub-journeys and lookups as one obligation mechanism",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "EVAL-43",
+    "title": "Bundle static reference data with the obligations file",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "EVAL-44",
+    "title": "Accept that evaluators are not cross-language portable",
+    "scope": "reduce",
+    "handled_by": ["dump.js", "contract/index.js"],
+    "test": "contract/index.test.js",
+    "note": "Reduced: the acceptance is demonstrated in one language — the JS ObligationEvaluator/JourneyEvaluator are the only implementations, contract/index.js pins that language-bound 20-export surface (surface-drift test), and dump.js emits the evaluator output headlessly so a future non-JS reimplementation has a diffable target. No second-language port is built."
+  },
+  {
+    "id": "EVAL-45",
+    "title": "Keep the data contract portable; runtimes own when/why and async",
+    "scope": "reduce",
+    "handled_by": [
+      "model/obligations.json",
+      "model/flow.json",
+      "routes/model-endpoints.js",
+      "dump.js"
+    ],
+    "test": "routes/model-endpoints.test.js",
+    "note": "Reduced: the portable contract is the pure-JSON model pair (obligations.json + flow.json — what data must exist and how it is presented), served verbatim by routes/model-endpoints.js and dumped headlessly by dump.js; when/why and async live wholly in this runtime's flow-eval/orchestrator. One runtime only — no second consumer is built."
+  },
+  {
+    "id": "EVAL-X1_1",
+    "title": "Orchestrator handles stuck obligations with uniform recovery patterns",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "EVAL-X1_2",
+    "title": "Record user-answer events alongside system-handled audit events",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Audit trail and deterministic replay): Production compliance tooling with no browser-observable surface in this journey; the pure recompute-on-load design keeps replay architecturally possible, so the deferral is logged rather than an event log built into a throwaway. Logged in the README defer log."
+  },
+  {
+    "id": "EVAL-X1_3",
+    "title": "Reserve lookup obligations for genuinely dynamic data",
+    "scope": "implement",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js"
+  },
+  {
+    "id": "INDEX-1",
+    "title": "Support single-cardinality obligations",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/evaluate.js",
+      "orchestrator/apply-answers.js",
+      "contract/mutation.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "INDEX-2",
+    "title": "Support indexed-cardinality obligations",
+    "scope": "implement",
+    "handled_by": [
+      "engine/load-model.js",
+      "engine/evaluate.js",
+      "orchestrator/apply-answers.js"
+    ],
+    "test": "engine/load-model.test.js"
+  },
+  {
+    "id": "INDEX-3",
+    "title": "Key stored fulfilments by obligation id, not name",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "INDEX-4",
+    "title": "Model indexedBy as source × mutability",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "model/obligations.test.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-5",
+    "title": "Define source=user semantics",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-6",
+    "title": "Define source=derived semantics",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "model/obligations.test.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-7",
+    "title": "Define source=seeded semantics",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-8",
+    "title": "Define mutability=edit-only semantics",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-9",
+    "title": "Define mutability=edit-add-remove semantics",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-10",
+    "title": "Defer intermediate mutability values until needed",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "INDEX-11",
+    "title": "Support pattern 1: user-driven collections",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-12",
+    "title": "Support pattern 2: collections derived from another obligation",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-13",
+    "title": "Support pattern 3: externally seeded collections",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-14",
+    "title": "Include controllingObligation in derived indexedBy",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-15",
+    "title": "Include seedHandler in seeded indexedBy",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "INDEX-16",
+    "title": "Implement seeding via existing orchestrator machinery (settled)",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "INDEX-17",
+    "title": "Fire seedHandler at journey start or scope entry",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "INDEX-18",
+    "title": "Keep the evaluator seeding-agnostic",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "INDEX-19",
+    "title": "Add fresh blank fulfilment when controller adds an id (settled)",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/scope-exit-wipe.js",
+      "contract/mutation.js",
+      "routes/claims.js",
+      "prototypes/e2e/invalidation.spec.js"
+    ],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "INDEX-20",
+    "title": "Wipe derived fulfilment data when controller removes an id (settled)",
+    "scope": "implement",
+    "handled_by": ["orchestrator/scope-exit-wipe.js", "routes/claims.js"],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "INDEX-21",
+    "title": "No rehydration on re-added fulfilmentId (settled)",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/scope-exit-wipe.js",
+      "orchestrator/index.js",
+      "contract/mutation.js",
+      "routes/claims.js",
+      "prototypes/e2e/invalidation.spec.js"
+    ],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "FULF-1",
+    "title": "Store fulfilments in a journey-scoped map",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "store/index.js",
+      "journey/journey-context.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "FULF-2",
+    "title": "Support multiple simultaneous journeys per user",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "store/index.js",
+      "journey/journey-context.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "FULF-3",
+    "title": "Key the fulfilments map by obligation id",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "FULF-4",
+    "title": "Map entries are single value or nested fulfilmentId map",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "orchestrator/apply-answers.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "FULF-5",
+    "title": "Real storage uses id even though examples show name",
+    "scope": "implement",
+    "handled_by": ["engine/identifiers.js", "tests/rename-survival.test.js"],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "FULF-6",
+    "title": "Single-cardinality: fulfilmentId equals obligationId",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "orchestrator/apply-answers.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "FULF-7",
+    "title": "Indexed fulfilmentId shape varies by source",
+    "scope": "implement",
+    "handled_by": [
+      "engine/load-model.js",
+      "orchestrator/fulfilment-ids.js",
+      "orchestrator/apply-answers.js"
+    ],
+    "test": "engine/load-model.test.js"
+  },
+  {
+    "id": "FULF-8",
+    "title": "user-source fulfilments get orchestrator-generated opaque ids",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/fulfilment-ids.js",
+      "orchestrator/apply-answers.js",
+      "orchestrator/index.js",
+      "contract/mutation.js",
+      "routes/claims.js",
+      "prototypes/e2e/invalidation.spec.js"
+    ],
+    "test": "orchestrator/fulfilment-ids.test.js"
+  },
+  {
+    "id": "FULF-9",
+    "title": "Opaque ids must survive reorder, delete and reload",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "orchestrator/fulfilment-ids.js",
+      "orchestrator/apply-answers.js",
+      "orchestrator/index.js",
+      "contract/mutation.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "FULF-10",
+    "title": "derived-source fulfilments keyed by controller answer values",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "FULF-11",
+    "title": "Adding a controller value spawns a blank derived fulfilment",
+    "scope": "implement",
+    "handled_by": ["orchestrator/scope-exit-wipe.js", "routes/claims.js"],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "FULF-12",
+    "title": "Removing a controller value drops and wipes its derived fulfilment",
+    "scope": "implement",
+    "handled_by": ["orchestrator/scope-exit-wipe.js", "routes/claims.js"],
+    "test": "orchestrator/scope-exit-wipe.test.js"
+  },
+  {
+    "id": "FULF-13",
+    "title": "seeded-source fulfilments keyed by external-source ids",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "FULF-14",
+    "title": "Allow heterogeneous id map when seeded obligation is user-mutable",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "FULF-15",
+    "title": "Model file need not know about id-origin mixing",
+    "scope": "implement",
+    "handled_by": ["engine/identifiers.js", "tests/rename-survival.test.js"],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "FULF-16",
+    "title": "Support within-fulfilment activation logic",
+    "scope": "reduce",
+    "handled_by": ["engine/scope/expressiveness.js", "tests/README.md"],
+    "test": "engine/scope/expressiveness.test.js",
+    "note": "Reduced: real predicates over injected in-memory external-state fixtures, unit-only (engine/scope/expressiveness.js); never registered against journey obligations."
+  },
+  {
+    "id": "FULF-17",
+    "title": "Support cross-fulfilment quantifier rules via scoping functions",
+    "scope": "reduce",
+    "handled_by": ["engine/scope/expressiveness.js", "tests/README.md"],
+    "test": "engine/scope/expressiveness.test.js",
+    "note": "Reduced: real predicates over injected in-memory external-state fixtures, unit-only (engine/scope/expressiveness.js); never registered against journey obligations."
+  },
+  {
+    "id": "FULF-18",
+    "title": "Map claims loop and addons subtasks onto indexedBy",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "model/obligations.test.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: user + derived sources fully implemented; 'seeded' stays a validated schema value exercised only with a unit-level fake seed (no seed machinery)."
+  },
+  {
+    "id": "FULF-19",
+    "title": "Staleness applies to all answers, not just lookups",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "FULF-20",
+    "title": "Make the staleness mechanism uniform across answer types",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "FULF-21",
+    "title": "Staleness shape: per-obligation freshness rule (open)",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "FULF-X1_1",
+    "title": "Stale answer re-enters needs-satisfying; orchestrator re-fires or re-presents by type",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "PERSIST-1",
+    "title": "Persist only fulfilments plus minimal metadata",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-2",
+    "title": "Recompute all derived state on load",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js", "dump.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-3",
+    "title": "Keep evaluators pure and synchronous",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "PERSIST-4",
+    "title": "Define the Journey document shape",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-5",
+    "title": "Generate journeyId as opaque UUID at start",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js", "journey/journey-context.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-6",
+    "title": "Record flowId on the Journey document",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-7",
+    "title": "Model Journey status as in-progress or submitted",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-8",
+    "title": "Key fulfilments by obligation id",
+    "scope": "implement",
+    "handled_by": ["engine/identifiers.js", "tests/rename-survival.test.js"],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "PERSIST-9",
+    "title": "Omit serviceId from the Journey document",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-10",
+    "title": "Defer userId user-association field",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "PERSIST-11",
+    "title": "Defer additional date metadata",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "PERSIST-12",
+    "title": "Keep operational storage concerns out of the model layer",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js", "store/index.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-13",
+    "title": "Version models by code deploy with no version stamping",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-14",
+    "title": "Tolerate mid-journey model updates",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-15",
+    "title": "Silently drop ill-fitting fulfilments",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-16",
+    "title": "Pass through cleanly mapping fulfilments",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-17",
+    "title": "Return the amended fulfilment set from the evaluator",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-18",
+    "title": "Persist the amended set as new source of truth",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-19",
+    "title": "Accept silent drop with no drop UX for MVP",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-20",
+    "title": "Log fulfilment drops server-side",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-21",
+    "title": "Defer user notification of dropped answers",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Model evolution and identifier-rename open items): A gated throwaway has one hand-authored model version and no live users, so no rename or migration event can occur; the spike simply keeps Container/Flow ids stable and unexposed so the deferral costs nothing. Logged in the README defer log."
+  },
+  {
+    "id": "PERSIST-22",
+    "title": "Defer per-obligation migration functions",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Model evolution and identifier-rename open items): A gated throwaway has one hand-authored model version and no live users, so no rename or migration event can occur; the spike simply keeps Container/Flow ids stable and unexposed so the deferral costs nothing. Logged in the README defer log."
+  },
+  {
+    "id": "PERSIST-23",
+    "title": "Give every obligation both id and name",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "PERSIST-24",
+    "title": "Use id as the stable persistence key",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "PERSIST-25",
+    "title": "Use name as the developer-facing surface",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/identifiers.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "PERSIST-26",
+    "title": "Enforce name uniqueness within the Obligations model",
+    "scope": "implement",
+    "handled_by": [
+      "engine/identifiers.js",
+      "engine/load-model.js",
+      "tests/rename-survival.test.js"
+    ],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "PERSIST-27",
+    "title": "Support cosmetic renames without data migration",
+    "scope": "implement",
+    "handled_by": ["engine/identifiers.js", "tests/rename-survival.test.js"],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "PERSIST-28",
+    "title": "Treat semantic changes as genuine model changes",
+    "scope": "implement",
+    "handled_by": ["engine/prune.js", "tests/rename-survival.test.js"],
+    "test": "engine/prune.test.js"
+  },
+  {
+    "id": "PERSIST-29",
+    "title": "Generate UUIDs via tooling, not by hand",
+    "scope": "implement",
+    "handled_by": ["engine/identifiers.js", "tests/rename-survival.test.js"],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "PERSIST-30",
+    "title": "Adopt UUID ids up-front, not retrofit",
+    "scope": "implement",
+    "handled_by": ["engine/identifiers.js", "tests/rename-survival.test.js"],
+    "test": "engine/identifiers.test.js"
+  },
+  {
+    "id": "PERSIST-31",
+    "title": "Use meaningful ids only in the Flow model",
+    "scope": "implement",
+    "handled_by": ["engine/load-model.js", "tests/rename-survival.test.js"],
+    "test": "engine/load-model.test.js"
+  },
+  {
+    "id": "PERSIST-32",
+    "title": "Keep Container ids out of persisted Journey state",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-33",
+    "title": "Update Flow presents references atomically with renames",
+    "scope": "implement",
+    "handled_by": ["tests/rename-survival.test.js"],
+    "test": "tests/rename-survival.test.js"
+  },
+  {
+    "id": "PERSIST-34",
+    "title": "Treat Container id renames as code-only changes",
+    "scope": "implement",
+    "handled_by": ["tests/rename-survival.test.js"],
+    "test": "tests/rename-survival.test.js"
+  },
+  {
+    "id": "PERSIST-35",
+    "title": "Flag URL-embedded Container ids as unsolved",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Model evolution and identifier-rename open items): A gated throwaway has one hand-authored model version and no live users, so no rename or migration event can occur; the spike simply keeps Container/Flow ids stable and unexposed so the deferral costs nothing. Logged in the README defer log."
+  },
+  {
+    "id": "PERSIST-36",
+    "title": "Defer Flow rename handling",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Model evolution and identifier-rename open items): A gated throwaway has one hand-authored model version and no live users, so no rename or migration event can occur; the spike simply keeps Container/Flow ids stable and unexposed so the deferral costs nothing. Logged in the README defer log."
+  },
+  {
+    "id": "PERSIST-X1_1",
+    "title": "Derive resume position via firstUnfulfilledPage; persist no current-page pointer",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "PERSIST-X2_1",
+    "title": "Record createdAt/updatedAt/submittedAt lifecycle timestamps, submittedAt null until submission",
+    "scope": "implement",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-1",
+    "title": "Decide which datastore backs the Journey document",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-2",
+    "title": "Treat the datastore choice as the upstream constraint on all persistence design",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-3",
+    "title": "Seek decision-maker input and Defra-wide data-store guidance",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-4",
+    "title": "Transition Journey from Fulfilled to Submitted on CYA Submit",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "routes/endings/submit.js",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-5",
+    "title": "Flip persisted document status to submitted on Submit",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "routes/endings/submit.js",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-6",
+    "title": "Set submittedAt timestamp on Submit",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "routes/endings/submit.js",
+      "routes/endings/confirmation.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-7",
+    "title": "Block writes to submitted documents at the storage layer",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "orchestrator/index.js",
+      "routes/guard.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-8",
+    "title": "Serve a read-only CYA page as the only post-submit surface",
+    "scope": "implement",
+    "handled_by": [
+      "contract/guards.js",
+      "routes/endings/check-your-answers.js",
+      "routes/guard.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "contract/guards.test.js"
+  },
+  {
+    "id": "SUBMIT-9",
+    "title": "Constrain routes from journeyState = Submitted in renderers",
+    "scope": "implement",
+    "handled_by": [
+      "contract/submit.js",
+      "contract/guards.js",
+      "routes/guard.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "contract/submit.test.js"
+  },
+  {
+    "id": "SUBMIT-10",
+    "title": "Exclude post-submit extension points from the core MVP",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "routes/endings/submit.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-11",
+    "title": "Defer post-submit navigation to individual pages",
+    "scope": "defer",
+    "handled_by": ["prototypes/e2e/obligations/post-submit-freeze.spec.js"],
+    "test": "prototypes/e2e/obligations/post-submit-freeze.spec.js",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Observed by the planned post-submit-freeze spec (Outcome A per Rulings item 1, 2026-07-02); no dedicated build."
+  },
+  {
+    "id": "SUBMIT-12",
+    "title": "Defer downloads (PDF receipt/confirmation)",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Logged in the README defer log."
+  },
+  {
+    "id": "SUBMIT-13",
+    "title": "Defer amendment workflow; sketch is new Journey referencing the immutable original",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Logged in the README defer log."
+  },
+  {
+    "id": "SUBMIT-14",
+    "title": "Defer withdrawal workflow (Withdrawn state)",
+    "scope": "defer",
+    "handled_by": ["prototypes/e2e/obligations/post-submit-freeze.spec.js"],
+    "test": "prototypes/e2e/obligations/post-submit-freeze.spec.js",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Observed by the planned post-submit-freeze spec (Outcome A per Rulings item 1, 2026-07-02); no dedicated build."
+  },
+  {
+    "id": "SUBMIT-15",
+    "title": "Defer downstream Submit events; orchestrator may fire a well-defined event",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Logged in the README defer log."
+  },
+  {
+    "id": "SUBMIT-16",
+    "title": "Defer reference-number generation at Submit",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Logged in the README defer log."
+  },
+  {
+    "id": "SUBMIT-17",
+    "title": "Defer Submit atomicity, coupled to the datastore decision",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-18",
+    "title": "Limit MVP Submit to state flip, timestamp, immutability, read-only CYA",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "contract/guards.js",
+      "routes/endings/submit.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-19",
+    "title": "Defer concurrency handling (multi-tab, multi-device) with auth",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-20",
+    "title": "Defer storage-layer choice between in-place status flip and copy-to-archive",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-21",
+    "title": "Defer per-Journey config snapshotting with the config extension",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred evaluator and record extension points): The doc’s own instruction is to keep these off the record and out of the evaluator signature until a concrete need arrives; the insurance journey supplies none, and adding them would pollute the portable model JSON with speculative fields. Logged in the README defer log."
+  },
+  {
+    "id": "SUBMIT-22",
+    "title": "Defer retention policy pending Defra-wide guidance",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-X1_1",
+    "title": "Adopt extension points only on concrete service demand",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "routes/endings/submit.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "SUBMIT-X2_1",
+    "title": "Do not assume MongoDB; Redis or another store may be required",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "SUBMIT-X2_2",
+    "title": "Datastore decision is urgent — persistence implementation is blocked on it",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: repository contract over an in-memory Map, explicitly framed non-precedential; the real datastore decision stays urgent and with Defra-wide decision-makers."
+  },
+  {
+    "id": "ARCH-1",
+    "title": "Keep the Obligations model Flow-agnostic",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "ARCH-2",
+    "title": "Support multiple coexisting Flows over one Obligations definition",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "ARCH-3",
+    "title": "Use dual Flows as a behavioural-equivalence regression check",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "model/flow.test.js",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js",
+      "prototypes/e2e/journey.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "ARCH-4",
+    "title": "Map every user-submitted form field to an obligation",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "engine/scope/journey-rules.js",
+      "engine/load-model.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "ARCH-5",
+    "title": "Keep presentational pages and UI affordances in the Flow layer",
+    "scope": "implement",
+    "handled_by": [
+      "templates/layout.njk",
+      "templates/start.njk",
+      "templates/hub.njk",
+      "templates/quote-summary.njk",
+      "templates/check-your-answers.njk",
+      "templates/confirmation.njk",
+      "routes/shell.js",
+      "routes/endings/index.js",
+      "routes/endings/quote-summary.js",
+      "routes/endings/confirmation.js"
+    ],
+    "test": "templates/layout.test.js"
+  },
+  {
+    "id": "ARCH-6",
+    "title": "Treat the Service layer as a pattern, not a runtime construct",
+    "scope": "reduce",
+    "handled_by": ["contract/index.js", "journey/config.js"],
+    "test": "contract/index.test.js",
+    "note": "Reduced: one Service only. The pattern-not-construct reading is followed exactly — this application implements its Service in its own code (the 20-export contract barrel plus the journey shell config), with no centralised registry, no shared cross-Service library and no runtime multi-Service support anywhere in the plan."
+  },
+  {
+    "id": "ARCH-7",
+    "title": "Scope each runtime to exactly one Service",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "ARCH-8",
+    "title": "Define Layer 1 Obligations as a portable Service-level data contract",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "ARCH-9",
+    "title": "Implement the ObligationEvaluator as a pure function",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "contract/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "ARCH-10",
+    "title": "Implement the JourneyEvaluator as pure primitives over the Flow tree",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "flow-eval/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "ARCH-11",
+    "title": "Make the orchestrator the sole side-effecting wrapper",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "orchestrator/fixed-point.js",
+      "orchestrator/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "ARCH-12",
+    "title": "Ship one evaluator/orchestrator set per implementation language per Service",
+    "scope": "reduce",
+    "handled_by": ["engine/index.js", "flow-eval/index.js"],
+    "test": "engine/index.test.js",
+    "note": "Reduced: one implementation language (JS), one Service — so exactly one evaluator/orchestrator set ships, exposed through the engine and flow-eval package barrels. The one-set-per-language-per-Service cardinality holds by construction; no second-language port is attempted (see EVAL-44)."
+  },
+  {
+    "id": "ARCH-13",
+    "title": "Define Layer 2 Flow as a static delivery definition referencing obligations by id",
+    "scope": "reduce",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "ARCH-14",
+    "title": "Allow one or more Flows per Service",
+    "scope": "reduce",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "ARCH-15",
+    "title": "Define Layer 3 Journey as a runtime instance owning the fulfilments map",
+    "scope": "reduce",
+    "handled_by": ["model/flow.json", "journey/journey-context.js"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "ARCH-16",
+    "title": "Support zero-many concurrent Journeys per Flow per user",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "store/index.js",
+      "journey/journey-context.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "ARCH-17",
+    "title": "Model Flow content as a tree of Containers with two shapes",
+    "scope": "implement",
+    "handled_by": ["model/flow.json", "model/flow.test.js"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-18",
+    "title": "Support arbitrary nesting of Groups",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-19",
+    "title": "Order children per Group; no Flow-global page ordering",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-20",
+    "title": "Treat CheckYourAnswers as a special container, not a Section",
+    "scope": "implement",
+    "handled_by": ["model/flow.json", "model/flow.test.js"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-21",
+    "title": "Support both Sectioned and pure-linear (flat) Flow shapes",
+    "scope": "implement",
+    "handled_by": ["model/flow.json", "model/skeleton-flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-22",
+    "title": "Resolve the precise skeleton-Flow shape (deferred)",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-23",
+    "title": "Make Pages declare their presented obligations and map 1:1 to HTML artefacts",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-24",
+    "title": "Support static page membership via a presents list",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "lib/fields/index.js",
+      "flow-eval/presents.js",
+      "templates/page.njk",
+      "templates/partials/fields.njk",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-25",
+    "title": "Support dynamic page membership via presentsForEach for indexed obligations",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "flow-eval/presents.js",
+      "templates/claims-list.njk",
+      "templates/claims-add.njk",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-26",
+    "title": "Expand presentsForEach to one virtual presentation per in-scope fulfilment",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/presents.js",
+      "orchestrator/scope-exit-wipe.js",
+      "routes/claims.js"
+    ],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "ARCH-27",
+    "title": "Make presentsForEach work for any indexed source",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/presents.js",
+      "templates/claims-list.njk",
+      "templates/claims-add.njk"
+    ],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "ARCH-28",
+    "title": "Allow a page to mix presents and presentsForEach",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/presents.js",
+      "templates/page.njk",
+      "templates/partials/fields.njk"
+    ],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "ARCH-29",
+    "title": "Support read-only Pages via empty or omitted presents",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/presents.js",
+      "templates/start.njk",
+      "templates/page.njk",
+      "templates/quote-summary.njk",
+      "templates/confirmation.njk"
+    ],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "ARCH-30",
+    "title": "Give read-only Pages a permanent Not Applicable status",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "ARCH-31",
+    "title": "Derive read-only-ness intrinsically; no readOnly flag in the schema",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "flow-eval/presents.js",
+      "templates/start.njk",
+      "templates/page.njk",
+      "templates/quote-summary.njk"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-32",
+    "title": "Optionally expose an isReadOnly derived helper",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "contract/view.js",
+      "templates/page.njk",
+      "routes/page.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "ARCH-33",
+    "title": "Route navigation decisions through the status taxonomy, not a read-only check",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js"
+  },
+  {
+    "id": "ARCH-34",
+    "title": "Distinguish dynamic-empty pages from structurally read-only pages",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "ARCH-35",
+    "title": "Enforce hard mandates at Save and continue",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "validation/field-errors.js",
+      "templates/page.njk",
+      "templates/partials/error-summary.njk",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "ARCH-36",
+    "title": "Let soft-mandate obligations pass Save and continue but stay on the to-do list",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "templates/check-your-answers.njk",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "ARCH-37",
+    "title": "Default the mandate to soft; require hard to be explicit",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "contract/mutation.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "ARCH-X1_1",
+    "title": "Exactly one Obligations definition per Service",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: one Service, so the one-per-Service cardinality holds by construction — the spike carries exactly one Obligations definition (model/obligations.json), parsed and validated once at registration by engine/load-model.js; both Flows (flow.json and the skeleton fixture) reference that single definition."
+  },
+  {
+    "id": "ARCH-X1_2",
+    "title": "Mandate on presentsForEach applies per expanded fulfilment",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/presents.js",
+      "templates/claims-add.njk",
+      "templates/partials/fields.njk"
+    ],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "ARCH-X1_3",
+    "title": "Read-only pages stay in the declared narrative sequence",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "ARCH-X1_4",
+    "title": "Journeys carry their own id and are isolated from each other",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json", "journey/journey-context.js"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: one Service, one polished Flow; multi-Flow layering proven structurally via the model/skeleton-flow.json fixture; evaluators stay parameterised on (model, state)."
+  },
+  {
+    "id": "FLOW-1",
+    "title": "Compose page-level and Engine-level mandates orthogonally",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "contract/mutation.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-2",
+    "title": "Implement hard x mandatory as most restrictive combination",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/messages.en.json",
+      "model/flow.test.js",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "contract/mutation.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-3",
+    "title": "Implement hard x optional as a page-only UX constraint",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/messages.en.json",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "contract/mutation.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-4",
+    "title": "Implement soft x mandatory as the skippable-but-required 90% case",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/messages.en.json",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "templates/partials/fields.njk",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-5",
+    "title": "Implement soft x optional as unconstrained",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/messages.en.json",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-6",
+    "title": "Default page-level mandate to soft",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "templates/partials/fields.njk",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-7",
+    "title": "Block Save and continue on unfulfilled in-scope hard mandates",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "validation/index.js",
+      "templates/partials/error-summary.njk",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-8",
+    "title": "Re-render blocked page with GDS error summary and per-field errors",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "engine/mandates.js",
+      "validation/format-checks.js",
+      "validation/save-check.js",
+      "validation/field-errors.js",
+      "validation/index.js",
+      "lib/fields/errors.js",
+      "templates/page.njk",
+      "templates/check-your-answers.njk",
+      "templates/partials/fields.njk",
+      "templates/partials/error-summary.njk",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-9",
+    "title": "Make Engine output the source of truth at Journey completion",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "contract/submit.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-10",
+    "title": "Save partial state when non-hard obligations are unfilled",
+    "scope": "implement",
+    "handled_by": [
+      "orchestrator/apply-answers.js",
+      "orchestrator/scope-exit-wipe.js",
+      "routes/page.js",
+      "routes/claims.js"
+    ],
+    "test": "orchestrator/apply-answers.test.js"
+  },
+  {
+    "id": "FLOW-11",
+    "title": "Resolve the navigation-advance algorithm (open)",
+    "scope": "implement",
+    "handled_by": ["model/flow.json", "flow-eval/navigation/next-after.js"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "FLOW-12",
+    "title": "Add static check: hard-mandate must have a rendered input",
+    "scope": "implement",
+    "handled_by": ["tests/alignment-walker.test.js"],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "FLOW-13",
+    "title": "Add warning-level static check for hard-mandate on never-applicable obligation",
+    "scope": "implement",
+    "handled_by": ["tests/completability.test.js"],
+    "test": "tests/completability.test.js"
+  },
+  {
+    "id": "FLOW-14",
+    "title": "Test cross-Flow evaluator equivalence on identical fulfilments",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js",
+      "tests/fixtures/scripts/claims-yes-no-yes.script.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "FLOW-15",
+    "title": "Use the skeleton Flow as a reference oracle for the polished Flow",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "FLOW-16",
+    "title": "Keep acquisition methods out of the obligation model",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "FLOW-17",
+    "title": "Store provenance as Flow-side metadata",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-18",
+    "title": "Collapse obligation kinds into types or journey-side mechanisms",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "lib/fields/registry.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-19",
+    "title": "Treat question as the default UI mechanism, not a kind",
+    "scope": "reduce",
+    "handled_by": [
+      "model/obligations.json",
+      "lib/fields/registry.js",
+      "lib/fields/choice-views.js"
+    ],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-20",
+    "title": "Model file uploads by canonical data, not as a kind",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "lib/fields/block-views.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-21",
+    "title": "Handle sub-journeys as orchestrator-handled sub-journey-receipt obligations",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "FLOW-22",
+    "title": "Model agreements as boolean/consent-typed obligations",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-23",
+    "title": "Model payment as a payment-receipt-typed obligation",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-24",
+    "title": "Model scheduling as a time-slot-typed obligation",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-25",
+    "title": "Handle lookups as orchestrator-handled lookup-result obligations",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "FLOW-26",
+    "title": "Make type the only obligation discriminant with an open type space",
+    "scope": "reduce",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "lib/fields/registry.js"
+    ],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: type remains an open string with a registry text-input fallback; only the journey's own types get dedicated widgets."
+  },
+  {
+    "id": "FLOW-27",
+    "title": "Split type handling between journey renderers and orchestrator handlers",
+    "scope": "implement",
+    "handled_by": [
+      "lib/fields/registry.js",
+      "lib/fields/index.js",
+      "templates/page.njk",
+      "templates/partials/fields.njk",
+      "routes/page.js",
+      "routes/endings/quote-summary.js"
+    ],
+    "test": "lib/fields/registry.test.js"
+  },
+  {
+    "id": "FLOW-28",
+    "title": "Extend types without touching the obligation file",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "FLOW-29",
+    "title": "Adapt spike C by moving rules.json into the evaluator, keeping authored reasons",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Spike A-D retrofit commentary): Nothing to build: the new spike is a fresh self-contained implementation, so retrofit paths are documentation context only, retained as rationale for design choices such as keeping spike C’s authored-reasons pattern. Logged in the README defer log."
+  },
+  {
+    "id": "FLOW-30",
+    "title": "Refactor spike A to split obligations data from evaluator and journey",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Spike A-D retrofit commentary): Nothing to build: the new spike is a fresh self-contained implementation, so retrofit paths are documentation context only, retained as rationale for design choices such as keeping spike C’s authored-reasons pattern. Logged in the README defer log."
+  },
+  {
+    "id": "FLOW-31",
+    "title": "Accept spike B needs one statechart per journey over shared obligations",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Spike A-D retrofit commentary): Nothing to build: the new spike is a fresh self-contained implementation, so retrofit paths are documentation context only, retained as rationale for design choices such as keeping spike C’s authored-reasons pattern. Logged in the README defer log."
+  },
+  {
+    "id": "FLOW-32",
+    "title": "Map spike D schema to obligation types and annotations to the journey layer",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Spike A-D retrofit commentary): Nothing to build: the new spike is a fresh self-contained implementation, so retrofit paths are documentation context only, retained as rationale for design choices such as keeping spike C’s authored-reasons pattern. Logged in the README defer log."
+  },
+  {
+    "id": "FLOW-33",
+    "title": "Build the orchestrator layer as net-new work",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/fixed-point.js"],
+    "test": "orchestrator/fixed-point.test.js",
+    "note": "Reduced: loop shape kept but degenerate (one sync handler ⇒ immediate convergence); 'yield' reinterpreted as render-and-end-request; EVAL-35 unreviewed-sketch header tag."
+  },
+  {
+    "id": "FLOW-X1_1",
+    "title": "Evaluator treats orchestrator-written fulfilments as ordinary input",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "FLOW-X1_2",
+    "title": "Spike D's residual weaknesses persist under the obligation mapping",
+    "scope": "implement",
+    "handled_by": [
+      "model/obligations.json",
+      "model/obligations.test.js",
+      "engine/load-model.js"
+    ],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "FLOW-X2_1",
+    "title": "Support multiple alternative acquisition methods for a single obligation",
+    "scope": "implement",
+    "handled_by": ["model/obligations.json", "engine/load-model.js"],
+    "test": "model/obligations.test.js"
+  },
+  {
+    "id": "STATUS-1",
+    "title": "Separate content tree from navigation decisions",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "STATUS-2",
+    "title": "Compute a status for every Container from Engine output",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js", "contract/status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-3",
+    "title": "Define the four-state status taxonomy",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-4",
+    "title": "Skip Not Applicable Containers in navigation",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js"
+  },
+  {
+    "id": "STATUS-5",
+    "title": "Apply the status vocabulary to the whole Journey",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "STATUS-6",
+    "title": "Do not include a Cannot-start-yet status",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-7",
+    "title": "Model conditional blocked Sections via appliesWhen",
+    "scope": "reduce",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "flow-eval/applies-when.js",
+      "flow-eval/container-status.js",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: appliesWhen→Not Applicable fully built; async blocker obligations demonstrated with synchronous stand-ins at unit level only."
+  },
+  {
+    "id": "STATUS-8",
+    "title": "Model async external blockers as system-handled obligations",
+    "scope": "reduce",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "STATUS-9",
+    "title": "Treat everything affecting applicability as an obligation",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/applies-when.js",
+      "contract/navigation.js",
+      "contract/guards.js"
+    ],
+    "test": "flow-eval/applies-when.test.js"
+  },
+  {
+    "id": "STATUS-10",
+    "title": "Defer signposting of upcoming NA work to an open question",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "STATUS-11",
+    "title": "Page Fulfilled leaf rule",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/container-status.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-12",
+    "title": "Group Fulfilled recursive rule",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-13",
+    "title": "Journey Fulfilled rule",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "STATUS-14",
+    "title": "Task List shows Section-level status; drill in for detail",
+    "scope": "implement",
+    "handled_by": [
+      "journey/hub-view.js",
+      "contract/view.js",
+      "templates/hub.njk"
+    ],
+    "test": "journey/hub-view.test.js"
+  },
+  {
+    "id": "STATUS-15",
+    "title": "Derive Group status from children with NA filtered out",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-16",
+    "title": "All children NA makes parent NA",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-17",
+    "title": "All applicable children Fulfilled makes parent Fulfilled",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-18",
+    "title": "All applicable children Not Started makes parent Not Started",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-19",
+    "title": "Any other mix makes parent In Progress",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-20",
+    "title": "Implement propagation per the seven-row truth table",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-21",
+    "title": "Render Task List with per-Section status links",
+    "scope": "implement",
+    "handled_by": [
+      "journey/config.js",
+      "journey/hub-view.js",
+      "contract/view.js",
+      "templates/hub.njk"
+    ],
+    "test": "journey/config.test.js"
+  },
+  {
+    "id": "STATUS-22",
+    "title": "Hide Not Applicable Sections on the Task List by default",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "journey/hub-view.js",
+      "contract/view.js",
+      "templates/hub.njk",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "STATUS-23",
+    "title": "Enter a Section at the first Page in declared order",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js"
+  },
+  {
+    "id": "STATUS-24",
+    "title": "Include read-only Pages in the Section walk",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "STATUS-25",
+    "title": "Allow forward, backward, and Task List movement from each Page",
+    "scope": "reduce",
+    "handled_by": [
+      "journey/paths.js",
+      "contract/view.js",
+      "routes/shell.js",
+      "routes/page.js"
+    ],
+    "test": "journey/paths.test.js",
+    "note": "Reduced: contextual Back carried by the change/source query param only; no referrer history stack."
+  },
+  {
+    "id": "STATUS-26",
+    "title": "Offer an optional Continue/Resume shortcut",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "STATUS-27",
+    "title": "Let the shortcut skip via status, not a read-only filter",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "STATUS-28",
+    "title": "Degrade shortcut to first-Page behaviour when Section Fulfilled",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js"
+  },
+  {
+    "id": "STATUS-29",
+    "title": "Validate hard mandates on Page POST",
+    "scope": "implement",
+    "handled_by": [
+      "engine/mandates.js",
+      "validation/save-check.js",
+      "validation/index.js",
+      "templates/page.njk",
+      "templates/partials/error-summary.njk",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "engine/mandates.test.js"
+  },
+  {
+    "id": "STATUS-30",
+    "title": "Write fulfilments and recalculate Engine on successful POST",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/next-after.js",
+      "orchestrator/apply-answers.js",
+      "orchestrator/index.js",
+      "contract/mutation.js",
+      "routes/page.js"
+    ],
+    "test": "flow-eval/navigation/next-after.test.js"
+  },
+  {
+    "id": "STATUS-31",
+    "title": "After POST, walk to next applicable non-Fulfilled Container",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/next-after.js",
+      "contract/mutation.js",
+      "routes/page.js"
+    ],
+    "test": "flow-eval/navigation/next-after.test.js"
+  },
+  {
+    "id": "STATUS-32",
+    "title": "Keep the Task List reachable from every page",
+    "scope": "reduce",
+    "handled_by": ["journey/paths.js", "contract/view.js", "routes/shell.js"],
+    "test": "journey/paths.test.js",
+    "note": "Reduced: contextual Back carried by the change/source query param only; no referrer history stack."
+  },
+  {
+    "id": "STATUS-33",
+    "title": "Make CYA reachable before the Journey is Fulfilled",
+    "scope": "implement",
+    "handled_by": [
+      "contract/view.js",
+      "routes/endings/check-your-answers.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "contract/view.test.js"
+  },
+  {
+    "id": "STATUS-34",
+    "title": "Enable CYA Submit only when Journey is Fulfilled",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "contract/status.js",
+      "contract/submit.js",
+      "routes/endings/check-your-answers.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "STATUS-35",
+    "title": "Re-check Journey-Fulfilled server-side on CYA Submit",
+    "scope": "implement",
+    "handled_by": [
+      "contract/submit.js",
+      "contract/guards.js",
+      "routes/endings/submit.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "contract/submit.test.js"
+  },
+  {
+    "id": "STATUS-36",
+    "title": "Never hard-code next-page; always query the Engine",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/next-after.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/next-after.test.js"
+  },
+  {
+    "id": "STATUS-X1_1",
+    "title": "Return to Task List when the Section subtree is exhausted",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/next-after.js",
+      "contract/status.js",
+      "contract/mutation.js",
+      "routes/page.js"
+    ],
+    "test": "flow-eval/navigation/next-after.test.js"
+  },
+  {
+    "id": "STATUS-X1_2",
+    "title": "Read-only Pages always carry status Not Applicable",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "STATUS-X1_3",
+    "title": "CYA renders soft prompts for missing items before Fulfilled",
+    "scope": "implement",
+    "handled_by": [
+      "contract/view.js",
+      "routes/endings/check-your-answers.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "contract/view.test.js"
+  },
+  {
+    "id": "STATUS-X1_4",
+    "title": "Transition the Journey to Submitted on successful CYA Submit",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/journey-state.js",
+      "contract/status.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "STATUS-X1_5",
+    "title": "Re-render CYA with missing items called out when Submit re-check fails",
+    "scope": "implement",
+    "handled_by": [
+      "contract/submit.js",
+      "routes/endings/submit.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "contract/submit.test.js"
+  },
+  {
+    "id": "STATUS-X2_1",
+    "title": "Container is Not Applicable when all its obligations are served elsewhere in the Flow",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "NAV-1",
+    "title": "Expose three pure navigation primitives over the Container tree",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "flow-eval/navigation/index.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "NAV-2",
+    "title": "Make primitives depth-first and rooted at any Container",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "NAV-3",
+    "title": "Guarantee primitives are deterministic",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "flow-eval/navigation/next-after.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "NAV-4",
+    "title": "firstApplicablePage: status-blind depth-first including read-only Pages",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "NAV-5",
+    "title": "firstUnfulfilledPage: status-filtered to first NS/IP Page",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js"
+  },
+  {
+    "id": "NAV-6",
+    "title": "firstPagePresentingObligation: locate Page by obligation id",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js",
+      "contract/guards.js"
+    ],
+    "test": "flow-eval/navigation/first-page-presenting-obligation.test.js"
+  },
+  {
+    "id": "NAV-7",
+    "title": "Unit-test each primitive in isolation",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "NAV-8",
+    "title": "Declare sectionEntryMode in flow.json",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "NAV-9",
+    "title": "Support per-Section entryMode override",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "NAV-10",
+    "title": "Default sectionEntryMode to firstApplicablePage",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js"
+  },
+  {
+    "id": "NAV-11",
+    "title": "Renderer invokes the resolved entry mode without forked logic",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js"
+  },
+  {
+    "id": "NAV-12",
+    "title": "Allow multiple parallel navigation widgets",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "NAV-13",
+    "title": "Resolve Task List Section clicks via configurable entry mode",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "NAV-14",
+    "title": "Sub-hub SubSection clicks inherit Section entry behaviour rooted at the SubSection",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "NAV-15",
+    "title": "Resume/Continue always uses firstUnfulfilledPage",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "NAV-16",
+    "title": "CYA Change links always use firstPagePresentingObligation",
+    "scope": "implement",
+    "handled_by": [
+      "journey/paths.js",
+      "contract/view.js",
+      "contract/navigation.js",
+      "routes/endings/check-your-answers.js",
+      "prototypes/e2e/invalidation.spec.js"
+    ],
+    "test": "journey/paths.test.js"
+  },
+  {
+    "id": "NAV-17",
+    "title": "Container-jump widgets choose their traversal mode per widget",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "NAV-18",
+    "title": "Page-jump widgets navigate directly without traversal",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "NAV-19",
+    "title": "Renderer decides whether to hide a redundant Resume affordance",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "NAV-20",
+    "title": "Unit-test firstApplicablePage structural cases",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "NAV-21",
+    "title": "Unit-test firstUnfulfilledPage status-filtering cases",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js"
+  },
+  {
+    "id": "NAV-22",
+    "title": "Unit-test firstPagePresentingObligation match cases",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-page-presenting-obligation.test.js"
+  },
+  {
+    "id": "NAV-23",
+    "title": "In-scope obligations must have at least one presenting Page",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-page-presenting-obligation.test.js"
+  },
+  {
+    "id": "NAV-24",
+    "title": "Test equivalence of the two entry primitives on fresh state",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js"
+  },
+  {
+    "id": "NAV-25",
+    "title": "Test that sectionEntryMode does not affect final evaluator state",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "NAV-26",
+    "title": "CYA lists every Fulfilment with values and a Change link",
+    "scope": "implement",
+    "handled_by": [
+      "contract/navigation.js",
+      "routes/endings/check-your-answers.js"
+    ],
+    "test": "contract/navigation.test.js"
+  },
+  {
+    "id": "NAV-27",
+    "title": "Change link targets the first depth-first Page presenting the obligation (settled)",
+    "scope": "implement",
+    "handled_by": [
+      "contract/navigation.js",
+      "routes/endings/check-your-answers.js",
+      "prototypes/e2e/invalidation.spec.js"
+    ],
+    "test": "contract/navigation.test.js"
+  },
+  {
+    "id": "NAV-28",
+    "title": "Use the ?change=1 pattern for Change mode",
+    "scope": "implement",
+    "handled_by": [
+      "contract/navigation.js",
+      "routes/page.js",
+      "routes/endings/check-your-answers.js"
+    ],
+    "test": "contract/navigation.test.js"
+  },
+  {
+    "id": "NAV-29",
+    "title": "Return to CYA after a change-mode submit",
+    "scope": "implement",
+    "handled_by": [
+      "contract/navigation.js",
+      "routes/page.js",
+      "prototypes/e2e/invalidation.spec.js"
+    ],
+    "test": "contract/navigation.test.js"
+  },
+  {
+    "id": "NAV-30",
+    "title": "Keep change-mode behaviour at runtime level, not declared per page",
+    "scope": "implement",
+    "handled_by": [
+      "journey/paths.js",
+      "contract/navigation.js",
+      "routes/page.js",
+      "routes/endings/check-your-answers.js",
+      "prototypes/e2e/obligations/early-cya-access.spec.js"
+    ],
+    "test": "journey/paths.test.js"
+  },
+  {
+    "id": "NAV-31",
+    "title": "Make Back navigation contextual by arrival source",
+    "scope": "reduce",
+    "handled_by": ["journey/paths.js", "contract/view.js", "routes/page.js"],
+    "test": "journey/paths.test.js",
+    "note": "Reduced: contextual Back carried by the change/source query param only; no referrer history stack."
+  },
+  {
+    "id": "NAV-32",
+    "title": "Treat breadcrumbs as an optional renderer concern",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "NAV-33",
+    "title": "Define journey-level Not Started status",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js", "contract/status.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "NAV-34",
+    "title": "Define journey-level In Progress status",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js", "contract/status.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "NAV-35",
+    "title": "Define journey Fulfilled status and gate CYA Submit on it",
+    "scope": "implement",
+    "handled_by": ["flow-eval/journey-state.js", "contract/status.js"],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "NAV-36",
+    "title": "Make Submitted final with no further changes",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "contract/submit.js",
+      "contract/guards.js",
+      "routes/endings/submit.js",
+      "routes/guard.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "NAV-37",
+    "title": "Show only a read-only CYA after submit",
+    "scope": "implement",
+    "handled_by": [
+      "contract/guards.js",
+      "routes/guard.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "contract/guards.test.js"
+  },
+  {
+    "id": "NAV-38",
+    "title": "Defer richer post-submit features to the Persistence submit-lifecycle extension point",
+    "scope": "defer",
+    "handled_by": ["prototypes/e2e/obligations/post-submit-freeze.spec.js"],
+    "test": "prototypes/e2e/obligations/post-submit-freeze.spec.js",
+    "note": "Deferred (theme: Post-submit lifecycle extensions): All are explicitly deferred with no counterpart in the existing journeys the spike must mirror; only the implied MVP boundary (submit freezes the journey) touches the spike and that lives in the submit theme. Observed by the planned post-submit-freeze spec (Outcome A per Rulings item 1, 2026-07-02); no dedicated build."
+  },
+  {
+    "id": "NAV-39",
+    "title": "Allow free movement between In Progress and Fulfilled; only Submitted is one-way",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/journey-state.js",
+      "contract/status.js",
+      "prototypes/e2e/obligations/post-submit-freeze.spec.js"
+    ],
+    "test": "flow-eval/journey-state.test.js"
+  },
+  {
+    "id": "NAV-X1_1",
+    "title": "Callers fall back to firstApplicablePage or CYA when a Container is fully Fulfilled",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js"
+  },
+  {
+    "id": "NAV-X2_1",
+    "title": "Three primitives are sufficient for all runtime navigation resolution",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/next-after.js",
+      "flow-eval/navigation/index.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/next-after.test.js"
+  },
+  {
+    "id": "NAV-X2_2",
+    "title": "firstPagePresentingObligation returns null defensively on no match",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-page-presenting-obligation.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-page-presenting-obligation.test.js"
+  },
+  {
+    "id": "TEST-1",
+    "title": "Implement static reachability test",
+    "scope": "implement",
+    "handled_by": ["tests/reachability.test.js"],
+    "test": "tests/reachability.test.js"
+  },
+  {
+    "id": "TEST-2",
+    "title": "Implement model-to-HTML alignment test class",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "tests/helpers/render-page.js",
+      "tests/helpers/extract-inputs.test.js",
+      "tests/fixtures/states/empty-journey.json",
+      "tests/fixtures/states/claims-in-scope.json"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-3",
+    "title": "Implement dynamic reachability/completability test class",
+    "scope": "implement",
+    "handled_by": [
+      "tests/completability.test.js",
+      "tests/helpers/enumerate-states.js"
+    ],
+    "test": "tests/completability.test.js"
+  },
+  {
+    "id": "TEST-4",
+    "title": "Implement cross-Flow evaluator-equivalence test class",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js",
+      "tests/fixtures/scripts/full-quote.script.json",
+      "tests/fixtures/scripts/no-claims.script.json",
+      "tests/fixtures/scripts/claims-yes-no-yes.script.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-5",
+    "title": "Keep browser end-to-end happy-path suite",
+    "scope": "implement",
+    "handled_by": [
+      "tests/README.md",
+      "prototypes/e2e/journey.js",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/invalidation.spec.js",
+      "prototypes/e2e/obligations/obligations-journey.js"
+    ],
+    "test": "(drives the three shared specs)"
+  },
+  {
+    "id": "TEST-6",
+    "title": "Keep static and alignment tests CI-fast",
+    "scope": "implement",
+    "handled_by": [
+      "tests/README.md",
+      "tests/reachability.test.js",
+      "tests/alignment-walker.test.js",
+      "tests/completability.test.js"
+    ],
+    "test": "tests/reachability.test.js"
+  },
+  {
+    "id": "TEST-7",
+    "title": "Run alignment sub-checks as one walker per page",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "tests/helpers/render-page.js",
+      "tests/helpers/extract-inputs.test.js",
+      "tests/fixtures/states/empty-journey.json",
+      "tests/fixtures/states/claims-in-scope.json"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-8",
+    "title": "Forward alignment: every presents entry has an HTML input",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "tests/helpers/extract-inputs.js",
+      "tests/fixtures/states/claims-in-scope.json"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-9",
+    "title": "Treat hard mandate with no input as a strict failure",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-10",
+    "title": "Reverse alignment: every HTML input has a presents entry",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "tests/helpers/extract-inputs.js",
+      "tests/fixtures/states/claims-in-scope.json"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-11",
+    "title": "Type alignment: widget can satisfy obligation type",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "tests/helpers/extract-inputs.js"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-12",
+    "title": "A11y/required alignment for hard mandates",
+    "scope": "implement",
+    "handled_by": [
+      "tests/alignment-walker.test.js",
+      "tests/helpers/render-page.js",
+      "tests/helpers/extract-inputs.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "tests/alignment-walker.test.js"
+  },
+  {
+    "id": "TEST-13",
+    "title": "State-aware reachability over generated fulfilments",
+    "scope": "implement",
+    "handled_by": [
+      "tests/completability.test.js",
+      "tests/helpers/enumerate-states.js"
+    ],
+    "test": "tests/completability.test.js"
+  },
+  {
+    "id": "TEST-14",
+    "title": "Detect hard mandates that are never applicable",
+    "scope": "implement",
+    "handled_by": [
+      "tests/completability.test.js",
+      "tests/helpers/enumerate-states.js"
+    ],
+    "test": "tests/completability.test.js"
+  },
+  {
+    "id": "TEST-15",
+    "title": "Keep plain reachability check in the static class",
+    "scope": "implement",
+    "handled_by": ["tests/reachability.test.js"],
+    "test": "tests/reachability.test.js"
+  },
+  {
+    "id": "TEST-16",
+    "title": "Cross-Flow equivalence proves the data-contract claim",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "model/flow.test.js",
+      "tests/README.md",
+      "tests/flow-equivalence.test.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-17",
+    "title": "Write equivalence scripts at the obligation level",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js",
+      "tests/fixtures/scripts/full-quote.script.json",
+      "tests/fixtures/scripts/no-claims.script.json",
+      "tests/fixtures/scripts/claims-yes-no-yes.script.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-18",
+    "title": "Script-runner walks each Flow via the navigation algorithm",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-19",
+    "title": "Use the skeleton Flow as a regression oracle",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/fixtures/scripts/full-quote.expected.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-20",
+    "title": "New Flows get free coverage by replaying scripts",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/fixtures/scripts/full-quote.script.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-21",
+    "title": "Equivalence tests guard Flow-migration data safety",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/fixtures/scripts/no-claims.script.json",
+      "tests/fixtures/scripts/claims-yes-no-yes.script.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-22",
+    "title": "Equivalence failures signal logic leaking into Flows",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json", "tests/README.md"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-23",
+    "title": "Run cross-Flow scripts only when there is more than one Flow",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json", "tests/README.md"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-24",
+    "title": "Build equivalence infrastructure once, reusable across Services",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/README.md",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js",
+      "prototypes/e2e/journey.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-25",
+    "title": "Maintain per-Service scripts only while multi-Flow",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json", "tests/README.md"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-26",
+    "title": "Treat cross-Flow equivalence as an architectural-invariant test",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "model/flow.test.js",
+      "tests/README.md"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-27",
+    "title": "Plan a replacement before retiring the equivalence test",
+    "scope": "reduce",
+    "handled_by": ["model/skeleton-flow.json", "tests/README.md"],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-28",
+    "title": "Maintain a separate script-coverage discipline",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/README.md",
+      "tests/fixtures/scripts/full-quote.script.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-29",
+    "title": "Land dynamic-reachability tests before cross-Flow tests",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/README.md",
+      "tests/completability.test.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-30",
+    "title": "Compare canonical fulfilment values, not per-Flow identifiers",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/helpers/script-runner.js",
+      "tests/fixtures/scripts/full-quote.expected.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TEST-X1_1",
+    "title": "Dynamic test class runs with Engine and navigation algorithm but no browser",
+    "scope": "implement",
+    "handled_by": ["tests/completability.test.js"],
+    "test": "tests/completability.test.js"
+  },
+  {
+    "id": "TOOL-1",
+    "title": "Treat the code-generation pipeline as an uncommitted stretch goal",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-2",
+    "title": "Keep the layered architecture codegen-friendly",
+    "scope": "reduce",
+    "handled_by": ["templates/layout.njk", "routes.js"],
+    "test": "templates/layout.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-3",
+    "title": "Define Stage 1: obligations.json to skeleton flow.json plus tests",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-4",
+    "title": "Accept that Stage 1 is judgement-heavy",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-5",
+    "title": "Require GDS-convention pattern matching in a usable Stage 1 skeleton",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-6",
+    "title": "Require related-field clustering in Stage 1",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-7",
+    "title": "Require conditional-group detection in Stage 1",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-8",
+    "title": "Require draft copy generation in Stage 1",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-9",
+    "title": "Implement Stage 1 as an AI skill using a reference implementation",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-10",
+    "title": "Define Stage 2: flow.json plus obligations.json to HTML scaffold",
+    "scope": "reduce",
+    "handled_by": ["templates/page.njk"],
+    "test": "templates/page.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-11",
+    "title": "Generate one template file per Page in Stage 2",
+    "scope": "reduce",
+    "handled_by": [
+      "templates/layout.njk",
+      "templates/page.njk",
+      "routes/page.js"
+    ],
+    "test": "templates/layout.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-12",
+    "title": "Generate one form input per presents entry, typed from the obligation",
+    "scope": "reduce",
+    "handled_by": [
+      "lib/fields/registry.js",
+      "lib/fields/input-views.js",
+      "lib/fields/block-views.js",
+      "lib/fields/choice-views.js",
+      "lib/fields/index.js",
+      "templates/claims-add.njk",
+      "templates/partials/fields.njk",
+      "routes/page.js"
+    ],
+    "test": "lib/fields/registry.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-13",
+    "title": "Wire required attributes and validation from hard mandates",
+    "scope": "reduce",
+    "handled_by": [
+      "validation/format-checks.js",
+      "validation/field-errors.js",
+      "lib/fields/errors.js",
+      "templates/partials/fields.njk",
+      "templates/partials/error-summary.njk",
+      "routes/page.js",
+      "prototypes/e2e/mandatory-fields.spec.js",
+      "prototypes/e2e/obligations/mandate-composition.spec.js"
+    ],
+    "test": "validation/format-checks.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-14",
+    "title": "Generate a template loop for presentsForEach",
+    "scope": "reduce",
+    "handled_by": [
+      "lib/fields/index.js",
+      "templates/claims-list.njk",
+      "templates/claims-add.njk",
+      "templates/partials/fields.njk",
+      "routes/page.js",
+      "routes/claims.js"
+    ],
+    "test": "lib/fields/index.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-15",
+    "title": "Make the Stage 2 generator deterministic",
+    "scope": "reduce",
+    "handled_by": [
+      "lib/fields/input-views.js",
+      "templates/partials/fields.njk",
+      "routes/page.js"
+    ],
+    "test": "lib/fields/input-views.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-16",
+    "title": "Keep AI polish optional and structural generation deterministic",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-17",
+    "title": "Use cross-Flow Engine equivalence tests as the oracle for generated Flows",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TOOL-18",
+    "title": "Catch AI Flow divergence via rendering-independent deterministic tests",
+    "scope": "reduce",
+    "handled_by": [
+      "model/skeleton-flow.json",
+      "tests/flow-equivalence.test.js",
+      "tests/fixtures/scripts/full-quote.expected.json"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: script-runner + skeleton fixture over canonical fulfilment values; equivalence demonstrated structurally for three scripts, not proven (TEST-16/TEST-28 caveat)."
+  },
+  {
+    "id": "TOOL-19",
+    "title": "Generate tests deterministically with hard-coded expectations",
+    "scope": "reduce",
+    "handled_by": ["routes/test-server.js"],
+    "test": "(self-tested by use)",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-20",
+    "title": "Keep evaluators pure functions and models pure data",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "engine/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "TOOL-21",
+    "title": "Export ObligationEvaluator and JourneyEvaluator as Node module APIs",
+    "scope": "implement",
+    "handled_by": [
+      "contract/navigation.js",
+      "contract/index.js",
+      "routes.js",
+      "routes/model-endpoints.js"
+    ],
+    "test": "contract/navigation.test.js"
+  },
+  {
+    "id": "TOOL-22",
+    "title": "Wrap evaluator functions in CLI tools (tim or dedicated binary)",
+    "scope": "implement",
+    "handled_by": ["contract/index.js", "routes/model-endpoints.js"],
+    "test": "contract/index.test.js"
+  },
+  {
+    "id": "TOOL-23",
+    "title": "Serve obligations.json and flow.json at well-known endpoints",
+    "scope": "implement",
+    "handled_by": ["contract/index.js", "routes/model-endpoints.js"],
+    "test": "contract/index.test.js"
+  },
+  {
+    "id": "TOOL-24",
+    "title": "Add a config-gated evaluator introspection API",
+    "scope": "implement",
+    "handled_by": ["contract/index.js", "routes/model-endpoints.js"],
+    "test": "contract/index.test.js"
+  },
+  {
+    "id": "TOOL-25",
+    "title": "Sequence interrogation levels: 1 free, 2-3 early, 4 deferred",
+    "scope": "implement",
+    "handled_by": ["contract/index.js", "routes/model-endpoints.js"],
+    "test": "contract/index.test.js"
+  },
+  {
+    "id": "TOOL-26",
+    "title": "Decide regenerability: one-shot scaffolder vs ongoing build step",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-27",
+    "title": "Require human polish of AI copy before it goes user-facing",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "TOOL-28",
+    "title": "Build the first Service without AI tooling as the reference",
+    "scope": "reduce",
+    "handled_by": [
+      "templates/page.njk",
+      "templates/partials/fields.njk",
+      "routes.js",
+      "routes/page.js"
+    ],
+    "test": "templates/page.test.js",
+    "note": "Reduced: no generator built; hand-written templates/routes follow the generator-shaped conventions (TOOL-28's hand-built reference implementation)."
+  },
+  {
+    "id": "TOOL-29",
+    "title": "Compare non-AI alternatives for Stage 1 if AI quality fails",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Code-generation pipeline — uncommitted stretch goal): TOOL-1 itself pins the two-stage generator (obligations→Flow, Flow→HTML) as an aspiration with no commitment to build, so nothing about a gated throwaway needs it; no generator, AI skill or polish layer is built. The hand-written templates/routes stand as TOOL-28's reference implementation for a future Stage 1/2 to pattern-match against. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN1-1",
+    "title": "Defer hybrid source/mutability combinations",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN1-2",
+    "title": "Defer cross-obligation references between fulfilments",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred indexed-obligation machinery: seeding, recovery, hybrids, references): Both presuppose external systems or journey shapes that do not exist in an in-memory parity spike — nothing to seed from, nothing that can fail, no fulfilment-to-fulfilment references; the claims loop needs only the settled edit-add-remove vocabulary. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN1-3",
+    "title": "Do not model evaluator configuration today",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js", "engine/index.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "OPEN1-4",
+    "title": "Inject future config at evaluator construction time",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred evaluator and record extension points): The doc’s own instruction is to keep these off the record and out of the evaluator signature until a concrete need arrives; the insurance journey supplies none, and adding them would pollute the portable model JSON with speculative fields. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN1-5",
+    "title": "Keep constructed evaluator pure in (obligations, fulfilments)",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "OPEN1-6",
+    "title": "Extend construction injection to all evaluator dependencies",
+    "scope": "implement",
+    "handled_by": ["engine/evaluate.js"],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "OPEN1-7",
+    "title": "Record closed-over evaluator context for deterministic replay",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Audit trail and deterministic replay): Production compliance tooling with no browser-observable surface in this journey; the pure recompute-on-load design keeps replay architecturally possible, so the deferral is logged rather than an event log built into a throwaway. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN1-8",
+    "title": "Return reasons as coded records",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/reasons.js",
+      "engine/evaluate.js",
+      "i18n/resolve.js",
+      "contract/view.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-9",
+    "title": "Use dot-separated naming convention for reason codes",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "engine/reasons.js",
+      "i18n/resolve.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-10",
+    "title": "Resolve reason codes via the frontend i18n mechanism",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "engine/reasons.js",
+      "i18n/resolve.js",
+      "i18n/index.js",
+      "validation/field-errors.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-11",
+    "title": "Carry a developer-facing explanation with each reason",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "engine/reasons.js",
+      "i18n/resolve.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-12",
+    "title": "Carry interpolation values with each reason",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/reasons.js",
+      "i18n/resolve.js",
+      "validation/field-errors.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-13",
+    "title": "Keep the evaluator locale-agnostic",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "engine/reasons.js",
+      "i18n/resolve.js",
+      "i18n/index.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-14",
+    "title": "Leave translated-string location to the frontend",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "engine/reasons.js",
+      "i18n/resolve.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-15",
+    "title": "Hold reasonCodes declaration as an optional extension",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred evaluator and record extension points): The doc’s own instruction is to keep these off the record and out of the evaluator signature until a concrete need arrives; the insurance journey supplies none, and adding them would pollute the portable model JSON with speculative fields. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN1-16",
+    "title": "Make staleness uniform across all fulfilment sources",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "OPEN1-17",
+    "title": "Defer the staleness mechanism choice",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "OPEN1-18",
+    "title": "Defer per-fulfilment metadata fields",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "OPEN1-19",
+    "title": "Resolve metadata shape within the staleness discussion",
+    "scope": "reduce",
+    "handled_by": ["store/journey-repository.js"],
+    "test": "store/journey-repository.test.js",
+    "note": "Reduced: store shape avoids precluding per-fulfilment metadata (fetchedAt/sourceRef/raw/versionStamp); no freshness mechanism built (the doc's own deferral)."
+  },
+  {
+    "id": "OPEN1-20",
+    "title": "Store system-handled fulfilments in the unified fulfilments map",
+    "scope": "implement",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js"
+  },
+  {
+    "id": "OPEN1-21",
+    "title": "Distinguish fulfilment provenance by obligation type and source",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "orchestrator/system-handlers.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "OPEN1-22",
+    "title": "Treat system-handled obligations as first-class obligations",
+    "scope": "implement",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js"
+  },
+  {
+    "id": "OPEN1-23",
+    "title": "Handle privacy, access and serialisation per-field, not per-source",
+    "scope": "implement",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js"
+  },
+  {
+    "id": "OPEN1-24",
+    "title": "Read provenance from the obligation model",
+    "scope": "reduce",
+    "handled_by": ["model/obligations.json", "orchestrator/system-handlers.js"],
+    "test": "model/obligations.test.js",
+    "note": "Reduced: real handler registry + unified-map write, but exactly one in-process synchronous handler (the quote); failure policies stored opaquely and ignored."
+  },
+  {
+    "id": "OPEN1-25",
+    "title": "Ship MVP without per-fulfilment metadata",
+    "scope": "implement",
+    "handled_by": [
+      "store/journey-repository.js",
+      "orchestrator/system-handlers.js"
+    ],
+    "test": "store/journey-repository.test.js"
+  },
+  {
+    "id": "OPEN1-X1_1",
+    "title": "Welsh language support is a statutory constraint on the reason surface",
+    "scope": "implement",
+    "handled_by": [
+      "model/messages.en.json",
+      "model/messages.test.js",
+      "engine/reasons.js",
+      "i18n/resolve.js"
+    ],
+    "test": "model/messages.test.js"
+  },
+  {
+    "id": "OPEN1-X2_1",
+    "title": "Construction injection applies to the JourneyEvaluator as well as the ObligationEvaluator",
+    "scope": "implement",
+    "handled_by": [
+      "engine/evaluate.js",
+      "flow-eval/applies-when.js",
+      "flow-eval/index.js"
+    ],
+    "test": "engine/evaluate.test.js"
+  },
+  {
+    "id": "OPEN1-X2_2",
+    "title": "Defer recorded-snapshot fidelity details until replay is a concrete need",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred evaluator and record extension points): The doc’s own instruction is to keep these off the record and out of the evaluator signature until a concrete need arrives; the insurance journey supplies none, and adding them would pollute the portable model JSON with speculative fields. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-1",
+    "title": "Decide on-disk Container schema shape",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-2",
+    "title": "Decide in-memory runtime representation of Containers",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-3",
+    "title": "Keep schema choice independent of runtime choice",
+    "scope": "reduce",
+    "handled_by": ["engine/load-model.js"],
+    "test": "engine/load-model.test.js",
+    "note": "Reduced: demonstrated at single-schema/single-runtime scale — engine/load-model.js is the one hydration seam where the on-disk JSON schema (Container picks labelled provisional per OPEN2-1/2, ARCH-22) is parsed once into the in-memory runtime representation, so either side can change without constraining the other."
+  },
+  {
+    "id": "OPEN2-4",
+    "title": "Apply settled status-propagation truth table for mixed-state Group children",
+    "scope": "implement",
+    "handled_by": ["flow-eval/container-status.js"],
+    "test": "flow-eval/container-status.test.js"
+  },
+  {
+    "id": "OPEN2-5",
+    "title": "Model blocked Sections as Not Applicable via appliesWhen",
+    "scope": "reduce",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "flow-eval/applies-when.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: appliesWhen→Not Applicable fully built; async blocker obligations demonstrated with synchronous stand-ins at unit level only."
+  },
+  {
+    "id": "OPEN2-6",
+    "title": "Model async blockers as obligations whose dependents are NA",
+    "scope": "reduce",
+    "handled_by": [
+      "model/flow.json",
+      "model/flow.test.js",
+      "flow-eval/applies-when.js"
+    ],
+    "test": "model/flow.test.js",
+    "note": "Reduced: appliesWhen→Not Applicable fully built; async blocker obligations demonstrated with synchronous stand-ins at unit level only."
+  },
+  {
+    "id": "OPEN2-7",
+    "title": "Enter a Section at its first Page in declared order by default",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js"
+  },
+  {
+    "id": "OPEN2-8",
+    "title": "Provide optional Continue/Resume shortcut to first incomplete Page",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-unfulfilled-page.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "OPEN2-9",
+    "title": "Derive read-only Pages from empty presents",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/presents.js",
+      "templates/start.njk",
+      "templates/page.njk",
+      "templates/confirmation.njk"
+    ],
+    "test": "flow-eval/presents.test.js"
+  },
+  {
+    "id": "OPEN2-10",
+    "title": "Decide where the UI exposes the Resume shortcut",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-11",
+    "title": "Expose depth-first firstApplicablePage and firstUnfulfilledPage runtime primitives",
+    "scope": "implement",
+    "handled_by": [
+      "flow-eval/navigation/first-applicable-page.js",
+      "flow-eval/navigation/first-unfulfilled-page.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/first-applicable-page.test.js"
+  },
+  {
+    "id": "OPEN2-12",
+    "title": "Declare Section-entry mode via Flow sectionEntryMode with per-Section override",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-13",
+    "title": "Allow both entry primitives to be exposed simultaneously",
+    "scope": "reduce",
+    "handled_by": [
+      "flow-eval/navigation/section-entry.js",
+      "contract/navigation.js"
+    ],
+    "test": "flow-eval/navigation/section-entry.test.js",
+    "note": "Reduced: firstUnfulfilledPage implemented and unit-tested; the hub Resume widget deliberately unrendered (parity forbids new hub chrome)."
+  },
+  {
+    "id": "OPEN2-14",
+    "title": "Require every Flow to have at least one top-level Section",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/skeleton-flow.json",
+      "model/flow.test.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-15",
+    "title": "Use one shape for skeleton and polished Flows",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "model/skeleton-flow.json",
+      "model/flow.test.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-16",
+    "title": "Let the renderer suppress Task List for single-Section Flows",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-17",
+    "title": "Defer Task List rendering of nested SubSections",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-18",
+    "title": "Record suggested SubSection-rendering approach: convention plus taskListVisible hint",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-19",
+    "title": "Resolve drill-in sub-hub cross-cutting questions when SubSection rendering lands",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-20",
+    "title": "Keep NA-Section signposting out of the Engine and status taxonomy",
+    "scope": "implement",
+    "handled_by": ["templates/hub.njk", "routes/shell.js"],
+    "test": "templates/hub.test.js"
+  },
+  {
+    "id": "OPEN2-21",
+    "title": "Formalise the signpost property shape when a real journey needs it",
+    "scope": "defer",
+    "handled_by": "deferred",
+    "test": "none — deferred",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Logged in the README defer log."
+  },
+  {
+    "id": "OPEN2-22",
+    "title": "Defer differentiated signpost rendering for reset-after-visit Sections",
+    "scope": "defer",
+    "handled_by": ["prototypes/e2e/invalidation.spec.js"],
+    "test": "prototypes/e2e/invalidation.spec.js",
+    "note": "Deferred (theme: Deferred renderer/UX affordances and navigation generality): The flat, always-hubbed, breadcrumb-free six-task journey forbids all of these under behavioural identity, and every item is explicitly implement-only-on-real-need; the traversal primitives already accept arbitrary root Containers so engine-side generality falls out for free. Referenced by the listed file(s) (pending spec / observing test); no dedicated build."
+  },
+  {
+    "id": "OPEN2-23",
+    "title": "Define per-obligation failure policies for orchestrator-handled obligations (deferred)",
+    "scope": "defer",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Deferred (theme: Orchestrator failure policies for system-handled obligations): The spike’s only system-computed step (the quote) runs in-process with nothing that can fail, so the stated precondition — real failure modes to reason against — is absent; the evaluator/orchestrator split stays clean so a policy field can slot in opaquely later. Referenced by the listed file(s) (pending spec / observing test); no dedicated build."
+  },
+  {
+    "id": "OPEN2-24",
+    "title": "Encode failure policy in the obligation, opaque to the evaluator",
+    "scope": "defer",
+    "handled_by": ["orchestrator/system-handlers.js"],
+    "test": "orchestrator/system-handlers.test.js",
+    "note": "Deferred (theme: Orchestrator failure policies for system-handled obligations): The spike’s only system-computed step (the quote) runs in-process with nothing that can fail, so the stated precondition — real failure modes to reason against — is absent; the evaluator/orchestrator split stays clean so a policy field can slot in opaquely later. Referenced by the listed file(s) (pending spec / observing test); no dedicated build."
+  },
+  {
+    "id": "OPEN2-X1_1",
+    "title": "Record leaning toward unified recursive Container schema (option b)",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-X1_2",
+    "title": "Record discriminated-union plus pure selectors as the most-aligned runtime candidate, pending Node-expert discussion",
+    "scope": "implement",
+    "handled_by": ["model/flow.json"],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-X1_3",
+    "title": "SubSection-rendering resolution must leave Container tree, status taxonomy, navigation algorithm and tests unchanged",
+    "scope": "implement",
+    "handled_by": ["templates/hub.njk", "routes/page.js"],
+    "test": "templates/hub.test.js"
+  },
+  {
+    "id": "OPEN2-X2_1",
+    "title": "Render signposted NA Sections on the Task List as coming up, not hidden",
+    "scope": "implement",
+    "handled_by": [
+      "model/flow.json",
+      "journey/hub-view.js",
+      "contract/view.js",
+      "templates/hub.njk",
+      "prototypes/e2e/task-list-with-linear-tasks.spec.js"
+    ],
+    "test": "model/flow.test.js"
+  },
+  {
+    "id": "OPEN2-X2_2",
+    "title": "Deliver the Cannot-start-yet label via signposting, not a status state",
+    "scope": "implement",
+    "handled_by": [
+      "journey/hub-view.js",
+      "contract/view.js",
+      "templates/hub.njk"
+    ],
+    "test": "journey/hub-view.test.js"
+  }
+]

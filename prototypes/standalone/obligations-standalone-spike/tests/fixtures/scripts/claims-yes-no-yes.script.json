@@ -1,0 +1,15 @@
+{
+  "$comment": "Wipe-equivalence script — the engine-level twin of prototypes/e2e/invalidation.spec.js: add a claim while hadClaims is yes, flip to no (the scope-exit wipe destroys the claim data), flip back to yes. The end-state must hold NO claim fulfilments in either flow — data destroyed, not hidden, never rehydrated (SHAPE-19, INDEX-21).",
+  "name": "claims-yes-no-yes",
+  "steps": [
+    { "answers": { "hadClaims": "yes" } },
+    {
+      "add": {
+        "names": ["claimType", "claimAmount"],
+        "values": { "claimType": "theft", "claimAmount": "1200" }
+      }
+    },
+    { "answers": { "hadClaims": "no" } },
+    { "answers": { "hadClaims": "yes" } }
+  ]
+}

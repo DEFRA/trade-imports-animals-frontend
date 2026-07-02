@@ -58,6 +58,11 @@ export const JOURNEYS = [
     id: 'standalone-spike-d',
     label: 'standalone spike-d (schema-first)',
     grouped: groupedPath('prototype-standalone', 'spike-d')
+  },
+  {
+    id: 'obligations-standalone-spike',
+    label: 'standalone obligations (obligations engine)',
+    grouped: groupedPath('prototype-standalone', 'obligations-standalone-spike')
   }
 ]
 

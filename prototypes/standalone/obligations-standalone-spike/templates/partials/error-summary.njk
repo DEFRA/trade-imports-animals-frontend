@@ -1,0 +1,11 @@
+{# Shared GDS error summary — the only user-visible face of a hard
+   mandate (server-side round trip, no `required` attribute anywhere).
+   Context: errorSummary = [{ text, href }], errorSummaryTitle? #}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% if errorSummary and errorSummary.length %}
+  {{ govukErrorSummary({
+    titleText: errorSummaryTitle or "There is a problem",
+    errorList: errorSummary
+  }) }}
+{% endif %}

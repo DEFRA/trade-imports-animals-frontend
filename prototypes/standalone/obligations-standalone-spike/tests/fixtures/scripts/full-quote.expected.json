@@ -1,0 +1,37 @@
+{
+  "$comment": "Authored canonical end-state for full-quote.script.json — written by hand, NOT captured from a run, so a bug shared by both flows cannot certify itself (TEST-30, TOOL-18). Premium arithmetic recomputed by the implementor from lib/quote/premium.js constants: estimatedValue 12000 -> valueLoading round(12000 * 0.01) = 120; (480 + 120) * comprehensive multiplier 1 = 600; + recent-claims loading 120 (hadClaims yes); + penalty points 3 * 15 = 45; - no-claims discount 5 * 25 = 125; + extras breakdown 60 + legal 25 = 85; total 600 + 120 + 45 - 125 + 85 = 725; max(725, 150) = 725.",
+  "journeyState": "fulfilled",
+  "values": {
+    "email": "sam@example.com",
+    "fullName": "Sam Farrington",
+    "preferredName": "Sam",
+    "phone": "01234 567890",
+    "postcode": "SW1A 1AA",
+    "country": "england",
+    "dateOfBirth": { "day": "27", "month": "3", "year": "1985" },
+    "registration": "AB12 CDE",
+    "make": "Ford",
+    "model": "Focus",
+    "year": "2015",
+    "estimatedValue": "12000",
+    "yearsNoClaims": "5",
+    "hadClaims": "yes",
+    "penaltyPoints": "3",
+    "claimType": ["accident"],
+    "claimAmount": ["900"],
+    "coverType": "comprehensive",
+    "voluntaryExcess": "yes",
+    "excessAmount": "250",
+    "extras": ["breakdown", "legal"],
+    "addons": ["named-driver", "modifications", "protected-ncd"],
+    "driverName": { "named-driver": "Alex Driver" },
+    "driverDob": {
+      "named-driver": { "day": "1", "month": "2", "year": "1990" }
+    },
+    "relationship": { "named-driver": "spouse" },
+    "modDescription": { "modifications": "Alloy wheels and a remapped engine" },
+    "modValue": { "modifications": "1500" },
+    "ncdYears": { "protected-ncd": "5" },
+    "premium": 725
+  }
+}

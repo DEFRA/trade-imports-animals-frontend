@@ -1,0 +1,23 @@
+{# THE generic presents-page template — every 'page'-keyed Flow Page
+   renders here from a pageViewModel context ({ heading, buttonText,
+   errorSummaryTitle, fields, readOnly, backLink }) plus the route's
+   errorSummary. Zero hardcoded copy; error summary above the h1; a page
+   presenting no user-facing fields renders happily with none
+   (intrinsic read-only, ARCH-29). #}
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "standalone/obligations-standalone-spike/templates/partials/fields.njk" import renderFields %}
+
+{% block journeyContent %}
+  {% include "standalone/obligations-standalone-spike/templates/partials/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ renderFields(fields) }}
+
+    {{ govukButton({ text: buttonText }) }}
+  </form>
+{% endblock %}

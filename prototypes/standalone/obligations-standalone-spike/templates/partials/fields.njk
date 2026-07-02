@@ -1,0 +1,84 @@
+{# The govuk widget dispatch macro. FieldViewItem — FROZEN interface,
+   produced by lib/fields/slotViews and consumed only here:
+
+     { type: 'input'|'textarea'|'charactercount'|'date'|'radios'|
+             'checkboxes'|'select'|'file',
+       args: <govuk macro arguments>,
+       suggestions?: [text] }
+
+   Each item renders as exactly one govuk macro call. A radios item's
+   option may carry `reveal: FieldViewItem` — rendered recursively into
+   the govuk conditional-reveal composition (the excessAmount input under
+   the voluntaryExcess 'Yes' radio), keeping ONE visible 'Yes' label per
+   group. `suggestions` on an input adds a native datalist (no JS).
+   NEVER emits `required` — every mandate is a server-side round trip. #}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+{% from "govuk/components/character-count/macro.njk" import govukCharacterCount %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
+
+{# Radios rebuild their items so `reveal` becomes `conditional.html`.
+   The args keys are copied explicitly — the frozen radios FieldViewItem
+   carries exactly name/fieldset/hint/errorMessage/items, and each item
+   exactly value/text/hint/checked (+reveal). #}
+{% macro radios(item) %}
+  {% set options = [] %}
+  {% for option in item.args.items %}
+    {% if option.reveal %}
+      {% set revealHtml %}{{ field(option.reveal) }}{% endset %}
+      {% set options = options.concat([{
+        value: option.value,
+        text: option.text,
+        hint: option.hint,
+        checked: option.checked,
+        conditional: { html: revealHtml }
+      }]) %}
+    {% else %}
+      {% set options = options.concat([option]) %}
+    {% endif %}
+  {% endfor %}
+  {{ govukRadios({
+    name: item.args.name,
+    fieldset: item.args.fieldset,
+    hint: item.args.hint,
+    errorMessage: item.args.errorMessage,
+    items: options
+  }) }}
+{% endmacro %}
+
+{% macro field(item) %}
+  {% if item.type == 'radios' %}
+    {{ radios(item) }}
+  {% elif item.type == 'checkboxes' %}
+    {{ govukCheckboxes(item.args) }}
+  {% elif item.type == 'select' %}
+    {{ govukSelect(item.args) }}
+  {% elif item.type == 'date' %}
+    {{ govukDateInput(item.args) }}
+  {% elif item.type == 'textarea' %}
+    {{ govukTextarea(item.args) }}
+  {% elif item.type == 'charactercount' %}
+    {{ govukCharacterCount(item.args) }}
+  {% elif item.type == 'file' %}
+    {{ govukFileUpload(item.args) }}
+  {% else %}
+    {{ govukInput(item.args) }}
+    {% if item.suggestions %}
+      <datalist id="{{ item.args.attributes.list }}">
+        {% for suggestion in item.suggestions %}
+          <option value="{{ suggestion }}"></option>
+        {% endfor %}
+      </datalist>
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{% macro renderFields(fields) %}
+  {% for item in fields %}
+    {{ field(item) }}
+  {% endfor %}
+{% endmacro %}

@@ -1,0 +1,506 @@
+{
+  "$comment": "The polished Flow — a Container tree of Groups (Sections/SubSections) and Pages referencing obligations by UUID id (obligations.md:929-965). Pages carry ordered `presents` / `presentsForEach` entries; each entry owns the pinned presentation copy (label, hint, option labels) because obligation records carry none. Per Rulings item 3 (2026-07-02) `fullName` is the ONLY page-hard mandate in the whole Flow — every other parity required_at_save field is authored page-soft and enforced as engine-mandatory at CYA POST. PROVISIONAL schema picks, labelled per OPEN2-1/OPEN2-2/ARCH-22: (1) `presentsForEach` is an ARRAY of entries (the doc sketches a single object) so one page can project several indexed obligations sharing fulfilment ids; (2) CheckYourAnswers and Confirmation are top-level constructs OUTSIDE the Section tree (obligations.md:959 'special; not a Section'); (3) the get-your-quote Section carries the `quoteReady` appliesWhen name while the hub renders it always-visible-inert (parity ruling c — a documented deviation from doc-default NA-hiding); (4) `revealedBy` on a presents entry pins the govuk conditional-reveal composition (excessAmount under the voluntaryExcess Yes radio). Copy is lifted verbatim from spike-a templates/config (the parity checklist is parity-facts.json).",
+  "id": "car-insurance-quote-flow",
+  "service": "car-insurance-quote",
+  "sectionEntryMode": "firstApplicablePage",
+  "defaults": {
+    "saveButtonText": "Save and continue",
+    "errorSummaryTitle": "There is a problem"
+  },
+  "start": {
+    "heading": "Get a car insurance quote",
+    "body": "The application is grouped into a few tasks. Each task takes you through a short set of questions, then returns you to this list.",
+    "buttonText": "Start now"
+  },
+  "hub": {
+    "heading": "Get a car insurance quote",
+    "progressLine": "You have completed {completed} of {total} tasks.",
+    "quoteRowTitle": "Get your quote",
+    "cannotStartYetText": "Cannot start yet",
+    "statusLabels": {
+      "fulfilled": "Completed",
+      "inProgress": "In progress",
+      "notStarted": "Not started",
+      "incomplete": "Incomplete"
+    }
+  },
+  "sections": [
+    {
+      "kind": "group",
+      "id": "email",
+      "title": "Email",
+      "children": [
+        {
+          "kind": "page",
+          "id": "email",
+          "slug": "email",
+          "title": "Give us your email to begin",
+          "heading": "Give us your email to begin",
+          "template": "page",
+          "presents": [
+            {
+              "obligation": "a3b5036a-9782-49fd-b549-973c4201a940",
+              "label": "Email address",
+              "hint": "We use this so you can save your quote and come back to it later.",
+              "cyaKey": "Email"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "group",
+      "id": "about-you-and-your-vehicle",
+      "title": "About you and your vehicle",
+      "children": [
+        {
+          "kind": "page",
+          "id": "about-you",
+          "slug": "about-you",
+          "title": "About you",
+          "heading": "About you",
+          "template": "page",
+          "presents": [
+            {
+              "obligation": "cbf19f34-9d24-4492-88ae-7390232a2d90",
+              "mandate": "hard",
+              "label": "Full name",
+              "cyaKey": "Name"
+            },
+            {
+              "obligation": "4edb3df9-040e-415e-81e6-af2c1d28526f",
+              "label": "What should we call you?",
+              "hint": "Optional. We'll use this when we contact you.",
+              "cyaKey": "Preferred name"
+            },
+            {
+              "obligation": "2afdfce3-c458-4b4d-a7d8-f476db3993cf",
+              "label": "UK telephone number",
+              "hint": "For international numbers include the country code",
+              "cyaKey": "Telephone"
+            },
+            {
+              "obligation": "40c881d4-0217-460a-99c3-b81b7c26dfa3",
+              "label": "Postcode",
+              "cyaKey": "Postcode"
+            },
+            {
+              "obligation": "ce04398c-e386-4f7d-aeb0-d2d39ff354f3",
+              "label": "Country of residence",
+              "placeholder": "Choose…",
+              "options": [
+                { "value": "england", "label": "England" },
+                { "value": "scotland", "label": "Scotland" },
+                { "value": "wales", "label": "Wales" },
+                { "value": "northern-ireland", "label": "Northern Ireland" }
+              ],
+              "cyaKey": "Country"
+            },
+            {
+              "obligation": "07746fd9-80e0-46aa-bd0d-8ba8a4e610ac",
+              "label": "Date of birth",
+              "hint": "For example, 27 3 1985",
+              "cyaKey": "Date of birth"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "your-vehicle",
+          "slug": "your-vehicle",
+          "title": "Your vehicle",
+          "heading": "Your vehicle",
+          "template": "page",
+          "presents": [
+            {
+              "obligation": "b9d88c19-e5ac-4bfe-bbbd-9e41f541a319",
+              "label": "Registration number",
+              "cyaKey": "Registration"
+            },
+            {
+              "obligation": "2ad86ddf-e60f-4e8f-a1a3-838960597eb0",
+              "label": "Make",
+              "hint": "Start typing to see suggestions",
+              "suggestions": [
+                "Audi",
+                "BMW",
+                "Ford",
+                "Nissan",
+                "Toyota",
+                "Volkswagen"
+              ]
+            },
+            {
+              "obligation": "be0e9365-0e50-410b-acb0-8536d818d7e2",
+              "label": "Model"
+            },
+            {
+              "obligation": "a20e1c38-9881-44fd-a7e5-9e15c4539f1f",
+              "label": "Year of manufacture"
+            },
+            {
+              "obligation": "f81cabff-5a69-4351-800e-98ad0aa502b6",
+              "label": "Estimated value",
+              "cyaKey": "Estimated value"
+            },
+            {
+              "obligation": "b002a938-ab80-48e7-b0f9-4bffa60a9793",
+              "label": "Upload a photo of your vehicle (optional)",
+              "hint": "This is a prototype, so the file is not saved"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "group",
+      "id": "your-driving-and-cover",
+      "title": "Your driving and cover",
+      "children": [
+        {
+          "kind": "page",
+          "id": "driving-history",
+          "slug": "driving-history",
+          "title": "Driving history",
+          "heading": "Driving history",
+          "template": "page",
+          "presents": [
+            {
+              "obligation": "68f8ba7a-e1ac-4311-9d9f-f51dc33e8bb4",
+              "label": "Years of no-claims discount",
+              "cyaKey": "Years no claims"
+            },
+            {
+              "obligation": "c840afdc-1d10-4dd4-9266-aa936ac20c7f",
+              "label": "Have you had any claims in the last 5 years?",
+              "cyaKey": "Recent claims"
+            },
+            {
+              "obligation": "8afda217-b536-4203-823e-5c4b09213a74",
+              "label": "Penalty points",
+              "cyaKey": "Penalty points"
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "claims",
+          "slug": "claims",
+          "title": "Your claims",
+          "heading": "Claims you have added",
+          "template": "claims-list",
+          "appliesWhen": "hadClaimsIsYes",
+          "presentsForEach": [
+            {
+              "obligation": "7ab088f8-dadc-4dd2-899e-530888fbcde3",
+              "fulfilment": "*",
+              "label": "What type of claim was it?",
+              "options": [
+                { "value": "accident", "label": "Accident" },
+                { "value": "theft", "label": "Theft" },
+                { "value": "windscreen", "label": "Windscreen" },
+                { "value": "other", "label": "Something else" }
+              ]
+            },
+            {
+              "obligation": "20d2f2a7-7951-487b-b2fa-739f2a4d1ba3",
+              "fulfilment": "*",
+              "label": "Approximate claim amount"
+            }
+          ],
+          "listCopy": {
+            "emptyText": "You have not added any claims yet.",
+            "addButtonText": "Add a claim",
+            "addAnotherButtonText": "Add another claim",
+            "continueButtonText": "Continue",
+            "rowKey": "Claim {index}",
+            "removeActionText": "Remove",
+            "removeHiddenText": "claim {index}"
+          },
+          "addPage": {
+            "slug": "claims/add",
+            "heading": "Add a claim",
+            "template": "claims-add",
+            "buttonText": "Add claim"
+          }
+        },
+        {
+          "kind": "page",
+          "id": "cover-type",
+          "slug": "cover-type",
+          "title": "Choose your cover",
+          "heading": "Choose your cover",
+          "template": "page",
+          "presents": [
+            {
+              "obligation": "25e06dfe-9058-4dc3-a3eb-a7f25484d63e",
+              "label": "Which cover do you want?",
+              "options": [
+                {
+                  "value": "comprehensive",
+                  "label": "Comprehensive",
+                  "hint": "Covers you, your car and other people"
+                },
+                {
+                  "value": "third-party-fire-theft",
+                  "label": "Third party, fire and theft",
+                  "hint": "Covers other people, plus fire and theft of your car"
+                },
+                {
+                  "value": "third-party",
+                  "label": "Third party only",
+                  "hint": "Covers other people only"
+                }
+              ],
+              "cyaKey": "Cover"
+            },
+            {
+              "obligation": "9905c109-3de7-4ed0-8b2c-633a99e158e9",
+              "label": "Do you want to add a voluntary excess?",
+              "hint": "Paying a voluntary excess can lower your premium",
+              "cyaKey": "Voluntary excess"
+            },
+            {
+              "obligation": "4a3f6b53-4cf9-4ef6-8817-3606600e06d1",
+              "label": "Voluntary excess amount",
+              "revealedBy": {
+                "obligation": "9905c109-3de7-4ed0-8b2c-633a99e158e9",
+                "value": "yes"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "page",
+          "id": "optional-extras",
+          "slug": "optional-extras",
+          "title": "Optional extras",
+          "heading": "Optional extras",
+          "template": "page",
+          "presents": [
+            {
+              "obligation": "781e275d-4cf4-4d79-87b4-0e6682dc0607",
+              "label": "Add any optional extras",
+              "hint": "Select all that apply",
+              "options": [
+                { "value": "breakdown", "label": "Breakdown cover" },
+                { "value": "courtesy-car", "label": "Courtesy car" },
+                { "value": "legal", "label": "Motor legal protection" },
+                { "value": "windscreen", "label": "Windscreen cover" }
+              ],
+              "cyaKey": "Optional extras"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "group",
+      "id": "add-to-your-policy",
+      "title": "Add to your policy",
+      "children": [
+        {
+          "kind": "page",
+          "id": "addons",
+          "slug": "addons",
+          "title": "Add to your policy",
+          "heading": "Add to your policy",
+          "template": "page",
+          "buttonText": "Continue",
+          "presents": [
+            {
+              "obligation": "c749f616-505f-412b-8632-b2118c27c041",
+              "label": "What would you like to add?",
+              "hint": "Select all that apply. Each one you choose adds its own set of questions.",
+              "options": [
+                { "value": "named-driver", "label": "Add a named driver" },
+                {
+                  "value": "modifications",
+                  "label": "Declare vehicle modifications"
+                },
+                {
+                  "value": "protected-ncd",
+                  "label": "Protect your no-claims discount"
+                }
+              ],
+              "cyaKey": "Added to policy"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "named-driver",
+          "title": "Add a named driver",
+          "appliesWhen": "addonSelected:named-driver",
+          "children": [
+            {
+              "kind": "page",
+              "id": "named-driver-who",
+              "slug": "addons/named-driver/who",
+              "title": "Named driver",
+              "heading": "Named driver",
+              "template": "page",
+              "presentsForEach": [
+                {
+                  "obligation": "d20a9e81-d556-4cec-bcc7-6bfbf03356ee",
+                  "fulfilment": "*",
+                  "label": "Full name"
+                },
+                {
+                  "obligation": "c4194580-d49d-4465-a281-2dfb7fdb0d67",
+                  "fulfilment": "*",
+                  "label": "Date of birth",
+                  "hint": "For example, 27 3 1985"
+                }
+              ]
+            },
+            {
+              "kind": "page",
+              "id": "named-driver-relationship",
+              "slug": "addons/named-driver/relationship",
+              "title": "Relationship to you",
+              "heading": "Relationship to you",
+              "template": "page",
+              "presentsForEach": [
+                {
+                  "obligation": "3b4f6b9f-fa8e-434e-99ff-bbca0fb72fa7",
+                  "fulfilment": "*",
+                  "label": "What is their relationship to you?",
+                  "options": [
+                    { "value": "spouse", "label": "Spouse or partner" },
+                    { "value": "child", "label": "Son or daughter" },
+                    { "value": "parent", "label": "Parent" },
+                    { "value": "other", "label": "Someone else" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "modifications",
+          "title": "Declare vehicle modifications",
+          "appliesWhen": "addonSelected:modifications",
+          "children": [
+            {
+              "kind": "page",
+              "id": "modifications-describe",
+              "slug": "addons/modifications/describe",
+              "title": "Describe the modifications",
+              "heading": "Describe the modifications",
+              "template": "page",
+              "presentsForEach": [
+                {
+                  "obligation": "5f6b561e-30c7-4f8e-bf7e-330d44dab053",
+                  "fulfilment": "*",
+                  "label": "Describe the modifications",
+                  "hint": "For example, alloy wheels or a remapped engine"
+                }
+              ]
+            },
+            {
+              "kind": "page",
+              "id": "modifications-value",
+              "slug": "addons/modifications/value",
+              "title": "Value of the modifications",
+              "heading": "Value of the modifications",
+              "template": "page",
+              "presentsForEach": [
+                {
+                  "obligation": "4a836fc9-a544-4847-bc7a-5cb91ec4146c",
+                  "fulfilment": "*",
+                  "label": "Approximate value added"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "protected-ncd",
+          "title": "Protect your no-claims discount",
+          "appliesWhen": "addonSelected:protected-ncd",
+          "children": [
+            {
+              "kind": "page",
+              "id": "protected-ncd-years",
+              "slug": "addons/protected-ncd/years",
+              "title": "Protect your no-claims discount",
+              "heading": "Protect your no-claims discount",
+              "template": "page",
+              "presentsForEach": [
+                {
+                  "obligation": "a2d2077e-150f-4733-a9d3-67d1b6df36dd",
+                  "fulfilment": "*",
+                  "label": "How many years do you want to protect?"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "group",
+      "id": "get-your-quote",
+      "title": "Get your quote",
+      "appliesWhen": "quoteReady",
+      "children": [
+        {
+          "kind": "page",
+          "id": "quote-summary",
+          "slug": "quote-summary",
+          "title": "Get your quote",
+          "heading": "Your quote",
+          "template": "quote-summary",
+          "buttonText": "Accept and continue",
+          "presents": [
+            {
+              "obligation": "b7a2b5d6-9b1e-40e1-8105-7f8361dcf1d1",
+              "label": "Estimated annual premium"
+            }
+          ],
+          "quoteCopy": {
+            "premiumLead": "Estimated annual premium:",
+            "coverRowKey": "Cover",
+            "extrasRowKey": "Optional extras",
+            "noneText": "None",
+            "disclaimer": "This is an illustrative price for a prototype. It is not a real quote."
+          }
+        }
+      ]
+    }
+  ],
+  "checkYourAnswers": {
+    "slug": "check-your-answers",
+    "heading": "Check your answers",
+    "buttonText": "Accept and get quote",
+    "bannerHeading": "You still need to complete some sections",
+    "sendHeading": "Now send your application",
+    "sendBody": "By accepting, you confirm the details above are correct.",
+    "changeActionText": "Change",
+    "notProvidedText": "Not provided",
+    "premiumLead": "Estimated annual premium:",
+    "cyaCopy": {
+      "vehicleRowKey": "Vehicle",
+      "claimRowKey": "Claim {index}",
+      "claimsNoneRow": { "key": "Claims", "value": "None added" },
+      "addonsNoneRow": { "key": "Added to policy", "value": "None" },
+      "addonAddedText": "Added",
+      "addonIncompleteText": "Incomplete",
+      "voluntaryExcessNoneText": "None",
+      "penaltyPointsDefaultText": "0"
+    }
+  },
+  "confirmation": {
+    "slug": "confirmation",
+    "panelTitle": "Quote confirmed",
+    "referenceLead": "Your reference number",
+    "savedBody": "We have saved your quote of £{premium} per year.",
+    "nextHeading": "What happens next",
+    "nextBody": "Nothing — this is a prototype. Your answers are held in memory for the lifetime of the app so you can see the journey persist data.",
+    "returnLinkText": "Return to the standalone prototype list",
+    "returnLinkHref": "/prototype-standalone"
+  }
+}

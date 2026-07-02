@@ -1,0 +1,48 @@
+{# Check your answers — cyaRows pass-through (rows already carry the
+   'Change <key>' accessible-name composition; actions are dropped by
+   the view once Submitted, Rulings item 1). `prompts` render the soft
+   "you still need to..." notification banner a mid-journey CYA shows
+   (Rulings item 2); `errorSummary` is the submit stale-recheck
+   re-render. Context: { heading, rows, prompts, bannerHeading, premium,
+   premiumLead, sendHeading, sendBody, buttonText, submitted }. #}
+{% extends layout %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+
+{% block journeyContent %}
+  {% include "standalone/obligations-standalone-spike/templates/partials/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  {% if prompts.length %}
+    {% set stillNeededHtml %}
+      <h3 class="govuk-notification-banner__heading">{{ bannerHeading }}</h3>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for prompt in prompts %}
+          <li>
+            <a class="govuk-notification-banner__link" href="{{ prompt.href }}">{{ prompt.text }}</a>
+            {% if prompt.because.length %}— {{ prompt.because | join("; ") }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endset %}
+    {{ govukNotificationBanner({ html: stillNeededHtml }) }}
+  {% endif %}
+
+  {{ govukSummaryList({ rows: rows }) }}
+
+  {% if premium %}
+    <p class="govuk-body-l">{{ premiumLead }} <strong>£{{ premium }}</strong></p>
+  {% endif %}
+
+  {% if not submitted %}
+    <h2 class="govuk-heading-m">{{ sendHeading }}</h2>
+    <p class="govuk-body">{{ sendBody }}</p>
+
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ govukButton({ text: buttonText }) }}
+    </form>
+  {% endif %}
+{% endblock %}
