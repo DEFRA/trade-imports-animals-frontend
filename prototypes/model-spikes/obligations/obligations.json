@@ -22,5 +22,29 @@
     "name": "excessAmount",
     "type": "monetaryAmount",
     "cardinality": "single"
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "name": "hasNamedDriver",
+    "type": "boolean",
+    "cardinality": "single"
+  },
+  {
+    "id": "d1e2f345-6789-4abc-8def-012345678901",
+    "name": "namedDriverName",
+    "type": "text",
+    "cardinality": "single"
+  },
+  {
+    "id": "9f8e7d6c-5b4a-4392-8175-6c5b4a392817",
+    "name": "licenseType",
+    "type": "text",
+    "cardinality": "single"
+  },
+  {
+    "id": "c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f",
+    "name": "licenseCountryIssued",
+    "type": "text",
+    "cardinality": "single"
   }
 ]
