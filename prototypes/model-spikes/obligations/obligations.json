@@ -10,5 +10,17 @@
     "name": "dateOfBirth",
     "type": "date",
     "cardinality": "single"
+  },
+  {
+    "id": "3a5c7e9b-1d4f-4a6c-8e0f-2b4c6d8e0f2a",
+    "name": "hasVoluntaryExcess",
+    "type": "boolean",
+    "cardinality": "single"
+  },
+  {
+    "id": "f1e2d3c4-b5a6-4978-8697-1a2b3c4d5e6f",
+    "name": "excessAmount",
+    "type": "currency",
+    "cardinality": "single"
   }
 ]

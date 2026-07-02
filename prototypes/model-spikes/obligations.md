@@ -101,12 +101,12 @@ A consistent vocabulary across the discussion and the data model:
   Submit on CYA. No further changes. We deliberately avoid "Complete"
   as a separate term — it overlapped Fulfilled and Submitted
   confusingly.
-- **ObligationEvaluator** — the pure, sync function that operates on
-  the Obligations layer. Given `(Obligations, Fulfilments)` returns
-  amended fulfilments (pruned to fit the current model) plus
+- **ObligationEvaluator** — the pure, sync evaluator that operates on
+  the Obligations layer. Constructed once per Service with the
+  Obligations model; each `evaluate(fulfilments)` call is pure and
+  returns amended fulfilments (pruned to fit the current model) plus
   per-obligation state (in-scope, mandatory, fulfilled, remaining,
   authored reasons). Service-scoped; knows nothing about Flows.
-  Single-call function.
 - **JourneyEvaluator** — a collection of pure, sync functions that
   operate on the Flow layer. Each is a small primitive answering a
   specific question about the Flow's state given the
@@ -241,10 +241,11 @@ covering different layers of the model, and a side-effecting
 orchestrator that wraps them and handles I/O:
 
 - **ObligationEvaluator** — pure, sync. Answers Service-layer
-  questions: given Obligations and Fulfilments, what's the state of
+  questions: given the Obligations model (injected at construction)
+  and a Fulfilments map (per `evaluate` call), what's the state of
   each obligation? Service-scoped; knows nothing about Flows.
-  Single-call function. (Configuration is a foreseen extension —
-  see §I.)
+  Configuration and other dependencies (`now`, `randomSeed`, logger,
+  …) are further foreseen construction-time injectables — see §I.
 - **JourneyEvaluator** — pure, sync. Answers Flow-layer questions:
   what's the status of this Container? What's the first applicable
   Page? Which Page presents this obligation? A collection of small
@@ -262,22 +263,26 @@ unit-testable with plain fixture in / plain output out.
 ### The ObligationEvaluator (Service layer)
 
 ```ts
-function evaluateObligations(
-  obligations: Obligation[],
-  fulfilments: FulfilmentsMap
-): EvaluationResult
+function createObligationEvaluator(options?: {
+  obligations?: Obligation[]
+  // config, now, randomSeed, logger, … — see §I for other
+  // foreseen construction-time injectables
+}): {
+  evaluate(fulfilments: FulfilmentsMap): EvaluationResult
+}
 ```
 
-Inputs:
+Constructed once per Service, typically at application boot. The
+Obligations model is injected at construction (defaulting to the
+Service's shipped `obligations.json`); each `evaluate(fulfilments)`
+call is pure. Fulfilments per call include user inputs AND the
+results of system-handled obligations (lookup results, sub-journey
+receipts).
 
-1. **Obligations** — the Service-level data contract (`obligations.json`).
-2. **Fulfilments** — the Journey's current fulfilments map. Includes
-   user inputs AND the results of system-handled obligations (lookup
-   results, sub-journey receipts).
-
-Configuration is a foreseen extension point — see §I. Deliberately not
-modelled today; the signature above is bare because we have no config
-to inject yet.
+Construction-time injection preserves the pure-function property —
+same-in / same-out for `(fulfilments)` — while letting tests vary
+behaviour by constructing with different obligations, configs, or
+other dependencies. See §I for the extension pattern.
 
 Output — a single result object with **amended fulfilments** plus
 per-obligation state:
@@ -906,9 +911,11 @@ no shared runtime.
   Service.**
 - **Layer 1.5 — Evaluators + orchestrator** (`evaluator.js` + a
   runtime, or per-language equivalents): the ObligationEvaluator is
-  pure `(obligations, fulfilments) → { fulfilments (amended),
-obligations (per-obligation state) }`. The JourneyEvaluator is a
-  collection of pure primitives operating on the Flow tree using the
+  constructed once per Service with the Obligations model (plus any
+  other injectable dependencies — see §I); each `evaluate(fulfilments)`
+  call is pure `(fulfilments) → { fulfilments (amended), obligations
+(per-obligation state) }`. The JourneyEvaluator is a collection of
+  pure primitives operating on the Flow tree using the
   ObligationEvaluator's output. The orchestrator is the
   side-effecting wrapper that triggers system-handled obligations,
   collects callbacks, writes to `fulfilments`, and re-runs the
@@ -1773,20 +1780,24 @@ a concrete journey needs them.
 config; the shape stays a foreseen extension point rather than
 something we commit to speculatively.
 
-**When config becomes needed** it will be injected at construction
-time, not passed as a function argument:
+**Construction-time injection is already the pattern** — the
+Obligations model is injected at construction (see §The
+ObligationEvaluator). When config becomes needed it joins the
+constructor options object rather than becoming a per-call
+argument:
 
 ```ts
-const evaluator = createObligationEvaluator({ config })
-evaluator.evaluate(obligations, fulfilments)
+const evaluator = createObligationEvaluator({ obligations, config })
+evaluator.evaluate(fulfilments)
 ```
 
 This preserves the pure-function property — the constructed evaluator
-remains same-in / same-out for `(obligations, fulfilments)` — while
-letting tests vary behaviour by constructing with different configs.
-The same pattern extends to any other evaluator dependency that
-becomes injectable (`now`, `randomSeed`, logger, metrics, …), for
-both the ObligationEvaluator and the JourneyEvaluator.
+remains same-in / same-out for `(fulfilments)` — while letting tests
+vary behaviour by constructing with different configs (or different
+obligation sets). The same pattern extends to any other evaluator
+dependency that becomes injectable (`now`, `randomSeed`, logger,
+metrics, …), for both the ObligationEvaluator and the
+JourneyEvaluator.
 
 Recorded-snapshot fidelity: whatever the constructed evaluator closes
 over becomes part of the recorded context for a Journey so replays
