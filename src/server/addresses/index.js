@@ -22,9 +22,19 @@ export const addresses = {
           ...consignorsSelectController.get
         },
         {
+          method: 'POST',
+          path: '/consignors/select',
+          ...consignorsSelectController.post
+        },
+        {
           method: 'GET',
           path: '/destinations/select',
           ...destinationsSelectController.get
+        },
+        {
+          method: 'POST',
+          path: '/destinations/select',
+          ...destinationsSelectController.post
         },
         {
           method: 'GET',

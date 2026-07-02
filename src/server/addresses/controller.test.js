@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 
 import { addressesController } from './controller.js'
-import { sessionKeys } from '../common/constants/session-keys.js'
 import { saveNotification } from '../common/helpers/notification-helpers.js'
 
 vi.mock('../common/helpers/notification-helpers.js')
@@ -113,69 +112,6 @@ describe('addressesController', () => {
         selectedDestination: destination,
         selectedCphNumber: cphNumber
       })
-    })
-
-    test('saves selected consignor from query param into session', () => {
-      const selectedConsignor = {
-        name: 'Astra Rosales',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
-          addressLine3: 'Quasoccaecat ut ear, 30055',
-          country: 'Switzerland'
-        }
-      }
-      const selectedDestination = {
-        name: 'Tech Imports Ltd',
-        address: {
-          addressLine1: '643 Main Street',
-          addressLine2: 'Birmingham G1 3AZ',
-          country: 'United Kingdom'
-        }
-      }
-      const get = vi.fn((key) => {
-        const values = {
-          referenceNumber: 'REF-123',
-          consignor: selectedConsignor,
-          destination: selectedDestination
-        }
-        return values[key] ?? null
-      })
-      const set = vi.fn()
-
-      const request = {
-        query: { selectedConsignor: '0', selectedDestination: '0' },
-        yar: { get, set }
-      }
-      const h = {
-        view: vi.fn((template, data) => ({ template, data }))
-      }
-
-      addressesController.get.handler(request, h)
-
-      expect(set).toHaveBeenCalledWith(sessionKeys.consignor, {
-        name: 'Astra Rosales',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
-          addressLine3: 'Quasoccaecat ut ear, 30055',
-          country: 'Switzerland'
-        }
-      })
-      expect(set).toHaveBeenCalledWith(sessionKeys.destination, {
-        name: 'Tech Imports Ltd',
-        address: {
-          addressLine1: '643 Main Street',
-          addressLine2: 'Birmingham G1 3AZ',
-          country: 'United Kingdom'
-        }
-      })
-      expect(h.view).toHaveBeenCalledWith(
-        'addresses/index',
-        expect.objectContaining({
-          selectedConsignor
-        })
-      )
     })
   })
 
