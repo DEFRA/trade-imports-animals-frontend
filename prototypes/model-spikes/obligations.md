@@ -374,6 +374,29 @@ The distinction matters for UX and audit: `appliesWhen` fields
 disappear on scope exit and their prior values vanish; `mandatoryWhen`
 fields stay visible and the user's answer is preserved.
 
+**Variant: optional-when-applicable.** `appliesWhen` doesn't dictate
+that in-scope obligations are always _mandatory_. The evaluator
+function can return `{ inScope: true, status: 'optional' }` when the
+condition holds — the obligation appears to the user (in scope) but
+they're not required to fill it in. Same purge semantics as any
+`appliesWhen`: scope-exit still drops the stored value. Example:
+`namedDriverRelationship` applies when `hasNamedDriver === true`
+(same gate as `namedDriverName`) but knowing the relationship is
+useful context rather than required data.
+
+```ts
+// Author return-shape when the condition holds:
+{ inScope: true, status: 'optional', reasons: [{ code: '...', explanation: '...' }] }
+// Author return-shape when the condition does not hold:
+{ inScope: false }
+```
+
+**Variant: always-optional.** An obligation that's always in-scope
+but never required. Trivial in the model — the evaluator returns
+`{ inScope: true, status: 'optional' }` unconditionally, no reasons.
+Example: `preferredName` — always presented to the user, always OK
+to skip.
+
 **Purges are silent by design.** The evaluator emits no audit hook
 or log when a fulfilment is dropped from the amended set — neither
 for the scope-exit purge here nor for the tolerate-and-amend drop

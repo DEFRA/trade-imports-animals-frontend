@@ -2,11 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
 import {
   fullName,
+  preferredName,
   dateOfBirth,
   hasVoluntaryExcess,
   excessAmount,
   hasNamedDriver,
   namedDriverName,
+  namedDriverRelationship,
   licenseType,
   licenseCountryIssued,
   hasClaims,
@@ -54,6 +56,16 @@ const licenseCountryIssuedMandatory = {
     }
   ]
 }
+const namedDriverRelationshipApplicable = {
+  inScope: true,
+  status: 'optional',
+  reasons: [
+    {
+      code: 'obligation.namedDriverRelationship.applicable.becauseNamedDriver',
+      explanation: 'namedDriverRelationship applies when hasNamedDriver is true'
+    }
+  ]
+}
 const claimTypeApplicableReason = {
   code: 'obligation.claimType.applicable.becauseHasClaims',
   explanation: 'claimType applies when hasClaims is true'
@@ -71,11 +83,13 @@ describe('ObligationEvaluator', () => {
       expect(result.fulfilments).toEqual({})
       expect(result.obligations).toEqual({
         [fullName.id]: mandatory,
+        [preferredName.id]: optional, // always in-scope, always optional
         [dateOfBirth.id]: mandatory,
         [hasVoluntaryExcess.id]: mandatory,
         [excessAmount.id]: outOfScope, // appliesWhen — no voluntary excess set
         [hasNamedDriver.id]: mandatory,
         [namedDriverName.id]: outOfScope, // appliesWhen — no named driver set
+        [namedDriverRelationship.id]: outOfScope, // optional-when-applicable — no named driver set
         [licenseType.id]: mandatory,
         [licenseCountryIssued.id]: optional, // mandatoryWhen — licenseType unset
         [hasClaims.id]: mandatory,
@@ -163,6 +177,21 @@ describe('ObligationEvaluator', () => {
     })
   })
 
+  describe('always-optional (preferredName)', () => {
+    it('empty fulfilments → in-scope, optional, no reasons', () => {
+      const result = evaluator.evaluate({})
+
+      expect(result.obligations[preferredName.id]).toEqual(optional)
+    })
+
+    it('value present → value passes through; state unchanged', () => {
+      const result = evaluator.evaluate({ [preferredName.id]: 'Alex' })
+
+      expect(result.obligations[preferredName.id]).toEqual(optional)
+      expect(result.fulfilments[preferredName.id]).toBe('Alex')
+    })
+  })
+
   describe('appliesWhen (namedDriverName) + scope-exit purge', () => {
     it('hasNamedDriver = true → namedDriverName in-scope, mandatory, with applicable-reason; value retained', () => {
       const result = evaluator.evaluate({
@@ -193,6 +222,48 @@ describe('ObligationEvaluator', () => {
 
       expect(result.obligations[namedDriverName.id]).toEqual(outOfScope)
       expect(result.fulfilments).not.toHaveProperty(namedDriverName.id)
+    })
+  })
+
+  describe('optional-when-applicable (namedDriverRelationship) + scope-exit purge', () => {
+    it('hasNamedDriver = true → namedDriverRelationship in-scope, OPTIONAL, with applicable-reason', () => {
+      const result = evaluator.evaluate({
+        [hasNamedDriver.id]: true,
+        [namedDriverRelationship.id]: 'spouse'
+      })
+
+      expect(result.obligations[namedDriverRelationship.id]).toEqual(
+        namedDriverRelationshipApplicable
+      )
+      expect(result.fulfilments[namedDriverRelationship.id]).toBe('spouse')
+    })
+
+    it('hasNamedDriver = true + no value → in-scope, OPTIONAL, no fulfilment; still valid because it is optional', () => {
+      const result = evaluator.evaluate({ [hasNamedDriver.id]: true })
+
+      expect(result.obligations[namedDriverRelationship.id]).toEqual(
+        namedDriverRelationshipApplicable
+      )
+      expect(result.fulfilments).not.toHaveProperty(namedDriverRelationship.id)
+    })
+
+    it('hasNamedDriver = false + stored namedDriverRelationship → out-of-scope; value purged', () => {
+      const result = evaluator.evaluate({
+        [hasNamedDriver.id]: false,
+        [namedDriverRelationship.id]: 'spouse'
+      })
+
+      expect(result.obligations[namedDriverRelationship.id]).toEqual(outOfScope)
+      expect(result.fulfilments).not.toHaveProperty(namedDriverRelationship.id)
+    })
+
+    it('hasNamedDriver absent → namedDriverRelationship out-of-scope', () => {
+      const result = evaluator.evaluate({
+        [namedDriverRelationship.id]: 'spouse'
+      })
+
+      expect(result.obligations[namedDriverRelationship.id]).toEqual(outOfScope)
+      expect(result.fulfilments).not.toHaveProperty(namedDriverRelationship.id)
     })
   })
 
@@ -409,11 +480,13 @@ describe('ObligationEvaluator', () => {
 
       const fulfilments = {
         [fullName.id]: 'Alex Driver',
+        [preferredName.id]: 'Alex',
         [dateOfBirth.id]: '1985-03-27',
         [hasVoluntaryExcess.id]: true,
         [excessAmount.id]: '250.50',
         [hasNamedDriver.id]: true,
         [namedDriverName.id]: 'Sam Passenger',
+        [namedDriverRelationship.id]: 'spouse',
         [licenseType.id]: 'other',
         [licenseCountryIssued.id]: 'Germany',
         [hasClaims.id]: true,
@@ -432,11 +505,13 @@ describe('ObligationEvaluator', () => {
       expect(result.fulfilments).toEqual(fulfilments)
       expect(result.obligations).toEqual({
         [fullName.id]: mandatory,
+        [preferredName.id]: optional,
         [dateOfBirth.id]: mandatory,
         [hasVoluntaryExcess.id]: mandatory,
         [excessAmount.id]: excessAmountApplicable,
         [hasNamedDriver.id]: mandatory,
         [namedDriverName.id]: namedDriverNameApplicable,
+        [namedDriverRelationship.id]: namedDriverRelationshipApplicable,
         [licenseType.id]: mandatory,
         [licenseCountryIssued.id]: licenseCountryIssuedMandatory,
         [hasClaims.id]: mandatory,

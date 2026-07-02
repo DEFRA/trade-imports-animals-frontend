@@ -37,6 +37,18 @@ export const fullName = {
   evaluate: () => ({ inScope: true, status: 'mandatory' })
 }
 
+// Always-optional: preferredName is always shown to the user but never
+// required. Matches the prototype's about-you page: "What should we call
+// you? (Optional. We'll use this when we contact you.)". No reason emitted
+// — reasons are for provenance of state changes; this obligation has no
+// state changes to explain.
+export const preferredName = {
+  id: '4d7c1f6b-8e0a-2c4d-9d7c-1f6b8e0a2c4d',
+  name: 'preferredName',
+  cardinality: 'single',
+  evaluate: () => ({ inScope: true, status: 'optional' })
+}
+
 export const dateOfBirth = {
   id: 'b7d3e5f1-9a2c-4b8d-8e0f-3c5a7b9d1e2f',
   name: 'dateOfBirth',
@@ -96,6 +108,33 @@ export const namedDriverName = {
           {
             code: 'obligation.namedDriverName.applicable.becauseNamedDriver',
             explanation: 'namedDriverName applies when hasNamedDriver is true'
+          }
+        ]
+      }
+    }
+    return { inScope: false }
+  }
+}
+
+// Optional-when-applicable: namedDriverRelationship only applies when the
+// user has a named driver (same gate as namedDriverName). When applicable,
+// it's OPTIONAL rather than mandatory — knowing the relationship is
+// helpful context but not required. Scope-exit purges any stored value
+// when hasNamedDriver flips false.
+export const namedDriverRelationship = {
+  id: '8e0f1a2b-3c4d-4e5f-6a7b-8c9d0e1f2a3b',
+  name: 'namedDriverRelationship',
+  cardinality: 'single',
+  evaluate: (fulfilments) => {
+    if (fulfilments[hasNamedDriver.id] === true) {
+      return {
+        inScope: true,
+        status: 'optional',
+        reasons: [
+          {
+            code: 'obligation.namedDriverRelationship.applicable.becauseNamedDriver',
+            explanation:
+              'namedDriverRelationship applies when hasNamedDriver is true'
           }
         ]
       }
@@ -235,11 +274,13 @@ export const claimGroup = {
 
 export const obligations = [
   fullName,
+  preferredName,
   dateOfBirth,
   hasVoluntaryExcess,
   excessAmount,
   hasNamedDriver,
   namedDriverName,
+  namedDriverRelationship,
   licenseType,
   licenseCountryIssued,
   hasClaims,
