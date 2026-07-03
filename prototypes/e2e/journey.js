@@ -63,6 +63,11 @@ export const JOURNEYS = [
     id: 'obligations-standalone-spike',
     label: 'standalone obligations (obligations engine)',
     grouped: groupedPath('prototype-standalone', 'obligations-standalone-spike')
+  },
+  {
+    id: 'obligations-v2-spike',
+    label: 'standalone obligations v2 (page-owned spine)',
+    grouped: groupedPath('prototype-standalone', 'obligations-v2-spike')
   }
 ]
 

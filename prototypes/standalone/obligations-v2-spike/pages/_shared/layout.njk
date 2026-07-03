@@ -1,0 +1,51 @@
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+{% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
+
+{% set spikeHome = "/prototype-standalone/obligations-v2-spike/task-list-with-linear-tasks" %}
+
+{% block head %}
+  <meta name="csrf-token" content="{{ crumb }}">
+  <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
+{% endblock %}
+
+{% block pageTitle %}{% if errorSummary %}Error: {% endif %}{{ pageTitle }} | Car insurance (obligations v2, standalone){% endblock %}
+
+{% block govukServiceNavigation %}
+  {{ govukServiceNavigation({
+    serviceName: "Car insurance — obligations v2 (standalone, page-owned spine)",
+    serviceUrl: spikeHome
+  }) }}
+{% endblock %}
+
+{% block beforeContent %}
+  {{ govukPhaseBanner({
+    tag: { text: "Prototype" },
+    html: 'Obligations v2 spike standalone — a non-functional prototype, not a real service.'
+  }) }}
+  {{ govukBreadcrumbs({
+    items: breadcrumbs if breadcrumbs else [
+      { text: "Prototypes", href: "/prototype-standalone" },
+      { text: "Obligations v2 (standalone)", href: spikeHome },
+      { text: pageTitle }
+    ]
+  }) }}
+  {% if backLink %}
+    {{ govukBackLink({ text: "Back", href: backLink }) }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      {% block journeyContent %}{% endblock %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="{{ getAssetPath('application.js') }}"></script>
+{% endblock %}

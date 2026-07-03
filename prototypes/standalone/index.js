@@ -3,6 +3,7 @@ import { spikeB } from './spike-b/routes.js'
 import { spikeC } from './spike-c/routes.js'
 import { spikeD } from './spike-d/routes.js'
 import { obligationsSpike } from './obligations-standalone-spike/routes.js'
+import { obligationsV2Spike } from './obligations-v2-spike/routes.js'
 
 const open = { auth: false }
 
@@ -30,7 +31,14 @@ export const standalonePrototypes = {
         }
       ])
 
-      await server.register([spikeA, spikeB, spikeC, spikeD, obligationsSpike])
+      await server.register([
+        spikeA,
+        spikeB,
+        spikeC,
+        spikeD,
+        obligationsSpike,
+        obligationsV2Spike
+      ])
     }
   }
 }

@@ -1,0 +1,112 @@
+import { BASE, hubPath, pagePath, TEMPLATES } from '../../config.js'
+import { sections } from '../../flow/flow.js'
+import { sectionEntry } from '../../flow/navigation.js'
+import * as state from '../../state/index.js'
+import { FULFILLED, IN_PROGRESS, sectionStatus } from '../../state/status.js'
+import { open } from '../_shared/kit.js'
+
+/**
+ * The task-list hub. It OWNS the task-link copy (titles + hints) — that is
+ * page/presentation, so it lives here, not in the flow — and asks the pure
+ * `sectionStatus` roll-up for each row's tag and `sectionEntry` for its
+ * href. Three always-live group tasks, the add-on picker, one row per
+ * selected add-on, and the quote row (inert until the state layer reports
+ * `readyForQuote`).
+ */
+const view = `${TEMPLATES}/pages/hub/template`
+
+const GROUP_ROWS = [
+  { id: 'email', title: 'Email', hint: 'Email' },
+  {
+    id: 'about-you-and-your-vehicle',
+    title: 'About you and your vehicle',
+    hint: 'About you, Your vehicle'
+  },
+  {
+    id: 'your-driving-and-cover',
+    title: 'Your driving and cover',
+    hint: 'Driving history, Choose your cover, Optional extras'
+  }
+]
+
+const ADDON_TITLE = {
+  'named-driver': 'Add a named driver',
+  modifications: 'Declare vehicle modifications',
+  'protected-ncd': 'Protect your no-claims discount'
+}
+
+const statusTag = (status) => {
+  if (status === FULFILLED) return { text: 'Completed' }
+  if (status === IN_PROGRESS) {
+    return { tag: { text: 'In progress', classes: 'govuk-tag--light-blue' } }
+  }
+  return { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
+}
+
+const sectionById = (id) => sections.find((s) => s.id === id)
+
+const handler = (request, h) => {
+  const { answers, scope } = state.get(request, h)
+  const inScope = scope.inScope
+
+  const groupItems = GROUP_ROWS.map((row) => ({
+    title: { text: row.title },
+    hint: { text: row.hint },
+    href: sectionEntry(row.id, scope),
+    status: statusTag(sectionStatus(sectionById(row.id), answers, inScope))
+  }))
+
+  const pickerSection = sectionById('add-to-your-policy')
+  const pickerItem = {
+    title: { text: 'Add to your policy' },
+    href: pagePath('addons'),
+    status: statusTag(
+      'addons' in answers
+        ? FULFILLED
+        : sectionStatus(pickerSection, answers, inScope)
+    )
+  }
+
+  const addonItems = sections
+    .filter((s) => s.addon && s.gate(scope))
+    .map((s) => ({
+      title: { text: ADDON_TITLE[s.addon] },
+      hint: { text: s.pages.map((p) => p.id).join(', ') },
+      href: sectionEntry(s.id, scope),
+      status: statusTag(sectionStatus(s, answers, inScope))
+    }))
+
+  const quoteItem = scope.readyForQuote
+    ? {
+        title: { text: 'Get your quote' },
+        href: pagePath('quote-summary'),
+        status: { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
+      }
+    : {
+        title: { text: 'Get your quote' },
+        status: {
+          text: 'Cannot start yet',
+          classes: 'govuk-task-list__status--cannot-start-yet'
+        }
+      }
+
+  const completed = GROUP_ROWS.filter(
+    (row) => sectionStatus(sectionById(row.id), answers, inScope) === FULFILLED
+  ).length
+
+  return h.view(view, {
+    pageTitle: 'Get a car insurance quote',
+    heading: 'Get a car insurance quote',
+    progressLine: `You have completed ${completed} of ${GROUP_ROWS.length} tasks.`,
+    items: [...groupItems, pickerItem, ...addonItems, quoteItem],
+    breadcrumbs: [
+      { text: 'Prototypes', href: '/prototype-standalone' },
+      { text: 'Obligations v2 (standalone)', href: BASE },
+      { text: 'Your application' }
+    ]
+  })
+}
+
+export const routes = [
+  { method: 'GET', path: hubPath(), options: open, handler }
+]
