@@ -333,6 +333,15 @@ Each obligation carries its own `applyTo` function inline in
 obligation's `applyTo` and collects the implications into the map
 above. See §J for the reason shape rationale and naming convention.
 
+**Group members — synthesised implications.** Obligations with a
+`members: [...]` list are groups (§Obligation groups). For each
+field-record member (a member with no `applyTo`) the evaluator
+synthesises an implication from the group's implication: same
+`inScope`, same fulfilmentIds, using the field's own `status`.
+Reasons live only on the group; field records don't emit their own.
+Computed members (members that have their own `applyTo`) are in the
+top-level obligations manifest and get processed there.
+
 The ObligationEvaluator never performs I/O. Given the same inputs it
 always returns the same output. Trivially testable; replayable;
 auditable. **Provenance / reasons are authored here** — the single
@@ -801,46 +810,92 @@ compound record is its own atomic obligation (satisfies HTML
 alignment; per-page completeness works). A **group** ties them
 together as a semantic record.
 
+**A group is an indexed obligation with a `members` list.** It plays
+two roles at once:
+
+- **Anchor** — its own `applyTo` defines the fulfilmentId space for the
+  record collection (which claim records exist? which drivers exist?).
+  Storage under the group's own id is a presence-marker map:
+  `{ [recordId]: {} }`. Any per-scope reasons live here.
+- **Group** — its `members: [...]` list declares the fields of one
+  record. Each member gets its own storage slot keyed by the group's
+  fulfilmentIds; each member holds one field of the compound record.
+
+**Two member shapes:**
+
+- **Field records** — members with `{ id, name, group, status }` and
+  no `applyTo`. The evaluator synthesises their implication from the
+  group's implication: same scope, same fulfilmentIds, member's own
+  `status`. Reasons live on the group; field records don't emit their
+  own — consumers walk to the group for provenance. Fields are the
+  common case: one value per group fulfilmentId (e.g. `claimType`,
+  `claimAmount`, `driverFullName`).
+- **Computed members** — members with their own `applyTo`. Used when
+  the fulfilment shape isn't "one value per group fulfilmentId" — e.g.
+  nested-indexed members like `driverAddress` (each driver has an
+  indexed sub-collection). See §S.
+
+Because the group is a real indexed obligation with `applyTo`, and
+because member implications derive from the group's fulfilments, the
+model is now consistent with the derived-indexing pattern used
+elsewhere (§Lifecycle for derived) — no shared-by-convention
+handshake between members required.
+
 **Shape:**
 
 ```jsonc
-// Members — atomic obligations declaring which group they belong to.
+// Field records — no applyTo. The evaluator synthesises their
+// implications from the group's implication.
 {
   id: "…claimType uuid…",
   name: "claimType",
-  group: "claim",              // back-reference to the group by name
-  cardinality: "indexed",
-  indexedBy: { source: "user", mutability: "edit-add-remove" },
-  applyTo: (fulfilments) => { /* returns per-fulfilment implication */ }
+  group: "claim",
+  status: "mandatory"
 }
 
 {
   id: "…claimAmount uuid…",
   name: "claimAmount",
   group: "claim",
-  cardinality: "indexed",
-  indexedBy: { source: "user", mutability: "edit-add-remove" },
-  applyTo: (fulfilments) => { /* returns per-fulfilment implication */ }
+  status: "mandatory"
 }
 
-// Group — declarative metadata declaring the members.
+// Group — indexed obligation with applyTo (anchor role) AND members
+// (group role). Declared after its members so `members: […]` can
+// reference them directly.
 {
-  id: "…group uuid…",
+  id: "…claim group uuid…",
   name: "claim",
   cardinality: "indexed",
   indexedBy: { source: "user", mutability: "edit-add-remove" },
-  members: [claimType, claimAmount]
+  members: [claimType, claimAmount],
+  applyTo: (fulfilments) => {
+    if (fulfilments[hasClaims.id] !== true) return { inScope: false }
+    const claims = fulfilments[claim.id] ?? {}
+    return {
+      inScope: true,
+      reasons: [{ code: "obligation.claim.applicable.becauseHasClaims", … }],
+      fulfilments: Object.keys(claims).map((claimId) => ({
+        fulfilmentId: claimId,
+        status: "mandatory"
+      }))
+    }
+  }
 }
 ```
 
-**Shared fulfilmentId space.** For an indexed group, member
-obligations share the group's fulfilmentIds by convention. Each
-fulfilmentId represents one instance of the compound record (one
-"claim event"); each member holds one field of it. Storage:
+**Shared fulfilmentId space is now explicit, not conventional.** Each
+member gets its own storage map keyed by the group's fulfilmentIds
+because that's what the group's `applyTo` reports and what the
+evaluator uses when synthesising field-record implications. Storage:
 
 ```jsonc
 fulfilments = {
-  [claimType.id]: {
+  [claim.id]: {              // anchor storage — presence markers
+    "01H8XK7M5RW6QYJ2AB": {},
+    "01H8XK9P3T8WBZN4DE": {}
+  },
+  [claimType.id]: {          // field values keyed by claim fulfilmentId
     "01H8XK7M5RW6QYJ2AB": "accident",
     "01H8XK9P3T8WBZN4DE": "theft"
   },
@@ -851,26 +906,24 @@ fulfilments = {
 }
 ```
 
-The same opaque ULID/UUID appears under both members. Adding a claim
-= new group fulfilmentId + blank member slots. Removing =
-propagates to all members. The **orchestrator** manages the shared
-id space; the evaluator sees each member as an ordinary indexed
-obligation and doesn't need to know about the group at evaluation
-time.
+Adding a claim = write a presence marker under the group's id + blank
+member slots follow via synthesis. Removing = delete the presence
+marker; the evaluator's `purgeLevel` cascades member storage on the
+next evaluate. Both operations act on the anchor's storage; the
+orchestrator doesn't need to touch member storage to add/remove
+records.
 
-**Group is metadata (for iteration 4).** The evaluator processes
-members as ordinary indexed obligations — group scope, group
-completeness, and cross-member pairing are consumer concerns (CYA
-rendering, HTML alignment tests, Task List completeness). Future
-iterations can layer on:
+**Evaluator awareness of groups.** The evaluator explicitly handles
+groups: when it processes an obligation that has `members`, it runs
+the group's `applyTo`, then for each field-record member it
+synthesises an implication (inheriting scope + fulfilmentIds + using
+the field's declared status). Field-record ids are also treated as
+recognised by the tolerate-and-amend spurious-purge pass so their
+storage isn't dropped.
 
-- **Group-level scope inheritance** — declare scope once on the
-  group; members inherit. Removes the current duplication where
-  each member re-checks the same `appliesWhen` condition.
-- **Group-level completeness** — "this claim is complete iff every
-  member has a fulfilment for its id".
-- **Cross-member rules** — algorithm-shaped constraints spanning
-  members of the same group (e.g. "claimAmount ≤ vehicleValue").
+Computed members (`applyTo`-having members like `driverAddress`) are
+in the top-level obligations manifest and get processed there as
+usual; the evaluator doesn't re-process them via the group.
 
 **Not every compound concept needs to be a group.** If two fields
 are genuinely independent (e.g. `email` and `phone`), model them as
@@ -882,13 +935,24 @@ pairing would lose meaning.
 itself be an indexed obligation whose fulfilmentIds are scoped
 within an outer fulfilmentId, and that inner level can in turn have
 its own inner level, and so on. The `driver` group's members
-demonstrate the mix: `driverFullName` is depth-0 (one value per
-driver); `driverAddress` and `driverClaim` are depth-1 (each driver
-has their own indexed collection); `driverClaimOtherParty` is
-depth-2 (each driver's each claim has an indexed collection of
-parties). See §S for the levels-array `indexedBy.nested` shape,
-the hierarchical storage sketch, and the recursive purge in the
-evaluator.
+demonstrate the mix: `driverFullName` is a depth-0 field record (one
+value per driver); `driverAddress` and `driverClaim` are depth-1
+computed members (each driver has their own indexed collection);
+`driverClaimOtherParty` is a depth-2 computed member (each driver's
+each claim has an indexed collection of parties). See §S for the
+levels-array `indexedBy.nested` shape, the hierarchical storage
+sketch, and the recursive purge in the evaluator.
+
+**Follow-ups (not implemented):**
+
+- **Group-level completeness** — "this claim is complete iff every
+  field-record member has a stored value for its id".
+- **Cross-member rules** — algorithm-shaped constraints spanning
+  members of the same group (e.g. "claimAmount ≤ vehicleValue").
+- **Per-field reason overrides** — today field records inherit only
+  scope + fulfilmentIds + status; they don't emit their own reasons.
+  If a member ever needs a distinct reason (e.g. field-specific
+  validation state), extend the field-record shape.
 
 ## Staleness
 

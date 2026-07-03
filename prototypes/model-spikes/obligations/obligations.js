@@ -119,9 +119,7 @@ export const namedDriverName = {
 
 // Optional-when-applicable: namedDriverRelationship only applies when the
 // user has a named driver (same gate as namedDriverName). When applicable,
-// it's OPTIONAL rather than mandatory — knowing the relationship is
-// helpful context but not required. Scope-exit purges any stored value
-// when hasNamedDriver flips false.
+// it's OPTIONAL rather than mandatory.
 export const namedDriverRelationship = {
   id: '8e0f1a2b-3c4d-4e5f-6a7b-8c9d0e1f2a3b',
   name: 'namedDriverRelationship',
@@ -189,7 +187,7 @@ export const hasModifications = {
 
 // appliesWhen: modifications multi-select is only in-scope when the user
 // has said they have modifications. Value is an array of strings — e.g.
-// ['turbo', 'alloys']. Scope-exit purges the array.
+// ['turbo', 'alloys'].
 export const modifications = {
   id: '2b3c4d5e-6f78-4a9b-8c0d-1e2f3a4b5c6d',
   name: 'modifications',
@@ -212,24 +210,11 @@ export const modifications = {
 }
 
 // Derived indexed: modificationCost is derived from the modifications
-// multi-select. Each selected modification value becomes a fulfilmentId
-// under this obligation; the user then fills in the cost per modification.
+// multi-select. Each selected modification value brings a new modificationCost
+// into scope - the user fills in the cost per modification.
 //
 // Also gated on hasModifications — if the user hasn't opted in, the
-// derived collection is out-of-scope entirely (not just empty). Otherwise
-// modificationCost could see a stale controller value that hasn't yet
-// been purged in the current pass. Gating both obligations independently
-// mirrors iteration 4b's claimType / claimAmount pattern.
-//
-// Lifecycle (per §Lifecycle for derived):
-//   - controller adds a value → fresh blank cost fulfilment for that key
-//   - controller removes a value → cost fulfilment for that key is purged
-//     (via the evaluator's per-fulfilmentId purge — see evaluator.js)
-//   - controller re-adds a value → fresh blank (no rehydration; the
-//     evaluator has no memory of the prior value)
-//
-// Mutability is `edit-only` — the user edits cost values within the
-// fixed collection shape; add/remove happens via the controller.
+// obligation is out-of-scope.
 export const modificationCost = {
   id: '3c4d5e6f-7890-4a1b-8c2d-3e4f5a6b7c8d',
   name: 'modificationCost',
@@ -243,7 +228,7 @@ export const modificationCost = {
     if (fulfilments[hasModifications.id] !== true) {
       return { inScope: false }
     }
-    const selectedModificationIds = fulfilments[modifications.id] ?? []
+    const selectedModifications = fulfilments[modifications.id] ?? []
     return {
       inScope: true,
       reasons: [
@@ -252,8 +237,8 @@ export const modificationCost = {
           explanation: 'modificationCost applies when hasModifications is true'
         }
       ],
-      fulfilments: selectedModificationIds.map((fulfilmentId) => ({
-        fulfilmentId,
+      fulfilments: selectedModifications.map((modification) => ({
+        fulfilmentId: modification,
         status: 'mandatory'
       }))
     }
@@ -267,93 +252,81 @@ export const hasClaims = {
   applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
-// appliesWhen + indexed: claimType belongs to the `claim` group (see below).
-// Only in-scope when the user has said they've had claims. Each fulfilmentId
-// represents one claim event; the value under it is the claim's type
-// ('accident' | 'theft' | 'windscreen' | 'other'). The same fulfilmentId
-// appears under `claimAmount` — the two members share the group's
-// fulfilmentId space by convention (orchestrator-enforced in a real
-// service; test fixtures enforce it here).
+// Field record for the `claim` group. Field records are members of an
+// indexed group with no `applyTo` of their own; the evaluator synthesises
+// their implication from the group's implication (inheriting scope and
+// fulfilmentIds; using the field's own `status`). See §Obligation groups
+// in obligations.md.
+//
+// The value stored under `fulfilments[claimType.id][<claim-id>]` is the
+// claim's type ('accident' | 'theft' | 'windscreen' | 'other'); the
+// (claim-id, value) pair is naturally scoped to a single claim record
+// because the fulfilmentId comes from the anchor.
 export const claimType = {
   id: 'e8f7d6c5-b4a3-4291-8074-6c5b4a392817',
   name: 'claimType',
   group: 'claim',
-  cardinality: 'indexed',
-  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  applyTo: (fulfilments) => {
-    if (fulfilments[hasClaims.id] !== true) {
-      return { inScope: false }
-    }
-    const collection = fulfilments[claimType.id] ?? {}
-    return {
-      inScope: true,
-      reasons: [
-        {
-          code: 'obligation.claimType.applicable.becauseHasClaims',
-          explanation: 'claimType applies when hasClaims is true'
-        }
-      ],
-      fulfilments: Object.keys(collection).map((fulfilmentId) => ({
-        fulfilmentId,
-        status: 'mandatory'
-      }))
-    }
-  }
+  status: 'mandatory'
 }
 
-// appliesWhen + indexed: claimAmount belongs to the `claim` group. Same
-// applicability gate as claimType; shares fulfilmentIds with claimType so
-// each pair (type, amount) describes one claim event.
+// Field record for the `claim` group. Amount value (string) per claim id.
 export const claimAmount = {
   id: 'a9b8c7d6-e5f4-4312-8091-6c5b4a392817',
   name: 'claimAmount',
   group: 'claim',
-  cardinality: 'indexed',
-  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  applyTo: (fulfilments) => {
-    if (fulfilments[hasClaims.id] !== true) {
-      return { inScope: false }
-    }
-    const collection = fulfilments[claimAmount.id] ?? {}
-    return {
-      inScope: true,
-      reasons: [
-        {
-          code: 'obligation.claimAmount.applicable.becauseHasClaims',
-          explanation: 'claimAmount applies when hasClaims is true'
-        }
-      ],
-      fulfilments: Object.keys(collection).map((fulfilmentId) => ({
-        fulfilmentId,
-        status: 'mandatory'
-      }))
-    }
-  }
+  status: 'mandatory'
 }
 
 /**
  * Obligation groups.
  *
- * A group is a declarative tie between atomic obligations that together
- * describe one compound record — e.g. a `claim` event has a type and an
- * amount. Members are ordinary atomic obligations (one per form field, so
- * HTML alignment tests still map 1:1). Under an indexed group, members
- * share the group's fulfilmentId space by convention.
+ * A group is an indexed obligation with a `members: [...]` list. The
+ * obligation itself defines the fulfilmentId space (via its own
+ * `applyTo`) and reasons for scope. Each member is one of two shapes:
  *
- * For iteration 4 the group is metadata only — the evaluator processes
- * members as ordinary indexed obligations and doesn't do anything special
- * with the group record. Future iterations can add group-level scope
- * inheritance (member scope = group scope) and group-level completeness
- * ("this claim is complete if all members have a fulfilment for its id").
+ *   - **Field record** — a member with `status` and no `applyTo`. The
+ *     evaluator synthesises its implication from the group's
+ *     implication (inheriting scope + fulfilmentIds; using the field's
+ *     declared status). Values are stored under the field record's
+ *     own id, keyed by the group's fulfilmentIds. Reasons live only on
+ *     the group.
+ *   - **Computed member** — a member with its own `applyTo`. Used for
+ *     nested-indexed collections (e.g. driverAddress) whose fulfilment
+ *     shape is not just "one value per group fulfilmentId".
+ *
+ * Members are ordinary atomic obligations (one per form field, so HTML
+ * alignment tests still map 1:1).
+ *
+ * The `groups` export at the bottom of this file is a convenience filter
+ * over `obligations` — any obligation with a `members` field is a group.
  *
  * See §Obligation groups in obligations.md.
  */
-export const claimGroup = {
-  id: 'f5e4d3c2-b1a0-4987-8654-3210fedcba98',
+export const claim = {
+  id: 'c1a2c3d4-0000-4111-8222-333444555666',
   name: 'claim',
   cardinality: 'indexed',
   indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  members: [claimType, claimAmount]
+  members: [claimType, claimAmount],
+  applyTo: (fulfilments) => {
+    if (fulfilments[hasClaims.id] !== true) {
+      return { inScope: false }
+    }
+    const claims = fulfilments[claim.id] ?? {}
+    return {
+      inScope: true,
+      reasons: [
+        {
+          code: 'obligation.claim.applicable.becauseHasClaims',
+          explanation: 'claim applies when hasClaims is true'
+        }
+      ],
+      fulfilments: Object.keys(claims).map((claim) => ({
+        fulfilmentId: claim,
+        status: 'mandatory'
+      }))
+    }
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -361,15 +334,20 @@ export const claimGroup = {
 // indexed collection of addresses.
 //
 // Structure (see §S. Nested indexing in obligations.md):
-//   - driver — outer collection (indexed, user-driven). Each fulfilment is
-//     one driver; the value under the driver's id is a presence marker
-//     (empty object).
+//   - driver — indexed obligation (user-driven, edit-add-remove) with a
+//     members list. Its `applyTo` defines the driver fulfilmentId space;
+//     the value under each driver id is a presence marker (empty object).
+//     Declared after its members (see below) so `members: [...]` can name
+//     them directly.
 //   - driverFullName — one string per driver. Derived from driver:
 //     fulfilmentIds are the driver ids.
 //   - driverAddress — nested indexed. Outer keyed by driver fulfilmentId
 //     (derived from driver); inner keyed by opaque address fulfilmentId
 //     (user-driven at the inner level).
-//   - driverGroup — metadata declaring the members (mirrors claimGroup).
+//   - driverClaim — nested indexed (depth-1). One claim collection per
+//     driver.
+//   - driverClaimOtherParty — nested indexed (depth-2). Parties per claim
+//     per driver.
 //
 // This iteration doesn't enforce 5-year address-coverage; that's a
 // cross-fulfilment quantifier rule captured as a follow-up. Address values
@@ -377,45 +355,15 @@ export const claimGroup = {
 // { line1, town, postcode, country, from, to } but the model doesn't
 // interpret them.
 // -------------------------------------------------------------------------
-export const driver = {
-  id: '5a6b7c8d-9e0f-4123-8456-789abcdef012',
-  name: 'driver',
-  cardinality: 'indexed',
-  indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  applyTo: (fulfilments) => {
-    const collection = fulfilments[driver.id] ?? {}
-    return {
-      inScope: true,
-      fulfilments: Object.keys(collection).map((fulfilmentId) => ({
-        fulfilmentId,
-        status: 'mandatory'
-      }))
-    }
-  }
-}
 
-// Derived from driver: one full-name entry per driver. FulfilmentIds are
-// the driver ids themselves.
+// Field record for the `driver` group. One full-name value (string) per
+// driver id. See §Obligation groups in obligations.md for how field-record
+// implications are synthesised from the group's implication.
 export const driverFullName = {
   id: '6b7c8d9e-0f12-4234-8567-89abcdef0123',
   name: 'driverFullName',
   group: 'driver',
-  cardinality: 'indexed',
-  indexedBy: {
-    source: 'derived',
-    controllingObligation: 'driver',
-    mutability: 'edit-only'
-  },
-  applyTo: (fulfilments) => {
-    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
-    return {
-      inScope: true,
-      fulfilments: driverIds.map((fulfilmentId) => ({
-        fulfilmentId,
-        status: 'mandatory'
-      }))
-    }
-  }
+  status: 'mandatory'
 }
 
 // Nested indexed (depth 1): outer keyed by driver id (derived from
@@ -433,23 +381,23 @@ export const driverAddress = {
   indexedBy: {
     source: 'derived',
     controllingObligation: 'driver',
-    mutability: 'edit-only', // outer: bound to driver membership
+    mutability: 'edit-only', // bound to driver membership
     nested: [
       // inner level: user adds/removes addresses freely
       { source: 'user', mutability: 'edit-add-remove' }
     ]
   },
   applyTo: (fulfilments) => {
-    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
-    const stored = fulfilments[driverAddress.id] ?? {}
+    const drivers = Object.keys(fulfilments[driver.id] ?? {})
+    const driverAddresses = fulfilments[driverAddress.id] ?? {}
     return {
       inScope: true,
-      fulfilments: driverIds.map((driverFulfilmentId) => {
-        const perDriver = stored[driverFulfilmentId] ?? {}
+      fulfilments: drivers.map((driver) => {
+        const addresses = driverAddresses[driver] ?? {}
         return {
-          fulfilmentId: driverFulfilmentId,
-          subFulfilments: Object.keys(perDriver).map((addressId) => ({
-            fulfilmentId: addressId,
+          fulfilmentId: driver,
+          subFulfilments: Object.keys(addresses).map((address) => ({
+            fulfilmentId: address,
             status: 'mandatory'
           }))
         }
@@ -476,16 +424,16 @@ export const driverClaim = {
     nested: [{ source: 'user', mutability: 'edit-add-remove' }]
   },
   applyTo: (fulfilments) => {
-    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
-    const stored = fulfilments[driverClaim.id] ?? {}
+    const drivers = Object.keys(fulfilments[driver.id] ?? {})
+    const driverClaims = fulfilments[driverClaim.id] ?? {}
     return {
       inScope: true,
-      fulfilments: driverIds.map((driverFulfilmentId) => {
-        const perDriver = stored[driverFulfilmentId] ?? {}
+      fulfilments: drivers.map((driver) => {
+        const claims = driverClaims[driver] ?? {}
         return {
-          fulfilmentId: driverFulfilmentId,
-          subFulfilments: Object.keys(perDriver).map((claimId) => ({
-            fulfilmentId: claimId,
+          fulfilmentId: driver,
+          subFulfilments: Object.keys(claims).map((claim) => ({
+            fulfilmentId: claim,
             status: 'mandatory'
           }))
         }
@@ -525,22 +473,23 @@ export const driverClaimOtherParty = {
     ]
   },
   applyTo: (fulfilments) => {
-    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
-    const claimsByDriver = fulfilments[driverClaim.id] ?? {}
-    const stored = fulfilments[driverClaimOtherParty.id] ?? {}
+    const drivers = Object.keys(fulfilments[driver.id] ?? {})
+    const driverClaims = fulfilments[driverClaim.id] ?? {}
+    const driverClaimOtherParties = fulfilments[driverClaimOtherParty.id] ?? {}
+
     return {
       inScope: true,
-      fulfilments: driverIds.map((driverFulfilmentId) => {
-        const perDriver = stored[driverFulfilmentId] ?? {}
-        const claimIds = Object.keys(claimsByDriver[driverFulfilmentId] ?? {})
+      fulfilments: drivers.map((driver) => {
+        const otherPartiesByClaim = driverClaimOtherParties[driver] ?? {}
+        const claims = Object.keys(driverClaims[driver] ?? {})
         return {
-          fulfilmentId: driverFulfilmentId,
-          subFulfilments: claimIds.map((claimId) => {
-            const perClaim = perDriver[claimId] ?? {}
+          fulfilmentId: driver,
+          subFulfilments: claims.map((claim) => {
+            const otherParties = otherPartiesByClaim[claim] ?? {}
             return {
-              fulfilmentId: claimId,
-              subFulfilments: Object.keys(perClaim).map((partyId) => ({
-                fulfilmentId: partyId,
+              fulfilmentId: claim,
+              subFulfilments: Object.keys(otherParties).map((party) => ({
+                fulfilmentId: party,
                 status: 'mandatory'
               }))
             }
@@ -551,12 +500,22 @@ export const driverClaimOtherParty = {
   }
 }
 
-export const driverGroup = {
-  id: '8d9e0f12-3456-4456-8789-abcdef012345',
+export const driver = {
+  id: '5a6b7c8d-9e0f-4123-8456-789abcdef012',
   name: 'driver',
   cardinality: 'indexed',
   indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  members: [driverFullName, driverAddress, driverClaim, driverClaimOtherParty]
+  members: [driverFullName, driverAddress, driverClaim, driverClaimOtherParty],
+  applyTo: (fulfilments) => {
+    const drivers = fulfilments[driver.id] ?? {}
+    return {
+      inScope: true,
+      fulfilments: Object.keys(drivers).map((driver) => ({
+        fulfilmentId: driver,
+        status: 'mandatory'
+      }))
+    }
+  }
 }
 
 export const obligations = [
@@ -574,13 +533,15 @@ export const obligations = [
   modifications,
   modificationCost,
   hasClaims,
-  claimType,
-  claimAmount,
-  driver,
-  driverFullName,
+  claim,
   driverAddress,
   driverClaim,
-  driverClaimOtherParty
+  driverClaimOtherParty,
+  driver
 ]
 
-export const groups = [claimGroup, driverGroup]
+// Groups are obligations with a `members` list — they play both the
+// anchor role (via `applyTo`, defining the fulfilmentId space) and the
+// group role (via `members`, declaring which obligations are fields of
+// the record).
+export const groups = obligations.filter((o) => Array.isArray(o.members))

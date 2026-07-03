@@ -26,17 +26,45 @@ export function createObligationEvaluator({
   obligations = defaultObligations
 } = {}) {
   const obligationIds = new Set(obligations.map((o) => o.id))
+  // Field records (group members with no applyTo) also have ids that
+  // appear in storage. Recognise them so they're not treated as spurious.
+  const fieldRecordIds = new Set()
+  for (const o of obligations) {
+    if (Array.isArray(o.members)) {
+      for (const m of o.members) {
+        if (typeof m.applyTo !== 'function') fieldRecordIds.add(m.id)
+      }
+    }
+  }
+  const recognisedIds = new Set([...obligationIds, ...fieldRecordIds])
 
-  // Drop fulfilments whose id doesn't match any current obligation.
-  // For example, we might have amended the obligation model since the user last saved progress.
+  // Drop fulfilments whose id doesn't match any current obligation or
+  // field record. For example, we might have amended the obligation
+  // model since the user last saved progress.
   const removeSpuriousFulfilments = (fulfilments) => {
     const result = {}
     for (const [id, value] of Object.entries(fulfilments)) {
-      if (obligationIds.has(id)) {
+      if (recognisedIds.has(id)) {
         result[id] = value
       }
     }
     return result
+  }
+
+  // Field records inherit scope and fulfilmentIds from their group.
+  // They contribute only their own `status` at the leaf level; reasons
+  // live on the group, not per-field.
+  const synthesiseFieldImplication = (groupImplication, fieldRecord) => {
+    if (groupImplication.inScope === false) {
+      return { inScope: false }
+    }
+    return {
+      inScope: true,
+      fulfilments: (groupImplication.fulfilments ?? []).map((entry) => ({
+        fulfilmentId: entry.fulfilmentId,
+        status: fieldRecord.status
+      }))
+    }
   }
 
   // Scope-exit purge: remove entries from the fulfilments map that no
@@ -145,11 +173,26 @@ export function createObligationEvaluator({
       // Single-pass per-obligation evaluation — collect each obligation's
       // implication for the current fulfilments. Fixed-point behaviour
       // lives in the orchestrator per §The evaluation engine.
+      //
+      // For each obligation with `members` (a group), also synthesise
+      // implications for its field-record members (members without their
+      // own `applyTo`). Computed members (members with an `applyTo`) are
+      // in the top-level manifest and get processed there.
       const implicationsByObligation = {}
       for (const obligation of obligations) {
-        implicationsByObligation[obligation.id] = obligation.applyTo(
-          recognisedFulfilments
-        )
+        const implication = obligation.applyTo(recognisedFulfilments)
+        implicationsByObligation[obligation.id] = implication
+
+        if (Array.isArray(obligation.members)) {
+          for (const member of obligation.members) {
+            if (typeof member.applyTo !== 'function') {
+              implicationsByObligation[member.id] = synthesiseFieldImplication(
+                implication,
+                member
+              )
+            }
+          }
+        }
       }
 
       const amendedFulfilments = removeOutOfScopeFulfilments(
