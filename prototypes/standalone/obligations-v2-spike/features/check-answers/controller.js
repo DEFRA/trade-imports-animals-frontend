@@ -82,18 +82,22 @@ const buildRows = (answers) => {
     row('Recent claims', val('hadClaims') === 'yes' ? 'Yes' : 'No', 'hadClaims')
   ]
 
-  // Claim N rows — bespoke, only when the collection is in scope + non-empty.
-  const claims = val('hadClaims') === 'yes' ? (val('claims') ?? []) : []
-  claims.forEach((claim, index) => {
-    const label = CLAIM_TYPE_LABEL[claim.claimType] ?? NOT_PROVIDED
-    const amount = (claim.claimAmount ?? '').toString().trim()
+  // Claim N rows — bespoke composition over the loop library's instance facts,
+  // only when the collection is in scope. The change target is DERIVED through
+  // the dispatch seam (the page that owns `claims`) rather than a hardcoded slug.
+  const claimsChangeHref = pagePath(slugOfPage(pageOfObligation('claims')))
+  const claims =
+    val('hadClaims') === 'yes' ? state.collectionView(answers, ['claims']) : []
+  claims.forEach(({ index, entry }) => {
+    const label = CLAIM_TYPE_LABEL[entry.claimType] ?? NOT_PROVIDED
+    const amount = (entry.claimAmount ?? '').toString().trim()
     rows.push({
       key: { text: `Claim ${index + 1}` },
       value: { text: amount ? `${label} — £${amount}` : label },
       actions: {
         items: [
           {
-            href: pagePath('claims'),
+            href: claimsChangeHref,
             text: 'Change',
             visuallyHiddenText: `claim ${index + 1}`
           }

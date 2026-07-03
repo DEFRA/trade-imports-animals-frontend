@@ -17,6 +17,25 @@ describe('dispatch + flow', () => {
     expect(collectsOf('about-you')).toContain('fullName')
   })
 
+  it('crashes boot when an obligation (and its derived sub-obligations) is uncovered', () => {
+    // Teeth: drop the claims page. `claims` is then owned by nobody, and its
+    // item sub-obligations (which derive ownership from it) are uncovered too —
+    // coverage descends the tree, so boot must throw naming the uncovered root.
+    const withoutClaims = dispatchPages.filter((p) => p.id !== 'claims')
+    expect(() => buildDispatch(withoutClaims)).toThrow(/collected by no page/)
+    expect(() => buildDispatch(withoutClaims)).toThrow(/claims/)
+    buildDispatch(dispatchPages) // restore the shared index for later tests
+  })
+
+  it('resolves a sub-obligation to its collection owner by template AND instance address', () => {
+    // Derived ownership: a claim sub-field is owned by the page owning `claims`.
+    expect(pageOfObligation('claims.claimType')).toBe('claims')
+    // The engine addresses instances in bracketed pathKey form (from reconcile);
+    // ownership must resolve that vocabulary too, else a per-item change link breaks.
+    expect(pageOfObligation('claims[0].claimType')).toBe('claims')
+    expect(pageOfObligation('claims[0]')).toBe('claims')
+  })
+
   it('walks the driving-and-cover section, skipping claims when out of scope', () => {
     const scopeNoClaims = { inScope: reconcile({ hadClaims: 'no' }).inScope }
     const scopeClaims = { inScope: reconcile({ hadClaims: 'yes' }).inScope }

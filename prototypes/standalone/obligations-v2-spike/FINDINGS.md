@@ -86,3 +86,88 @@ Copy/labels/headings for every page are pinned in `journey.js` and the v1 flow.j
 4. **The dispatch seam:** obligation state → "owed, and page P handles it"; a page→obligations binding (page declares what it collects). Keep the seam crisp and one-directional.
 5. **Keep:** scope-exit wipe, activation/derived reconcile, pure-eval/orchestrator split, status roll-up, recompute-on-load. **Drop:** UUIDs, model-owned copy, generic renderer, contract barrel, i18n codes, mandate table, equivalence harness.
    </content>
+
+---
+
+# Entry 6 — stress-testing the model with nested, conditional, indexed collections
+
+The verdict trail for DISCUSSION-LOG entry 6 (are indexed obligations first-class?).
+Each phase (6a/6b/6c) escalates and ends with a written go/no-go on whether the
+paradigm survives real recursive, conditional, indexed requirements. Method: a
+design-panel workflow (3 architects → 3 diverse-lens judges) chose each load-bearing
+representation, then an adversarial-verify workflow (skeptics + completeness critic)
+stress-tested the code before the verdict landed — the same provenance discipline that
+chose the paradigm (`DESIGN-PROVENANCE.md`).
+
+## 6a — Verdict: single-level indexing made first-class (claims canary)
+
+**Did the model hold? YES.** Indexed obligations are no longer a special case the
+engine tolerates; they are a modelled concept the engine sees. A collection def now
+carries `collection: true` + a real nested `item: [...defs]` (`features/claims/obligations.js`),
+so sub-obligations (`claimType`, `claimAmount`) are first-class defs with their own
+mandate facts. The engine gained a path vocabulary (`lib/path.js`) and walks the tree
+MATERIALISED against the answers (`registry.walk`), so `reconcile` produces per-instance
+scope (`claims[0].claimType`) and per-instance wipe, `status` computes per-item
+completeness (a claim with a blank required field no longer counts the section done),
+and dispatch coverage descends every depth. The existing `claims` collection was
+re-expressed on this mechanism with **zero rendered-DOM change**: the three shared
+Playwright specs and `contract.test.js` stayed green **untouched**, plus 80 unit tests
+(13 new engine tests for path scope / per-item wipe / per-item completeness, 4 more
+pinning the adversarial fixes). The panel chose the **recursive-tree** representation
+unanimously across all three lenses precisely because the model IS a tree — walk/walkDefs
+are literal tree-walks — so Phase 2 nesting is projected to add new defs, not new engine.
+
+**Where did it strain? Three honest concessions, none a breakage.**
+
+1. **Ownership at depth is DERIVED, not declared per field — and the regression net
+   forced it.** The zero-touch contract pins `claimsList.meta.collects === ['claims']`,
+   so a sub-obligation's owning page could not be declared per field without editing
+   `contract.test.js`. Coverage therefore DERIVES a sub-obligation's page from its
+   nearest collection ancestor (`flow/dispatch.js`). Coverage stays total and
+   boot-asserted (an uncovered top-level or nested collection still crashes boot, with
+   teeth — verified), but strictness about _authorial intent_ at depth is traded away: a
+   new sub-field silently inherits its collection's page rather than forcing a decision.
+   Notable that the safety net itself shaped the ownership model.
+
+2. **The model now carries TWO identity vocabularies.** A dot-form TEMPLATE address
+   (`claims.claimType`, for dispatch/coverage, from `walkDefs`) and a bracketed INSTANCE
+   pathKey (`claims[0].claimType`, for scope/wipe, from `reconcile`/`pathKey`). They must
+   be bridged — `pageOfObligation` now normalises instance→template before resolving. The
+   panel's unanimous kill-objection was that keeping sub-defs out of `registry.all` to
+   protect the contract iterator re-creates "the engine is blind to sub-fields" one level
+   down; that was answered by making `walkDefs`/`byPath` the FULL catalogue (nothing is
+   blind) while `registry.all` stays the roots VIEW the contract test walks. A single
+   unified path-addressed lookup would be cleaner; the split is a documented tax kept to
+   leave the regression net structurally untouched.
+
+3. **The reusable loop is near-vestigial at ONE flat level.** `collectionView` (the
+   facts-only loop library) barely removes bespoke code today; its justification is
+   forward-looking to Phase 2's loop-inside-a-loop. Honest, and flagged by the panel.
+
+**Is the no-generic-engine / library-not-framework line intact? YES at this level — but
+Phase 2 is the real trial.** `collectionView(answers, collectionPath)` returns pure
+structural facts — `{ index, path, entry, complete }` — and nothing presentational: no
+hrefs, no labels, no copy, no row view-models, no template, no routes, no Joi. The
+claims list/entry/CYA controllers compose ALL presentation themselves; CYA's per-item
+change link now routes through the dispatch seam (`pageOfObligation('claims')`) instead
+of a hardcoded slug, still byte-identical. The store facade stayed narrow — a page still
+physically cannot hand-roll a wipe. The line held because a single flat loop does not yet
+pressure the helper to render; the loop-inside-a-loop in 6b is where that pressure peaks.
+
+**Adversarial pass — 3 real defects found, all latent in 6a, all fixed now.** Skeptics
+broke: (a) `commit`'s wipe ordering (sibling array-index splices renumber each other —
+unreachable at one level because only the `claims` root is `wipeOnExit`, but live in 6c's
+item-scoped wipes) — fixed with a sibling-aware comparator + regression test, and the
+docstring that overclaimed depth-correctness was corrected; (b) `pageOfObligation`
+returning `undefined` for the engine's own bracketed instance addresses (live in 6b/6c
+per-item change links) — fixed by normalising instance→template + a round-trip test;
+(c) a model→engine layering import (`registry.js` reaching into `engine/path.js`) — fixed
+by relocating the pure path helpers to the neutral `lib/` leaf. Two lanes (per-item
+completeness; DOM parity + library line) survived the skeptics unbroken.
+
+**Go/no-go: GO.** The paradigm survives single-level first-class indexing cleanly. The two
+structural tensions (derived ownership; dual identity vocabulary) are documented
+concessions the canary constraint dictated, not model breakages. Carried into 6b: whether
+`entryComplete` must recurse into a nested `requiredAtLeastOne` collection (it does not
+yet — invisible at one level), and whether the loop library survives the loop-inside-a-loop
+without rendering.
