@@ -9,8 +9,10 @@ import * as claimsEntry from './claims/entry.controller.js'
 import * as cover from './cover-type/controller.js'
 import * as extras from './optional-extras/controller.js'
 import * as addons from './addons/controller.js'
-import * as ndWho from './named-driver/who.controller.js'
-import * as ndRel from './named-driver/relationship.controller.js'
+import * as driversHub from './named-driver/drivers-hub.controller.js'
+import * as driverEntry from './named-driver/driver-entry.controller.js'
+import * as driverDetail from './named-driver/driver-detail.controller.js'
+import * as driverClaim from './named-driver/driver-claim.controller.js'
 import * as modDesc from './modifications/describe.controller.js'
 import * as modVal from './modifications/value.controller.js'
 import * as ncd from './protected-ncd/years.controller.js'
@@ -36,8 +38,7 @@ export const dispatchPages = [
   cover.meta,
   extras.meta,
   addons.meta,
-  ndWho.meta,
-  ndRel.meta,
+  driversHub.meta,
   modDesc.meta,
   modVal.meta,
   ncd.meta
@@ -56,8 +57,10 @@ export const allRoutes = [
   ...cover.routes,
   ...extras.routes,
   ...addons.routes,
-  ...ndWho.routes,
-  ...ndRel.routes,
+  ...driversHub.routes,
+  ...driverEntry.routes,
+  ...driverDetail.routes,
+  ...driverClaim.routes,
   ...modDesc.routes,
   ...modVal.routes,
   ...ncd.routes,

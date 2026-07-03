@@ -25,21 +25,17 @@ describe('reconcile', () => {
     expect(reconcile(answers).wiped).toContain('claims')
   })
 
-  it('activates addon detail obligations on selection and wipes them on deselect', () => {
+  it('activates the drivers collection on selection and wipes it on deselect', () => {
     const on = reconcile({ addons: ['named-driver'] }).inScope
-    expect(on.has('driverName')).toBe(true)
-    expect(on.has('relationship')).toBe(true)
+    expect(on.has('drivers')).toBe(true)
     expect(on.has('modDescription')).toBe(false)
 
     const off = reconcile({
       addons: [],
-      driverName: 'Sam',
-      relationship: 'spouse'
+      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
     })
-    expect(off.inScope.has('driverName')).toBe(false)
-    expect(off.wiped).toEqual(
-      expect.arrayContaining(['driverName', 'relationship'])
-    )
+    expect(off.inScope.has('drivers')).toBe(false)
+    expect(off.wiped).toContain('drivers')
   })
 
   it('reveals + wipes excessAmount with the voluntaryExcess answer', () => {

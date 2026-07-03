@@ -22,7 +22,7 @@ describe('journey simulator', () => {
     expect(pages).toContain('cover-type')
     expect(pages).not.toContain('claims')
     // …and no add-on detail pages appear.
-    expect(pages).not.toContain('named-driver-who')
+    expect(pages).not.toContain('drivers')
     expect(pages).not.toContain('modifications-describe')
     // order is flow order: driving-history precedes cover-type precedes addons.
     expect(pages.indexOf('driving-history')).toBeLessThan(
@@ -43,9 +43,9 @@ describe('journey simulator', () => {
 
   it('opens only the add-on section a persona selected', () => {
     const pages = simulateJourney({ addons: ['named-driver'] })
-    expect(pages).toEqual(
-      expect.arrayContaining(['named-driver-who', 'named-driver-relationship'])
-    )
+    // The named-driver add-on is now the `drivers` collection hub (its sub-loop
+    // add/detail pages are reached from the hub, not walked by the section).
+    expect(pages).toContain('drivers')
     expect(pages).not.toContain('modifications-describe')
     expect(pages).not.toContain('protected-ncd-years')
   })

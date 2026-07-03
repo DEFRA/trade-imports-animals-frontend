@@ -65,11 +65,7 @@ for (const journey of j.JOURNEYS) {
       await j.selectAddons(page)
       await click(page, j.CONTINUE)
 
-      await task(page, 'Add a named driver')
-      await j.fillNamedDriverWho(page)
-      await click(page, j.SAVE)
-      await j.pickRelationship(page)
-      await click(page, j.SAVE)
+      await j.walkNamedDriver(page, journey)
 
       await task(page, 'Declare vehicle modifications')
       await j.fillModificationsDescribe(page)

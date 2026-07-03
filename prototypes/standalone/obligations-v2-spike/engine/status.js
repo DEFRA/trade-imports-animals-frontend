@@ -25,9 +25,18 @@ const isRequired = (id) => {
 }
 
 /** One entry of a collection is COMPLETE when every required sub-obligation in
- * the item is answered — the per-item completeness fact the model gained in 6a. */
+ * the item is satisfied — the per-item completeness fact the model gained in 6a,
+ * now DEPTH-AWARE (6b): a sub-obligation that is itself a collection defers to
+ * `collectionComplete`, which enforces "any entry that EXISTS must be complete"
+ * and, when `requiredAtLeastOne`, also "≥1 entry". So a driver holding a
+ * half-entered nested claim is not complete, whether or not its claims are
+ * mandated — the mandate governs only whether ZERO entries is acceptable. */
 export const entryComplete = (def, entry) =>
-  (def.item ?? []).every((sub) => !sub.required || isAnswered(entry?.[sub.id]))
+  (def.item ?? []).every((sub) =>
+    sub.collection
+      ? collectionComplete(sub, entry?.[sub.id])
+      : !sub.required || isAnswered(entry?.[sub.id])
+  )
 
 /** A collection is SATISFIED when it meets its cardinality mandate AND every
  * entry is complete — not merely "≥1 entry exists" (DISCUSSION-LOG entry 6,
