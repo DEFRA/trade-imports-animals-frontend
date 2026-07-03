@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
 import {
   fullName,
@@ -26,1393 +26,797 @@ import {
   groups
 } from './obligations.js'
 
-// The evaluator is stateless once constructed — one instance suffices for the
-// whole suite. Constructed with no args so it uses the shipped obligations.
-const evaluator = createObligationEvaluator()
+let evaluator
+beforeEach(() => {
+  evaluator = createObligationEvaluator()
+})
 
+// Common implication constants
+const outOfScope = { inScope: false }
 const mandatory = { inScope: true, status: 'mandatory' }
 const optional = { inScope: true, status: 'optional' }
-const outOfScope = { inScope: false }
 
-const excessAmountApplicable = {
-  inScope: true,
-  status: 'mandatory',
-  reasons: [
-    {
-      code: 'obligation.excessAmount.applicable.becauseVoluntaryExcess',
-      explanation: 'excessAmount applies when hasVoluntaryExcess is true'
-    }
-  ]
+// Reason constants (kept verbatim from applyTo emission)
+const excessAmountApplicableReason = {
+  code: 'obligation.excessAmount.applicable.becauseVoluntaryExcess',
+  explanation: 'excessAmount applies when hasVoluntaryExcess is true'
 }
-const namedDriverNameApplicable = {
-  inScope: true,
-  status: 'mandatory',
-  reasons: [
-    {
-      code: 'obligation.namedDriverName.applicable.becauseNamedDriver',
-      explanation: 'namedDriverName applies when hasNamedDriver is true'
-    }
-  ]
+const namedDriverNameApplicableReason = {
+  code: 'obligation.namedDriverName.applicable.becauseNamedDriver',
+  explanation: 'namedDriverName applies when hasNamedDriver is true'
 }
-const licenseCountryIssuedMandatory = {
-  inScope: true,
-  status: 'mandatory',
-  reasons: [
-    {
-      code: 'obligation.licenseCountryIssued.mandatory.becauseLicenseTypeOther',
-      explanation: 'licenseCountryIssued is mandatory when licenseType is other'
-    }
-  ]
+const namedDriverRelationshipApplicableReason = {
+  code: 'obligation.namedDriverRelationship.applicable.becauseNamedDriver',
+  explanation: 'namedDriverRelationship applies when hasNamedDriver is true'
 }
-const namedDriverRelationshipApplicable = {
-  inScope: true,
-  status: 'optional',
-  reasons: [
-    {
-      code: 'obligation.namedDriverRelationship.applicable.becauseNamedDriver',
-      explanation: 'namedDriverRelationship applies when hasNamedDriver is true'
-    }
-  ]
+const licenseCountryIssuedMandatoryReason = {
+  code: 'obligation.licenseCountryIssued.mandatory.becauseLicenseTypeOther',
+  explanation: 'licenseCountryIssued is mandatory when licenseType is other'
 }
-const modificationsApplicable = {
-  inScope: true,
-  status: 'mandatory',
-  reasons: [
-    {
-      code: 'obligation.modifications.applicable.becauseHasModifications',
-      explanation: 'modifications applies when hasModifications is true'
-    }
-  ]
+const modificationsApplicableReason = {
+  code: 'obligation.modifications.applicable.becauseHasModifications',
+  explanation: 'modifications applies when hasModifications is true'
 }
 const modificationCostApplicableReason = {
   code: 'obligation.modificationCost.applicable.becauseHasModifications',
   explanation: 'modificationCost applies when hasModifications is true'
 }
+const claimApplicableReason = {
+  code: 'obligation.claim.applicable.becauseHasClaims',
+  explanation: 'claim applies when hasClaims is true'
+}
+
+const sortedIds = (fulfilments) => fulfilments.map((f) => f.fulfilmentId).sort()
 
 describe('ObligationEvaluator', () => {
-  describe('return-shape mechanics', () => {
-    it('empty fulfilments → unconditional obligations mandatory; appliesWhen ones out-of-scope; mandatoryWhen ones optional', () => {
+  // ---------------------------------------------------------------------------
+  // Return-shape mechanics
+  // ---------------------------------------------------------------------------
+
+  describe('return shape', () => {
+    it('returns { fulfilments, obligations }', () => {
       const result = evaluator.evaluate({})
-
-      expect(result.fulfilments).toEqual({})
-      expect(result.obligations).toEqual({
-        [fullName.id]: mandatory,
-        [preferredName.id]: optional, // always in-scope, always optional
-        [dateOfBirth.id]: mandatory,
-        [hasVoluntaryExcess.id]: mandatory,
-        [excessAmount.id]: outOfScope, // appliesWhen — no voluntary excess set
-        [hasNamedDriver.id]: mandatory,
-        [namedDriverName.id]: outOfScope, // appliesWhen — no named driver set
-        [namedDriverRelationship.id]: outOfScope, // optional-when-applicable — no named driver set
-        [licenseType.id]: mandatory,
-        [licenseCountryIssued.id]: optional, // mandatoryWhen — licenseType unset
-        [hasModifications.id]: mandatory,
-        [modifications.id]: outOfScope, // appliesWhen — no modifications opt-in
-        [modificationCost.id]: outOfScope, // derived; gated by hasModifications
-        [hasClaims.id]: mandatory,
-        [claim.id]: outOfScope, // anchor — hasClaims not set
-        [claimType.id]: outOfScope, // group member — hasClaims not set
-        [claimAmount.id]: outOfScope, // group member — hasClaims not set
-        [driver.id]: { inScope: true, fulfilments: [] }, // no drivers yet
-        [driverFullName.id]: { inScope: true, fulfilments: [] },
-        [driverAddress.id]: { inScope: true, fulfilments: [] },
-        [driverClaim.id]: { inScope: true, fulfilments: [] },
-        [driverClaimOtherParty.id]: { inScope: true, fulfilments: [] }
-      })
+      expect(result).toHaveProperty('fulfilments')
+      expect(result).toHaveProperty('obligations')
     })
 
-    it('unknown fulfilment id → dropped from amended', () => {
-      const fulfilments = {
-        [fullName.id]: 'Alex Driver',
-        'unknown-obligation-id': 'stray value'
+    it('obligations map has one entry per manifest obligation', () => {
+      const result = evaluator.evaluate({})
+      const ids = [
+        fullName.id,
+        preferredName.id,
+        dateOfBirth.id,
+        hasVoluntaryExcess.id,
+        excessAmount.id,
+        hasNamedDriver.id,
+        namedDriverName.id,
+        namedDriverRelationship.id,
+        licenseType.id,
+        licenseCountryIssued.id,
+        hasModifications.id,
+        modifications.id,
+        modificationCost.id,
+        hasClaims.id,
+        claim.id,
+        claimType.id,
+        claimAmount.id,
+        driver.id,
+        driverFullName.id,
+        driverAddress.id,
+        driverClaim.id,
+        driverClaimOtherParty.id
+      ]
+      for (const id of ids) {
+        expect(result.obligations).toHaveProperty(id)
       }
-
-      const result = evaluator.evaluate(fulfilments)
-
-      expect(result.fulfilments).toEqual({ [fullName.id]: 'Alex Driver' })
-    })
-
-    it('fulfilments are keyed by stable id, not by name → name-keyed entries are dropped by tolerate-and-amend', () => {
-      const fulfilments = {
-        [fullName.id]: 'Alex Driver', // keyed by id — passes through
-        dateOfBirth: '1985-03-27' // keyed by name — dropped
-      }
-
-      const result = evaluator.evaluate(fulfilments)
-
-      expect(result.fulfilments).toEqual({ [fullName.id]: 'Alex Driver' })
-    })
-
-    it('empty obligations model → amended empty; obligation state empty', () => {
-      const emptyEvaluator = createObligationEvaluator({ obligations: [] })
-
-      const result = emptyEvaluator.evaluate({ [fullName.id]: 'Alex Driver' })
-
-      expect(result.fulfilments).toEqual({})
-      expect(result.obligations).toEqual({})
-    })
-
-    it('idempotent → calling twice yields structurally equal outputs', () => {
-      const fulfilments = {
-        [fullName.id]: 'Alex Driver',
-        [dateOfBirth.id]: '1985-03-27',
-        [hasVoluntaryExcess.id]: true,
-        [excessAmount.id]: '250',
-        [hasNamedDriver.id]: false,
-        [licenseType.id]: 'full'
-      }
-
-      const first = evaluator.evaluate(fulfilments)
-      const second = evaluator.evaluate(fulfilments)
-
-      expect(second).toEqual(first)
     })
   })
 
-  describe('appliesWhen (excessAmount) + scope-exit purge', () => {
-    it('hasVoluntaryExcess = true → excessAmount in-scope, mandatory, with applicable-reason; value retained', () => {
-      const result = evaluator.evaluate({
-        [hasVoluntaryExcess.id]: true,
-        [excessAmount.id]: '250.50'
-      })
+  // ---------------------------------------------------------------------------
+  // Tolerate-and-amend — drop unknown obligation ids
+  // ---------------------------------------------------------------------------
 
-      expect(result.obligations[excessAmount.id]).toEqual(
-        excessAmountApplicable
+  describe('tolerate-and-amend', () => {
+    it('drops fulfilments whose id is not in the manifest', () => {
+      const result = evaluator.evaluate({
+        [fullName.id]: 'Alex',
+        'unknown-id-not-in-manifest': 'orphan'
+      })
+      expect(result.fulfilments).not.toHaveProperty(
+        'unknown-id-not-in-manifest'
       )
-      expect(result.fulfilments[excessAmount.id]).toBe('250.50')
-    })
-
-    it('hasVoluntaryExcess = false + stored excessAmount → excessAmount out-of-scope; value purged', () => {
-      const result = evaluator.evaluate({
-        [hasVoluntaryExcess.id]: false,
-        [excessAmount.id]: '250'
-      })
-
-      expect(result.obligations[excessAmount.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(excessAmount.id)
-    })
-
-    it('hasVoluntaryExcess absent → excessAmount out-of-scope', () => {
-      const result = evaluator.evaluate({ [excessAmount.id]: '250' })
-
-      expect(result.obligations[excessAmount.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(excessAmount.id)
+      expect(result.fulfilments[fullName.id]).toBe('Alex')
     })
   })
 
-  describe('always-optional (preferredName)', () => {
-    it('empty fulfilments → in-scope, optional, no reasons', () => {
-      const result = evaluator.evaluate({})
+  // ---------------------------------------------------------------------------
+  // Single-cardinality — unconditional
+  // ---------------------------------------------------------------------------
 
+  describe('single-cardinality — unconditional', () => {
+    it('fullName is always mandatory', () => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[fullName.id]).toEqual(mandatory)
+    })
+
+    it('dateOfBirth is always mandatory', () => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[dateOfBirth.id]).toEqual(mandatory)
+    })
+
+    it('preferredName is always optional; no reasons emitted', () => {
+      const result = evaluator.evaluate({})
       expect(result.obligations[preferredName.id]).toEqual(optional)
+      expect(result.obligations[preferredName.id].reasons).toBeUndefined()
     })
 
-    it('value present → value passes through; state unchanged', () => {
-      const result = evaluator.evaluate({ [preferredName.id]: 'Alex' })
-
-      expect(result.obligations[preferredName.id]).toEqual(optional)
-      expect(result.fulfilments[preferredName.id]).toBe('Alex')
-    })
-  })
-
-  describe('appliesWhen (namedDriverName) + scope-exit purge', () => {
-    it('hasNamedDriver = true → namedDriverName in-scope, mandatory, with applicable-reason; value retained', () => {
-      const result = evaluator.evaluate({
-        [hasNamedDriver.id]: true,
-        [namedDriverName.id]: 'Sam Passenger'
-      })
-
-      expect(result.obligations[namedDriverName.id]).toEqual(
-        namedDriverNameApplicable
-      )
-      expect(result.fulfilments[namedDriverName.id]).toBe('Sam Passenger')
+    it('retains a mandatory single value verbatim', () => {
+      const result = evaluator.evaluate({ [fullName.id]: 'Alex Driver' })
+      expect(result.fulfilments[fullName.id]).toBe('Alex Driver')
     })
 
-    it('hasNamedDriver = false + stored namedDriverName → out-of-scope; value purged', () => {
-      const result = evaluator.evaluate({
-        [hasNamedDriver.id]: false,
-        [namedDriverName.id]: 'Sam Passenger'
-      })
-
-      expect(result.obligations[namedDriverName.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(namedDriverName.id)
-    })
-
-    it('hasNamedDriver absent → namedDriverName out-of-scope', () => {
-      const result = evaluator.evaluate({
-        [namedDriverName.id]: 'Sam Passenger'
-      })
-
-      expect(result.obligations[namedDriverName.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(namedDriverName.id)
+    it('retains an optional single value verbatim', () => {
+      const result = evaluator.evaluate({ [preferredName.id]: 'Al' })
+      expect(result.fulfilments[preferredName.id]).toBe('Al')
     })
   })
 
-  describe('optional-when-applicable (namedDriverRelationship) + scope-exit purge', () => {
-    it('hasNamedDriver = true → namedDriverRelationship in-scope, OPTIONAL, with applicable-reason', () => {
-      const result = evaluator.evaluate({
-        [hasNamedDriver.id]: true,
-        [namedDriverRelationship.id]: 'spouse'
-      })
+  // ---------------------------------------------------------------------------
+  // Single-cardinality — appliesWhen (scope-exit purges the value)
+  // ---------------------------------------------------------------------------
 
-      expect(result.obligations[namedDriverRelationship.id]).toEqual(
-        namedDriverRelationshipApplicable
-      )
-      expect(result.fulfilments[namedDriverRelationship.id]).toBe('spouse')
-    })
-
-    it('hasNamedDriver = true + no value → in-scope, OPTIONAL, no fulfilment; still valid because it is optional', () => {
-      const result = evaluator.evaluate({ [hasNamedDriver.id]: true })
-
-      expect(result.obligations[namedDriverRelationship.id]).toEqual(
-        namedDriverRelationshipApplicable
-      )
-      expect(result.fulfilments).not.toHaveProperty(namedDriverRelationship.id)
-    })
-
-    it('hasNamedDriver = false + stored namedDriverRelationship → out-of-scope; value purged', () => {
-      const result = evaluator.evaluate({
-        [hasNamedDriver.id]: false,
-        [namedDriverRelationship.id]: 'spouse'
-      })
-
-      expect(result.obligations[namedDriverRelationship.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(namedDriverRelationship.id)
-    })
-
-    it('hasNamedDriver absent → namedDriverRelationship out-of-scope', () => {
-      const result = evaluator.evaluate({
-        [namedDriverRelationship.id]: 'spouse'
-      })
-
-      expect(result.obligations[namedDriverRelationship.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(namedDriverRelationship.id)
-    })
-  })
-
-  describe('purge idempotence', () => {
-    it('running evaluate twice with the same stale-value input yields the same amended fulfilments', () => {
-      const staleInput = {
-        [hasVoluntaryExcess.id]: false,
-        [excessAmount.id]: '250' // stale — should be purged
-      }
-
-      const first = evaluator.evaluate(staleInput)
-      const second = evaluator.evaluate(first.fulfilments)
-
-      expect(first.fulfilments).toEqual(second.fulfilments)
-      expect(first.fulfilments).not.toHaveProperty(excessAmount.id)
-    })
-  })
-
-  describe('mandatoryWhen (licenseCountryIssued) — value retained across condition changes', () => {
-    it('licenseType = "other" → licenseCountryIssued mandatory with mandatory-reason', () => {
-      const result = evaluator.evaluate({
-        [licenseType.id]: 'other',
-        [licenseCountryIssued.id]: 'Germany'
-      })
-
-      expect(result.obligations[licenseCountryIssued.id]).toEqual(
-        licenseCountryIssuedMandatory
-      )
-      expect(result.fulfilments[licenseCountryIssued.id]).toBe('Germany')
-    })
-
-    it('licenseType = "full" → licenseCountryIssued optional, no reasons; value RETAINED (mandatoryWhen does not purge)', () => {
-      const result = evaluator.evaluate({
-        [licenseType.id]: 'full',
-        [licenseCountryIssued.id]: 'United Kingdom'
-      })
-
-      expect(result.obligations[licenseCountryIssued.id]).toEqual(optional)
-      expect(result.fulfilments[licenseCountryIssued.id]).toBe('United Kingdom')
-    })
-
-    it('licenseType absent → licenseCountryIssued optional (undefined !== "other")', () => {
+  describe('appliesWhen — excessAmount gated on hasVoluntaryExcess', () => {
+    it('out of scope when hasVoluntaryExcess is absent', () => {
       const result = evaluator.evaluate({})
-
-      expect(result.obligations[licenseCountryIssued.id]).toEqual(optional)
-    })
-  })
-
-  describe('appliesWhen + derived indexing (modifications / modificationCost) — gated by hasModifications', () => {
-    it('hasModifications = true + no controller value → modifications in-scope with reason; derived in-scope with empty fulfilments', () => {
-      const result = evaluator.evaluate({ [hasModifications.id]: true })
-
-      expect(result.obligations[modifications.id]).toEqual(
-        modificationsApplicable
-      )
-      expect(result.obligations[modificationCost.id]).toEqual({
-        inScope: true,
-        reasons: [modificationCostApplicableReason],
-        fulfilments: []
-      })
-      expect(result.fulfilments).not.toHaveProperty(modifications.id)
-      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+      expect(result.obligations[excessAmount.id]).toEqual(outOfScope)
     })
 
-    it('controller with one value + no cost stored → derived has one fresh blank slot; nothing in amended', () => {
-      const result = evaluator.evaluate({
-        [hasModifications.id]: true,
-        [modifications.id]: ['turbo']
-      })
-
-      expect(result.obligations[modificationCost.id]).toEqual({
-        inScope: true,
-        reasons: [modificationCostApplicableReason],
-        fulfilments: [{ fulfilmentId: 'turbo', status: 'mandatory' }]
-      })
-      expect(result.fulfilments[modifications.id]).toEqual(['turbo'])
-      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+    it('out of scope when hasVoluntaryExcess = false', () => {
+      const result = evaluator.evaluate({ [hasVoluntaryExcess.id]: false })
+      expect(result.obligations[excessAmount.id]).toEqual(outOfScope)
     })
 
-    it('controller with values + cost values stored → derived reflects controller; values pass through', () => {
-      const result = evaluator.evaluate({
-        [hasModifications.id]: true,
-        [modifications.id]: ['turbo', 'alloys'],
-        [modificationCost.id]: { turbo: '800', alloys: '200' }
-      })
-
-      expect(result.obligations[modificationCost.id]).toEqual({
-        inScope: true,
-        reasons: [modificationCostApplicableReason],
-        fulfilments: [
-          { fulfilmentId: 'turbo', status: 'mandatory' },
-          { fulfilmentId: 'alloys', status: 'mandatory' }
-        ]
-      })
-      expect(result.fulfilments[modificationCost.id]).toEqual({
-        turbo: '800',
-        alloys: '200'
-      })
-    })
-
-    it('controller value removed → corresponding cost fulfilment PURGED (derived lifecycle)', () => {
-      const result = evaluator.evaluate({
-        [hasModifications.id]: true,
-        [modifications.id]: ['turbo'], // user removed 'alloys'
-        [modificationCost.id]: { turbo: '800', alloys: '200' } // stale 'alloys' still stored
-      })
-
-      expect(result.obligations[modificationCost.id]).toEqual({
-        inScope: true,
-        reasons: [modificationCostApplicableReason],
-        fulfilments: [{ fulfilmentId: 'turbo', status: 'mandatory' }]
-      })
-      // 'alloys' cost purged; 'turbo' retained.
-      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
-    })
-
-    it('controller emptied + stale cost values → all cost fulfilments purged', () => {
-      const result = evaluator.evaluate({
-        [hasModifications.id]: true,
-        [modifications.id]: [],
-        [modificationCost.id]: { turbo: '800', alloys: '200' }
-      })
-
-      expect(result.obligations[modificationCost.id]).toEqual({
-        inScope: true,
-        reasons: [modificationCostApplicableReason],
-        fulfilments: []
-      })
-      expect(result.fulfilments[modificationCost.id]).toEqual({})
-    })
-
-    it('re-adding a controller value after removal → fresh blank (no rehydration; evaluator has no memory)', () => {
-      // First: user has 'turbo' + 'alloys' with costs. Then user removes 'alloys'.
-      // Then user re-adds 'alloys'. Under our stateless evaluator, the "re-add"
-      // is just the current state — 'alloys' present in controller, no cost
-      // stored. Cost fulfilment is a fresh blank.
-      const result = evaluator.evaluate({
-        [hasModifications.id]: true,
-        [modifications.id]: ['turbo', 'alloys'], // re-added
-        [modificationCost.id]: { turbo: '800' } // no 'alloys' cost (it was purged on remove)
-      })
-
-      expect(result.obligations[modificationCost.id]).toEqual({
-        inScope: true,
-        reasons: [modificationCostApplicableReason],
-        fulfilments: [
-          { fulfilmentId: 'turbo', status: 'mandatory' },
-          { fulfilmentId: 'alloys', status: 'mandatory' } // fresh blank slot
-        ]
-      })
-      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
-    })
-
-    it('hasModifications = false + stored controller + costs → both purged (gate flips false)', () => {
-      const result = evaluator.evaluate({
-        [hasModifications.id]: false,
-        [modifications.id]: ['turbo', 'alloys'],
-        [modificationCost.id]: { turbo: '800', alloys: '200' }
-      })
-
-      expect(result.obligations[modifications.id]).toEqual(outOfScope)
-      expect(result.obligations[modificationCost.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(modifications.id)
-      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
-    })
-
-    it('hasModifications absent → both out-of-scope; no keys in amended', () => {
-      const result = evaluator.evaluate({
-        [modifications.id]: ['turbo'],
-        [modificationCost.id]: { turbo: '800' }
-      })
-
-      expect(result.obligations[modifications.id]).toEqual(outOfScope)
-      expect(result.obligations[modificationCost.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(modifications.id)
-      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
-    })
-  })
-
-  describe('appliesWhen + indexed (claim group) — gated by hasClaims; anchored by `claim`; members derived-from-anchor', () => {
-    const firstClaimId = '01H8XK7M5RW6QYJ2AB'
-    const secondClaimId = '01H8XK9P3T8WBZN4DE'
-
-    const claimApplicable = (fulfilmentIds) => ({
-      inScope: true,
-      reasons: [
-        {
-          code: 'obligation.claim.applicable.becauseHasClaims',
-          explanation: 'claim applies when hasClaims is true'
-        }
-      ],
-      fulfilments: fulfilmentIds.map((fulfilmentId) => ({
-        fulfilmentId,
-        status: 'mandatory'
-      }))
-    })
-    // Field-record impls: synthesised from the group; no reasons of their own.
-    const fieldRecordImplication = (fulfilmentIds) => ({
-      inScope: true,
-      fulfilments: fulfilmentIds.map((fulfilmentId) => ({
-        fulfilmentId,
-        status: 'mandatory'
-      }))
-    })
-    const claimTypeApplicable = fieldRecordImplication
-    const claimAmountApplicable = fieldRecordImplication
-
-    it('hasClaims = true + empty collections → anchor and both members in-scope with empty fulfilments; no keys in amended', () => {
-      const result = evaluator.evaluate({ [hasClaims.id]: true })
-
-      expect(result.obligations[claim.id]).toEqual(claimApplicable([]))
-      expect(result.obligations[claimType.id]).toEqual(claimTypeApplicable([]))
-      expect(result.obligations[claimAmount.id]).toEqual(
-        claimAmountApplicable([])
-      )
-      expect(result.fulfilments).not.toHaveProperty(claim.id)
-      expect(result.fulfilments).not.toHaveProperty(claimType.id)
-      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
-    })
-
-    it('hasClaims = true + one claim → anchor lists the claim id; both derived members reflect it; values retained', () => {
-      const result = evaluator.evaluate({
-        [hasClaims.id]: true,
-        [claim.id]: { [firstClaimId]: {} },
-        [claimType.id]: { [firstClaimId]: 'accident' },
-        [claimAmount.id]: { [firstClaimId]: '1200' }
-      })
-
-      expect(result.obligations[claim.id]).toEqual(
-        claimApplicable([firstClaimId])
-      )
-      expect(result.obligations[claimType.id]).toEqual(
-        claimTypeApplicable([firstClaimId])
-      )
-      expect(result.obligations[claimAmount.id]).toEqual(
-        claimAmountApplicable([firstClaimId])
-      )
-      expect(result.fulfilments[claim.id]).toEqual({ [firstClaimId]: {} })
-      expect(result.fulfilments[claimType.id]).toEqual({
-        [firstClaimId]: 'accident'
-      })
-      expect(result.fulfilments[claimAmount.id]).toEqual({
-        [firstClaimId]: '1200'
-      })
-    })
-
-    it('hasClaims = true + two claims → anchor drives both members', () => {
-      const result = evaluator.evaluate({
-        [hasClaims.id]: true,
-        [claim.id]: { [firstClaimId]: {}, [secondClaimId]: {} },
-        [claimType.id]: {
-          [firstClaimId]: 'accident',
-          [secondClaimId]: 'theft'
-        },
-        [claimAmount.id]: {
-          [firstClaimId]: '1200',
-          [secondClaimId]: '500'
-        }
-      })
-
-      expect(result.obligations[claim.id]).toEqual(
-        claimApplicable([firstClaimId, secondClaimId])
-      )
-      expect(result.obligations[claimType.id]).toEqual(
-        claimTypeApplicable([firstClaimId, secondClaimId])
-      )
-      expect(result.obligations[claimAmount.id]).toEqual(
-        claimAmountApplicable([firstClaimId, secondClaimId])
-      )
-      expect(result.fulfilments[claimType.id]).toEqual({
-        [firstClaimId]: 'accident',
-        [secondClaimId]: 'theft'
-      })
-      expect(result.fulfilments[claimAmount.id]).toEqual({
-        [firstClaimId]: '1200',
-        [secondClaimId]: '500'
-      })
-    })
-
-    it('remove one claim (stale member keys) → derived-lifecycle purge drops the stale claim from claimType and claimAmount', () => {
-      // The anchor's collection has only firstClaimId, but claimType and
-      // claimAmount still have stale entries under secondClaimId.
-      const result = evaluator.evaluate({
-        [hasClaims.id]: true,
-        [claim.id]: { [firstClaimId]: {} },
-        [claimType.id]: {
-          [firstClaimId]: 'accident',
-          [secondClaimId]: 'theft' // stale — no matching claim id in anchor
-        },
-        [claimAmount.id]: {
-          [firstClaimId]: '1200',
-          [secondClaimId]: '500' // stale
-        }
-      })
-
-      expect(result.fulfilments[claimType.id]).toEqual({
-        [firstClaimId]: 'accident'
-      })
-      expect(result.fulfilments[claimAmount.id]).toEqual({
-        [firstClaimId]: '1200'
-      })
-    })
-
-    it('hasClaims = false + stored claim fulfilments → anchor and both members out-of-scope; all collections PURGED', () => {
-      const result = evaluator.evaluate({
-        [hasClaims.id]: false,
-        [claim.id]: { [firstClaimId]: {} },
-        [claimType.id]: { [firstClaimId]: 'accident' },
-        [claimAmount.id]: { [firstClaimId]: '1200' }
-      })
-
-      expect(result.obligations[claim.id]).toEqual(outOfScope)
-      expect(result.obligations[claimType.id]).toEqual(outOfScope)
-      expect(result.obligations[claimAmount.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(claim.id)
-      expect(result.fulfilments).not.toHaveProperty(claimType.id)
-      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
-    })
-
-    it('hasClaims absent → anchor and both members out-of-scope; no keys in amended', () => {
-      const result = evaluator.evaluate({
-        [claim.id]: { [firstClaimId]: {} },
-        [claimType.id]: { [firstClaimId]: 'accident' },
-        [claimAmount.id]: { [firstClaimId]: '1200' }
-      })
-
-      expect(result.obligations[claim.id]).toEqual(outOfScope)
-      expect(result.obligations[claimType.id]).toEqual(outOfScope)
-      expect(result.obligations[claimAmount.id]).toEqual(outOfScope)
-      expect(result.fulfilments).not.toHaveProperty(claim.id)
-      expect(result.fulfilments).not.toHaveProperty(claimType.id)
-      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
-    })
-  })
-
-  describe('claim group — metadata', () => {
-    it('claim declares its members', () => {
-      expect(claim.members).toEqual([claimType, claimAmount])
-    })
-
-    it('claim members back-reference the group by name', () => {
-      expect(claimType.group).toBe('claim')
-      expect(claimAmount.group).toBe('claim')
-    })
-
-    it('groups export lists claim (the anchor obligation with members)', () => {
-      expect(groups).toContain(claim)
-    })
-  })
-
-  describe('reason-shape sanity', () => {
-    it('appliesWhen reason shape matches §J → { code, explanation }', () => {
+    it('in scope + mandatory + reason when hasVoluntaryExcess = true', () => {
       const result = evaluator.evaluate({ [hasVoluntaryExcess.id]: true })
-      const reasons = result.obligations[excessAmount.id].reasons
-
-      expect(reasons).toHaveLength(1)
-      expect(Object.keys(reasons[0]).sort()).toEqual(['code', 'explanation'])
+      expect(result.obligations[excessAmount.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        reasons: [excessAmountApplicableReason]
+      })
     })
 
-    it('mandatoryWhen reason shape matches §J → { code, explanation }', () => {
-      const result = evaluator.evaluate({ [licenseType.id]: 'other' })
-      const reasons = result.obligations[licenseCountryIssued.id].reasons
-
-      expect(reasons).toHaveLength(1)
-      expect(Object.keys(reasons[0]).sort()).toEqual(['code', 'explanation'])
+    it('purges stored value on scope exit', () => {
+      const result = evaluator.evaluate({
+        [hasVoluntaryExcess.id]: false,
+        [excessAmount.id]: '500'
+      })
+      expect(result.fulfilments).not.toHaveProperty(excessAmount.id)
     })
 
-    it('unconditional / non-triggered obligations do not emit reasons', () => {
+    it('preserves stored value while in scope', () => {
+      const result = evaluator.evaluate({
+        [hasVoluntaryExcess.id]: true,
+        [excessAmount.id]: '500'
+      })
+      expect(result.fulfilments[excessAmount.id]).toBe('500')
+    })
+  })
+
+  describe('appliesWhen — namedDriverName gated on hasNamedDriver', () => {
+    it('out of scope when hasNamedDriver is absent', () => {
       const result = evaluator.evaluate({})
+      expect(result.obligations[namedDriverName.id]).toEqual(outOfScope)
+    })
 
-      expect(result.obligations[fullName.id].reasons).toBeUndefined()
-      expect(result.obligations[dateOfBirth.id].reasons).toBeUndefined()
-      expect(result.obligations[hasVoluntaryExcess.id].reasons).toBeUndefined()
-      expect(result.obligations[hasNamedDriver.id].reasons).toBeUndefined()
-      expect(result.obligations[licenseType.id].reasons).toBeUndefined()
-      expect(result.obligations[hasClaims.id].reasons).toBeUndefined()
-      // Out-of-scope obligations have no reasons either.
-      expect(result.obligations[excessAmount.id].reasons).toBeUndefined()
-      expect(result.obligations[namedDriverName.id].reasons).toBeUndefined()
-      expect(result.obligations[claim.id].reasons).toBeUndefined()
-      expect(result.obligations[claimType.id].reasons).toBeUndefined()
-      expect(result.obligations[claimAmount.id].reasons).toBeUndefined()
-      // Optional (mandatoryWhen with condition false) has no reasons.
+    it('in scope + mandatory when hasNamedDriver = true', () => {
+      const result = evaluator.evaluate({ [hasNamedDriver.id]: true })
+      expect(result.obligations[namedDriverName.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        reasons: [namedDriverNameApplicableReason]
+      })
+    })
+
+    it('purges stored value on scope exit', () => {
+      const result = evaluator.evaluate({
+        [hasNamedDriver.id]: false,
+        [namedDriverName.id]: 'Sam'
+      })
+      expect(result.fulfilments).not.toHaveProperty(namedDriverName.id)
+    })
+  })
+
+  describe('appliesWhen — namedDriverRelationship optional-when-applicable', () => {
+    it('out of scope when hasNamedDriver is absent', () => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[namedDriverRelationship.id]).toEqual(outOfScope)
+    })
+
+    it('in scope + OPTIONAL when hasNamedDriver = true', () => {
+      const result = evaluator.evaluate({ [hasNamedDriver.id]: true })
+      expect(result.obligations[namedDriverRelationship.id]).toEqual({
+        inScope: true,
+        status: 'optional',
+        reasons: [namedDriverRelationshipApplicableReason]
+      })
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // Single-cardinality — mandatoryWhen (value retained across status flip)
+  // ---------------------------------------------------------------------------
+
+  describe('mandatoryWhen — licenseCountryIssued', () => {
+    it('optional when licenseType is not "other"', () => {
+      const result = evaluator.evaluate({ [licenseType.id]: 'uk' })
+      expect(result.obligations[licenseCountryIssued.id]).toEqual(optional)
       expect(
         result.obligations[licenseCountryIssued.id].reasons
       ).toBeUndefined()
     })
+
+    it('mandatory + reason when licenseType = "other"', () => {
+      const result = evaluator.evaluate({ [licenseType.id]: 'other' })
+      expect(result.obligations[licenseCountryIssued.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        reasons: [licenseCountryIssuedMandatoryReason]
+      })
+    })
+
+    it('retains value across mandatory → optional flip (no purge)', () => {
+      const result = evaluator.evaluate({
+        [licenseType.id]: 'uk',
+        [licenseCountryIssued.id]: 'France'
+      })
+      expect(result.fulfilments[licenseCountryIssued.id]).toBe('France')
+    })
   })
 
-  describe('nested indexing (drivers × address history)', () => {
-    const firstDriverId = '01H8XKAAA00000000000AA'
-    const secondDriverId = '01H8XKBBB00000000000BB'
-    const addr1a = '01H8XKAA111111111111AA'
-    const addr1b = '01H8XKAA222222222222BB'
-    const addr2a = '01H8XKBB111111111111AA'
+  // ---------------------------------------------------------------------------
+  // Single-cardinality — modifications (appliesWhen with array value)
+  // ---------------------------------------------------------------------------
 
-    const addressAtDowning = {
-      line1: '10 Downing St',
-      town: 'London',
-      postcode: 'SW1A 2AA',
-      country: 'United Kingdom',
-      from: '2020-01-01',
-      to: '2023-06-30'
-    }
-    const addressAtBaker = {
-      line1: '221B Baker St',
-      town: 'London',
-      postcode: 'NW1 6XE',
-      country: 'United Kingdom',
-      from: '2023-07-01',
-      to: null
-    }
-    const addressForSam = {
-      line1: '1 Somewhere Ln',
-      town: 'Bristol',
-      postcode: 'BS1 1AA',
-      country: 'United Kingdom',
-      from: '2020-05-01',
-      to: null
-    }
-
-    it('empty fulfilments → driver, driverFullName, driverAddress all in-scope with empty fulfilments arrays', () => {
+  describe('modifications gated on hasModifications', () => {
+    it('out of scope when hasModifications is absent', () => {
       const result = evaluator.evaluate({})
-
-      expect(result.obligations[driver.id]).toEqual({
-        inScope: true,
-        fulfilments: []
-      })
-      expect(result.obligations[driverFullName.id]).toEqual({
-        inScope: true,
-        fulfilments: []
-      })
-      expect(result.obligations[driverAddress.id]).toEqual({
-        inScope: true,
-        fulfilments: []
-      })
-      expect(result.fulfilments).not.toHaveProperty(driver.id)
-      expect(result.fulfilments).not.toHaveProperty(driverFullName.id)
-      expect(result.fulfilments).not.toHaveProperty(driverAddress.id)
+      expect(result.obligations[modifications.id]).toEqual(outOfScope)
     })
 
-    it('one driver, no other data → driver has one fulfilment; driverFullName has one blank slot; driverAddress has one entry with empty subFulfilments', () => {
+    it('in scope + mandatory + reason when hasModifications = true', () => {
+      const result = evaluator.evaluate({ [hasModifications.id]: true })
+      expect(result.obligations[modifications.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        reasons: [modificationsApplicableReason]
+      })
+    })
+
+    it('retains array value when in scope', () => {
       const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} }
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'alloys']
       })
-
-      expect(result.obligations[driver.id]).toEqual({
-        inScope: true,
-        fulfilments: [{ fulfilmentId: firstDriverId, status: 'mandatory' }]
-      })
-      expect(result.obligations[driverFullName.id]).toEqual({
-        inScope: true,
-        fulfilments: [{ fulfilmentId: firstDriverId, status: 'mandatory' }]
-      })
-      expect(result.obligations[driverAddress.id]).toEqual({
-        inScope: true,
-        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
-      })
-      // Only driver's presence marker is in storage.
-      expect(result.fulfilments[driver.id]).toEqual({ [firstDriverId]: {} })
-      expect(result.fulfilments).not.toHaveProperty(driverFullName.id)
-      expect(result.fulfilments).not.toHaveProperty(driverAddress.id)
+      expect(result.fulfilments[modifications.id]).toEqual(['turbo', 'alloys'])
     })
 
-    it('driver + fullName only → fullName value retained; driverAddress still empty subFulfilments', () => {
+    it('purges array on scope exit', () => {
       const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverFullName.id]: { [firstDriverId]: 'Alex Passenger' }
+        [hasModifications.id]: false,
+        [modifications.id]: ['turbo']
       })
-
-      expect(result.fulfilments[driverFullName.id]).toEqual({
-        [firstDriverId]: 'Alex Passenger'
-      })
-      expect(result.obligations[driverAddress.id]).toEqual({
-        inScope: true,
-        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
-      })
-    })
-
-    it('driver + one address → driverAddress has one sub-fulfilment; address value retained', () => {
-      const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverAddress.id]: {
-          [firstDriverId]: { [addr1a]: addressAtDowning }
-        }
-      })
-
-      expect(result.obligations[driverAddress.id]).toEqual({
-        inScope: true,
-        fulfilments: [
-          {
-            fulfilmentId: firstDriverId,
-            subFulfilments: [{ fulfilmentId: addr1a, status: 'mandatory' }]
-          }
-        ]
-      })
-      expect(result.fulfilments[driverAddress.id]).toEqual({
-        [firstDriverId]: { [addr1a]: addressAtDowning }
-      })
-    })
-
-    it('driver + two addresses → both addresses in sub-fulfilments; both values retained', () => {
-      const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverAddress.id]: {
-          [firstDriverId]: {
-            [addr1a]: addressAtDowning,
-            [addr1b]: addressAtBaker
-          }
-        }
-      })
-
-      expect(result.obligations[driverAddress.id]).toEqual({
-        inScope: true,
-        fulfilments: [
-          {
-            fulfilmentId: firstDriverId,
-            subFulfilments: [
-              { fulfilmentId: addr1a, status: 'mandatory' },
-              { fulfilmentId: addr1b, status: 'mandatory' }
-            ]
-          }
-        ]
-      })
-      expect(result.fulfilments[driverAddress.id]).toEqual({
-        [firstDriverId]: {
-          [addr1a]: addressAtDowning,
-          [addr1b]: addressAtBaker
-        }
-      })
-    })
-
-    it('two drivers with mixed data → each driver’s data preserved independently', () => {
-      const result = evaluator.evaluate({
-        [driver.id]: {
-          [firstDriverId]: {},
-          [secondDriverId]: {}
-        },
-        [driverFullName.id]: {
-          [firstDriverId]: 'Alex Passenger',
-          [secondDriverId]: 'Sam Passenger'
-        },
-        [driverAddress.id]: {
-          [firstDriverId]: {
-            [addr1a]: addressAtDowning,
-            [addr1b]: addressAtBaker
-          },
-          [secondDriverId]: {
-            [addr2a]: addressForSam
-          }
-        }
-      })
-
-      expect(result.obligations[driverAddress.id]).toEqual({
-        inScope: true,
-        fulfilments: [
-          {
-            fulfilmentId: firstDriverId,
-            subFulfilments: [
-              { fulfilmentId: addr1a, status: 'mandatory' },
-              { fulfilmentId: addr1b, status: 'mandatory' }
-            ]
-          },
-          {
-            fulfilmentId: secondDriverId,
-            subFulfilments: [{ fulfilmentId: addr2a, status: 'mandatory' }]
-          }
-        ]
-      })
-      expect(result.fulfilments[driverFullName.id]).toEqual({
-        [firstDriverId]: 'Alex Passenger',
-        [secondDriverId]: 'Sam Passenger'
-      })
-    })
-
-    it('remove one address (stale inner key) → nested purge drops the stale address; other addresses under the same driver retained', () => {
-      // User removed addr1b from firstDriver's address list. The stored
-      // driverAddress map still has addr1b under firstDriver until the
-      // evaluator purges it.
-      const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverAddress.id]: {
-          [firstDriverId]: {
-            [addr1a]: addressAtDowning
-            // addr1b intentionally omitted — represents the "after user removed" state.
-            // But we're testing the case where storage still has the stale key.
-          }
-        }
-      })
-
-      expect(result.fulfilments[driverAddress.id]).toEqual({
-        [firstDriverId]: { [addr1a]: addressAtDowning }
-      })
-
-      // Now the stale-key scenario: storage still has addr1b, but the
-      // user's action effectively removed it. Under our stateless
-      // evaluator, "the user removed it" translates to "the applyTo
-      // reports the current state without it". The applyTo reads
-      // stored fulfilments to know which addresses exist, so this
-      // stale-key case can only be constructed if state was manually
-      // manipulated. Simulate that:
-      const staleResult = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverAddress.id]: {
-          [firstDriverId]: {
-            [addr1a]: addressAtDowning,
-            [addr1b]: addressAtBaker // "stale" — imagine user had removed this but state is inconsistent
-          }
-        }
-      })
-      // Since applyTo reports both addresses (it reads all stored keys),
-      // neither is purged. This test documents that user-driven inner
-      // level obligations don't self-purge — the orchestrator controls
-      // add/remove.
-      expect(staleResult.fulfilments[driverAddress.id]).toEqual({
-        [firstDriverId]: {
-          [addr1a]: addressAtDowning,
-          [addr1b]: addressAtBaker
-        }
-      })
-    })
-
-    it('remove driver (stale outer key) → outer purge drops the driver from driverFullName and driverAddress via the derived-lifecycle rule', () => {
-      // driver's collection has only firstDriver; but driverFullName and
-      // driverAddress still have stale entries for secondDriver.
-      const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverFullName.id]: {
-          [firstDriverId]: 'Alex Passenger',
-          [secondDriverId]: 'Stale Sam' // stale — no matching driver
-        },
-        [driverAddress.id]: {
-          [firstDriverId]: { [addr1a]: addressAtDowning },
-          [secondDriverId]: { [addr2a]: addressForSam } // stale
-        }
-      })
-
-      // Rule 2 (outer purge) drops the stale secondDriver from both
-      // derived obligations because driverFullName and driverAddress's
-      // applyTo only lists firstDriver.
-      expect(result.fulfilments[driverFullName.id]).toEqual({
-        [firstDriverId]: 'Alex Passenger'
-      })
-      expect(result.fulfilments[driverAddress.id]).toEqual({
-        [firstDriverId]: { [addr1a]: addressAtDowning }
-      })
-    })
-
-    it('values preserved verbatim under all keys — deep-equal on amended for a two-driver, multi-address case', () => {
-      const fulfilments = {
-        [driver.id]: {
-          [firstDriverId]: {},
-          [secondDriverId]: {}
-        },
-        [driverFullName.id]: {
-          [firstDriverId]: 'Alex Passenger',
-          [secondDriverId]: 'Sam Passenger'
-        },
-        [driverAddress.id]: {
-          [firstDriverId]: {
-            [addr1a]: addressAtDowning,
-            [addr1b]: addressAtBaker
-          },
-          [secondDriverId]: {
-            [addr2a]: addressForSam
-          }
-        }
-      }
-
-      const result = evaluator.evaluate(fulfilments)
-
-      expect(result.fulfilments[driver.id]).toEqual(fulfilments[driver.id])
-      expect(result.fulfilments[driverFullName.id]).toEqual(
-        fulfilments[driverFullName.id]
-      )
-      expect(result.fulfilments[driverAddress.id]).toEqual(
-        fulfilments[driverAddress.id]
-      )
+      expect(result.fulfilments).not.toHaveProperty(modifications.id)
     })
   })
 
-  describe('depth-2 nested indexing (drivers × claims × other parties)', () => {
-    const firstDriverId = '01H8XKAAA00000000000AA'
-    const secondDriverId = '01H8XKBBB00000000000BB'
-    const claim1a = '01H8XKAA555555555555EE'
-    const claim1b = '01H8XKAA666666666666FF'
-    const claim2a = '01H8XKBB555555555555EE'
-    const partyA = '01H8XKAA777777777777GG'
-    const partyB = '01H8XKAA888888888888HH'
-    const partyC = '01H8XKBB777777777777GG'
+  // ---------------------------------------------------------------------------
+  // Derived indexed leaf — modificationCost (ids from `modifications`)
+  // ---------------------------------------------------------------------------
 
-    const partyDetailsA = { name: 'Other Party A', role: 'other-driver' }
-    const partyDetailsB = { name: 'Other Party B', role: 'passenger' }
-    const partyDetailsC = { name: 'Third-party', role: 'pedestrian' }
+  describe('modificationCost — derived indexed leaf', () => {
+    it('out of scope when hasModifications is absent', () => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[modificationCost.id]).toEqual(outOfScope)
+    })
 
-    it('one driver, no claims → driverClaim + driverClaimOtherParty each have one entry with empty subFulfilments', () => {
+    it('empty fulfilments when in scope but modifications is empty', () => {
       const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} }
+        [hasModifications.id]: true,
+        [modifications.id]: []
       })
-
-      expect(result.obligations[driverClaim.id]).toEqual({
+      expect(result.obligations[modificationCost.id]).toEqual({
         inScope: true,
-        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
+        reasons: [modificationCostApplicableReason],
+        fulfilments: []
       })
-      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
-        inScope: true,
-        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
-      })
-      expect(result.fulfilments).not.toHaveProperty(driverClaim.id)
-      expect(result.fulfilments).not.toHaveProperty(driverClaimOtherParty.id)
     })
 
-    it('one driver + one claim + no parties → driverClaimOtherParty entry has sub-fulfilment with empty inner subFulfilments', () => {
+    it('lists one fulfilment per selected modification', () => {
       const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } }
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'alloys']
       })
-
-      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
-        inScope: true,
-        fulfilments: [
-          {
-            fulfilmentId: firstDriverId,
-            subFulfilments: [{ fulfilmentId: claim1a, subFulfilments: [] }]
-          }
-        ]
-      })
+      expect(
+        sortedIds(result.obligations[modificationCost.id].fulfilments)
+      ).toEqual(['alloys', 'turbo'])
     })
 
-    it('one driver + one claim + two parties → three-level FulfilmentState populated; party values retained verbatim', () => {
+    it('purges stored cost for an id no longer in modifications', () => {
       const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: {
-            [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
-          }
-        }
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo'],
+        [modificationCost.id]: { turbo: '800', alloys: '200' }
       })
-
-      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
-        inScope: true,
-        fulfilments: [
-          {
-            fulfilmentId: firstDriverId,
-            subFulfilments: [
-              {
-                fulfilmentId: claim1a,
-                subFulfilments: [
-                  { fulfilmentId: partyA, status: 'mandatory' },
-                  { fulfilmentId: partyB, status: 'mandatory' }
-                ]
-              }
-            ]
-          }
-        ]
-      })
-      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual({
-        [firstDriverId]: {
-          [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
-        }
-      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
     })
 
-    it('two drivers with mixed claim/party counts → per-driver independence preserved at every level', () => {
+    it('drops all storage when hasModifications flips out', () => {
       const result = evaluator.evaluate({
-        [driver.id]: {
-          [firstDriverId]: {},
-          [secondDriverId]: {}
-        },
-        [driverClaim.id]: {
-          [firstDriverId]: { [claim1a]: {}, [claim1b]: {} },
-          [secondDriverId]: { [claim2a]: {} }
-        },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: {
-            [claim1a]: { [partyA]: partyDetailsA },
-            [claim1b]: { [partyB]: partyDetailsB }
-          },
-          [secondDriverId]: {
-            [claim2a]: { [partyC]: partyDetailsC }
-          }
-        }
+        [hasModifications.id]: false,
+        [modificationCost.id]: { turbo: '800' }
       })
-
-      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
-        inScope: true,
-        fulfilments: [
-          {
-            fulfilmentId: firstDriverId,
-            subFulfilments: [
-              {
-                fulfilmentId: claim1a,
-                subFulfilments: [{ fulfilmentId: partyA, status: 'mandatory' }]
-              },
-              {
-                fulfilmentId: claim1b,
-                subFulfilments: [{ fulfilmentId: partyB, status: 'mandatory' }]
-              }
-            ]
-          },
-          {
-            fulfilmentId: secondDriverId,
-            subFulfilments: [
-              {
-                fulfilmentId: claim2a,
-                subFulfilments: [{ fulfilmentId: partyC, status: 'mandatory' }]
-              }
-            ]
-          }
-        ]
-      })
-    })
-
-    it('remove one party (stale innermost key) → inner-inner purge drops it; sibling parties retained', () => {
-      // Storage has partyA + partyB under (firstDriver, claim1a); user
-      // has removed partyB. Because partyB is user-driven at the inner
-      // level, applyTo reads storage — so simulating "removed" means the
-      // stored map already lacks partyB. Constructing a genuinely stale
-      // inner-inner key requires manual manipulation:
-      const staleResult = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: {
-            [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
-          }
-        }
-      })
-      // User-driven innermost level: applyTo reports every stored party,
-      // so nothing is stale from its own perspective — both retained.
-      expect(staleResult.fulfilments[driverClaimOtherParty.id]).toEqual({
-        [firstDriverId]: {
-          [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
-        }
-      })
-    })
-
-    it('remove one claim (stale mid-level key) → mid-level purge cascades: claim gone from driverClaim; parties under it purged from driverClaimOtherParty', () => {
-      // driverClaim's collection under firstDriver has only claim1a; but
-      // driverClaimOtherParty's stored map still has parties under a
-      // stale claim1b.
-      const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: {
-            [claim1a]: { [partyA]: partyDetailsA },
-            [claim1b]: { [partyB]: partyDetailsB } // stale — no matching claim
-          }
-        }
-      })
-
-      // The mid-level derived rule (via recursive purgeLevel) drops the
-      // stale claim1b from driverClaimOtherParty because
-      // driverClaimOtherParty's applyTo only reports subFulfilments for
-      // claims that exist in driverClaim's collection.
-      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual({
-        [firstDriverId]: {
-          [claim1a]: { [partyA]: partyDetailsA }
-        }
-      })
-    })
-
-    it('remove one driver (stale outer key) → outer purge cascades everything: driverClaim and driverClaimOtherParty under that driver gone', () => {
-      // driver's collection has only firstDriver; but driverClaim and
-      // driverClaimOtherParty still have stale entries under secondDriver.
-      const result = evaluator.evaluate({
-        [driver.id]: { [firstDriverId]: {} },
-        [driverClaim.id]: {
-          [firstDriverId]: { [claim1a]: {} },
-          [secondDriverId]: { [claim2a]: {} } // stale
-        },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: { [claim1a]: { [partyA]: partyDetailsA } },
-          [secondDriverId]: { [claim2a]: { [partyC]: partyDetailsC } } // stale
-        }
-      })
-
-      expect(result.fulfilments[driverClaim.id]).toEqual({
-        [firstDriverId]: { [claim1a]: {} }
-      })
-      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual({
-        [firstDriverId]: { [claim1a]: { [partyA]: partyDetailsA } }
-      })
-    })
-
-    it('values preserved verbatim under every key — deep-equal on amended for a full two-driver × multi-claim × multi-party case', () => {
-      const fulfilments = {
-        [driver.id]: {
-          [firstDriverId]: {},
-          [secondDriverId]: {}
-        },
-        [driverClaim.id]: {
-          [firstDriverId]: { [claim1a]: {}, [claim1b]: {} },
-          [secondDriverId]: { [claim2a]: {} }
-        },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: {
-            [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB },
-            [claim1b]: { [partyC]: partyDetailsC }
-          },
-          [secondDriverId]: {
-            [claim2a]: { [partyA]: partyDetailsA }
-          }
-        }
-      }
-
-      const result = evaluator.evaluate(fulfilments)
-
-      expect(result.fulfilments[driver.id]).toEqual(fulfilments[driver.id])
-      expect(result.fulfilments[driverClaim.id]).toEqual(
-        fulfilments[driverClaim.id]
-      )
-      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual(
-        fulfilments[driverClaimOtherParty.id]
-      )
+      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
     })
   })
 
-  describe('driver group — metadata', () => {
-    it('driver declares its members (any-depth mix)', () => {
-      expect(driver.members).toEqual([
-        driverFullName,
-        driverAddress,
-        driverClaim,
-        driverClaimOtherParty
+  // ---------------------------------------------------------------------------
+  // Claim group + field records
+  // ---------------------------------------------------------------------------
+
+  describe('claim group + claimType / claimAmount field records', () => {
+    it('out of scope when hasClaims is absent', () => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[claim.id]).toEqual(outOfScope)
+      expect(result.obligations[claimType.id]).toEqual(outOfScope)
+      expect(result.obligations[claimAmount.id]).toEqual(outOfScope)
+    })
+
+    it('empty fulfilments when hasClaims=true but no claims yet', () => {
+      const result = evaluator.evaluate({ [hasClaims.id]: true })
+      expect(result.obligations[claim.id]).toEqual({
+        inScope: true,
+        reasons: [claimApplicableReason],
+        fulfilments: []
+      })
+      expect(result.obligations[claimType.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+      expect(result.obligations[claimAmount.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+    })
+
+    it('field records inherit claim instance ids from either descendant', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident' }
+      })
+      expect(sortedIds(result.obligations[claim.id].fulfilments)).toEqual([
+        'c1'
+      ])
+      // Both field records list c1 (from the group's inferred instance set)
+      expect(result.obligations[claimType.id].fulfilments).toEqual([
+        { fulfilmentId: 'c1', status: 'mandatory' }
+      ])
+      expect(result.obligations[claimAmount.id].fulfilments).toEqual([
+        { fulfilmentId: 'c1', status: 'mandatory' }
       ])
     })
 
-    it('driver members back-reference the group by name', () => {
-      expect(driverFullName.group).toBe('driver')
-      expect(driverAddress.group).toBe('driver')
-      expect(driverClaim.group).toBe('driver')
-      expect(driverClaimOtherParty.group).toBe('driver')
+    it('field records emit no reasons of their own', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident' }
+      })
+      expect(result.obligations[claimType.id].reasons).toBeUndefined()
+      expect(result.obligations[claimAmount.id].reasons).toBeUndefined()
     })
 
-    it('groups export lists driver (the anchor obligation with members)', () => {
-      expect(groups).toContain(driver)
+    it('scope-exit purges the group and its field-record storage', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: false,
+        [claimType.id]: { c1: 'accident' },
+        [claimAmount.id]: { c1: '1200' }
+      })
+      expect(result.fulfilments).not.toHaveProperty(claimType.id)
+      expect(result.fulfilments).not.toHaveProperty(claimAmount.id)
+      expect(result.obligations[claim.id]).toEqual(outOfScope)
+      expect(result.obligations[claimType.id]).toEqual(outOfScope)
     })
   })
 
-  describe('full journey scenario', () => {
-    it('all obligations fulfilled with all conditions triggering → holistic state check', () => {
-      const firstClaimId = '01H8XK7M5RW6QYJ2AB'
-      const secondClaimId = '01H8XK9P3T8WBZN4DE'
-      const firstDriverId = '01H8XKAAA00000000000AA'
-      const secondDriverId = '01H8XKBBB00000000000BB'
-      const addr1a = '01H8XKAA111111111111AA'
-      const addr2a = '01H8XKBB111111111111AA'
-      // First driver has one claim; that claim has one other party.
-      const driverClaimId = '01H8XKAA333333333333CC'
-      const partyId = '01H8XKAA444444444444DD'
-      const partyDetails = { name: 'Other Party', role: 'other-driver' }
-      const addressA = {
-        line1: '10 Downing St',
-        town: 'London',
-        postcode: 'SW1A 2AA',
-        country: 'United Kingdom',
-        from: '2020-01-01',
-        to: null
-      }
-      const addressB = {
-        line1: '1 Somewhere Ln',
-        town: 'Bristol',
-        postcode: 'BS1 1AA',
-        country: 'United Kingdom',
-        from: '2020-05-01',
-        to: null
-      }
+  // ---------------------------------------------------------------------------
+  // Driver group + driverFullName field + driverAddress indexed leaf
+  // ---------------------------------------------------------------------------
 
-      const fulfilments = {
-        [fullName.id]: 'Alex Driver',
-        [preferredName.id]: 'Alex',
-        [dateOfBirth.id]: '1985-03-27',
-        [hasVoluntaryExcess.id]: true,
-        [excessAmount.id]: '250.50',
-        [hasNamedDriver.id]: true,
-        [namedDriverName.id]: 'Sam Passenger',
-        [namedDriverRelationship.id]: 'spouse',
-        [licenseType.id]: 'other',
-        [licenseCountryIssued.id]: 'Germany',
+  describe('driver group (unconditional) + driverFullName + driverAddress', () => {
+    it('driver group is always in scope and lists driver instance ids', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex', d2: 'Sam' }
+      })
+      expect(sortedIds(result.obligations[driver.id].fulfilments)).toEqual([
+        'd1',
+        'd2'
+      ])
+      // group instance entries have no per-instance status
+      for (const entry of result.obligations[driver.id].fulfilments) {
+        expect(entry.status).toBeUndefined()
+      }
+    })
+
+    it('driverFullName field record lists parent group instances with own status', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' }
+      })
+      expect(result.obligations[driverFullName.id].fulfilments).toEqual([
+        { fulfilmentId: 'd1', status: 'mandatory' }
+      ])
+    })
+
+    it('driverAddress indexed leaf lists composite-keyed instances with own status', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverAddress.id]: { 'd1/a1': { line1: '10 High St' } }
+      })
+      expect(result.obligations[driverAddress.id].fulfilments).toEqual([
+        { fulfilmentId: 'd1/a1', status: 'mandatory' }
+      ])
+    })
+
+    it('driverFullName lists ALL drivers even if one has no name yet', () => {
+      const result = evaluator.evaluate({
+        // d2 has an address but no name yet
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverAddress.id]: { 'd2/a1': { line1: '20 Broad St' } }
+      })
+      expect(
+        sortedIds(result.obligations[driverFullName.id].fulfilments)
+      ).toEqual(['d1', 'd2'])
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // Nested group — driverClaim + driverClaimOtherParty
+  // ---------------------------------------------------------------------------
+
+  describe('nested group: driverClaim + driverClaimOtherParty', () => {
+    it('empty when there are no drivers', () => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[driverClaim.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
+        inScope: true,
+        fulfilments: []
+      })
+    })
+
+    it('driverClaim ids include the (driver, claim) prefix from other-party leaves', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverClaimOtherParty.id]: {
+          'd1/c1/p1': { name: 'Other', role: 'other-driver' }
+        }
+      })
+      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
+        ['d1/c1']
+      )
+      expect(result.obligations[driverClaimOtherParty.id].fulfilments).toEqual([
+        { fulfilmentId: 'd1/c1/p1', status: 'mandatory' }
+      ])
+    })
+
+    it('multiple parties in the same claim collapse to one driverClaim instance', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverClaimOtherParty.id]: {
+          'd1/c1/p1': { name: 'Party 1' },
+          'd1/c1/p2': { name: 'Party 2' }
+        }
+      })
+      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
+        ['d1/c1']
+      )
+      expect(
+        sortedIds(result.obligations[driverClaimOtherParty.id].fulfilments)
+      ).toEqual(['d1/c1/p1', 'd1/c1/p2'])
+    })
+
+    it('two claims for one driver, and a driver with no claims', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex', d2: 'Sam' },
+        [driverClaimOtherParty.id]: {
+          'd1/c1/p1': {},
+          'd1/c2/p2': {}
+        }
+      })
+      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
+        ['d1/c1', 'd1/c2']
+      )
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // groups export
+  // ---------------------------------------------------------------------------
+
+  describe('groups export', () => {
+    it('includes each obligation with at least one child via `within`', () => {
+      expect(groups).toContain(claim)
+      expect(groups).toContain(driver)
+      expect(groups).toContain(driverClaim)
+    })
+
+    it('excludes non-groups (single-cardinality, field records, indexed leaves)', () => {
+      expect(groups).not.toContain(fullName)
+      expect(groups).not.toContain(claimType) // field record
+      expect(groups).not.toContain(driverAddress) // indexed leaf
+      expect(groups).not.toContain(modificationCost) // derived indexed leaf
+    })
+  })
+})
+
+// ============================================================================
+// FULFILMENT_SHAPES.md — one test per documented state
+// ============================================================================
+
+describe('FULFILMENT_SHAPES.md scenarios', () => {
+  describe('A. Single-cardinality progression (hasClaims + claim group)', () => {
+    it('A0 — nothing answered', () => {
+      const result = evaluator.evaluate({})
+      expect(result.fulfilments).toEqual({})
+    })
+
+    it('A1 — hasClaims = false', () => {
+      const result = evaluator.evaluate({ [hasClaims.id]: false })
+      expect(result.fulfilments).toEqual({ [hasClaims.id]: false })
+      expect(result.obligations[claim.id]).toEqual(outOfScope)
+    })
+
+    it('A2 — hasClaims = true; no claim instances yet', () => {
+      const result = evaluator.evaluate({ [hasClaims.id]: true })
+      expect(result.fulfilments).toEqual({ [hasClaims.id]: true })
+      expect(result.obligations[claim.id]).toEqual({
+        inScope: true,
+        reasons: [claimApplicableReason],
+        fulfilments: []
+      })
+    })
+
+    it('A3 — user adds claim c1, answers its type', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident' }
+      })
+      expect(result.fulfilments).toEqual({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident' }
+      })
+      expect(result.obligations[claim.id].fulfilments).toEqual([
+        { fulfilmentId: 'c1' }
+      ])
+      expect(result.obligations[claimType.id].fulfilments).toEqual([
+        { fulfilmentId: 'c1', status: 'mandatory' }
+      ])
+    })
+
+    it('A4 — user answers amount too', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident' },
+        [claimAmount.id]: { c1: '1200' }
+      })
+      expect(result.fulfilments).toEqual({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident' },
+        [claimAmount.id]: { c1: '1200' }
+      })
+      expect(result.obligations[claim.id].fulfilments).toEqual([
+        { fulfilmentId: 'c1' }
+      ])
+    })
+
+    it('A5 — user adds a second claim c2', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: true,
+        [claimType.id]: { c1: 'accident', c2: 'theft' },
+        [claimAmount.id]: { c1: '1200', c2: '500' }
+      })
+      expect(sortedIds(result.obligations[claim.id].fulfilments)).toEqual([
+        'c1',
+        'c2'
+      ])
+    })
+  })
+
+  describe('B. Depth-1 indexed leaf (driver → driverAddress)', () => {
+    it('B1 — driver d1 with name', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' }
+      })
+      expect(result.fulfilments).toEqual({
+        [driverFullName.id]: { d1: 'Alex' }
+      })
+      expect(sortedIds(result.obligations[driver.id].fulfilments)).toEqual([
+        'd1'
+      ])
+      expect(result.obligations[driverAddress.id].fulfilments).toEqual([])
+    })
+
+    it('B2 — d1 with one address', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverAddress.id]: { 'd1/a1': { line1: '10 High St' } }
+      })
+      expect(result.obligations[driverAddress.id].fulfilments).toEqual([
+        { fulfilmentId: 'd1/a1', status: 'mandatory' }
+      ])
+    })
+
+    it('B3 — d1 with two addresses', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverAddress.id]: {
+          'd1/a1': { line1: '10 High St' },
+          'd1/a2': { line1: '20 Broad St' }
+        }
+      })
+      expect(
+        sortedIds(result.obligations[driverAddress.id].fulfilments)
+      ).toEqual(['d1/a1', 'd1/a2'])
+    })
+
+    it('B4 — second driver d2, name only; d1 keeps addresses', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex', d2: 'Sam' },
+        [driverAddress.id]: {
+          'd1/a1': { line1: '10 High St' },
+          'd1/a2': { line1: '20 Broad St' }
+        }
+      })
+      expect(sortedIds(result.obligations[driver.id].fulfilments)).toEqual([
+        'd1',
+        'd2'
+      ])
+      expect(
+        sortedIds(result.obligations[driverFullName.id].fulfilments)
+      ).toEqual(['d1', 'd2'])
+      // driverAddress only lists d1's addresses; d2 has none
+      expect(
+        sortedIds(result.obligations[driverAddress.id].fulfilments)
+      ).toEqual(['d1/a1', 'd1/a2'])
+    })
+  })
+
+  describe('C. Depth-2 chain (driver → driverClaim → driverClaimOtherParty)', () => {
+    it('C1 — driver d1, name only; no claims', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' }
+      })
+      expect(result.obligations[driverClaim.id].fulfilments).toEqual([])
+      expect(result.obligations[driverClaimOtherParty.id].fulfilments).toEqual(
+        []
+      )
+    })
+
+    it('C2 — user adds a claim, answers first party p1', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverClaimOtherParty.id]: {
+          'd1/c1/p1': { name: 'Other Driver', role: 'other-driver' }
+        }
+      })
+      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
+        ['d1/c1']
+      )
+      expect(result.obligations[driverClaimOtherParty.id].fulfilments).toEqual([
+        { fulfilmentId: 'd1/c1/p1', status: 'mandatory' }
+      ])
+    })
+
+    it('C3 — second party in the same claim', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverClaimOtherParty.id]: {
+          'd1/c1/p1': {},
+          'd1/c1/p2': {}
+        }
+      })
+      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
+        ['d1/c1']
+      )
+      expect(
+        sortedIds(result.obligations[driverClaimOtherParty.id].fulfilments)
+      ).toEqual(['d1/c1/p1', 'd1/c1/p2'])
+    })
+
+    it('C4 — second claim c2 with one party', () => {
+      const result = evaluator.evaluate({
+        [driverFullName.id]: { d1: 'Alex' },
+        [driverClaimOtherParty.id]: {
+          'd1/c1/p1': {},
+          'd1/c1/p2': {},
+          'd1/c2/p3': {}
+        }
+      })
+      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
+        ['d1/c1', 'd1/c2']
+      )
+    })
+  })
+
+  describe('D. Purge on gate flip (hasClaims → false)', () => {
+    it('flipping hasClaims to false drops every key visiting `claim`', () => {
+      const result = evaluator.evaluate({
+        [hasClaims.id]: false,
+        [claimType.id]: { c1: 'accident', c2: 'theft' },
+        [claimAmount.id]: { c1: '1200', c2: '500' }
+      })
+      expect(result.fulfilments).toEqual({ [hasClaims.id]: false })
+    })
+
+    it('re-enabling hasClaims after a purge shows an empty claim group (no rehydration)', () => {
+      const result = evaluator.evaluate({ [hasClaims.id]: true })
+      expect(result.obligations[claim.id].fulfilments).toEqual([])
+    })
+  })
+
+  describe('E. Derived indexed leaf (modificationCost)', () => {
+    it('E1 — hasModifications=true, mods=[turbo, alloys]; no cost fulfilments yet', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'alloys']
+      })
+      expect(
+        sortedIds(result.obligations[modificationCost.id].fulfilments)
+      ).toEqual(['alloys', 'turbo'])
+      expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
+    })
+
+    it('E2 — user answers cost for turbo', () => {
+      const result = evaluator.evaluate({
         [hasModifications.id]: true,
         [modifications.id]: ['turbo', 'alloys'],
-        [modificationCost.id]: { turbo: '800', alloys: '200' },
-        [hasClaims.id]: true,
-        [claim.id]: {
-          [firstClaimId]: {},
-          [secondClaimId]: {}
-        },
-        [claimType.id]: {
-          [firstClaimId]: 'accident',
-          [secondClaimId]: 'theft'
-        },
-        [claimAmount.id]: {
-          [firstClaimId]: '1200',
-          [secondClaimId]: '500'
-        },
-        [driver.id]: {
-          [firstDriverId]: {},
-          [secondDriverId]: {}
-        },
-        [driverFullName.id]: {
-          [firstDriverId]: 'Alex Passenger',
-          [secondDriverId]: 'Sam Passenger'
-        },
-        [driverAddress.id]: {
-          [firstDriverId]: { [addr1a]: addressA },
-          [secondDriverId]: { [addr2a]: addressB }
-        },
-        [driverClaim.id]: {
-          [firstDriverId]: { [driverClaimId]: {} }
-        },
-        [driverClaimOtherParty.id]: {
-          [firstDriverId]: { [driverClaimId]: { [partyId]: partyDetails } }
-        }
-      }
+        [modificationCost.id]: { turbo: '800' }
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
+    })
 
-      const result = evaluator.evaluate(fulfilments)
+    it('E3 — user removes alloys, adds suspension; nothing to purge', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'suspension'],
+        [modificationCost.id]: { turbo: '800' }
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
+      expect(
+        sortedIds(result.obligations[modificationCost.id].fulfilments)
+      ).toEqual(['suspension', 'turbo'])
+    })
 
-      expect(result.fulfilments).toEqual(fulfilments)
-      expect(result.obligations).toEqual({
-        [fullName.id]: mandatory,
-        [preferredName.id]: optional,
-        [dateOfBirth.id]: mandatory,
-        [hasVoluntaryExcess.id]: mandatory,
-        [excessAmount.id]: excessAmountApplicable,
-        [hasNamedDriver.id]: mandatory,
-        [namedDriverName.id]: namedDriverNameApplicable,
-        [namedDriverRelationship.id]: namedDriverRelationshipApplicable,
-        [licenseType.id]: mandatory,
-        [licenseCountryIssued.id]: licenseCountryIssuedMandatory,
-        [hasModifications.id]: mandatory,
-        [modifications.id]: modificationsApplicable,
-        [modificationCost.id]: {
-          inScope: true,
-          reasons: [modificationCostApplicableReason],
-          fulfilments: [
-            { fulfilmentId: 'turbo', status: 'mandatory' },
-            { fulfilmentId: 'alloys', status: 'mandatory' }
-          ]
-        },
-        [hasClaims.id]: mandatory,
-        [claim.id]: {
-          inScope: true,
-          reasons: [
-            {
-              code: 'obligation.claim.applicable.becauseHasClaims',
-              explanation: 'claim applies when hasClaims is true'
-            }
-          ],
-          fulfilments: [
-            { fulfilmentId: firstClaimId, status: 'mandatory' },
-            { fulfilmentId: secondClaimId, status: 'mandatory' }
-          ]
-        },
-        [claimType.id]: {
-          inScope: true,
-          fulfilments: [
-            { fulfilmentId: firstClaimId, status: 'mandatory' },
-            { fulfilmentId: secondClaimId, status: 'mandatory' }
-          ]
-        },
-        [claimAmount.id]: {
-          inScope: true,
-          fulfilments: [
-            { fulfilmentId: firstClaimId, status: 'mandatory' },
-            { fulfilmentId: secondClaimId, status: 'mandatory' }
-          ]
-        },
-        [driver.id]: {
-          inScope: true,
-          fulfilments: [
-            { fulfilmentId: firstDriverId, status: 'mandatory' },
-            { fulfilmentId: secondDriverId, status: 'mandatory' }
-          ]
-        },
-        [driverFullName.id]: {
-          inScope: true,
-          fulfilments: [
-            { fulfilmentId: firstDriverId, status: 'mandatory' },
-            { fulfilmentId: secondDriverId, status: 'mandatory' }
-          ]
-        },
-        [driverAddress.id]: {
-          inScope: true,
-          fulfilments: [
-            {
-              fulfilmentId: firstDriverId,
-              subFulfilments: [{ fulfilmentId: addr1a, status: 'mandatory' }]
-            },
-            {
-              fulfilmentId: secondDriverId,
-              subFulfilments: [{ fulfilmentId: addr2a, status: 'mandatory' }]
-            }
-          ]
-        },
-        [driverClaim.id]: {
-          inScope: true,
-          fulfilments: [
-            {
-              fulfilmentId: firstDriverId,
-              subFulfilments: [
-                { fulfilmentId: driverClaimId, status: 'mandatory' }
-              ]
-            },
-            { fulfilmentId: secondDriverId, subFulfilments: [] }
-          ]
-        },
-        [driverClaimOtherParty.id]: {
-          inScope: true,
-          fulfilments: [
-            {
-              fulfilmentId: firstDriverId,
-              subFulfilments: [
-                {
-                  fulfilmentId: driverClaimId,
-                  subFulfilments: [
-                    { fulfilmentId: partyId, status: 'mandatory' }
-                  ]
-                }
-              ]
-            },
-            { fulfilmentId: secondDriverId, subFulfilments: [] }
-          ]
-        }
+    it('E4 — user answers cost for suspension', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['turbo', 'suspension'],
+        [modificationCost.id]: { turbo: '800', suspension: '600' }
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({
+        turbo: '800',
+        suspension: '600'
+      })
+    })
+
+    it('E5 — user removes turbo; stale cost is purged', () => {
+      const result = evaluator.evaluate({
+        [hasModifications.id]: true,
+        [modifications.id]: ['suspension'],
+        [modificationCost.id]: { turbo: '800', suspension: '600' }
+      })
+      expect(result.fulfilments[modificationCost.id]).toEqual({
+        suspension: '600'
       })
     })
   })

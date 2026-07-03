@@ -3,202 +3,270 @@ import { obligations as defaultObligations } from './obligations.js'
 /**
  * ObligationEvaluator.
  *
- * Pure sync evaluator per §The ObligationEvaluator in
- * prototypes/model-spikes/obligations.md. Constructed once per Service with
- * the Obligations model; each `evaluate(fulfilments)` call is pure. Other
- * injectable dependencies (config, now, randomSeed, logger, …) can be added
- * to the constructor options object as they become needed — see §I.
+ * Pure sync evaluator over the flat, composite-key `fulfilments` map.
+ * See obligations.md for the model and FULFILMENT_SHAPES.md for storage
+ * examples.
  *
- * Obligations are the source of truth for both data and applicability logic
- * (see `obligations.js`). Each obligation carries its own `applyTo` method
- * inline, which returns that obligation's **implication** for the current
- * fulfilments. This factory reduces to pure orchestration:
+ * Constructed once per Service; each `evaluate(fulfilments)` call is
+ * pure. The obligations manifest is injected at construction.
  *
- *   1. remove spurious fulfilments (ones whose id doesn't match any current
- *      obligation — the "tolerate-and-amend" rule; see §Persistence →
- *      Model versioning).
- *   2. compute each obligation's implication by calling its own `applyTo`.
- *   3. remove out-of-scope fulfilments (the appliesWhen scope-exit purge;
- *      see §Key properties → Scope exit).
+ * Algorithm per call:
+ *
+ *   1. Drop unknown obligation ids (tolerate-and-amend).
+ *   2. Evaluate each obligation's `applyTo` (if present).
+ *   3. Compute effective inScope per obligation — own applyTo inScope
+ *      AND every ancestor group's inScope.
+ *   4. Purge storage:
+ *        - Out-of-scope obligation → drop entire entry.
+ *        - Derived indexed leaf → keep only keys whose innermost segment
+ *          is in the `applyTo`-returned id set.
+ *        - Otherwise → keep (ancestors already in scope).
+ *   5. Enumerate group instance ids by scanning descendants'
+ *      composite-key prefixes.
+ *   6. Build per-obligation implications.
  */
+
+const PATH_DELIMITER = '/'
+const joinPath = (segments) => segments.join(PATH_DELIMITER)
+const splitPath = (key) => key.split(PATH_DELIMITER)
 
 export function createObligationEvaluator({
   obligations = defaultObligations
 } = {}) {
-  const obligationIds = new Set(obligations.map((o) => o.id))
-  // Field records (group members with no applyTo) also have ids that
-  // appear in storage. Recognise them so they're not treated as spurious.
-  const fieldRecordIds = new Set()
+  const obligationsById = new Map(obligations.map((o) => [o.id, o]))
+  const distinctObligationIds = new Set(obligationsById.keys())
+
+  // Parent-child links from `within` back-refs.
+  const parentChildObligations = new Map()
   for (const o of obligations) {
-    if (Array.isArray(o.members)) {
-      for (const m of o.members) {
-        if (typeof m.applyTo !== 'function') fieldRecordIds.add(m.id)
-      }
-    }
-  }
-  const recognisedIds = new Set([...obligationIds, ...fieldRecordIds])
-
-  // Drop fulfilments whose id doesn't match any current obligation or
-  // field record. For example, we might have amended the obligation
-  // model since the user last saved progress.
-  const removeSpuriousFulfilments = (fulfilments) => {
-    const result = {}
-    for (const [id, value] of Object.entries(fulfilments)) {
-      if (recognisedIds.has(id)) {
-        result[id] = value
-      }
-    }
-    return result
-  }
-
-  // Field records inherit scope and fulfilmentIds from their group.
-  // They contribute only their own `status` at the leaf level; reasons
-  // live on the group, not per-field.
-  const synthesiseFieldImplication = (groupImplication, fieldRecord) => {
-    if (groupImplication.inScope === false) {
-      return { inScope: false }
-    }
-    return {
-      inScope: true,
-      fulfilments: (groupImplication.fulfilments ?? []).map((entry) => ({
-        fulfilmentId: entry.fulfilmentId,
-        status: fieldRecord.status
-      }))
+    if (o.within) {
+      const kids = parentChildObligations.get(o.within.id) ?? []
+      kids.push(o)
+      parentChildObligations.set(o.within.id, kids)
     }
   }
 
-  // Scope-exit purge: remove entries from the fulfilments map that no
-  // longer reflect the implication each obligation returned from its
-  // applyTo.
-  //
-  // The fulfilments map can have arbitrary depth for a nested indexed
-  // obligation:
-  //   - single-cardinality obligation → its value lives directly under
-  //     the obligation's id
-  //   - indexed obligation → a map lives under the obligation's id,
-  //     keyed by fulfilmentId
-  //   - nested-indexed obligation → an N-level nested map lives under
-  //     the obligation's id; depth = length of `indexedBy.nested` + 1
-  //     (e.g. driverAddress is depth 2: driver id → address id;
-  //     driverClaimOtherParty is depth 3: driver id → claim id → party id)
-  //
-  // Two rules applied per obligation:
-  //
-  //   1. If the obligation's implication has inScope: false, drop its
-  //      top-level entry from the fulfilments map.
-  //
-  //   2. If the obligation is in-scope and its implication includes a
-  //      `fulfilments` array, recursively purge the stored map against
-  //      that array: at each level, any key not named in the
-  //      corresponding `fulfilments` (or `subFulfilments`) array is
-  //      stale and gets dropped. `purgeLevel` handles this recursion.
-  //
-  // Examples of rule 2 in practice:
-  //
-  //   modificationCost (depth 1) — user removed 'alloys' from
-  //   modifications controller:
-  //     stored:  { turbo: '800', alloys: '200' }
-  //     applyTo: { fulfilments: [{ fulfilmentId: 'turbo', ... }] }
-  //     after:   { turbo: '800' }
-  //
-  //   driverAddress (depth 2) — controller (driver collection) still
-  //   has driver-1, and only 'addr-a' is a valid address for them:
-  //     stored:  { 'driver-1': { 'addr-a': {...}, 'addr-b': {...} } }
-  //     applyTo: { fulfilments: [{
-  //       fulfilmentId: 'driver-1',
-  //       subFulfilments: [{ fulfilmentId: 'addr-a', ... }]
-  //     }] }
-  //     after:   { 'driver-1': { 'addr-a': {...} } }
-  //
-  //   driverClaimOtherParty (depth 3) — one driver, one claim, one
-  //   valid party (stale 'party-b' gets dropped from the inner-inner
-  //   map):
-  //     stored:  { 'driver-1': { 'claim-1': { 'party-a': {...}, 'party-b': {...} } } }
-  //     applyTo: { fulfilments: [{
-  //       fulfilmentId: 'driver-1',
-  //       subFulfilments: [{
-  //         fulfilmentId: 'claim-1',
-  //         subFulfilments: [{ fulfilmentId: 'party-a', ... }]
-  //       }]
-  //     }] }
-  //     after:   { 'driver-1': { 'claim-1': { 'party-a': {...} } } }
-  //
-  // Rule 2 powers the derived lifecycle at every level. For user-driven
-  // indexed levels it is effectively a no-op: their applyTo emits one
-  // entry for every fulfilmentId already in storage, so nothing is ever
-  // stale from their own perspective.
-  const purgeLevel = (storedAtLevel, validEntries) => {
-    const validIds = new Set(validEntries.map((e) => e.fulfilmentId))
-    const purged = { ...storedAtLevel }
-    for (const key of Object.keys(purged)) {
-      if (!validIds.has(key)) delete purged[key]
-    }
-    for (const entry of validEntries) {
-      if (entry.subFulfilments && purged[entry.fulfilmentId]) {
-        purged[entry.fulfilmentId] = purgeLevel(
-          purged[entry.fulfilmentId],
-          entry.subFulfilments
-        )
-      }
-    }
-    return purged
+  // Classify each obligation.
+  //   'indexed' — has `indexedBy` (leaf with own inner dimension)
+  //   'field'   — has `status`, no `applyTo`, no `indexedBy`
+  //   'group'   — has children via `within` back-refs, no `status`/`indexedBy`
+  //   'single'  — otherwise (leaf value at fulfilments[o.id])
+  const obligationsByKind = new Map()
+  for (const o of obligations) {
+    if (o.indexedBy) obligationsByKind.set(o.id, 'indexed')
+    else if (o.status !== undefined && !o.applyTo) {
+      obligationsByKind.set(o.id, 'field')
+    } else if (parentChildObligations.has(o.id)) {
+      obligationsByKind.set(o.id, 'group')
+    } else obligationsByKind.set(o.id, 'single')
   }
 
-  const removeOutOfScopeFulfilments = (
-    fulfilments,
-    implicationsByObligation
-  ) => {
-    const result = { ...fulfilments }
-    for (const [obligationId, implication] of Object.entries(
-      implicationsByObligation
-    )) {
-      if (implication.inScope === false) {
-        delete result[obligationId]
-        continue
-      }
-      if (implication.fulfilments && result[obligationId]) {
-        result[obligationId] = purgeLevel(
-          result[obligationId],
-          implication.fulfilments
-        )
+  // Ancestor groups from root down to immediate parent (excluding self).
+  const obligationAncestorGroups = new Map()
+  for (const o of obligations) {
+    const chain = []
+    let cur = o.within
+    while (cur) {
+      chain.unshift(cur)
+      cur = cur.within
+    }
+    obligationAncestorGroups.set(o.id, chain)
+  }
+
+  // Transitive descendants (excluding self).
+  const obligationDescendants = new Map()
+  for (const o of obligations) {
+    const acc = []
+    const stack = [...(parentChildObligations.get(o.id) ?? [])]
+    while (stack.length) {
+      const child = stack.pop()
+      acc.push(child)
+      for (const grandchild of parentChildObligations.get(child.id) ?? []) {
+        stack.push(grandchild)
       }
     }
-    return result
+    obligationDescendants.set(o.id, acc)
   }
 
   return {
     evaluate(fulfilments) {
-      const recognisedFulfilments = removeSpuriousFulfilments(fulfilments)
+      // 1. Drop unknown obligation ids.
+      const recognisedFulfilments = {}
+      for (const [obligationId, value] of Object.entries(fulfilments)) {
+        if (distinctObligationIds.has(obligationId)) {
+          recognisedFulfilments[obligationId] = value
+        }
+      }
 
-      // Single-pass per-obligation evaluation — collect each obligation's
-      // implication for the current fulfilments. Fixed-point behaviour
-      // lives in the orchestrator per §The evaluation engine.
-      //
-      // For each obligation with `members` (a group), also synthesise
-      // implications for its field-record members (members without their
-      // own `applyTo`). Computed members (members with an `applyTo`) are
-      // in the top-level manifest and get processed there.
-      const implicationsByObligation = {}
-      for (const obligation of obligations) {
-        const implication = obligation.applyTo(recognisedFulfilments)
-        implicationsByObligation[obligation.id] = implication
+      // 2. Run each obligation's applyTo (if it has one).
+      const obligationApplicabilityDecisions = new Map()
+      for (const o of obligations) {
+        if (o.applyTo) {
+          obligationApplicabilityDecisions.set(
+            o.id,
+            o.applyTo(recognisedFulfilments)
+          )
+        }
+      }
 
-        if (Array.isArray(obligation.members)) {
-          for (const member of obligation.members) {
-            if (typeof member.applyTo !== 'function') {
-              implicationsByObligation[member.id] = synthesiseFieldImplication(
-                implication,
-                member
-              )
+      // 3. Effective inScope — own applyTo AND every ancestor group.
+      const inScopeCache = new Map()
+      const isInScope = (obligation) => {
+        if (inScopeCache.has(obligation.id)) {
+          return inScopeCache.get(obligation.id)
+        }
+        const own = obligationApplicabilityDecisions.get(obligation.id)
+        if (own && own.inScope === false) {
+          inScopeCache.set(obligation.id, false)
+          return false
+        }
+        for (const ancestor of obligationAncestorGroups.get(obligation.id)) {
+          if (!isInScope(ancestor)) {
+            inScopeCache.set(obligation.id, false)
+            return false
+          }
+        }
+        inScopeCache.set(obligation.id, true)
+        return true
+      }
+      for (const o of obligations) isInScope(o)
+
+      // 4. Purge storage.
+      const amendedFulfilments = {}
+      for (const [obligationId, value] of Object.entries(
+        recognisedFulfilments
+      )) {
+        const obligation = obligationsById.get(obligationId)
+        if (!isInScope(obligation)) continue
+
+        const obligationKind = obligationsByKind.get(obligation.id)
+
+        if (
+          obligationKind === 'indexed' &&
+          obligation.indexedBy?.source === 'derived'
+        ) {
+          const derivedIds = new Set(
+            obligationApplicabilityDecisions.get(obligation.id)?.fulfilments ??
+              []
+          )
+          const filtered = {}
+          for (const [key, v] of Object.entries(value ?? {})) {
+            const segments = splitPath(key)
+            const innermost = segments[segments.length - 1]
+            if (derivedIds.has(innermost)) filtered[key] = v
+          }
+          if (Object.keys(filtered).length > 0) {
+            amendedFulfilments[obligationId] = filtered
+          }
+        } else if (obligationKind === 'single') {
+          amendedFulfilments[obligationId] = value
+        } else {
+          // field record or user-driven indexed leaf: keep as-is.
+          if (value && typeof value === 'object' && !Array.isArray(value)) {
+            if (Object.keys(value).length > 0) {
+              amendedFulfilments[obligationId] = value
             }
+          } else {
+            amendedFulfilments[obligationId] = value
           }
         }
       }
 
-      const amendedFulfilments = removeOutOfScopeFulfilments(
-        recognisedFulfilments,
-        implicationsByObligation
-      )
+      // 5. Enumerate each group's instance ids from descendants' storage.
+      const fulfilmentIdsByObligationId = new Map()
+      for (const o of obligations) {
+        if (obligationsByKind.get(o.id) !== 'group') continue
+        if (!isInScope(o)) {
+          fulfilmentIdsByObligationId.set(o.id, new Set())
+          continue
+        }
+        const prefixLen = obligationAncestorGroups.get(o.id).length + 1
+        const ids = new Set()
+        for (const desc of obligationDescendants.get(o.id)) {
+          const storage = amendedFulfilments[desc.id]
+          if (!storage || typeof storage !== 'object') continue
+          if (Array.isArray(storage)) continue
+          for (const key of Object.keys(storage)) {
+            const segments = splitPath(key)
+            if (segments.length >= prefixLen) {
+              ids.add(joinPath(segments.slice(0, prefixLen)))
+            }
+          }
+        }
+        fulfilmentIdsByObligationId.set(o.id, ids)
+      }
+
+      // 6. Build implications.
+      const implicationsByObligation = {}
+      for (const o of obligations) {
+        implicationsByObligation[o.id] = buildImplication(o)
+      }
+
+      function buildImplication(obligation) {
+        if (!isInScope(obligation)) return { inScope: false }
+
+        const kind = obligationsByKind.get(obligation.id)
+        const own = obligationApplicabilityDecisions.get(obligation.id)
+
+        if (kind === 'single') {
+          return own ?? { inScope: true }
+        }
+
+        if (kind === 'group') {
+          const fulfilmentIds = [
+            ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
+          ]
+          const impl = { inScope: true }
+          if (own?.reasons) impl.reasons = own.reasons
+          impl.fulfilments = fulfilmentIds.map((fulfilmentId) => ({
+            fulfilmentId
+          }))
+          return impl
+        }
+
+        if (kind === 'field') {
+          const parentGroupFulfilmentIds = [
+            ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
+          ]
+          return {
+            inScope: true,
+            fulfilments: parentGroupFulfilmentIds.map((fulfilmentId) => ({
+              fulfilmentId,
+              status: obligation.status
+            }))
+          }
+        }
+
+        if (kind === 'indexed') {
+          const impl = { inScope: true }
+          if (own?.reasons) impl.reasons = own.reasons
+
+          // Derived indexed leaves: the id set comes from applyTo (the
+          // authoritative "what instances CAN exist"). Storage tracks
+          // which ones have VALUES.
+          // User-driven leaves: presence via storage keys.
+          if (obligation.indexedBy?.source === 'derived') {
+            const ids = own?.fulfilments ?? []
+            impl.fulfilments = ids.map((fulfilmentId) => ({
+              fulfilmentId,
+              status: obligation.status
+            }))
+          } else {
+            const storage = amendedFulfilments[obligation.id]
+            const keys =
+              storage && typeof storage === 'object' && !Array.isArray(storage)
+                ? Object.keys(storage)
+                : []
+            impl.fulfilments = keys.map((fulfilmentId) => ({
+              fulfilmentId,
+              status: obligation.status
+            }))
+          }
+          return impl
+        }
+
+        return { inScope: true }
+      }
 
       return {
         fulfilments: amendedFulfilments,
