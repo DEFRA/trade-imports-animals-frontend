@@ -171,3 +171,74 @@ concessions the canary constraint dictated, not model breakages. Carried into 6b
 `entryComplete` must recurse into a nested `requiredAtLeastOne` collection (it does not
 yet — invisible at one level), and whether the loop library survives the loop-inside-a-loop
 without rendering.
+
+## 6b — Verdict: one level of nesting (drivers → claims)
+
+**Did the model hold? YES — and the recursive-tree bet paid off.** The named-driver add-on
+became an indexed `drivers` collection whose item contains a nested `claims` collection
+(`features/named-driver/obligations.js`), so the model tree reaches depth 2
+(`drivers[i].claims[j].claimType`). The headline result: **nesting required NO engine change
+to scope, wipe or dispatch.** `reconcile.walk` already recurses `def.item`; `pathKey`
+addressing already descends; boot coverage already walks `walkDefs()` to every depth (a nested
+sub-obligation derives its owning page from its collection ancestor). The design bet of
+6a — choosing the representation that recurses honestly — paid off: 6b was **additive, not a
+rewrite**. Proven at three levels: `engine/nested.test.js` (depth-2 scope, cascading subtree
+wipe, cross-item independence, tree coverage), `engine/store-ops.test.js` (the path-op
+lifecycle through the real store boundary, no-rehydrate round-trip), and the DOM-level
+`prototypes/e2e/nested-drivers.spec.js` (two drivers with independent nested claims; removing
+one destroys only its subtree; deselect→reselect starts empty). 93 unit + 68 E2E green,
+including all 11 shared journeys.
+
+**Where did it strain? The one engine change, and four honest costs.**
+
+1. **`entryComplete` had to become DEPTH-AWARE — the single engine change.** Completeness is
+   the one fact that does not recurse for free: an incomplete NESTED collection must fail its
+   parent entry. The safety net earned its keep here — it first caught a subtler bug: an
+   OPTIONAL nested collection must still require its EXISTING entries to be complete (the
+   mandate governs only "is zero acceptable?", never "may a half-entered entry pass"). So the
+   precise boundary of "no engine change" is: scope/wipe/dispatch recurse structurally;
+   completeness needed one depth-aware line.
+
+2. **The shared happy-path spec became journey-conditional.** v2's drivers loop diverges from
+   the other ten journeys' single named-driver flow, so `task-list-with-linear-tasks.spec.js`
+   now branches (`journey.js walkNamedDriver`) on the v2 journey. This is the real cost of
+   "reuse the existing add-on to keep the specs meaningful": the uniform-across-all-journeys
+   property is now conditional for the one journey that models nesting.
+
+3. **`updateEntry` went from dead code to a live, tested primitive** (`updateEntryAt`, edit at
+   depth) — though the driver flow itself uses add/remove only, so edit-in-place exists as a
+   proven primitive without a UI route yet.
+
+4. **A minor cross-feature coupling.** The nested driver-claim reuses the top-level claims
+   `entry.njk` template and imports the `CLAIM_TYPE_*` value-domain from the claims feature.
+   The MODEL keeps `drivers.claims` and root `claims` as distinct defs at distinct addresses,
+   but the UI shares the claim-type vocabulary. This sits within the library rule (a logic-free
+   presentation partial + a shared constant; the controller still owns render/routes/copy), but
+   it is a smell to split the day nested claims diverge from root claims.
+
+5. **Malformed-URL hardening (found by the adversarial pass).** Two input-validation gaps at
+   depth: a non-integer `{driver}`/`{claim}` index would `splice(NaN)` → destroy instance 0
+   (a PRE-EXISTING depth-1 hole the flat claims loop already had, faithfully recurred), and an
+   out-of-range parent index would fabricate a phantom driver via the generic `setAt` write
+   path. Both fixed — the engine primitives now reject non-integer indices, and the driver-claim
+   controller validates the parent index (mirroring the read path's guard) — and regression-
+   tested. The shared primitive fix closes the pre-existing top-level case too.
+
+**Is the no-generic-engine / library-not-framework line intact at depth 2? YES — this was the
+crux, and it held.** The loop-inside-a-loop is exactly where the pressure to let the helper
+render peaks. It did not bend: `collectionView` stays facts-only at every depth
+(`{ index, path, entry, complete }`); the drivers hub, driver detail and driver-claim
+controllers each compose their own bespoke rows/copy/routes; the inner claims sub-hub calls the
+SAME `collectionView` one level deeper; no shared row-builder or generic renderer emerged; the
+store facade stayed narrow (a page still cannot hand-roll a wipe). **But it held by ACCEPTING
+duplication** — each hub hand-builds its rows rather than sharing a renderer. That is the
+paradigm's chosen trade-off (bespoke duplication over a re-emergent engine), so the honest
+answer to "can the loop be first-class without a framework?" is: **yes, if you accept per-loop
+bespoke rendering as the price.** No clever abstraction dissolved the tension; the line is
+held by discipline, not by a new primitive.
+
+**Go/no-go: GO.** The recursive-tree model recurses cleanly to depth 2, additively. Carried
+into 6c (item-scoped conditionality): the item-relative predicate is the one machinery the
+model has NOT yet exercised — `evalPredicate` still reads only top-level answers
+(`engine/predicate.js`) — and it is where `wipeOrder`'s defensive sibling/nested ordering
+(correct but structurally unreachable in 6b) becomes load-bearing.

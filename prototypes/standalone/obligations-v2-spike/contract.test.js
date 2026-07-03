@@ -16,8 +16,8 @@ import * as claimsEntry from './features/claims/entry.controller.js'
 import * as cover from './features/cover-type/controller.js'
 import * as extras from './features/optional-extras/controller.js'
 import * as addons from './features/addons/controller.js'
-import * as ndWho from './features/named-driver/who.controller.js'
-import * as ndRel from './features/named-driver/relationship.controller.js'
+import * as driversHub from './features/named-driver/drivers-hub.controller.js'
+import * as driverEntry from './features/named-driver/driver-entry.controller.js'
 import * as modDesc from './features/modifications/describe.controller.js'
 import * as modVal from './features/modifications/value.controller.js'
 import * as ncd from './features/protected-ncd/years.controller.js'
@@ -146,25 +146,6 @@ const cases = [
     payload: { addons: ['named-driver', 'modifications', 'protected-ncd'] }
   },
   {
-    id: 'named-driver-who',
-    collects: ndWho.meta.collects,
-    handler: postHandlerOf(ndWho),
-    seed: { addons: ['named-driver'] },
-    payload: {
-      driverName: 'Sam Passenger',
-      'driverDob-day': '2',
-      'driverDob-month': '3',
-      'driverDob-year': '1988'
-    }
-  },
-  {
-    id: 'named-driver-relationship',
-    collects: ndRel.meta.collects,
-    handler: postHandlerOf(ndRel),
-    seed: { addons: ['named-driver'] },
-    payload: { relationship: 'spouse' }
-  },
-  {
     id: 'modifications-describe',
     collects: modDesc.meta.collects,
     handler: postHandlerOf(modDesc),
@@ -215,6 +196,24 @@ describe('controller <-> model commit contract', () => {
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(claimsList.meta.collects))
+    )
+  })
+
+  // Drivers is the nested collection: the HUB declares `collects: ['drivers']`,
+  // the identity-minting write happens in the driver ENTRY sub-page's append.
+  // Same contract shape as claims, one level up.
+  it('drivers is committed by the entry (append) handler it declares', () => {
+    expect(driversHub.meta.collects).toEqual(['drivers'])
+    const postAdd = driverEntry.routes.find(
+      (route) =>
+        route.method === 'POST' && route.path.endsWith('named-driver/add')
+    ).handler
+    const result = drive(postAdd, {
+      seed: { addons: ['named-driver'] }, // keeps the drivers collection in scope
+      payload: { driverName: 'Sam Passenger', relationship: 'spouse' }
+    })
+    expect(new Set(committedIds(result))).toEqual(
+      new Set(committableCollects(driversHub.meta.collects))
     )
   })
 })

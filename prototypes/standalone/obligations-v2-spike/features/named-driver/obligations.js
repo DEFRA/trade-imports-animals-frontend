@@ -1,30 +1,43 @@
 import { addons } from '../addons/obligations.js'
 
 /**
- * Named driver — the add-on detail obligations this feature owns. Pure data;
- * the only import is sideways, to the `addons` obligation that activates this
- * whole slice (a shared reference across features).
+ * Named drivers — now an INDEXED collection that NESTS (DISCUSSION-LOG entry 6b).
+ * The single add-on became `drivers` (0..n), and each driver OWNS its own nested
+ * `claims` collection — a real loop-inside-a-loop in the model. Pure data; the
+ * only import is sideways, to the `addons` obligation that activates the whole
+ * collection.
  *
- * SINGLE (not indexed): spawn on selection, wipe on deselect.
+ * The nesting is literal: `drivers.item` contains sub-obligations AND a nested
+ * collection def (`driverClaims`), so the model tree reaches depth 2
+ * (`drivers[i].claims[j].claimType`). Sub-def ids are frame-relative, so this
+ * nested `claims` and the top-level driving-history `claims` share the id but are
+ * distinct defs at distinct template addresses (`drivers.claims` vs `claims`).
+ *
+ * A driver requires a name + relationship; its claims are OPTIONAL
+ * (requiredAtLeastOne omitted), so a driver with no claims is still complete —
+ * but each claim it DOES hold must be complete (per-item completeness recurses).
  */
-const namedDriverGate = { obligation: addons, includes: 'named-driver' }
+export const driverClaimType = { id: 'claimType', required: true }
+export const driverClaimAmount = { id: 'claimAmount' }
 
-export const driverName = {
-  id: 'driverName',
-  required: true,
-  activatedBy: namedDriverGate,
-  wipeOnExit: true
-}
-export const driverDob = {
-  id: 'driverDob',
-  activatedBy: namedDriverGate,
-  wipeOnExit: true
-}
-export const relationship = {
-  id: 'relationship',
-  required: true,
-  activatedBy: namedDriverGate,
+export const driverClaims = {
+  id: 'claims',
+  collection: true,
+  item: [driverClaimType, driverClaimAmount],
   wipeOnExit: true
 }
 
-export const defs = [driverName, driverDob, relationship]
+export const driverName = { id: 'driverName', required: true }
+export const driverDob = { id: 'driverDob' }
+export const relationship = { id: 'relationship', required: true }
+
+export const drivers = {
+  id: 'drivers',
+  collection: true,
+  item: [driverName, driverDob, relationship, driverClaims],
+  activatedBy: { obligation: addons, includes: 'named-driver' },
+  requiredAtLeastOne: true,
+  wipeOnExit: true
+}
+
+export const defs = [drivers]

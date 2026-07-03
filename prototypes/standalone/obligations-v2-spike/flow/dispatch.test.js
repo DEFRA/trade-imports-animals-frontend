@@ -48,8 +48,9 @@ describe('dispatch + flow', () => {
 
   it('enters an addon section only at its first gated-in page', () => {
     const scope = { inScope: reconcile({ addons: ['named-driver'] }).inScope }
+    // The named-driver add-on section now lands on the drivers collection hub.
     expect(sectionEntry('named-driver', scope)).toMatch(
-      /\/addons\/named-driver\/who$/
+      /\/addons\/named-driver$/
     )
   })
 

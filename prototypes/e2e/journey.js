@@ -139,6 +139,61 @@ export async function pickRelationship(page) {
   await page.getByLabel('Spouse or partner').check()
 }
 
+/**
+ * Walk the "Add a named driver" add-on from the hub. Journey-conditional: the
+ * obligations-v2 spike models this as a NESTED indexed collection (drivers,
+ * each owning its own claims — DISCUSSION-LOG entry 6b), so it walks a
+ * loop-inside-a-loop (add a driver, then add a claim UNDER that driver); every
+ * other journey keeps the original single named-driver two-page flow. Both
+ * leave the same completed add-on behind, so the rest of the walk is shared.
+ */
+export async function walkNamedDriver(page, journey) {
+  await page.getByRole('link', { name: 'Add a named driver' }).click()
+
+  if (journey.id === 'obligations-v2-spike') {
+    await page.getByRole('button', { name: 'Add a driver' }).click()
+    await fillNamedDriverWho(page)
+    await page.getByLabel('Spouse or partner').check()
+    await page.getByRole('button', { name: SAVE }).click()
+    // Driver detail → add a claim UNDER this driver (the nested inner loop).
+    await page.getByRole('button', { name: 'Add a claim' }).click()
+    await page.getByLabel('Accident').check()
+    await page.getByLabel('Approximate claim amount').fill('300')
+    await page.getByRole('button', { name: 'Add claim' }).click()
+    await page.getByRole('button', { name: CONTINUE }).click() // detail → drivers hub
+    await page.getByRole('button', { name: CONTINUE }).click() // hub → back to hub
+    return
+  }
+
+  await fillNamedDriverWho(page)
+  await page.getByRole('button', { name: SAVE }).click()
+  await pickRelationship(page)
+  await page.getByRole('button', { name: SAVE }).click()
+}
+
+/** Short path to the v2 drivers hub: start → email → select the named-driver
+ * add-on → open its hub. Used by the nested drivers/claims property spec. */
+export async function reachDriversHub(page, grouped) {
+  await page.goto(grouped)
+  await page.getByRole('button', { name: 'Start now' }).click()
+  const emailHeading = page.getByRole('heading', {
+    name: 'Give us your email to begin'
+  })
+  const hubHeading = page.getByRole('heading', {
+    name: 'Get a car insurance quote'
+  })
+  await emailHeading.or(hubHeading).first().waitFor()
+  if (await hubHeading.isVisible()) {
+    await page.getByRole('link', { name: 'Email' }).click()
+  }
+  await fillEmail(page)
+  await page.getByRole('button', { name: SAVE }).click()
+  await page.getByRole('link', { name: 'Add to your policy' }).click()
+  await page.getByLabel('Add a named driver').check()
+  await page.getByRole('button', { name: CONTINUE }).click()
+  await page.getByRole('link', { name: 'Add a named driver' }).click()
+}
+
 export async function fillModificationsDescribe(page) {
   await page.getByLabel('Describe the modifications').fill('Alloy wheels')
 }

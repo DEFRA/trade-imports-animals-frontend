@@ -27,7 +27,7 @@ describe('reachability / dead-end prover', () => {
     ]
     const problems = proveReachability({ pagesFor })
     expect(problems.length).toBeGreaterThan(0)
-    expect(problems.map((p) => p.obligation)).toContain('driverName')
+    expect(problems.map((p) => p.obligation)).toContain('drivers')
     expect(
       problems.every((p) => p.reason === 'owning-page-unreachable-in-scope')
     ).toBe(true)

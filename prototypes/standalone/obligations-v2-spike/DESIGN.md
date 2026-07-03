@@ -575,3 +575,29 @@ its justification is the loop-inside-a-loop that entry 6b will exercise.
 **Net:** the tree lives in the data (`item`), the addresses live in `lib/path.js`, the
 traversal lives in `registry.walk`, and presentation stays entirely in the bespoke
 controllers — the three seams remain non-overlapping, now at depth.
+
+### 10.1 Nesting — the loop inside the loop (entry 6b)
+
+The named-driver add-on became an indexed `drivers` collection whose item contains a NESTED
+`claims` collection, so the model tree reaches depth 2 (`drivers[i].claims[j].claimType`). The
+result that matters: **nesting required no engine change to scope, wipe or dispatch.**
+`reconcile.walk` recurses `def.item`, `pathKey` addresses any depth, and `walkDefs` coverage
+already descends — so a nested collection is "just more tree". The ONE engine change was making
+`entryComplete` depth-aware: an incomplete nested collection must fail its parent entry, while
+the mandate (`requiredAtLeastOne`) governs only whether ZERO entries is acceptable.
+
+The store facade gained PATH-ADDRESSED mutation — `appendEntryAt(path, entry)` /
+`updateEntryAt(path, i, entry)` / `removeEntryAt(path, i)` — so the same primitives drive a loop
+and a loop-inside-a-loop (a nested claim is appended at `['drivers', d, 'claims']`); the
+single-level `appendEntry(id, …)` calls are thin wrappers over a depth-0 path, and `updateEntry`
+is no longer dead code. Malformed URLs are hardened at the seam: the primitives reject a
+non-integer index (a `.../foo/remove` URL must not `splice(NaN)` → destroy instance 0), and the
+nested add controller validates its parent index (mirroring the read path) so an out-of-range
+`{driver}` cannot fabricate a phantom via the generic `setAt` write.
+
+The **library-not-framework line held at depth 2** — the crux this phase existed to test. The
+inner claims sub-hub calls the SAME facts-only `collectionView(answers, ['drivers', d,
+'claims'])`; the drivers hub, driver detail and driver-claim controllers each compose their own
+bespoke rows and copy. It held by ACCEPTING per-loop bespoke rendering (duplication over a
+re-emergent engine), not by a new abstraction — the honest answer to "can the loop be
+first-class without a framework" is yes, at the price of that duplication.

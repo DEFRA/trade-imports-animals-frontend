@@ -2,7 +2,7 @@ import { currentJourney } from './journey.js'
 import { reconcile } from './reconcile.js'
 import { entryComplete, readyForQuote } from './status.js'
 import { store } from './store.js'
-import { deleteAt, parsePath, valueAt } from '../lib/path.js'
+import { deleteAt, parsePath, setAt, valueAt } from '../lib/path.js'
 import { registry } from '../registry.js'
 
 /**
@@ -94,36 +94,61 @@ export const collectionView = (answers, collectionPath) => {
   }))
 }
 
-/** Append one entry to an indexed obligation — MINTS its index (identity). */
-export const appendEntry = (request, h, obligationId, entry) => {
+/**
+ * Append one entry to an indexed obligation at ANY depth — MINTS its index
+ * (identity). `collectionPath` addresses the collection (`['claims']` at the
+ * root, `['drivers', 1, 'claims']` for a nested sub-hub), so the same primitive
+ * drives a loop and a loop-inside-a-loop. No reconcile here: an append only adds
+ * scope, never removes it, so nothing can be wiped by adding.
+ */
+export const appendEntryAt = (request, h, collectionPath, entry) => {
   const journey = currentJourney(request, h)
-  const answers = { ...journey.answers }
-  answers[obligationId] = [...(answers[obligationId] ?? []), entry]
+  const list = valueAt(journey.answers, collectionPath) ?? []
+  const answers = setAt(journey.answers, collectionPath, [...list, entry])
   store.saveAnswers(journey.journeyId, answers)
-  return answers[obligationId].length - 1
+  return list.length
 }
 
-export const updateEntry = (request, h, obligationId, index, entry) => {
+/** Replace the entry at `[...collectionPath, index]` (edit-in-place at depth). */
+export const updateEntryAt = (request, h, collectionPath, index, entry) => {
   const journey = currentJourney(request, h)
-  const answers = { ...journey.answers }
-  const list = [...(answers[obligationId] ?? [])]
-  if (index >= 0 && index < list.length) {
-    list[index] = entry
-    answers[obligationId] = list
-    store.saveAnswers(journey.journeyId, answers)
-  }
+  const list = [...(valueAt(journey.answers, collectionPath) ?? [])]
+  if (!Number.isInteger(index) || index < 0 || index >= list.length) return
+  list[index] = entry
+  const answers = setAt(journey.answers, collectionPath, list)
+  store.saveAnswers(journey.journeyId, answers)
 }
 
-export const removeEntry = (request, h, obligationId, index) => {
+/**
+ * Remove the entry at `[...collectionPath, index]`. Splicing an entry destroys
+ * its whole subtree (a driver's nested claims go with the driver), then a
+ * reconcile prunes anything left dangling out of scope — so removal at depth is
+ * destroyed-not-hidden, per instance, exactly like the root case.
+ */
+export const removeEntryAt = (request, h, collectionPath, index) => {
   const journey = currentJourney(request, h)
-  const answers = { ...journey.answers }
-  const list = [...(answers[obligationId] ?? [])]
-  if (index >= 0 && index < list.length) {
-    list.splice(index, 1)
-    answers[obligationId] = list
-    store.saveAnswers(journey.journeyId, answers)
+  const list = [...(valueAt(journey.answers, collectionPath) ?? [])]
+  // Reject a non-integer index: `splice(NaN, 1)` coerces to `splice(0, 1)` and
+  // would destroy the WRONG (first) instance on a malformed `.../foo/remove` URL.
+  if (!Number.isInteger(index) || index < 0 || index >= list.length) return
+  list.splice(index, 1)
+  const answers = setAt(journey.answers, collectionPath, list)
+  const { wiped } = reconcile(answers)
+  for (const path of wiped.map(parsePath).sort(wipeOrder)) {
+    deleteAt(answers, path)
   }
+  store.saveAnswers(journey.journeyId, answers)
 }
+
+/** Single-level convenience wrappers — a bare obligation id is a depth-0 path. */
+export const appendEntry = (request, h, obligationId, entry) =>
+  appendEntryAt(request, h, [obligationId], entry)
+
+export const updateEntry = (request, h, obligationId, index, entry) =>
+  updateEntryAt(request, h, [obligationId], index, entry)
+
+export const removeEntry = (request, h, obligationId, index) =>
+  removeEntryAt(request, h, [obligationId], index)
 
 /** Server-side submit — flip to submitted (freezes writes) after a re-check. */
 export const submitJourney = (request, h) => {

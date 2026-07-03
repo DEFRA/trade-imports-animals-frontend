@@ -479,13 +479,25 @@ brief for a fresh agent live in
   instance `claims[0].claimType`). Canary held: 3 shared specs + contract.test green untouched,
   80 unit tests. `contract.test.js` `registry.all` stays roots-only (the view the iterator walks);
   `walkDefs`/`byPath` are the full catalogue, so nothing in the model is blind at depth.
-- **6b. Phase 2 — one level of nesting (drivers → claims).** A `drivers` collection whose item
-  contains a nested `claims` collection. Proves recursion: nested paths, cascading per-instance
-  wipe, a loop-inside-a-loop UI. **Decided: extend the existing single `named-driver` add-on into
-  an indexed `drivers` collection** (n drivers, each owning nested claims — natural domain fit) and
-  update the happy-path spec (it already walks "Add a named driver"); add specs for multi-driver +
-  independent nested claims + subtree wipe. Keep iterating on **this** v2 prototype; no parallel
-  spike.
+- **6b. Phase 2 — one level of nesting (drivers → claims). ✅ DONE — verdict: GO (see FINDINGS
+  "6b").** A `drivers` collection whose item contains a nested `claims` collection. Proves
+  recursion: nested paths, cascading per-instance wipe, a loop-inside-a-loop UI. **Decided:
+  extend the existing single `named-driver` add-on into an indexed `drivers` collection** (n
+  drivers, each owning nested claims — natural domain fit) and update the happy-path spec (it
+  already walks "Add a named driver"); add specs for multi-driver + independent nested claims +
+  subtree wipe. Keep iterating on **this** v2 prototype; no parallel spike.
+  _Landed as:_ `drivers` collection, item `[driverName, driverDob, relationship, driverClaims]`
+  (a nested collection). **Headline: no engine change to scope/wipe/dispatch** — `reconcile.walk`,
+  `pathKey` and `walkDefs` coverage already recurse; the design bet of 6a paid off, 6b was
+  additive. The ONE engine change: `entryComplete` became depth-aware (an incomplete nested
+  collection fails its parent — and the safety net first caught that an OPTIONAL nested collection
+  must still require its existing entries to be complete). Path-addressed store ops
+  (`appendEntryAt`/`updateEntryAt`/`removeEntryAt`) drive both loops; `updateEntry` is no longer
+  dead code. The library-not-framework line HELD at depth 2 (the crux) — `collectionView` stays
+  facts-only, both hubs stay bespoke — but held by ACCEPTING per-loop bespoke rendering, not a
+  clever abstraction. The shared task-list spec became journey-conditional for v2. Adversarial
+  pass fixed two malformed-URL gaps (NaN-index wrong-instance splice — pre-existing at depth-1;
+  out-of-range parent phantom — new at depth). 93 unit + 68 E2E green (all 11 journeys).
 - **6c. Phase 3 — item-scoped conditionality.** Inside a claim item, `claimType === 'windscreen'`
   activates `windscreenProvider` (one of three approved) **for that claim instance only**. Proves
   item-relative predicates at full depth (`drivers[i].claims[j].windscreenProvider`). Specs prove

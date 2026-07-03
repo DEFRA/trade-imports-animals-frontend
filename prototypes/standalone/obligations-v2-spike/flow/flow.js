@@ -37,14 +37,8 @@ export const sections = [
   {
     id: 'named-driver',
     addon: 'named-driver',
-    gate: (s) => s.inScope.has('driverName'),
-    pages: [
-      { id: 'named-driver-who', slug: 'addons/named-driver/who' },
-      {
-        id: 'named-driver-relationship',
-        slug: 'addons/named-driver/relationship'
-      }
-    ]
+    gate: (s) => s.inScope.has('drivers'),
+    pages: [{ id: 'drivers', slug: 'addons/named-driver' }]
   },
   {
     id: 'modifications',
