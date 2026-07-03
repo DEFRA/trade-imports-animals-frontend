@@ -21,10 +21,24 @@ import { hadClaims } from '../driving-history/obligations.js'
 export const claimType = { id: 'claimType', required: true }
 export const claimAmount = { id: 'claimAmount' }
 
+/**
+ * ITEM-SCOPED CONDITIONALITY (DISCUSSION-LOG entry 6c). A windscreen claim must
+ * name its approved repairer — an obligation activated by a SIBLING FIELD within
+ * the same claim item (`claimType === 'windscreen'`), so it comes into scope for
+ * THAT claim instance only. The `activatedBy` references the sibling def object;
+ * reconcile resolves it item-relatively at the claim's exact path.
+ */
+export const windscreenProvider = {
+  id: 'windscreenProvider',
+  required: true,
+  activatedBy: { obligation: claimType, equals: 'windscreen' },
+  wipeOnExit: true
+}
+
 export const claims = {
   id: 'claims',
   collection: true,
-  item: [claimType, claimAmount],
+  item: [claimType, claimAmount, windscreenProvider],
   activatedBy: { obligation: hadClaims, equals: 'yes' },
   requiredAtLeastOne: true,
   wipeOnExit: true

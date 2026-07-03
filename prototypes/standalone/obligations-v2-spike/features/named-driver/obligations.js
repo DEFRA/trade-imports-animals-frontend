@@ -20,10 +20,21 @@ import { addons } from '../addons/obligations.js'
 export const driverClaimType = { id: 'claimType', required: true }
 export const driverClaimAmount = { id: 'claimAmount' }
 
+/** Item-scoped conditionality at FULL depth (entry 6c): a windscreen claim under
+ * a driver names its approved repairer, activated by that claim's own sibling
+ * `claimType` — so `drivers[i].claims[j].windscreenProvider` is in scope iff
+ * `drivers[i].claims[j].claimType === 'windscreen'`, per instance. */
+export const driverWindscreenProvider = {
+  id: 'windscreenProvider',
+  required: true,
+  activatedBy: { obligation: driverClaimType, equals: 'windscreen' },
+  wipeOnExit: true
+}
+
 export const driverClaims = {
   id: 'claims',
   collection: true,
-  item: [driverClaimType, driverClaimAmount],
+  item: [driverClaimType, driverClaimAmount, driverWindscreenProvider],
   wipeOnExit: true
 }
 

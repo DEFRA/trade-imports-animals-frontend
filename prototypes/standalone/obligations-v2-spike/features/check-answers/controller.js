@@ -4,7 +4,10 @@ import * as state from '../../engine/index.js'
 import { calculatePremium } from '../../lib/quote.js'
 import { isBlank } from '../../engine/util.js'
 import { open } from '../../shared/kit.js'
-import { CLAIM_TYPE_LABEL } from '../claims/entry.controller.js'
+import {
+  CLAIM_TYPE_LABEL,
+  WINDSCREEN_PROVIDER_LABEL
+} from '../claims/entry.controller.js'
 
 /**
  * Check your answers — bespoke summary composition (v1's "bespoke bypass"
@@ -91,9 +94,15 @@ const buildRows = (answers) => {
   claims.forEach(({ index, entry }) => {
     const label = CLAIM_TYPE_LABEL[entry.claimType] ?? NOT_PROVIDED
     const amount = (entry.claimAmount ?? '').toString().trim()
+    const base = amount ? `${label} — £${amount}` : label
+    // A windscreen claim carries its approved repairer (item-scoped, 6c).
+    const provider =
+      entry.claimType === 'windscreen' && entry.windscreenProvider
+        ? ` (${WINDSCREEN_PROVIDER_LABEL[entry.windscreenProvider] ?? entry.windscreenProvider})`
+        : ''
     rows.push({
       key: { text: `Claim ${index + 1}` },
-      value: { text: amount ? `${label} — £${amount}` : label },
+      value: { text: `${base}${provider}` },
       actions: {
         items: [
           {

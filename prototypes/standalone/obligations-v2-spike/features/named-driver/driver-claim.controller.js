@@ -1,28 +1,24 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
-import { compose, currency, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-import { CLAIM_TYPE_OPTIONS } from '../claims/entry.controller.js'
+import {
+  claimEntryModel,
+  claimFromPayload,
+  validateClaim
+} from '../claims/entry.controller.js'
 
 /**
  * A driver's nested claims — add + remove, the INNER loop's mutations (entry
- * 6b). The add form APPENDS at the nested path `['drivers', d, 'claims']`, so
- * the identity minted is (drivers, d, claims, arrayIndex); remove destroys one
- * nested instance in place. Both go through the path-addressed store facade —
- * the same primitives the flat claims loop uses, now at depth. The claim entry
- * VIEW is reused verbatim from the top-level claims feature (identical fields);
- * only the collection path differs.
+ * 6b), now carrying the same item-scoped windscreen-provider conditionality as
+ * the top-level claim (entry 6c). The add form APPENDS at the nested path
+ * `['drivers', d, 'claims']`, minting (drivers, d, claims, arrayIndex). It
+ * reuses the claims feature's view-model builder + payload parser + validators
+ * (`claimEntryModel`/`claimFromPayload`/`validateClaim`) and the claims entry
+ * template — those are shared LOGIC + a value-domain, not a renderer: this
+ * controller still chooses the template and calls `h.view` itself.
  */
 const view = `${TEMPLATES}/features/claims/entry`
-
-const fields = compose(
-  oneOf(
-    'claimType',
-    CLAIM_TYPE_OPTIONS.map((o) => o.value)
-  ),
-  currency('claimAmount')
-)
 
 const driverPath = (request) => [
   'drivers',
@@ -45,32 +41,24 @@ const validDriver = (request, answers) => {
 const render = (request, h, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Add a claim', { backLink: detailPath(request) }),
-    heading: 'Add a claim',
-    buttonText: 'Add claim',
-    options: CLAIM_TYPE_OPTIONS.map((o) => ({
-      ...o,
-      checked: o.value === values.claimType
-    })),
-    values,
-    errors,
-    errorSummary: kit.errorSummary(errors)
+    ...claimEntryModel(values, errors)
   })
 
 const getAdd = (request, h) => {
   const { answers } = state.get(request, h)
   if (validDriver(request, answers) === null) return h.redirect(hubPath)
-  return render(request, h, { claimType: '', claimAmount: '' })
+  return render(request, h, {
+    claimType: '',
+    claimAmount: '',
+    windscreenProvider: ''
+  })
 }
 
 const postAdd = (request, h) => {
   const { answers } = state.get(request, h)
   if (validDriver(request, answers) === null) return h.redirect(hubPath)
-  const payload = request.payload ?? {}
-  const entry = {
-    claimType: payload.claimType ?? '',
-    claimAmount: (payload.claimAmount ?? '').trim()
-  }
-  const { errors } = validate(fields, payload)
+  const entry = claimFromPayload(request.payload ?? {})
+  const { errors } = validateClaim(request.payload ?? {})
   if (errors) return render(request, h, entry, errors)
 
   state.appendEntryAt(request, h, driverPath(request), entry) // MINTS nested index

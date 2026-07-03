@@ -2,6 +2,7 @@ import { collectsOf } from '../flow/dispatch.js'
 import { nonQuoteSections } from '../flow/flow.js'
 import { registry } from '../registry.js'
 import { isAnswered } from './util.js'
+import { applyPredicate } from './predicate.js'
 
 /**
  * The four-status roll-up (v1's taxonomy, kept). Pure and page-agnostic:
@@ -31,12 +32,30 @@ const isRequired = (id) => {
  * and, when `requiredAtLeastOne`, also "≥1 entry". So a driver holding a
  * half-entered nested claim is not complete, whether or not its claims are
  * mandated — the mandate governs only whether ZERO entries is acceptable. */
-export const entryComplete = (def, entry) =>
-  (def.item ?? []).every((sub) =>
-    sub.collection
+export const entryComplete = (def, entry) => {
+  const siblings = def.item ?? []
+  return siblings.every((sub) => {
+    // An ITEM-RELATIVE activation (entry 6c) is resolved against THIS entry: a
+    // sub gated on a SIBLING is only OWED when that sibling's value satisfies it,
+    // so a non-windscreen claim is not blocked by a missing provider. The
+    // sibling-identity check (`siblings.includes(ref)`) is the SAME criterion
+    // reconcile's `evalPredicate` uses — the two resolvers cannot diverge. A sub
+    // gated on a NON-sibling (a top-level obligation) is not resolvable from
+    // inside the entry, so it is left to reconcile/status and treated here as
+    // owed (conservative — never falsely complete).
+    const ref = sub.activatedBy?.obligation
+    if (
+      ref &&
+      siblings.includes(ref) &&
+      !applyPredicate(sub.activatedBy, entry?.[ref.id])
+    ) {
+      return true
+    }
+    return sub.collection
       ? collectionComplete(sub, entry?.[sub.id])
       : !sub.required || isAnswered(entry?.[sub.id])
-  )
+  })
+}
 
 /** A collection is SATISFIED when it meets its cardinality mandate AND every
  * entry is complete — not merely "≥1 entry exists" (DISCUSSION-LOG entry 6,

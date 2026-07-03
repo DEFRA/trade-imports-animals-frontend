@@ -498,10 +498,20 @@ brief for a fresh agent live in
   clever abstraction. The shared task-list spec became journey-conditional for v2. Adversarial
   pass fixed two malformed-URL gaps (NaN-index wrong-instance splice — pre-existing at depth-1;
   out-of-range parent phantom — new at depth). 93 unit + 68 E2E green (all 11 journeys).
-- **6c. Phase 3 — item-scoped conditionality.** Inside a claim item, `claimType === 'windscreen'`
-  activates `windscreenProvider` (one of three approved) **for that claim instance only**. Proves
-  item-relative predicates at full depth (`drivers[i].claims[j].windscreenProvider`). Specs prove
-  it appears/wipes per exact path, independently across items.
+- **6c. Phase 3 — item-scoped conditionality. ✅ DONE — verdict: GO; paradigm SURVIVES (see
+  FINDINGS "6c" + "FINAL READ").** Inside a claim item, `claimType === 'windscreen'` activates
+  `windscreenProvider` (one of three approved) **for that claim instance only**. Proves item-
+  relative predicates at full depth (`drivers[i].claims[j].windscreenProvider`). Specs prove it
+  appears/wipes per exact path, independently across items.
+  _Landed as:_ item-relativeness INFERRED by sibling-object IDENTITY — `evalPredicate` resolves a
+  ref within the item's frame when the ref is one of the node's `siblings` (walk now yields
+  `framePath` + `siblings`), else top-level. **The three-operator vocab did NOT grow** — resolution
+  grew, not vocabulary (the recorded finding). Field-level wipe (destroyed, not hidden) now fires
+  WITHIN an item, making `wipeOrder`'s 6b-defensive branches load-bearing (verified). Adversarial
+  pass found + fixed the one real debt: a DUAL-RESOLVER DIVERGENCE (`reconcile` inferred item-
+  relativeness by identity, `entryComplete` assumed it by id-keying) — unified so both use the
+  sibling-identity criterion. Documented boundary: **cross-frame conditionality is unmodelled**
+  (would force the first vocab/model growth). 102 unit + 70 E2E green.
 
 **Why this order.** 6b/6c are "just more bespoke code" until indexing is first-class (6a), so
 generalise first — and 6a is uniquely safe because the existing specs pin it with zero-DOM

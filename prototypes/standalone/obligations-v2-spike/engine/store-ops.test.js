@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { appendEntryAt, removeEntryAt, updateEntryAt } from './index.js'
+import { appendEntryAt, commit, removeEntryAt, updateEntryAt } from './index.js'
 import { store } from './store.js'
 import { JOURNEY_COOKIE } from './journey.js'
 import * as driverClaim from '../features/named-driver/driver-claim.controller.js'
@@ -97,6 +97,24 @@ describe('path-addressed store ops at depth', () => {
     appendEntryAt(req(), stubH(), ['drivers'], { driverName: 'Jo' })
     expect(JSON.stringify(answersNow())).not.toContain('ghost')
     expect(answersNow().drivers[0].claims).toBeUndefined()
+  })
+
+  it('destroys a windscreenProvider at its exact path on commit when a claim leaves windscreen', () => {
+    // claim 0 stays windscreen; claim 1 is now accident but carries a stale
+    // provider. A commit reconciles and must DELETE claims[1].windscreenProvider
+    // (destroyed, not hidden) at that exact path, leaving claim 0's provider.
+    store.saveAnswers(journeyId, {
+      hadClaims: 'yes',
+      claims: [
+        { claimType: 'windscreen', windscreenProvider: 'autoglass' },
+        { claimType: 'accident', windscreenProvider: 'stale' }
+      ]
+    })
+    commit(req(), stubH(), {})
+    const now = answersNow()
+    expect('windscreenProvider' in now.claims[1]).toBe(false) // field destroyed
+    expect(now.claims[0].windscreenProvider).toBe('autoglass') // sibling intact
+    expect(now.claims[1].claimType).toBe('accident') // rest of the entry intact
   })
 
   it('a malformed/out-of-range driver index does not fabricate a phantom driver', () => {

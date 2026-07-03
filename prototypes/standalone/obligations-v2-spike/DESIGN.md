@@ -601,3 +601,34 @@ inner claims sub-hub calls the SAME facts-only `collectionView(answers, ['driver
 bespoke rows and copy. It held by ACCEPTING per-loop bespoke rendering (duplication over a
 re-emergent engine), not by a new abstraction — the honest answer to "can the loop be
 first-class without a framework" is yes, at the price of that duplication.
+
+### 10.2 Item-scoped conditionality — the item-relative predicate (entry 6c)
+
+A windscreen claim activates a `windscreenProvider` obligation for THAT claim instance only:
+`drivers[i].claims[j].windscreenProvider` is in scope iff `drivers[i].claims[j].claimType ===
+'windscreen'`. This is the item-relative predicate — the last machinery the model had not
+exercised — and it landed by growing RESOLUTION, not vocabulary.
+
+The three-operator vocab (`equals`/`includes`/`present`) is UNCHANGED. `evalPredicate` split into
+a pure operator (`applyPredicate`) and a frame-aware resolver: `evalPredicate(activatedBy,
+answers, framePath, siblings)` resolves a reference within the current item's frame —
+`valueAt(answers, [...framePath, ref.id])` — when the referenced def is one of the node's
+`siblings` (the item's own def list it was walked from), else it resolves top-level exactly as
+before. `registry.walk` now yields `framePath` + `siblings` for every node; item-relativeness is
+INFERRED by object identity (`siblings.includes(ref)`), so the SAME `{ obligation: claimType,
+equals: 'windscreen' }` literal — with `claimType` a real sibling def — works at any depth without
+a new operator or a marker on the predicate.
+
+Scope-exit wipe is now FIELD-LEVEL within an item: when a claim leaves windscreen, its
+`windscreenProvider` is destroyed at that exact path (`deleteAt` on a string leaf deletes the
+key), and `wipeOrder`'s sibling/nested ordering — defensive-but-unreachable through 6b — becomes
+load-bearing. Completeness uses the SAME sibling-identity criterion: `entryComplete` treats a sub
+as owed only when its item-relative gate (evaluated against the entry) holds, so a windscreen
+claim without a provider is incomplete while a non-windscreen claim is not. Crucially, both
+resolvers share the `siblings.includes(ref)` test, so scope and completeness cannot diverge
+toward a false completion (a non-sibling gate is treated conservatively as owed).
+
+**The one documented boundary:** `siblings` carries only the immediate item's forest, so the
+model expresses SAME-FRAME conditions only. A reference reaching an ENCLOSING frame
+(`drivers[i].claims[j].x` gated on `drivers[i].y`) is unmodelled and would force the first genuine
+vocab/model growth — recorded in FINDINGS 6c as the precise edge NOT proven.

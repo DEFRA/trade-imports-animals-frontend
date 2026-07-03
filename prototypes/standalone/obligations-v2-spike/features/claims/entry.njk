@@ -11,10 +11,24 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
+    {% set windscreenHtml %}
+      {{ govukRadios({
+        name: "windscreenProvider",
+        fieldset: { legend: { text: "Which approved repairer did you use?", classes: "govuk-fieldset__legend--s" } },
+        items: windscreenOptions,
+        errorMessage: errors.windscreenProvider and { text: errors.windscreenProvider }
+      }) }}
+    {% endset %}
+
     {{ govukRadios({
       name: "claimType",
       fieldset: { legend: { text: "What type of claim was it?", classes: "govuk-fieldset__legend--s" } },
-      items: options
+      items: [
+        { value: "accident", text: "Accident", checked: values.claimType == "accident" },
+        { value: "theft", text: "Theft", checked: values.claimType == "theft" },
+        { value: "windscreen", text: "Windscreen", checked: values.claimType == "windscreen", conditional: { html: windscreenHtml } },
+        { value: "other", text: "Something else", checked: values.claimType == "other" }
+      ]
     }) }}
 
     {{ govukInput({
