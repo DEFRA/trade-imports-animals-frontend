@@ -61,9 +61,10 @@ further code:
   `format.mileage.notNumber` / `.notWholeNumber` / `.outOfRange` finding
   codes, only when the field is filled (a blank optional field never fails).
   The GDS error summary round trip is the generic one in `routes/page.js`.
-- **Collect / persistence** — `orchestrator/apply-answers.js` canonicalises
-  the posted value by type and writes the fulfilment; the page's slot list
-  comes from the Flow, so the new slot is collected automatically.
+- **Collect / persistence** — the `orchestrator/apply-answers/` folder
+  canonicalises the posted value by type (`canonical-value.js`) and writes the
+  fulfilment (`page-answers.js`); the page's slot list comes from the Flow, so
+  the new slot is collected automatically.
 - **Check your answers** — the `cyaKey` on the presents entry produces the
   row (with its Change link and "Not provided" fallback) through
   `contract/cya-rows/page-rows.js`. No CYA catalogue to edit.
@@ -197,10 +198,10 @@ reverted so only this document changed:
    completability (tier 3) still completed all 162 enumerated states, and
    the cross-Flow equivalence (tier 4) held over both edited Flows — none of
    the tier files needed edits.
-3. Reverted every edit exactly (restoring the original file contents — this
-   spike's folder is not yet under version control, so the revert was done
-   by inverse edits, not `git checkout`) and re-ran the suite → **633 passed
-   (85 files)** again, proving the revert exact.
+3. Reverted every edit exactly (restoring the original file contents by
+   inverse edits — at the time this was performed the spike folder was not yet
+   under version control; it now is, so `git checkout` reverts cleanly) and
+   re-ran the suite → **633 passed (85 files)** again, proving the revert exact.
 4. The three shared Playwright specs need no tolerance edit for this
    example: the field is optional and page-soft, so the shared walk in
    `prototypes/e2e/journey.js` (which never fills it) stays green as-is. If
@@ -404,8 +405,9 @@ Code-read-derived — the suite is the authority:
   verbatim; gains `'parkingLocation'`.
 - `engine/index.test.js`, `engine/load-model.test.js` — 30 → 32.
 - `journey/config.test.js` — asserts `hubShape.groups` against
-  `flow.sections.slice(0, 3)`; the slice becomes `(0, 4)` (which is why the
-  Section goes _before_ `add-to-your-policy` in `flow.json`).
+  `flow.sections.slice(0, ALWAYS_LIVE_GROUP_COUNT)` (currently 3); bump
+  `ALWAYS_LIVE_GROUP_COUNT` to 4 (which is why the Section goes _before_
+  `add-to-your-policy` in `flow.json`).
 - `journey/hub-view.test.js` — pins "completed 0 of 3 tasks",
   `totalCount: 3` and the task-row list; all become 4-group shaped.
 - `contract/cya-rows/index.test.js`, `contract/view.test.js` — the parity
@@ -434,7 +436,7 @@ Code-read-derived — the suite is the authority:
 it), `lib/fields/` (radio and boolean companions exist), `validation/`
 (mandate enforcement is derived), `flow-eval/` (the tree walkers are
 generic), `orchestrator/` and `store/` (writes are model-driven),
-`contract/` (the 20-export barrel is unchanged — no surface drift). The
+`contract/` (the 21-export barrel is unchanged — no surface drift). The
 three code files that did change (`journey-rules.js`, `reasons.js`,
 `config.js`) are all declarative tables the tests pin, not logic.
 
@@ -481,8 +483,8 @@ Flow (obligations.md:196).
 
 Give the Container an `appliesWhen` name in **both** Flows, as the `claims`
 page (`"appliesWhen": "hadClaimsIsYes"`) and the add-on groups do, and
-register the named condition in `flow-eval/applies-when.js`'s Flow-condition
-registry. `model/flow.test.js` pins the closed `appliesWhen` name list, so
+define the named condition in `flow-eval/applies-when.js`'s Flow-condition
+registry (via its `define` / `defineFamily` API). `model/flow.test.js` pins the closed `appliesWhen` name list, so
 the new name is a reviewed addition there too. A gated-out page's data is
 **wiped, not hidden** — the orchestrator's scope-exit wipe
 (`orchestrator/scope-exit-wipe.js`) destroys out-of-scope fulfilments on the
