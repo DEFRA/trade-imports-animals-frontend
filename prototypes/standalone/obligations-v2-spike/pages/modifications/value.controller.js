@@ -1,17 +1,23 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../state/index.js'
+import { compose, currency, validate } from '../../lib/validate/index.js'
 import * as kit from '../_shared/kit.js'
 
-/** Modifications — value (second page of the gated modifications section). */
+/** Modifications — value (second page of the gated modifications section).
+ * The amount carries the optional currency validator. */
 const page = { id: 'modifications-value', slug: 'addons/modifications/value' }
 export const meta = { ...page, collects: ['modValue'] }
 const view = `${TEMPLATES}/pages/modifications/value`
 
-const render = (h, value) =>
+const fields = compose(currency('modValue'))
+
+const render = (h, value, errors = {}) =>
   h.view(view, {
     ...kit.base('Value of the modifications', { backLink: hubPath() }),
     heading: 'Value of the modifications',
-    value
+    value,
+    errors,
+    errorSummary: kit.errorSummary(errors)
   })
 
 const get = (request, h) => {
@@ -21,9 +27,11 @@ const get = (request, h) => {
 
 const post = (request, h) => {
   const payload = request.payload ?? {}
-  const { scope } = state.commit(request, h, {
-    modValue: (payload.modValue ?? '').trim()
-  })
+  const value = (payload.modValue ?? '').trim()
+  const { errors } = validate(fields, payload)
+  if (errors) return render(h, value, errors)
+
+  const { scope } = state.commit(request, h, { modValue: value })
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

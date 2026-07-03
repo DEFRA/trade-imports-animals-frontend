@@ -30,20 +30,23 @@
       id: "phone", name: "phone", type: "tel",
       label: { text: "UK telephone number" },
       hint: { text: "For international numbers include the country code" },
-      value: values.phone
+      value: values.phone,
+      errorMessage: errors.phone and { text: errors.phone }
     }) }}
 
     {{ govukInput({
       id: "postcode", name: "postcode",
       label: { text: "Postcode" },
       classes: "govuk-input--width-10",
-      value: values.postcode
+      value: values.postcode,
+      errorMessage: errors.postcode and { text: errors.postcode }
     }) }}
 
     {{ govukSelect({
       id: "country", name: "country",
       label: { text: "Country of residence" },
-      items: [{ value: "", text: "Choose…" }].concat(countries)
+      items: [{ value: "", text: "Choose…" }].concat(countries),
+      errorMessage: errors.country and { text: errors.country }
     }) }}
 
     {{ govukDateInput(dob) }}

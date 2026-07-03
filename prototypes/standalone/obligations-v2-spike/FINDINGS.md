@@ -1,5 +1,14 @@
 # Phase 1 — Investigation findings (v1 → v2)
 
+> **Addendum (validation rework).** A later review steer removed the obligation `type`
+> taxonomy and all constraint metadata (`pattern`/`min`/`max`/`maxLength`/`options`/
+> `saveBlocking`) after a usage trace confirmed **no runtime code read them** — every
+> widget and value-domain was already re-declared in the per-page templates/controllers,
+> so the def copies were dead. Validation is now a **controller** concern backed by a
+> reusable Joi lib (`lib/validate/`), loosely coupled to obligations rather than owned by
+> them. See `DESIGN.md` §9. This sharpened, rather than contradicted, the finding below
+> that "mandates become ordinary per-controller validation".
+
 Grounding note for the v2 design. Everything here is read from the v1 spike
 (`../obligations-standalone-spike/`, **read-only**), the source spec
 (`../../model-spikes/obligations.md`) and the three shared Playwright specs

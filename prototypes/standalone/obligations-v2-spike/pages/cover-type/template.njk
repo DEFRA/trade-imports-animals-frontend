@@ -4,6 +4,8 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {% block journeyContent %}
+  {% include "standalone/obligations-v2-spike/pages/_shared/error-summary.njk" %}
+
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
   <form method="post" novalidate>
@@ -22,7 +24,8 @@
         classes: "govuk-input--width-5",
         inputmode: "numeric",
         prefix: { text: "£" },
-        value: values.excessAmount
+        value: values.excessAmount,
+        errorMessage: errors.excessAmount and { text: errors.excessAmount }
       }) }}
     {% endset %}
 

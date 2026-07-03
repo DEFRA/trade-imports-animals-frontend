@@ -1,77 +1,65 @@
-import { T } from './types.js'
-
 /**
  * THE obligation catalogue — plain-JS data (the v2 inversion of v1's
- * UUID-keyed JSON). Each def carries only nouns and constraint values:
- * `type`, `cardinality`, `options` (value-domains, NOT labels), `required`
- * / `saveBlocking` (mandate facts), `system`, `renderOnly`, and the
- * relationship literals `activatedBy` / `wipeOnExit`. There is NO copy,
- * NO widget choice, NO message text and NO closure here — those live in
- * per-page controllers/templates.
+ * UUID-keyed JSON). A def carries only IDENTITY, RELATIONSHIPS and
+ * STRUCTURAL STATE FACTS:
+ *   - `id`               — the store key + DOM field name
+ *   - `required` / `requiredAtLeastOne` — "what is OWED" (completion facts the
+ *                          status roll-up reads; NOT save-time validation)
+ *   - `activatedBy` / `wipeOnExit` — scope + Yes-No-Yes wipe relationships
+ *   - `cardinality` / `fields` — the shape of a repeating collection (claims)
+ *   - `system`           — computed, never collected (premium)
+ *   - `renderOnly`       — presented but never stored (vehiclePhoto)
+ *
+ * There is deliberately NO `type` and NO validation here. A presentation-shaped
+ * "type" taxonomy (text/date/currency/radio/textarea/file…) leaked *how a value
+ * renders* into the model — the page template owns that. And validation is NOT
+ * an obligation's to own: the same value may be validated differently on a page,
+ * a controller or a future mapping layer, so it lives in the CONTROLLERS, drawn
+ * from the reusable, context-agnostic Joi helpers in `lib/validate/`. The
+ * obligation stays ignorant of validation; coupling is loose, via the schema a
+ * controller assembles — never a schema stamped on the record. Value-domains,
+ * formats, ranges and the sole hard mandate are all controller-owned validators.
  *
  * `activatedBy` is a PREDICATE-AS-DATA over a REAL JS reference:
  *   { obligation: <ref>, equals|includes|present: <value> }
- * interpreted by state/predicate.js. The reference is a const, so
- * relationships are typed and greppable with none of v1's UUID ceremony.
+ * interpreted by state/predicate.js. The reference is a const, so relationships
+ * are typed and greppable with none of v1's UUID ceremony.
  *
- * PURITY: this module imports only ./types.js. A stray import of a view,
- * a request or copy would be caught by the boot assertion in routes.js.
+ * PURITY: this module imports nothing. A stray import of a view, a request or
+ * copy would be caught by the boot assertion in routes.js.
  */
 
-const POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
-const REG = /^[A-Za-z]{2}\d{2}\s?[A-Za-z]{3}$/
-
 // ── root obligations (no activatedBy → always in scope) ──
-const email = { id: 'email', type: T.EMAIL, required: true }
-// fullName is the ONLY save-blocking (hard) mandate in the whole journey.
-const fullName = {
-  id: 'fullName',
-  type: T.TEXT,
-  required: true,
-  saveBlocking: true
-}
-const preferredName = { id: 'preferredName', type: T.TEXT }
-const phone = { id: 'phone', type: T.TEL }
-const postcode = { id: 'postcode', type: T.FORMATTED, pattern: POSTCODE }
-const country = {
-  id: 'country',
-  type: T.SELECT,
-  options: ['england', 'scotland', 'wales', 'northern-ireland']
-}
-const dateOfBirth = { id: 'dateOfBirth', type: T.DATE }
-const registration = { id: 'registration', type: T.FORMATTED, pattern: REG }
-const make = { id: 'make', type: T.TEXT }
-const model = { id: 'model', type: T.TEXT }
-const year = { id: 'year', type: T.NUMBER, min: 1900, max: 2100 }
-const estimatedValue = { id: 'estimatedValue', type: T.CURRENCY }
+const email = { id: 'email', required: true }
+// fullName is the ONLY save-blocking (hard) mandate in the whole journey —
+// expressed as a controller-owned Joi rule (about-you), not a def flag.
+const fullName = { id: 'fullName', required: true }
+const preferredName = { id: 'preferredName' }
+const phone = { id: 'phone' }
+const postcode = { id: 'postcode' }
+const country = { id: 'country' }
+const dateOfBirth = { id: 'dateOfBirth' }
+const registration = { id: 'registration' }
+const make = { id: 'make' }
+const model = { id: 'model' }
+const year = { id: 'year' }
+const estimatedValue = { id: 'estimatedValue' }
 // Render-only: the file input is presented but never stored (spike parity).
-const vehiclePhoto = { id: 'vehiclePhoto', type: T.FILE, renderOnly: true }
-const yearsNoClaims = { id: 'yearsNoClaims', type: T.NUMBER, min: 0, max: 99 }
-const hadClaims = { id: 'hadClaims', type: T.BOOLEAN, required: true }
-const penaltyPoints = { id: 'penaltyPoints', type: T.NUMBER, min: 0, max: 12 }
-const coverType = {
-  id: 'coverType',
-  type: T.RADIO,
-  required: true,
-  options: ['comprehensive', 'third-party-fire-theft', 'third-party']
-}
-const voluntaryExcess = { id: 'voluntaryExcess', type: T.BOOLEAN }
-const extras = {
-  id: 'extras',
-  type: T.MULTISELECT,
-  options: ['breakdown', 'courtesy-car', 'legal', 'windscreen']
-}
-const addons = {
-  id: 'addons',
-  type: T.MULTISELECT,
-  options: ['named-driver', 'modifications', 'protected-ncd']
-}
+const vehiclePhoto = { id: 'vehiclePhoto', renderOnly: true }
+const yearsNoClaims = { id: 'yearsNoClaims' }
+const hadClaims = { id: 'hadClaims', required: true }
+const penaltyPoints = { id: 'penaltyPoints' }
+const coverType = { id: 'coverType', required: true }
+const voluntaryExcess = { id: 'voluntaryExcess' }
+const extras = { id: 'extras' }
+const addons = { id: 'addons' }
 
 // ── the one repeating collection: claims (0..n, user add/remove) ──
-// Identity is (claims, arrayIndex) minted on append — no id ledger.
+// Identity is (claims, arrayIndex) minted on append — no id ledger. cardinality
+// + fields describe the value's JSON SHAPE (an array of { claimType, claimAmount }),
+// a structural state fact — not a "type" and not validation.
 const claims = {
   id: 'claims',
-  type: T.GROUP,
   cardinality: 'indexed',
   fields: ['claimType', 'claimAmount'],
   activatedBy: { obligation: hadClaims, equals: 'yes' },
@@ -82,7 +70,6 @@ const claims = {
 // ── conditional reveal — scope/wipe live here; the reveal MARKUP is page-side ──
 const excessAmount = {
   id: 'excessAmount',
-  type: T.CURRENCY,
   activatedBy: { obligation: voluntaryExcess, equals: 'yes' },
   wipeOnExit: true
 }
@@ -91,22 +78,18 @@ const excessAmount = {
 const namedDriverGate = { obligation: addons, includes: 'named-driver' }
 const driverName = {
   id: 'driverName',
-  type: T.TEXT,
   required: true,
   activatedBy: namedDriverGate,
   wipeOnExit: true
 }
 const driverDob = {
   id: 'driverDob',
-  type: T.DATE,
   activatedBy: namedDriverGate,
   wipeOnExit: true
 }
 const relationship = {
   id: 'relationship',
-  type: T.RADIO,
   required: true,
-  options: ['spouse', 'child', 'parent', 'other'],
   activatedBy: namedDriverGate,
   wipeOnExit: true
 }
@@ -114,15 +97,12 @@ const relationship = {
 const modificationsGate = { obligation: addons, includes: 'modifications' }
 const modDescription = {
   id: 'modDescription',
-  type: T.TEXTAREA,
   required: true,
-  maxLength: 200,
   activatedBy: modificationsGate,
   wipeOnExit: true
 }
 const modValue = {
   id: 'modValue',
-  type: T.CURRENCY,
   activatedBy: modificationsGate,
   wipeOnExit: true
 }
@@ -130,10 +110,7 @@ const modValue = {
 const protectedNcdGate = { obligation: addons, includes: 'protected-ncd' }
 const ncdYears = {
   id: 'ncdYears',
-  type: T.NUMBER,
   required: true,
-  min: 1,
-  max: 99,
   activatedBy: protectedNcdGate,
   wipeOnExit: true
 }
@@ -141,7 +118,6 @@ const ncdYears = {
 // ── system-handled: computed on demand, never collected ──
 const premium = {
   id: 'premium',
-  type: T.QUOTE,
   system: true,
   activatedBy: { obligation: coverType, present: true }
 }

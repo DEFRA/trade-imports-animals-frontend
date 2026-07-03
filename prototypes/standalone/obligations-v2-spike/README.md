@@ -22,9 +22,13 @@
 1. **Pages are the spine.** Every page is an ordinary Hapi GET/POST pair with its own
    bespoke `.njk` template, owning its copy, validation and view-model (`pages/<page>/`).
 2. **A thin declarative state layer** (`state/`) holds obligations as plain-JS data —
-   type, cardinality, and activation/wipe **relationships** as inert literals over real
-   JS references — plus one pure `reconcile` (scope + Yes-No-Yes wipe, to a fixpoint) and
-   one pure `rollUp` (four-status). It **never renders and never owns copy**.
+   identity, structural facts (`cardinality`, `system`, `renderOnly`), mandate facts
+   (`required`) and activation/wipe **relationships** as inert literals over real JS
+   references — plus one pure `reconcile` (scope + Yes-No-Yes wipe, to a fixpoint) and
+   one pure `rollUp` (four-status). It carries **no `type`** and **no validation**, and it
+   **never renders and never owns copy**.
+   **Validation lives in the controllers**, drawn from a reusable, context-agnostic Joi
+   library (`lib/validate/`) — loosely coupled to obligations, never stamped on them.
 3. **The seam is one-directional and derived.** Pages declare the obligations they
    `collects`; at boot those are inverted into `flow/dispatch.js` (obligation → page,
    coverage-asserted). Pages write answers **down** (`state.commit`); the store derives
@@ -57,13 +61,14 @@ equivalence harness, and obligations knowing about pages (inverted to page-side 
 
 ## Where things live
 
-| Concern                                          | Home                                                      |
-| ------------------------------------------------ | --------------------------------------------------------- |
-| Obligation defs (data only)                      | `state/obligations/registry.js` (imports only `types.js`) |
-| Scope + scope-exit wipe                          | `state/reconcile.js` (pure)                               |
-| Four-status roll-up + quote-readiness            | `state/status.js` (pure)                                  |
-| The one-directional facade pages call            | `state/index.js` (`get`/`commit`/`appendEntry`/…)         |
-| Flow ordering + gating (no copy)                 | `flow/flow.js` + `flow/navigation.js`                     |
-| Dispatch seam (obligation → page, boot-asserted) | `flow/dispatch.js`                                        |
-| Per-page controllers + templates                 | `pages/<page>/`                                           |
-| Shared per-page library (not a framework)        | `pages/_shared/kit.js`                                    |
+| Concern                                          | Home                                                     |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| Obligation defs (identity + relationships only)  | `state/obligations/registry.js` (imports nothing)        |
+| Scope + scope-exit wipe                          | `state/reconcile.js` (pure)                              |
+| Four-status roll-up + quote-readiness            | `state/status.js` (pure)                                 |
+| The one-directional facade pages call            | `state/index.js` (`get`/`commit`/`appendEntry`/…)        |
+| Flow ordering + gating (no copy)                 | `flow/flow.js` + `flow/navigation.js`                    |
+| Dispatch seam (obligation → page, boot-asserted) | `flow/dispatch.js`                                       |
+| Per-page controllers + templates                 | `pages/<page>/`                                          |
+| Shared per-page library (not a framework)        | `pages/_shared/kit.js`                                   |
+| Reusable Joi validators (context-agnostic)       | `lib/validate/` (`requiredText`/`postcode`/`currency`/…) |

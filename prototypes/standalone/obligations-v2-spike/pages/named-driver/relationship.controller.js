@@ -1,8 +1,10 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../state/index.js'
+import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../_shared/kit.js'
 
-/** Named driver — relationship (second page of the gated section). */
+/** Named driver — relationship (second page of the gated section). The value
+ * domain is a controller-owned `oneOf`. */
 const page = {
   id: 'named-driver-relationship',
   slug: 'addons/named-driver/relationship'
@@ -17,10 +19,18 @@ const OPTIONS = [
   { value: 'other', text: 'Someone else' }
 ]
 
-const render = (h, value) =>
+const fields = compose(
+  oneOf(
+    'relationship',
+    OPTIONS.map((o) => o.value)
+  )
+)
+
+const render = (h, value, errors = {}) =>
   h.view(view, {
     ...kit.base('Relationship to you', { backLink: hubPath() }),
     heading: 'Relationship to you',
+    errorSummary: kit.errorSummary(errors),
     options: OPTIONS.map((o) => ({ ...o, checked: o.value === value }))
   })
 
@@ -31,6 +41,9 @@ const get = (request, h) => {
 
 const post = (request, h) => {
   const payload = request.payload ?? {}
+  const { errors } = validate(fields, payload)
+  if (errors) return render(h, payload.relationship ?? '', errors)
+
   const { scope } = state.commit(request, h, {
     relationship: payload.relationship ?? ''
   })

@@ -1,5 +1,6 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../state/index.js'
+import { compose, currency, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../_shared/kit.js'
 import { open } from '../_shared/kit.js'
 
@@ -22,6 +23,14 @@ export const CLAIM_TYPE_LABEL = Object.fromEntries(
 )
 
 const view = `${TEMPLATES}/pages/claims/entry`
+
+const fields = compose(
+  oneOf(
+    'claimType',
+    CLAIM_TYPE_OPTIONS.map((o) => o.value)
+  ),
+  currency('claimAmount')
+)
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
@@ -48,6 +57,9 @@ const postAdd = (request, h) => {
     claimType: payload.claimType ?? '',
     claimAmount: (payload.claimAmount ?? '').trim()
   }
+  const { errors } = validate(fields, payload)
+  if (errors) return render(h, entry, errors)
+
   state.appendEntry(request, h, 'claims', entry) // MINTS the index (identity)
   return h.redirect(pagePath('claims'))
 }

@@ -80,6 +80,13 @@ off to the relevant page" with "the binding lives on the page side": pages decla
 inverts, the state layer dispatches through the derived index and never learns a page's
 copy or shape.
 
+> **Revision (validation rework).** The obligation model below has since **shed its
+> `type` taxonomy and every presentation/validation-shaped field** (`type`, `pattern`,
+> `min`, `max`, `maxLength`, `options`, `saveBlocking`). A def now carries only identity,
+> relationships and structural state facts. Validation moved into the controllers, backed
+> by a reusable Joi lib. See **§9** for the rationale and the current shape; the block in
+> this section is retained as the design's original record.
+
 ## 3. Obligation-model shape (real JS, real journey)
 
 Defs are plain objects: **nouns and constraint values only** — `type`, `cardinality`,
@@ -418,3 +425,66 @@ pages declare `collects`, boot builds the dispatch index).
 4. All three shared specs green (`npm run test:prototype`); plus pure unit tests for
    `reconcile` (single + cascading wipe), `rollUp`, `navigation`, `dispatch` coverage,
    and the claims append/remove/wipe lifecycle.
+
+## 9. Validation rework — no model `type`, controller-owned Joi (revision)
+
+A review steer landed after the design above: **obligations should not carry
+presentation-shaped "types", and must not own validation.** This section records how
+that was resolved. It is a subtraction _and_ an addition — the model gets thinner while
+the validation the model only _implied_ becomes real, in the right place.
+
+**The subtraction — the model sheds `type` and all constraint metadata.** A usage trace
+confirmed `type`, `pattern`, `min`, `max`, `maxLength`, `options` and `saveBlocking` were
+**near-vestigial**: no runtime code read them. `reconcile`/`status`/`dispatch`/`predicate`
+key off `id` / `activatedBy` / `wipeOnExit` / `required` / `requiredAtLeastOne` / `system`
+only, and every widget/value-domain was already re-declared literally in the per-page
+templates and controllers. So `type` and the constraint fields were **dead duplicates of
+presentation** and are removed; `state/obligations/types.js` is deleted. A def now carries
+only:
+
+- **identity** — `id` (the store key + DOM field name);
+- **mandate facts** — `required` / `requiredAtLeastOne` ("what is _owed_" — a completion
+  fact the status roll-up reads; deliberately **distinct** from save-time validation);
+- **structural state facts** — `cardinality` + `fields` (the JSON shape of the `claims`
+  collection), `system` (`premium`, computed), `renderOnly` (`vehiclePhoto`, never stored);
+- **relationships** — `activatedBy` / `wipeOnExit`.
+
+**Q1 — reduce `type` to native-JSON, or drop it?** Dropped entirely. Nothing read it, and
+the only honest notion of a value's "shape" that the state layer still needs is expressed
+by the structural facts above (`cardinality`/`fields` for the one collection). A single
+`type: 'string'` on every scalar would have been ceremony no code consults.
+
+**The addition — a reusable Joi lib the controllers own (`lib/validate/`).** Steer B is
+load-bearing: validation is a **controller** concern (and later a mapping-layer concern),
+and the _same_ value may be validated differently in different contexts — so it cannot be
+a fact stamped on the obligation.
+
+- **Q2 — shape of the validators.** A **flat library of small, named, context-agnostic
+  Joi factories** (`requiredText`, `optionalText`, `postcode`, `vehicleReg`, `ukPhone`,
+  `oneOf`, `integerInRange`, `currency`, `dateParts`, `maxText`). Each returns a single-key
+  `Joi.object({ [name]: rule }).unknown(true)`, so it is greppable, unit-testable in
+  isolation, and reusable by a page, a controller or a future transform — none of them
+  knows about obligations. Chosen over per-page schema classes (less reusable) and a
+  model-derived compiler (re-introduces the config engine v2 exists to avoid).
+- **Q3 — the hook / coupling.** Each controller declares **its own** field→validator map
+  (`const fields = compose(requiredText('fullName', …), postcode('postcode'), …)`) and
+  calls `validate(fields, payload)` on POST. The association lives on the **page side**,
+  never on the obligation — the same seam v2 already uses for `collects`. `lib/validate`
+  is a **library the controller calls**, never a framework that renders or drives the
+  page: no helper takes a template name or field schema and renders.
+- **Q4 — the mandate split.** `fullName` is the sole **save-blocking** rule, now an
+  explicit controller-owned `requiredText('fullName', 'Enter your full name')` in
+  `about-you`. Every other validator is **optional** (blank passes; only malformed
+  non-blank input is caught), so "progresses with only Full name" still holds.
+  _Completion_-required-ness (`required` / `requiredAtLeastOne`) stays on the obligation
+  because the status roll-up and quote-readiness legitimately need "what is owed" — a
+  state fact, distinct from save-time validation, which does not live there.
+
+**The Joi → GDS seam is reused, not reinvented.** `validate()` maps Joi's `error.details`
+to the exact `{ fieldId: message }` map v2 already speaks; `kit.errorSummary` turns it into
+the GDS summary (`a[href="#fieldId"]`) and each govuk macro, given `errorMessage` + a
+matching `id`, emits the inline `#fieldId-error`. So `mandatory-fields`' error wiring is
+unchanged and DOM parity holds (optional validators never fire on the valid journeys).
+
+**Net crispness:** obligation = identity + relationships + structural flags; validation =
+controller + `lib/validate`; presentation = template. Three seams, none overlapping.

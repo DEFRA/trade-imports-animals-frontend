@@ -1,11 +1,23 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../state/index.js'
+import {
+  compose,
+  dateParts,
+  oneOf,
+  postcode,
+  requiredText,
+  ukPhone,
+  validate
+} from '../../lib/validate/index.js'
 import * as kit from '../_shared/kit.js'
 
 /**
  * About you — the ONE page with a save-blocking (hard) mandate: fullName.
  * Every other field saves blank (soft), so "progresses with only Full name"
- * holds. Bespoke validation lives right here; the state layer only stores.
+ * holds. This controller OWNS its validation: it composes a schema from the
+ * reusable lib validators and runs it against the payload. fullName is the
+ * sole `requiredText`; everything else is optional (blank passes, malformed
+ * fails). The state layer only stores — it never sees the schema.
  */
 const page = { id: 'about-you', slug: 'about-you' }
 export const meta = {
@@ -27,6 +39,18 @@ const COUNTRIES = [
   { value: 'wales', text: 'Wales' },
   { value: 'northern-ireland', text: 'Northern Ireland' }
 ]
+
+// The page's field→validator map — assembled from lib pieces, owned here.
+const fields = compose(
+  requiredText('fullName', 'Enter your full name'),
+  ukPhone('phone'),
+  postcode('postcode'),
+  oneOf(
+    'country',
+    COUNTRIES.map((c) => c.value)
+  ),
+  dateParts('dateOfBirth')
+)
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
@@ -69,9 +93,8 @@ const post = (request, h) => {
     country: payload.country ?? '',
     dateOfBirth: kit.readDate(payload, 'dateOfBirth')
   }
-  const errors = {}
-  if (!values.fullName) errors.fullName = 'Enter your full name' // the sole hard mandate
-  if (Object.keys(errors).length) return render(h, values, errors)
+  const { errors } = validate(fields, payload)
+  if (errors) return render(h, values, errors)
 
   const { scope } = state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))

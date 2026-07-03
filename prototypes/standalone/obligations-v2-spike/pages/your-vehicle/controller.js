@@ -1,9 +1,18 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../state/index.js'
+import {
+  compose,
+  currency,
+  integerInRange,
+  validate,
+  vehicleReg
+} from '../../lib/validate/index.js'
 import * as kit from '../_shared/kit.js'
 
 /** Your vehicle — all fields soft (save blank). vehiclePhoto is render-only
- * (never stored, spike parity). */
+ * (never stored, spike parity). Format checks (registration pattern, year
+ * range, currency) are controller-owned lib validators — optional, so a blank
+ * field still saves, but a malformed non-blank value is caught. */
 const page = { id: 'your-vehicle', slug: 'your-vehicle' }
 export const meta = {
   ...page,
@@ -19,11 +28,19 @@ export const meta = {
 const view = `${TEMPLATES}/pages/your-vehicle/template`
 const MAKES = ['Audi', 'BMW', 'Ford', 'Nissan', 'Toyota', 'Volkswagen']
 
-const render = (h, values) =>
+const fields = compose(
+  vehicleReg('registration'),
+  integerInRange('year', { min: 1900, max: 2100 }),
+  currency('estimatedValue')
+)
+
+const render = (h, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Your vehicle', { backLink: hubPath() }),
     heading: 'Your vehicle',
     values,
+    errors,
+    errorSummary: kit.errorSummary(errors),
     makes: MAKES
   })
 
@@ -40,13 +57,17 @@ const get = (request, h) => {
 
 const post = (request, h) => {
   const payload = request.payload ?? {}
-  const { scope } = state.commit(request, h, {
+  const values = {
     registration: (payload.registration ?? '').trim(),
     make: (payload.make ?? '').trim(),
     model: (payload.model ?? '').trim(),
     year: (payload.year ?? '').trim(),
     estimatedValue: (payload.estimatedValue ?? '').trim()
-  })
+  }
+  const { errors } = validate(fields, payload)
+  if (errors) return render(h, values, errors)
+
+  const { scope } = state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

@@ -23,7 +23,8 @@
       classes: "govuk-input--width-5",
       inputmode: "numeric",
       prefix: { text: "£" },
-      value: values.claimAmount
+      value: values.claimAmount,
+      errorMessage: errors.claimAmount and { text: errors.claimAmount }
     }) }}
 
     {{ govukButton({ text: buttonText }) }}
