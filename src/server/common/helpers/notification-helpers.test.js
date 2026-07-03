@@ -4,13 +4,15 @@ import {
   saveNotification,
   submitNotification,
   deleteNotification,
-  amendNotification
+  amendNotification,
+  cancelAmendNotification
 } from './notification-helpers.js'
 
 const mockSave = vi.hoisted(() => vi.fn())
 const mockSubmitNotification = vi.hoisted(() => vi.fn())
 const mockSoftDelete = vi.hoisted(() => vi.fn())
 const mockAmend = vi.hoisted(() => vi.fn())
+const mockCancelAmend = vi.hoisted(() => vi.fn())
 const mockGetTraceId = vi.hoisted(() => vi.fn())
 
 vi.mock('../clients/notification-client.js', () => ({
@@ -18,7 +20,8 @@ vi.mock('../clients/notification-client.js', () => ({
     save: mockSave,
     submitNotification: mockSubmitNotification,
     softDelete: mockSoftDelete,
-    amend: mockAmend
+    amend: mockAmend,
+    cancelAmend: mockCancelAmend
   }
 }))
 
@@ -303,6 +306,85 @@ describe('#amendNotification', () => {
       await expect(
         amendNotification(mockRequest, mockLogger, referenceNumber)
       ).rejects.toThrow('amend error')
+    })
+  })
+})
+
+describe('#cancelAmendNotification', () => {
+  let mockLogger
+  const mockRequest = { yar: {} }
+  const traceId = 'trace-can'
+  const referenceNumber = 'REF-CAN-1'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockLogger = { info: vi.fn(), error: vi.fn() }
+    mockGetTraceId.mockReturnValue(traceId)
+  })
+
+  describe('When cancel amend succeeds', () => {
+    const mockResponse = { status: 'SUBMITTED' }
+
+    beforeEach(() => {
+      mockCancelAmend.mockResolvedValue(mockResponse)
+    })
+
+    test('Should call notificationClient.cancelAmend with correct args', async () => {
+      await cancelAmendNotification(mockRequest, mockLogger, referenceNumber)
+
+      expect(mockCancelAmend).toHaveBeenCalledWith(
+        mockRequest,
+        referenceNumber,
+        traceId
+      )
+    })
+
+    test('Should log the cancelled reference number', async () => {
+      await cancelAmendNotification(mockRequest, mockLogger, referenceNumber)
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Amendment cancelled for notification: REF-CAN-1'
+      )
+    })
+
+    test('Should return the response', async () => {
+      const result = await cancelAmendNotification(
+        mockRequest,
+        mockLogger,
+        referenceNumber
+      )
+
+      expect(result).toEqual(mockResponse)
+    })
+
+    test('Should use empty trace id when getTraceId returns null', async () => {
+      mockGetTraceId.mockReturnValueOnce(null)
+
+      await cancelAmendNotification(mockRequest, mockLogger, referenceNumber)
+
+      expect(mockCancelAmend).toHaveBeenCalledWith(
+        mockRequest,
+        referenceNumber,
+        ''
+      )
+    })
+  })
+
+  describe('When cancel amend fails', () => {
+    const error = new Error('cancel error')
+
+    beforeEach(() => {
+      mockCancelAmend.mockRejectedValue(error)
+    })
+
+    test('Should log error message and re-throw', async () => {
+      await expect(
+        cancelAmendNotification(mockRequest, mockLogger, referenceNumber)
+      ).rejects.toThrow('cancel error')
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to cancel amendment: cancel error'
+      )
     })
   })
 })

@@ -301,9 +301,6 @@ export const notificationClient = {
     return response.json()
   },
 
-  /**
-   * Moves a SUBMITTED notification into AMEND so the trader can edit it.
-   */
   async amend(_request, referenceNumber, traceId) {
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/amend`,
@@ -321,6 +318,32 @@ export const notificationClient = {
       error.status = response.status
       error.statusText = response.statusText
       logger.error(`Failed to amend notification: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Cancels an in-progress amendment and restores the submitted notification.
+   */
+  async cancelAmend(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/cancel-amend`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to cancel amendment')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to cancel amendment: ${error.message}`)
       throw error
     }
 
