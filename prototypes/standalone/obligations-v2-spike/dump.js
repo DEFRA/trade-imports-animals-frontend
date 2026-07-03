@@ -1,8 +1,8 @@
 import { buildDispatch } from './flow/dispatch.js'
 import { allFlowPages, sections } from './flow/flow.js'
-import { dispatchPages } from './pages/registry.js'
-import { reconcile } from './state/reconcile.js'
-import { readyForQuote, sectionStatus } from './state/status.js'
+import { dispatchPages } from './features/index.js'
+import { reconcile } from './engine/reconcile.js'
+import { readyForQuote, sectionStatus } from './engine/status.js'
 
 /**
  * Headless state dump — the state layer without its UI. Prints, for a

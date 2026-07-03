@@ -1,0 +1,44 @@
+{% extends "standalone/obligations-v2-spike/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/obligations-v2-spike/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "coverType",
+      fieldset: { legend: { text: "Which cover do you want?", classes: "govuk-fieldset__legend--s" } },
+      items: coverOptions
+    }) }}
+
+    {% set excessHtml %}
+      {{ govukInput({
+        id: "excessAmount", name: "excessAmount",
+        label: { text: "Voluntary excess amount" },
+        classes: "govuk-input--width-5",
+        inputmode: "numeric",
+        prefix: { text: "£" },
+        value: values.excessAmount,
+        errorMessage: errors.excessAmount and { text: errors.excessAmount }
+      }) }}
+    {% endset %}
+
+    {{ govukRadios({
+      name: "voluntaryExcess",
+      fieldset: { legend: { text: "Do you want to add a voluntary excess?", classes: "govuk-fieldset__legend--s" } },
+      hint: { text: "Paying a voluntary excess can lower your premium" },
+      items: [
+        { value: "yes", text: "Yes", checked: values.voluntaryExcess == "yes", conditional: { html: excessHtml } },
+        { value: "no", text: "No", checked: values.voluntaryExcess == "no" }
+      ]
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { dispatchPages } from '../pages/registry.js'
-import { reconcile } from '../state/reconcile.js'
-import { readyForQuote } from '../state/status.js'
+import { dispatchPages } from '../features/index.js'
+import { reconcile } from '../engine/reconcile.js'
+import { readyForQuote } from '../engine/status.js'
 import { buildDispatch, collectsOf, pageOfObligation } from './dispatch.js'
 import { nextInSection, sectionEntry } from './navigation.js'
 

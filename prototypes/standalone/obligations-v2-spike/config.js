@@ -8,7 +8,7 @@ export const BASE =
   '/prototype-standalone/obligations-v2-spike/task-list-with-linear-tasks'
 
 export const TEMPLATES = 'standalone/obligations-v2-spike'
-export const LAYOUT = `${TEMPLATES}/pages/_shared/layout.njk`
+export const LAYOUT = `${TEMPLATES}/shared/layout.njk`
 
 /** Page URL from a flow slug (slugs may nest, e.g. addons/…/who). */
 export const pagePath = (slug) => `${BASE}/${slug}`

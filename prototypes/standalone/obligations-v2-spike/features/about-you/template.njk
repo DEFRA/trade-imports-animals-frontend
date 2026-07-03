@@ -1,0 +1,56 @@
+{% extends "standalone/obligations-v2-spike/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/obligations-v2-spike/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "fullName", name: "fullName",
+      label: { text: "Full name" },
+      value: values.fullName,
+      errorMessage: errors.fullName and { text: errors.fullName }
+    }) }}
+
+    {{ govukInput({
+      id: "preferredName", name: "preferredName",
+      label: { text: "What should we call you?" },
+      hint: { text: "Optional. We'll use this when we contact you." },
+      value: values.preferredName
+    }) }}
+
+    {{ govukInput({
+      id: "phone", name: "phone", type: "tel",
+      label: { text: "UK telephone number" },
+      hint: { text: "For international numbers include the country code" },
+      value: values.phone,
+      errorMessage: errors.phone and { text: errors.phone }
+    }) }}
+
+    {{ govukInput({
+      id: "postcode", name: "postcode",
+      label: { text: "Postcode" },
+      classes: "govuk-input--width-10",
+      value: values.postcode,
+      errorMessage: errors.postcode and { text: errors.postcode }
+    }) }}
+
+    {{ govukSelect({
+      id: "country", name: "country",
+      label: { text: "Country of residence" },
+      items: [{ value: "", text: "Choose…" }].concat(countries),
+      errorMessage: errors.country and { text: errors.country }
+    }) }}
+
+    {{ govukDateInput(dob) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

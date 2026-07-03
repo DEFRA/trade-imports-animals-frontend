@@ -1,4 +1,4 @@
-import { registry } from '../state/obligations/registry.js'
+import { registry } from '../registry.js'
 
 /**
  * THE dispatch seam — obligation -> owning page. It is DERIVED at boot

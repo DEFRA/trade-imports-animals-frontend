@@ -1,0 +1,12 @@
+{% extends "standalone/obligations-v2-spike/shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+  <p class="govuk-body">{{ body }}</p>
+
+  <form method="post" action="{{ startAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: buttonText, isStartButton: true }) }}
+  </form>
+{% endblock %}

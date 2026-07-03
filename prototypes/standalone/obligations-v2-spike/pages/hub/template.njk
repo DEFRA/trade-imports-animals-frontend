@@ -1,9 +1,0 @@
-{% extends "standalone/obligations-v2-spike/pages/_shared/layout.njk" %}
-{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
-
-{% block journeyContent %}
-  <h1 class="govuk-heading-xl">{{ heading }}</h1>
-  <p class="govuk-body">{{ progressLine }}</p>
-
-  {{ govukTaskList({ items: items }) }}
-{% endblock %}

@@ -1,0 +1,37 @@
+import { hubPath, TEMPLATES } from '../../config.js'
+import * as state from '../../engine/index.js'
+import * as kit from '../../shared/kit.js'
+
+/** Optional extras — a multi-select. Optional (saves empty). */
+const page = { id: 'optional-extras', slug: 'optional-extras' }
+export const meta = { ...page, collects: ['extras'] }
+const view = `${TEMPLATES}/features/optional-extras/template`
+
+const EXTRAS = [
+  { value: 'breakdown', text: 'Breakdown cover' },
+  { value: 'courtesy-car', text: 'Courtesy car' },
+  { value: 'legal', text: 'Motor legal protection' },
+  { value: 'windscreen', text: 'Windscreen cover' }
+]
+
+const render = (h, selected) =>
+  h.view(view, {
+    ...kit.base('Optional extras', { backLink: hubPath() }),
+    heading: 'Optional extras',
+    options: EXTRAS.map((e) => ({ ...e, checked: selected.includes(e.value) }))
+  })
+
+const get = (request, h) => {
+  const { answers } = state.get(request, h)
+  return render(h, [].concat(answers.extras ?? []))
+}
+
+const post = (request, h) => {
+  const payload = request.payload ?? {}
+  const { scope } = state.commit(request, h, {
+    extras: [].concat(payload.extras ?? [])
+  })
+  return h.redirect(kit.nextTarget(request, page, scope))
+}
+
+export const routes = kit.pageRoutes(page, { get, post })

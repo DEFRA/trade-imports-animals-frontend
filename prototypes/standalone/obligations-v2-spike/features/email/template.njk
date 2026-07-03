@@ -1,0 +1,25 @@
+{% extends "standalone/obligations-v2-spike/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/obligations-v2-spike/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "email",
+      name: "email",
+      type: "email",
+      label: { text: "Email address" },
+      hint: { text: "We use this so you can save your quote and come back to it later." },
+      value: values.email,
+      errorMessage: errors.email and { text: errors.email }
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

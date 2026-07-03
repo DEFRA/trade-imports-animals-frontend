@@ -26,50 +26,69 @@ status and hands them **up** as read-only facts. Nothing else crosses.
 
 ## 2. Module map + folder tree
 
+> **Revision (feature model — DISCUSSION-LOG entry 5).** The layout below replaces
+> the original `pages/` + central-`state/` map. The defs moved from one central
+> `state/obligations/registry.js` into a pure `obligations.js` **per feature**
+> (entry 3a's split, landed inside the features), assembled by a top-level
+> `registry.js` **barrel** (entry 3 — the model is now first-class, not a drawer
+> in `state/`). What remained of `state/` — the pure evaluators + store + facade —
+> is the central `engine/`; `quote.js` moved to `lib/` as domain logic (entry 2).
+> The model-purity guard is **re-pointed per-file** (`obligation-purity.js`).
+
 ```
 obligations-v2-spike/
-  FINDINGS.md  DESIGN.md  DESIGN-PROVENANCE.md  README.md
-  routes.js                     # one Hapi plugin; boot-asserts, registers pages, wraps guard
-  index.js  dump.js             # (dump = headless state dump for a fixture)
+  FINDINGS.md  DESIGN.md  DESIGN-PROVENANCE.md  README.md  DISCUSSION-LOG.md
+  routes.js                     # one Hapi plugin; runs the two boot guards, registers the routes
+  registry.js                   # the ASSEMBLING BARREL — imports every feature's obligations.js
+  obligation-purity.js          # per-file boot guard: a def file imports ONLY another def file
+  contract.test.js              # controller<->model commit contract (the restructure safety net)
+  config.js  dump.js            # (dump = headless state dump for a fixture)
 
-  state/                        # ── THIN SHARED STATE LAYER (no copy, no render) ──
-    obligations/
-      types.js                  # type tag constants
-      registry.js               # ALL obligation defs — plain data + real JS references
+  features/                     # ── THE SPINE — one vertical slice per feature ──
+    start/          { controller.js, template.njk }                      # shell (no obligations)
+    hub/            { controller.js, template.njk }                      # task-list; owns task titles
+    email/          { controller.js, template.njk, obligations.js }
+    about-you/      { controller.js, template.njk, obligations.js }      # owns fullName (sole save-blocking mandate)
+    your-vehicle/   { controller.js, template.njk, obligations.js }      # owns vehiclePhoto (renderOnly)
+    driving-history/{ controller.js, template.njk, obligations.js }      # owns hadClaims (activates claims)
+    claims/         { list.controller.js, entry.controller.js, list.njk, entry.njk, obligations.js }
+    cover-type/     { controller.js, template.njk, obligations.js }      # voluntaryExcess Yes reveals excessAmount
+    optional-extras/{ controller.js, template.njk, obligations.js }
+    addons/         { controller.js, template.njk, obligations.js }      # picker; activates 3 detail slices
+    named-driver/   { who.controller.js, relationship.controller.js, who.njk, relationship.njk, obligations.js }
+    modifications/  { describe.controller.js, value.controller.js, describe.njk, value.njk, obligations.js }
+    protected-ncd/  { years.controller.js, years.njk, obligations.js }
+    quote/          { controller.js, template.njk, obligations.js }      # owns premium (system, computed)
+    check-answers/  { controller.js, template.njk }                      # bespoke rows; SOFT-GATE at POST
+    confirmation/   { controller.js, template.njk }
+    index.js                    # the route + dispatchPages barrel (every controller assembled)
+
+  engine/                       # ── THE CENTRAL ENGINE (was state/, model + calculator removed) ──
     predicate.js                # evalPredicate(activatedBy, answers) — the tiny vocab
     reconcile.js                # PURE: (answers) -> { inScope:Set, wiped:[] }, fixpoint
     status.js                   # PURE: rollUp(obligationIds, answers, scope) -> status
+    util.js                     # isBlank/isAnswered
     store.js                    # in-memory Map; get/commit/appendEntry/updateEntry/removeEntry
     journey.js                  # cookie journeyId, load-or-create, submit-freeze
-    quote.js                    # calculatePremium(answers) + makeReference(id)  [system handler]
-    index.js                    # the narrow facade pages import
+    index.js                    # the narrow state facade controllers import
 
   flow/
     flow.js                     # ordered sections -> pages {id, slug, gate?} — STRUCTURE + GATING only
-    navigation.js               # sectionEntry, nextInSection (else hub), changeReturn
+    navigation.js               # sectionEntry, nextInSection (else hub)
     dispatch.js                 # obligationId -> {pageId, slug} built at boot; coverage-asserted
 
-  pages/                        # ── THE SPINE — one folder per page, fully bespoke ──
-    _shared/
-      kit.js                    # a LIBRARY of helpers (errorSummary, nextTarget, pageRoutes, view ctx)
-      layout.njk                # base template (service nav, phase banner, breadcrumbs, back link)
-      error-summary.njk         # shared GDS error-summary partial (#id-error, a[href="#id"])
-    start/          { controller.js, template.njk }
-    hub/            { controller.js, template.njk }   # task-list; owns task titles (page copy)
-    email/          { controller.js, template.njk }
-    about-you/      { controller.js, template.njk }   # collects fullName (the ONLY save-blocking mandate)
-    your-vehicle/   { controller.js, template.njk }
-    driving-history/{ controller.js, template.njk }
-    claims/         { list.controller.js, entry.controller.js, list.njk, entry.njk }
-    cover-type/     { controller.js, template.njk }   # voluntaryExcess Yes reveals excessAmount
-    optional-extras/{ controller.js, template.njk }
-    addons/         { controller.js, template.njk }   # picker; Continue button
-    named-driver/   { who.controller.js, relationship.controller.js, who.njk, relationship.njk }
-    modifications/  { describe.controller.js, value.controller.js, describe.njk, value.njk }
-    protected-ncd/  { years.controller.js, years.njk }
-    quote/          { controller.js, template.njk }   # reads system premium
-    check-answers/  { controller.js, template.njk }   # bespoke rows; SOFT-GATE at POST
-    confirmation/   { controller.js, template.njk }
+  shared/                       # shared UI plumbing (a LIBRARY the page calls, never a framework)
+    kit.js                      # errorSummary, nextTarget, pageRoutes, view ctx, date helpers
+    layout.njk                  # base template (service nav, phase banner, breadcrumbs, back link)
+    error-summary.njk           # shared GDS error-summary partial (#id-error, a[href="#id"])
+
+  lib/
+    validate/                   # reusable, context-agnostic Joi validators (unchanged)
+    quote.js                    # calculatePremium(answers) + makeReference(id) — pure domain, not state
+
+  analysis/                     # ── MODEL-LEVEL TOOLING (browser-free payoff, entry 4) ──
+    simulate.js                 # simulateJourney(answers) -> ordered page ids a persona visits
+    reachability.js             # proveReachability() -> [] (no owed obligation is unreachable)
 ```
 
 **The dispatch seam is `flow/dispatch.js`** — _derived_ at boot from every page's
