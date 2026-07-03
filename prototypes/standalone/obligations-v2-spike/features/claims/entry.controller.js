@@ -22,6 +22,18 @@ export const CLAIM_TYPE_LABEL = Object.fromEntries(
   CLAIM_TYPE_OPTIONS.map((o) => [o.value, o.text])
 )
 
+/** The three approved windscreen repairers — asked ONLY for a windscreen claim
+ * (item-scoped conditionality, entry 6c). Exported so the CYA + the nested
+ * driver-claim reuse render identical copy. */
+export const WINDSCREEN_PROVIDER_OPTIONS = [
+  { value: 'autoglass', text: 'Autoglass' },
+  { value: 'national-windscreens', text: 'National Windscreens' },
+  { value: 'nationwide', text: 'Nationwide Windscreen Services' }
+]
+export const WINDSCREEN_PROVIDER_LABEL = Object.fromEntries(
+  WINDSCREEN_PROVIDER_OPTIONS.map((o) => [o.value, o.text])
+)
+
 const view = `${TEMPLATES}/features/claims/entry`
 
 const fields = compose(
@@ -29,35 +41,51 @@ const fields = compose(
     'claimType',
     CLAIM_TYPE_OPTIONS.map((o) => o.value)
   ),
-  currency('claimAmount')
+  currency('claimAmount'),
+  oneOf(
+    'windscreenProvider',
+    WINDSCREEN_PROVIDER_OPTIONS.map((o) => o.value)
+  )
 )
+
+/** The claim-entry view-model DATA (plain values — the controller still chooses
+ * its template and calls `h.view`). Shared by the top-level claims loop and the
+ * nested driver-claims reuse so the two render an identical form. */
+export const claimEntryModel = (values, errors = {}) => ({
+  heading: 'Add a claim',
+  buttonText: 'Add claim',
+  values,
+  windscreenOptions: WINDSCREEN_PROVIDER_OPTIONS.map((o) => ({
+    ...o,
+    checked: o.value === values.windscreenProvider
+  })),
+  errors,
+  errorSummary: kit.errorSummary(errors)
+})
+
+/** Build a claim entry object from a POST payload (shared by both loops). */
+export const claimFromPayload = (payload) => ({
+  claimType: payload.claimType ?? '',
+  claimAmount: (payload.claimAmount ?? '').trim(),
+  windscreenProvider: payload.windscreenProvider ?? ''
+})
+
+export const validateClaim = (payload) => validate(fields, payload)
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Add a claim', { backLink: pagePath('claims') }),
-    heading: 'Add a claim',
-    buttonText: 'Add claim',
-    options: CLAIM_TYPE_OPTIONS.map((o) => ({
-      ...o,
-      checked: o.value === values.claimType
-    })),
-    values,
-    errors,
-    errorSummary: kit.errorSummary(errors)
+    ...claimEntryModel(values, errors)
   })
 
 const getAdd = (request, h) => {
   state.get(request, h)
-  return render(h, { claimType: '', claimAmount: '' })
+  return render(h, { claimType: '', claimAmount: '', windscreenProvider: '' })
 }
 
 const postAdd = (request, h) => {
-  const payload = request.payload ?? {}
-  const entry = {
-    claimType: payload.claimType ?? '',
-    claimAmount: (payload.claimAmount ?? '').trim()
-  }
-  const { errors } = validate(fields, payload)
+  const entry = claimFromPayload(request.payload ?? {})
+  const { errors } = validateClaim(request.payload ?? {})
   if (errors) return render(h, entry, errors)
 
   state.appendEntry(request, h, 'claims', entry) // MINTS the index (identity)

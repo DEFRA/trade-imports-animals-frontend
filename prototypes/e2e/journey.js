@@ -171,6 +171,40 @@ export async function walkNamedDriver(page, journey) {
   await page.getByRole('button', { name: SAVE }).click()
 }
 
+/** Walk to the top-level claims "Add a claim" entry page: start → email →
+ * about-you+vehicle → driving history (hadClaims = yes) → claims hub → Add.
+ * Used by the item-scoped windscreen-conditionality spec. */
+export async function reachClaimEntry(page, grouped) {
+  await page.goto(grouped)
+  await page.getByRole('button', { name: 'Start now' }).click()
+  const emailHeading = page.getByRole('heading', {
+    name: 'Give us your email to begin'
+  })
+  const hubHeading = page.getByRole('heading', {
+    name: 'Get a car insurance quote'
+  })
+  await emailHeading.or(hubHeading).first().waitFor()
+  if (await hubHeading.isVisible()) {
+    await page.getByRole('link', { name: 'Email' }).click()
+  }
+  await fillEmail(page)
+  await page.getByRole('button', { name: SAVE }).click()
+
+  await page.getByRole('link', { name: 'About you and your vehicle' }).click()
+  await fillAboutYou(page)
+  await page.getByRole('button', { name: SAVE }).click()
+  await fillVehicle(page)
+  await page.getByRole('button', { name: SAVE }).click()
+
+  await page.getByRole('link', { name: 'Your driving and cover' }).click()
+  await fillDriving(page, { hadClaims: true })
+  await page.getByRole('button', { name: SAVE }).click()
+  // Now on the claims hub ("Claims you have added").
+  await page
+    .getByRole('button', { name: /Add a claim|Add another claim/ })
+    .click()
+}
+
 /** Short path to the v2 drivers hub: start → email → select the named-driver
  * add-on → open its hub. Used by the nested drivers/claims property spec. */
 export async function reachDriversHub(page, grouped) {

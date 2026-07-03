@@ -74,11 +74,16 @@ export function* walkDefs(forest = all, base = []) {
 
 /**
  * The per-INSTANCE catalogue for a concrete answers map — the tree MATERIALISED
- * against the data. Yields `{ path, def, collectionAncestorKey }` for every root
- * def and, for each collection, once per ACTUAL stored entry (so two claims
- * yield `claims[0].*` and `claims[1].*`). `collectionAncestorKey` is the pathKey
- * of the nearest enclosing collection (null at the root) — reconcile uses it to
- * gate a sub-obligation's scope on its collection being in scope.
+ * against the data. Yields `{ path, def, collectionAncestorKey, framePath,
+ * siblings }` for every root def and, for each collection, once per ACTUAL stored
+ * entry (so two claims yield `claims[0].*` and `claims[1].*`).
+ *  - `collectionAncestorKey` is the pathKey of the nearest enclosing collection
+ *    (null at the root) — reconcile gates a sub-obligation's scope on its
+ *    collection being in scope.
+ *  - `framePath` is the path of THIS item's frame (the entry the def sits in;
+ *    `[]` at the root) and `siblings` is the def list it was walked from — the
+ *    two together let reconcile resolve an item-relative `activatedBy` (a
+ *    reference to a sibling field within the same item) at this exact instance.
  */
 export function* walk(
   answers,
@@ -88,7 +93,13 @@ export function* walk(
 ) {
   for (const def of forest) {
     const path = [...basePath, def.id]
-    yield { path, def, collectionAncestorKey: ancestorKey }
+    yield {
+      path,
+      def,
+      collectionAncestorKey: ancestorKey,
+      framePath: basePath,
+      siblings: forest
+    }
     if (def.item) {
       const entries = valueAt(answers, path) ?? []
       const key = pathKey(path)

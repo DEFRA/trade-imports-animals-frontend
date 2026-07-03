@@ -242,3 +242,95 @@ into 6c (item-scoped conditionality): the item-relative predicate is the one mac
 model has NOT yet exercised — `evalPredicate` still reads only top-level answers
 (`engine/predicate.js`) — and it is where `wipeOrder`'s defensive sibling/nested ordering
 (correct but structurally unreachable in 6b) becomes load-bearing.
+
+## 6c — Verdict: item-scoped conditionality (windscreen → provider)
+
+**Did the model hold? YES — and the paradigm survives the full combination.** A windscreen
+claim now activates a `windscreenProvider` obligation (one of three approved repairers) FOR
+THAT CLAIM INSTANCE ONLY, at full depth: `drivers[i].claims[j].windscreenProvider` is in scope
+iff `drivers[i].claims[j].claimType === 'windscreen'`. The mechanism landed by growing
+RESOLUTION, not vocabulary. Proven at both depths (top-level `claims[j]` AND nested
+`drivers[i].claims[j]`): per-instance scope, per-PATH field-level wipe (destroyed not hidden,
+now WITHIN an item), independence across claims, item-relative completeness and quote-locking.
+102 unit + 70 E2E green. The Phase-1 design panel's graft — "resolve item-relative refs by
+OBJECT IDENTITY up the enclosing frame" — was the exact mechanism used; the design provenance
+paid off a third time.
+
+**Is the vocab still small? YES — and that IS the finding.** The brief asked to keep the
+predicate vocab "as small as the existing three-operator vocab; if it needs to grow, that
+growth is a finding." The vocab did **not** grow — `applyPredicate` still has exactly
+`equals`/`includes`/`present`, and `activatedBy` carries no new marker. Item-relativeness is
+INFERRED: `evalPredicate(activatedBy, answers, framePath, siblings)` resolves a reference
+within the current item's frame when the referenced def is one of the node's `siblings` (the
+item's own def list), else top-level — the same `{ obligation, equals }` literal works at any
+depth. The RESOLUTION grew (frame-aware), not the vocabulary; that is the smaller, cleaner
+change, and it is the recorded finding.
+
+**Where did it strain? Three real edges.**
+
+1. **`wipeOrder`'s defensive branches went live — and held.** A field-level wipe within an item
+   (a stale provider on a claim that left windscreen) is the first real deep/multi-path wipe;
+   the sibling/nested ordering that was structurally unreachable in 6b is now load-bearing.
+   Adversarially verified through `commit()` to the real store: the provider key is DELETED at
+   its exact path, siblings intact.
+
+2. **The dual-resolver divergence — found by the adversarial pass, and FIXED.** Item-
+   relativeness was resolved by two mechanisms: `reconcile` INFERS it by sibling identity, while
+   `entryComplete` originally ASSUMED it by id-keying the entry without checking siblings. They
+   agreed for the shipped model (every item-sub references an immediate sibling) but would
+   silently diverge on a non-sibling-gated item field — `entryComplete` could report a claim
+   COMPLETE that `reconcile` scoped as owed. Unified: `entryComplete` now applies the item-
+   relative gate only when `siblings.includes(ref)` — the SAME criterion `reconcile` uses — so
+   the two cannot diverge toward a FALSE COMPLETION: a sibling-gated field resolves identically
+   in both, and a (hypothetical) non-sibling-gated field is treated conservatively as owed,
+   never silently complete (regression-pinned). This was the one genuine architectural debt the
+   phase surfaced, and it is closed.
+
+3. **Cross-frame conditionality is UNMODELLED — the documented boundary.** `siblings` carries
+   only the immediate item's forest, so the data literal can express SAME-FRAME sibling
+   conditions only. A dependency reaching an ENCLOSING frame (e.g. `drivers[i].claims[j].x`
+   gated on `drivers[i].y`) has no representation and would force the first genuine vocab/model
+   growth (an explicit frame-hop reference). Conditionality is proven for indexed + same-frame +
+   depth-2; cross-frame is the precise edge NOT proven — a finding, per the brief.
+
+**Is the no-generic-engine line intact? YES.** The shared claim helpers (`claimEntryModel`
+returns facts-only data; `claimFromPayload`/`validateClaim` are logic + a value-domain) keep the
+controllers choosing their own template and calling `h.view`; the conditional reveal is bespoke
+template markup mirroring the existing cover-type pattern. No renderer emerged.
+
+---
+
+## FINAL READ — does this obligations paradigm survive real recursive, conditional, indexed requirements?
+
+**GO.** For the demonstrated car-insurance model the paradigm survives the full combination:
+indexing (6a) → depth-2 nesting (6b) → same-frame item conditionality (6c) all compose on ONE
+path-addressed `reconcile` + fixpoint scope, with per-instance independence and per-path field
+wipe holding at full depth. The decisive property was chosen once, in 6a, and never rewritten:
+because the model IS a recursive data tree (a def's item is a nested array of defs), 6b added no
+engine change to scope/wipe/dispatch and 6c added only frame-aware resolution. The three-operator
+vocabulary never grew.
+
+**The library-vs-framework line held at every phase — the central research question.** It held
+NOT by discovering a clever abstraction but by DISCIPLINE: `collectionView` stays facts-only at
+any depth, and every loop (flat, loop-inside-loop, item-conditional) composes its own bespoke
+rows and copy. The honest answer to "can the loop be first-class without becoming a framework" is
+**yes — at the price of accepting per-loop bespoke rendering.** A page still physically cannot
+hand-roll a wipe (the store facade stayed narrow through all three phases).
+
+**The precise limits of what was proven** (none a breakage; all recorded so the go-read is not
+wishful):
+
+- **Cross-frame conditionality** is unmodelled and would force the first vocab/model growth (6c).
+- **Ownership at depth is DERIVED, not declared** per field — a concession the zero-touch Phase-1
+  contract dictated (6a).
+- **Two identity vocabularies** (template `claims.claimType` for dispatch/coverage, instance
+  `claims[0].claimType` for scope/wipe), bridged but not unified (6a).
+- **Edit-in-place at depth** exists as a tested primitive (`updateEntryAt`) but has no UI, so the
+  "change a claim away from windscreen" wipe is proven at the model layer, not through a browser
+  edit (6b/6c).
+- Adversarial passes across all three phases found only **latent/malformed-input defects and one
+  resolver-divergence** — all fixed — and **zero happy-path breakages**.
+
+If a future requirement needs cross-frame conditionality, that is the one place the model would
+have to grow first — and, per the brief, that growth is itself the finding, not a failure of the
+paradigm as it stands.

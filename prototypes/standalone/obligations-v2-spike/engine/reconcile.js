@@ -33,7 +33,13 @@ export function reconcile(answers) {
   let changed = true
   while (changed) {
     changed = false
-    for (const { path, def, collectionAncestorKey } of nodes) {
+    for (const {
+      path,
+      def,
+      collectionAncestorKey,
+      framePath,
+      siblings
+    } of nodes) {
       const key = pathKey(path)
       if (inScope.has(key)) continue
       if (
@@ -42,7 +48,10 @@ export function reconcile(answers) {
       ) {
         continue
       }
-      if (!def.activatedBy || evalPredicate(def.activatedBy, answers)) {
+      if (
+        !def.activatedBy ||
+        evalPredicate(def.activatedBy, answers, framePath, siblings)
+      ) {
         inScope.add(key)
         changed = true
       }
