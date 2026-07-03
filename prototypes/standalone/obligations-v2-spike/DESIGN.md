@@ -507,3 +507,71 @@ unchanged and DOM parity holds (optional validators never fire on the valid jour
 
 **Net crispness:** obligation = identity + relationships + structural flags; validation =
 controller + `lib/validate`; presentation = template. Three seams, none overlapping.
+
+## 10. First-class indexed obligations (revision — DISCUSSION-LOG entry 6a)
+
+The original model _tolerated_ one repeating collection (`claims`) as an array-shaped value
+the engine could not see: `cardinality`/`fields` were inert, the sub-fields were not
+obligations, `reconcile` treated the array as an opaque scalar, and completeness was merely
+"≥1 entry exists". Entry 6a promoted indexing to a **modelled concept** without breaking any
+of the three seams above. Chosen by a 3-architect/3-judge design panel (unanimous winner:
+_recursive-tree_) and hardened by an adversarial-verify pass.
+
+**The model IS a tree.** A collection def carries `collection: true` and a real nested
+`item: [...defs]` array of sub-obligations — ordinary pure defs with their own mandate facts:
+
+```js
+export const claimType = { id: 'claimType', required: true }
+export const claimAmount = { id: 'claimAmount' }
+export const claims = {
+  id: 'claims',
+  collection: true,
+  item: [claimType, claimAmount],
+  activatedBy: { obligation: hadClaims, equals: 'yes' },
+  requiredAtLeastOne: true,
+  wipeOnExit: true
+}
+```
+
+Sub-def ids are **frame-relative** (`claimType`, not `claims.claimType`): the id is the key
+inside each entry object (`answers.claims[0].claimType`) _and_ the DOM field name — both
+unchanged, which is what makes the re-expression **zero-DOM**.
+
+**One catalogue, reaching every depth.** `registry.all` stays the flat ROOTS array — the view
+`contract.test.js` iterates — while two generators reach the whole tree: `walkDefs()` (the
+FULL structure-only catalogue, `{ templatePath, def }`) and `walk(answers)` (the tree
+MATERIALISED against the data, `{ path, def, collectionAncestorKey }`, once per stored entry).
+`byPath('claims.claimType')` resolves any sub-def. So nothing in the model is blind to a
+sub-obligation — the finding that motivated 6a — yet the regression net is structurally
+untouched.
+
+**Path-addressed scope/wipe/status.** `lib/path.js` is the address vocabulary: a path array
+(`['claims', 0, 'claimType']`) with `pathKey` stringifying it (`claims[0].claimType`). The
+**depth-0 collapse** (`['claims'] → 'claims'`) is the compatibility keystone — every scalar
+`scope.has('claims')` is byte-identical once scope is keyed by path. `reconcile` walks the
+per-instance tree once (projected before the fixpoint), keys `inScope` by `pathKey`, and gates
+a sub-obligation on its enclosing collection being in scope; `wiped` is path-addressed and
+deduped by array-segment prefix (a wiped collection root destroys its subtree). `status`
+gained per-item completeness: `entryComplete`/`collectionComplete` mean a claim with a blank
+required field no longer counts the section done.
+
+**Dispatch coverage descends — via DERIVED ownership.** Coverage now asserts over `walkDefs()`,
+so every obligation at every depth must resolve to exactly one page. A sub-obligation's owner
+is DERIVED from its nearest collection ancestor (a collection's items are collected by the
+collection's loop). This keeps coverage total and boot-asserted _without_ the collection's
+`collects` enumerating its item ids — which is what lets `contract.test.js` stay untouched.
+The trade-off (recorded, not hidden): ownership at depth is derived, not declared per field.
+An id-safety boot assertion rejects path metacharacters in any def id.
+
+**The loop as a LIBRARY, not a framework (§6 held).** The reusable loop primitive is
+`state.collectionView(answers, collectionPath)`, returning pure structural FACTS —
+`{ index, path, entry, complete }` — and nothing presentational: no hrefs, labels, copy, row
+view-models, template, routes or Joi. It descends by path, so it works at any depth (a nested
+sub-hub is `collectionView(answers, ['drivers', i, 'claims'])`). The claims list/entry/CYA
+controllers compose ALL presentation themselves; the store facade stays narrow, so a page
+still physically cannot hand-roll a wipe. At one flat level the library is near-vestigial —
+its justification is the loop-inside-a-loop that entry 6b will exercise.
+
+**Net:** the tree lives in the data (`item`), the addresses live in `lib/path.js`, the
+traversal lives in `registry.walk`, and presentation stays entirely in the bespoke
+controllers — the three seams remain non-overlapping, now at depth.

@@ -460,13 +460,25 @@ item-relative predicates, sub-fields aren't obligations, the store has no nested
 brief for a fresh agent live in
 [`../obligations-v2-nested-collections-prompt.md`](../obligations-v2-nested-collections-prompt.md).
 
-- **6a. Phase 1 — make single-level indexing first-class.** Promote "indexed obligation" to a
-  modelled concept: sub-fields become real (sub-)obligations, the engine gains path-addressed
-  scope/wipe/status for one level, and the bespoke loop is extracted into a reusable pattern.
+- **6a. Phase 1 — make single-level indexing first-class. ✅ DONE — verdict: GO (see FINDINGS
+  "6a").** Promote "indexed obligation" to a modelled concept: sub-fields become real
+  (sub-)obligations, the engine gains path-addressed scope/wipe/status for one level, and the
+  bespoke loop is extracted into a reusable pattern.
   **Canary: re-express the existing `claims` on the new mechanism with ZERO rendered-DOM change**
   — the three shared specs + `contract.test.js` are the ready-made regression net. Fixes findings
   1-4, 6, 7 for one level. Nothing new is added yet, so the model change is provable against
   existing green.
+  _Landed as:_ a collection def carries `collection:true` + a real nested `item:[...defs]`; the
+  model became a tree (`registry.walkDefs`/`walk`); a path vocabulary (`lib/path.js`) keys
+  per-instance scope/wipe (`reconcile`) and per-item completeness (`status`); dispatch coverage
+  descends every depth (derived ownership); the loop is a facts-only library
+  (`state.collectionView`). Chosen by a 3-architect/3-judge design panel (unanimous:
+  recursive-tree) and hardened by an adversarial-verify pass (3 latent defects found + fixed).
+  Two documented concessions the zero-touch contract dictated: ownership at depth is DERIVED not
+  declared, and the model carries two identity vocabularies (template `claims.claimType` +
+  instance `claims[0].claimType`). Canary held: 3 shared specs + contract.test green untouched,
+  80 unit tests. `contract.test.js` `registry.all` stays roots-only (the view the iterator walks);
+  `walkDefs`/`byPath` are the full catalogue, so nothing in the model is blind at depth.
 - **6b. Phase 2 — one level of nesting (drivers → claims).** A `drivers` collection whose item
   contains a nested `claims` collection. Proves recursion: nested paths, cascading per-instance
   wipe, a loop-inside-a-loop UI. **Decided: extend the existing single `named-driver` add-on into

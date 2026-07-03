@@ -22,20 +22,23 @@ const claimValue = (claim) => {
 
 const get = (request, h) => {
   const { answers } = state.get(request, h)
-  const claims = answers.claims ?? []
-  const rows = claims.map((claim, index) => ({
-    key: { text: `Claim ${index + 1}` },
-    value: { text: claimValue(claim) },
-    actions: {
-      items: [
-        {
-          href: pagePath(`claims/${index}/remove`),
-          text: 'Remove',
-          visuallyHiddenText: `claim ${index + 1}`
-        }
-      ]
-    }
-  }))
+  // The reusable loop library gives the instance FACTS (index, path, entry);
+  // this controller composes the bespoke Claim-N rows + copy over them.
+  const rows = state
+    .collectionView(answers, ['claims'])
+    .map(({ index, entry }) => ({
+      key: { text: `Claim ${index + 1}` },
+      value: { text: claimValue(entry) },
+      actions: {
+        items: [
+          {
+            href: pagePath(`claims/${index}/remove`),
+            text: 'Remove',
+            visuallyHiddenText: `claim ${index + 1}`
+          }
+        ]
+      }
+    }))
   return h.view(view, {
     ...kit.base('Your claims', { backLink: hubPath() }),
     heading: 'Claims you have added',

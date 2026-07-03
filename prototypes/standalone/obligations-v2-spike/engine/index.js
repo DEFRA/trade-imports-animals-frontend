@@ -1,7 +1,9 @@
 import { currentJourney } from './journey.js'
 import { reconcile } from './reconcile.js'
-import { readyForQuote } from './status.js'
+import { entryComplete, readyForQuote } from './status.js'
 import { store } from './store.js'
+import { deleteAt, parsePath, valueAt } from '../lib/path.js'
+import { registry } from '../registry.js'
 
 /**
  * THE narrow facade every page controller imports. This is the whole
@@ -32,14 +34,64 @@ export const get = (request, h) => {
   }
 }
 
-/** Apply a scalar patch, reconcile to a fixpoint, DESTROY wiped data, persist. */
+/**
+ * Order two wipe paths so a `deleteAt` never invalidates a not-yet-applied
+ * sibling. `deleteAt` SPLICES an array index, which renumbers later siblings, so
+ * two sibling index deletes must run HIGHEST-INDEX-FIRST; and a nested delete
+ * must run before the shallower delete that would remove its container. So:
+ * at the first differing segment, larger numeric index first; otherwise (a
+ * shared prefix) the deeper path first. Disjoint string branches are
+ * independent — their order does not matter.
+ */
+export const wipeOrder = (a, b) => {
+  const shared = Math.min(a.length, b.length)
+  for (let i = 0; i < shared; i++) {
+    if (a[i] === b[i]) continue
+    if (typeof a[i] === 'number' && typeof b[i] === 'number') return b[i] - a[i]
+    return 0
+  }
+  return b.length - a.length
+}
+
+/** Apply a scalar patch, reconcile to a fixpoint, DESTROY wiped data, persist.
+ * `wiped` is path-addressed now, so a nested instance can be destroyed in place;
+ * a depth-0 key still deletes the whole top-level obligation. Paths are ordered
+ * by `wipeOrder` so sibling array-index splices run highest-index-first and a
+ * nested delete precedes its container's — no delete ever shifts another. */
 export const commit = (request, h, patch) => {
   const journey = currentJourney(request, h)
   const answers = { ...journey.answers, ...patch }
   const { wiped } = reconcile(answers)
-  for (const id of wiped) delete answers[id]
+  const paths = wiped.map(parsePath).sort(wipeOrder)
+  for (const path of paths) deleteAt(answers, path)
   store.saveAnswers(journey.journeyId, answers)
   return { answers, scope: makeScope(answers) }
+}
+
+/**
+ * The reusable LOOP primitive — a page LIBRARY, never a framework. Given a
+ * collection's path it returns pure STRUCTURAL FACTS about the live instances:
+ * `[{ index, path, entry, complete }]` (`entry` is the raw stored answer — a
+ * fact, not presentation). It descends by path, so it works at ANY depth
+ * (a driver's nested claims sub-hub is `collectionView(answers, ['drivers', i,
+ * 'claims'])`). The line it holds: it emits facts (how many entries, each
+ * entry's path, whether each entry is complete) and NOTHING presentational — no
+ * hrefs, no labels, no copy, no row view-models, no template. The moment a
+ * helper turns these facts into govuk rows it has become the rejected generic
+ * engine; the list/entry controllers compose all presentation themselves.
+ */
+export const collectionView = (answers, collectionPath) => {
+  const template = collectionPath
+    .filter((seg) => typeof seg === 'string')
+    .join('.')
+  const def = registry.byPath(template)
+  const entries = valueAt(answers, collectionPath) ?? []
+  return entries.map((entry, index) => ({
+    index,
+    path: [...collectionPath, index],
+    entry,
+    complete: def ? entryComplete(def, entry) : true
+  }))
 }
 
 /** Append one entry to an indexed obligation — MINTS its index (identity). */

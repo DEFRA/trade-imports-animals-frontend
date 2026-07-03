@@ -74,8 +74,11 @@ equivalence harness, and obligations knowing about pages (inverted to page-side 
 | Feature slice (controller + template + defs)     | `features/<feature>/` (`controller.js`, `template.njk`, `obligations.js`) |
 | Obligation defs a feature owns (pure)            | `features/<feature>/obligations.js` (imports only sideways)               |
 | Assembling model barrel (`all`/`byId`/`refs`)    | `registry.js` (top-level — imports every feature's defs)                  |
+| Full tree catalogue (every depth) + per-instance | `registry.js` (`walkDefs` / `walk` / `byPath` — indexed obligations)      |
+| Path address vocabulary (indexed collections)    | `lib/path.js` (`pathKey`/`valueAt`/`deleteAt` — pure leaf)                |
+| Reusable loop LIBRARY (facts, never renders)     | `engine/index.js` (`collectionView` — `{ index, path, entry, complete }`) |
 | Per-file model-purity guard (boot)               | `obligation-purity.js`                                                    |
-| Scope + scope-exit wipe                          | `engine/reconcile.js` (pure)                                              |
+| Scope + scope-exit wipe (path-addressed)         | `engine/reconcile.js` (pure)                                              |
 | Four-status roll-up + quote-readiness            | `engine/status.js` (pure)                                                 |
 | The one-directional facade controllers call      | `engine/index.js` (`get`/`commit`/`appendEntry`/…)                        |
 | In-memory store + journey cookie                 | `engine/store.js` + `engine/journey.js`                                   |
