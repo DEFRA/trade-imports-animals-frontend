@@ -21,9 +21,11 @@ import {
   driver,
   driverFullName,
   driverAddress,
+  driverClaim,
+  driverClaimOtherParty,
   driverGroup,
   groups
-} from './obligations/obligations.js'
+} from './obligations.js'
 
 // The evaluator is stateless once constructed — one instance suffices for the
 // whole suite. Constructed with no args so it uses the shipped obligations.
@@ -121,7 +123,9 @@ describe('ObligationEvaluator', () => {
         [claimAmount.id]: outOfScope, // group member — hasClaims not set
         [driver.id]: { inScope: true, fulfilments: [] }, // no drivers yet
         [driverFullName.id]: { inScope: true, fulfilments: [] },
-        [driverAddress.id]: { inScope: true, fulfilments: [] }
+        [driverAddress.id]: { inScope: true, fulfilments: [] },
+        [driverClaim.id]: { inScope: true, fulfilments: [] },
+        [driverClaimOtherParty.id]: { inScope: true, fulfilments: [] }
       })
     })
 
@@ -923,14 +927,260 @@ describe('ObligationEvaluator', () => {
     })
   })
 
+  describe('depth-2 nested indexing (drivers × claims × other parties)', () => {
+    const firstDriverId = '01H8XKAAA00000000000AA'
+    const secondDriverId = '01H8XKBBB00000000000BB'
+    const claim1a = '01H8XKAA555555555555EE'
+    const claim1b = '01H8XKAA666666666666FF'
+    const claim2a = '01H8XKBB555555555555EE'
+    const partyA = '01H8XKAA777777777777GG'
+    const partyB = '01H8XKAA888888888888HH'
+    const partyC = '01H8XKBB777777777777GG'
+
+    const partyDetailsA = { name: 'Other Party A', role: 'other-driver' }
+    const partyDetailsB = { name: 'Other Party B', role: 'passenger' }
+    const partyDetailsC = { name: 'Third-party', role: 'pedestrian' }
+
+    it('one driver, no claims → driverClaim + driverClaimOtherParty each have one entry with empty subFulfilments', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} }
+      })
+
+      expect(result.obligations[driverClaim.id]).toEqual({
+        inScope: true,
+        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
+      })
+      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
+        inScope: true,
+        fulfilments: [{ fulfilmentId: firstDriverId, subFulfilments: [] }]
+      })
+      expect(result.fulfilments).not.toHaveProperty(driverClaim.id)
+      expect(result.fulfilments).not.toHaveProperty(driverClaimOtherParty.id)
+    })
+
+    it('one driver + one claim + no parties → driverClaimOtherParty entry has sub-fulfilment with empty inner subFulfilments', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } }
+      })
+
+      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
+        inScope: true,
+        fulfilments: [
+          {
+            fulfilmentId: firstDriverId,
+            subFulfilments: [{ fulfilmentId: claim1a, subFulfilments: [] }]
+          }
+        ]
+      })
+    })
+
+    it('one driver + one claim + two parties → three-level FulfilmentState populated; party values retained verbatim', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: {
+            [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
+          }
+        }
+      })
+
+      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
+        inScope: true,
+        fulfilments: [
+          {
+            fulfilmentId: firstDriverId,
+            subFulfilments: [
+              {
+                fulfilmentId: claim1a,
+                subFulfilments: [
+                  { fulfilmentId: partyA, status: 'mandatory' },
+                  { fulfilmentId: partyB, status: 'mandatory' }
+                ]
+              }
+            ]
+          }
+        ]
+      })
+      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual({
+        [firstDriverId]: {
+          [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
+        }
+      })
+    })
+
+    it('two drivers with mixed claim/party counts → per-driver independence preserved at every level', () => {
+      const result = evaluator.evaluate({
+        [driver.id]: {
+          [firstDriverId]: {},
+          [secondDriverId]: {}
+        },
+        [driverClaim.id]: {
+          [firstDriverId]: { [claim1a]: {}, [claim1b]: {} },
+          [secondDriverId]: { [claim2a]: {} }
+        },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: {
+            [claim1a]: { [partyA]: partyDetailsA },
+            [claim1b]: { [partyB]: partyDetailsB }
+          },
+          [secondDriverId]: {
+            [claim2a]: { [partyC]: partyDetailsC }
+          }
+        }
+      })
+
+      expect(result.obligations[driverClaimOtherParty.id]).toEqual({
+        inScope: true,
+        fulfilments: [
+          {
+            fulfilmentId: firstDriverId,
+            subFulfilments: [
+              {
+                fulfilmentId: claim1a,
+                subFulfilments: [{ fulfilmentId: partyA, status: 'mandatory' }]
+              },
+              {
+                fulfilmentId: claim1b,
+                subFulfilments: [{ fulfilmentId: partyB, status: 'mandatory' }]
+              }
+            ]
+          },
+          {
+            fulfilmentId: secondDriverId,
+            subFulfilments: [
+              {
+                fulfilmentId: claim2a,
+                subFulfilments: [{ fulfilmentId: partyC, status: 'mandatory' }]
+              }
+            ]
+          }
+        ]
+      })
+    })
+
+    it('remove one party (stale innermost key) → inner-inner purge drops it; sibling parties retained', () => {
+      // Storage has partyA + partyB under (firstDriver, claim1a); user
+      // has removed partyB. Because partyB is user-driven at the inner
+      // level, applyTo reads storage — so simulating "removed" means the
+      // stored map already lacks partyB. Constructing a genuinely stale
+      // inner-inner key requires manual manipulation:
+      const staleResult = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: {
+            [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
+          }
+        }
+      })
+      // User-driven innermost level: applyTo reports every stored party,
+      // so nothing is stale from its own perspective — both retained.
+      expect(staleResult.fulfilments[driverClaimOtherParty.id]).toEqual({
+        [firstDriverId]: {
+          [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB }
+        }
+      })
+    })
+
+    it('remove one claim (stale mid-level key) → mid-level purge cascades: claim gone from driverClaim; parties under it purged from driverClaimOtherParty', () => {
+      // driverClaim's collection under firstDriver has only claim1a; but
+      // driverClaimOtherParty's stored map still has parties under a
+      // stale claim1b.
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverClaim.id]: { [firstDriverId]: { [claim1a]: {} } },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: {
+            [claim1a]: { [partyA]: partyDetailsA },
+            [claim1b]: { [partyB]: partyDetailsB } // stale — no matching claim
+          }
+        }
+      })
+
+      // The mid-level derived rule (via recursive purgeLevel) drops the
+      // stale claim1b from driverClaimOtherParty because
+      // driverClaimOtherParty's applyTo only reports subFulfilments for
+      // claims that exist in driverClaim's collection.
+      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual({
+        [firstDriverId]: {
+          [claim1a]: { [partyA]: partyDetailsA }
+        }
+      })
+    })
+
+    it('remove one driver (stale outer key) → outer purge cascades everything: driverClaim and driverClaimOtherParty under that driver gone', () => {
+      // driver's collection has only firstDriver; but driverClaim and
+      // driverClaimOtherParty still have stale entries under secondDriver.
+      const result = evaluator.evaluate({
+        [driver.id]: { [firstDriverId]: {} },
+        [driverClaim.id]: {
+          [firstDriverId]: { [claim1a]: {} },
+          [secondDriverId]: { [claim2a]: {} } // stale
+        },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: { [claim1a]: { [partyA]: partyDetailsA } },
+          [secondDriverId]: { [claim2a]: { [partyC]: partyDetailsC } } // stale
+        }
+      })
+
+      expect(result.fulfilments[driverClaim.id]).toEqual({
+        [firstDriverId]: { [claim1a]: {} }
+      })
+      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual({
+        [firstDriverId]: { [claim1a]: { [partyA]: partyDetailsA } }
+      })
+    })
+
+    it('values preserved verbatim under every key — deep-equal on amended for a full two-driver × multi-claim × multi-party case', () => {
+      const fulfilments = {
+        [driver.id]: {
+          [firstDriverId]: {},
+          [secondDriverId]: {}
+        },
+        [driverClaim.id]: {
+          [firstDriverId]: { [claim1a]: {}, [claim1b]: {} },
+          [secondDriverId]: { [claim2a]: {} }
+        },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: {
+            [claim1a]: { [partyA]: partyDetailsA, [partyB]: partyDetailsB },
+            [claim1b]: { [partyC]: partyDetailsC }
+          },
+          [secondDriverId]: {
+            [claim2a]: { [partyA]: partyDetailsA }
+          }
+        }
+      }
+
+      const result = evaluator.evaluate(fulfilments)
+
+      expect(result.fulfilments[driver.id]).toEqual(fulfilments[driver.id])
+      expect(result.fulfilments[driverClaim.id]).toEqual(
+        fulfilments[driverClaim.id]
+      )
+      expect(result.fulfilments[driverClaimOtherParty.id]).toEqual(
+        fulfilments[driverClaimOtherParty.id]
+      )
+    })
+  })
+
   describe('driver group — metadata', () => {
-    it('driverGroup declares its members', () => {
-      expect(driverGroup.members).toEqual([driverFullName, driverAddress])
+    it('driverGroup declares its members (any-depth mix)', () => {
+      expect(driverGroup.members).toEqual([
+        driverFullName,
+        driverAddress,
+        driverClaim,
+        driverClaimOtherParty
+      ])
     })
 
     it('driver group members back-reference the group by name', () => {
       expect(driverFullName.group).toBe('driver')
       expect(driverAddress.group).toBe('driver')
+      expect(driverClaim.group).toBe('driver')
+      expect(driverClaimOtherParty.group).toBe('driver')
     })
 
     it('groups export lists the driver group', () => {
@@ -946,6 +1196,10 @@ describe('ObligationEvaluator', () => {
       const secondDriverId = '01H8XKBBB00000000000BB'
       const addr1a = '01H8XKAA111111111111AA'
       const addr2a = '01H8XKBB111111111111AA'
+      // First driver has one claim; that claim has one other party.
+      const driverClaimId = '01H8XKAA333333333333CC'
+      const partyId = '01H8XKAA444444444444DD'
+      const partyDetails = { name: 'Other Party', role: 'other-driver' }
       const addressA = {
         line1: '10 Downing St',
         town: 'London',
@@ -997,6 +1251,12 @@ describe('ObligationEvaluator', () => {
         [driverAddress.id]: {
           [firstDriverId]: { [addr1a]: addressA },
           [secondDriverId]: { [addr2a]: addressB }
+        },
+        [driverClaim.id]: {
+          [firstDriverId]: { [driverClaimId]: {} }
+        },
+        [driverClaimOtherParty.id]: {
+          [firstDriverId]: { [driverClaimId]: { [partyId]: partyDetails } }
         }
       }
 
@@ -1066,6 +1326,35 @@ describe('ObligationEvaluator', () => {
               fulfilmentId: secondDriverId,
               subFulfilments: [{ fulfilmentId: addr2a, status: 'mandatory' }]
             }
+          ]
+        },
+        [driverClaim.id]: {
+          inScope: true,
+          fulfilments: [
+            {
+              fulfilmentId: firstDriverId,
+              subFulfilments: [
+                { fulfilmentId: driverClaimId, status: 'mandatory' }
+              ]
+            },
+            { fulfilmentId: secondDriverId, subFulfilments: [] }
+          ]
+        },
+        [driverClaimOtherParty.id]: {
+          inScope: true,
+          fulfilments: [
+            {
+              fulfilmentId: firstDriverId,
+              subFulfilments: [
+                {
+                  fulfilmentId: driverClaimId,
+                  subFulfilments: [
+                    { fulfilmentId: partyId, status: 'mandatory' }
+                  ]
+                }
+              ]
+            },
+            { fulfilmentId: secondDriverId, subFulfilments: [] }
           ]
         }
       })

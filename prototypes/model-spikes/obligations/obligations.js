@@ -418,10 +418,13 @@ export const driverFullName = {
   }
 }
 
-// Nested indexed: outer keyed by driver id (derived from driver); inner
-// keyed by opaque address id (user-driven at the inner level). Each
-// entry in the implication's `fulfilments` carries `subFulfilments`
-// listing that driver's addresses.
+// Nested indexed (depth 1): outer keyed by driver id (derived from
+// driver); inner keyed by opaque address id (user-driven at the inner
+// level). Each entry in the implication's `fulfilments` carries
+// `subFulfilments` listing that driver's addresses.
+//
+// `indexedBy.nested` is a **levels array** — one entry per level below
+// the outer. Length = depth below outer. See §S in obligations.md.
 export const driverAddress = {
   id: '7c8d9e0f-1234-4345-8678-9abcdef01234',
   name: 'driverAddress',
@@ -431,11 +434,10 @@ export const driverAddress = {
     source: 'derived',
     controllingObligation: 'driver',
     mutability: 'edit-only', // outer: bound to driver membership
-    nested: {
+    nested: [
       // inner level: user adds/removes addresses freely
-      source: 'user',
-      mutability: 'edit-add-remove'
-    }
+      { source: 'user', mutability: 'edit-add-remove' }
+    ]
   },
   applyTo: (fulfilments) => {
     const driverIds = Object.keys(fulfilments[driver.id] ?? {})
@@ -456,12 +458,105 @@ export const driverAddress = {
   }
 }
 
+// Nested indexed (depth 1): one indexed collection of claims per driver.
+// Parallels driverAddress. Outer keyed by driver id (derived from
+// driver); inner keyed by opaque claim id (user-driven at the inner
+// level). Presence-marker values under each claim id — this iteration
+// doesn't model per-claim fields (type / amount / date). Those would be
+// separate obligations sharing the (driver, claim) fulfilmentId space.
+export const driverClaim = {
+  id: '9e0f1234-5678-4567-89ab-cdef01234567',
+  name: 'driverClaim',
+  group: 'driver',
+  cardinality: 'indexed',
+  indexedBy: {
+    source: 'derived',
+    controllingObligation: 'driver',
+    mutability: 'edit-only',
+    nested: [{ source: 'user', mutability: 'edit-add-remove' }]
+  },
+  applyTo: (fulfilments) => {
+    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
+    const stored = fulfilments[driverClaim.id] ?? {}
+    return {
+      inScope: true,
+      fulfilments: driverIds.map((driverFulfilmentId) => {
+        const perDriver = stored[driverFulfilmentId] ?? {}
+        return {
+          fulfilmentId: driverFulfilmentId,
+          subFulfilments: Object.keys(perDriver).map((claimId) => ({
+            fulfilmentId: claimId,
+            status: 'mandatory'
+          }))
+        }
+      })
+    }
+  }
+}
+
+// Nested indexed (depth 2): the depth-N demonstration. For each driver,
+// for each of that driver's claims, an indexed collection of other
+// parties involved in that claim.
+//
+// Outer level: driver id (derived from driver).
+// Mid level:   claim id (derived from driverClaim; scoped to this
+//              driver's claim collection).
+// Inner level: party id (user-driven; user adds / removes parties).
+//
+// The applyTo function walks all three controllers to build a
+// three-level FulfilmentState tree. Party values are opaque; tests use
+// a realistic shape like { name, role } but nothing checks fields.
+export const driverClaimOtherParty = {
+  id: 'a0123456-789a-4678-9abc-def012345678',
+  name: 'driverClaimOtherParty',
+  group: 'driver',
+  cardinality: 'indexed',
+  indexedBy: {
+    source: 'derived',
+    controllingObligation: 'driver',
+    mutability: 'edit-only',
+    nested: [
+      {
+        source: 'derived',
+        controllingObligation: 'driverClaim',
+        mutability: 'edit-only'
+      },
+      { source: 'user', mutability: 'edit-add-remove' }
+    ]
+  },
+  applyTo: (fulfilments) => {
+    const driverIds = Object.keys(fulfilments[driver.id] ?? {})
+    const claimsByDriver = fulfilments[driverClaim.id] ?? {}
+    const stored = fulfilments[driverClaimOtherParty.id] ?? {}
+    return {
+      inScope: true,
+      fulfilments: driverIds.map((driverFulfilmentId) => {
+        const perDriver = stored[driverFulfilmentId] ?? {}
+        const claimIds = Object.keys(claimsByDriver[driverFulfilmentId] ?? {})
+        return {
+          fulfilmentId: driverFulfilmentId,
+          subFulfilments: claimIds.map((claimId) => {
+            const perClaim = perDriver[claimId] ?? {}
+            return {
+              fulfilmentId: claimId,
+              subFulfilments: Object.keys(perClaim).map((partyId) => ({
+                fulfilmentId: partyId,
+                status: 'mandatory'
+              }))
+            }
+          })
+        }
+      })
+    }
+  }
+}
+
 export const driverGroup = {
   id: '8d9e0f12-3456-4456-8789-abcdef012345',
   name: 'driver',
   cardinality: 'indexed',
   indexedBy: { source: 'user', mutability: 'edit-add-remove' },
-  members: [driverFullName, driverAddress]
+  members: [driverFullName, driverAddress, driverClaim, driverClaimOtherParty]
 }
 
 export const obligations = [
@@ -483,7 +578,9 @@ export const obligations = [
   claimAmount,
   driver,
   driverFullName,
-  driverAddress
+  driverAddress,
+  driverClaim,
+  driverClaimOtherParty
 ]
 
 export const groups = [claimGroup, driverGroup]

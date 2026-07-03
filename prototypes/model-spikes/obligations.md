@@ -319,11 +319,14 @@ type FulfilmentState = {
 }
 ```
 
-`FulfilmentState` is recursive: entries in the outer `fulfilments`
-array can carry a `subFulfilments` array for **nested indexed**
-obligations — a group member whose fulfilmentIds are scoped within
-an outer fulfilmentId (e.g. address history per driver). See §S for
-the depth-1 exemplar and the storage shape.
+`FulfilmentState` is recursive and composes to any depth. An entry
+at any level can carry a `subFulfilments` array — one per level
+below the outer, matching the length of the obligation's
+`indexedBy.nested` array (see §S). Depth-1 example: address history
+per driver (driver → address). Depth-2 example: other-party
+per claim per driver (driver → claim → party). Depth is
+data-driven; the evaluator's purge recurses through
+`subFulfilments` at every level.
 
 Each obligation carries its own `applyTo` function inline in
 `obligations.js`; the top-level evaluator's `evaluate` calls each
@@ -875,14 +878,17 @@ separate obligations without a group tie. Groups are for fields that
 describe **one event, one record, one thing** — where losing the
 pairing would lose meaning.
 
-**Nested indexing is supported.** A group member can itself be an
-indexed obligation whose fulfilmentIds are scoped **within** an outer
-fulfilmentId — e.g. the `driver` group's `driverAddress` member is
-nested indexed (each driver has their own indexed collection of
-addresses). See §S for the exemplar, the storage shape
-(hierarchical), and the evaluator's third purge rule. The claim
-group (§Obligation groups exemplar above) is depth-0; the driver
-group is depth-1.
+**Nested indexing is supported at any depth.** A group member can
+itself be an indexed obligation whose fulfilmentIds are scoped
+within an outer fulfilmentId, and that inner level can in turn have
+its own inner level, and so on. The `driver` group's members
+demonstrate the mix: `driverFullName` is depth-0 (one value per
+driver); `driverAddress` and `driverClaim` are depth-1 (each driver
+has their own indexed collection); `driverClaimOtherParty` is
+depth-2 (each driver's each claim has an indexed collection of
+parties). See §S for the levels-array `indexedBy.nested` shape,
+the hierarchical storage sketch, and the recursive purge in the
+evaluator.
 
 ## Staleness
 
@@ -2375,124 +2381,170 @@ failing-lookup case (and likely colleague input on operational
 policy) — no value in pinning the shape before we know which
 failure modes we actually need to handle.
 
-### S. Nested indexing — implemented pattern
+### S. Nested indexing — implemented pattern (any depth)
 
 Compound records modelled as groups (§Obligation groups) work
 naturally when a group's members are all single-cardinality per
 group-fulfilmentId — e.g. one type and one amount per claim.
 
 **Nested indexing** lets a group member itself be an indexed
-obligation whose fulfilmentIds are scoped **within** the outer
-group's fulfilmentId. Concrete exemplar in the spike:
+obligation whose fulfilmentIds are scoped **within** an outer
+fulfilmentId, and that inner level can in turn have its own inner
+level. Depth is data-driven — `indexedBy.nested.length + 1` gives
+the depth of the storage tree. The `driver` group has members at
+depth 0, 1 and 2:
 
 - `driver` — outer collection (indexed, user-driven). Each
   fulfilment is one driver.
-- `driverFullName` — member; one string per driver (derived from
-  `driver`).
-- `driverAddress` — **nested indexed** member: outer keyed by
-  driver fulfilmentId; inner keyed by opaque address fulfilmentId.
-  Each driver has their own indexed collection of addresses.
+- `driverFullName` — depth-0 member; one string per driver
+  (derived from `driver`).
+- `driverAddress` — **depth-1** member: outer keyed by driver
+  fulfilmentId; inner keyed by opaque address fulfilmentId. Each
+  driver has their own indexed collection of addresses.
+- `driverClaim` — **depth-1** member: outer keyed by driver
+  fulfilmentId; inner keyed by opaque claim fulfilmentId. Each
+  driver has their own indexed collection of claims.
+- `driverClaimOtherParty` — **depth-2** member: outer keyed by
+  driver fulfilmentId; mid keyed by claim fulfilmentId (scoped to
+  that driver's `driverClaim` collection); inner keyed by opaque
+  party fulfilmentId. Each driver's each claim has an indexed
+  collection of other parties.
 
-**Storage shape** — **hierarchical** (chosen over tuple keys —
-mirrors the nesting; the evaluator's per-fulfilmentId purge extends
-naturally):
+**Storage shape** — **hierarchical** (chosen over tuple keys:
+mirrors the nesting; the evaluator's purge recurses through the
+same shape). Depth-2 example for `driverClaimOtherParty`:
 
 ```jsonc
-fulfilments[driverAddress.id] = {
+fulfilments[driverClaimOtherParty.id] = {
   "driver-1-uuid": {
-    "addr-1a-uuid": {
-      line1: "10 Downing St",
-      town: "London",
-      postcode: "SW1A 2AA",
-      country: "United Kingdom",
-      from: "2020-01-01",
-      to: "2023-06-30"
+    "claim-1a-uuid": {
+      "party-a-uuid": { name: "Other Driver", role: "other-driver" },
+      "party-b-uuid": { name: "Passenger", role: "passenger" }
     },
-    "addr-1b-uuid": {
-      /* … */
+    "claim-1b-uuid": {
+      "party-c-uuid": { /* … */ }
     }
   },
   "driver-2-uuid": {
-    "addr-2a-uuid": {
-      /* … */
+    "claim-2a-uuid": {
+      "party-d-uuid": { /* … */ }
     }
   }
 }
 ```
 
-**Nested `indexedBy`.** A nested-indexed obligation declares
-`indexedBy.nested` for the inner level's source × mutability:
+Depth-1 (driverAddress) is a proper subset of the same shape —
+same recursion, one level shorter.
+
+**`indexedBy.nested` is a levels array.** One entry per level
+below the outer, in outer→inner order. Length = depth below
+outer. Each entry declares that level's source × mutability
+(plus `controllingObligation` for derived levels). Depth-1
+declaration for `driverAddress`:
 
 ```jsonc
 {
   "cardinality": "indexed",
   "indexedBy": {
-    "source": "derived", // outer level: derived from driver
+    "source": "derived",
     "controllingObligation": "driver",
     "mutability": "edit-only",
-    "nested": {
+    "nested": [
       // inner level: user-driven address list
-      "source": "user",
-      "mutability": "edit-add-remove"
-    }
+      { "source": "user", "mutability": "edit-add-remove" }
+    ]
   }
 }
 ```
 
+Depth-2 declaration for `driverClaimOtherParty`:
+
+```jsonc
+{
+  "cardinality": "indexed",
+  "indexedBy": {
+    "source": "derived",
+    "controllingObligation": "driver",
+    "mutability": "edit-only",
+    "nested": [
+      // mid level: derived from driverClaim (per-driver claim id)
+      {
+        "source": "derived",
+        "controllingObligation": "driverClaim",
+        "mutability": "edit-only"
+      },
+      // inner level: user-driven party list
+      { "source": "user", "mutability": "edit-add-remove" }
+    ]
+  }
+}
+```
+
+**Why an array, not a recursive nested-object.** Uniform iteration
+(the evaluator and any authoring helper can walk `nested` with a
+`for`-loop); depth is `.length` at a glance; every entry has the
+same per-level shape rather than mixing level fields with a `nested`
+tail pointer. Not backwards-compatible with iteration 7's
+single-object form; the spike is private and we own every call
+site.
+
 **Implication shape.** Entries in the outer `fulfilments` array
-carry `subFulfilments` listing the inner fulfilmentIds. See
-`FulfilmentState` in §The ObligationEvaluator for the recursive
-type.
+carry `subFulfilments` at every level up to the obligation's
+declared depth. `FulfilmentState` in §The ObligationEvaluator is
+typed recursively for this. Depth-2 example:
 
 ```ts
 {
   inScope: true,
   fulfilments: [
     {
-      fulfilmentId: "driver-1-uuid",
+      fulfilmentId: 'driver-1-uuid',
       subFulfilments: [
-        { fulfilmentId: "addr-1a-uuid", status: "mandatory" },
-        { fulfilmentId: "addr-1b-uuid", status: "mandatory" }
+        {
+          fulfilmentId: 'claim-1a-uuid',
+          subFulfilments: [
+            { fulfilmentId: 'party-a-uuid', status: 'mandatory' },
+            { fulfilmentId: 'party-b-uuid', status: 'mandatory' }
+          ]
+        }
       ]
     }
   ]
 }
 ```
 
-**Evaluator purge extension.** `removeOutOfScopeFulfilments` now
-has a third rule: for each outer entry whose implication carries
-`subFulfilments`, the inner keys of the stored nested map are
-purged against the sub-list. This is what makes removing an
-address from a driver's history purge just that address (rather
-than needing coordinated storage writes elsewhere). See the code
-comment on the function for the full three-rule structure and a
-before/after example.
+**Evaluator purge — one recursive rule.** `removeOutOfScopeFulfilments`
+recurses through the implication's `fulfilments` + nested
+`subFulfilments`, purging any stored key that isn't named at its
+level. See the code comment on the function for depth-1 and
+depth-2 before/after examples. This is what makes removing a
+party purge just that party, removing a claim cascade to the
+parties under it, and removing a driver cascade to everything
+under them — all from a single recursive traversal.
 
-**Depth-1 today.** The exemplar has exactly one level of
-sub-indexing (driver → addresses). `FulfilmentState.subFulfilments`
-is typed recursively, so composing depth ≥ 2 is expressible; the
-evaluator's purge would need to be extended to recurse further.
-Not currently needed; most real journeys can be flattened.
+**Non-goals (still deferred):**
 
-**Non-goals for the exemplar:**
-
+- **Per-record fields on claim / party** — no `driverClaimType`,
+  `driverClaimAmount`, `driverClaimOtherPartyName`, etc. This
+  iteration proves the _structural_ pattern; per-claim fields are
+  cheap follow-ups (same shape as `driverFullName` at each
+  respective depth).
 - **5-year address-coverage rule** — a cross-fulfilment quantifier
   rule ("union of from-to periods covers 5 years without gaps").
-  Would live inside `driverAddress.applyTo` (or at a group-level
-  completeness check when that lands). Deferred until a concrete
-  service needs it.
-- **Value-shape validation** — address values are opaque to the
-  evaluator. Tests use realistic shapes but nothing checks the
-  fields. Consistent with the stance that validation is a separate
-  future concern.
+  Would live inside `driverAddress.applyTo` or at a group-level
+  completeness check. Deferred until a concrete service needs it.
+- **Value-shape validation** — address / party values are opaque
+  to the evaluator. Tests use realistic shapes but nothing checks
+  the fields.
 
 **Design decisions still open** (revisit as more nested cases
 surface):
 
 - Whether nested groups can compose (group-within-group). Today
   members are declared individually; a group is metadata only.
-- Interactions with pure derived-pattern controllers where the
-  outer is derived and inner is derived from a different source.
+- Whether authoring N-deep `applyTo` functions manually stays
+  readable at depth ≥ 3. Extracting a per-obligation walker
+  helper is a natural extension if it does not.
 
 ### R. Submission-block / Cannot Submit Journey state (extension point)
 
