@@ -34,7 +34,7 @@ const submittedEvaluation = () => {
   return evaluate(repository.get(journey.journeyId))
 }
 
-const cya = pagePath('check-your-answers')
+const checkYourAnswers = pagePath('check-your-answers')
 
 describe('contract/guards — pre-submit is open (Rulings item 2)', () => {
   it('allows the hub, applicable pages, direct-URL CYA and quote-summary', () => {
@@ -81,20 +81,22 @@ describe('contract/guards — pre-submit is open (Rulings item 2)', () => {
 describe('contract/guards — the post-submit freeze (Rulings item 1)', () => {
   it('resolves every journey route to read-only CYA once submitted', () => {
     const evaluation = submittedEvaluation()
-    expect(guardPage({ surface: 'hub' }, evaluation)).toBe(cya)
+    expect(guardPage({ surface: 'hub' }, evaluation)).toBe(checkYourAnswers)
     expect(
       guardPage({ surface: 'page', pageId: 'about-you' }, evaluation)
-    ).toBe(cya)
-    expect(guardPage({ surface: 'quote-summary' }, evaluation)).toBe(cya)
+    ).toBe(checkYourAnswers)
+    expect(guardPage({ surface: 'quote-summary' }, evaluation)).toBe(
+      checkYourAnswers
+    )
     expect(
       guardPage(
         { method: 'post', surface: 'page', pageId: 'about-you' },
         evaluation
       )
-    ).toBe(cya)
+    ).toBe(checkYourAnswers)
     expect(
       guardPage({ method: 'post', surface: 'check-your-answers' }, evaluation)
-    ).toBe(cya)
+    ).toBe(checkYourAnswers)
   })
 
   it('only the CYA and confirmation GETs survive; start stays open', () => {

@@ -51,16 +51,17 @@ const UUID =
 const NAME = /^[a-z][a-zA-Z0-9]*$/
 const SOURCES = ['user', 'derived', 'seeded']
 const MUTABILITIES = ['edit-only', 'edit-add-remove']
+const CARDINALITY_SINGLE = 'single'
+const CARDINALITY_INDEXED = 'indexed'
 
 const fail = (record, message) => {
   throw new Error(`Obligation "${record.name ?? record.id}": ${message}`)
 }
 
 const validateRecord = (record) => {
-  for (const key of Object.keys(record)) {
-    if (!ALLOWED_KEYS.has(key)) {
-      fail(record, `carries forbidden key "${key}" (obligations.md:196)`)
-    }
+  const forbiddenKey = Object.keys(record).find((key) => !ALLOWED_KEYS.has(key))
+  if (forbiddenKey) {
+    fail(record, `carries forbidden key "${forbiddenKey}" (obligations.md:196)`)
   }
   if (!UUID.test(record.id ?? '')) {
     fail(record, 'id must be a committed UUID')
@@ -71,11 +72,11 @@ const validateRecord = (record) => {
   if (!typeCompanions[record.type]) {
     fail(record, `type "${record.type}" has no companion in the type registry`)
   }
-  if (record.cardinality === 'single') {
+  if (record.cardinality === CARDINALITY_SINGLE) {
     if (record.indexedBy) {
       fail(record, 'single cardinality must not carry indexedBy')
     }
-  } else if (record.cardinality === 'indexed') {
+  } else if (record.cardinality === CARDINALITY_INDEXED) {
     validateIndexedBy(record)
   } else {
     fail(record, `unknown cardinality "${record.cardinality}"`)
@@ -107,7 +108,7 @@ const validateDerivedReferences = (record, identifiers) => {
 }
 
 /** Validate a parsed catalogue; returns `{ obligations, identifiers }`. */
-export function loadModel(rawJson, { scopeRegistry } = {}) {
+export const loadModel = (rawJson, { scopeRegistry } = {}) => {
   const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson
   const obligations = parsed?.obligations
   if (!Array.isArray(obligations) || obligations.length === 0) {
@@ -133,7 +134,7 @@ const modelPath = path.join(dirname, '..', 'model', 'obligations.json')
 let cachedJson
 
 /** Load and validate the real model/obligations.json (read once). */
-export function loadJourneyModel(options) {
+export const loadJourneyModel = (options) => {
   cachedJson ??= fs.readFileSync(modelPath, 'utf8')
   return loadModel(cachedJson, options)
 }

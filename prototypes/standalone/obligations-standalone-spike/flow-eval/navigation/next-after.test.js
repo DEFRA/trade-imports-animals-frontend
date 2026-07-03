@@ -15,7 +15,7 @@ const flow = JSON.parse(
 /** Same status-through-obligations kit as first-unfulfilled-page.test. */
 const kit = () => {
   const entries = []
-  const ob = (name, over) => {
+  const obligation = (name, overrides) => {
     entries.push([
       name,
       {
@@ -24,25 +24,25 @@ const kit = () => {
         status: 'optional',
         reasons: [],
         fulfilled: false,
-        ...over
+        ...overrides
       }
     ])
     return { obligation: name }
   }
-  const page = (id, status, over = {}) => {
+  const page = (id, status, overrides = {}) => {
     if (status === 'notApplicable') {
-      return { kind: 'page', id, ...over }
+      return { kind: 'page', id, ...overrides }
     }
     return {
       kind: 'page',
       id,
       presents: [
-        ob(`${id}-main`, {
+        obligation(`${id}-main`, {
           status: 'mandatory',
           fulfilled: status === 'fulfilled'
         })
       ],
-      ...over
+      ...overrides
     }
   }
   const evaluation = (fulfilments = {}) => ({
@@ -53,11 +53,11 @@ const kit = () => {
   return { page, evaluation }
 }
 
-const group = (id, children, over = {}) => ({
+const group = (id, children, overrides = {}) => ({
   kind: 'group',
   id,
   children,
-  ...over
+  ...overrides
 })
 
 const conditions = createFlowConditionRegistry()

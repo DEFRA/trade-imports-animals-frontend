@@ -4,6 +4,8 @@ import {
   NOT_APPLICABLE
 } from '../container-status.js'
 
+const PAGE = 'page'
+
 /**
  * The Resume / Continue primitive: status-filtered depth-first walk to
  * the first Page with status Not Started or In Progress
@@ -15,13 +17,13 @@ import {
  * Implemented and tested although the journey renders no Resume widget —
  * parity forbids new hub chrome (the reduce is ledgered in the README).
  */
-export function firstUnfulfilledPage(root, evaluation, options = {}) {
+export const firstUnfulfilledPage = (root, evaluation, options = {}) => {
   if (root.kind) {
     const status = containerStatus(root, evaluation, options)
     if (status === NOT_APPLICABLE || status === FULFILLED) {
       return null
     }
-    if (root.kind === 'page') {
+    if (root.kind === PAGE) {
       return root
     }
   }

@@ -17,11 +17,15 @@ import {
  * re-render.
  */
 
+const GET_YOUR_QUOTE_SECTION_ID = 'get-your-quote'
+const QUOTE_SUMMARY_ID = 'quote-summary'
+
 const flow = JSON.parse(modelJson().flow)
 const cya = flow.checkYourAnswers
 const premiumId = flow.sections
-  .find((section) => section.id === 'get-your-quote')
-  .children.find((child) => child.id === 'quote-summary').presents[0].obligation
+  .find((section) => section.id === GET_YOUR_QUOTE_SECTION_ID)
+  .children.find((child) => child.id === QUOTE_SUMMARY_ID)
+  .presents[0].obligation
 
 /** Render CYA from one evaluation; `extras` carries the stale-recheck
  * error summary. */
@@ -41,7 +45,7 @@ export const renderCya = (evaluation, h, extras = {}) => {
     buttonText: cya.buttonText,
     submitted: evaluation.submitted,
     errorSummaryTitle: flow.defaults.errorSummaryTitle,
-    backLink: pagePath('quote-summary'),
+    backLink: pagePath(QUOTE_SUMMARY_ID),
     breadcrumbs: breadcrumbs(cya.heading),
     ...extras
   })

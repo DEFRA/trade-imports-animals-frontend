@@ -17,6 +17,10 @@ import { groupStatusTag, pageStatusTag, tagged } from './status-tags.js'
  * Statuses come verbatim from the evaluation, copy from flow.json.
  */
 
+const QUOTE_ROW_INERT = 'inert'
+const QUOTE_ROW_NA_HIDE = 'na-hide'
+const INCOMPLETE_TAG_CLASS = 'govuk-tag--blue'
+
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const flowPath = path.join(dirname, '..', 'model', 'flow.json')
 let cachedFlow
@@ -85,7 +89,7 @@ const addonItems = (flow, evaluation) =>
       status:
         status === FULFILLED
           ? { text: flow.hub.statusLabels.fulfilled }
-          : tagged(flow.hub.statusLabels.incomplete, 'govuk-tag--blue')
+          : tagged(flow.hub.statusLabels.incomplete, INCOMPLETE_TAG_CLASS)
     }))
 
 /** Always visible, inert until Fulfilled — never a route guard. */
@@ -96,7 +100,7 @@ const quoteItem = (flow, evaluation) => {
     title: { text: flow.hub.quoteRowTitle },
     ...(ready && { href: pagePath(page.slug) }),
     status: ready
-      ? tagged(flow.hub.statusLabels.notStarted, 'govuk-tag--blue')
+      ? tagged(flow.hub.statusLabels.notStarted, INCOMPLETE_TAG_CLASS)
       : {
           text: flow.hub.cannotStartYetText,
           classes: 'govuk-task-list__status--cannot-start-yet'
@@ -105,23 +109,23 @@ const quoteItem = (flow, evaluation) => {
 }
 
 /**
- * hubViewModel(evaluation) -> the govukTaskList context. Progress counts
- * the three task groups only (spike-a parity) — add-ons and Get your
- * quote never move the completed-of-total line.
+ * hubViewModel(evaluation, options) -> the govukTaskList context;
+ * `options.quoteRowMode` selects the quote-row rendering (inert vs
+ * na-hide). Progress counts the three task groups only (spike-a parity)
+ * — add-ons and Get your quote never move the completed-of-total line.
  */
 export function hubViewModel(evaluation, options = {}) {
-  const { flow = journeyFlow(), quoteRowMode = 'inert' } = options
-  const items = hubShape.groups.map((group) =>
-    groupItem(flow, evaluation, group)
-  )
-  items.push(addonPickerItem(flow, evaluation), ...addonItems(flow, evaluation))
+  const { flow = journeyFlow(), quoteRowMode = QUOTE_ROW_INERT } = options
   const groupStatuses = evaluation.containerStatuses.groups
-  if (
-    quoteRowMode !== 'na-hide' ||
+  const includeQuote =
+    quoteRowMode !== QUOTE_ROW_NA_HIDE ||
     groupStatuses[hubShape.quote.sectionId] !== NOT_APPLICABLE
-  ) {
-    items.push(quoteItem(flow, evaluation))
-  }
+  const items = [
+    ...hubShape.groups.map((group) => groupItem(flow, evaluation, group)),
+    addonPickerItem(flow, evaluation),
+    ...addonItems(flow, evaluation),
+    ...(includeQuote ? [quoteItem(flow, evaluation)] : [])
+  ]
   const completedCount = hubShape.groups.filter(
     ({ sectionId }) => groupStatuses[sectionId] === FULFILLED
   ).length

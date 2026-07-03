@@ -86,27 +86,30 @@ const viewContext = (viewModel, request, extras = {}) => ({
   ...extras
 })
 
-const getHandler = (page) => (request, h) => {
-  const journey = currentJourney(request, h)
+const getHandler = (page) => (request, responseToolkit) => {
+  const journey = currentJourney(request, responseToolkit)
   const viewModel = pageViewModel(page.id, evaluate(journey))
-  return h.view(`${TEMPLATES}/page`, viewContext(viewModel, request))
+  return responseToolkit.view(
+    `${TEMPLATES}/page`,
+    viewContext(viewModel, request)
+  )
 }
 
-const postHandler = (page) => (request, h) => {
-  const journey = currentJourney(request, h)
+const postHandler = (page) => (request, responseToolkit) => {
+  const journey = currentJourney(request, responseToolkit)
   const payload = request.payload ?? {}
   const evaluation = evaluate(journey)
   const check = checkSave(page.id, payload, evaluation)
   if (!check.ok) {
     const viewModel = pageViewModel(page.id, evaluation, check.fieldErrors)
     viewModel.fields.forEach((field) => overlayField(field, payload))
-    return h.view(
+    return responseToolkit.view(
       `${TEMPLATES}/page`,
       viewContext(viewModel, request, { errorSummary: check.errorSummary })
     )
   }
   const saved = applyAnswers(journey, page.id, payload)
-  return h.redirect(
+  return responseToolkit.redirect(
     request.query.change ? cyaPath() : nextAfter(page.id, saved.evaluation)
   )
 }
@@ -136,7 +139,8 @@ export function pageRoutes() {
       method: 'GET',
       path: `${BASE}/addons/{rest*}`,
       options: options('addons'),
-      handler: (_request, h) => h.redirect(pagePath('addons'))
+      handler: (_request, responseToolkit) =>
+        responseToolkit.redirect(pagePath('addons'))
     }
   ]
 }

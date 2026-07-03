@@ -12,12 +12,14 @@ export const encodeFieldName = (name, fulfilmentId = null) =>
     ? name
     : `${name}${SEPARATOR}${encodeURIComponent(fulfilmentId)}`
 
-export function decodeFieldName(inputName) {
-  const at = inputName.indexOf(SEPARATOR)
-  return at === -1
+export const decodeFieldName = (inputName) => {
+  const separatorIndex = inputName.indexOf(SEPARATOR)
+  return separatorIndex === -1
     ? { name: inputName, fulfilmentId: null }
     : {
-        name: inputName.slice(0, at),
-        fulfilmentId: decodeURIComponent(inputName.slice(at + SEPARATOR.length))
+        name: inputName.slice(0, separatorIndex),
+        fulfilmentId: decodeURIComponent(
+          inputName.slice(separatorIndex + SEPARATOR.length)
+        )
       }
 }

@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { sectionEntry, SECTION_ENTRY_MODES } from './section-entry.js'
 
-/** Status-through-obligations fixture kit (non-car names). */
-const kit = () => {
+const obligationFixtures = () => {
   const entries = []
-  const ob = (name, over) => {
+  const addObligation = (name, overrides) => {
     entries.push([
       name,
       {
@@ -13,7 +12,7 @@ const kit = () => {
         status: 'optional',
         reasons: [],
         fulfilled: false,
-        ...over
+        ...overrides
       }
     ])
     return { obligation: name }
@@ -26,7 +25,7 @@ const kit = () => {
       kind: 'page',
       id,
       presents: [
-        ob(`${id}-main`, {
+        addObligation(`${id}-main`, {
           status: 'mandatory',
           fulfilled: status === 'fulfilled'
         })
@@ -41,11 +40,11 @@ const kit = () => {
   return { page, evaluation }
 }
 
-const group = (id, children, over = {}) => ({
+const group = (id, children, overrides = {}) => ({
   kind: 'group',
   id,
   children,
-  ...over
+  ...overrides
 })
 
 describe('flow-eval/navigation/section-entry', () => {
@@ -57,7 +56,7 @@ describe('flow-eval/navigation/section-entry', () => {
   })
 
   it('defaults to firstApplicablePage when neither Flow nor Section declares a mode', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = obligationFixtures()
     const section = group('who', [
       page('intro', 'notApplicable'),
       page('a', 'fulfilled')
@@ -67,7 +66,7 @@ describe('flow-eval/navigation/section-entry', () => {
   })
 
   it('follows the Flow-level sectionEntryMode', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = obligationFixtures()
     const section = group('who', [
       page('a', 'fulfilled'),
       page('b', 'notStarted')
@@ -80,7 +79,7 @@ describe('flow-eval/navigation/section-entry', () => {
   })
 
   it('lets a per-Section entryMode override the Flow default', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = obligationFixtures()
     const section = group(
       'who',
       [page('a', 'fulfilled'), page('b', 'notStarted')],
@@ -96,7 +95,7 @@ describe('flow-eval/navigation/section-entry', () => {
   })
 
   it('degrades a fully-Fulfilled Section to first-Page behaviour in unfulfilled mode', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = obligationFixtures()
     const section = group('who', [
       page('a', 'fulfilled'),
       page('b', 'fulfilled')
@@ -109,7 +108,7 @@ describe('flow-eval/navigation/section-entry', () => {
   })
 
   it('throws loudly on an unknown mode, wherever it is declared', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = obligationFixtures()
     const section = group('who', [page('a', 'notStarted')])
     expect(() =>
       sectionEntry(

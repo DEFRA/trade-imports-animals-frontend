@@ -11,18 +11,21 @@ import { firstUnfulfilledPage } from './first-unfulfilled-page.js'
  * first-Page behaviour. Unknown modes throw loudly.
  */
 
+const FIRST_APPLICABLE_PAGE = 'firstApplicablePage'
+const FIRST_UNFULFILLED_PAGE = 'firstUnfulfilledPage'
+
 export const SECTION_ENTRY_MODES = Object.freeze([
-  'firstApplicablePage',
-  'firstUnfulfilledPage'
+  FIRST_APPLICABLE_PAGE,
+  FIRST_UNFULFILLED_PAGE
 ])
 
-export function sectionEntry(flow, section, evaluation, options = {}) {
+export const sectionEntry = (flow, section, evaluation, options = {}) => {
   const mode =
-    section.entryMode ?? flow.sectionEntryMode ?? 'firstApplicablePage'
+    section.entryMode ?? flow.sectionEntryMode ?? FIRST_APPLICABLE_PAGE
   if (!SECTION_ENTRY_MODES.includes(mode)) {
     throw new Error(`Unknown section entry mode "${mode}"`)
   }
-  if (mode === 'firstUnfulfilledPage') {
+  if (mode === FIRST_UNFULFILLED_PAGE) {
     return (
       firstUnfulfilledPage(section, evaluation, options) ??
       firstApplicablePage(section, evaluation, options)

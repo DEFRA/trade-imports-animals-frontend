@@ -12,7 +12,7 @@
  * identifier spaces are unique. Lookups throw on unknown identifiers so a
  * typo fails loudly at the boundary instead of evaluating to undefined.
  */
-export function createIdentifierIndex(obligations) {
+export const createIdentifierIndex = (obligations) => {
   const byId = new Map()
   const byName = new Map()
   for (const record of obligations) {

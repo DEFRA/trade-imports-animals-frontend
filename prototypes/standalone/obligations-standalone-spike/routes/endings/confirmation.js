@@ -15,17 +15,19 @@ import {
  * identical confirmation.
  */
 
+const QUOTE_SECTION_ID = 'get-your-quote'
+const QUOTE_SUMMARY_ID = 'quote-summary'
+
 const flow = JSON.parse(modelJson().flow)
 const premiumId = flow.sections
-  .find((section) => section.id === 'get-your-quote')
-  .children.find((child) => child.id === 'quote-summary').presents[0].obligation
+  .find((section) => section.id === QUOTE_SECTION_ID)
+  .children.find((child) => child.id === QUOTE_SUMMARY_ID)
+  .presents[0].obligation
 
 export const getConfirmation = (request, h) => {
   const journey = currentJourney(request, h)
   const evaluation = evaluate(journey)
-  if (!evaluation.submitted) {
-    return h.redirect(BASE)
-  }
+  if (!evaluation.submitted) return h.redirect(BASE)
   return h.view(`${TEMPLATES}/confirmation`, {
     layout: LAYOUT,
     pageTitle: flow.confirmation.panelTitle,

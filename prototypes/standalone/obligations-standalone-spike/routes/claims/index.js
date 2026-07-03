@@ -19,37 +19,35 @@ import { page } from './page-model.js'
 
 const options = { auth: false, app: { surface: 'page', pageId: page.id } }
 
-export function claimsRoutes() {
-  return [
-    {
-      method: 'GET',
-      path: pagePath(page.slug),
-      options,
-      handler: getClaimsList
-    },
-    {
-      method: 'POST',
-      path: pagePath(page.slug),
-      options,
-      handler: postClaimsList
-    },
-    {
-      method: 'GET',
-      path: pagePath(page.addPage.slug),
-      options,
-      handler: getClaimsAddForm
-    },
-    {
-      method: 'POST',
-      path: pagePath(page.addPage.slug),
-      options,
-      handler: postClaimsAddForm
-    },
-    {
-      method: 'GET',
-      path: pagePath('claims/{index}/remove'),
-      options,
-      handler: getRemoveClaim
-    }
-  ]
-}
+export const claimsRoutes = () => [
+  {
+    method: 'GET',
+    path: pagePath(page.slug),
+    options,
+    handler: getClaimsList
+  },
+  {
+    method: 'POST',
+    path: pagePath(page.slug),
+    options,
+    handler: postClaimsList
+  },
+  {
+    method: 'GET',
+    path: pagePath(page.addPage.slug),
+    options,
+    handler: getClaimsAddForm
+  },
+  {
+    method: 'POST',
+    path: pagePath(page.addPage.slug),
+    options,
+    handler: postClaimsAddForm
+  },
+  {
+    method: 'GET',
+    path: pagePath('claims/{index}/remove'),
+    options,
+    handler: getRemoveClaim
+  }
+]

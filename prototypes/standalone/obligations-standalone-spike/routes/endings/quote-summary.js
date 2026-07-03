@@ -17,11 +17,11 @@ import {
  */
 
 const flow = JSON.parse(modelJson().flow)
-const pages = flow.sections.flatMap(function collect(container) {
-  return container.kind === 'page'
+const collectPages = (container) =>
+  container.kind === 'page'
     ? [container]
-    : (container.children ?? []).flatMap(collect)
-})
+    : (container.children ?? []).flatMap(collectPages)
+const pages = flow.sections.flatMap(collectPages)
 const page = pages.find((candidate) => candidate.id === 'quote-summary')
 const coverEntry = pages.find((candidate) => candidate.id === 'cover-type')
   .presents[0]

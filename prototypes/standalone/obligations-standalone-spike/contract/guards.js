@@ -66,7 +66,7 @@ const notApplicableTarget = (pageId, evaluation) => {
 }
 
 /** Routing decision for one request: null to allow, or a redirect URL. */
-export function guardPage(requestish, evaluation) {
+export const guardPage = (requestish, evaluation) => {
   const { method = 'get', surface, pageId = null } = requestish
   if (!SURFACES.includes(surface)) {
     throw new Error(`Unknown guard surface "${surface}"`)

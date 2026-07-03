@@ -3,17 +3,17 @@ import { createFlowConditionRegistry } from '../applies-when.js'
 import { firstApplicablePage } from './first-applicable-page.js'
 
 /** Non-car fixture trees (generality rail) — status is irrelevant here. */
-const page = (id, over = {}) => ({
+const page = (id, overrides = {}) => ({
   kind: 'page',
   id,
   presents: [{ obligation: `${id}-obligation` }],
-  ...over
+  ...overrides
 })
-const group = (id, children, over = {}) => ({
+const group = (id, children, overrides = {}) => ({
   kind: 'group',
   id,
   children,
-  ...over
+  ...overrides
 })
 
 const evaluation = { obligations: {}, fulfilments: {}, drops: [] }

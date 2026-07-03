@@ -12,6 +12,9 @@
  * projects sibling indexed obligations (the claims list).
  */
 
+/** Default page-mandate when an entry does not declare one. */
+const DEFAULT_MANDATE = 'soft'
+
 /** Read-only-ness is intrinsic — no presents, no presentsForEach. */
 export const isReadOnly = (page) =>
   (page.presents?.length ?? 0) === 0 &&
@@ -38,18 +41,17 @@ const obligationEntry = (page, evaluation, entry) => {
  * obligation. The container-status leaf rule reads this — an indexed
  * obligation's collection-level fulfilled-ness lives here, not on slots.
  */
-export function presentedObligations(page, evaluation) {
-  return declaredEntries(page).map((entry) => ({
+export const presentedObligations = (page, evaluation) =>
+  declaredEntries(page).map((entry) => ({
     entry,
     obligation: obligationEntry(page, evaluation, entry)
   }))
-}
 
 const slotOf = (entry, obligation, fulfilment, value) => ({
   obligationId: entry.obligation,
   name: obligation.name,
   fulfilmentId: fulfilment?.fulfilmentId ?? null,
-  pageMandate: entry.mandate ?? 'soft',
+  pageMandate: entry.mandate ?? DEFAULT_MANDATE,
   inScope: obligation.inScope,
   engineStatus: obligation.status,
   fulfilled: fulfilment ? fulfilment.fulfilled : obligation.fulfilled,
@@ -63,21 +65,19 @@ const slotOf = (entry, obligation, fulfilment, value) => ({
  * entry (zero fulfilments expand to zero slots — the dynamically-empty
  * case, obligations.md:1042-1045).
  */
-export function expandSlots(page, evaluation) {
-  const slots = []
-  for (const entry of page.presents ?? []) {
+export const expandSlots = (page, evaluation) => [
+  ...(page.presents ?? []).map((entry) => {
     const obligation = obligationEntry(page, evaluation, entry)
     const value = evaluation.fulfilments[entry.obligation]?.value
-    slots.push(slotOf(entry, obligation, null, value))
-  }
-  for (const entry of page.presentsForEach ?? []) {
+    return slotOf(entry, obligation, null, value)
+  }),
+  ...(page.presentsForEach ?? []).flatMap((entry) => {
     const obligation = obligationEntry(page, evaluation, entry)
-    for (const fulfilment of obligation.fulfilments ?? []) {
+    return (obligation.fulfilments ?? []).map((fulfilment) => {
       const value =
         evaluation.fulfilments[entry.obligation]?.[fulfilment.fulfilmentId]
           ?.value
-      slots.push(slotOf(entry, obligation, fulfilment, value))
-    }
-  }
-  return slots
-}
+      return slotOf(entry, obligation, fulfilment, value)
+    })
+  })
+]

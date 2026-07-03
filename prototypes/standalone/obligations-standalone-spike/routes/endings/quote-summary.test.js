@@ -4,20 +4,20 @@ import { createTestServer } from '../test-server.js'
 /** 'Your quote' — priced from the orchestrated evaluation, including
  * half-empty journeys reached by URL (Rulings item 2). */
 
-let t
+let testServer
 beforeEach(async () => {
-  t = await createTestServer()
-  await t.startJourney()
+  testServer = await createTestServer()
+  await testServer.startJourney()
 })
-afterEach(() => t.stop())
+afterEach(() => testServer.stop())
 
 describe('routes/endings/quote-summary', () => {
   it('prices a half-empty journey reached by URL (Rulings item 2)', async () => {
-    await t.post(`${t.base}/your-vehicle`, {
+    await testServer.post(`${testServer.base}/your-vehicle`, {
       registration: 'AB12CDE',
       estimatedValue: '10000'
     })
-    const response = await t.get(`${t.base}/quote-summary`)
+    const response = await testServer.get(`${testServer.base}/quote-summary`)
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('Your quote')
     expect(response.payload).toContain('Estimated annual premium:')
@@ -27,10 +27,10 @@ describe('routes/endings/quote-summary', () => {
   })
 
   it('prices the full journey with cover and extras labels', async () => {
-    await t.answerAllTasks({
+    await testServer.answerAllTasks({
       'optional-extras': { extras: ['breakdown', 'windscreen'] }
     })
-    const response = await t.get(`${t.base}/quote-summary`)
+    const response = await testServer.get(`${testServer.base}/quote-summary`)
     // 480 comprehensive + 60 breakdown + 20 windscreen.
     expect(response.payload).toContain('£560')
     expect(response.payload).toContain('Comprehensive')
@@ -41,11 +41,13 @@ describe('routes/endings/quote-summary', () => {
   })
 
   it('renders Accept and continue and POSTs on to CYA without writing', async () => {
-    await t.answerAllTasks()
-    const page = await t.get(`${t.base}/quote-summary`)
+    await testServer.answerAllTasks()
+    const page = await testServer.get(`${testServer.base}/quote-summary`)
     expect(page.payload).toContain('Accept and continue')
-    const response = await t.post(`${t.base}/quote-summary`)
+    const response = await testServer.post(`${testServer.base}/quote-summary`)
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(`${t.base}/check-your-answers`)
+    expect(response.headers.location).toBe(
+      `${testServer.base}/check-your-answers`
+    )
   })
 })

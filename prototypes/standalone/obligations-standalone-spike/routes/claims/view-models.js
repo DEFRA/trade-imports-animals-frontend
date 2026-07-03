@@ -9,9 +9,12 @@ import {
 } from './page-model.js'
 
 /**
- * View-models for the claims loop: the manage-list summary rows and the
- * hand-built add-form fields, both pure over an evaluation.
+ * View-models for the claims loop: the manage-list summary rows
+ * (pure over an evaluation) and the hand-built add-form fields
+ * (pure, built from the Flow entries' copy).
  */
+
+const INDEX_PLACEHOLDER = '{index}'
 
 /** 'Claim N' summary rows with 'Remove claim N' accessible names. A
  * typeless claim still counts (spike-a parity) as 'Not provided'. */
@@ -25,7 +28,7 @@ export const claimRows = (evaluation) => {
     const label = typeLabel(type) ?? flow.checkYourAnswers.notProvidedText
     const nth = String(index + 1)
     return {
-      key: { text: listCopy.rowKey.replace('{index}', nth) },
+      key: { text: listCopy.rowKey.replace(INDEX_PLACEHOLDER, nth) },
       value: { text: isBlank(amount) ? label : `${label} — £${amount}` },
       actions: {
         items: [
@@ -33,7 +36,7 @@ export const claimRows = (evaluation) => {
             href: pagePath(`claims/${index}/remove`),
             text: listCopy.removeActionText,
             visuallyHiddenText: listCopy.removeHiddenText.replace(
-              '{index}',
+              INDEX_PLACEHOLDER,
               nth
             )
           }

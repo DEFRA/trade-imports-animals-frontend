@@ -19,6 +19,7 @@ const { obligations } = load('obligations.json')
 const obligationNames = new Set(obligations.map((record) => record.name))
 const keys = Object.keys(messages)
 const TOKEN = /\{[a-z][a-zA-Z0-9]*\}/g
+const BRACES_PER_TOKEN = 2
 
 describe('model/messages.en.json — reason-code catalogue', () => {
   it('keys every message with a dotted locale-agnostic code', () => {
@@ -87,7 +88,7 @@ describe('model/messages.en.json — reason-code catalogue', () => {
       const braces = message.match(/[{}]/g) ?? []
       const tokens = message.match(TOKEN) ?? []
       expect(braces.length, `${key} has malformed braces`).toBe(
-        tokens.length * 2
+        tokens.length * BRACES_PER_TOKEN
       )
     }
   })

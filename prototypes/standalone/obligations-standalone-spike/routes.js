@@ -32,7 +32,7 @@ export const routeTable = () => [
 export const obligationsSpike = {
   plugin: {
     name: 'standalone-obligations-spike',
-    register(server) {
+    register: (server) => {
       registerJourneyCookie(server)
       server.route(routeTable().map(withGuard))
     }

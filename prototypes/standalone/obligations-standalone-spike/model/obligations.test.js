@@ -114,13 +114,17 @@ describe('model/obligations.json — catalogue contract', () => {
   })
 
   it('uses only types with a companion in the type registry', () => {
-    const typesInUse = [...new Set(obligations.map((r) => r.type))].sort()
+    const typesInUse = [
+      ...new Set(obligations.map((record) => record.type))
+    ].sort()
     expect(typesInUse).toEqual(EXPECTED_TYPES)
   })
 
   it('pins the indexedBy taxonomy on exactly the indexed records', () => {
-    const indexed = obligations.filter((r) => r.cardinality === 'indexed')
-    expect(indexed.map((r) => r.name).sort()).toEqual([
+    const indexed = obligations.filter(
+      (record) => record.cardinality === 'indexed'
+    )
+    expect(indexed.map((record) => record.name).sort()).toEqual([
       'claimAmount',
       'claimType',
       'driverDob',
@@ -225,8 +229,8 @@ describe('model/obligations.json — catalogue contract', () => {
   })
 
   it('marks premium as the sole system-handled obligation', () => {
-    const handled = obligations.filter((r) => r.handler !== undefined)
-    expect(handled.map((r) => r.name)).toEqual(['premium'])
+    const handled = obligations.filter((record) => record.handler !== undefined)
+    expect(handled.map((record) => record.name)).toEqual(['premium'])
     expect(byName.get('premium')).toMatchObject({
       type: 'quote',
       cardinality: 'single',

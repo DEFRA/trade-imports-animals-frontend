@@ -47,10 +47,10 @@ export const MANDATE_COMPOSITION = Object.freeze([
 ])
 
 /** Resolve one composition row; page mandate defaults soft, engine optional. */
-export function composeMandate(
+export const composeMandate = (
   pageMandate = 'soft',
   engineStatus = 'optional'
-) {
+) => {
   const row = MANDATE_COMPOSITION.find(
     (candidate) =>
       candidate.page === pageMandate && candidate.engine === engineStatus
@@ -65,21 +65,18 @@ export function composeMandate(
  * Save-time gate for one page entry: only a hard page mandate on an
  * in-scope, unfulfilled obligation blocks Save and continue.
  */
-export function blocksSave(pageMandate, obligationEntry) {
-  return (
-    composeMandate(pageMandate, obligationEntry.status).blocksSave &&
-    obligationEntry.inScope &&
-    !obligationEntry.fulfilled
-  )
-}
+export const blocksSave = (pageMandate, obligationEntry) =>
+  composeMandate(pageMandate, obligationEntry.status).blocksSave &&
+  obligationEntry.inScope &&
+  !obligationEntry.fulfilled
 
 /**
  * The CYA-POST hard gate (and the soft-prompt list): every in-scope,
  * engine-mandatory, unfulfilled obligation with its stacked reasons —
  * including the zero-claims 'Add at least one claim' case.
  */
-export function unfulfilledMandatory(evaluation) {
-  return Object.entries(evaluation.obligations)
+export const unfulfilledMandatory = (evaluation) =>
+  Object.entries(evaluation.obligations)
     .filter(
       ([, entry]) =>
         entry.inScope && entry.status === 'mandatory' && !entry.fulfilled
@@ -89,7 +86,6 @@ export function unfulfilledMandatory(evaluation) {
       name: entry.name,
       reasons: entry.reasons
     }))
-}
 
 /**
  * The three per-journey completion policies (obligations.md:201). This
@@ -104,7 +100,7 @@ export const COMPLETION_POLICIES = Object.freeze([
 export const JOURNEY_COMPLETION_POLICY = 'gate-collected-at-end'
 
 /** Per-journey default with per-obligation override. */
-export function resolveCompletionPolicy(journeyDefault, obligationOverride) {
+export const resolveCompletionPolicy = (journeyDefault, obligationOverride) => {
   const policy = obligationOverride ?? journeyDefault
   if (!COMPLETION_POLICIES.includes(policy)) {
     throw new Error(`Unknown completion policy "${policy}"`)

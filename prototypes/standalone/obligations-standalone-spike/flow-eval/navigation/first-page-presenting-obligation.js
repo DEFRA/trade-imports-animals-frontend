@@ -7,7 +7,7 @@
  * Change links. Defensive null on no match: in-scope obligations should
  * always have at least one presenting Page.
  */
-export function firstPagePresentingObligation(root, obligationId) {
+export const firstPagePresentingObligation = (root, obligationId) => {
   if (root.kind === 'page') {
     const entries = [...(root.presents ?? []), ...(root.presentsForEach ?? [])]
     return entries.some((entry) => entry.obligation === obligationId)
@@ -16,9 +16,7 @@ export function firstPagePresentingObligation(root, obligationId) {
   }
   for (const child of root.sections ?? root.children ?? []) {
     const found = firstPagePresentingObligation(child, obligationId)
-    if (found) {
-      return found
-    }
+    if (found) return found
   }
   return null
 }

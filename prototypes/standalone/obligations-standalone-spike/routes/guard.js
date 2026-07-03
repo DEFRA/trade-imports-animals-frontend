@@ -30,7 +30,7 @@ export const guardPreHandler = (request, h) => {
  * surface metadata (the model endpoints — sessionless interrogation)
  * pass through untouched.
  */
-export function withGuard(route) {
+export const withGuard = (route) => {
   if (!route.options?.app?.surface) {
     return route
   }

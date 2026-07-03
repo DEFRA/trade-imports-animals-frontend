@@ -17,15 +17,15 @@ const attributeOf = (tag, attribute) =>
 
 const selectOptionValues = (html, name) => {
   const pattern = /<select\b([^>]*)>([\s\S]*?)<\/select>/gi
-  for (const [, attributes, body] of html.matchAll(pattern)) {
-    if (!attributes.includes(`name="${name}"`)) {
-      continue
-    }
-    return [...body.matchAll(/<option\b[^>]*value="([^"]*)"/gi)].map(
-      ([, value]) => value
-    )
+  const match = [...html.matchAll(pattern)].find(([, attributes]) =>
+    attributes.includes(`name="${name}"`)
+  )
+  if (!match) {
+    return []
   }
-  return []
+  return [...match[2].matchAll(/<option\b[^>]*value="([^"]*)"/gi)].map(
+    ([, value]) => value
+  )
 }
 
 const rawControls = (html) =>

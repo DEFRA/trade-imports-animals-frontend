@@ -59,29 +59,31 @@ const validationSlots = (page, evaluation) => {
 
 /** Obligation state over the payload-merged candidate fulfilments. */
 const candidateState = (slots, payload, evaluation, options) => {
-  const fulfilments = structuredClone(evaluation.fulfilments)
-  for (const slot of slots) {
+  const fulfilments = slots.reduce((acc, slot) => {
     const value = candidateValue(slot, payload)
     if (value === undefined) {
-      continue
+      return acc
     }
-    fulfilments[slot.obligationId] =
-      slot.fulfilmentId === null
-        ? { value }
-        : {
-            ...(fulfilments[slot.obligationId] ?? {}),
-            [slot.fulfilmentId]: { value }
-          }
-  }
+    return {
+      ...acc,
+      [slot.obligationId]:
+        slot.fulfilmentId === null
+          ? { value }
+          : {
+              ...(acc[slot.obligationId] ?? {}),
+              [slot.fulfilmentId]: { value }
+            }
+    }
+  }, structuredClone(evaluation.fulfilments))
   return obligationStateOver(fulfilments, options)
 }
 
 /**
- * checkSave(pageId, payload, evaluation) -> { ok, errorSummary,
+ * checkSave(pageId, payload, evaluation, options) -> { ok, errorSummary,
  * fieldErrors }. `ok` false means the POST must re-render with the GDS
  * error summary instead of writing.
  */
-export function checkSave(pageId, payload = {}, evaluation, options = {}) {
+export const checkSave = (pageId, payload = {}, evaluation, options = {}) => {
   const page = pageById(pageId, options.flow)
   const slots = validationSlots(page, evaluation)
   const state = candidateState(slots, payload, evaluation, options)
@@ -90,7 +92,7 @@ export function checkSave(pageId, payload = {}, evaluation, options = {}) {
 }
 
 /** POST answers for one page (plain and ?change=1 mode take this path). */
-export function applyAnswers(journey, pageId, payload, options = {}) {
+export const applyAnswers = (journey, pageId, payload, options = {}) => {
   const page = pageById(pageId, options.flow)
   const {
     journey: saved,
@@ -104,7 +106,7 @@ export function applyAnswers(journey, pageId, payload, options = {}) {
  * Add one row across sibling user-source indexed obligations (a claim
  * spans claimType and claimAmount under ONE minted fulfilment id).
  */
-export function addFulfilment(journey, names, values = {}, options = {}) {
+export const addFulfilment = (journey, names, values = {}, options = {}) => {
   const { journey: saved, fulfilmentId } = addIndexedFulfilment(
     journey,
     [].concat(names),
@@ -120,7 +122,7 @@ export function addFulfilment(journey, names, values = {}, options = {}) {
  * hub (spike-a's claimsDone, parity ruling c) while the engine's
  * atLeastOne mandate still blocks the CYA POST.
  */
-export function markCollectionReviewed(journey, names, options = {}) {
+export const markCollectionReviewed = (journey, names, options = {}) => {
   const { journey: saved } = markIndexedCollectionReviewed(
     journey,
     [].concat(names),
@@ -130,7 +132,12 @@ export function markCollectionReviewed(journey, names, options = {}) {
 }
 
 /** Remove one row (by shared fulfilment id) from sibling obligations. */
-export function removeFulfilment(journey, names, fulfilmentId, options = {}) {
+export const removeFulfilment = (
+  journey,
+  names,
+  fulfilmentId,
+  options = {}
+) => {
   const { journey: saved } = removeIndexedFulfilment(
     journey,
     [].concat(names),

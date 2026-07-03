@@ -51,9 +51,7 @@ const rawModelFile = (file) =>
  * (raw JSON text, byte-identical to what is committed), so
  * routes/model-endpoints.js can serve them without re-serialising.
  */
-export function modelJson() {
-  return {
-    obligations: rawModelFile('obligations.json'),
-    flow: rawModelFile('flow.json')
-  }
-}
+export const modelJson = () => ({
+  obligations: rawModelFile('obligations.json'),
+  flow: rawModelFile('flow.json')
+})

@@ -56,7 +56,7 @@ const commit = (
 }
 
 /** POST answers for one page (plain and ?change=1 mode take this path). */
-export function applyPageAnswers(journey, page, payload, options = {}) {
+export const applyPageAnswers = (journey, page, payload, options = {}) => {
   const deps = settle(options)
   const evaluation = evaluateObligations(
     deps.obligations,
@@ -68,7 +68,7 @@ export function applyPageAnswers(journey, page, payload, options = {}) {
 }
 
 /** Add one row across sibling user-source indexed obligations (a claim). */
-export function addIndexedFulfilment(journey, names, values, options = {}) {
+export const addIndexedFulfilment = (journey, names, values, options = {}) => {
   const deps = settle(options)
   const { fulfilments, fulfilmentId } = addFulfilment(
     deps.obligations,
@@ -80,7 +80,7 @@ export function addIndexedFulfilment(journey, names, values, options = {}) {
 }
 
 /** Mark user-source indexed collections reviewed (Continue on the list). */
-export function markIndexedCollectionReviewed(journey, names, options = {}) {
+export const markIndexedCollectionReviewed = (journey, names, options = {}) => {
   const deps = settle(options)
   const fulfilments = markCollectionReviewed(
     deps.obligations,
@@ -91,12 +91,12 @@ export function markIndexedCollectionReviewed(journey, names, options = {}) {
 }
 
 /** Remove one row (by shared fulfilment id) from sibling obligations. */
-export function removeIndexedFulfilment(
+export const removeIndexedFulfilment = (
   journey,
   names,
   fulfilmentId,
   options = {}
-) {
+) => {
   const deps = settle(options)
   const fulfilments = removeFulfilment(
     deps.obligations,
@@ -112,6 +112,6 @@ export function removeIndexedFulfilment(
  * and persist the amended set — prune drops surface as data for the
  * caller to log (obligations.md:690-720).
  */
-export function reconcileJourney(journey, options = {}) {
+export const reconcileJourney = (journey, options = {}) => {
   return commit(journey, journey.fulfilments, settle(options))
 }

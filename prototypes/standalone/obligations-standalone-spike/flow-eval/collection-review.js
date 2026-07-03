@@ -18,14 +18,11 @@
  * the evaluation reports zero fulfilments AND the stored fulfilments map
  * carries the obligation's envelope key.
  */
-export function isReviewedEmptyCollection(
+export const isReviewedEmptyCollection = (
   obligationId,
   obligation,
   fulfilments = {}
-) {
-  return (
-    Array.isArray(obligation.fulfilments) &&
-    obligation.fulfilments.length === 0 &&
-    Object.hasOwn(fulfilments ?? {}, obligationId)
-  )
-}
+) =>
+  Array.isArray(obligation.fulfilments) &&
+  obligation.fulfilments.length === 0 &&
+  Object.hasOwn(fulfilments ?? {}, obligationId)

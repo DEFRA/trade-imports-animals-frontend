@@ -36,6 +36,7 @@ const flow = JSON.parse(
   )
 )
 const states = enumerateStates()
+const MAX_FILL_ROUNDS = 6
 
 const writeGap = (fulfilments, gap) => {
   const record = identifiers.recordOfName(gap.name)
@@ -56,7 +57,7 @@ const writeGap = (fulfilments, gap) => {
 /** Fill mandatory gaps until none remain; throws if that never happens. */
 const fillToCompletion = (fulfilments) => {
   let current = structuredClone(fulfilments)
-  for (let round = 0; round < 6; round++) {
+  for (let round = 0; round < MAX_FILL_ROUNDS; round++) {
     const outcome = runToFixedPoint(obligations, current)
     const gaps = unfulfilledMandatory(outcome.evaluation)
     if (gaps.length === 0) {
@@ -65,7 +66,9 @@ const fillToCompletion = (fulfilments) => {
     current = outcome.fulfilments
     gaps.forEach((gap) => writeGap(current, gap))
   }
-  throw new Error('Filling mandatory gaps did not converge in 6 rounds')
+  throw new Error(
+    `Filling mandatory gaps did not converge in ${MAX_FILL_ROUNDS} rounds`
+  )
 }
 
 describe('tests/completability — bounded enumeration (162 states)', () => {

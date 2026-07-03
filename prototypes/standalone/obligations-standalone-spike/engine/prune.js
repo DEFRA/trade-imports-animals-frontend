@@ -9,6 +9,12 @@
  * `{ value }`; an indexed entry is `{ [fulfilmentId]: { value } }`.
  */
 
+const CARDINALITY_SINGLE = 'single'
+
+const REASON_UNKNOWN_OBLIGATION = 'unknown-obligation'
+const REASON_CARDINALITY_MISMATCH = 'cardinality-mismatch'
+const REASON_MALFORMED_FULFILMENT = 'malformed-fulfilment'
+
 const isPlainObject = (candidate) =>
   typeof candidate === 'object' &&
   candidate !== null &&
@@ -29,18 +35,18 @@ export function pruneFulfilments(obligations, fulfilments = {}) {
   for (const [obligationId, entry] of Object.entries(fulfilments)) {
     const record = byId.get(obligationId)
     if (!record) {
-      drops.push({ obligationId, reason: 'unknown-obligation' })
+      drops.push({ obligationId, reason: REASON_UNKNOWN_OBLIGATION })
       continue
     }
 
-    if (record.cardinality === 'single') {
+    if (record.cardinality === CARDINALITY_SINGLE) {
       if (isValueEnvelope(entry)) {
         kept[obligationId] = { value: structuredClone(entry.value) }
       } else {
         drops.push({
           obligationId,
           name: record.name,
-          reason: 'cardinality-mismatch'
+          reason: REASON_CARDINALITY_MISMATCH
         })
       }
       continue
@@ -50,7 +56,7 @@ export function pruneFulfilments(obligations, fulfilments = {}) {
       drops.push({
         obligationId,
         name: record.name,
-        reason: 'cardinality-mismatch'
+        reason: REASON_CARDINALITY_MISMATCH
       })
       continue
     }
@@ -63,7 +69,7 @@ export function pruneFulfilments(obligations, fulfilments = {}) {
           obligationId,
           name: record.name,
           fulfilmentId,
-          reason: 'malformed-fulfilment'
+          reason: REASON_MALFORMED_FULFILMENT
         })
       }
     }

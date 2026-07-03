@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import * as o from './obligations-journey.js'
+import * as journey from './obligations-journey.js'
 
 /**
  * Rulings item 1 — POST-SUBMIT FREEZE (Outcome A). After 'Quote
@@ -16,7 +16,7 @@ const cyaHeading = (page) =>
   page.getByRole('heading', { name: 'Check your answers' })
 
 /** Read-only CYA: no Change actions, no send form, nothing editable. */
-async function expectReadOnlyCya(page) {
+const expectReadOnlyCya = async (page) => {
   await expect(cyaHeading(page)).toBeVisible()
   await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
   await expect(
@@ -29,33 +29,33 @@ async function expectReadOnlyCya(page) {
 const crumbFrom = (page) =>
   page.locator('meta[name="csrf-token"]').getAttribute('content')
 
-test.describe(o.OBLIGATIONS.label, () => {
+test.describe(journey.OBLIGATIONS.label, () => {
   test('hub, task pages and Change links all resolve to read-only CYA after submit', async ({
     page
   }) => {
-    await o.submitToQuoteConfirmed(page)
+    await journey.submitToQuoteConfirmed(page)
 
-    await page.goto(o.pagePath('hub'))
+    await page.goto(journey.pagePath('hub'))
     await expectReadOnlyCya(page)
     expect(page.url()).toContain('/check-your-answers')
 
     // A plain question page…
-    await page.goto(o.pagePath('about-you'))
+    await page.goto(journey.pagePath('about-you'))
     await expectReadOnlyCya(page)
 
     // …a CYA Change round-trip URL…
-    await page.goto(`${o.pagePath('driving-history')}?change=1`)
+    await page.goto(`${journey.pagePath('driving-history')}?change=1`)
     await expectReadOnlyCya(page)
 
     // …and the claims manage list (its own route family) freeze alike.
-    await page.goto(o.pagePath('claims'))
+    await page.goto(journey.pagePath('claims'))
     await expectReadOnlyCya(page)
   })
 
   test('a re-POST after submit alters nothing', async ({ page }) => {
-    await o.submitToQuoteConfirmed(page)
+    await journey.submitToQuoteConfirmed(page)
 
-    await page.goto(o.pagePath('check-your-answers'))
+    await page.goto(journey.pagePath('check-your-answers'))
     // The fullName row's CYA key is 'Name' (spike-a parity — see
     // parity-facts.json cya rows and flow.json cyaKey), so anchor on the
     // exact key: a 'Full name' filter matches nothing here.
@@ -70,7 +70,7 @@ test.describe(o.OBLIGATIONS.label, () => {
     // Replay a save against a task page through the same cookie jar. The
     // guard resolves it to CYA; the repository write-block keeps the
     // stored answer intact either way.
-    const replay = await page.request.post(o.pagePath('about-you'), {
+    const replay = await page.request.post(journey.pagePath('about-you'), {
       form: { crumb, fullName: 'Someone Else' }
     })
     expect(replay.ok()).toBe(true)
@@ -78,9 +78,12 @@ test.describe(o.OBLIGATIONS.label, () => {
 
     // A re-POST of CYA itself re-renders read-only — never a second
     // submit, never an error page.
-    const resubmit = await page.request.post(o.pagePath('check-your-answers'), {
-      form: { crumb }
-    })
+    const resubmit = await page.request.post(
+      journey.pagePath('check-your-answers'),
+      {
+        form: { crumb }
+      }
+    )
     expect(resubmit.ok()).toBe(true)
 
     await page.reload()
@@ -92,15 +95,15 @@ test.describe(o.OBLIGATIONS.label, () => {
     page,
     context
   }) => {
-    await o.submitToQuoteConfirmed(page)
+    await journey.submitToQuoteConfirmed(page)
 
     // 'CI-' + the journeyId's first 6 hex, uppercased — so a revisit
     // re-renders the identical confirmation, no re-stamping.
-    const journeyId = await o.journeyIdFrom(context)
+    const journeyId = await journey.journeyIdFrom(context)
     const reference = `CI-${journeyId.replace(/-/g, '').slice(0, 6).toUpperCase()}`
     await expect(page.locator('.govuk-panel')).toContainText(reference)
 
-    await page.goto(o.pagePath('confirmation'))
+    await page.goto(journey.pagePath('confirmation'))
     await expect(
       page.getByRole('heading', { name: 'Quote confirmed' })
     ).toBeVisible()

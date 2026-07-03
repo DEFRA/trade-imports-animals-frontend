@@ -8,6 +8,8 @@ import { evaluateObligations, loadJourneyModel } from '../engine/index.js'
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const spikeRoot = path.resolve(dirname, '..')
 
+const SAMPLE_SIZE = 50
+
 const jsFilesUnder = (dir) =>
   fs
     .readdirSync(dir, { recursive: true, withFileTypes: true })
@@ -16,8 +18,10 @@ const jsFilesUnder = (dir) =>
 
 describe('orchestrator/fulfilment-ids — the determinism seam (graft 4)', () => {
   it('mints opaque, unique ids', () => {
-    const minted = new Set(Array.from({ length: 50 }, () => mintFulfilmentId()))
-    expect(minted.size).toBe(50)
+    const minted = new Set(
+      Array.from({ length: SAMPLE_SIZE }, () => mintFulfilmentId())
+    )
+    expect(minted.size).toBe(SAMPLE_SIZE)
     for (const id of minted) {
       expect(id).toMatch(/^f-[0-9a-f-]{36}$/)
     }

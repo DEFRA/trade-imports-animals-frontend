@@ -64,7 +64,7 @@ describe('engine/evaluate — scope and mandate over the real model', () => {
       status: 'mandatory'
     })
     expect(
-      entryOf(withExcess, 'excessAmount').reasons.map((r) => r.code)
+      entryOf(withExcess, 'excessAmount').reasons.map((reason) => reason.code)
     ).toEqual(['scope.answered', 'mandate.excessAmount.missing'])
     const withoutExcess = evaluateObligations(
       obligations,
@@ -239,7 +239,7 @@ describe('engine/evaluate — amendment, determinism, purity', () => {
       ])
     )
     const claimGap = gaps.find((gap) => gap.name === 'claimType')
-    expect(claimGap.reasons.map((r) => r.code)).toContain(
+    expect(claimGap.reasons.map((reason) => reason.code)).toContain(
       'mandate.claimType.atLeastOne'
     )
   })

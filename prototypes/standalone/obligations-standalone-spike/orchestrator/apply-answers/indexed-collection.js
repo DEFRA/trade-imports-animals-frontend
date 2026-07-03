@@ -24,7 +24,7 @@ const userIndexedRecord = (identifiers, name) => {
  * arrive keyed by obligation name; unanswered obligations store blank —
  * spike-a counts a typeless claim.
  */
-export function addFulfilment(obligations, fulfilments, names, values = {}) {
+export const addFulfilment = (obligations, fulfilments, names, values = {}) => {
   const identifiers = createIdentifierIndex(obligations)
   const next = structuredClone(fulfilments ?? {})
   const fulfilmentId = mintFulfilmentId()
@@ -43,7 +43,7 @@ export function addFulfilment(obligations, fulfilments, names, values = {}) {
  * list then counts complete on the hub while the atLeastOne mandate
  * still blocks the CYA POST. Idempotent; rows already stored are kept.
  */
-export function markCollectionReviewed(obligations, fulfilments, names) {
+export const markCollectionReviewed = (obligations, fulfilments, names) => {
   const identifiers = createIdentifierIndex(obligations)
   const next = structuredClone(fulfilments ?? {})
   for (const name of names) {
@@ -57,12 +57,12 @@ export function markCollectionReviewed(obligations, fulfilments, names) {
  * Removing the last row deletes the envelope too, so the collection
  * reads Not Started again — only markCollectionReviewed (the Continue
  * press) leaves the reviewed-empty marker behind. */
-export function removeFulfilment(
+export const removeFulfilment = (
   obligations,
   fulfilments,
   names,
   fulfilmentId
-) {
+) => {
   const identifiers = createIdentifierIndex(obligations)
   const next = structuredClone(fulfilments ?? {})
   for (const name of names) {

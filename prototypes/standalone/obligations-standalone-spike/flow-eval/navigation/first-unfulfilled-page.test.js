@@ -10,7 +10,7 @@ import { firstUnfulfilledPage } from './first-unfulfilled-page.js'
  */
 const kit = () => {
   const entries = []
-  const ob = (name, over) => {
+  const obligation = (name, overrides) => {
     entries.push([
       name,
       {
@@ -19,7 +19,7 @@ const kit = () => {
         status: 'optional',
         reasons: [],
         fulfilled: false,
-        ...over
+        ...overrides
       }
     ])
     return { obligation: name }
@@ -29,13 +29,13 @@ const kit = () => {
       return { kind: 'page', id }
     }
     const presents = [
-      ob(`${id}-main`, {
+      obligation(`${id}-main`, {
         status: 'mandatory',
         fulfilled: status === 'fulfilled'
       })
     ]
     if (status === 'inProgress') {
-      presents.push(ob(`${id}-extra`, { fulfilled: true }))
+      presents.push(obligation(`${id}-extra`, { fulfilled: true }))
     }
     return { kind: 'page', id, presents }
   }

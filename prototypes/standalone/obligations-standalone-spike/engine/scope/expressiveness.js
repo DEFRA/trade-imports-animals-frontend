@@ -10,6 +10,8 @@ import { scopeAnswered } from '../reasons.js'
  * `demos`).
  */
 
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000
+
 const values = (view, name) =>
   Object.values(view.fulfilmentsOf(name)).map((fulfilment) => fulfilment.value)
 
@@ -24,10 +26,10 @@ export const anyFulfilmentMatches = (name, predicate) => (view) =>
  */
 export const intervalsLeaveGap = (name, years, today) => (view) => {
   const end = Date.parse(today)
-  let cursor = end - years * 365.25 * 24 * 60 * 60 * 1000
+  let cursor = end - years * MS_PER_YEAR
   const intervals = values(view, name)
     .filter((value) => value?.from)
-    .sort((a, b) => Date.parse(a.from) - Date.parse(b.from))
+    .sort((first, second) => Date.parse(first.from) - Date.parse(second.from))
   for (const { from, to } of intervals) {
     if (Date.parse(from) > cursor) {
       break

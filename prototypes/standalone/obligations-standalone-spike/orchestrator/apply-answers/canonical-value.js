@@ -28,9 +28,10 @@ const dateParts = (inputName, payload) => {
     : undefined
 }
 
+const toArray = (value) => (Array.isArray(value) ? value : [value])
+
 const canonicalMultiSelect = (raw) =>
-  [raw ?? []]
-    .flat()
+  toArray(raw ?? [])
     .map((value) => String(value).trim())
     .filter((value) => value !== '')
 

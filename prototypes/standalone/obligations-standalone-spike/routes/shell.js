@@ -23,46 +23,43 @@ const options = (surface, pageId = null) => ({
 })
 
 /** The start page and the hub (task list) — the journey's two shell pages. */
-export function shellRoutes() {
-  return [
-    {
-      method: 'GET',
-      path: BASE,
-      options: options('start'),
-      handler(_request, h) {
-        return h.view(`${TEMPLATES}/start`, {
-          pageTitle: flow.start.heading,
-          start: flow.start,
-          startAction: startPath()
-        })
-      }
-    },
-    {
-      method: 'POST',
-      path: startPath(),
-      options: options('start'),
-      handler(_request, h) {
-        startJourney(h)
-        return h.redirect(hubPath())
-      }
-    },
-    {
-      method: 'GET',
-      path: hubPath(),
-      options: options('hub'),
-      handler(request, h) {
-        const journey = currentJourney(request, h)
-        const viewModel = hubViewModel(evaluate(journey))
-        return h.view(`${TEMPLATES}/hub`, {
-          pageTitle: viewModel.heading,
-          ...viewModel,
-          breadcrumbs: [
-            { text: 'Prototypes', href: '/prototype-standalone' },
-            { text: 'Obligations (standalone)', href: BASE },
-            { text: 'Your application' }
-          ]
-        })
-      }
+export const shellRoutes = () => [
+  {
+    method: 'GET',
+    path: BASE,
+    options: options('start'),
+    handler: (_request, responseToolkit) =>
+      responseToolkit.view(`${TEMPLATES}/start`, {
+        pageTitle: flow.start.heading,
+        start: flow.start,
+        startAction: startPath()
+      })
+  },
+  {
+    method: 'POST',
+    path: startPath(),
+    options: options('start'),
+    handler: (_request, responseToolkit) => {
+      startJourney(responseToolkit)
+      return responseToolkit.redirect(hubPath())
     }
-  ]
-}
+  },
+  {
+    method: 'GET',
+    path: hubPath(),
+    options: options('hub'),
+    handler: (request, responseToolkit) => {
+      const journey = currentJourney(request, responseToolkit)
+      const viewModel = hubViewModel(evaluate(journey))
+      return responseToolkit.view(`${TEMPLATES}/hub`, {
+        pageTitle: viewModel.heading,
+        ...viewModel,
+        breadcrumbs: [
+          { text: 'Prototypes', href: '/prototype-standalone' },
+          { text: 'Obligations (standalone)', href: BASE },
+          { text: 'Your application' }
+        ]
+      })
+    }
+  }
+]

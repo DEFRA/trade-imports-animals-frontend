@@ -66,21 +66,19 @@ const foldScope = (rules, view, externalState) => {
   if (rules.length === 0) {
     return { inScope: true, status: 'optional', reasons: [] }
   }
-  const reasons = []
-  let fired = false
-  let mandatory = false
-  for (const { when } of rules) {
-    const outcome = when(view, externalState)
-    if (!outcome) {
-      continue
-    }
-    fired = true
-    mandatory ||= outcome.status === 'mandatory'
-    reasons.push(...(outcome.reasons ?? []))
+  const firings = rules
+    .map(({ when }) => when(view, externalState))
+    .filter((outcome) => outcome)
+  if (firings.length === 0) {
+    return { inScope: false }
   }
-  return fired
-    ? { inScope: true, status: mandatory ? 'mandatory' : 'optional', reasons }
-    : { inScope: false }
+  const mandatory = firings.some((outcome) => outcome.status === 'mandatory')
+  const reasons = firings.flatMap((outcome) => outcome.reasons ?? [])
+  return {
+    inScope: true,
+    status: mandatory ? 'mandatory' : 'optional',
+    reasons
+  }
 }
 
 /** Projected fulfilment ids: stored keys, or the controller's selection. */

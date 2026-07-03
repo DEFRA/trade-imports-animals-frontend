@@ -16,31 +16,34 @@ const flow = JSON.parse(modelJson().flow)
 
 const options = (surface) => ({ auth: false, app: { surface, pageId: null } })
 
-export function endingsRoutes() {
+const QUOTE_SUMMARY = 'quote-summary'
+const CHECK_YOUR_ANSWERS = 'check-your-answers'
+
+export const endingsRoutes = () => {
   const cyaPath = pagePath(flow.checkYourAnswers.slug)
   return [
     {
       method: 'GET',
-      path: pagePath('quote-summary'),
-      options: options('quote-summary'),
+      path: pagePath(QUOTE_SUMMARY),
+      options: options(QUOTE_SUMMARY),
       handler: getQuoteSummary
     },
     {
       method: 'POST',
-      path: pagePath('quote-summary'),
-      options: options('quote-summary'),
+      path: pagePath(QUOTE_SUMMARY),
+      options: options(QUOTE_SUMMARY),
       handler: submitQuoteSummary
     },
     {
       method: 'GET',
       path: cyaPath,
-      options: options('check-your-answers'),
+      options: options(CHECK_YOUR_ANSWERS),
       handler: getCheckYourAnswers
     },
     {
       method: 'POST',
       path: cyaPath,
-      options: options('check-your-answers'),
+      options: options(CHECK_YOUR_ANSWERS),
       handler: submitCheckYourAnswers
     },
     {

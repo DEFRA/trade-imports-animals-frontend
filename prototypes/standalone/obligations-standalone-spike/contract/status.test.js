@@ -11,6 +11,8 @@ import {
 } from './status.js'
 import { createJourneyRepository } from '../store/index.js'
 
+const REFERENCE_ID_LENGTH = 6
+
 const { identifiers } = journeyModel()
 const id = (name) => identifiers.idOf(name)
 
@@ -108,7 +110,7 @@ describe('contract/status — the evaluation spine', () => {
 
   it('carries the deterministic quote reference for its journeyId', () => {
     const { journey } = setup()
-    const expected = `CI-${journey.journeyId.replace(/-/g, '').slice(0, 6).toUpperCase()}`
+    const expected = `CI-${journey.journeyId.replace(/-/g, '').slice(0, REFERENCE_ID_LENGTH).toUpperCase()}`
     expect(evaluate(journey).reference).toBe(expected)
     expect(evaluate(journey)).toEqual(evaluate(journey))
   })

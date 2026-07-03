@@ -13,9 +13,7 @@ const attachDateError = (view, slot, errors) => {
   const firstMessage = partKeys
     .map((key) => errors[key])
     .find((message) => message)
-  if (!firstMessage) {
-    return
-  }
+  if (!firstMessage) return
   view.args.errorMessage = { text: firstMessage }
   view.args.items = view.args.items.map((item) =>
     errors[`${slot.inputName}-${item.name}`]
@@ -24,7 +22,7 @@ const attachDateError = (view, slot, errors) => {
   )
 }
 
-export function attachError(view, slot, errors) {
+export const attachError = (view, slot, errors) => {
   if (slot.type === 'date') {
     return attachDateError(view, slot, errors)
   }

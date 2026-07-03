@@ -42,7 +42,9 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
   })
 
   it('targets only real obligations, and exactly the expected fifteen', () => {
-    journeyScopeRegistry.assertCoverage(obligations.map((r) => r.name))
+    journeyScopeRegistry.assertCoverage(
+      obligations.map((obligation) => obligation.name)
+    )
     expect([...journeyScopeRegistry.obligationNames()].sort()).toEqual(
       [
         'addons',
@@ -78,7 +80,9 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
     for (const name of ENGINE_MANDATORY_ALWAYS) {
       const outcome = fire(name, {})
       expect(outcome.status, name).toBe('mandatory')
-      expect(outcome.reasons.map((r) => r.code)).toEqual([codes[name]])
+      expect(outcome.reasons.map((reason) => reason.code)).toEqual([
+        codes[name]
+      ])
     }
   })
 
@@ -87,7 +91,7 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
     expect(fire('excessAmount', { voluntaryExcess: 'no' })).toBeNull()
     const outcome = fire('excessAmount', { voluntaryExcess: 'yes' })
     expect(outcome.status).toBe('mandatory')
-    expect(outcome.reasons.map((r) => r.code)).toEqual([
+    expect(outcome.reasons.map((reason) => reason.code)).toEqual([
       'scope.answered',
       'mandate.excessAmount.missing'
     ])
@@ -102,7 +106,7 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
     expect(fire('claimAmount', {})).toBeNull()
     const claimType = fire('claimType', { hadClaims: 'yes' })
     expect(claimType.status).toBe('mandatory')
-    expect(claimType.reasons.map((r) => r.code)).toEqual([
+    expect(claimType.reasons.map((reason) => reason.code)).toEqual([
       'scope.answered',
       'mandate.claimType.atLeastOne'
     ])
@@ -112,7 +116,9 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
     })
     const claimAmount = fire('claimAmount', { hadClaims: 'yes' })
     expect(claimAmount.status).toBeUndefined()
-    expect(claimAmount.reasons.map((r) => r.code)).toEqual(['scope.answered'])
+    expect(claimAmount.reasons.map((reason) => reason.code)).toEqual([
+      'scope.answered'
+    ])
   })
 
   it('scopes addon follow-ups by selection with finishSelected mandates', () => {
@@ -120,7 +126,7 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
     for (const name of ['driverName', 'relationship', 'ncdYears']) {
       const outcome = fire(name, selected)
       expect(outcome.status, name).toBe('mandatory')
-      expect(outcome.reasons.map((r) => r.code)).toEqual([
+      expect(outcome.reasons.map((reason) => reason.code)).toEqual([
         'scope.answered',
         'mandate.addons.finishSelected'
       ])
@@ -139,7 +145,9 @@ describe('engine/scope/journey-rules — the canonical engine-mandatory set', ()
     expect(fire('driverDob', {})).toBeNull()
     const outcome = fire('driverDob', { addons: ['named-driver'] })
     expect(outcome.status).toBeUndefined()
-    expect(outcome.reasons.map((r) => r.code)).toEqual(['scope.answered'])
+    expect(outcome.reasons.map((reason) => reason.code)).toEqual([
+      'scope.answered'
+    ])
   })
 
   it('ignores non-array addons answers (no scope until a real selection exists)', () => {

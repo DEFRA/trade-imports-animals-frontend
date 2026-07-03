@@ -13,6 +13,7 @@ const NO_CLAIMS_DISCOUNT_PER_YEAR = 25
 const PENALTY_POINT_LOADING = 15
 const RECENT_CLAIMS_LOADING = 120
 const MINIMUM_PREMIUM = 150
+const CLAIMS_ANSWER_YES = 'yes'
 
 const coverTypeMultiplier = {
   comprehensive: 1,
@@ -28,7 +29,7 @@ const extraCost = {
 }
 
 /** Annual premium in whole pounds; happily prices a half-empty journey. */
-export function calculatePremium(answers = {}) {
+export const calculatePremium = (answers = {}) => {
   const multiplier =
     coverTypeMultiplier[answers.coverType] ?? DEFAULT_MULTIPLIER
 
@@ -39,7 +40,8 @@ export function calculatePremium(answers = {}) {
     (Number(answers.yearsNoClaims) || 0) * NO_CLAIMS_DISCOUNT_PER_YEAR
   const pointsLoading =
     (Number(answers.penaltyPoints) || 0) * PENALTY_POINT_LOADING
-  const claimsLoading = answers.hadClaims === 'yes' ? RECENT_CLAIMS_LOADING : 0
+  const claimsLoading =
+    answers.hadClaims === CLAIMS_ANSWER_YES ? RECENT_CLAIMS_LOADING : 0
 
   const extras = (answers.extras ?? []).reduce(
     (total, extra) => total + (extraCost[extra] ?? 0),

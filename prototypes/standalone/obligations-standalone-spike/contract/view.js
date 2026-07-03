@@ -17,6 +17,9 @@ import { journeyFlow, journeyModel, pageById } from './status.js'
 export { hubViewModel } from '../journey/hub-view.js'
 export { cyaRows } from './cya-rows/index.js'
 
+/** Record kind that is system-handled and never rendered as an input. */
+const SYSTEM_KIND = 'system'
+
 /** Dotted reason records -> English copy; unknown codes throw (graft 7). */
 export const resolveReasons = (reasons = []) => reasons.map(resolveReason)
 
@@ -50,7 +53,7 @@ const fieldSlot = (slot, identifiers) => {
 /** System-handled slots (the quote) are never rendered as inputs. */
 const userFacing = (slot, identifiers) =>
   typeCompanions[identifiers.recordOfId(slot.obligationId).type].kind !==
-  'system'
+  SYSTEM_KIND
 
 /**
  * pageViewModel(pageId, evaluation, errors?) -> the generic page
@@ -59,7 +62,7 @@ const userFacing = (slot, identifiers) =>
  * widgets. Pages presenting nothing come out read-only with no fields
  * (intrinsic read-only, ARCH-29).
  */
-export function pageViewModel(pageId, evaluation, errors = null) {
+export const pageViewModel = (pageId, evaluation, errors = null) => {
   const flow = journeyFlow()
   const page = pageById(pageId)
   const { identifiers } = journeyModel()

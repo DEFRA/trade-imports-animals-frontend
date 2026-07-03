@@ -66,7 +66,7 @@ const EXPLANATIONS = {
 export const reasonCodes = Object.freeze(Object.keys(EXPLANATIONS).sort())
 
 /** Build a reason record; throws on codes outside the registry. */
-export function reason(code, values) {
+export const reason = (code, values) => {
   const explanation = EXPLANATIONS[code]
   if (!explanation) {
     throw new Error(`Unknown reason code "${code}"`)
@@ -75,7 +75,7 @@ export function reason(code, values) {
 }
 
 /** 'hadClaims' -> 'Had claims' — the display form of an obligation name. */
-export function humaniseName(name) {
+export const humaniseName = (name) => {
   const spaced = name.replace(/([A-Z])/g, ' $1').toLowerCase()
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
@@ -84,9 +84,8 @@ export function humaniseName(name) {
  * The scope-provenance reason: 'You answered "{answer}" for {field}'.
  * Interpolation values are authored here so every emitter agrees on them.
  */
-export function scopeAnswered(answer, controllerName) {
-  return reason('scope.answered', {
+export const scopeAnswered = (answer, controllerName) =>
+  reason('scope.answered', {
     answer,
     field: humaniseName(controllerName)
   })
-}

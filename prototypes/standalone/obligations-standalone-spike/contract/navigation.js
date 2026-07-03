@@ -36,15 +36,15 @@ export {
 const taskGroupOfPage = (flow, pageId) => {
   const walk = (group) => {
     for (const child of group.children ?? []) {
+      if (child.kind === 'page' && child.id === pageId) {
+        return group
+      }
       if (child.kind === 'page') {
-        if (child.id === pageId) {
-          return group
-        }
-      } else {
-        const found = walk(child)
-        if (found) {
-          return found
-        }
+        continue
+      }
+      const found = walk(child)
+      if (found) {
+        return found
       }
     }
     return null
@@ -59,7 +59,7 @@ const taskGroupOfPage = (flow, pageId) => {
  * advance would cross into another hub task (an add-on SubSection —
  * spike-a parity, see taskGroupOfPage).
  */
-export function nextAfter(pageId, evaluation, options = {}) {
+export const nextAfter = (pageId, evaluation, options = {}) => {
   const { flow = journeyFlow(), conditions } = options
   const page = nextPageAfter(flow, pageId, evaluation, { conditions })
   const withinTask =
@@ -72,7 +72,7 @@ export function nextAfter(pageId, evaluation, options = {}) {
  * resolved through the Section's entry mode. The hub is the defensive
  * fallback for a Section with nothing applicable to enter.
  */
-export function sectionEntry(sectionId, evaluation, options = {}) {
+export const sectionEntry = (sectionId, evaluation, options = {}) => {
   const { flow = journeyFlow(), conditions } = options
   const section = flow.sections.find((candidate) => candidate.id === sectionId)
   if (!section) {
@@ -93,7 +93,7 @@ const controlsDerivedRows = (obligations, obligationId) =>
  * presenting Page in depth-first order wins (settled option a of the
  * amend-link question).
  */
-export function changeTarget(obligationName, options = {}) {
+export const changeTarget = (obligationName, options = {}) => {
   const { flow = journeyFlow() } = options
   const { obligations, identifiers } = journeyModel()
   const obligationId = identifiers.idOf(obligationName)

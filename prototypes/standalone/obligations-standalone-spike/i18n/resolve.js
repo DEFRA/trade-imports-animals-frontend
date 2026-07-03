@@ -18,8 +18,8 @@ const catalogue = JSON.parse(
 const TOKEN = /\{([a-zA-Z]+)\}/g
 
 /** Build a resolver over any message catalogue (fixtures, future Welsh). */
-export function createResolver(messages) {
-  return function resolve(code, values = {}) {
+export const createResolver = (messages) => {
+  return (code, values = {}) => {
     const template = messages[code]
     if (template === undefined) {
       throw new Error(`Unknown message code "${code}"`)
@@ -38,5 +38,4 @@ export function createResolver(messages) {
 export const resolveMessage = createResolver(catalogue)
 
 /** Resolve one reason record ({ code, values? }) to UI copy. */
-export const resolveReason = (reason) =>
-  resolveMessage(reason.code, reason.values)
+export const resolveReason = ({ code, values }) => resolveMessage(code, values)

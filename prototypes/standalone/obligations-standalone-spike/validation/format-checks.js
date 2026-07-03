@@ -10,7 +10,7 @@
  * Save-time blankness — unlike the engine's hasValue, an empty array is
  * BLANK here even though an answered-empty selection satisfies the engine.
  */
-export function isBlank(value) {
+export const isBlank = (value) => {
   if (value === undefined || value === null) {
     return true
   }
@@ -27,7 +27,7 @@ export function isBlank(value) {
  * THE date-parts decode (one place only): `{prefix}-day/-month/-year` keys
  * -> `{ day, month, year }`, or undefined when no part key was posted.
  */
-export function decodeDateParts(prefix, payload = {}) {
+export const decodeDateParts = (prefix, payload = {}) => {
   const parts = ['day', 'month', 'year'].map((part) => [
     part,
     payload[`${prefix}-${part}`]
@@ -38,6 +38,7 @@ export function decodeDateParts(prefix, payload = {}) {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const MIN_YEAR = 1000
 
 /** Names whose every failure collapses onto one catalogue code. */
 const SINGLE_CODE = {
@@ -97,17 +98,20 @@ const checkCurrency = (record, value) => {
 }
 
 const isRealCalendarDate = ({ day, month, year }) => {
-  const [d, m, y] = [day, month, year].map((part) =>
+  const [dayNumber, monthNumber, yearNumber] = [day, month, year].map((part) =>
     Number(String(part).trim())
   )
-  if (![d, m, y].every(Number.isInteger) || y < 1000) {
+  if (
+    ![dayNumber, monthNumber, yearNumber].every(Number.isInteger) ||
+    yearNumber < MIN_YEAR
+  ) {
     return false
   }
-  const date = new Date(Date.UTC(y, m - 1, d))
+  const date = new Date(Date.UTC(yearNumber, monthNumber - 1, dayNumber))
   return (
-    date.getUTCFullYear() === y &&
-    date.getUTCMonth() === m - 1 &&
-    date.getUTCDate() === d
+    date.getUTCFullYear() === yearNumber &&
+    date.getUTCMonth() === monthNumber - 1 &&
+    date.getUTCDate() === dayNumber
   )
 }
 
@@ -128,13 +132,13 @@ const checkersByType = {
 }
 
 /** Format findings for one filled value; blank values never fail. */
-export function checkFormat(record, value) {
+export const checkFormat = (record, value) => {
   const checker = checkersByType[record.type]
   return isBlank(value) || !checker ? [] : checker(record, value)
 }
 
 /** Every code checkFormat can emit for a record — the lockstep-test hook. */
-export function formatCodesFor(record) {
+export const formatCodesFor = (record) => {
   const codesByType = {
     email: [`format.${record.name}.invalid`],
     formatted: [`format.${record.name}.invalid`],

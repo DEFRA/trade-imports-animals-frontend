@@ -8,17 +8,19 @@ import { FULFILLED, IN_PROGRESS } from '../flow-eval/index.js'
 export const tagged = (text, classes) => ({ tag: { text, classes } })
 
 /** Spike-a's groupTag: Completed plain text, else a coloured tag. */
-export const groupStatusTag = (status, labels) =>
-  status === FULFILLED
-    ? { text: labels.fulfilled }
-    : status === IN_PROGRESS
-      ? tagged(labels.inProgress, 'govuk-tag--light-blue')
-      : tagged(labels.notStarted, 'govuk-tag--grey')
+export const groupStatusTag = (status, labels) => {
+  if (status === FULFILLED) return { text: labels.fulfilled }
+  if (status === IN_PROGRESS) {
+    return tagged(labels.inProgress, 'govuk-tag--light-blue')
+  }
+  return tagged(labels.notStarted, 'govuk-tag--grey')
+}
 
 /** Spike-a's statusTag for the add-on picker row (blue tags). */
-export const pageStatusTag = (status, labels) =>
-  status === FULFILLED
-    ? { text: labels.fulfilled }
-    : status === IN_PROGRESS
-      ? tagged(labels.incomplete, 'govuk-tag--blue')
-      : tagged(labels.notStarted, 'govuk-tag--blue')
+export const pageStatusTag = (status, labels) => {
+  if (status === FULFILLED) return { text: labels.fulfilled }
+  if (status === IN_PROGRESS) {
+    return tagged(labels.incomplete, 'govuk-tag--blue')
+  }
+  return tagged(labels.notStarted, 'govuk-tag--blue')
+}

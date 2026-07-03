@@ -5,27 +5,32 @@ import { isBlank } from '../../validation/index.js'
  * plus the option-label lookup the row builders share.
  */
 
+const RADIO_YES = 'yes'
+
 export const optionLabel = (entry, value) =>
   (entry.options ?? []).find((option) => option.value === value)?.label
 
-export const formatValue = (entry, record, value, ctx) => {
-  const notProvided = ctx.cya.notProvidedText
+export const formatValue = (entry, record, value, context) => {
+  const notProvided = context.cya.notProvidedText
   if (record.name === 'penaltyPoints' && isBlank(value)) {
-    return ctx.cya.cyaCopy.penaltyPointsDefaultText
+    return context.cya.cyaCopy.penaltyPointsDefaultText
   }
   if (record.name === 'voluntaryExcess') {
-    return value === 'yes'
-      ? `£${ctx.valueOf('excessAmount') || '0'}`
-      : ctx.cya.cyaCopy.voluntaryExcessNoneText
+    return value === RADIO_YES
+      ? `£${context.valueOf('excessAmount') || '0'}`
+      : context.cya.cyaCopy.voluntaryExcessNoneText
   }
   const byType = {
-    boolean: () => (value === 'yes' ? 'Yes' : 'No'),
+    boolean: () => (value === RADIO_YES ? 'Yes' : 'No'),
     radio: () => optionLabel(entry, value) ?? notProvided,
     select: () => optionLabel(entry, value) ?? notProvided,
     'multi-select': () => {
-      const labels = []
-        .concat(value ?? [])
-        .map((item) => optionLabel(entry, item) ?? item)
+      const selected = Array.isArray(value)
+        ? value
+        : value == null
+          ? []
+          : [value]
+      const labels = selected.map((item) => optionLabel(entry, item) ?? item)
       return labels.length ? labels.join(', ') : 'None'
     },
     date: () =>

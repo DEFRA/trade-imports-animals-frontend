@@ -37,16 +37,10 @@ const flow = JSON.parse(
 )
 const { identifiers } = loadJourneyModel()
 
-const collectPages = (container, pages = []) => {
-  if (container.kind === 'page') {
-    pages.push(container)
-    return pages
-  }
-  for (const child of container.sections ?? container.children ?? []) {
-    collectPages(child, pages)
-  }
-  return pages
-}
+const collectPages = (container) =>
+  container.kind === 'page'
+    ? [container]
+    : (container.sections ?? container.children ?? []).flatMap(collectPages)
 
 const pages = collectPages(flow)
 const genericPages = pages.filter((page) => page.template === 'page')
@@ -73,24 +67,20 @@ const KIND_BY_TYPE = {
 
 /** The controls the model says a page must render, one per concrete slot. */
 const expectedControls = (page) => {
-  const expected = []
-  for (const entry of page.presents ?? []) {
+  const direct = (page.presents ?? [])
+    .map((entry) => identifiers.recordOfId(entry.obligation))
+    .filter((record) => !record.handler)
+    .map((record) => ({ record, inputName: record.name }))
+  const forEach = (page.presentsForEach ?? []).flatMap((entry) => {
     const record = identifiers.recordOfId(entry.obligation)
-    if (!record.handler) {
-      expected.push({ record, inputName: record.name })
-    }
-  }
-  for (const entry of page.presentsForEach ?? []) {
-    const record = identifiers.recordOfId(entry.obligation)
-    for (const fulfilment of evaluation.obligations[entry.obligation]
-      .fulfilments) {
-      expected.push({
+    return evaluation.obligations[entry.obligation].fulfilments.map(
+      (fulfilment) => ({
         record,
         inputName: `${record.name}__${encodeURIComponent(fulfilment.fulfilmentId)}`
       })
-    }
-  }
-  return expected
+    )
+  })
+  return [...direct, ...forEach]
 }
 
 describe.each(genericPages.map((page) => [page.id, page]))(

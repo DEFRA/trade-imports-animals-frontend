@@ -14,11 +14,11 @@ const { obligations } = JSON.parse(
 const idOf = (name) => obligations.find((record) => record.name === name).id
 
 const page = (id, entries) => ({ kind: 'page', id, ...entries })
-const group = (id, children, over = {}) => ({
+const group = (id, children, overrides = {}) => ({
   kind: 'group',
   id,
   children,
-  ...over
+  ...overrides
 })
 
 describe('flow-eval/navigation/first-page-presenting-obligation', () => {
@@ -47,7 +47,8 @@ describe('flow-eval/navigation/first-page-presenting-obligation', () => {
   })
 
   it('matches presentsForEach entries and nested deep Pages', () => {
-    const nested = group('outer', [group('inner', [tree.children[2]])])
+    const livestockGroup = tree.children[2]
+    const nested = group('outer', [group('inner', [livestockGroup])])
     expect(firstPagePresentingObligation(nested, 'hiveLocation')?.id).toBe(
       'hives'
     )

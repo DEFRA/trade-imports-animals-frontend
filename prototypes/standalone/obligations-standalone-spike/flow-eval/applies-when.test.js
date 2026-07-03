@@ -13,7 +13,7 @@ const flow = JSON.parse(
   fs.readFileSync(path.join(dirname, '../model/flow.json'), 'utf8')
 )
 
-const ob = (name, over = {}) => [
+const obligationEntry = (name, overrides = {}) => [
   name,
   {
     name,
@@ -21,7 +21,7 @@ const ob = (name, over = {}) => [
     status: 'optional',
     reasons: [],
     fulfilled: false,
-    ...over
+    ...overrides
   }
 ]
 
@@ -105,34 +105,38 @@ describe('flow-eval/applies-when — containerApplies', () => {
 
 describe('flow-eval/applies-when — the journey conditions', () => {
   it('hadClaimsIsYes reads the stored answer through the name view', () => {
-    const yes = evaluationOf([ob('hadClaims')], { hadClaims: { value: 'yes' } })
-    const no = evaluationOf([ob('hadClaims')], { hadClaims: { value: 'no' } })
+    const yes = evaluationOf([obligationEntry('hadClaims')], {
+      hadClaims: { value: 'yes' }
+    })
+    const no = evaluationOf([obligationEntry('hadClaims')], {
+      hadClaims: { value: 'no' }
+    })
     expect(journeyFlowConditions.resolve('hadClaimsIsYes')(yes)).toBe(true)
     expect(journeyFlowConditions.resolve('hadClaimsIsYes')(no)).toBe(false)
   })
 
   it('addonSelected:* checks membership of the addons answer array', () => {
-    const evaluation = evaluationOf([ob('addons')], {
+    const evaluation = evaluationOf([obligationEntry('addons')], {
       addons: { value: ['named-driver'] }
     })
     const applies = journeyFlowConditions.resolve('addonSelected:named-driver')
     const doesNot = journeyFlowConditions.resolve('addonSelected:protected-ncd')
     expect(applies(evaluation)).toBe(true)
     expect(doesNot(evaluation)).toBe(false)
-    expect(applies(evaluationOf([ob('addons')]))).toBe(false)
+    expect(applies(evaluationOf([obligationEntry('addons')]))).toBe(false)
   })
 
   it('quoteReady fires iff every in-scope engine-mandatory obligation is fulfilled', () => {
     const blocked = evaluationOf([
-      ob('email', { status: 'mandatory', fulfilled: true }),
-      ob('coverType', { status: 'mandatory', fulfilled: false }),
-      ob('phone')
+      obligationEntry('email', { status: 'mandatory', fulfilled: true }),
+      obligationEntry('coverType', { status: 'mandatory', fulfilled: false }),
+      obligationEntry('phone')
     ])
     const ready = evaluationOf([
-      ob('email', { status: 'mandatory', fulfilled: true }),
-      ob('coverType', { status: 'mandatory', fulfilled: true }),
-      ob('phone'),
-      ob('excessAmount', { inScope: false, status: undefined })
+      obligationEntry('email', { status: 'mandatory', fulfilled: true }),
+      obligationEntry('coverType', { status: 'mandatory', fulfilled: true }),
+      obligationEntry('phone'),
+      obligationEntry('excessAmount', { inScope: false, status: undefined })
     ])
     const quoteReady = journeyFlowConditions.resolve('quoteReady')
     expect(quoteReady(blocked)).toBe(false)
@@ -141,18 +145,12 @@ describe('flow-eval/applies-when — the journey conditions', () => {
 })
 
 describe('flow-eval/applies-when — closed name list against model/flow.json', () => {
-  const names = new Set()
-  const walk = (containers) => {
-    for (const container of containers) {
-      if (container.appliesWhen) {
-        names.add(container.appliesWhen)
-      }
-      if (container.kind === 'group') {
-        walk(container.children)
-      }
-    }
-  }
-  walk(flow.sections)
+  const collectNames = (containers) =>
+    containers.flatMap((container) => [
+      ...(container.appliesWhen ? [container.appliesWhen] : []),
+      ...(container.kind === 'group' ? collectNames(container.children) : [])
+    ])
+  const names = new Set(collectNames(flow.sections))
 
   it('resolves every appliesWhen name the polished Flow declares', () => {
     expect(names.size).toBeGreaterThan(0)

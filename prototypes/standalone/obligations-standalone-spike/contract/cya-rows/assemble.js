@@ -14,9 +14,7 @@ import { BESPOKE_ROWS, presentsRows } from './page-rows.js'
 /** Pages in Flow order with every appliesWhen gate honoured. */
 const applicablePages = (flow, evaluation) => {
   const collect = (container) => {
-    if (!containerApplies(container, evaluation)) {
-      return []
-    }
+    if (!containerApplies(container, evaluation)) return []
     return container.kind === 'page'
       ? [container]
       : (container.children ?? []).flatMap(collect)
@@ -44,7 +42,7 @@ export function cyaRows(evaluation) {
   const flow = journeyFlow()
   const { identifiers } = journeyModel()
   const cya = flow.checkYourAnswers
-  const ctx = {
+  const context = {
     flow,
     identifiers,
     cya,
@@ -53,7 +51,7 @@ export function cyaRows(evaluation) {
     row: rowBuilder(cya, isFrozen(evaluation))
   }
   const rows = applicablePages(flow, evaluation).flatMap((page) =>
-    (BESPOKE_ROWS[page.id] ?? presentsRows)(page, ctx)
+    (BESPOKE_ROWS[page.id] ?? presentsRows)(page, context)
   )
   return { rows, prompts: missingPrompts(evaluation) }
 }

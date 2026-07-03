@@ -31,7 +31,7 @@ const visionConfig = {
   options: {
     engines: {
       njk: {
-        compile(src, options) {
+        compile: (src, options) => {
           const template = nunjucks.compile(src, options.environment)
           return (context) => template.render(context)
         }
@@ -44,15 +44,12 @@ const visionConfig = {
 }
 
 /** Encode a form object as a browser would (arrays repeat the key). */
-const encodeForm = (form) => {
-  const params = new URLSearchParams()
-  for (const [name, value] of Object.entries(form)) {
-    for (const item of [].concat(value)) {
-      params.append(name, item)
-    }
-  }
-  return params.toString()
-}
+const encodeForm = (form) =>
+  new URLSearchParams(
+    Object.entries(form).flatMap(([name, value]) =>
+      [].concat(value).map((item) => [name, String(item)])
+    )
+  ).toString()
 
 /** The standard all-tasks-answered drive; override per-page payloads
  * (e.g. `{ 'driving-history': { hadClaims: 'yes' } }`). */
@@ -88,7 +85,7 @@ export async function createTestServer() {
     return response
   }
 
-  const t = {
+  const client = {
     server,
     base: BASE,
     get: (url) => inject({ method: 'GET', url }),
@@ -100,14 +97,14 @@ export async function createTestServer() {
         headers: { 'content-type': 'application/x-www-form-urlencoded' }
       }),
     /** POST Start now — mints the journey and points the cookie at it. */
-    startJourney: () => t.post(startPath()),
+    startJourney: () => client.post(startPath()),
     /** Answer every task page in hub order (spike-a's happy path). */
-    async answerAllTasks(overrides = {}) {
+    answerAllTasks: async (overrides = {}) => {
       for (const [slug, payload] of HAPPY_ANSWERS) {
-        await t.post(`${BASE}/${slug}`, { ...payload, ...overrides[slug] })
+        await client.post(`${BASE}/${slug}`, { ...payload, ...overrides[slug] })
       }
     },
     stop: () => server.stop()
   }
-  return t
+  return client
 }

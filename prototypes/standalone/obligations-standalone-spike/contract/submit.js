@@ -4,6 +4,9 @@ import { journeyRepository } from '../store/index.js'
 import { changeTarget } from './navigation.js'
 import { evaluate } from './status.js'
 
+const MANDATE_CODE_PREFIX = 'mandate.'
+const SCOPE_ANSWERED_CODE = 'scope.answered'
+
 /**
  * [submit] — the CYA POST hard gate. The server re-checks the
  * engine-mandatory set from a fresh evaluation and never trusts the
@@ -29,27 +32,26 @@ import { evaluate } from './status.js'
  * scope-provenance lines, `href` the Change target. Shared by the CYA
  * soft prompts (contract/view.js) and the stale-recheck result below.
  */
-export function missingPrompts(evaluation) {
-  return unfulfilledMandatory(evaluation).map(
-    ({ obligationId, name, reasons }) => {
-      const mandate = reasons.find((entry) => entry.code.startsWith('mandate.'))
-      if (!mandate) {
-        throw new Error(
-          `Mandatory obligation "${name}" carries no authored mandate reason`
-        )
-      }
-      return {
-        obligationId,
-        name,
-        text: resolveReason(mandate),
-        because: reasons
-          .filter((entry) => entry.code === 'scope.answered')
-          .map(resolveReason),
-        href: changeTarget(name)
-      }
+export const missingPrompts = (evaluation) =>
+  unfulfilledMandatory(evaluation).map(({ obligationId, name, reasons }) => {
+    const mandate = reasons.find((entry) =>
+      entry.code.startsWith(MANDATE_CODE_PREFIX)
+    )
+    if (!mandate) {
+      throw new Error(
+        `Mandatory obligation "${name}" carries no authored mandate reason`
+      )
     }
-  )
-}
+    return {
+      obligationId,
+      name,
+      text: resolveReason(mandate),
+      because: reasons
+        .filter((entry) => entry.code === SCOPE_ANSWERED_CODE)
+        .map(resolveReason),
+      href: changeTarget(name)
+    }
+  })
 
 const staleResult = (evaluation) => {
   const missing = missingPrompts(evaluation)
@@ -69,7 +71,7 @@ const staleResult = (evaluation) => {
  * submitted journey is `ok: false, submitted: true` with nothing
  * missing — the freeze answer, distinguishable from a stale one.
  */
-export function submit(journey, options = {}) {
+export const submit = (journey, options = {}) => {
   const { repository = journeyRepository } = options
   const evaluation = evaluate(journey, options)
   if (evaluation.submitted || unfulfilledMandatory(evaluation).length > 0) {

@@ -17,11 +17,9 @@ export const LAYOUT = `${TEMPLATES}/layout.njk`
 export const FLOW_ID = 'car-insurance-quote-flow'
 
 const deepFreeze = (value) => {
-  if (value !== null && typeof value === 'object') {
-    Object.values(value).forEach(deepFreeze)
-    Object.freeze(value)
-  }
-  return value
+  if (value === null || typeof value !== 'object') return value
+  Object.values(value).forEach(deepFreeze)
+  return Object.freeze(value)
 }
 
 // The journey shape, hardcoded like spike-a's `grouped` literal: three

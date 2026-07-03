@@ -13,17 +13,21 @@ import { resolveMessage } from '../i18n/index.js'
  * here (propagated deliberately, graft 7) rather than reaching the DOM.
  * First message wins per target, spike-a parity.
  */
-export function toFieldErrors(findings, resolve = resolveMessage) {
-  const errors = {}
-  const errorSummary = []
-  for (const finding of findings) {
-    const target = `${finding.inputName}${finding.focusSuffix ?? ''}`
-    if (errors[target] !== undefined) {
-      continue
-    }
-    const message = resolve(finding.code, finding.values)
-    errors[target] = message
-    errorSummary.push({ text: message, href: `#${target}` })
-  }
-  return { errors, errorSummary }
-}
+export const toFieldErrors = (findings, resolve = resolveMessage) =>
+  findings.reduce(
+    (acc, finding) => {
+      const target = `${finding.inputName}${finding.focusSuffix ?? ''}`
+      if (acc.errors[target] !== undefined) {
+        return acc
+      }
+      const message = resolve(finding.code, finding.values)
+      return {
+        errors: { ...acc.errors, [target]: message },
+        errorSummary: [
+          ...acc.errorSummary,
+          { text: message, href: `#${target}` }
+        ]
+      }
+    },
+    { errors: {}, errorSummary: [] }
+  )

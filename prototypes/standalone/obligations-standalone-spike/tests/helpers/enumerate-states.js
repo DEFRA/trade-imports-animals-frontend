@@ -43,45 +43,38 @@ const addonSubsets = ADDON_VALUES.reduce(
 )
 
 /** The enumerated states: `{ label, coherent, fulfilments }`. */
-export function enumerateStates() {
-  const states = []
-  for (const hadClaims of ANSWERED_OR_NOT(['yes', 'no'])) {
-    for (const claimCount of [0, 1]) {
-      for (const voluntaryExcess of ANSWERED_OR_NOT(['yes', 'no'])) {
-        for (const addons of ANSWERED_OR_NOT(addonSubsets)) {
-          const fulfilments = {}
-          if (hadClaims !== undefined) {
-            fulfilments[idOf('hadClaims')] = { value: hadClaims }
+export const enumerateStates = () =>
+  ANSWERED_OR_NOT(['yes', 'no']).flatMap((hadClaims) =>
+    [0, 1].flatMap((claimCount) =>
+      ANSWERED_OR_NOT(['yes', 'no']).flatMap((voluntaryExcess) =>
+        ANSWERED_OR_NOT(addonSubsets).map((addons) => ({
+          label: `hadClaims=${hadClaims} claims=${claimCount} voluntaryExcess=${voluntaryExcess} addons=${addons?.join('+') ?? undefined}`,
+          coherent: claimCount === 0 || hadClaims === 'yes',
+          fulfilments: {
+            ...(hadClaims !== undefined && {
+              [idOf('hadClaims')]: { value: hadClaims }
+            }),
+            ...(claimCount > 0 && {
+              [idOf('claimType')]: { 'claim-1': { value: 'accident' } },
+              [idOf('claimAmount')]: { 'claim-1': { value: '900' } }
+            }),
+            ...(voluntaryExcess !== undefined && {
+              [idOf('voluntaryExcess')]: { value: voluntaryExcess }
+            }),
+            ...(addons !== undefined && {
+              [idOf('addons')]: { value: addons }
+            })
           }
-          if (claimCount > 0) {
-            fulfilments[idOf('claimType')] = {
-              'claim-1': { value: 'accident' }
-            }
-            fulfilments[idOf('claimAmount')] = { 'claim-1': { value: '900' } }
-          }
-          if (voluntaryExcess !== undefined) {
-            fulfilments[idOf('voluntaryExcess')] = { value: voluntaryExcess }
-          }
-          if (addons !== undefined) {
-            fulfilments[idOf('addons')] = { value: addons }
-          }
-          states.push({
-            label: `hadClaims=${hadClaims} claims=${claimCount} voluntaryExcess=${voluntaryExcess} addons=${addons?.join('+') ?? undefined}`,
-            coherent: claimCount === 0 || hadClaims === 'yes',
-            fulfilments
-          })
-        }
-      }
-    }
-  }
-  return states
-}
+        }))
+      )
+    )
+  )
 
 /**
  * The canonical satisfying value per obligation TYPE — a non-blank
  * answer the completability filler writes into any engine-mandatory gap.
  */
-export function satisfyingValueFor(record) {
+export const satisfyingValueFor = (record) => {
   switch (record.type) {
     case 'email':
       return 'user@example.com'

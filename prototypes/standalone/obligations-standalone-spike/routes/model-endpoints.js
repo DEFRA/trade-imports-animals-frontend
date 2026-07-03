@@ -10,8 +10,8 @@ import { BASE } from '../journey/index.js'
 export function modelEndpointRoutes() {
   const { obligations, flow } = modelJson()
   const open = { auth: false }
-  const serve = (body) => (_request, h) =>
-    h.response(body).type('application/json')
+  const serve = (body) => (_request, responseToolkit) =>
+    responseToolkit.response(body).type('application/json')
   return [
     {
       method: 'GET',

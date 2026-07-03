@@ -29,7 +29,7 @@ const hasPayloadValue = (slot, payload) => {
 }
 
 /** The payload-merged candidate value for one slot. */
-export function candidateValue(slot, payload = {}) {
+export const candidateValue = (slot, payload = {}) => {
   if (!hasPayloadValue(slot, payload)) {
     return slot.value
   }
@@ -45,27 +45,28 @@ export function candidateValue(slot, payload = {}) {
  * is the id-keyed EvaluationResult obligations map; out-of-scope slots are
  * skipped entirely (a hidden reveal cannot block its own page).
  */
-export function saveCheck(slots, payload = {}, obligationState = {}) {
-  const findings = []
-  for (const slot of slots) {
-    const entry = obligationState[slot.obligationId]
-    if (entry && !entry.inScope) {
-      continue
-    }
-    const value = candidateValue(slot, payload)
-    if (isBlank(value)) {
-      if ((slot.mandate ?? 'soft') === 'hard') {
-        findings.push({
-          inputName: slot.inputName,
-          code: mandateMissingCode(slot.name),
-          ...(slot.type === 'date' && { focusSuffix: '-day' })
-        })
+export const saveCheck = (slots, payload = {}, obligationState = {}) =>
+  slots
+    .filter((slot) => {
+      const entry = obligationState[slot.obligationId]
+      return !(entry && !entry.inScope)
+    })
+    .flatMap((slot) => {
+      const value = candidateValue(slot, payload)
+      if (isBlank(value)) {
+        if ((slot.mandate ?? 'soft') !== 'hard') {
+          return []
+        }
+        return [
+          {
+            inputName: slot.inputName,
+            code: mandateMissingCode(slot.name),
+            ...(slot.type === 'date' && { focusSuffix: '-day' })
+          }
+        ]
       }
-      continue
-    }
-    for (const finding of checkFormat(slot, value)) {
-      findings.push({ inputName: slot.inputName, ...finding })
-    }
-  }
-  return findings
-}
+      return checkFormat(slot, value).map((finding) => ({
+        inputName: slot.inputName,
+        ...finding
+      }))
+    })

@@ -14,7 +14,6 @@ const readModel = (file) =>
 const { messages } = readModel('messages.en.json')
 const { obligations } = readModel('obligations.json')
 
-/** Dummy interpolation values for every token a template names. */
 const valuesFor = (template) =>
   Object.fromEntries(
     [...template.matchAll(/\{([a-zA-Z]+)\}/g)].map((match) => [match[1], 'x'])

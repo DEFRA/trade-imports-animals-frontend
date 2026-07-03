@@ -31,6 +31,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 const flowPath = path.join(dirname, '..', 'model', 'flow.json')
 let cachedFlow
 
+const PAGE_KIND = 'page'
+
 const deepFreeze = (value) => {
   if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value)
@@ -40,18 +42,16 @@ const deepFreeze = (value) => {
 }
 
 /** The polished Flow, read once and frozen (model/flow.json). */
-export function journeyFlow() {
+export const journeyFlow = () => {
   cachedFlow ??= deepFreeze(JSON.parse(fs.readFileSync(flowPath, 'utf8')))
   return cachedFlow
 }
 
 /** The validated journey catalogue: `{ obligations, identifiers }`. */
-export function journeyModel() {
-  return loadJourneyModel()
-}
+export const journeyModel = () => loadJourneyModel()
 
 const findPageIn = (container, pageId) => {
-  if (container.kind === 'page') {
+  if (container.kind === PAGE_KIND) {
     return container.id === pageId ? container : null
   }
   return (container.children ?? []).reduce(
@@ -61,7 +61,7 @@ const findPageIn = (container, pageId) => {
 }
 
 /** Resolve one Page by id anywhere in the Container tree; throws. */
-export function pageById(pageId, flow = journeyFlow()) {
+export const pageById = (pageId, flow = journeyFlow()) => {
   const page = flow.sections.reduce(
     (found, section) => found ?? findPageIn(section, pageId),
     null
@@ -73,7 +73,7 @@ export function pageById(pageId, flow = journeyFlow()) {
 }
 
 /** The top-level Section whose subtree presents the given Page; throws. */
-export function sectionOfPage(pageId, flow = journeyFlow()) {
+export const sectionOfPage = (pageId, flow = journeyFlow()) => {
   const section = flow.sections.find((candidate) =>
     Boolean(findPageIn(candidate, pageId))
   )
@@ -87,7 +87,7 @@ export function sectionOfPage(pageId, flow = journeyFlow()) {
  * Obligation state over an arbitrary fulfilments map — the candidate
  * seam behind contract/mutation.js's payload-merged save gate.
  */
-export function obligationStateOver(fulfilments, options = {}) {
+export const obligationStateOver = (fulfilments, options = {}) => {
   const { obligations = journeyModel().obligations, ...rest } = options
   const { scopeRegistry, externalState } = rest
   return evaluateObligations(obligations, fulfilments, {
@@ -98,7 +98,7 @@ export function obligationStateOver(fulfilments, options = {}) {
 
 const collectStatuses = (container, evaluation, options, groups, pages) => {
   const status = containerStatus(container, evaluation, options)
-  if (container.kind === 'page') {
+  if (container.kind === PAGE_KIND) {
     pages[container.id] = status
     return
   }
@@ -109,7 +109,7 @@ const collectStatuses = (container, evaluation, options, groups, pages) => {
 }
 
 /** Run both evaluators over one journey; returns the frozen evaluation. */
-export function evaluate(journey, options = {}) {
+export const evaluate = (journey, options = {}) => {
   const {
     flow = journeyFlow(),
     obligations = journeyModel().obligations,

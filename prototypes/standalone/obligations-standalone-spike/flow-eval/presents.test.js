@@ -6,7 +6,7 @@ import { expandSlots, isReadOnly, presentedObligations } from './presents.js'
  * car-insurance journey (an allotment permit — the generality rail,
  * OPEN1-X2_1): flow-eval must not care what the obligations mean.
  */
-const ob = (name, over = {}) => [
+const obligationEntry = (name, overrides = {}) => [
   name,
   {
     name,
@@ -14,7 +14,7 @@ const ob = (name, over = {}) => [
     status: 'optional',
     reasons: [],
     fulfilled: false,
-    ...over
+    ...overrides
   }
 ]
 
@@ -26,10 +26,10 @@ const evaluationOf = (entries, fulfilments = {}) => ({
 
 const evaluation = evaluationOf(
   [
-    ob('applicantName', { status: 'mandatory', fulfilled: true }),
-    ob('contactEmail'),
-    ob('sheddingConsent', { inScope: false, status: undefined }),
-    ob('hiveLocation', {
+    obligationEntry('applicantName', { status: 'mandatory', fulfilled: true }),
+    obligationEntry('contactEmail'),
+    obligationEntry('sheddingConsent', { inScope: false, status: undefined }),
+    obligationEntry('hiveLocation', {
       status: 'mandatory',
       fulfilled: false,
       fulfilments: [
@@ -37,13 +37,13 @@ const evaluation = evaluationOf(
         { fulfilmentId: 'h2', fulfilled: false }
       ]
     }),
-    ob('hiveCount', {
+    obligationEntry('hiveCount', {
       fulfilments: [
         { fulfilmentId: 'h1', fulfilled: false },
         { fulfilmentId: 'h2', fulfilled: true }
       ]
     }),
-    ob('toolList', { fulfilments: [] })
+    obligationEntry('toolList', { fulfilments: [] })
   ],
   {
     applicantName: { value: 'Ada Lovelace' },

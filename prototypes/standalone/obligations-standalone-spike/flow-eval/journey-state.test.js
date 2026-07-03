@@ -12,10 +12,9 @@ const flow = JSON.parse(
   fs.readFileSync(path.join(dirname, '../model/flow.json'), 'utf8')
 )
 
-/** Status-through-obligations fixture kit (non-car names). */
-const kit = () => {
+const buildObligationFixtures = () => {
   const entries = []
-  const ob = (name, over) => {
+  const addObligation = (name, overrides) => {
     entries.push([
       name,
       {
@@ -24,7 +23,7 @@ const kit = () => {
         status: 'optional',
         reasons: [],
         fulfilled: false,
-        ...over
+        ...overrides
       }
     ])
     return { obligation: name }
@@ -33,7 +32,7 @@ const kit = () => {
     kind: 'page',
     id,
     presents: [
-      ob(`${id}-main`, {
+      addObligation(`${id}-main`, {
         status: 'mandatory',
         fulfilled: status === 'fulfilled'
       })
@@ -47,11 +46,11 @@ const kit = () => {
   return { page, evaluation }
 }
 
-const group = (id, children, over = {}) => ({
+const group = (id, children, overrides = {}) => ({
   kind: 'group',
   id,
   children,
-  ...over
+  ...overrides
 })
 
 describe('flow-eval/journey-state — fixture trees', () => {
@@ -65,7 +64,7 @@ describe('flow-eval/journey-state — fixture trees', () => {
   })
 
   it('is Submitted whenever the stored flag says so — nothing is derived', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = buildObligationFixtures()
     const fixture = { sections: [group('who', [page('a', 'notStarted')])] }
     expect(journeyState(fixture, evaluation(), { submitted: true })).toBe(
       'submitted'
@@ -73,7 +72,7 @@ describe('flow-eval/journey-state — fixture trees', () => {
   })
 
   it('is Not Started while every applicable Section is Not Started', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = buildObligationFixtures()
     const fixture = {
       sections: [
         group('who', [page('a', 'notStarted')]),
@@ -84,7 +83,7 @@ describe('flow-eval/journey-state — fixture trees', () => {
   })
 
   it('is In Progress once some Section is In Progress or Fulfilled', () => {
-    const { page, evaluation } = kit()
+    const { page, evaluation } = buildObligationFixtures()
     const fixture = {
       sections: [
         group('who', [page('a', 'fulfilled')]),
@@ -100,7 +99,7 @@ describe('flow-eval/journey-state — fixture trees', () => {
       'keepsBees',
       ({ fulfilments }) => fulfilments.keepsBees?.value === 'yes'
     )
-    const { page, evaluation } = kit()
+    const { page, evaluation } = buildObligationFixtures()
     const fixture = {
       sections: [
         group('who', [page('a', 'fulfilled')]),
@@ -121,7 +120,7 @@ describe('flow-eval/journey-state — fixture trees', () => {
     // journey holding ONLY such a fulfilment still reads Not Started.
     const conditions = createFlowConditionRegistry()
     conditions.define('never', () => false)
-    const { page, evaluation } = kit()
+    const { page, evaluation } = buildObligationFixtures()
     const fixture = {
       sections: [
         group('who', [page('a', 'notStarted')]),

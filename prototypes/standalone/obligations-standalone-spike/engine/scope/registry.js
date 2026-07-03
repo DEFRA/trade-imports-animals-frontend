@@ -10,7 +10,7 @@
  * may target one obligation (convergent obligations) — the evaluator folds
  * firings with most-restrictive-wins.
  */
-export function createScopeRegistry() {
+export const createScopeRegistry = () => {
   const rules = new Map()
 
   return {
@@ -39,12 +39,11 @@ export function createScopeRegistry() {
     /** Model-coverage assertion: every registered name must be real. */
     assertCoverage(knownNames) {
       const known = new Set(knownNames)
-      for (const obligationName of rules.keys()) {
-        if (!known.has(obligationName)) {
-          throw new Error(
-            `Scope rules target unknown obligation "${obligationName}"`
-          )
-        }
+      const unknown = [...rules.keys()].find(
+        (obligationName) => !known.has(obligationName)
+      )
+      if (unknown) {
+        throw new Error(`Scope rules target unknown obligation "${unknown}"`)
       }
     }
   }

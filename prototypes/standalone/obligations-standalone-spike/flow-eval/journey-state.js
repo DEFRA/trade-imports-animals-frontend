@@ -30,20 +30,14 @@ export const JOURNEY_STATES = Object.freeze([
   SUBMITTED
 ])
 
-export function journeyState(flow, evaluation, options = {}) {
+export const journeyState = (flow, evaluation, options = {}) => {
   const { submitted = false } = options
-  if (submitted) {
-    return SUBMITTED
-  }
+  if (submitted) return SUBMITTED
   const applicable = flow.sections
     .map((section) => containerStatus(section, evaluation, options))
     .filter((status) => status !== NOT_APPLICABLE)
-  if (applicable.length === 0) {
-    return NOT_STARTED
-  }
-  if (applicable.every((status) => status === FULFILLED)) {
-    return FULFILLED
-  }
+  if (applicable.length === 0) return NOT_STARTED
+  if (applicable.every((status) => status === FULFILLED)) return FULFILLED
   if (
     applicable.some((status) => status === FULFILLED || status === IN_PROGRESS)
   ) {

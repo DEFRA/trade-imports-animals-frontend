@@ -16,7 +16,7 @@ const flow = JSON.parse(
   fs.readFileSync(path.join(dirname, '../model/flow.json'), 'utf8')
 )
 
-const ob = (name, over = {}) => [
+const obligationEntry = (name, overrides = {}) => [
   name,
   {
     name,
@@ -24,7 +24,7 @@ const ob = (name, over = {}) => [
     status: 'optional',
     reasons: [],
     fulfilled: false,
-    ...over
+    ...overrides
   }
 ]
 
@@ -34,11 +34,11 @@ const evaluationOf = (entries, fulfilments = {}) => ({
   drops: []
 })
 
-const page = (id, presents, over = {}) => ({
+const page = (id, presents, overrides = {}) => ({
   kind: 'page',
   id,
   presents,
-  ...over
+  ...overrides
 })
 
 describe('flow-eval/container-status — the seven-row truth table', () => {
@@ -84,7 +84,7 @@ describe('flow-eval/container-status — Page leaf rule', () => {
 
   it('reads a Page whose presented obligations are all out of scope as Not Applicable', () => {
     const evaluation = evaluationOf([
-      ob('sheddingConsent', { inScope: false, status: undefined })
+      obligationEntry('sheddingConsent', { inScope: false, status: undefined })
     ])
     expect(
       containerStatus(
@@ -95,7 +95,9 @@ describe('flow-eval/container-status — Page leaf rule', () => {
   })
 
   it('reads an optional-only Page as Not Applicable (provisional pick)', () => {
-    const evaluation = evaluationOf([ob('contactEmail', { fulfilled: true })])
+    const evaluation = evaluationOf([
+      obligationEntry('contactEmail', { fulfilled: true })
+    ])
     expect(
       containerStatus(
         page('contact', [{ obligation: 'contactEmail' }]),
@@ -110,16 +112,19 @@ describe('flow-eval/container-status — Page leaf rule', () => {
       { obligation: 'contactEmail' }
     ])
     const untouched = evaluationOf([
-      ob('applicantName', { status: 'mandatory' }),
-      ob('contactEmail')
+      obligationEntry('applicantName', { status: 'mandatory' }),
+      obligationEntry('contactEmail')
     ])
     const optionalOnly = evaluationOf([
-      ob('applicantName', { status: 'mandatory' }),
-      ob('contactEmail', { fulfilled: true })
+      obligationEntry('applicantName', { status: 'mandatory' }),
+      obligationEntry('contactEmail', { fulfilled: true })
     ])
     const done = evaluationOf([
-      ob('applicantName', { status: 'mandatory', fulfilled: true }),
-      ob('contactEmail')
+      obligationEntry('applicantName', {
+        status: 'mandatory',
+        fulfilled: true
+      }),
+      obligationEntry('contactEmail')
     ])
     expect(containerStatus(target, untouched)).toBe('notStarted')
     expect(containerStatus(target, optionalOnly)).toBe('inProgress')
@@ -128,7 +133,7 @@ describe('flow-eval/container-status — Page leaf rule', () => {
 
   it('reads an in-scope mandatory but empty collection as Not Started', () => {
     const evaluation = evaluationOf([
-      ob('hiveLocation', { status: 'mandatory', fulfilments: [] })
+      obligationEntry('hiveLocation', { status: 'mandatory', fulfilments: [] })
     ])
     const target = page('hives', undefined, {
       presentsForEach: [{ obligation: 'hiveLocation', fulfilment: '*' }]
@@ -161,9 +166,9 @@ describe('flow-eval/container-status — gating and recursion (non-car tree)', (
     ]
   }
 
-  const entries = (over = {}) => [
-    ob('applicantName', { status: 'mandatory', ...over }),
-    ob('hiveLocation', { status: 'mandatory' })
+  const entries = (overrides = {}) => [
+    obligationEntry('applicantName', { status: 'mandatory', ...overrides }),
+    obligationEntry('hiveLocation', { status: 'mandatory' })
   ]
 
   it('reads a gated-out Group as Not Applicable regardless of its contents', () => {

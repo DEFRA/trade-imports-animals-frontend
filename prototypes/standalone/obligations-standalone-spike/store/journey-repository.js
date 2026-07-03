@@ -23,9 +23,9 @@ export const IN_PROGRESS = 'in-progress'
 export const SUBMITTED = 'submitted'
 
 /** `now` is injectable for deterministic timestamp tests. */
-export function createJourneyRepository({
+export const createJourneyRepository = ({
   now = () => new Date().toISOString()
-} = {}) {
+} = {}) => {
   const journeys = new Map()
 
   const stored = (journeyId) => {

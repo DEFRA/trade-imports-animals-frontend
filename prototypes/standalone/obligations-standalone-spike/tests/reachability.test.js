@@ -27,26 +27,17 @@ const flows = [
 
 const catalogueIds = new Set(obligations.map((record) => record.id))
 
-const collectPages = (container, pages = []) => {
-  if (container.kind === 'page') {
-    pages.push(container)
-    return pages
-  }
-  for (const child of container.sections ?? container.children ?? []) {
-    collectPages(child, pages)
-  }
-  return pages
-}
+const collectPages = (container) =>
+  container.kind === 'page'
+    ? [container]
+    : (container.sections ?? container.children ?? []).flatMap(collectPages)
 
-const collectAppliesWhen = (container, names = []) => {
-  if (container.appliesWhen) {
-    names.push(container.appliesWhen)
-  }
-  for (const child of container.sections ?? container.children ?? []) {
-    collectAppliesWhen(child, names)
-  }
-  return names
-}
+const collectAppliesWhen = (container) => [
+  ...(container.appliesWhen ? [container.appliesWhen] : []),
+  ...(container.sections ?? container.children ?? []).flatMap(
+    collectAppliesWhen
+  )
+]
 
 const entriesOf = (page) => [
   ...(page.presents ?? []),
@@ -118,8 +109,9 @@ describe('tests/reachability — catalogue cross-references', () => {
           entriesOf(page).map((entry) => entry.obligation)
         )
       )
-    expect([...presentedIn(flows[0][1])].sort()).toEqual(
-      [...presentedIn(flows[1][1])].sort()
+    const [[, firstFlow], [, secondFlow]] = flows
+    expect([...presentedIn(firstFlow)].sort()).toEqual(
+      [...presentedIn(secondFlow)].sort()
     )
   })
 })

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import * as j from '../journey.js'
-import * as o from './obligations-journey.js'
+import * as journey from '../journey.js'
+import * as obligations from './obligations-journey.js'
 
 /**
  * Rulings item 2 — EARLY CYA (Outcome A, open access). Pre-submit,
@@ -16,23 +16,23 @@ const cyaHeading = (page) =>
   page.getByRole('heading', { name: 'Check your answers' })
 
 /** Fresh journey with ONLY the email task completed. */
-async function reachHubWithEmailOnly(page) {
-  await o.reachHub(page)
+const reachHubWithEmailOnly = async (page) => {
+  await obligations.reachHub(page)
   await page.getByRole('link', { name: 'Email' }).click()
-  await j.fillEmail(page)
-  await page.getByRole('button', { name: j.SAVE }).click()
+  await journey.fillEmail(page)
+  await page.getByRole('button', { name: journey.SAVE }).click()
   await expect(
     page.getByRole('heading', { name: 'Get a car insurance quote' })
   ).toBeVisible()
 }
 
-test.describe(o.OBLIGATIONS.label, () => {
+test.describe(obligations.OBLIGATIONS.label, () => {
   test('direct-URL CYA mid-journey renders soft prompts, not a redirect', async ({
     page
   }) => {
     await reachHubWithEmailOnly(page)
 
-    await page.goto(o.pagePath('check-your-answers'))
+    await page.goto(obligations.pagePath('check-your-answers'))
     await expect(cyaHeading(page)).toBeVisible()
     expect(page.url()).toContain('/check-your-answers')
 
@@ -58,7 +58,7 @@ test.describe(o.OBLIGATIONS.label, () => {
   }) => {
     await reachHubWithEmailOnly(page)
 
-    await page.goto(o.pagePath('quote-summary'))
+    await page.goto(obligations.pagePath('quote-summary'))
     await expect(
       page.getByRole('heading', { name: 'Your quote' })
     ).toBeVisible()
@@ -72,7 +72,7 @@ test.describe(o.OBLIGATIONS.label, () => {
   }) => {
     await reachHubWithEmailOnly(page)
 
-    await page.goto(o.pagePath('check-your-answers'))
+    await page.goto(obligations.pagePath('check-your-answers'))
     await page.getByRole('button', { name: 'Accept and get quote' }).click()
 
     await expect(cyaHeading(page)).toBeVisible()
@@ -89,9 +89,13 @@ test.describe(o.OBLIGATIONS.label, () => {
     page
   }) => {
     // Reach a submittable CYA with one claim declared…
-    await j.walkGroupedToCheckAnswers(page, o.OBLIGATIONS.grouped, {
-      hadClaims: true
-    })
+    await journey.walkGroupedToCheckAnswers(
+      page,
+      obligations.OBLIGATIONS.grouped,
+      {
+        hadClaims: true
+      }
+    )
     await expect(cyaHeading(page)).toBeVisible()
     await expect(
       page.locator('.govuk-summary-list__key').filter({ hasText: 'Claim 1' })
@@ -99,7 +103,9 @@ test.describe(o.OBLIGATIONS.label, () => {
 
     // …then remove that claim behind the rendered page (same cookie jar),
     // so the POST below carries a stale canSubmit.
-    const removed = await page.request.get(o.pagePath('claims/0/remove'))
+    const removed = await page.request.get(
+      obligations.pagePath('claims/0/remove')
+    )
     expect(removed.ok()).toBe(true)
 
     // The server re-checks and re-renders CYA as a 200 naming the gap —

@@ -33,7 +33,10 @@ const walk = (containers, visit) => {
 
 const pagesOf = (aFlow) => {
   const pages = []
-  walk(aFlow.sections, (c) => c.kind === 'page' && pages.push(c))
+  walk(
+    aFlow.sections,
+    (container) => container.kind === 'page' && pages.push(container)
+  )
   return pages
 }
 
@@ -46,7 +49,10 @@ const allEntries = (aFlow) => pagesOf(aFlow).flatMap(entriesOf)
 
 const appliesWhenNames = (aFlow) => {
   const names = new Set()
-  walk(aFlow.sections, (c) => c.appliesWhen && names.add(c.appliesWhen))
+  walk(
+    aFlow.sections,
+    (container) => container.appliesWhen && names.add(container.appliesWhen)
+  )
   return names
 }
 
@@ -82,8 +88,8 @@ describe.each([
 
   it('keeps page ids and slugs unique, with CYA/confirmation outside the tree', () => {
     const pages = pagesOf(aFlow)
-    expect(new Set(pages.map((p) => p.id)).size).toBe(pages.length)
-    expect(new Set(pages.map((p) => p.slug)).size).toBe(pages.length)
+    expect(new Set(pages.map((page) => page.id)).size).toBe(pages.length)
+    expect(new Set(pages.map((page) => page.slug)).size).toBe(pages.length)
     for (const page of pages) {
       expect(['check-your-answers', 'confirmation']).not.toContain(page.slug)
       expect(
@@ -121,13 +127,17 @@ describe('model/flow.json — the polished Flow', () => {
 
   it('routes the twelve question pages through the generic page template', () => {
     const templates = pagesOf(flow).map((page) => page.template)
-    expect(templates.filter((t) => t === 'page')).toHaveLength(12)
-    expect(templates.filter((t) => t === 'claims-list')).toHaveLength(1)
-    expect(templates.filter((t) => t === 'quote-summary')).toHaveLength(1)
+    expect(templates.filter((template) => template === 'page')).toHaveLength(12)
+    expect(
+      templates.filter((template) => template === 'claims-list')
+    ).toHaveLength(1)
+    expect(
+      templates.filter((template) => template === 'quote-summary')
+    ).toHaveLength(1)
   })
 
   it('spot-checks the pinned parity copy', () => {
-    const page = (id) => pagesOf(flow).find((p) => p.id === id)
+    const page = (id) => pagesOf(flow).find((candidate) => candidate.id === id)
     expect(flow.hub.heading).toBe('Get a car insurance quote')
     expect(flow.start.buttonText).toBe('Start now')
     expect(flow.defaults.saveButtonText).toBe('Save and continue')
@@ -178,9 +188,9 @@ describe('flow <-> skeleton equivalence (the cross-Flow fixture contract)', () =
 
   it('keeps the skeleton single-Section with a deliberately different entry mode', () => {
     expect(skeleton.sections).toHaveLength(1)
-    expect(skeleton.sections[0].children.every((c) => c.kind === 'page')).toBe(
-      true
-    )
+    expect(
+      skeleton.sections[0].children.every((child) => child.kind === 'page')
+    ).toBe(true)
     expect(flow.sectionEntryMode).toBe('firstApplicablePage')
     expect(skeleton.sectionEntryMode).toBe('firstUnfulfilledPage')
     expect(skeleton.service).toBe(flow.service)

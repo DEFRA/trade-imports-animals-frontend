@@ -8,7 +8,7 @@ import { toFieldErrors } from './field-errors.js'
  * true means the POST must re-render with the error summary instead of
  * writing (only a hard page mandate or a filled format failure gets here).
  */
-export function checkSave(slots, payload, obligationState) {
+export const checkSave = (slots, payload, obligationState) => {
   const findings = saveCheck(slots, payload, obligationState)
   const { errors, errorSummary } = toFieldErrors(findings)
   return { blocked: findings.length > 0, findings, errors, errorSummary }

@@ -14,12 +14,12 @@ import { isReviewedEmptyCollection } from './collection-review.js'
 
 /** Look a stored value up by obligation name through the evaluation. */
 const valueByName = (evaluation, name) => {
-  for (const [obligationId, entry] of Object.entries(evaluation.obligations)) {
-    if (entry.name === name) {
-      return evaluation.fulfilments[obligationId]?.value
-    }
-  }
-  return undefined
+  const match = Object.entries(evaluation.obligations).find(
+    ([, entry]) => entry.name === name
+  )
+  if (!match) return undefined
+  const [obligationId] = match
+  return evaluation.fulfilments[obligationId]?.value
 }
 
 /**
@@ -28,7 +28,7 @@ const valueByName = (evaluation, name) => {
  * prefix (`addonSelected:<value>`) whose builder returns the condition
  * for one argument.
  */
-export function createFlowConditionRegistry() {
+export const createFlowConditionRegistry = () => {
   const named = new Map()
   const families = new Map()
 
@@ -56,7 +56,7 @@ export function createFlowConditionRegistry() {
 }
 
 /** The journey's closed condition list (asserted against model/flow.json). */
-export function createJourneyFlowConditions() {
+export const createJourneyFlowConditions = () => {
   const registry = createFlowConditionRegistry()
 
   registry.define(
@@ -92,11 +92,11 @@ export const journeyFlowConditions = createJourneyFlowConditions()
  * Does this Container apply in the current state? Containers without an
  * `appliesWhen` name always apply (including the Flow root).
  */
-export function containerApplies(
+export const containerApplies = (
   container,
   evaluation,
   conditions = journeyFlowConditions
-) {
+) => {
   if (!container.appliesWhen) {
     return true
   }

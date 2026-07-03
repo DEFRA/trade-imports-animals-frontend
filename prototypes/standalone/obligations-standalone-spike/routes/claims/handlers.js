@@ -22,6 +22,8 @@ import { addFields, claimRows } from './view-models.js'
  * contract barrel and the claims view-models.
  */
 
+const ACTION_ADD = 'add'
+
 export const getClaimsList = (request, h) => {
   const journey = currentJourney(request, h)
   return h.view(`${TEMPLATES}/claims-list`, {
@@ -37,7 +39,7 @@ export const getClaimsList = (request, h) => {
 
 export const postClaimsList = (request, h) => {
   const journey = currentJourney(request, h)
-  if (request.payload?.action === 'add') {
+  if (request.payload?.action === ACTION_ADD) {
     return h.redirect(pagePath(page.addPage.slug))
   }
   // Continue marks the collection REVIEWED (spike-a's markClaimsDone,

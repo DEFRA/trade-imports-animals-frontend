@@ -15,6 +15,8 @@ const childPages = (group) =>
 const childGroups = (group) =>
   (group.children ?? []).filter((child) => child.kind === 'group')
 
+const ALWAYS_LIVE_GROUP_COUNT = 3
+
 describe('journey/config — shell identity', () => {
   it('mounts under the standalone tree on the shared journey path', () => {
     expect(BASE).toBe(
@@ -35,7 +37,9 @@ describe('journey/config — shell identity', () => {
 describe('journey/config — hubShape alignment with flow.json', () => {
   it('lists the three always-live groups in Flow order with their pages', () => {
     expect(hubShape.groups.map((group) => group.sectionId)).toEqual(
-      flow.sections.slice(0, 3).map((section) => section.id)
+      flow.sections
+        .slice(0, ALWAYS_LIVE_GROUP_COUNT)
+        .map((section) => section.id)
     )
     for (const group of hubShape.groups) {
       const section = sectionById(group.sectionId)

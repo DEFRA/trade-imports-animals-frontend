@@ -94,7 +94,7 @@ const presentsName = (page, name) =>
  * indexed collections become value lists in insertion order, derived
  * indexed collections stay keyed by their stable controlling values.
  */
-export function canonicalise(fulfilments) {
+export const canonicalise = (fulfilments) => {
   const values = {}
   for (const record of obligations) {
     const entry = fulfilments[record.id]
@@ -121,7 +121,7 @@ export function canonicalise(fulfilments) {
  * `canonical` is `{ values, journeyState }` — the deep-equal surface the
  * equivalence tier compares across Flows.
  */
-export function replayScript(flow, script) {
+export const replayScript = (flow, script) => {
   const repository = createJourneyRepository()
   let journey = repository.create(flow.id)
 

@@ -5,16 +5,16 @@ import { createTestServer } from './test-server.js'
  * page-hard mandate, page-soft blank advances (Rulings item 3), change
  * mode, add-on fan-out and the add-ons catch-all. */
 
-let t
+let server
 beforeEach(async () => {
-  t = await createTestServer()
-  await t.startJourney()
+  server = await createTestServer()
+  await server.startJourney()
 })
-afterEach(() => t.stop())
+afterEach(() => server.stop())
 
 describe('routes/page — rendering', () => {
   it('renders a question page with its inputs and no required attribute', async () => {
-    const response = await t.get(`${t.base}/email`)
+    const response = await server.get(`${server.base}/email`)
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('Give us your email to begin')
     expect(response.payload).toContain('name="email"')
@@ -22,16 +22,16 @@ describe('routes/page — rendering', () => {
   })
 
   it('back-links to CYA in change mode, the hub otherwise', async () => {
-    const plain = await t.get(`${t.base}/about-you`)
-    expect(plain.payload).toContain(`href="${t.base}/hub"`)
-    const change = await t.get(`${t.base}/about-you?change=1`)
-    expect(change.payload).toContain(`href="${t.base}/check-your-answers"`)
+    const plain = await server.get(`${server.base}/about-you`)
+    expect(plain.payload).toContain(`href="${server.base}/hub"`)
+    const change = await server.get(`${server.base}/about-you?change=1`)
+    expect(change.payload).toContain(`href="${server.base}/check-your-answers"`)
   })
 })
 
 describe('routes/page — the save gate (Rulings item 3)', () => {
   it('blocks a blank fullName save with a GDS error round trip', async () => {
-    const response = await t.post(`${t.base}/about-you`, {})
+    const response = await server.post(`${server.base}/about-you`, {})
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('govuk-error-summary')
     expect(response.payload).toContain('There is a problem')
@@ -41,7 +41,7 @@ describe('routes/page — the save gate (Rulings item 3)', () => {
   })
 
   it('re-renders the typed (unsaved) values on a blocked save', async () => {
-    const response = await t.post(`${t.base}/about-you`, {
+    const response = await server.post(`${server.base}/about-you`, {
       preferredName: 'Al',
       'dateOfBirth-day': '27'
     })
@@ -51,50 +51,52 @@ describe('routes/page — the save gate (Rulings item 3)', () => {
   })
 
   it('blocks a filled-but-invalid value, preserving what was typed', async () => {
-    const response = await t.post(`${t.base}/email`, { email: 'junk' })
+    const response = await server.post(`${server.base}/email`, {
+      email: 'junk'
+    })
     expect(response.statusCode).toBe(200)
     expect(response.payload).toContain('Enter a valid Email')
     expect(response.payload).toContain('value="junk"')
   })
 
   it('advances a blank page-soft save (the email gate saves blank freely)', async () => {
-    const response = await t.post(`${t.base}/email`, {})
+    const response = await server.post(`${server.base}/email`, {})
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(`${t.base}/hub`)
+    expect(response.headers.location).toBe(`${server.base}/hub`)
   })
 
   it('advances fullName alone to the next page in the section', async () => {
-    const response = await t.post(`${t.base}/about-you`, {
+    const response = await server.post(`${server.base}/about-you`, {
       fullName: 'Alex Driver'
     })
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(`${t.base}/your-vehicle`)
+    expect(response.headers.location).toBe(`${server.base}/your-vehicle`)
   })
 
   it('returns to CYA after a ?change=1 save', async () => {
-    const response = await t.post(`${t.base}/about-you?change=1`, {
+    const response = await server.post(`${server.base}/about-you?change=1`, {
       fullName: 'Alex Driver'
     })
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(`${t.base}/check-your-answers`)
+    expect(response.headers.location).toBe(`${server.base}/check-your-answers`)
   })
 })
 
 describe('routes/page — the add-on fan-out', () => {
   it('the picker save returns to the hub; the spawned follow-up page renders (spike-a parity)', async () => {
-    const response = await t.post(`${t.base}/addons`, {
+    const response = await server.post(`${server.base}/addons`, {
       addons: 'named-driver'
     })
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(`${t.base}/hub`)
-    const page = await t.get(`${t.base}/addons/named-driver/who`)
+    expect(response.headers.location).toBe(`${server.base}/hub`)
+    const page = await server.get(`${server.base}/addons/named-driver/who`)
     expect(page.statusCode).toBe(200)
     expect(page.payload).toContain('name="driverName__')
   })
 
   it('302s an unknown add-on step back to the picker (spike-a parity)', async () => {
-    const response = await t.get(`${t.base}/addons/nope/step`)
+    const response = await server.get(`${server.base}/addons/nope/step`)
     expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toBe(`${t.base}/addons`)
+    expect(response.headers.location).toBe(`${server.base}/addons`)
   })
 })

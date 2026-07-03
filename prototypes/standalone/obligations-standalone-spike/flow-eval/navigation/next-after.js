@@ -19,47 +19,32 @@ import {
  * diverge only when re-saving an early page of a complete Section.
  */
 
-const collectPages = (
-  container,
-  section,
-  evaluation,
-  conditions,
-  gatedOut,
-  pages
-) => {
+const collectPages = (container, section, evaluation, conditions, gatedOut) => {
   const excluded =
     gatedOut || !containerApplies(container, evaluation, conditions)
   if (container.kind === 'page') {
-    pages.push({ page: container, gatedOut: excluded, section })
-    return pages
+    return [{ page: container, gatedOut: excluded, section }]
   }
-  for (const child of container.children ?? []) {
-    collectPages(child, section, evaluation, conditions, excluded, pages)
-  }
-  return pages
+  return (container.children ?? []).flatMap((child) =>
+    collectPages(child, section, evaluation, conditions, excluded)
+  )
 }
 
-export function nextAfter(flow, pageId, evaluation, options = {}) {
+export const nextAfter = (flow, pageId, evaluation, options = {}) => {
   const { conditions = journeyFlowConditions } = options
-  const pages = []
-  for (const section of flow.sections) {
-    collectPages(section, section, evaluation, conditions, false, pages)
-  }
+  const pages = flow.sections.flatMap((section) =>
+    collectPages(section, section, evaluation, conditions, false)
+  )
 
   const from = pages.findIndex(({ page }) => page.id === pageId)
   if (from === -1) {
     throw new Error(`Unknown page "${pageId}"`)
   }
   const section = pages[from].section
-  for (const candidate of pages.slice(from + 1)) {
-    if (candidate.section !== section || candidate.gatedOut) {
-      continue
-    }
+  const next = pages.slice(from + 1).find((candidate) => {
+    if (candidate.section !== section || candidate.gatedOut) return false
     const status = containerStatus(candidate.page, evaluation, options)
-    if (status === NOT_APPLICABLE || status === FULFILLED) {
-      continue
-    }
-    return candidate.page
-  }
-  return null
+    return status !== NOT_APPLICABLE && status !== FULFILLED
+  })
+  return next?.page ?? null
 }

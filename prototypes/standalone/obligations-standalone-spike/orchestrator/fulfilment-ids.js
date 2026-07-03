@@ -11,6 +11,4 @@ import { randomUUID } from 'node:crypto'
  */
 
 /** Mint one opaque, stable fulfilment id for a user-source indexed row. */
-export function mintFulfilmentId() {
-  return `f-${randomUUID()}`
-}
+export const mintFulfilmentId = () => `f-${randomUUID()}`

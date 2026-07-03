@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test'
-import * as j from '../journey.js'
+import * as journeys from '../journey.js'
 
 /**
  * Support for the obligations edge specs. Each spec in this folder
@@ -9,7 +9,7 @@ import * as j from '../journey.js'
  * array — so these specs can never gate the other spikes.
  */
 
-const registered = j.JOURNEYS.find(
+const registered = journeys.JOURNEYS.find(
   (journey) => journey.id === 'obligations-standalone-spike'
 )
 if (!registered) {
@@ -31,7 +31,7 @@ export const pagePath = (slug) => `${OBLIGATIONS.grouped}/${slug}`
  * segment anywhere. Reading it back lets specs pin the deterministic
  * quote reference ('CI-' + first 6 hex of the journeyId, uppercased).
  */
-export async function journeyIdFrom(context) {
+export const journeyIdFrom = async (context) => {
   const cookies = await context.cookies()
   const cookie = cookies.find(({ name }) => name === 'obligationsJourneyId')
   if (!cookie) {
@@ -44,7 +44,7 @@ export async function journeyIdFrom(context) {
 }
 
 /** Start a fresh journey and land on the task-list hub. */
-export async function reachHub(page) {
+export const reachHub = async (page) => {
   await page.goto(OBLIGATIONS.grouped)
   await page.getByRole('button', { name: 'Start now' }).click()
   await expect(
@@ -56,8 +56,8 @@ export async function reachHub(page) {
  * Full happy-path walk (one claim, no add-ons) ending on the 'Quote
  * confirmed' panel — the launch pad for every post-submit assertion.
  */
-export async function submitToQuoteConfirmed(page) {
-  await j.walkGroupedToCheckAnswers(page, OBLIGATIONS.grouped, {
+export const submitToQuoteConfirmed = async (page) => {
+  await journeys.walkGroupedToCheckAnswers(page, OBLIGATIONS.grouped, {
     hadClaims: true
   })
   await page.getByRole('button', { name: 'Accept and get quote' }).click()
@@ -71,7 +71,7 @@ export async function submitToQuoteConfirmed(page) {
  * (mirrors the shared mandatory-fields spec): summary box, inline error
  * and an anchor link targeting the field.
  */
-export async function expectGdsFieldError(page, fieldId) {
+export const expectGdsFieldError = async (page, fieldId) => {
   await expect(page.locator('.govuk-error-summary')).toBeVisible()
   await expect(page.locator(`#${fieldId}-error`)).toBeVisible()
   await expect(page.locator(`a[href="#${fieldId}"]`).first()).toBeVisible()

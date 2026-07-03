@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import * as j from '../journey.js'
-import * as o from './obligations-journey.js'
+import * as journey from '../journey.js'
+import * as obligations from './obligations-journey.js'
 
 /**
  * Rulings item 3 — MANDATES (Outcome B, fullName-only page-hard).
@@ -25,18 +25,18 @@ const hubStatus = (page, title) =>
     .filter({ hasText: title })
     .locator('.govuk-task-list__status')
 
-test.describe(o.OBLIGATIONS.label, () => {
+test.describe(obligations.OBLIGATIONS.label, () => {
   test('the email gate saves blank freely, blocking only at CYA', async ({
     page
   }) => {
-    await o.reachHub(page)
+    await obligations.reachHub(page)
     await task(page, 'Email')
-    await click(page, j.SAVE) // blank — page-soft, no error round trip
+    await click(page, journey.SAVE) // blank — page-soft, no error round trip
     await expect(hubHeading(page)).toBeVisible()
     await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
 
     // The gap surfaces at the CYA POST instead, named in the summary.
-    await page.goto(o.pagePath('check-your-answers'))
+    await page.goto(obligations.pagePath('check-your-answers'))
     await click(page, 'Accept and get quote')
     await expect(
       page.getByRole('heading', { name: 'Check your answers' })
@@ -49,33 +49,33 @@ test.describe(o.OBLIGATIONS.label, () => {
   test('fullName blocks the save; a blank vehicle save advances and the hub shows In progress', async ({
     page
   }) => {
-    await o.reachHub(page)
+    await obligations.reachHub(page)
     await task(page, 'Email')
-    await j.fillEmail(page)
-    await click(page, j.SAVE)
+    await journey.fillEmail(page)
+    await click(page, journey.SAVE)
 
     // fullName is the one page-hard field: blank About you blocks with
     // the GDS structure (summary + inline error + anchor link).
     await task(page, 'About you and your vehicle')
-    await click(page, j.SAVE)
+    await click(page, journey.SAVE)
     await expect(page.getByRole('heading', { name: 'About you' })).toBeVisible()
-    await o.expectGdsFieldError(page, 'fullName')
+    await obligations.expectGdsFieldError(page, 'fullName')
 
     // fullName alone advances; a fully blank vehicle save advances too
     // (registration is engine-mandatory, never page-hard).
     await page.getByLabel('Full name').fill('Alex Driver')
-    await click(page, j.SAVE)
+    await click(page, journey.SAVE)
     await expect(
       page.getByRole('heading', { name: 'Your vehicle' })
     ).toBeVisible()
-    await click(page, j.SAVE)
+    await click(page, journey.SAVE)
     await expect(hubHeading(page)).toBeVisible()
     await expect(hubStatus(page, 'About you and your vehicle')).toHaveText(
       'In progress'
     )
 
     // The vehicle gap blocks at CYA POST, named in the summary.
-    await page.goto(o.pagePath('check-your-answers'))
+    await page.goto(obligations.pagePath('check-your-answers'))
     await click(page, 'Accept and get quote')
     await expect(page.locator('.govuk-error-summary')).toContainText(
       'Registration is required'
@@ -87,29 +87,29 @@ test.describe(o.OBLIGATIONS.label, () => {
   }) => {
     // Walk every task with hadClaims=yes but NO claim added: Continue on
     // the empty manage list counts complete on the hub (spike-a parity)…
-    await o.reachHub(page)
+    await obligations.reachHub(page)
     await task(page, 'Email')
-    await j.fillEmail(page)
-    await click(page, j.SAVE)
+    await journey.fillEmail(page)
+    await click(page, journey.SAVE)
     await task(page, 'About you and your vehicle')
-    await j.fillAboutYou(page)
-    await click(page, j.SAVE)
-    await j.fillVehicle(page)
-    await click(page, j.SAVE)
+    await journey.fillAboutYou(page)
+    await click(page, journey.SAVE)
+    await journey.fillVehicle(page)
+    await click(page, journey.SAVE)
     await task(page, 'Your driving and cover')
-    await j.fillDriving(page, { hadClaims: true })
-    await click(page, j.SAVE)
+    await journey.fillDriving(page, { hadClaims: true })
+    await click(page, journey.SAVE)
     await expect(
       page.getByRole('heading', { name: 'Claims you have added' })
     ).toBeVisible()
-    await click(page, j.CONTINUE) // zero claims
+    await click(page, journey.CONTINUE) // zero claims
     // Cover-type probes use getByLabel — the single-'Yes' reveal trap.
-    await j.fillCoverType(page)
-    await click(page, j.SAVE)
-    await j.fillExtras(page)
-    await click(page, j.SAVE)
+    await journey.fillCoverType(page)
+    await click(page, journey.SAVE)
+    await journey.fillExtras(page)
+    await click(page, journey.SAVE)
     await task(page, 'Add to your policy')
-    await click(page, j.CONTINUE) // no add-ons
+    await click(page, journey.CONTINUE) // no add-ons
 
     await expect(hubStatus(page, 'Your driving and cover')).toHaveText(
       'Completed'
@@ -136,12 +136,12 @@ test.describe(o.OBLIGATIONS.label, () => {
   test('no required attribute renders anywhere — the round trip is server-side only', async ({
     page
   }) => {
-    await o.reachHub(page)
+    await obligations.reachHub(page)
     // Answer hadClaims=yes so the claims pages are in scope (a Not
     // Applicable deep link resolves away rather than rendering a form).
     await task(page, 'Your driving and cover')
-    await j.fillDriving(page, { hadClaims: true })
-    await click(page, j.SAVE)
+    await journey.fillDriving(page, { hadClaims: true })
+    await click(page, journey.SAVE)
 
     const slugs = [
       'email',
@@ -154,7 +154,7 @@ test.describe(o.OBLIGATIONS.label, () => {
       'addons'
     ]
     for (const slug of slugs) {
-      const response = await page.goto(o.pagePath(slug))
+      const response = await page.goto(obligations.pagePath(slug))
       expect(response.ok()).toBe(true)
       await expect(page.locator('form')).toBeVisible()
       await expect(page.locator('[required]')).toHaveCount(0)

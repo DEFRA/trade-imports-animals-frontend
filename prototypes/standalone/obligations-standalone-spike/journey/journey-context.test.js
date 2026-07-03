@@ -80,8 +80,12 @@ describe('journey/journey-context — the isolation seam', () => {
 
   it('never shares a journey between two cookie-less requests', () => {
     const repository = createJourneyRepository()
-    const a = currentJourney(requestWith(null), fakeToolkit().h, { repository })
-    const b = currentJourney(requestWith(null), fakeToolkit().h, { repository })
-    expect(a.journeyId).not.toBe(b.journeyId)
+    const first = currentJourney(requestWith(null), fakeToolkit().h, {
+      repository
+    })
+    const second = currentJourney(requestWith(null), fakeToolkit().h, {
+      repository
+    })
+    expect(first.journeyId).not.toBe(second.journeyId)
   })
 })

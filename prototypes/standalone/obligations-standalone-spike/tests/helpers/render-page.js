@@ -18,9 +18,11 @@ import { render } from '../../templates/test-helpers.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const statesDir = path.join(dirname, '..', 'fixtures', 'states')
+const TEST_CRUMB = 'test-crumb'
+const FIXTURE_JOURNEY_ID = '00000000-0000-4000-8000-000000000000'
 
 /** Parse one tests/fixtures/states fixture, dropping `$comment`. */
-export function readStateFixture(name) {
+export const readStateFixture = (name) => {
   const { $comment, ...values } = JSON.parse(
     fs.readFileSync(path.join(statesDir, name), 'utf8')
   )
@@ -28,7 +30,7 @@ export function readStateFixture(name) {
 }
 
 /** Name-keyed fixture values -> a synthetic Journey envelope. */
-export function journeyFrom(values = {}) {
+export const journeyFrom = (values = {}) => {
   const { identifiers } = loadJourneyModel()
   const fulfilments = Object.fromEntries(
     Object.entries(values).map(([name, value]) => {
@@ -37,7 +39,7 @@ export function journeyFrom(values = {}) {
     })
   )
   return {
-    journeyId: '00000000-0000-4000-8000-000000000000',
+    journeyId: FIXTURE_JOURNEY_ID,
     status: 'in-progress',
     submittedAt: null,
     fulfilments
@@ -52,14 +54,14 @@ export const evaluationFor = (values) => evaluate(journeyFrom(values))
  * plus the layout, error summary and crumb. Returns the html AND the
  * view-model so the walker can assert on both sides of the render.
  */
-export function renderFlowPage(pageId, evaluation, options = {}) {
+export const renderFlowPage = (pageId, evaluation, options = {}) => {
   const { fieldErrors = null, errorSummary = [] } = options
   const viewModel = pageViewModel(pageId, evaluation, fieldErrors)
   const html = render(`${viewModel.template}.njk`, {
     ...viewModel,
     layout: LAYOUT,
     errorSummary,
-    crumb: 'test-crumb'
+    crumb: TEST_CRUMB
   })
   return { html, viewModel }
 }
@@ -70,7 +72,7 @@ export function renderFlowPage(pageId, evaluation, options = {}) {
  * form posts bare obligation names — orchestrator addFulfilment reads
  * values keyed by name, no fulfilment id yet).
  */
-export function renderClaimsAdd(page) {
+export const renderClaimsAdd = (page) => {
   const { identifiers } = loadJourneyModel()
   const slots = (page.presentsForEach ?? []).map((entry) => {
     const record = identifiers.recordOfId(entry.obligation)
@@ -87,7 +89,7 @@ export function renderClaimsAdd(page) {
     layout: LAYOUT,
     heading: page.addPage.heading,
     buttonText: page.addPage.buttonText,
-    crumb: 'test-crumb',
+    crumb: TEST_CRUMB,
     fields: slotViews(slots)
   })
   return { html, slots }

@@ -18,9 +18,7 @@ export { attachError } from './errors.js'
  * revealing control's matching item rather than emitted top-level; an
  * unknown host or option value throws loudly.
  */
-export function slotViews(slots, errors = null) {
-  const views = []
-  const byInputName = new Map()
+export const slotViews = (slots, errors = null) => {
   const buildView = (slot) => {
     const view = slotToView(slot)
     if (errors) {
@@ -28,11 +26,11 @@ export function slotViews(slots, errors = null) {
     }
     return view
   }
-  for (const slot of slots.filter((candidate) => !candidate.revealedBy)) {
-    const view = buildView(slot)
-    views.push(view)
-    byInputName.set(slot.inputName, view)
-  }
+  const topLevelSlots = slots.filter((candidate) => !candidate.revealedBy)
+  const views = topLevelSlots.map(buildView)
+  const byInputName = new Map(
+    topLevelSlots.map((slot, index) => [slot.inputName, views[index]])
+  )
   for (const slot of slots.filter((candidate) => candidate.revealedBy)) {
     const host = byInputName.get(slot.revealedBy.inputName)
     if (!host?.args?.items) {

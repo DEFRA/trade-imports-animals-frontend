@@ -18,16 +18,16 @@ import { calculatePremium } from '../lib/quote/index.js'
  */
 
 /** Name-keyed answers view over single-cardinality fulfilments. */
-const answersByName = (identifiers, fulfilments) => {
-  const answers = {}
-  for (const name of identifiers.names()) {
-    const record = identifiers.recordOfName(name)
-    if (record.cardinality === 'single') {
-      answers[name] = fulfilments[record.id]?.value
-    }
-  }
-  return answers
-}
+const answersByName = (identifiers, fulfilments) =>
+  Object.fromEntries(
+    identifiers
+      .names()
+      .filter((name) => identifiers.recordOfName(name).cardinality === 'single')
+      .map((name) => [
+        name,
+        fulfilments[identifiers.recordOfName(name).id]?.value
+      ])
+  )
 
 /** The journey's handler registry, keyed by the record's `handler` name. */
 export const systemHandlers = Object.freeze({
@@ -46,7 +46,7 @@ export const systemHandlers = Object.freeze({
 export function createSystemHandlerRun({ handlers = systemHandlers } = {}) {
   const inFlight = new Set()
 
-  return function run(obligations, obligationState, fulfilments = {}) {
+  const run = (obligations, obligationState, fulfilments = {}) => {
     const identifiers = createIdentifierIndex(obligations)
     const next = structuredClone(fulfilments)
     const ran = []
@@ -79,4 +79,6 @@ export function createSystemHandlerRun({ handlers = systemHandlers } = {}) {
 
     return { fulfilments: next, changed, ran }
   }
+
+  return run
 }

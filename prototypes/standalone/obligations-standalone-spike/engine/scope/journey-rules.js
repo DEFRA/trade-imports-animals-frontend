@@ -39,8 +39,10 @@ const MANDATE_CODES = {
   addons: 'mandate.addons.finishSelected'
 }
 
+const STATUS_MANDATORY = 'mandatory'
+
 const always = (code) => () => ({
-  status: 'mandatory',
+  status: STATUS_MANDATORY,
   reasons: [reason(code)]
 })
 
@@ -53,11 +55,8 @@ const whenAddonSelected = (addon, outcome) => (view) => {
 }
 
 const mandatoryFollowUp = (addon) => () => ({
-  status: 'mandatory',
-  reasons: [
-    scopeAnswered(addon, 'addons'),
-    reason('mandate.addons.finishSelected')
-  ]
+  status: STATUS_MANDATORY,
+  reasons: [scopeAnswered(addon, 'addons'), reason(MANDATE_CODES.addons)]
 })
 
 const optionalFollowUp = (addon) => () => ({
@@ -65,7 +64,7 @@ const optionalFollowUp = (addon) => () => ({
 })
 
 /** Build and populate the journey registry (exported for fixture reuse). */
-export function createJourneyScopeRegistry() {
+export const createJourneyScopeRegistry = () => {
   const registry = createScopeRegistry()
 
   for (const name of ENGINE_MANDATORY_ALWAYS) {
@@ -76,7 +75,7 @@ export function createJourneyScopeRegistry() {
     'excessAmount',
     'voluntaryExcessIsYes',
     whenAnswered('voluntaryExcess', 'yes', () => ({
-      status: 'mandatory',
+      status: STATUS_MANDATORY,
       reasons: [
         scopeAnswered('yes', 'voluntaryExcess'),
         reason('mandate.excessAmount.missing')
@@ -88,7 +87,7 @@ export function createJourneyScopeRegistry() {
     'claimType',
     'hadClaimsIsYes',
     whenAnswered('hadClaims', 'yes', () => ({
-      status: 'mandatory',
+      status: STATUS_MANDATORY,
       reasons: [
         scopeAnswered('yes', 'hadClaims'),
         reason('mandate.claimType.atLeastOne')

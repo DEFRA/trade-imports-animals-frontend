@@ -24,13 +24,16 @@ export const CONTAINER_STATUSES = Object.freeze([
   FULFILLED
 ])
 
+const STATUS_MANDATORY = 'mandatory'
+const KIND_PAGE = 'page'
+
 /**
  * The seven-row Group truth table (obligations.md:1226-1234) over child
  * statuses, Not Applicable treated as filtered out: all-F -> Fulfilled;
  * any IP, or F mixed with NS -> In Progress; otherwise Not Started (or
  * Not Applicable when everything was filtered).
  */
-export function rollUpChildStatuses(childStatuses) {
+export const rollUpChildStatuses = (childStatuses) => {
   const applicable = childStatuses.filter((status) => status !== NOT_APPLICABLE)
   if (applicable.length === 0) {
     return NOT_APPLICABLE
@@ -80,7 +83,7 @@ const pageStatus = (page, evaluation) => {
     return NOT_APPLICABLE
   }
   const mandatory = inScope.filter(
-    ({ obligation }) => obligation.status === 'mandatory'
+    ({ obligation }) => obligation.status === STATUS_MANDATORY
   )
   if (mandatory.length === 0) {
     return NOT_APPLICABLE
@@ -101,12 +104,12 @@ const pageStatus = (page, evaluation) => {
  * appliesWhen gate wins first at every level: a gated-out Container is
  * Not Applicable regardless of its contents.
  */
-export function containerStatus(container, evaluation, options = {}) {
+export const containerStatus = (container, evaluation, options = {}) => {
   const { conditions = journeyFlowConditions } = options
   if (!containerApplies(container, evaluation, conditions)) {
     return NOT_APPLICABLE
   }
-  if (container.kind === 'page') {
+  if (container.kind === KIND_PAGE) {
     return pageStatus(container, evaluation)
   }
   return rollUpChildStatuses(

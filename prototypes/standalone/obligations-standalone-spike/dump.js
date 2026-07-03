@@ -21,20 +21,24 @@ import {
  * missingRequired, canSubmit for allComplete. No server, no rendering.
  */
 
+const CARDINALITY_INDEXED = 'indexed'
+
 const records = JSON.parse(modelJson().obligations).obligations
 const byName = new Map(records.map((record) => [record.name, record]))
 
-function fulfilmentsFrom(values) {
-  return Object.fromEntries(
+const fulfilmentsFrom = (values) =>
+  Object.fromEntries(
     Object.entries(values).map(([name, value]) => {
       const record = byName.get(name)
       if (!record) {
         throw new Error(`Unknown obligation name "${name}"`)
       }
-      return [record.id, record.cardinality === 'indexed' ? value : { value }]
+      return [
+        record.id,
+        record.cardinality === CARDINALITY_INDEXED ? value : { value }
+      ]
     })
   )
-}
 
 const fixture = process.argv[2]
 const values = fixture ? JSON.parse(fs.readFileSync(fixture, 'utf8')) : {}

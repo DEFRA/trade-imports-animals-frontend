@@ -27,12 +27,10 @@ export const journeyCookieOptions = Object.freeze({
 })
 
 /** Define the cookie once, at plugin registration. */
-export function registerJourneyCookie(server) {
+export const registerJourneyCookie = (server) =>
   server.state(JOURNEY_COOKIE, journeyCookieOptions)
-}
 
-/** Start now: always mint a fresh journey and point the cookie at it. */
-export function startJourney(h, options = {}) {
+export const startJourney = (h, options = {}) => {
   const { repository = journeyRepository } = options
   const journey = repository.create(FLOW_ID)
   h.state(JOURNEY_COOKIE, journey.journeyId)
@@ -44,7 +42,7 @@ export function startJourney(h, options = {}) {
  * while it still exists, otherwise mint a fresh one (absent, stale or
  * cleared-invalid cookies all land here).
  */
-export function currentJourney(request, h, options = {}) {
+export const currentJourney = (request, h, options = {}) => {
   const { repository = journeyRepository } = options
   const journeyId = request.state?.[JOURNEY_COOKIE]
   if (journeyId && repository.has(journeyId)) {

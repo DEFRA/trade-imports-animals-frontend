@@ -7,6 +7,9 @@
  * carry only values), shaped [{ value, label, hint? }].
  */
 
+const BOOLEAN_YES = 'yes'
+const BOOLEAN_NO = 'no'
+
 const legendAndHint = (slot) => ({
   fieldset: {
     legend: { text: slot.label, classes: 'govuk-fieldset__legend--m' }
@@ -35,8 +38,8 @@ export const booleanView = (slot) => ({
     name: slot.inputName,
     ...legendAndHint(slot),
     items: [
-      { value: 'yes', text: 'Yes', checked: slot.value === 'yes' },
-      { value: 'no', text: 'No', checked: slot.value === 'no' }
+      { value: BOOLEAN_YES, text: 'Yes', checked: slot.value === BOOLEAN_YES },
+      { value: BOOLEAN_NO, text: 'No', checked: slot.value === BOOLEAN_NO }
     ]
   }
 })

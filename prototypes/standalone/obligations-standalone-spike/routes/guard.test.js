@@ -23,7 +23,8 @@ const stub = (surface, pageId = null) => ({
   auth: false,
   app: { surface, pageId }
 })
-const ok = (name) => (_request, h) => h.response(`ok:${name}`)
+const ok = (name) => (_request, responseToolkit) =>
+  responseToolkit.response(`ok:${name}`)
 
 let server
 beforeAll(async () => {

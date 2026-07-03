@@ -25,7 +25,7 @@ export const changePath = (slug) => `${pagePath(slug)}?change=1`
  * bookends. Unknown results throw — a wrong sentinel is a coding error,
  * never a redirect-to-somewhere-quiet.
  */
-export function resolveNav(result) {
+export const resolveNav = (result) => {
   if (typeof result === 'string') {
     return pagePath(result)
   }
@@ -39,11 +39,9 @@ export function resolveNav(result) {
 }
 
 /** Breadcrumbs keep the hub reachable from every journey page. */
-export function breadcrumbs(title) {
-  return [
-    { text: 'Prototypes', href: '/prototype-standalone' },
-    { text: 'Obligations (standalone)', href: BASE },
-    { text: 'Your application', href: hubPath() },
-    { text: title }
-  ]
-}
+export const breadcrumbs = (title) => [
+  { text: 'Prototypes', href: '/prototype-standalone' },
+  { text: 'Obligations (standalone)', href: BASE },
+  { text: 'Your application', href: hubPath() },
+  { text: title }
+]

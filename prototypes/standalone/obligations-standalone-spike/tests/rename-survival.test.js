@@ -38,11 +38,10 @@ const stored = () => ({
   [EMAIL_ID]: { value: 'sam@example.com' }
 })
 
-const renamed = (to) => {
-  const obligations = catalogue()
-  recordOf(obligations, 'fullName').name = to
-  return obligations
-}
+const renamed = (to) =>
+  catalogue().map((record) =>
+    record.name === 'fullName' ? { ...record, name: to } : record
+  )
 
 describe('tests/rename-survival — the dual-identifier proof', () => {
   it('keeps every fulfilment through a rename: same UUID, new name', () => {
@@ -104,8 +103,9 @@ describe('tests/rename-survival — the dual-identifier proof', () => {
   })
 
   it('survives an indexed rename too: claim rows keep their minted ids', () => {
-    const obligations = catalogue()
-    recordOf(obligations, 'claimType').name = 'incidentType'
+    const obligations = catalogue().map((record) =>
+      record.name === 'claimType' ? { ...record, name: 'incidentType' } : record
+    )
     const claims = {
       [recordOf(obligations, 'incidentType').id]: {
         'claim-1': { value: 'accident' }
