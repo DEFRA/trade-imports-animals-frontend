@@ -5,6 +5,18 @@ grow (and shrink) as a user progresses through the spike's obligations.
 Each state is a snapshot of the whole `fulfilments` map; unless a
 section says otherwise, states build on each other.
 
+## Terminology
+
+- **Fulfilment** — what an obligation is fulfilled by. For a
+  single-cardinality obligation it's one atomic value; for an indexed
+  obligation it's a keyed collection of **records**.
+- **Record** — one atomic filling-in inside an indexed fulfilment. A
+  single-cardinality fulfilment is one record.
+- **fulfilmentId** — identifier of one record. For single-cardinality,
+  `fulfilmentId === obligationId`.
+
+See obligations.md §Terminology for the full glossary.
+
 ## Reading these examples
 
 - **Obligation ids** appear as `[<name>.id]` — computed-property syntax
@@ -76,8 +88,9 @@ fulfilments = {
 }
 ```
 
-No entry for `claim.id` itself — the group has no fulfilments.
-Presence of `c1` is inferred from `claimType`'s composite-key prefix.
+No entry for `claim.id` itself — the group's fulfilment is inferred,
+not stored. Presence of `c1` is inferred from `claimType`'s
+composite-key prefix.
 
 **A4** — user answers the amount too:
 
@@ -264,8 +277,9 @@ fulfilments = {
 }
 ```
 
-`modificationCost` is now in scope with id set `{ 'turbo', 'alloys' }`
-(returned by its `applyTo`). No fulfilments yet.
+`modificationCost` is now in scope with record-id set
+`{ 'turbo', 'alloys' }` (returned by its `applyTo`). No records
+stored yet.
 
 **E2** — user answers cost for `'turbo'`:
 
@@ -318,21 +332,21 @@ fulfilments = {
 }
 ```
 
-`'turbo'` is purged because `modificationCost.applyTo`'s returned id
-array no longer contains it.
+`'turbo'` is purged because `modificationCost.applyTo`'s returned
+record-id array no longer contains it.
 
 ## What falls out
 
-- **Groups have no fulfilments.** Their instance ids are inferred from
-  descendants' composite-key prefixes.
+- **Groups have no stored fulfilment.** Their instance ids are inferred
+  from descendants' composite-key prefixes.
 - **Composite key length = number of instance dimensions** from root
   down to the value being held.
-- **A fulfilment implies presence of every prefix along its path.**
-  Field records and indexed leaves are how the model learns "this
-  claim exists" or "this driver's claim's other party exists".
+- **A record implies presence of every prefix along its path.** Field
+  records and indexed leaves are how the model learns "this claim
+  exists" or "this driver's claim's other party exists".
 - **Purge is one rule** — drop composite keys whose path visits an
   out-of-scope group, OR whose innermost segment is not in a derived
-  leaf's `applyTo`-returned id set.
+  leaf's `applyTo`-returned record-id set.
 - **User-driven inner-level ids are self-valid** — being in the
   `fulfilments` map is enough; no external enumeration to check
   against.
@@ -345,7 +359,7 @@ array no longer contains it.
 - **Field records on nested groups** — the spike's `driverClaim` has
   no field records; a real service modelling per-claim `type` /
   `amount` / `date` would add them as `{ id, name, within: driverClaim,
-status }` with fulfilments at composite key `driverId/claimId`.
+status }` with records at composite key `driverId/claimId`.
 - **Empty group instances** — a compound-record instance with zero
   filled fields. Not representable under the current model; if a
   concrete service needs it, the resolution is to add a designated

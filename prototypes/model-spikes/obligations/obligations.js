@@ -15,11 +15,11 @@
  *   - **Field record**: one value per parent-group instance. Shape:
  *       { id, name, within, status }
  *
- *   - **Derived indexed leaf**: authors its own id set from a controlling
- *     obligation. Shape:
+ *   - **Derived indexed leaf**: authors its own record id set from a
+ *     controlling obligation. Shape:
  *       { id, name, within?, status,
  *         indexedBy: { source: 'derived', controllingObligation, mutability },
- *         applyTo(fulfilments) → { inScope, reasons?, fulfilments: [id, …] } }
+ *         applyTo(fulfilments) → { inScope, reasons?, records: [id, …] } }
  *
  *   - **User-driven indexed leaf**: user adds/removes instances at the inner
  *     level; ids are opaque and orchestrator-generated. Shape:
@@ -232,7 +232,7 @@ export const modificationCost = {
           explanation: 'modificationCost applies when hasModifications is true'
         }
       ],
-      fulfilments: fulfilments[modifications.id] ?? []
+      records: fulfilments[modifications.id] ?? []
     }
   }
 }

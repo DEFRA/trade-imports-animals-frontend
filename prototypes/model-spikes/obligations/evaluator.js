@@ -19,11 +19,11 @@ import { obligations as defaultObligations } from './obligations.js'
  *   4. Purge storage:
  *        - Out-of-scope obligation → drop entire entry.
  *        - Derived indexed leaf → keep only keys whose innermost segment
- *          is in the `applyTo`-returned id set.
+ *          is in the `applyTo`-returned record id set.
  *        - Otherwise → keep (ancestors already in scope).
  *   5. Enumerate group instance ids by scanning descendants'
  *      composite-key prefixes.
- *   6. Build per-obligation implications.
+ *   6. Build per-obligation implications (each with a `records` array).
  */
 
 const PATH_DELIMITER = '/'
@@ -146,8 +146,7 @@ export function createObligationEvaluator({
           obligation.indexedBy?.source === 'derived'
         ) {
           const derivedIds = new Set(
-            obligationApplicabilityDecisions.get(obligation.id)?.fulfilments ??
-              []
+            obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
           )
           const filtered = {}
           for (const [key, v] of Object.entries(value ?? {})) {
@@ -218,7 +217,7 @@ export function createObligationEvaluator({
           ]
           const impl = { inScope: true }
           if (own?.reasons) impl.reasons = own.reasons
-          impl.fulfilments = fulfilmentIds.map((fulfilmentId) => ({
+          impl.records = fulfilmentIds.map((fulfilmentId) => ({
             fulfilmentId
           }))
           return impl
@@ -230,7 +229,7 @@ export function createObligationEvaluator({
           ]
           return {
             inScope: true,
-            fulfilments: parentGroupFulfilmentIds.map((fulfilmentId) => ({
+            records: parentGroupFulfilmentIds.map((fulfilmentId) => ({
               fulfilmentId,
               status: obligation.status
             }))
@@ -246,8 +245,8 @@ export function createObligationEvaluator({
           // which ones have VALUES.
           // User-driven leaves: presence via storage keys.
           if (obligation.indexedBy?.source === 'derived') {
-            const ids = own?.fulfilments ?? []
-            impl.fulfilments = ids.map((fulfilmentId) => ({
+            const ids = own?.records ?? []
+            impl.records = ids.map((fulfilmentId) => ({
               fulfilmentId,
               status: obligation.status
             }))
@@ -257,7 +256,7 @@ export function createObligationEvaluator({
               storage && typeof storage === 'object' && !Array.isArray(storage)
                 ? Object.keys(storage)
                 : []
-            impl.fulfilments = keys.map((fulfilmentId) => ({
+            impl.records = keys.map((fulfilmentId) => ({
               fulfilmentId,
               status: obligation.status
             }))

@@ -5,6 +5,17 @@
 > the concept evolves.
 >
 > **Last updated:** 2026-06-30
+>
+> **Note (2026-07-03, iterations 10–11):** iteration 10 flattened
+> storage (composite keys), removed the anchor concept, and simplified
+> the evaluator; iteration 11 renamed the atomic sense from "fulfilment"
+> to "record". §Terminology and §Fulfilments storage reflect the current
+> model; older sections downstream (notably §The ObligationEvaluator's
+> return shape sketch, §Obligation groups' storage sketch, §S. Nested
+> indexing's storage sketch) still describe iteration-9 anchor/hierarchy
+> shapes and are pending a doc pass. See the working spike code and
+> [FULFILMENT_SHAPES.md](./obligations/FULFILMENT_SHAPES.md) for the
+> current shapes.
 
 ## Context
 
@@ -52,20 +63,27 @@ A consistent vocabulary across the discussion and the data model:
   journey layer renders them. **May be renamed between deployments**
   because persistence uses the separate `id`. See §Persistence →
   Obligation identifiers.
-- **Fulfilment** — an entry/record holding one filling-in of an obligation
-  by a user (or by the system, for system-handled obligations). A
-  single-cardinality obligation has at most one fulfilment; an
-  indexed-cardinality obligation has zero or more.
-- **FulfilmentId** — identifier of a specific fulfilment.
+- **Fulfilment** — what an obligation is fulfilled by, in aggregate. One
+  fulfilment per obligation. Shape depends on the obligation category:
+  - **Single-cardinality** — one atomic value (one record; the
+    fulfilment IS the record).
+  - **Indexed** — a keyed collection of zero or more records.
+  - **Group** — inferred from descendants' records, not stored directly.
+- **Record** — one atomic filling-in inside a fulfilment. A
+  single-cardinality obligation's fulfilment is exactly one record; an
+  indexed obligation's fulfilment is zero or more records keyed by
+  fulfilmentId. Iteration 11 renamed the atomic sense from "fulfilment"
+  to "record" to remove overloaded usage — see
+  [FULFILMENT_SHAPES.md](./obligations/FULFILMENT_SHAPES.md).
+- **FulfilmentId** — identifier of a specific record.
   - For **single-cardinality** obligations: `fulfilmentId === obligationId`.
-    The obligation id alone uniquely addresses the (at most one)
-    fulfilment.
-  - For **indexed-cardinality** obligations: a per-fulfilment id within
-    the obligation's collection. Shape depends on `source` — see
+    The obligation id alone uniquely addresses the (at most one) record.
+  - For **indexed-cardinality** obligations: a per-record id within the
+    obligation's fulfilment. Shape depends on `source` — see
     §Fulfilments storage.
 - **Fulfil** (verb) — the user (or the system) fulfils an obligation by
-  providing the canonical data. Fulfilments can be incomplete (partially
-  answered), complete, or stale.
+  providing records. A fulfilment can be incomplete (fewer records than
+  the obligation's mandate demands), complete, or stale.
 - **Service** — the thing the user is trying to do (e.g. "get a car
   insurance quote", "file an animal-trade notification"). A Service has
   exactly **one** Obligations definition (the data contract) and **one

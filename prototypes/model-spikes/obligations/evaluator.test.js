@@ -327,7 +327,7 @@ describe('ObligationEvaluator', () => {
       expect(result.obligations[modificationCost.id]).toEqual({
         inScope: true,
         reasons: [modificationCostApplicableReason],
-        fulfilments: []
+        records: []
       })
     })
 
@@ -337,7 +337,7 @@ describe('ObligationEvaluator', () => {
         [modifications.id]: ['turbo', 'alloys']
       })
       expect(
-        sortedIds(result.obligations[modificationCost.id].fulfilments)
+        sortedIds(result.obligations[modificationCost.id].records)
       ).toEqual(['alloys', 'turbo'])
     })
 
@@ -376,15 +376,15 @@ describe('ObligationEvaluator', () => {
       expect(result.obligations[claim.id]).toEqual({
         inScope: true,
         reasons: [claimApplicableReason],
-        fulfilments: []
+        records: []
       })
       expect(result.obligations[claimType.id]).toEqual({
         inScope: true,
-        fulfilments: []
+        records: []
       })
       expect(result.obligations[claimAmount.id]).toEqual({
         inScope: true,
-        fulfilments: []
+        records: []
       })
     })
 
@@ -393,14 +393,12 @@ describe('ObligationEvaluator', () => {
         [hasClaims.id]: true,
         [claimType.id]: { c1: 'accident' }
       })
-      expect(sortedIds(result.obligations[claim.id].fulfilments)).toEqual([
-        'c1'
-      ])
+      expect(sortedIds(result.obligations[claim.id].records)).toEqual(['c1'])
       // Both field records list c1 (from the group's inferred instance set)
-      expect(result.obligations[claimType.id].fulfilments).toEqual([
+      expect(result.obligations[claimType.id].records).toEqual([
         { fulfilmentId: 'c1', status: 'mandatory' }
       ])
-      expect(result.obligations[claimAmount.id].fulfilments).toEqual([
+      expect(result.obligations[claimAmount.id].records).toEqual([
         { fulfilmentId: 'c1', status: 'mandatory' }
       ])
     })
@@ -436,12 +434,12 @@ describe('ObligationEvaluator', () => {
       const result = evaluator.evaluate({
         [driverFullName.id]: { d1: 'Alex', d2: 'Sam' }
       })
-      expect(sortedIds(result.obligations[driver.id].fulfilments)).toEqual([
+      expect(sortedIds(result.obligations[driver.id].records)).toEqual([
         'd1',
         'd2'
       ])
       // group instance entries have no per-instance status
-      for (const entry of result.obligations[driver.id].fulfilments) {
+      for (const entry of result.obligations[driver.id].records) {
         expect(entry.status).toBeUndefined()
       }
     })
@@ -450,7 +448,7 @@ describe('ObligationEvaluator', () => {
       const result = evaluator.evaluate({
         [driverFullName.id]: { d1: 'Alex' }
       })
-      expect(result.obligations[driverFullName.id].fulfilments).toEqual([
+      expect(result.obligations[driverFullName.id].records).toEqual([
         { fulfilmentId: 'd1', status: 'mandatory' }
       ])
     })
@@ -460,7 +458,7 @@ describe('ObligationEvaluator', () => {
         [driverFullName.id]: { d1: 'Alex' },
         [driverAddress.id]: { 'd1/a1': { line1: '10 High St' } }
       })
-      expect(result.obligations[driverAddress.id].fulfilments).toEqual([
+      expect(result.obligations[driverAddress.id].records).toEqual([
         { fulfilmentId: 'd1/a1', status: 'mandatory' }
       ])
     })
@@ -471,9 +469,10 @@ describe('ObligationEvaluator', () => {
         [driverFullName.id]: { d1: 'Alex' },
         [driverAddress.id]: { 'd2/a1': { line1: '20 Broad St' } }
       })
-      expect(
-        sortedIds(result.obligations[driverFullName.id].fulfilments)
-      ).toEqual(['d1', 'd2'])
+      expect(sortedIds(result.obligations[driverFullName.id].records)).toEqual([
+        'd1',
+        'd2'
+      ])
     })
   })
 
@@ -486,11 +485,11 @@ describe('ObligationEvaluator', () => {
       const result = evaluator.evaluate({})
       expect(result.obligations[driverClaim.id]).toEqual({
         inScope: true,
-        fulfilments: []
+        records: []
       })
       expect(result.obligations[driverClaimOtherParty.id]).toEqual({
         inScope: true,
-        fulfilments: []
+        records: []
       })
     })
 
@@ -501,10 +500,10 @@ describe('ObligationEvaluator', () => {
           'd1/c1/p1': { name: 'Other', role: 'other-driver' }
         }
       })
-      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
-        ['d1/c1']
-      )
-      expect(result.obligations[driverClaimOtherParty.id].fulfilments).toEqual([
+      expect(sortedIds(result.obligations[driverClaim.id].records)).toEqual([
+        'd1/c1'
+      ])
+      expect(result.obligations[driverClaimOtherParty.id].records).toEqual([
         { fulfilmentId: 'd1/c1/p1', status: 'mandatory' }
       ])
     })
@@ -517,11 +516,11 @@ describe('ObligationEvaluator', () => {
           'd1/c1/p2': { name: 'Party 2' }
         }
       })
-      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
-        ['d1/c1']
-      )
+      expect(sortedIds(result.obligations[driverClaim.id].records)).toEqual([
+        'd1/c1'
+      ])
       expect(
-        sortedIds(result.obligations[driverClaimOtherParty.id].fulfilments)
+        sortedIds(result.obligations[driverClaimOtherParty.id].records)
       ).toEqual(['d1/c1/p1', 'd1/c1/p2'])
     })
 
@@ -533,9 +532,10 @@ describe('ObligationEvaluator', () => {
           'd1/c2/p2': {}
         }
       })
-      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
-        ['d1/c1', 'd1/c2']
-      )
+      expect(sortedIds(result.obligations[driverClaim.id].records)).toEqual([
+        'd1/c1',
+        'd1/c2'
+      ])
     })
   })
 
@@ -582,7 +582,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
       expect(result.obligations[claim.id]).toEqual({
         inScope: true,
         reasons: [claimApplicableReason],
-        fulfilments: []
+        records: []
       })
     })
 
@@ -595,10 +595,10 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
         [hasClaims.id]: true,
         [claimType.id]: { c1: 'accident' }
       })
-      expect(result.obligations[claim.id].fulfilments).toEqual([
+      expect(result.obligations[claim.id].records).toEqual([
         { fulfilmentId: 'c1' }
       ])
-      expect(result.obligations[claimType.id].fulfilments).toEqual([
+      expect(result.obligations[claimType.id].records).toEqual([
         { fulfilmentId: 'c1', status: 'mandatory' }
       ])
     })
@@ -614,7 +614,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
         [claimType.id]: { c1: 'accident' },
         [claimAmount.id]: { c1: '1200' }
       })
-      expect(result.obligations[claim.id].fulfilments).toEqual([
+      expect(result.obligations[claim.id].records).toEqual([
         { fulfilmentId: 'c1' }
       ])
     })
@@ -625,7 +625,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
         [claimType.id]: { c1: 'accident', c2: 'theft' },
         [claimAmount.id]: { c1: '1200', c2: '500' }
       })
-      expect(sortedIds(result.obligations[claim.id].fulfilments)).toEqual([
+      expect(sortedIds(result.obligations[claim.id].records)).toEqual([
         'c1',
         'c2'
       ])
@@ -640,10 +640,8 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
       expect(result.fulfilments).toEqual({
         [driverFullName.id]: { d1: 'Alex' }
       })
-      expect(sortedIds(result.obligations[driver.id].fulfilments)).toEqual([
-        'd1'
-      ])
-      expect(result.obligations[driverAddress.id].fulfilments).toEqual([])
+      expect(sortedIds(result.obligations[driver.id].records)).toEqual(['d1'])
+      expect(result.obligations[driverAddress.id].records).toEqual([])
     })
 
     it('B2 — d1 with one address', () => {
@@ -651,7 +649,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
         [driverFullName.id]: { d1: 'Alex' },
         [driverAddress.id]: { 'd1/a1': { line1: '10 High St' } }
       })
-      expect(result.obligations[driverAddress.id].fulfilments).toEqual([
+      expect(result.obligations[driverAddress.id].records).toEqual([
         { fulfilmentId: 'd1/a1', status: 'mandatory' }
       ])
     })
@@ -664,9 +662,10 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
           'd1/a2': { line1: '20 Broad St' }
         }
       })
-      expect(
-        sortedIds(result.obligations[driverAddress.id].fulfilments)
-      ).toEqual(['d1/a1', 'd1/a2'])
+      expect(sortedIds(result.obligations[driverAddress.id].records)).toEqual([
+        'd1/a1',
+        'd1/a2'
+      ])
     })
 
     it('B4 — second driver d2, name only; d1 keeps addresses', () => {
@@ -677,17 +676,19 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
           'd1/a2': { line1: '20 Broad St' }
         }
       })
-      expect(sortedIds(result.obligations[driver.id].fulfilments)).toEqual([
+      expect(sortedIds(result.obligations[driver.id].records)).toEqual([
         'd1',
         'd2'
       ])
-      expect(
-        sortedIds(result.obligations[driverFullName.id].fulfilments)
-      ).toEqual(['d1', 'd2'])
+      expect(sortedIds(result.obligations[driverFullName.id].records)).toEqual([
+        'd1',
+        'd2'
+      ])
       // driverAddress only lists d1's addresses; d2 has none
-      expect(
-        sortedIds(result.obligations[driverAddress.id].fulfilments)
-      ).toEqual(['d1/a1', 'd1/a2'])
+      expect(sortedIds(result.obligations[driverAddress.id].records)).toEqual([
+        'd1/a1',
+        'd1/a2'
+      ])
     })
   })
 
@@ -696,10 +697,8 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
       const result = evaluator.evaluate({
         [driverFullName.id]: { d1: 'Alex' }
       })
-      expect(result.obligations[driverClaim.id].fulfilments).toEqual([])
-      expect(result.obligations[driverClaimOtherParty.id].fulfilments).toEqual(
-        []
-      )
+      expect(result.obligations[driverClaim.id].records).toEqual([])
+      expect(result.obligations[driverClaimOtherParty.id].records).toEqual([])
     })
 
     it('C2 — user adds a claim, answers first party p1', () => {
@@ -709,10 +708,10 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
           'd1/c1/p1': { name: 'Other Driver', role: 'other-driver' }
         }
       })
-      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
-        ['d1/c1']
-      )
-      expect(result.obligations[driverClaimOtherParty.id].fulfilments).toEqual([
+      expect(sortedIds(result.obligations[driverClaim.id].records)).toEqual([
+        'd1/c1'
+      ])
+      expect(result.obligations[driverClaimOtherParty.id].records).toEqual([
         { fulfilmentId: 'd1/c1/p1', status: 'mandatory' }
       ])
     })
@@ -725,11 +724,11 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
           'd1/c1/p2': {}
         }
       })
-      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
-        ['d1/c1']
-      )
+      expect(sortedIds(result.obligations[driverClaim.id].records)).toEqual([
+        'd1/c1'
+      ])
       expect(
-        sortedIds(result.obligations[driverClaimOtherParty.id].fulfilments)
+        sortedIds(result.obligations[driverClaimOtherParty.id].records)
       ).toEqual(['d1/c1/p1', 'd1/c1/p2'])
     })
 
@@ -742,9 +741,10 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
           'd1/c2/p3': {}
         }
       })
-      expect(sortedIds(result.obligations[driverClaim.id].fulfilments)).toEqual(
-        ['d1/c1', 'd1/c2']
-      )
+      expect(sortedIds(result.obligations[driverClaim.id].records)).toEqual([
+        'd1/c1',
+        'd1/c2'
+      ])
     })
   })
 
@@ -760,7 +760,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
 
     it('re-enabling hasClaims after a purge shows an empty claim group (no rehydration)', () => {
       const result = evaluator.evaluate({ [hasClaims.id]: true })
-      expect(result.obligations[claim.id].fulfilments).toEqual([])
+      expect(result.obligations[claim.id].records).toEqual([])
     })
   })
 
@@ -771,7 +771,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
         [modifications.id]: ['turbo', 'alloys']
       })
       expect(
-        sortedIds(result.obligations[modificationCost.id].fulfilments)
+        sortedIds(result.obligations[modificationCost.id].records)
       ).toEqual(['alloys', 'turbo'])
       expect(result.fulfilments).not.toHaveProperty(modificationCost.id)
     })
@@ -793,7 +793,7 @@ describe('FULFILMENT_SHAPES.md scenarios', () => {
       })
       expect(result.fulfilments[modificationCost.id]).toEqual({ turbo: '800' })
       expect(
-        sortedIds(result.obligations[modificationCost.id].fulfilments)
+        sortedIds(result.obligations[modificationCost.id].records)
       ).toEqual(['suspension', 'turbo'])
     })
 
