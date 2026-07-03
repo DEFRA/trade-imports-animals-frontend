@@ -387,3 +387,116 @@ discovered along the way that revises the entries above.
       not (recorded on `analysis/reachability.js`). So entry 4's two decisions are not eroded:
       readiness is proven here; validity stays a controller concern by design, not omission.
 - [ ] **1 (many-to-one dispatch) — parked**, as intended (demand-driven).
+
+---
+
+## 6. Are indexed obligations first-class? (nesting + item-scoped conditionality)
+
+**Question asked.** The spike has exactly one repeating collection — `claims` — and it is
+treated as the showcase for "an obligation that is an indexed list of sub-details." But real
+services are not one-off: many obligations are indexed, indexed obligations **nest** (a driver
+has claims; each claim its own details), and a value chosen _inside_ an item can **trigger
+further obligations for that item only** (a windscreen claim asks which approved repairer was
+used). Before building any of that: is the `claims` mechanism **first-class in the model**, or
+is it a special case bolted beside the model that a second collection would have to copy?
+
+**Investigation — verdict: NOT first-class.** `claims` works, but the model engine is blind to
+it; the indexing lives entirely in controller convention over an array-shaped value. Evidence,
+all anchored:
+
+1. **`cardinality` + `fields` are declared-but-unread.** No code in `engine/`, `flow/`,
+   `registry.js`, `shared/` or `analysis/` reads either — only `features/claims/obligations.js`
+   declares them. The "indexed" behaviour is not modelled; it emerges from the value happening
+   to be an array plus the controllers. This is the exact smell the `type` taxonomy had before
+   the validation rework deleted it (§9).
+2. **Sub-fields are not obligations.** `claimType` / `claimAmount` never appear as `id:` defs in
+   `registry.all`. So they get **no scope, no per-item wipe, no dispatch coverage, no status
+   contribution** — the model literally cannot see them.
+3. **`reconcile` treats the array as an opaque scalar.** Scope + wipe key off `answers['claims']`
+   as a single unit (`engine/reconcile.js`); it never descends into items. Wipe is all-or-nothing
+   for the whole collection.
+4. **Completeness is "≥1 entry exists", not "each entry complete".** `statusOf` does
+   `isAnswered(answers[id])`, and a non-empty array is "answered" (`engine/status.js:34`). A
+   claim with blank fields still counts the section complete. Per-item completeness is not a
+   model fact.
+5. **Item-scoped conditionality is inexpressible.** `evalPredicate` reads only top-level
+   `answers[activatedBy.obligation.id]` (`engine/predicate.js:16`). There is no vocabulary for
+   "activated by a sibling field _within this item_". Entry 5's "cross-feature reference graph"
+   is a graph of _top-level_ obligations only.
+6. **The store facade is single-level.** `appendEntry` / `updateEntry` / `removeEntry` address
+   exactly `answers[obligationId]` — one flat array, no nested path (`engine/index.js:46-74`).
+   And `updateEntry` is **dead code** — nothing calls it; the loop is add/remove only, no
+   edit-in-place.
+7. **The loop UI is fully bespoke and hardcoded to `'claims'`.** `claims/list.controller.js` +
+   `claims/entry.controller.js` (routes `claims/add`, `claims/{index}/remove`), and CYA
+   hand-builds Claim-N rows with `href: pagePath('claims')` — bypassing the generic
+   `changeHref(obligationId)` → dispatch path every scalar row uses
+   (`check-answers/controller.js:86-103`). A second collection today is a copy-paste of all of it.
+
+So the honest verdict: **`claims` is a one-off.** The model does not _provide_ indexed
+obligations; it merely _tolerates_ an array. Nesting and item-conditionality are not just
+unimplemented — with the current model they are **inexpressible** (no path vocabulary, no
+item-relative predicates, sub-fields aren't obligations, the store has no nested addressing).
+
+**What the real requirements demand (the shape of the work).**
+
+- A **recursive obligation model** — a collection's item is itself a set of obligations, which
+  may include nested collections. `registry.all` (or its walk) becomes a tree.
+- **Path-addressed scope + wipe** — an obligation _instance_ is identified by a path
+  (`drivers[1].claims[0].windscreenProvider`); `reconcile` descends and wipes per-instance, so
+  removing a driver destroys that driver's claims subtree (Yes-No-Yes at every depth).
+- **Item-relative predicates** — `activatedBy` must resolve against the current item's context,
+  not a global answer, so a windscreen claim activates a provider obligation _for that claim only_.
+- **A reusable loop pattern that is still a library, not a framework** — the load-bearing
+  tension. v2's non-negotiable is "no generic engine; shared code is a library the page calls,
+  never a framework that renders" (§6). A nested add/remove loop begs to become that framework.
+  **Whether the loop can be first-class without crossing that line is the central thing this
+  next phase must prove** — and honestly document if it cannot.
+- **Dispatch coverage, status roll-up and CYA over the tree** — no obligation at any depth
+  without an owning page; completeness that rolls item fields up; CYA that renders per-item and
+  per-instance-conditional rows.
+
+**Work order (escalating canaries; each de-risks the next).** Full rationale and the executable
+brief for a fresh agent live in
+[`../obligations-v2-nested-collections-prompt.md`](../obligations-v2-nested-collections-prompt.md).
+
+- **6a. Phase 1 — make single-level indexing first-class.** Promote "indexed obligation" to a
+  modelled concept: sub-fields become real (sub-)obligations, the engine gains path-addressed
+  scope/wipe/status for one level, and the bespoke loop is extracted into a reusable pattern.
+  **Canary: re-express the existing `claims` on the new mechanism with ZERO rendered-DOM change**
+  — the three shared specs + `contract.test.js` are the ready-made regression net. Fixes findings
+  1-4, 6, 7 for one level. Nothing new is added yet, so the model change is provable against
+  existing green.
+- **6b. Phase 2 — one level of nesting (drivers → claims).** A `drivers` collection whose item
+  contains a nested `claims` collection. Proves recursion: nested paths, cascading per-instance
+  wipe, a loop-inside-a-loop UI. **Decided: extend the existing single `named-driver` add-on into
+  an indexed `drivers` collection** (n drivers, each owning nested claims — natural domain fit) and
+  update the happy-path spec (it already walks "Add a named driver"); add specs for multi-driver +
+  independent nested claims + subtree wipe. Keep iterating on **this** v2 prototype; no parallel
+  spike.
+- **6c. Phase 3 — item-scoped conditionality.** Inside a claim item, `claimType === 'windscreen'`
+  activates `windscreenProvider` (one of three approved) **for that claim instance only**. Proves
+  item-relative predicates at full depth (`drivers[i].claims[j].windscreenProvider`). Specs prove
+  it appears/wipes per exact path, independently across items.
+
+**Why this order.** 6b/6c are "just more bespoke code" until indexing is first-class (6a), so
+generalise first — and 6a is uniquely safe because the existing specs pin it with zero-DOM
+parity. 6c needs the item-context machinery 6b already forces, so it strictly follows. This
+mirrors how the feature-model restructure went: safety net → structural move → additive proof.
+
+**Execution — orchestrate, don't solo it.** This is too big for one context and the goal is
+quality, so each phase is run as a multi-agent pass, not by a lone agent: fan-out reader subagents
+to map every `claims` special-case site; a **design-panel workflow** (N architects → M adversarial
+judges → synthesize) for each load-bearing fork — the recursive item shape, the path-scope
+representation, the item-relative predicate vocab, and above all **where the loop's
+library-vs-framework line sits** (the same 3-architect/3-judge method that chose this paradigm,
+`DESIGN-PROVENANCE.md`); safety-net specs before the churn; and an **adversarial-verify workflow**
+(skeptics trying to break per-instance wipe, no-rehydrate-at-depth, tree dispatch coverage and DOM
+parity; plus a completeness critic) as the quality gate on every phase. The full orchestration
+recipe is in the executable prompt.
+
+**The deliverable is a VERDICT, not just green code.** The point is to stress-test the model.
+Each phase ends with a FINDINGS/DISCUSSION-LOG write-up answering: did the model hold; where did
+it strain; is the "no generic engine / library-not-framework" line intact or did nesting force a
+principled concession — and if so, exactly where and why. The final output is a go/no-go read on
+whether this obligations paradigm survives real recursive, conditional, indexed requirements.
