@@ -34,15 +34,14 @@ export function createObligationEvaluator({
   obligations = defaultObligations
 } = {}) {
   const obligationsById = new Map(obligations.map((o) => [o.id, o]))
-  const distinctObligationIds = new Set(obligationsById.keys())
 
-  // Parent-child links from `within` back-refs.
-  const parentChildObligations = new Map()
+  // Immediate children per obligation, from `within` back-refs.
+  const obligationChildren = new Map()
   for (const o of obligations) {
     if (o.within) {
-      const kids = parentChildObligations.get(o.within.id) ?? []
-      kids.push(o)
-      parentChildObligations.set(o.within.id, kids)
+      const children = obligationChildren.get(o.within.id) ?? []
+      children.push(o)
+      obligationChildren.set(o.within.id, children)
     }
   }
 
@@ -62,7 +61,7 @@ export function createObligationEvaluator({
       )
     } else if (o.status !== undefined && !o.applyTo) {
       obligationsByCategory.set(o.id, 'field')
-    } else if (parentChildObligations.has(o.id)) {
+    } else if (obligationChildren.has(o.id)) {
       obligationsByCategory.set(o.id, 'group')
     } else {
       obligationsByCategory.set(o.id, 'single')
@@ -85,11 +84,11 @@ export function createObligationEvaluator({
   const obligationDescendants = new Map()
   for (const o of obligations) {
     const acc = []
-    const stack = [...(parentChildObligations.get(o.id) ?? [])]
+    const stack = [...(obligationChildren.get(o.id) ?? [])]
     while (stack.length) {
       const child = stack.pop()
       acc.push(child)
-      for (const grandchild of parentChildObligations.get(child.id) ?? []) {
+      for (const grandchild of obligationChildren.get(child.id) ?? []) {
         stack.push(grandchild)
       }
     }
@@ -101,7 +100,7 @@ export function createObligationEvaluator({
       // 1. Drop unknown obligation ids.
       const recognisedFulfilments = {}
       for (const [obligationId, fulfilment] of Object.entries(fulfilments)) {
-        if (distinctObligationIds.has(obligationId)) {
+        if (obligationsById.has(obligationId)) {
           recognisedFulfilments[obligationId] = fulfilment
         }
       }
@@ -147,22 +146,26 @@ export function createObligationEvaluator({
         const obligation = obligationsById.get(obligationId)
         if (!isInScope(obligation)) continue
 
-        const obligationCategory = obligationsByCategory.get(obligation.id)
+        const category = obligationsByCategory.get(obligation.id)
 
-        if (obligationCategory === 'derived-leaf') {
-          const derivedIds = new Set(
+        if (category === 'derived-leaf') {
+          const fulfilmentIds = new Set(
             obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
           )
           const filtered = {}
-          for (const [key, v] of Object.entries(fulfilment ?? {})) {
-            const segments = splitPath(key)
+          for (const [fulfilmentId, recordValue] of Object.entries(
+            fulfilment ?? {}
+          )) {
+            const segments = splitPath(fulfilmentId)
             const innermost = segments[segments.length - 1]
-            if (derivedIds.has(innermost)) filtered[key] = v
+            if (fulfilmentIds.has(innermost)) {
+              filtered[fulfilmentId] = recordValue
+            }
           }
           if (Object.keys(filtered).length > 0) {
             amendedFulfilments[obligationId] = filtered
           }
-        } else if (obligationCategory === 'single') {
+        } else if (category === 'single') {
           amendedFulfilments[obligationId] = fulfilment
         } else {
           // field record or user-leaf: keep as-is.
@@ -191,10 +194,15 @@ export function createObligationEvaluator({
         const prefixLen = obligationAncestorGroups.get(o.id).length + 1
         const ids = new Set()
         for (const desc of obligationDescendants.get(o.id)) {
-          const storage = amendedFulfilments[desc.id]
-          if (!storage || typeof storage !== 'object') continue
-          if (Array.isArray(storage)) continue
-          for (const key of Object.keys(storage)) {
+          const descendantFulfilment = amendedFulfilments[desc.id]
+          if (
+            !descendantFulfilment ||
+            typeof descendantFulfilment !== 'object'
+          ) {
+            continue
+          }
+          if (Array.isArray(descendantFulfilment)) continue
+          for (const key of Object.keys(descendantFulfilment)) {
             const segments = splitPath(key)
             if (segments.length >= prefixLen) {
               ids.add(joinPath(segments.slice(0, prefixLen)))
@@ -250,8 +258,8 @@ export function createObligationEvaluator({
           // CAN exist". Storage tracks which ones have VALUES.
           const impl = { inScope: true }
           if (own?.reasons) impl.reasons = own.reasons
-          const ids = own?.records ?? []
-          impl.records = ids.map((fulfilmentId) => ({
+          const fulfilmentIds = own?.records ?? []
+          impl.records = fulfilmentIds.map((fulfilmentId) => ({
             fulfilmentId,
             status: obligation.status
           }))
@@ -262,12 +270,14 @@ export function createObligationEvaluator({
           // Record presence via own storage keys.
           const impl = { inScope: true }
           if (own?.reasons) impl.reasons = own.reasons
-          const storage = amendedFulfilments[obligation.id]
-          const keys =
-            storage && typeof storage === 'object' && !Array.isArray(storage)
-              ? Object.keys(storage)
+          const fulfilment = amendedFulfilments[obligation.id]
+          const fulfilmentIds =
+            fulfilment &&
+            typeof fulfilment === 'object' &&
+            !Array.isArray(fulfilment)
+              ? Object.keys(fulfilment)
               : []
-          impl.records = keys.map((fulfilmentId) => ({
+          impl.records = fulfilmentIds.map((fulfilmentId) => ({
             fulfilmentId,
             status: obligation.status
           }))
