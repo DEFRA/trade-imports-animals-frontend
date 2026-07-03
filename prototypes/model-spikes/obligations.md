@@ -81,6 +81,15 @@ A consistent vocabulary across the discussion and the data model:
   - For **indexed-cardinality** obligations: a per-record id within the
     obligation's fulfilment. Shape depends on `source` — see
     §Fulfilments storage.
+- **Inner id** — the innermost segment of a record's fulfilmentId;
+  identifies the leaf's own record independent of any parent-group
+  instance context. For a top-level indexed leaf (no `within`), the
+  inner id IS the whole fulfilmentId. For a leaf within a group, the
+  fulfilmentId is `<ancestor group instance ids>/<inner id>` and the
+  inner id is the last path segment. Derived indexed leaves' `applyTo`
+  returns a `records: [innerId, …]` array — one entry per record the
+  leaf currently authorises; the evaluator's purge compares each
+  stored record's inner id against that set.
 - **Fulfil** (verb) — the user (or the system) fulfils an obligation by
   providing records. A fulfilment can be incomplete (fewer records than
   the obligation's mandate demands), complete, or stale.

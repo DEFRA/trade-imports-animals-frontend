@@ -18,8 +18,9 @@ import { obligations as defaultObligations } from './obligations.js'
  *      AND every ancestor group's inScope.
  *   4. Purge storage:
  *        - Out-of-scope obligation → drop entire entry.
- *        - Derived indexed leaf → keep only keys whose innermost segment
- *          is in the `applyTo`-returned record id set.
+ *        - Derived indexed leaf → keep only keys whose inner id (the
+ *          innermost path segment) is in the `applyTo`-returned record
+ *          id set. See obligations.md §Terminology for "inner id".
  *        - Otherwise → keep (ancestors already in scope).
  *   5. Enumerate group instance ids by scanning descendants'
  *      composite-key prefixes.
@@ -157,8 +158,8 @@ export function createObligationEvaluator({
             fulfilment ?? {}
           )) {
             const segments = splitPath(fulfilmentId)
-            const innermost = segments[segments.length - 1]
-            if (fulfilmentIds.has(innermost)) {
+            const innerId = segments[segments.length - 1]
+            if (fulfilmentIds.has(innerId)) {
               filtered[fulfilmentId] = recordValue
             }
           }

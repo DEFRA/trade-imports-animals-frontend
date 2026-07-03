@@ -14,6 +14,11 @@ section says otherwise, states build on each other.
   single-cardinality fulfilment is one record.
 - **fulfilmentId** — identifier of one record. For single-cardinality,
   `fulfilmentId === obligationId`.
+- **inner id** — the innermost segment of a record's fulfilmentId
+  (i.e. the leaf's own inner-level identifier, stripped of any
+  parent-group prefix). For top-level indexed leaves the inner id IS
+  the whole fulfilmentId; §E is entirely inner ids because
+  `modificationCost` has no parent group.
 
 See obligations.md §Terminology for the full glossary.
 
