@@ -14,11 +14,16 @@ section says otherwise, states build on each other.
   single-cardinality fulfilment is one record.
 - **fulfilmentId** — identifier of one record. For single-cardinality,
   `fulfilmentId === obligationId`.
-- **inner id** — the innermost segment of a record's fulfilmentId
-  (i.e. the leaf's own inner-level identifier, stripped of any
-  parent-group prefix). For top-level indexed leaves the inner id IS
-  the whole fulfilmentId; §E is entirely inner ids because
-  `modificationCost` has no parent group.
+- **leaf fulfilmentId** — a fulfilmentId identifying one record of a
+  leaf obligation. Single-segment for top-level leaves (e.g.
+  `'turbo'` for `modificationCost`), composite path for leaves inside
+  a group (e.g. `'d1/a1'` for a `driverAddress` under driver `d1`).
+- **group fulfilmentId** — a fulfilmentId identifying one instance of
+  a group. Same shape as a leaf fulfilmentId: single-segment for a
+  top-level group (e.g. `'c1'` for `claim`), composite for a nested
+  group (e.g. `'d1/c1'` for `driverClaim` under driver `d1`). Groups
+  have no storage — the evaluator infers group fulfilmentIds from
+  descendant leaves' composite-key prefixes.
 
 See obligations.md §Terminology for the full glossary.
 

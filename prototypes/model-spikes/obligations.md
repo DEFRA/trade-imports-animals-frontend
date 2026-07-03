@@ -81,15 +81,24 @@ A consistent vocabulary across the discussion and the data model:
   - For **indexed-cardinality** obligations: a per-record id within the
     obligation's fulfilment. Shape depends on `source` — see
     §Fulfilments storage.
-- **Inner id** — the innermost segment of a record's fulfilmentId;
-  identifies the leaf's own record independent of any parent-group
-  instance context. For a top-level indexed leaf (no `within`), the
-  inner id IS the whole fulfilmentId. For a leaf within a group, the
-  fulfilmentId is `<ancestor group instance ids>/<inner id>` and the
-  inner id is the last path segment. Derived indexed leaves' `applyTo`
-  returns a `records: [innerId, …]` array — one entry per record the
-  leaf currently authorises; the evaluator's purge compares each
-  stored record's inner id against that set.
+- **Leaf fulfilmentId** — a fulfilmentId that identifies one record of
+  a leaf obligation (field record, user-driven indexed leaf, or
+  derived indexed leaf). For a top-level indexed leaf (no `within`) it
+  is a single-segment id, e.g. `'turbo'` for `modificationCost`. For a
+  leaf inside a group it is a composite path — `<ancestor group
+instance ids>/<own inner id>` — e.g. `'d1/a1'` for a
+  `driverAddress` under driver `d1`. A derived indexed leaf's
+  `applyTo` returns a `records: [leafFulfilmentId, …]` array — one
+  entry per record the leaf currently authorises; the evaluator's
+  purge keeps only stored records whose leaf fulfilmentId is in that
+  set.
+- **Group fulfilmentId** — a fulfilmentId that identifies one instance
+  of a group. Same shape as a leaf fulfilmentId: single-segment for a
+  top-level group (e.g. `'c1'` for a `claim`), composite for a nested
+  group (e.g. `'d1/c1'` for a `driverClaim` under driver `d1`). Group
+  fulfilmentIds have no direct storage — the evaluator infers them by
+  taking the first-N-segments prefix of descendant leaves' composite
+  fulfilmentIds. See §Fulfilments storage.
 - **Fulfil** (verb) — the user (or the system) fulfils an obligation by
   providing records. A fulfilment can be incomplete (fewer records than
   the obligation's mandate demands), complete, or stale.

@@ -18,9 +18,9 @@ import { obligations as defaultObligations } from './obligations.js'
  *      AND every ancestor group's inScope.
  *   4. Purge storage:
  *        - Out-of-scope obligation → drop entire entry.
- *        - Derived indexed leaf → keep only keys whose inner id (the
- *          innermost path segment) is in the `applyTo`-returned record
- *          id set. See obligations.md §Terminology for "inner id".
+ *        - Derived indexed leaf → keep only records whose leaf
+ *          fulfilmentId is in the `applyTo`-returned set. See
+ *          obligations.md §Terminology.
  *        - Otherwise → keep (ancestors already in scope).
  *   5. Enumerate group instance ids by scanning descendants'
  *      composite-key prefixes.
@@ -150,6 +150,15 @@ export function createObligationEvaluator({
         const category = obligationsByCategory.get(obligation.id)
 
         if (category === 'derived-leaf') {
+          // applyTo returns the leaf fulfilmentIds it currently authorises;
+          // keep only stored records whose fulfilmentId is in that set.
+          //
+          // The spike's only derived leaf (`modificationCost`) is
+          // top-level, so its stored fulfilmentIds are single-segment
+          // strings ('turbo', 'alloys' …) and match applyTo's return
+          // directly. A future nested derived leaf (leaf inside a group)
+          // would need applyTo to return composite paths (e.g.
+          // 'd1/turbo') to preserve the direct-match contract.
           const fulfilmentIds = new Set(
             obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
           )
@@ -157,9 +166,7 @@ export function createObligationEvaluator({
           for (const [fulfilmentId, recordValue] of Object.entries(
             fulfilment ?? {}
           )) {
-            const segments = splitPath(fulfilmentId)
-            const innerId = segments[segments.length - 1]
-            if (fulfilmentIds.has(innerId)) {
+            if (fulfilmentIds.has(fulfilmentId)) {
               filtered[fulfilmentId] = recordValue
             }
           }
