@@ -46,19 +46,27 @@ export function createObligationEvaluator({
     }
   }
 
-  // Classify each obligation.
-  //   'indexed' — has `indexedBy` (leaf with own inner dimension)
-  //   'field'   — has `status`, no `applyTo`, no `indexedBy`
-  //   'group'   — has children via `within` back-refs, no `status`/`indexedBy`
-  //   'single'  — otherwise (leaf value at fulfilments[o.id])
-  const obligationsByKind = new Map()
+  // Classify each obligation into one of the five categories from
+  // obligations.js's block comment.
+  //   'derived-leaf' — indexedBy.source === 'derived' (id set from applyTo)
+  //   'user-leaf'    — indexedBy present, non-derived source (ids from own storage)
+  //   'field'        — has `status`, no `applyTo`, no `indexedBy`
+  //   'group'        — has children via `within` back-refs, no `status`/`indexedBy`
+  //   'single'       — otherwise (leaf value at fulfilments[o.id])
+  const obligationsByCategory = new Map()
   for (const o of obligations) {
-    if (o.indexedBy) obligationsByKind.set(o.id, 'indexed')
-    else if (o.status !== undefined && !o.applyTo) {
-      obligationsByKind.set(o.id, 'field')
+    if (o.indexedBy) {
+      obligationsByCategory.set(
+        o.id,
+        o.indexedBy.source === 'derived' ? 'derived-leaf' : 'user-leaf'
+      )
+    } else if (o.status !== undefined && !o.applyTo) {
+      obligationsByCategory.set(o.id, 'field')
     } else if (parentChildObligations.has(o.id)) {
-      obligationsByKind.set(o.id, 'group')
-    } else obligationsByKind.set(o.id, 'single')
+      obligationsByCategory.set(o.id, 'group')
+    } else {
+      obligationsByCategory.set(o.id, 'single')
+    }
   }
 
   // Ancestor groups from root down to immediate parent (excluding self).
@@ -92,9 +100,9 @@ export function createObligationEvaluator({
     evaluate(fulfilments) {
       // 1. Drop unknown obligation ids.
       const recognisedFulfilments = {}
-      for (const [obligationId, value] of Object.entries(fulfilments)) {
+      for (const [obligationId, fulfilment] of Object.entries(fulfilments)) {
         if (distinctObligationIds.has(obligationId)) {
-          recognisedFulfilments[obligationId] = value
+          recognisedFulfilments[obligationId] = fulfilment
         }
       }
 
@@ -133,23 +141,20 @@ export function createObligationEvaluator({
 
       // 4. Purge storage.
       const amendedFulfilments = {}
-      for (const [obligationId, value] of Object.entries(
+      for (const [obligationId, fulfilment] of Object.entries(
         recognisedFulfilments
       )) {
         const obligation = obligationsById.get(obligationId)
         if (!isInScope(obligation)) continue
 
-        const obligationKind = obligationsByKind.get(obligation.id)
+        const obligationCategory = obligationsByCategory.get(obligation.id)
 
-        if (
-          obligationKind === 'indexed' &&
-          obligation.indexedBy?.source === 'derived'
-        ) {
+        if (obligationCategory === 'derived-leaf') {
           const derivedIds = new Set(
             obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
           )
           const filtered = {}
-          for (const [key, v] of Object.entries(value ?? {})) {
+          for (const [key, v] of Object.entries(fulfilment ?? {})) {
             const segments = splitPath(key)
             const innermost = segments[segments.length - 1]
             if (derivedIds.has(innermost)) filtered[key] = v
@@ -157,16 +162,20 @@ export function createObligationEvaluator({
           if (Object.keys(filtered).length > 0) {
             amendedFulfilments[obligationId] = filtered
           }
-        } else if (obligationKind === 'single') {
-          amendedFulfilments[obligationId] = value
+        } else if (obligationCategory === 'single') {
+          amendedFulfilments[obligationId] = fulfilment
         } else {
-          // field record or user-driven indexed leaf: keep as-is.
-          if (value && typeof value === 'object' && !Array.isArray(value)) {
-            if (Object.keys(value).length > 0) {
-              amendedFulfilments[obligationId] = value
+          // field record or user-leaf: keep as-is.
+          if (
+            fulfilment &&
+            typeof fulfilment === 'object' &&
+            !Array.isArray(fulfilment)
+          ) {
+            if (Object.keys(fulfilment).length > 0) {
+              amendedFulfilments[obligationId] = fulfilment
             }
           } else {
-            amendedFulfilments[obligationId] = value
+            amendedFulfilments[obligationId] = fulfilment
           }
         }
       }
@@ -174,7 +183,7 @@ export function createObligationEvaluator({
       // 5. Enumerate each group's instance ids from descendants' storage.
       const fulfilmentIdsByObligationId = new Map()
       for (const o of obligations) {
-        if (obligationsByKind.get(o.id) !== 'group') continue
+        if (obligationsByCategory.get(o.id) !== 'group') continue
         if (!isInScope(o)) {
           fulfilmentIdsByObligationId.set(o.id, new Set())
           continue
@@ -204,14 +213,14 @@ export function createObligationEvaluator({
       function buildImplication(obligation) {
         if (!isInScope(obligation)) return { inScope: false }
 
-        const kind = obligationsByKind.get(obligation.id)
+        const category = obligationsByCategory.get(obligation.id)
         const own = obligationApplicabilityDecisions.get(obligation.id)
 
-        if (kind === 'single') {
+        if (category === 'single') {
           return own ?? { inScope: true }
         }
 
-        if (kind === 'group') {
+        if (category === 'group') {
           const fulfilmentIds = [
             ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
           ]
@@ -223,7 +232,7 @@ export function createObligationEvaluator({
           return impl
         }
 
-        if (kind === 'field') {
+        if (category === 'field') {
           const parentGroupFulfilmentIds = [
             ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
           ]
@@ -236,31 +245,32 @@ export function createObligationEvaluator({
           }
         }
 
-        if (kind === 'indexed') {
+        if (category === 'derived-leaf') {
+          // Id set comes from applyTo — the authoritative "what records
+          // CAN exist". Storage tracks which ones have VALUES.
           const impl = { inScope: true }
           if (own?.reasons) impl.reasons = own.reasons
+          const ids = own?.records ?? []
+          impl.records = ids.map((fulfilmentId) => ({
+            fulfilmentId,
+            status: obligation.status
+          }))
+          return impl
+        }
 
-          // Derived indexed leaves: the id set comes from applyTo (the
-          // authoritative "what instances CAN exist"). Storage tracks
-          // which ones have VALUES.
-          // User-driven leaves: presence via storage keys.
-          if (obligation.indexedBy?.source === 'derived') {
-            const ids = own?.records ?? []
-            impl.records = ids.map((fulfilmentId) => ({
-              fulfilmentId,
-              status: obligation.status
-            }))
-          } else {
-            const storage = amendedFulfilments[obligation.id]
-            const keys =
-              storage && typeof storage === 'object' && !Array.isArray(storage)
-                ? Object.keys(storage)
-                : []
-            impl.records = keys.map((fulfilmentId) => ({
-              fulfilmentId,
-              status: obligation.status
-            }))
-          }
+        if (category === 'user-leaf') {
+          // Record presence via own storage keys.
+          const impl = { inScope: true }
+          if (own?.reasons) impl.reasons = own.reasons
+          const storage = amendedFulfilments[obligation.id]
+          const keys =
+            storage && typeof storage === 'object' && !Array.isArray(storage)
+              ? Object.keys(storage)
+              : []
+          impl.records = keys.map((fulfilmentId) => ({
+            fulfilmentId,
+            status: obligation.status
+          }))
           return impl
         }
 
