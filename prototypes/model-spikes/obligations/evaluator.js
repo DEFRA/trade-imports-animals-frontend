@@ -68,56 +68,12 @@ export function createObligationEvaluator({
       for (const o of obligations) isInScope(o)
 
       // 4. Purge storage.
-      const amendedFulfilments = {}
-      for (const [obligationId, fulfilment] of Object.entries(
-        recognisedFulfilments
-      )) {
-        const obligation = obligationsById.get(obligationId)
-        if (!isInScope(obligation)) continue
-
-        const category = obligationsByCategory.get(obligation.id)
-
-        if (category === 'derived-leaf') {
-          // applyTo returns the leaf fulfilmentIds it currently authorises;
-          // keep only stored records whose fulfilmentId is in that set.
-          //
-          // The spike's only derived leaf (`modificationCost`) is
-          // top-level, so its stored fulfilmentIds are single-segment
-          // strings ('turbo', 'alloys' …) and match applyTo's return
-          // directly. A future nested derived leaf (leaf inside a group)
-          // would need applyTo to return composite paths (e.g.
-          // 'd1/turbo') to preserve the direct-match contract.
-          const fulfilmentIds = new Set(
-            obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
-          )
-          const filtered = {}
-          for (const [fulfilmentId, recordValue] of Object.entries(
-            fulfilment ?? {}
-          )) {
-            if (fulfilmentIds.has(fulfilmentId)) {
-              filtered[fulfilmentId] = recordValue
-            }
-          }
-          if (Object.keys(filtered).length > 0) {
-            amendedFulfilments[obligationId] = filtered
-          }
-        } else if (category === 'single') {
-          amendedFulfilments[obligationId] = fulfilment
-        } else {
-          // field record or user-leaf: keep as-is.
-          if (
-            fulfilment &&
-            typeof fulfilment === 'object' &&
-            !Array.isArray(fulfilment)
-          ) {
-            if (Object.keys(fulfilment).length > 0) {
-              amendedFulfilments[obligationId] = fulfilment
-            }
-          } else {
-            amendedFulfilments[obligationId] = fulfilment
-          }
-        }
-      }
+      const amendedFulfilments = purgeStorage(recognisedFulfilments, {
+        obligationsById,
+        obligationsByCategory,
+        obligationApplicabilityDecisions,
+        isInScope
+      })
 
       // 5. Enumerate each group's instance ids from descendants' storage.
       const fulfilmentIdsByObligationId = new Map()
@@ -280,6 +236,73 @@ export function runApplicabilityDecisions(obligations, recognisedFulfilments) {
     }
   }
   return obligationApplicabilityDecisions
+}
+
+// Step 4: purge storage.
+//   - Out-of-scope obligation → drop entire entry.
+//   - Derived indexed leaf → keep only records whose fulfilmentId is in
+//     the `applyTo`-returned set. See obligations.md §Terminology.
+//   - Otherwise → keep as-is (ancestors already in scope, own storage
+//     is self-valid for field records and user-driven indexed leaves).
+export function purgeStorage(recognisedFulfilments, context) {
+  const {
+    obligationsById,
+    obligationsByCategory,
+    obligationApplicabilityDecisions,
+    isInScope
+  } = context
+
+  const amendedFulfilments = {}
+  for (const [obligationId, fulfilment] of Object.entries(
+    recognisedFulfilments
+  )) {
+    const obligation = obligationsById.get(obligationId)
+    if (!isInScope(obligation)) continue
+
+    const category = obligationsByCategory.get(obligation.id)
+
+    if (category === 'derived-leaf') {
+      // applyTo returns the leaf fulfilmentIds it currently authorises;
+      // keep only stored records whose fulfilmentId is in that set.
+      //
+      // The spike's only derived leaf (`modificationCost`) is
+      // top-level, so its stored fulfilmentIds are single-segment
+      // strings ('turbo', 'alloys' …) and match applyTo's return
+      // directly. A future nested derived leaf (leaf inside a group)
+      // would need applyTo to return composite paths (e.g.
+      // 'd1/turbo') to preserve the direct-match contract.
+      const fulfilmentIds = new Set(
+        obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
+      )
+      const filtered = {}
+      for (const [fulfilmentId, recordValue] of Object.entries(
+        fulfilment ?? {}
+      )) {
+        if (fulfilmentIds.has(fulfilmentId)) {
+          filtered[fulfilmentId] = recordValue
+        }
+      }
+      if (Object.keys(filtered).length > 0) {
+        amendedFulfilments[obligationId] = filtered
+      }
+    } else if (category === 'single') {
+      amendedFulfilments[obligationId] = fulfilment
+    } else {
+      // field record or user-leaf: keep as-is.
+      if (
+        fulfilment &&
+        typeof fulfilment === 'object' &&
+        !Array.isArray(fulfilment)
+      ) {
+        if (Object.keys(fulfilment).length > 0) {
+          amendedFulfilments[obligationId] = fulfilment
+        }
+      } else {
+        amendedFulfilments[obligationId] = fulfilment
+      }
+    }
+  }
+  return amendedFulfilments
 }
 
 // Step 3: build a memoised effective-inScope predicate.
