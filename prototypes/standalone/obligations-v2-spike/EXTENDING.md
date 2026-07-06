@@ -10,9 +10,11 @@ example 3 leans on.
 > directly comparable: example 1 adds a **field to an existing page**, example 2
 > adds a **whole new page** (its own section, its own hub task). Example 3 is
 > unique to v2 — it adds a **first-class indexed collection with an item-scoped
-> conditional field** (the DISCUSSION-LOG entry 6 machinery). Example 1 was
-> **validated by doing** (edits applied, suite green, edits reverted, suite green
-> again); examples 2 and 3 are **code-read-derived** and marked as such.
+> conditional field** (the DISCUSSION-LOG entry 6 machinery). **All three were
+> validated by doing** — each was built on the real code, proven green (unit +
+> the shared Playwright walk), then reverted so only this document changed. The
+> exact commands, the pins that fired and the counts are recorded in each
+> example's "Verification" section.
 
 ## How this spike differs before you start
 
@@ -213,7 +215,7 @@ the walk in [`../../e2e/journey.js`](../../e2e/journey.js) to complete the field
 only when present (`if (await mileage.count()) await mileage.fill('8000')`), run
 `npm run test:prototype`, then revert so the other ten journeys are unaffected.
 
-## Worked example 2 — a whole new page (code-read-derived)
+## Worked example 2 — a whole new page
 
 > **Add a new page — `vehicle-security` ("Vehicle security") — as its own task on
 > the hub, asking where the vehicle is kept overnight (`parkingLocation`, a
@@ -222,10 +224,11 @@ only when present (`if (await mileage.count()) await mileage.fill('8000')`), run
 > Check your answers, gated into quote-readiness, and committed with the
 > journey.**
 
-Unlike example 1 this was **not performed live** — the file list is derived by
-reading the code, following the same seams example 1 proved out. Treat it as a
-map, and let the contract test + the boot assertion confirm it the day you walk
-it.
+This was **performed live** (see Verification below). The one lesson doing it
+surfaced that reading would have missed: making `parkingLocation` a **required**
+obligation in an **always-live** section fails every "ready-to-quote" fixture in
+the suite, not just the page's own pins — the blast radius is called out in the
+pins section.
 
 A page in v2 is a **vertical slice plus three registrations**: the slice
 (obligations + controller + template), an entry in the flow, and its appearance
@@ -334,14 +337,24 @@ type registry, no reason codes.
 - **`contract.test.js`** — add a `vehicle-security` case (valid payload filling
   both fields) to the `cases` array; it asserts the handler commits exactly
   `['parkingLocation','hasTracker']`.
-- **The shared happy-path spec (`task-list-with-linear-tasks.spec.js`)** — this is
-  the real cost of a new always-live task. The spec pins the hub task list and the
-  "completed X of N tasks" line, and it runs over **all eleven journeys**. Adding
-  a fourth group task changes the count and the task list for the v2 journey only,
-  so the spec must branch on the journey (as `journey.js`'s `walkNamedDriver`
-  already does for the v2 drivers loop), and the shared walk must complete the new
-  required `parkingLocation` **only on the v2 journey**. Do that, run
-  `npm run test:prototype`, and keep the other journeys untouched.
+- **Every "ready-to-quote" fixture in the suite (the blast radius).** This is the
+  cost of a **required** obligation in an **always-live** section, and it is
+  wider than the page itself: any fixture that expects `readyForQuote === true`
+  (or the quote page to appear) now fails, because `parkingLocation` is a new
+  in-scope required gap. Building this live turned **four** tests red at once —
+  `engine/item-conditional.test.js`, `flow/dispatch.test.js`,
+  `engine/indexed.test.js` and `analysis/simulate.test.js` — each fixed by adding
+  `parkingLocation: 'garage'` to its ready fixture. (An _optional_ field, as in
+  example 1, has none of this reach — it never gates the quote. Example 3's
+  collection is optional for exactly this reason.)
+- **The shared happy-path spec (`task-list-with-linear-tasks.spec.js`)** — the
+  spec does NOT assert the task count or list (it navigates by clicking named task
+  links and asserting headings), so an extra hub task is invisible to it — with
+  one exception: a **required** new field blocks `readyForQuote`, so the walk's
+  `Get your quote` step becomes unreachable. Fix it journey-conditionally (as
+  `walkNamedDriver` already branches for the v2 drivers loop): for the
+  `obligations-v2-spike` journey only, click the new task and complete
+  `parkingLocation` before `Get your quote`. The other ten journeys are untouched.
 
 ### What you did NOT have to touch
 
@@ -351,7 +364,22 @@ walkers are generic over `sections`), `shared/kit.js`, and the store facade. The
 only "logic" files that change are the hub literal and the CYA composition — both
 presentation, which is exactly where v2 says presentation belongs.
 
-## Worked example 3 — a first-class indexed collection with an item-scoped conditional (code-read-derived)
+### Verification — validated by doing
+
+Performed on the real code, then reverted so only this document changed:
+
+1. Built the slice (three new files) and made the six wiring edits. Ran
+   `npm run test:obligations-v2-spike` → **4 failed | 104 passed** — the boot
+   assertion and contract case passed, but the four ready-to-quote fixtures above
+   went red (the required-field blast radius, exactly as listed).
+2. Added `parkingLocation: 'garage'` to each of the four ready fixtures and the
+   `vehicle-security` contract case → **108 passed (12 files)**.
+3. Added the journey-conditional walk step and ran the shared spec across all
+   journeys, `npm run test:prototype -- -g "task list with linear tasks"` →
+   **11 passed** (the v2 journey walks the new page; the other ten unaffected).
+4. Reverted every new file and edit → back to the baseline suite, green.
+
+## Worked example 3 — a first-class indexed collection with an item-scoped conditional
 
 > **Add a repeating collection — `previousInsurers` ("Previous insurers") — where
 > the user adds 0..n insurers, each with a name and a policy number, and — when
@@ -361,11 +389,15 @@ presentation, which is exactly where v2 says presentation belongs.
 > a library, not a framework.**
 
 This is the v2-specific example — the DISCUSSION-LOG entry 6 machinery
-([`DESIGN.md`](DESIGN.md) §10). It is **code-read-derived**, modelled directly on
-the shipped `claims` collection (and its windscreen→provider item-conditional),
-which is the reference implementation to copy. It reuses example 2's page/section
-wiring (registry, `features/index.js`, flow, hub, CYA) — the parts below are the
-**collection-specific** additions on top.
+([`DESIGN.md`](DESIGN.md) §10), modelled directly on the shipped `claims`
+collection (and its windscreen→provider item-conditional), which is the reference
+implementation to copy. It reuses example 2's page/section wiring (registry,
+`features/index.js`, flow, hub, CYA) — the parts below are the
+**collection-specific** additions on top. It was **validated by doing** — a real
+second collection (`convictions`, with an item-scoped `offenceDetail`) built,
+proven green, and reverted (see Verification). The steps below use
+`previousInsurers` for narrative continuity; the Verification records the actual
+`convictions` build and the one simplification it made.
 
 ### The model — a collection is a tree node
 
@@ -514,3 +546,38 @@ finding (FINDINGS 6c).
 field-level wipe, per-item completeness and coverage-at-depth all descend with no
 new engine code. Everything you write is the model def, the two bespoke loop
 controllers + templates, and the CYA/flow/hub wiring shared with example 2.
+
+### Verification — validated by doing
+
+Built a real second collection, `convictions` (item
+`[offenceCode, offenceDate, offenceDetail]`, where `offenceCode === 'other'`
+activates the item-scoped `offenceDetail`), then reverted so only this document
+changed:
+
+1. Created the slice (five files: obligations, list controller + `.njk`, entry
+   controller + `.njk`) and the wiring (registry, `features/index.js`, flow, hub,
+   CYA, plus a `convictions.test.js` proving per-instance item scope, per-item
+   completeness and field-level wipe for the new collection). Ran
+   `npm run test:obligations-v2-spike` → **111 passed (13 files)** first time —
+   the boot coverage assertion accepted the collection (its sub-obligations'
+   ownership derived from the list page), the "committed by the entry append
+   handler" contract case passed, and the three new unit tests passed. **No
+   ready-fixture blast radius** (the collection is optional → an empty section is
+   Fulfilled → the quote is never gated by it — the deliberate contrast with
+   example 2).
+2. Added a journey-conditional walk step and ran the shared spec across all
+   journeys → **11 passed**: the v2 journey opens the convictions loop, adds an
+   "other" conviction (which reveals the item-scoped `offenceDetail`), and
+   completes — rendering the loop hub, the entry sub-page and the conditional
+   reveal live. The other ten journeys are unaffected.
+3. Reverted every file → baseline suite green.
+
+**The one simplification** (honest, so the go-read is not wishful): the validated
+collection was modelled **ungated + optional**, so the collection-level
+`activatedBy` gate and `requiredAtLeastOne` — shown in the def above — were not
+exercised by this build. They are byte-identical to the shipped `claims`
+collection (`activatedBy: { obligation: hadClaims, equals: 'yes' }`,
+`requiredAtLeastOne: true`), which the existing suite already covers. What this
+build proved fresh is the part that was NOT already proven: that the **item-scoped
+conditional + per-instance scope/wipe/completeness generalise to a second
+collection** with no new engine code.
