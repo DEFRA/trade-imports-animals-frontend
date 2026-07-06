@@ -1,0 +1,61 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { commit, submitJourney } from './index.js'
+import { records, IN_PROGRESS, SUBMITTED } from './persistence/records.js'
+import { configureReadyForQuote } from './read.js'
+import { JOURNEY_COOKIE } from './journey.js'
+
+/**
+ * NW-4 shape proof — SUBMIT IS FINALISE. Because durable answers land on every
+ * commit (write-through), submit is a pure status flip: it stamps
+ * `submittedAt`, writes NO answers (byte-equal to the last commit), and freezes
+ * the record (a later commit throws). A not-ready submit is a no-op that leaves
+ * the journey in-progress. `readyForQuote` is stubbed to drive both branches
+ * deterministically — the readiness computation itself is tested in the flow.
+ */
+const stubH = () => ({
+  view: (view, ctx) => ({ view, ctx }),
+  redirect: (to) => ({ redirect: to }),
+  state: () => {}
+})
+
+let journeyId
+const req = () => ({
+  payload: {},
+  params: {},
+  query: {},
+  state: { [JOURNEY_COOKIE]: journeyId },
+  headers: {}
+})
+
+describe('submit is finalise', () => {
+  beforeEach(() => {
+    records.clear()
+    journeyId = records.create().journeyId
+  })
+
+  it('flips to submitted, keeps answers byte-equal, and freezes further writes', () => {
+    configureReadyForQuote(() => true)
+    commit(req(), stubH(), { email: 'a@b.com' })
+    const committed = records.load({ journeyId }).answers
+
+    const result = submitJourney(req(), stubH())
+
+    expect(result.ok).toBe(true)
+    expect(result.journey.status).toBe(SUBMITTED)
+    expect(result.journey.submittedAt).toEqual(expect.any(String))
+    // finalise writes NO data — answers are exactly the last commit.
+    expect(result.journey.answers).toEqual(committed)
+    // the record is frozen — a later commit is rejected.
+    expect(() => commit(req(), stubH(), { late: true })).toThrow()
+  })
+
+  it('is a no-op when not ready — journey stays in-progress', () => {
+    configureReadyForQuote(() => false)
+    commit(req(), stubH(), { email: 'a@b.com' })
+
+    const result = submitJourney(req(), stubH())
+
+    expect(result.ok).toBe(false)
+    expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)
+  })
+})

@@ -19,6 +19,7 @@ import * as ncd from './protected-ncd/years.controller.js'
 import * as quote from './quote/controller.js'
 import * as cya from './check-answers/controller.js'
 import * as confirmation from './confirmation/controller.js'
+import * as resume from './resume/controller.js'
 
 /**
  * The page registry — the one place every controller is assembled. The
@@ -66,5 +67,6 @@ export const allRoutes = [
   ...ncd.routes,
   ...quote.routes,
   ...cya.routes,
-  ...confirmation.routes
+  ...confirmation.routes,
+  ...resume.routes
 ]

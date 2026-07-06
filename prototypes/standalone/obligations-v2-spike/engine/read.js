@@ -1,4 +1,4 @@
-import { currentJourney } from './journey.js'
+import { currentJourney, resumeByUser } from './journey.js'
 import { reconcile } from './reconcile.js'
 
 /**
@@ -36,6 +36,21 @@ export const makeScope = (answers) => {
 /** { journey, answers, scope } for a request (load-or-create). */
 export const get = (request, h) => {
   const journey = currentJourney(request, h)
+  return {
+    journey,
+    answers: journey.answers,
+    scope: makeScope(journey.answers)
+  }
+}
+
+/**
+ * Cookieless resume — recover this user's durable journey by identity (no
+ * JOURNEY_COOKIE needed) and expose the SAME read-only shape as `get`. `scope`
+ * is rebuilt fresh by `reconcile` from the loaded answers: nothing derived is
+ * read back from the record, so a days-later resume self-heals to current scope.
+ */
+export const resume = (request, h) => {
+  const journey = resumeByUser(request, h)
   return {
     journey,
     answers: journey.answers,

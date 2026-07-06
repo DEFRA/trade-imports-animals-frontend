@@ -245,3 +245,35 @@ Sensible order. Principle mirrors the spike's own method (safety-net → structu
   skeptic "no gaps", status/complete skeptic "clean" (recursion + item-relative gate intact, no
   cycle), wipe skeptic "clean" (byte-diffed vs HEAD), barrel/acyclicity critic **PASS**. Own code
   eslint + prettier clean. **Green: unit 107 / E2E 70.**
+
+- [x] **Phase 4 — NW-4 (two-port persistence SERVICE shape, all stubs). DONE — additive, green, verified.**
+  _Design (Phase 4a):_ 3-architect → 2-judge → synthesis panel chose the **minimal-stub** shape,
+  decisively because it keeps `cookie = journeyId` (so the seeded-cookie tests stay byte-green by
+  construction, not by hope), grafting in a polymorphic `load({journeyId}|{userId})`, an
+  `x-stub-user` header override, and the self-heal test. Plan saved to scratchpad.
+  _Landed as (Phase 4b — safety-net-first → reshape → shape tests → resume route + adversarial
+  verify):_ `engine/store.js` split into two STUB ports beneath the unchanged facade —
+  **`engine/persistence/records.js`** (durable source of truth: old store body + a `userId` field +
+  a `Map<userId,journeyId>` index + polymorphic `load`, `saveAnswers` write-through on *every*
+  commit/mutation, `submit`→`finalise` which flips status and writes NO answers) and
+  **`engine/persistence/session.js`** (the OIDC/session seam: a constant `STUB_USER`, the
+  active-journey cookie — same `'obligationsV2JourneyId'` literal). `store.js` shrank to a
+  **byte-transparent compat shim** (git-diff-verified) so `store-ops.test`/`contract.test`/
+  `confirmation` needed ZERO edits. `journey.js` rewired to compose the two ports + a
+  `resumeByUser`; `write.js` import-swap only; `read.js`+`index.js` gained the single additive verb
+  **`resume`**; a new additive **`features/resume/` GET route** demonstrates cookieless resume.
+  **The paradigm strength is now a test, not a claim:** `resume = load(answers) + reconcile`, and
+  `resume-self-heal.test.js` plants an out-of-scope answer (`hadClaims:'no'` beside a stale `claims`
+  array) and proves `reconcile` excludes it on a days-later load — nothing derived is stored, so
+  staleness cannot survive. **Guardrail held absolutely:** stub-only (no Redis/Mongo/Defra-ID/OIDC —
+  critic grepped clean), `state.*` grew by exactly `resume`, zero controller churn, ports expose no
+  delete-a-key/setScope (reconcile+destroyWiped stay the sole wipe path), acyclic (ports have zero
+  engine imports). Safety-net tests (store-contract + journey, 11) were written and passed on the
+  PRE-reshape code first. Adversarial-verify: shim byte-transparent, resume self-heal genuinely
+  proven, guardrail/acyclicity critic PASS; the write-through skeptic found the per-mutator
+  write-through was only tested for `commit` — **gap closed** with 3 added cases asserting durable
+  state after append/update/remove via `records.load`. One correctness deviation: `start/controller.js`
+  `startJourney(h)`→`startJourney(request, h)` (the only external caller; not a `state.*` change).
+  Tests: 107 pre + 11 safety-net + 19 new-shape = **137 unit** (all additive; the 107 stay green) /
+  **E2E 70**. Bare-stub boundary (what NOT to copy to prod) documented in-code and in the plan.
+  eslint + prettier clean.

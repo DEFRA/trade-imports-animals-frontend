@@ -1,7 +1,7 @@
 import { currentJourney } from './journey.js'
 import { reconcile } from './reconcile.js'
 import { makeScope } from './read.js'
-import { store } from './store.js'
+import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 
 /**
@@ -21,7 +21,7 @@ export const commit = (request, h, patch) => {
   const answers = { ...journey.answers, ...patch }
   const { wiped } = reconcile(answers)
   destroyWiped(answers, wiped)
-  store.saveAnswers(journey.journeyId, answers)
+  records.saveAnswers(journey.journeyId, answers)
   return { answers, scope: makeScope(answers) }
 }
 
@@ -36,7 +36,7 @@ export const appendEntryAt = (request, h, collectionPath, entry) => {
   const journey = currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []
   const answers = setAt(journey.answers, collectionPath, [...list, entry])
-  store.saveAnswers(journey.journeyId, answers)
+  records.saveAnswers(journey.journeyId, answers)
   return list.length
 }
 
@@ -47,7 +47,7 @@ export const updateEntryAt = (request, h, collectionPath, index, entry) => {
   if (!Number.isInteger(index) || index < 0 || index >= list.length) return
   list[index] = entry
   const answers = setAt(journey.answers, collectionPath, list)
-  store.saveAnswers(journey.journeyId, answers)
+  records.saveAnswers(journey.journeyId, answers)
 }
 
 /**
@@ -66,7 +66,7 @@ export const removeEntryAt = (request, h, collectionPath, index) => {
   const answers = setAt(journey.answers, collectionPath, list)
   const { wiped } = reconcile(answers)
   destroyWiped(answers, wiped)
-  store.saveAnswers(journey.journeyId, answers)
+  records.saveAnswers(journey.journeyId, answers)
 }
 
 /** Single-level convenience wrappers — a bare obligation id is a depth-0 path. */
@@ -84,6 +84,6 @@ export const submitJourney = (request, h) => {
   const journey = currentJourney(request, h)
   const scope = makeScope(journey.answers)
   if (!scope.readyForQuote) return { ok: false, journey, scope }
-  const submitted = store.submit(journey.journeyId)
+  const submitted = records.finalise(journey.journeyId)
   return { ok: true, journey: submitted, scope }
 }
