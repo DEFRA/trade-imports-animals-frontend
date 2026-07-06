@@ -34,67 +34,17 @@ const splitPath = (key) => key.split(PATH_DELIMITER)
 export function createObligationEvaluator({
   obligations = defaultObligations
 } = {}) {
-  const obligationsById = new Map(obligations.map((o) => [o.id, o]))
-
-  // Immediate children per obligation, from `within` back-refs.
-  const obligationChildren = new Map()
-  for (const o of obligations) {
-    if (o.within) {
-      const children = obligationChildren.get(o.within.id) ?? []
-      children.push(o)
-      obligationChildren.set(o.within.id, children)
-    }
-  }
-
-  // Classify each obligation into one of the five categories from
-  // obligations.js's block comment.
-  //   'derived-leaf' — indexedBy.source === 'derived' (id set from applyTo)
-  //   'user-leaf'    — indexedBy present, non-derived source (ids from own storage)
-  //   'field'        — has `status`, no `applyTo`, no `indexedBy`
-  //   'group'        — has children via `within` back-refs, no `status`/`indexedBy`
-  //   'single'       — otherwise (leaf value at fulfilments[o.id])
-  const obligationsByCategory = new Map()
-  for (const o of obligations) {
-    if (o.indexedBy) {
-      obligationsByCategory.set(
-        o.id,
-        o.indexedBy.source === 'derived' ? 'derived-leaf' : 'user-leaf'
-      )
-    } else if (o.status !== undefined && !o.applyTo) {
-      obligationsByCategory.set(o.id, 'field')
-    } else if (obligationChildren.has(o.id)) {
-      obligationsByCategory.set(o.id, 'group')
-    } else {
-      obligationsByCategory.set(o.id, 'single')
-    }
-  }
-
-  // Ancestor groups from root down to immediate parent (excluding self).
-  const obligationAncestorGroups = new Map()
-  for (const o of obligations) {
-    const chain = []
-    let cur = o.within
-    while (cur) {
-      chain.unshift(cur)
-      cur = cur.within
-    }
-    obligationAncestorGroups.set(o.id, chain)
-  }
-
-  // Transitive descendants (excluding self).
-  const obligationDescendants = new Map()
-  for (const o of obligations) {
-    const acc = []
-    const stack = [...(obligationChildren.get(o.id) ?? [])]
-    while (stack.length) {
-      const child = stack.pop()
-      acc.push(child)
-      for (const grandchild of obligationChildren.get(child.id) ?? []) {
-        stack.push(grandchild)
-      }
-    }
-    obligationDescendants.set(o.id, acc)
-  }
+  const obligationsById = buildObligationsById(obligations)
+  const obligationChildren = buildObligationChildren(obligations)
+  const obligationsByCategory = classifyObligations(
+    obligations,
+    obligationChildren
+  )
+  const obligationAncestorGroups = buildAncestorGroups(obligations)
+  const obligationDescendants = buildDescendants(
+    obligations,
+    obligationChildren
+  )
 
   return {
     evaluate(fulfilments) {
@@ -301,4 +251,85 @@ export function createObligationEvaluator({
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Construction-phase builders — pure functions of the obligations manifest.
+// Exported for isolation-testing.
+// ---------------------------------------------------------------------------
+
+export function buildObligationsById(obligations) {
+  return new Map(obligations.map((o) => [o.id, o]))
+}
+
+// Immediate children per obligation, from `within` back-refs.
+export function buildObligationChildren(obligations) {
+  const obligationChildren = new Map()
+  for (const o of obligations) {
+    if (o.within) {
+      const children = obligationChildren.get(o.within.id) ?? []
+      children.push(o)
+      obligationChildren.set(o.within.id, children)
+    }
+  }
+  return obligationChildren
+}
+
+// Classify each obligation into one of the five categories from
+// obligations.js's block comment.
+//   'derived-leaf' — indexedBy.source === 'derived' (id set from applyTo)
+//   'user-leaf'    — indexedBy present, non-derived source (ids from own storage)
+//   'field'        — has `status`, no `applyTo`, no `indexedBy`
+//   'group'        — has children via `within` back-refs, no `status`/`indexedBy`
+//   'single'       — otherwise (leaf value at fulfilments[o.id])
+export function classifyObligations(obligations, obligationChildren) {
+  const obligationsByCategory = new Map()
+  for (const o of obligations) {
+    if (o.indexedBy) {
+      obligationsByCategory.set(
+        o.id,
+        o.indexedBy.source === 'derived' ? 'derived-leaf' : 'user-leaf'
+      )
+    } else if (o.status !== undefined && !o.applyTo) {
+      obligationsByCategory.set(o.id, 'field')
+    } else if (obligationChildren.has(o.id)) {
+      obligationsByCategory.set(o.id, 'group')
+    } else {
+      obligationsByCategory.set(o.id, 'single')
+    }
+  }
+  return obligationsByCategory
+}
+
+// Ancestor groups from root down to immediate parent (excluding self).
+export function buildAncestorGroups(obligations) {
+  const obligationAncestorGroups = new Map()
+  for (const o of obligations) {
+    const chain = []
+    let cur = o.within
+    while (cur) {
+      chain.unshift(cur)
+      cur = cur.within
+    }
+    obligationAncestorGroups.set(o.id, chain)
+  }
+  return obligationAncestorGroups
+}
+
+// Transitive descendants (excluding self).
+export function buildDescendants(obligations, obligationChildren) {
+  const obligationDescendants = new Map()
+  for (const o of obligations) {
+    const acc = []
+    const stack = [...(obligationChildren.get(o.id) ?? [])]
+    while (stack.length) {
+      const child = stack.pop()
+      acc.push(child)
+      for (const grandchild of obligationChildren.get(child.id) ?? []) {
+        stack.push(grandchild)
+      }
+    }
+    obligationDescendants.set(o.id, acc)
+  }
+  return obligationDescendants
 }
