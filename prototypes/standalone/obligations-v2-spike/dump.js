@@ -10,8 +10,8 @@ import {
   NA
 } from './engine/status.js'
 import {
-  drivers as driversDef,
-  driverClaims as driverClaimsDef
+  drivers as driversObligation,
+  driverClaims as driverClaimsObligation
 } from './features/named-driver/obligations.js'
 import { pathKey } from './lib/path.js'
 
@@ -132,7 +132,7 @@ const driversBreakdown = (answers.drivers ?? []).map((driver, d) => ({
   driver: driver.driverName,
   relationship: driver.relationship,
   claimCount: (driver.claims ?? []).length,
-  complete: entryComplete(driversDef, driver),
+  complete: entryComplete(driversObligation, driver),
   claims: (driver.claims ?? []).map((claim, c) => {
     const providerPath = pathKey([
       'drivers',
@@ -147,7 +147,7 @@ const driversBreakdown = (answers.drivers ?? []).map((driver, d) => ({
       claimAmount: claim.claimAmount,
       windscreenProvider: claim.windscreenProvider ?? null,
       providerInScope: inScope.has(providerPath),
-      complete: entryComplete(driverClaimsDef, claim)
+      complete: entryComplete(driverClaimsObligation, claim)
     }
   })
 }))

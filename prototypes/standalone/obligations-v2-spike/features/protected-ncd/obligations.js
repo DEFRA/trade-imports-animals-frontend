@@ -14,4 +14,4 @@ export const ncdYears = {
   wipeOnExit: true
 }
 
-export const defs = [ncdYears]
+export const obligations = [ncdYears]

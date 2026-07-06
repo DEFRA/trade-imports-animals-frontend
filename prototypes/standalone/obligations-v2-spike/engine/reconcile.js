@@ -35,7 +35,7 @@ export function reconcile(answers) {
     changed = false
     for (const {
       path,
-      def,
+      obligation,
       collectionAncestorKey,
       framePath,
       siblings
@@ -49,8 +49,8 @@ export function reconcile(answers) {
         continue
       }
       if (
-        !def.activatedBy ||
-        evalPredicate(def.activatedBy, answers, framePath, siblings)
+        !obligation.activatedBy ||
+        evalPredicate(obligation.activatedBy, answers, framePath, siblings)
       ) {
         inScope.add(key)
         changed = true
@@ -60,8 +60,8 @@ export function reconcile(answers) {
 
   const wipedPaths = nodes
     .filter(
-      ({ path, def }) =>
-        def.wipeOnExit &&
+      ({ path, obligation }) =>
+        obligation.wipeOnExit &&
         !inScope.has(pathKey(path)) &&
         isAnswered(valueAt(answers, path))
     )

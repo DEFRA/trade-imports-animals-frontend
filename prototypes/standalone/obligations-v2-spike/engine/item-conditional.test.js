@@ -89,9 +89,9 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
       required: true,
       activatedBy: { obligation: topLevel, equals: 'yes' } // ref is NOT a sibling
     }
-    const def = { id: 'x', item: [gated] }
-    expect(entryComplete(def, {})).toBe(false) // owed (conservative), not skipped
-    expect(entryComplete(def, { gated: 'answered' })).toBe(true)
+    const obligation = { id: 'x', item: [gated] }
+    expect(entryComplete(obligation, {})).toBe(false) // owed (conservative), not skipped
+    expect(entryComplete(obligation, { gated: 'answered' })).toBe(true)
   })
 })
 

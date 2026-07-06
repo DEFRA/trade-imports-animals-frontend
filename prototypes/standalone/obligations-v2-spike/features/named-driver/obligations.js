@@ -8,10 +8,10 @@ import { addons } from '../addons/obligations.js'
  * collection.
  *
  * The nesting is literal: `drivers.item` contains sub-obligations AND a nested
- * collection def (`driverClaims`), so the model tree reaches depth 2
- * (`drivers[i].claims[j].claimType`). Sub-def ids are frame-relative, so this
+ * collection obligation (`driverClaims`), so the model tree reaches depth 2
+ * (`drivers[i].claims[j].claimType`). Sub-obligation ids are frame-relative, so this
  * nested `claims` and the top-level driving-history `claims` share the id but are
- * distinct defs at distinct template addresses (`drivers.claims` vs `claims`).
+ * distinct obligations at distinct template addresses (`drivers.claims` vs `claims`).
  *
  * A driver requires a name + relationship; its claims are OPTIONAL
  * (requiredAtLeastOne omitted), so a driver with no claims is still complete —
@@ -51,4 +51,4 @@ export const drivers = {
   wipeOnExit: true
 }
 
-export const defs = [drivers]
+export const obligations = [drivers]

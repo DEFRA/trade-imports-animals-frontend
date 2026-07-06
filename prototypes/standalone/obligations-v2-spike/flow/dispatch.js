@@ -1,4 +1,4 @@
-import { walkDefs } from '../registry.js'
+import { walkObligations } from '../registry.js'
 
 /**
  * THE dispatch seam — obligation -> owning page. It is DERIVED at boot
@@ -12,7 +12,7 @@ import { walkDefs } from '../registry.js'
  * silent runtime break into a startup failure.
  *
  * Coverage now DESCENDS THE TREE (DISCUSSION-LOG entry 6a): it asserts over
- * `walkDefs()` — every obligation at EVERY depth. A sub-obligation's owning
+ * `walkObligations()` — every obligation at EVERY depth. A sub-obligation's owning
  * page is DERIVED: the page that owns its nearest collection ancestor (a
  * collection's items are collected by the collection's loop). This keeps
  * coverage total and unambiguous without the collection's `collects` having to
@@ -53,13 +53,13 @@ export function buildDispatch(pages) {
   collectsByPageMap = new Map()
   slugByPageMap = new Map()
 
-  // A def id becomes a store key + a segment of a dotted template address, so it
+  // An obligation id becomes a store key + a segment of a dotted template address, so it
   // must not itself contain the path metacharacters, or addresses would be
   // ambiguous (`claims.claimType` could not be told from a stray-dotted id).
-  for (const { templatePath, def } of walkDefs()) {
-    if (ID_UNSAFE.test(def.id)) {
+  for (const { templatePath, obligation } of walkObligations()) {
+    if (ID_UNSAFE.test(obligation.id)) {
       throw new Error(
-        `Obligation id "${def.id}" (at ${templatePath}) contains a path ` +
+        `Obligation id "${obligation.id}" (at ${templatePath}) contains a path ` +
           `metacharacter ('.', '[' or ']') — ids must be path-safe`
       )
     }
@@ -79,9 +79,10 @@ export function buildDispatch(pages) {
     }
   }
 
-  const uncovered = [...walkDefs()]
+  const uncovered = [...walkObligations()]
     .filter(
-      ({ templatePath, def }) => !def.system && !ownerOfObligation(templatePath)
+      ({ templatePath, obligation }) =>
+        !obligation.system && !ownerOfObligation(templatePath)
     )
     .map(({ templatePath }) => templatePath)
   if (uncovered.length) {

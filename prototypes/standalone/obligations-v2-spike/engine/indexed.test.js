@@ -9,7 +9,7 @@ import {
   NA
 } from './status.js'
 import { sections } from '../flow/flow.js'
-import { walkDefs } from '../registry.js'
+import { walkObligations } from '../registry.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 
@@ -29,8 +29,8 @@ describe('indexed obligations are first-class', () => {
   // boot inversion must run first — same as dispatch.test / contract.test.
   beforeAll(() => buildDispatch(dispatchPages))
 
-  it('registry.walkDefs enumerates sub-obligations at every depth', () => {
-    const addresses = [...walkDefs()].map((n) => n.templatePath)
+  it('registry.walkObligations enumerates sub-obligations at every depth', () => {
+    const addresses = [...walkObligations()].map((n) => n.templatePath)
     expect(addresses).toContain('claims')
     expect(addresses).toContain('claims.claimType')
     expect(addresses).toContain('claims.claimAmount')

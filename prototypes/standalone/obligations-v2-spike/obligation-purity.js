@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
  *
  * v2's load-bearing guardrail is that the obligation model imports NOTHING
  * outward — no view, request, error, controller, engine, validator or config.
- * In the old central `registry.js` that was one file to eyeball. Now the defs
+ * In the old central `registry.js` that was one file to eyeball. Now the obligations
  * are co-located next to controllers that DO import Hapi/views, so the guard
  * moves with them: it checks EVERY `features/<feature>/obligations.js` and
  * asserts each imports only SIDEWAYS — another feature's obligations.js.

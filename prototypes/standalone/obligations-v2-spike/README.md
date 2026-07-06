@@ -22,13 +22,13 @@
 
 1. **Features are the spine.** Every feature is a **vertical slice** (`features/<feature>/`):
    an ordinary Hapi GET/POST pair with its own bespoke `.njk` template, owning its copy,
-   validation and view-model — **and a pure `obligations.js` holding the obligation defs
+   validation and view-model — **and a pure `obligations.js` holding the obligations
    that feature owns.** "Read the feature you're changing" now covers the model too.
 2. **A central engine over an assembling model barrel.** Each feature's `obligations.js`
    holds plain-JS data — identity, structural facts (`cardinality`, `system`, `renderOnly`),
    mandate facts (`required`) and activation/wipe **relationships** as inert literals over
    real JS references (which cross feature boundaries — a shared DAG). A top-level
-   `registry.js` **barrel** assembles them into the `all`/`byId`/`refs` catalogue. The
+   `registry.js` **barrel** assembles them into the `all`/`byId` catalogue. The
    central `engine/` (`reconcile`, `status`, `store`, `journey`, `predicate`, `util`)
    operates over _all_ obligations at once: one pure `reconcile` (scope + Yes-No-Yes wipe,
    to a fixpoint) and one pure `rollUp` (four-status). The model carries **no `type`** and
@@ -69,23 +69,23 @@ equivalence harness, and obligations knowing about pages (inverted to page-side 
 
 ## Where things live
 
-| Concern                                          | Home                                                                      |
-| ------------------------------------------------ | ------------------------------------------------------------------------- |
-| Feature slice (controller + template + defs)     | `features/<feature>/` (`controller.js`, `template.njk`, `obligations.js`) |
-| Obligation defs a feature owns (pure)            | `features/<feature>/obligations.js` (imports only sideways)               |
-| Assembling model barrel (`all`/`byId`/`refs`)    | `registry.js` (top-level — imports every feature's defs)                  |
-| Full tree catalogue (every depth) + per-instance | `registry.js` (`walkDefs` / `walk` / `byPath` — indexed obligations)      |
-| Path address vocabulary (indexed collections)    | `lib/path.js` (`pathKey`/`valueAt`/`deleteAt` — pure leaf)                |
-| Reusable loop LIBRARY (facts, never renders)     | `engine/index.js` (`collectionView` — `{ index, path, entry, complete }`) |
-| Per-file model-purity guard (boot)               | `obligation-purity.js`                                                    |
-| Scope + scope-exit wipe (path-addressed)         | `engine/reconcile.js` (pure)                                              |
-| Four-status roll-up + quote-readiness            | `engine/status.js` (pure)                                                 |
-| The one-directional facade controllers call      | `engine/index.js` (`get`/`commit`/`appendEntry`/…)                        |
-| In-memory store + journey cookie                 | `engine/store.js` + `engine/journey.js`                                   |
-| Flow ordering + gating (no copy)                 | `flow/flow.js` + `flow/navigation.js`                                     |
-| Dispatch seam (obligation → page, boot-asserted) | `flow/dispatch.js`                                                        |
-| Shared per-page library (not a framework)        | `shared/kit.js` (+ `layout.njk`, `error-summary.njk`)                     |
-| Reusable Joi validators (context-agnostic)       | `lib/validate/` (`requiredText`/`postcode`/`currency`/…)                  |
-| Premium calculator (pure domain, not state)      | `lib/quote.js`                                                            |
-| Controller↔model commit contract (safety net)    | `contract.test.js`                                                        |
-| Model-level journey simulator + dead-end prover  | `analysis/` (`simulateJourney`, `proveReachability`)                      |
+| Concern                                             | Home                                                                        |
+| --------------------------------------------------- | --------------------------------------------------------------------------- |
+| Feature slice (controller + template + obligations) | `features/<feature>/` (`controller.js`, `template.njk`, `obligations.js`)   |
+| Obligations a feature owns (pure)                   | `features/<feature>/obligations.js` (imports only sideways)                 |
+| Assembling model barrel (`all`/`byId`)              | `registry.js` (top-level — imports every feature's obligations)             |
+| Full tree catalogue (every depth) + per-instance    | `registry.js` (`walkObligations` / `walk` / `byPath` — indexed obligations) |
+| Path address vocabulary (indexed collections)       | `lib/path.js` (`pathKey`/`valueAt`/`deleteAt` — pure leaf)                  |
+| Reusable loop LIBRARY (facts, never renders)        | `engine/index.js` (`collectionView` — `{ index, path, entry, complete }`)   |
+| Per-file model-purity guard (boot)                  | `obligation-purity.js`                                                      |
+| Scope + scope-exit wipe (path-addressed)            | `engine/reconcile.js` (pure)                                                |
+| Four-status roll-up + quote-readiness               | `engine/status.js` (pure)                                                   |
+| The one-directional facade controllers call         | `engine/index.js` (`get`/`commit`/`appendEntry`/…)                          |
+| In-memory store + journey cookie                    | `engine/store.js` + `engine/journey.js`                                     |
+| Flow ordering + gating (no copy)                    | `flow/flow.js` + `flow/navigation.js`                                       |
+| Dispatch seam (obligation → page, boot-asserted)    | `flow/dispatch.js`                                                          |
+| Shared per-page library (not a framework)           | `shared/kit.js` (+ `layout.njk`, `error-summary.njk`)                       |
+| Reusable Joi validators (context-agnostic)          | `lib/validate/` (`requiredText`/`postcode`/`currency`/…)                    |
+| Premium calculator (pure domain, not state)         | `lib/quote.js`                                                              |
+| Controller↔model commit contract (safety net)       | `contract.test.js`                                                          |
+| Model-level journey simulator + dead-end prover     | `analysis/` (`simulateJourney`, `proveReachability`)                        |

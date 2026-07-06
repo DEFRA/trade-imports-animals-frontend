@@ -85,16 +85,16 @@ spikes' "just declare it and the renderer does the rest".
 ### The exact steps
 
 **1. Add the obligation def — `features/your-vehicle/obligations.js`.** A pure
-one-liner (no copy, no type, no page), added to the feature's `defs` export so the
+one-liner (no copy, no type, no page), added to the feature's `obligations` export so the
 registry barrel picks it up:
 
 ```js
 export const mileage = { id: 'mileage' }
-// …add `mileage` to the exported `defs` array (order is immaterial — the
+// …add `mileage` to the exported `obligations` array (order is immaterial — the
 // contract test and CYA are set-based / hand-ordered).
 ```
 
-No registry.js edit: `registry.js` already spreads `...vehicle.defs`, so growing
+No registry.js edit: `registry.js` already spreads `...vehicle.obligations`, so growing
 that array is enough.
 
 **2. Wire the controller — `features/your-vehicle/controller.js`.** Four small
@@ -171,7 +171,7 @@ the set match. **Five files total**: four slice edits + one contract-payload lin
 
 ### What you did NOT have to touch
 
-- **No `registry.js`** — it spreads the feature's `defs`.
+- **No `registry.js`** — it spreads the feature's `obligations`.
 - **No `flow/flow.js`, no `flow/dispatch.js`** — the field's owning page already
   exists; coverage derives from the unchanged `collects` list.
 - **No engine, status, navigation or hub** — an optional field never changes
@@ -263,7 +263,7 @@ task row — all authored by hand.
 ```js
 export const parkingLocation = { id: 'parkingLocation', required: true }
 export const hasTracker = { id: 'hasTracker' }
-export const defs = [parkingLocation, hasTracker]
+export const obligations = [parkingLocation, hasTracker]
 ```
 
 `controller.js` (mirror `your-vehicle/controller.js`): a `meta` with
@@ -277,11 +277,11 @@ is a soft yes/no), a GET `render` seeding values, a POST that `validate`s then
 a `govukRadios` for `parkingLocation` (three options) and a `govukRadios` yes/no
 for `hasTracker`.
 
-**2. Register the defs — `registry.js`.** Add the sideways import and spread:
+**2. Register the obligations — `registry.js`.** Add the sideways import and spread:
 
 ```js
 import * as vehicleSecurity from './features/vehicle-security/obligations.js'
-// …and `...vehicleSecurity.defs` in the `all` array (in flow order).
+// …and `...vehicleSecurity.obligations` in the `all` array (in flow order).
 ```
 
 **3. Register the routes + dispatch meta — `features/index.js`.** Add
@@ -434,7 +434,7 @@ export const previousInsurers = {
   wipeOnExit: true // deselecting the gate destroys the whole subtree
 }
 
-export const defs = [previousInsurers]
+export const obligations = [previousInsurers]
 ```
 
 Sub-def ids are **frame-relative** (`insurerName`, not `previousInsurers.insurerName`):
@@ -499,7 +499,7 @@ WITHIN the entry, at its exact path.
 - **Dispatch (`flow/dispatch.js`) is DERIVED at depth.** The list page declares
   only `collects: ['previousInsurers']`; the sub-obligations' owning page is
   derived from their nearest collection ancestor. You do **not** enumerate item
-  ids in `collects` — coverage still descends `walkDefs()` and stays total. (The
+  ids in `collects` — coverage still descends `walkObligations()` and stays total. (The
   recorded trade-off: ownership at depth is derived, not declared per field.)
 - **CYA (`features/check-answers/controller.js`)** — bespoke "Insurer N" rows over
   `state.collectionView(answers, ['previousInsurers'])`, only when the collection
@@ -542,7 +542,7 @@ finding (FINDINGS 6c).
 ### What you did NOT have to touch
 
 `engine/reconcile.js`, `engine/status.js`, `lib/path.js`, `registry.js`'s
-`walk`/`walkDefs` — the collection is "just more tree", so scope, per-instance and
+`walk`/`walkObligations` — the collection is "just more tree", so scope, per-instance and
 field-level wipe, per-item completeness and coverage-at-depth all descend with no
 new engine code. Everything you write is the model def, the two bespoke loop
 controllers + templates, and the CYA/flow/hub wiring shared with example 2.

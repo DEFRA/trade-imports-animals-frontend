@@ -19,4 +19,4 @@ export const modValue = {
   wipeOnExit: true
 }
 
-export const defs = [modDescription, modValue]
+export const obligations = [modDescription, modValue]

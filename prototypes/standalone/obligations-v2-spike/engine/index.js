@@ -84,13 +84,13 @@ export const collectionView = (answers, collectionPath) => {
   const template = collectionPath
     .filter((seg) => typeof seg === 'string')
     .join('.')
-  const def = registry.byPath(template)
+  const obligation = registry.byPath(template)
   const entries = valueAt(answers, collectionPath) ?? []
   return entries.map((entry, index) => ({
     index,
     path: [...collectionPath, index],
     entry,
-    complete: def ? entryComplete(def, entry) : true
+    complete: obligation ? entryComplete(obligation, entry) : true
   }))
 }
 

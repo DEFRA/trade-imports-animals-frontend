@@ -173,3 +173,25 @@ Sensible order. Principle mirrors the spike's own method (safety-net → structu
   "no-rehydrate-at-depth" invariant it never tests (coverage illusion). Two agents returned
   placeholder noise (`lib/path.test.js` + a mis-named `test` entry) — a small coverage gap to
   re-run in Phase 6. Green unchanged (read-only): unit 107 / E2E 70.
+
+- [x] **Phase 1 — NW-1 (full de-abbreviation, per DEC-1). DONE — pure rename, byte-green.**
+  _Landed as:_ a fan-out Workflow (one agent per file + a docs agent + a completeness critic)
+  applied the whole family in one pass across **25 files**: `export const defs` → `export const
+  obligations` in all 12 feature `obligations.js`; the 12 `...x.defs` spreads in `registry.js`
+  → `.obligations`; `walkDefs` → `walkObligations` (generator + recursive calls + imports + the
+  `dispatch.js`/`indexed.test.js`/`nested.test.js` call sites); the yielded/destructured/param
+  obligation binding `def` → `obligation` everywhere it holds an obligation
+  (`{ templatePath, def }`, `{ path, def, … }`, `n.def`, `for (const def of …)`, `const def =
+  registry.byPath(…)`, `entryComplete(def, …)`, and `dump.js`'s `driversDef`/`driverClaimsDef`
+  → `driversObligation`/`driverClaimsObligation`); and the doc-comments naming any of them.
+  **DEC on `refs` (open question resolved):** `registry.refs` was defined once and consumed
+  **nowhere** (a dead duplicate of `byId`), so — rather than rename dead code — it was
+  **removed** (property + its header-comment bullet); that is the honest "no abbreviated seam
+  left" outcome. Live docs updated (`README.md` module map + `EXTENDING.md` worked-example
+  code); the dated historical docs (DESIGN/FINDINGS/DISCUSSION-LOG/DESIGN-PROVENANCE/MONDAY)
+  left as period records. `walk`, `byId`, `byPath`, `all`, `item`, `siblings`, `framePath`
+  deliberately untouched (clear names, not abbreviations). Diff: 123 insertions / 125 deletions
+  (net −2 = the dropped `refs`), no behaviour/control-flow/ordering change. Completeness critic
+  found zero residual code symbols; 3 stale comment/test-label prose leftovers
+  (`obligation-purity.js`, `routes.js`, `nested.test.js` describe-string) were then fixed.
+  Own code eslint + prettier clean. **Byte-green: unit 107 / E2E 70** (identical to baseline).

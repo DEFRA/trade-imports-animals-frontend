@@ -32,8 +32,8 @@ const isRequired = (id) => {
  * and, when `requiredAtLeastOne`, also "≥1 entry". So a driver holding a
  * half-entered nested claim is not complete, whether or not its claims are
  * mandated — the mandate governs only whether ZERO entries is acceptable. */
-export const entryComplete = (def, entry) => {
-  const siblings = def.item ?? []
+export const entryComplete = (obligation, entry) => {
+  const siblings = obligation.item ?? []
   return siblings.every((sub) => {
     // An ITEM-RELATIVE activation (entry 6c) is resolved against THIS entry: a
     // sub gated on a SIBLING is only OWED when that sibling's value satisfies it,
@@ -60,18 +60,18 @@ export const entryComplete = (def, entry) => {
 /** A collection is SATISFIED when it meets its cardinality mandate AND every
  * entry is complete — not merely "≥1 entry exists" (DISCUSSION-LOG entry 6,
  * finding 4). A blank-required-field claim no longer counts the section done. */
-export const collectionComplete = (def, value) => {
+export const collectionComplete = (obligation, value) => {
   const entries = value ?? []
-  if (def.requiredAtLeastOne && entries.length === 0) return false
-  return entries.every((entry) => entryComplete(def, entry))
+  if (obligation.requiredAtLeastOne && entries.length === 0) return false
+  return entries.every((entry) => entryComplete(obligation, entry))
 }
 
 /** "Is this obligation's mandate met?" — a collection descends into its items;
  * a scalar is just answered/not. The one place completeness knows about depth. */
 const satisfied = (id, answers) => {
-  const def = registry.byId(id)
-  return def?.collection
-    ? collectionComplete(def, answers[id])
+  const obligation = registry.byId(id)
+  return obligation?.collection
+    ? collectionComplete(obligation, answers[id])
     : isAnswered(answers[id])
 }
 

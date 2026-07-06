@@ -4,7 +4,7 @@ import { entryComplete, collectionComplete } from './status.js'
 import { buildDispatch, pageOfObligation } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { drivers } from '../features/named-driver/obligations.js'
-import { walkDefs } from '../registry.js'
+import { walkObligations } from '../registry.js'
 
 /**
  * ONE LEVEL OF NESTING (Phase 2 / entry 6b): drivers -> claims. The claim is
@@ -30,8 +30,8 @@ const twoDriversEachWithClaims = {
 }
 
 describe('nested indexed obligations (drivers -> claims)', () => {
-  it('walkDefs reaches depth-2 template addresses', () => {
-    const addresses = [...walkDefs()].map((n) => n.templatePath)
+  it('walkObligations reaches depth-2 template addresses', () => {
+    const addresses = [...walkObligations()].map((n) => n.templatePath)
     expect(addresses).toContain('drivers')
     expect(addresses).toContain('drivers.driverName')
     expect(addresses).toContain('drivers.claims')

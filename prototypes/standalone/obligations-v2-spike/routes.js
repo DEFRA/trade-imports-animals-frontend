@@ -11,7 +11,7 @@ import { registerJourneyCookie } from './engine/journey.js'
  *  1. `assertObligationPurity()` — reads every `features/<feature>/obligations.js`
  *     and asserts it imports NOTHING outward (only sideways to another
  *     feature's obligations). This is the per-file model-purity guard: with
- *     the defs co-located next to controllers that import views/requests, it
+ *     the obligations co-located next to controllers that import views/requests, it
  *     is the load-bearing check that co-location has not re-coupled the model
  *     to presentation.
  *  2. `buildDispatch()` — INVERTS the page-side `collects` declarations into

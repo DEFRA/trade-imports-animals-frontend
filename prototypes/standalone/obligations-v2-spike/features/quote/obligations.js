@@ -13,4 +13,4 @@ export const premium = {
   activatedBy: { obligation: coverType, present: true }
 }
 
-export const defs = [premium]
+export const obligations = [premium]
