@@ -171,78 +171,16 @@ export function createObligationEvaluator({
       }
 
       // 6. Build implications.
+      const implicationContext = {
+        isInScope,
+        obligationsByCategory,
+        obligationApplicabilityDecisions,
+        fulfilmentIdsByObligationId,
+        amendedFulfilments
+      }
       const implicationsByObligation = {}
       for (const o of obligations) {
-        implicationsByObligation[o.id] = buildImplication(o)
-      }
-
-      function buildImplication(obligation) {
-        if (!isInScope(obligation)) return { inScope: false }
-
-        const category = obligationsByCategory.get(obligation.id)
-        const own = obligationApplicabilityDecisions.get(obligation.id)
-
-        if (category === 'single') {
-          return own ?? { inScope: true }
-        }
-
-        if (category === 'group') {
-          const fulfilmentIds = [
-            ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
-          ]
-          const impl = { inScope: true }
-          if (own?.reasons) impl.reasons = own.reasons
-          impl.records = fulfilmentIds.map((fulfilmentId) => ({
-            fulfilmentId
-          }))
-          return impl
-        }
-
-        if (category === 'field') {
-          const parentGroupFulfilmentIds = [
-            ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
-          ]
-          return {
-            inScope: true,
-            records: parentGroupFulfilmentIds.map((fulfilmentId) => ({
-              fulfilmentId,
-              status: obligation.status
-            }))
-          }
-        }
-
-        if (category === 'derived-leaf') {
-          // Id set comes from applyTo — the authoritative "what records
-          // CAN exist". Storage tracks which ones have VALUES.
-          const impl = { inScope: true }
-          if (own?.reasons) impl.reasons = own.reasons
-          const fulfilmentIds = own?.records ?? []
-          impl.records = fulfilmentIds.map((fulfilmentId) => ({
-            fulfilmentId,
-            status: obligation.status
-          }))
-          return impl
-        }
-
-        if (category === 'user-leaf') {
-          // Record presence via own storage keys.
-          const impl = { inScope: true }
-          if (own?.reasons) impl.reasons = own.reasons
-          const fulfilment = amendedFulfilments[obligation.id]
-          const fulfilmentIds =
-            fulfilment &&
-            typeof fulfilment === 'object' &&
-            !Array.isArray(fulfilment)
-              ? Object.keys(fulfilment)
-              : []
-          impl.records = fulfilmentIds.map((fulfilmentId) => ({
-            fulfilmentId,
-            status: obligation.status
-          }))
-          return impl
-        }
-
-        return { inScope: true }
+        implicationsByObligation[o.id] = buildImplication(o, implicationContext)
       }
 
       return {
@@ -332,4 +270,93 @@ export function buildDescendants(obligations, obligationChildren) {
     obligationDescendants.set(o.id, acc)
   }
   return obligationDescendants
+}
+
+// ---------------------------------------------------------------------------
+// Evaluate-phase helpers — pure functions used per `evaluate` call.
+// Exported for isolation-testing.
+// ---------------------------------------------------------------------------
+
+// Build one obligation's implication given the evaluate-call context:
+//   - isInScope(obligation)      → boolean (effective scope, per §3)
+//   - obligationsByCategory      → Map<id, category>
+//   - obligationApplicabilityDecisions → Map<id, applyTo return>
+//   - fulfilmentIdsByObligationId → Map<group id, Set<group fulfilmentId>>
+//   - amendedFulfilments         → post-purge fulfilments map
+//
+// Returns { inScope: false } if the obligation is out of scope. Otherwise
+// returns the category-specific implication — see the branches below.
+export function buildImplication(obligation, context) {
+  const {
+    isInScope,
+    obligationsByCategory,
+    obligationApplicabilityDecisions,
+    fulfilmentIdsByObligationId,
+    amendedFulfilments
+  } = context
+
+  if (!isInScope(obligation)) return { inScope: false }
+
+  const category = obligationsByCategory.get(obligation.id)
+  const own = obligationApplicabilityDecisions.get(obligation.id)
+
+  if (category === 'single') {
+    return own ?? { inScope: true }
+  }
+
+  if (category === 'group') {
+    const fulfilmentIds = [
+      ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
+    ]
+    const impl = { inScope: true }
+    if (own?.reasons) impl.reasons = own.reasons
+    impl.records = fulfilmentIds.map((fulfilmentId) => ({
+      fulfilmentId
+    }))
+    return impl
+  }
+
+  if (category === 'field') {
+    const parentGroupFulfilmentIds = [
+      ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
+    ]
+    return {
+      inScope: true,
+      records: parentGroupFulfilmentIds.map((fulfilmentId) => ({
+        fulfilmentId,
+        status: obligation.status
+      }))
+    }
+  }
+
+  if (category === 'derived-leaf') {
+    // Id set comes from applyTo — the authoritative "what records
+    // CAN exist". Storage tracks which ones have VALUES.
+    const impl = { inScope: true }
+    if (own?.reasons) impl.reasons = own.reasons
+    const fulfilmentIds = own?.records ?? []
+    impl.records = fulfilmentIds.map((fulfilmentId) => ({
+      fulfilmentId,
+      status: obligation.status
+    }))
+    return impl
+  }
+
+  if (category === 'user-leaf') {
+    // Record presence via own storage keys.
+    const impl = { inScope: true }
+    if (own?.reasons) impl.reasons = own.reasons
+    const fulfilment = amendedFulfilments[obligation.id]
+    const fulfilmentIds =
+      fulfilment && typeof fulfilment === 'object' && !Array.isArray(fulfilment)
+        ? Object.keys(fulfilment)
+        : []
+    impl.records = fulfilmentIds.map((fulfilmentId) => ({
+      fulfilmentId,
+      status: obligation.status
+    }))
+    return impl
+  }
+
+  return { inScope: true }
 }
