@@ -1,10 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
+import { readyForQuote } from './flow/section-status.js'
 import { registry } from './registry.js'
 import { JOURNEY_COOKIE } from './engine/journey.js'
 import { store } from './engine/store.js'
-import { isAnswered } from './engine/util.js'
+import { configureReadyForQuote } from './engine/read.js'
+import { isAnswered } from './lib/answered.js'
 import { dispatchPages } from './features/index.js'
 
 import * as email from './features/email/controller.js'
@@ -169,7 +171,10 @@ const cases = [
 ]
 
 describe('controller <-> model commit contract', () => {
-  beforeAll(() => buildDispatch(dispatchPages))
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForQuote(readyForQuote)
+  })
   beforeEach(() => store.clear())
 
   it.each(cases)(

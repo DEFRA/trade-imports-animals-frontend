@@ -1,4 +1,4 @@
-import { isAnswered } from './util.js'
+import { isAnswered } from '../lib/answered.js'
 import { valueAt } from '../lib/path.js'
 
 /**

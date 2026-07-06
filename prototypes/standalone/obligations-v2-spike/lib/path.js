@@ -69,3 +69,35 @@ export const deleteAt = (answers, path) => {
  * string-prefix — so `['claims']` does not match a sibling `claimsExtra`). */
 export const isStrictPathPrefix = (prefix, path) =>
   prefix.length < path.length && prefix.every((seg, i) => seg === path[i])
+
+/**
+ * Order two wipe paths so a `deleteAt` never invalidates a not-yet-applied
+ * sibling. `deleteAt` SPLICES an array index, which renumbers later siblings, so
+ * two sibling index deletes must run HIGHEST-INDEX-FIRST; and a nested delete
+ * must run before the shallower delete that would remove its container. So:
+ * at the first differing segment, larger numeric index first; otherwise (a
+ * shared prefix) the deeper path first. Disjoint string branches are
+ * independent — their order does not matter.
+ */
+export const wipeOrder = (a, b) => {
+  const shared = Math.min(a.length, b.length)
+  for (let i = 0; i < shared; i++) {
+    if (a[i] === b[i]) continue
+    if (typeof a[i] === 'number' && typeof b[i] === 'number') return b[i] - a[i]
+    return 0
+  }
+  return b.length - a.length
+}
+
+/**
+ * DESTROY every wiped instance in place. `wiped` is a list of path KEYS (the
+ * `pathKey` form `reconcile` returns); they are parsed and `wipeOrder`-sorted so
+ * sibling array-index splices run highest-index-first and a nested delete
+ * precedes its container's — no delete ever shifts another. The single home of
+ * scope-exit deletion, shared by `commit` and `removeEntryAt`.
+ */
+export const destroyWiped = (answers, wiped) => {
+  for (const path of wiped.map(parsePath).sort(wipeOrder)) {
+    deleteAt(answers, path)
+  }
+}

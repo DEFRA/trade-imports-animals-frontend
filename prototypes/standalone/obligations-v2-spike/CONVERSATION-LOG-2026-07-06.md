@@ -218,3 +218,30 @@ Sensible order. Principle mirrors the spike's own method (safety-net → structu
   sequence+gating, not domain); the hub filters on `s.dynamic` and keys `ADDON_TITLE` by section id
   (title stays hub-side presentation). Completeness/cycle critic PASS on all four checks. Own code
   eslint + prettier clean (2 new page.js prettier-fixed). **Green: unit 107 / E2E 70.**
+
+- [x] **Phase 3 — NW-2 (engine decomposition + barrel convention). DONE — green, adversarially verified.**
+  _Design (Phase 3a):_ a 3-architect → 2-adversarial-judge → synthesis panel (the provenance
+  method) chose **convention-first + two grafts** (barrel discipline from the minimal proposal,
+  a `destroyWiped` dedup from the cohesion proposal). Plan saved to the scratchpad and executed
+  in 10 ordered steps.
+  _Landed as (Phase 3b — one implementer + a 4-agent adversarial-verify panel):_ `engine/` is now
+  a set of single-responsibility modules behind a **pure-barrel `index.js`** (explicit named
+  re-exports, zero owned logic — the standing convention): `read.js` (get/makeScope + the
+  readyForQuote seam), `write.js` (commit + all entry mutations + submit), `collection-view.js`,
+  `status.js` (engine-pure `statusOf` core), `complete.js` (depth-aware completeness), with
+  `predicate.js`/`reconcile.js`/`store.js`/`journey.js` unchanged. Context-agnostic helpers left the
+  engine: `util.js` → **`lib/answered.js`**; `wipeOrder` → **`lib/path.js`** (+ new `destroyWiped`
+  dedup, byte-verified against git HEAD). **OBS-1 fixed:** the flow-aware roll-up
+  (`sectionStatus`/`sectionObligationIds`/`readyForQuote`) moved OUT of engine into new
+  **`flow/section-status.js`**, so no `engine/*` module imports `flow/` anymore. The one real design
+  choice — how to keep `scope.readyForQuote` on the engine's scope object without the engine
+  importing flow — was resolved with a **fail-loud boot-time injection seam**
+  (`configureReadyForQuote(fn)` in `read.js`, wired at the composition roots), NOT a silent default
+  (which would reintroduce the vacuous-true footgun Phase 0 flagged in `simulate.js`). That fail-loud
+  choice earned its keep: it exposed a **5th boot site** the plan's grep missed
+  (`analysis/reachability.test.js` → `simulateJourney` → `makeScope`), wired identically. **ZERO
+  churn to the 20 `import * as state` controller lines**; only `hub` (sectionStatus) and
+  `check-answers` (isBlank) changed a non-state helper import. Adversarial-verify panel: injection
+  skeptic "no gaps", status/complete skeptic "clean" (recursion + item-relative gate intact, no
+  cycle), wipe skeptic "clean" (byte-diffed vs HEAD), barrel/acyclicity critic **PASS**. Own code
+  eslint + prettier clean. **Green: unit 107 / E2E 70.**

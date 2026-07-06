@@ -1,12 +1,19 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../flow/dispatch.js'
+import { readyForQuote } from '../flow/section-status.js'
+import { configureReadyForQuote } from '../engine/read.js'
 import { dispatchPages } from '../features/index.js'
 import { enumerateScopeStates, proveReachability } from './reachability.js'
 
 /** The model-level dead-end prover (entry 4). */
 describe('reachability / dead-end prover', () => {
-  beforeAll(() => buildDispatch(dispatchPages))
+  // proveReachability -> simulateJourney -> makeScope eagerly computes
+  // readyForQuote, so inject the roll-up at boot alongside buildDispatch.
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForQuote(readyForQuote)
+  })
 
   it('enumerates a small finite scope space', () => {
     // hadClaims(2) x voluntaryExcess(2) x coverType(2) x addons-subsets(8)

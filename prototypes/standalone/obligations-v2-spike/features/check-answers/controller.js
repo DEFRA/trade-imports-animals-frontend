@@ -2,7 +2,7 @@ import { breadcrumbs, pagePath, TEMPLATES } from '../../config.js'
 import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import * as state from '../../engine/index.js'
 import { calculatePremium } from '../../lib/quote.js'
-import { isBlank } from '../../engine/util.js'
+import { isBlank } from '../../lib/answered.js'
 import { open } from '../../shared/kit.js'
 import {
   CLAIM_TYPE_LABEL,

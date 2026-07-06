@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../flow/dispatch.js'
+import { readyForQuote } from '../flow/section-status.js'
+import { configureReadyForQuote } from '../engine/read.js'
 import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from './simulate.js'
 
@@ -8,7 +10,10 @@ import { simulateJourney } from './simulate.js'
 describe('journey simulator', () => {
   // The quote-readiness gate flows through the status roll-up, which reads the
   // boot-built dispatch index — so replicate boot, exactly as the app does.
-  beforeAll(() => buildDispatch(dispatchPages))
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForQuote(readyForQuote)
+  })
 
   it('walks a plain persona (no claims, no add-ons) straight through', () => {
     const pages = simulateJourney({

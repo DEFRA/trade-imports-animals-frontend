@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { reconcile } from './reconcile.js'
-import { entryComplete, collectionComplete } from './status.js'
+import { entryComplete, collectionComplete } from './complete.js'
 import { buildDispatch, pageOfObligation } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { drivers } from '../features/named-driver/obligations.js'

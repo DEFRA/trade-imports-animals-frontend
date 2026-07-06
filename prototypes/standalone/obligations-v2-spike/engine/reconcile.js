@@ -1,6 +1,6 @@
 import { walk } from '../registry.js'
 import { evalPredicate } from './predicate.js'
-import { isAnswered } from './util.js'
+import { isAnswered } from '../lib/answered.js'
 import { isStrictPathPrefix, pathKey, valueAt } from '../lib/path.js'
 
 /**

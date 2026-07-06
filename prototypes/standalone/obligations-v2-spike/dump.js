@@ -2,13 +2,9 @@ import { buildDispatch } from './flow/dispatch.js'
 import { allFlowPages, sections, nonQuoteSections } from './flow/flow.js'
 import { dispatchPages } from './features/index.js'
 import { reconcile } from './engine/reconcile.js'
-import {
-  readyForQuote,
-  sectionStatus,
-  entryComplete,
-  FULFILLED,
-  NA
-} from './engine/status.js'
+import { FULFILLED, NA } from './engine/status.js'
+import { entryComplete } from './engine/complete.js'
+import { readyForQuote, sectionStatus } from './flow/section-status.js'
 import {
   drivers as driversObligation,
   driverClaims as driverClaimsObligation

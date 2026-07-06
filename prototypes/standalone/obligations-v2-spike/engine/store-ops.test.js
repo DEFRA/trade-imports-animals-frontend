@@ -1,7 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { appendEntryAt, commit, removeEntryAt, updateEntryAt } from './index.js'
 import { store } from './store.js'
+import { configureReadyForQuote } from './read.js'
 import { JOURNEY_COOKIE } from './journey.js'
+import { buildDispatch } from '../flow/dispatch.js'
+import { readyForQuote } from '../flow/section-status.js'
+import { dispatchPages } from '../features/index.js'
 import * as driverClaim from '../features/named-driver/driver-claim.controller.js'
 
 /**
@@ -32,6 +36,12 @@ const seed = (answers) =>
 const answersNow = () => store.get(journeyId).answers
 
 describe('path-addressed store ops at depth', () => {
+  // `commit` -> `makeScope` eagerly computes `readyForQuote`, so replicate boot:
+  // build the dispatch index and inject the roll-up (fail-loud if unconfigured).
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForQuote(readyForQuote)
+  })
   beforeEach(() => {
     store.clear()
     journeyId = store.create().journeyId

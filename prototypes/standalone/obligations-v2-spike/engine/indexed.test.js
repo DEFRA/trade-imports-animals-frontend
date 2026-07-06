@@ -1,13 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { reconcile } from './reconcile.js'
-import {
-  readyForQuote,
-  sectionStatus,
-  FULFILLED,
-  IN_PROGRESS,
-  NOT_STARTED,
-  NA
-} from './status.js'
+import { FULFILLED, IN_PROGRESS, NOT_STARTED, NA } from './status.js'
+import { readyForQuote, sectionStatus } from '../flow/section-status.js'
 import { sections } from '../flow/flow.js'
 import { walkObligations } from '../registry.js'
 import { buildDispatch } from '../flow/dispatch.js'

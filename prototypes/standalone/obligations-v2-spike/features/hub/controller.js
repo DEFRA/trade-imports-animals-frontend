@@ -2,7 +2,8 @@ import { BASE, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import { sectionEntry } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
-import { FULFILLED, IN_PROGRESS, sectionStatus } from '../../engine/status.js'
+import { FULFILLED, IN_PROGRESS } from '../../engine/status.js'
+import { sectionStatus } from '../../flow/section-status.js'
 import { open } from '../../shared/kit.js'
 
 /**

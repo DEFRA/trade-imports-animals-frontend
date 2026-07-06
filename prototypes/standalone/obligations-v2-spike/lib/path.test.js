@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { deleteAt, parsePath, pathKey, setAt, valueAt } from './path.js'
-import { wipeOrder } from '../engine/index.js'
+import {
+  deleteAt,
+  parsePath,
+  pathKey,
+  setAt,
+  valueAt,
+  wipeOrder
+} from './path.js'
 
 /**
  * Path helpers — the address vocabulary that lets reconcile/status/store
