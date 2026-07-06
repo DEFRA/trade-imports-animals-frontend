@@ -75,6 +75,17 @@ const satisfied = (id, answers) => {
     : isAnswered(answers[id])
 }
 
+/** "Has any progress been made on this obligation?" — the In Progress vs Not
+ * Started split, deliberately WEAKER than `satisfied`. A scalar is started once
+ * answered; a COLLECTION is started once it holds ≥1 entry, even an INCOMPLETE
+ * one (`isAnswered` treats a non-empty array as answered). Using `satisfied`
+ * here instead would misreport a section whose only obligation is a
+ * partially-filled collection — e.g. the named-driver section, which collects
+ * just `drivers` — as Not Started despite holding several drivers, because the
+ * collection is not yet fully complete and there is no other answered scalar to
+ * carry the section. Started ≠ satisfied is exactly that distinction. */
+const isStarted = (id, answers) => isAnswered(answers[id])
+
 export function statusOf(obligationIds, answers, inScope) {
   const inScopeIds = obligationIds.filter((id) => inScope.has(id))
   if (inScopeIds.length === 0) return NA
@@ -84,7 +95,7 @@ export function statusOf(obligationIds, answers, inScope) {
 
   const allRequiredAnswered = required.every((id) => satisfied(id, answers))
   if (allRequiredAnswered) return FULFILLED
-  return inScopeIds.some((id) => satisfied(id, answers))
+  return inScopeIds.some((id) => isStarted(id, answers))
     ? IN_PROGRESS
     : NOT_STARTED
 }

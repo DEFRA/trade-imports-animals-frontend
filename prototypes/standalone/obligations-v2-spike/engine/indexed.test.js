@@ -4,7 +4,9 @@ import {
   readyForQuote,
   sectionStatus,
   FULFILLED,
-  IN_PROGRESS
+  IN_PROGRESS,
+  NOT_STARTED,
+  NA
 } from './status.js'
 import { sections } from '../flow/flow.js'
 import { walkDefs } from '../registry.js'
@@ -112,5 +114,81 @@ describe('indexed obligations are first-class', () => {
         reconcile(withCompleteClaim).inScope
       )
     ).toBe(FULFILLED)
+  })
+})
+
+/**
+ * SECTION STATUS OVER A COLLECTION-ONLY SECTION. The named-driver section
+ * collects exactly one obligation — the `drivers` collection — so nothing else
+ * can carry the section's In Progress state. A partially-filled collection MUST
+ * read In Progress, never Not Started: showing "Not started" on the hub while
+ * several drivers are already entered is a status lie the journey cannot
+ * tolerate. Regression guard for the `satisfied`→`isStarted` fix.
+ */
+describe('a section whose only obligation is a collection', () => {
+  beforeAll(() => buildDispatch(dispatchPages))
+
+  const namedDriverSection = sections.find((s) => s.id === 'named-driver')
+  const statusFor = (answers) =>
+    sectionStatus(namedDriverSection, answers, reconcile(answers).inScope)
+
+  it('is In Progress — not Not Started — while the collection is partially filled', () => {
+    // A driver entered but missing its required `relationship`: the collection
+    // holds an entry (so it is STARTED) but is not complete (so not Fulfilled).
+    const answers = {
+      addons: ['named-driver'],
+      drivers: [{ driverName: 'Priya Raman' }]
+    }
+    expect(statusFor(answers)).toBe(IN_PROGRESS)
+    expect(statusFor(answers)).not.toBe(NOT_STARTED)
+  })
+
+  it('is In Progress when a nested claim, deep in the tree, is the only gap', () => {
+    // Every driver field complete, but one driver holds a windscreen claim with
+    // no provider — the incompleteness is two levels down, yet it must still
+    // pull the whole section off Fulfilled and onto In Progress (not Not Started).
+    const answers = {
+      addons: ['named-driver'],
+      drivers: [
+        {
+          driverName: 'Marcus Webb',
+          relationship: 'child',
+          claims: [{ claimType: 'windscreen', claimAmount: '400' }]
+        }
+      ]
+    }
+    expect(statusFor(answers)).toBe(IN_PROGRESS)
+  })
+
+  it('is Not Started only when the collection is genuinely empty', () => {
+    // In scope (add-on selected) but zero entries: nothing started yet.
+    expect(statusFor({ addons: ['named-driver'], drivers: [] })).toBe(
+      NOT_STARTED
+    )
+  })
+
+  it('is Fulfilled when every entry — and every nested entry — is complete', () => {
+    const answers = {
+      addons: ['named-driver'],
+      drivers: [
+        { driverName: 'Jordan Fielding', relationship: 'spouse', claims: [] },
+        {
+          driverName: 'Priya Raman',
+          relationship: 'named',
+          claims: [
+            {
+              claimType: 'windscreen',
+              claimAmount: '300',
+              windscreenProvider: 'autoglass'
+            }
+          ]
+        }
+      ]
+    }
+    expect(statusFor(answers)).toBe(FULFILLED)
+  })
+
+  it('is Not Applicable when the named-driver add-on is not selected', () => {
+    expect(statusFor({ addons: [], drivers: [] })).toBe(NA)
   })
 })
