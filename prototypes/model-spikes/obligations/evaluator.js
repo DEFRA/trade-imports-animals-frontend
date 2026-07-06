@@ -61,25 +61,10 @@ export function createObligationEvaluator({
       )
 
       // 3. Effective inScope — own applyTo AND every ancestor group.
-      const inScopeCache = new Map()
-      const isInScope = (obligation) => {
-        if (inScopeCache.has(obligation.id)) {
-          return inScopeCache.get(obligation.id)
-        }
-        const own = obligationApplicabilityDecisions.get(obligation.id)
-        if (own && own.inScope === false) {
-          inScopeCache.set(obligation.id, false)
-          return false
-        }
-        for (const ancestor of obligationAncestorGroups.get(obligation.id)) {
-          if (!isInScope(ancestor)) {
-            inScopeCache.set(obligation.id, false)
-            return false
-          }
-        }
-        inScopeCache.set(obligation.id, true)
-        return true
-      }
+      const isInScope = makeInScopeCheck(
+        obligationApplicabilityDecisions,
+        obligationAncestorGroups
+      )
       for (const o of obligations) isInScope(o)
 
       // 4. Purge storage.
@@ -295,6 +280,39 @@ export function runApplicabilityDecisions(obligations, recognisedFulfilments) {
     }
   }
   return obligationApplicabilityDecisions
+}
+
+// Step 3: build a memoised effective-inScope predicate.
+//
+// Returns a function `isInScope(obligation) → boolean` that ANDs the
+// obligation's own applyTo inScope with every ancestor group's inScope.
+// Results are cached inside the closure across calls; the caller can
+// optionally warm the cache by invoking it for every obligation up
+// front.
+export function makeInScopeCheck(
+  obligationApplicabilityDecisions,
+  obligationAncestorGroups
+) {
+  const inScopeCache = new Map()
+  const isInScope = (obligation) => {
+    if (inScopeCache.has(obligation.id)) {
+      return inScopeCache.get(obligation.id)
+    }
+    const own = obligationApplicabilityDecisions.get(obligation.id)
+    if (own && own.inScope === false) {
+      inScopeCache.set(obligation.id, false)
+      return false
+    }
+    for (const ancestor of obligationAncestorGroups.get(obligation.id)) {
+      if (!isInScope(ancestor)) {
+        inScopeCache.set(obligation.id, false)
+        return false
+      }
+    }
+    inScopeCache.set(obligation.id, true)
+    return true
+  }
+  return isInScope
 }
 
 // Build one obligation's implication given the evaluate-call context:
