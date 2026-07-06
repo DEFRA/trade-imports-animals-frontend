@@ -49,23 +49,16 @@ export function createObligationEvaluator({
   return {
     evaluate(fulfilments) {
       // 1. Drop unknown obligation ids.
-      const recognisedFulfilments = {}
-      for (const [obligationId, fulfilment] of Object.entries(fulfilments)) {
-        if (obligationsById.has(obligationId)) {
-          recognisedFulfilments[obligationId] = fulfilment
-        }
-      }
+      const recognisedFulfilments = dropUnknownFulfilments(
+        fulfilments,
+        obligationsById
+      )
 
       // 2. Run each obligation's applyTo (if it has one).
-      const obligationApplicabilityDecisions = new Map()
-      for (const o of obligations) {
-        if (o.applyTo) {
-          obligationApplicabilityDecisions.set(
-            o.id,
-            o.applyTo(recognisedFulfilments)
-          )
-        }
-      }
+      const obligationApplicabilityDecisions = runApplicabilityDecisions(
+        obligations,
+        recognisedFulfilments
+      )
 
       // 3. Effective inScope — own applyTo AND every ancestor group.
       const inScopeCache = new Map()
@@ -276,6 +269,33 @@ export function buildDescendants(obligations, obligationChildren) {
 // Evaluate-phase helpers — pure functions used per `evaluate` call.
 // Exported for isolation-testing.
 // ---------------------------------------------------------------------------
+
+// Step 1: drop fulfilments whose obligation id is not in the current
+// manifest ("tolerate-and-amend").
+export function dropUnknownFulfilments(fulfilments, obligationsById) {
+  const recognisedFulfilments = {}
+  for (const [obligationId, fulfilment] of Object.entries(fulfilments)) {
+    if (obligationsById.has(obligationId)) {
+      recognisedFulfilments[obligationId] = fulfilment
+    }
+  }
+  return recognisedFulfilments
+}
+
+// Step 2: evaluate each obligation's applyTo (if it has one) against the
+// recognised fulfilments; return a Map<obligationId, applyTo return>.
+export function runApplicabilityDecisions(obligations, recognisedFulfilments) {
+  const obligationApplicabilityDecisions = new Map()
+  for (const o of obligations) {
+    if (o.applyTo) {
+      obligationApplicabilityDecisions.set(
+        o.id,
+        o.applyTo(recognisedFulfilments)
+      )
+    }
+  }
+  return obligationApplicabilityDecisions
+}
 
 // Build one obligation's implication given the evaluate-call context:
 //   - isInScope(obligation)      → boolean (effective scope, per §3)
