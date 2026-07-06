@@ -76,46 +76,25 @@ export function createObligationEvaluator({
       })
 
       // 5. Enumerate each group's instance ids from descendants' storage.
-      const fulfilmentIdsByObligationId = new Map()
-      for (const o of obligations) {
-        if (obligationsByCategory.get(o.id) !== 'group') continue
-        if (!isInScope(o)) {
-          fulfilmentIdsByObligationId.set(o.id, new Set())
-          continue
+      const fulfilmentIdsByObligationId = enumerateGroupFulfilmentIds(
+        obligations,
+        {
+          obligationsByCategory,
+          obligationAncestorGroups,
+          obligationDescendants,
+          isInScope,
+          amendedFulfilments
         }
-        const prefixLen = obligationAncestorGroups.get(o.id).length + 1
-        const ids = new Set()
-        for (const desc of obligationDescendants.get(o.id)) {
-          const descendantFulfilment = amendedFulfilments[desc.id]
-          if (
-            !descendantFulfilment ||
-            typeof descendantFulfilment !== 'object'
-          ) {
-            continue
-          }
-          if (Array.isArray(descendantFulfilment)) continue
-          for (const key of Object.keys(descendantFulfilment)) {
-            const segments = splitPath(key)
-            if (segments.length >= prefixLen) {
-              ids.add(joinPath(segments.slice(0, prefixLen)))
-            }
-          }
-        }
-        fulfilmentIdsByObligationId.set(o.id, ids)
-      }
+      )
 
       // 6. Build implications.
-      const implicationContext = {
+      const implicationsByObligation = buildImplications(obligations, {
         isInScope,
         obligationsByCategory,
         obligationApplicabilityDecisions,
         fulfilmentIdsByObligationId,
         amendedFulfilments
-      }
-      const implicationsByObligation = {}
-      for (const o of obligations) {
-        implicationsByObligation[o.id] = buildImplication(o, implicationContext)
-      }
+      })
 
       return {
         fulfilments: amendedFulfilments,
@@ -238,6 +217,39 @@ export function runApplicabilityDecisions(obligations, recognisedFulfilments) {
   return obligationApplicabilityDecisions
 }
 
+// Step 3: build a memoised effective-inScope predicate.
+//
+// Returns a function `isInScope(obligation) → boolean` that ANDs the
+// obligation's own applyTo inScope with every ancestor group's inScope.
+// Results are cached inside the closure across calls; the caller can
+// optionally warm the cache by invoking it for every obligation up
+// front.
+export function makeInScopeCheck(
+  obligationApplicabilityDecisions,
+  obligationAncestorGroups
+) {
+  const inScopeCache = new Map()
+  const isInScope = (obligation) => {
+    if (inScopeCache.has(obligation.id)) {
+      return inScopeCache.get(obligation.id)
+    }
+    const own = obligationApplicabilityDecisions.get(obligation.id)
+    if (own && own.inScope === false) {
+      inScopeCache.set(obligation.id, false)
+      return false
+    }
+    for (const ancestor of obligationAncestorGroups.get(obligation.id)) {
+      if (!isInScope(ancestor)) {
+        inScopeCache.set(obligation.id, false)
+        return false
+      }
+    }
+    inScopeCache.set(obligation.id, true)
+    return true
+  }
+  return isInScope
+}
+
 // Step 4: purge storage.
 //   - Out-of-scope obligation → drop entire entry.
 //   - Derived indexed leaf → keep only records whose fulfilmentId is in
@@ -305,37 +317,61 @@ export function purgeStorage(recognisedFulfilments, context) {
   return amendedFulfilments
 }
 
-// Step 3: build a memoised effective-inScope predicate.
+// Step 5: enumerate each group's instance ids by scanning descendants'
+// composite-key prefixes.
 //
-// Returns a function `isInScope(obligation) → boolean` that ANDs the
-// obligation's own applyTo inScope with every ancestor group's inScope.
-// Results are cached inside the closure across calls; the caller can
-// optionally warm the cache by invoking it for every obligation up
-// front.
-export function makeInScopeCheck(
-  obligationApplicabilityDecisions,
-  obligationAncestorGroups
-) {
-  const inScopeCache = new Map()
-  const isInScope = (obligation) => {
-    if (inScopeCache.has(obligation.id)) {
-      return inScopeCache.get(obligation.id)
+// A group's instance fulfilmentId is the first N segments of any
+// descendant leaf's composite fulfilmentId, where N =
+// ancestorGroups.length + 1 (the group's own depth). Union across all
+// descendants of that group. Out-of-scope groups map to an empty Set.
+//
+// Returns Map<group obligation id, Set<group fulfilmentId>>.
+export function enumerateGroupFulfilmentIds(obligations, context) {
+  const {
+    obligationsByCategory,
+    obligationAncestorGroups,
+    obligationDescendants,
+    isInScope,
+    amendedFulfilments
+  } = context
+
+  const fulfilmentIdsByObligationId = new Map()
+  for (const o of obligations) {
+    if (obligationsByCategory.get(o.id) !== 'group') continue
+    if (!isInScope(o)) {
+      fulfilmentIdsByObligationId.set(o.id, new Set())
+      continue
     }
-    const own = obligationApplicabilityDecisions.get(obligation.id)
-    if (own && own.inScope === false) {
-      inScopeCache.set(obligation.id, false)
-      return false
-    }
-    for (const ancestor of obligationAncestorGroups.get(obligation.id)) {
-      if (!isInScope(ancestor)) {
-        inScopeCache.set(obligation.id, false)
-        return false
+    const prefixLen = obligationAncestorGroups.get(o.id).length + 1
+    const ids = new Set()
+    for (const desc of obligationDescendants.get(o.id)) {
+      const descendantFulfilment = amendedFulfilments[desc.id]
+      if (!descendantFulfilment || typeof descendantFulfilment !== 'object') {
+        continue
+      }
+      if (Array.isArray(descendantFulfilment)) continue
+      for (const key of Object.keys(descendantFulfilment)) {
+        const segments = splitPath(key)
+        if (segments.length >= prefixLen) {
+          ids.add(joinPath(segments.slice(0, prefixLen)))
+        }
       }
     }
-    inScopeCache.set(obligation.id, true)
-    return true
+    fulfilmentIdsByObligationId.set(o.id, ids)
   }
-  return isInScope
+  return fulfilmentIdsByObligationId
+}
+
+// Step 6: build per-obligation implications by invoking
+// `buildImplication` for each obligation in the manifest.
+//
+// Returns Object<obligationId, implication>.
+export function buildImplications(obligations, context) {
+  const implicationsByObligation = {}
+  for (const o of obligations) {
+    implicationsByObligation[o.id] = buildImplication(o, context)
+  }
+  return implicationsByObligation
 }
 
 // Build one obligation's implication given the evaluate-call context:
