@@ -94,6 +94,38 @@ Accept two mechanisms; author picks per obligation. Consistent with
 "gatedBy is a fast path, applyTo is the escape hatch". More surface,
 more docs, more choice-fatigue on new obligations.
 
+**Option 4 — Ship three parallel obligations.js files and let
+reviewers form an opinion.**
+
+Land three self-contained manifests expressing the same V4 domain:
+
+- `obligations.js` — the current mix (steps 1-3 applyTo, steps 4-5
+  gatedBy). Left as-is.
+- `obligations-all-gated.js` — every V4 obligation expressed via
+  `gatedBy` (implies backfilling steps 1-3 to gatedBy).
+- `obligations-all-applyto.js` — every V4 obligation expressed via
+  `applyTo` (implies migrating steps 4-5 back to applyTo, plus
+  building the enumeration helpers).
+
+Shared integration test suite runs against all three — proves
+functional equivalence and demonstrates the comparison isn't about
+"does it work" but about "how does it read."
+
+Reviewers (team, tech lead, whoever the recommendation is played
+back to) can read three files expressing the same domain and form
+an opinion grounded in concrete code, not abstract trade-off talk.
+Spike delivers the strongest possible evidence for whichever
+direction wins.
+
+- Author cost per manifest: rewrite ~40 obligations in each style
+  once; done. High one-time cost, high evidence value.
+- Runtime cost: unchanged (evaluator still supports both mechanisms;
+  the two alternative manifests are alternative _authorings_ of the
+  same domain).
+- 4b substrate refactor becomes optional in this option — the two
+  manifest styles are the evidence artefact; substrate cleanup is
+  independent.
+
 ### What each option means for 4b / 4c
 
 - **Option 1**: 4b substrate refactor as planned; 4c backfill step 1-3
@@ -105,11 +137,18 @@ more docs, more choice-fatigue on new obligations.
   footprint post-refactor.
 - **Option 3**: skip 4b/4c entirely; go straight to RECOMMENDATION.md
   documenting both mechanisms as legitimate.
+- **Option 4**: build the two alternative manifests + shared test
+  suite (this is the "4c and reverse-4c both, in parallel" version).
+  4b substrate refactor becomes optional. RECOMMENDATION.md then
+  cites the three files as evidence and states the team's preferred
+  direction.
 
 ### Recommendation for the next session
 
-Start there. Pick between options 1 / 2 / 3 before writing any more
-code. The 4b plan below assumes option 1.
+Start there. Pick between options 1 / 2 / 3 / 4 before writing any
+more code. Option 4 is the most spike-shaped (evidence for a
+recommendation is the ticket AC); options 1 / 2 pre-commit to a
+direction; option 3 punts. The 4b plan below assumes option 1.
 
 ---
 
@@ -256,12 +295,17 @@ Consolidate `enumerateInstancePaths` (in `gate-resolver.js`) and
 ## Suggested next-session flow
 
 1. Read this file top-to-bottom (5 min).
-2. Decide option 1 / 2 / 3 for the two-mechanisms question (design
+2. Decide option 1 / 2 / 3 / 4 for the two-mechanisms question (design
    discussion).
 3. If option 1: answer Q1 / Q2 / Q3 and start 4b.1.
 4. If option 2: sketch out the helper module for `applyTo`; plan a
    "reverse backfill" of step 4-5 obligations.
 5. If option 3: skip to RECOMMENDATION.md drafting.
+6. If option 4: draft the two alternative manifests
+   (`obligations-all-gated.js`, `obligations-all-applyto.js`) and a
+   shared integration test suite that runs against all three
+   (`obligations.js` + the two alternatives). RECOMMENDATION.md then
+   cites the three files as evidence.
 
 Once the direction is chosen, delete this file — it is scaffolding
 for the pause, not part of the durable spike output.
