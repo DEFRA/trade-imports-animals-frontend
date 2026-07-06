@@ -19,16 +19,21 @@
  *      commodity-code-gated derived-leaf (see GAPS.md §1), CPH as a
  *      notification-level single reading nested storage, and
  *      animalsCertifiedFor.
- *   4. Unit record + per-animal identifiers (this iteration): nested
- *      user-driven indexed group inside commodityLine; per-unit
- *      identifiers (passport / tattoo / earTag / horseName) gated by
- *      the parent line's commodityCode via the new gatedBy substrate;
+ *   4. Unit record + per-animal identifiers: nested user-driven
+ *      indexed group inside commodityLine; per-unit identifiers
+ *      (passport / tattoo / earTag / horseName) gated by the parent
+ *      line's commodityCode via the new gatedBy substrate;
  *      identificationDetails / description inverse-gated for
  *      commodities with no specific identifier; permanentAddress as a
  *      per-unit standard address block gated by commodityCode. See
  *      GAPS.md §2 for the identity-space-mismatch gap closed by
  *      gatedBy.
- *   5. Accompanying Document all-or-nothing block.
+ *   5. Accompanying Document all-or-nothing block (this iteration):
+ *      four notification-level fields (type / attachment type /
+ *      reference / date of issue) sharing a symmetric cross-sibling
+ *      gate — all optional when no field is filled, all mandatory
+ *      once any one field is filled. Extended `gatedBy` form used to
+ *      express the retain-value-and-downgrade-status pattern.
  *
  * System-populated fields (Reference Number, gov.identity-fed Responsible
  * Person, MDM-sourced enum values) are stubbed in test fixtures rather
@@ -47,7 +52,7 @@
  * is out of scope of the obligation model.
  */
 
-import { allowListed, and, not } from './gates.js'
+import { allowListed, and, not, or, present } from './gates.js'
 
 // -----------------------------------------------------------------------------
 // Country of origin + regionCode conditional gate
@@ -603,6 +608,74 @@ export const permanentAddress = {
 }
 
 // -----------------------------------------------------------------------------
+// Accompanying Documents — notification-level all-or-nothing block.
+//
+// Semantic: each of the four fields (type / attachment type /
+// reference / date of issue) is always in scope. When no field in the
+// block is filled, all four are optional. As soon as ANY field in the
+// block is filled, ALL four become mandatory (retain-value-and-swap-
+// status pattern via the extended `gatedBy` form).
+//
+// Circular-reference convention: each field's gate references the four
+// obligations, including itself. Direct references at declaration time
+// would create a temporal-dead-zone cycle, so the four obligations are
+// declared without `gatedBy` first, then the shared gate is built and
+// attached below via mutation. This is the only place in the manifest
+// that mutates after declaration; the pattern is confined to
+// cross-sibling scope rules.
+// -----------------------------------------------------------------------------
+
+export const accompanyingDocumentType = {
+  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
+  name: 'accompanyingDocumentType'
+  // gatedBy attached below
+}
+
+export const accompanyingDocumentAttachmentType = {
+  id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
+  name: 'accompanyingDocumentAttachmentType'
+  // gatedBy attached below
+}
+
+export const accompanyingDocumentReference = {
+  id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
+  name: 'accompanyingDocumentReference'
+  // gatedBy attached below
+}
+
+export const accompanyingDocumentDateOfIssue = {
+  id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
+  name: 'accompanyingDocumentDateOfIssue'
+  // gatedBy attached below
+}
+
+const accompanyingDocumentBlockGate = {
+  when: or(
+    present(accompanyingDocumentType),
+    present(accompanyingDocumentAttachmentType),
+    present(accompanyingDocumentReference),
+    present(accompanyingDocumentDateOfIssue)
+  ),
+  whenTrue: {
+    inScope: true,
+    status: 'mandatory',
+    reasons: [
+      {
+        code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
+        explanation:
+          'accompanying document fields become mandatory once any one is filled'
+      }
+    ]
+  },
+  whenFalse: { inScope: true, status: 'optional' }
+}
+
+accompanyingDocumentType.gatedBy = accompanyingDocumentBlockGate
+accompanyingDocumentAttachmentType.gatedBy = accompanyingDocumentBlockGate
+accompanyingDocumentReference.gatedBy = accompanyingDocumentBlockGate
+accompanyingDocumentDateOfIssue.gatedBy = accompanyingDocumentBlockGate
+
+// -----------------------------------------------------------------------------
 // Manifest — order does not affect evaluation (evaluator builds group
 // hierarchy via `within` back-references).
 // -----------------------------------------------------------------------------
@@ -645,7 +718,11 @@ export const obligations = [
   horseName,
   identificationDetails,
   description,
-  permanentAddress
+  permanentAddress,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue
 ]
 
 // Groups are obligations that other obligations reference via `within`.

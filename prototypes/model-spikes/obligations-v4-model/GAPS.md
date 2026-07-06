@@ -244,3 +244,66 @@ Follow-on work (see `TODO.md`):
   a `keyspace` metadata dimension, unify the pipeline). Independent
   of this gap but the substrate refactor benefits from having
   `gatedBy` already in place.
+
+---
+
+## Notes — patterns and conventions surfaced (not gaps)
+
+### Cross-sibling gates require attach-after-declaration
+
+Iteration 5 landed the Accompanying Document all-or-nothing block —
+four notification-level fields (`accompanyingDocumentType` /
+`AttachmentType` / `Reference` / `DateOfIssue`) sharing a symmetric
+cross-sibling gate:
+
+```js
+const accompanyingDocumentBlockGate = {
+  when: or(
+    present(accompanyingDocumentType),
+    present(accompanyingDocumentAttachmentType),
+    present(accompanyingDocumentReference),
+    present(accompanyingDocumentDateOfIssue)
+  ),
+  whenTrue: { inScope: true, status: 'mandatory', reasons: [...] },
+  whenFalse: { inScope: true, status: 'optional' }
+}
+```
+
+All four fields point to the same gate. Because every field's gate
+references every field (including itself), inlining `gatedBy` on each
+declaration would create a temporal-dead-zone cycle: the gate would
+reference obligation objects that don't exist yet.
+
+The convention landed in iteration 5 is: **declare each obligation
+without `gatedBy`, build the shared gate below, then attach it via
+mutation.** Confined to cross-sibling scope rules; every other pattern
+in the manifest still uses inline `gatedBy` at declaration time.
+
+Not a machinery gap — the resolver handles the pattern correctly
+(each field's `gatedBy` resolves against current fulfilments,
+including self-presence checks). Just a JS-mechanical constraint on
+how the manifest is authored.
+
+Alternatives considered:
+
+- **Getter for `gatedBy`** (`get gatedBy() { return { when: or(...), ... } }`).
+  Lazy resolution avoids the cycle. Verbose syntax, unusual for the
+  rest of the manifest style. Rejected.
+- **String-id references in combinators** (`present('obligation-id')`
+  instead of `present(obligation)`). Removes the direct-reference
+  requirement. Loses ESLint-catches-typos property; breaks the "gates
+  are pure functions of obligation values" invariant. Rejected.
+- **Sibling-only gate** (each field checks only the OTHER three).
+  Structurally simpler but produces surprising UX: the field the user
+  filled stays optional while siblings become mandatory. Rejected as
+  semantically wrong for symmetric all-or-nothing.
+
+### Extended `gatedBy` form is essential for retain-value patterns
+
+Both `regionCode` (step 1) and the accompanying document block (step 5)
+need "in scope always, status swaps based on gate". That's what the
+extended form (`{ when, whenTrue, whenFalse }`) is for — the shortcut
+form only supports "in scope when gate true, out of scope when false".
+
+Baked in from 4a.1 rather than retrofitted later. Confirmed as
+essential during step 5.

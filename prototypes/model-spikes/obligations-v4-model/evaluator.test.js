@@ -38,7 +38,11 @@ import {
   horseName,
   identificationDetails,
   description,
-  permanentAddress
+  permanentAddress,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue
 } from './obligations.js'
 
 let evaluator
@@ -1035,5 +1039,103 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
       result.obligations[horseName.id].records.map((r) => r.fulfilmentId)
     )
     expect(horseNameIds).toEqual(new Set([`${LINE_HORSE}/${UNIT_1}`]))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Step 5 — Accompanying Documents (notification-level all-or-nothing block)
+//
+// Four fields sharing a symmetric cross-sibling gate: optional when
+// nothing is filled; mandatory once any one is filled. Uses the
+// extended `gatedBy` form to keep every field in scope regardless of
+// gate state (retain-value pattern).
+// ---------------------------------------------------------------------------
+
+const documentBlockFields = [
+  ['Type', accompanyingDocumentType],
+  ['AttachmentType', accompanyingDocumentAttachmentType],
+  ['Reference', accompanyingDocumentReference],
+  ['DateOfIssue', accompanyingDocumentDateOfIssue]
+]
+
+const documentBlockMandatoryReason = {
+  code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
+  explanation:
+    'accompanying document fields become mandatory once any one is filled'
+}
+
+describe('V4 — accompanying document block: no field filled → all optional', () => {
+  it.each(documentBlockFields)(
+    '%s is optional in-scope on empty input',
+    (_name, obligation) => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[obligation.id]).toEqual({
+        inScope: true,
+        status: 'optional'
+      })
+    }
+  )
+})
+
+describe('V4 — accompanying document block: any field filled → all four mandatory', () => {
+  const triggers = [
+    ['Type', accompanyingDocumentType, 'Veterinary health certificate'],
+    ['AttachmentType', accompanyingDocumentAttachmentType, 'PDF'],
+    ['Reference', accompanyingDocumentReference, 'GBHC1234567890'],
+    ['DateOfIssue', accompanyingDocumentDateOfIssue, '2025-12-12']
+  ]
+
+  it.each(triggers)(
+    'when only %s is filled, all four document fields are mandatory in-scope',
+    (_name, filledObligation, filledValue) => {
+      const result = evaluator.evaluate({
+        [filledObligation.id]: filledValue
+      })
+      for (const [, obligation] of documentBlockFields) {
+        expect(result.obligations[obligation.id]).toEqual({
+          inScope: true,
+          status: 'mandatory',
+          reasons: [documentBlockMandatoryReason]
+        })
+      }
+    }
+  )
+})
+
+describe('V4 — accompanying document block: all four filled', () => {
+  it('all four fields are mandatory and values round-trip', () => {
+    const stored = {
+      [accompanyingDocumentType.id]: 'Veterinary health certificate',
+      [accompanyingDocumentAttachmentType.id]: 'PDF',
+      [accompanyingDocumentReference.id]: 'GBHC1234567890',
+      [accompanyingDocumentDateOfIssue.id]: '2025-12-12'
+    }
+    const result = evaluator.evaluate(stored)
+    for (const [, obligation] of documentBlockFields) {
+      expect(result.obligations[obligation.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        reasons: [documentBlockMandatoryReason]
+      })
+      expect(result.fulfilments[obligation.id]).toBe(stored[obligation.id])
+    }
+  })
+})
+
+describe('V4 — accompanying document block: retain-value semantic', () => {
+  it('does not purge a stored value when the gate is off (extended form whenFalse keeps inScope: true)', () => {
+    // Contrast with purge-on-flip patterns (purposeInInternalMarket
+    // etc.). Here whenFalse is `{ inScope: true, status: 'optional' }`
+    // — never out of scope — so purgeStorage keeps the value.
+    const result = evaluator.evaluate({
+      [accompanyingDocumentReference.id]: 'GBHC1234567890'
+    })
+    // Reference filled → gate on → all four mandatory (see previous test)
+    expect(result.fulfilments[accompanyingDocumentReference.id]).toBe(
+      'GBHC1234567890'
+    )
+    expect(result.obligations[accompanyingDocumentReference.id].status).toBe(
+      'mandatory'
+    )
   })
 })
