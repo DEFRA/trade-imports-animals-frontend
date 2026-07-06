@@ -277,3 +277,26 @@ Sensible order. Principle mirrors the spike's own method (safety-net → structu
   Tests: 107 pre + 11 safety-net + 19 new-shape = **137 unit** (all additive; the 107 stay green) /
   **E2E 70**. Bare-stub boundary (what NOT to copy to prod) documented in-code and in the plan.
   eslint + prettier clean.
+
+- [x] **Phase 5 — NW-5 (reachability prover to full depth). DONE — additive proof, adversarially verified.**
+  _Landed as (safety-net-first → implement → adversarial verify):_ `analysis/reachability.js` no
+  longer iterates `registry.all` (ROOTS only, bare-id) — it now walks `walkObligations()` (every def
+  at every depth) and proves each is reachable via **representative-instance witnessing**. New
+  `scaffoldFor(templatePath)` walks root→target minting one representative entry (index 0) per
+  collection ancestor and satisfying the target's item-conditional sibling gate in that entry (e.g.
+  `claimType:'windscreen'`); `buildWitnesses()` overlays that scaffold on each enumerated top-level
+  state, reconciles, and keeps the first state whose `inScope` contains the target's instance
+  `pathKey` (a target with NO such witness is surfaced as a `no-witness-puts-in-scope` problem, never
+  silently skipped). `proveReachability` then resolves each target's derived owning page and checks
+  it against `simulateJourney`. **The hole NW-5 exists to close is closed:** the item-conditional
+  `windscreenProvider` is now genuinely witnessed at BOTH depths (`claims[0].windscreenProvider` and
+  `drivers[0].claims[0].windscreenProvider`), with reconcile-confirmed non-null witnesses, and the
+  new **teeth-at-depth** test proves the prover reports them unreachable if their derived hub page is
+  dropped (the depth-2 one resolving to `pageId==='drivers'`). Cost is O(defs × item-conditional
+  branches), NOT O(n^depth) — the critic confirmed no combinatorial blow-up (suite runs in ~12ms).
+  The PAGE-reachability-not-input-validity caveat is preserved, and I added the critic's honest
+  **soundness-assumption note** (one witness generalises only because every flow `gate` is a pure
+  read of `inScope`/`readyForQuote`; if a gate ever keyed off a non-scope answer the single-witness
+  proof could false-pass — the point to enumerate more). Adversarial coverage-at-depth skeptic
+  hand-traced the nested reconcile and confirmed "full-depth coverage"; tractability/caveat critic
+  **PASS**. Tests: 137 → **140 unit** (+3 additive) / **E2E 70**. eslint + prettier clean.
