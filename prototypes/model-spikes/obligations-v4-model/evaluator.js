@@ -1,4 +1,5 @@
 import { obligations as defaultObligations } from './obligations.js'
+import { resolveGatedBy } from './gate-resolver.js'
 
 /**
  * ObligationEvaluator.
@@ -13,11 +14,17 @@ import { obligations as defaultObligations } from './obligations.js'
  * Algorithm per call:
  *
  *   1. Drop unknown obligation ids (tolerate-and-amend).
- *   2. Evaluate each obligation's `applyTo` (if present).
- *   3. Compute effective inScope per obligation — own applyTo inScope
- *      AND every ancestor group's inScope.
+ *   2. Evaluate each obligation's scope specification:
+ *        - `applyTo` (imperative)  → obligationApplicabilityDecisions
+ *        - `gatedBy` (declarative) → gatedDecisionsByObligationId,
+ *          per-instance-path decisions produced by the gate resolver.
+ *   3. Compute effective inScope per obligation — own scope decision
+ *      (applyTo inScope OR any `gatedBy` path inScope) AND every
+ *      ancestor group's inScope.
  *   4. Purge storage:
  *        - Out-of-scope obligation → drop entire entry.
+ *        - `gatedBy` obligation → filter stored records per path
+ *          decision (keep only paths where `inScope` is true).
  *        - Derived indexed leaf → keep only records whose leaf
  *          fulfilmentId is in the `applyTo`-returned set. See
  *          obligations.md §Terminology.
@@ -54,16 +61,24 @@ export function createObligationEvaluator({
         obligationsById
       )
 
-      // 2. Run each obligation's applyTo (if it has one).
+      // 2. Resolve scope specifications — both `applyTo` (imperative) and
+      // `gatedBy` (declarative). Every obligation uses at most one.
       const obligationApplicabilityDecisions = runApplicabilityDecisions(
         obligations,
         recognisedFulfilments
       )
+      const gatedDecisionsByObligationId = runGateResolutions(
+        obligations,
+        recognisedFulfilments,
+        obligationsById
+      )
 
-      // 3. Effective inScope — own applyTo AND every ancestor group.
+      // 3. Effective inScope — own scope decision AND every ancestor
+      // group.
       const isInScope = makeInScopeCheck(
         obligationApplicabilityDecisions,
-        obligationAncestorGroups
+        obligationAncestorGroups,
+        gatedDecisionsByObligationId
       )
       for (const o of obligations) isInScope(o)
 
@@ -72,6 +87,8 @@ export function createObligationEvaluator({
         obligationsById,
         obligationsByCategory,
         obligationApplicabilityDecisions,
+        gatedDecisionsByObligationId,
+        obligationAncestorGroups,
         isInScope
       })
 
@@ -92,6 +109,8 @@ export function createObligationEvaluator({
         isInScope,
         obligationsByCategory,
         obligationApplicabilityDecisions,
+        gatedDecisionsByObligationId,
+        obligationAncestorGroups,
         fulfilmentIdsByObligationId,
         amendedFulfilments
       })
@@ -202,8 +221,9 @@ export function dropUnknownFulfilments(fulfilments, obligationsById) {
   return recognisedFulfilments
 }
 
-// Step 2: evaluate each obligation's applyTo (if it has one) against the
-// recognised fulfilments; return a Map<obligationId, applyTo return>.
+// Step 2 (imperative): evaluate each obligation's applyTo (if it has
+// one) against the recognised fulfilments; return a
+// Map<obligationId, applyTo return>.
 export function runApplicabilityDecisions(obligations, recognisedFulfilments) {
   const obligationApplicabilityDecisions = new Map()
   for (const o of obligations) {
@@ -217,16 +237,46 @@ export function runApplicabilityDecisions(obligations, recognisedFulfilments) {
   return obligationApplicabilityDecisions
 }
 
+// Step 2 (declarative): resolve each obligation's `gatedBy` metadata
+// via the gate resolver. Returns a
+// Map<obligationId, Map<instancePath, decision>>.
+//
+// An obligation uses at most one of `applyTo` or `gatedBy`; obligations
+// with neither always default to in-scope with their static status.
+export function runGateResolutions(
+  obligations,
+  recognisedFulfilments,
+  obligationsById
+) {
+  const gatedDecisionsByObligationId = new Map()
+  for (const o of obligations) {
+    if (o.gatedBy) {
+      gatedDecisionsByObligationId.set(
+        o.id,
+        resolveGatedBy(o.gatedBy, o, recognisedFulfilments, obligationsById)
+      )
+    }
+  }
+  return gatedDecisionsByObligationId
+}
+
 // Step 3: build a memoised effective-inScope predicate.
 //
 // Returns a function `isInScope(obligation) → boolean` that ANDs the
-// obligation's own applyTo inScope with every ancestor group's inScope.
-// Results are cached inside the closure across calls; the caller can
-// optionally warm the cache by invoking it for every obligation up
-// front.
+// obligation's own scope decision (from applyTo OR gatedBy) with every
+// ancestor group's inScope.
+//
+// For `gatedBy` obligations the own-scope check is "any path in scope"
+// — the obligation as a whole is in scope iff at least one enumerated
+// instance-path is in scope. Per-path filtering happens in purgeStorage
+// and buildImplication.
+//
+// `gatedDecisionsByObligationId` is optional to keep this backwards-
+// compatible with tests that predate the gate resolver.
 export function makeInScopeCheck(
   obligationApplicabilityDecisions,
-  obligationAncestorGroups
+  obligationAncestorGroups,
+  gatedDecisionsByObligationId = new Map()
 ) {
   const inScopeCache = new Map()
   const isInScope = (obligation) => {
@@ -235,6 +285,11 @@ export function makeInScopeCheck(
     }
     const own = obligationApplicabilityDecisions.get(obligation.id)
     if (own && own.inScope === false) {
+      inScopeCache.set(obligation.id, false)
+      return false
+    }
+    const decisions = gatedDecisionsByObligationId.get(obligation.id)
+    if (decisions && !hasAnyInScopeDecision(decisions)) {
       inScopeCache.set(obligation.id, false)
       return false
     }
@@ -250,8 +305,19 @@ export function makeInScopeCheck(
   return isInScope
 }
 
+// Any-path-in-scope predicate for a `gatedBy` decisions map.
+function hasAnyInScopeDecision(decisions) {
+  for (const decision of decisions.values()) {
+    if (decision.inScope) return true
+  }
+  return false
+}
+
 // Step 4: purge storage.
 //   - Out-of-scope obligation → drop entire entry.
+//   - `gatedBy` obligation → filter stored records per-path against the
+//     gate resolver's decisions (keep only paths where inScope is true).
+//     Handled before category branches so gatedBy overrides.
 //   - Derived indexed leaf → keep only records whose fulfilmentId is in
 //     the `applyTo`-returned set. See obligations.md §Terminology.
 //   - Otherwise → keep as-is (ancestors already in scope, own storage
@@ -261,6 +327,8 @@ export function purgeStorage(recognisedFulfilments, context) {
     obligationsById,
     obligationsByCategory,
     obligationApplicabilityDecisions,
+    gatedDecisionsByObligationId = new Map(),
+    obligationAncestorGroups,
     isInScope
   } = context
 
@@ -270,6 +338,19 @@ export function purgeStorage(recognisedFulfilments, context) {
   )) {
     const obligation = obligationsById.get(obligationId)
     if (!isInScope(obligation)) continue
+
+    if (obligation.gatedBy) {
+      const keptFulfilment = purgeGatedStorage(
+        obligation,
+        fulfilment,
+        gatedDecisionsByObligationId.get(obligation.id),
+        obligationAncestorGroups
+      )
+      if (keptFulfilment !== undefined) {
+        amendedFulfilments[obligationId] = keptFulfilment
+      }
+      continue
+    }
 
     const category = obligationsByCategory.get(obligation.id)
 
@@ -315,6 +396,33 @@ export function purgeStorage(recognisedFulfilments, context) {
     }
   }
   return amendedFulfilments
+}
+
+// Filter a `gatedBy` obligation's stored fulfilment against the gate
+// resolver's per-path decisions. Returns the kept fulfilment (a scalar
+// value or a filtered map), or `undefined` when nothing should be kept.
+function purgeGatedStorage(
+  obligation,
+  fulfilment,
+  decisions,
+  obligationAncestorGroups
+) {
+  const isScalar = obligationAncestorGroups.get(obligation.id).length === 0
+  if (isScalar) {
+    return decisions?.get('')?.inScope ? fulfilment : undefined
+  }
+  if (
+    !fulfilment ||
+    typeof fulfilment !== 'object' ||
+    Array.isArray(fulfilment)
+  ) {
+    return undefined
+  }
+  const filtered = {}
+  for (const [path, value] of Object.entries(fulfilment)) {
+    if (decisions?.get(path)?.inScope) filtered[path] = value
+  }
+  return Object.keys(filtered).length > 0 ? filtered : undefined
 }
 
 // Step 5: enumerate each group's instance ids by scanning descendants'
@@ -378,21 +486,34 @@ export function buildImplications(obligations, context) {
 //   - isInScope(obligation)      → boolean (effective scope, per §3)
 //   - obligationsByCategory      → Map<id, category>
 //   - obligationApplicabilityDecisions → Map<id, applyTo return>
+//   - gatedDecisionsByObligationId → Map<id, Map<path, decision>>
+//   - obligationAncestorGroups   → Map<id, group[]>
 //   - fulfilmentIdsByObligationId → Map<group id, Set<group fulfilmentId>>
 //   - amendedFulfilments         → post-purge fulfilments map
 //
 // Returns { inScope: false } if the obligation is out of scope. Otherwise
-// returns the category-specific implication — see the branches below.
+// returns the category- or gate-specific implication — see the branches
+// below.
 export function buildImplication(obligation, context) {
   const {
     isInScope,
     obligationsByCategory,
     obligationApplicabilityDecisions,
+    gatedDecisionsByObligationId = new Map(),
+    obligationAncestorGroups,
     fulfilmentIdsByObligationId,
     amendedFulfilments
   } = context
 
   if (!isInScope(obligation)) return { inScope: false }
+
+  if (obligation.gatedBy) {
+    return buildGatedImplication(
+      obligation,
+      gatedDecisionsByObligationId.get(obligation.id),
+      obligationAncestorGroups
+    )
+  }
 
   const category = obligationsByCategory.get(obligation.id)
   const own = obligationApplicabilityDecisions.get(obligation.id)
@@ -456,4 +577,36 @@ export function buildImplication(obligation, context) {
   }
 
   return { inScope: true }
+}
+
+// Build a `gatedBy` obligation's implication from the gate resolver's
+// per-path decisions.
+//
+// Scalar (notification-level) obligations: the '' entry IS the
+// implication — return it directly.
+//
+// Indexed obligations: collect in-scope paths as records
+// (`{ fulfilmentId, status }`). Reasons are hoisted from the first
+// in-scope decision (uniform per gate under the shortcut form; may
+// vary in the extended form — first-wins is a defensible default).
+function buildGatedImplication(
+  obligation,
+  decisions,
+  obligationAncestorGroups
+) {
+  const isScalar = obligationAncestorGroups.get(obligation.id).length === 0
+  if (isScalar) return decisions.get('')
+
+  const inScopeEntries = []
+  for (const entry of decisions) {
+    if (entry[1].inScope) inScopeEntries.push(entry)
+  }
+  const impl = { inScope: inScopeEntries.length > 0 }
+  const firstReasons = inScopeEntries[0]?.[1]?.reasons
+  if (firstReasons) impl.reasons = firstReasons
+  impl.records = inScopeEntries.map(([path, decision]) => ({
+    fulfilmentId: path,
+    status: decision.status
+  }))
+  return impl
 }

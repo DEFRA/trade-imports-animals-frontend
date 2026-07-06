@@ -125,3 +125,122 @@ pattern, a reader would expect record-ids to be the code values
   user changes the code answer. Rejected.
 - **Debug pretty-printer** for storage joins — see `TODO.md`. Not
   taken as an alternative; would complement docs+tests.
+
+### Update after iteration 4a
+
+Iteration 4a landed the `gatedBy` substrate (see §Gap 2 below), which
+subsumes the derived-leaf reuse pattern with a cleaner surface.
+`numberOfPackages` remains on the derived-leaf reuse for now; refactor
+to `gatedBy` is scheduled as part of 4c backfill of steps 1-3.
+
+---
+
+## Gap 2 — identity-space mismatch when a gate is at a broader identity level than the gated obligation
+
+**Pattern:** An obligation gated by another obligation whose stored
+identity space is _broader_ (fewer dimensions) than its own. The
+gated obligation's `applyTo` has to enumerate the extra dimensions
+itself, because the model previously exposed no way to ask the
+evaluator for group-instance-ids at the target identity level.
+
+**Obligation(s) affected:** All step-4 per-unit identifier fields
+(`passport`, `tattoo`, `earTag`, `horseName`, `identificationDetails`,
+`description`, `permanentAddress`) — each gated by `commodityCode`
+(per-line) but stored per-unit (per-line × per-unit). The mismatch
+appears whenever a gate crosses identity levels; not depth-2-specific.
+Would recur on any depth-1 field gated by a notification-level value,
+any depth-2+ field gated by a shallower field, and so on. See the
+"corrected mental model" in the design discussion for the general
+rule.
+
+**Type:** _Machinery gap._ Every workaround on the current substrate
+was structurally unsatisfying — either duplicate enumeration logic
+inside every obligation's `applyTo` (ugly, coupling to storage
+internals), denormalise storage (kept-in-sync burden), encode
+description into keys (identity confusion under value flips), or
+model as unconditional and drop purge semantics.
+
+**Extension made:** Yes — closed by the `gatedBy` substrate landed in
+iteration 4a.
+
+Concretely:
+
+- `gates.js` — data-only combinator constructors (`allowListed`,
+  `matches`, `present`, `and`, `or`, `not`, `any`, `every`).
+- `gate-resolver.js` — interpreter that walks a gate tree, reads
+  storage, projects between identity levels (expand via
+  `enumerateInstancePaths`, aggregate via `any` / `every`), and
+  produces per-instance-path scope decisions.
+- `evaluator.js` — integrated as a new step 2 phase (`runGateResolutions`)
+  running alongside `runApplicabilityDecisions`; `makeInScopeCheck`
+  extended to treat "any path in scope" as own-scope-true;
+  `purgeStorage` extended with a `gatedBy` branch (helper
+  `purgeGatedStorage`) that filters records per-path; `buildImplication`
+  extended with a `gatedBy` branch (helper `buildGatedImplication`)
+  that builds records from in-scope decisions.
+
+Author-facing shape (from `obligations.js`):
+
+```js
+export const passport = {
+  ...,
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: allowListed(commodityCode, PASSPORT_COMMODITIES)
+}
+
+export const identificationDetails = {
+  ...,
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: and(
+    not(allowListed(commodityCode, PASSPORT_COMMODITIES)),
+    not(allowListed(commodityCode, TATTOO_COMMODITIES)),
+    not(allowListed(commodityCode, EAR_TAG_COMMODITIES)),
+    not(allowListed(commodityCode, HORSE_NAME_COMMODITIES))
+  )
+}
+```
+
+Both take ~3-4 lines of declarative data. Enumeration, projection,
+purge, implication-building — all handled by the resolver + evaluator.
+Adding new depth-2 (or depth-N) commodity-gated fields is now a
+cut+paste-a-shape operation.
+
+### Options considered, not taken
+
+- **A′ — Derived-leaf reuse extended to depth-2 with in-`applyTo`
+  enumeration.** Every gated obligation's `applyTo` would duplicate
+  the group-enumeration logic the evaluator already implements. Ugly,
+  coupled to storage internals, doesn't scale beyond depth-2 without
+  further duplication. Rejected.
+- **B — Derived-leaf + evaluator helpers.** Adds
+  `applyTo(f, { enumerateChildInstancesOf })` and keeps derived-leaf
+  as the category. Cleaner than A′ but still imperative; leaves the
+  category taxonomy fragmented; scale-only fix. Rejected in favour of
+  the declarative surface.
+- **C — Always-in-scope field records with UX-layer gating.** No
+  machinery change; loses per-unit purge semantics; storage
+  accumulates orphaned values on non-applicable units. Rejected.
+- **D — New `conditional-field` category with per-instance
+  `applyTo(fulfilments, instancePath)`.** Cleaner per-instance mental
+  model but requires bigger evaluator changes (classifier + per-
+  instance purge + per-instance implication branches). Author cost
+  higher than declarative gates for the common allowlist case.
+  Rejected in favour of F+G (declarative) as the primary surface.
+
+### Author-facing readability of gates
+
+The declarative combinators keep gates self-documenting. For any gate
+that doesn't fit the combinator vocabulary, `applyTo` remains as an
+escape hatch, so nothing loses expressiveness.
+
+Follow-on work (see `TODO.md`):
+
+- Backfill steps 1-3 obligations to use `gatedBy` (this is the "4c"
+  iteration of the outer plan).
+- Land the identity-space uniform substrate ("4b" — collapse legacy
+  categories `single` / `field` / `derived-leaf` / `user-leaf` into
+  a `keyspace` metadata dimension, unify the pipeline). Independent
+  of this gap but the substrate refactor benefits from having
+  `gatedBy` already in place.

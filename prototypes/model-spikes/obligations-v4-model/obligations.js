@@ -13,18 +13,32 @@
  *      commercial/private address blocks, means-of-transport gate on
  *      transitedCountries, six standard address blocks storing composite
  *      values.
- *   3. Commodity line + members (this iteration): user-driven indexed
- *      group with per-line commodityCode / commodityType / species /
+ *   3. Commodity line + members: user-driven indexed group with
+ *      per-line commodityCode / commodityType / species /
  *      numberOfAnimals field records, numberOfPackages as a
  *      commodity-code-gated derived-leaf (see GAPS.md §1), CPH as a
  *      notification-level single reading nested storage, and
  *      animalsCertifiedFor.
- *   4. Unit record (nested user-driven indexed group).
+ *   4. Unit record + per-animal identifiers (this iteration): nested
+ *      user-driven indexed group inside commodityLine; per-unit
+ *      identifiers (passport / tattoo / earTag / horseName) gated by
+ *      the parent line's commodityCode via the new gatedBy substrate;
+ *      identificationDetails / description inverse-gated for
+ *      commodities with no specific identifier; permanentAddress as a
+ *      per-unit standard address block gated by commodityCode. See
+ *      GAPS.md §2 for the identity-space-mismatch gap closed by
+ *      gatedBy.
  *   5. Accompanying Document all-or-nothing block.
  *
  * System-populated fields (Reference Number, gov.identity-fed Responsible
  * Person, MDM-sourced enum values) are stubbed in test fixtures rather
  * than modelled as obligations.
+ *
+ * Gate combinators (`allowListed`, `and`, `not`, etc.) come from
+ * `gates.js`; the evaluator interprets them via `gate-resolver.js`.
+ * Prefer `gatedBy` over `applyTo` for new obligations — declarative,
+ * cut+paste-friendly, single-source-of-truth per gate. Step 1-3
+ * obligations still use `applyTo` for now; refactor is deferred to 4c.
  *
  * Standard address block: modelled as a single-cardinality obligation
  * whose stored value is a composite `{ name, addressLine1, addressLine2?,
@@ -32,6 +46,8 @@
  * validation of the composite (max-length, formats, mandatory subfields)
  * is out of scope of the obligation model.
  */
+
+import { allowListed, and, not } from './gates.js'
 
 // -----------------------------------------------------------------------------
 // Country of origin + regionCode conditional gate
@@ -457,6 +473,136 @@ export const cph = {
 }
 
 // -----------------------------------------------------------------------------
+// Unit record — nested user-driven indexed group inside commodityLine.
+// Composite keys have length 2: `lineId/unitId`. Instance-ids are opaque
+// orchestrator-generated ULIDs — mnemonic `line1/unit1` etc. in tests.
+// -----------------------------------------------------------------------------
+
+export const unitRecord = {
+  id: '385d6e7f-8091-4eb5-8234-8ef506172940',
+  name: 'unitRecord',
+  within: commodityLine
+  // No applyTo, no gatedBy — structural user-driven group, always in
+  // scope. Instance-ids inferred from descendant field-record composite-
+  // key prefixes.
+}
+
+// -----------------------------------------------------------------------------
+// Commodity-code whitelists driving unit-level identifier scope.
+// Subsets of the full V4 lists — enough to exercise every pattern in
+// tests. Full lists belong with the real journey code, not this spike.
+// -----------------------------------------------------------------------------
+
+// Commodities that require a Passport identifier.
+export const PASSPORT_COMMODITIES = [
+  '0101', // Horse
+  '0102', // Cattle
+  '01061900' // Cats / Dogs / Ferrets
+]
+
+// Commodities that require a Tattoo identifier.
+export const TATTOO_COMMODITIES = [
+  '01061900', // Cats / Dogs / Ferrets
+  '0103', // Pig
+  '0102' // Bovine
+]
+
+// Commodities that require an Ear Tag identifier.
+export const EAR_TAG_COMMODITIES = [
+  '0102', // Cattle
+  '0103', // Pig
+  '010410', // Sheep
+  '010420' // Goats
+]
+
+// Commodities that require a Horse Name.
+export const HORSE_NAME_COMMODITIES = ['0101']
+
+// Commodities that require a Permanent Address per animal.
+export const PERMANENT_ADDRESS_COMMODITIES = ['01061900']
+
+// -----------------------------------------------------------------------------
+// Per-unit identifier field records — depth-2, commodity-gated via
+// gatedBy. Each obligation is one data structure with a declarative
+// gate — no boilerplate enumeration logic; the resolver handles the
+// depth-2 identity-space expansion. See GAPS.md §2.
+// -----------------------------------------------------------------------------
+
+export const passport = {
+  id: '39657a80-91a2-4fc6-8345-9f0617284a51',
+  name: 'passport',
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: allowListed(commodityCode, PASSPORT_COMMODITIES)
+}
+
+export const tattoo = {
+  id: '3a768b91-a2b3-4fd7-8456-a01728395b62',
+  name: 'tattoo',
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: allowListed(commodityCode, TATTOO_COMMODITIES)
+}
+
+export const earTag = {
+  id: '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73',
+  name: 'earTag',
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: allowListed(commodityCode, EAR_TAG_COMMODITIES)
+}
+
+export const horseName = {
+  id: '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84',
+  name: 'horseName',
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: allowListed(commodityCode, HORSE_NAME_COMMODITIES)
+}
+
+// Inverse gate: in scope for units on commodity lines whose code has
+// NO specific identifier type. The `and(not(...), ...)` shape reads
+// as "no specific identifier applies."
+export const identificationDetails = {
+  id: '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95',
+  name: 'identificationDetails',
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: and(
+    not(allowListed(commodityCode, PASSPORT_COMMODITIES)),
+    not(allowListed(commodityCode, TATTOO_COMMODITIES)),
+    not(allowListed(commodityCode, EAR_TAG_COMMODITIES)),
+    not(allowListed(commodityCode, HORSE_NAME_COMMODITIES))
+  )
+}
+
+export const description = {
+  id: '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6',
+  name: 'description',
+  within: unitRecord,
+  status: 'optional',
+  gatedBy: and(
+    not(allowListed(commodityCode, PASSPORT_COMMODITIES)),
+    not(allowListed(commodityCode, TATTOO_COMMODITIES)),
+    not(allowListed(commodityCode, EAR_TAG_COMMODITIES)),
+    not(allowListed(commodityCode, HORSE_NAME_COMMODITIES))
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Permanent address — depth-2 standard address block, commodity-gated.
+// Stored composite address value per unit-instance-path.
+// -----------------------------------------------------------------------------
+
+export const permanentAddress = {
+  id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',
+  name: 'permanentAddress',
+  within: unitRecord,
+  status: 'mandatory',
+  gatedBy: allowListed(commodityCode, PERMANENT_ADDRESS_COMMODITIES)
+}
+
+// -----------------------------------------------------------------------------
 // Manifest — order does not affect evaluation (evaluator builds group
 // hierarchy via `within` back-references).
 // -----------------------------------------------------------------------------
@@ -491,7 +637,15 @@ export const obligations = [
   species,
   numberOfAnimals,
   numberOfPackages,
-  cph
+  cph,
+  unitRecord,
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description,
+  permanentAddress
 ]
 
 // Groups are obligations that other obligations reference via `within`.
