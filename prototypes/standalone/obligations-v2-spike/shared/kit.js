@@ -13,6 +13,14 @@ export const open = { auth: false }
 
 export const CYA_SLUG = 'check-answers'
 
+/**
+ * Derives a page's collected obligation ids from the real obligation objects —
+ * reference, not string coincidence. The default for a page that collects its
+ * feature's whole non-system obligation set.
+ */
+export const collectsFrom = (obligations) =>
+  obligations.filter((o) => !o.system).map((o) => o.id)
+
 /** GDS error summary from a `{ fieldId: message }` map (null when clean). */
 export const errorSummary = (fieldErrors) => {
   const entries = Object.entries(fieldErrors ?? {})

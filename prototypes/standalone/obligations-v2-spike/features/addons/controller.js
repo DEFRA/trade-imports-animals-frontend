@@ -1,6 +1,8 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
+import { addonsPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /**
  * Add to your policy — the add-on picker (multi-select). Selecting an
@@ -9,8 +11,7 @@ import * as kit from '../../shared/kit.js'
  * this page just writes the selection; reconcile spawns/wipes the details.
  * Button copy is "Continue" (spec parity).
  */
-const page = { id: 'addons', slug: 'addons' }
-export const meta = { ...page, collects: ['addons'] }
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/addons/template`
 
 const ADDONS = [

@@ -2,11 +2,12 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { protectedNcdYearsPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /** Protect your no-claims discount — years (the gated protected-ncd section).
  * The range is a controller-owned validator. */
-const page = { id: 'protected-ncd-years', slug: 'addons/protected-ncd/years' }
-export const meta = { ...page, collects: ['ncdYears'] }
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/protected-ncd/years`
 
 const fields = compose(integerInRange('ncdYears', { min: 1, max: 99 }))

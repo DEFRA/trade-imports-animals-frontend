@@ -1,10 +1,11 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
+import { optionalExtrasPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /** Optional extras — a multi-select. Optional (saves empty). */
-const page = { id: 'optional-extras', slug: 'optional-extras' }
-export const meta = { ...page, collects: ['extras'] }
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/optional-extras/template`
 
 const EXTRAS = [

@@ -68,9 +68,9 @@ const handler = (request, h) => {
   }
 
   const addonItems = sections
-    .filter((s) => s.addon && s.gate(scope))
+    .filter((s) => s.dynamic && s.gate(scope))
     .map((s) => ({
-      title: { text: ADDON_TITLE[s.addon] },
+      title: { text: ADDON_TITLE[s.id] },
       hint: { text: s.pages.map((p) => p.id).join(', ') },
       href: sectionEntry(s.id, scope),
       status: statusTag(sectionStatus(s, answers, inScope))

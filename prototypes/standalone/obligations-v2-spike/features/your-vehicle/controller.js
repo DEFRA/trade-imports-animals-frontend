@@ -8,23 +8,14 @@ import {
   vehicleReg
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { yourVehiclePage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /** Your vehicle — all fields soft (save blank). vehiclePhoto is render-only
  * (never stored, spike parity). Format checks (registration pattern, year
  * range, currency) are controller-owned lib validators — optional, so a blank
  * field still saves, but a malformed non-blank value is caught. */
-const page = { id: 'your-vehicle', slug: 'your-vehicle' }
-export const meta = {
-  ...page,
-  collects: [
-    'registration',
-    'make',
-    'model',
-    'year',
-    'estimatedValue',
-    'vehiclePhoto'
-  ]
-}
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/your-vehicle/template`
 const MAKES = ['Audi', 'BMW', 'Ford', 'Nissan', 'Toyota', 'Volkswagen']
 

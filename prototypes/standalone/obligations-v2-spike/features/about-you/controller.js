@@ -10,6 +10,8 @@ import {
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { aboutYouPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /**
  * About you — the ONE page with a save-blocking (hard) mandate: fullName.
@@ -19,18 +21,7 @@ import * as kit from '../../shared/kit.js'
  * sole `requiredText`; everything else is optional (blank passes, malformed
  * fails). The state layer only stores — it never sees the schema.
  */
-const page = { id: 'about-you', slug: 'about-you' }
-export const meta = {
-  ...page,
-  collects: [
-    'fullName',
-    'preferredName',
-    'phone',
-    'postcode',
-    'country',
-    'dateOfBirth'
-  ]
-}
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/about-you/template`
 
 const COUNTRIES = [

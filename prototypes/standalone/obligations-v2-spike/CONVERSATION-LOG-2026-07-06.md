@@ -195,3 +195,26 @@ Sensible order. Principle mirrors the spike's own method (safety-net → structu
   found zero residual code symbols; 3 stale comment/test-label prose leftovers
   (`obligation-purity.js`, `routes.js`, `nested.test.js` describe-string) were then fixed.
   Own code eslint + prettier clean. **Byte-green: unit 107 / E2E 70** (identical to baseline).
+  _(Amended post-hoc: the longer identifiers made prettier wrap `registry.js`'s
+  `walkObligations` recursion `if` onto two lines, tripping the eslint `curly` (multi-line)
+  rule — I'd failed to re-lint after the Phase-1 prettier-write. Fixed with braces and folded
+  into this commit; still byte-green.)_
+
+- [x] **Phase 2 — reference-not-string seams (NW-7 + NW-3 + NW-8). DONE — green, no DOM change.**
+  _Landed as:_ a canary→fan-out→central→critic Workflow. **NW-7:** every flow-page feature now
+  authors its `{ id, slug }` ONCE in a cycle-free `features/<feature>/page.js` leaf that imports
+  nothing; the controller imports it (`import { <x>Page as page }`) and `flow/flow.js` imports the
+  SAME leaves and spreads them, adding only `gate` — so no `{ id, slug }` literal is hand-typed in
+  flow.js anymore, and the flow→controller→engine→status→flow **cycle is structurally impossible**
+  (flow imports only leaves; critic verified each imports nothing). **NW-3:** `meta.collects` is now
+  reference-derived — a new `collectsFrom(obligations)` helper in `shared/kit.js`
+  (`obligations.filter(o => !o.system).map(o => o.id)`) for single-page features, and explicit
+  object-ref subsets for the one split (`modifications`: `describe` → `[modDescription.id]`, `value`
+  → `[modValue.id]`). The non-system filter dissolves `quote` to `[]` with no override (premium is
+  system) and keeps `vehiclePhoto` (renderOnly, not system) in your-vehicle's set — every page's
+  collected id-SET is provably unchanged (pinned by `contract.test.js` + `buildDispatch`). No
+  bare-string `collects` array remains. **NW-8 (chose log option 2):** the domain marker
+  `addon: '<value>'` on the three add-on sections is replaced by a generic `dynamic: true` (flow owns
+  sequence+gating, not domain); the hub filters on `s.dynamic` and keys `ADDON_TITLE` by section id
+  (title stays hub-side presentation). Completeness/cycle critic PASS on all four checks. Own code
+  eslint + prettier clean (2 new page.js prettier-fixed). **Green: unit 107 / E2E 70.**

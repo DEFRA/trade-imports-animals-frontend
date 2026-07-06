@@ -2,6 +2,8 @@ import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import { CLAIM_TYPE_LABEL } from './entry.controller.js'
+import { claimsPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /**
  * Claims manage-list — the "loop hub". Bespoke by nature (a repeating
@@ -10,8 +12,7 @@ import { CLAIM_TYPE_LABEL } from './entry.controller.js'
  * page copy that flips on the row count. `Continue` marks the loop done
  * and advances; `Add` hands off to the entry sub-page.
  */
-const page = { id: 'claims', slug: 'claims' }
-export const meta = { ...page, collects: ['claims'] }
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/claims/list`
 
 const claimValue = (claim) => {

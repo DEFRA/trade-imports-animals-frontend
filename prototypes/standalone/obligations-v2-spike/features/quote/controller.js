@@ -1,13 +1,18 @@
 import { breadcrumbs, hubPath, pagePath, TEMPLATES } from '../../config.js'
-import { open } from '../../shared/kit.js'
 import * as state from '../../engine/index.js'
+import * as kit from '../../shared/kit.js'
+import { quoteSummaryPage as page } from './page.js'
+import { obligations } from './obligations.js'
 import { calculatePremium } from '../../lib/quote.js'
 
 /**
  * Your quote — read-only presentation of the system-handled premium. The
  * premium is computed on demand from the current answers (nothing derived
- * is stored). Bespoke by nature; the POST only advances to CYA.
+ * is stored). Bespoke by nature; the POST only advances to CYA. The one
+ * obligation this feature owns (`premium`) is `system` — computed, never
+ * collected — so `collectsFrom` correctly yields an empty set here.
  */
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/quote/template`
 
 const COVER_LABEL = {
@@ -38,17 +43,4 @@ const get = (request, h) => {
 
 const post = (_request, h) => h.redirect(pagePath('check-answers'))
 
-export const routes = [
-  {
-    method: 'GET',
-    path: pagePath('quote-summary'),
-    options: open,
-    handler: get
-  },
-  {
-    method: 'POST',
-    path: pagePath('quote-summary'),
-    options: open,
-    handler: post
-  }
-]
+export const routes = kit.pageRoutes(page, { get, post })

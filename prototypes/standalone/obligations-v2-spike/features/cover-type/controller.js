@@ -2,6 +2,8 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, currency, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { coverTypePage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /**
  * Choose your cover. excessAmount is a conditional reveal under
@@ -11,11 +13,7 @@ import * as kit from '../../shared/kit.js'
  * "Yes" label on this page (the voluntary-excess radio). coverType's value
  * domain is a controller-owned `oneOf`.
  */
-const page = { id: 'cover-type', slug: 'cover-type' }
-export const meta = {
-  ...page,
-  collects: ['coverType', 'voluntaryExcess', 'excessAmount']
-}
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/cover-type/template`
 
 const COVER = [

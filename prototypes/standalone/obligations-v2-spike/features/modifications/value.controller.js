@@ -2,11 +2,15 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, currency, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { modificationsValuePage as page } from './page.js'
+import { modValue } from './obligations.js'
 
 /** Modifications — value (second page of the gated modifications section).
- * The amount carries the optional currency validator. */
-const page = { id: 'modifications-value', slug: 'addons/modifications/value' }
-export const meta = { ...page, collects: ['modValue'] }
+ * The amount carries the optional currency validator. Modifications SPLITS
+ * its obligations across two pages, so `collects` is an explicit object-ref
+ * subset rather than the `collectsFrom(obligations)` default — this page
+ * owns only `modValue`. */
+export const meta = { ...page, collects: [modValue.id] }
 const view = `${TEMPLATES}/features/modifications/value`
 
 const fields = compose(currency('modValue'))

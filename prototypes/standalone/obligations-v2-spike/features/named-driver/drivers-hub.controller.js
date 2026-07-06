@@ -1,6 +1,8 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
+import { driversPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /**
  * Drivers manage-list — the OUTER loop hub (DISCUSSION-LOG entry 6b). Bespoke
@@ -9,8 +11,7 @@ import * as kit from '../../shared/kit.js'
  * a loop whose items contain a loop. It composes its rows over the SAME
  * `collectionView` facts library the claims hub uses, one level up.
  */
-const page = { id: 'drivers', slug: 'addons/named-driver' }
-export const meta = { ...page, collects: ['drivers'] }
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/named-driver/drivers-hub`
 
 const driverSummary = (entry) => {

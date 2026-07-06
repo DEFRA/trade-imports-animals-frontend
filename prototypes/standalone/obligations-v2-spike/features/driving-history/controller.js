@@ -2,16 +2,14 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { drivingHistoryPage as page } from './page.js'
+import { obligations } from './obligations.js'
 
 /** Driving history. hadClaims (Yes/No) is the controlling answer that
  * activates the claims collection — but that relationship lives in the
  * model (activatedBy), not here; this page only writes the answer. The two
  * numeric fields carry controller-owned range validators (optional). */
-const page = { id: 'driving-history', slug: 'driving-history' }
-export const meta = {
-  ...page,
-  collects: ['yearsNoClaims', 'hadClaims', 'penaltyPoints']
-}
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/driving-history/template`
 
 const fields = compose(

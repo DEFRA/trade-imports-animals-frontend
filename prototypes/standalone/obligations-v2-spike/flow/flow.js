@@ -1,3 +1,19 @@
+import { emailPage } from '../features/email/page.js'
+import { aboutYouPage } from '../features/about-you/page.js'
+import { yourVehiclePage } from '../features/your-vehicle/page.js'
+import { drivingHistoryPage } from '../features/driving-history/page.js'
+import { claimsPage } from '../features/claims/page.js'
+import { coverTypePage } from '../features/cover-type/page.js'
+import { optionalExtrasPage } from '../features/optional-extras/page.js'
+import { addonsPage } from '../features/addons/page.js'
+import { driversPage } from '../features/named-driver/page.js'
+import {
+  modificationsDescribePage,
+  modificationsValuePage
+} from '../features/modifications/page.js'
+import { protectedNcdYearsPage } from '../features/protected-ncd/page.js'
+import { quoteSummaryPage } from '../features/quote/page.js'
+
 /**
  * The Flow — an ordered section -> pages structure. It owns SEQUENCE and
  * GATING only: no copy, no headings, no validation, no template choice
@@ -12,53 +28,47 @@
 export const sections = [
   {
     id: 'email',
-    pages: [{ id: 'email', slug: 'email' }]
+    pages: [{ ...emailPage }]
   },
   {
     id: 'about-you-and-your-vehicle',
-    pages: [
-      { id: 'about-you', slug: 'about-you' },
-      { id: 'your-vehicle', slug: 'your-vehicle' }
-    ]
+    pages: [{ ...aboutYouPage }, { ...yourVehiclePage }]
   },
   {
     id: 'your-driving-and-cover',
     pages: [
-      { id: 'driving-history', slug: 'driving-history' },
-      { id: 'claims', slug: 'claims', gate: (s) => s.inScope.has('claims') },
-      { id: 'cover-type', slug: 'cover-type' },
-      { id: 'optional-extras', slug: 'optional-extras' }
+      { ...drivingHistoryPage },
+      { ...claimsPage, gate: (s) => s.inScope.has('claims') },
+      { ...coverTypePage },
+      { ...optionalExtrasPage }
     ]
   },
   {
     id: 'add-to-your-policy',
-    pages: [{ id: 'addons', slug: 'addons' }]
+    pages: [{ ...addonsPage }]
   },
   {
     id: 'named-driver',
-    addon: 'named-driver',
+    dynamic: true,
     gate: (s) => s.inScope.has('drivers'),
-    pages: [{ id: 'drivers', slug: 'addons/named-driver' }]
+    pages: [{ ...driversPage }]
   },
   {
     id: 'modifications',
-    addon: 'modifications',
+    dynamic: true,
     gate: (s) => s.inScope.has('modDescription'),
-    pages: [
-      { id: 'modifications-describe', slug: 'addons/modifications/describe' },
-      { id: 'modifications-value', slug: 'addons/modifications/value' }
-    ]
+    pages: [{ ...modificationsDescribePage }, { ...modificationsValuePage }]
   },
   {
     id: 'protected-ncd',
-    addon: 'protected-ncd',
+    dynamic: true,
     gate: (s) => s.inScope.has('ncdYears'),
-    pages: [{ id: 'protected-ncd-years', slug: 'addons/protected-ncd/years' }]
+    pages: [{ ...protectedNcdYearsPage }]
   },
   {
     id: 'get-your-quote',
     gate: (s) => s.readyForQuote,
-    pages: [{ id: 'quote-summary', slug: 'quote-summary' }]
+    pages: [{ ...quoteSummaryPage }]
   }
 ]
 
