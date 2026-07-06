@@ -8,12 +8,17 @@
  *
  * Modelling walk (iterations land layer by layer):
  *   1. Notification-level countryOfOrigin + regionCodeRequirement gate.
- *   2. Notification-level singles + standard address blocks (this
- *      iteration): reason/purpose gate, transporter-type mutually-
- *      exclusive commercial/private address blocks, means-of-transport
- *      gate on transitedCountries, six standard address blocks storing
- *      composite values.
- *   3. Commodity line (user-driven indexed group).
+ *   2. Notification-level singles + standard address blocks:
+ *      reason/purpose gate, transporter-type mutually-exclusive
+ *      commercial/private address blocks, means-of-transport gate on
+ *      transitedCountries, six standard address blocks storing composite
+ *      values.
+ *   3. Commodity line + members (this iteration): user-driven indexed
+ *      group with per-line commodityCode / commodityType / species /
+ *      numberOfAnimals field records, numberOfPackages as a
+ *      commodity-code-gated derived-leaf (see GAPS.md §1), CPH as a
+ *      notification-level single reading nested storage, and
+ *      animalsCertifiedFor.
  *   4. Unit record (nested user-driven indexed group).
  *   5. Accompanying Document all-or-nothing block.
  *
@@ -289,6 +294,169 @@ export const internalReferenceNumber = {
 }
 
 // -----------------------------------------------------------------------------
+// Animals certified for (notification-level; spec notes APHA may make
+// this commodity-gated later — modelled as always-mandatory for now)
+// -----------------------------------------------------------------------------
+
+export const animalsCertifiedFor = {
+  id: '274c5d6e-7f80-4da4-8123-7de4f5061729',
+  name: 'animalsCertifiedFor',
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
+}
+
+// -----------------------------------------------------------------------------
+// Commodity line — user-driven indexed group. Each commodity line
+// carries commodityCode + commodityType + species + numberOfAnimals and
+// (conditionally) numberOfPackages. Line-instance ids are opaque
+// orchestrator-generated ULIDs — mnemonic `line1` / `line2` etc. in
+// tests and docs.
+// -----------------------------------------------------------------------------
+
+export const commodityLine = {
+  id: '20e5f607-1829-4c3d-8abc-06d7e8f9a0b2',
+  name: 'commodityLine'
+  // No applyTo — structural group, always in scope. Instance ids
+  // inferred from field-record composite-key prefixes.
+}
+
+export const commodityCode = {
+  id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
+  name: 'commodityCode',
+  within: commodityLine,
+  status: 'mandatory'
+}
+
+// Spec: "Where applicable for given commodity, user is able to filter
+// species by type." Ambiguous whether Type itself is commodity-gated
+// or whether that phrase describes UX for species filtering. Modelled
+// as unconditional field record for now; revisit if it turns out to
+// need per-line gating (would be another derived-leaf case per
+// GAPS.md §1).
+export const commodityType = {
+  id: '22071829-2a3b-4e5f-8cde-28f9a0b1c2d4',
+  name: 'commodityType',
+  within: commodityLine,
+  status: 'mandatory'
+}
+
+// Multi-select; stored value is an array of species strings per line.
+// The obligation model treats the array opaquely — agreed-maximum
+// cardinality is out of scope.
+export const species = {
+  id: '2318293a-3b4c-4f60-8def-39a0b1c2d3e5',
+  name: 'species',
+  within: commodityLine,
+  status: 'mandatory'
+}
+
+export const numberOfAnimals = {
+  id: '24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6',
+  name: 'numberOfAnimals',
+  within: commodityLine,
+  status: 'mandatory'
+}
+
+// Commodity codes for which V4 requires a package count. Subset of the
+// 54 codes listed on the Confluence page — enough to exercise every
+// pattern in tests; the full list belongs with the real journey code,
+// not this spike.
+export const PACKAGE_COUNT_COMMODITIES = [
+  '01064100', // Bees
+  '01063100', // Birds of Prey — Owls / Falcons / Other
+  '01061900', // Cats / Dogs / Ferrets / Rodents
+  '0102' // Cattle
+]
+
+// Derived-leaf reuse — see GAPS.md §1 for the conceptual gap this
+// resolves and why it's not a machinery gap.
+//
+// Semantics: per-line optional field record, in scope on any line whose
+// commodityCode is in PACKAGE_COUNT_COMMODITIES. Record-ids are the
+// line-instance ids where the code matches — NOT the commodity code
+// values — because two lines can share a code and each needs an
+// independent packages answer. Storage shape:
+//   fulfilments[numberOfPackages.id] = { line2: 3 }
+// (never `{ '01064100': 3 }` — see GAPS.md §1 for why that shape
+// collapses under duplicate codes.)
+//
+// `controllingObligation` names the field whose values drive the
+// filter, not the source of the record-ids themselves. The naming
+// mismatch is the gap.
+export const numberOfPackages = {
+  id: '252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507',
+  name: 'numberOfPackages',
+  within: commodityLine,
+  status: 'optional',
+  indexedBy: {
+    source: 'derived',
+    controllingObligation: commodityCode,
+    mutability: 'edit-only'
+  },
+  applyTo: (fulfilments) => {
+    const codesByLine = fulfilments[commodityCode.id] ?? {}
+    const matchingLineIds = Object.entries(codesByLine)
+      .filter(([, code]) => PACKAGE_COUNT_COMMODITIES.includes(code))
+      .map(([lineId]) => lineId)
+    if (matchingLineIds.length === 0) return { inScope: false }
+    return {
+      inScope: true,
+      reasons: [
+        {
+          code: 'obligation.numberOfPackages.applicable.becausePackageCountCommodity',
+          explanation:
+            'numberOfPackages applies on lines whose commodityCode is in the package-count list'
+        }
+      ],
+      records: matchingLineIds
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// County Parish Holding (CPH) — notification-level single, conditional
+// on the presence of any CPH-required commodity code across all
+// commodity lines.
+//
+// Pattern note (not a gap): a notification-level single's applyTo
+// reaches into the storage of a nested-record obligation
+// (`commodityCode`'s per-line map) to make its decision. Awkward
+// because the applyTo has to know the storage shape of another
+// obligation, but no evaluator extension needed — applyTo receives the
+// whole fulfilments map by design.
+// -----------------------------------------------------------------------------
+
+// Subset of the 19 CPH-required codes listed on the Confluence page.
+export const CPH_REQUIRED_COMMODITIES = [
+  '0102', // Cattle
+  '0103', // Pig (Domestic)
+  '010410', // Sheep (Domestic)
+  '010420' // Goats
+]
+
+export const cph = {
+  id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
+  name: 'cph',
+  applyTo: (fulfilments) => {
+    const codesByLine = fulfilments[commodityCode.id] ?? {}
+    const anyRequired = Object.values(codesByLine).some((code) =>
+      CPH_REQUIRED_COMMODITIES.includes(code)
+    )
+    if (!anyRequired) return { inScope: false }
+    return {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [
+        {
+          code: 'obligation.cph.applicable.becauseCphCommodity',
+          explanation:
+            'CPH applies when any commodity line has a CPH-required commodityCode'
+        }
+      ]
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Manifest — order does not affect evaluation (evaluator builds group
 // hierarchy via `within` back-references).
 // -----------------------------------------------------------------------------
@@ -315,7 +483,15 @@ export const obligations = [
   arrivalDateAtPort,
   portOfEntry,
   contactAddress,
-  internalReferenceNumber
+  internalReferenceNumber,
+  animalsCertifiedFor,
+  commodityLine,
+  commodityCode,
+  commodityType,
+  species,
+  numberOfAnimals,
+  numberOfPackages,
+  cph
 ]
 
 // Groups are obligations that other obligations reference via `within`.

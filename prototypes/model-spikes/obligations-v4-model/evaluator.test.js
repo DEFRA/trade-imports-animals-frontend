@@ -22,7 +22,15 @@ import {
   arrivalDateAtPort,
   portOfEntry,
   contactAddress,
-  internalReferenceNumber
+  internalReferenceNumber,
+  animalsCertifiedFor,
+  commodityLine,
+  commodityCode,
+  commodityType,
+  species,
+  numberOfAnimals,
+  numberOfPackages,
+  cph
 } from './obligations.js'
 
 let evaluator
@@ -61,6 +69,28 @@ const transitedCountriesReason = {
   explanation:
     'transitedCountries applies when meansOfTransport is railway or road-vehicle'
 }
+
+const numberOfPackagesReason = {
+  code: 'obligation.numberOfPackages.applicable.becausePackageCountCommodity',
+  explanation:
+    'numberOfPackages applies on lines whose commodityCode is in the package-count list'
+}
+
+const cphReason = {
+  code: 'obligation.cph.applicable.becauseCphCommodity',
+  explanation:
+    'CPH applies when any commodity line has a CPH-required commodityCode'
+}
+
+// Line-instance-id mnemonics. Real orchestrator-generated ids are
+// opaque ULIDs; the tests use readable constants so intent is
+// scannable (option 3 of the readability-vs-machinery discussion —
+// see GAPS.md §1).
+const LINE_UNKNOWN = 'line1' // commodity code not in any whitelist
+const LINE_BEES = 'line2' //    01064100 — packages required, CPH not required
+const LINE_OWLS = 'line3' //    01063100 — packages required, CPH not required
+const LINE_CATTLE = 'line4' //  0102     — packages required AND CPH required
+const LINE_SHEEP = 'line5' //   010410   — CPH required, packages not
 
 // A representative composite address value — the obligation model treats
 // the address as an opaque single value; field-level validation is out
@@ -110,7 +140,8 @@ describe('V4 — always-mandatory notification-level singles', () => {
     ['transportIdentification', transportIdentification],
     ['transportDocumentReference', transportDocumentReference],
     ['arrivalDateAtPort', arrivalDateAtPort],
-    ['portOfEntry', portOfEntry]
+    ['portOfEntry', portOfEntry],
+    ['animalsCertifiedFor', animalsCertifiedFor]
   ])('%s is mandatory in-scope on empty input', (_name, obligation) => {
     const result = evaluator.evaluate({})
     expect(result.obligations[obligation.id]).toEqual(mandatory)
@@ -344,5 +375,268 @@ describe('V4 — standard address blocks (composite value round-trip)', () => {
     })
     expect(result.fulfilments[obligation.id]).toEqual(alpineExporterAddress)
     expect(result.obligations[obligation.id]).toEqual(mandatory)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Commodity line — user-driven indexed group semantics
+// ---------------------------------------------------------------------------
+
+describe('V4 — commodity line group semantics', () => {
+  it('has no records when no commodity lines exist', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[commodityLine.id]).toEqual({
+      inScope: true,
+      records: []
+    })
+  })
+
+  it('infers a group fulfilmentId per line from commodityCode composite-key prefixes', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: {
+        [LINE_BEES]: '01064100',
+        [LINE_OWLS]: '01063100'
+      }
+    })
+    const ids = new Set(
+      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
+    )
+    expect(ids).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+  })
+
+  it('unions fulfilmentIds across any descendant field record', () => {
+    // Only numberOfAnimals is answered on line3 — the line's presence
+    // is still inferred (no dedicated commodityCode entry required).
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_BEES]: '01064100' },
+      [numberOfAnimals.id]: { [LINE_OWLS]: 42 }
+    })
+    const ids = new Set(
+      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
+    )
+    expect(ids).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Commodity line field records — per-line round-trip
+// ---------------------------------------------------------------------------
+
+describe('V4 — commodity line field records (round-trip)', () => {
+  it('commodityCode stores one value per line', () => {
+    const stored = {
+      [LINE_UNKNOWN]: '00000001',
+      [LINE_BEES]: '01064100',
+      [LINE_OWLS]: '01063100'
+    }
+    const result = evaluator.evaluate({ [commodityCode.id]: stored })
+    expect(result.fulfilments[commodityCode.id]).toEqual(stored)
+  })
+
+  it('commodityType stores one value per line', () => {
+    const result = evaluator.evaluate({
+      [commodityType.id]: { [LINE_BEES]: 'Adult', [LINE_OWLS]: 'Adult' }
+    })
+    expect(result.fulfilments[commodityType.id]).toEqual({
+      [LINE_BEES]: 'Adult',
+      [LINE_OWLS]: 'Adult'
+    })
+  })
+
+  it('numberOfAnimals stores one whole-number value per line', () => {
+    const result = evaluator.evaluate({
+      [numberOfAnimals.id]: { [LINE_BEES]: 250, [LINE_OWLS]: 12 }
+    })
+    expect(result.fulfilments[numberOfAnimals.id]).toEqual({
+      [LINE_BEES]: 250,
+      [LINE_OWLS]: 12
+    })
+  })
+
+  it('species stores an array of species strings per line', () => {
+    const result = evaluator.evaluate({
+      [species.id]: {
+        [LINE_BEES]: ['Apis mellifera'],
+        [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
+      }
+    })
+    expect(result.fulfilments[species.id]).toEqual({
+      [LINE_BEES]: ['Apis mellifera'],
+      [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// numberOfPackages — derived-leaf reuse (commodity-code-gated per line)
+// See GAPS.md §1.
+// ---------------------------------------------------------------------------
+
+describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
+  it('is out of scope when no commodity lines exist', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
+  })
+
+  it('is out of scope when no line has a package-count commodity code', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_UNKNOWN]: '00000001' }
+    })
+    expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
+  })
+
+  it('is in scope with reason on a matching line', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_BEES]: '01064100' }
+    })
+    expect(result.obligations[numberOfPackages.id]).toEqual({
+      inScope: true,
+      reasons: [numberOfPackagesReason],
+      records: [{ fulfilmentId: LINE_BEES, status: 'optional' }]
+    })
+  })
+
+  it('records list contains only matching line ids (mixed manifest)', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: {
+        [LINE_UNKNOWN]: '00000001',
+        [LINE_BEES]: '01064100',
+        [LINE_OWLS]: '01063100'
+      }
+    })
+    const ids = result.obligations[numberOfPackages.id].records.map(
+      (r) => r.fulfilmentId
+    )
+    expect(new Set(ids)).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+  })
+
+  it('keeps a stored value on a matching line (round-trip)', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_BEES]: '01064100' },
+      [numberOfPackages.id]: { [LINE_BEES]: 3 }
+    })
+    expect(result.fulfilments[numberOfPackages.id]).toEqual({
+      [LINE_BEES]: 3
+    })
+  })
+
+  it('purges a stored value on a non-matching line', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_UNKNOWN]: '00000001' },
+      [numberOfPackages.id]: { [LINE_UNKNOWN]: 7 }
+    })
+    expect(result.fulfilments[numberOfPackages.id]).toBeUndefined()
+  })
+
+  it('keeps matching-line values, purges non-matching-line values (mixed)', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: {
+        [LINE_UNKNOWN]: '00000001',
+        [LINE_BEES]: '01064100',
+        [LINE_OWLS]: '01063100'
+      },
+      [numberOfPackages.id]: {
+        [LINE_UNKNOWN]: 7, // should be purged
+        [LINE_BEES]: 3 // should survive
+        // LINE_OWLS unanswered
+      }
+    })
+    expect(result.fulfilments[numberOfPackages.id]).toEqual({
+      [LINE_BEES]: 3
+    })
+  })
+
+  // Identity comes from line-instance-id, not code value — see GAPS.md §1
+  // for why the code-value-keyed shape would collapse here.
+  it('supports two lines sharing the same matching code', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: {
+        [LINE_BEES]: '01064100',
+        [LINE_OWLS]: '01064100' // both lines: bees
+      },
+      [numberOfPackages.id]: {
+        [LINE_BEES]: 3,
+        [LINE_OWLS]: 5
+      }
+    })
+    expect(result.fulfilments[numberOfPackages.id]).toEqual({
+      [LINE_BEES]: 3,
+      [LINE_OWLS]: 5
+    })
+    const ids = result.obligations[numberOfPackages.id].records.map(
+      (r) => r.fulfilmentId
+    )
+    expect(new Set(ids)).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// CPH — notification-level single reading nested storage
+// ---------------------------------------------------------------------------
+
+describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
+  it('is out of scope when no commodity lines exist', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[cph.id]).toEqual(outOfScope)
+  })
+
+  it('is out of scope when no line has a CPH-required commodity code', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: {
+        [LINE_BEES]: '01064100',
+        [LINE_OWLS]: '01063100'
+      }
+    })
+    expect(result.obligations[cph.id]).toEqual(outOfScope)
+  })
+
+  it('is mandatory in-scope when at least one line has a CPH-required code', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: {
+        [LINE_BEES]: '01064100', // not CPH-required
+        [LINE_SHEEP]: '010410' //   CPH-required
+      }
+    })
+    expect(result.obligations[cph.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [cphReason]
+    })
+  })
+
+  it('keeps a stored cph value when a required code is present', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
+      [cph.id]: '123456789'
+    })
+    expect(result.fulfilments[cph.id]).toBe('123456789')
+  })
+
+  it('purges a stored cph value when no line has a required code', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_BEES]: '01064100' },
+      [cph.id]: '123456789'
+    })
+    expect(result.fulfilments[cph.id]).toBeUndefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Interlock — one cattle line triggers both packages and CPH gates
+// ---------------------------------------------------------------------------
+
+describe('V4 — cattle line triggers both packages and CPH gates', () => {
+  it('activates numberOfPackages (per-line) and cph (notification-level) simultaneously', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+    })
+    expect(
+      result.obligations[numberOfPackages.id].records.map((r) => r.fulfilmentId)
+    ).toEqual([LINE_CATTLE])
+    expect(result.obligations[cph.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [cphReason]
+    })
   })
 })
