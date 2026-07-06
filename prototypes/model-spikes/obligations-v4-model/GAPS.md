@@ -67,7 +67,7 @@ fulfilments[commodityCode.id] = {
 ```
 
 The `applyTo` filters those entries and returns the **line-instance
-ids** where the code is in the whitelist, not the code values
+ids** where the code is in the allowlist, not the code values
 themselves:
 
 ```js

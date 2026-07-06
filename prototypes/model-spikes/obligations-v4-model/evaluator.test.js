@@ -86,7 +86,7 @@ const cphReason = {
 // opaque ULIDs; the tests use readable constants so intent is
 // scannable (option 3 of the readability-vs-machinery discussion —
 // see GAPS.md §1).
-const LINE_UNKNOWN = 'line1' // commodity code not in any whitelist
+const LINE_UNKNOWN = 'line1' // commodity code not in any allowlist
 const LINE_BEES = 'line2' //    01064100 — packages required, CPH not required
 const LINE_OWLS = 'line3' //    01063100 — packages required, CPH not required
 const LINE_CATTLE = 'line4' //  0102     — packages required AND CPH required
