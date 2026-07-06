@@ -35,6 +35,7 @@
     "test:spike-d": "TZ=UTC vitest run prototypes/standalone/spike-d --no-coverage",
     "test:obligations-standalone-spike": "TZ=UTC vitest run prototypes/standalone/obligations-standalone-spike --no-coverage",
     "test:obligations-v2-spike": "TZ=UTC vitest run prototypes/standalone/obligations-v2-spike --no-coverage",
+    "dump:obligations-v2-spike": "node prototypes/standalone/obligations-v2-spike/dump.js",
     "lighthouse": "lhci autorun",
     "test:watch": "TZ=UTC vitest",
     "security-audit": "npm audit --audit-level=high",
