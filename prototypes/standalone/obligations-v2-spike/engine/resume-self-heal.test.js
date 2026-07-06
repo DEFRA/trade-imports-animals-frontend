@@ -9,8 +9,10 @@ import { configureReadyForQuote } from './read.js'
  * is saved with an obligation that is now OUT of scope (claims data, but
  * `hadClaims: 'no'`). On a days-later `state.resume`, scope is recomputed from
  * the answers alone: the stale obligation is excluded and the in-scope one is
- * re-derived. The durable record carries ONLY answers — no scope/status/wipe
- * fields — so there is nothing derived to go stale in the first place.
+ * re-derived. The durable record carries answers + lifecycle metadata
+ * (journeyId/userId/status/submittedAt) but NO *derived* fields (scope/wipe) —
+ * so there is nothing derived to go stale in the first place. That is the
+ * self-heal point.
  */
 const makeH = () => ({ state: () => {}, unstate: () => {} })
 

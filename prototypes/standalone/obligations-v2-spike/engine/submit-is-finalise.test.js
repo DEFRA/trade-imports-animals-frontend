@@ -42,7 +42,7 @@ describe('submit is finalise', () => {
 
     expect(result.ok).toBe(true)
     expect(result.journey.status).toBe(SUBMITTED)
-    expect(result.journey.submittedAt).toEqual(expect.any(String))
+    expect(result.journey.submittedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     // finalise writes NO data — answers are exactly the last commit.
     expect(result.journey.answers).toEqual(committed)
     // the record is frozen — a later commit is rejected.

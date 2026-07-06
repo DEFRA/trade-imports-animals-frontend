@@ -95,7 +95,9 @@ const gateValue = (activatedBy) => {
  * field within the current item frame) set that sibling in the representative
  * entry (e.g. `claimType:'windscreen'` to owe `windscreenProvider`). Top-level
  * activators (a collection's own gate, e.g. `hadClaims`/`addons`) are left to
- * `enumerateScopeStates`, so the scaffold only ever writes collection arrays.
+ * `enumerateScopeStates`. So the scaffold writes BOTH: a representative
+ * collection entry (index 0) per ancestor AND, inside that entry, the
+ * item-conditional sibling scalar that gates the target.
  */
 function scaffoldFor(templatePath) {
   const segments = templatePath.split('.')

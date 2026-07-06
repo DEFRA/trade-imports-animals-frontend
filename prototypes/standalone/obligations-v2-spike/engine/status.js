@@ -8,7 +8,7 @@ import { satisfied } from './complete.js'
  * over a set of obligation ids and the scope the state layer produced.
  *
  *  - Not Applicable — none of the ids are in scope
- *  - Fulfilled      — every in-scope REQUIRED id is answered
+ *  - Fulfilled      — every in-scope REQUIRED id is satisfied
  *                     (a section owing nothing required is vacuously Fulfilled)
  *  - In Progress    — some answered, but a required one is still missing
  *  - Not Started    — in scope, nothing answered yet
@@ -45,8 +45,8 @@ export function statusOf(obligationIds, answers, inScope) {
   const required = inScopeIds.filter(isRequired)
   if (required.length === 0) return FULFILLED
 
-  const allRequiredAnswered = required.every((id) => satisfied(id, answers))
-  if (allRequiredAnswered) return FULFILLED
+  const allRequiredSatisfied = required.every((id) => satisfied(id, answers))
+  if (allRequiredSatisfied) return FULFILLED
   return inScopeIds.some((id) => isStarted(id, answers))
     ? IN_PROGRESS
     : NOT_STARTED

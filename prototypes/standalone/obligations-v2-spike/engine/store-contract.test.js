@@ -3,9 +3,10 @@ import { store, IN_PROGRESS, SUBMITTED } from './store.js'
 
 /**
  * SAFETY-NET (NW-4 step 1) — pins the clone/freeze/unknown-id contract of the
- * durable store that no existing unit test drives directly. `contract.test.js`
- * and `store-ops.test.js` already exercise `store` THROUGH the facade; this pins
- * the boundary guarantees themselves (deep-clone both ways, the submit freeze,
+ * durable store through the compat shim. `contract.test.js` and
+ * `store-ops.test.js` already exercise `store` THROUGH the facade, and
+ * `records-port.test.js` drives the durable port directly; this pins the
+ * boundary guarantees themselves (deep-clone both ways, the submit freeze,
  * honest unknown-id handling) so the two-port reshape is provably behaviour-
  * preserving. Written against today's `store.js`; stays green after the reshape
  * because the compat shim re-exports the identical surface. `toMatchObject` (not
@@ -49,8 +50,12 @@ describe('store clone/freeze contract', () => {
   it('freezes on submit — saveAnswers and re-submit both throw once submitted', () => {
     const { journeyId } = store.create()
     store.submit(journeyId)
-    expect(() => store.saveAnswers(journeyId, { late: true })).toThrow()
-    expect(() => store.submit(journeyId)).toThrow()
+    expect(() => store.saveAnswers(journeyId, { late: true })).toThrow(
+      /is submitted — writes blocked/
+    )
+    expect(() => store.submit(journeyId)).toThrow(
+      /is submitted — writes blocked/
+    )
   })
 
   it('flips status to submitted and stamps submittedAt on submit', () => {

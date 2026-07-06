@@ -39,6 +39,8 @@ describe('records durable port', () => {
     const { journeyId } = records.create({ userId: 'user-A' })
     records.saveAnswers(journeyId, { email: 'a@b.com' })
     records.finalise(journeyId)
-    expect(() => records.saveAnswers(journeyId, { late: true })).toThrow()
+    expect(() => records.saveAnswers(journeyId, { late: true })).toThrow(
+      /is submitted — writes blocked/
+    )
   })
 })

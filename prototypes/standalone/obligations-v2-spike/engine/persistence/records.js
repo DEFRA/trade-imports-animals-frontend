@@ -5,8 +5,9 @@ import { randomUUID } from 'node:crypto'
  * application (Journey) document per journeyId, over an in-memory Map, deep-
  * copied across the boundary both ways so callers can never mutate stored state
  * by reference. Explicitly a STUB: the Map stands in for the real datastore
- * (Mongo, reached via the backend API) so a throwaway spike can run. Only
- * `answers` is mutable, and ALL writes are rejected once submitted (the one-way
+ * (Mongo, reached via the backend API) so a throwaway spike can run. `answers`
+ * is the only repeatedly-writable field; `status`/`submittedAt` are set once by
+ * `finalise`. ALL writes are rejected once submitted (the one-way
  * in-progress -> submitted freeze).
  *
  * A record is `{ journeyId, userId, status, submittedAt, answers }`. Two backing

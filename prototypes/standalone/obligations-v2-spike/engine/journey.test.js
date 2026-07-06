@@ -6,12 +6,13 @@ import { store } from './store.js'
  * SAFETY-NET (NW-4 step 1) — pins journey isolation through the ONE public
  * entry point every read/write path funnels through: `currentJourney(req, h)`.
  * Mint / same-session-resume / stale-pointer-remint / parallel-cookie isolation
- * are the behaviours the two-port split must preserve byte-for-byte. Driven via
- * `currentJourney` (whose `(request, h)` signature is stable across the reshape)
- * rather than `startJourney` (whose signature gains `request`), so every
- * assertion here stays identical before and after the port split. `headers: {}`
- * on the stub request is forward-compat with the session port's `userId(req)`
- * and is ignored by today's model.
+ * are the behaviours the session/records port split preserves byte-for-byte.
+ * Driven via `currentJourney` (whose `(request, h)` signature is stable across
+ * the split) rather than `startJourney` (whose signature gains `request`), so
+ * every assertion here is a regression pin that holds identically either side of
+ * the port split. `headers: {}` on the stub request feeds the session port's
+ * `userId(req)`: no override header is present, so it falls through to
+ * STUB_USER.
  */
 const makeH = () => {
   const cookies = {}

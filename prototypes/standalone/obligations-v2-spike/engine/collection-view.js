@@ -24,6 +24,8 @@ export const collectionView = (answers, collectionPath) => {
     index,
     path: [...collectionPath, index],
     entry,
+    // A missing/unresolved def path reports the entry complete-by-default;
+    // consumers should treat an unknown path as complete.
     complete: obligation ? entryComplete(obligation, entry) : true
   }))
 }

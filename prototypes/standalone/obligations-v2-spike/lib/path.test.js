@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  deleteAt,
-  parsePath,
-  pathKey,
-  setAt,
-  valueAt,
-  wipeOrder
-} from './path.js'
+import { deleteAt, destroyWiped, pathKey, setAt, valueAt } from './path.js'
 
 /**
  * Path helpers — the address vocabulary that lets reconcile/status/store
@@ -69,10 +62,10 @@ describe('path helpers', () => {
  * item-scoped wipes, so it is pinned now while the code is fresh.
  */
 describe('wipeOrder — sibling-safe deletion order', () => {
+  // Drive the REAL exported `destroyWiped` (used in production by
+  // `engine/write.js`) rather than re-deriving its map/sort/delete body inline.
   const applyWipes = (answers, keys) => {
-    for (const path of keys.map(parsePath).sort(wipeOrder)) {
-      deleteAt(answers, path)
-    }
+    destroyWiped(answers, keys)
     return answers
   }
 
@@ -100,5 +93,23 @@ describe('wipeOrder — sibling-safe deletion order', () => {
     const answers = { claims: [{ x: '1' }, { x: '2' }] }
     applyWipes(answers, ['claims[0]', 'claims[0].x'])
     expect(answers.claims).toEqual([{ x: '2' }])
+  })
+
+  it('destroyWiped deletes a sibling array-index and a nested path in order', () => {
+    const answers = {
+      claims: [
+        { claimType: 'a', claimAmount: '100' },
+        { claimType: 'b', claimAmount: '200' }
+      ],
+      email: 'x@y.com'
+    }
+    // Mix a whole-entry array-index wipe (claims[0]) with a nested-leaf wipe on
+    // a LATER sibling (claims[1].claimAmount). The nested delete must run before
+    // the splice, or renumbering would land it on the wrong entry.
+    destroyWiped(answers, ['claims[0]', 'claims[1].claimAmount'])
+    expect(answers).toEqual({
+      claims: [{ claimType: 'b' }],
+      email: 'x@y.com'
+    })
   })
 })
