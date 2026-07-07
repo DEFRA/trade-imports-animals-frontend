@@ -264,14 +264,13 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(documentsRow).toContainText('Completed')
   })
 
-  test('addresses — selecting a consignor, a place of destination, a place of origin and a consignee copies each party onto the landing page and completes the task', async ({
+  test('addresses — selecting a consignor, a place of destination, a place of origin, a consignee and an importer copies each party onto the landing page and completes the task', async ({
     page
   }) => {
     await startNotification(page)
 
-    // The consignor, place of destination, place of origin and consignee
-    // are required obligations owned by the addresses landing page, so the
-    // task starts open.
+    // All five parties are required obligations owned by the addresses
+    // landing page, so the task starts open.
     const addressesRow = page.locator('.govuk-task-list__item', {
       hasText: 'Addresses'
     })
@@ -279,15 +278,6 @@ test.describe('live-animals (page-owned spine)', () => {
 
     await page.getByRole('link', { name: 'Addresses' }).click()
     await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
-
-    // Parties whose select spoke has not landed yet stay Not added with no
-    // link — the landing page has no dead links.
-    const pendingParties = ['Importer']
-    for (const party of pendingParties) {
-      const row = page.locator('.govuk-summary-list__row', { hasText: party })
-      await expect(row).toContainText('Not added yet')
-      await expect(row.getByRole('link')).toHaveCount(0)
-    }
 
     // The consignor spoke exists: its row offers Add.
     const consignorRow = page.locator('.govuk-summary-list__row', {
@@ -365,7 +355,25 @@ test.describe('live-animals (page-owned spine)', () => {
       consigneeRow.getByRole('link', { name: 'Change' })
     ).toBeVisible()
 
-    // Continue returns to the hub with all four owed parties answered.
+    // The importer spoke works the same way — its own copy-commit.
+    const importerRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Importer'
+    })
+    await expect(importerRow).toContainText('Not added yet')
+    await importerRow.getByRole('link', { name: 'Add' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Search for an importer' })
+    ).toBeVisible()
+
+    await page.getByRole('radio', { name: values.importer.name }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(importerRow).toContainText(values.importer.name)
+    await expect(
+      importerRow.getByRole('link', { name: 'Change' })
+    ).toBeVisible()
+
+    // Continue returns to the hub with all five owed parties answered.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })

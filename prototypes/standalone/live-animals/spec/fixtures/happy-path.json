@@ -79,6 +79,19 @@
         "telephoneNumber": "+44 1756 555 0192",
         "emailAddress": "intake@yorkshire-dales-livestock.example.co.uk"
       }
+    },
+    "importer": {
+      "name": "Albion Livestock Imports Ltd",
+      "address": {
+        "addressLine1": "18 Harbour Road",
+        "addressLine2": "",
+        "townOrCity": "Dover",
+        "county": "Kent",
+        "postalOrZipCode": "CT17 9BU",
+        "country": "United Kingdom",
+        "telephoneNumber": "+44 1304 555 0184",
+        "emailAddress": "notifications@albion-livestock.example.co.uk"
+      }
     }
   }
 }

@@ -25,6 +25,7 @@ import * as consignorsSelect from './features/addresses/consignors-select.contro
 import * as destinationsSelect from './features/addresses/destinations-select.controller.js'
 import * as placeOfOriginSelect from './features/addresses/place-of-origin-select.controller.js'
 import * as consigneesSelect from './features/addresses/consignees-select.controller.js'
+import * as importersSelect from './features/addresses/importers-select.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -264,7 +265,8 @@ describe('controller <-> model commit contract', () => {
       'consignor',
       'placeOfDestination',
       'placeOfOrigin',
-      'consignee'
+      'consignee',
+      'importer'
     ])
 
     const spokes = [
@@ -291,6 +293,12 @@ describe('controller <-> model commit contract', () => {
         slug: 'consignees/select',
         payload: { consignee: 'yorkshire-dales-livestock' },
         commits: ['consignee']
+      },
+      {
+        module: importersSelect,
+        slug: 'importers/select',
+        payload: { importer: 'albion-livestock-imports' },
+        commits: ['importer']
       }
     ]
     const committed = []

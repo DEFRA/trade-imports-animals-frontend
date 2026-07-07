@@ -149,6 +149,7 @@ const buildRows = (answers) => {
     row('Place of origin', answerOf('placeOfOrigin')?.name, 'placeOfOrigin'),
     row('Consignor', answerOf('consignor')?.name, 'consignor'),
     row('Consignee', answerOf('consignee')?.name, 'consignee'),
+    row('Importer', answerOf('importer')?.name, 'importer'),
     row(
       'Place of destination',
       answerOf('placeOfDestination')?.name,

@@ -95,6 +95,13 @@ describe('indexed obligations are first-class', () => {
           country: 'United Kingdom'
         }
       },
+      importer: {
+        name: 'Albion Livestock Imports Ltd',
+        address: {
+          addressLine1: '18 Harbour Road',
+          country: 'United Kingdom'
+        }
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

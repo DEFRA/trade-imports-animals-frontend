@@ -29,7 +29,7 @@ const PARTY_ROWS = [
   },
   { id: 'consignor', label: 'Consignor', href: 'consignors/select' },
   { id: 'consignee', label: 'Consignee', href: 'consignees/select' },
-  { id: 'importer', label: 'Importer' },
+  { id: 'importer', label: 'Importer', href: 'importers/select' },
   {
     id: 'placeOfDestination',
     label: 'Place of destination',

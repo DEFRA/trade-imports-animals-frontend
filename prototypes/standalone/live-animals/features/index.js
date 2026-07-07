@@ -14,6 +14,7 @@ import * as consignorsSelect from './addresses/consignors-select.controller.js'
 import * as destinationsSelect from './addresses/destinations-select.controller.js'
 import * as placeOfOriginSelect from './addresses/place-of-origin-select.controller.js'
 import * as consigneesSelect from './addresses/consignees-select.controller.js'
+import * as importersSelect from './addresses/importers-select.controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -74,6 +75,7 @@ export const allRoutes = [
   ...destinationsSelect.routes,
   ...placeOfOriginSelect.routes,
   ...consigneesSelect.routes,
+  ...importersSelect.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,
