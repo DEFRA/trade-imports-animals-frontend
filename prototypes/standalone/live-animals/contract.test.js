@@ -28,6 +28,7 @@ import * as consigneesSelect from './features/addresses/consignees-select.contro
 import * as importersSelect from './features/addresses/importers-select.controller.js'
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as transportDetails from './features/transport/transport-details.controller.js'
+import * as transporters from './features/transport/transporters.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -116,6 +117,12 @@ const cases = [
       transportDocumentReference: 'CMR-2026-884721',
       transitedCountries: ['FR', 'BE']
     }
+  },
+  {
+    id: 'transporters',
+    collects: transporters.meta.collects,
+    handler: postHandlerOf(transporters),
+    payload: { transporterType: 'Commercial transporter' }
   },
   {
     id: 'email',

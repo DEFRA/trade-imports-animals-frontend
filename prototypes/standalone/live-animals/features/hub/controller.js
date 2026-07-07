@@ -38,7 +38,7 @@ const GROUP_ROWS = [
   {
     id: 'transport',
     title: 'Transport',
-    hint: 'The port of entry, when the consignment will arrive and how the animals will travel'
+    hint: 'The port of entry, when the consignment will arrive, how the animals will travel and who transports them'
   },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {

@@ -186,6 +186,8 @@ const buildRows = (answers) => {
           )
         ]
       : []),
+    // The stored type IS the V4 label (no code lookup needed).
+    row('Transporter type', answerOf('transporterType'), 'transporterType'),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

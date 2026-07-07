@@ -102,6 +102,7 @@
     "meansOfTransport": "Road Vehicle",
     "transportIdentification": "FR-892-LK",
     "transportDocumentReference": "CMR-2026-884721",
-    "transitedCountries": ["FR", "BE"]
+    "transitedCountries": ["FR", "BE"],
+    "transporterType": "Commercial transporter"
   }
 }

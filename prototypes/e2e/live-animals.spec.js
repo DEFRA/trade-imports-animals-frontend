@@ -381,7 +381,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Completed')
   })
 
-  test('transport — a partial arrival date blocks the save; the port, date and travel details complete the task', async ({
+  test('transport — a partial arrival date blocks the save; the port, date, travel details and transporter type complete the task', async ({
     page
   }) => {
     await startNotification(page)
@@ -443,11 +443,83 @@ test.describe('live-animals (page-owned spine)', () => {
       .fill(values.transportDocumentReference)
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
+    // Three-page section: saving walks on to the transporter-type page.
+    await expect(
+      page.getByRole('heading', {
+        name: 'What type of transporter will move the animals?'
+      })
+    ).toBeVisible()
+    await page
+      .getByRole('radio', { name: values.transporterType, exact: true })
+      .check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
     // Last page of the section: saving returns to the hub, task completed.
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
     ).toBeVisible()
     await expect(transportRow).toContainText('Completed')
+  })
+
+  test('transporters — reached by saving through the earlier transport pages; the chosen type persists', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // Every field on the two earlier pages is submit-enforced, so blank
+    // saves walk straight through to the transporter-type page.
+    const openTransporters = async () => {
+      await page.getByRole('link', { name: 'Transport' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Port of entry' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'How the animals will travel' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', {
+          name: 'What type of transporter will move the animals?'
+        })
+      ).toBeVisible()
+    }
+
+    await openTransporters()
+
+    // Both V4 types are offered; nothing is pre-selected.
+    const commercial = page.getByRole('radio', {
+      name: 'Commercial transporter'
+    })
+    const privateType = page.getByRole('radio', {
+      name: 'Private transporter'
+    })
+    await expect(commercial).not.toBeChecked()
+    await expect(privateType).not.toBeChecked()
+
+    // transporterType is submit-enforced too — even a blank save passes and
+    // returns to the hub with the task still open.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    const transportRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Transport'
+    })
+    await expect(transportRow).toContainText('Not started')
+
+    // Choosing a type saves and persists on return.
+    await openTransporters()
+    await privateType.check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(transportRow).toContainText('In progress')
+
+    await openTransporters()
+    await expect(privateType).toBeChecked()
+    await expect(commercial).not.toBeChecked()
   })
 
   test('transport details — transited countries revealed only for rail or road; changing the means wipes saved countries', async ({
@@ -465,6 +537,20 @@ test.describe('live-animals (page-owned spine)', () => {
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
         page.getByRole('heading', { name: 'How the animals will travel' })
+      ).toBeVisible()
+    }
+    // Saving the travel details walks on to the transporter-type page; a
+    // blank save there (submit-enforced) returns to the hub.
+    const saveThroughTransporters = async () => {
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', {
+          name: 'What type of transporter will move the animals?'
+        })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Get a car insurance quote' })
       ).toBeVisible()
     }
     const roadReveal = page.locator(
@@ -489,10 +575,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Save two transited countries under Road Vehicle...
     await roadReveal.getByRole('checkbox', { name: 'France' }).check()
     await roadReveal.getByRole('checkbox', { name: 'Belgium' }).check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
-    ).toBeVisible()
+    await saveThroughTransporters()
 
     // ...and they are still selected on return.
     await openTransportDetails()
@@ -506,10 +589,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // A means outside the overland set takes the countries out of scope —
     // saving wipes them.
     await page.getByRole('radio', { name: 'Vessel' }).check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
-    ).toBeVisible()
+    await saveThroughTransporters()
 
     // Back to Road Vehicle: leaving scope wiped the saved countries — no
     // checkbox is pre-selected.

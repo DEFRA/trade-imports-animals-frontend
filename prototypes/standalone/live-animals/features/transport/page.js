@@ -12,3 +12,8 @@ export const transportDetailsPage = {
   id: 'transport-details',
   slug: 'transport-details'
 }
+
+export const transportersPage = {
+  id: 'transporters',
+  slug: 'transporters'
+}

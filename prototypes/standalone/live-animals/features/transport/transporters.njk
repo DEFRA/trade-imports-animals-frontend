@@ -1,0 +1,40 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "transporterType",
+      fieldset: {
+        legend: {
+          text: "What type of transporter will move the animals?",
+          isPageHeading: true,
+          classes: "govuk-fieldset__legend--l"
+        }
+      },
+      hint: { text: "We will ask for the transporter's details next." },
+      errorMessage: errors.transporterType and { text: errors.transporterType },
+      items: [
+        {
+          value: "Commercial transporter",
+          text: "Commercial transporter",
+          hint: { text: "A business approved to transport animals — you will choose one from a list" },
+          checked: values.transporterType == "Commercial transporter"
+        },
+        {
+          value: "Private transporter",
+          text: "Private transporter",
+          hint: { text: "You or another individual moving the animals — you will give their address" },
+          checked: values.transporterType == "Private transporter"
+        }
+      ]
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

@@ -31,11 +31,20 @@ export const transitedCountries = {
   wipeOnExit: true
 }
 
+/**
+ * The commercial-vs-private split (V4, c-012). The stored value is the V4
+ * label itself — the commercial and private transporter obligations (next
+ * two increments) activate on 'Commercial transporter' / 'Private
+ * transporter' verbatim.
+ */
+export const transporterType = { id: 'transporterType', required: true }
+
 export const obligations = [
   portOfEntry,
   arrivalDateAtPort,
   meansOfTransport,
   transportIdentification,
   transportDocumentReference,
-  transitedCountries
+  transitedCountries,
+  transporterType
 ]

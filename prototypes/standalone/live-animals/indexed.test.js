@@ -107,6 +107,7 @@ describe('indexed obligations are first-class', () => {
       meansOfTransport: 'Airplane',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
+      transporterType: 'Commercial transporter',
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

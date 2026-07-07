@@ -46,20 +46,27 @@ export const enumerateScopeStates = () =>
       // 'Road Vehicle' is one of transitedCountries' two activating values —
       // either member of the includes-list witnesses the activated side.
       ['', 'Road Vehicle'].flatMap((meansOfTransport) =>
-        ['no', 'yes'].flatMap((hadClaims) =>
-          ['no', 'yes'].flatMap((voluntaryExcess) =>
-            ['', 'comprehensive'].flatMap((coverType) =>
-              subsetsOf(ADDONS).map((addons) => ({
-                regionOfOriginCodeRequirement,
-                reasonForImport,
-                meansOfTransport,
-                hadClaims,
-                voluntaryExcess,
-                coverType,
-                addons
-              }))
+        // The commercial and private transporter spokes activate on DIFFERENT
+        // equals-values, so (unlike an includes-list) one non-blank value
+        // cannot witness both branches — the axis carries all three.
+        ['', 'Commercial transporter', 'Private transporter'].flatMap(
+          (transporterType) =>
+            ['no', 'yes'].flatMap((hadClaims) =>
+              ['no', 'yes'].flatMap((voluntaryExcess) =>
+                ['', 'comprehensive'].flatMap((coverType) =>
+                  subsetsOf(ADDONS).map((addons) => ({
+                    regionOfOriginCodeRequirement,
+                    reasonForImport,
+                    meansOfTransport,
+                    transporterType,
+                    hadClaims,
+                    voluntaryExcess,
+                    coverType,
+                    addons
+                  }))
+                )
+              )
             )
-          )
         )
       )
     )
