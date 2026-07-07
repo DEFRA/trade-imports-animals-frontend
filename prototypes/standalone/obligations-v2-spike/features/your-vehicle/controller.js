@@ -55,10 +55,13 @@ const post = (request, h) => {
     year: (payload.year ?? '').trim(),
     estimatedValue: (payload.estimatedValue ?? '').trim()
   }
-  const { errors } = validate(fields, payload)
+  const { value: clean, errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  const { scope } = state.commit(request, h, values)
+  const { scope } = state.commit(request, h, {
+    ...values,
+    estimatedValue: clean.estimatedValue ?? ''
+  })
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

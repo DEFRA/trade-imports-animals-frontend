@@ -32,10 +32,12 @@ const get = (request, h) => {
 const post = (request, h) => {
   const payload = request.payload ?? {}
   const value = (payload.modValue ?? '').trim()
-  const { errors } = validate(fields, payload)
+  const { value: clean, errors } = validate(fields, payload)
   if (errors) return render(h, value, errors)
 
-  const { scope } = state.commit(request, h, { modValue: value })
+  const { scope } = state.commit(request, h, {
+    modValue: clean.modValue ?? ''
+  })
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

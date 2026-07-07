@@ -350,3 +350,40 @@ touching `reconcile`/`status`/`store`). **State: green — 141 unit / 70 E2E.** 
 specs and all 11 journeys are byte-unaffected. Phase 1–3 were byte-green pure refactors; 4–5 additive
 (+34 unit tests). Design-panel plans + sweep reports are in the scratchpad / `PHASE0-SWEEP.md` /
 `PHASE6-SWEEP.md`. Not pushed; no PR opened.
+
+---
+
+## Cleanup pipeline (EUDPA-249), 2026-07-07 — work order in `CLEANUP-TODO.md`
+
+Sam commissioned a full clean-up pass: 12 tasks (T0–T11) across 8 phases, defined in
+[`CLEANUP-TODO.md`](CLEANUP-TODO.md) (problems + acceptance criteria + gates; workers own the
+diagnosis). Model routing: Phase 1–4 workers on Opus 4.8; T0/T9/T10/T11 on Fable. Same rails as
+the 2026-07-06 pass (green every commit, one commit per task, `--no-verify`, own code lint-clean,
+Workflow-orchestrated, parent-shell verification).
+
+- [x] **T0 — activatedBy vs gate design investigation (report-only). DONE.**
+  _Landed as:_ a 3-lens adversarial workflow (collapse advocate / separation advocate / empiricist
+  catalogue) → skeptical judge who spot-checked citations (refuted 2 analyst miscites). **Verdict:
+  CONSOLIDATE PARTIALLY** — 4 of 5 gates (claims + three addons) are pure `inScope.has(key)` reads
+  fully determined by the model + `collects` (divergence ⇒ ghost NA row or quote deadlock;
+  string-coincidence rename hazard already fired once in DESIGN.md ~277), while `readyForQuote` is
+  a hard counterexample to full collapse. Report: [`T0-ACTIVATEDBY-VS-GATE.md`](T0-ACTIVATEDBY-VS-GATE.md).
+  **Sam ACCEPTED the §7 proposal as T11** (Phase 4.5 — derive default gates from `collects`, keep
+  `gate` as authored override; before T9/T10 so reorg + docs describe the consolidated design).
+  No code changes; no green gate needed (read-only).
+
+- [x] **T1 — currency values persisted raw (cleaned value discarded). DONE — green, adversarially verified.**
+  _Landed as:_ investigate → implement (fail-before proven) → 3-skeptic verify workflow (Opus).
+  Root cause: every controller composing the `currency()` validator destructured only `{ errors }`
+  from `validate()` and committed the raw hand-trimmed payload, so `£9,000` persisted raw —
+  **`Number('£9,000')||0` collapsed the premium value-loading to 0** (a £15,000 car priced the same
+  as an empty field) and check-answers rendered `££9,000`. **Five sites fixed** (the investigation
+  found one beyond the flagged four): `your-vehicle` (estimatedValue), `cover-type` (excessAmount),
+  `modifications/value` (modValue), `claims/entry` + `named-driver/driver-claim` (claimAmount via
+  the shared `claimFromPayload`). Fix is currency-key-scoped — `const { value: clean, errors } =
+  validate(...)`, commit overrides ONLY the currency key (`clean.<field> ?? ''`); raw `values` kept
+  for the error re-render (contract pinned by 2 guard tests). NOT wholesale `validate().value`
+  (would clobber the controller-assembled date object + hand-trims). New
+  `t1-currency-persist.test.js`: 8 tests through the real store — 6 proven fail-before (incl.
+  premium 480→570), 2 error-path guards. Skeptics (coverage / over-correction / test-quality): no
+  objections. **Green: unit 149 (21 files) / E2E 70, parent-shell verified; eslint + prettier clean.**

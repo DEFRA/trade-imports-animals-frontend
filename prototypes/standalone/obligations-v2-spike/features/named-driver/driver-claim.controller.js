@@ -57,11 +57,16 @@ const getAdd = (request, h) => {
 const postAdd = (request, h) => {
   const { answers } = state.get(request, h)
   if (validDriver(request, answers) === null) return h.redirect(hubPath)
-  const entry = claimFromPayload(request.payload ?? {})
-  const { errors } = validateClaim(request.payload ?? {})
+  const payload = request.payload ?? {}
+  const entry = claimFromPayload(payload)
+  const { value: clean, errors } = validateClaim(payload)
   if (errors) return render(request, h, entry, errors)
 
-  state.appendEntryAt(request, h, driverPath(request), entry) // MINTS nested index
+  // MINTS nested index
+  state.appendEntryAt(request, h, driverPath(request), {
+    ...entry,
+    claimAmount: clean.claimAmount ?? ''
+  })
   return h.redirect(detailPath(request))
 }
 

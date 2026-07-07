@@ -84,11 +84,16 @@ const getAdd = (request, h) => {
 }
 
 const postAdd = (request, h) => {
-  const entry = claimFromPayload(request.payload ?? {})
-  const { errors } = validateClaim(request.payload ?? {})
+  const payload = request.payload ?? {}
+  const entry = claimFromPayload(payload)
+  const { value: clean, errors } = validateClaim(payload)
   if (errors) return render(h, entry, errors)
 
-  state.appendEntry(request, h, 'claims', entry) // MINTS the index (identity)
+  // MINTS the index (identity)
+  state.appendEntry(request, h, 'claims', {
+    ...entry,
+    claimAmount: clean.claimAmount ?? ''
+  })
   return h.redirect(pagePath('claims'))
 }
 
