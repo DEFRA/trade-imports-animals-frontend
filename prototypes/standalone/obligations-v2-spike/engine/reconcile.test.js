@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { reconcile } from './reconcile.js'
 
 /** The scope + scope-exit-wipe invariants — pure, page-agnostic. */
-describe('reconcile', () => {
-  it('places root obligations in scope and gates the rest', () => {
+describe('#reconcile', () => {
+  it('Should place root obligations in scope and gate the rest', () => {
     const { inScope } = reconcile({})
     expect(inScope.has('fullName')).toBe(true)
     expect(inScope.has('email')).toBe(true)
@@ -12,12 +12,12 @@ describe('reconcile', () => {
     expect(inScope.has('driverName')).toBe(false)
   })
 
-  it('activates the claims collection when hadClaims is yes', () => {
+  it('Should activate the claims collection when hadClaims is yes', () => {
     expect(reconcile({ hadClaims: 'yes' }).inScope.has('claims')).toBe(true)
     expect(reconcile({ hadClaims: 'no' }).inScope.has('claims')).toBe(false)
   })
 
-  it('wipes claims data when hadClaims leaves the yes scope (destroyed, not hidden)', () => {
+  it('Should wipe claims data when hadClaims leaves the yes scope (destroyed, not hidden)', () => {
     const answers = {
       hadClaims: 'no',
       claims: [{ claimType: 'accident', claimAmount: '500' }]
@@ -25,7 +25,7 @@ describe('reconcile', () => {
     expect(reconcile(answers).wiped).toContain('claims')
   })
 
-  it('activates the drivers collection on selection and wipes it on deselect', () => {
+  it('Should activate the drivers collection on selection and wipe it on deselect', () => {
     const on = reconcile({ addons: ['named-driver'] }).inScope
     expect(on.has('drivers')).toBe(true)
     expect(on.has('modDescription')).toBe(false)
@@ -38,7 +38,7 @@ describe('reconcile', () => {
     expect(off.wiped).toContain('drivers')
   })
 
-  it('reveals + wipes excessAmount with the voluntaryExcess answer', () => {
+  it('Should reveal and wipe excessAmount with the voluntaryExcess answer', () => {
     expect(
       reconcile({ voluntaryExcess: 'yes' }).inScope.has('excessAmount')
     ).toBe(true)
@@ -47,7 +47,7 @@ describe('reconcile', () => {
     ).toContain('excessAmount')
   })
 
-  it('brings the system premium into scope once cover is chosen', () => {
+  it('Should bring the system premium into scope once cover is chosen', () => {
     expect(reconcile({}).inScope.has('premium')).toBe(false)
     expect(
       reconcile({ coverType: 'comprehensive' }).inScope.has('premium')

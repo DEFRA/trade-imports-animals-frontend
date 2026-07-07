@@ -37,7 +37,7 @@ describe('path-addressed store ops at depth', () => {
     journeyId = store.create().journeyId
   })
 
-  it('appends a nested claim under a driver, minting the nested index', () => {
+  it('Should append a nested claim under a driver, minting the nested index', () => {
     seed({ drivers: [{ driverName: 'Sam' }] })
     const index = appendEntryAt(
       buildRequest(),
@@ -62,7 +62,7 @@ describe('path-addressed store ops at depth', () => {
     expect(answersNow().drivers[0].claims).toHaveLength(2)
   })
 
-  it('removes a nested claim in place, leaving siblings intact', () => {
+  it('Should remove a nested claim in place, leaving siblings intact', () => {
     seed({
       drivers: [{ claims: [{ claimType: 'a' }, { claimType: 'b' }] }]
     })
@@ -70,7 +70,7 @@ describe('path-addressed store ops at depth', () => {
     expect(answersNow().drivers[0].claims).toEqual([{ claimType: 'b' }])
   })
 
-  it('IGNORES a non-integer index (a malformed URL must not destroy instance 0)', () => {
+  it('Should ignore a non-integer index (a malformed URL must not destroy instance 0)', () => {
     seed({ drivers: [{ driverName: 'FIRST' }, { driverName: 'SECOND' }] })
     removeEntryAt(buildRequest(), stubH(), ['drivers'], Number('foo')) // NaN
     expect(answersNow().drivers.map((driver) => driver.driverName)).toEqual([
@@ -79,16 +79,21 @@ describe('path-addressed store ops at depth', () => {
     ])
   })
 
-  it('IGNORES an out-of-range index on remove and update', () => {
+  it('Should ignore an out-of-range index on remove', () => {
     seed({ drivers: [{ driverName: 'only' }] })
     removeEntryAt(buildRequest(), stubH(), ['drivers'], 5)
+    expect(answersNow().drivers).toEqual([{ driverName: 'only' }])
+  })
+
+  it('Should ignore an out-of-range index on update', () => {
+    seed({ drivers: [{ driverName: 'only' }] })
     updateEntryAt(buildRequest(), stubH(), ['drivers'], 5, {
       driverName: 'ghost'
     })
     expect(answersNow().drivers).toEqual([{ driverName: 'only' }])
   })
 
-  it('edits a nested entry in place (updateEntryAt — no longer dead code)', () => {
+  it('Should edit a nested entry in place (updateEntryAt — no longer dead code)', () => {
     seed({ drivers: [{ claims: [{ claimType: 'a' }] }] })
     updateEntryAt(buildRequest(), stubH(), ['drivers', 0, 'claims'], 0, {
       claimType: 'windscreen'
@@ -98,7 +103,7 @@ describe('path-addressed store ops at depth', () => {
     ])
   })
 
-  it('does not leak nested data after remove-then-add (no rehydrate at depth)', () => {
+  it('Should not leak nested data after remove-then-add (no rehydrate at depth)', () => {
     seed({ drivers: [{ driverName: 'Sam', claims: [{ claimType: 'ghost' }] }] })
     removeEntryAt(buildRequest(), stubH(), ['drivers'], 0)
     appendEntryAt(buildRequest(), stubH(), ['drivers'], { driverName: 'Jo' })
@@ -106,7 +111,7 @@ describe('path-addressed store ops at depth', () => {
     expect(answersNow().drivers[0].claims).toBeUndefined()
   })
 
-  it('destroys a windscreenProvider at its exact path on commit when a claim leaves windscreen', () => {
+  it('Should destroy a windscreenProvider at its exact path on commit when a claim leaves windscreen', () => {
     // claim 0 stays windscreen; claim 1 is now accident but carries a stale
     // provider. A commit reconciles and must DELETE claims[1].windscreenProvider
     // (destroyed, not hidden) at that exact path, leaving claim 0's provider.
@@ -124,7 +129,7 @@ describe('path-addressed store ops at depth', () => {
     expect(now.claims[1].claimType).toBe('accident') // rest of the entry intact
   })
 
-  it('a malformed/out-of-range driver index does not fabricate a phantom driver', () => {
+  it('Should not fabricate a phantom driver for a malformed/out-of-range driver index', () => {
     seed({ drivers: [{ driverName: 'Sam' }] })
     const postAddClaim = postHandlerEndingWith(driverClaim, 'claims/add')
     const request = journeyRequest(journeyId, {

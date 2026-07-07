@@ -7,7 +7,7 @@ import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from './simulate.js'
 
 /** The headless persona -> ordered page sequence walk (entry 4). */
-describe('journey simulator', () => {
+describe('#simulateJourney', () => {
   // The quote-readiness gate flows through the status roll-up, which reads the
   // boot-built dispatch index — so replicate boot, exactly as the app does.
   beforeAll(() => {
@@ -15,7 +15,7 @@ describe('journey simulator', () => {
     configureReadyForQuote(readyForQuote)
   })
 
-  it('walks a plain persona (no claims, no add-ons) straight through', () => {
+  it('Should walk a plain persona (no claims, no add-ons) straight through', () => {
     const pages = simulateJourney({
       email: 'a@b.co',
       fullName: 'Alex',
@@ -36,7 +36,7 @@ describe('journey simulator', () => {
     expect(pages.indexOf('cover-type')).toBeLessThan(pages.indexOf('addons'))
   })
 
-  it('inserts the gated claims page exactly when hadClaims is yes', () => {
+  it('Should insert the gated claims page exactly when hadClaims is yes', () => {
     const pages = simulateJourney({ hadClaims: 'yes' })
     expect(pages).toContain('claims')
     // between driving-history and cover-type, per the flow.
@@ -46,7 +46,7 @@ describe('journey simulator', () => {
     expect(pages.indexOf('claims')).toBeLessThan(pages.indexOf('cover-type'))
   })
 
-  it('opens only the add-on section a persona selected', () => {
+  it('Should open only the add-on section a persona selected', () => {
     const pages = simulateJourney({ addons: ['named-driver'] })
     // The named-driver add-on is now the `drivers` collection hub (its sub-loop
     // add/detail pages are reached from the hub, not walked by the section).
@@ -55,7 +55,7 @@ describe('journey simulator', () => {
     expect(pages).not.toContain('protected-ncd-years')
   })
 
-  it('reveals the quote page only once the journey is ready to quote', () => {
+  it('Should reveal the quote page only once the journey is ready to quote', () => {
     const notReady = simulateJourney({ email: 'a@b.co' })
     expect(notReady).not.toContain('quote-summary')
 

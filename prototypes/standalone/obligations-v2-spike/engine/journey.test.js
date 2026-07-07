@@ -19,10 +19,10 @@ import { recordingH } from './test-support.js'
 // Distinct from the journey-pinned `journeyRequest`.
 const buildRequest = (cookies) => ({ state: { ...cookies }, headers: {} })
 
-describe('journey isolation seam', () => {
+describe('#currentJourney', () => {
   beforeEach(() => store.clear())
 
-  it('mints a fresh journey and pins it in the cookie when none is present', () => {
+  it('Should mint a fresh journey and pin it in the cookie when none is present', () => {
     const h = recordingH()
     const journey = currentJourney(buildRequest({}), h)
     expect(journey.journeyId).toEqual(expect.any(String))
@@ -30,7 +30,7 @@ describe('journey isolation seam', () => {
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 
-  it('resumes the same journey within a session (cookie points at a live journey)', () => {
+  it('Should resume the same journey within a session (cookie points at a live journey)', () => {
     const first = currentJourney(buildRequest({}), recordingH())
     store.saveAnswers(first.journeyId, { email: 'a@b.com' })
     const again = currentJourney(
@@ -41,7 +41,7 @@ describe('journey isolation seam', () => {
     expect(again.answers).toEqual({ email: 'a@b.com' })
   })
 
-  it('re-mints when the cookie points at a stale/unknown journey', () => {
+  it('Should re-mint when the cookie points at a stale/unknown journey', () => {
     const h = recordingH()
     const journey = currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: 'gone-1234' }),
@@ -52,7 +52,7 @@ describe('journey isolation seam', () => {
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 
-  it('keeps parallel cookies isolated — no cross-talk between two journeys', () => {
+  it('Should keep parallel cookies isolated — no cross-talk between two journeys', () => {
     const journeyA = currentJourney(buildRequest({}), recordingH())
     const journeyB = currentJourney(buildRequest({}), recordingH())
     expect(journeyA.journeyId).not.toBe(journeyB.journeyId)

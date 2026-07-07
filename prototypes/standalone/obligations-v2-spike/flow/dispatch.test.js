@@ -9,7 +9,7 @@ import { nextInSection, sectionEntry } from './navigation.js'
 describe('dispatch + flow', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
-  it('coverage-asserts every non-system obligation to exactly one page', () => {
+  it('Should assert coverage of every non-system obligation to exactly one page', () => {
     expect(() => buildDispatch(dispatchPages)).not.toThrow()
     expect(pageOfObligation('fullName')).toBe('about-you')
     expect(pageOfObligation('claims')).toBe('claims')
@@ -17,7 +17,7 @@ describe('dispatch + flow', () => {
     expect(collectsOf('about-you')).toContain('fullName')
   })
 
-  it('crashes boot when an obligation (and its derived sub-obligations) is uncovered', () => {
+  it('Should crash boot when an obligation (and its derived sub-obligations) is uncovered', () => {
     // Teeth: drop the claims page. `claims` is then owned by nobody, and its
     // item sub-obligations (which derive ownership from it) are uncovered too —
     // coverage descends the tree, so boot must throw naming the uncovered root.
@@ -27,7 +27,7 @@ describe('dispatch + flow', () => {
     buildDispatch(dispatchPages) // restore the shared index for later tests
   })
 
-  it('resolves a sub-obligation to its collection owner by template AND instance address', () => {
+  it('Should resolve a sub-obligation to its collection owner by template and instance address', () => {
     // Derived ownership: a claim sub-field is owned by the page owning `claims`.
     expect(pageOfObligation('claims.claimType')).toBe('claims')
     // The engine addresses instances in bracketed pathKey form (from reconcile);
@@ -36,7 +36,7 @@ describe('dispatch + flow', () => {
     expect(pageOfObligation('claims[0]')).toBe('claims')
   })
 
-  it('walks the driving-and-cover section, skipping claims when out of scope', () => {
+  it('Should walk the driving-and-cover section, skipping claims when out of scope', () => {
     const scopeNoClaims = { inScope: reconcile({ hadClaims: 'no' }).inScope }
     const scopeClaims = { inScope: reconcile({ hadClaims: 'yes' }).inScope }
     expect(nextInSection('driving-history', scopeClaims)).toMatch(/\/claims$/)
@@ -46,7 +46,7 @@ describe('dispatch + flow', () => {
     expect(nextInSection('optional-extras', scopeClaims)).toMatch(/\/hub$/)
   })
 
-  it('enters an addon section only at its first gated-in page', () => {
+  it('Should enter an addon section only at its first gated-in page', () => {
     const scope = { inScope: reconcile({ addons: ['named-driver'] }).inScope }
     // The named-driver add-on section now lands on the drivers collection hub.
     expect(sectionEntry('named-driver', scope)).toMatch(
@@ -54,7 +54,7 @@ describe('dispatch + flow', () => {
     )
   })
 
-  it('unlocks the quote only once every other section is complete', () => {
+  it('Should unlock the quote only once every other section is complete', () => {
     const complete = {
       email: 'a@b.co',
       fullName: 'Alex',

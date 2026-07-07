@@ -23,14 +23,14 @@ describe('indexed obligations are first-class', () => {
   // boot inversion must run first — same as dispatch.test / contract.test.
   beforeAll(() => buildDispatch(dispatchPages))
 
-  it('registry.walkObligations enumerates sub-obligations at every depth', () => {
+  it('Should enumerate sub-obligations at every depth via walkObligations', () => {
     const addresses = [...walkObligations()].map((node) => node.templatePath)
     expect(addresses).toContain('claims')
     expect(addresses).toContain('claims.claimType')
     expect(addresses).toContain('claims.claimAmount')
   })
 
-  it('scopes each stored claim instance path when the collection is in scope', () => {
+  it('Should scope each stored claim instance path when the collection is in scope', () => {
     const { inScope } = reconcile({
       hadClaims: 'yes',
       claims: [
@@ -45,7 +45,7 @@ describe('indexed obligations are first-class', () => {
     expect(inScope.has('claims[1].claimAmount')).toBe(true)
   })
 
-  it('does not scope any claim sub-obligation when the collection is out of scope', () => {
+  it('Should not scope any claim sub-obligation when the collection is out of scope', () => {
     const { inScope } = reconcile({
       hadClaims: 'no',
       claims: [{ claimType: 'accident', claimAmount: '500' }]
@@ -54,7 +54,7 @@ describe('indexed obligations are first-class', () => {
     expect(inScope.has('claims[0].claimType')).toBe(false)
   })
 
-  it('wipes the whole collection (a single root path) when it leaves scope', () => {
+  it('Should wipe the whole collection as a single root path when it leaves scope', () => {
     const { wiped } = reconcile({
       hadClaims: 'no',
       claims: [{ claimType: 'accident', claimAmount: '500' }]
@@ -70,7 +70,7 @@ describe('indexed obligations are first-class', () => {
     )
   })
 
-  it('treats a claim with a blank REQUIRED sub-field as incomplete (per-item completeness)', () => {
+  it('Should treat a claim with a blank required sub-field as incomplete (per-item completeness)', () => {
     const complete = {
       email: 'a@b.co',
       fullName: 'Alex',
@@ -87,7 +87,7 @@ describe('indexed obligations are first-class', () => {
     expect(readyForQuote(incomplete, reconcile(incomplete).inScope)).toBe(false)
   })
 
-  it('rolls per-item completeness into the driving-and-cover section status', () => {
+  it('Should roll per-item completeness into the driving-and-cover section status', () => {
     const withIncompleteClaim = {
       hadClaims: 'yes',
       claims: [{ claimAmount: '500' }], // missing required claimType
@@ -132,7 +132,7 @@ describe('a section whose only obligation is a collection', () => {
   const statusFor = (answers) =>
     sectionStatus(namedDriverSection, answers, reconcile(answers).inScope)
 
-  it('is In Progress — not Not Started — while the collection is partially filled', () => {
+  it('Should be In Progress — not Not Started — while the collection is partially filled', () => {
     // A driver entered but missing its required `relationship`: the collection
     // holds an entry (so it is STARTED) but is not complete (so not Fulfilled).
     const answers = {
@@ -143,7 +143,7 @@ describe('a section whose only obligation is a collection', () => {
     expect(statusFor(answers)).not.toBe(NOT_STARTED)
   })
 
-  it('is In Progress when a nested claim, deep in the tree, is the only gap', () => {
+  it('Should be In Progress when a nested claim, deep in the tree, is the only gap', () => {
     // Every driver field complete, but one driver holds a windscreen claim with
     // no provider — the incompleteness is two levels down, yet it must still
     // pull the whole section off Fulfilled and onto In Progress (not Not Started).
@@ -160,14 +160,14 @@ describe('a section whose only obligation is a collection', () => {
     expect(statusFor(answers)).toBe(IN_PROGRESS)
   })
 
-  it('is Not Started only when the collection is genuinely empty', () => {
+  it('Should be Not Started only when the collection is genuinely empty', () => {
     // In scope (add-on selected) but zero entries: nothing started yet.
     expect(statusFor({ addons: ['named-driver'], drivers: [] })).toBe(
       NOT_STARTED
     )
   })
 
-  it('is Fulfilled when every entry — and every nested entry — is complete', () => {
+  it('Should be Fulfilled when every entry — and every nested entry — is complete', () => {
     const answers = {
       addons: ['named-driver'],
       drivers: [
@@ -188,7 +188,7 @@ describe('a section whose only obligation is a collection', () => {
     expect(statusFor(answers)).toBe(FULFILLED)
   })
 
-  it('is Not Applicable when the named-driver add-on is not selected', () => {
+  it('Should be Not Applicable when the named-driver add-on is not selected', () => {
     expect(statusFor({ addons: [], drivers: [] })).toBe(NA)
   })
 })

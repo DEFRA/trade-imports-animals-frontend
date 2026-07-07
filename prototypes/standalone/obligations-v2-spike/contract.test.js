@@ -162,7 +162,7 @@ describe('controller <-> model commit contract', () => {
   beforeEach(() => store.clear())
 
   it.each(cases)(
-    '$id commits exactly its committable collects',
+    'Should commit exactly the committable collects for $id',
     ({ collects, handler, payload, seed }) => {
       const result = drive(handler, { payload, seed })
       expect(new Set(committedIds(result))).toEqual(
@@ -174,7 +174,7 @@ describe('controller <-> model commit contract', () => {
   // Claims is the one indexed collection: the LIST page declares `collects: ['claims']`,
   // but the identity-minting write happens in the ENTRY sub-page's append. The contract
   // still holds, measured against the handler that actually commits.
-  it('claims is committed by the entry (append) handler it declares', () => {
+  it('Should commit claims via the entry (append) handler it declares', () => {
     expect(claimsList.meta.collects).toEqual(['claims'])
     const postAdd = postHandlerEndingWith(claimsEntry, 'claims/add')
     const result = drive(postAdd, {
@@ -189,7 +189,7 @@ describe('controller <-> model commit contract', () => {
   // Drivers is the nested collection: the HUB declares `collects: ['drivers']`,
   // the identity-minting write happens in the driver ENTRY sub-page's append.
   // Same contract shape as claims, one level up.
-  it('drivers is committed by the entry (append) handler it declares', () => {
+  it('Should commit drivers via the entry (append) handler it declares', () => {
     expect(driversHub.meta.collects).toEqual(['drivers'])
     const postAdd = postHandlerEndingWith(driverEntry, 'named-driver/add')
     const result = drive(postAdd, {

@@ -22,12 +22,12 @@ describe('write-through on every commit', () => {
     journeyId = records.create().journeyId
   })
 
-  it('persists to the records port on the first commit, before any submit', () => {
+  it('Should persist to the records port on the first commit, before any submit', () => {
     commit(buildRequest(), stubH(), { email: 'a@b.com' })
     expect(records.load({ journeyId }).answers).toEqual({ email: 'a@b.com' })
   })
 
-  it('overwrites the durable record on a second commit', () => {
+  it('Should overwrite the durable record on a second commit', () => {
     commit(buildRequest(), stubH(), { email: 'a@b.com' })
     commit(buildRequest(), stubH(), { fullName: 'Alex' })
     expect(records.load({ journeyId }).answers).toEqual({
@@ -57,7 +57,7 @@ describe('write-through on every collection mutation', () => {
     journeyId = records.create().journeyId
   })
 
-  it('persists an appended entry to the records port, before any submit', () => {
+  it('Should persist an appended entry to the records port, before any submit', () => {
     seed({ drivers: [{ driverName: 'Sam' }] })
     expect(durableDrivers()).toEqual([{ driverName: 'Sam' }])
     appendEntryAt(buildRequest(), stubH(), ['drivers'], { driverName: 'Jo' })
@@ -67,7 +67,7 @@ describe('write-through on every collection mutation', () => {
     ])
   })
 
-  it('persists an updated entry to the records port, before any submit', () => {
+  it('Should persist an updated entry to the records port, before any submit', () => {
     seed({ drivers: [{ driverName: 'Sam' }, { driverName: 'Jo' }] })
     expect(durableDrivers()).toEqual([
       { driverName: 'Sam' },
@@ -82,7 +82,7 @@ describe('write-through on every collection mutation', () => {
     ])
   })
 
-  it('persists a removed entry to the records port, before any submit', () => {
+  it('Should persist a removed entry to the records port, before any submit', () => {
     seed({ drivers: [{ driverName: 'Sam' }, { driverName: 'Jo' }] })
     expect(durableDrivers()).toEqual([
       { driverName: 'Sam' },

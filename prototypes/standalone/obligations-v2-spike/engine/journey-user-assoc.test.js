@@ -18,14 +18,14 @@ const buildRequest = (headers = {}) => ({ state: {}, headers })
 describe('journey-user association', () => {
   beforeEach(() => records.clear())
 
-  it('stamps the session user on a journey minted through the facade', () => {
+  it('Should stamp the session user on a journey minted through the facade', () => {
     const journey = currentJourney(buildRequest(), recordingH())
     expect(records.load({ journeyId: journey.journeyId }).userId).toBe(
       STUB_USER
     )
   })
 
-  it('honours the x-stub-user header so a test can be a second user', () => {
+  it('Should honour the x-stub-user header so a test can be a second user', () => {
     expect(session.userId(buildRequest({ [STUB_USER_HEADER]: 'user-B' }))).toBe(
       'user-B'
     )
@@ -33,7 +33,7 @@ describe('journey-user association', () => {
     expect(records.load({ userId: 'user-B' })).toBeDefined()
   })
 
-  it('keeps two users active journeys isolated in the byUser index', () => {
+  it('Should keep two users active journeys isolated in the byUser index', () => {
     const journeyA = currentJourney(buildRequest(), recordingH())
     const journeyB = currentJourney(
       buildRequest({ [STUB_USER_HEADER]: 'user-B' }),

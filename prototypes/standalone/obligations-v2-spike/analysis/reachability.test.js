@@ -20,16 +20,16 @@ describe('reachability / dead-end prover', () => {
     configureReadyForQuote(readyForQuote)
   })
 
-  it('enumerates a small finite scope space', () => {
+  it('Should enumerate a small finite scope space', () => {
     // hadClaims(2) x voluntaryExcess(2) x coverType(2) x addons-subsets(8)
     expect(enumerateScopeStates()).toHaveLength(64)
   })
 
-  it('proves no owed obligation is ever unreachable', () => {
+  it('Should prove no owed obligation is ever unreachable', () => {
     expect(proveReachability()).toEqual([])
   })
 
-  it('has teeth — reports a dead end if an owning page becomes unreachable', () => {
+  it('Should have teeth — reporting a dead end if an owning page becomes unreachable', () => {
     // Inject a reachability oracle that pretends the named-driver pages never open.
     const pagesFor = () => [
       'email',
@@ -55,14 +55,14 @@ describe('reachability / dead-end prover', () => {
   // These tests pin that the plan now WITNESSES it at both depths and that the
   // prover BITES when a collection-hub page is dropped at depth.
 
-  it('witnesses windscreenProvider at BOTH depths (the closed hole)', () => {
+  it('Should witness windscreenProvider at both depths (the closed hole)', () => {
     const targets = buildWitnesses().map((witness) => witness.targetKey)
     // Top-level claims loop and the driver-nested claims loop.
     expect(targets).toContain('claims[0].windscreenProvider')
     expect(targets).toContain('drivers[0].claims[0].windscreenProvider')
   })
 
-  it('actually puts the item-conditional obligations in scope (not a null witness)', () => {
+  it('Should actually put the item-conditional obligations in scope (not a null witness)', () => {
     const byKey = new Map(
       buildWitnesses().map((witness) => [witness.targetKey, witness])
     )
@@ -76,7 +76,7 @@ describe('reachability / dead-end prover', () => {
     }
   })
 
-  it('has teeth AT DEPTH — biting when the claims/drivers hub pages are dropped', () => {
+  it('Should have teeth at depth — biting when the claims/drivers hub pages are dropped', () => {
     // Drop only the two collection-hub pages; everything else stays reachable.
     // A roots-only prover could not surface this — windscreenProvider lives at
     // depth and its DERIVED owning page is the dropped hub.

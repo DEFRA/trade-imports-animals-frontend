@@ -11,31 +11,31 @@ import { records, IN_PROGRESS } from './persistence/records.js'
 describe('records durable port', () => {
   beforeEach(() => records.clear())
 
-  it('mints a record stamped with its user and indexes it by user', () => {
+  it('Should mint a record stamped with its user and index it by user', () => {
     const journey = records.create({ userId: 'user-A' })
     expect(journey).toMatchObject({ userId: 'user-A', status: IN_PROGRESS })
     expect(records.load({ userId: 'user-A' }).journeyId).toBe(journey.journeyId)
   })
 
-  it('load resolves polymorphically by journeyId OR by userId', () => {
+  it('Should resolve load polymorphically by journeyId or by userId', () => {
     const { journeyId } = records.create({ userId: 'user-A' })
     expect(records.load({ journeyId }).journeyId).toBe(journeyId)
     expect(records.load({ userId: 'user-A' }).journeyId).toBe(journeyId)
   })
 
-  it('load by an unknown user returns undefined', () => {
+  it('Should return undefined from load for an unknown user', () => {
     records.create({ userId: 'user-A' })
     expect(records.load({ userId: 'nobody' })).toBeUndefined()
   })
 
-  it('saveAnswers is durable immediately, with no finalise', () => {
+  it('Should make saveAnswers durable immediately, with no finalise', () => {
     const { journeyId } = records.create({ userId: 'user-A' })
     records.saveAnswers(journeyId, { email: 'a@b.com' })
     expect(records.load({ journeyId }).answers).toEqual({ email: 'a@b.com' })
     expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)
   })
 
-  it('freezes after finalise — a later saveAnswers throws', () => {
+  it('Should freeze after finalise so a later saveAnswers throws', () => {
     const { journeyId } = records.create({ userId: 'user-A' })
     records.saveAnswers(journeyId, { email: 'a@b.com' })
     records.finalise(journeyId)

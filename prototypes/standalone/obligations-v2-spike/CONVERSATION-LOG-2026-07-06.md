@@ -465,3 +465,18 @@ Workflow-orchestrated, parent-shell verification).
   elsewhere already named. Rename-purity skeptic: clean (no data-key/error-string leaks; dateParts
   arg order verified). **Byte-green: unit 154 (22 files) / E2E 71, parent-shell verified;
   whole-spike eslint + prettier clean.**
+
+- [x] **T7 — test-naming convention (`#fn` / `Should …`). DONE — green, +3 from splits.**
+  _Landed as:_ implement → assertion-preservation-skeptic workflow (Opus). Convention established
+  from the parent repo's own specs (`#functionName` describes + `Should …` one-behaviour titles;
+  the spike's newest specs t1/t2 already complied). Applied across 20 unit spec files: every title
+  → `Should …` (incl. `it.each`), single-function describes → `#reconcile`/`#currentJourney`/
+  `#simulateJourney`/per-validator `#requiredText`…`#compose`; genuinely cross-cutting scenario
+  blocks kept descriptive names (matching the parent's own mixed use). Two multi-fact `it`s split
+  with assertions relocated VERBATIM: store-ops out-of-range remove/update (+1; shared
+  post-condition duplicated into both branches so a regression localises to the mutator) and
+  nested per-item completeness (+2; 5 assertions across 3 rules → 3 its). Declined:
+  `write-through-per-commit.test.js` rename (T9 file-move territory); Playwright specs keep prose
+  style. Whole-diff assertion audit: 1 relocated line added, 0 removed/reworded. Skeptic: no
+  objections. **Green: unit 157 (22 files, +3 splits) / E2E 71, parent-shell verified; eslint +
+  prettier clean.**

@@ -21,7 +21,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
     configureReadyForQuote(() => false)
   })
 
-  it('re-derives scope on resume, excluding a now-out-of-scope obligation', () => {
+  it('Should re-derive scope on resume, excluding a now-out-of-scope obligation', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, {
       email: 'a@b.com',
@@ -37,7 +37,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
     expect(result.scope.has('email')).toBe(true)
   })
 
-  it('stores only the canonical record fields — nothing derived is persisted', () => {
+  it('Should store only the canonical record fields — nothing derived is persisted', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, { hadClaims: 'no', claims: [{ x: 1 }] })
 

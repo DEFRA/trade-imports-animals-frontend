@@ -23,20 +23,20 @@ import {
 
 const run = (schema, payload) => validate(schema, payload)
 
-describe('requiredText — the sole save-blocking primitive', () => {
+describe('#requiredText — the sole save-blocking primitive', () => {
   const schema = requiredText('fullName', 'Enter your full name')
 
-  it('passes a non-blank value', () => {
+  it('Should pass a non-blank value', () => {
     expect(run(schema, { fullName: 'Alex Driver' }).errors).toBeNull()
   })
 
-  it('blocks a missing value with the given message on the field', () => {
+  it('Should block a missing value with the given message on the field', () => {
     expect(run(schema, {}).errors).toEqual({
       fullName: 'Enter your full name'
     })
   })
 
-  it('blocks a whitespace-only value (trimmed to empty)', () => {
+  it('Should block a whitespace-only value (trimmed to empty)', () => {
     expect(run(schema, { fullName: '   ' }).errors).toEqual({
       fullName: 'Enter your full name'
     })
@@ -52,17 +52,17 @@ describe('optional validators save blank (the mandate split)', () => {
     ['estimatedValue', currency('estimatedValue')],
     ['country', oneOf('country', ['england', 'wales'])],
     ['modDescription', maxText('modDescription', 200)]
-  ])('%s passes when blank', (field, schema) => {
+  ])('Should pass %s when blank', (field, schema) => {
     expect(run(schema, { [field]: '' }).errors).toBeNull()
   })
 
-  it('passes when the field is absent entirely', () => {
+  it('Should pass when the field is absent entirely', () => {
     expect(run(postcode('postcode'), {}).errors).toBeNull()
   })
 })
 
 describe('postcode / vehicleReg — format (was def `pattern`)', () => {
-  it('accepts a valid postcode and rejects a malformed one', () => {
+  it('Should accept a valid postcode and reject a malformed one', () => {
     expect(
       run(postcode('postcode'), { postcode: 'SW1A 1AA' }).errors
     ).toBeNull()
@@ -71,7 +71,7 @@ describe('postcode / vehicleReg — format (was def `pattern`)', () => {
     })
   })
 
-  it('accepts a valid registration and rejects a malformed one', () => {
+  it('Should accept a valid registration and reject a malformed one', () => {
     expect(
       run(vehicleReg('registration'), { registration: 'AB12 CDE' }).errors
     ).toBeNull()
@@ -81,12 +81,12 @@ describe('postcode / vehicleReg — format (was def `pattern`)', () => {
   })
 })
 
-describe('ukPhone — allow-list + digit count', () => {
-  it('accepts a real UK number', () => {
+describe('#ukPhone — allow-list + digit count', () => {
+  it('Should accept a real UK number', () => {
     expect(run(ukPhone('phone'), { phone: '07700 900123' }).errors).toBeNull()
   })
 
-  it('rejects letters and too-few-digit numbers', () => {
+  it('Should reject letters and too-few-digit numbers', () => {
     expect(run(ukPhone('phone'), { phone: 'call me' }).errors).toHaveProperty(
       'phone'
     )
@@ -96,35 +96,35 @@ describe('ukPhone — allow-list + digit count', () => {
   })
 })
 
-describe('oneOf — value domain (was def `options`)', () => {
+describe('#oneOf — value domain (was def `options`)', () => {
   const schema = oneOf('coverType', ['comprehensive', 'third-party'])
 
-  it('accepts a value in the domain', () => {
+  it('Should accept a value in the domain', () => {
     expect(run(schema, { coverType: 'comprehensive' }).errors).toBeNull()
   })
 
-  it('rejects a value outside the domain', () => {
+  it('Should reject a value outside the domain', () => {
     expect(run(schema, { coverType: 'gold-plated' }).errors).toEqual({
       coverType: 'Select a valid option'
     })
   })
 })
 
-describe('integerInRange — bounds (was def `min`/`max`)', () => {
+describe('#integerInRange — bounds (was def `min`/`max`)', () => {
   const schema = integerInRange('year', { min: 1900, max: 2100 })
 
-  it('accepts an in-range whole number', () => {
+  it('Should accept an in-range whole number', () => {
     expect(run(schema, { year: '2018' }).errors).toBeNull()
   })
 
-  it('rejects out-of-range and non-numeric input', () => {
+  it('Should reject out-of-range and non-numeric input', () => {
     expect(run(schema, { year: '1850' }).errors).toHaveProperty('year')
     expect(run(schema, { year: 'twenty' }).errors).toHaveProperty('year')
   })
 })
 
-describe('currency — positive amount, £/commas stripped', () => {
-  it('accepts and cleans a formatted amount', () => {
+describe('#currency — positive amount, £/commas stripped', () => {
+  it('Should accept and clean a formatted amount', () => {
     const { value, errors } = run(currency('estimatedValue'), {
       estimatedValue: '£8,000'
     })
@@ -132,7 +132,7 @@ describe('currency — positive amount, £/commas stripped', () => {
     expect(value.estimatedValue).toBe('8000')
   })
 
-  it('rejects zero, negatives, decimals and non-numbers', () => {
+  it('Should reject zero, negatives, decimals and non-numbers', () => {
     for (const bad of ['0', '-5', '12.50', 'lots']) {
       expect(run(currency('amount'), { amount: bad }).errors).toHaveProperty(
         'amount'
@@ -141,24 +141,24 @@ describe('currency — positive amount, £/commas stripped', () => {
   })
 })
 
-describe('maxText — length cap (was def `maxLength`)', () => {
+describe('#maxText — length cap (was def `maxLength`)', () => {
   const schema = maxText('modDescription', 10)
 
-  it('accepts text within the cap', () => {
+  it('Should accept text within the cap', () => {
     expect(run(schema, { modDescription: 'short' }).errors).toBeNull()
   })
 
-  it('rejects text over the cap', () => {
+  it('Should reject text over the cap', () => {
     expect(
       run(schema, { modDescription: 'far too long to allow' }).errors
     ).toHaveProperty('modDescription')
   })
 })
 
-describe('dateParts — day/month/year triple, anchored on the day box', () => {
+describe('#dateParts — day/month/year triple, anchored on the day box', () => {
   const schema = dateParts('dateOfBirth')
 
-  it('passes when all three parts are blank (optional)', () => {
+  it('Should pass when all three parts are blank (optional)', () => {
     expect(
       run(schema, {
         'dateOfBirth-day': '',
@@ -168,7 +168,7 @@ describe('dateParts — day/month/year triple, anchored on the day box', () => {
     ).toBeNull()
   })
 
-  it('passes a real date', () => {
+  it('Should pass a real date', () => {
     expect(
       run(schema, {
         'dateOfBirth-day': '27',
@@ -178,7 +178,7 @@ describe('dateParts — day/month/year triple, anchored on the day box', () => {
     ).toBeNull()
   })
 
-  it('fails a partial date, anchored on the day part', () => {
+  it('Should fail a partial date, anchored on the day part', () => {
     expect(
       run(schema, {
         'dateOfBirth-day': '27',
@@ -188,7 +188,7 @@ describe('dateParts — day/month/year triple, anchored on the day box', () => {
     ).toEqual({ 'dateOfBirth-day': 'Enter a valid date' })
   })
 
-  it('fails an unreal date (31 February)', () => {
+  it('Should fail an unreal date (31 February)', () => {
     expect(
       run(schema, {
         'dateOfBirth-day': '31',
@@ -199,20 +199,20 @@ describe('dateParts — day/month/year triple, anchored on the day box', () => {
   })
 })
 
-describe('compose + the Joi → GDS mapping', () => {
+describe('#compose + the Joi → GDS mapping', () => {
   const schema = compose(
     requiredText('fullName', 'Enter your full name'),
     postcode('postcode')
   )
 
-  it('lets unknown keys (e.g. the CSRF crumb) pass through', () => {
+  it('Should let unknown keys (e.g. the CSRF crumb) pass through', () => {
     expect(
       run(schema, { fullName: 'Alex', postcode: 'SW1A 1AA', crumb: 'tok' })
         .errors
     ).toBeNull()
   })
 
-  it('collects one message per failing field (abortEarly: false)', () => {
+  it('Should collect one message per failing field (abortEarly: false)', () => {
     const { errors } = run(schema, { fullName: '', postcode: 'NOPE' })
     expect(errors).toEqual({
       fullName: 'Enter your full name',
@@ -220,7 +220,7 @@ describe('compose + the Joi → GDS mapping', () => {
     })
   })
 
-  it('returns null errors when everything is valid', () => {
+  it('Should return null errors when everything is valid', () => {
     expect(run(schema, { fullName: 'Alex', postcode: '' }).errors).toBeNull()
   })
 })

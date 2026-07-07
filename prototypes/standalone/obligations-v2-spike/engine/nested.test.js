@@ -30,7 +30,7 @@ const twoDriversEachWithClaims = {
 }
 
 describe('nested indexed obligations (drivers -> claims)', () => {
-  it('walkObligations reaches depth-2 template addresses', () => {
+  it('Should reach depth-2 template addresses via walkObligations', () => {
     const addresses = [...walkObligations()].map((node) => node.templatePath)
     expect(addresses).toContain('drivers')
     expect(addresses).toContain('drivers.driverName')
@@ -38,7 +38,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     expect(addresses).toContain('drivers.claims.claimType')
   })
 
-  it('scopes nested claim instance paths under each driver (no engine change)', () => {
+  it('Should scope nested claim instance paths under each driver (no engine change)', () => {
     const { inScope } = reconcile(twoDriversEachWithClaims)
     expect(inScope.has('drivers')).toBe(true)
     expect(inScope.has('drivers[0].driverName')).toBe(true)
@@ -47,7 +47,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     expect(inScope.has('drivers[1].claims[0].claimType')).toBe(true)
   })
 
-  it('does not scope a driver subtree when named-driver is not selected', () => {
+  it('Should not scope a driver subtree when named-driver is not selected', () => {
     const { inScope } = reconcile({
       addons: [],
       drivers: [{ driverName: 'Sam', claims: [{ claimType: 'accident' }] }]
@@ -56,7 +56,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     expect(inScope.has('drivers[0].claims[0].claimType')).toBe(false)
   })
 
-  it('wipes the whole drivers subtree (one root path) on deselect — destroyed, not hidden', () => {
+  it('Should wipe the whole drivers subtree (one root path) on deselect — destroyed, not hidden', () => {
     const { wiped } = reconcile({
       addons: [],
       drivers: [
@@ -69,7 +69,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     expect(wiped.filter((key) => key.startsWith('drivers')).length).toBe(1)
   })
 
-  it('holds two drivers claims independent (removing one leaves the other)', () => {
+  it('Should hold two drivers claims independent (removing one leaves the other)', () => {
     // Simulate "remove driver 0": splice the entry, reconcile the remainder.
     const spliced = {
       ...twoDriversEachWithClaims,
@@ -80,7 +80,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     expect(inScope.has('drivers[1].claims[0].claimType')).toBe(false) // only one left
   })
 
-  it('recurses per-item completeness: a required nested collection gates the parent', () => {
+  it('Should recurse per-item completeness so a nested claim gates its driver', () => {
     // Real drivers: nested claims are OPTIONAL, so a driver with no claims is complete...
     expect(
       entryComplete(drivers, { driverName: 'Sam', relationship: 'spouse' })
@@ -93,7 +93,10 @@ describe('nested indexed obligations (drivers -> claims)', () => {
         claims: [{ claimAmount: '100' }] // missing required claimType
       })
     ).toBe(false)
-    // And a REQUIRED nested collection (synthetic) gates the parent when empty.
+  })
+
+  it('Should gate the parent on a required nested collection', () => {
+    // A REQUIRED nested collection (synthetic) gates the parent when empty.
     const requiredNested = {
       id: 'x',
       collection: true,
@@ -103,6 +106,15 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     const parent = { id: 'p', item: [requiredNested] }
     expect(entryComplete(parent, { x: [] })).toBe(false)
     expect(entryComplete(parent, { x: [{ y: 'ok' }] })).toBe(true)
+  })
+
+  it('Should treat a required nested entry with a blank field as incomplete', () => {
+    const requiredNested = {
+      id: 'x',
+      collection: true,
+      item: [{ id: 'y', required: true }],
+      requiredAtLeastOne: true
+    }
     expect(collectionComplete(requiredNested, [{ y: '' }])).toBe(false)
   })
 })
@@ -110,7 +122,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
 describe('nested tree dispatch coverage (needs boot)', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
-  it('derives tree coverage: a nested sub-obligation resolves to the drivers page', () => {
+  it('Should derive tree coverage so a nested sub-obligation resolves to the drivers page', () => {
     expect(pageOfObligation('drivers.claims.claimType')).toBe(
       pageOfObligation('drivers')
     )

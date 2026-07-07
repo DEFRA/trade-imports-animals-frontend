@@ -18,7 +18,7 @@ describe('resume by user (cookieless)', () => {
     configureReadyForQuote(() => false)
   })
 
-  it('recovers a saved journey with no cookie, rebuilds scope, and re-pins it', () => {
+  it('Should recover a saved journey with no cookie, rebuild scope, and re-pin it', () => {
     // Session A: mint + save durable answers for the stub user.
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, { email: 'a@b.com' })
@@ -36,7 +36,7 @@ describe('resume by user (cookieless)', () => {
     expect(h.calls).toContainEqual([JOURNEY_COOKIE, journeyId])
   })
 
-  it('mints a fresh journey when the user has none to resume', () => {
+  it('Should mint a fresh journey when the user has none to resume', () => {
     const h = recordingH()
     const result = resume({ state: {}, headers: {} }, h)
     expect(result.journey.journeyId).toEqual(expect.any(String))

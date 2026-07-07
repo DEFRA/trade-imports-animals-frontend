@@ -19,13 +19,13 @@ const claimsPersona = (types) => ({
 })
 
 describe('item-scoped conditionality (windscreen → provider)', () => {
-  it('scopes windscreenProvider for a windscreen claim only, per instance', () => {
+  it('Should scope windscreenProvider for a windscreen claim only, per instance', () => {
     const { inScope } = reconcile(claimsPersona(['accident', 'windscreen']))
     expect(inScope.has('claims[0].windscreenProvider')).toBe(false) // accident
     expect(inScope.has('claims[1].windscreenProvider')).toBe(true) // windscreen
   })
 
-  it('resolves the predicate at FULL depth (drivers[i].claims[j])', () => {
+  it('Should resolve the predicate at full depth (drivers[i].claims[j])', () => {
     const { inScope } = reconcile({
       addons: ['named-driver'],
       drivers: [
@@ -40,7 +40,7 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
     expect(inScope.has('drivers[0].claims[1].windscreenProvider')).toBe(false)
   })
 
-  it('wipes the provider at that EXACT path when the claim leaves windscreen', () => {
+  it('Should wipe the provider at that exact path when the claim leaves windscreen', () => {
     // claim 1 was windscreen with a provider answered; now changed to accident.
     const { wiped } = reconcile({
       hadClaims: 'yes',
@@ -53,13 +53,13 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
     expect(wiped).not.toContain('claims[0].windscreenProvider') // still windscreen
   })
 
-  it('keeps two windscreen claims providers independent', () => {
+  it('Should keep two windscreen claims providers independent', () => {
     const { inScope } = reconcile(claimsPersona(['windscreen', 'windscreen']))
     expect(inScope.has('claims[0].windscreenProvider')).toBe(true)
     expect(inScope.has('claims[1].windscreenProvider')).toBe(true)
   })
 
-  it('makes item-relative completeness respect the sibling', () => {
+  it('Should make item-relative completeness respect the sibling', () => {
     // windscreen claim missing its provider is INCOMPLETE...
     expect(
       entryComplete(claims, { claimType: 'windscreen', claimAmount: '100' })
@@ -78,7 +78,7 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
     ).toBe(true)
   })
 
-  it('applies the item-relative gate by SIBLING IDENTITY, not id-keying (resolver unity)', () => {
+  it('Should apply the item-relative gate by sibling identity, not id-keying (resolver unity)', () => {
     // A synthetic item sub gated on a NON-sibling (top-level) obligation must NOT
     // be silently treated as not-owed — the gate fires only for true siblings,
     // the SAME criterion reconcile uses, so entryComplete and reconcile cannot
@@ -99,7 +99,7 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
 describe('item-relative completeness gates the quote', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
-  it('locks readyForQuote for a windscreen claim missing its provider', () => {
+  it('Should lock readyForQuote for a windscreen claim missing its provider', () => {
     const base = {
       email: 'a@b.co',
       fullName: 'Alex',
