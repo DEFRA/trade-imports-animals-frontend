@@ -54,7 +54,7 @@ describe('optional validators save blank (the mandate split)', () => {
   })
 })
 
-describe('postcode / vehicleReg — format (was def `pattern`)', () => {
+describe('postcode / vehicleReg — format', () => {
   it('Should accept a valid postcode and reject a malformed one', () => {
     expect(
       run(postcode('postcode'), { postcode: 'SW1A 1AA' }).errors
@@ -89,7 +89,7 @@ describe('#ukPhone — allow-list + digit count', () => {
   })
 })
 
-describe('#oneOf — value domain (was def `options`)', () => {
+describe('#oneOf — value domain', () => {
   const schema = oneOf('coverType', ['comprehensive', 'third-party'])
 
   it('Should accept a value in the domain', () => {
@@ -103,7 +103,7 @@ describe('#oneOf — value domain (was def `options`)', () => {
   })
 })
 
-describe('#integerInRange — bounds (was def `min`/`max`)', () => {
+describe('#integerInRange — bounds', () => {
   const schema = integerInRange('year', { min: 1900, max: 2100 })
 
   it('Should accept an in-range whole number', () => {
@@ -134,7 +134,7 @@ describe('#currency — positive amount, £/commas stripped', () => {
   })
 })
 
-describe('#maxText — length cap (was def `maxLength`)', () => {
+describe('#maxText — length cap', () => {
   const schema = maxText('modDescription', 10)
 
   it('Should accept text within the cap', () => {
