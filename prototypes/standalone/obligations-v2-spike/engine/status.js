@@ -1,6 +1,6 @@
 import { registry } from '../registry.js'
 import { isAnswered } from '../lib/answered.js'
-import { satisfied } from './complete.js'
+import { satisfied } from './evaluate/complete.js'
 
 /**
  * The four-status roll-up (v1's taxonomy, kept). Pure and page-agnostic:

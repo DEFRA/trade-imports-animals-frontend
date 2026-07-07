@@ -1,7 +1,7 @@
-import { walk } from '../registry.js'
+import { walk } from '../../registry.js'
 import { evalPredicate } from './predicate.js'
-import { isAnswered } from '../lib/answered.js'
-import { isStrictPathPrefix, pathKey, valueAt } from '../lib/path.js'
+import { isAnswered } from '../../lib/answered.js'
+import { isStrictPathPrefix, pathKey, valueAt } from '../../lib/path.js'
 
 /**
  * THE pure state evaluator — the single home of activation + scope-exit

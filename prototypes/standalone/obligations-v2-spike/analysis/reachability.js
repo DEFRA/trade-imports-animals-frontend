@@ -1,5 +1,5 @@
 import { pageOfObligation } from '../flow/dispatch.js'
-import { reconcile } from '../engine/reconcile.js'
+import { reconcile } from '../engine/evaluate/reconcile.js'
 import { registry, walkObligations } from '../registry.js'
 import { pathKey } from '../lib/path.js'
 import { simulateJourney } from './simulate.js'

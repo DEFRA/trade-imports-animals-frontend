@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { reconcile } from './reconcile.js'
-import { entryComplete } from './complete.js'
-import { readyForQuote } from '../flow/section-status.js'
-import { claims } from '../features/claims/obligations.js'
-import { buildDispatch } from '../flow/dispatch.js'
-import { dispatchPages } from '../features/index.js'
+import { reconcile } from './engine/evaluate/reconcile.js'
+import { entryComplete } from './engine/evaluate/complete.js'
+import { readyForQuote } from './flow/section-status.js'
+import { claims } from './features/claims/obligations.js'
+import { buildDispatch } from './flow/dispatch.js'
+import { dispatchPages } from './features/index.js'
 
 /**
  * ITEM-SCOPED CONDITIONALITY (DISCUSSION-LOG entry 6c): a windscreen claim

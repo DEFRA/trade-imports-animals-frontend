@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { records, IN_PROGRESS } from './persistence/records.js'
+import { records, IN_PROGRESS } from './records.js'
 
 /**
  * NW-4 shape proof — the RECORDS (durable) port in isolation. Pins the additions

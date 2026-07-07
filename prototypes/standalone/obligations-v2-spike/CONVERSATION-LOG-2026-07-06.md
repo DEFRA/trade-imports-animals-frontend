@@ -520,3 +520,25 @@ Workflow-orchestrated, parent-shell verification).
   flow-only `gate`. **Byte-green: unit 162 (23 files, was 157/22; all 157 pass unchanged) /
   targeted E2E: shared journey (12 variants) + hub-copy specs green in parent shell (full E2E left
   to the orchestrator); eslint + prettier clean.**
+
+- [x] **T9 — regroup the flat `engine/` into cohesive subfolders. DONE — byte-green, zero controller edits.**
+  _Landed as:_ design-panel (3 architects + adversarial judge) → executor workflow. Judged layout:
+  engine root = sanctioned entry points (barrel + the four externally pinned modules `read.js`/
+  `journey.js`/`status.js`/`store.js` + `write.js` as read's facade peer); `engine/evaluate/` = the
+  pure derivation core (`predicate.js`, `reconcile.js` + its test, `complete.js`,
+  `collection-view.js` — zero I/O, zero request/h, zero `flow/`); `engine/persistence/` unchanged
+  but gains `records-port.test.js` (co-location graft). The four whole-journey scenario specs
+  (`indexed`, `item-conditional`, `nested`, `store-ops`) left engine for the spike root's existing
+  scenario cohort (contract/t1/t2/obligation-purity) — they import `flow/` + `features/` (incl. a
+  controller), so after the move the OBS-1 seam is mechanically checkable:
+  `grep "from '.*flow/" engine/ -r` now returns zero hits, no source-files-only caveat. 10 `git mv`
+  (history follows), 17 files rewritten (~40 one-line specifiers), engine listing 25 → 16 entries.
+  Barrel: path unchanged, export surface byte-identical (sole diff: `./collection-view.js` →
+  `./evaluate/collection-view.js` internal specifier); all ~20 `import * as state` controllers,
+  the three sanctioned deep-importing controllers (start/confirmation/hub) and `routes.js`
+  untouched. Prettier re-wrapped the two lengthened import lines (nested/store-ops), re-linted
+  clean after per the rail. `dump:obligations-v2-spike` re-run as an import-resolution smoke.
+  Rejected alternatives (recorded in the panel): data-flow taxonomy (breached the
+  no-controller-edit AC ×3) and responsibility taxonomy (×2 + one-file folders); `__tests__/`
+  folders and re-export shims rejected across the board. **Byte-green: unit 162 (23 files) /
+  E2E 71, both parent-shell verified; whole-spike eslint + prettier clean.**

@@ -23,4 +23,4 @@ export {
   removeEntryAt,
   submitJourney
 } from './write.js'
-export { collectionView } from './collection-view.js'
+export { collectionView } from './evaluate/collection-view.js'

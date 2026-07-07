@@ -1,17 +1,22 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { appendEntryAt, commit, removeEntryAt, updateEntryAt } from './index.js'
-import { store } from './store.js'
-import { configureReadyForQuote } from './read.js'
+import {
+  appendEntryAt,
+  commit,
+  removeEntryAt,
+  updateEntryAt
+} from './engine/index.js'
+import { store } from './engine/store.js'
+import { configureReadyForQuote } from './engine/read.js'
 import {
   stubH,
   journeyRequest,
   seedNamedDriver,
   postHandlerEndingWith
-} from './test-support.js'
-import { buildDispatch } from '../flow/dispatch.js'
-import { readyForQuote } from '../flow/section-status.js'
-import { dispatchPages } from '../features/index.js'
-import * as driverClaim from '../features/named-driver/driver-claim.controller.js'
+} from './engine/test-support.js'
+import { buildDispatch } from './flow/dispatch.js'
+import { readyForQuote } from './flow/section-status.js'
+import { dispatchPages } from './features/index.js'
+import * as driverClaim from './features/named-driver/driver-claim.controller.js'
 
 /**
  * The PATH-ADDRESSED store facade at depth (entry 6b). Drives the real

@@ -1,10 +1,13 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { reconcile } from './reconcile.js'
-import { entryComplete, collectionComplete } from './complete.js'
-import { buildDispatch, pageOfObligation } from '../flow/dispatch.js'
-import { dispatchPages } from '../features/index.js'
-import { drivers } from '../features/named-driver/obligations.js'
-import { walkObligations } from '../registry.js'
+import { reconcile } from './engine/evaluate/reconcile.js'
+import {
+  entryComplete,
+  collectionComplete
+} from './engine/evaluate/complete.js'
+import { buildDispatch, pageOfObligation } from './flow/dispatch.js'
+import { dispatchPages } from './features/index.js'
+import { drivers } from './features/named-driver/obligations.js'
+import { walkObligations } from './registry.js'
 
 /**
  * ONE LEVEL OF NESTING (Phase 2 / entry 6b): drivers -> claims. The claim is

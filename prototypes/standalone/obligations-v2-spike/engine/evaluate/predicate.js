@@ -1,5 +1,5 @@
-import { isAnswered } from '../lib/answered.js'
-import { valueAt } from '../lib/path.js'
+import { isAnswered } from '../../lib/answered.js'
+import { valueAt } from '../../lib/path.js'
 
 /**
  * The tiny activation vocabulary. `activatedBy` is a data literal over a

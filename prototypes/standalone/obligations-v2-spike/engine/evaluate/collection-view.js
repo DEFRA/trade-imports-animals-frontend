@@ -1,5 +1,5 @@
-import { valueAt } from '../lib/path.js'
-import { registry } from '../registry.js'
+import { valueAt } from '../../lib/path.js'
+import { registry } from '../../registry.js'
 import { entryComplete } from './complete.js'
 
 /**

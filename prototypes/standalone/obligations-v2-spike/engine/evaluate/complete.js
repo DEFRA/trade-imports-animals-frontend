@@ -1,5 +1,5 @@
-import { registry } from '../registry.js'
-import { isAnswered } from '../lib/answered.js'
+import { registry } from '../../registry.js'
+import { isAnswered } from '../../lib/answered.js'
 import { applyPredicate } from './predicate.js'
 
 /**

@@ -1,5 +1,5 @@
 import { currentJourney, resumeByUser } from './journey.js'
-import { reconcile } from './reconcile.js'
+import { reconcile } from './evaluate/reconcile.js'
 
 /**
  * The READ side of the narrow state facade: load-or-create the journey and

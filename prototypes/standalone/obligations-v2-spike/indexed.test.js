@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { reconcile } from './reconcile.js'
-import { FULFILLED, IN_PROGRESS, NOT_STARTED, NA } from './status.js'
-import { readyForQuote, sectionStatus } from '../flow/section-status.js'
-import { sections } from '../flow/flow.js'
-import { walkObligations } from '../registry.js'
-import { buildDispatch } from '../flow/dispatch.js'
-import { dispatchPages } from '../features/index.js'
+import { reconcile } from './engine/evaluate/reconcile.js'
+import { FULFILLED, IN_PROGRESS, NOT_STARTED, NA } from './engine/status.js'
+import { readyForQuote, sectionStatus } from './flow/section-status.js'
+import { sections } from './flow/flow.js'
+import { walkObligations } from './registry.js'
+import { buildDispatch } from './flow/dispatch.js'
+import { dispatchPages } from './features/index.js'
 
 /**
  * FIRST-CLASS INDEXED OBLIGATIONS (Phase 1). The engine must SEE a
