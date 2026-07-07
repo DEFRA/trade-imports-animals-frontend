@@ -117,6 +117,19 @@
         "telephoneNumber": "+44 1304 555 0171",
         "emailAddress": "bookings@channel-livestock.example.co.uk"
       }
+    },
+    "privateTransporter": {
+      "name": "Jean Dupont",
+      "address": {
+        "addressLine1": "12 Rue des Fermes",
+        "addressLine2": "",
+        "townOrCity": "Amiens",
+        "county": "",
+        "postalOrZipCode": "80000",
+        "country": "France",
+        "telephoneNumber": "+33 3 22 55 01 44",
+        "emailAddress": "jean.dupont@example.fr"
+      }
     }
   }
 }

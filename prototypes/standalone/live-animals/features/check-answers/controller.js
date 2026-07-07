@@ -199,6 +199,17 @@ const buildRows = (answers) => {
           )
         ]
       : []),
+    // The stored private transporter is a keyed-in { name, address } object
+    // (party-record shape, c-020), owed only on the private branch.
+    ...(answerOf('transporterType') === 'Private transporter'
+      ? [
+          row(
+            'Private transporter',
+            answerOf('privateTransporter')?.name,
+            'privateTransporter'
+          )
+        ]
+      : []),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

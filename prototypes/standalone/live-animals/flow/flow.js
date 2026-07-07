@@ -7,6 +7,7 @@ import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
 import {
   portOfEntryPage,
+  privateTransporterDetailsPage,
   transportDetailsPage,
   transportersPage,
   transportersSelectPage
@@ -58,7 +59,8 @@ export const sections = [
       portOfEntryPage,
       transportDetailsPage,
       transportersPage,
-      transportersSelectPage
+      transportersSelectPage,
+      privateTransporterDetailsPage
     ]
   },
   {

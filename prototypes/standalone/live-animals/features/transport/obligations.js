@@ -56,6 +56,23 @@ export const commercialTransporter = {
   wipeOnExit: true
 }
 
+/**
+ * The private spoke of the c-012 type split — owed only when the
+ * transporter type is 'Private transporter' (the stored V4 label,
+ * verbatim). The answer is a keyed-in { name, address } object,
+ * shape-compatible with the copied party records (c-020). Leaving the
+ * private branch wipes any saved details (spec: activatedBy + wipeOnExit).
+ */
+export const privateTransporter = {
+  id: 'privateTransporter',
+  required: true,
+  activatedBy: {
+    obligation: transporterType,
+    equals: 'Private transporter'
+  },
+  wipeOnExit: true
+}
+
 export const obligations = [
   portOfEntry,
   arrivalDateAtPort,
@@ -64,5 +81,6 @@ export const obligations = [
   transportDocumentReference,
   transitedCountries,
   transporterType,
-  commercialTransporter
+  commercialTransporter,
+  privateTransporter
 ]

@@ -30,6 +30,7 @@ import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as transportDetails from './features/transport/transport-details.controller.js'
 import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
+import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -134,6 +135,26 @@ const cases = [
     // its copied { name, address, approvalNumber } (c-020).
     seed: { transporterType: 'Commercial transporter' },
     payload: { commercialTransporter: 'channel-livestock-logistics' }
+  },
+  {
+    id: 'private-transporter-details',
+    collects: privateTransporterDetails.meta.collects,
+    handler: postHandlerOf(privateTransporterDetails),
+    // 'Private transporter' keeps privateTransporter in scope on the commit;
+    // the keyed-in fields commit as one { name, address } object (the
+    // party-record shape, c-020).
+    seed: { transporterType: 'Private transporter' },
+    payload: {
+      nameOrOrganisationName: 'Jean Dupont',
+      addressLine1: '12 Rue des Fermes',
+      addressLine2: '',
+      townOrCity: 'Amiens',
+      county: '',
+      postalOrZipCode: '80000',
+      country: 'France',
+      telephoneNumber: '+33 3 22 55 01 44',
+      emailAddress: 'jean.dupont@example.fr'
+    }
   },
   {
     id: 'email',

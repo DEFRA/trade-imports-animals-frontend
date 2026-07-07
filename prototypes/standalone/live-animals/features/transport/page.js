@@ -22,3 +22,8 @@ export const transportersSelectPage = {
   id: 'transporters-select',
   slug: 'transporters/select'
 }
+
+export const privateTransporterDetailsPage = {
+  id: 'private-transporter-details',
+  slug: 'transporters/private'
+}

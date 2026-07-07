@@ -19,6 +19,7 @@ import * as portOfEntry from './transport/port-of-entry.controller.js'
 import * as transportDetails from './transport/transport-details.controller.js'
 import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
+import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -52,6 +53,7 @@ export const dispatchPages = [
   transportDetails.meta,
   transporters.meta,
   transportersSelect.meta,
+  privateTransporterDetails.meta,
   email.meta,
   aboutYou.meta,
   vehicle.meta,
@@ -88,6 +90,7 @@ export const allRoutes = [
   ...transportDetails.routes,
   ...transporters.routes,
   ...transportersSelect.routes,
+  ...privateTransporterDetails.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,

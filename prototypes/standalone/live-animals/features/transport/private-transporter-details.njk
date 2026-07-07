@@ -1,0 +1,94 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <p class="govuk-body">Enter the name and address of the private transporter moving the animals.</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "nameOrOrganisationName", name: "nameOrOrganisationName",
+      label: { text: "Name or organisation name" },
+      autocomplete: "name",
+      value: values.nameOrOrganisationName,
+      errorMessage: errors.nameOrOrganisationName and { text: errors.nameOrOrganisationName }
+    }) }}
+
+    {{ govukInput({
+      id: "addressLine1", name: "addressLine1",
+      label: { text: "Address line 1" },
+      autocomplete: "address-line1",
+      value: values.addressLine1,
+      errorMessage: errors.addressLine1 and { text: errors.addressLine1 }
+    }) }}
+
+    {{ govukInput({
+      id: "addressLine2", name: "addressLine2",
+      label: { text: "Address line 2 (optional)" },
+      autocomplete: "address-line2",
+      value: values.addressLine2,
+      errorMessage: errors.addressLine2 and { text: errors.addressLine2 }
+    }) }}
+
+    {{ govukInput({
+      id: "townOrCity", name: "townOrCity",
+      label: { text: "Town or city" },
+      classes: "govuk-!-width-two-thirds",
+      autocomplete: "address-level2",
+      value: values.townOrCity,
+      errorMessage: errors.townOrCity and { text: errors.townOrCity }
+    }) }}
+
+    {{ govukInput({
+      id: "county", name: "county",
+      label: { text: "County (optional)" },
+      classes: "govuk-!-width-two-thirds",
+      value: values.county,
+      errorMessage: errors.county and { text: errors.county }
+    }) }}
+
+    {{ govukInput({
+      id: "postalOrZipCode", name: "postalOrZipCode",
+      label: { text: "Postal or zip code" },
+      classes: "govuk-input--width-10",
+      autocomplete: "postal-code",
+      value: values.postalOrZipCode,
+      errorMessage: errors.postalOrZipCode and { text: errors.postalOrZipCode }
+    }) }}
+
+    {{ govukSelect({
+      id: "country", name: "country",
+      label: { text: "Country" },
+      items: countryItems,
+      errorMessage: errors.country and { text: errors.country }
+    }) }}
+
+    {{ govukInput({
+      id: "telephoneNumber", name: "telephoneNumber",
+      label: { text: "Telephone number" },
+      type: "tel",
+      classes: "govuk-input--width-20",
+      autocomplete: "tel",
+      value: values.telephoneNumber,
+      errorMessage: errors.telephoneNumber and { text: errors.telephoneNumber }
+    }) }}
+
+    {{ govukInput({
+      id: "emailAddress", name: "emailAddress",
+      label: { text: "Email address" },
+      type: "email",
+      autocomplete: "email",
+      value: values.emailAddress,
+      errorMessage: errors.emailAddress and { text: errors.emailAddress }
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

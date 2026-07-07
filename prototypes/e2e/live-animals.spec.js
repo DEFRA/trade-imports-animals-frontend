@@ -520,9 +520,14 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(transportRow).toContainText('Not started')
 
-    // Choosing a type saves and persists on return.
+    // Choosing a type saves and persists on return. The private branch owes
+    // the details page next — a blank save there walks on to the hub.
     await openTransporters()
     await privateType.check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Private transporter details' })
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
@@ -586,9 +591,14 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     // Private transporter: the select page is no longer owed — saving the
-    // type returns straight to the hub, skipping it.
+    // type skips it and walks on to the private details page; a blank save
+    // there returns to the hub.
     await openTransporters()
     await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Private transporter details' })
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
@@ -601,6 +611,110 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(selectHeading).toBeVisible()
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+  })
+
+  test('private transporter — keyed-in details owed only for the private type; a partial fill blocks the save; changing the type wipes them', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // Every field on the two earlier pages is submit-enforced, so blank
+    // saves walk straight through to the transporter-type page.
+    const openTransporters = async () => {
+      await page.getByRole('link', { name: 'Transport' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Port of entry' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'How the animals will travel' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', {
+          name: 'What type of transporter will move the animals?'
+        })
+      ).toBeVisible()
+    }
+    const detailsHeading = page.getByRole('heading', {
+      name: 'Private transporter details'
+    })
+    const transporter = values.privateTransporter
+
+    // Private transporter: the details page opens. A PARTIAL fill blocks the
+    // save — the fieldGroup's mandates apply once the record is provided —
+    // naming the missing mandatory fields.
+    await openTransporters()
+    await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(detailsHeading).toBeVisible()
+    await page.getByLabel('Name or organisation name').fill(transporter.name)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Enter address line 1' })
+    ).toBeVisible()
+
+    // Completing the mandatory fields commits the whole group as one
+    // { name, address } object and finishes the section.
+    await page
+      .getByLabel('Address line 1')
+      .fill(transporter.address.addressLine1)
+    await page.getByLabel('Town or city').fill(transporter.address.townOrCity)
+    await page
+      .getByLabel('Postal or zip code')
+      .fill(transporter.address.postalOrZipCode)
+    await page.getByLabel('Country').selectOption(transporter.address.country)
+    await page
+      .getByLabel('Telephone number')
+      .fill(transporter.address.telephoneNumber)
+    await page
+      .getByLabel('Email address')
+      .fill(transporter.address.emailAddress)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+
+    // The record persists: walking back in flattens the saved object into
+    // the form fields.
+    await openTransporters()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(detailsHeading).toBeVisible()
+    await expect(page.getByLabel('Name or organisation name')).toHaveValue(
+      transporter.name
+    )
+    await expect(page.getByLabel('Country')).toHaveValue(
+      transporter.address.country
+    )
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Commercial transporter: the details page is no longer owed — saving
+    // the type walks to the commercial select page instead; a blank save
+    // there returns to the hub.
+    await openTransporters()
+    await page.getByRole('radio', { name: 'Commercial transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Search for an approved commercial transporter'
+      })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+
+    // Back to private: leaving scope wiped the saved details — the form
+    // renders empty.
+    await openTransporters()
+    await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(detailsHeading).toBeVisible()
+    await expect(page.getByLabel('Name or organisation name')).toHaveValue('')
+    await expect(page.getByLabel('Country')).toHaveValue('')
   })
 
   test('transport details — transited countries revealed only for rail or road; changing the means wipes saved countries', async ({
