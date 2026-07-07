@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentJourney, JOURNEY_COOKIE } from './journey.js'
-import { store } from './store.js'
+import { store, IN_PROGRESS } from './store.js'
 import { recordingH } from './test-support.js'
 
 /**
@@ -26,7 +26,7 @@ describe('journey isolation seam', () => {
     const h = recordingH()
     const journey = currentJourney(reqWith({}), h)
     expect(journey.journeyId).toEqual(expect.any(String))
-    expect(journey.status).toBe('in-progress')
+    expect(journey.status).toBe(IN_PROGRESS)
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 

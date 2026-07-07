@@ -53,8 +53,21 @@ import { simulateJourney } from './simulate.js'
  * SCOPE — they are not claims that those values are valid input.
  */
 
-// The obligations that a page's/section's gate keys off — the full activator set.
-const ADDONS = ['named-driver', 'modifications', 'protected-ncd']
+// The add-on picker's selectable slugs — DERIVED from the model, not re-typed.
+// Every `includes` predicate that activates off the `addons` picker names one
+// slug (the two `modifications` detail obligations share a slug, hence the
+// dedupe). Reuses `walkObligations()` — already traversed here, so no new import
+// edge — meaning the scope space tracks the model by construction: adding an
+// add-on brings its slug into enumeration for free.
+const addonsPicker = registry.byId('addons')
+const ADDONS = [
+  ...new Set(
+    [...walkObligations()]
+      .map(({ obligation }) => obligation.activatedBy)
+      .filter((rule) => rule?.obligation === addonsPicker && 'includes' in rule)
+      .map((rule) => rule.includes)
+  )
+]
 
 const subsetsOf = (items) =>
   items.reduce((acc, item) => [...acc, ...acc.map((s) => [...s, item])], [[]])

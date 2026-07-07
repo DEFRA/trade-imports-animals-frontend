@@ -14,6 +14,7 @@
  * second user cheaply. NO real OIDC, token validation, Redis or multi-user auth.
  */
 export const STUB_USER = 'stub-user-0001'
+export const STUB_USER_HEADER = 'x-stub-user'
 export const JOURNEY_COOKIE = 'obligationsV2JourneyId'
 
 export const session = {
@@ -23,7 +24,7 @@ export const session = {
    * Prod seam: the validated OIDC subject from Defra ID.
    */
   userId(request) {
-    return request?.headers?.['x-stub-user'] ?? STUB_USER
+    return request?.headers?.[STUB_USER_HEADER] ?? STUB_USER
   },
 
   /**

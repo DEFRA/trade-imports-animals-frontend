@@ -432,3 +432,18 @@ Workflow-orchestrated, parent-shell verification).
   pinned by store-contract/records-port tests; freeze-gate scope unchanged, non-mutating ops
   correctly excluded). Barrel surface untouched; no test edits. Skeptics: no objections.
   **Byte-green: unit 154 (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**
+
+- [x] **T5 — magic strings → single source of truth. DONE — byte-green.**
+  _Landed as:_ implement → derivation-soundness-skeptic workflow (Opus). Three derivations:
+  (1) `reachability.js` `ADDONS` literal → derived from the model by collecting
+  `activatedBy.includes` predicates targeting `registry.byId('addons')` via the traversal the
+  prover ALREADY imports (no new edge; `Set`-dedupe is load-bearing — `modifications` is authored
+  twice via `modificationsGate`; first-seen order byte-identical); (2) `session.js` gained
+  `export const STUB_USER_HEADER = 'x-stub-user'` (additive; mirrors STUB_USER/JOURNEY_COOKIE
+  convention), 3 re-typings in `journey-user-assoc.test.js` now computed-key imports;
+  (3) `journey.test.js` hardcoded `'in-progress'` → imported `IN_PROGRESS` (was the lone re-typer
+  among 4 sibling specs). Declined with reasons: the addons picker option list (slugs pair with
+  authored copy that has no model source — presentation domain), the `includes:'<slug>'` authoring
+  sites themselves (they ARE the source), flow gate keys (T11 territory), prose/test-name mentions.
+  Skeptic (equivalence / cycles / live-vs-snapshot / misses): no objections. **Byte-green: unit 154
+  (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**

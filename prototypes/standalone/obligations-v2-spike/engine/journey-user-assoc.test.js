@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentJourney } from './journey.js'
 import { records } from './persistence/records.js'
-import { session, STUB_USER } from './persistence/session.js'
+import { session, STUB_USER, STUB_USER_HEADER } from './persistence/session.js'
 import { recordingH } from './test-support.js'
 
 /**
@@ -26,14 +26,17 @@ describe('journey-user association', () => {
   })
 
   it('honours the x-stub-user header so a test can be a second user', () => {
-    expect(session.userId(req({ 'x-stub-user': 'user-B' }))).toBe('user-B')
-    currentJourney(req({ 'x-stub-user': 'user-B' }), recordingH())
+    expect(session.userId(req({ [STUB_USER_HEADER]: 'user-B' }))).toBe('user-B')
+    currentJourney(req({ [STUB_USER_HEADER]: 'user-B' }), recordingH())
     expect(records.load({ userId: 'user-B' })).toBeDefined()
   })
 
   it('keeps two users active journeys isolated in the byUser index', () => {
     const a = currentJourney(req(), recordingH())
-    const b = currentJourney(req({ 'x-stub-user': 'user-B' }), recordingH())
+    const b = currentJourney(
+      req({ [STUB_USER_HEADER]: 'user-B' }),
+      recordingH()
+    )
     expect(a.journeyId).not.toBe(b.journeyId)
     expect(records.load({ userId: STUB_USER }).journeyId).toBe(a.journeyId)
     expect(records.load({ userId: 'user-B' }).journeyId).toBe(b.journeyId)
