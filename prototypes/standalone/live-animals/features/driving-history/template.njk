@@ -1,0 +1,43 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "yearsNoClaims", name: "yearsNoClaims",
+      label: { text: "Years of no-claims discount" },
+      classes: "govuk-input--width-3",
+      inputmode: "numeric",
+      value: values.yearsNoClaims,
+      errorMessage: errors.yearsNoClaims and { text: errors.yearsNoClaims }
+    }) }}
+
+    {{ govukRadios({
+      name: "hadClaims",
+      fieldset: { legend: { text: "Have you had any claims in the last 5 years?", classes: "govuk-fieldset__legend--s" } },
+      items: [
+        { value: "yes", text: "Yes", checked: values.hadClaims == "yes" },
+        { value: "no", text: "No", checked: values.hadClaims == "no" }
+      ]
+    }) }}
+
+    {{ govukInput({
+      id: "penaltyPoints", name: "penaltyPoints",
+      label: { text: "Penalty points" },
+      classes: "govuk-input--width-3",
+      inputmode: "numeric",
+      value: values.penaltyPoints,
+      errorMessage: errors.penaltyPoints and { text: errors.penaltyPoints }
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

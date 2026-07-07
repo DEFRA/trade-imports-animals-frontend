@@ -1,0 +1,20 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukCheckboxes({
+      name: "addons",
+      fieldset: { legend: { text: "What would you like to add?", classes: "govuk-fieldset__legend--s" } },
+      hint: { text: "Select all that apply. Each one you choose adds its own set of questions." },
+      items: options
+    }) }}
+
+    {{ govukButton({ text: "Continue" }) }}
+  </form>
+{% endblock %}

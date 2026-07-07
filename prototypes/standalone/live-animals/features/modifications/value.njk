@@ -1,0 +1,25 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "modValue", name: "modValue",
+      label: { text: "Approximate value added" },
+      classes: "govuk-input--width-5",
+      inputmode: "numeric",
+      prefix: { text: "£" },
+      value: value,
+      errorMessage: errors.modValue and { text: errors.modValue }
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

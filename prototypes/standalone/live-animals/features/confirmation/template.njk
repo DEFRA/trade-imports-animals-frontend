@@ -1,0 +1,18 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+
+{% block journeyContent %}
+  {{ govukPanel({
+    titleText: "Quote confirmed",
+    html: "Your reference number<br><strong>" + reference + "</strong>"
+  }) }}
+
+  <p class="govuk-body">We have saved your quote of £{{ premium }} per year.</p>
+
+  <h2 class="govuk-heading-m">What happens next</h2>
+  <p class="govuk-body">Nothing — this is a prototype. Your answers are held in memory for the lifetime of the app so you can see the journey persist data.</p>
+
+  <p class="govuk-body">
+    <a class="govuk-link" href="{{ returnHref }}">Return to the standalone prototype list</a>
+  </p>
+{% endblock %}

@@ -210,9 +210,7 @@
           "slug": "commodities",
           "title": "Select a commodity",
           "gate": null,
-          "collects": [
-            "commodityLines"
-          ],
+          "collects": ["commodityLines"],
           "notes": "Entry page for the commodityLines collection - member fields (commoditySelection, typeSelection, speciesSelection, numberOfPackages, numberOfAnimalsQuantity, animalIdentifiers) are covered via the collection's item[]."
         },
         {
@@ -251,9 +249,7 @@
           "slug": "import-reason",
           "title": "Reason for import",
           "gate": null,
-          "collects": [
-            "reasonForImport"
-          ],
+          "collects": ["reasonForImport"],
           "notes": "Skeleton heading: What is the main reason for importing the animals? Sits at skeleton step 4, interleaved mid-commodity (c-019); grouped here under the skeleton's About the consignment page group."
         },
         {
@@ -261,9 +257,7 @@
           "slug": "import-purpose",
           "title": "Purpose in the internal market",
           "gate": null,
-          "collects": [
-            "purposeInInternalMarket"
-          ],
+          "collects": ["purposeInInternalMarket"],
           "provisionalCopy": true,
           "notes": "Invented page (no skeleton counterpart, c-012): conditional follow-up shown when reasonForImport = Internal market."
         },
@@ -272,10 +266,7 @@
           "slug": "additional-details",
           "title": "Additional animal details",
           "gate": null,
-          "collects": [
-            "animalsCertifiedFor",
-            "containsUnweanedAnimals"
-          ],
+          "collects": ["animalsCertifiedFor", "containsUnweanedAnimals"],
           "notes": "Skeleton template page group: Description of the goods. containsUnweanedAnimals only shows for the five listed commodity groups (cross-frame gate, modelGap)."
         }
       ]
@@ -290,9 +281,7 @@
           "slug": "accompanying-documents",
           "title": "Accompanying documents",
           "gate": null,
-          "collects": [
-            "documents"
-          ],
+          "collects": ["documents"],
           "notes": "Entry page for the documents collection (upload loop: add/remove one document per POST; Continue enabled only when no scan is PENDING or REJECTED). Item fields covered via documents.item."
         }
       ]
@@ -315,9 +304,7 @@
           "slug": "consignors/select",
           "title": "Search for an existing consignor or exporter",
           "gate": null,
-          "collects": [
-            "consignor"
-          ],
+          "collects": ["consignor"],
           "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-consignors.json."
         },
         {
@@ -325,9 +312,7 @@
           "slug": "destinations/select",
           "title": "Search for a place of destination",
           "gate": null,
-          "collects": [
-            "placeOfDestination"
-          ],
+          "collects": ["placeOfDestination"],
           "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-destinations.json."
         },
         {
@@ -335,9 +320,7 @@
           "slug": "place-of-origin/select",
           "title": "Search for a place of origin",
           "gate": null,
-          "collects": [
-            "placeOfOrigin"
-          ],
+          "collects": ["placeOfOrigin"],
           "provisionalCopy": true,
           "notes": "Invented page: the skeleton hub links to /place-of-origin/select but the route is unregistered (dead spoke, c-005)."
         },
@@ -346,9 +329,7 @@
           "slug": "consignees/select",
           "title": "Search for a consignee",
           "gate": null,
-          "collects": [
-            "consignee"
-          ],
+          "collects": ["consignee"],
           "provisionalCopy": true,
           "notes": "Invented page: the skeleton hub links to /consignees/select but the route is unregistered (dead spoke, c-005)."
         },
@@ -357,9 +338,7 @@
           "slug": "importers/select",
           "title": "Search for an importer",
           "gate": null,
-          "collects": [
-            "importer"
-          ],
+          "collects": ["importer"],
           "provisionalCopy": true,
           "notes": "Invented page: the skeleton hub links to /importers/select but the route is unregistered (dead spoke, c-005)."
         },
@@ -368,9 +347,7 @@
           "slug": "cph-number",
           "title": "Add the County Parish Holding number (CPH)",
           "gate": null,
-          "collects": [
-            "countyParishHoldingCph"
-          ],
+          "collects": ["countyParishHoldingCph"],
           "notes": "Presented as an addresses-hub spoke but the skeleton POST jumps straight to /port-of-entry, short-circuiting the hub (c-019). Only shown when a CPH-required commodity is selected (cross-frame gate, modelGap)."
         }
       ]
@@ -385,10 +362,7 @@
           "slug": "port-of-entry",
           "title": "Entry point and arrival at destination",
           "gate": null,
-          "collects": [
-            "portOfEntry",
-            "arrivalDateAtPort"
-          ],
+          "collects": ["portOfEntry", "arrivalDateAtPort"],
           "notes": "Skeleton template page group: Transport. Title keeps the skeleton's arrival-at-destination wording, but V4 defines arrival date AT PORT (c-011) - copy to reconcile with Figma."
         },
         {
@@ -410,9 +384,7 @@
           "slug": "transporters",
           "title": "Transporter",
           "gate": null,
-          "collects": [
-            "transporterType"
-          ],
+          "collects": ["transporterType"],
           "notes": "Hub page. Skeleton has a single mock transporter select with no type split; V4 requires choosing Commercial vs Private first (c-012), so this page collects transporterType and hands off to the matching spoke."
         },
         {
@@ -420,9 +392,7 @@
           "slug": "transporters/select",
           "title": "Search for an existing transporter",
           "gate": null,
-          "collects": [
-            "commercialTransporter"
-          ],
+          "collects": ["commercialTransporter"],
           "notes": "Spoke of the transporters hub; maps to V4 Commercial Transporter (consumed from the TBC approved-transporter list; address block + approval number). Skeleton options come from load-mock-transporters.js."
         },
         {
@@ -430,9 +400,7 @@
           "slug": "transporters/private",
           "title": "Private transporter details",
           "gate": null,
-          "collects": [
-            "privateTransporter"
-          ],
+          "collects": ["privateTransporter"],
           "provisionalCopy": true,
           "notes": "Invented page (no skeleton counterpart, c-012): standard address block entry shown when transporterType = Private transporter."
         }
@@ -448,9 +416,7 @@
           "slug": "consignment/contact/select",
           "title": "Contact address for consignment",
           "gate": null,
-          "collects": [
-            "contactAddress"
-          ],
+          "collects": ["contactAddress"],
           "notes": "Last data-entry step before the CYA. Registered inside the addresses plugin but reached in-flow from the transporters POST (c-019). gov.identity variant: if more than one address exists the user must select one before continuing; user-created variant uses the standard address block (c-001)."
         }
       ]
@@ -473,9 +439,7 @@
           "slug": "declaration",
           "title": "Declaration",
           "gate": null,
-          "collects": [
-            "declaration"
-          ],
+          "collects": ["declaration"],
           "notes": "POST validates the confirmation checkbox then calls the submit endpoint (DRAFT to SUBMITTED) and redirects back to /declaration - no separate confirmation page (c-022)."
         }
       ]
@@ -563,10 +527,7 @@
       "label": "Region of origin code requirement",
       "input": {
         "widget": "radios",
-        "values": [
-          "Yes",
-          "No"
-        ],
+        "values": ["Yes", "No"],
         "hint": "If a region of origin code is required it will be shown on your health certificate."
       },
       "notes": "Skeleton (requiresRegionCode) defaults to no and accepts an empty answer; V4 makes it mandatory to submit - V4 wins (see c-006).",
@@ -602,9 +563,7 @@
         "example": "FR-75"
       },
       "notes": "Displayed and stored with ISO country prefix derived from Country of Origin. Not collected anywhere in the skeleton despite requiresRegionCode existing (see c-012).",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -671,9 +630,7 @@
         "hint": "You will find this on the health certificate."
       },
       "notes": "PO approval pending: APHA intend to make this conditional for some commodities - pending confirmation. Unresolved inline comment on field name.",
-      "conflicts": [
-        "c-009"
-      ],
+      "conflicts": ["c-009"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -697,10 +654,7 @@
       "label": "Contains Unweaned Animals",
       "input": {
         "widget": "radios",
-        "values": [
-          "Yes",
-          "No"
-        ],
+        "values": ["Yes", "No"],
         "hint": "These are animals that are still feeding from their mother."
       },
       "activatedBy": {
@@ -749,9 +703,7 @@
         ]
       },
       "notes": "V4 carries an unresolved inline comment on 'Temporary admission horses'.",
-      "conflicts": [
-        "c-008"
-      ],
+      "conflicts": ["c-008"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -795,9 +747,7 @@
         ]
       },
       "notes": "Not present in the skeleton at all (see c-012); collected on an invented provisional page.",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -819,9 +769,7 @@
         "group": "address"
       },
       "notes": "Standard address block; user must provide one address record. Dead spoke in the skeleton: hub link to /place-of-origin/select is unregistered and session key placeOfOrigin is never written (see c-005).",
-      "conflicts": [
-        "c-005"
-      ],
+      "conflicts": ["c-005"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -847,9 +795,7 @@
         "group": "address"
       },
       "notes": "Standard address block; user must provide one address record. Skeleton selects a whole address object from mock-consignors.json via the /consignors/select spoke and sends it as notification.consignor.",
-      "conflicts": [
-        "c-020"
-      ],
+      "conflicts": ["c-020"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -875,9 +821,7 @@
         "group": "address"
       },
       "notes": "Standard address block; user must provide one address record. Dead spoke in the skeleton: /consignees/select is unregistered and session key consignee is never written (see c-005).",
-      "conflicts": [
-        "c-005"
-      ],
+      "conflicts": ["c-005"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -903,9 +847,7 @@
         "group": "address"
       },
       "notes": "Standard address block; user must provide one address record. Dead spoke in the skeleton: /importers/select is unregistered and session key importer is never written (see c-005).",
-      "conflicts": [
-        "c-005"
-      ],
+      "conflicts": ["c-005"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -931,9 +873,7 @@
         "group": "address"
       },
       "notes": "Standard address block; user must provide one address record. Skeleton selects a whole address object from mock-destinations.json via the /destinations/select spoke and sends it as notification.destination.",
-      "conflicts": [
-        "c-020"
-      ],
+      "conflicts": ["c-020"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -959,10 +899,7 @@
         "group": "address"
       },
       "notes": "Two V4 variants share one anchor (see c-001): consumed from gov.identity ('if more than one address exists, the user must select one before continuing') or created by the user via the Standard address block. Modelled as one select-or-create obligation. Skeleton: radios over mock-contacts.json indexes, stored as consignmentContactAddress and sent as notification.consignment.contact; a separate sessionKeys.contactAddress is defined but unused.",
-      "conflicts": [
-        "c-001",
-        "c-020"
-      ],
+      "conflicts": ["c-001", "c-020"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -986,15 +923,10 @@
       "label": "Transporter type",
       "input": {
         "widget": "radios",
-        "values": [
-          "Commercial transporter",
-          "Private transporter"
-        ]
+        "values": ["Commercial transporter", "Private transporter"]
       },
       "notes": "User must select one transporter type. Skeleton has no type split - a single mock transporter select (see c-012).",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1031,9 +963,7 @@
         ]
       },
       "notes": "Standard address block PLUS approval number; single entry for the consignment. Consumed from a TBC list of approved transporters (unresolved inline comment on that clause); if a trader creates a new commercial transporter it is restricted to NI.",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1064,9 +994,7 @@
       },
       "wipeOnExit": true,
       "notes": "Standard address block; single entry for the consignment. Not present in the skeleton (see c-012); collected on an invented provisional page.",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1117,9 +1045,7 @@
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
       "notes": "Single entry for the notification, required when CPH applies to the selected commodity (19 listed commodities) - notification-level field gated on commodityLines contents (frame:anyItem proposed vocabulary). Unresolved inline comment on field name.",
-      "conflicts": [
-        "c-007"
-      ],
+      "conflicts": ["c-007"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1145,9 +1071,7 @@
         "widget": "select",
         "valuesSource": "Named MDM live animal ports of entry list (skeleton hardcodes ABERDEEN / EAST MIDLANDS AIRPORT / EDINBURGH)"
       },
-      "conflicts": [
-        "c-018"
-      ],
+      "conflicts": ["c-018"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1175,9 +1099,7 @@
         "example": "12/12/2026"
       },
       "notes": "Unresolved inline comment on field name. Skeleton asks for arrival at final destination with lax validation (see c-011).",
-      "conflicts": [
-        "c-011"
-      ],
+      "conflicts": ["c-011"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1201,17 +1123,10 @@
       "label": "Means of transport",
       "input": {
         "widget": "radios",
-        "values": [
-          "Airplane",
-          "Railway",
-          "Road Vehicle",
-          "Vessel"
-        ]
+        "values": ["Airplane", "Railway", "Road Vehicle", "Vessel"]
       },
       "notes": "Not present in the skeleton (see c-012); collected on an invented provisional page.",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1235,9 +1150,7 @@
         "example": "FR-892-LK"
       },
       "notes": "Free-text transport identifier. Not present in the skeleton (see c-012).",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1261,9 +1174,7 @@
         "example": "CMR-2026-884721"
       },
       "notes": "Free-text transport document reference. Not present in the skeleton (see c-012).",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1280,10 +1191,7 @@
       "label": "Transited Countries",
       "activatedBy": {
         "obligation": "meansOfTransport",
-        "includes": [
-          "Railway",
-          "Road Vehicle"
-        ]
+        "includes": ["Railway", "Road Vehicle"]
       },
       "wipeOnExit": true,
       "input": {
@@ -1293,9 +1201,7 @@
         "example": "France, Belgium"
       },
       "notes": "V4 tension recorded verbatim: Conditions cell says 'Conditional: required when Means of transport is Railway or Road Vehicle. Optional multi-select.' while the Mandatory cell says Optional - both clauses carry unresolved inline comments. Modelled as optional but only shown for Railway/Road Vehicle. Not present in the skeleton (see c-012).",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1315,14 +1221,10 @@
       "label": "I declare that the information I have provided in this notification I am submitting is true and correct.",
       "input": {
         "widget": "checkboxes",
-        "values": [
-          "confirmed"
-        ]
+        "values": ["confirmed"]
       },
       "notes": "Skeleton-only field: not persisted; a valid POST calls POST /notifications/{referenceNumber}/submit (DRAFT to SUBMITTED) and redirects back to /declaration with no separate confirmation page. Shows Date of declaration as today (en-GB).",
-      "conflicts": [
-        "c-022"
-      ],
+      "conflicts": ["c-022"],
       "provenance": [
         {
           "source": "skeleton",
@@ -1349,9 +1251,7 @@
         "animalIdentifiers"
       ],
       "notes": "V4 data-level model: a commodity code plus its taxonomy chain (Type, Class, Species) plus a quantity; things true at the specific commodity line level. Skeleton supports exactly one line (commodityComplement single-element array) - see c-003.",
-      "conflicts": [
-        "c-003"
-      ],
+      "conflicts": ["c-003"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1384,10 +1284,7 @@
       ],
       "modelGap": "sibling-at-least-one",
       "notes": "V4 Level 3: Unit record - 0..N per commodity line, carrying per-animal identifiers and per-animal Permanent Address. Banner rule: a notification must be submitted with at least one animal identifier PER ANIMAL - the at-least-one applies across the sibling identifier fields within each unit record, not just to the item count (hence modelGap sibling-at-least-one). Each identifier field is individually Optional.",
-      "conflicts": [
-        "c-002",
-        "c-003"
-      ],
+      "conflicts": ["c-002", "c-003"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1413,10 +1310,7 @@
         "accompanyingDocumentDateOfIssue"
       ],
       "notes": "A notification can be submitted without an accompanying document, but once a document type is selected the attachment, reference and date of issue are mandatory to proceed (all-or-nothing per item - item fields carry required:true within an item). Skeleton mechanics: upload loop with per-document remove, max 10 documents, 10 MB cap, virus-scan polling (REJECTED must be removed before Continue); documents never enter buildNotificationPayload (see c-004).",
-      "conflicts": [
-        "c-004",
-        "c-010"
-      ],
+      "conflicts": ["c-004", "c-010"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1444,9 +1338,7 @@
         "example": "Cattle, 0102, Bos taurus"
       },
       "notes": "Unresolved inline comment on field name. Skeleton hardcodes Cow/Fish/Cat/Dog (see c-018).",
-      "conflicts": [
-        "c-018"
-      ],
+      "conflicts": ["c-018"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1474,9 +1366,7 @@
         "example": "Game"
       },
       "notes": "Applicability is data-driven from MDM ('where applicable for given commodity') - not expressible as an activatedBy equals/includes rule, so no activatedBy is wired. Unresolved inline comment on the Example cell (Game). Skeleton offers only Domestic from mock-species.json and posts the type text, not its numeric value (see c-018).",
-      "conflicts": [
-        "c-018"
-      ],
+      "conflicts": ["c-018"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1505,9 +1395,7 @@
         "example": "Bison bison (Bison); Bos spp. (Cattle species); Bos taurus (Cattle); Bubalus bubalis (Water buffalo)"
       },
       "notes": "User may select one or more species up to the agreed maximum (maximum not stated in V4). Skeleton stores each selection as {value, text} from mock-species.json and carries per-species values over on reselect (see c-017).",
-      "conflicts": [
-        "c-017"
-      ],
+      "conflicts": ["c-017"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1593,10 +1481,7 @@
       },
       "wipeOnExit": true,
       "notes": "Shown where package count applies to the selected commodity (54-entry list, same commodity-line frame so activatedBy is natively expressible). List includes 0203 Pig Meat, a product (see c-021). Unresolved inline comments on field name and on 0203. Skeleton models this per species with derived subtotals (see c-003).",
-      "conflicts": [
-        "c-021",
-        "c-003"
-      ],
+      "conflicts": ["c-021", "c-003"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1625,9 +1510,7 @@
         "example": "1, 25, 5000"
       },
       "notes": "Unresolved inline comments on field name and on the int64 max in the Type cell; PO approval pending. Skeleton collects this per species and derives a subtotal (see c-003).",
-      "conflicts": [
-        "c-003"
-      ],
+      "conflicts": ["c-003"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1669,9 +1552,7 @@
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
       "notes": "Shown when the enclosing commodity line requires Passport identifier - unit-level field gated on the enclosing frame (proposed frame:enclosing vocabulary). V4 bracketed count says (6) but lists 9 entries (see c-002). PO approved with note: field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
-      "conflicts": [
-        "c-002"
-      ],
+      "conflicts": ["c-002"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1709,9 +1590,7 @@
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
       "notes": "Shown when the enclosing commodity line requires Tattoo identifier (frame:enclosing). V4 bracketed count says (2) but lists 5 entries (see c-002). Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
-      "conflicts": [
-        "c-002"
-      ],
+      "conflicts": ["c-002"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1769,9 +1648,7 @@
       "activatedBy": {
         "obligation": "commoditySelection",
         "frame": "enclosing",
-        "includes": [
-          "0101 - Horse"
-        ]
+        "includes": ["0101 - Horse"]
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
@@ -1843,18 +1720,12 @@
       "activatedBy": {
         "obligation": "commoditySelection",
         "frame": "enclosing",
-        "includes": [
-          "01061900 - Cats",
-          "01061900 - Dogs",
-          "01061900 - Ferrets"
-        ]
+        "includes": ["01061900 - Cats", "01061900 - Dogs", "01061900 - Ferrets"]
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
       "notes": "Required per animal when the enclosing commodity line is Cats, Dogs or Ferrets (frame:enclosing); a different address can be entered for each animal, so it lives on the unit record alongside the identifiers (V4 Level 3 prose). Standard address block. Unresolved inline comment on field name. Not present in the skeleton (see c-012).",
-      "conflicts": [
-        "c-012"
-      ],
+      "conflicts": ["c-012"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1892,9 +1763,7 @@
         ]
       },
       "notes": "Required within a document item (all-or-nothing block). PO approved with note Pending; unresolved inline comments on field name and Mandatory cell. Skeleton enum has only ITAHC and Veterinary health certificate (see c-010).",
-      "conflicts": [
-        "c-010"
-      ],
+      "conflicts": ["c-010"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1918,21 +1787,10 @@
       "label": "Accompanying Document: Attachment Type",
       "input": {
         "widget": "select",
-        "values": [
-          "PDF",
-          "DOC",
-          "DOCX",
-          "JPG",
-          "JPEG",
-          "PNG",
-          "XLS",
-          "XLSX"
-        ]
+        "values": ["PDF", "DOC", "DOCX", "JPG", "JPEG", "PNG", "XLS", "XLSX"]
       },
       "notes": "Required within a document item (all-or-nothing block). Skeleton implements this as an actual file upload instead - allowed extensions pdf/doc/docx/jpeg/jpg/png/xls/xlsx, max 10 MB (decimal, under the CDP nginx 10 MiB cap), uploaded to the document service and virus-scanned (see c-010). Unresolved inline comments on field name and Mandatory cell.",
-      "conflicts": [
-        "c-010"
-      ],
+      "conflicts": ["c-010"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1960,9 +1818,7 @@
         "example": "GBHC1234567890"
       },
       "notes": "Required within a document item (all-or-nothing block). Skeleton has it optional with max 100 and alphanumeric-only pattern (see c-010). Unresolved inline comments on field name and Mandatory cell.",
-      "conflicts": [
-        "c-010"
-      ],
+      "conflicts": ["c-010"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1990,9 +1846,7 @@
         "example": "12/12/2025"
       },
       "notes": "Required within a document item (all-or-nothing block). Skeleton requires it only when a file is attached, with day/month/year completeness and real-calendar-date checks, persisted per document as yyyy-mm-dd (see c-010). Unresolved inline comment on Mandatory cell.",
-      "conflicts": [
-        "c-010"
-      ],
+      "conflicts": ["c-010"],
       "provenance": [
         {
           "source": "confluence-v4",

@@ -1,0 +1,63 @@
+import { beforeAll, describe, expect, it } from 'vitest'
+
+import { buildDispatch } from '../flow/dispatch.js'
+import { readyForQuote } from '../flow/section-status.js'
+import { configureReadyForQuote } from '../engine/read.js'
+import { dispatchPages } from '../features/index.js'
+import { simulateJourney } from './simulate.js'
+
+describe('#simulateJourney', () => {
+  // The quote-readiness gate flows through the status roll-up, which reads the
+  // boot-built dispatch index — so replicate boot, exactly as the app does.
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForQuote(readyForQuote)
+  })
+
+  it('Should walk a plain persona (no claims, no add-ons) straight through', () => {
+    const pages = simulateJourney({
+      email: 'a@b.co',
+      fullName: 'Alex',
+      hadClaims: 'no',
+      coverType: 'comprehensive'
+    })
+    expect(pages).toContain('driving-history')
+    expect(pages).toContain('cover-type')
+    expect(pages).not.toContain('claims')
+    expect(pages).not.toContain('drivers')
+    expect(pages).not.toContain('modifications-describe')
+    expect(pages.indexOf('driving-history')).toBeLessThan(
+      pages.indexOf('cover-type')
+    )
+    expect(pages.indexOf('cover-type')).toBeLessThan(pages.indexOf('addons'))
+  })
+
+  it('Should insert the gated claims page exactly when hadClaims is yes', () => {
+    const pages = simulateJourney({ hadClaims: 'yes' })
+    expect(pages).toContain('claims')
+    expect(pages.indexOf('driving-history')).toBeLessThan(
+      pages.indexOf('claims')
+    )
+    expect(pages.indexOf('claims')).toBeLessThan(pages.indexOf('cover-type'))
+  })
+
+  it('Should open only the add-on section a persona selected', () => {
+    const pages = simulateJourney({ addons: ['named-driver'] })
+    expect(pages).toContain('drivers')
+    expect(pages).not.toContain('modifications-describe')
+    expect(pages).not.toContain('protected-ncd-years')
+  })
+
+  it('Should reveal the quote page only once the journey is ready to quote', () => {
+    const notReady = simulateJourney({ email: 'a@b.co' })
+    expect(notReady).not.toContain('quote-summary')
+
+    const ready = simulateJourney({
+      email: 'a@b.co',
+      fullName: 'Alex',
+      hadClaims: 'no',
+      coverType: 'comprehensive'
+    })
+    expect(ready).toContain('quote-summary')
+  })
+})
