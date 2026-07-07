@@ -11,6 +11,15 @@ import { setAt, valueAt, destroyWiped } from '../lib/path.js'
  * and applied by `destroyWiped`, so a page physically cannot hand-roll a wipe.
  */
 
+/**
+ * True only for a real in-range integer index into `list`. `Number.isInteger`
+ * rejects `NaN` and non-integers UP FRONT: without it `splice(NaN, 1)` coerces
+ * to `splice(0, 1)` and would destroy the WRONG (first) instance on a malformed
+ * `.../foo/remove` URL. Guards edit-in-place and remove alike.
+ */
+const isValidIndex = (index, list) =>
+  Number.isInteger(index) && index >= 0 && index < list.length
+
 /** Apply a scalar patch, reconcile to a fixpoint, DESTROY wiped data, persist.
  * `wiped` is path-addressed now, so a nested instance can be destroyed in place;
  * a depth-0 key still deletes the whole top-level obligation. `destroyWiped`
@@ -44,7 +53,7 @@ export const appendEntryAt = (request, h, collectionPath, entry) => {
 export const updateEntryAt = (request, h, collectionPath, index, entry) => {
   const journey = currentJourney(request, h)
   const list = [...(valueAt(journey.answers, collectionPath) ?? [])]
-  if (!Number.isInteger(index) || index < 0 || index >= list.length) return
+  if (!isValidIndex(index, list)) return
   list[index] = entry
   const answers = setAt(journey.answers, collectionPath, list)
   records.saveAnswers(journey.journeyId, answers)
@@ -59,9 +68,7 @@ export const updateEntryAt = (request, h, collectionPath, index, entry) => {
 export const removeEntryAt = (request, h, collectionPath, index) => {
   const journey = currentJourney(request, h)
   const list = [...(valueAt(journey.answers, collectionPath) ?? [])]
-  // Reject a non-integer index: `splice(NaN, 1)` coerces to `splice(0, 1)` and
-  // would destroy the WRONG (first) instance on a malformed `.../foo/remove` URL.
-  if (!Number.isInteger(index) || index < 0 || index >= list.length) return
+  if (!isValidIndex(index, list)) return
   list.splice(index, 1)
   const answers = setAt(journey.answers, collectionPath, list)
   const { wiped } = reconcile(answers)

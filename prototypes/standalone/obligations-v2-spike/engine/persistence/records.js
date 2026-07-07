@@ -31,6 +31,18 @@ const assertWritable = (journey) => {
   }
 }
 
+/**
+ * Load a record that is safe to mutate, or fail loud: unknown id throws, and a
+ * SUBMITTED record throws (the one-way in-progress -> submitted freeze). The
+ * single gate in front of every mutating op, so no writer can skip either check.
+ */
+const loadWritable = (journeyId) => {
+  const journey = journeys.get(journeyId)
+  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+  assertWritable(journey)
+  return journey
+}
+
 export const records = {
   /**
    * Mint a fresh in-progress record and index it by id and by user. Zero-arg is
@@ -73,9 +85,7 @@ export const records = {
    * only: no delete-a-key surface. Prod seam: PATCH /applications/{id}/answers.
    */
   saveAnswers(journeyId, answers) {
-    const journey = journeys.get(journeyId)
-    if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
-    assertWritable(journey)
+    const journey = loadWritable(journeyId)
     journey.answers = structuredClone(answers ?? {})
     return structuredClone(journey)
   },
@@ -87,9 +97,7 @@ export const records = {
    * Prod seam: POST /applications/{id}/submit.
    */
   finalise(journeyId) {
-    const journey = journeys.get(journeyId)
-    if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
-    assertWritable(journey)
+    const journey = loadWritable(journeyId)
     journey.status = SUBMITTED
     journey.submittedAt = new Date().toISOString()
     return structuredClone(journey)

@@ -33,27 +33,25 @@ export const makeScope = (answers) => {
   }
 }
 
+/**
+ * The read-only shape both `get` and `resume` expose for a loaded journey:
+ * `{ journey, answers, scope }`. `scope` is always rebuilt fresh by `reconcile`
+ * from the journey's answers — nothing derived is read back from the record, so
+ * whichever loader supplied the journey, the scope self-heals to current.
+ */
+const readViewOf = (journey) => ({
+  journey,
+  answers: journey.answers,
+  scope: makeScope(journey.answers)
+})
+
 /** { journey, answers, scope } for a request (load-or-create). */
-export const get = (request, h) => {
-  const journey = currentJourney(request, h)
-  return {
-    journey,
-    answers: journey.answers,
-    scope: makeScope(journey.answers)
-  }
-}
+export const get = (request, h) => readViewOf(currentJourney(request, h))
 
 /**
  * Cookieless resume — recover this user's durable journey by identity (no
- * JOURNEY_COOKIE needed) and expose the SAME read-only shape as `get`. `scope`
- * is rebuilt fresh by `reconcile` from the loaded answers: nothing derived is
- * read back from the record, so a days-later resume self-heals to current scope.
+ * JOURNEY_COOKIE needed) and expose the SAME read-only shape as `get`. Because
+ * `readViewOf` rebuilds scope fresh from the loaded answers, a days-later resume
+ * self-heals to current scope.
  */
-export const resume = (request, h) => {
-  const journey = resumeByUser(request, h)
-  return {
-    journey,
-    answers: journey.answers,
-    scope: makeScope(journey.answers)
-  }
-}
+export const resume = (request, h) => readViewOf(resumeByUser(request, h))

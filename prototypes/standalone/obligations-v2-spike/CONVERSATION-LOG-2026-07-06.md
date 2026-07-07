@@ -419,3 +419,16 @@ Workflow-orchestrated, parent-shell verification).
   `headers:{}` uniformity proven inert (`session.userId` optional-chains). Module named
   `test-support.js` (not `.test.`) so vitest doesn't collect it. Skeptic: no objections.
   **Byte-green: unit 154 (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**
+
+- [x] **T4 — state-I/O core DRY. DONE — byte-green, guard intent preserved.**
+  _Landed as:_ implement → 2-skeptic verify workflow (Opus; guard-integrity + byte-green purity).
+  Three genuine duplications factored behind module-private, intention-named helpers: (1)
+  `read.js` `get`/`resume` shared an identical read-view tail → `readViewOf(journey)` (self-heal
+  rationale moved onto the helper where the scope rebuild physically happens); (2) `write.js`
+  bounds guard duplicated across `updateEntryAt`/`removeEntryAt` → `isValidIndex(index, list)`
+  (De-Morgan-exact negation; the `splice(NaN,1)`→`splice(0,1)` gotcha rationale now covers BOTH
+  call sites — `updateEntryAt` previously carried none); (3) `records.js` `saveAnswers`/`finalise`
+  load-then-guard preamble → `loadWritable(journeyId)` (exact throw strings preserved — both
+  pinned by store-contract/records-port tests; freeze-gate scope unchanged, non-mutating ops
+  correctly excluded). Barrel surface untouched; no test edits. Skeptics: no objections.
+  **Byte-green: unit 154 (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**
