@@ -27,6 +27,19 @@
           "year": "2025"
         }
       }
-    ]
+    ],
+    "consignor": {
+      "name": "Laiterie du Nord SARL",
+      "address": {
+        "addressLine1": "12 Rue de la Gare",
+        "addressLine2": "",
+        "townOrCity": "Lille",
+        "county": "",
+        "postalOrZipCode": "59000",
+        "country": "France",
+        "telephoneNumber": "+33 3 20 61 10 10",
+        "emailAddress": "exports@laiterie-du-nord.example.com"
+      }
+    }
   }
 }

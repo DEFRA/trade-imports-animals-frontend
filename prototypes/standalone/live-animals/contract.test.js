@@ -20,6 +20,8 @@ import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
 import * as documentsList from './features/documents/list.controller.js'
 import * as documentsEntry from './features/documents/entry.controller.js'
+import * as addresses from './features/addresses/controller.js'
+import * as consignorsSelect from './features/addresses/consignors-select.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -246,6 +248,24 @@ describe('controller <-> model commit contract', () => {
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(documentsList.meta.collects))
+    )
+  })
+
+  // The addresses LANDING declares `collects: ['consignor']`, but the write
+  // is the consignors SELECT spoke's copy-commit (c-020) — the hub-and-spoke
+  // variant of the claims list/entry split. No seed: the party obligation is
+  // always-live.
+  it('Should commit the consignor via the select (copy) handler it declares', () => {
+    expect(addresses.meta.collects).toEqual(['consignor'])
+    const postSelect = postHandlerEndingWith(
+      consignorsSelect,
+      'consignors/select'
+    )
+    const result = drive(postSelect, {
+      payload: { consignor: 'laiterie-du-nord' }
+    })
+    expect(new Set(committedIds(result))).toEqual(
+      new Set(committableCollects(addresses.meta.collects))
     )
   })
 

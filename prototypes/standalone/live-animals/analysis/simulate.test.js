@@ -66,6 +66,10 @@ describe('#simulateJourney', () => {
           numberOfAnimalsQuantity: '25'
         }
       ],
+      consignor: {
+        name: 'Laiterie du Nord SARL',
+        address: { addressLine1: '12 Rue de la Gare', country: 'France' }
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',

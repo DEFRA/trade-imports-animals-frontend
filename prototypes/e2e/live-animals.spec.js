@@ -264,34 +264,63 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(documentsRow).toContainText('Completed')
   })
 
-  test('addresses — the landing page lists the five parties, all Not added yet with no links', async ({
+  test('addresses — selecting a consignor copies the party onto the landing page and completes the task', async ({
     page
   }) => {
     await startNotification(page)
 
+    // The consignor is a required obligation now owned by the addresses
+    // landing page, so the task starts open.
+    const addressesRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Addresses'
+    })
+    await expect(addressesRow).toContainText('Not started')
+
     await page.getByRole('link', { name: 'Addresses' }).click()
     await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
 
-    // No select sub-page exists yet, so every party shows the Not-added
-    // state with no change link — the landing page has no dead links.
-    const parties = [
+    // Parties whose select spoke has not landed yet stay Not added with no
+    // link — the landing page has no dead links.
+    const pendingParties = [
       'Place of origin',
-      'Consignor',
       'Consignee',
       'Importer',
       'Place of destination'
     ]
-    for (const party of parties) {
+    for (const party of pendingParties) {
       const row = page.locator('.govuk-summary-list__row', { hasText: party })
       await expect(row).toContainText('Not added yet')
       await expect(row.getByRole('link')).toHaveCount(0)
     }
 
-    // The page collects nothing: Continue returns straight to the hub.
+    // The consignor spoke exists: its row offers Add.
+    const consignorRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Consignor'
+    })
+    await expect(consignorRow).toContainText('Not added yet')
+    await consignorRow.getByRole('link', { name: 'Add' }).click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Search for an existing consignor or exporter'
+      })
+    ).toBeVisible()
+
+    // Selecting a party COPIES its name and address into the answer and
+    // returns to the landing page, which now shows the copied name.
+    await page.getByRole('radio', { name: values.consignor.name }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(consignorRow).toContainText(values.consignor.name)
+    await expect(
+      consignorRow.getByRole('link', { name: 'Change' })
+    ).toBeVisible()
+
+    // Continue returns to the hub with the only owed party answered.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
     ).toBeVisible()
+    await expect(addressesRow).toContainText('Completed')
   })
 
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({

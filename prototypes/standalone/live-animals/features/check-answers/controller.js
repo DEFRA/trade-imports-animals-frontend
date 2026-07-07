@@ -143,6 +143,10 @@ const buildRows = (answers) => {
         ]
       : []),
     ...documentRows(answers),
+    // The stored consignor is a copied { name, address } party (c-020); the
+    // Change link resolves to the addresses landing page, which owns the
+    // collect and links out to the select spoke.
+    row('Consignor', answerOf('consignor')?.name, 'consignor'),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

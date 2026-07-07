@@ -1,0 +1,27 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "consignor",
+      fieldset: {
+        legend: {
+          text: "Search for an existing consignor or exporter",
+          isPageHeading: true,
+          classes: "govuk-fieldset__legend--l"
+        }
+      },
+      hint: { text: "Selecting a consignor copies their name and address into this notification." },
+      errorMessage: errors.consignor and { text: errors.consignor },
+      items: consignorOptions
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}
