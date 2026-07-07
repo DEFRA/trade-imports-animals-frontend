@@ -15,6 +15,11 @@ const GROUP_ROWS = [
     title: 'Origin of the import',
     hint: 'Country of origin, region of origin code, your internal reference'
   },
+  {
+    id: 'commodities',
+    title: 'Commodities',
+    hint: 'The commodities, species and numbers of animals you are importing'
+  },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',

@@ -106,6 +106,14 @@ closure. There are exactly three operators, interpreted in one place
 { obligation: coverType, present: true }          // answered (non-blank)
 ```
 
+`includes` also accepts a list target — set intersection, so a scalar
+answer reads "is one of these" (the number-of-packages commodity list in
+`features/commodities/obligations.js`):
+
+```js
+{ obligation: commoditySelection, includes: PACKAGE_COUNT_COMMODITIES }
+```
+
 The vocabulary is deliberately small. It covers "this answer unlocks
 that obligation" and nothing more. Anything that needs real branching —
 arithmetic, multi-condition logic, external state — belongs in a page

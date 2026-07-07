@@ -4,6 +4,15 @@
     "countryOfOrigin": "FR",
     "regionOfOriginCodeRequirement": "yes",
     "regionOfOriginCode": "FR-75",
-    "internalReferenceNumber": "Imports456GB"
+    "internalReferenceNumber": "Imports456GB",
+    "commodityLines": [
+      {
+        "commoditySelection": "0102 - Cattle",
+        "typeSelection": "domestic",
+        "speciesSelection": ["bos-taurus"],
+        "numberOfPackages": "5",
+        "numberOfAnimalsQuantity": "25"
+      }
+    ]
   }
 }

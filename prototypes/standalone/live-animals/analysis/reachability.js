@@ -59,7 +59,9 @@ export const enumerateScopeStates = () =>
 
 const gateValue = (activatedBy) => {
   if ('equals' in activatedBy) return activatedBy.equals
-  if ('includes' in activatedBy) return [activatedBy.includes]
+  // Any single member of a (possibly list-valued) `includes` target satisfies
+  // the intersection predicate, so the witness answers with the first.
+  if ('includes' in activatedBy) return [].concat(activatedBy.includes)[0]
   if ('present' in activatedBy) return activatedBy.present ? 'x' : ''
   return undefined
 }

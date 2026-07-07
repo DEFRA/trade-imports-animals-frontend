@@ -3,6 +3,7 @@ import { reconcile } from './engine/evaluate/reconcile.js'
 import { entryComplete } from './engine/evaluate/complete.js'
 import { readyForQuote } from './flow/section-status.js'
 import { claims } from './features/claims/obligations.js'
+import { commodityLines } from './features/commodities/obligations.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
 
@@ -83,6 +84,39 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
   })
 })
 
+describe('item-scoped conditionality with a LIST target (commodity → packages)', () => {
+  const line = (commoditySelection) => ({
+    commoditySelection,
+    typeSelection: 'domestic',
+    speciesSelection: ['bos-taurus'],
+    numberOfAnimalsQuantity: '25'
+  })
+
+  it('Should scope numberOfPackages per instance when the commodity is one of the list', () => {
+    const { inScope } = reconcile({
+      commodityLines: [line('0102 - Cattle'), line('0301 - Fish')]
+    })
+    expect(inScope.has('commodityLines[0].numberOfPackages')).toBe(true)
+    expect(inScope.has('commodityLines[1].numberOfPackages')).toBe(false)
+  })
+
+  it('Should wipe a stale package count when the commodity leaves the list', () => {
+    const { wiped } = reconcile({
+      commodityLines: [
+        { ...line('0102 - Cattle'), numberOfPackages: '5' },
+        { ...line('0301 - Fish'), numberOfPackages: '9' } // stale
+      ]
+    })
+    expect(wiped).toContain('commodityLines[1].numberOfPackages')
+    expect(wiped).not.toContain('commodityLines[0].numberOfPackages')
+  })
+
+  it('Should not owe the optional package count for completeness either way', () => {
+    expect(entryComplete(commodityLines, line('0102 - Cattle'))).toBe(true)
+    expect(entryComplete(commodityLines, line('0301 - Fish'))).toBe(true)
+  })
+})
+
 describe('item-relative completeness gates the quote', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
@@ -90,6 +124,15 @@ describe('item-relative completeness gates the quote', () => {
     const base = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
+      commodityLines: [
+        {
+          commoditySelection: '0102 - Cattle',
+          typeSelection: 'domestic',
+          speciesSelection: ['bos-taurus'],
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        }
+      ],
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

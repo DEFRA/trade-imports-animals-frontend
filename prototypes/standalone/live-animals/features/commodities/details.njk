@@ -1,0 +1,37 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <span class="govuk-caption-l">{{ commodity }}</span>
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "numberOfAnimalsQuantity", name: "numberOfAnimalsQuantity",
+      label: { text: "Number of animals" },
+      hint: { text: "For example, 1, 25 or 5000." },
+      classes: "govuk-input--width-5",
+      inputmode: "numeric",
+      value: values.numberOfAnimalsQuantity,
+      errorMessage: errors.numberOfAnimalsQuantity and { text: errors.numberOfAnimalsQuantity }
+    }) }}
+
+    {% if showPackages %}
+      {{ govukInput({
+        id: "numberOfPackages", name: "numberOfPackages",
+        label: { text: "Number of packages (optional)" },
+        classes: "govuk-input--width-5",
+        inputmode: "numeric",
+        value: values.numberOfPackages,
+        errorMessage: errors.numberOfPackages and { text: errors.numberOfPackages }
+      }) }}
+    {% endif %}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

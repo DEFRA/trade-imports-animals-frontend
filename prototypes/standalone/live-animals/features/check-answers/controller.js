@@ -9,6 +9,7 @@ import {
   WINDSCREEN_PROVIDER_LABEL
 } from '../claims/entry.controller.js'
 import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
+import { commodityLineValue } from '../commodities/list.controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -39,6 +40,22 @@ const ADDON_LABEL = {
 
 const changeHref = (obligationId) =>
   `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
+
+// Change links to the commodities LOOP HUB — per-line edits live there.
+const commodityRows = (answers) =>
+  state.collectionView(answers, ['commodityLines']).map(({ index, entry }) => ({
+    key: { text: `Commodity ${index + 1}` },
+    value: { text: commodityLineValue(entry) },
+    actions: {
+      items: [
+        {
+          href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
+          text: 'Change',
+          visuallyHiddenText: `commodity ${index + 1}`
+        }
+      ]
+    }
+  }))
 
 const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`
@@ -89,6 +106,7 @@ const buildRows = (answers) => {
       answerOf('internalReferenceNumber'),
       'internalReferenceNumber'
     ),
+    ...commodityRows(answers),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

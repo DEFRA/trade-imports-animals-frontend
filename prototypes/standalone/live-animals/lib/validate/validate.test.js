@@ -8,6 +8,7 @@ import {
   maxText,
   oneOf,
   postcode,
+  requiredOneOf,
   requiredText,
   ukPhone,
   validate,
@@ -99,6 +100,35 @@ describe('#oneOf — value domain', () => {
   it('Should reject a value outside the domain', () => {
     expect(run(schema, { coverType: 'gold-plated' }).errors).toEqual({
       coverType: 'Select a valid option'
+    })
+  })
+})
+
+describe('#requiredOneOf — save-blocking value domain', () => {
+  const schema = requiredOneOf(
+    'commoditySelection',
+    ['0102 - Cattle', '0301 - Fish'],
+    'Select a commodity'
+  )
+
+  it('Should accept a value in the domain', () => {
+    expect(
+      run(schema, { commoditySelection: '0102 - Cattle' }).errors
+    ).toBeNull()
+  })
+
+  it('Should block blank and missing values — unlike composing requiredText with oneOf', () => {
+    expect(run(schema, { commoditySelection: '' }).errors).toEqual({
+      commoditySelection: 'Select a commodity'
+    })
+    expect(run(schema, {}).errors).toEqual({
+      commoditySelection: 'Select a commodity'
+    })
+  })
+
+  it('Should reject a value outside the domain', () => {
+    expect(run(schema, { commoditySelection: 'gold-plated' }).errors).toEqual({
+      commoditySelection: 'Select a commodity'
     })
   })
 })

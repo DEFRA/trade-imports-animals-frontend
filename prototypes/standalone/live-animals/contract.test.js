@@ -14,6 +14,8 @@ import { isAnswered } from './lib/answered.js'
 import { dispatchPages } from './features/index.js'
 
 import * as origin from './features/origin/controller.js'
+import * as commoditiesList from './features/commodities/list.controller.js'
+import * as commoditiesSelect from './features/commodities/select.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -180,6 +182,28 @@ describe('controller <-> model commit contract', () => {
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(claimsList.meta.collects))
+    )
+  })
+
+  // The LIST page declares `collects: ['commodityLines']`, but the
+  // identity-minting write is the SELECT sub-page's append (the details
+  // sub-page then edits the same entry) — same shape as claims. No seed:
+  // the collection is always-live.
+  it('Should commit commodity lines via the select (append) handler it declares', () => {
+    expect(commoditiesList.meta.collects).toEqual(['commodityLines'])
+    const postAdd = postHandlerEndingWith(
+      commoditiesSelect,
+      'commodities/select'
+    )
+    const result = drive(postAdd, {
+      payload: {
+        commoditySelection: '0102 - Cattle',
+        typeSelection: 'domestic',
+        speciesSelection: ['bos-taurus']
+      }
+    })
+    expect(new Set(committedIds(result))).toEqual(
+      new Set(committableCollects(commoditiesList.meta.collects))
     )
   })
 

@@ -55,6 +55,15 @@ describe('#simulateJourney', () => {
     const ready = simulateJourney({
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
+      commodityLines: [
+        {
+          commoditySelection: '0102 - Cattle',
+          typeSelection: 'domestic',
+          speciesSelection: ['bos-taurus'],
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        }
+      ],
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',

@@ -9,6 +9,7 @@ export {
   vehicleReg,
   ukPhone,
   oneOf,
+  requiredOneOf,
   integerInRange,
   currency,
   dateParts

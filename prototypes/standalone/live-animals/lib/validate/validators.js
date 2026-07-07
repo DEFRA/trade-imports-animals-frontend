@@ -78,6 +78,25 @@ export const ukPhone = (name, message = 'Enter a valid UK telephone number') =>
       .messages({ 'string.pattern.base': message, 'any.invalid': message })
   )
 
+/**
+ * Save-blocking `oneOf`: blank AND out-of-domain both fail. Needed as one
+ * primitive because composing `requiredText` with `oneOf` would merge the
+ * latter's `.allow('')` into the key and let blank straight through.
+ */
+export const requiredOneOf = (name, values, message) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .valid(...values)
+      .messages({
+        'string.empty': message,
+        'any.required': message,
+        'any.only': message
+      })
+  )
+
 export const oneOf = (name, values, message = 'Select a valid option') =>
   single(
     name,

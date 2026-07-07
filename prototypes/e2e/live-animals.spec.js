@@ -85,4 +85,69 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(originRow).toContainText('Completed')
   })
+
+  test('commodities — a line is added across the select and details sub-pages, then the hub row completes', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const [line] = values.commodityLines
+
+    await page.getByRole('link', { name: 'Commodities' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Commodities you have added' })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Add a commodity' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Select species of commodity' })
+    ).toBeVisible()
+
+    // commoditySelection is enforcedAt=continue — saving without it must fail.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Select a commodity' })
+    ).toBeVisible()
+
+    // First entry sub-page: the taxonomy, from the shared fixture.
+    await page
+      .getByLabel('Commodity', { exact: true })
+      .selectOption(line.commoditySelection)
+    await page.getByRole('radio', { name: 'Domestic' }).check()
+    await page.getByRole('checkbox', { name: 'Bos taurus (Cattle)' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Second entry sub-page: the counts for the line just minted.
+    await expect(
+      page.getByRole('heading', { name: 'Description of goods' })
+    ).toBeVisible()
+    await page
+      .getByLabel('Number of animals')
+      .fill(line.numberOfAnimalsQuantity)
+    await page
+      .getByLabel('Number of packages (optional)')
+      .fill(line.numberOfPackages)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Back on the loop hub with the new line summarised.
+    await expect(
+      page.getByRole('heading', { name: 'Commodities you have added' })
+    ).toBeVisible()
+    const row = page.locator('.govuk-summary-list__row', {
+      hasText: 'Commodity 1'
+    })
+    await expect(row).toContainText('0102 - Cattle — 25 animals')
+
+    // Continue returns to the hub with the task completed.
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    const commoditiesRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Commodities'
+    })
+    await expect(commoditiesRow).toContainText('Completed')
+  })
 })

@@ -52,6 +52,15 @@ describe('dispatch + flow', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
+      commodityLines: [
+        {
+          commoditySelection: '0102 - Cattle',
+          typeSelection: 'domestic',
+          speciesSelection: ['bos-taurus'],
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        }
+      ],
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',
