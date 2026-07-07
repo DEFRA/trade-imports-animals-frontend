@@ -78,6 +78,13 @@ describe('#simulateJourney', () => {
         name: 'Ferme des Trois Vallées',
         address: { addressLine1: '3 Chemin des Prés', country: 'France' }
       },
+      consignee: {
+        name: 'Yorkshire Dales Livestock Ltd',
+        address: {
+          addressLine1: 'Unit 4, Auction Mart Lane',
+          country: 'United Kingdom'
+        }
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',

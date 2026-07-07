@@ -1,0 +1,27 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "consignee",
+      fieldset: {
+        legend: {
+          text: "Search for a consignee",
+          isPageHeading: true,
+          classes: "govuk-fieldset__legend--l"
+        }
+      },
+      hint: { text: "Selecting a consignee copies its name and address into this notification." },
+      errorMessage: errors.consignee and { text: errors.consignee },
+      items: consigneeOptions
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

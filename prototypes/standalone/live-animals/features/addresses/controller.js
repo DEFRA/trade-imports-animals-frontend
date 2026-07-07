@@ -28,7 +28,7 @@ const PARTY_ROWS = [
     href: 'place-of-origin/select'
   },
   { id: 'consignor', label: 'Consignor', href: 'consignors/select' },
-  { id: 'consignee', label: 'Consignee' },
+  { id: 'consignee', label: 'Consignee', href: 'consignees/select' },
   { id: 'importer', label: 'Importer' },
   {
     id: 'placeOfDestination',

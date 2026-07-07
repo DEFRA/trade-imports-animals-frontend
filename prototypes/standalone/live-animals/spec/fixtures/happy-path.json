@@ -66,6 +66,19 @@
         "telephoneNumber": "+33 4 50 55 01 23",
         "emailAddress": "contact@trois-vallees.example.fr"
       }
+    },
+    "consignee": {
+      "name": "Yorkshire Dales Livestock Ltd",
+      "address": {
+        "addressLine1": "Unit 4, Auction Mart Lane",
+        "addressLine2": "",
+        "townOrCity": "Skipton",
+        "county": "North Yorkshire",
+        "postalOrZipCode": "BD23 1UD",
+        "country": "United Kingdom",
+        "telephoneNumber": "+44 1756 555 0192",
+        "emailAddress": "intake@yorkshire-dales-livestock.example.co.uk"
+      }
     }
   }
 }

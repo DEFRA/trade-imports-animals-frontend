@@ -264,14 +264,14 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(documentsRow).toContainText('Completed')
   })
 
-  test('addresses — selecting a consignor, a place of destination and a place of origin copies each party onto the landing page and completes the task', async ({
+  test('addresses — selecting a consignor, a place of destination, a place of origin and a consignee copies each party onto the landing page and completes the task', async ({
     page
   }) => {
     await startNotification(page)
 
-    // The consignor, place of destination and place of origin are required
-    // obligations owned by the addresses landing page, so the task starts
-    // open.
+    // The consignor, place of destination, place of origin and consignee
+    // are required obligations owned by the addresses landing page, so the
+    // task starts open.
     const addressesRow = page.locator('.govuk-task-list__item', {
       hasText: 'Addresses'
     })
@@ -282,7 +282,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Parties whose select spoke has not landed yet stay Not added with no
     // link — the landing page has no dead links.
-    const pendingParties = ['Consignee', 'Importer']
+    const pendingParties = ['Importer']
     for (const party of pendingParties) {
       const row = page.locator('.govuk-summary-list__row', { hasText: party })
       await expect(row).toContainText('Not added yet')
@@ -347,7 +347,25 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(originRow).toContainText(values.placeOfOrigin.name)
     await expect(originRow.getByRole('link', { name: 'Change' })).toBeVisible()
 
-    // Continue returns to the hub with all three owed parties answered.
+    // The consignee spoke works the same way — its own copy-commit.
+    const consigneeRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Consignee'
+    })
+    await expect(consigneeRow).toContainText('Not added yet')
+    await consigneeRow.getByRole('link', { name: 'Add' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Search for a consignee' })
+    ).toBeVisible()
+
+    await page.getByRole('radio', { name: values.consignee.name }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(consigneeRow).toContainText(values.consignee.name)
+    await expect(
+      consigneeRow.getByRole('link', { name: 'Change' })
+    ).toBeVisible()
+
+    // Continue returns to the hub with all four owed parties answered.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
