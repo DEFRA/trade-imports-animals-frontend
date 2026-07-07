@@ -98,6 +98,10 @@
       "day": "12",
       "month": "12",
       "year": "2026"
-    }
+    },
+    "meansOfTransport": "Road Vehicle",
+    "transportIdentification": "FR-892-LK",
+    "transportDocumentReference": "CMR-2026-884721",
+    "transitedCountries": ["FR", "BE"]
   }
 }

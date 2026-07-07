@@ -7,3 +7,8 @@ export const portOfEntryPage = {
   id: 'port-of-entry',
   slug: 'port-of-entry'
 }
+
+export const transportDetailsPage = {
+  id: 'transport-details',
+  slug: 'transport-details'
+}

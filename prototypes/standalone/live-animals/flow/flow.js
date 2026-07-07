@@ -5,7 +5,10 @@ import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
-import { portOfEntryPage } from '../features/transport/page.js'
+import {
+  portOfEntryPage,
+  transportDetailsPage
+} from '../features/transport/page.js'
 import { emailPage } from '../features/email/page.js'
 import { aboutYouPage } from '../features/about-you/page.js'
 import { yourVehiclePage } from '../features/your-vehicle/page.js'
@@ -49,7 +52,7 @@ export const sections = [
   },
   {
     id: 'transport',
-    pages: [portOfEntryPage]
+    pages: [portOfEntryPage, transportDetailsPage]
   },
   {
     id: 'email',

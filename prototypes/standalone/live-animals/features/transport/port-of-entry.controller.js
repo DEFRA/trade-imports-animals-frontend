@@ -8,9 +8,14 @@ import {
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { portOfEntryPage as page } from './page.js'
-import { obligations } from './obligations.js'
+import { arrivalDateAtPort, portOfEntry } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+// Explicit subset: the transport feature splits its obligations across the
+// port-of-entry and transport-details pages.
+export const meta = {
+  ...page,
+  collects: [portOfEntry.id, arrivalDateAtPort.id]
+}
 const view = `${TEMPLATES}/features/transport/port-of-entry`
 
 /**

@@ -27,6 +27,7 @@ import * as placeOfOriginSelect from './features/addresses/place-of-origin-selec
 import * as consigneesSelect from './features/addresses/consignees-select.controller.js'
 import * as importersSelect from './features/addresses/importers-select.controller.js'
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
+import * as transportDetails from './features/transport/transport-details.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -102,6 +103,18 @@ const cases = [
       'arrivalDateAtPort-day': '12',
       'arrivalDateAtPort-month': '12',
       'arrivalDateAtPort-year': '2026'
+    }
+  },
+  {
+    id: 'transport-details',
+    collects: transportDetails.meta.collects,
+    handler: postHandlerOf(transportDetails),
+    payload: {
+      // 'Road Vehicle' keeps transitedCountries in scope on the same commit
+      meansOfTransport: 'Road Vehicle',
+      transportIdentification: 'FR-892-LK',
+      transportDocumentReference: 'CMR-2026-884721',
+      transitedCountries: ['FR', 'BE']
     }
   },
   {

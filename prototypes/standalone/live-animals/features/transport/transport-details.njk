@@ -1,0 +1,76 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {# The rail and road options share the same follow-up, so the countries
+       checkboxes are repeated per conditional (the design system's
+       repeated-conditional pattern) with a distinct idPrefix each — the
+       controller dedupes the twin submissions. #}
+    {% macro transitedCountriesHtml(idPrefix) %}
+      {{ govukCheckboxes({
+        name: "transitedCountries",
+        idPrefix: idPrefix,
+        fieldset: { legend: { text: "Transited countries (optional)", classes: "govuk-fieldset__legend--s" } },
+        hint: { text: "Select up to 12 countries the animals will travel through." },
+        errorMessage: errors.transitedCountries and { text: errors.transitedCountries },
+        items: countryOptions
+      }) }}
+    {% endmacro %}
+
+    {{ govukRadios({
+      name: "meansOfTransport",
+      fieldset: { legend: { text: "Means of transport", classes: "govuk-fieldset__legend--s" } },
+      errorMessage: errors.meansOfTransport and { text: errors.meansOfTransport },
+      items: [
+        { value: "Airplane", text: "Airplane", checked: values.meansOfTransport == "Airplane" },
+        {
+          id: "meansOfTransport-railway",
+          value: "Railway",
+          text: "Railway",
+          checked: values.meansOfTransport == "Railway",
+          conditional: { html: transitedCountriesHtml("transitedCountries-railway") }
+        },
+        {
+          id: "meansOfTransport-road-vehicle",
+          value: "Road Vehicle",
+          text: "Road Vehicle",
+          checked: values.meansOfTransport == "Road Vehicle",
+          conditional: { html: transitedCountriesHtml("transitedCountries") }
+        },
+        { value: "Vessel", text: "Vessel", checked: values.meansOfTransport == "Vessel" }
+      ]
+    }) }}
+
+    {{ govukInput({
+      id: "transportIdentification",
+      name: "transportIdentification",
+      label: { text: "Transport identification", classes: "govuk-label--s" },
+      hint: { text: "For example, FR-892-LK" },
+      classes: "govuk-!-width-one-half",
+      value: values.transportIdentification,
+      errorMessage: errors.transportIdentification and { text: errors.transportIdentification }
+    }) }}
+
+    {{ govukInput({
+      id: "transportDocumentReference",
+      name: "transportDocumentReference",
+      label: { text: "Transport document reference", classes: "govuk-label--s" },
+      hint: { text: "For example, CMR-2026-884721" },
+      classes: "govuk-!-width-one-half",
+      value: values.transportDocumentReference,
+      errorMessage: errors.transportDocumentReference and { text: errors.transportDocumentReference }
+    }) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

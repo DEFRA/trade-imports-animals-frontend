@@ -43,17 +43,22 @@ const subsetsOf = (items) =>
 export const enumerateScopeStates = () =>
   ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
     ['', 'internal-market'].flatMap((reasonForImport) =>
-      ['no', 'yes'].flatMap((hadClaims) =>
-        ['no', 'yes'].flatMap((voluntaryExcess) =>
-          ['', 'comprehensive'].flatMap((coverType) =>
-            subsetsOf(ADDONS).map((addons) => ({
-              regionOfOriginCodeRequirement,
-              reasonForImport,
-              hadClaims,
-              voluntaryExcess,
-              coverType,
-              addons
-            }))
+      // 'Road Vehicle' is one of transitedCountries' two activating values —
+      // either member of the includes-list witnesses the activated side.
+      ['', 'Road Vehicle'].flatMap((meansOfTransport) =>
+        ['no', 'yes'].flatMap((hadClaims) =>
+          ['no', 'yes'].flatMap((voluntaryExcess) =>
+            ['', 'comprehensive'].flatMap((coverType) =>
+              subsetsOf(ADDONS).map((addons) => ({
+                regionOfOriginCodeRequirement,
+                reasonForImport,
+                meansOfTransport,
+                hadClaims,
+                voluntaryExcess,
+                coverType,
+                addons
+              }))
+            )
           )
         )
       )

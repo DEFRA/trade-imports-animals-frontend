@@ -20,9 +20,10 @@ describe('reachability / dead-end prover', () => {
   })
 
   it('Should enumerate a small finite scope space', () => {
-    // regionOfOriginCodeRequirement(2) x reasonForImport(2) x hadClaims(2)
-    // x voluntaryExcess(2) x coverType(2) x addons-subsets(8)
-    expect(enumerateScopeStates()).toHaveLength(256)
+    // regionOfOriginCodeRequirement(2) x reasonForImport(2)
+    // x meansOfTransport(2) x hadClaims(2) x voluntaryExcess(2)
+    // x coverType(2) x addons-subsets(8)
+    expect(enumerateScopeStates()).toHaveLength(512)
   })
 
   it('Should prove no owed obligation is ever unreachable', () => {

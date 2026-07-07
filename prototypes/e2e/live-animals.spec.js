@@ -381,13 +381,14 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Completed')
   })
 
-  test('transport — a partial arrival date blocks the save; the port and full date complete the task', async ({
+  test('transport — a partial arrival date blocks the save; the port, date and travel details complete the task', async ({
     page
   }) => {
     await startNotification(page)
     const arrival = values.arrivalDateAtPort
 
-    // Both fields are required (enforcedAt=submit), so the task starts open.
+    // All the section's fields are required (enforcedAt=submit), so the task
+    // starts open.
     const transportRow = page.locator('.govuk-task-list__item', {
       hasText: 'Transport'
     })
@@ -418,11 +419,108 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByLabel('Year').fill(arrival.year)
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    // One-page section: saving returns to the hub with the task completed.
+    // Two-page section: saving walks on to the travel details page.
+    await expect(
+      page.getByRole('heading', { name: 'How the animals will travel' })
+    ).toBeVisible()
+
+    // Road Vehicle reveals the transited-countries checkboxes; the fixture's
+    // FR and BE codes render as their country names.
+    await page
+      .getByRole('radio', { name: values.meansOfTransport, exact: true })
+      .check()
+    const roadReveal = page.locator(
+      '#conditional-meansOfTransport-road-vehicle'
+    )
+    await expect(roadReveal).toBeVisible()
+    await roadReveal.getByRole('checkbox', { name: 'France' }).check()
+    await roadReveal.getByRole('checkbox', { name: 'Belgium' }).check()
+    await page
+      .getByLabel('Transport identification')
+      .fill(values.transportIdentification)
+    await page
+      .getByLabel('Transport document reference')
+      .fill(values.transportDocumentReference)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Last page of the section: saving returns to the hub, task completed.
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
     ).toBeVisible()
     await expect(transportRow).toContainText('Completed')
+  })
+
+  test('transport details — transited countries revealed only for rail or road; changing the means wipes saved countries', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // transport-details is the section's second page: a blank save on the
+    // port page (all its fields are submit-enforced) walks straight on to it.
+    const openTransportDetails = async () => {
+      await page.getByRole('link', { name: 'Transport' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Port of entry' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'How the animals will travel' })
+      ).toBeVisible()
+    }
+    const roadReveal = page.locator(
+      '#conditional-meansOfTransport-road-vehicle'
+    )
+    const railReveal = page.locator('#conditional-meansOfTransport-railway')
+
+    await openTransportDetails()
+
+    // The countries reveal for the overland means only.
+    await expect(roadReveal).toBeHidden()
+    await expect(railReveal).toBeHidden()
+    await page.getByRole('radio', { name: 'Airplane' }).check()
+    await expect(roadReveal).toBeHidden()
+    await expect(railReveal).toBeHidden()
+    await page.getByRole('radio', { name: 'Railway' }).check()
+    await expect(railReveal).toBeVisible()
+    await page.getByRole('radio', { name: 'Road Vehicle' }).check()
+    await expect(roadReveal).toBeVisible()
+    await expect(railReveal).toBeHidden()
+
+    // Save two transited countries under Road Vehicle...
+    await roadReveal.getByRole('checkbox', { name: 'France' }).check()
+    await roadReveal.getByRole('checkbox', { name: 'Belgium' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+
+    // ...and they are still selected on return.
+    await openTransportDetails()
+    await expect(
+      page.getByRole('radio', { name: 'Road Vehicle' })
+    ).toBeChecked()
+    await expect(
+      roadReveal.getByRole('checkbox', { name: 'France' })
+    ).toBeChecked()
+
+    // A means outside the overland set takes the countries out of scope —
+    // saving wipes them.
+    await page.getByRole('radio', { name: 'Vessel' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+
+    // Back to Road Vehicle: leaving scope wiped the saved countries — no
+    // checkbox is pre-selected.
+    await openTransportDetails()
+    await page.getByRole('radio', { name: 'Road Vehicle' }).check()
+    await expect(
+      roadReveal.getByRole('checkbox', { name: 'France' })
+    ).not.toBeChecked()
+    await expect(
+      roadReveal.getByRole('checkbox', { name: 'Belgium' })
+    ).not.toBeChecked()
   })
 
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({

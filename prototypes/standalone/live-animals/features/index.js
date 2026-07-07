@@ -16,6 +16,7 @@ import * as placeOfOriginSelect from './addresses/place-of-origin-select.control
 import * as consigneesSelect from './addresses/consignees-select.controller.js'
 import * as importersSelect from './addresses/importers-select.controller.js'
 import * as portOfEntry from './transport/port-of-entry.controller.js'
+import * as transportDetails from './transport/transport-details.controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -46,6 +47,7 @@ export const dispatchPages = [
   documentsList.meta,
   addresses.meta,
   portOfEntry.meta,
+  transportDetails.meta,
   email.meta,
   aboutYou.meta,
   vehicle.meta,
@@ -79,6 +81,7 @@ export const allRoutes = [
   ...consigneesSelect.routes,
   ...importersSelect.routes,
   ...portOfEntry.routes,
+  ...transportDetails.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,

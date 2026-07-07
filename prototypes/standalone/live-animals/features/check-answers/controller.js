@@ -13,6 +13,7 @@ import { commodityLineValue } from '../commodities/list.controller.js'
 import { documentValue } from '../documents/list.controller.js'
 import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
 import { PURPOSE_IN_INTERNAL_MARKET_LABEL } from '../import-purpose/controller.js'
+import { OVERLAND_MEANS } from '../transport/transport-details.controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -161,6 +162,30 @@ const buildRows = (answers) => {
       dateText(answerOf('arrivalDateAtPort')),
       'arrivalDateAtPort'
     ),
+    // The stored means IS the V4 label (no code lookup needed).
+    row('Means of transport', answerOf('meansOfTransport'), 'meansOfTransport'),
+    row(
+      'Transport identification',
+      answerOf('transportIdentification'),
+      'transportIdentification'
+    ),
+    row(
+      'Transport document reference',
+      answerOf('transportDocumentReference'),
+      'transportDocumentReference'
+    ),
+    ...(OVERLAND_MEANS.includes(answerOf('meansOfTransport'))
+      ? [
+          row(
+            'Transited countries',
+            []
+              .concat(answerOf('transitedCountries') ?? [])
+              .map((code) => COUNTRY_OF_ORIGIN_LABEL[code] ?? code)
+              .join(', '),
+            'transitedCountries'
+          )
+        ]
+      : []),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),
