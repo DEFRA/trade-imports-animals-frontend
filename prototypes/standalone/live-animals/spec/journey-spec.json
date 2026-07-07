@@ -1,0 +1,2008 @@
+{
+  "specVersion": 1,
+  "journey": "live-animals-import-notification",
+  "sources": [
+    {
+      "id": "confluence-v4",
+      "type": "confluence",
+      "ref": "6497338582",
+      "fetchedAt": "2026-07-07T10:05:55Z",
+      "status": "extracting"
+    },
+    {
+      "id": "skeleton",
+      "type": "code",
+      "ref": "src/server@017a1a1220b7c3e3ccb73ab635e75f562bd68ba4",
+      "fetchedAt": "2026-07-07T10:05:55Z",
+      "status": "extracting"
+    },
+    {
+      "id": "ixd-canvas",
+      "type": "canvas",
+      "ref": "Notes from chat with interaction design.canvas",
+      "fetchedAt": "2026-07-07T10:05:55Z",
+      "status": "extracting"
+    },
+    {
+      "id": "figma",
+      "type": "figma",
+      "ref": null,
+      "fetchedAt": null,
+      "status": "pending"
+    },
+    {
+      "id": "heroku-prototype",
+      "type": "prototype",
+      "ref": null,
+      "fetchedAt": null,
+      "status": "pending"
+    }
+  ],
+  "behaviours": [
+    {
+      "id": "minimal-journey-type-selection",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Minimal journey is select type e.g. animals, or plants.' The obligations-v2 model already supports a degenerate journey of one section, one page, one obligation - no extension needed."
+    },
+    {
+      "id": "multi-page-tasks-and-subtasks",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Multiple pages in a task (linear journey in a task). Sub tasks within tasks as well.' Sections-with-pages covers the first half, but the model has no nesting below section - sub-tasks within tasks would need a third level. | Ruling (spec gate 2026-07-07): flow/page-layer concern answered by the built journey (sections+pages), not an obligation-model fact."
+    },
+    {
+      "id": "back-navigation-variants",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Back button implementation - back as in journey, back as in to hub, back as in to Check Your Answers.' The model has no navigation-context vocabulary; each page's back target must be resolved from context rather than a hardcoded destination. | Ruling (spec gate 2026-07-07): the spike's navigation model answers back semantics; not a model-level fact."
+    },
+    {
+      "id": "delete-conditional-data-on-change",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Delete conditional data on change of determining condition, e.g. delete crash records when saying you didnt have any claims.' Matches the model's wipeOnExit semantics - the spec defaults wipeOnExit=true on every activatedBy obligation (retain cases must be argued at a gate; see conflict c-017)."
+    },
+    {
+      "id": "linear-then-task-list",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Current design is linear followed by task list.' The model orders sections and pages but has no presentation-mode concept distinguishing a linear opening run from a task-list hub - and the canvas itself asks what determines linear vs task list. | Ruling (spec gate 2026-07-07): flow/page-layer concern; the built journey decides presentation, the model only orders sections."
+    },
+    {
+      "id": "mandatory-at-point-of-display",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: '*Some* questions are mandatory at the point of display - cannot Save and Continue without entering a valid value.' V4 distinguishes Mandatory to proceed from Mandatory to submit, but the spec's mandate vocabulary collapses both to required:true (mandateRaw preserves the distinction verbatim). A distinct at-display mandate may be a model extension. | Ruling (spec gate 2026-07-07): mandate is two-level - enforcedAt continue vs submit. V4 'Mandatory to submit' rows carry enforcedAt=submit; which fields (if any) are continue-level is open as c-023."
+    },
+    {
+      "id": "multiple-pages-same-end-field",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'More than one page / question can lead to the same end field. Does this mean one obligation, two implementations? Or logical OR on obligations.' Directly contradicts the boot-guard coverage rule (every obligation collected by exactly one page); unresolved on the canvas too. | Ruling (spec gate 2026-07-07): closed - not a real case for this journey; no one-obligation-collected-by-many-pages support needed."
+    },
+    {
+      "id": "multiple-journeys-cross-navigation",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Multiple Journeys - and one journey might navigate to another (how about multiple drivers on our car insurance).' The spec models a single journey; cross-journey navigation and per-entity journey repetition are beyond the current model. | Ruling (spec gate 2026-07-07): closed - not a real requirement for this journey."
+    },
+    {
+      "id": "field-level-persistence",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Field level values persisted on page.' The skeleton's save model is page-owned spine (every POST rebuilds and saves the whole notification); persisting individual field values without a page submit is not something the current model or skeleton does. | Ruling (spec gate 2026-07-07): requirement is only that committed values reappear when returning to a page; the page-owned save model already provides this. No sub-page/keystroke persistence needed."
+    },
+    {
+      "id": "partial-page-completion",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Partial page completion is supported, even if a field is required for the overall outcome.' Matches the model's split between page save and submission-level mandate enforcement - required:true obligations gate submission, not page save (V4's Mandatory to submit)."
+    },
+    {
+      "id": "in-scope-but-optional-questions",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Questions can be in scope but optional - e.g. bring your own label/reference number.' Matches the model's empty mandate {} - used for internalReferenceNumber, numberOfPackages, transitedCountries and the individual animal identifier fields."
+    },
+    {
+      "id": "page-exits-to-next-task",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Task list where some pages navigate to the next task, rather than back to task list.' Per-page exit-navigation configuration is not in the model; the skeleton exhibits exactly this ambiguity (cph-number short-circuits the addresses hub to /port-of-entry, conflict c-019). | Ruling (spec gate 2026-07-07): flow-layer navigation choice per page; not a model-level fact."
+    },
+    {
+      "id": "state-driven-navigation",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas: 'Navigation can be determined by state of journey.' Matches the model's activatedBy/gate semantics - conditional pages (import-purpose, cph-number, transporter spokes) appear or disappear based on earlier answers."
+    },
+    {
+      "id": "configuration-affects-obligations",
+      "source": "ixd-canvas",
+      "status": "open-question",
+      "detail": "Canvas: 'Configuration can affect obligations - e.g. versioning, feature flags, A/B testing, statute change.' The spec's obligation set is static; resolving the active set against configuration (version, flag, A/B arm, statute change) is a model extension. | Gate note (2026-07-07): deliberately deferred - complicated; revisit at a later gate, not blocking the build."
+    },
+    {
+      "id": "js-in-browser",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas open question: 'JavaScript in Browser?' - whether client-side JavaScript can be assumed or required is unresolved. Bears on the documents upload loop (scan-status polling) and any conditional-reveal widgets. | Ruling (spec gate 2026-07-07): not a model question. Requirement is graceful degradation (works without client-side JS, progressively enhanced) - the skeleton journey already demonstrates this."
+    },
+    {
+      "id": "conditional-data-after-rule-change",
+      "source": "ixd-canvas",
+      "status": "open-question",
+      "detail": "Canvas open question: 'What to do about conditional data after a rule change? Might be constrained by the delete conditional data steer.' Interacts with configuration-affects-obligations and wipeOnExit."
+    },
+    {
+      "id": "linear-vs-task-list-determinant",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas open question: 'What determines it being linear vs task list?' - the canvas does not say what property of a journey decides linear presentation versus a task list. Pairs with the linear-then-task-list behaviour. | Ruling (spec gate 2026-07-07): flow-layer; determined when the journey is built, not specced at model level."
+    },
+    {
+      "id": "save-by-copy-or-reference",
+      "source": "ixd-canvas",
+      "status": "adopted",
+      "detail": "Canvas open question: 'Save by copy, by reference, or both? E.g. address example.' The spec's address fieldGroup usages assume copy semantics by default; recorded as conflict c-020 against all six address-block obligations. | Ruling (spec gate 2026-07-07): save by copy. Matches the spec's address fieldGroup copy semantics."
+    }
+  ],
+  "fieldGroups": {
+    "address": {
+      "fields": [
+        "nameOrOrganisationName",
+        "addressLine1",
+        "addressLine2",
+        "townOrCity",
+        "county",
+        "postalOrZipCode",
+        "country",
+        "telephoneNumber",
+        "emailAddress"
+      ],
+      "detail": "V4 Standard Address Block (#address_block): Name or Organisation name (string max 255, Mandatory); Address Line 1 (string max 255, Mandatory); Address Line 2 (string max 255, Optional); Town or city (string max 100, Mandatory); County (string max 100, Optional); Postal or Zip code (string max 12, Mandatory); Country (enum from MDM country list, Mandatory); Telephone number (string max 20, Mandatory); Email address (string max 254, Mandatory). The parent field determines whether an address record is required; this validation applies once the record is provided. Copy semantics assumed for all usages (see conflict c-020)."
+    }
+  },
+  "sections": [
+    {
+      "id": "start",
+      "title": "Start",
+      "gate": null,
+      "pages": [
+        {
+          "id": "dashboard",
+          "slug": "home",
+          "title": "Import notification service",
+          "gate": null,
+          "collects": [],
+          "notes": "Paginated, sortable list of existing notifications; POST /start-journey resets the whole session then redirects to origin. Also hosts copy and delete actions (notification-copy / notification-delete)."
+        }
+      ]
+    },
+    {
+      "id": "origin",
+      "title": "Origin of the import",
+      "gate": null,
+      "pages": [
+        {
+          "id": "origin",
+          "slug": "origin",
+          "title": "Origin of the import",
+          "gate": null,
+          "collects": [
+            "countryOfOrigin",
+            "regionOfOriginCodeRequirement",
+            "regionOfOriginCode",
+            "internalReferenceNumber"
+          ],
+          "notes": "First step; successful POST saves the draft and captures the backend-assigned referenceNumber into session. regionOfOriginCode added here as a conditional reveal (skeleton never collected it - c-012)."
+        }
+      ]
+    },
+    {
+      "id": "commodities",
+      "title": "Commodities",
+      "gate": null,
+      "pages": [
+        {
+          "id": "commodities",
+          "slug": "commodities",
+          "title": "Select a commodity",
+          "gate": null,
+          "collects": [
+            "commodityLines"
+          ],
+          "notes": "Entry page for the commodityLines collection - member fields (commoditySelection, typeSelection, speciesSelection, numberOfPackages, numberOfAnimalsQuantity, animalIdentifiers) are covered via the collection's item[]."
+        },
+        {
+          "id": "commoditiesSelect",
+          "slug": "commodities/select",
+          "title": "Select species of commodity",
+          "gate": null,
+          "collects": [],
+          "notes": "Collects typeSelection and speciesSelection for the current commodity line (covered via commodityLines.item). Shows a read-only commodity-details table; preserves per-species values on reselect (c-017)."
+        },
+        {
+          "id": "commodityDetails",
+          "slug": "commodities/details",
+          "title": "Description of goods",
+          "gate": null,
+          "collects": [],
+          "notes": "Collects numberOfAnimalsQuantity and numberOfPackages for the current commodity line (covered via commodityLines.item). Skeleton renders one row per selected species and recomputes derived subtotals (c-003)."
+        },
+        {
+          "id": "animalIdentification",
+          "slug": "commodities/identification",
+          "title": "Enter animal identification details",
+          "gate": null,
+          "collects": [],
+          "notes": "Entry surface for the nested animalIdentifiers unit collection (covered via commodityLines.item -> animalIdentifiers.item). Skeleton shows one table per selected species with ear tag and passport inputs only (c-003)."
+        }
+      ]
+    },
+    {
+      "id": "consignment",
+      "title": "About the consignment",
+      "gate": null,
+      "pages": [
+        {
+          "id": "importReason",
+          "slug": "import-reason",
+          "title": "Reason for import",
+          "gate": null,
+          "collects": [
+            "reasonForImport"
+          ],
+          "notes": "Skeleton heading: What is the main reason for importing the animals? Sits at skeleton step 4, interleaved mid-commodity (c-019); grouped here under the skeleton's About the consignment page group."
+        },
+        {
+          "id": "importPurpose",
+          "slug": "import-purpose",
+          "title": "Purpose in the internal market",
+          "gate": null,
+          "collects": [
+            "purposeInInternalMarket"
+          ],
+          "provisionalCopy": true,
+          "notes": "Invented page (no skeleton counterpart, c-012): conditional follow-up shown when reasonForImport = Internal market."
+        },
+        {
+          "id": "additionalDetails",
+          "slug": "additional-details",
+          "title": "Additional animal details",
+          "gate": null,
+          "collects": [
+            "animalsCertifiedFor",
+            "containsUnweanedAnimals"
+          ],
+          "notes": "Skeleton template page group: Description of the goods. containsUnweanedAnimals only shows for the five listed commodity groups (cross-frame gate, modelGap)."
+        }
+      ]
+    },
+    {
+      "id": "documents",
+      "title": "Accompanying documents",
+      "gate": null,
+      "pages": [
+        {
+          "id": "accompanyingDocuments",
+          "slug": "accompanying-documents",
+          "title": "Accompanying documents",
+          "gate": null,
+          "collects": [
+            "documents"
+          ],
+          "notes": "Entry page for the documents collection (upload loop: add/remove one document per POST; Continue enabled only when no scan is PENDING or REJECTED). Item fields covered via documents.item."
+        }
+      ]
+    },
+    {
+      "id": "addresses",
+      "title": "Addresses",
+      "gate": null,
+      "pages": [
+        {
+          "id": "addresses",
+          "slug": "addresses",
+          "title": "Addresses",
+          "gate": null,
+          "collects": [],
+          "notes": "Hub page: renders sections for place of origin, consignor/exporter, consignee, importer, place of destination and CPH with Add/Change links to the select spokes; collects nothing itself. Skeleton hub POST swallows save failures (c-006) and three of its spokes are dead (c-005)."
+        },
+        {
+          "id": "consignorsSelect",
+          "slug": "consignors/select",
+          "title": "Search for an existing consignor or exporter",
+          "gate": null,
+          "collects": [
+            "consignor"
+          ],
+          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-consignors.json."
+        },
+        {
+          "id": "destinationsSelect",
+          "slug": "destinations/select",
+          "title": "Search for a place of destination",
+          "gate": null,
+          "collects": [
+            "placeOfDestination"
+          ],
+          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-destinations.json."
+        },
+        {
+          "id": "placeOfOriginSelect",
+          "slug": "place-of-origin/select",
+          "title": "Search for a place of origin",
+          "gate": null,
+          "collects": [
+            "placeOfOrigin"
+          ],
+          "provisionalCopy": true,
+          "notes": "Invented page: the skeleton hub links to /place-of-origin/select but the route is unregistered (dead spoke, c-005)."
+        },
+        {
+          "id": "consigneesSelect",
+          "slug": "consignees/select",
+          "title": "Search for a consignee",
+          "gate": null,
+          "collects": [
+            "consignee"
+          ],
+          "provisionalCopy": true,
+          "notes": "Invented page: the skeleton hub links to /consignees/select but the route is unregistered (dead spoke, c-005)."
+        },
+        {
+          "id": "importersSelect",
+          "slug": "importers/select",
+          "title": "Search for an importer",
+          "gate": null,
+          "collects": [
+            "importer"
+          ],
+          "provisionalCopy": true,
+          "notes": "Invented page: the skeleton hub links to /importers/select but the route is unregistered (dead spoke, c-005)."
+        },
+        {
+          "id": "cphNumber",
+          "slug": "cph-number",
+          "title": "Add the County Parish Holding number (CPH)",
+          "gate": null,
+          "collects": [
+            "countyParishHoldingCph"
+          ],
+          "notes": "Presented as an addresses-hub spoke but the skeleton POST jumps straight to /port-of-entry, short-circuiting the hub (c-019). Only shown when a CPH-required commodity is selected (cross-frame gate, modelGap)."
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "title": "Transport",
+      "gate": null,
+      "pages": [
+        {
+          "id": "portOfEntry",
+          "slug": "port-of-entry",
+          "title": "Entry point and arrival at destination",
+          "gate": null,
+          "collects": [
+            "portOfEntry",
+            "arrivalDateAtPort"
+          ],
+          "notes": "Skeleton template page group: Transport. Title keeps the skeleton's arrival-at-destination wording, but V4 defines arrival date AT PORT (c-011) - copy to reconcile with Figma."
+        },
+        {
+          "id": "transportDetails",
+          "slug": "transport-details",
+          "title": "How the animals will travel",
+          "gate": null,
+          "collects": [
+            "meansOfTransport",
+            "transportIdentification",
+            "transportDocumentReference",
+            "transitedCountries"
+          ],
+          "provisionalCopy": true,
+          "notes": "Invented page (no skeleton counterpart, c-012) for the four V4 transport fields; transitedCountries reveals only for Railway/Road Vehicle."
+        },
+        {
+          "id": "transporters",
+          "slug": "transporters",
+          "title": "Transporter",
+          "gate": null,
+          "collects": [
+            "transporterType"
+          ],
+          "notes": "Hub page. Skeleton has a single mock transporter select with no type split; V4 requires choosing Commercial vs Private first (c-012), so this page collects transporterType and hands off to the matching spoke."
+        },
+        {
+          "id": "transportersSelect",
+          "slug": "transporters/select",
+          "title": "Search for an existing transporter",
+          "gate": null,
+          "collects": [
+            "commercialTransporter"
+          ],
+          "notes": "Spoke of the transporters hub; maps to V4 Commercial Transporter (consumed from the TBC approved-transporter list; address block + approval number). Skeleton options come from load-mock-transporters.js."
+        },
+        {
+          "id": "privateTransporterDetails",
+          "slug": "transporters/private",
+          "title": "Private transporter details",
+          "gate": null,
+          "collects": [
+            "privateTransporter"
+          ],
+          "provisionalCopy": true,
+          "notes": "Invented page (no skeleton counterpart, c-012): standard address block entry shown when transporterType = Private transporter."
+        }
+      ]
+    },
+    {
+      "id": "contact",
+      "title": "Contact address",
+      "gate": null,
+      "pages": [
+        {
+          "id": "consignmentContactSelect",
+          "slug": "consignment/contact/select",
+          "title": "Contact address for consignment",
+          "gate": null,
+          "collects": [
+            "contactAddress"
+          ],
+          "notes": "Last data-entry step before the CYA. Registered inside the addresses plugin but reached in-flow from the transporters POST (c-019). gov.identity variant: if more than one address exists the user must select one before continuing; user-created variant uses the standard address block (c-001)."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "title": "Check and submit",
+      "gate": null,
+      "pages": [
+        {
+          "id": "notificationView",
+          "slug": "notification-view",
+          "title": "Notification details",
+          "gate": null,
+          "collects": [],
+          "notes": "CYA hub: re-fetches the notification from the backend and re-hydrates every session key; summary cards with Change links to each step; Confirm and submit only when status is DRAFT."
+        },
+        {
+          "id": "declaration",
+          "slug": "declaration",
+          "title": "Declaration",
+          "gate": null,
+          "collects": [
+            "declaration"
+          ],
+          "notes": "POST validates the confirmation checkbox then calls the submit endpoint (DRAFT to SUBMITTED) and redirects back to /declaration - no separate confirmation page (c-022)."
+        }
+      ]
+    }
+  ],
+  "obligations": [
+    {
+      "id": "referenceNumber",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "N/A",
+      "system": true,
+      "label": "Reference Number",
+      "notes": "System-assigned by the backend on first successful save (origin POST). Format GBN-AG-YY-XXXXXX: GBN = Great Britain Notification, AG = Animals and Germinals, YY = two-digit allocation year, body = six-character Crockford base32 non-guessable identifier. Displayed as a caption on every subsequent page and used in /notification-view/{referenceNumber}.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#reference_number"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/origin/controller.js:98"
+        }
+      ]
+    },
+    {
+      "id": "responsiblePersonForLoad",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "N/A",
+      "system": true,
+      "label": "Responsible Person for Load",
+      "notes": "Consumed from gov identity on authentication - not collected by any page. Composite of six sub-fields: Responsible person, Telephone, Email, Organisation Name, Organisation Address, Organisation Telephone.",
+      "subFields": [
+        "responsiblePerson",
+        "responsiblePersonTelephone",
+        "responsiblePersonEmail",
+        "responsiblePersonOrganisationName",
+        "responsiblePersonOrganisationAddress",
+        "responsiblePersonOrganisationTelephone"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#responsible_person_for_load"
+        }
+      ]
+    },
+    {
+      "id": "countryOfOrigin",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "continue"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Country of origin",
+      "input": {
+        "widget": "select",
+        "valuesSource": "Named MDM list of EU, EEA and EFTA countries (skeleton uses reference-data countries client, group GBNAG_SPS_EX, with blank placeholder and disabled divider row)"
+      },
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#country_of_origin"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/origin/origin-schema.js:4"
+        }
+      ]
+    },
+    {
+      "id": "regionOfOriginCodeRequirement",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Region of origin code requirement",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Yes",
+          "No"
+        ],
+        "hint": "If a region of origin code is required it will be shown on your health certificate."
+      },
+      "notes": "Skeleton (requiresRegionCode) defaults to no and accepts an empty answer; V4 makes it mandatory to submit - V4 wins (see c-006).",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#region_of_origin_code_requirement"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/origin/index.njk:36"
+        }
+      ]
+    },
+    {
+      "id": "regionOfOriginCode",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Region of origin code",
+      "activatedBy": {
+        "obligation": "regionOfOriginCodeRequirement",
+        "equals": "Yes"
+      },
+      "wipeOnExit": true,
+      "input": {
+        "widget": "input",
+        "maxLength": 5,
+        "example": "FR-75"
+      },
+      "notes": "Displayed and stored with ISO country prefix derived from Country of Origin. Not collected anywhere in the skeleton despite requiresRegionCode existing (see c-012).",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#region_of_origin_code"
+        }
+      ]
+    },
+    {
+      "id": "internalReferenceNumber",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Internal reference number",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "pattern": "^[a-zA-Z0-9]*$",
+        "hint": "Enter any internal reference number you want to use to identify this consignment, or leave blank.",
+        "example": "Imports456_GB"
+      },
+      "notes": "Optional trader-entered reference for the consignment. V4 carries an unresolved inline comment on the Mandatory cell ('Optional'). NB: V4 example Imports456_GB contains an underscore, which the skeleton's alphanumeric-only pattern would reject.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#internal_reference_number"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/origin/origin-schema.js:9"
+        }
+      ]
+    },
+    {
+      "id": "animalsCertifiedFor",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Animals certified for",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Further keeping",
+          "Slaughter",
+          "Confined establishment",
+          "Germinal products",
+          "Registered equine animal",
+          "Travelling circus/animal act",
+          "Exhibition",
+          "Event or activity near borders",
+          "Release into the wild",
+          "Dispatch centre",
+          "Relaying area / purification centre",
+          "Ornamental aquaculture establishment",
+          "Technical use",
+          "Quarantine or similar establishment",
+          "Live aquatic animals for human consumption",
+          "Other"
+        ],
+        "hint": "You will find this on the health certificate."
+      },
+      "notes": "PO approval pending: APHA intend to make this conditional for some commodities - pending confirmation. Unresolved inline comment on field name.",
+      "conflicts": [
+        "c-009"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#animals_certified_for"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/additional-details/index.njk:28"
+        }
+      ]
+    },
+    {
+      "id": "containsUnweanedAnimals",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Contains Unweaned Animals",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Yes",
+          "No"
+        ],
+        "hint": "These are animals that are still feeding from their mother."
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "anyItem",
+        "includes": [
+          "0101 - equines: horses, asses, mules, hinnies",
+          "0102 - cattle",
+          "0103 - pigs",
+          "010410 - sheep",
+          "010420 - goats"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Notification-level field gated on commodity selections made inside the commodityLines collection - the reverse of the proposed frame:enclosing direction; frame:anyItem is proposed vocabulary meaning shown when any commodity line matches. PO approval pending.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#contains_unweaned_animals"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/additional-details/index.njk:57"
+        }
+      ]
+    },
+    {
+      "id": "reasonForImport",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Reason for import",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Internal market",
+          "Transhipment or onward travel",
+          "Transit",
+          "Re-entry",
+          "Temporary admission horses"
+        ]
+      },
+      "notes": "V4 carries an unresolved inline comment on 'Temporary admission horses'.",
+      "conflicts": [
+        "c-008"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#reason_for_import"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/import-reason/index.njk:28"
+        }
+      ]
+    },
+    {
+      "id": "purposeInInternalMarket",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Purpose in internal market",
+      "activatedBy": {
+        "obligation": "reasonForImport",
+        "equals": "Internal market"
+      },
+      "wipeOnExit": true,
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Transfer of ownership - Sale/gift",
+          "Transfer of ownership - Rescue",
+          "Breeding",
+          "Research",
+          "Racing, competition, show or training",
+          "Approved premises or body",
+          "Companion animal not for resale or rehoming",
+          "Production",
+          "Slaughter",
+          "Fattening",
+          "Restocking"
+        ]
+      },
+      "notes": "Not present in the skeleton at all (see c-012); collected on an invented provisional page.",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#purpose_in_internal_market"
+        }
+      ]
+    },
+    {
+      "id": "placeOfOrigin",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Place of Origin",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "notes": "Standard address block; user must provide one address record. Dead spoke in the skeleton: hub link to /place-of-origin/select is unregistered and session key placeOfOrigin is never written (see c-005).",
+      "conflicts": [
+        "c-005"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#place_of_origin"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/addresses/controller.js:69-75"
+        }
+      ]
+    },
+    {
+      "id": "consignor",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Consignor",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "notes": "Standard address block; user must provide one address record. Skeleton selects a whole address object from mock-consignors.json via the /consignors/select spoke and sends it as notification.consignor.",
+      "conflicts": [
+        "c-020"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#consignor"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/addresses/controller.js:48"
+        }
+      ]
+    },
+    {
+      "id": "consignee",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Consignee",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "notes": "Standard address block; user must provide one address record. Dead spoke in the skeleton: /consignees/select is unregistered and session key consignee is never written (see c-005).",
+      "conflicts": [
+        "c-005"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#consignee"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/addresses/controller.js:69-75"
+        }
+      ]
+    },
+    {
+      "id": "importer",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Importer",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "notes": "Standard address block; user must provide one address record. Dead spoke in the skeleton: /importers/select is unregistered and session key importer is never written (see c-005).",
+      "conflicts": [
+        "c-005"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#importer"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/addresses/controller.js:69-75"
+        }
+      ]
+    },
+    {
+      "id": "placeOfDestination",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Place of destination",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "notes": "Standard address block; user must provide one address record. Skeleton selects a whole address object from mock-destinations.json via the /destinations/select spoke and sends it as notification.destination.",
+      "conflicts": [
+        "c-020"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#place_of_destination"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/addresses/controller.js:58"
+        }
+      ]
+    },
+    {
+      "id": "contactAddress",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "'-' (gov.identity variant); Mandatory to proceed (user-created variant)",
+      "label": "Contact Address",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "notes": "Two V4 variants share one anchor (see c-001): consumed from gov.identity ('if more than one address exists, the user must select one before continuing') or created by the user via the Standard address block. Modelled as one select-or-create obligation. Skeleton: radios over mock-contacts.json indexes, stored as consignmentContactAddress and sent as notification.consignment.contact; a separate sessionKeys.contactAddress is defined but unused.",
+      "conflicts": [
+        "c-001",
+        "c-020"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#contact_address"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/addresses/consignment/contact/select/controller.js:55"
+        }
+      ]
+    },
+    {
+      "id": "transporterType",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Transporter type",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Commercial transporter",
+          "Private transporter"
+        ]
+      },
+      "notes": "User must select one transporter type. Skeleton has no type split - a single mock transporter select (see c-012).",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#transporter_type"
+        }
+      ]
+    },
+    {
+      "id": "commercialTransporter",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Commercial Transporter",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "activatedBy": {
+        "obligation": "transporterType",
+        "equals": "Commercial transporter"
+      },
+      "wipeOnExit": true,
+      "input": {
+        "widget": "fieldGroup",
+        "extraFields": [
+          {
+            "id": "approvalNumber",
+            "label": "Approval number",
+            "example": "UK/NEWCA/T1/00090953"
+          }
+        ]
+      },
+      "notes": "Standard address block PLUS approval number; single entry for the consignment. Consumed from a TBC list of approved transporters (unresolved inline comment on that clause); if a trader creates a new commercial transporter it is restricted to NI.",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#commercial_transporter"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/transporters/controller.js:33"
+        }
+      ]
+    },
+    {
+      "id": "privateTransporter",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Private Transporter",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "activatedBy": {
+        "obligation": "transporterType",
+        "equals": "Private transporter"
+      },
+      "wipeOnExit": true,
+      "notes": "Standard address block; single entry for the consignment. Not present in the skeleton (see c-012); collected on an invented provisional page.",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#private_transporter"
+        }
+      ]
+    },
+    {
+      "id": "countyParishHoldingCph",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "County Parish Holding (CPH)",
+      "input": {
+        "widget": "input",
+        "maxLength": 11,
+        "example": "123456789 or 123/456/789"
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "anyItem",
+        "includes": [
+          "0102 - Cattle",
+          "0103 - Pig (Domestic)",
+          "010410 - Sheep (Domestic)",
+          "010420 - Goats",
+          "01051111 - Poultry - Day old chicks - Chickens",
+          "01051200 - Poultry - Day old chicks - Turkeys",
+          "01051300 - Poultry - Day old chicks - Ducks",
+          "01051400 - Poultry - Day old chicks - Geese",
+          "01051500 - Poultry - Day old chicks - Guinea Fowl",
+          "01059400 - Poultry - Adult Birds - Chickens",
+          "01059910 - Poultry - Adult Birds - Ducks",
+          "01059920 - Poultry - Adult Birds - Geese",
+          "01059930 - Poultry - Adult Birds - Turkeys",
+          "01059950 - Poultry - Adult Birds - Guinea Fowl",
+          "04071100 - Poultry - Hatching eggs- Chickens",
+          "04071911 - Poultry - Hatching eggs- Geese",
+          "04071911 - Poultry - Hatching eggs- Turkeys",
+          "04071919 - Poultry - Hatching eggs- Ducks",
+          "04071919 - Poultry - Hatching eggs- Guinea Fowl"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Single entry for the notification, required when CPH applies to the selected commodity (19 listed commodities) - notification-level field gated on commodityLines contents (frame:anyItem proposed vocabulary). Unresolved inline comment on field name.",
+      "conflicts": [
+        "c-007"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#county_parish_holding_cph"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/cph-number/cph-number-schema.js:4"
+        }
+      ]
+    },
+    {
+      "id": "portOfEntry",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Port of Entry",
+      "input": {
+        "widget": "select",
+        "valuesSource": "Named MDM live animal ports of entry list (skeleton hardcodes ABERDEEN / EAST MIDLANDS AIRPORT / EDINBURGH)"
+      },
+      "conflicts": [
+        "c-018"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#port_of_entry"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/port-of-entry/port-of-entry-schema.js:11"
+        }
+      ]
+    },
+    {
+      "id": "arrivalDateAtPort",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Arrival date at Port",
+      "input": {
+        "widget": "date-parts",
+        "validation": "Must be a valid date in DD/MM/YYYY format",
+        "example": "12/12/2026"
+      },
+      "notes": "Unresolved inline comment on field name. Skeleton asks for arrival at final destination with lax validation (see c-011).",
+      "conflicts": [
+        "c-011"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#arrival_date_at_port"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/port-of-entry/port-of-entry-schema.js:12"
+        }
+      ]
+    },
+    {
+      "id": "meansOfTransport",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Means of transport",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Airplane",
+          "Railway",
+          "Road Vehicle",
+          "Vessel"
+        ]
+      },
+      "notes": "Not present in the skeleton (see c-012); collected on an invented provisional page.",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#means_of_transport"
+        }
+      ]
+    },
+    {
+      "id": "transportIdentification",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Transport identification",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "FR-892-LK"
+      },
+      "notes": "Free-text transport identifier. Not present in the skeleton (see c-012).",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#transport_identification"
+        }
+      ]
+    },
+    {
+      "id": "transportDocumentReference",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Transport document reference",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "CMR-2026-884721"
+      },
+      "notes": "Free-text transport document reference. Not present in the skeleton (see c-012).",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#transport_document_reference"
+        }
+      ]
+    },
+    {
+      "id": "transitedCountries",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Transited Countries",
+      "activatedBy": {
+        "obligation": "meansOfTransport",
+        "includes": [
+          "Railway",
+          "Road Vehicle"
+        ]
+      },
+      "wipeOnExit": true,
+      "input": {
+        "widget": "checkboxes",
+        "valuesSource": "Country list",
+        "maxSelections": 12,
+        "example": "France, Belgium"
+      },
+      "notes": "V4 tension recorded verbatim: Conditions cell says 'Conditional: required when Means of transport is Railway or Road Vehicle. Optional multi-select.' while the Mandatory cell says Optional - both clauses carry unresolved inline comments. Modelled as optional but only shown for Railway/Road Vehicle. Not present in the skeleton (see c-012).",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#transited_countries"
+        }
+      ]
+    },
+    {
+      "id": "declaration",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Required to submit (skeleton Joi: must equal confirmed)",
+      "label": "I declare that the information I have provided in this notification I am submitting is true and correct.",
+      "input": {
+        "widget": "checkboxes",
+        "values": [
+          "confirmed"
+        ]
+      },
+      "notes": "Skeleton-only field: not persisted; a valid POST calls POST /notifications/{referenceNumber}/submit (DRAFT to SUBMITTED) and redirects back to /declaration with no separate confirmation page. Shows Date of declaration as today (en-GB).",
+      "conflicts": [
+        "c-022"
+      ],
+      "provenance": [
+        {
+          "source": "skeleton",
+          "ref": "src/server/declaration/declaration-schema.js:4"
+        }
+      ]
+    },
+    {
+      "id": "commodityLines",
+      "appliesAt": "notification",
+      "kind": "collection",
+      "mandate": {
+        "requiredAtLeastOne": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Level 2: Commodity line - 1..N per notification",
+      "label": "Commodity lines",
+      "item": [
+        "commoditySelection",
+        "typeSelection",
+        "speciesSelection",
+        "numberOfPackages",
+        "numberOfAnimalsQuantity",
+        "animalIdentifiers"
+      ],
+      "notes": "V4 data-level model: a commodity code plus its taxonomy chain (Type, Class, Species) plus a quantity; things true at the specific commodity line level. Skeleton supports exactly one line (commodityComplement single-element array) - see c-003.",
+      "conflicts": [
+        "c-003"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "table:Live Animal Data Elements (data-level model prose)"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/select/controller.js:110"
+        }
+      ]
+    },
+    {
+      "id": "animalIdentifiers",
+      "appliesAt": "commodity",
+      "kind": "collection",
+      "mandate": {
+        "requiredAtLeastOne": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Field Block - Mandatory to Submit - At least one",
+      "label": "Animal identifiers (unit records)",
+      "item": [
+        "animalIdentifierPassport",
+        "animalIdentifierTattoo",
+        "animalIdentifierEarTag",
+        "horseName",
+        "animalIdentifierIdentificationDetails",
+        "animalIdentifierDescription",
+        "permanentAddress"
+      ],
+      "modelGap": "sibling-at-least-one",
+      "notes": "V4 Level 3: Unit record - 0..N per commodity line, carrying per-animal identifiers and per-animal Permanent Address. Banner rule: a notification must be submitted with at least one animal identifier PER ANIMAL - the at-least-one applies across the sibling identifier fields within each unit record, not just to the item count (hence modelGap sibling-at-least-one). Each identifier field is individually Optional.",
+      "conflicts": [
+        "c-002",
+        "c-003"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "table:Animal Identifiers (banner row + section intro)"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/identification/controller.js:54"
+        }
+      ]
+    },
+    {
+      "id": "documents",
+      "appliesAt": "notification",
+      "kind": "collection",
+      "mandate": {},
+      "mandateRaw": "Field Block - Optional - All-or-nothing",
+      "label": "Accompanying documents",
+      "item": [
+        "accompanyingDocumentType",
+        "accompanyingDocumentAttachmentType",
+        "accompanyingDocumentReference",
+        "accompanyingDocumentDateOfIssue"
+      ],
+      "notes": "A notification can be submitted without an accompanying document, but once a document type is selected the attachment, reference and date of issue are mandatory to proceed (all-or-nothing per item - item fields carry required:true within an item). Skeleton mechanics: upload loop with per-document remove, max 10 documents, 10 MB cap, virus-scan polling (REJECTED must be removed before Continue); documents never enter buildNotificationPayload (see c-004).",
+      "conflicts": [
+        "c-004",
+        "c-010"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "table:Documents (banner row + section intro)"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/accompanying-documents/index.js"
+        }
+      ]
+    },
+    {
+      "id": "commoditySelection",
+      "appliesAt": "commodity",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "continue"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Commodity selection",
+      "input": {
+        "widget": "select",
+        "valuesSource": "Named MDM commodity list; search supports common name, species (scientific name) and commodity code",
+        "example": "Cattle, 0102, Bos taurus"
+      },
+      "notes": "Unresolved inline comment on field name. Skeleton hardcodes Cow/Fish/Cat/Dog (see c-018).",
+      "conflicts": [
+        "c-018"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#commodity_selection"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/controller.js:33"
+        }
+      ]
+    },
+    {
+      "id": "typeSelection",
+      "appliesAt": "commodity",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Type selection",
+      "input": {
+        "widget": "select",
+        "valuesSource": "MDM; where applicable for given commodity the user can filter species by type",
+        "example": "Game"
+      },
+      "notes": "Applicability is data-driven from MDM ('where applicable for given commodity') - not expressible as an activatedBy equals/includes rule, so no activatedBy is wired. Unresolved inline comment on the Example cell (Game). Skeleton offers only Domestic from mock-species.json and posts the type text, not its numeric value (see c-018).",
+      "conflicts": [
+        "c-018"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#type_selection"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/select/controller.js:110"
+        }
+      ]
+    },
+    {
+      "id": "speciesSelection",
+      "appliesAt": "commodity",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Species selection",
+      "input": {
+        "widget": "checkboxes",
+        "valuesSource": "MDM species for the selected commodity/type",
+        "hint": "Select all that apply.",
+        "example": "Bison bison (Bison); Bos spp. (Cattle species); Bos taurus (Cattle); Bubalus bubalis (Water buffalo)"
+      },
+      "notes": "User may select one or more species up to the agreed maximum (maximum not stated in V4). Skeleton stores each selection as {value, text} from mock-species.json and carries per-species values over on reselect (see c-017).",
+      "conflicts": [
+        "c-017"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#species_selection"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/select/controller.js:110"
+        }
+      ]
+    },
+    {
+      "id": "numberOfPackages",
+      "appliesAt": "commodity",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Number of packages",
+      "input": {
+        "widget": "input",
+        "inputmode": "numeric",
+        "maxLength": 10,
+        "example": "1, 25, 5000"
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "includes": [
+          "01064100 - Bees",
+          "01063100 - Birds of Prey- Owls",
+          "01063100 - Birds of Prey- Falcons",
+          "01063100 - Birds of Prey- Other",
+          "01061900 - Cats",
+          "0102 - Cattle",
+          "01061900 - Dogs",
+          "05119985 - Embryos/Ova - Cattle",
+          "05119985 - Embryos/Ova - Goat",
+          "05119985 - Embryos/Ova - Horse",
+          "05119985 - Embryos/Ova - Sheep",
+          "05119985 - Embryos/Ova - Pig",
+          "01061900 - Ferrets",
+          "01063980 - Game Birds - Adult Birds- Partridge",
+          "01063980 - Game Birds - Adult Birds- Pheasant",
+          "01063980 - Game Birds - Day old chicks - Partridge",
+          "01063980 - Game Birds - Day old chicks - Pheasant",
+          "04071919 - Game Birds - Hatching eggs - Pheasant and Partridge",
+          "010420 - Goats",
+          "0101 - Horse",
+          "0101 - Donkey",
+          "01064900 - Insects and other invertebrates",
+          "01064900 - Asian Hornet",
+          "0103 - Pig (Domestic)",
+          "0203 - Pig Meat under safeguard measure",
+          "01059400 - Poultry - Adult Birds - Chickens",
+          "01059910 - Poultry - Adult Birds - Ducks",
+          "01059920 - Poultry - Adult Birds - Geese",
+          "01059930 - Poultry - Adult Birds - Turkeys",
+          "01059950 - Poultry - Adult Birds - Guinea Fowl",
+          "01051111 - Poultry - Day old chicks - Chickens",
+          "01051200 - Poultry - Day old chicks - Turkeys",
+          "01051300 - Poultry - Day old chicks - Ducks",
+          "01051400 - Poultry - Day old chicks - Geese",
+          "01051500 - Poultry - Day old chicks - Guinea Fowl",
+          "04071100 - Poultry - Hatching eggs- Chickens",
+          "04071911 - Poultry - Hatching eggs- Turkeys",
+          "04071911 - Poultry - Hatching eggs- Geese",
+          "04071919 - Poultry - Hatching eggs- Ducks",
+          "04071919 - Poultry - Hatching eggs- Guinea Fowl",
+          "01063200 - Psittaciformes (including parrots, parakeets, macaws and cockatoos)",
+          "01061410 - Domestic European Rabbits",
+          "01061410 - Domestic Rabbits- Other",
+          "01062000 - Reptiles",
+          "01061900 - Rodents",
+          "05111000 - Semen - Cattle",
+          "05119985 - Semen - Dog or Cat",
+          "05119985 - Semen - Horse",
+          "05119985 - Semen - Goat",
+          "05119985 - Semen - Pig",
+          "05119985 - Semen - Rodent/Rabbit",
+          "05119985 - Semen - Sheep",
+          "010410 - Sheep (Domestic)",
+          "0407 - SPF Eggs"
+        ]
+      },
+      "wipeOnExit": true,
+      "notes": "Shown where package count applies to the selected commodity (54-entry list, same commodity-line frame so activatedBy is natively expressible). List includes 0203 Pig Meat, a product (see c-021). Unresolved inline comments on field name and on 0203. Skeleton models this per species with derived subtotals (see c-003).",
+      "conflicts": [
+        "c-021",
+        "c-003"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#number_of_packages"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/details/controller.js:59"
+        }
+      ]
+    },
+    {
+      "id": "numberOfAnimalsQuantity",
+      "appliesAt": "commodity",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to proceed",
+      "label": "Number of animals (quantity)",
+      "input": {
+        "widget": "input",
+        "inputmode": "numeric",
+        "validation": "whole number, max 9223372036854775807 (int64)",
+        "example": "1, 25, 5000"
+      },
+      "notes": "Unresolved inline comments on field name and on the int64 max in the Type cell; PO approval pending. Skeleton collects this per species and derives a subtotal (see c-003).",
+      "conflicts": [
+        "c-003"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#number_of_animals_quantity"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/details/controller.js:56"
+        }
+      ]
+    },
+    {
+      "id": "animalIdentifierPassport",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Animal Identifier - Passport",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "UK123456789"
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "includes": [
+          "0101 - Donkey and asses",
+          "0101 - Horse",
+          "0101 - Ponies",
+          "0101 - Zebras",
+          "0101 - Mules, hinnies or other hybrids",
+          "0102 - Cattle",
+          "01061900 - Cats",
+          "01061900 - Dogs",
+          "01061900 - Ferrets"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Shown when the enclosing commodity line requires Passport identifier - unit-level field gated on the enclosing frame (proposed frame:enclosing vocabulary). V4 bracketed count says (6) but lists 9 entries (see c-002). PO approved with note: field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "conflicts": [
+        "c-002"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#animal_identifier_passport"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/identification/controller.js:57"
+        }
+      ]
+    },
+    {
+      "id": "animalIdentifierTattoo",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Animal Identifier - Tattoo",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "AB1234"
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "includes": [
+          "01061900 - Cats",
+          "01061900 - Dogs",
+          "01061900 - Ferrets",
+          "0103 - Pigs",
+          "0102 - Bovine"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Shown when the enclosing commodity line requires Tattoo identifier (frame:enclosing). V4 bracketed count says (2) but lists 5 entries (see c-002). Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "conflicts": [
+        "c-002"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#animal_identifier_tattoo"
+        }
+      ]
+    },
+    {
+      "id": "animalIdentifierEarTag",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Animal Identifier - Ear Tag",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "UK123456789012"
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "includes": [
+          "0102 - Cattle",
+          "0103 - Pig (Domestic)",
+          "010410 - Sheep (Domestic)",
+          "010420 - Goats"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Shown when the enclosing commodity line requires Ear Tag (frame:enclosing); the (4) bracketed count matches its list. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#animal_identifier_ear_tag"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/commodities/identification/controller.js:54"
+        }
+      ]
+    },
+    {
+      "id": "horseName",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Horse Name",
+      "input": {
+        "widget": "input",
+        "maxLength": 58
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "includes": [
+          "0101 - Horse"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Shown when the enclosing commodity line requires horse name (0101 - Horse only; frame:enclosing). No example in V4 and the PO Approved cell is empty (no task item). Unresolved inline comment on Mandatory cell.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "table:Animal Identifiers/row:5"
+        }
+      ]
+    },
+    {
+      "id": "animalIdentifierIdentificationDetails",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Animal Identifier - Identification details",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "Hive mark HM-2026-004"
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Shown when the enclosing commodity line does NOT have a specific identifier type - a negated cross-frame condition with no explicit commodity list, so no activatedBy can be wired (modelGap). Captures free-text identification details. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#animal_identifier_identification_details"
+        }
+      ]
+    },
+    {
+      "id": "animalIdentifierDescription",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {},
+      "mandateRaw": "Optional",
+      "label": "Animal Identifier - Description",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "Worker bees in sealed transport hive"
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Shown when the enclosing commodity line does NOT have a specific identifier type - negated cross-frame condition with no explicit list, so no activatedBy can be wired (modelGap). Captures a free-text animal description. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#animal_identifier_description"
+        }
+      ]
+    },
+    {
+      "id": "permanentAddress",
+      "appliesAt": "unit",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Mandatory to submit",
+      "label": "Permanent Address",
+      "fieldGroupRef": {
+        "group": "address"
+      },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "includes": [
+          "01061900 - Cats",
+          "01061900 - Dogs",
+          "01061900 - Ferrets"
+        ]
+      },
+      "wipeOnExit": true,
+      "modelGap": "cross-frame-conditionality",
+      "notes": "Required per animal when the enclosing commodity line is Cats, Dogs or Ferrets (frame:enclosing); a different address can be entered for each animal, so it lives on the unit record alongside the identifiers (V4 Level 3 prose). Standard address block. Unresolved inline comment on field name. Not present in the skeleton (see c-012).",
+      "conflicts": [
+        "c-012"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#permanent_address"
+        }
+      ]
+    },
+    {
+      "id": "accompanyingDocumentType",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "All-or-nothing",
+      "label": "Accompanying Document: Type",
+      "input": {
+        "widget": "select",
+        "values": [
+          "ITAHC",
+          "Veterinary health certificate",
+          "Air waybill",
+          "Import permit",
+          "Letter of authority (Directive 2008/61/EC)",
+          "Commercial invoice",
+          "Sea waybill",
+          "Rail waybill",
+          "Bill of lading",
+          "Catch certificate",
+          "Laboratory sampling results for aflatoxin (Reg 2019/1793)",
+          "Health certificate",
+          "Journey log",
+          "Other"
+        ]
+      },
+      "notes": "Required within a document item (all-or-nothing block). PO approved with note Pending; unresolved inline comments on field name and Mandatory cell. Skeleton enum has only ITAHC and Veterinary health certificate (see c-010).",
+      "conflicts": [
+        "c-010"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#accompanying_document_type"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/accompanying-documents/accompanying-documents-schema.js:14"
+        }
+      ]
+    },
+    {
+      "id": "accompanyingDocumentAttachmentType",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "All-or-nothing",
+      "label": "Accompanying Document: Attachment Type",
+      "input": {
+        "widget": "select",
+        "values": [
+          "PDF",
+          "DOC",
+          "DOCX",
+          "JPG",
+          "JPEG",
+          "PNG",
+          "XLS",
+          "XLSX"
+        ]
+      },
+      "notes": "Required within a document item (all-or-nothing block). Skeleton implements this as an actual file upload instead - allowed extensions pdf/doc/docx/jpeg/jpg/png/xls/xlsx, max 10 MB (decimal, under the CDP nginx 10 MiB cap), uploaded to the document service and virus-scanned (see c-010). Unresolved inline comments on field name and Mandatory cell.",
+      "conflicts": [
+        "c-010"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#accompanying_document_attachment_type"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/accompanying-documents/controller/post/validation.js:45"
+        }
+      ]
+    },
+    {
+      "id": "accompanyingDocumentReference",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "All-or-nothing",
+      "label": "Accompanying Document: Reference",
+      "input": {
+        "widget": "input",
+        "maxLength": 58,
+        "example": "GBHC1234567890"
+      },
+      "notes": "Required within a document item (all-or-nothing block). Skeleton has it optional with max 100 and alphanumeric-only pattern (see c-010). Unresolved inline comments on field name and Mandatory cell.",
+      "conflicts": [
+        "c-010"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#accompanying_document_reference"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/accompanying-documents/accompanying-documents-schema.js:22"
+        }
+      ]
+    },
+    {
+      "id": "accompanyingDocumentDateOfIssue",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "All-or-nothing",
+      "label": "Accompanying Document: Date of Issue",
+      "input": {
+        "widget": "date-parts",
+        "validation": "Must be a valid date in DD/MM/YYYY format",
+        "example": "12/12/2025"
+      },
+      "notes": "Required within a document item (all-or-nothing block). Skeleton requires it only when a file is attached, with day/month/year completeness and real-calendar-date checks, persisted per document as yyyy-mm-dd (see c-010). Unresolved inline comment on Mandatory cell.",
+      "conflicts": [
+        "c-010"
+      ],
+      "provenance": [
+        {
+          "source": "confluence-v4",
+          "ref": "#accompanying_document_date_of_issue"
+        },
+        {
+          "source": "skeleton",
+          "ref": "src/server/accompanying-documents/partial-date-validator.js:29"
+        }
+      ]
+    }
+  ]
+}

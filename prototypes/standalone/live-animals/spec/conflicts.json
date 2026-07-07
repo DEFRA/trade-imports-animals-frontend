@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "conflicts": [
+    {
+      "id": "c-001",
+      "fields": [
+        "contactAddress"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "Contact Address appears as TWO V4 table rows sharing one anchor #contact_address: one consumed from gov.identity (Mandatory '-', Source gov.identity, 'if more than one address exists the user must select one before continuing') and one user-created via Standard address block (Mandatory to proceed). How the two variants interact is unspecified. Modelled as a single contactAddress obligation (select-or-create) with fieldGroupRef address.",
+      "resolution": null,
+      "resolvedBy": null
+    },
+    {
+      "id": "c-002",
+      "fields": [
+        "animalIdentifierPassport",
+        "animalIdentifierTattoo"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "Stale bracketed counts in V4 Animal Identifiers commodity lists: 'Passport identifier commodities (6)' actually lists 9 entries (adds 0102 - Cattle and 01061900 - Cats/Dogs/Ferrets to the equine entries); 'Tattoo identifier commodities (2)' lists 5 entries (Cats, Dogs, Ferrets, 0103 - Pigs, 0102 - Bovine). Ear tag (4) matches. Spec adopts the bullet lists, not the bracketed counts.",
+      "resolution": "The commodity lists are truth; the bracketed counts are stale. Raise the count/list mismatch with the PO as a V4 page defect.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-003",
+      "fields": [
+        "commodityLines",
+        "numberOfAnimalsQuantity",
+        "numberOfPackages",
+        "animalIdentifiers"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Structural disagreement on commodity hierarchy: the skeleton stores commodityComplement as a single-element array (one commodity line only) and hangs per-SPECIES dynamic inputs off it (noOfAnimals-{species}, noOfPackages-{species}, earTag-{species}, passport-{species}) plus derived totalNoOfAnimals/totalNoOfPackages subtotals. V4's data-level model is 1..N commodity lines per notification with quantity/packages at commodity-line level and identifiers at unit level (0..N unit records per line). Spec follows V4: commodityLines collection with a nested unit-level animalIdentifiers collection; the skeleton's derived subtotals are not modelled as obligations.",
+      "resolution": "V4 hierarchy stands: commodityLines 1..N with nested unit records; skeleton single-line commodityComplement and per-species dynamic inputs are implementation shortfalls, not requirements.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-004",
+      "fields": [
+        "documents"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Accompanying documents never reach the notification payload in the skeleton: buildNotificationPayload (src/server/common/clients/notification-client.js:108) has no documents section - files and metadata go to a separate document service via document-client keyed by uploadId, tied to the journey only by the session documents array. V4 defines the Accompanying Document block as notification-level data. Spec models a notification-level documents collection; how it reaches the payload is unresolved.",
+      "resolution": "Intended design, not a bug: documents persist in a separate Mongo collection and are foreign-keyed into the notification (by uploadId), not embedded in the payload. The spec's documents collection stands as journey-level obligations; persistence is by reference.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-005",
+      "fields": [
+        "placeOfOrigin",
+        "consignee",
+        "importer"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Dead address spokes: the skeleton addresses hub renders Add/Change links to /place-of-origin/select, /consignees/select and /importers/select but no such routes are registered, and session keys placeOfOrigin, consignee and importer are read (src/server/addresses/controller.js:69-75) but never written. V4 makes all three Mandatory to submit. Spec keeps all three obligations and invents provisional select pages for them (provisionalCopy=true).",
+      "resolution": "V4 party fields (place of origin, consignee, importer) are requirements; the skeleton's dead spokes are implementation gaps. Provisional select pages stand.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-006",
+      "fields": [],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Validation coverage is uneven in the skeleton: only origin, cph-number, port-of-entry, accompanying-documents and declaration have Joi schemas (plus controller checks on consignment contact select); /commodities, /commodities/select, /import-reason, /commodities/details, /commodities/identification, /additional-details, /addresses and /transporters accept any payload with no server-side validation. V4 marks most of these fields Mandatory to proceed/submit. Spec adopts the V4 mandates.",
+      "resolution": "Skeleton validation gaps are not requirements; V4 mandates and formats win everywhere the skeleton lacks them.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-007",
+      "fields": [
+        "countyParishHoldingCph"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "CPH format disagreement: skeleton requires exactly 9 digits (^\\d+$, length 9, inputmode numeric); V4 allows up to 11 characters including slashes ('123456789 or 123/456/789'). V4 wins: string max 11.",
+      "resolution": "V4 CPH format wins: string max 11 with examples 123456789 and 123/456/789; the skeleton's exactly-9-digits rule is not a requirement.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-008",
+      "fields": [
+        "reasonForImport"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Reason for import value-set disagreement: skeleton offers 2 radios (internalMarket, reEntry); V4 defines 5 values (Internal market, Transhipment or onward travel, Transit, Re-entry, Temporary admission horses - the last carrying an unresolved inline comment). V4 wins.",
+      "resolution": "V4 five-value reason-for-import enum wins over the skeleton's two radios.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-009",
+      "fields": [
+        "animalsCertifiedFor"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Animals certified for value-set disagreement: skeleton offers 3 radios (approvedBodies, breedingAndOrProduction, slaughter); V4 defines a 16-value single-select. V4 wins. Also PO-pending: APHA intend to make the field conditional for some commodities.",
+      "resolution": "V4 animals-certified-for value set wins over the skeleton's three radios.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-010",
+      "fields": [
+        "accompanyingDocumentType",
+        "accompanyingDocumentAttachmentType",
+        "accompanyingDocumentReference",
+        "accompanyingDocumentDateOfIssue"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Document field disagreements: skeleton document type enum has 2 values vs V4's 14; skeleton documentReference is optional with max 100 vs V4 All-or-nothing with max 58; V4 models Attachment Type as a user-selected enum of extensions (PDF/DOC/DOCX/JPG/JPEG/PNG/XLS/XLSX) while the skeleton derives it from an actual file upload (10 MB cap, virus scan, max 10 documents); skeleton requires date of issue only when a file is attached vs V4 All-or-nothing. V4 wins on data; skeleton upload mechanics noted on the collection.",
+      "resolution": "V4 document rules win: 14 document types and V4 reference/date rules; the skeleton's two-type enum is not a requirement.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-011",
+      "fields": [
+        "arrivalDateAtPort"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Arrival date semantics disagree: V4 defines 'Arrival date at Port' (valid DD/MM/YYYY); the skeleton page asks 'When will the consignment arrive at its final destination?' (transport.arrivalDate) and its date validation has no completeness or real-date check (unlike issueDate). V4 wording and validation win.",
+      "resolution": "V4 'Arrival date at Port' semantics win; the skeleton page's arrival-at-destination copy is reconciled when the page is built.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-012",
+      "fields": [
+        "regionOfOriginCode",
+        "purposeInInternalMarket",
+        "meansOfTransport",
+        "transportIdentification",
+        "transportDocumentReference",
+        "transitedCountries",
+        "transporterType",
+        "permanentAddress"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Skeleton collects only a subset of the V4 fields. Missing entirely: region of origin code input, purpose in internal market, means of transport, transport identification, transport document reference, transited countries, transporter type split (commercial vs private), per-animal permanent address, and any display of Responsible Person for Load. Spec keeps the V4 obligations and invents provisional pages (provisionalCopy=true) where the skeleton has no collection point.",
+      "resolution": "The V4 field set is the requirement; fields the skeleton never collects stay in the spec and get pages.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-013",
+      "fields": [
+        "arrivalTimeAtPort"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "descoped: Arrival time at port - de-scoped by Monica.Rivera on 14 May 2026. Not modelled as an obligation.",
+      "resolution": "Descoped by the PO (14 May 2026); correctly excluded from the spec.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-014",
+      "fields": [
+        "journeyLog"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "descoped: Journey Log - de-scoped by Monica.Rivera on 14 May 2026. Not modelled as an obligation (Journey log survives only as a value in the Accompanying Document Type enum).",
+      "resolution": "Descoped by the PO (14 May 2026); correctly excluded from the spec.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-015",
+      "fields": [
+        "transportAfterBcp"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "descoped: Transport after BCP - de-scoped by Monica.Rivera on 14 May 2026. Not modelled as an obligation.",
+      "resolution": "Descoped by the PO (14 May 2026); correctly excluded from the spec.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-016",
+      "fields": [
+        "animalIdentifierWingRing"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "descoped: Animal Identifier - Wing Ring - de-scoped by Monica.Rivera on 29 May 2026. Not modelled as an obligation.",
+      "resolution": "Descoped by the PO (29 May 2026); correctly excluded from the spec.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-017",
+      "fields": [
+        "speciesSelection"
+      ],
+      "sources": [
+        "skeleton",
+        "ixd-canvas"
+      ],
+      "detail": "Wipe-vs-retain disagreement: the skeleton carries previously saved per-species noOfAnimals/noOfPackages/earTag/passport values over when species are reselected (retain), while the IxD canvas steer is 'delete conditional data on change of determining condition'. Spec defaults wipeOnExit=true on all conditional obligations; where retain is wanted this must be resolved at a gate session.",
+      "resolution": "Wipe on exit everywhere, confirmed: data whose determining condition flips out of scope is destroyed, not hidden. The skeleton's retained per-species values and the v4-model branch's retained regionCode are not requirements.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-018",
+      "fields": [
+        "commoditySelection",
+        "typeSelection",
+        "speciesSelection",
+        "portOfEntry"
+      ],
+      "sources": [
+        "confluence-v4",
+        "skeleton"
+      ],
+      "detail": "Option-data disagreement: skeleton commodity list is hardcoded (Cow/Fish/Cat/Dog), port list is hardcoded (ABERDEEN/EAST MIDLANDS AIRPORT/EDINBURGH), species/types come from mock-species.json and consignors/destinations/contacts/transporters from mock JSON; V4 sources commodities, types, species, ports and countries from named MDM lists (commodity search by common name, species and commodity code). Only the skeleton origin country list uses a real reference-data client. V4/MDM wins.",
+      "resolution": "MDM reference data wins: option lists (commodities, ports, countries, species) come from MDM-backed reference data, not the skeleton's hardcoded mocks. Spec optionsRef markers stand as the swap points.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-019",
+      "fields": [],
+      "sources": [
+        "skeleton"
+      ],
+      "detail": "Skeleton flow ambiguities around the addresses hub: cph-number is presented as a hub spoke (Add/Change link, back link to /addresses) but its POST jumps straight to /port-of-entry, short-circuiting the hub; the consignment contact page is registered inside the addresses plugin yet is only reached from the /transporters POST; and /import-reason (step 4) interleaves mid-commodity between /commodities/select (3) and /commodities/details (5). Spec groups pages by the skeleton's template page groups (About the consignment, Description of the goods, Transport) rather than the raw interleaved order.",
+      "resolution": "Navigation-layer, not model: hub/spoke wiring around addresses (CPH short-circuit, contact reached from transporters) is decided by flow.js + navigation when the addresses section is built. Obligations are unaffected.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-020",
+      "fields": [
+        "consignor",
+        "placeOfDestination",
+        "contactAddress",
+        "placeOfOrigin",
+        "consignee",
+        "importer"
+      ],
+      "sources": [
+        "ixd-canvas"
+      ],
+      "detail": "Canvas open question: is shared data such as an address saved by copy, by reference, or both? The spec's address fieldGroup usages assume copy semantics by default (per the obligations-v2 model); the skeleton stores whole address objects picked from mock lists, which is copy-like but selected by reference index. Unresolved.",
+      "resolution": "Save by copy. Address (and similar shared data) is copied per usage, not shared by reference.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-021",
+      "fields": [
+        "numberOfPackages"
+      ],
+      "sources": [
+        "confluence-v4"
+      ],
+      "detail": "The V4 Number of packages commodity list (54) includes '0203 - Pig Meat under safeguard measure' - a product, not a live animal - and that entry carries an unresolved inline comment on '0203'. Several commodity codes also repeat across entries (e.g. 01061900 for Cats/Dogs/Ferrets/Rodents, 04071919/04071911 for several hatching-egg lines), so code alone does not identify a list entry.",
+      "resolution": "For this prototype, treat the V4 list as true and valid: 0203 Pig Meat under safeguard measure stays in the number-of-packages commodity list. Its unresolved inline comment remains a V4 page question for the PO, not a build blocker.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-022",
+      "fields": [
+        "declaration"
+      ],
+      "sources": [
+        "skeleton"
+      ],
+      "detail": "The declaration confirmation checkbox and submit action (DRAFT to SUBMITTED, no separate confirmation page) exist only in the skeleton; V4 has no declaration row. Kept as a skeleton-provenanced obligation since submission requires it.",
+      "resolution": "Declaration stays, sourced from the skeleton. End-of-journey shape confirmed: hub (task list) -> check your answers -> declaration -> submitted.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-023",
+      "fields": [],
+      "sources": [
+        "ixd-canvas",
+        "confluence-v4"
+      ],
+      "detail": "Mandate is two-level per gate ruling: mandatory-to-continue (blocks Save and Continue at point of display) vs mandatory-to-submit (blocks submission only). V4's 'Mandatory to submit' rows map to enforcedAt=submit; canvas says *some* questions are continue-level but neither source names which - every required obligation currently carries enforcedAt=submit|unspecified and no field is yet marked enforcedAt=continue. Needs per-field ruling (likely at M0/M1 page builds).",
+      "resolution": "countryOfOrigin and commoditySelection are enforcedAt=continue (cannot Save and Continue without them); every other required obligation is enforcedAt=submit.",
+      "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    }
+  ]
+}
