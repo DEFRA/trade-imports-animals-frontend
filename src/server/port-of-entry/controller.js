@@ -14,7 +14,7 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
-const PAGE_TITLE = 'Entry point and arrival at destination'
+const PAGE_TITLE = 'Arrival details'
 const VIEW = 'port-of-entry/index'
 
 async function buildPortItems(traceId) {
@@ -34,6 +34,18 @@ export const portOfEntryController = {
     async handler(_request, h) {
       const portOfEntry = getSessionValue(_request, sessionKeys.portOfEntry)
       const arrivalDate = getSessionValue(_request, sessionKeys.arrivalDate)
+      const meansOfTransport = getSessionValue(
+        _request,
+        sessionKeys.meansOfTransport
+      )
+      const transportIdentification = getSessionValue(
+        _request,
+        sessionKeys.transportIdentification
+      )
+      const transportDocumentReference = getSessionValue(
+        _request,
+        sessionKeys.transportDocumentReference
+      )
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
@@ -45,6 +57,9 @@ export const portOfEntryController = {
         pageTitle: PAGE_TITLE,
         portOfEntry,
         arrivalDate,
+        meansOfTransport,
+        transportIdentification,
+        transportDocumentReference,
         referenceNumber,
         portItems
       })
@@ -56,6 +71,10 @@ export const portOfEntryController = {
       const arrivalDay = _request.payload['arrivalDate-day']
       const arrivalMonth = _request.payload['arrivalDate-month']
       const arrivalYear = _request.payload['arrivalDate-year']
+      const meansOfTransport = _request.payload.meansOfTransport
+      const transportIdentification = _request.payload.transportIdentification
+      const transportDocumentReference =
+        _request.payload.transportDocumentReference
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
@@ -78,6 +97,9 @@ export const portOfEntryController = {
               month: arrivalMonth,
               year: arrivalYear
             },
+            meansOfTransport,
+            transportIdentification,
+            transportDocumentReference,
             referenceNumber,
             portItems,
             errorList: formattedErrors.errorList,
@@ -93,6 +115,17 @@ export const portOfEntryController = {
       }
       setSessionValue(_request, sessionKeys.portOfEntry, portOfEntry)
       setSessionValue(_request, sessionKeys.arrivalDate, arrivalDate)
+      setSessionValue(_request, sessionKeys.meansOfTransport, meansOfTransport)
+      setSessionValue(
+        _request,
+        sessionKeys.transportIdentification,
+        transportIdentification
+      )
+      setSessionValue(
+        _request,
+        sessionKeys.transportDocumentReference,
+        transportDocumentReference
+      )
       logger.info(`Port of entry saved: ${portOfEntry}`)
 
       try {
@@ -103,6 +136,9 @@ export const portOfEntryController = {
             pageTitle: PAGE_TITLE,
             portOfEntry,
             arrivalDate,
+            meansOfTransport,
+            transportIdentification,
+            transportDocumentReference,
             referenceNumber,
             portItems,
             errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]

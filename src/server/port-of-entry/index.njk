@@ -1,6 +1,7 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block pageContent %}
@@ -11,7 +12,7 @@
   }) }}
 
   {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
-  {{ appHeading({ pageTitle: "Transport", heading: "Entry point and arrival at destination" }) }}
+  {{ appHeading({ pageTitle: "Movement", heading: "Arrival details" }) }}
 
       <div class="govuk-body" data-testid="app-page-body">
 
@@ -24,18 +25,6 @@
 
         <form method="post" novalidate>
           <input type="hidden" name="crumb" value="{{ crumb }}" />
-
-          {{ govukSelect({
-            id: "portOfEntry",
-            name: "portOfEntry",
-            label: {
-              text: "What is the port of entry into Great Britain?",
-              classes: "govuk-label--m"
-            },
-            value: portOfEntry if portOfEntry,
-            errorMessage: fieldErrors["portOfEntry"] if fieldErrors,
-            items: portItems
-          }) }}
 
           {{ govukDateInput({
             id: "arrivalDate",
@@ -73,6 +62,72 @@
                 value: arrivalDate.year if arrivalDate
               }
             ]
+          }) }}
+
+          {{ govukSelect({
+            id: "portOfEntry",
+            name: "portOfEntry",
+            label: {
+              text: "What is the port of entry into Great Britain?",
+              classes: "govuk-label--m"
+            },
+            value: portOfEntry if portOfEntry,
+            errorMessage: fieldErrors["portOfEntry"] if fieldErrors,
+            items: portItems
+          }) }}
+
+          {{ govukSelect({
+            id: "meansOfTransport",
+            name: "meansOfTransport",
+            label: {
+              text: "Means of transport",
+              classes: "govuk-label--m"
+            },
+            value: meansOfTransport if meansOfTransport,
+            errorMessage: fieldErrors["meansOfTransport"] if fieldErrors,
+            items: [
+              { value: "", text: "Select one" },
+              { value: "AIRPLANE", text: "Airplane" },
+              { value: "RAILWAY", text: "Railway" },
+              { value: "ROAD_VEHICLE", text: "Road vehicle" },
+              { value: "VESSEL", text: "Vessel" }
+            ]
+          }) }}
+
+          {{ govukInput({
+            id: "transportIdentification",
+            name: "transportIdentification",
+            label: {
+              text: "Transport identification",
+              classes: "govuk-label--m"
+            },
+            hint: {
+              html: 'To identify the means of transport, enter (one of the following):
+                <ul class="govuk-list govuk-list--bullet">
+                  <li>flight number</li>
+                  <li>train number</li>
+                  <li>road vehicle registration number</li>
+                  <li>vessel name (for ferries, also the road vehicle registration number)</li>
+                </ul>'
+            },
+            classes: "govuk-!-width-three-quarters",
+            value: transportIdentification if transportIdentification,
+            errorMessage: fieldErrors["transportIdentification"] if fieldErrors
+          }) }}
+
+          {{ govukInput({
+            id: "transportDocumentReference",
+            name: "transportDocumentReference",
+            label: {
+              text: "Transport document reference",
+              classes: "govuk-label--m"
+            },
+            hint: {
+              text: "Enter the reference number on the air waybill, bill of lading, sea waybill, road consignment note (CMR) or other transport document."
+            },
+            classes: "govuk-!-width-three-quarters",
+            value: transportDocumentReference if transportDocumentReference,
+            errorMessage: fieldErrors["transportDocumentReference"] if fieldErrors
           }) }}
 
           <div class="govuk-button-group">

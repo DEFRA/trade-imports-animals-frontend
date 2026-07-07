@@ -237,6 +237,52 @@ describe('#notificationClient', () => {
         expect(body.transport.arrivalDate).toBeUndefined()
       })
 
+      test('Should include means of transport and text fields in transport payload', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            portOfEntry: 'ABERDEEN',
+            meansOfTransport: 'VESSEL',
+            transportIdentification: 'Vessel Poseidon',
+            transportDocumentReference: 'BILL-OF-LADING-001'
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport).toEqual({
+          portOfEntry: 'ABERDEEN',
+          meansOfTransport: 'VESSEL',
+          transportIdentification: 'Vessel Poseidon',
+          transportDocumentReference: 'BILL-OF-LADING-001'
+        })
+      })
+
+      test('Should build transport from means of transport alone', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          if (key === 'meansOfTransport') {
+            return 'AIRPLANE'
+          }
+          return null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport).toEqual({ meansOfTransport: 'AIRPLANE' })
+      })
+
       test('Should send consignmentContactAddress as flat consignment field', async () => {
         const consignmentContactAddress = {
           name: 'Animal and Plant Health Agency',
@@ -672,6 +718,40 @@ describe('#notificationClient', () => {
           mockRequest,
           sessionKeys.arrivalDate,
           { day: 5, month: 3, year: 2026 }
+        )
+      })
+
+      test('Should hydrate means of transport and text fields from transport', async () => {
+        const responseBody = {
+          transport: {
+            portOfEntry: 'ABERDEEN',
+            meansOfTransport: 'VESSEL',
+            transportIdentification: 'Vessel Poseidon',
+            transportDocumentReference: 'BILL-OF-LADING-001'
+          }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.meansOfTransport,
+          'VESSEL'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.transportIdentification,
+          'Vessel Poseidon'
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.transportDocumentReference,
+          'BILL-OF-LADING-001'
         )
       })
 
