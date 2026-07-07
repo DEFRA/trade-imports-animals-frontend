@@ -76,18 +76,61 @@ are easier because gates are data.
   problem).
 
 **Option 2 — Consolidate on `applyTo` + helpers.**
-Delete `gates.js` and `gate-resolver.js`. Add a small helpers module
-(e.g. `helpers.js`) that exposes enumeration primitives so `applyTo`
-can handle identity-space mismatches without in-obligation
-enumeration.
 
-- Author cost per obligation: ~5-10 lines of imperative logic
-  (composable, still readable if the helpers are named well).
-- No new vocabulary; JS is the vocabulary.
-- Fully flexible for any weird gate.
-- Loses static analysis of gates (they become function bodies).
-- Cross-obligation aggregations (`any` / `every` from combinators)
-  become slightly more verbose but still expressible.
+Delete `gates.js` and `gate-resolver.js`. Extend `applyTo`'s signature
+to `applyTo(fulfilments, fulfilmentIdsByObligationId)` — the second
+arg is the same instance-path map the evaluator already computes
+internally via `enumerateGroupFulfilmentIds`, exposed to obligation
+code. Add a small helpers module of pure functions that build applyTo
+functions using the map: `allowListed(gateObl, values, projectionGroup)`,
+`allowListedByPredicate(gateObl, predicate, projectionGroup)`,
+`branchedGate(predicate, whenTrue, whenFalse)`, `matches(gateObl,
+value)`, `present(obl)`.
+
+Author cost per obligation is comparable to gatedBy (~3 lines for the
+common allowlist case, ~5-10 for weirder shapes). Key wins over
+gatedBy that emerged in the second-thoughts discussion:
+
+- **Idiomatic JS.** No DSL, no interpretation layer. Standard debug
+  tools (breakpoints, `console.log`, `debugger`) work everywhere.
+- **Testable at obligation level without other units.** Each
+  `obligation.applyTo(fulfilments, ids)` is a plain function call
+  with plain inputs. No evaluator, no resolver, no `obligationsById`
+  to construct.
+- **Cross-sibling ergonomics.** Closures over `const` bindings are
+  evaluated at call time, so all-or-nothing blocks avoid the
+  attach-after-declaration mutation `gatedBy` needed. Each obligation
+  self-contains its logic.
+- **Composes with JS operators.** `&&`, `||`, `!`, spreads, `.filter()`,
+  `.map()`. No `and()` / `or()` / `not()` combinator wrappers.
+- **Helpers themselves are unit-testable.** Pure functions, standard
+  vitest, no framework knowledge.
+
+Reclaimable static analyzability: helpers can attach metadata to the
+functions they return.
+
+```js
+export function allowListed(gateObligation, values, projectionGroup) {
+  const fn = (f, ids) => {
+    /* ... */
+  }
+  fn.metadata = {
+    type: 'allowListed',
+    obligation: gateObligation.id,
+    values,
+    projection: projectionGroup?.id
+  }
+  return fn
+}
+```
+
+`obligation.applyTo` is a function (runtime); `obligation.applyTo.metadata`
+is a data structure (tooling / data-dictionary export / cross-language
+serialisation). Selective — one-off custom gates just omit metadata
+and tooling handles that gracefully.
+
+Sub-option-2b: keep `gatedBy` alongside for the introspection cases,
+delete for everything else. Ends up in option 3 territory.
 
 **Option 3 — Keep both (status quo).**
 Accept two mechanisms; author picks per obligation. Consistent with
@@ -149,6 +192,25 @@ Start there. Pick between options 1 / 2 / 3 / 4 before writing any
 more code. Option 4 is the most spike-shaped (evidence for a
 recommendation is the ticket AC); options 1 / 2 pre-commit to a
 direction; option 3 punts. The 4b plan below assumes option 1.
+
+### Trade-off table (post-second-thoughts)
+
+| Property                        | gatedBy                                 | applyTo + fulfilmentIds map + helpers |
+| ------------------------------- | --------------------------------------- | ------------------------------------- | --- | --------------------- |
+| Author brevity for common cases | ~3 lines                                | ~3 lines (with helpers)               |
+| Vocabulary to learn             | 8 combinators + resolver semantics      | 0 (JS + helper library)               |
+| Testable at obligation level    | Requires resolver + obligationsById map | Plain function call                   |
+| Debuggable                      | Data + interpreter (walk the tree)      | Native breakpoints, `console.log`     |
+| Cross-sibling ergonomics        | Attach-after-declaration mutation       | Closures over `const`, no mutation    |
+| Compose with JS operators       | No — need combinators                   | Yes — `&&`, `                         |     | `, `!`, spreads, etc. |
+| Static introspection            | Native (walk the tree)                  | Only via helper metadata (add-on)     |
+| Cross-language export           | Native                                  | Only via helper metadata (add-on)     |
+| Helper functions unit-testable  | N/A                                     | Yes — pure functions                  |
+
+Prototype landed alongside PICKUP.md: `helpers.js`,
+`obligations-all-applyto.js`, `helpers.test.js`,
+`obligations-all-applyto.test.js`. Read those to see the shape in
+concrete code.
 
 ---
 
