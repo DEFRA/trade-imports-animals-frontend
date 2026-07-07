@@ -387,3 +387,20 @@ Workflow-orchestrated, parent-shell verification).
   `t1-currency-persist.test.js`: 8 tests through the real store — 6 proven fail-before (incl.
   premium 480→570), 2 error-path guards. Skeptics (coverage / over-correction / test-quality): no
   objections. **Green: unit 149 (21 files) / E2E 70, parent-shell verified; eslint + prettier clean.**
+
+- [x] **T2 — internal ids leaking into hub task-list hint copy. DONE — green, browser-verified.**
+  _Landed as:_ implement → 2-skeptic verify workflow (Opus); the first implementer died mid-run on
+  an API error, so the run was resumed as an audit-and-complete pass over its inherited tree (fix
+  kept after audit). Before: add-on rows rendered raw page ids as hints (`drivers`,
+  `modifications-describe, modifications-value`, `protected-ncd-years`), the Email row's hint
+  echoed its own title, and `ADDON_TITLE[s.id]` was unguarded (`undefined` title for an unmapped
+  dynamic section). After: authored GDS-styled `ADDON_COPY` (title+hint per add-on, hub-side —
+  page-owns-copy paradigm kept), Email hint "Where we send your quote", and a fail-loud
+  `addonCopy()` lookup (throws naming the missing section — the codebase idiom). Other rows
+  audited: group-row hints are authored copy, picker/quote rows carry no hint — nothing else leaked.
+  Tests: `t2-hub-copy.test.js` (5 unit — rendered hints pinned, no-page-id sweep, fail-loud throw)
+  + **new browser-level `prototypes/e2e/hub-copy.spec.js`** (drives the real hub, asserts the
+  rendered `.govuk-task-list__hint` DOM; proven fail-before — the old derivation renders `drivers`
+  and the spec fails; the shared journey specs navigate by title and can never catch this).
+  Skeptics (copy/GDS + robustness): no objections. **Green: unit 154 (22 files) / E2E 71 (new
+  browser pin), parent-shell verified; eslint + prettier clean.**

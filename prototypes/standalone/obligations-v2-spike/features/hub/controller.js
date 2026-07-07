@@ -17,7 +17,7 @@ import { open } from '../../shared/kit.js'
 const view = `${TEMPLATES}/features/hub/template`
 
 const GROUP_ROWS = [
-  { id: 'email', title: 'Email', hint: 'Email' },
+  { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',
     title: 'About you and your vehicle',
@@ -30,10 +30,34 @@ const GROUP_ROWS = [
   }
 ]
 
-const ADDON_TITLE = {
-  'named-driver': 'Add a named driver',
-  modifications: 'Declare vehicle modifications',
-  'protected-ncd': 'Protect your no-claims discount'
+const ADDON_COPY = {
+  'named-driver': {
+    title: 'Add a named driver',
+    hint: 'People you want insured to drive your vehicle'
+  },
+  modifications: {
+    title: 'Declare vehicle modifications',
+    hint: 'Changes to your vehicle and their value'
+  },
+  'protected-ncd': {
+    title: 'Protect your no-claims discount',
+    hint: 'Keep your discount if you make a claim'
+  }
+}
+
+/**
+ * Hub copy for one add-on section. Fails loud: a dynamic section with no
+ * authored entry is a missing-copy bug, not a blank/`undefined` row.
+ */
+export const addonCopy = (id) => {
+  const copy = ADDON_COPY[id]
+  if (!copy) {
+    throw new Error(
+      `No hub copy for add-on section '${id}' — add a title and hint to ` +
+        'ADDON_COPY in features/hub/controller.js'
+    )
+  }
+  return copy
 }
 
 const statusTag = (status) => {
@@ -70,12 +94,15 @@ const handler = (request, h) => {
 
   const addonItems = sections
     .filter((s) => s.dynamic && s.gate(scope))
-    .map((s) => ({
-      title: { text: ADDON_TITLE[s.id] },
-      hint: { text: s.pages.map((p) => p.id).join(', ') },
-      href: sectionEntry(s.id, scope),
-      status: statusTag(sectionStatus(s, answers, inScope))
-    }))
+    .map((s) => {
+      const copy = addonCopy(s.id)
+      return {
+        title: { text: copy.title },
+        hint: { text: copy.hint },
+        href: sectionEntry(s.id, scope),
+        status: statusTag(sectionStatus(s, answers, inScope))
+      }
+    })
 
   const quoteItem = scope.readyForQuote
     ? {
