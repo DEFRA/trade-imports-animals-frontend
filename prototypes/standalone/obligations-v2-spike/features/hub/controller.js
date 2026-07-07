@@ -68,7 +68,7 @@ const statusTag = (status) => {
   return { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
 }
 
-const sectionById = (id) => sections.find((s) => s.id === id)
+const sectionById = (id) => sections.find((section) => section.id === id)
 
 const handler = (request, h) => {
   const { answers, scope } = state.get(request, h)
@@ -93,14 +93,14 @@ const handler = (request, h) => {
   }
 
   const addonItems = sections
-    .filter((s) => s.dynamic && s.gate(scope))
-    .map((s) => {
-      const copy = addonCopy(s.id)
+    .filter((section) => section.dynamic && section.gate(scope))
+    .map((section) => {
+      const copy = addonCopy(section.id)
       return {
         title: { text: copy.title },
         hint: { text: copy.hint },
-        href: sectionEntry(s.id, scope),
-        status: statusTag(sectionStatus(s, answers, inScope))
+        href: sectionEntry(section.id, scope),
+        status: statusTag(sectionStatus(section, answers, inScope))
       }
     })
 

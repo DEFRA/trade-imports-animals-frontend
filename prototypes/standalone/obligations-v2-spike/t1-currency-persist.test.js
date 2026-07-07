@@ -111,8 +111,8 @@ describe('T1 — error path still echoes the raw input and commits nothing', () 
         excessAmount: '£1,2x4'
       }
     })
-    expect(view.ctx.values.excessAmount).toBe('£1,2x4')
-    expect(view.ctx.errors).toHaveProperty('excessAmount')
+    expect(view.context.values.excessAmount).toBe('£1,2x4')
+    expect(view.context.errors).toHaveProperty('excessAmount')
     expect(after.excessAmount).toBeUndefined()
   })
 
@@ -120,8 +120,8 @@ describe('T1 — error path still echoes the raw input and commits nothing', () 
     const { after, view } = drive(postHandlerOf(vehicle), {
       payload: { estimatedValue: '£9,00x' }
     })
-    expect(view.ctx.values.estimatedValue).toBe('£9,00x')
-    expect(view.ctx.errors).toHaveProperty('estimatedValue')
+    expect(view.context.values.estimatedValue).toBe('£9,00x')
+    expect(view.context.errors).toHaveProperty('estimatedValue')
     expect(after.estimatedValue).toBeUndefined()
   })
 })

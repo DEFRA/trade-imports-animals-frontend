@@ -38,7 +38,7 @@ const fields = compose(
   postcode('postcode'),
   oneOf(
     'country',
-    COUNTRIES.map((c) => c.value)
+    COUNTRIES.map((country) => country.value)
   ),
   dateParts('dateOfBirth')
 )
@@ -50,9 +50,9 @@ const render = (h, values, errors = {}) =>
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countries: COUNTRIES.map((c) => ({
-      ...c,
-      selected: c.value === values.country
+    countries: COUNTRIES.map((country) => ({
+      ...country,
+      selected: country.value === values.country
     })),
     dob: kit.dateField('dateOfBirth', {
       label: 'Date of birth',

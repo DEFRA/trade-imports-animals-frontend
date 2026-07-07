@@ -69,9 +69,10 @@ export const records = {
    * Prod seam: GET /applications/{id} or GET /applications?userId=.
    */
   load({ journeyId, userId } = {}) {
-    const id = journeyId ?? (userId != null ? byUser.get(userId) : undefined)
-    if (id == null) return undefined
-    const journey = journeys.get(id)
+    const resolvedJourneyId =
+      journeyId ?? (userId != null ? byUser.get(userId) : undefined)
+    if (resolvedJourneyId == null) return undefined
+    const journey = journeys.get(resolvedJourneyId)
     return journey ? structuredClone(journey) : undefined
   },
 

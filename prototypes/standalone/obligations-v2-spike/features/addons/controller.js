@@ -24,7 +24,10 @@ const render = (h, selected) =>
   h.view(view, {
     ...kit.base('Add to your policy', { backLink: hubPath() }),
     heading: 'Add to your policy',
-    options: ADDONS.map((a) => ({ ...a, checked: selected.includes(a.value) }))
+    options: ADDONS.map((addon) => ({
+      ...addon,
+      checked: selected.includes(addon.value)
+    }))
   })
 
 const get = (request, h) => {

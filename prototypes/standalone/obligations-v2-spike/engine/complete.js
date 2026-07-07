@@ -18,7 +18,7 @@ import { applyPredicate } from './predicate.js'
  * mandated — the mandate governs only whether ZERO entries is acceptable. */
 export const entryComplete = (obligation, entry) => {
   const siblings = obligation.item ?? []
-  return siblings.every((sub) => {
+  return siblings.every((subObligation) => {
     // An ITEM-RELATIVE activation (entry 6c) is resolved against THIS entry: a
     // sub gated on a SIBLING is only OWED when that sibling's value satisfies it,
     // so a non-windscreen claim is not blocked by a missing provider. The
@@ -27,17 +27,20 @@ export const entryComplete = (obligation, entry) => {
     // gated on a NON-sibling (a top-level obligation) is not resolvable from
     // inside the entry, so it is left to reconcile/status and treated here as
     // owed (conservative — never falsely complete).
-    const ref = sub.activatedBy?.obligation
+    const referencedObligation = subObligation.activatedBy?.obligation
     if (
-      ref &&
-      siblings.includes(ref) &&
-      !applyPredicate(sub.activatedBy, entry?.[ref.id])
+      referencedObligation &&
+      siblings.includes(referencedObligation) &&
+      !applyPredicate(
+        subObligation.activatedBy,
+        entry?.[referencedObligation.id]
+      )
     ) {
       return true
     }
-    return sub.collection
-      ? collectionComplete(sub, entry?.[sub.id])
-      : !sub.required || isAnswered(entry?.[sub.id])
+    return subObligation.collection
+      ? collectionComplete(subObligation, entry?.[subObligation.id])
+      : !subObligation.required || isAnswered(entry?.[subObligation.id])
   })
 }
 

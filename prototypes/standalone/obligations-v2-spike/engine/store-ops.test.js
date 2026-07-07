@@ -21,7 +21,7 @@ import * as driverClaim from '../features/named-driver/driver-claim.controller.j
  * hardening (a `.../foo/remove` URL must not `splice(NaN)` -> destroy instance 0).
  */
 let journeyId
-const req = () => journeyRequest(journeyId)
+const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) => seedNamedDriver(store, journeyId, answers)
 const answersNow = () => store.get(journeyId).answers
 
@@ -39,14 +39,19 @@ describe('path-addressed store ops at depth', () => {
 
   it('appends a nested claim under a driver, minting the nested index', () => {
     seed({ drivers: [{ driverName: 'Sam' }] })
-    const index = appendEntryAt(req(), stubH(), ['drivers', 0, 'claims'], {
-      claimType: 'accident'
-    })
+    const index = appendEntryAt(
+      buildRequest(),
+      stubH(),
+      ['drivers', 0, 'claims'],
+      {
+        claimType: 'accident'
+      }
+    )
     expect(index).toBe(0)
     expect(answersNow().drivers[0].claims).toEqual([{ claimType: 'accident' }])
     // Sibling driver untouched, input not aliased across the store boundary.
     const secondIndex = appendEntryAt(
-      req(),
+      buildRequest(),
       stubH(),
       ['drivers', 0, 'claims'],
       {
@@ -61,14 +66,14 @@ describe('path-addressed store ops at depth', () => {
     seed({
       drivers: [{ claims: [{ claimType: 'a' }, { claimType: 'b' }] }]
     })
-    removeEntryAt(req(), stubH(), ['drivers', 0, 'claims'], 0)
+    removeEntryAt(buildRequest(), stubH(), ['drivers', 0, 'claims'], 0)
     expect(answersNow().drivers[0].claims).toEqual([{ claimType: 'b' }])
   })
 
   it('IGNORES a non-integer index (a malformed URL must not destroy instance 0)', () => {
     seed({ drivers: [{ driverName: 'FIRST' }, { driverName: 'SECOND' }] })
-    removeEntryAt(req(), stubH(), ['drivers'], Number('foo')) // NaN
-    expect(answersNow().drivers.map((d) => d.driverName)).toEqual([
+    removeEntryAt(buildRequest(), stubH(), ['drivers'], Number('foo')) // NaN
+    expect(answersNow().drivers.map((driver) => driver.driverName)).toEqual([
       'FIRST',
       'SECOND'
     ])
@@ -76,14 +81,16 @@ describe('path-addressed store ops at depth', () => {
 
   it('IGNORES an out-of-range index on remove and update', () => {
     seed({ drivers: [{ driverName: 'only' }] })
-    removeEntryAt(req(), stubH(), ['drivers'], 5)
-    updateEntryAt(req(), stubH(), ['drivers'], 5, { driverName: 'ghost' })
+    removeEntryAt(buildRequest(), stubH(), ['drivers'], 5)
+    updateEntryAt(buildRequest(), stubH(), ['drivers'], 5, {
+      driverName: 'ghost'
+    })
     expect(answersNow().drivers).toEqual([{ driverName: 'only' }])
   })
 
   it('edits a nested entry in place (updateEntryAt — no longer dead code)', () => {
     seed({ drivers: [{ claims: [{ claimType: 'a' }] }] })
-    updateEntryAt(req(), stubH(), ['drivers', 0, 'claims'], 0, {
+    updateEntryAt(buildRequest(), stubH(), ['drivers', 0, 'claims'], 0, {
       claimType: 'windscreen'
     })
     expect(answersNow().drivers[0].claims).toEqual([
@@ -93,8 +100,8 @@ describe('path-addressed store ops at depth', () => {
 
   it('does not leak nested data after remove-then-add (no rehydrate at depth)', () => {
     seed({ drivers: [{ driverName: 'Sam', claims: [{ claimType: 'ghost' }] }] })
-    removeEntryAt(req(), stubH(), ['drivers'], 0)
-    appendEntryAt(req(), stubH(), ['drivers'], { driverName: 'Jo' })
+    removeEntryAt(buildRequest(), stubH(), ['drivers'], 0)
+    appendEntryAt(buildRequest(), stubH(), ['drivers'], { driverName: 'Jo' })
     expect(JSON.stringify(answersNow())).not.toContain('ghost')
     expect(answersNow().drivers[0].claims).toBeUndefined()
   })
@@ -110,7 +117,7 @@ describe('path-addressed store ops at depth', () => {
         { claimType: 'accident', windscreenProvider: 'stale' }
       ]
     })
-    commit(req(), stubH(), {})
+    commit(buildRequest(), stubH(), {})
     const now = answersNow()
     expect('windscreenProvider' in now.claims[1]).toBe(false) // field destroyed
     expect(now.claims[0].windscreenProvider).toBe('autoglass') // sibling intact
@@ -124,8 +131,8 @@ describe('path-addressed store ops at depth', () => {
       payload: { claimType: 'accident', claimAmount: '100' },
       params: { driver: '99' }
     })
-    const res = postAddClaim(request, stubH())
-    expect(res.redirect).toContain('addons/named-driver')
+    const response = postAddClaim(request, stubH())
+    expect(response.redirect).toContain('addons/named-driver')
     // No sparse phantom driver fabricated at index 99.
     expect(answersNow().drivers).toHaveLength(1)
   })

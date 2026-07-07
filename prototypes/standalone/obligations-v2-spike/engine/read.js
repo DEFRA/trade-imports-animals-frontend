@@ -19,8 +19,8 @@ let readyForQuoteFn = () => {
   )
 }
 
-export const configureReadyForQuote = (fn) => {
-  readyForQuoteFn = fn
+export const configureReadyForQuote = (computeReadyForQuote) => {
+  readyForQuoteFn = computeReadyForQuote
 }
 
 /** Read-only scope facts, computed fresh from the answers map. */

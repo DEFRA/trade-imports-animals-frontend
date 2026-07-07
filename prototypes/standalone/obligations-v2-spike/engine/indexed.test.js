@@ -15,7 +15,7 @@ import { dispatchPages } from '../features/index.js'
  * findings 1-4).
  */
 const drivingCoverSection = sections.find(
-  (s) => s.id === 'your-driving-and-cover'
+  (section) => section.id === 'your-driving-and-cover'
 )
 
 describe('indexed obligations are first-class', () => {
@@ -24,7 +24,7 @@ describe('indexed obligations are first-class', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
   it('registry.walkObligations enumerates sub-obligations at every depth', () => {
-    const addresses = [...walkObligations()].map((n) => n.templatePath)
+    const addresses = [...walkObligations()].map((node) => node.templatePath)
     expect(addresses).toContain('claims')
     expect(addresses).toContain('claims.claimType')
     expect(addresses).toContain('claims.claimAmount')
@@ -61,9 +61,13 @@ describe('indexed obligations are first-class', () => {
     })
     // Wiped is path-shaped; the root path deletes the subtree — descendants
     // are deduped away (destroyed with the parent, not listed separately).
-    const wipedKeys = wiped.map((p) => (Array.isArray(p) ? p.join('.') : p))
+    const wipedKeys = wiped.map((path) =>
+      Array.isArray(path) ? path.join('.') : path
+    )
     expect(wipedKeys).toContain('claims')
-    expect(wiped.some((p) => Array.isArray(p) && p.length > 1)).toBe(false)
+    expect(wiped.some((path) => Array.isArray(path) && path.length > 1)).toBe(
+      false
+    )
   })
 
   it('treats a claim with a blank REQUIRED sub-field as incomplete (per-item completeness)', () => {
@@ -122,7 +126,9 @@ describe('indexed obligations are first-class', () => {
 describe('a section whose only obligation is a collection', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
-  const namedDriverSection = sections.find((s) => s.id === 'named-driver')
+  const namedDriverSection = sections.find(
+    (section) => section.id === 'named-driver'
+  )
   const statusFor = (answers) =>
     sectionStatus(namedDriverSection, answers, reconcile(answers).inScope)
 

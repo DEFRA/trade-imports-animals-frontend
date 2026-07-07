@@ -15,7 +15,7 @@ import { RELATIONSHIP_OPTIONS } from './driver-entry.controller.js'
 const view = `${TEMPLATES}/features/named-driver/driver-detail`
 
 const RELATIONSHIP_LABEL = Object.fromEntries(
-  RELATIONSHIP_OPTIONS.map((o) => [o.value, o.text])
+  RELATIONSHIP_OPTIONS.map((option) => [option.value, option.text])
 )
 
 const claimValue = (entry) => {
@@ -35,19 +35,21 @@ const driverIndexOf = (request, answers) => {
 
 const get = (request, h) => {
   const { answers } = state.get(request, h)
-  const d = driverIndexOf(request, answers)
-  if (d === null) return h.redirect(pagePath('addons/named-driver'))
-  const driver = answers.drivers[d]
+  const driverIndex = driverIndexOf(request, answers)
+  if (driverIndex === null) return h.redirect(pagePath('addons/named-driver'))
+  const driver = answers.drivers[driverIndex]
 
   const claimRows = state
-    .collectionView(answers, ['drivers', d, 'claims'])
+    .collectionView(answers, ['drivers', driverIndex, 'claims'])
     .map(({ index, entry }) => ({
       key: { text: `Claim ${index + 1}` },
       value: { text: claimValue(entry) },
       actions: {
         items: [
           {
-            href: pagePath(`addons/named-driver/${d}/claims/${index}/remove`),
+            href: pagePath(
+              `addons/named-driver/${driverIndex}/claims/${index}/remove`
+            ),
             text: 'Remove',
             visuallyHiddenText: `claim ${index + 1}`
           }
@@ -59,7 +61,7 @@ const get = (request, h) => {
     ...kit.base('Named driver', {
       backLink: pagePath('addons/named-driver')
     }),
-    heading: (driver.driverName ?? '').trim() || `Driver ${d + 1}`,
+    heading: (driver.driverName ?? '').trim() || `Driver ${driverIndex + 1}`,
     detailRows: [
       {
         key: { text: 'Full name' },
@@ -74,7 +76,7 @@ const get = (request, h) => {
     ],
     claimRows,
     hasClaims: claimRows.length > 0,
-    addClaimHref: pagePath(`addons/named-driver/${d}/claims/add`),
+    addClaimHref: pagePath(`addons/named-driver/${driverIndex}/claims/add`),
     addClaimText: claimRows.length ? 'Add another claim' : 'Add a claim',
     emptyClaimsText: 'You have not added any claims for this driver yet.'
   })

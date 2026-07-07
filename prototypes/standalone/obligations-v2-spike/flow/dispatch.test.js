@@ -21,7 +21,7 @@ describe('dispatch + flow', () => {
     // Teeth: drop the claims page. `claims` is then owned by nobody, and its
     // item sub-obligations (which derive ownership from it) are uncovered too —
     // coverage descends the tree, so boot must throw naming the uncovered root.
-    const withoutClaims = dispatchPages.filter((p) => p.id !== 'claims')
+    const withoutClaims = dispatchPages.filter((page) => page.id !== 'claims')
     expect(() => buildDispatch(withoutClaims)).toThrow(/collected by no page/)
     expect(() => buildDispatch(withoutClaims)).toThrow(/claims/)
     buildDispatch(dispatchPages) // restore the shared index for later tests

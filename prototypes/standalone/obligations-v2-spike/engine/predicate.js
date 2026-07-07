@@ -41,9 +41,9 @@ export function evalPredicate(
   framePath = [],
   siblings = []
 ) {
-  const ref = activatedBy.obligation
-  const value = siblings.includes(ref)
-    ? valueAt(answers, [...framePath, ref.id])
-    : answers[ref.id]
+  const referencedObligation = activatedBy.obligation
+  const value = siblings.includes(referencedObligation)
+    ? valueAt(answers, [...framePath, referencedObligation.id])
+    : answers[referencedObligation.id]
   return applyPredicate(activatedBy, value)
 }

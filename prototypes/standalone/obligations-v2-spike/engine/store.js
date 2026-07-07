@@ -11,7 +11,7 @@ import { records } from './persistence/records.js'
 export { IN_PROGRESS, SUBMITTED } from './persistence/records.js'
 
 export const store = {
-  create: (opts) => records.create(opts),
+  create: (createOptions) => records.create(createOptions),
   get: (journeyId) => records.load({ journeyId }),
   has: records.has,
   saveAnswers: records.saveAnswers,

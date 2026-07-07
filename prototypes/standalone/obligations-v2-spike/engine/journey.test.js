@@ -17,24 +17,24 @@ import { recordingH } from './test-support.js'
  */
 // A bare session-seam request carrying only cookies (no journeyId binding).
 // Distinct from the journey-pinned `journeyRequest`.
-const reqWith = (cookies) => ({ state: { ...cookies }, headers: {} })
+const buildRequest = (cookies) => ({ state: { ...cookies }, headers: {} })
 
 describe('journey isolation seam', () => {
   beforeEach(() => store.clear())
 
   it('mints a fresh journey and pins it in the cookie when none is present', () => {
     const h = recordingH()
-    const journey = currentJourney(reqWith({}), h)
+    const journey = currentJourney(buildRequest({}), h)
     expect(journey.journeyId).toEqual(expect.any(String))
     expect(journey.status).toBe(IN_PROGRESS)
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 
   it('resumes the same journey within a session (cookie points at a live journey)', () => {
-    const first = currentJourney(reqWith({}), recordingH())
+    const first = currentJourney(buildRequest({}), recordingH())
     store.saveAnswers(first.journeyId, { email: 'a@b.com' })
     const again = currentJourney(
-      reqWith({ [JOURNEY_COOKIE]: first.journeyId }),
+      buildRequest({ [JOURNEY_COOKIE]: first.journeyId }),
       recordingH()
     )
     expect(again.journeyId).toBe(first.journeyId)
@@ -44,7 +44,7 @@ describe('journey isolation seam', () => {
   it('re-mints when the cookie points at a stale/unknown journey', () => {
     const h = recordingH()
     const journey = currentJourney(
-      reqWith({ [JOURNEY_COOKIE]: 'gone-1234' }),
+      buildRequest({ [JOURNEY_COOKIE]: 'gone-1234' }),
       h
     )
     expect(journey.journeyId).not.toBe('gone-1234')
@@ -53,20 +53,20 @@ describe('journey isolation seam', () => {
   })
 
   it('keeps parallel cookies isolated — no cross-talk between two journeys', () => {
-    const a = currentJourney(reqWith({}), recordingH())
-    const b = currentJourney(reqWith({}), recordingH())
-    expect(a.journeyId).not.toBe(b.journeyId)
-    store.saveAnswers(a.journeyId, { who: 'A' })
-    store.saveAnswers(b.journeyId, { who: 'B' })
-    const aResumed = currentJourney(
-      reqWith({ [JOURNEY_COOKIE]: a.journeyId }),
+    const journeyA = currentJourney(buildRequest({}), recordingH())
+    const journeyB = currentJourney(buildRequest({}), recordingH())
+    expect(journeyA.journeyId).not.toBe(journeyB.journeyId)
+    store.saveAnswers(journeyA.journeyId, { who: 'A' })
+    store.saveAnswers(journeyB.journeyId, { who: 'B' })
+    const journeyAResumed = currentJourney(
+      buildRequest({ [JOURNEY_COOKIE]: journeyA.journeyId }),
       recordingH()
     )
-    const bResumed = currentJourney(
-      reqWith({ [JOURNEY_COOKIE]: b.journeyId }),
+    const journeyBResumed = currentJourney(
+      buildRequest({ [JOURNEY_COOKIE]: journeyB.journeyId }),
       recordingH()
     )
-    expect(aResumed.answers).toEqual({ who: 'A' })
-    expect(bResumed.answers).toEqual({ who: 'B' })
+    expect(journeyAResumed.answers).toEqual({ who: 'A' })
+    expect(journeyBResumed.answers).toEqual({ who: 'B' })
   })
 })

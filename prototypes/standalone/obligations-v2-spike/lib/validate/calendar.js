@@ -9,10 +9,10 @@ export const isRealDate = (year, month, day) => {
   if (![year, month, day].every(Number.isInteger)) return false
   if (month < 1 || month > 12) return false
   if (day < 1) return false
-  const d = new Date(Date.UTC(year, month - 1, day))
+  const date = new Date(Date.UTC(year, month - 1, day))
   return (
-    d.getUTCFullYear() === year &&
-    d.getUTCMonth() === month - 1 &&
-    d.getUTCDate() === day
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
   )
 }

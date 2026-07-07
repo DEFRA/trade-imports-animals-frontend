@@ -124,21 +124,21 @@ const answers = {
 const { inScope, wiped } = reconcile(answers)
 
 /** Per-driver, per-claim readout — the nested engine facts made legible. */
-const driversBreakdown = (answers.drivers ?? []).map((driver, d) => ({
+const driversBreakdown = (answers.drivers ?? []).map((driver, driverIndex) => ({
   driver: driver.driverName,
   relationship: driver.relationship,
   claimCount: (driver.claims ?? []).length,
   complete: entryComplete(driversObligation, driver),
-  claims: (driver.claims ?? []).map((claim, c) => {
+  claims: (driver.claims ?? []).map((claim, claimIndex) => {
     const providerPath = pathKey([
       'drivers',
-      d,
+      driverIndex,
       'claims',
-      c,
+      claimIndex,
       'windscreenProvider'
     ])
     return {
-      path: pathKey(['drivers', d, 'claims', c]),
+      path: pathKey(['drivers', driverIndex, 'claims', claimIndex]),
       claimType: claim.claimType,
       claimAmount: claim.claimAmount,
       windscreenProvider: claim.windscreenProvider ?? null,
@@ -150,7 +150,10 @@ const driversBreakdown = (answers.drivers ?? []).map((driver, d) => ({
 
 /** Which non-quote sections are not yet Fulfilled/NA — i.e. what blocks the quote. */
 const whyNotReady = nonQuoteSections
-  .map((s) => ({ section: s.id, status: sectionStatus(s, answers, inScope) }))
+  .map((section) => ({
+    section: section.id,
+    status: sectionStatus(section, answers, inScope)
+  }))
   .filter(({ status }) => status !== FULFILLED && status !== NA)
 
 console.log(
@@ -159,12 +162,17 @@ console.log(
       answers,
       driversBreakdown,
       // Just the drivers subtree of scope, so the nested paths read clearly.
-      nestedScope: [...inScope].filter((k) => k.startsWith('drivers')).sort(),
+      nestedScope: [...inScope]
+        .filter((key) => key.startsWith('drivers'))
+        .sort(),
       wiped,
       readyForQuote: readyForQuote(answers, inScope),
       whyNotReady,
       sectionStatus: Object.fromEntries(
-        sections.map((s) => [s.id, sectionStatus(s, answers, inScope)])
+        sections.map((section) => [
+          section.id,
+          sectionStatus(section, answers, inScope)
+        ])
       ),
       inScope: [...inScope].sort(),
       pageCount: allFlowPages.length

@@ -11,8 +11,8 @@ const gatePasses = (page, scope) => !page.gate || page.gate(scope)
 
 /** First applicable page of a section (its entry point from the hub). */
 export const sectionEntry = (sectionId, scope) => {
-  const section = sections.find((s) => s.id === sectionId)
-  const page = section?.pages.find((p) => gatePasses(p, scope))
+  const section = sections.find((candidate) => candidate.id === sectionId)
+  const page = section?.pages.find((candidate) => gatePasses(candidate, scope))
   return page ? pagePath(page.slug) : hubPath()
 }
 
@@ -20,7 +20,9 @@ export const sectionEntry = (sectionId, scope) => {
 export const nextInSection = (pageId, scope) => {
   const section = sectionOfPage(pageId)
   if (!section) return hubPath()
-  const index = section.pages.findIndex((p) => p.id === pageId)
-  const next = section.pages.slice(index + 1).find((p) => gatePasses(p, scope))
+  const index = section.pages.findIndex((page) => page.id === pageId)
+  const next = section.pages
+    .slice(index + 1)
+    .find((page) => gatePasses(page, scope))
   return next ? pagePath(next.slug) : hubPath()
 }

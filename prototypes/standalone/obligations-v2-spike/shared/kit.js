@@ -19,7 +19,9 @@ export const CYA_SLUG = 'check-answers'
  * feature's whole non-system obligation set.
  */
 export const collectsFrom = (obligations) =>
-  obligations.filter((o) => !o.system).map((o) => o.id)
+  obligations
+    .filter((obligation) => !obligation.system)
+    .map((obligation) => obligation.id)
 
 /** GDS error summary from a `{ fieldId: message }` map (null when clean). */
 export const errorSummary = (fieldErrors) => {
@@ -63,8 +65,8 @@ export const readDate = (payload, name) => ({
 
 /** Assemble govukDateInput args (view-model, rendered by the page template). */
 export const dateField = (name, { label, hint, value = {}, error } = {}) => {
-  const width = (n) =>
-    `govuk-input--width-${n}${error ? ' govuk-input--error' : ''}`
+  const width = (charWidth) =>
+    `govuk-input--width-${charWidth}${error ? ' govuk-input--error' : ''}`
   return {
     id: name,
     namePrefix: name,

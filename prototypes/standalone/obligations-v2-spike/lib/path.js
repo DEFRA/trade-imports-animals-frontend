@@ -15,12 +15,12 @@
  */
 export const pathKey = (path) =>
   path.reduce(
-    (key, seg, i) =>
-      typeof seg === 'number'
-        ? `${key}[${seg}]`
+    (key, segment, i) =>
+      typeof segment === 'number'
+        ? `${key}[${segment}]`
         : i === 0
-          ? seg
-          : `${key}.${seg}`,
+          ? segment
+          : `${key}.${segment}`,
     ''
   )
 
@@ -28,12 +28,15 @@ export const pathKey = (path) =>
 export const parsePath = (key) =>
   key
     .split(/\.|\[|\]/)
-    .filter((seg) => seg !== '')
-    .map((seg) => (/^\d+$/.test(seg) ? Number(seg) : seg))
+    .filter((segment) => segment !== '')
+    .map((segment) => (/^\d+$/.test(segment) ? Number(segment) : segment))
 
 /** Read the value at a path, or undefined if any segment is missing. */
 export const valueAt = (answers, path) =>
-  path.reduce((value, seg) => (value == null ? undefined : value[seg]), answers)
+  path.reduce(
+    (value, segment) => (value == null ? undefined : value[segment]),
+    answers
+  )
 
 /**
  * Return a copy of `answers` with `value` set at `path`, cloning only the spine
@@ -68,7 +71,8 @@ export const deleteAt = (answers, path) => {
 /** True when `prefix` is a STRICT array-segment prefix of `path` (never a
  * string-prefix — so `['claims']` does not match a sibling `claimsExtra`). */
 export const isStrictPathPrefix = (prefix, path) =>
-  prefix.length < path.length && prefix.every((seg, i) => seg === path[i])
+  prefix.length < path.length &&
+  prefix.every((segment, i) => segment === path[i])
 
 /**
  * Order two wipe paths so a `deleteAt` never invalidates a not-yet-applied
@@ -79,14 +83,16 @@ export const isStrictPathPrefix = (prefix, path) =>
  * shared prefix) the deeper path first. Disjoint string branches are
  * independent — their order does not matter.
  */
-export const wipeOrder = (a, b) => {
-  const shared = Math.min(a.length, b.length)
+export const wipeOrder = (pathA, pathB) => {
+  const shared = Math.min(pathA.length, pathB.length)
   for (let i = 0; i < shared; i++) {
-    if (a[i] === b[i]) continue
-    if (typeof a[i] === 'number' && typeof b[i] === 'number') return b[i] - a[i]
+    if (pathA[i] === pathB[i]) continue
+    if (typeof pathA[i] === 'number' && typeof pathB[i] === 'number') {
+      return pathB[i] - pathA[i]
+    }
     return 0
   }
-  return b.length - a.length
+  return pathB.length - pathA.length
 }
 
 /**

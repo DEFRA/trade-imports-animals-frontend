@@ -13,7 +13,7 @@ import { stubH, journeyRequest, seedNamedDriver } from './test-support.js'
  * `makeScope` needs no boot dispatch index; readiness itself is tested elsewhere.
  */
 let journeyId
-const req = () => journeyRequest(journeyId)
+const buildRequest = () => journeyRequest(journeyId)
 
 describe('write-through on every commit', () => {
   beforeEach(() => {
@@ -23,13 +23,13 @@ describe('write-through on every commit', () => {
   })
 
   it('persists to the records port on the first commit, before any submit', () => {
-    commit(req(), stubH(), { email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { email: 'a@b.com' })
     expect(records.load({ journeyId }).answers).toEqual({ email: 'a@b.com' })
   })
 
   it('overwrites the durable record on a second commit', () => {
-    commit(req(), stubH(), { email: 'a@b.com' })
-    commit(req(), stubH(), { fullName: 'Alex' })
+    commit(buildRequest(), stubH(), { email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { fullName: 'Alex' })
     expect(records.load({ journeyId }).answers).toEqual({
       email: 'a@b.com',
       fullName: 'Alex'
@@ -60,7 +60,7 @@ describe('write-through on every collection mutation', () => {
   it('persists an appended entry to the records port, before any submit', () => {
     seed({ drivers: [{ driverName: 'Sam' }] })
     expect(durableDrivers()).toEqual([{ driverName: 'Sam' }])
-    appendEntryAt(req(), stubH(), ['drivers'], { driverName: 'Jo' })
+    appendEntryAt(buildRequest(), stubH(), ['drivers'], { driverName: 'Jo' })
     expect(durableDrivers()).toEqual([
       { driverName: 'Sam' },
       { driverName: 'Jo' }
@@ -73,7 +73,9 @@ describe('write-through on every collection mutation', () => {
       { driverName: 'Sam' },
       { driverName: 'Jo' }
     ])
-    updateEntryAt(req(), stubH(), ['drivers'], 0, { driverName: 'Alex' })
+    updateEntryAt(buildRequest(), stubH(), ['drivers'], 0, {
+      driverName: 'Alex'
+    })
     expect(durableDrivers()).toEqual([
       { driverName: 'Alex' },
       { driverName: 'Jo' }
@@ -86,7 +88,7 @@ describe('write-through on every collection mutation', () => {
       { driverName: 'Sam' },
       { driverName: 'Jo' }
     ])
-    removeEntryAt(req(), stubH(), ['drivers'], 0)
+    removeEntryAt(buildRequest(), stubH(), ['drivers'], 0)
     expect(durableDrivers()).toEqual([{ driverName: 'Jo' }])
   })
 })

@@ -31,7 +31,7 @@ const fields = compose(
   dateParts('driverDob'),
   oneOf(
     'relationship',
-    RELATIONSHIP_OPTIONS.map((o) => o.value)
+    RELATIONSHIP_OPTIONS.map((option) => option.value)
   )
 )
 
@@ -51,9 +51,9 @@ const render = (h, values, errors = {}) =>
       value: values.driverDob ?? {},
       error: errors['driverDob-day']
     }),
-    options: RELATIONSHIP_OPTIONS.map((o) => ({
-      ...o,
-      checked: o.value === values.relationship
+    options: RELATIONSHIP_OPTIONS.map((option) => ({
+      ...option,
+      checked: option.value === values.relationship
     }))
   })
 

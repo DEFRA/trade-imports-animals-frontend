@@ -15,10 +15,10 @@ import { entryComplete } from './complete.js'
  * engine; the list/entry controllers compose all presentation themselves.
  */
 export const collectionView = (answers, collectionPath) => {
-  const template = collectionPath
-    .filter((seg) => typeof seg === 'string')
+  const templatePath = collectionPath
+    .filter((segment) => typeof segment === 'string')
     .join('.')
-  const obligation = registry.byPath(template)
+  const obligation = registry.byPath(templatePath)
   const entries = valueAt(answers, collectionPath) ?? []
   return entries.map((entry, index) => ({
     index,

@@ -29,7 +29,9 @@ const EXTRA_LABEL = {
 
 const get = (request, h) => {
   const { answers } = state.get(request, h)
-  const extras = [].concat(answers.extras ?? []).map((v) => EXTRA_LABEL[v] ?? v)
+  const extras = []
+    .concat(answers.extras ?? [])
+    .map((extra) => EXTRA_LABEL[extra] ?? extra)
   return h.view(view, {
     pageTitle: 'Your quote',
     heading: 'Your quote',

@@ -13,7 +13,7 @@ import { stubH, journeyRequest } from './test-support.js'
  * deterministically — the readiness computation itself is tested in the flow.
  */
 let journeyId
-const req = () => journeyRequest(journeyId)
+const buildRequest = () => journeyRequest(journeyId)
 
 describe('submit is finalise', () => {
   beforeEach(() => {
@@ -23,10 +23,10 @@ describe('submit is finalise', () => {
 
   it('flips to submitted, keeps answers byte-equal, and freezes further writes', () => {
     configureReadyForQuote(() => true)
-    commit(req(), stubH(), { email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { email: 'a@b.com' })
     const committed = records.load({ journeyId }).answers
 
-    const result = submitJourney(req(), stubH())
+    const result = submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(true)
     expect(result.journey.status).toBe(SUBMITTED)
@@ -34,14 +34,14 @@ describe('submit is finalise', () => {
     // finalise writes NO data — answers are exactly the last commit.
     expect(result.journey.answers).toEqual(committed)
     // the record is frozen — a later commit is rejected.
-    expect(() => commit(req(), stubH(), { late: true })).toThrow()
+    expect(() => commit(buildRequest(), stubH(), { late: true })).toThrow()
   })
 
   it('is a no-op when not ready — journey stays in-progress', () => {
     configureReadyForQuote(() => false)
-    commit(req(), stubH(), { email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { email: 'a@b.com' })
 
-    const result = submitJourney(req(), stubH())
+    const result = submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(false)
     expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)

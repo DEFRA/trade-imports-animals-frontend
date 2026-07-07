@@ -37,7 +37,7 @@ const COVER = [
 const fields = compose(
   oneOf(
     'coverType',
-    COVER.map((c) => c.value)
+    COVER.map((cover) => cover.value)
   ),
   currency('excessAmount')
 )
@@ -49,9 +49,9 @@ const render = (h, values, errors = {}) =>
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    coverOptions: COVER.map((c) => ({
-      ...c,
-      checked: c.value === values.coverType
+    coverOptions: COVER.map((cover) => ({
+      ...cover,
+      checked: cover.value === values.coverType
     }))
   })
 

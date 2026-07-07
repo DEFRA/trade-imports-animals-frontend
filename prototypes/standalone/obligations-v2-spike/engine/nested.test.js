@@ -31,7 +31,7 @@ const twoDriversEachWithClaims = {
 
 describe('nested indexed obligations (drivers -> claims)', () => {
   it('walkObligations reaches depth-2 template addresses', () => {
-    const addresses = [...walkObligations()].map((n) => n.templatePath)
+    const addresses = [...walkObligations()].map((node) => node.templatePath)
     expect(addresses).toContain('drivers')
     expect(addresses).toContain('drivers.driverName')
     expect(addresses).toContain('drivers.claims')
@@ -66,7 +66,7 @@ describe('nested indexed obligations (drivers -> claims)', () => {
     })
     // The drivers root subsumes every nested descendant — a single deletable path.
     expect(wiped).toContain('drivers')
-    expect(wiped.filter((k) => k.startsWith('drivers')).length).toBe(1)
+    expect(wiped.filter((key) => key.startsWith('drivers')).length).toBe(1)
   })
 
   it('holds two drivers claims independent (removing one leaves the other)', () => {

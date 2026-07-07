@@ -55,7 +55,7 @@ const all = [
   ...quote.obligations
 ]
 
-const byIdMap = new Map(all.map((o) => [o.id, o]))
+const byIdMap = new Map(all.map((obligation) => [obligation.id, obligation]))
 
 /**
  * The FULL catalogue — every obligation at every depth, structure-only (independent of
@@ -63,14 +63,14 @@ const byIdMap = new Map(all.map((o) => [o.id, o]))
  * the index-free dotted path (`claims`, `claims.claimType`). Recurses `obligation.item`,
  * so a collection whose item contains another collection walks to full depth.
  */
-export function* walkObligations(forest = all, base = []) {
+export function* walkObligations(forest = all, basePath = []) {
   for (const obligation of forest) {
-    const templatePath = base.length
-      ? `${base.join('.')}.${obligation.id}`
+    const templatePath = basePath.length
+      ? `${basePath.join('.')}.${obligation.id}`
       : obligation.id
     yield { templatePath, obligation }
     if (obligation.item) {
-      yield* walkObligations(obligation.item, [...base, obligation.id])
+      yield* walkObligations(obligation.item, [...basePath, obligation.id])
     }
   }
 }
@@ -114,7 +114,7 @@ export function* walk(
 }
 
 const byPathMap = new Map(
-  [...walkObligations()].map((n) => [n.templatePath, n.obligation])
+  [...walkObligations()].map((node) => [node.templatePath, node.obligation])
 )
 
 export const registry = {

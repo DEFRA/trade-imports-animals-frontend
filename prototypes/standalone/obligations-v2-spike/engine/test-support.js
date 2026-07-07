@@ -13,14 +13,14 @@ import { JOURNEY_COOKIE } from './journey.js'
  * The Hapi response toolkit (`h`) stub. `view` records the last render into
  * `captured.view` AND returns it, so a controller test can either ignore the
  * render (the engine specs) or assert on the rendered context (the hub-copy and
- * currency regressions read `captured.view.ctx`). `redirect` echoes its target;
- * `state` is a no-op cookie write.
+ * currency regressions read `captured.view.context`). `redirect` echoes its
+ * target; `state` is a no-op cookie write.
  */
 export const stubH = () => {
   const captured = {}
   return {
-    view: (view, ctx) => {
-      captured.view = { view, ctx }
+    view: (view, context) => {
+      captured.view = { view, context }
       return captured.view
     },
     redirect: (to) => ({ redirect: to }),
@@ -101,14 +101,14 @@ export const driveHandler = (
 }
 
 /** The single POST handler a feature module declares. */
-export const postHandlerOf = (mod) =>
-  mod.routes.find((route) => route.method === 'POST').handler
+export const postHandlerOf = (featureModule) =>
+  featureModule.routes.find((route) => route.method === 'POST').handler
 
 /**
  * The POST handler whose path ends with `pathSuffix` — for feature modules that
  * expose more than one POST route (an add/remove sub-hub).
  */
-export const postHandlerEndingWith = (mod, pathSuffix) =>
-  mod.routes.find(
+export const postHandlerEndingWith = (featureModule, pathSuffix) =>
+  featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
   ).handler

@@ -51,7 +51,7 @@ const dateText = (value) =>
 const currency = (value) => (isBlank(value) ? NOT_PROVIDED : `£${value}`)
 
 const buildRows = (answers) => {
-  const val = (id) => answers[id]
+  const answerOf = (id) => answers[id]
   const row = (key, value, obligationId) => ({
     key: { text: key },
     value: { text: isBlank(value) ? NOT_PROVIDED : value },
@@ -67,22 +67,30 @@ const buildRows = (answers) => {
   })
 
   const vehicle = ['make', 'model', 'year']
-    .map(val)
-    .filter((v) => !isBlank(v))
+    .map(answerOf)
+    .filter((part) => !isBlank(part))
     .join(' ')
   const rows = [
-    row('Email', val('email'), 'email'),
-    row('Name', val('fullName'), 'fullName'),
-    row('Preferred name', val('preferredName'), 'preferredName'),
-    row('Telephone', val('phone'), 'phone'),
-    row('Postcode', val('postcode'), 'postcode'),
-    row('Country', COUNTRY_LABEL[val('country')] ?? '', 'country'),
-    row('Date of birth', dateText(val('dateOfBirth')), 'dateOfBirth'),
-    row('Registration', val('registration'), 'registration'),
+    row('Email', answerOf('email'), 'email'),
+    row('Name', answerOf('fullName'), 'fullName'),
+    row('Preferred name', answerOf('preferredName'), 'preferredName'),
+    row('Telephone', answerOf('phone'), 'phone'),
+    row('Postcode', answerOf('postcode'), 'postcode'),
+    row('Country', COUNTRY_LABEL[answerOf('country')] ?? '', 'country'),
+    row('Date of birth', dateText(answerOf('dateOfBirth')), 'dateOfBirth'),
+    row('Registration', answerOf('registration'), 'registration'),
     row('Vehicle', vehicle, 'make'),
-    row('Estimated value', currency(val('estimatedValue')), 'estimatedValue'),
-    row('Years no claims', val('yearsNoClaims'), 'yearsNoClaims'),
-    row('Recent claims', val('hadClaims') === 'yes' ? 'Yes' : 'No', 'hadClaims')
+    row(
+      'Estimated value',
+      currency(answerOf('estimatedValue')),
+      'estimatedValue'
+    ),
+    row('Years no claims', answerOf('yearsNoClaims'), 'yearsNoClaims'),
+    row(
+      'Recent claims',
+      answerOf('hadClaims') === 'yes' ? 'Yes' : 'No',
+      'hadClaims'
+    )
   ]
 
   // Claim N rows — bespoke composition over the loop library's instance facts,
@@ -90,7 +98,9 @@ const buildRows = (answers) => {
   // the dispatch seam (the page that owns `claims`) rather than a hardcoded slug.
   const claimsChangeHref = pagePath(slugOfPage(pageOfObligation('claims')))
   const claims =
-    val('hadClaims') === 'yes' ? state.collectionView(answers, ['claims']) : []
+    answerOf('hadClaims') === 'yes'
+      ? state.collectionView(answers, ['claims'])
+      : []
   claims.forEach(({ index, entry }) => {
     const label = CLAIM_TYPE_LABEL[entry.claimType] ?? NOT_PROVIDED
     const amount = (entry.claimAmount ?? '').toString().trim()
@@ -116,13 +126,19 @@ const buildRows = (answers) => {
   })
 
   const excess =
-    val('voluntaryExcess') === 'yes' ? `£${val('excessAmount') || '0'}` : 'None'
-  const extras = [].concat(val('extras') ?? []).map((v) => EXTRA_LABEL[v] ?? v)
-  const addons = [].concat(val('addons') ?? []).map((v) => ADDON_LABEL[v] ?? v)
+    answerOf('voluntaryExcess') === 'yes'
+      ? `£${answerOf('excessAmount') || '0'}`
+      : 'None'
+  const extras = []
+    .concat(answerOf('extras') ?? [])
+    .map((extra) => EXTRA_LABEL[extra] ?? extra)
+  const addons = []
+    .concat(answerOf('addons') ?? [])
+    .map((addon) => ADDON_LABEL[addon] ?? addon)
 
   rows.push(
-    row('Penalty points', val('penaltyPoints') || '0', 'penaltyPoints'),
-    row('Cover', COVER_LABEL[val('coverType')] ?? '', 'coverType'),
+    row('Penalty points', answerOf('penaltyPoints') || '0', 'penaltyPoints'),
+    row('Cover', COVER_LABEL[answerOf('coverType')] ?? '', 'coverType'),
     row('Voluntary excess', excess, 'voluntaryExcess'),
     row(
       'Optional extras',

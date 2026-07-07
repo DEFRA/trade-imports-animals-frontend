@@ -70,7 +70,13 @@ const ADDONS = [
 ]
 
 const subsetsOf = (items) =>
-  items.reduce((acc, item) => [...acc, ...acc.map((s) => [...s, item])], [[]])
+  items.reduce(
+    (subsets, item) => [
+      ...subsets,
+      ...subsets.map((subset) => [...subset, item])
+    ],
+    [[]]
+  )
 
 /**
  * Every combination of the scope-controlling TOP-LEVEL answers. Non-activating
@@ -120,7 +126,7 @@ function scaffoldFor(templatePath) {
   let frame = scaffold // where representative entries + sibling gates are written
   let inItem = false // true once we have descended into a collection item
   segments.forEach((id, i) => {
-    const obligation = forest.find((o) => o.id === id)
+    const obligation = forest.find((candidate) => candidate.id === id)
     const gate = obligation.activatedBy
     // An item-conditional gate references a SIBLING in THIS item frame — satisfy it.
     if (inItem && gate && forest.includes(gate.obligation)) {

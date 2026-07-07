@@ -19,7 +19,7 @@ export const CLAIM_TYPE_OPTIONS = [
   { value: 'other', text: 'Something else' }
 ]
 export const CLAIM_TYPE_LABEL = Object.fromEntries(
-  CLAIM_TYPE_OPTIONS.map((o) => [o.value, o.text])
+  CLAIM_TYPE_OPTIONS.map((option) => [option.value, option.text])
 )
 
 /** The three approved windscreen repairers — asked ONLY for a windscreen claim
@@ -31,7 +31,7 @@ export const WINDSCREEN_PROVIDER_OPTIONS = [
   { value: 'nationwide', text: 'Nationwide Windscreen Services' }
 ]
 export const WINDSCREEN_PROVIDER_LABEL = Object.fromEntries(
-  WINDSCREEN_PROVIDER_OPTIONS.map((o) => [o.value, o.text])
+  WINDSCREEN_PROVIDER_OPTIONS.map((option) => [option.value, option.text])
 )
 
 const view = `${TEMPLATES}/features/claims/entry`
@@ -39,12 +39,12 @@ const view = `${TEMPLATES}/features/claims/entry`
 const fields = compose(
   oneOf(
     'claimType',
-    CLAIM_TYPE_OPTIONS.map((o) => o.value)
+    CLAIM_TYPE_OPTIONS.map((option) => option.value)
   ),
   currency('claimAmount'),
   oneOf(
     'windscreenProvider',
-    WINDSCREEN_PROVIDER_OPTIONS.map((o) => o.value)
+    WINDSCREEN_PROVIDER_OPTIONS.map((option) => option.value)
   )
 )
 
@@ -55,9 +55,9 @@ export const claimEntryModel = (values, errors = {}) => ({
   heading: 'Add a claim',
   buttonText: 'Add claim',
   values,
-  windscreenOptions: WINDSCREEN_PROVIDER_OPTIONS.map((o) => ({
-    ...o,
-    checked: o.value === values.windscreenProvider
+  windscreenOptions: WINDSCREEN_PROVIDER_OPTIONS.map((option) => ({
+    ...option,
+    checked: option.value === values.windscreenProvider
   })),
   errors,
   errorSummary: kit.errorSummary(errors)

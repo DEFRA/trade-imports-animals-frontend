@@ -22,7 +22,7 @@ import { quoteSummaryPage } from '../features/quote/page.js'
  * the hub renders one task per section.
  *
  * `gate` is a PURE read of the scope facts the state layer already
- * computed (`s.inScope` / `s.readyForQuote`) — the flow never re-derives
+ * computed (`scope.inScope` / `scope.readyForQuote`) — the flow never re-derives
  * scope or mutates data.
  */
 export const sections = [
@@ -38,7 +38,7 @@ export const sections = [
     id: 'your-driving-and-cover',
     pages: [
       { ...drivingHistoryPage },
-      { ...claimsPage, gate: (s) => s.inScope.has('claims') },
+      { ...claimsPage, gate: (scope) => scope.inScope.has('claims') },
       { ...coverTypePage },
       { ...optionalExtrasPage }
     ]
@@ -50,24 +50,24 @@ export const sections = [
   {
     id: 'named-driver',
     dynamic: true,
-    gate: (s) => s.inScope.has('drivers'),
+    gate: (scope) => scope.inScope.has('drivers'),
     pages: [{ ...driversPage }]
   },
   {
     id: 'modifications',
     dynamic: true,
-    gate: (s) => s.inScope.has('modDescription'),
+    gate: (scope) => scope.inScope.has('modDescription'),
     pages: [{ ...modificationsDescribePage }, { ...modificationsValuePage }]
   },
   {
     id: 'protected-ncd',
     dynamic: true,
-    gate: (s) => s.inScope.has('ncdYears'),
+    gate: (scope) => scope.inScope.has('ncdYears'),
     pages: [{ ...protectedNcdYearsPage }]
   },
   {
     id: 'get-your-quote',
-    gate: (s) => s.readyForQuote,
+    gate: (scope) => scope.readyForQuote,
     pages: [{ ...quoteSummaryPage }]
   }
 ]

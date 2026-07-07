@@ -36,8 +36,8 @@ export const startJourney = (request, h) => {
 
 /** Resume the active journey while it exists, else mint a fresh one. */
 export const currentJourney = (request, h) => {
-  const id = session.activeJourneyId(request)
-  if (id && records.has(id)) return records.load({ journeyId: id })
+  const journeyId = session.activeJourneyId(request)
+  if (journeyId && records.has(journeyId)) return records.load({ journeyId })
   return startJourney(request, h)
 }
 

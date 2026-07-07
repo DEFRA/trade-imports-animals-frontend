@@ -33,9 +33,13 @@ const hubPath = pagePath('addons/named-driver')
  * out-of-range URL redirects to the hub instead of writing through the generic
  * store primitive (which would otherwise fabricate a phantom driver on append). */
 const validDriver = (request, answers) => {
-  const d = Number(request.params.driver)
+  const driverIndex = Number(request.params.driver)
   const drivers = answers.drivers ?? []
-  return Number.isInteger(d) && d >= 0 && d < drivers.length ? d : null
+  return Number.isInteger(driverIndex) &&
+    driverIndex >= 0 &&
+    driverIndex < drivers.length
+    ? driverIndex
+    : null
 }
 
 const render = (request, h, values, errors = {}) =>

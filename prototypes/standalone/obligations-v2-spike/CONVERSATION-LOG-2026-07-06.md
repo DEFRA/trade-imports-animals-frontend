@@ -447,3 +447,21 @@ Workflow-orchestrated, parent-shell verification).
   sites themselves (they ARE the source), flow gate keys (T11 territory), prose/test-name mentions.
   Skeptic (equivalence / cycles / live-vs-snapshot / misses): no objections. **Byte-green: unit 154
   (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**
+
+- [x] **T6 — de-abbreviation (keep `h`). DONE — byte-green, skeptic finding remediated.**
+  _Landed as:_ implement → 2-skeptic verify workflow (Opus), then an orchestrator remediation pass
+  on the completeness skeptic's REFUTED verdict. The pass standardised one vocabulary across 39
+  files (s→scope/section, p→page, o→obligation, sub/ref→subObligation/referencedObligation,
+  seg→segment, opts→createOptions, fn→computeReadyForQuote, template→templatePath, base→basePath,
+  a/b→journeyA/journeyB, req→buildRequest, d/c→driverIndex/claimIndex, and the full vocabulary
+  table in the workflow report). **Export renames: NONE** — `state.get` deliberately kept (the
+  `state.` namespace supplies intent; `state.getJourneyState` would stutter across ~24 call
+  sites); barrel untouched. Skeptic findings fixed by the orchestrator: `ctx`→`context` in
+  `test-support.js` + both consumer specs (real cross-file miss); `acc`→`subsets` in
+  `reachability.subsetsOf` (self-created drift); `navigation.js` self-shadowing callbacks →
+  `candidate` (readability smell the rename introduced). Recorded declines: `h` (binding),
+  loop-index `i` (idiom, now declared), `dob` view-model key (njk-template-coupled), local `base`
+  label strings (real word), `stubH`/`recordingH` (h-idiom derivatives), `acc`-family accumulators
+  elsewhere already named. Rename-purity skeptic: clean (no data-key/error-string leaks; dateParts
+  arg order verified). **Byte-green: unit 154 (22 files) / E2E 71, parent-shell verified;
+  whole-spike eslint + prettier clean.**

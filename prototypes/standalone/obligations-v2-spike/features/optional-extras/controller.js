@@ -19,7 +19,10 @@ const render = (h, selected) =>
   h.view(view, {
     ...kit.base('Optional extras', { backLink: hubPath() }),
     heading: 'Optional extras',
-    options: EXTRAS.map((e) => ({ ...e, checked: selected.includes(e.value) }))
+    options: EXTRAS.map((extra) => ({
+      ...extra,
+      checked: selected.includes(extra.value)
+    }))
   })
 
 const get = (request, h) => {

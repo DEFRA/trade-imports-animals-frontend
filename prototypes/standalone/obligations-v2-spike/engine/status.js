@@ -23,8 +23,8 @@ export const IN_PROGRESS = 'in-progress'
 export const FULFILLED = 'fulfilled'
 
 const isRequired = (id) => {
-  const o = registry.byId(id)
-  return Boolean(o?.required || o?.requiredAtLeastOne)
+  const obligation = registry.byId(id)
+  return Boolean(obligation?.required || obligation?.requiredAtLeastOne)
 }
 
 /** "Has any progress been made on this obligation?" — the In Progress vs Not

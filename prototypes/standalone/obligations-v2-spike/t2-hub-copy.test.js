@@ -26,7 +26,7 @@ const renderHub = (seed = {}) => {
   store.saveAnswers(journey.journeyId, seed)
   const h = stubH()
   hubHandler(journeyRequest(journey.journeyId), h)
-  return h.captured.view.ctx.items
+  return h.captured.view.context.items
 }
 
 /** The rendered row whose title matches `title`. */

@@ -29,7 +29,10 @@ const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
 
 /** Compose several single-field validators into one page schema. */
 export const compose = (...schemas) =>
-  schemas.reduce((acc, s) => acc.concat(s), Joi.object({}).unknown(true))
+  schemas.reduce(
+    (combined, schema) => combined.concat(schema),
+    Joi.object({}).unknown(true)
+  )
 
 /** The sole save-blocking primitive: a non-blank trimmed string. */
 export const requiredText = (name, message) =>
@@ -113,8 +116,8 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       .allow('')
       .custom((raw, helpers) => {
         if (!/^-?\d+$/.test(raw)) return helpers.error('number.base')
-        const n = Number(raw)
-        if ((min != null && n < min) || (max != null && n > max)) {
+        const parsed = Number(raw)
+        if ((min != null && parsed < min) || (max != null && parsed > max)) {
           return helpers.error('number.range')
         }
         return raw
@@ -156,14 +159,16 @@ export const dateParts = (name, message = 'Enter a valid date') => {
     [dayKey]: Joi.any()
       .custom((day, helpers) => {
         const siblings = helpers.state.ancestors[0] ?? {}
-        const parts = [day, siblings[monthKey], siblings[yearKey]].map((v) =>
-          String(v ?? '').trim()
+        const parts = [day, siblings[monthKey], siblings[yearKey]].map((part) =>
+          String(part ?? '').trim()
         )
-        const filled = parts.filter((v) => v !== '')
+        const filled = parts.filter((part) => part !== '')
         if (filled.length === 0) return day // optional — all blank passes
         if (filled.length < 3) return helpers.error('any.invalid')
-        const [d, m, y] = parts.map(Number)
-        if (!isRealDate(y, m, d)) return helpers.error('any.invalid')
+        const [parsedDay, parsedMonth, parsedYear] = parts.map(Number)
+        if (!isRealDate(parsedYear, parsedMonth, parsedDay)) {
+          return helpers.error('any.invalid')
+        }
         return day
       })
       .messages({ 'any.invalid': message }),

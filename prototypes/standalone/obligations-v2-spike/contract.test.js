@@ -55,14 +55,14 @@ const drive = driveHandler
 /** Obligation ids this handler NEWLY answered (across the whole model). */
 const committedIds = ({ before, after }) =>
   registry.all
-    .map((o) => o.id)
+    .map((obligation) => obligation.id)
     .filter((id) => isAnswered(after[id]) && !isAnswered(before[id]))
 
 /** `collects` minus the ids that are never committed by contract. */
 const committableCollects = (collects) =>
   collects.filter((id) => {
-    const o = registry.byId(id)
-    return !o.renderOnly && !o.system
+    const obligation = registry.byId(id)
+    return !obligation.renderOnly && !obligation.system
   })
 
 // One case per collecting page. Payloads are VALID (an invalid payload re-renders
