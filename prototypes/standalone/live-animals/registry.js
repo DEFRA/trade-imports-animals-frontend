@@ -1,3 +1,4 @@
+import * as origin from './features/origin/obligations.js'
 import * as email from './features/email/obligations.js'
 import * as aboutYou from './features/about-you/obligations.js'
 import * as vehicle from './features/your-vehicle/obligations.js'
@@ -13,6 +14,7 @@ import * as quote from './features/quote/obligations.js'
 import { pathKey, valueAt } from './lib/path.js'
 
 const all = [
+  ...origin.obligations,
   ...email.obligations,
   ...aboutYou.obligations,
   ...vehicle.obligations,

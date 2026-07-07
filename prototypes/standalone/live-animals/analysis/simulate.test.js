@@ -53,6 +53,8 @@ describe('#simulateJourney', () => {
     expect(notReady).not.toContain('quote-summary')
 
     const ready = simulateJourney({
+      countryOfOrigin: 'FR',
+      regionOfOriginCodeRequirement: 'no',
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',

@@ -41,15 +41,18 @@ const subsetsOf = (items) =>
  * added here or the prover silently under-enumerates.
  */
 export const enumerateScopeStates = () =>
-  ['no', 'yes'].flatMap((hadClaims) =>
-    ['no', 'yes'].flatMap((voluntaryExcess) =>
-      ['', 'comprehensive'].flatMap((coverType) =>
-        subsetsOf(ADDONS).map((addons) => ({
-          hadClaims,
-          voluntaryExcess,
-          coverType,
-          addons
-        }))
+  ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
+    ['no', 'yes'].flatMap((hadClaims) =>
+      ['no', 'yes'].flatMap((voluntaryExcess) =>
+        ['', 'comprehensive'].flatMap((coverType) =>
+          subsetsOf(ADDONS).map((addons) => ({
+            regionOfOriginCodeRequirement,
+            hadClaims,
+            voluntaryExcess,
+            coverType,
+            addons
+          }))
+        )
       )
     )
   )

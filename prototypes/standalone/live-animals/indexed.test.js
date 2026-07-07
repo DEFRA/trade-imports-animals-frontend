@@ -63,6 +63,8 @@ describe('indexed obligations are first-class', () => {
 
   it('Should treat a claim with a blank required sub-field as incomplete (per-item completeness)', () => {
     const complete = {
+      countryOfOrigin: 'FR',
+      regionOfOriginCodeRequirement: 'no',
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

@@ -13,6 +13,7 @@ import {
 import { isAnswered } from './lib/answered.js'
 import { dispatchPages } from './features/index.js'
 
+import * as origin from './features/origin/controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -53,6 +54,18 @@ const committableCollects = (collects) =>
 // every committable id is filled so the declared-but-never-written direction
 // is genuinely exercised.
 const cases = [
+  {
+    id: 'origin',
+    collects: origin.meta.collects,
+    handler: postHandlerOf(origin),
+    payload: {
+      countryOfOrigin: 'FR',
+      // 'yes' keeps regionOfOriginCode in scope on the same commit
+      regionOfOriginCodeRequirement: 'yes',
+      regionOfOriginCode: 'FR-75',
+      internalReferenceNumber: 'Imports456GB'
+    }
+  },
   {
     id: 'email',
     collects: email.meta.collects,

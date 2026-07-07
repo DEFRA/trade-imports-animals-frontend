@@ -10,6 +10,11 @@ import { open } from '../../shared/kit.js'
 const view = `${TEMPLATES}/features/hub/template`
 
 const GROUP_ROWS = [
+  {
+    id: 'origin',
+    title: 'Origin of the import',
+    hint: 'Country of origin, region of origin code, your internal reference'
+  },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',

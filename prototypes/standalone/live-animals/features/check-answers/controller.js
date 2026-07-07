@@ -8,6 +8,7 @@ import {
   CLAIM_TYPE_LABEL,
   WINDSCREEN_PROVIDER_LABEL
 } from '../claims/entry.controller.js'
+import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -29,6 +30,7 @@ const EXTRA_LABEL = {
   legal: 'Motor legal protection',
   windscreen: 'Windscreen cover'
 }
+const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 const ADDON_LABEL = {
   'named-driver': 'Add a named driver',
   modifications: 'Declare vehicle modifications',
@@ -63,6 +65,30 @@ const buildRows = (answers) => {
     .filter((part) => !isBlank(part))
     .join(' ')
   const rows = [
+    row(
+      'Country of origin',
+      COUNTRY_OF_ORIGIN_LABEL[answerOf('countryOfOrigin')] ?? '',
+      'countryOfOrigin'
+    ),
+    row(
+      'Region of origin code required',
+      YES_NO_LABEL[answerOf('regionOfOriginCodeRequirement')] ?? '',
+      'regionOfOriginCodeRequirement'
+    ),
+    ...(answerOf('regionOfOriginCodeRequirement') === 'yes'
+      ? [
+          row(
+            'Region of origin code',
+            answerOf('regionOfOriginCode'),
+            'regionOfOriginCode'
+          )
+        ]
+      : []),
+    row(
+      'Internal reference number',
+      answerOf('internalReferenceNumber'),
+      'internalReferenceNumber'
+    ),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

@@ -1,1 +1,9 @@
-{ "schema_version": 1, "values": {} }
+{
+  "schema_version": 1,
+  "values": {
+    "countryOfOrigin": "FR",
+    "regionOfOriginCodeRequirement": "yes",
+    "regionOfOriginCode": "FR-75",
+    "internalReferenceNumber": "Imports456GB"
+  }
+}

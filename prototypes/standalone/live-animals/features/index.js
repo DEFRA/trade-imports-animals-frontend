@@ -1,6 +1,7 @@
 import * as dashboard from './dashboard/controller.js'
 import * as start from './start/controller.js'
 import * as hub from './hub/controller.js'
+import * as origin from './origin/controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -24,6 +25,7 @@ import * as resume from './resume/controller.js'
 
 /** The pages whose page-side `collects` build the obligation->page index. */
 export const dispatchPages = [
+  origin.meta,
   email.meta,
   aboutYou.meta,
   vehicle.meta,
@@ -42,6 +44,7 @@ export const allRoutes = [
   ...dashboard.routes,
   ...start.routes,
   ...hub.routes,
+  ...origin.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,

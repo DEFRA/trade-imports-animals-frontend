@@ -88,6 +88,8 @@ describe('item-relative completeness gates the quote', () => {
 
   it('Should lock readyForQuote for a windscreen claim missing its provider', () => {
     const base = {
+      countryOfOrigin: 'FR',
+      regionOfOriginCodeRequirement: 'no',
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

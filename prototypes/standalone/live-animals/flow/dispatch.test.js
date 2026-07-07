@@ -50,6 +50,8 @@ describe('dispatch + flow', () => {
 
   it('Should unlock the quote only once every other section is complete', () => {
     const complete = {
+      countryOfOrigin: 'FR',
+      regionOfOriginCodeRequirement: 'no',
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',
