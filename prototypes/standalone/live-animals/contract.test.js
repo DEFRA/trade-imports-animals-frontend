@@ -16,6 +16,7 @@ import { dispatchPages } from './features/index.js'
 import * as origin from './features/origin/controller.js'
 import * as commoditiesList from './features/commodities/list.controller.js'
 import * as commoditiesSelect from './features/commodities/select.controller.js'
+import * as importReason from './features/import-reason/controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -67,6 +68,12 @@ const cases = [
       regionOfOriginCode: 'FR-75',
       internalReferenceNumber: 'Imports456GB'
     }
+  },
+  {
+    id: 'import-reason',
+    collects: importReason.meta.collects,
+    handler: postHandlerOf(importReason),
+    payload: { reasonForImport: 'internal-market' }
   },
   {
     id: 'email',

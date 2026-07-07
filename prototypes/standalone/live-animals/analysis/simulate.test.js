@@ -55,6 +55,7 @@ describe('#simulateJourney', () => {
     const ready = simulateJourney({
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
+      reasonForImport: 'internal-market',
       commodityLines: [
         {
           commoditySelection: '0102 - Cattle',

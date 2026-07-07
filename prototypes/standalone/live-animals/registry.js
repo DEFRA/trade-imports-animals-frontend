@@ -1,5 +1,6 @@
 import * as origin from './features/origin/obligations.js'
 import * as commodities from './features/commodities/obligations.js'
+import * as importReason from './features/import-reason/obligations.js'
 import * as email from './features/email/obligations.js'
 import * as aboutYou from './features/about-you/obligations.js'
 import * as vehicle from './features/your-vehicle/obligations.js'
@@ -17,6 +18,7 @@ import { pathKey, valueAt } from './lib/path.js'
 const all = [
   ...origin.obligations,
   ...commodities.obligations,
+  ...importReason.obligations,
   ...email.obligations,
   ...aboutYou.obligations,
   ...vehicle.obligations,

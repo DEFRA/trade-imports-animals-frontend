@@ -10,6 +10,7 @@ import {
 } from '../claims/entry.controller.js'
 import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
 import { commodityLineValue } from '../commodities/list.controller.js'
+import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -107,6 +108,11 @@ const buildRows = (answers) => {
       'internalReferenceNumber'
     ),
     ...commodityRows(answers),
+    row(
+      'Reason for import',
+      REASON_FOR_IMPORT_LABEL[answerOf('reasonForImport')] ?? '',
+      'reasonForImport'
+    ),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

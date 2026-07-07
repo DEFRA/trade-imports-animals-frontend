@@ -150,4 +150,38 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(commoditiesRow).toContainText('Completed')
   })
+
+  test('import reason — blank saves without error (enforcedAt=submit), then the happy path completes the task', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'What is the main reason for importing the animals?'
+      })
+    ).toBeVisible()
+
+    // reasonForImport is enforcedAt=submit — a blank save is not an error;
+    // the one-page section returns to the hub with the task still open.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    const consignmentRow = page.locator('.govuk-task-list__item', {
+      hasText: 'About the consignment'
+    })
+    await expect(consignmentRow).not.toContainText('Completed')
+
+    // Happy path from the shared fixture.
+    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('radio', { name: 'Internal market' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(consignmentRow).toContainText('Completed')
+  })
 })

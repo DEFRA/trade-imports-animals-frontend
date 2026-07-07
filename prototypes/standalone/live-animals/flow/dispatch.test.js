@@ -52,6 +52,7 @@ describe('dispatch + flow', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
+      reasonForImport: 'internal-market',
       commodityLines: [
         {
           commoditySelection: '0102 - Cattle',
