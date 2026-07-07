@@ -381,7 +381,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Completed')
   })
 
-  test('transport — a partial arrival date blocks the save; the port, date, travel details and transporter type complete the task', async ({
+  test('transport — a partial arrival date blocks the save; the port, date, travel details, transporter type and commercial transporter complete the task', async ({
     page
   }) => {
     await startNotification(page)
@@ -443,7 +443,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .fill(values.transportDocumentReference)
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    // Three-page section: saving walks on to the transporter-type page.
+    // Saving walks on to the transporter-type page.
     await expect(
       page.getByRole('heading', {
         name: 'What type of transporter will move the animals?'
@@ -451,6 +451,18 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page
       .getByRole('radio', { name: values.transporterType, exact: true })
+      .check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Commercial transporter puts the select page in scope, so the section
+    // walks on to it; selecting a transporter copies its details (c-020).
+    await expect(
+      page.getByRole('heading', {
+        name: 'Search for an approved commercial transporter'
+      })
+    ).toBeVisible()
+    await page
+      .getByRole('radio', { name: values.commercialTransporter.name })
       .check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
@@ -520,6 +532,75 @@ test.describe('live-animals (page-owned spine)', () => {
     await openTransporters()
     await expect(privateType).toBeChecked()
     await expect(commercial).not.toBeChecked()
+  })
+
+  test('commercial transporter — owed only for the commercial type; changing the type wipes a saved transporter', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // Every field on the two earlier pages is submit-enforced, so blank
+    // saves walk straight through to the transporter-type page.
+    const openTransporters = async () => {
+      await page.getByRole('link', { name: 'Transport' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Port of entry' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'How the animals will travel' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', {
+          name: 'What type of transporter will move the animals?'
+        })
+      ).toBeVisible()
+    }
+    const selectHeading = page.getByRole('heading', {
+      name: 'Search for an approved commercial transporter'
+    })
+
+    // Commercial transporter: the select page opens; choosing a transporter
+    // copies its name, address and approval number into the answer (c-020).
+    await openTransporters()
+    await page.getByRole('radio', { name: 'Commercial transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(selectHeading).toBeVisible()
+    await page
+      .getByRole('radio', { name: values.commercialTransporter.name })
+      .check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+
+    // The copy persists: walking back in re-derives the checked option from
+    // the copied name.
+    await openTransporters()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(selectHeading).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: values.commercialTransporter.name })
+    ).toBeChecked()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Private transporter: the select page is no longer owed — saving the
+    // type returns straight to the hub, skipping it.
+    await openTransporters()
+    await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+
+    // Back to commercial: leaving scope wiped the saved transporter — no
+    // radio is pre-selected on the select page.
+    await openTransporters()
+    await page.getByRole('radio', { name: 'Commercial transporter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(selectHeading).toBeVisible()
+    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
   })
 
   test('transport details — transited countries revealed only for rail or road; changing the means wipes saved countries', async ({

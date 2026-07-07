@@ -188,6 +188,17 @@ const buildRows = (answers) => {
       : []),
     // The stored type IS the V4 label (no code lookup needed).
     row('Transporter type', answerOf('transporterType'), 'transporterType'),
+    // The stored transporter is a copied { name, address, approvalNumber }
+    // object (c-020), owed only on the commercial branch of the type split.
+    ...(answerOf('transporterType') === 'Commercial transporter'
+      ? [
+          row(
+            'Commercial transporter',
+            answerOf('commercialTransporter')?.name,
+            'commercialTransporter'
+          )
+        ]
+      : []),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

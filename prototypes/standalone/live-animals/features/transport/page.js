@@ -17,3 +17,8 @@ export const transportersPage = {
   id: 'transporters',
   slug: 'transporters'
 }
+
+export const transportersSelectPage = {
+  id: 'transporters-select',
+  slug: 'transporters/select'
+}

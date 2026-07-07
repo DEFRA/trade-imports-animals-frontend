@@ -29,6 +29,7 @@ import * as importersSelect from './features/addresses/importers-select.controll
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as transportDetails from './features/transport/transport-details.controller.js'
 import * as transporters from './features/transport/transporters.controller.js'
+import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -123,6 +124,16 @@ const cases = [
     collects: transporters.meta.collects,
     handler: postHandlerOf(transporters),
     payload: { transporterType: 'Commercial transporter' }
+  },
+  {
+    id: 'transporters-select',
+    collects: transportersSelect.meta.collects,
+    handler: postHandlerOf(transportersSelect),
+    // 'Commercial transporter' keeps commercialTransporter in scope on the
+    // commit; the payload is the vendored option id, the committed answer
+    // its copied { name, address, approvalNumber } (c-020).
+    seed: { transporterType: 'Commercial transporter' },
+    payload: { commercialTransporter: 'channel-livestock-logistics' }
   },
   {
     id: 'email',

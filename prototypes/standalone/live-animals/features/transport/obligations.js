@@ -39,6 +39,23 @@ export const transitedCountries = {
  */
 export const transporterType = { id: 'transporterType', required: true }
 
+/**
+ * The commercial spoke of the c-012 type split — owed only when the
+ * transporter type is 'Commercial transporter' (the stored V4 label,
+ * verbatim). The answer is a copied { name, address, approvalNumber }
+ * object (c-020). Leaving the commercial branch wipes any saved
+ * transporter (spec: activatedBy + wipeOnExit).
+ */
+export const commercialTransporter = {
+  id: 'commercialTransporter',
+  required: true,
+  activatedBy: {
+    obligation: transporterType,
+    equals: 'Commercial transporter'
+  },
+  wipeOnExit: true
+}
+
 export const obligations = [
   portOfEntry,
   arrivalDateAtPort,
@@ -46,5 +63,6 @@ export const obligations = [
   transportIdentification,
   transportDocumentReference,
   transitedCountries,
-  transporterType
+  transporterType,
+  commercialTransporter
 ]

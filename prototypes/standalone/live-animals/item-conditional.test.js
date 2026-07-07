@@ -167,6 +167,14 @@ describe('item-relative completeness gates the quote', () => {
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
       transporterType: 'Commercial transporter',
+      commercialTransporter: {
+        name: 'Channel Livestock Logistics Ltd',
+        address: {
+          addressLine1: '18 Eastern Docks',
+          country: 'United Kingdom'
+        },
+        approvalNumber: 'UK/DOVER/T2/00012345'
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

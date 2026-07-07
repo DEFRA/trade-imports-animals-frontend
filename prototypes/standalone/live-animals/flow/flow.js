@@ -8,7 +8,8 @@ import { addressesPage } from '../features/addresses/page.js'
 import {
   portOfEntryPage,
   transportDetailsPage,
-  transportersPage
+  transportersPage,
+  transportersSelectPage
 } from '../features/transport/page.js'
 import { emailPage } from '../features/email/page.js'
 import { aboutYouPage } from '../features/about-you/page.js'
@@ -53,7 +54,12 @@ export const sections = [
   },
   {
     id: 'transport',
-    pages: [portOfEntryPage, transportDetailsPage, transportersPage]
+    pages: [
+      portOfEntryPage,
+      transportDetailsPage,
+      transportersPage,
+      transportersSelectPage
+    ]
   },
   {
     id: 'email',
