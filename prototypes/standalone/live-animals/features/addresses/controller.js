@@ -22,7 +22,11 @@ const view = `${TEMPLATES}/features/addresses/template`
  * text with no link, so the landing page never shows a dead link.
  */
 const PARTY_ROWS = [
-  { id: 'placeOfOrigin', label: 'Place of origin' },
+  {
+    id: 'placeOfOrigin',
+    label: 'Place of origin',
+    href: 'place-of-origin/select'
+  },
   { id: 'consignor', label: 'Consignor', href: 'consignors/select' },
   { id: 'consignee', label: 'Consignee' },
   { id: 'importer', label: 'Importer' },

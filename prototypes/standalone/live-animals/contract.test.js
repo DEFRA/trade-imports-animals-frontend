@@ -23,6 +23,7 @@ import * as documentsEntry from './features/documents/entry.controller.js'
 import * as addresses from './features/addresses/controller.js'
 import * as consignorsSelect from './features/addresses/consignors-select.controller.js'
 import * as destinationsSelect from './features/addresses/destinations-select.controller.js'
+import * as placeOfOriginSelect from './features/addresses/place-of-origin-select.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -258,7 +259,11 @@ describe('controller <-> model commit contract', () => {
   // own party, and together the spokes cover everything the landing
   // declares. No seed: the party obligations are always-live.
   it('Should commit each party via its select (copy) spoke, covering the landing collects', () => {
-    expect(addresses.meta.collects).toEqual(['consignor', 'placeOfDestination'])
+    expect(addresses.meta.collects).toEqual([
+      'consignor',
+      'placeOfDestination',
+      'placeOfOrigin'
+    ])
 
     const spokes = [
       {
@@ -272,6 +277,12 @@ describe('controller <-> model commit contract', () => {
         slug: 'destinations/select',
         payload: { placeOfDestination: 'tech-imports-ltd' },
         commits: ['placeOfDestination']
+      },
+      {
+        module: placeOfOriginSelect,
+        slug: 'place-of-origin/select',
+        payload: { placeOfOrigin: 'ferme-des-trois-vallees' },
+        commits: ['placeOfOrigin']
       }
     ]
     const committed = []

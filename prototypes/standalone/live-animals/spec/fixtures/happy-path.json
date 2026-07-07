@@ -53,6 +53,19 @@
         "telephoneNumber": "+44 121 555 0143",
         "emailAddress": "goods-in@tech-imports.example.co.uk"
       }
+    },
+    "placeOfOrigin": {
+      "name": "Ferme des Trois Vallées",
+      "address": {
+        "addressLine1": "3 Chemin des Prés",
+        "addressLine2": "",
+        "townOrCity": "Annecy",
+        "county": "",
+        "postalOrZipCode": "74000",
+        "country": "France",
+        "telephoneNumber": "+33 4 50 55 01 23",
+        "emailAddress": "contact@trois-vallees.example.fr"
+      }
     }
   }
 }

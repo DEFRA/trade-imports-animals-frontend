@@ -8,9 +8,14 @@
  * blocks a save, but the notification cannot be submitted without one.
  * placeOfDestination — V4 "Mandatory to submit" (enforcedAt=submit): the
  * same shape and mandate as the consignor.
+ * placeOfOrigin — V4 "Mandatory to submit" (enforcedAt=submit): the same
+ * shape and mandate again; a dead spoke in the skeleton (c-005), landed
+ * here as a provisional select page.
  */
 export const consignor = { id: 'consignor', required: true }
 
 export const placeOfDestination = { id: 'placeOfDestination', required: true }
 
-export const obligations = [consignor, placeOfDestination]
+export const placeOfOrigin = { id: 'placeOfOrigin', required: true }
+
+export const obligations = [consignor, placeOfDestination, placeOfOrigin]

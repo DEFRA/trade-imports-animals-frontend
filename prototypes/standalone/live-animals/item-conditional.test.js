@@ -143,6 +143,10 @@ describe('item-relative completeness gates the quote', () => {
         name: 'Tech Imports Ltd',
         address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
       },
+      placeOfOrigin: {
+        name: 'Ferme des Trois Vallées',
+        address: { addressLine1: '3 Chemin des Prés', country: 'France' }
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

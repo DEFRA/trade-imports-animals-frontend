@@ -146,6 +146,7 @@ const buildRows = (answers) => {
     // Each stored party is a copied { name, address } object (c-020); the
     // Change link resolves to the addresses landing page, which owns the
     // collects and links out to the select spokes.
+    row('Place of origin', answerOf('placeOfOrigin')?.name, 'placeOfOrigin'),
     row('Consignor', answerOf('consignor')?.name, 'consignor'),
     row(
       'Place of destination',
