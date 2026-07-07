@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   allowListed,
   allowListedByPredicate,
+  anyAllowListed,
   branchedGate,
   matches,
   present
@@ -60,8 +61,27 @@ describe('allowListed', () => {
       type: 'allowListed',
       obligation: codeObl.id,
       values: ['a', 'b'],
-      projection: groupObl.id
+      projection: groupObl.id,
+      reasons: null
     })
+  })
+
+  it('merges reasons into the decision when in scope', () => {
+    const reason = { code: 'x.applicable', explanation: 'because x' }
+    const gate = allowListed(codeObl, ['a'], null, [reason])
+    const decision = gate({ [codeObl.id]: { k1: 'a' } }, new Map())
+    expect(decision).toEqual({
+      inScope: true,
+      records: ['k1'],
+      reasons: [reason]
+    })
+  })
+
+  it('does not attach reasons to out-of-scope decisions', () => {
+    const reason = { code: 'x', explanation: 'y' }
+    const gate = allowListed(codeObl, ['a'], null, [reason])
+    const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
+    expect(decision).toEqual({ inScope: false })
   })
 })
 
@@ -95,8 +115,37 @@ describe('allowListedByPredicate', () => {
     expect(gate.metadata).toEqual({
       type: 'allowListedByPredicate',
       obligation: codeObl.id,
-      projection: groupObl.id
+      projection: groupObl.id,
+      reasons: null
     })
+  })
+})
+
+describe('anyAllowListed', () => {
+  const whenTrue = { inScope: true, status: 'mandatory' }
+  const whenFalse = { inScope: false }
+
+  it('returns whenTrue when any stored value is in the allowlist', () => {
+    const gate = anyAllowListed(codeObl, ['a', 'b'], whenTrue, whenFalse)
+    const decision = gate({ [codeObl.id]: { k1: 'x', k2: 'a', k3: 'y' } })
+    expect(decision).toEqual(whenTrue)
+  })
+
+  it('returns whenFalse when no stored value is in the allowlist', () => {
+    const gate = anyAllowListed(codeObl, ['a'], whenTrue, whenFalse)
+    const decision = gate({ [codeObl.id]: { k1: 'x', k2: 'y' } })
+    expect(decision).toEqual(whenFalse)
+  })
+
+  it('returns whenFalse when nothing is stored at all', () => {
+    const gate = anyAllowListed(codeObl, ['a'], whenTrue, whenFalse)
+    expect(gate({})).toEqual(whenFalse)
+  })
+
+  it('handles scalar stored values (not just maps)', () => {
+    const gate = anyAllowListed(codeObl, ['yes'], whenTrue, whenFalse)
+    expect(gate({ [codeObl.id]: 'yes' })).toEqual(whenTrue)
+    expect(gate({ [codeObl.id]: 'no' })).toEqual(whenFalse)
   })
 })
 

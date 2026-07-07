@@ -1,309 +1,219 @@
 # Obligations V4 spike — gap log
 
-Running log of gaps discovered while modelling
+Gaps discovered while modelling
 [Live Animals Data Fields V4](https://eaflood.atlassian.net/wiki/spaces/EUDP/pages/6497338582)
-against the obligations model from the EUDPA-249 spike (`../obligations/`).
+against the obligations model from the EUDPA-249 spike
+(`../obligations/`). Feeds `RECOMMENDATION.md`.
 
-Each entry records: the pattern hit, the obligation(s) affected, whether
-it's a machinery gap or a conceptual/naming gap, and what (if
-anything) was done to close it. Feeds `RECOMMENDATION.md` at the end
-of the spike.
-
----
-
-## Gap 1 — `derived-leaf` category covers more than pass-through controllers
-
-**Pattern:** Field record inside a group, in scope conditionally on the
-same line's answer to a sibling field.
-
-**Obligation(s) affected:** `numberOfPackages` (this spike). Likely
-recurs for `commodityType` if it turns out to be commodity-gated, and
-for any future field of the form "per-line record, applicable only for
-some commodity codes."
-
-**Type:** _Conceptual / naming_ — the evaluator handles this case
-without change. The mismatch is between the mental model
-`derived-leaf` invites (established by the v3 spike's `modificationCost`
-exemplar and `FULFILMENT_SHAPES.md` §E) and how V4 has to use it.
-
-**Extension made:** None to machinery. `numberOfPackages` uses
-`indexedBy: { source: 'derived', controllingObligation: commodityCode }`
-with an `applyTo` that filters + projects `commodityCode`'s stored
-map. Purge behaviour is correct out-of-the-box. See obligations.js and
-the worked example below.
-
-### The mismatch, worked through
-
-**The v3 pattern.** `modificationCost` is derived from `modifications`
-— a top-level multi-select storing an array:
-
-```js
-fulfilments[modifications.id] = ['turbo', 'alloys']
-
-// derived-leaf applyTo passes those values through as record-ids:
-records: fulfilments[modifications.id] ?? []
-// → ['turbo', 'alloys']
-
-// storage keys are the mod names themselves:
-fulfilments[modificationCost.id] = { turbo: '800', alloys: '400' }
-```
-
-Reading `controllingObligation: modifications` tells the reader exactly
-where the record-ids come from — they _are_ the controller's stored
-values. `FULFILMENT_SHAPES.md` §E states this explicitly:
-
-> Derived fulfilment ids are the controller's answer values, not
-> opaque ids.
-
-**The V4 pattern.** `numberOfPackages` is derived from `commodityCode`
-— a per-line field record storing a keyed map:
-
-```js
-fulfilments[commodityCode.id] = {
-  line1: '00000001', // made-up code, not in the packages-required list
-  line2: '01064100', // bees — in the list
-  line3: '01063100' // owls — in the list
-}
-```
-
-The `applyTo` filters those entries and returns the **line-instance
-ids** where the code is in the allowlist, not the code values
-themselves:
-
-```js
-records: Object.entries(fulfilments[commodityCode.id])
-  .filter(([_, code]) => PACKAGE_COUNT_COMMODITIES.includes(code))
-  .map(([lineId]) => lineId)
-// → ['line2', 'line3']
-```
-
-Storage keys are line-instance ids (opaque ULIDs in production):
-
-```js
-fulfilments[numberOfPackages.id] = { line2: 3 }
-```
-
-### Why the strong reading fails
-
-Reading `controllingObligation: commodityCode` and applying the v3
-pattern, a reader would expect record-ids to be the code values
-`['00000001', '01064100', '01063100']` and storage keyed like
-`{ '01064100': 3 }`. Two problems:
-
-1. **Non-unique keys.** Commodity codes are not unique across lines.
-   Two lines can both be bees, each with its own packages count. The
-   code-keyed shape `{ '01064100': 3 }` cannot represent
-   "`line2` = 3 packages, `line3` = 5 packages" — the entries collapse
-   to one. Line-instance-id keying preserves independence:
-   `{ line2: 3, line3: 5 }`.
-
-2. **`FULFILMENT_SHAPES.md` §E's absolute claim is false here.** The
-   derived record-ids ARE opaque ids (ULIDs), not answer values. The
-   doc's clean rule needs a caveat.
-
-### What we did instead
-
-- Documented the pattern in `obligations.js` at `numberOfPackages`'s
-  declaration with a comment header explaining the reuse and the
-  line-instance-id keying.
-- Tests use named line-id constants (`LINE_BEES = 'line2'` etc.) so
-  the reader can see intent without decoding opaque ids — see
-  `evaluator.test.js` step-3 blocks.
-- This entry logs the gap for the recommendation write-up.
-
-### Options considered, not taken
-
-- **Extend the evaluator with a new `conditional-field` category.**
-  First-class semantics for "field record with per-instance `applyTo`".
-  Cleaner mental model, but requires classifier + purge + implication
-  branch updates. Deferred — reuse fits without machinery change.
-- **Denormalise storage** (e.g. `{ line2: { value: 3, commodityCode:
-'01064100' } }`). Two sources of truth; kept-in-sync burden;
-  storage-shape pollution. Rejected.
-- **Encode meaning into keys** (e.g. `'commodityCode-01064100-uuid':
-3`). Confuses identity with description; semantic drift when the
-  user changes the code answer. Rejected.
-- **Debug pretty-printer** for storage joins — see `TODO.md`. Not
-  taken as an alternative; would complement docs+tests.
-
-### Update after iteration 4a
-
-Iteration 4a landed the `gatedBy` substrate (see §Gap 2 below), which
-subsumes the derived-leaf reuse pattern with a cleaner surface.
-`numberOfPackages` remains on the derived-leaf reuse for now; refactor
-to `gatedBy` is scheduled as part of 4c backfill of steps 1-3.
+Each entry: the pattern hit, the obligation(s) affected, whether it's
+a machinery gap or conceptual, and what was done to close it.
 
 ---
 
-## Gap 2 — identity-space mismatch when a gate is at a broader identity level than the gated obligation
+## Gap 1 — identity-space mismatch when a gate is at a broader identity level than the gated obligation
 
 **Pattern:** An obligation gated by another obligation whose stored
 identity space is _broader_ (fewer dimensions) than its own. The
-gated obligation's `applyTo` has to enumerate the extra dimensions
-itself, because the model previously exposed no way to ask the
-evaluator for group-instance-ids at the target identity level.
+gated obligation's scope-resolution logic needs to enumerate the extra
+dimensions to produce composite paths at its own identity level.
 
-**Obligation(s) affected:** All step-4 per-unit identifier fields
+**Obligation(s) affected:** all step-4 per-unit identifier fields
 (`passport`, `tattoo`, `earTag`, `horseName`, `identificationDetails`,
 `description`, `permanentAddress`) — each gated by `commodityCode`
-(per-line) but stored per-unit (per-line × per-unit). The mismatch
-appears whenever a gate crosses identity levels; not depth-2-specific.
-Would recur on any depth-1 field gated by a notification-level value,
-any depth-2+ field gated by a shallower field, and so on. See the
-"corrected mental model" in the design discussion for the general
-rule.
+(per-line) but stored per-unit (per-line × per-unit). And
+`numberOfPackages` at depth-1 (gated by same-level `commodityCode`).
+The general shape recurs whenever a gate crosses identity levels;
+not depth-2-specific.
 
-**Type:** _Machinery gap._ Every workaround on the current substrate
-was structurally unsatisfying — either duplicate enumeration logic
-inside every obligation's `applyTo` (ugly, coupling to storage
-internals), denormalise storage (kept-in-sync burden), encode
-description into keys (identity confusion under value flips), or
-model as unconditional and drop purge semantics.
+**Type:** _Machinery gap._ The v3 spike's `applyTo(fulfilments)`
+signature gave obligation code no way to look up group-instance-paths
+without scanning sibling storage itself — duplicating enumeration
+logic the evaluator already implements.
 
-**Extension made:** Yes — closed by the `gatedBy` substrate landed in
-iteration 4a.
+**Extension made:** Yes — closed by extending `applyTo`'s signature to
+`applyTo(fulfilments, fulfilmentIdsByObligationId)` where the second
+arg is a `Map<obligationId, string[]>` of currently-present
+group-instance-paths, enumerated pre-purge from raw storage. See
+`evaluator.js`'s `enumerateGroupPathsFromStorage` (step 2) and
+`runApplicabilityDecisions` (step 3).
 
-Concretely:
+A small helper library builds common gate shapes on top of this
+signature, so obligation authors don't touch the enumeration machinery
+directly. See `helpers.js`:
 
-- `gates.js` — data-only combinator constructors (`allowListed`,
-  `matches`, `present`, `and`, `or`, `not`, `any`, `every`).
-- `gate-resolver.js` — interpreter that walks a gate tree, reads
-  storage, projects between identity levels (expand via
-  `enumerateInstancePaths`, aggregate via `any` / `every`), and
-  produces per-instance-path scope decisions.
-- `evaluator.js` — integrated as a new step 2 phase (`runGateResolutions`)
-  running alongside `runApplicabilityDecisions`; `makeInScopeCheck`
-  extended to treat "any path in scope" as own-scope-true;
-  `purgeStorage` extended with a `gatedBy` branch (helper
-  `purgeGatedStorage`) that filters records per-path; `buildImplication`
-  extended with a `gatedBy` branch (helper `buildGatedImplication`)
-  that builds records from in-scope decisions.
+- `allowListed(gateObl, values, projectionGroup?, reasons?)` —
+  in scope where the gate's stored value is in the allowlist. If
+  `projectionGroup` is supplied, project matches down to that group's
+  instance-paths (depth-N gates); otherwise records are the passing
+  gate keys directly (depth-1 same-level gates).
+- `allowListedByPredicate(gateObl, predicate, projectionGroup?, reasons?)` —
+  same but with a predicate function (for inverse gates,
+  compound conditions).
+- `branchedGate(predicate, whenTrue, whenFalse)` — evaluate a predicate
+  and return one of two decision objects. For retain-value +
+  status-swap patterns (`regionCode`, all-or-nothing blocks).
+- `anyAllowListed(gateObl, values, whenTrue, whenFalse)` — scalar
+  aggregation: true if any of the gate's stored values matches. For
+  notification-level obligations gated by per-record data (CPH).
 
-Author-facing shape (from `obligations.js`):
+Each helper returns a pure applyTo function with `.metadata` attached
+for optional introspection / cross-language export.
+
+### Why applyTo + helpers over a declarative gate DSL
+
+Both approaches were prototyped (see git history:
+`c79fbd0` gatedBy, `a17a9a1` applyTo prototype). The applyTo shape won
+on:
+
+- **Idiomatic JS** — no DSL, no interpretation layer. Standard debug
+  tools work everywhere.
+- **Testable at obligation level without other units** — each
+  `obligation.applyTo(fulfilments, ids)` is a plain function call
+  with plain inputs. No evaluator, no resolver, no `obligationsById`
+  to construct.
+- **Cross-sibling ergonomics** — closures over `const` bindings resolve
+  names at call time, so patterns like the accompanying-document
+  all-or-nothing block avoid the attach-after-declaration mutation
+  that the DSL approach required. Each obligation self-contains its
+  applyTo.
+- **Composes with JS operators** — `&&`, `||`, `!`, spreads,
+  `.filter()`, `.map()` — no combinator wrappers.
+- **Helpers themselves are unit-testable** — pure functions.
+
+Static introspection is reclaimed selectively via helper metadata:
+`obligation.applyTo` is a function (runtime); `obligation.applyTo.metadata`
+is a data structure (tooling / data-dictionary export / cross-language
+serialisation). Custom one-off applyTos just omit metadata.
+
+### Worked example — numberOfPackages (depth-1)
 
 ```js
-export const passport = {
-  ...,
-  within: unitRecord,
+export const numberOfPackages = {
+  id: '...',
+  name: 'numberOfPackages',
+  within: commodityLine,
   status: 'optional',
-  gatedBy: allowListed(commodityCode, PASSPORT_COMMODITIES)
-}
-
-export const identificationDetails = {
-  ...,
-  within: unitRecord,
-  status: 'optional',
-  gatedBy: and(
-    not(allowListed(commodityCode, PASSPORT_COMMODITIES)),
-    not(allowListed(commodityCode, TATTOO_COMMODITIES)),
-    not(allowListed(commodityCode, EAR_TAG_COMMODITIES)),
-    not(allowListed(commodityCode, HORSE_NAME_COMMODITIES))
+  applyTo: allowListed(
+    commodityCode,
+    PACKAGE_COUNT_COMMODITIES,
+    null, // no projectionGroup — gate and gated at same level
+    [numberOfPackagesReason]
   )
 }
 ```
 
-Both take ~3-4 lines of declarative data. Enumeration, projection,
-purge, implication-building — all handled by the resolver + evaluator.
-Adding new depth-2 (or depth-N) commodity-gated fields is now a
-cut+paste-a-shape operation.
+Storage keys are line-instance-ids. Records list contains only
+matching lines. No in-obligation enumeration.
 
-### Options considered, not taken
-
-- **A′ — Derived-leaf reuse extended to depth-2 with in-`applyTo`
-  enumeration.** Every gated obligation's `applyTo` would duplicate
-  the group-enumeration logic the evaluator already implements. Ugly,
-  coupled to storage internals, doesn't scale beyond depth-2 without
-  further duplication. Rejected.
-- **B — Derived-leaf + evaluator helpers.** Adds
-  `applyTo(f, { enumerateChildInstancesOf })` and keeps derived-leaf
-  as the category. Cleaner than A′ but still imperative; leaves the
-  category taxonomy fragmented; scale-only fix. Rejected in favour of
-  the declarative surface.
-- **C — Always-in-scope field records with UX-layer gating.** No
-  machinery change; loses per-unit purge semantics; storage
-  accumulates orphaned values on non-applicable units. Rejected.
-- **D — New `conditional-field` category with per-instance
-  `applyTo(fulfilments, instancePath)`.** Cleaner per-instance mental
-  model but requires bigger evaluator changes (classifier + per-
-  instance purge + per-instance implication branches). Author cost
-  higher than declarative gates for the common allowlist case.
-  Rejected in favour of F+G (declarative) as the primary surface.
-
-### Author-facing readability of gates
-
-The declarative combinators keep gates self-documenting. For any gate
-that doesn't fit the combinator vocabulary, `applyTo` remains as an
-escape hatch, so nothing loses expressiveness.
-
-Follow-on work (see `TODO.md`):
-
-- Backfill steps 1-3 obligations to use `gatedBy` (this is the "4c"
-  iteration of the outer plan).
-- Land the identity-space uniform substrate ("4b" — collapse legacy
-  categories `single` / `field` / `derived-leaf` / `user-leaf` into
-  a `keyspace` metadata dimension, unify the pipeline). Independent
-  of this gap but the substrate refactor benefits from having
-  `gatedBy` already in place.
-
----
-
-## Notes — patterns and conventions surfaced (not gaps)
-
-### Cross-sibling gates require attach-after-declaration
-
-Iteration 5 landed the Accompanying Document all-or-nothing block —
-four notification-level fields (`accompanyingDocumentType` /
-`AttachmentType` / `Reference` / `DateOfIssue`) sharing a symmetric
-cross-sibling gate:
+### Worked example — passport (depth-2)
 
 ```js
-const accompanyingDocumentBlockGate = {
-  when: or(
-    present(accompanyingDocumentType),
-    present(accompanyingDocumentAttachmentType),
-    present(accompanyingDocumentReference),
-    present(accompanyingDocumentDateOfIssue)
-  ),
-  whenTrue: { inScope: true, status: 'mandatory', reasons: [...] },
-  whenFalse: { inScope: true, status: 'optional' }
+export const passport = {
+  id: '...',
+  name: 'passport',
+  within: unitRecord,
+  status: 'optional',
+  applyTo: allowListed(
+    commodityCode,
+    PASSPORT_COMMODITIES,
+    unitRecord, // project to unitRecord's instance-paths
+    [passportReason]
+  )
 }
 ```
 
-All four fields point to the same gate. Because every field's gate
-references every field (including itself), inlining `gatedBy` on each
-declaration would create a temporal-dead-zone cycle: the gate would
-reference obligation objects that don't exist yet.
+Under the hood the helper takes the pre-purge
+`fulfilmentIdsByObligationId.get(unitRecord.id)` array and filters it
+to units whose parent-line's code is in the allowlist. The obligation
+code doesn't enumerate; the pipeline hands over the paths.
 
-The convention landed in iteration 5 is: **declare each obligation
-without `gatedBy`, build the shared gate below, then attach it via
-mutation.** Confined to cross-sibling scope rules; every other pattern
-in the manifest still uses inline `gatedBy` at declaration time.
+### Worked example — CPH (aggregation to scalar)
 
-Not a machinery gap — the resolver handles the pattern correctly
-(each field's `gatedBy` resolves against current fulfilments,
-including self-presence checks). Just a JS-mechanical constraint on
-how the manifest is authored.
+```js
+export const cph = {
+  id: '...',
+  name: 'cph',
+  applyTo: anyAllowListed(
+    commodityCode,
+    CPH_REQUIRED_COMMODITIES,
+    { inScope: true, status: 'mandatory', reasons: [cphReason] },
+    { inScope: false }
+  )
+}
+```
 
-Alternatives considered:
+Reads across `commodityCode`'s per-line map and returns a scalar
+decision. No projection needed (target is a scalar obligation).
 
-- **Getter for `gatedBy`** (`get gatedBy() { return { when: or(...), ... } }`).
-  Lazy resolution avoids the cycle. Verbose syntax, unusual for the
-  rest of the manifest style. Rejected.
-- **String-id references in combinators** (`present('obligation-id')`
-  instead of `present(obligation)`). Removes the direct-reference
-  requirement. Loses ESLint-catches-typos property; breaks the "gates
-  are pure functions of obligation values" invariant. Rejected.
-- **Sibling-only gate** (each field checks only the OTHER three).
-  Structurally simpler but produces surprising UX: the field the user
-  filled stays optional while siblings become mandatory. Rejected as
-  semantically wrong for symmetric all-or-nothing.
+### Worked example — accompanying document all-or-nothing (cross-sibling)
 
-### Extended `gatedBy` form is essential for retain-value patterns
+```js
+const anyDocumentFieldPresent = (fulfilments) =>
+  [
+    accompanyingDocumentType,
+    accompanyingDocumentAttachmentType,
+    accompanyingDocumentReference,
+    accompanyingDocumentDateOfIssue
+  ].some((obligation) => fulfilments[obligation.id] !== undefined)
 
-Both `regionCode` (step 1) and the accompanying document block (step 5)
-need "in scope always, status swaps based on gate". That's what the
-extended form (`{ when, whenTrue, whenFalse }`) is for — the shortcut
-form only supports "in scope when gate true, out of scope when false".
+const accompanyingDocumentBlockApplyTo = branchedGate(
+  anyDocumentFieldPresent,
+  { inScope: true, status: 'mandatory', reasons: [...] },
+  { inScope: true, status: 'optional' }
+)
 
-Baked in from 4a.1 rather than retrofitted later. Confirmed as
-essential during step 5.
+export const accompanyingDocumentType = {
+  id: '...',
+  applyTo: accompanyingDocumentBlockApplyTo
+}
+// same applyTo shared across all four fields
+```
+
+Predicate is a closure over the four const bindings; sibling names
+resolve at call time. No attach-after-declaration mutation, no shared
+gate structure.
+
+### Options considered, not taken
+
+- **In-applyTo enumeration** (option A′) — obligation code scans
+  sibling storage to reconstruct group instances. Ugly at depth-2+;
+  duplicates evaluator logic; couples obligation code to storage
+  internals. Rejected.
+- **New `conditional-field` category with per-instance
+  `applyTo(fulfilments, instancePath)`** (option D) — cleaner
+  per-instance mental model but requires bigger evaluator changes
+  (classifier + per-instance purge + per-instance implication
+  branches) and higher author cost per obligation. Rejected.
+- **Declarative gatedBy DSL** (options F+G) — landed as a prototype
+  and used through step 4 and 5. Same brevity as applyTo + helpers
+  for common cases, plus native introspection. Rejected in favour of
+  applyTo + helpers on the idiomatic-JS, obligation-level-testability
+  and cross-sibling-ergonomics grounds listed above. The metadata
+  hook on helpers reclaims introspection selectively.
+- **Denormalise storage** (`{ line2: { value: 3, commodityCode: '01064100' } }`)
+  — two sources of truth; kept-in-sync burden; storage-shape
+  pollution. Rejected.
+- **Encode meaning into keys** (`'commodityCode-01064100-uuid': 3`)
+  — confuses identity with description; semantic drift on value
+  flips. Rejected.
+
+---
+
+## Note — line-instance-id keying (not a gap)
+
+Not a machinery gap but worth capturing for future readers.
+`numberOfPackages`-style depth-1 records are stored under
+line-instance-ids, not commodity code values, because two lines can
+share a code and each needs an independent answer.
+
+```js
+// Storage — keyed by line-instance-id
+fulfilments[numberOfPackages.id] = { line2: 3 }
+
+// NOT keyed by commodity code value (would collapse two-lines-same-code):
+// fulfilments[numberOfPackages.id] = { '01064100': 3 }  // ← wrong
+```
+
+Line-instance-ids are opaque orchestrator-generated ULIDs in
+production; tests use readable mnemonic constants (`LINE_BEES =
+'line2'` etc.) so intent is scannable — see `evaluator.test.js`.

@@ -4,55 +4,125 @@
  * Source: Confluence "Live Animals Data Fields - V4" (page 6497338582).
  * Model under test: obligations model from EUDPA-249 spike (see
  * ../obligations/). This manifest expresses the V4 domain against that
- * model; see GAPS.md for anything the model can't express naturally.
+ * model; see GAPS.md for gaps discovered and how they were closed.
  *
- * Modelling walk (iterations land layer by layer):
- *   1. Notification-level countryOfOrigin + regionCodeRequirement gate.
- *   2. Notification-level singles + standard address blocks:
- *      reason/purpose gate, transporter-type mutually-exclusive
- *      commercial/private address blocks, means-of-transport gate on
- *      transitedCountries, six standard address blocks storing composite
- *      values.
- *   3. Commodity line + members: user-driven indexed group with
- *      per-line commodityCode / commodityType / species /
- *      numberOfAnimals field records, numberOfPackages as a
- *      commodity-code-gated derived-leaf (see GAPS.md §1), CPH as a
- *      notification-level single reading nested storage, and
- *      animalsCertifiedFor.
- *   4. Unit record + per-animal identifiers: nested user-driven
- *      indexed group inside commodityLine; per-unit identifiers
- *      (passport / tattoo / earTag / horseName) gated by the parent
- *      line's commodityCode via the new gatedBy substrate;
- *      identificationDetails / description inverse-gated for
- *      commodities with no specific identifier; permanentAddress as a
- *      per-unit standard address block gated by commodityCode. See
- *      GAPS.md §2 for the identity-space-mismatch gap closed by
- *      gatedBy.
- *   5. Accompanying Document all-or-nothing block (this iteration):
- *      four notification-level fields (type / attachment type /
- *      reference / date of issue) sharing a symmetric cross-sibling
- *      gate — all optional when no field is filled, all mandatory
- *      once any one field is filled. Extended `gatedBy` form used to
- *      express the retain-value-and-downgrade-status pattern.
+ * Scope mechanism: every obligation with a conditional scope uses
+ * `applyTo(fulfilments, fulfilmentIdsByObligationId)`. Common gate
+ * shapes are provided as pure helper functions in `helpers.js` —
+ * `allowListed`, `allowListedByPredicate`, `branchedGate`,
+ * `anyAllowListed` — that build applyTo functions with metadata
+ * attached for optional introspection. One mechanism, one testing
+ * story: any obligation's applyTo can be exercised as a plain function
+ * call with plain inputs (no evaluator, no resolver, no obligationsById).
  *
- * System-populated fields (Reference Number, gov.identity-fed Responsible
- * Person, MDM-sourced enum values) are stubbed in test fixtures rather
- * than modelled as obligations.
- *
- * Gate combinators (`allowListed`, `and`, `not`, etc.) come from
- * `gates.js`; the evaluator interprets them via `gate-resolver.js`.
- * Prefer `gatedBy` over `applyTo` for new obligations — declarative,
- * cut+paste-friendly, single-source-of-truth per gate. Step 1-3
- * obligations still use `applyTo` for now; refactor is deferred to 4c.
+ * System-populated fields (Reference Number, gov.identity-fed
+ * Responsible Person, MDM-sourced enum values) are stubbed in test
+ * fixtures rather than modelled as obligations.
  *
  * Standard address block: modelled as a single-cardinality obligation
- * whose stored value is a composite `{ name, addressLine1, addressLine2?,
- * town, county?, postCode, country, telephone, email }`. Field-level
- * validation of the composite (max-length, formats, mandatory subfields)
- * is out of scope of the obligation model.
+ * whose stored value is a composite `{ name, addressLine1,
+ * addressLine2?, town, county?, postCode, country, telephone, email }`.
+ * Field-level validation of the composite (max-length, formats,
+ * mandatory subfields) is out of scope of the obligation model.
  */
 
-import { allowListed, and, not, or, present } from './gates.js'
+import {
+  allowListed,
+  allowListedByPredicate,
+  anyAllowListed,
+  branchedGate
+} from './helpers.js'
+
+// -----------------------------------------------------------------------------
+// Reason constants — collected here so obligation declarations stay tight.
+// -----------------------------------------------------------------------------
+
+const regionCodeRequiredReason = {
+  code: 'obligation.regionCode.mandatory.becauseRegionCodeRequired',
+  explanation: 'regionCode is mandatory when regionCodeRequirement is yes'
+}
+
+const purposeInInternalMarketReason = {
+  code: 'obligation.purposeInInternalMarket.applicable.becauseInternalMarket',
+  explanation:
+    'purposeInInternalMarket applies when reasonForImport is internal-market'
+}
+
+const commercialTransporterReason = {
+  code: 'obligation.commercialTransporter.applicable.becauseCommercial',
+  explanation:
+    'commercialTransporter applies when transporterType is commercial'
+}
+
+const privateTransporterReason = {
+  code: 'obligation.privateTransporter.applicable.becausePrivate',
+  explanation: 'privateTransporter applies when transporterType is private'
+}
+
+const transitedCountriesReason = {
+  code: 'obligation.transitedCountries.applicable.becauseLandTransport',
+  explanation:
+    'transitedCountries applies when meansOfTransport is railway or road-vehicle'
+}
+
+const numberOfPackagesReason = {
+  code: 'obligation.numberOfPackages.applicable.becausePackageCountCommodity',
+  explanation:
+    'numberOfPackages applies on lines whose commodityCode is in the package-count list'
+}
+
+const cphReason = {
+  code: 'obligation.cph.applicable.becauseCphCommodity',
+  explanation:
+    'CPH applies when any commodity line has a CPH-required commodityCode'
+}
+
+const passportReason = {
+  code: 'obligation.passport.applicable.becausePassportCommodity',
+  explanation:
+    'passport applies on units of lines whose commodityCode is in the passport list'
+}
+
+const tattooReason = {
+  code: 'obligation.tattoo.applicable.becauseTattooCommodity',
+  explanation:
+    'tattoo applies on units of lines whose commodityCode is in the tattoo list'
+}
+
+const earTagReason = {
+  code: 'obligation.earTag.applicable.becauseEarTagCommodity',
+  explanation:
+    'earTag applies on units of lines whose commodityCode is in the ear-tag list'
+}
+
+const horseNameReason = {
+  code: 'obligation.horseName.applicable.becauseHorseCommodity',
+  explanation: 'horseName applies on units of horse-commodity lines'
+}
+
+const identificationDetailsReason = {
+  code: 'obligation.identificationDetails.applicable.becauseNoSpecificIdentifier',
+  explanation:
+    'identificationDetails applies on units of lines whose commodityCode has no specific identifier type'
+}
+
+const descriptionReason = {
+  code: 'obligation.description.applicable.becauseNoSpecificIdentifier',
+  explanation:
+    'description applies on units of lines whose commodityCode has no specific identifier type'
+}
+
+const permanentAddressReason = {
+  code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
+  explanation:
+    'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
+}
+
+const accompanyingDocumentBlockReason = {
+  code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
+  explanation:
+    'accompanying document fields become mandatory once any one is filled'
+}
 
 // -----------------------------------------------------------------------------
 // Country of origin + regionCode conditional gate
@@ -70,29 +140,18 @@ export const regionCodeRequirement = {
   applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
-// Conditional: required when regionCodeRequirement === 'yes'. Modelled
-// as always-in-scope-with-optional-status when the gate is off, so a
-// previously-entered value is retained across gate flips (matches the
-// V4 spec: the field itself is not purged on `no`).
+// Retain-value pattern: always in scope; mandatory when
+// regionCodeRequirement === 'yes', optional otherwise. Stored values
+// are kept across gate flips (V4 spec: the field itself is not purged
+// on `no`).
 export const regionCode = {
   id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
   name: 'regionCode',
-  applyTo: (fulfilments) => {
-    if (fulfilments[regionCodeRequirement.id] === 'yes') {
-      return {
-        inScope: true,
-        status: 'mandatory',
-        reasons: [
-          {
-            code: 'obligation.regionCode.mandatory.becauseRegionCodeRequired',
-            explanation:
-              'regionCode is mandatory when regionCodeRequirement is yes'
-          }
-        ]
-      }
-    }
-    return { inScope: true, status: 'optional' }
-  }
+  applyTo: branchedGate(
+    (fulfilments) => fulfilments[regionCodeRequirement.id] === 'yes',
+    { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
+    { inScope: true, status: 'optional' }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -105,29 +164,21 @@ export const reasonForImport = {
   applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
-// Purge-on-flip is the default: when reasonForImport is not
-// 'internal-market', purposeInInternalMarket goes out of scope and any
-// stored value is dropped (matches V4 spec — the field is only present
-// when applicable).
+// Purge-on-flip: when reasonForImport is not 'internal-market',
+// purposeInInternalMarket goes out of scope and any stored value is
+// dropped.
 export const purposeInInternalMarket = {
   id: 'e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f',
   name: 'purposeInInternalMarket',
-  applyTo: (fulfilments) => {
-    if (fulfilments[reasonForImport.id] === 'internal-market') {
-      return {
-        inScope: true,
-        status: 'mandatory',
-        reasons: [
-          {
-            code: 'obligation.purposeInInternalMarket.applicable.becauseInternalMarket',
-            explanation:
-              'purposeInInternalMarket applies when reasonForImport is internal-market'
-          }
-        ]
-      }
-    }
-    return { inScope: false }
-  }
+  applyTo: branchedGate(
+    (fulfilments) => fulfilments[reasonForImport.id] === 'internal-market',
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [purposeInInternalMarketReason]
+    },
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -186,48 +237,33 @@ export const transporterType = {
 }
 
 // Purge-on-flip: switching transporterType from 'commercial' to
-// 'private' drops any stored commercialTransporter address (out-of-scope
-// obligations are removed from storage by the evaluator's purge step).
+// 'private' drops any stored commercialTransporter address.
 export const commercialTransporter = {
   id: 'de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071',
   name: 'commercialTransporter',
-  applyTo: (fulfilments) => {
-    if (fulfilments[transporterType.id] === 'commercial') {
-      return {
-        inScope: true,
-        status: 'mandatory',
-        reasons: [
-          {
-            code: 'obligation.commercialTransporter.applicable.becauseCommercial',
-            explanation:
-              'commercialTransporter applies when transporterType is commercial'
-          }
-        ]
-      }
-    }
-    return { inScope: false }
-  }
+  applyTo: branchedGate(
+    (fulfilments) => fulfilments[transporterType.id] === 'commercial',
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [commercialTransporterReason]
+    },
+    { inScope: false }
+  )
 }
 
 export const privateTransporter = {
   id: 'ef26d7e8-f9a0-4b15-8c61-ed4e5f607182',
   name: 'privateTransporter',
-  applyTo: (fulfilments) => {
-    if (fulfilments[transporterType.id] === 'private') {
-      return {
-        inScope: true,
-        status: 'mandatory',
-        reasons: [
-          {
-            code: 'obligation.privateTransporter.applicable.becausePrivate',
-            explanation:
-              'privateTransporter applies when transporterType is private'
-          }
-        ]
-      }
-    }
-    return { inScope: false }
-  }
+  applyTo: branchedGate(
+    (fulfilments) => fulfilments[transporterType.id] === 'private',
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [privateTransporterReason]
+    },
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -253,28 +289,23 @@ export const transportDocumentReference = {
 }
 
 // Conditional in-scope-optional multi-select — stored as an array of
-// country strings. Out of scope (and purged) when means-of-transport is
-// not railway or road-vehicle.
+// country strings. Out of scope (and purged) when means-of-transport
+// is not railway or road-vehicle.
+const LAND_TRANSPORT_MODES = ['railway', 'road-vehicle']
+
 export const transitedCountries = {
   id: '78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b',
   name: 'transitedCountries',
-  applyTo: (fulfilments) => {
-    const means = fulfilments[meansOfTransport.id]
-    if (means === 'railway' || means === 'road-vehicle') {
-      return {
-        inScope: true,
-        status: 'optional',
-        reasons: [
-          {
-            code: 'obligation.transitedCountries.applicable.becauseLandTransport',
-            explanation:
-              'transitedCountries applies when meansOfTransport is railway or road-vehicle'
-          }
-        ]
-      }
-    }
-    return { inScope: false }
-  }
+  applyTo: branchedGate(
+    (fulfilments) =>
+      LAND_TRANSPORT_MODES.includes(fulfilments[meansOfTransport.id]),
+    {
+      inScope: true,
+      status: 'optional',
+      reasons: [transitedCountriesReason]
+    },
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -350,9 +381,7 @@ export const commodityCode = {
 // Spec: "Where applicable for given commodity, user is able to filter
 // species by type." Ambiguous whether Type itself is commodity-gated
 // or whether that phrase describes UX for species filtering. Modelled
-// as unconditional field record for now; revisit if it turns out to
-// need per-line gating (would be another derived-leaf case per
-// GAPS.md §1).
+// as unconditional field record for now.
 export const commodityType = {
   id: '22071829-2a3b-4e5f-8cde-28f9a0b1c2d4',
   name: 'commodityType',
@@ -361,8 +390,7 @@ export const commodityType = {
 }
 
 // Multi-select; stored value is an array of species strings per line.
-// The obligation model treats the array opaquely — agreed-maximum
-// cardinality is out of scope.
+// The obligation model treats the array opaquely.
 export const species = {
   id: '2318293a-3b4c-4f60-8def-39a0b1c2d3e5',
   name: 'species',
@@ -379,8 +407,7 @@ export const numberOfAnimals = {
 
 // Commodity codes for which V4 requires a package count. Subset of the
 // 54 codes listed on the Confluence page — enough to exercise every
-// pattern in tests; the full list belongs with the real journey code,
-// not this spike.
+// pattern in tests.
 export const PACKAGE_COUNT_COMMODITIES = [
   '01064100', // Bees
   '01063100', // Birds of Prey — Owls / Falcons / Other
@@ -388,65 +415,23 @@ export const PACKAGE_COUNT_COMMODITIES = [
   '0102' // Cattle
 ]
 
-// Derived-leaf reuse — see GAPS.md §1 for the conceptual gap this
-// resolves and why it's not a machinery gap.
-//
-// Semantics: per-line optional field record, in scope on any line whose
-// commodityCode is in PACKAGE_COUNT_COMMODITIES. Record-ids are the
-// line-instance ids where the code matches — NOT the commodity code
-// values — because two lines can share a code and each needs an
-// independent packages answer. Storage shape:
-//   fulfilments[numberOfPackages.id] = { line2: 3 }
-// (never `{ '01064100': 3 }` — see GAPS.md §1 for why that shape
-// collapses under duplicate codes.)
-//
-// `controllingObligation` names the field whose values drive the
-// filter, not the source of the record-ids themselves. The naming
-// mismatch is the gap.
+// Depth-1 commodity-code-gated field record. `applyTo` returns records
+// = matching line-ids; no projection group needed (the gate lives at
+// the same identity level as the gated obligation).
 export const numberOfPackages = {
   id: '252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507',
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  indexedBy: {
-    source: 'derived',
-    controllingObligation: commodityCode,
-    mutability: 'edit-only'
-  },
-  applyTo: (fulfilments) => {
-    const codesByLine = fulfilments[commodityCode.id] ?? {}
-    const matchingLineIds = Object.entries(codesByLine)
-      .filter(([, code]) => PACKAGE_COUNT_COMMODITIES.includes(code))
-      .map(([lineId]) => lineId)
-    if (matchingLineIds.length === 0) return { inScope: false }
-    return {
-      inScope: true,
-      reasons: [
-        {
-          code: 'obligation.numberOfPackages.applicable.becausePackageCountCommodity',
-          explanation:
-            'numberOfPackages applies on lines whose commodityCode is in the package-count list'
-        }
-      ],
-      records: matchingLineIds
-    }
-  }
+  applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
+    numberOfPackagesReason
+  ])
 }
 
 // -----------------------------------------------------------------------------
-// County Parish Holding (CPH) — notification-level single, conditional
-// on the presence of any CPH-required commodity code across all
-// commodity lines.
-//
-// Pattern note (not a gap): a notification-level single's applyTo
-// reaches into the storage of a nested-record obligation
-// (`commodityCode`'s per-line map) to make its decision. Awkward
-// because the applyTo has to know the storage shape of another
-// obligation, but no evaluator extension needed — applyTo receives the
-// whole fulfilments map by design.
+// CPH — notification-level single, aggregated across commodity lines.
 // -----------------------------------------------------------------------------
 
-// Subset of the 19 CPH-required codes listed on the Confluence page.
 export const CPH_REQUIRED_COMMODITIES = [
   '0102', // Cattle
   '0103', // Pig (Domestic)
@@ -457,62 +442,44 @@ export const CPH_REQUIRED_COMMODITIES = [
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
   name: 'cph',
-  applyTo: (fulfilments) => {
-    const codesByLine = fulfilments[commodityCode.id] ?? {}
-    const anyRequired = Object.values(codesByLine).some((code) =>
-      CPH_REQUIRED_COMMODITIES.includes(code)
-    )
-    if (!anyRequired) return { inScope: false }
-    return {
-      inScope: true,
-      status: 'mandatory',
-      reasons: [
-        {
-          code: 'obligation.cph.applicable.becauseCphCommodity',
-          explanation:
-            'CPH applies when any commodity line has a CPH-required commodityCode'
-        }
-      ]
-    }
-  }
+  applyTo: anyAllowListed(
+    commodityCode,
+    CPH_REQUIRED_COMMODITIES,
+    { inScope: true, status: 'mandatory', reasons: [cphReason] },
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
 // Unit record — nested user-driven indexed group inside commodityLine.
-// Composite keys have length 2: `lineId/unitId`. Instance-ids are opaque
-// orchestrator-generated ULIDs — mnemonic `line1/unit1` etc. in tests.
+// Composite keys have length 2: `lineId/unitId`. Instance-ids are
+// opaque orchestrator-generated ULIDs.
 // -----------------------------------------------------------------------------
 
 export const unitRecord = {
   id: '385d6e7f-8091-4eb5-8234-8ef506172940',
   name: 'unitRecord',
   within: commodityLine
-  // No applyTo, no gatedBy — structural user-driven group, always in
-  // scope. Instance-ids inferred from descendant field-record composite-
-  // key prefixes.
+  // No applyTo — structural user-driven group, always in scope.
 }
 
 // -----------------------------------------------------------------------------
-// Commodity-code whitelists driving unit-level identifier scope.
-// Subsets of the full V4 lists — enough to exercise every pattern in
-// tests. Full lists belong with the real journey code, not this spike.
+// Commodity-code whitelists for per-unit identifier gates. Subsets of
+// the full V4 lists — enough to exercise every pattern in tests.
 // -----------------------------------------------------------------------------
 
-// Commodities that require a Passport identifier.
 export const PASSPORT_COMMODITIES = [
   '0101', // Horse
   '0102', // Cattle
   '01061900' // Cats / Dogs / Ferrets
 ]
 
-// Commodities that require a Tattoo identifier.
 export const TATTOO_COMMODITIES = [
   '01061900', // Cats / Dogs / Ferrets
   '0103', // Pig
   '0102' // Bovine
 ]
 
-// Commodities that require an Ear Tag identifier.
 export const EAR_TAG_COMMODITIES = [
   '0102', // Cattle
   '0103', // Pig
@@ -520,17 +487,15 @@ export const EAR_TAG_COMMODITIES = [
   '010420' // Goats
 ]
 
-// Commodities that require a Horse Name.
 export const HORSE_NAME_COMMODITIES = ['0101']
 
-// Commodities that require a Permanent Address per animal.
 export const PERMANENT_ADDRESS_COMMODITIES = ['01061900']
 
 // -----------------------------------------------------------------------------
-// Per-unit identifier field records — depth-2, commodity-gated via
-// gatedBy. Each obligation is one data structure with a declarative
-// gate — no boilerplate enumeration logic; the resolver handles the
-// depth-2 identity-space expansion. See GAPS.md §2.
+// Per-unit identifier field records — depth-2, commodity-code-gated
+// via `allowListed` with projection to unitRecord's instance-paths.
+// The evaluator's pre-purge enumeration supplies the paths; the
+// obligation code doesn't enumerate them itself.
 // -----------------------------------------------------------------------------
 
 export const passport = {
@@ -538,7 +503,9 @@ export const passport = {
   name: 'passport',
   within: unitRecord,
   status: 'optional',
-  gatedBy: allowListed(commodityCode, PASSPORT_COMMODITIES)
+  applyTo: allowListed(commodityCode, PASSPORT_COMMODITIES, unitRecord, [
+    passportReason
+  ])
 }
 
 export const tattoo = {
@@ -546,7 +513,9 @@ export const tattoo = {
   name: 'tattoo',
   within: unitRecord,
   status: 'optional',
-  gatedBy: allowListed(commodityCode, TATTOO_COMMODITIES)
+  applyTo: allowListed(commodityCode, TATTOO_COMMODITIES, unitRecord, [
+    tattooReason
+  ])
 }
 
 export const earTag = {
@@ -554,7 +523,9 @@ export const earTag = {
   name: 'earTag',
   within: unitRecord,
   status: 'optional',
-  gatedBy: allowListed(commodityCode, EAR_TAG_COMMODITIES)
+  applyTo: allowListed(commodityCode, EAR_TAG_COMMODITIES, unitRecord, [
+    earTagReason
+  ])
 }
 
 export const horseName = {
@@ -562,22 +533,30 @@ export const horseName = {
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  gatedBy: allowListed(commodityCode, HORSE_NAME_COMMODITIES)
+  applyTo: allowListed(commodityCode, HORSE_NAME_COMMODITIES, unitRecord, [
+    horseNameReason
+  ])
 }
 
-// Inverse gate: in scope for units on commodity lines whose code has
-// NO specific identifier type. The `and(not(...), ...)` shape reads
-// as "no specific identifier applies."
+// Inverse gate — the free-text identifiers apply on units whose parent
+// line's commodity has NO specific identifier. Expressed as a plain JS
+// predicate.
+const noSpecificIdentifier = (code) =>
+  !PASSPORT_COMMODITIES.includes(code) &&
+  !TATTOO_COMMODITIES.includes(code) &&
+  !EAR_TAG_COMMODITIES.includes(code) &&
+  !HORSE_NAME_COMMODITIES.includes(code)
+
 export const identificationDetails = {
   id: '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95',
   name: 'identificationDetails',
   within: unitRecord,
   status: 'optional',
-  gatedBy: and(
-    not(allowListed(commodityCode, PASSPORT_COMMODITIES)),
-    not(allowListed(commodityCode, TATTOO_COMMODITIES)),
-    not(allowListed(commodityCode, EAR_TAG_COMMODITIES)),
-    not(allowListed(commodityCode, HORSE_NAME_COMMODITIES))
+  applyTo: allowListedByPredicate(
+    commodityCode,
+    noSpecificIdentifier,
+    unitRecord,
+    [identificationDetailsReason]
   )
 }
 
@@ -586,94 +565,82 @@ export const description = {
   name: 'description',
   within: unitRecord,
   status: 'optional',
-  gatedBy: and(
-    not(allowListed(commodityCode, PASSPORT_COMMODITIES)),
-    not(allowListed(commodityCode, TATTOO_COMMODITIES)),
-    not(allowListed(commodityCode, EAR_TAG_COMMODITIES)),
-    not(allowListed(commodityCode, HORSE_NAME_COMMODITIES))
+  applyTo: allowListedByPredicate(
+    commodityCode,
+    noSpecificIdentifier,
+    unitRecord,
+    [descriptionReason]
   )
 }
-
-// -----------------------------------------------------------------------------
-// Permanent address — depth-2 standard address block, commodity-gated.
-// Stored composite address value per unit-instance-path.
-// -----------------------------------------------------------------------------
 
 export const permanentAddress = {
   id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  gatedBy: allowListed(commodityCode, PERMANENT_ADDRESS_COMMODITIES)
+  applyTo: allowListed(
+    commodityCode,
+    PERMANENT_ADDRESS_COMMODITIES,
+    unitRecord,
+    [permanentAddressReason]
+  )
 }
 
 // -----------------------------------------------------------------------------
 // Accompanying Documents — notification-level all-or-nothing block.
 //
-// Semantic: each of the four fields (type / attachment type /
-// reference / date of issue) is always in scope. When no field in the
-// block is filled, all four are optional. As soon as ANY field in the
-// block is filled, ALL four become mandatory (retain-value-and-swap-
-// status pattern via the extended `gatedBy` form).
+// Four fields sharing a single applyTo: optional when nothing is
+// filled, mandatory once ANY field is filled (retain-value + status-
+// swap via `branchedGate`).
 //
-// Circular-reference convention: each field's gate references the four
-// obligations, including itself. Direct references at declaration time
-// would create a temporal-dead-zone cycle, so the four obligations are
-// declared without `gatedBy` first, then the shared gate is built and
-// attached below via mutation. This is the only place in the manifest
-// that mutates after declaration; the pattern is confined to
-// cross-sibling scope rules.
+// The predicate references all four obligations, including itself.
+// Under gatedBy this required attach-after-declaration mutation; under
+// applyTo the closure defers name resolution to call time, so the
+// obligations are declared normally and each has its applyTo set at
+// declaration.
 // -----------------------------------------------------------------------------
+
+const anyDocumentFieldPresent = (fulfilments) =>
+  [
+    accompanyingDocumentType,
+    accompanyingDocumentAttachmentType,
+    accompanyingDocumentReference,
+    accompanyingDocumentDateOfIssue
+  ].some((obligation) => fulfilments[obligation.id] !== undefined)
+
+const accompanyingDocumentBlockApplyTo = branchedGate(
+  anyDocumentFieldPresent,
+  {
+    inScope: true,
+    status: 'mandatory',
+    reasons: [accompanyingDocumentBlockReason]
+  },
+  { inScope: true, status: 'optional' }
+)
 
 export const accompanyingDocumentType = {
   id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
-  name: 'accompanyingDocumentType'
-  // gatedBy attached below
+  name: 'accompanyingDocumentType',
+  applyTo: accompanyingDocumentBlockApplyTo
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
-  name: 'accompanyingDocumentAttachmentType'
-  // gatedBy attached below
+  name: 'accompanyingDocumentAttachmentType',
+  applyTo: accompanyingDocumentBlockApplyTo
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
-  name: 'accompanyingDocumentReference'
-  // gatedBy attached below
+  name: 'accompanyingDocumentReference',
+  applyTo: accompanyingDocumentBlockApplyTo
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
-  name: 'accompanyingDocumentDateOfIssue'
-  // gatedBy attached below
+  name: 'accompanyingDocumentDateOfIssue',
+  applyTo: accompanyingDocumentBlockApplyTo
 }
-
-const accompanyingDocumentBlockGate = {
-  when: or(
-    present(accompanyingDocumentType),
-    present(accompanyingDocumentAttachmentType),
-    present(accompanyingDocumentReference),
-    present(accompanyingDocumentDateOfIssue)
-  ),
-  whenTrue: {
-    inScope: true,
-    status: 'mandatory',
-    reasons: [
-      {
-        code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
-        explanation:
-          'accompanying document fields become mandatory once any one is filled'
-      }
-    ]
-  },
-  whenFalse: { inScope: true, status: 'optional' }
-}
-
-accompanyingDocumentType.gatedBy = accompanyingDocumentBlockGate
-accompanyingDocumentAttachmentType.gatedBy = accompanyingDocumentBlockGate
-accompanyingDocumentReference.gatedBy = accompanyingDocumentBlockGate
-accompanyingDocumentDateOfIssue.gatedBy = accompanyingDocumentBlockGate
 
 // -----------------------------------------------------------------------------
 // Manifest — order does not affect evaluation (evaluator builds group

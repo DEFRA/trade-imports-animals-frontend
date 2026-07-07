@@ -36,19 +36,22 @@
  * `fulfilmentIdsByObligationId` map supplies the paths — the
  * obligation code doesn't enumerate them itself.
  */
-export function allowListed(gateObligation, values, projectionGroup) {
-  const fn = (fulfilments, fulfilmentIdsByObligationId) =>
-    filterAndProject(
+export function allowListed(gateObligation, values, projectionGroup, reasons) {
+  const fn = (fulfilments, fulfilmentIdsByObligationId) => {
+    const decision = filterAndProject(
       fulfilments[gateObligation.id],
       (value) => values.includes(value),
       projectionGroup,
       fulfilmentIdsByObligationId
     )
+    return decision.inScope && reasons ? { ...decision, reasons } : decision
+  }
   fn.metadata = {
     type: 'allowListed',
     obligation: gateObligation.id,
     values,
-    projection: projectionGroup?.id ?? null
+    projection: projectionGroup?.id ?? null,
+    reasons: reasons ?? null
   }
   return fn
 }
@@ -62,19 +65,50 @@ export function allowListed(gateObligation, values, projectionGroup) {
 export function allowListedByPredicate(
   gateObligation,
   predicate,
-  projectionGroup
+  projectionGroup,
+  reasons
 ) {
-  const fn = (fulfilments, fulfilmentIdsByObligationId) =>
-    filterAndProject(
+  const fn = (fulfilments, fulfilmentIdsByObligationId) => {
+    const decision = filterAndProject(
       fulfilments[gateObligation.id],
       predicate,
       projectionGroup,
       fulfilmentIdsByObligationId
     )
+    return decision.inScope && reasons ? { ...decision, reasons } : decision
+  }
   fn.metadata = {
     type: 'allowListedByPredicate',
     obligation: gateObligation.id,
-    projection: projectionGroup?.id ?? null
+    projection: projectionGroup?.id ?? null,
+    reasons: reasons ?? null
+  }
+  return fn
+}
+
+/**
+ * anyAllowListed — scalar aggregation. True if ANY of the gate
+ * obligation's stored values is in the allowlist. Returns whenTrue on
+ * match, whenFalse on miss. Handles per-line-gate → notification-level-
+ * gated shape (e.g. CPH: "any commodity line has a CPH-required code").
+ */
+export function anyAllowListed(gateObligation, values, whenTrue, whenFalse) {
+  const fn = (fulfilments) => {
+    const stored = fulfilments[gateObligation.id]
+    const candidates =
+      stored && typeof stored === 'object' && !Array.isArray(stored)
+        ? Object.values(stored)
+        : stored !== undefined
+          ? [stored]
+          : []
+    return candidates.some((v) => values.includes(v)) ? whenTrue : whenFalse
+  }
+  fn.metadata = {
+    type: 'anyAllowListed',
+    obligation: gateObligation.id,
+    values,
+    whenTrue,
+    whenFalse
   }
   return fn
 }
