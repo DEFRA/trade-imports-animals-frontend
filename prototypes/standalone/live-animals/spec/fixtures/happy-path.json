@@ -130,6 +130,19 @@
         "telephoneNumber": "+33 3 22 55 01 44",
         "emailAddress": "jean.dupont@example.fr"
       }
+    },
+    "contactAddress": {
+      "name": "Animal and Plant Health Agency",
+      "address": {
+        "addressLine1": "Woodham Lane",
+        "addressLine2": "New Haw",
+        "townOrCity": "Addlestone",
+        "county": "Surrey",
+        "postalOrZipCode": "KT15 3NB",
+        "country": "United Kingdom",
+        "telephoneNumber": "+44 3000 200 301",
+        "emailAddress": "enquiries@apha.example.gov.uk"
+      }
     }
   }
 }

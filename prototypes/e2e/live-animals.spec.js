@@ -798,6 +798,49 @@ test.describe('live-animals (page-owned spine)', () => {
     ).not.toBeChecked()
   })
 
+  test('contact address — a blank save leaves the task open (enforcedAt=submit); selecting a contact copies it and completes the task', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // contactAddress is a required obligation owned by the one-page contact
+    // section, so the task starts open.
+    const contactRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Contact address'
+    })
+    await expect(contactRow).toContainText('Not started')
+
+    await page.getByRole('link', { name: 'Contact address' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Contact address for consignment' })
+    ).toBeVisible()
+
+    // contactAddress is enforcedAt=submit — a blank save is not an error;
+    // the one-page section returns to the hub with the task still open.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(contactRow).toContainText('Not started')
+
+    // Happy path from the shared fixture: selecting a contact COPIES its
+    // name and address into the answer (c-020) and completes the task.
+    await page.getByRole('link', { name: 'Contact address' }).click()
+    await page.getByRole('radio', { name: values.contactAddress.name }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(contactRow).toContainText('Completed')
+
+    // The copy persists: walking back in re-derives the checked option from
+    // the copied name.
+    await page.getByRole('link', { name: 'Contact address' }).click()
+    await expect(
+      page.getByRole('radio', { name: values.contactAddress.name })
+    ).toBeChecked()
+  })
+
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({
     page
   }) => {

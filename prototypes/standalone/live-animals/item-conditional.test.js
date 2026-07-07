@@ -175,6 +175,10 @@ describe('item-relative completeness gates the quote', () => {
         },
         approvalNumber: 'UK/DOVER/T2/00012345'
       },
+      contactAddress: {
+        name: 'Animal and Plant Health Agency',
+        address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

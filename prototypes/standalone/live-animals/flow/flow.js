@@ -12,6 +12,7 @@ import {
   transportersPage,
   transportersSelectPage
 } from '../features/transport/page.js'
+import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { emailPage } from '../features/email/page.js'
 import { aboutYouPage } from '../features/about-you/page.js'
 import { yourVehiclePage } from '../features/your-vehicle/page.js'
@@ -62,6 +63,10 @@ export const sections = [
       transportersSelectPage,
       privateTransporterDetailsPage
     ]
+  },
+  {
+    id: 'contact',
+    pages: [consignmentContactSelectPage]
   },
   {
     id: 'email',

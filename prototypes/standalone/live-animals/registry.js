@@ -5,6 +5,7 @@ import * as importPurpose from './features/import-purpose/obligations.js'
 import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
 import * as transport from './features/transport/obligations.js'
+import * as contact from './features/contact/obligations.js'
 import * as email from './features/email/obligations.js'
 import * as aboutYou from './features/about-you/obligations.js'
 import * as vehicle from './features/your-vehicle/obligations.js'
@@ -27,6 +28,7 @@ const all = [
   ...documents.obligations,
   ...addresses.obligations,
   ...transport.obligations,
+  ...contact.obligations,
   ...email.obligations,
   ...aboutYou.obligations,
   ...vehicle.obligations,

@@ -31,6 +31,7 @@ import * as transportDetails from './features/transport/transport-details.contro
 import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
+import * as contactSelect from './features/contact/controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -155,6 +156,15 @@ const cases = [
       telephoneNumber: '+33 3 22 55 01 44',
       emailAddress: 'jean.dupont@example.fr'
     }
+  },
+  {
+    id: 'consignment-contact-select',
+    collects: contactSelect.meta.collects,
+    handler: postHandlerOf(contactSelect),
+    // The payload is the vendored option id, the committed answer its
+    // copied { name, address } (c-020) — the select side of the
+    // unresolved c-001 variant pair.
+    payload: { contactAddress: 'animal-and-plant-health-agency' }
   },
   {
     id: 'email',

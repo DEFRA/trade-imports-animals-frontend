@@ -40,6 +40,11 @@ const GROUP_ROWS = [
     title: 'Transport',
     hint: 'The port of entry, when the consignment will arrive, how the animals will travel and who transports them'
   },
+  {
+    id: 'contact',
+    title: 'Contact address',
+    hint: 'Who we should contact about this notification'
+  },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',
