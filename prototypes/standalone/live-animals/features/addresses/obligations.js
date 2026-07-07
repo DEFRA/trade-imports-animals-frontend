@@ -6,7 +6,11 @@
  *
  * consignor — V4 "Mandatory to submit" (enforcedAt=submit): blank never
  * blocks a save, but the notification cannot be submitted without one.
+ * placeOfDestination — V4 "Mandatory to submit" (enforcedAt=submit): the
+ * same shape and mandate as the consignor.
  */
 export const consignor = { id: 'consignor', required: true }
 
-export const obligations = [consignor]
+export const placeOfDestination = { id: 'placeOfDestination', required: true }
+
+export const obligations = [consignor, placeOfDestination]

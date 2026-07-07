@@ -40,6 +40,19 @@
         "telephoneNumber": "+33 3 20 61 10 10",
         "emailAddress": "exports@laiterie-du-nord.example.com"
       }
+    },
+    "placeOfDestination": {
+      "name": "Tech Imports Ltd",
+      "address": {
+        "addressLine1": "643 Main Street",
+        "addressLine2": "",
+        "townOrCity": "Birmingham",
+        "county": "West Midlands",
+        "postalOrZipCode": "B1 3AZ",
+        "country": "United Kingdom",
+        "telephoneNumber": "+44 121 555 0143",
+        "emailAddress": "goods-in@tech-imports.example.co.uk"
+      }
     }
   }
 }

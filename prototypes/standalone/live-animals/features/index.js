@@ -11,6 +11,7 @@ import * as documentsList from './documents/list.controller.js'
 import * as documentsEntry from './documents/entry.controller.js'
 import * as addresses from './addresses/controller.js'
 import * as consignorsSelect from './addresses/consignors-select.controller.js'
+import * as destinationsSelect from './addresses/destinations-select.controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -68,6 +69,7 @@ export const allRoutes = [
   ...documentsEntry.routes,
   ...addresses.routes,
   ...consignorsSelect.routes,
+  ...destinationsSelect.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,

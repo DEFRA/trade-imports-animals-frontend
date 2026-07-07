@@ -26,7 +26,11 @@ const PARTY_ROWS = [
   { id: 'consignor', label: 'Consignor', href: 'consignors/select' },
   { id: 'consignee', label: 'Consignee' },
   { id: 'importer', label: 'Importer' },
-  { id: 'placeOfDestination', label: 'Place of destination' }
+  {
+    id: 'placeOfDestination',
+    label: 'Place of destination',
+    href: 'destinations/select'
+  }
 ]
 
 const partyRow = (party, answers) => {

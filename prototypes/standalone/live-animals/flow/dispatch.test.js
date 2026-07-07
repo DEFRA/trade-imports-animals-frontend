@@ -67,6 +67,10 @@ describe('dispatch + flow', () => {
         name: 'Laiterie du Nord SARL',
         address: { addressLine1: '12 Rue de la Gare', country: 'France' }
       },
+      placeOfDestination: {
+        name: 'Tech Imports Ltd',
+        address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
+      },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',

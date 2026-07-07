@@ -22,6 +22,7 @@ import * as documentsList from './features/documents/list.controller.js'
 import * as documentsEntry from './features/documents/entry.controller.js'
 import * as addresses from './features/addresses/controller.js'
 import * as consignorsSelect from './features/addresses/consignors-select.controller.js'
+import * as destinationsSelect from './features/addresses/destinations-select.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -251,20 +252,35 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  // The addresses LANDING declares `collects: ['consignor']`, but the write
-  // is the consignors SELECT spoke's copy-commit (c-020) — the hub-and-spoke
-  // variant of the claims list/entry split. No seed: the party obligation is
-  // always-live.
-  it('Should commit the consignor via the select (copy) handler it declares', () => {
-    expect(addresses.meta.collects).toEqual(['consignor'])
-    const postSelect = postHandlerEndingWith(
-      consignorsSelect,
-      'consignors/select'
-    )
-    const result = drive(postSelect, {
-      payload: { consignor: 'laiterie-du-nord' }
-    })
-    expect(new Set(committedIds(result))).toEqual(
+  // The addresses LANDING accretes one collect per landed spoke, but every
+  // write is a SELECT spoke's copy-commit (c-020) — the hub-and-spoke
+  // variant of the claims list/entry split. Each spoke commits exactly its
+  // own party, and together the spokes cover everything the landing
+  // declares. No seed: the party obligations are always-live.
+  it('Should commit each party via its select (copy) spoke, covering the landing collects', () => {
+    expect(addresses.meta.collects).toEqual(['consignor', 'placeOfDestination'])
+
+    const spokes = [
+      {
+        module: consignorsSelect,
+        slug: 'consignors/select',
+        payload: { consignor: 'laiterie-du-nord' },
+        commits: ['consignor']
+      },
+      {
+        module: destinationsSelect,
+        slug: 'destinations/select',
+        payload: { placeOfDestination: 'tech-imports-ltd' },
+        commits: ['placeOfDestination']
+      }
+    ]
+    const committed = []
+    for (const { module, slug, payload, commits } of spokes) {
+      const result = drive(postHandlerEndingWith(module, slug), { payload })
+      expect(committedIds(result)).toEqual(commits)
+      committed.push(...committedIds(result))
+    }
+    expect(new Set(committed)).toEqual(
       new Set(committableCollects(addresses.meta.collects))
     )
   })
