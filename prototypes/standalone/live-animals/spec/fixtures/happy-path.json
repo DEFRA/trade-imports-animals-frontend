@@ -14,6 +14,7 @@
         "numberOfAnimalsQuantity": "25"
       }
     ],
-    "reasonForImport": "internal-market"
+    "reasonForImport": "internal-market",
+    "purposeInInternalMarket": "breeding"
   }
 }

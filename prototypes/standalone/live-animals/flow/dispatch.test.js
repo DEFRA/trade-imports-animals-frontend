@@ -53,6 +53,7 @@ describe('dispatch + flow', () => {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
       reasonForImport: 'internal-market',
+      purposeInInternalMarket: 'breeding',
       commodityLines: [
         {
           commoditySelection: '0102 - Cattle',

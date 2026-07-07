@@ -42,16 +42,19 @@ const subsetsOf = (items) =>
  */
 export const enumerateScopeStates = () =>
   ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
-    ['no', 'yes'].flatMap((hadClaims) =>
-      ['no', 'yes'].flatMap((voluntaryExcess) =>
-        ['', 'comprehensive'].flatMap((coverType) =>
-          subsetsOf(ADDONS).map((addons) => ({
-            regionOfOriginCodeRequirement,
-            hadClaims,
-            voluntaryExcess,
-            coverType,
-            addons
-          }))
+    ['', 'internal-market'].flatMap((reasonForImport) =>
+      ['no', 'yes'].flatMap((hadClaims) =>
+        ['no', 'yes'].flatMap((voluntaryExcess) =>
+          ['', 'comprehensive'].flatMap((coverType) =>
+            subsetsOf(ADDONS).map((addons) => ({
+              regionOfOriginCodeRequirement,
+              reasonForImport,
+              hadClaims,
+              voluntaryExcess,
+              coverType,
+              addons
+            }))
+          )
         )
       )
     )

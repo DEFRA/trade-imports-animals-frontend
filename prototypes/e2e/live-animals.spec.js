@@ -174,14 +174,69 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(consignmentRow).not.toContainText('Completed')
 
-    // Happy path from the shared fixture.
+    // Happy path from the shared fixture. Choosing the internal market
+    // activates purposeInInternalMarket, so the section walks on to the
+    // purpose page instead of returning to the hub.
     await page.getByRole('link', { name: 'About the consignment' }).click()
     await page.getByRole('radio', { name: 'Internal market' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Purpose in the internal market' })
+    ).toBeVisible()
+    await page.getByRole('radio', { name: 'Breeding' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Get a car insurance quote' })
     ).toBeVisible()
     await expect(consignmentRow).toContainText('Completed')
+  })
+
+  test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const consignmentRow = page.locator('.govuk-task-list__item', {
+      hasText: 'About the consignment'
+    })
+
+    // Internal market: the purpose page opens and completes the task.
+    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('radio', { name: 'Internal market' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Purpose in the internal market' })
+    ).toBeVisible()
+    await page.getByRole('radio', { name: 'Breeding' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(consignmentRow).toContainText('Completed')
+
+    // Another reason: the purpose is no longer owed — saving returns
+    // straight to the hub, skipping the purpose page, task still complete.
+    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('radio', { name: 'Transit' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(consignmentRow).toContainText('Completed')
+
+    // Back to the internal market: leaving scope wiped the saved purpose —
+    // no radio is pre-selected and the task is owed (open) again.
+    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('radio', { name: 'Internal market' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Purpose in the internal market' })
+    ).toBeVisible()
+    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+
+    // A blank save is not an error (enforcedAt=submit) but leaves the task open.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(consignmentRow).not.toContainText('Completed')
   })
 })

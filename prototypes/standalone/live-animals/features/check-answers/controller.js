@@ -11,6 +11,7 @@ import {
 import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
 import { commodityLineValue } from '../commodities/list.controller.js'
 import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
+import { PURPOSE_IN_INTERNAL_MARKET_LABEL } from '../import-purpose/controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -113,6 +114,17 @@ const buildRows = (answers) => {
       REASON_FOR_IMPORT_LABEL[answerOf('reasonForImport')] ?? '',
       'reasonForImport'
     ),
+    ...(answerOf('reasonForImport') === 'internal-market'
+      ? [
+          row(
+            'Purpose in the internal market',
+            PURPOSE_IN_INTERNAL_MARKET_LABEL[
+              answerOf('purposeInInternalMarket')
+            ] ?? '',
+            'purposeInInternalMarket'
+          )
+        ]
+      : []),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

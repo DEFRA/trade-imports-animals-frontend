@@ -2,6 +2,7 @@ import { dashboardPage } from '../features/dashboard/page.js'
 import { originPage } from '../features/origin/page.js'
 import { commoditiesPage } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
+import { importPurposePage } from '../features/import-purpose/page.js'
 import { emailPage } from '../features/email/page.js'
 import { aboutYouPage } from '../features/about-you/page.js'
 import { yourVehiclePage } from '../features/your-vehicle/page.js'
@@ -33,7 +34,7 @@ export const sections = [
   },
   {
     id: 'consignment',
-    pages: [importReasonPage]
+    pages: [importReasonPage, importPurposePage]
   },
   {
     id: 'email',

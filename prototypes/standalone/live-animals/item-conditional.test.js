@@ -125,6 +125,7 @@ describe('item-relative completeness gates the quote', () => {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
       reasonForImport: 'internal-market',
+      purposeInInternalMarket: 'breeding',
       commodityLines: [
         {
           commoditySelection: '0102 - Cattle',

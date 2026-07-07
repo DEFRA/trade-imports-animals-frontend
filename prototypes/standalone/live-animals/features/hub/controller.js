@@ -23,7 +23,7 @@ const GROUP_ROWS = [
   {
     id: 'consignment',
     title: 'About the consignment',
-    hint: 'Why you are importing the animals'
+    hint: 'Why you are importing the animals and their purpose in the internal market'
   },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
