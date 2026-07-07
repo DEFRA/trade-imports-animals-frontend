@@ -381,6 +381,50 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Completed')
   })
 
+  test('transport — a partial arrival date blocks the save; the port and full date complete the task', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const arrival = values.arrivalDateAtPort
+
+    // Both fields are required (enforcedAt=submit), so the task starts open.
+    const transportRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Transport'
+    })
+    await expect(transportRow).toContainText('Not started')
+
+    await page.getByRole('link', { name: 'Transport' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Port of entry' })
+    ).toBeVisible()
+
+    // A partial arrival date is malformed, not merely blank — it blocks the
+    // save (dateParts validation), unlike a fully blank submit-enforced field.
+    await page.getByLabel('Day').fill(arrival.day)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Enter a real arrival date' })
+    ).toBeVisible()
+
+    // Happy path from the shared fixture.
+    await page
+      .getByLabel('What is the port of entry into Great Britain?')
+      .selectOption(values.portOfEntry)
+    await page.getByLabel('Day').fill(arrival.day)
+    await page.getByLabel('Month').fill(arrival.month)
+    await page.getByLabel('Year').fill(arrival.year)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // One-page section: saving returns to the hub with the task completed.
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(transportRow).toContainText('Completed')
+  })
+
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({
     page
   }) => {

@@ -35,6 +35,11 @@ const GROUP_ROWS = [
     title: 'Addresses',
     hint: 'The consignor, consignee, importer and the places of origin and destination'
   },
+  {
+    id: 'transport',
+    title: 'Transport',
+    hint: 'The port of entry and when the consignment will arrive at it'
+  },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',

@@ -155,6 +155,12 @@ const buildRows = (answers) => {
       answerOf('placeOfDestination')?.name,
       'placeOfDestination'
     ),
+    row('Port of entry', answerOf('portOfEntry'), 'portOfEntry'),
+    row(
+      'Arrival date at port of entry',
+      dateText(answerOf('arrivalDateAtPort')),
+      'arrivalDateAtPort'
+    ),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

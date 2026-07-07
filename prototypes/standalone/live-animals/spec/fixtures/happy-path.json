@@ -92,6 +92,12 @@
         "telephoneNumber": "+44 1304 555 0184",
         "emailAddress": "notifications@albion-livestock.example.co.uk"
       }
+    },
+    "portOfEntry": "ABERDEEN",
+    "arrivalDateAtPort": {
+      "day": "12",
+      "month": "12",
+      "year": "2026"
     }
   }
 }

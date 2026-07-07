@@ -92,6 +92,8 @@ describe('#simulateJourney', () => {
           country: 'United Kingdom'
         }
       },
+      portOfEntry: 'ABERDEEN',
+      arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',

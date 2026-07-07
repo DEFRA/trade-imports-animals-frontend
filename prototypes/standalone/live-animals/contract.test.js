@@ -26,6 +26,7 @@ import * as destinationsSelect from './features/addresses/destinations-select.co
 import * as placeOfOriginSelect from './features/addresses/place-of-origin-select.controller.js'
 import * as consigneesSelect from './features/addresses/consignees-select.controller.js'
 import * as importersSelect from './features/addresses/importers-select.controller.js'
+import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -91,6 +92,17 @@ const cases = [
     // 'internal-market' keeps purposeInInternalMarket in scope on the commit
     seed: { reasonForImport: 'internal-market' },
     payload: { purposeInInternalMarket: 'breeding' }
+  },
+  {
+    id: 'port-of-entry',
+    collects: portOfEntry.meta.collects,
+    handler: postHandlerOf(portOfEntry),
+    payload: {
+      portOfEntry: 'ABERDEEN',
+      'arrivalDateAtPort-day': '12',
+      'arrivalDateAtPort-month': '12',
+      'arrivalDateAtPort-year': '2026'
+    }
   },
   {
     id: 'email',

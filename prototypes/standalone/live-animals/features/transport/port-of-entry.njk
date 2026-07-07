@@ -1,0 +1,27 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukSelect({
+      id: "portOfEntry",
+      name: "portOfEntry",
+      label: { text: "What is the port of entry into Great Britain?", classes: "govuk-label--s" },
+      value: values.portOfEntry,
+      errorMessage: errors.portOfEntry and { text: errors.portOfEntry },
+      items: portItems
+    }) }}
+
+    {{ govukDateInput(arrivalDate) }}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}
