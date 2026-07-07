@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentJourney, JOURNEY_COOKIE } from './journey.js'
 import { store } from './store.js'
+import { recordingH } from './test-support.js'
 
 /**
  * SAFETY-NET (NW-4 step 1) — pins journey isolation through the ONE public
@@ -14,26 +15,15 @@ import { store } from './store.js'
  * `userId(req)`: no override header is present, so it falls through to
  * STUB_USER.
  */
-const makeH = () => {
-  const cookies = {}
-  return {
-    state: (name, value) => {
-      cookies[name] = value
-    },
-    unstate: (name) => {
-      delete cookies[name]
-    },
-    cookies
-  }
-}
-
+// A bare session-seam request carrying only cookies (no journeyId binding).
+// Distinct from the journey-pinned `journeyRequest`.
 const reqWith = (cookies) => ({ state: { ...cookies }, headers: {} })
 
 describe('journey isolation seam', () => {
   beforeEach(() => store.clear())
 
   it('mints a fresh journey and pins it in the cookie when none is present', () => {
-    const h = makeH()
+    const h = recordingH()
     const journey = currentJourney(reqWith({}), h)
     expect(journey.journeyId).toEqual(expect.any(String))
     expect(journey.status).toBe('in-progress')
@@ -41,18 +31,18 @@ describe('journey isolation seam', () => {
   })
 
   it('resumes the same journey within a session (cookie points at a live journey)', () => {
-    const first = currentJourney(reqWith({}), makeH())
+    const first = currentJourney(reqWith({}), recordingH())
     store.saveAnswers(first.journeyId, { email: 'a@b.com' })
     const again = currentJourney(
       reqWith({ [JOURNEY_COOKIE]: first.journeyId }),
-      makeH()
+      recordingH()
     )
     expect(again.journeyId).toBe(first.journeyId)
     expect(again.answers).toEqual({ email: 'a@b.com' })
   })
 
   it('re-mints when the cookie points at a stale/unknown journey', () => {
-    const h = makeH()
+    const h = recordingH()
     const journey = currentJourney(
       reqWith({ [JOURNEY_COOKIE]: 'gone-1234' }),
       h
@@ -63,18 +53,18 @@ describe('journey isolation seam', () => {
   })
 
   it('keeps parallel cookies isolated — no cross-talk between two journeys', () => {
-    const a = currentJourney(reqWith({}), makeH())
-    const b = currentJourney(reqWith({}), makeH())
+    const a = currentJourney(reqWith({}), recordingH())
+    const b = currentJourney(reqWith({}), recordingH())
     expect(a.journeyId).not.toBe(b.journeyId)
     store.saveAnswers(a.journeyId, { who: 'A' })
     store.saveAnswers(b.journeyId, { who: 'B' })
     const aResumed = currentJourney(
       reqWith({ [JOURNEY_COOKIE]: a.journeyId }),
-      makeH()
+      recordingH()
     )
     const bResumed = currentJourney(
       reqWith({ [JOURNEY_COOKIE]: b.journeyId }),
-      makeH()
+      recordingH()
     )
     expect(aResumed.answers).toEqual({ who: 'A' })
     expect(bResumed.answers).toEqual({ who: 'B' })

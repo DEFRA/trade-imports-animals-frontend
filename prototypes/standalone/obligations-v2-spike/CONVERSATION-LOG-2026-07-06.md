@@ -404,3 +404,18 @@ Workflow-orchestrated, parent-shell verification).
   and the spec fails; the shared journey specs navigate by title and can never catch this).
   Skeptics (copy/GDS + robustness): no objections. **Green: unit 154 (22 files) / E2E 71 (new
   browser pin), parent-shell verified; eslint + prettier clean.**
+
+- [x] **T3 — engine test-scaffold duplication → shared `engine/test-support.js`. DONE — byte-green.**
+  _Landed as:_ implement → assertion-preservation-skeptic workflow (Opus). Scope proved
+  UNDERSTATED: not just the flagged 4 specs — the drift map found **5 duplicated fake families
+  across 11 files** (6× `stubH` in two drifted forms; 6× journey-pinned request builder drifted on
+  `headers`; 4× recording session `h` in three capture strategies; 2× seed helper; 2× `driveHandler`)
+  plus duplicated route selectors (2× `postHandlerOf`, 4× endsWith-pattern). Consolidation rule:
+  keep the SUPERSET, never flatten a capability (capturing `stubH`; `recordingH` = union of
+  `.calls` log + `.cookies` jar; `driveHandler` returning `{before,after,response,view}`) — so
+  every spec's observational power is intact and call sites unchanged via one-line aliases.
+  Deliberately kept local: `journey.test.js reqWith` + `journey-user-assoc.test.js req` (session-
+  seam builders, not copies — forcing them in would add indirection, not remove duplication).
+  `headers:{}` uniformity proven inert (`session.userId` optional-chains). Module named
+  `test-support.js` (not `.test.`) so vitest doesn't collect it. Skeptic: no objections.
+  **Byte-green: unit 154 (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**

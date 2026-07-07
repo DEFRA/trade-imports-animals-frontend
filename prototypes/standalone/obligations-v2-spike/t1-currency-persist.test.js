@@ -2,9 +2,13 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
 import { readyForQuote } from './flow/section-status.js'
-import { JOURNEY_COOKIE } from './engine/journey.js'
 import { store } from './engine/store.js'
 import { configureReadyForQuote } from './engine/read.js'
+import {
+  driveHandler,
+  postHandlerOf,
+  postHandlerEndingWith
+} from './engine/test-support.js'
 import { calculatePremium } from './lib/quote.js'
 import { dispatchPages } from './features/index.js'
 
@@ -23,48 +27,8 @@ import * as driverClaim from './features/named-driver/driver-claim.controller.js
  * malformed amount must re-render the user's RAW input and commit nothing.
  */
 
-const stubH = () => {
-  const captured = {}
-  return {
-    view: (view, ctx) => {
-      captured.view = { view, ctx }
-      return captured.view
-    },
-    redirect: (to) => ({ redirect: to }),
-    state: () => {},
-    captured
-  }
-}
-
-const postHandlerOf = (mod) =>
-  mod.routes.find((route) => route.method === 'POST').handler
-
-const findPost = (mod, endsWith) =>
-  mod.routes.find(
-    (route) => route.method === 'POST' && route.path.endsWith(endsWith)
-  ).handler
-
-/** Drive one real handler against the real store; return before/after answers
- *  plus the response the handler returned (a redirect on success, a view on the
- *  error re-render). */
-const drive = (handler, { payload = {}, seed = {}, params = {} } = {}) => {
-  const journey = store.create()
-  store.saveAnswers(journey.journeyId, seed)
-  const h = stubH()
-  const request = {
-    payload,
-    params,
-    query: {},
-    state: { [JOURNEY_COOKIE]: journey.journeyId }
-  }
-  const response = handler(request, h)
-  return {
-    before: seed,
-    after: store.get(journey.journeyId).answers,
-    response,
-    view: h.captured.view
-  }
-}
+const findPost = postHandlerEndingWith
+const drive = driveHandler
 
 describe('T1 — cleaned currency values are persisted, not the raw payload', () => {
   beforeAll(() => {

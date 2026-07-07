@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, submitJourney } from './index.js'
 import { records, IN_PROGRESS, SUBMITTED } from './persistence/records.js'
 import { configureReadyForQuote } from './read.js'
-import { JOURNEY_COOKIE } from './journey.js'
+import { stubH, journeyRequest } from './test-support.js'
 
 /**
  * NW-4 shape proof — SUBMIT IS FINALISE. Because durable answers land on every
@@ -12,20 +12,8 @@ import { JOURNEY_COOKIE } from './journey.js'
  * the journey in-progress. `readyForQuote` is stubbed to drive both branches
  * deterministically — the readiness computation itself is tested in the flow.
  */
-const stubH = () => ({
-  view: (view, ctx) => ({ view, ctx }),
-  redirect: (to) => ({ redirect: to }),
-  state: () => {}
-})
-
 let journeyId
-const req = () => ({
-  payload: {},
-  params: {},
-  query: {},
-  state: { [JOURNEY_COOKIE]: journeyId },
-  headers: {}
-})
+const req = () => journeyRequest(journeyId)
 
 describe('submit is finalise', () => {
   beforeEach(() => {

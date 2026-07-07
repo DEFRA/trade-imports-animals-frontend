@@ -3,6 +3,7 @@ import { resume } from './index.js'
 import { records } from './persistence/records.js'
 import { STUB_USER } from './persistence/session.js'
 import { configureReadyForQuote } from './read.js'
+import { recordingH } from './test-support.js'
 
 /**
  * NW-4 shape proof (the definitive NOTHING-DERIVED-IS-STORED test) — a journey
@@ -14,8 +15,6 @@ import { configureReadyForQuote } from './read.js'
  * so there is nothing derived to go stale in the first place. That is the
  * self-heal point.
  */
-const makeH = () => ({ state: () => {}, unstate: () => {} })
-
 describe('resume self-heal (nothing derived is stored)', () => {
   beforeEach(() => {
     records.clear()
@@ -30,7 +29,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
       claims: [{ claimType: 'accident', claimAmount: '500' }]
     })
 
-    const result = resume({ state: {}, headers: {} }, makeH())
+    const result = resume({ state: {}, headers: {} }, recordingH())
 
     // The stale, now-out-of-scope obligation is NOT in the freshly derived scope.
     expect(result.scope.has('claims')).toBe(false)
@@ -42,7 +41,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, { hadClaims: 'no', claims: [{ x: 1 }] })
 
-    const result = resume({ state: {}, headers: {} }, makeH())
+    const result = resume({ state: {}, headers: {} }, recordingH())
 
     expect(Object.keys(result.journey).sort()).toEqual([
       'answers',

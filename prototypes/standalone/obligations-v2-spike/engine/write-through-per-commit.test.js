@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { appendEntryAt, commit, removeEntryAt, updateEntryAt } from './index.js'
 import { records } from './persistence/records.js'
 import { configureReadyForQuote } from './read.js'
-import { JOURNEY_COOKIE } from './journey.js'
+import { stubH, journeyRequest, seedNamedDriver } from './test-support.js'
 
 /**
  * NW-4 shape proof (load-bearing) — WRITE-THROUGH ON EVERY COMMIT. Drives the
@@ -12,20 +12,8 @@ import { JOURNEY_COOKIE } from './journey.js'
  * property the two-port split must preserve. `readyForQuote` is stubbed false so
  * `makeScope` needs no boot dispatch index; readiness itself is tested elsewhere.
  */
-const stubH = () => ({
-  view: (view, ctx) => ({ view, ctx }),
-  redirect: (to) => ({ redirect: to }),
-  state: () => {}
-})
-
 let journeyId
-const req = () => ({
-  payload: {},
-  params: {},
-  query: {},
-  state: { [JOURNEY_COOKIE]: journeyId },
-  headers: {}
-})
+const req = () => journeyRequest(journeyId)
 
 describe('write-through on every commit', () => {
   beforeEach(() => {
@@ -59,8 +47,7 @@ describe('write-through on every commit', () => {
  * scope so `removeEntryAt`'s reconcile splices rather than scope-wipes the
  * collection (mirrors `store-ops.test.js`).
  */
-const seed = (answers) =>
-  records.saveAnswers(journeyId, { addons: ['named-driver'], ...answers })
+const seed = (answers) => seedNamedDriver(records, journeyId, answers)
 const durableDrivers = () => records.load({ journeyId }).answers.drivers
 
 describe('write-through on every collection mutation', () => {

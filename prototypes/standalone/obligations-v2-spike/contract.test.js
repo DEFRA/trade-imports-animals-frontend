@@ -3,9 +3,13 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildDispatch } from './flow/dispatch.js'
 import { readyForQuote } from './flow/section-status.js'
 import { registry } from './registry.js'
-import { JOURNEY_COOKIE } from './engine/journey.js'
 import { store } from './engine/store.js'
 import { configureReadyForQuote } from './engine/read.js'
+import {
+  driveHandler,
+  postHandlerOf,
+  postHandlerEndingWith
+} from './engine/test-support.js'
 import { isAnswered } from './lib/answered.js'
 import { dispatchPages } from './features/index.js'
 
@@ -45,28 +49,8 @@ import * as ncd from './features/protected-ncd/years.controller.js'
  * which is itself the invalidation invariant, exercised separately.
  */
 
-const stubH = () => ({
-  view: (view, ctx) => ({ view, ctx }),
-  redirect: (to) => ({ redirect: to }),
-  state: () => {}
-})
-
-/** Drive one real handler against the store and return the resulting answers. */
-const drive = (handler, { payload = {}, seed = {} } = {}) => {
-  const journey = store.create()
-  store.saveAnswers(journey.journeyId, seed)
-  const request = {
-    payload,
-    params: {},
-    query: {},
-    state: { [JOURNEY_COOKIE]: journey.journeyId }
-  }
-  handler(request, stubH())
-  return { before: seed, after: store.get(journey.journeyId).answers }
-}
-
-const postHandlerOf = (mod) =>
-  mod.routes.find((route) => route.method === 'POST').handler
+/** Drive one real handler against the store and return before/after answers. */
+const drive = driveHandler
 
 /** Obligation ids this handler NEWLY answered (across the whole model). */
 const committedIds = ({ before, after }) =>
@@ -192,9 +176,7 @@ describe('controller <-> model commit contract', () => {
   // still holds, measured against the handler that actually commits.
   it('claims is committed by the entry (append) handler it declares', () => {
     expect(claimsList.meta.collects).toEqual(['claims'])
-    const postAdd = claimsEntry.routes.find(
-      (route) => route.method === 'POST' && route.path.endsWith('claims/add')
-    ).handler
+    const postAdd = postHandlerEndingWith(claimsEntry, 'claims/add')
     const result = drive(postAdd, {
       seed: { hadClaims: 'yes' }, // keeps the claims collection in scope
       payload: { claimType: 'accident', claimAmount: '500' }
@@ -209,10 +191,7 @@ describe('controller <-> model commit contract', () => {
   // Same contract shape as claims, one level up.
   it('drivers is committed by the entry (append) handler it declares', () => {
     expect(driversHub.meta.collects).toEqual(['drivers'])
-    const postAdd = driverEntry.routes.find(
-      (route) =>
-        route.method === 'POST' && route.path.endsWith('named-driver/add')
-    ).handler
+    const postAdd = postHandlerEndingWith(driverEntry, 'named-driver/add')
     const result = drive(postAdd, {
       seed: { addons: ['named-driver'] }, // keeps the drivers collection in scope
       payload: { driverName: 'Sam Passenger', relationship: 'spouse' }

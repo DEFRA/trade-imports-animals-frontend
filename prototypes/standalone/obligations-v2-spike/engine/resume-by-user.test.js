@@ -3,6 +3,7 @@ import { resume } from './index.js'
 import { records } from './persistence/records.js'
 import { STUB_USER, JOURNEY_COOKIE } from './persistence/session.js'
 import { configureReadyForQuote } from './read.js'
+import { recordingH } from './test-support.js'
 
 /**
  * NW-4 shape proof — COOKIELESS RESUME end-to-end through `state.resume`. A
@@ -11,15 +12,6 @@ import { configureReadyForQuote } from './read.js'
  * payoff: load-by-user + reconcile, with the found journey re-pinned as active.
  * `readyForQuote` is stubbed so `makeScope` needs no boot dispatch index.
  */
-const makeH = () => {
-  const calls = []
-  return {
-    state: (name, value) => calls.push([name, value]),
-    unstate: () => {},
-    calls
-  }
-}
-
 describe('resume by user (cookieless)', () => {
   beforeEach(() => {
     records.clear()
@@ -32,7 +24,7 @@ describe('resume by user (cookieless)', () => {
     records.saveAnswers(journeyId, { email: 'a@b.com' })
 
     // A brand-new request with NO JOURNEY_COOKIE.
-    const h = makeH()
+    const h = recordingH()
     const result = resume({ state: {}, headers: {} }, h)
 
     // (i) the durable answers came back
@@ -45,7 +37,7 @@ describe('resume by user (cookieless)', () => {
   })
 
   it('mints a fresh journey when the user has none to resume', () => {
-    const h = makeH()
+    const h = recordingH()
     const result = resume({ state: {}, headers: {} }, h)
     expect(result.journey.journeyId).toEqual(expect.any(String))
     expect(records.load({ userId: STUB_USER }).journeyId).toBe(

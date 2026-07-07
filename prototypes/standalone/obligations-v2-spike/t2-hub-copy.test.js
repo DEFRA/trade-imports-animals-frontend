@@ -2,9 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
 import { readyForQuote } from './flow/section-status.js'
-import { JOURNEY_COOKIE } from './engine/journey.js'
 import { store } from './engine/store.js'
 import { configureReadyForQuote } from './engine/read.js'
+import { stubH, journeyRequest } from './engine/test-support.js'
 import { dispatchPages } from './features/index.js'
 
 import { addonCopy, routes } from './features/hub/controller.js'
@@ -18,19 +18,6 @@ import { addonCopy, routes } from './features/hub/controller.js'
  * -copy lookup is pinned too: it fails loud rather than rendering `undefined`.
  */
 
-const stubH = () => {
-  const captured = {}
-  return {
-    view: (view, ctx) => {
-      captured.view = { view, ctx }
-      return captured.view
-    },
-    redirect: (to) => ({ redirect: to }),
-    state: () => {},
-    captured
-  }
-}
-
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
 /** Render the hub over a seeded journey; return its task-list items. */
@@ -38,12 +25,7 @@ const renderHub = (seed = {}) => {
   const journey = store.create()
   store.saveAnswers(journey.journeyId, seed)
   const h = stubH()
-  const request = {
-    params: {},
-    query: {},
-    state: { [JOURNEY_COOKIE]: journey.journeyId }
-  }
-  hubHandler(request, h)
+  hubHandler(journeyRequest(journey.journeyId), h)
   return h.captured.view.ctx.items
 }
 

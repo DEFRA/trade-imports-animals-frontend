@@ -2,7 +2,12 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { appendEntryAt, commit, removeEntryAt, updateEntryAt } from './index.js'
 import { store } from './store.js'
 import { configureReadyForQuote } from './read.js'
-import { JOURNEY_COOKIE } from './journey.js'
+import {
+  stubH,
+  journeyRequest,
+  seedNamedDriver,
+  postHandlerEndingWith
+} from './test-support.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { readyForQuote } from '../flow/section-status.js'
 import { dispatchPages } from '../features/index.js'
@@ -15,24 +20,9 @@ import * as driverClaim from '../features/named-driver/driver-claim.controller.j
  * append/remove/edit lifecycle for nested collections AND the malformed-index
  * hardening (a `.../foo/remove` URL must not `splice(NaN)` -> destroy instance 0).
  */
-const stubH = () => ({
-  view: (view, ctx) => ({ view, ctx }),
-  redirect: (to) => ({ redirect: to }),
-  state: () => {}
-})
-
 let journeyId
-const req = () => ({
-  payload: {},
-  params: {},
-  query: {},
-  state: { [JOURNEY_COOKIE]: journeyId }
-})
-// Every seed keeps the named-driver add-on selected so the `drivers` collection
-// stays IN SCOPE — otherwise `removeEntryAt`'s reconcile would (correctly) wipe
-// the whole out-of-scope collection, masking the path-op behaviour under test.
-const seed = (answers) =>
-  store.saveAnswers(journeyId, { addons: ['named-driver'], ...answers })
+const req = () => journeyRequest(journeyId)
+const seed = (answers) => seedNamedDriver(store, journeyId, answers)
 const answersNow = () => store.get(journeyId).answers
 
 describe('path-addressed store ops at depth', () => {
@@ -129,15 +119,11 @@ describe('path-addressed store ops at depth', () => {
 
   it('a malformed/out-of-range driver index does not fabricate a phantom driver', () => {
     seed({ drivers: [{ driverName: 'Sam' }] })
-    const postAddClaim = driverClaim.routes.find(
-      (r) => r.method === 'POST' && r.path.endsWith('claims/add')
-    ).handler
-    const request = {
+    const postAddClaim = postHandlerEndingWith(driverClaim, 'claims/add')
+    const request = journeyRequest(journeyId, {
       payload: { claimType: 'accident', claimAmount: '100' },
-      params: { driver: '99' },
-      query: {},
-      state: { [JOURNEY_COOKIE]: journeyId }
-    }
+      params: { driver: '99' }
+    })
     const res = postAddClaim(request, stubH())
     expect(res.redirect).toContain('addons/named-driver')
     // No sparse phantom driver fabricated at index 99.
