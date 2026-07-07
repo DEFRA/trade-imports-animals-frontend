@@ -215,6 +215,22 @@
       "detail": "Mandate is two-level per gate ruling: mandatory-to-continue (blocks Save and Continue at point of display) vs mandatory-to-submit (blocks submission only). V4's 'Mandatory to submit' rows map to enforcedAt=submit; canvas says *some* questions are continue-level but neither source names which - every required obligation currently carries enforcedAt=submit|unspecified and no field is yet marked enforcedAt=continue. Needs per-field ruling (likely at M0/M1 page builds).",
       "resolution": "countryOfOrigin and commoditySelection are enforcedAt=continue (cannot Save and Continue without them); every other required obligation is enforcedAt=submit.",
       "resolvedBy": "Sam — spec gate voice session 2026-07-07"
+    },
+    {
+      "id": "c-024",
+      "fields": ["internalReferenceNumber"],
+      "sources": ["confluence-v4"],
+      "detail": "V4 defect: the example value Imports456_GB contains an underscore that the stated alphanumeric pattern rejects. Prototype keeps the alphanumeric pattern and an underscore-free fixture; raise with the PO.",
+      "resolution": null,
+      "resolvedBy": null
+    },
+    {
+      "id": "c-025",
+      "fields": ["regionOfOriginCode"],
+      "sources": ["confluence-v4"],
+      "detail": "V4 note says region code is displayed/stored with an ISO country prefix derived from Country of Origin. M0 implements a plain 5-char input (hint: For example, FR-75) with no derived-prefix logic. Decide at a design gate whether auto-prefix behaviour is required.",
+      "resolution": null,
+      "resolvedBy": null
     }
   ]
 }
