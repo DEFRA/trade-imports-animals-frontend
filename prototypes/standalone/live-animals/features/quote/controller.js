@@ -37,6 +37,6 @@ const get = (request, h) => {
   })
 }
 
-const post = (_request, h) => h.redirect(pagePath('check-answers'))
+const post = (_request, h) => h.redirect(pagePath(kit.CYA_SLUG))
 
 export const routes = kit.pageRoutes(page, { get, post })

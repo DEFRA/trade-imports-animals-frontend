@@ -3,7 +3,8 @@ import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import * as state from '../../engine/index.js'
 import { calculatePremium } from '../../lib/quote.js'
 import { isBlank } from '../../lib/answered.js'
-import { open } from '../../shared/kit.js'
+import { pageRoutes } from '../../shared/kit.js'
+import { notificationViewPage as page } from './page.js'
 import {
   CLAIM_TYPE_LABEL,
   WINDSCREEN_PROVIDER_LABEL
@@ -309,17 +310,4 @@ const post = (request, h) => {
   return renderCya(h, result.journey.answers)
 }
 
-export const routes = [
-  {
-    method: 'GET',
-    path: pagePath('check-answers'),
-    options: open,
-    handler: get
-  },
-  {
-    method: 'POST',
-    path: pagePath('check-answers'),
-    options: open,
-    handler: post
-  }
-]
+export const routes = pageRoutes(page, { get, post })

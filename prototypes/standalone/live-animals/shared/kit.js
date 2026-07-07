@@ -8,7 +8,7 @@ import { nextInSection } from '../flow/navigation.js'
  */
 export const open = { auth: false }
 
-export const CYA_SLUG = 'check-answers'
+export const CYA_SLUG = 'notification-view'
 
 /** Default `collects`: a feature's whole non-system obligation set. */
 export const collectsFrom = (obligations) =>

@@ -132,6 +132,16 @@ const buildAddonItems = (answers, scope, inScope) =>
       }
     })
 
+// "Check and submit" is a task row, not a GROUP_ROW: it collects nothing,
+// so its status derives Not applicable (rendered "Not started") and it must
+// not join the completed-tasks count, which only Fulfilled sections can move.
+const buildReviewItem = (answers, scope, inScope) => ({
+  title: { text: 'Check and submit' },
+  hint: { text: 'Check your answers before you submit the notification' },
+  href: sectionEntry('review', scope),
+  status: statusTag(sectionStatus(sectionById('review'), answers, inScope))
+})
+
 const buildQuoteItem = (scope) =>
   scope.readyForQuote
     ? {
@@ -164,7 +174,8 @@ const handler = (request, h) => {
       ...buildGroupItems(answers, scope, inScope),
       buildPickerItem(answers, inScope),
       ...buildAddonItems(answers, scope, inScope),
-      buildQuoteItem(scope)
+      buildQuoteItem(scope),
+      buildReviewItem(answers, scope, inScope)
     ],
     breadcrumbs: [
       { text: 'Prototypes', href: '/prototype-standalone' },

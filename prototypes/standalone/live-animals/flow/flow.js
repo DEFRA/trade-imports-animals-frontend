@@ -28,6 +28,7 @@ import {
 } from '../features/modifications/page.js'
 import { protectedNcdYearsPage } from '../features/protected-ncd/page.js'
 import { quoteSummaryPage } from '../features/quote/page.js'
+import { notificationViewPage } from '../features/check-answers/page.js'
 
 export const sections = [
   {
@@ -103,6 +104,13 @@ export const sections = [
     id: 'get-your-quote',
     gate: (scope) => scope.readyForQuote,
     pages: [quoteSummaryPage]
+  },
+  // "Check and submit" (c-022 end shape: hub -> check your answers ->
+  // declaration -> submitted). No gate: the section collects nothing, so
+  // it derives reachable — a CYA you can always visit.
+  {
+    id: 'review',
+    pages: [notificationViewPage]
   }
 ]
 

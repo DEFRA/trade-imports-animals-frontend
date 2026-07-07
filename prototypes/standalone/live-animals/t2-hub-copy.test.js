@@ -69,6 +69,22 @@ describe('#handler hub copy', () => {
     }
   })
 
+  it('Should render the Check and submit row linking to the check-your-answers page', () => {
+    const reviewRow = rowByTitle(renderHub(), 'Check and submit')
+
+    expect(reviewRow.hint.text).toBe(
+      'Check your answers before you submit the notification'
+    )
+    // The review section collects nothing, so it derives reachable on a
+    // fresh journey — the row must link out, never fall back to the hub.
+    expect(reviewRow.href).toBe(
+      '/prototype-standalone/live-animals/notification-view'
+    )
+    expect(reviewRow.status).toEqual({
+      tag: { text: 'Not started', classes: 'govuk-tag--grey' }
+    })
+  })
+
   it('Should give the Email row a hint that does not echo its title', () => {
     const emailRow = rowByTitle(renderHub(), 'Email')
 

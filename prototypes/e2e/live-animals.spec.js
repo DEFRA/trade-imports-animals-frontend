@@ -887,4 +887,69 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(consignmentRow).not.toContainText('Completed')
   })
+
+  test('check and submit — the review task is on the hub and check your answers lists the answered rows', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // The review task is on the hub from the start — check your answers
+    // collects nothing, so it is always open to visit.
+    const reviewRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Check and submit'
+    })
+    await expect(reviewRow).toBeVisible()
+
+    // Answer the origin section from the shared fixture...
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByLabel('Country of origin')
+      .selectOption(values.countryOfOrigin)
+    await page.getByRole('radio', { name: 'Yes' }).check()
+    await page
+      .getByLabel('Region of origin code', { exact: true })
+      .fill(values.regionOfOriginCode)
+    await page
+      .getByLabel(
+        'Your internal reference number for this consignment (optional)'
+      )
+      .fill(values.internalReferenceNumber)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // ...and the contact section (a copied record, c-020).
+    await page.getByRole('link', { name: 'Contact address' }).click()
+    await page.getByRole('radio', { name: values.contactAddress.name }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // The review task opens check your answers.
+    await reviewRow.getByRole('link', { name: 'Check and submit' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+    expect(page.url()).toContain('/notification-view')
+
+    // The answered live-animals rows show the fixture values. The key match
+    // is whole-cell (modulo template whitespace) so 'Region of origin code'
+    // cannot also match the 'Region of origin code required' row.
+    const summaryValue = (key) =>
+      page
+        .locator('.govuk-summary-list__row')
+        .filter({
+          has: page.locator('.govuk-summary-list__key', {
+            hasText: new RegExp(`^\\s*${key}\\s*$`)
+          })
+        })
+        .locator('.govuk-summary-list__value')
+
+    await expect(summaryValue('Country of origin')).toHaveText('France')
+    await expect(summaryValue('Region of origin code')).toHaveText(
+      values.regionOfOriginCode
+    )
+    await expect(summaryValue('Internal reference number')).toHaveText(
+      values.internalReferenceNumber
+    )
+    await expect(summaryValue('Contact address')).toHaveText(
+      values.contactAddress.name
+    )
+  })
 })
