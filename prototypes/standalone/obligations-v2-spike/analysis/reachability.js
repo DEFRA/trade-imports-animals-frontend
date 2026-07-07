@@ -84,19 +84,19 @@ const subsetsOf = (items) =>
  * product. Sub-obligation scope is steered per-witness (representative entries +
  * item-conditional sibling gates), not by widening this top-level space.
  */
-export function enumerateScopeStates() {
-  const states = []
-  for (const hadClaims of ['no', 'yes']) {
-    for (const voluntaryExcess of ['no', 'yes']) {
-      for (const coverType of ['', 'comprehensive']) {
-        for (const addons of subsetsOf(ADDONS)) {
-          states.push({ hadClaims, voluntaryExcess, coverType, addons })
-        }
-      }
-    }
-  }
-  return states
-}
+export const enumerateScopeStates = () =>
+  ['no', 'yes'].flatMap((hadClaims) =>
+    ['no', 'yes'].flatMap((voluntaryExcess) =>
+      ['', 'comprehensive'].flatMap((coverType) =>
+        subsetsOf(ADDONS).map((addons) => ({
+          hadClaims,
+          voluntaryExcess,
+          coverType,
+          addons
+        }))
+      )
+    )
+  )
 
 /** The concrete value that satisfies a sibling item-conditional gate. */
 const gateValue = (activatedBy) => {

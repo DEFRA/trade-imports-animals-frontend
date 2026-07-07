@@ -28,47 +28,47 @@ import { quoteSummaryPage } from '../features/quote/page.js'
 export const sections = [
   {
     id: 'email',
-    pages: [{ ...emailPage }]
+    pages: [emailPage]
   },
   {
     id: 'about-you-and-your-vehicle',
-    pages: [{ ...aboutYouPage }, { ...yourVehiclePage }]
+    pages: [aboutYouPage, yourVehiclePage]
   },
   {
     id: 'your-driving-and-cover',
     pages: [
-      { ...drivingHistoryPage },
+      drivingHistoryPage,
       { ...claimsPage, gate: (scope) => scope.inScope.has('claims') },
-      { ...coverTypePage },
-      { ...optionalExtrasPage }
+      coverTypePage,
+      optionalExtrasPage
     ]
   },
   {
     id: 'add-to-your-policy',
-    pages: [{ ...addonsPage }]
+    pages: [addonsPage]
   },
   {
     id: 'named-driver',
     dynamic: true,
     gate: (scope) => scope.inScope.has('drivers'),
-    pages: [{ ...driversPage }]
+    pages: [driversPage]
   },
   {
     id: 'modifications',
     dynamic: true,
     gate: (scope) => scope.inScope.has('modDescription'),
-    pages: [{ ...modificationsDescribePage }, { ...modificationsValuePage }]
+    pages: [modificationsDescribePage, modificationsValuePage]
   },
   {
     id: 'protected-ncd',
     dynamic: true,
     gate: (scope) => scope.inScope.has('ncdYears'),
-    pages: [{ ...protectedNcdYearsPage }]
+    pages: [protectedNcdYearsPage]
   },
   {
     id: 'get-your-quote',
     gate: (scope) => scope.readyForQuote,
-    pages: [{ ...quoteSummaryPage }]
+    pages: [quoteSummaryPage]
   }
 ]
 

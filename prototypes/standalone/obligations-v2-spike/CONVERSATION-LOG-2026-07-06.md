@@ -480,3 +480,20 @@ Workflow-orchestrated, parent-shell verification).
   style. Whole-diff assertion audit: 1 relocated line added, 0 removed/reworded. Skeptic: no
   objections. **Green: unit 157 (22 files, +3 splits) / E2E 71, parent-shell verified; eslint +
   prettier clean.**
+
+- [x] **T8 — functional-style + test-quality residue. DONE — byte-green, ledgered.**
+  _Landed as:_ implement → 2-skeptic verify workflow (Opus; engine-semantics + judgement-auditor).
+  The PHASE6 §2 worklist was reconciled against post-T1–T7 code first. **Fixed (8):** `write.js`
+  entry mutators → `list.with()` / `list.toSpliced()` (Node ≥24 confirmed; NaN guard untouched,
+  runs first); `status.js` `statusOf` → arrow (file convention); hub `statusTag` if/else → closed
+  `STATUS_TAG` lookup + `NOT_STARTED_TAG` fallback; hub handler decomposed into named builders
+  (`buildGroupItems`/`buildPickerItem`/`buildAddonItems`/`buildQuoteItem`/`countCompletedGroups`);
+  `reachability.enumerateScopeStates` 4 nested loops → `flatMap` composition (state ORDER verified
+  identical — witness selection depends on it); `answered.js` `every(isBlank)`; `flow.js` 10 no-op
+  `{...page}` spreads removed (restores documented reference-sharing; all consumers traced
+  read-only first); + 2 assertion strengthenings (bare `.toThrow` → pinned message; `toBeDefined`
+  → journeyId identity). **Already resolved by earlier passes (5)** incl. the `destroyWiped`
+  coverage gap. **Declined (3) with reasons:** session-port method-shorthand (uniform port idiom),
+  `pinActive` extraction (sweep-marked optional; a T4-family nit), `scaffoldFor` recursive-fold
+  rewrite (siblings are imperative; risk > gain). Skeptics: no objections. **Byte-green: unit 157
+  (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**

@@ -38,7 +38,7 @@ const isRequired = (id) => {
  * carry the section. Started ≠ satisfied is exactly that distinction. */
 const isStarted = (id, answers) => isAnswered(answers[id])
 
-export function statusOf(obligationIds, answers, inScope) {
+export const statusOf = (obligationIds, answers, inScope) => {
   const inScopeIds = obligationIds.filter((id) => inScope.has(id))
   if (inScopeIds.length === 0) return NA
 

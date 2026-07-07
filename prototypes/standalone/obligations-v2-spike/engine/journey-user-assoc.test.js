@@ -29,8 +29,11 @@ describe('journey-user association', () => {
     expect(session.userId(buildRequest({ [STUB_USER_HEADER]: 'user-B' }))).toBe(
       'user-B'
     )
-    currentJourney(buildRequest({ [STUB_USER_HEADER]: 'user-B' }), recordingH())
-    expect(records.load({ userId: 'user-B' })).toBeDefined()
+    const journey = currentJourney(
+      buildRequest({ [STUB_USER_HEADER]: 'user-B' }),
+      recordingH()
+    )
+    expect(records.load({ userId: 'user-B' }).journeyId).toBe(journey.journeyId)
   })
 
   it('Should keep two users active journeys isolated in the byUser index', () => {

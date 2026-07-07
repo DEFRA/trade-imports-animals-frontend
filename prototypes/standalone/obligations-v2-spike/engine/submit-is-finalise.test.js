@@ -34,7 +34,9 @@ describe('submit is finalise', () => {
     // finalise writes NO data — answers are exactly the last commit.
     expect(result.journey.answers).toEqual(committed)
     // the record is frozen — a later commit is rejected.
-    expect(() => commit(buildRequest(), stubH(), { late: true })).toThrow()
+    expect(() => commit(buildRequest(), stubH(), { late: true })).toThrow(
+      /is submitted — writes blocked/
+    )
   })
 
   it('Should be a no-op when not ready — journey stays in-progress', () => {

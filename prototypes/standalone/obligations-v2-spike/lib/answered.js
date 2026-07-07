@@ -6,7 +6,7 @@ export const isBlank = (value) => {
   if (value === undefined || value === null) return true
   if (Array.isArray(value)) return value.length === 0
   if (typeof value === 'object') {
-    return Object.values(value).every((part) => isBlank(part))
+    return Object.values(value).every(isBlank)
   }
   return String(value).trim() === ''
 }

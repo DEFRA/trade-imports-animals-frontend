@@ -60,39 +60,39 @@ export const addonCopy = (id) => {
   return copy
 }
 
-const statusTag = (status) => {
-  if (status === FULFILLED) return { text: 'Completed' }
-  if (status === IN_PROGRESS) {
-    return { tag: { text: 'In progress', classes: 'govuk-tag--light-blue' } }
-  }
-  return { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
+const NOT_STARTED_TAG = {
+  tag: { text: 'Not started', classes: 'govuk-tag--grey' }
 }
+const STATUS_TAG = {
+  [FULFILLED]: { text: 'Completed' },
+  [IN_PROGRESS]: {
+    tag: { text: 'In progress', classes: 'govuk-tag--light-blue' }
+  }
+}
+const statusTag = (status) => STATUS_TAG[status] ?? NOT_STARTED_TAG
 
 const sectionById = (id) => sections.find((section) => section.id === id)
 
-const handler = (request, h) => {
-  const { answers, scope } = state.get(request, h)
-  const inScope = scope.inScope
-
-  const groupItems = GROUP_ROWS.map((row) => ({
+const buildGroupItems = (answers, scope, inScope) =>
+  GROUP_ROWS.map((row) => ({
     title: { text: row.title },
     hint: { text: row.hint },
     href: sectionEntry(row.id, scope),
     status: statusTag(sectionStatus(sectionById(row.id), answers, inScope))
   }))
 
-  const pickerSection = sectionById('add-to-your-policy')
-  const pickerItem = {
-    title: { text: 'Add to your policy' },
-    href: pagePath('addons'),
-    status: statusTag(
-      'addons' in answers
-        ? FULFILLED
-        : sectionStatus(pickerSection, answers, inScope)
-    )
-  }
+const buildPickerItem = (answers, inScope) => ({
+  title: { text: 'Add to your policy' },
+  href: pagePath('addons'),
+  status: statusTag(
+    'addons' in answers
+      ? FULFILLED
+      : sectionStatus(sectionById('add-to-your-policy'), answers, inScope)
+  )
+})
 
-  const addonItems = sections
+const buildAddonItems = (answers, scope, inScope) =>
+  sections
     .filter((section) => section.dynamic && section.gate(scope))
     .map((section) => {
       const copy = addonCopy(section.id)
@@ -104,7 +104,8 @@ const handler = (request, h) => {
       }
     })
 
-  const quoteItem = scope.readyForQuote
+const buildQuoteItem = (scope) =>
+  scope.readyForQuote
     ? {
         title: { text: 'Get your quote' },
         href: pagePath('quote-summary'),
@@ -118,15 +119,25 @@ const handler = (request, h) => {
         }
       }
 
-  const completed = GROUP_ROWS.filter(
+const countCompletedGroups = (answers, inScope) =>
+  GROUP_ROWS.filter(
     (row) => sectionStatus(sectionById(row.id), answers, inScope) === FULFILLED
   ).length
+
+const handler = (request, h) => {
+  const { answers, scope } = state.get(request, h)
+  const inScope = scope.inScope
 
   return h.view(view, {
     pageTitle: 'Get a car insurance quote',
     heading: 'Get a car insurance quote',
-    progressLine: `You have completed ${completed} of ${GROUP_ROWS.length} tasks.`,
-    items: [...groupItems, pickerItem, ...addonItems, quoteItem],
+    progressLine: `You have completed ${countCompletedGroups(answers, inScope)} of ${GROUP_ROWS.length} tasks.`,
+    items: [
+      ...buildGroupItems(answers, scope, inScope),
+      buildPickerItem(answers, inScope),
+      ...buildAddonItems(answers, scope, inScope),
+      buildQuoteItem(scope)
+    ],
     breadcrumbs: [
       { text: 'Prototypes', href: '/prototype-standalone' },
       { text: 'Obligations v2 (standalone)', href: BASE },

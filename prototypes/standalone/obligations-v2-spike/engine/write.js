@@ -52,10 +52,13 @@ export const appendEntryAt = (request, h, collectionPath, entry) => {
 /** Replace the entry at `[...collectionPath, index]` (edit-in-place at depth). */
 export const updateEntryAt = (request, h, collectionPath, index, entry) => {
   const journey = currentJourney(request, h)
-  const list = [...(valueAt(journey.answers, collectionPath) ?? [])]
+  const list = valueAt(journey.answers, collectionPath) ?? []
   if (!isValidIndex(index, list)) return
-  list[index] = entry
-  const answers = setAt(journey.answers, collectionPath, list)
+  const answers = setAt(
+    journey.answers,
+    collectionPath,
+    list.with(index, entry)
+  )
   records.saveAnswers(journey.journeyId, answers)
 }
 
@@ -67,10 +70,13 @@ export const updateEntryAt = (request, h, collectionPath, index, entry) => {
  */
 export const removeEntryAt = (request, h, collectionPath, index) => {
   const journey = currentJourney(request, h)
-  const list = [...(valueAt(journey.answers, collectionPath) ?? [])]
+  const list = valueAt(journey.answers, collectionPath) ?? []
   if (!isValidIndex(index, list)) return
-  list.splice(index, 1)
-  const answers = setAt(journey.answers, collectionPath, list)
+  const answers = setAt(
+    journey.answers,
+    collectionPath,
+    list.toSpliced(index, 1)
+  )
   const { wiped } = reconcile(answers)
   destroyWiped(answers, wiped)
   records.saveAnswers(journey.journeyId, answers)
