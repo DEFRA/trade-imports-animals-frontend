@@ -1,3 +1,4 @@
+import * as dashboard from './dashboard/controller.js'
 import * as start from './start/controller.js'
 import * as hub from './hub/controller.js'
 import * as email from './email/controller.js'
@@ -38,6 +39,7 @@ export const dispatchPages = [
 ]
 
 export const allRoutes = [
+  ...dashboard.routes,
   ...start.routes,
   ...hub.routes,
   ...email.routes,

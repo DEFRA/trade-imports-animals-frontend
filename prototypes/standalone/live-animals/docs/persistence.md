@@ -13,7 +13,7 @@ who is the user, and which journey is active in this session.
 - `userId(request)` returns a single constant stub user
   (`stub-user-0001`). An `x-stub-user` request header overrides it, so a
   test can play a second user cheaply.
-- The active-journey pointer is a cookie (`obligationsV2JourneyId`) that
+- The active-journey pointer is a cookie (`liveAnimalsJourneyId`) that
   carries the `journeyId` directly. This deliberately collapses the
   production indirection of an opaque session id mapped to a journey in
   a session store — the cookie IS the pointer.

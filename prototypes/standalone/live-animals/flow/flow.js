@@ -1,3 +1,4 @@
+import { dashboardPage } from '../features/dashboard/page.js'
 import { emailPage } from '../features/email/page.js'
 import { aboutYouPage } from '../features/about-you/page.js'
 import { yourVehiclePage } from '../features/your-vehicle/page.js'
@@ -15,6 +16,10 @@ import { protectedNcdYearsPage } from '../features/protected-ncd/page.js'
 import { quoteSummaryPage } from '../features/quote/page.js'
 
 export const sections = [
+  {
+    id: 'start',
+    pages: [dashboardPage]
+  },
   {
     id: 'email',
     pages: [emailPage]
