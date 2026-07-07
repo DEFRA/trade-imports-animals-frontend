@@ -113,18 +113,18 @@ Two mechanisms were prototyped during the spike:
    map. Prototyped alongside gatedBy (`a17a9a1`).
 
 Both handled every V4 shape. The trade-off surfaced by side-by-side
-prototyping (the applyTo prototype landed as `obligations-all-applyto.js`
-
-- tests, since removed):
+prototyping — the applyTo prototype landed as
+`obligations-all-applyto.js` plus tests (since removed after the
+migration):
 
 | Property                                  | gatedBy DSL                                        | applyTo + helpers                                       |
-| ----------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- | --- | ----------------------------- |
+| ----------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
 | Author brevity for common cases           | ~3 lines                                           | ~3 lines (with helpers)                                 |
 | Vocabulary to learn                       | 8 combinators + resolver semantics                 | 0 — JS + helper library                                 |
 | Testable at obligation level              | Requires resolver + `obligationsById` construction | Plain function call with plain inputs                   |
 | Debuggable                                | Data + interpreter (walk the tree)                 | Native breakpoints, `console.log`                       |
 | Cross-sibling ergonomics (all-or-nothing) | Attach-after-declaration mutation required         | Closures over `const` resolve at call time; no mutation |
-| Compose with JS operators                 | No — need combinators                              | Yes — `&&`, `                                           |     | `, `!`, `.filter()`, `.map()` |
+| Compose with JS operators                 | No — need combinators                              | Yes — logical operators, spreads, array methods         |
 | Static introspection                      | Native (walk the tree)                             | Only via helper `.metadata`                             |
 | Cross-language export                     | Native (gate is data)                              | Only via helper `.metadata`                             |
 | Helper functions unit-testable            | N/A (interpreter is the atom)                      | Yes — pure functions                                    |
