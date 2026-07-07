@@ -10,6 +10,7 @@ import {
 } from '../claims/entry.controller.js'
 import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
 import { commodityLineValue } from '../commodities/list.controller.js'
+import { documentValue } from '../documents/list.controller.js'
 import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
 import { PURPOSE_IN_INTERNAL_MARKET_LABEL } from '../import-purpose/controller.js'
 
@@ -54,6 +55,22 @@ const commodityRows = (answers) =>
           href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
           text: 'Change',
           visuallyHiddenText: `commodity ${index + 1}`
+        }
+      ]
+    }
+  }))
+
+// Change links to the documents LOOP HUB — per-document edits live there.
+const documentRows = (answers) =>
+  state.collectionView(answers, ['documents']).map(({ index, entry }) => ({
+    key: { text: `Document ${index + 1}` },
+    value: { text: documentValue(entry) },
+    actions: {
+      items: [
+        {
+          href: pagePath(slugOfPage(pageOfObligation('documents'))),
+          text: 'Change',
+          visuallyHiddenText: `document ${index + 1}`
         }
       ]
     }
@@ -125,6 +142,7 @@ const buildRows = (answers) => {
           )
         ]
       : []),
+    ...documentRows(answers),
     row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),

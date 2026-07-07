@@ -193,6 +193,77 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(consignmentRow).toContainText('Completed')
   })
 
+  test('accompanying documents — the optional collection starts Completed; adding a document lists it on the loop hub', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const [doc] = values.documents
+    const issued = doc.accompanyingDocumentDateOfIssue
+
+    // documents is optional (nothing required until an entry exists), so
+    // section-status derives the task as Completed before any document is
+    // added — the row is never an open requirement.
+    const documentsRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Accompanying documents'
+    })
+    await expect(documentsRow).toContainText('Completed')
+
+    await page.getByRole('link', { name: 'Accompanying documents' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Documents you have added' })
+    ).toBeVisible()
+    await expect(
+      page.getByText('You have not added any documents yet.')
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Add a document' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add a document' })
+    ).toBeVisible()
+
+    // A partial date of issue is malformed, not merely blank — it blocks
+    // the add (dateParts validation).
+    await page.getByLabel('Day').fill(issued.day)
+    await page.getByRole('button', { name: 'Add document' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Enter a real date of issue' })
+    ).toBeVisible()
+
+    // Happy path from the shared fixture — metadata only, no file upload.
+    await page
+      .getByLabel('Document type')
+      .selectOption(doc.accompanyingDocumentType)
+    await page
+      .getByLabel('Attachment type')
+      .selectOption(doc.accompanyingDocumentAttachmentType)
+    await page
+      .getByLabel('Document reference')
+      .fill(doc.accompanyingDocumentReference)
+    await page.getByLabel('Day').fill(issued.day)
+    await page.getByLabel('Month').fill(issued.month)
+    await page.getByLabel('Year').fill(issued.year)
+    await page.getByRole('button', { name: 'Add document' }).click()
+
+    // Back on the loop hub with the new document summarised.
+    await expect(
+      page.getByRole('heading', { name: 'Documents you have added' })
+    ).toBeVisible()
+    const row = page.locator('.govuk-summary-list__row', {
+      hasText: 'Document 1'
+    })
+    await expect(row).toContainText('ITAHC — GBHC1234567890')
+
+    // Continue returns to the hub; the optional task stays Completed.
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+    await expect(documentsRow).toContainText('Completed')
+  })
+
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({
     page
   }) => {

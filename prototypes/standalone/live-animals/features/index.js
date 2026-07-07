@@ -7,6 +7,8 @@ import * as commoditiesSelect from './commodities/select.controller.js'
 import * as commoditiesDetails from './commodities/details.controller.js'
 import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
+import * as documentsList from './documents/list.controller.js'
+import * as documentsEntry from './documents/entry.controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -34,6 +36,7 @@ export const dispatchPages = [
   commoditiesList.meta,
   importReason.meta,
   importPurpose.meta,
+  documentsList.meta,
   email.meta,
   aboutYou.meta,
   vehicle.meta,
@@ -58,6 +61,8 @@ export const allRoutes = [
   ...commoditiesDetails.routes,
   ...importReason.routes,
   ...importPurpose.routes,
+  ...documentsList.routes,
+  ...documentsEntry.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,

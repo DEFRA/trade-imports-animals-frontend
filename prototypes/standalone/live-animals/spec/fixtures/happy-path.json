@@ -15,6 +15,18 @@
       }
     ],
     "reasonForImport": "internal-market",
-    "purposeInInternalMarket": "breeding"
+    "purposeInInternalMarket": "breeding",
+    "documents": [
+      {
+        "accompanyingDocumentType": "ITAHC",
+        "accompanyingDocumentAttachmentType": "PDF",
+        "accompanyingDocumentReference": "GBHC1234567890",
+        "accompanyingDocumentDateOfIssue": {
+          "day": "12",
+          "month": "12",
+          "year": "2025"
+        }
+      }
+    ]
   }
 }

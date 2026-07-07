@@ -25,6 +25,11 @@ const GROUP_ROWS = [
     title: 'About the consignment',
     hint: 'Why you are importing the animals and their purpose in the internal market'
   },
+  {
+    id: 'documents',
+    title: 'Accompanying documents',
+    hint: 'Certificates, permits and other documents for the consignment'
+  },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',

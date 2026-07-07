@@ -2,6 +2,7 @@ import * as origin from './features/origin/obligations.js'
 import * as commodities from './features/commodities/obligations.js'
 import * as importReason from './features/import-reason/obligations.js'
 import * as importPurpose from './features/import-purpose/obligations.js'
+import * as documents from './features/documents/obligations.js'
 import * as email from './features/email/obligations.js'
 import * as aboutYou from './features/about-you/obligations.js'
 import * as vehicle from './features/your-vehicle/obligations.js'
@@ -21,6 +22,7 @@ const all = [
   ...commodities.obligations,
   ...importReason.obligations,
   ...importPurpose.obligations,
+  ...documents.obligations,
   ...email.obligations,
   ...aboutYou.obligations,
   ...vehicle.obligations,

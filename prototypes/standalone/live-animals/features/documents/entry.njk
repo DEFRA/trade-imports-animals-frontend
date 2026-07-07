@@ -1,0 +1,48 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukSelect({
+      id: "accompanyingDocumentType",
+      name: "accompanyingDocumentType",
+      label: { text: "Document type", classes: "govuk-label--s" },
+      value: values.accompanyingDocumentType,
+      errorMessage: errors.accompanyingDocumentType and { text: errors.accompanyingDocumentType },
+      items: typeItems
+    }) }}
+
+    {{ govukSelect({
+      id: "accompanyingDocumentAttachmentType",
+      name: "accompanyingDocumentAttachmentType",
+      label: { text: "Attachment type", classes: "govuk-label--s" },
+      hint: { text: "The file type of the document, for example PDF." },
+      value: values.accompanyingDocumentAttachmentType,
+      errorMessage: errors.accompanyingDocumentAttachmentType and { text: errors.accompanyingDocumentAttachmentType },
+      items: attachmentTypeItems
+    }) }}
+
+    {{ govukInput({
+      id: "accompanyingDocumentReference",
+      name: "accompanyingDocumentReference",
+      label: { text: "Document reference", classes: "govuk-label--s" },
+      hint: { text: "For example, GBHC1234567890." },
+      classes: "govuk-input--width-20",
+      value: values.accompanyingDocumentReference,
+      errorMessage: errors.accompanyingDocumentReference and { text: errors.accompanyingDocumentReference }
+    }) }}
+
+    {{ govukDateInput(dateOfIssue) }}
+
+    {{ govukButton({ text: buttonText }) }}
+  </form>
+{% endblock %}

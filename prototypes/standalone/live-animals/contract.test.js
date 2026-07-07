@@ -18,6 +18,8 @@ import * as commoditiesList from './features/commodities/list.controller.js'
 import * as commoditiesSelect from './features/commodities/select.controller.js'
 import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
+import * as documentsList from './features/documents/list.controller.js'
+import * as documentsEntry from './features/documents/entry.controller.js'
 import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
@@ -220,6 +222,30 @@ describe('controller <-> model commit contract', () => {
     })
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(commoditiesList.meta.collects))
+    )
+  })
+
+  // The LIST page declares `collects: ['documents']`, but the identity-minting
+  // write is the entry sub-page's append — same shape as claims. No seed:
+  // the optional collection is always-live.
+  it('Should commit documents via the entry (append) handler it declares', () => {
+    expect(documentsList.meta.collects).toEqual(['documents'])
+    const postAdd = postHandlerEndingWith(
+      documentsEntry,
+      'accompanying-documents/add'
+    )
+    const result = drive(postAdd, {
+      payload: {
+        accompanyingDocumentType: 'ITAHC',
+        accompanyingDocumentAttachmentType: 'PDF',
+        accompanyingDocumentReference: 'GBHC1234567890',
+        'accompanyingDocumentDateOfIssue-day': '12',
+        'accompanyingDocumentDateOfIssue-month': '12',
+        'accompanyingDocumentDateOfIssue-year': '2025'
+      }
+    })
+    expect(new Set(committedIds(result))).toEqual(
+      new Set(committableCollects(documentsList.meta.collects))
     )
   })
 
