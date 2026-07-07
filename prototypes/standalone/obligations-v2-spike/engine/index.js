@@ -1,16 +1,8 @@
 /**
- * THE narrow facade every page controller imports (`import * as state`). This is
- * a PURE BARREL — it owns zero logic; it re-exports exactly the one-directional
- * state surface pages are allowed to touch: read scope/status UP (`get`,
- * `makeScope`, `resume`), write answers DOWN (`commit` / `appendEntry(At)` /
- * `updateEntry(At)` / `removeEntry(At)` / `submitJourney`) and read the loop
- * primitive (`collectionView`). There is deliberately NO `setScope` and NO
- * `delete(otherObligation)`.
- *
- * The names are re-exported EXPLICITLY (never `export *`) so the facade surface
- * cannot silently widen when a source module gains an internal export.
- * `configureReadyForQuote` is intentionally NOT re-exported here — boot roots
- * import it straight from `./read.js`, keeping the `state.*` surface stable.
+ * The state facade every page imports (`import * as state`). Names are
+ * re-exported EXPLICITLY (never `export *`) so the facade surface cannot
+ * silently widen; `configureReadyForQuote` is deliberately NOT re-exported —
+ * boot roots import it straight from `./read.js`.
  */
 export { get, makeScope, resume } from './read.js'
 export {

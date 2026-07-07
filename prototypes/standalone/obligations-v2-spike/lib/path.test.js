@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { deleteAt, destroyWiped, pathKey, setAt, valueAt } from './path.js'
 
-/**
- * Path helpers — the address vocabulary that lets reconcile/status/store
- * descend into indexed collections. The DEPTH-0 COLLAPSE (a single-segment
- * path stringifies to the bare id) is the zero-DOM compatibility keystone:
- * every existing `scope.has('claims')` keeps working unchanged.
- */
 describe('path helpers', () => {
   it('Should collapse a depth-0 path to the legacy bare id', () => {
     expect(pathKey(['claims'])).toBe('claims')
@@ -32,7 +26,7 @@ describe('path helpers', () => {
     const answers = { claims: [{ claimType: 'accident' }] }
     const next = setAt(answers, ['claims', 0, 'claimAmount'], '500')
     expect(next.claims[0].claimAmount).toBe('500')
-    expect(answers.claims[0].claimAmount).toBeUndefined() // input untouched
+    expect(answers.claims[0].claimAmount).toBeUndefined()
   })
 
   it('Should delete a leaf key at a nested path', () => {
@@ -54,16 +48,9 @@ describe('path helpers', () => {
   })
 })
 
-/**
- * `wipeOrder` (commit's delete comparator) must order sibling array-index
- * deletes HIGHEST-INDEX-FIRST — a splice renumbers later siblings, so deleting
- * index 0 before index 1 would leave the second entry alive. This is inert in
- * Phase 1 (only the whole `claims` root is wipeOnExit) but goes live in Phase 3's
- * item-scoped wipes, so it is pinned now while the code is fresh.
- */
 describe('wipeOrder — sibling-safe deletion order', () => {
-  // Drive the REAL exported `destroyWiped` (used in production by
-  // `engine/write.js`) rather than re-deriving its map/sort/delete body inline.
+  // Drive the REAL exported `destroyWiped` rather than re-deriving its
+  // map/sort/delete body inline.
   const applyWipes = (answers, keys) => {
     destroyWiped(answers, keys)
     return answers

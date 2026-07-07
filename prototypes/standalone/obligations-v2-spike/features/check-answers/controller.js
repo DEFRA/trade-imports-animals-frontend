@@ -9,13 +9,6 @@ import {
   WINDSCREEN_PROVIDER_LABEL
 } from '../claims/entry.controller.js'
 
-/**
- * Check your answers — bespoke summary composition (v1's "bespoke bypass"
- * is the NORM in v2). It owns its row order, its composed rows (Vehicle,
- * Claim N, add-on status) and its exact "Change <key>" accessible names.
- * The POST is the one soft gate: submit re-checks readiness server-side,
- * flips to submitted, and moves on to confirmation.
- */
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
 
@@ -42,7 +35,6 @@ const ADDON_LABEL = {
   'protected-ncd': 'Protect your no-claims discount'
 }
 
-/** ?change=1 return-to-CYA edit target for the page that owns an obligation. */
 const changeHref = (obligationId) =>
   `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
 
@@ -93,9 +85,6 @@ const buildRows = (answers) => {
     )
   ]
 
-  // Claim N rows — bespoke composition over the loop library's instance facts,
-  // only when the collection is in scope. The change target is DERIVED through
-  // the dispatch seam (the page that owns `claims`) rather than a hardcoded slug.
   const claimsChangeHref = pagePath(slugOfPage(pageOfObligation('claims')))
   const claims =
     answerOf('hadClaims') === 'yes'
@@ -105,7 +94,6 @@ const buildRows = (answers) => {
     const label = CLAIM_TYPE_LABEL[entry.claimType] ?? NOT_PROVIDED
     const amount = (entry.claimAmount ?? '').toString().trim()
     const base = amount ? `${label} — £${amount}` : label
-    // A windscreen claim carries its approved repairer (item-scoped, 6c).
     const provider =
       entry.claimType === 'windscreen' && entry.windscreenProvider
         ? ` (${WINDSCREEN_PROVIDER_LABEL[entry.windscreenProvider] ?? entry.windscreenProvider})`

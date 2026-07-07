@@ -3,20 +3,8 @@ import Joi from 'joi'
 import { isRealDate } from './calendar.js'
 
 /**
- * A FLAT library of small, named, context-agnostic Joi validators. Each is a
- * factory returning a single-key `Joi.object({ [name]: rule }).unknown(true)`,
- * so a caller composes the ones it needs with `compose(...)` (`.concat` under
- * the hood) and every sibling field — including the CSRF `crumb` — passes
- * through untouched.
- *
- * These are NOT tied to an obligation. A validator is a fact about a *value*
- * (a JSON shape or domain), reusable by a page, a controller or a future
- * mapping layer. The obligation record is ignorant of them: coupling is loose,
- * via the schema a controller assembles, never a schema stamped on the model.
- *
- * Convention: every OPTIONAL validator lets '' (blank) through — the journey's
- * mandate split is "only fullName is save-blocking; everything else saves
- * blank" — so blank is valid and only a *malformed* non-blank value is caught.
+ * Convention: every OPTIONAL validator lets '' (blank) through — omit
+ * `.allow('')` and an optional field silently becomes save-blocking.
  * `requiredText` is the one save-blocking primitive.
  */
 
@@ -27,14 +15,12 @@ const PHONE_ALLOWED = /^[0-9+()\-.,;\s]+$/
 
 const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
 
-/** Compose several single-field validators into one page schema. */
 export const compose = (...schemas) =>
   schemas.reduce(
     (combined, schema) => combined.concat(schema),
     Joi.object({}).unknown(true)
   )
 
-/** The sole save-blocking primitive: a non-blank trimmed string. */
 export const requiredText = (name, message) =>
   single(
     name,
@@ -44,11 +30,9 @@ export const requiredText = (name, message) =>
     })
   )
 
-/** Optional free text (never blocks). */
 export const optionalText = (name) =>
   single(name, Joi.string().trim().allow(''))
 
-/** Optional trimmed string with a maximum length. */
 export const maxText = (name, max, message) =>
   single(
     name,
@@ -59,7 +43,6 @@ export const maxText = (name, max, message) =>
       .messages({ 'string.max': message ?? `Enter ${max} characters or fewer` })
   )
 
-/** Optional string matching a regex when present. */
 export const pattern = (name, regex, message) =>
   single(
     name,
@@ -78,7 +61,6 @@ export const vehicleReg = (
   message = 'Enter a valid registration number'
 ) => pattern(name, VEHICLE_REG, message)
 
-/** Optional UK telephone number: allow-list format plus a 7–15 digit count. */
 export const ukPhone = (name, message = 'Enter a valid UK telephone number') =>
   single(
     name,
@@ -96,7 +78,6 @@ export const ukPhone = (name, message = 'Enter a valid UK telephone number') =>
       .messages({ 'string.pattern.base': message, 'any.invalid': message })
   )
 
-/** Optional value from a fixed domain. */
 export const oneOf = (name, values, message = 'Select a valid option') =>
   single(
     name,
@@ -106,8 +87,7 @@ export const oneOf = (name, values, message = 'Select a valid option') =>
       .messages({ 'any.only': message })
   )
 
-/** Optional whole number within an inclusive range. Kept as its trimmed
- *  string so the stored shape is unchanged. */
+/** Kept as its trimmed string so the stored shape is unchanged. */
 export const integerInRange = (name, { min, max, message } = {}) =>
   single(
     name,
@@ -128,8 +108,8 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       })
   )
 
-/** Optional positive currency amount; stores the cleaned string (£/commas
- *  stripped) so downstream rendering and the quote maths are unchanged. */
+/** Returns the cleaned string (£/commas stripped) — controllers must persist
+ *  this value, not the raw payload. */
 export const currency = (name, message = 'Enter a valid amount') =>
   single(
     name,
@@ -146,11 +126,8 @@ export const currency = (name, message = 'Enter a valid amount') =>
       .messages({ 'any.invalid': message })
   )
 
-/** Optional `{ name-day, name-month, name-year }` govuk date triple. Blank
- *  (all three empty) passes; a partial or unreal date fails, anchored on the
- *  day part so the error summary points at the first box. Dates are stored as
- *  a `{ day, month, year }` JSON object — the parts are validated here, the
- *  controller assembles the object (via kit.readDate). */
+/** Blank (all three empty) passes; a partial or unreal date fails, anchored
+ *  on the day part so the error summary points at the first box. */
 export const dateParts = (name, message = 'Enter a valid date') => {
   const dayKey = `${name}-day`
   const monthKey = `${name}-month`

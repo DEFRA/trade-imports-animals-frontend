@@ -18,13 +18,6 @@ import { readyForQuote } from './flow/section-status.js'
 import { dispatchPages } from './features/index.js'
 import * as driverClaim from './features/named-driver/driver-claim.controller.js'
 
-/**
- * The PATH-ADDRESSED store facade at depth (entry 6b). Drives the real
- * primitives through the real structuredClone store boundary — the round trip
- * `nested.test.js` cannot see (it tests reconcile in isolation). Pins the
- * append/remove/edit lifecycle for nested collections AND the malformed-index
- * hardening (a `.../foo/remove` URL must not `splice(NaN)` -> destroy instance 0).
- */
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) => seedNamedDriver(store, journeyId, answers)
@@ -54,7 +47,6 @@ describe('path-addressed store ops at depth', () => {
     )
     expect(index).toBe(0)
     expect(answersNow().drivers[0].claims).toEqual([{ claimType: 'accident' }])
-    // Sibling driver untouched, input not aliased across the store boundary.
     const secondIndex = appendEntryAt(
       buildRequest(),
       stubH(),
@@ -129,9 +121,9 @@ describe('path-addressed store ops at depth', () => {
     })
     commit(buildRequest(), stubH(), {})
     const now = answersNow()
-    expect('windscreenProvider' in now.claims[1]).toBe(false) // field destroyed
-    expect(now.claims[0].windscreenProvider).toBe('autoglass') // sibling intact
-    expect(now.claims[1].claimType).toBe('accident') // rest of the entry intact
+    expect('windscreenProvider' in now.claims[1]).toBe(false)
+    expect(now.claims[0].windscreenProvider).toBe('autoglass')
+    expect(now.claims[1].claimType).toBe('accident')
   })
 
   it('Should not fabricate a phantom driver for a malformed/out-of-range driver index', () => {
@@ -143,7 +135,6 @@ describe('path-addressed store ops at depth', () => {
     })
     const response = postAddClaim(request, stubH())
     expect(response.redirect).toContain('addons/named-driver')
-    // No sparse phantom driver fabricated at index 99.
     expect(answersNow().drivers).toHaveLength(1)
   })
 })

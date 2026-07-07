@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { records, IN_PROGRESS } from './records.js'
 
-/**
- * NW-4 shape proof — the RECORDS (durable) port in isolation. Pins the additions
- * the reshape made over today's store body: a `userId` stamp, the `byUser` index
- * behind polymorphic `load({ userId })`, and that the clone/freeze contract the
- * safety-net pinned on the shim survives on the port itself (`saveAnswers` is
- * durable with NO finalise; a post-`finalise` write throws).
- */
 describe('records durable port', () => {
   beforeEach(() => records.clear())
 

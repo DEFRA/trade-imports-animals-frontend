@@ -7,14 +7,6 @@ import { FULFILLED, IN_PROGRESS } from '../../engine/status.js'
 import { sectionStatus } from '../../flow/section-status.js'
 import { open } from '../../shared/kit.js'
 
-/**
- * The task-list hub. It OWNS the task-link copy (titles + hints) — that is
- * page/presentation, so it lives here, not in the flow — and asks the pure
- * `sectionStatus` roll-up for each row's tag and `sectionEntry` for its
- * href. Three always-live group tasks, the add-on picker, one row per
- * selected add-on, and the quote row (inert until the state layer reports
- * `readyForQuote`).
- */
 const view = `${TEMPLATES}/features/hub/template`
 
 const GROUP_ROWS = [
@@ -47,8 +39,8 @@ const ADDON_COPY = {
 }
 
 /**
- * Hub copy for one add-on section. Fails loud: a dynamic section with no
- * authored entry is a missing-copy bug, not a blank/`undefined` row.
+ * Fail loud: a dynamic section with no authored copy entry is a
+ * missing-copy bug, not a blank/`undefined` row.
  */
 export const addonCopy = (id) => {
   const copy = ADDON_COPY[id]

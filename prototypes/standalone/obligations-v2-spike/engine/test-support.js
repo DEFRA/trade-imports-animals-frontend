@@ -1,21 +1,9 @@
 import { store } from './store.js'
 import { JOURNEY_COOKIE } from './journey.js'
 
-/**
- * Shared fakes for the engine specs (and the T1/T2 controller regressions). One
- * source of truth for the Hapi response-toolkit stub, the request builders, the
- * cookie-recording toolkit and the in-scope seed — retiring the copies that had
- * drifted (a capturing vs non-capturing `stubH`, a request with vs without
- * `headers`, two recording `h` shapes, a per-port `seed`).
- */
+/** Shared fakes for the engine and controller specs. */
 
-/**
- * The Hapi response toolkit (`h`) stub. `view` records the last render into
- * `captured.view` AND returns it, so a controller test can either ignore the
- * render (the engine specs) or assert on the rendered context (the hub-copy and
- * currency regressions read `captured.view.context`). `redirect` echoes its
- * target; `state` is a no-op cookie write.
- */
+/** Hapi response-toolkit stub — `view` records the last render into `captured.view`. */
 export const stubH = () => {
   const captured = {}
   return {
@@ -29,12 +17,7 @@ export const stubH = () => {
   }
 }
 
-/**
- * A request pinned to an existing journey via its cookie. `headers` is always
- * present (empty) — the session port optional-chains it, so this is byte-equal
- * to a request without headers, but keeps every caller uniform. `overrides` lets
- * a case supply a `payload`/`params` (e.g. a nested driver claim add).
- */
+/** A request pinned to an existing journey via its cookie. */
 export const journeyRequest = (journeyId, overrides = {}) => ({
   payload: {},
   params: {},
@@ -44,12 +27,7 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides
 })
 
-/**
- * A recording `h` for the session seam. Exposes both views a spec might assert
- * on: `calls` is the ordered log of `state(name, value)` writes, `cookies` is the
- * resulting cookie jar (`unstate` deletes from it). A spec that only needs `h` to
- * be callable ignores both.
- */
+/** A recording `h` for the session seam — logs `state` writes and keeps a cookie jar. */
 export const recordingH = () => {
   const cookies = {}
   const calls = []
@@ -67,20 +45,14 @@ export const recordingH = () => {
 }
 
 /**
- * Seed answers through a persistence port, keeping the named-driver add-on
- * selected so the `drivers` collection stays IN SCOPE — otherwise a reconcile
- * would (correctly) wipe the whole out-of-scope collection and mask the path-op
- * behaviour under test. `port` is `store` or the durable `records` port.
+ * Seed answers keeping the named-driver add-on selected so the `drivers`
+ * collection stays IN SCOPE — otherwise a reconcile would (correctly) wipe the
+ * whole out-of-scope collection and mask the path-op behaviour under test.
  */
 export const seedNamedDriver = (port, journeyId, answers) =>
   port.saveAnswers(journeyId, { addons: ['named-driver'], ...answers })
 
-/**
- * Drive one real controller handler against the real store: mint a journey, save
- * `seed`, invoke the handler, and hand back before/after answers plus the raw
- * response and the captured view (a redirect on success, a re-rendered view on
- * the error path).
- */
+/** Drive one real controller handler against the real store. */
 export const driveHandler = (
   handler,
   { payload = {}, seed = {}, params = {} } = {}
@@ -100,14 +72,9 @@ export const driveHandler = (
   }
 }
 
-/** The single POST handler a feature module declares. */
 export const postHandlerOf = (featureModule) =>
   featureModule.routes.find((route) => route.method === 'POST').handler
 
-/**
- * The POST handler whose path ends with `pathSuffix` — for feature modules that
- * expose more than one POST route (an add/remove sub-hub).
- */
 export const postHandlerEndingWith = (featureModule, pathSuffix) =>
   featureModule.routes.find(
     (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)

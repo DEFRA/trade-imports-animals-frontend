@@ -5,13 +5,6 @@ import { CLAIM_TYPE_LABEL } from './entry.controller.js'
 import { claimsPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/**
- * Claims manage-list — the "loop hub". Bespoke by nature (a repeating
- * collection has no uniform-widget projection): it owns its Claim-N rows,
- * its add/continue buttons and their exact copy. The add button label is
- * page copy that flips on the row count. `Continue` marks the loop done
- * and advances; `Add` hands off to the entry sub-page.
- */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/claims/list`
 
@@ -23,8 +16,6 @@ const claimValue = (claim) => {
 
 const get = (request, h) => {
   const { answers } = state.get(request, h)
-  // The reusable loop library gives the instance FACTS (index, path, entry);
-  // this controller composes the bespoke Claim-N rows + copy over them.
   const rows = state
     .collectionView(answers, ['claims'])
     .map(({ index, entry }) => ({
@@ -55,7 +46,7 @@ const post = (request, h) => {
   if (payload.action === 'add') {
     return h.redirect(pagePath('claims/add'))
   }
-  const { scope } = state.get(request, h) // Continue: no write, just advance
+  const { scope } = state.get(request, h)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

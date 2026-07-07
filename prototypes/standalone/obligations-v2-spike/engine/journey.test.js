@@ -3,20 +3,6 @@ import { currentJourney, JOURNEY_COOKIE } from './journey.js'
 import { store, IN_PROGRESS } from './store.js'
 import { recordingH } from './test-support.js'
 
-/**
- * SAFETY-NET (NW-4 step 1) — pins journey isolation through the ONE public
- * entry point every read/write path funnels through: `currentJourney(req, h)`.
- * Mint / same-session-resume / stale-pointer-remint / parallel-cookie isolation
- * are the behaviours the session/records port split preserves byte-for-byte.
- * Driven via `currentJourney` (whose `(request, h)` signature is stable across
- * the split) rather than `startJourney` (whose signature gains `request`), so
- * every assertion here is a regression pin that holds identically either side of
- * the port split. `headers: {}` on the stub request feeds the session port's
- * `userId(req)`: no override header is present, so it falls through to
- * STUB_USER.
- */
-// A bare session-seam request carrying only cookies (no journeyId binding).
-// Distinct from the journey-pinned `journeyRequest`.
 const buildRequest = (cookies) => ({ state: { ...cookies }, headers: {} })
 
 describe('#currentJourney', () => {

@@ -14,13 +14,6 @@ import {
   vehicleReg
 } from './index.js'
 
-/**
- * The validation lib is the "real teeth" the obligation model only implied.
- * These tests pin each reusable validator on representative input, the
- * required-vs-soft split, and the Joi-error → GDS `{ fieldId: message }`
- * mapping the controllers depend on.
- */
-
 const run = (schema, payload) => validate(schema, payload)
 
 describe('#requiredText — the sole save-blocking primitive', () => {

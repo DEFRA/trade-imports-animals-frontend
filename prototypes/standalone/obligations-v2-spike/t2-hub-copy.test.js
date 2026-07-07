@@ -10,17 +10,12 @@ import { dispatchPages } from './features/index.js'
 import { addonCopy, routes } from './features/hub/controller.js'
 
 /**
- * T2 REGRESSION — the hub owns its task-link copy, so add-on rows must show
- * authored human hints, never the internal page ids they used to be derived
- * from (`drivers`, `modifications-describe`, `protected-ncd-years`). The
- * shared E2E navigates rows by TITLE and never observes the hint, so these
- * cases pin the rendered HINT text against the running handler. The missing
- * -copy lookup is pinned too: it fails loud rather than rendering `undefined`.
+ * The shared E2E navigates rows by TITLE and never observes the hint — so the
+ * rendered hint text must be pinned here.
  */
 
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
-/** Render the hub over a seeded journey; return its task-list items. */
 const renderHub = (seed = {}) => {
   const journey = store.create()
   store.saveAnswers(journey.journeyId, seed)
@@ -29,7 +24,6 @@ const renderHub = (seed = {}) => {
   return h.captured.view.context.items
 }
 
-/** The rendered row whose title matches `title`. */
 const rowByTitle = (items, title) =>
   items.find((item) => item.title.text === title)
 

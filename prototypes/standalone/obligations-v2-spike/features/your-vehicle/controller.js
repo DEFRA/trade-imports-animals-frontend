@@ -11,10 +11,6 @@ import * as kit from '../../shared/kit.js'
 import { yourVehiclePage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/** Your vehicle — all fields soft (save blank). vehiclePhoto is render-only
- * (never stored, spike parity). Format checks (registration pattern, year
- * range, currency) are controller-owned lib validators — optional, so a blank
- * field still saves, but a malformed non-blank value is caught. */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/your-vehicle/template`
 const MAKES = ['Audi', 'BMW', 'Ford', 'Nissan', 'Toyota', 'Volkswagen']

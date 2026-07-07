@@ -5,8 +5,6 @@ import * as kit from '../../shared/kit.js'
 import { protectedNcdYearsPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/** Protect your no-claims discount — years (the gated protected-ncd section).
- * The range is a controller-owned validator. */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/protected-ncd/years`
 

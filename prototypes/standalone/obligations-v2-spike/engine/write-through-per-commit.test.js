@@ -4,14 +4,6 @@ import { records } from './persistence/records.js'
 import { configureReadyForQuote } from './read.js'
 import { stubH, journeyRequest, seedNamedDriver } from './test-support.js'
 
-/**
- * NW-4 shape proof (load-bearing) — WRITE-THROUGH ON EVERY COMMIT. Drives the
- * public `state.commit` and asserts the durable RECORDS port already holds the
- * answers BEFORE any submit runs — twice, so a second save-and-continue is seen
- * to overwrite the first. This is the "durable writes happened on every save"
- * property the two-port split must preserve. `readyForQuote` is stubbed false so
- * `makeScope` needs no boot dispatch index; readiness itself is tested elsewhere.
- */
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
@@ -37,16 +29,6 @@ describe('write-through on every commit', () => {
   })
 })
 
-/**
- * NW-4 shape proof, WIDENED — write-through fires on EVERY collection mutation,
- * not just `commit`. Drives the three save-and-continue mutators of an indexed
- * collection (`appendEntryAt` / `updateEntryAt` / `removeEntryAt`) and asserts
- * the durable RECORDS port already holds the mutated list BEFORE any submit —
- * the same per-save durability the `commit` cases above pin, proven directly
- * for the collection surface. `addons: ['named-driver']` keeps `drivers` in
- * scope so `removeEntryAt`'s reconcile splices rather than scope-wipes the
- * collection (mirrors `store-ops.test.js`).
- */
 const seed = (answers) => seedNamedDriver(records, journeyId, answers)
 const durableDrivers = () => records.load({ journeyId }).answers.drivers
 

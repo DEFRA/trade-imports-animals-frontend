@@ -1,12 +1,7 @@
 /**
- * About you — the obligations this feature owns. Pure data; imports
- * nothing outward (see the purity note in email/obligations.js).
- *
- * `fullName` is the ONLY save-blocking (hard) mandate in the whole journey —
- * but that is expressed as a controller-owned Joi rule (`about-you`'s
- * `requiredText`), not an obligation flag. `required` here is the completion fact the
- * status roll-up reads ("what is owed"), deliberately distinct from save-time
- * validation.
+ * `required` is the completion fact the status roll-up reads ("what is
+ * owed") — it does NOT block save. Save-blocking is controller-owned
+ * validation; fullName's `requiredText` is the journey's only one.
  */
 export const fullName = { id: 'fullName', required: true }
 export const preferredName = { id: 'preferredName' }

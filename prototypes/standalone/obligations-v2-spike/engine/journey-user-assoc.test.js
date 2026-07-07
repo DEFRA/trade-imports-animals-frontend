@@ -4,15 +4,6 @@ import { records } from './persistence/records.js'
 import { session, STUB_USER, STUB_USER_HEADER } from './persistence/session.js'
 import { recordingH } from './test-support.js'
 
-/**
- * NW-4 shape proof — JOURNEY <-> USER association through `journey.js`. A journey
- * minted through the facade carries the SESSION port's user on the durable
- * record; the `x-stub-user` header lets a test play a second user; and the two
- * users' active journeys are isolated in the `byUser` index. This is the
- * per-user recall the cookieless resume is built on.
- */
-// A bare session-seam request: no journey cookie, header-parameterised so a case
-// can play a second user. Distinct from the journey-pinned `journeyRequest`.
 const buildRequest = (headers = {}) => ({ state: {}, headers })
 
 describe('journey-user association', () => {

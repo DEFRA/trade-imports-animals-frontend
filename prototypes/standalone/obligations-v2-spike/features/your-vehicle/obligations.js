@@ -1,10 +1,7 @@
 /**
- * Your vehicle — the obligations this feature owns. Pure data; imports
- * nothing outward.
- *
- * `vehiclePhoto` is `renderOnly`: the file input is presented but never
- * stored (spike parity). The commit contract test relies on this flag to
- * exclude it from the "committed == collects" check.
+ * `vehiclePhoto` is `renderOnly`: presented but never stored. The commit
+ * contract test relies on the flag to exclude it from the
+ * "committed == collects" check.
  */
 export const registration = { id: 'registration' }
 export const make = { id: 'make' }

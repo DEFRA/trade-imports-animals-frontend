@@ -4,7 +4,6 @@ import * as kit from '../../shared/kit.js'
 import { emailPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/** Email gate — the first task. Saves blank freely (soft); no page-hard mandate. */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/email/template`
 

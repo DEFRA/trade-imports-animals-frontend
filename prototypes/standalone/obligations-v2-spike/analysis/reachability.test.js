@@ -11,7 +11,6 @@ import {
 } from './reachability.js'
 import { simulateJourney } from './simulate.js'
 
-/** The model-level dead-end prover (entry 4), extended to full depth (NW-5). */
 describe('reachability / dead-end prover', () => {
   // proveReachability -> simulateJourney -> makeScope eagerly computes
   // readyForQuote, so inject the roll-up at boot alongside buildDispatch.
@@ -47,17 +46,8 @@ describe('reachability / dead-end prover', () => {
     ).toBe(true)
   })
 
-  // --- NW-5: the depth extension closes the ROOTS-ONLY hole ------------------
-  // Before NW-5 the prover iterated `registry.all` (roots) and keyed scope by
-  // bare id, so no sub-obligation was ever checked. The clearest casualty was
-  // the item-conditional `windscreenProvider`, owed only when a claim's own
-  // `claimType === 'windscreen'` — a state no top-level enumeration produces.
-  // These tests pin that the plan now WITNESSES it at both depths and that the
-  // prover BITES when a collection-hub page is dropped at depth.
-
   it('Should witness windscreenProvider at both depths (the closed hole)', () => {
     const targets = buildWitnesses().map((witness) => witness.targetKey)
-    // Top-level claims loop and the driver-nested claims loop.
     expect(targets).toContain('claims[0].windscreenProvider')
     expect(targets).toContain('drivers[0].claims[0].windscreenProvider')
   })
@@ -70,15 +60,12 @@ describe('reachability / dead-end prover', () => {
       'claims[0].windscreenProvider',
       'drivers[0].claims[0].windscreenProvider'
     ]) {
-      // A found witness (non-null answers) means reconcile confirmed the target
-      // instance path is in scope — proven, not asserted in prose.
       expect(byKey.get(key)?.answers).not.toBeNull()
     }
   })
 
   it('Should have teeth at depth — biting when the claims/drivers hub pages are dropped', () => {
-    // Drop only the two collection-hub pages; everything else stays reachable.
-    // A roots-only prover could not surface this — windscreenProvider lives at
+    // Drop only the two collection-hub pages — windscreenProvider lives at
     // depth and its DERIVED owning page is the dropped hub.
     const pagesFor = (answers) =>
       simulateJourney(answers).filter(
@@ -92,7 +79,6 @@ describe('reachability / dead-end prover', () => {
       .map((problem) => problem.targetKey)
     expect(deadEnds).toContain('claims[0].windscreenProvider')
     expect(deadEnds).toContain('drivers[0].claims[0].windscreenProvider')
-    // And the derived owning page named is the dropped hub, at depth.
     const windscreen = problems.find(
       (problem) =>
         problem.targetKey === 'drivers[0].claims[0].windscreenProvider'

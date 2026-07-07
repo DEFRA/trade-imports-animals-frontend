@@ -5,14 +5,6 @@ import * as kit from '../../shared/kit.js'
 import { coverTypePage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/**
- * Choose your cover. excessAmount is a conditional reveal under
- * voluntaryExcess = Yes — the reveal MARKUP is page-side (govuk
- * conditional), while the scope/wipe of excessAmount lives in the model
- * (activatedBy voluntaryExcess = 'yes', wipeOnExit). Exactly one visible
- * "Yes" label on this page (the voluntary-excess radio). coverType's value
- * domain is a controller-owned `oneOf`.
- */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/cover-type/template`
 

@@ -6,13 +6,6 @@ import { claims } from './features/claims/obligations.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
 
-/**
- * ITEM-SCOPED CONDITIONALITY (DISCUSSION-LOG entry 6c): a windscreen claim
- * activates its `windscreenProvider` for THAT claim instance only — an
- * item-relative predicate resolved at the claim's exact path, at full depth.
- * These pin: per-instance scope, per-path wipe when a claim changes away from
- * windscreen, independence across claims, and item-relative completeness.
- */
 const claimsPersona = (types) => ({
   hadClaims: 'yes',
   claims: types.map((claimType) => ({ claimType, claimAmount: '100' }))
@@ -41,7 +34,6 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
   })
 
   it('Should wipe the provider at that exact path when the claim leaves windscreen', () => {
-    // claim 1 was windscreen with a provider answered; now changed to accident.
     const { wiped } = reconcile({
       hadClaims: 'yes',
       claims: [
@@ -50,7 +42,7 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
       ]
     })
     expect(wiped).toContain('claims[1].windscreenProvider')
-    expect(wiped).not.toContain('claims[0].windscreenProvider') // still windscreen
+    expect(wiped).not.toContain('claims[0].windscreenProvider')
   })
 
   it('Should keep two windscreen claims providers independent', () => {
@@ -60,15 +52,12 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
   })
 
   it('Should make item-relative completeness respect the sibling', () => {
-    // windscreen claim missing its provider is INCOMPLETE...
     expect(
       entryComplete(claims, { claimType: 'windscreen', claimAmount: '100' })
     ).toBe(false)
-    // ...but a non-windscreen claim is complete without one (not owed).
     expect(
       entryComplete(claims, { claimType: 'accident', claimAmount: '100' })
     ).toBe(true)
-    // ...and a windscreen claim with a provider is complete.
     expect(
       entryComplete(claims, {
         claimType: 'windscreen',
@@ -79,11 +68,9 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
   })
 
   it('Should apply the item-relative gate by sibling identity, not id-keying (resolver unity)', () => {
-    // A synthetic item sub gated on a NON-sibling (top-level) obligation must NOT
-    // be silently treated as not-owed — the gate fires only for true siblings,
-    // the SAME criterion reconcile uses, so entryComplete and reconcile cannot
-    // diverge. (Before unification, entryComplete read entry[ref.id]=undefined
-    // and wrongly reported this COMPLETE.)
+    // The gate fires only for true siblings — the SAME criterion reconcile
+    // uses, so entryComplete and reconcile cannot diverge; a non-sibling ref
+    // is owed conservatively, not skipped.
     const topLevel = { id: 'topLevel' }
     const gated = {
       id: 'gated',

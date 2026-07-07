@@ -11,13 +11,6 @@ import { sections } from './flow.js'
 import { sectionStatus } from './section-status.js'
 import { pageGatePasses, sectionGatePasses } from './gates.js'
 
-/**
- * The derived-gate seam: default gates come from `collects` + the obligation
- * model; an authored `gate` overrides. The invariant test pins the
- * equivalence the design rests on — derived gate ⟺ section not
- * Not Applicable — across the SAME enumerated scope space the reachability
- * prover walks, rather than sampling personas.
- */
 describe('#pageGatePasses / #sectionGatePasses', () => {
   const dynamicSections = sections.filter((section) => section.dynamic)
   const quoteSection = sections.find(
@@ -77,9 +70,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     })
 
     it('Should derive a page that collects nothing as reachable (the empty-collects convention)', () => {
-      // quote-summary collects only the system `premium` obligation, so its
-      // page-level derivation passes; restricting it is the job of its
-      // section's authored readyForQuote gate.
       expect(pageGatePasses(quoteSummaryPage, { inScope: new Set() })).toBe(
         true
       )

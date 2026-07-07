@@ -5,13 +5,7 @@ import { quoteSummaryPage as page } from './page.js'
 import { obligations } from './obligations.js'
 import { calculatePremium } from '../../lib/quote.js'
 
-/**
- * Your quote — read-only presentation of the system-handled premium. The
- * premium is computed on demand from the current answers (nothing derived
- * is stored). Bespoke by nature; the POST only advances to CYA. The one
- * obligation this feature owns (`premium`) is `system` — computed, never
- * collected — so `collectsFrom` correctly yields an empty set here.
- */
+/** The premium is computed on demand from the current answers — never stored. */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/quote/template`
 

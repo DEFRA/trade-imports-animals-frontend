@@ -2,28 +2,20 @@ import { breadcrumbs, LAYOUT, pagePath } from '../config.js'
 import { nextInSection } from '../flow/navigation.js'
 
 /**
- * The shared per-page LIBRARY — small, independently-callable helpers a
- * controller calls; NEVER a framework that calls the controller. None of
- * these accepts a template name or a field schema and renders: the moment
- * a helper wants to own WHAT renders it has crossed from library to engine
- * and is rejected. Controllers keep their own GET/POST, validation and
- * view-model; they call kit only for the genuinely-uniform mechanical bits.
+ * Library, not framework: kit helpers are independently callable and never
+ * accept a template/schema and render — a helper that owns WHAT renders has
+ * crossed into engine territory and is rejected.
  */
 export const open = { auth: false }
 
 export const CYA_SLUG = 'check-answers'
 
-/**
- * Derives a page's collected obligation ids from the real obligation objects —
- * reference, not string coincidence. The default for a page that collects its
- * feature's whole non-system obligation set.
- */
+/** Default `collects`: a feature's whole non-system obligation set. */
 export const collectsFrom = (obligations) =>
   obligations
     .filter((obligation) => !obligation.system)
     .map((obligation) => obligation.id)
 
-/** GDS error summary from a `{ fieldId: message }` map (null when clean). */
 export const errorSummary = (fieldErrors) => {
   const entries = Object.entries(fieldErrors ?? {})
   if (entries.length === 0) return null
@@ -33,16 +25,12 @@ export const errorSummary = (fieldErrors) => {
   }
 }
 
-/** Field-level govuk errorMessage for a widget, or undefined when clean. */
 export const fieldError = (fieldErrors, field) =>
   fieldErrors?.[field] ? { text: fieldErrors[field] } : undefined
 
-/** Where a valid save goes: back to CYA on a `?change=1` edit, else the
- * next applicable page in this section (or the hub). */
 export const nextTarget = (request, page, scope) =>
   request.query.change ? pagePath(CYA_SLUG) : nextInSection(page.id, scope)
 
-/** Base view context (layout, title, breadcrumbs, back link). */
 export const base = (title, { backLink } = {}) => ({
   layout: LAYOUT,
   pageTitle: title,
@@ -50,20 +38,17 @@ export const base = (title, { backLink } = {}) => ({
   backLink
 })
 
-/** GET/POST route pair for a page. */
 export const pageRoutes = (page, { get, post }) => [
   { method: 'GET', path: pagePath(page.slug), options: open, handler: get },
   { method: 'POST', path: pagePath(page.slug), options: open, handler: post }
 ]
 
-/** Read a govuk date-input's three parts from a payload into { day, month, year }. */
 export const readDate = (payload, name) => ({
   day: (payload[`${name}-day`] ?? '').trim(),
   month: (payload[`${name}-month`] ?? '').trim(),
   year: (payload[`${name}-year`] ?? '').trim()
 })
 
-/** Assemble govukDateInput args (view-model, rendered by the page template). */
 export const dateField = (name, { label, hint, value = {}, error } = {}) => {
   const width = (charWidth) =>
     `govuk-input--width-${charWidth}${error ? ' govuk-input--error' : ''}`

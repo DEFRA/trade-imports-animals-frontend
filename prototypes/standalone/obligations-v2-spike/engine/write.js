@@ -5,10 +5,9 @@ import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 
 /**
- * The WRITE side of the narrow state facade: pages write answers DOWN and the
- * layer reconciles + persists. There is deliberately NO `setScope` and NO
- * `delete(otherObligation)` — scope-exit wipe is derived by `reconcile` alone
- * and applied by `destroyWiped`, so a page physically cannot hand-roll a wipe.
+ * There is deliberately NO `setScope` and NO `delete(otherObligation)` —
+ * scope-exit wipe is derived by `reconcile` alone and applied by
+ * `destroyWiped`, so a page physically cannot hand-roll a wipe.
  */
 
 /**
@@ -20,11 +19,6 @@ import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 const isValidIndex = (index, list) =>
   Number.isInteger(index) && index >= 0 && index < list.length
 
-/** Apply a scalar patch, reconcile to a fixpoint, DESTROY wiped data, persist.
- * `wiped` is path-addressed now, so a nested instance can be destroyed in place;
- * a depth-0 key still deletes the whole top-level obligation. `destroyWiped`
- * orders the deletes so sibling array-index splices run highest-index-first and
- * a nested delete precedes its container's — no delete ever shifts another. */
 export const commit = (request, h, patch) => {
   const journey = currentJourney(request, h)
   const answers = { ...journey.answers, ...patch }
@@ -35,11 +29,8 @@ export const commit = (request, h, patch) => {
 }
 
 /**
- * Append one entry to an indexed obligation at ANY depth — MINTS its index
- * (identity). `collectionPath` addresses the collection (`['claims']` at the
- * root, `['drivers', 1, 'claims']` for a nested sub-hub), so the same primitive
- * drives a loop and a loop-inside-a-loop. No reconcile here: an append only adds
- * scope, never removes it, so nothing can be wiped by adding.
+ * No reconcile here: an append only adds scope, never removes it, so nothing
+ * can be wiped by adding.
  */
 export const appendEntryAt = (request, h, collectionPath, entry) => {
   const journey = currentJourney(request, h)
@@ -49,7 +40,6 @@ export const appendEntryAt = (request, h, collectionPath, entry) => {
   return list.length
 }
 
-/** Replace the entry at `[...collectionPath, index]` (edit-in-place at depth). */
 export const updateEntryAt = (request, h, collectionPath, index, entry) => {
   const journey = currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []
@@ -63,10 +53,8 @@ export const updateEntryAt = (request, h, collectionPath, index, entry) => {
 }
 
 /**
- * Remove the entry at `[...collectionPath, index]`. Splicing an entry destroys
- * its whole subtree (a driver's nested claims go with the driver), then a
- * reconcile prunes anything left dangling out of scope — so removal at depth is
- * destroyed-not-hidden, per instance, exactly like the root case.
+ * Splice destroys the whole subtree, then reconcile prunes anything left
+ * dangling out of scope — removal is destroyed-not-hidden.
  */
 export const removeEntryAt = (request, h, collectionPath, index) => {
   const journey = currentJourney(request, h)
@@ -82,7 +70,6 @@ export const removeEntryAt = (request, h, collectionPath, index) => {
   records.saveAnswers(journey.journeyId, answers)
 }
 
-/** Single-level convenience wrappers — a bare obligation id is a depth-0 path. */
 export const appendEntry = (request, h, obligationId, entry) =>
   appendEntryAt(request, h, [obligationId], entry)
 
@@ -92,7 +79,6 @@ export const updateEntry = (request, h, obligationId, index, entry) =>
 export const removeEntry = (request, h, obligationId, index) =>
   removeEntryAt(request, h, [obligationId], index)
 
-/** Server-side submit — flip to submitted (freezes writes) after a re-check. */
 export const submitJourney = (request, h) => {
   const journey = currentJourney(request, h)
   const scope = makeScope(journey.answers)

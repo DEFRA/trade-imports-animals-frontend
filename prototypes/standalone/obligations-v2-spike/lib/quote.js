@@ -1,9 +1,3 @@
-/**
- * The one system-handled obligation: `premium`. A pure, illustrative-only
- * premium formula (parity constants from the mirrored journey) plus the
- * deterministic quote reference. Computed on demand from the answers map —
- * nothing derived is stored, so it always reflects the current answers.
- */
 const BASE_PREMIUM = 480
 const VALUE_LOADING_RATE = 0.01
 const NO_CLAIMS_DISCOUNT_PER_YEAR = 25
@@ -47,6 +41,5 @@ export const calculatePremium = (answers = {}) => {
   return Math.max(premium, MINIMUM_PREMIUM)
 }
 
-/** 'CI-' + the journeyId's first 6 hex chars, uppercased. */
 export const makeReference = (journeyId) =>
   `CI-${journeyId.replace(/-/g, '').slice(0, 6).toUpperCase()}`

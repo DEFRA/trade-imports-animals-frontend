@@ -1,21 +1,11 @@
 import { randomUUID } from 'node:crypto'
 
 /**
- * RECORDS — the durable persistence port. Durable source of truth for one
- * application (Journey) document per journeyId, over an in-memory Map, deep-
- * copied across the boundary both ways so callers can never mutate stored state
- * by reference. Explicitly a STUB: the Map stands in for the real datastore
- * (Mongo, reached via the backend API) so a throwaway spike can run. `answers`
- * is the only repeatedly-writable field; `status`/`submittedAt` are set once by
- * `finalise`. ALL writes are rejected once submitted (the one-way
- * in-progress -> submitted freeze).
- *
- * A record is `{ journeyId, userId, status, submittedAt, answers }`. Two backing
- * maps: `journeys` keyed by journeyId (the record) and `byUser` keyed by userId
- * (the id of that user's active journey — last-writer-wins). There is NO delete-
- * a-key surface, only whole-map `saveAnswers`, so scope-exit wipe stays derived
- * by `reconcile` and applied by `destroyWiped` — the ports cannot hand-roll a
- * wipe. NOTE: multi-draft-per-user is an OPEN product question, not decided here.
+ * RECORDS — the durable persistence port (in-memory stub). Records are
+ * deep-copied across the boundary both ways (`structuredClone`) so callers can
+ * never mutate stored state by reference. There is NO delete-a-key surface,
+ * only whole-map `saveAnswers`, so scope-exit wipe stays derived by `reconcile`
+ * — the ports cannot hand-roll a wipe.
  */
 export const IN_PROGRESS = 'in-progress'
 export const SUBMITTED = 'submitted'
@@ -32,9 +22,8 @@ const assertWritable = (journey) => {
 }
 
 /**
- * Load a record that is safe to mutate, or fail loud: unknown id throws, and a
- * SUBMITTED record throws (the one-way in-progress -> submitted freeze). The
- * single gate in front of every mutating op, so no writer can skip either check.
+ * The single gate in front of every mutating op — unknown id throws, submitted
+ * throws (the one-way freeze) — so no writer can skip either check.
  */
 const loadWritable = (journeyId) => {
   const journey = journeys.get(journeyId)
@@ -44,11 +33,7 @@ const loadWritable = (journeyId) => {
 }
 
 export const records = {
-  /**
-   * Mint a fresh in-progress record and index it by id and by user. Zero-arg is
-   * tolerated (userId -> null) so the legacy shim's `store.create()` still works.
-   * Prod seam: POST /applications.
-   */
+  /** Zero-arg tolerated (userId -> null) so the legacy shim's `store.create()` still works. */
   create({ userId } = {}) {
     const journey = {
       journeyId: randomUUID(),
@@ -62,12 +47,6 @@ export const records = {
     return structuredClone(journey)
   },
 
-  /**
-   * Polymorphic load — the `byId OR byUser` requirement in one method.
-   * `load({ journeyId })` -> clone of that record or undefined.
-   * `load({ userId })` -> clone of the user's active record or undefined.
-   * Prod seam: GET /applications/{id} or GET /applications?userId=.
-   */
   load({ journeyId, userId } = {}) {
     const resolvedJourneyId =
       journeyId ?? (userId != null ? byUser.get(userId) : undefined)
@@ -80,23 +59,12 @@ export const records = {
     return journeys.has(journeyId)
   },
 
-  /**
-   * WRITE-THROUGH — replace the answers map (the only mutable key). Called on
-   * EVERY commit, so durable state is current before submit ever runs. Whole-map
-   * only: no delete-a-key surface. Prod seam: PATCH /applications/{id}/answers.
-   */
   saveAnswers(journeyId, answers) {
     const journey = loadWritable(journeyId)
     journey.answers = structuredClone(answers ?? {})
     return structuredClone(journey)
   },
 
-  /**
-   * The submit step — flip in-progress -> submitted and stamp `submittedAt`.
-   * Writes NO answers (they are already durable from per-commit write-through);
-   * the record's `answers` ARE the application. Re-finalise throws (the freeze).
-   * Prod seam: POST /applications/{id}/submit.
-   */
   finalise(journeyId) {
     const journey = loadWritable(journeyId)
     journey.status = SUBMITTED

@@ -9,15 +9,6 @@ import {
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 
-/**
- * Driver entry — the add sub-page for the OUTER loop. Like the claims entry, a
- * valid POST APPENDS and thereby MINTS the driver's identity (drivers,
- * arrayIndex); the draft lives only in the payload until then. driverName is
- * soft (blank saves — only fullName is save-blocking anywhere); driverDob
- * carries the optional date-parts validator; relationship is a controller-owned
- * value domain. On success we hand off to the new driver's detail page, where
- * its nested claims sub-hub lives.
- */
 export const RELATIONSHIP_OPTIONS = [
   { value: 'spouse', text: 'Spouse or partner' },
   { value: 'child', text: 'Son or daughter' },

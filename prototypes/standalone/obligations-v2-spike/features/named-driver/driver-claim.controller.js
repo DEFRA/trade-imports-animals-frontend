@@ -8,16 +8,6 @@ import {
   validateClaim
 } from '../claims/entry.controller.js'
 
-/**
- * A driver's nested claims — add + remove, the INNER loop's mutations (entry
- * 6b), now carrying the same item-scoped windscreen-provider conditionality as
- * the top-level claim (entry 6c). The add form APPENDS at the nested path
- * `['drivers', d, 'claims']`, minting (drivers, d, claims, arrayIndex). It
- * reuses the claims feature's view-model builder + payload parser + validators
- * (`claimEntryModel`/`claimFromPayload`/`validateClaim`) and the claims entry
- * template — those are shared LOGIC + a value-domain, not a renderer: this
- * controller still chooses the template and calls `h.view` itself.
- */
 const view = `${TEMPLATES}/features/claims/entry`
 
 const driverPath = (request) => [

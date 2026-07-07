@@ -21,14 +21,6 @@ import * as cya from './check-answers/controller.js'
 import * as confirmation from './confirmation/controller.js'
 import * as resume from './resume/controller.js'
 
-/**
- * The page registry — the one place every controller is assembled. The
- * collecting pages contribute their page-side `meta.collects` to the
- * dispatch inversion (coverage-asserted at boot); every controller
- * contributes its routes. Shell + endings collect nothing and carry no
- * meta.
- */
-
 /** The pages whose page-side `collects` build the obligation->page index. */
 export const dispatchPages = [
   email.meta,
@@ -45,7 +37,6 @@ export const dispatchPages = [
   ncd.meta
 ]
 
-/** Every route across the whole spike, flattened for server.route(). */
 export const allRoutes = [
   ...start.routes,
   ...hub.routes,

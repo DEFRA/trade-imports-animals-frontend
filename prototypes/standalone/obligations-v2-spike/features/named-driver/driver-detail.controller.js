@@ -5,13 +5,6 @@ import { open } from '../../shared/kit.js'
 import { CLAIM_TYPE_LABEL } from '../claims/entry.controller.js'
 import { RELATIONSHIP_OPTIONS } from './driver-entry.controller.js'
 
-/**
- * Driver detail — a driver item, and INSIDE it that driver's own claims sub-hub
- * (DISCUSSION-LOG entry 6b: a loop inside a loop). The nested claims list is
- * composed over `collectionView(answers, ['drivers', d, 'claims'])` — the SAME
- * facts library the outer drivers hub and the top-level claims hub use, now one
- * level deeper. Bespoke rows + copy stay here; the library never renders.
- */
 const view = `${TEMPLATES}/features/named-driver/driver-detail`
 
 const RELATIONSHIP_LABEL = Object.fromEntries(
@@ -24,7 +17,6 @@ const claimValue = (entry) => {
   return amount ? `${label} — £${amount}` : label
 }
 
-/** The driver index from the path, or null when it is out of range. */
 const driverIndexOf = (request, answers) => {
   const index = Number(request.params.driver)
   const drivers = answers.drivers ?? []
@@ -83,7 +75,6 @@ const get = (request, h) => {
 }
 
 const post = (request, h) => {
-  // Continue: no write, back to the drivers hub (the outer loop).
   return h.redirect(pagePath('addons/named-driver'))
 }
 

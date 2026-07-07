@@ -4,12 +4,6 @@ import * as state from '../../engine/index.js'
 import { calculatePremium, makeReference } from '../../lib/quote.js'
 import { open } from '../../shared/kit.js'
 
-/**
- * Confirmation — the 'Quote confirmed' panel every shared spec ends on,
- * and the one status-guarded route: a pre-submit visit redirects to the
- * start page. The reference is deterministic, so a refresh re-renders the
- * identical confirmation.
- */
 const view = `${TEMPLATES}/features/confirmation/template`
 
 const get = (request, h) => {

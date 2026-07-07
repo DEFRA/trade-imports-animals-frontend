@@ -29,45 +29,29 @@ import * as modVal from './features/modifications/value.controller.js'
 import * as ncd from './features/protected-ncd/years.controller.js'
 
 /**
- * CONTRACT TEST (DISCUSSION-LOG entry 4a) — the safety net for the feature-model
- * restructure. It pins the controller<->model binding the boot assertion cannot
- * see: the boot coverage assertion only checks that each obligation is DECLARED
- * (`collects`) by exactly one page; it never checks a handler HONOURS that
- * declaration. This does.
- *
- *   The set of obligation ids a controller actually COMMITS must equal its
- *   declared `collects`, minus `renderOnly` (vehiclePhoto) and `system` (premium).
- *
- * Controllers are plain functions, so this is checkable headlessly: build a
- * synthetic (valid) payload, invoke the page's real POST handler against a stub
- * request/h backed by the real store, then diff the obligation ids the handler
- * newly wrote against `meta.collects`. Written outside `collects`, or a declared
- * id never written, both fail — the drift becomes a red test, not a silent hole.
+ * The obligation ids a real POST handler newly commits must equal its declared
+ * `collects`, minus `renderOnly` (vehiclePhoto) and `system` (premium).
  *
  * Gated obligations must be kept in scope by a `seed` (a pre-existing answer
- * that activates them), else `reconcile` would wipe the fresh write on commit —
- * which is itself the invalidation invariant, exercised separately.
+ * that activates them), else `reconcile` would wipe the fresh write on commit.
  */
 
-/** Drive one real handler against the store and return before/after answers. */
 const drive = driveHandler
 
-/** Obligation ids this handler NEWLY answered (across the whole model). */
 const committedIds = ({ before, after }) =>
   registry.all
     .map((obligation) => obligation.id)
     .filter((id) => isAnswered(after[id]) && !isAnswered(before[id]))
 
-/** `collects` minus the ids that are never committed by contract. */
 const committableCollects = (collects) =>
   collects.filter((id) => {
     const obligation = registry.byId(id)
     return !obligation.renderOnly && !obligation.system
   })
 
-// One case per collecting page. Payloads are VALID (an invalid payload re-renders
-// and never commits), and every non-render/non-system collected id is filled so
-// the "declared but never written" direction is genuinely exercised.
+// Payloads are VALID (an invalid payload re-renders and never commits), and
+// every committable id is filled so the declared-but-never-written direction
+// is genuinely exercised.
 const cases = [
   {
     id: 'email',
@@ -92,7 +76,7 @@ const cases = [
   },
   {
     id: 'your-vehicle',
-    collects: vehicle.meta.collects, // includes vehiclePhoto (renderOnly)
+    collects: vehicle.meta.collects,
     handler: postHandlerOf(vehicle),
     payload: {
       registration: 'AB12 CDE',
@@ -171,9 +155,9 @@ describe('controller <-> model commit contract', () => {
     }
   )
 
-  // Claims is the one indexed collection: the LIST page declares `collects: ['claims']`,
-  // but the identity-minting write happens in the ENTRY sub-page's append. The contract
-  // still holds, measured against the handler that actually commits.
+  // The LIST page declares `collects: ['claims']`, but the identity-minting
+  // write happens in the ENTRY sub-page's append — the contract is measured
+  // against the handler that actually commits.
   it('Should commit claims via the entry (append) handler it declares', () => {
     expect(claimsList.meta.collects).toEqual(['claims'])
     const postAdd = postHandlerEndingWith(claimsEntry, 'claims/add')
@@ -186,9 +170,8 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  // Drivers is the nested collection: the HUB declares `collects: ['drivers']`,
-  // the identity-minting write happens in the driver ENTRY sub-page's append.
-  // Same contract shape as claims, one level up.
+  // The HUB declares `collects: ['drivers']`, but the identity-minting write
+  // happens in the driver ENTRY sub-page's append — same shape as claims.
   it('Should commit drivers via the entry (append) handler it declares', () => {
     expect(driversHub.meta.collects).toEqual(['drivers'])
     const postAdd = postHandlerEndingWith(driverEntry, 'named-driver/add')

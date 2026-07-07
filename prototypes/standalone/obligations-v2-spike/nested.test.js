@@ -9,13 +9,6 @@ import { dispatchPages } from './features/index.js'
 import { drivers } from './features/named-driver/obligations.js'
 import { walkObligations } from './registry.js'
 
-/**
- * ONE LEVEL OF NESTING (Phase 2 / entry 6b): drivers -> claims. The claim is
- * that the recursive-tree model recurses with NO engine change for
- * scope/wipe/dispatch — only completeness had to become depth-aware. These
- * pin depth-2 paths, cascading per-instance wipe, independence across items,
- * no-rehydrate-at-depth, and tree coverage.
- */
 const twoDriversEachWithClaims = {
   addons: ['named-driver'],
   drivers: [
@@ -67,13 +60,11 @@ describe('nested indexed obligations (drivers -> claims)', () => {
         { driverName: 'Jo', claims: [{ claimType: 'theft' }] }
       ]
     })
-    // The drivers root subsumes every nested descendant — a single deletable path.
     expect(wiped).toContain('drivers')
     expect(wiped.filter((key) => key.startsWith('drivers')).length).toBe(1)
   })
 
   it('Should hold two drivers claims independent (removing one leaves the other)', () => {
-    // Simulate "remove driver 0": splice the entry, reconcile the remainder.
     const spliced = {
       ...twoDriversEachWithClaims,
       drivers: [twoDriversEachWithClaims.drivers[1]]
@@ -84,11 +75,9 @@ describe('nested indexed obligations (drivers -> claims)', () => {
   })
 
   it('Should recurse per-item completeness so a nested claim gates its driver', () => {
-    // Real drivers: nested claims are OPTIONAL, so a driver with no claims is complete...
     expect(
       entryComplete(drivers, { driverName: 'Sam', relationship: 'spouse' })
     ).toBe(true)
-    // ...but a claim it holds must itself be complete (nested entry recursion).
     expect(
       entryComplete(drivers, {
         driverName: 'Sam',
@@ -99,7 +88,6 @@ describe('nested indexed obligations (drivers -> claims)', () => {
   })
 
   it('Should gate the parent on a required nested collection', () => {
-    // A REQUIRED nested collection (synthetic) gates the parent when empty.
     const requiredNested = {
       id: 'x',
       collection: true,

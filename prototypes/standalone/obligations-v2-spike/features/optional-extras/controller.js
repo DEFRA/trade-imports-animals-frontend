@@ -4,7 +4,6 @@ import * as kit from '../../shared/kit.js'
 import { optionalExtrasPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/** Optional extras — a multi-select. Optional (saves empty). */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/optional-extras/template`
 

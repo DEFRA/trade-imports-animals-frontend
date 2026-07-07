@@ -4,13 +4,6 @@ import * as kit from '../../shared/kit.js'
 import { driversPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/**
- * Drivers manage-list — the OUTER loop hub (DISCUSSION-LOG entry 6b). Bespoke
- * like the claims hub, but its rows are driver instances and each links INTO a
- * driver's own detail page (which holds that driver's nested claims sub-hub) —
- * a loop whose items contain a loop. It composes its rows over the SAME
- * `collectionView` facts library the claims hub uses, one level up.
- */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/named-driver/drivers-hub`
 
@@ -57,7 +50,7 @@ const post = (request, h) => {
   if (payload.action === 'add') {
     return h.redirect(pagePath('addons/named-driver/add'))
   }
-  const { scope } = state.get(request, h) // Continue: no write, just advance
+  const { scope } = state.get(request, h)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

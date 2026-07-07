@@ -7,7 +7,7 @@ describe('#reconcile', () => {
     const { inScope } = reconcile({})
     expect(inScope.has('fullName')).toBe(true)
     expect(inScope.has('email')).toBe(true)
-    expect(inScope.has('claims')).toBe(false) // hadClaims not 'yes'
+    expect(inScope.has('claims')).toBe(false)
     expect(inScope.has('excessAmount')).toBe(false)
     expect(inScope.has('driverName')).toBe(false)
   })

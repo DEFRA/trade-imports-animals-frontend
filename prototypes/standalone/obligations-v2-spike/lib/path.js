@@ -1,17 +1,7 @@
 /**
- * Path vocabulary for indexed obligations. An obligation INSTANCE is addressed
- * by a path array mixing string ids and numeric indices —
- * `['claims', 0, 'claimType']` — and `pathKey` stringifies it to a stable key
- * (`claims[0].claimType`) used as the scope/wipe identity.
- *
- * THE DEPTH-0 COLLAPSE is the zero-DOM compatibility keystone: a single-segment
- * path stringifies to the BARE id (`['claims'] -> 'claims'`), so every existing
- * `scope.has('claims')` / `scope.has('driverName')` keeps working byte-for-byte
- * once scope is keyed by path instead of id. Only genuinely-nested obligations
- * pick up the bracketed form.
- *
- * Pure and zero-I/O; the leaf of the recursion the reconcile/status/store layers
- * walk over.
+ * DEPTH-0 COLLAPSE: a single-segment path stringifies to the BARE id
+ * (`['claims'] -> 'claims'`), so every existing `scope.has('claims')` keeps
+ * working once scope is keyed by path.
  */
 export const pathKey = (path) =>
   path.reduce(
@@ -24,25 +14,18 @@ export const pathKey = (path) =>
     ''
   )
 
-/** Inverse of `pathKey` — `'claims[0].claimType' -> ['claims', 0, 'claimType']`. */
 export const parsePath = (key) =>
   key
     .split(/\.|\[|\]/)
     .filter((segment) => segment !== '')
     .map((segment) => (/^\d+$/.test(segment) ? Number(segment) : segment))
 
-/** Read the value at a path, or undefined if any segment is missing. */
 export const valueAt = (answers, path) =>
   path.reduce(
     (value, segment) => (value == null ? undefined : value[segment]),
     answers
   )
 
-/**
- * Return a copy of `answers` with `value` set at `path`, cloning only the spine
- * down to the leaf so the input is never mutated. Missing branches are created
- * as arrays or objects to match the next segment's type.
- */
 export const setAt = (answers, path, value) => {
   if (path.length === 0) return value
   const [head, ...rest] = path
@@ -53,10 +36,9 @@ export const setAt = (answers, path, value) => {
 }
 
 /**
- * Delete the leaf at `path` IN PLACE — splice it out when it is an array index,
- * else delete the key. A no-op if any ancestor is already gone (so deleting a
- * subtree deepest-first is safe). Mirrors the old `delete answers[id]`: a
- * depth-0 path deletes the top-level key.
+ * Delete the leaf at `path` in place — splice when it is an array index, else
+ * delete the key. A no-op if any ancestor is already gone, so deleting a
+ * subtree deepest-first is safe.
  */
 export const deleteAt = (answers, path) => {
   if (path.length === 0) return
@@ -95,13 +77,7 @@ export const wipeOrder = (pathA, pathB) => {
   return pathB.length - pathA.length
 }
 
-/**
- * DESTROY every wiped instance in place. `wiped` is a list of path KEYS (the
- * `pathKey` form `reconcile` returns); they are parsed and `wipeOrder`-sorted so
- * sibling array-index splices run highest-index-first and a nested delete
- * precedes its container's — no delete ever shifts another. The single home of
- * scope-exit deletion, shared by `commit` and `removeEntryAt`.
- */
+/** Parsed keys are `wipeOrder`-sorted so no delete ever shifts another. */
 export const destroyWiped = (answers, wiped) => {
   for (const path of wiped.map(parsePath).sort(wipeOrder)) {
     deleteAt(answers, path)

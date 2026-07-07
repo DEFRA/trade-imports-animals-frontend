@@ -1,12 +1,8 @@
 import { records } from './persistence/records.js'
 
 /**
- * COMPAT SHIM — the old `store` surface, re-expressed over the RECORDS port
- * (`persistence/records.js`). Kept so the three pre-reshape consumers stay
- * byte-green with ZERO test edits: `store-ops.test.js` (zero-arg `store.create()`
- * + `store.get(journeyId).answers`), `contract.test.js` (drive-through-store),
- * and `confirmation/controller.js` (imports SUBMITTED). New code imports the
- * ports directly; this shim exists only for the legacy surface.
+ * COMPAT SHIM over the records port, kept for the pre-reshape consumers; new
+ * code imports the ports directly.
  */
 export { IN_PROGRESS, SUBMITTED } from './persistence/records.js'
 

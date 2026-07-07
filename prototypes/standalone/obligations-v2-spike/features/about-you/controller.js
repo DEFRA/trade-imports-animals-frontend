@@ -13,14 +13,6 @@ import * as kit from '../../shared/kit.js'
 import { aboutYouPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/**
- * About you — the ONE page with a save-blocking (hard) mandate: fullName.
- * Every other field saves blank (soft), so "progresses with only Full name"
- * holds. This controller OWNS its validation: it composes a schema from the
- * reusable lib validators and runs it against the payload. fullName is the
- * sole `requiredText`; everything else is optional (blank passes, malformed
- * fails). The state layer only stores — it never sees the schema.
- */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/about-you/template`
 
@@ -31,7 +23,6 @@ const COUNTRIES = [
   { value: 'northern-ireland', text: 'Northern Ireland' }
 ]
 
-// The page's field→validator map — assembled from lib pieces, owned here.
 const fields = compose(
   requiredText('fullName', 'Enter your full name'),
   ukPhone('phone'),

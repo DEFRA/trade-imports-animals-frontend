@@ -5,16 +5,6 @@ import { STUB_USER } from './persistence/session.js'
 import { configureReadyForQuote } from './read.js'
 import { recordingH } from './test-support.js'
 
-/**
- * NW-4 shape proof (the definitive NOTHING-DERIVED-IS-STORED test) — a journey
- * is saved with an obligation that is now OUT of scope (claims data, but
- * `hadClaims: 'no'`). On a days-later `state.resume`, scope is recomputed from
- * the answers alone: the stale obligation is excluded and the in-scope one is
- * re-derived. The durable record carries answers + lifecycle metadata
- * (journeyId/userId/status/submittedAt) but NO *derived* fields (scope/wipe) —
- * so there is nothing derived to go stale in the first place. That is the
- * self-heal point.
- */
 describe('resume self-heal (nothing derived is stored)', () => {
   beforeEach(() => {
     records.clear()
@@ -31,9 +21,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
 
     const result = resume({ state: {}, headers: {} }, recordingH())
 
-    // The stale, now-out-of-scope obligation is NOT in the freshly derived scope.
     expect(result.scope.has('claims')).toBe(false)
-    // The in-scope obligation is re-derived correctly.
     expect(result.scope.has('email')).toBe(true)
   })
 

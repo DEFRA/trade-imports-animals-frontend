@@ -19,12 +19,8 @@ import * as claimsEntry from './features/claims/entry.controller.js'
 import * as driverClaim from './features/named-driver/driver-claim.controller.js'
 
 /**
- * T1 REGRESSION — currency validators strip £/commas and return the cleaned
- * digits, but the affected POST handlers were discarding that cleaned value and
- * persisting the raw hand-trimmed payload instead. These cases pin the STORED
- * value (and the one downstream numeric consequence — premium value-loading) so
- * the raw-persist behaviour cannot come back. The error path is pinned too: a
- * malformed amount must re-render the user's RAW input and commit nothing.
+ * Handlers must persist the validator's cleaned value, not the raw payload;
+ * the error path must echo the RAW input and commit nothing.
  */
 
 const findPost = postHandlerEndingWith

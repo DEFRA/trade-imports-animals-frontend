@@ -4,13 +4,6 @@ import * as kit from '../../shared/kit.js'
 import { addonsPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
-/**
- * Add to your policy — the add-on picker (multi-select). Selecting an
- * add-on ACTIVATES its derived detail obligations (driverName, modValue,
- * ncdYears, …) — but that relationship is in the model (activatedBy), so
- * this page just writes the selection; reconcile spawns/wipes the details.
- * Button copy is "Continue" (spec parity).
- */
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/addons/template`
 

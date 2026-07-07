@@ -2,11 +2,6 @@ import { BASE, hubPath, startPath, TEMPLATES } from '../../config.js'
 import { startJourney } from '../../engine/journey.js'
 import { open } from '../../shared/kit.js'
 
-/**
- * The start page (mounted at BASE — the grouped path the specs walk) and
- * its POST that mints a fresh journey and redirects to the hub. Copy is
- * authored here, next to the page.
- */
 const view = `${TEMPLATES}/features/start/template`
 
 export const routes = [

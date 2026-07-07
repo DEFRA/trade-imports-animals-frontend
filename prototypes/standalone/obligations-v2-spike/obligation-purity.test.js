@@ -5,7 +5,6 @@ import {
   isSidewaysObligationImport
 } from './obligation-purity.js'
 
-/** The per-file model-purity guard (the feature-model re-point of the boot check). */
 describe('obligation model purity', () => {
   it('Should pass for the real feature obligation files', () => {
     expect(() => assertObligationPurity()).not.toThrow()
