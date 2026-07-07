@@ -4,7 +4,36 @@
 > are settled; several are open (see §What's still open). Update this file as
 > the concept evolves.
 >
-> **Last updated:** 2026-06-30
+> **Last updated:** 2026-07-07
+>
+> **Note (2026-07-07, EUDPA-277 V4 spike updates):** the V4 spike
+> validated the model against
+> [Live Animals Data Fields V4](https://eaflood.atlassian.net/wiki/spaces/EUDP/pages/6497338582)
+> and closed one machinery gap by extending `applyTo`'s signature.
+> Changes vs the pre-V4 doc:
+>
+> - `applyTo` signature extended to
+>   `applyTo(fulfilments, fulfilmentIdsByObligationId)`. Second arg is
+>   a `Map<obligationId, string[]>` of currently-present group-
+>   instance-paths, enumerated pre-purge from raw storage. Handed to
+>   every applyTo call by the pipeline. See §The applyTo helpers below.
+> - Pipeline gains a pre-purge enumeration step
+>   (`enumerateGroupPathsFromStorage` in `evaluator.js`) between step 1
+>   (drop unknowns) and step 3 (`runApplicabilityDecisions`).
+> - Classifier extended so `applyTo + within` (no `indexedBy`)
+>   classifies as `derived-leaf`. Makes depth-N gated field records
+>   (like V4's passport / tattoo / etc.) expressible without
+>   `indexedBy` metadata.
+> - Companion helper library `helpers.js` — `allowListed`,
+>   `allowListedByPredicate`, `branchedGate`, `anyAllowListed`,
+>   `matches`, `present` — building applyTo functions with
+>   `.metadata` attached for optional introspection.
+>
+> These update — but don't invalidate — the pipeline sketches below.
+> The V3 iteration 10-11 doc-pass is still pending on §Obligation
+> groups' storage sketch and §S. Nested indexing (the nested-object
+> shape described there is unimplemented; V4 uses flat composite keys
+> with helpers and `applyTo + within` classifier — see §S).
 >
 > **Note (2026-07-03, iterations 10–11):** iteration 10 flattened
 > storage (composite keys), removed the anchor concept, and simplified
@@ -320,6 +349,27 @@ same-in / same-out for `(fulfilments)` — while letting tests vary
 behaviour by constructing with different obligations, configs, or
 other dependencies. See §I for the extension pattern.
 
+**Algorithm per call.** The pipeline is seven steps:
+
+1. **Drop unknown obligation ids** (tolerate-and-amend).
+2. **Pre-purge enumeration** of group instance-paths from raw
+   storage. Feeds `applyTo`'s second arg so obligations can look up
+   their parent group's instance-paths without in-obligation
+   enumeration.
+3. **Run each obligation's `applyTo`** (if it has one). Signature:
+   `applyTo(fulfilments, fulfilmentIdsByObligationId) → Decision`.
+4. **Compute effective inScope** per obligation — own `applyTo`
+   inScope AND every ancestor group's inScope.
+5. **Purge storage.** Out-of-scope obligation → drop entire entry.
+   Derived indexed leaf → keep only records whose fulfilmentId is
+   in `applyTo`-returned records set. Otherwise → keep.
+6. **Post-purge enumeration** for group implication building.
+7. **Build per-obligation implications** with `records` array.
+
+Steps 2 and 6 both enumerate group instance-paths — step 2 from raw
+storage (so `applyTo` sees the ids map), step 6 from amended storage
+(so groups' implications account for records dropped in step 5).
+
 Output — a single result object with **amended fulfilments** plus a
 map of **per-obligation implications**:
 
@@ -332,42 +382,71 @@ map of **per-obligation implications**:
 }
 ```
 
-Where `Implication` is the return value of an obligation's own
-`applyTo(fulfilments)` method:
+Where `Implication` is (broadly) the return value of an obligation's
+own `applyTo(fulfilments, fulfilmentIdsByObligationId)` method:
 
 ```ts
-type Implication = {
-  inScope: boolean
-  status?: 'mandatory' | 'optional' // only meaningful if inScope
-  reasons?: Array<{
-    code: string // e.g. "obligation.excessAmount.applicable.becauseVoluntaryExcess"
-    explanation?: string // freeform, developer-facing; not shown to end users
-    values?: object // interpolation values for the resolved UI message
-  }>
-  fulfilments?: Array<FulfilmentState> // only for indexed cardinality
+type ApplyTo = (
+  fulfilments: FulfilmentsMap,
+  fulfilmentIdsByObligationId: Map<string, string[]>
+) => Decision
+
+type Decision =
+  | { inScope: false }
+  | {
+      inScope: true
+      status?: 'mandatory' | 'optional'
+      reasons?: Array<Reason>
+      records?: string[] // composite paths — indexed obligations only
+    }
+
+type Reason = {
+  code: string // e.g. "obligation.excessAmount.applicable.becauseVoluntaryExcess"
+  explanation?: string // freeform, developer-facing; not shown to end users
+  values?: object // interpolation values for the resolved UI message
 }
 
-type FulfilmentState = {
-  fulfilmentId: string
-  status?: 'mandatory' | 'optional'
-  reasons?: Array<Reason>
-  subFulfilments?: Array<FulfilmentState> // for nested indexing (see §S)
-}
+type Implication =
+  | { inScope: false }
+  | {
+      inScope: true
+      status?: 'mandatory' | 'optional' // scalars
+      reasons?: Array<Reason>
+      records?: Array<{
+        // indexed / grouped obligations
+        fulfilmentId: string // composite path — flat, `/`-delimited
+        status?: 'mandatory' | 'optional'
+      }>
+    }
 ```
 
-`FulfilmentState` is recursive and composes to any depth. An entry
-at any level can carry a `subFulfilments` array — one per level
-below the outer, matching the length of the obligation's
-`indexedBy.nested` array (see §S). Depth-1 example: address history
-per driver (driver → address). Depth-2 example: other-party
-per claim per driver (driver → claim → party). Depth is
-data-driven; the evaluator's purge recurses through
-`subFulfilments` at every level.
+`applyTo`'s second argument — `fulfilmentIdsByObligationId` — is a
+`Map<obligationId, string[]>` supplying **currently-present
+group-instance-paths per obligation**, enumerated pre-purge from raw
+storage by the evaluator. It's how gated obligations at depth-N look
+up their parent-group's instance-paths without in-obligation
+enumeration. See §The applyTo helpers below.
+
+Composite paths are `/`-delimited (`line1/unit1`, `d1/c1/p1`), flat
+storage keys — no nested `subFulfilments` recursion. See
+[FULFILMENT_SHAPES.md](./obligations/FULFILMENT_SHAPES.md) for
+worked examples across identity levels.
+
+Depth is data-driven and expressed via the `within` chain — a leaf's
+identity level is the ancestor-group chain from its immediate parent
+up to the top-level group. Depth-1 example: address history per
+driver (driver → address). Depth-2 example: other-party per claim per
+driver (driver → claim → party). The evaluator's purge iterates
+storage entries and drops any composite path that isn't authorised
+by the obligation's `applyTo`.
 
 Each obligation carries its own `applyTo` function inline in
 `obligations.js`; the top-level evaluator's `evaluate` calls each
 obligation's `applyTo` and collects the implications into the map
-above. See §J for the reason shape rationale and naming convention.
+above. Most obligations don't hand-write their `applyTo` — they use
+one of the helpers from `helpers.js` (see §The applyTo helpers below)
+which build the applyTo function for common gate shapes. See §J for
+the reason shape rationale and naming convention.
 
 **Group members — synthesised implications.** Obligations with a
 `members: [...]` list are groups (§Obligation groups). For each
@@ -396,6 +475,72 @@ idempotent (converges in one step).
 
 See §Persistence for the model-versioning rationale.
 
+### The applyTo helpers
+
+Most obligations don't hand-write their `applyTo` function.
+`helpers.js` provides a small library of pure functions that build
+applyTo functions for common gate shapes. Each helper returns an
+`applyTo(fulfilments, fulfilmentIdsByObligationId)` function with a
+`.metadata` property attached — the runtime uses the function; tools
+that need static introspection (data-dictionary export, cross-
+language serialisation, renderer hints) can read the metadata.
+
+**Signatures:**
+
+```ts
+// Depth-N gate: in scope on entries where gateObligation's stored
+// value is in the allowlist. Pass projectionGroup for depth > 1
+// gates (e.g. per-line commodityCode gating per-unit records); the
+// helper reads fulfilmentIdsByObligationId.get(projectionGroup.id)
+// to project matches down to the group's instance-paths.
+allowListed(gateObligation, values[], projectionGroup?, reasons?)
+
+// Same as allowListed but with a predicate function (inverse gates,
+// compound conditions, or anything not expressible as a value array).
+allowListedByPredicate(gateObligation, predicate, projectionGroup?, reasons?)
+
+// Evaluate a predicate; return one of two full Decision objects.
+// For retain-value + status-swap patterns (regionCode,
+// all-or-nothing blocks) — both branches can carry inScope: true
+// with different statuses.
+branchedGate(predicate, whenTrue, whenFalse)
+
+// Scalar aggregation: true if ANY of the gate obligation's stored
+// values is in the allowlist. Returns whenTrue on match, whenFalse
+// otherwise. For notification-level obligations aggregating over
+// per-record data (V4's CPH: "any commodity line has a required
+// code").
+anyAllowListed(gateObligation, values[], whenTrue, whenFalse)
+
+// Lower-level primitives — return applyTo functions (matches) or
+// predicates (present).
+matches(gateObligation, value)   // scalar equality → Decision
+present(obligation)               // any-stored-value → boolean
+```
+
+**Which to use for which V4 shape:**
+
+| V4 shape                                   | Helper                                                                                   |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Retain-value scalar (mandatory-when-gated) | `branchedGate(pred, whenMandatory, whenOptional)`                                        |
+| Purge-on-flip scalar                       | `branchedGate(pred, whenInScope, { inScope: false })`                                    |
+| Mutually-exclusive pair                    | Two obligations each with `branchedGate` gated on the same trigger with different values |
+| Per-line commodity-gated (depth-1)         | `allowListed(commodityCode, WHITELIST, null, reasons)`                                   |
+| Per-unit commodity-gated (depth-2)         | `allowListed(commodityCode, WHITELIST, unitRecord, reasons)`                             |
+| Inverse commodity gate                     | `allowListedByPredicate(commodityCode, predicate, unitRecord, reasons)`                  |
+| Notification-level aggregation             | `anyAllowListed(commodityCode, WHITELIST, whenTrue, whenFalse)`                          |
+| Cross-sibling all-or-nothing               | Shared `branchedGate` with a plain closure predicate referencing all siblings            |
+
+For anything that doesn't fit a helper, hand-write `applyTo` as a
+plain closure — JS is the vocabulary, no need to reach for a helper.
+
+**Testable at obligation level.** Each obligation's `applyTo` is a
+pure function of `(fulfilments, ids)`. Tests can exercise them
+directly with plain-object inputs — no evaluator, no `obligationsById`
+construction. The helper functions themselves are also pure and
+unit-testable. See `helpers.test.js` and integration tests in
+`evaluator.test.js`.
+
 ### Conditional obligation patterns — `mandatoryWhen` and `appliesWhen`
 
 Per-obligation evaluator functions author two distinct kinds of
@@ -412,12 +557,18 @@ condition. **Value is retained** even when the requirement lifts.
 Corresponds to the "Status flip while in scope" row in §Key
 properties.
 
-```ts
-// Author return-shape when the condition holds:
-{ inScope: true, status: 'mandatory', reasons: [{ code: '...', explanation: '...' }] }
-// Author return-shape when the condition does not hold:
-{ inScope: true, status: 'optional' }
+Idiomatic expression via the `branchedGate` helper:
+
+```js
+applyTo: branchedGate(
+  (fulfilments) => fulfilments[trigger.id] === 'yes',
+  { inScope: true, status: 'mandatory', reasons: [reason] },
+  { inScope: true, status: 'optional' }
+)
 ```
+
+Both branches carry `inScope: true` — the purge step keeps the
+stored value.
 
 **`appliesWhen`** — the obligation is **in-scope only when the
 condition holds**. When false, the obligation is out-of-scope; **any
@@ -425,12 +576,35 @@ stored fulfilment is purged** from the amended fulfilments (scope-exit
 rule from §Key properties and §Fulfilments storage). The field
 effectively disappears from the model when the condition is false.
 
-```ts
-// Author return-shape when the condition holds:
-{ inScope: true, status: 'mandatory', reasons: [{ code: '...', explanation: '...' }] }
-// Author return-shape when the condition does not hold:
-{ inScope: false }
+Idiomatic expression:
+
+```js
+applyTo: branchedGate(
+  (fulfilments) => fulfilments[trigger.id] === 'internal-market',
+  { inScope: true, status: 'mandatory', reasons: [reason] },
+  { inScope: false }
+)
 ```
+
+The `whenFalse` branch's `inScope: false` triggers the purge.
+
+For cross-level `appliesWhen` patterns — where the trigger lives at
+a broader identity level than the gated obligation — use `allowListed`
+with a `projectionGroup`:
+
+```js
+// passport: depth-2, gated by depth-1 commodityCode
+applyTo: allowListed(
+  commodityCode,
+  PASSPORT_COMMODITIES,
+  unitRecord, // project matches to unit-instance-paths
+  [passportReason]
+)
+```
+
+`allowListed` handles the depth-N enumeration via
+`fulfilmentIdsByObligationId.get(projectionGroup.id)` — the obligation
+code doesn't touch storage layout. See §The applyTo helpers.
 
 **Choosing between them.** Use `appliesWhen` when the field is
 _meaningless_ without the trigger condition — e.g. `excessAmount`
@@ -580,6 +754,36 @@ implementations. What stays portable is the **contract** — the
 obligations and flow data files describe what data must exist and how
 it's presented; each runtime decides when and why, and orchestrates
 its own async.
+
+**Partial recovery via helper metadata.** For obligations that use
+the helpers from `helpers.js` (see §The applyTo helpers), the returned
+`applyTo` function carries a `.metadata` property that describes the
+gate declaratively as data:
+
+```js
+passport.applyTo.metadata
+// {
+//   type: 'allowListed',
+//   obligation: '<commodityCode.id>',
+//   values: ['0101', '0102', '01061900'],
+//   projection: '<unitRecord.id>',
+//   reasons: [{ code: 'obligation.passport.applicable.becausePassport...', … }]
+// }
+```
+
+A downstream data-dictionary exporter (see §Data-dictionary generation
+from the obligations model in §Stretch goals) can walk the manifest
+and emit metadata-based descriptions of each obligation's gate. A
+non-JS runtime could re-implement the small set of helper primitives
+(`allowListed`, `matches`, `branchedGate`, etc.) against the same
+metadata and get equivalent behaviour for the common cases. Custom
+`applyTo` closures with no metadata remain language-specific and
+would need a hand-port.
+
+The metadata hook is not a full serialisation — an `applyTo` written
+as a bespoke closure (not via a helper) carries no metadata and stays
+opaque to tooling. In the V4 manifest, all conditional obligations
+use helpers, so all their gates are introspectable.
 
 ## Single vs indexed obligations
 
@@ -2483,168 +2687,161 @@ failure modes we actually need to handle.
 
 ### S. Nested indexing — implemented pattern (any depth)
 
-Compound records modelled as groups (§Obligation groups) work
-naturally when a group's members are all single-cardinality per
-group-fulfilmentId — e.g. one type and one amount per claim.
+Nested indexing supports leaves at arbitrary depth. Depth is
+**data-driven via the `within` chain**: an obligation's identity
+level is the sequence of ancestor groups from top-most down to its
+immediate parent. Depth = length of the `within` chain.
 
-**Nested indexing** lets a group member itself be an indexed
-obligation whose fulfilmentIds are scoped **within** an outer
-fulfilmentId, and that inner level can in turn have its own inner
-level. Depth is data-driven — `indexedBy.nested.length + 1` gives
-the depth of the storage tree. The `driver` group has members at
-depth 0, 1 and 2:
+**V3 example** — the `driver` group has members at depths 1, 2, 3
+(where the top-level group itself sits at depth 1):
 
-- `driver` — outer collection (indexed, user-driven). Each
-  fulfilment is one driver.
-- `driverFullName` — depth-0 member; one string per driver
-  (derived from `driver`).
-- `driverAddress` — **depth-1** member: outer keyed by driver
-  fulfilmentId; inner keyed by opaque address fulfilmentId. Each
-  driver has their own indexed collection of addresses.
-- `driverClaim` — **depth-1** member: outer keyed by driver
-  fulfilmentId; inner keyed by opaque claim fulfilmentId. Each
-  driver has their own indexed collection of claims.
-- `driverClaimOtherParty` — **depth-2** member: outer keyed by
-  driver fulfilmentId; mid keyed by claim fulfilmentId (scoped to
-  that driver's `driverClaim` collection); inner keyed by opaque
-  party fulfilmentId. Each driver's each claim has an indexed
-  collection of other parties.
+- `driver` — top-level user-driven group. Instance-ids are opaque
+  ULIDs generated when the user adds a driver.
+- `driverFullName` — depth-1 field record: `within: driver`,
+  `status: 'mandatory'`. One value per driver.
+- `driverAddress` — depth-1 indexed leaf: `within: driver`,
+  `indexedBy: { source: 'user', mutability: 'edit-add-remove' }`.
+  Each driver has their own indexed collection of addresses.
+- `driverClaim` — depth-1 structural group: `within: driver`. Its
+  own instance-ids inferred from descendants (§Obligation groups).
+- `driverClaimOtherParty` — depth-2 indexed leaf:
+  `within: driverClaim` (which is `within: driver`).
 
-**Storage shape** — **hierarchical** (chosen over tuple keys:
-mirrors the nesting; the evaluator's purge recurses through the
-same shape). Depth-2 example for `driverClaimOtherParty`:
+**V4 example** — the `commodityLine` group has members at depths 1
+and 2:
 
-```jsonc
+- `commodityLine` — top-level user-driven group.
+- `commodityCode`, `species`, `numberOfAnimals`, `commodityType` —
+  depth-1 field records.
+- `numberOfPackages` — depth-1 derived leaf with `applyTo` (via
+  `allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES)`).
+  Classified as `derived-leaf` because it has `applyTo + within`.
+- `unitRecord` — depth-1 structural group inside `commodityLine`.
+- `passport`, `tattoo`, `earTag`, `horseName`, `permanentAddress`,
+  `identificationDetails`, `description` — depth-2 leaves gated by
+  the parent line's `commodityCode`. All use `applyTo(f, ids)` via
+  the helpers (`allowListed(commodityCode, WHITELIST, unitRecord,
+reasons)`) — the second-arg ids map supplies the unit-instance-
+  paths, and the helper filters them down to units on matching
+  lines.
+
+**Storage shape** — **flat composite keys** (chosen in iteration 10
+of the V3 spike over the previously-considered hierarchical shape).
+The storage map keyed by obligation id is a flat map of
+composite-path strings to values; the composite path is a `/`-
+delimited sequence of ancestor-instance-ids up to the leaf's own
+inner id. Depth-2 example for `driverClaimOtherParty`:
+
+```js
 fulfilments[driverClaimOtherParty.id] = {
-  "driver-1-uuid": {
-    "claim-1a-uuid": {
-      "party-a-uuid": { name: "Other Driver", role: "other-driver" },
-      "party-b-uuid": { name: "Passenger", role: "passenger" }
-    },
-    "claim-1b-uuid": {
-      "party-c-uuid": { /* … */ }
-    }
+  'd1/c1/p1': { name: 'Other Driver', role: 'other-driver' },
+  'd1/c1/p2': { name: 'Passenger', role: 'passenger' },
+  'd1/c2/p3': {
+    /* … */
   },
-  "driver-2-uuid": {
-    "claim-2a-uuid": {
-      "party-d-uuid": { /* … */ }
-    }
+  'd2/c1/p4': {
+    /* … */
   }
 }
 ```
 
-Depth-1 (driverAddress) is a proper subset of the same shape —
-same recursion, one level shorter.
+Depth-1 (driverAddress) is the same shape one segment shorter
+(`d1/a1`); depth-1 field records at the very top of a group are
+single-segment (`d1`). See
+[FULFILMENT_SHAPES.md](./obligations/FULFILMENT_SHAPES.md) for
+worked examples.
 
-**`indexedBy.nested` is a levels array.** One entry per level
-below the outer, in outer→inner order. Length = depth below
-outer. Each entry declares that level's source × mutability
-(plus `controllingObligation` for derived levels). Depth-1
-declaration for `driverAddress`:
+**Group instance-paths are inferred, not stored.** A group's
+instance-paths (`d1`, `d1/c1`, etc.) come from the composite-key
+prefixes of any descendant leaf's stored data. Groups have no
+storage of their own — no anchor obligation, no presence markers.
+The evaluator's step-6 enumeration walks descendants' storage and
+computes the union of prefixes at the group's depth.
 
-```jsonc
-{
-  "cardinality": "indexed",
-  "indexedBy": {
-    "source": "derived",
-    "controllingObligation": "driver",
-    "mutability": "edit-only",
-    "nested": [
-      // inner level: user-driven address list
-      { "source": "user", "mutability": "edit-add-remove" }
-    ]
-  }
+**No `indexedBy.nested` array.** Earlier iterations of this doc
+proposed an `indexedBy.nested` levels-array for declaring depth-N
+identity. That approach was superseded — the `within` chain
+already carries all the depth information, and the classifier
+routes leaves to the right pipeline branch based on shape:
+
+- `indexedBy: { source: 'derived', … }` (or `applyTo + within`
+  without `indexedBy`) → `derived-leaf`. Purge filters records by
+  `applyTo`'s returned records list.
+- `indexedBy: { source: 'user', … }` → `user-leaf`. Purge keeps
+  own storage keys as-is (subject to ancestor scope).
+- `within` + `status`, no `applyTo`, no `indexedBy` → `field`.
+  Always in scope for parent group instances.
+- No `within`, no children → `single`. Scalar value.
+- Has children → `group`.
+
+The `applyTo + within` shape lets depth-N conditional obligations
+declare their gate imperatively (or via helpers) without carrying
+`indexedBy` metadata that isn't strictly needed for the
+classification.
+
+**Depth-N gate resolution.** For depth-N conditional obligations
+(V4's per-unit identifiers) the second arg to `applyTo` supplies
+the parent-group instance-paths:
+
+```js
+applyTo: (fulfilments, fulfilmentIdsByObligationId) => {
+  // enumerate current unit-paths from the pipeline
+  const unitPaths = fulfilmentIdsByObligationId.get(unitRecord.id) ?? []
+  // filter to units on lines whose commodityCode is in the passport list
+  const codes = fulfilments[commodityCode.id] ?? {}
+  const okLines = Object.entries(codes)
+    .filter(([, c]) => PASSPORT_COMMODITIES.includes(c))
+    .map(([id]) => id)
+  return okLines.length
+    ? {
+        inScope: true,
+        records: unitPaths.filter((p) => okLines.includes(p.split('/')[0]))
+      }
+    : { inScope: false }
 }
 ```
 
-Depth-2 declaration for `driverClaimOtherParty`:
+The `allowListed` helper (see §The applyTo helpers) collapses that
+to three lines of data:
 
-```jsonc
-{
-  "cardinality": "indexed",
-  "indexedBy": {
-    "source": "derived",
-    "controllingObligation": "driver",
-    "mutability": "edit-only",
-    "nested": [
-      // mid level: derived from driverClaim (per-driver claim id)
-      {
-        "source": "derived",
-        "controllingObligation": "driverClaim",
-        "mutability": "edit-only"
-      },
-      // inner level: user-driven party list
-      { "source": "user", "mutability": "edit-add-remove" }
-    ]
-  }
-}
+```js
+applyTo: allowListed(commodityCode, PASSPORT_COMMODITIES, unitRecord, [reason])
 ```
 
-**Why an array, not a recursive nested-object.** Uniform iteration
-(the evaluator and any authoring helper can walk `nested` with a
-`for`-loop); depth is `.length` at a glance; every entry has the
-same per-level shape rather than mixing level fields with a `nested`
-tail pointer. Not backwards-compatible with iteration 7's
-single-object form; the spike is private and we own every call
-site.
-
-**Implication shape.** Entries in the outer `fulfilments` array
-carry `subFulfilments` at every level up to the obligation's
-declared depth. `FulfilmentState` in §The ObligationEvaluator is
-typed recursively for this. Depth-2 example:
-
-```ts
-{
-  inScope: true,
-  fulfilments: [
-    {
-      fulfilmentId: 'driver-1-uuid',
-      subFulfilments: [
-        {
-          fulfilmentId: 'claim-1a-uuid',
-          subFulfilments: [
-            { fulfilmentId: 'party-a-uuid', status: 'mandatory' },
-            { fulfilmentId: 'party-b-uuid', status: 'mandatory' }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Evaluator purge — one recursive rule.** `removeOutOfScopeFulfilments`
-recurses through the implication's `fulfilments` + nested
-`subFulfilments`, purging any stored key that isn't named at its
-level. See the code comment on the function for depth-1 and
-depth-2 before/after examples. This is what makes removing a
-party purge just that party, removing a claim cascade to the
-parties under it, and removing a driver cascade to everything
-under them — all from a single recursive traversal.
+**Evaluator purge — one uniform rule for indexed leaves.** For
+`derived-leaf` obligations, purge iterates stored composite keys
+and keeps only those in `applyTo`'s returned records set. The
+same rule applies at every depth — no per-level recursion, no
+`subFulfilments` walk. Composite-path keys make this a flat set-
+membership check.
 
 **Non-goals (still deferred):**
 
-- **Per-record fields on claim / party** — no `driverClaimType`,
-  `driverClaimAmount`, `driverClaimOtherPartyName`, etc. This
-  iteration proves the _structural_ pattern; per-claim fields are
-  cheap follow-ups (same shape as `driverFullName` at each
-  respective depth).
+- **Per-record fields on driverClaim / driverClaimOtherParty** —
+  the V3 spike proves the structural pattern; per-claim fields
+  (`driverClaimType`, `driverClaimAmount`) are cheap follow-ups
+  at each respective depth. V4 has the equivalent shape modelled
+  for real (per-line fields on `commodityLine`, per-unit fields
+  on `unitRecord`).
 - **5-year address-coverage rule** — a cross-fulfilment quantifier
   rule ("union of from-to periods covers 5 years without gaps").
-  Would live inside `driverAddress.applyTo` or at a group-level
-  completeness check. Deferred until a concrete service needs it.
-- **Value-shape validation** — address / party values are opaque
-  to the evaluator. Tests use realistic shapes but nothing checks
-  the fields.
+  Would live inside `driverAddress`'s `applyTo`. Deferred until a
+  concrete service needs it.
+- **Value-shape validation** — leaf values are opaque to the
+  evaluator. Tests use realistic shapes but nothing checks fields.
 
 **Design decisions still open** (revisit as more nested cases
 surface):
 
-- Whether nested groups can compose (group-within-group). Today
-  members are declared individually; a group is metadata only.
-- Whether authoring N-deep `applyTo` functions manually stays
-  readable at depth ≥ 3. Extracting a per-obligation walker
-  helper is a natural extension if it does not.
+- Whether nested groups can compose (group-within-group) with
+  their own aggregations. Today members are declared individually;
+  a group is metadata only. V4's `commodityLine → unitRecord`
+  demonstrates a nested group with commodity-gated leaves under
+  it; this works today via the classifier + helpers.
+- Whether hand-writing per-obligation `applyTo` at depth ≥ 3 stays
+  readable. Extracting a per-obligation walker helper is a natural
+  extension if not — but the current helpers handle depth-2
+  ergonomically already.
 
 ### R. Submission-block / Cannot Submit Journey state (extension point)
 
