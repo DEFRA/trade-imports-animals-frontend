@@ -506,10 +506,11 @@ WITHIN the entry, at its exact path.
   is in scope, exactly like the Claim-N block; surface `leavingDetail` on the row
   only for `leavingReason === 'other'`.
 - **Flow + hub** — the gating scalar (`hasPreviousInsurers`) needs a page (example
-  2), and the collection is a gated section
-  (`gate: (s) => s.inScope.has('previousInsurers')`), reached from the hub. If it
+  2), and the collection is a gated section reached from the hub. You do **not**
+  write a `gate:` for it — the section's gate is derived from its pages' `collects`
+  (`flow/gates.js`), so it opens exactly when `previousInsurers` is in scope. If it
   is an add-on rather than always-live, model it like the `named-driver` section
-  (`addon:` + `gate:`), which keeps the shared task-list count unchanged.
+  (`dynamic: true`, no `gate:`), which keeps the shared task-list count unchanged.
 - **Contract test (`contract.test.js`)** — a collection's identity-minting write
   happens in the ENTRY (append) handler, not the list page, so add a case shaped
   like the existing claims one: assert `listController.meta.collects ===

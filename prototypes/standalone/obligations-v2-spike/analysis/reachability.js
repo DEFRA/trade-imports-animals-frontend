@@ -41,7 +41,9 @@ import { simulateJourney } from './simulate.js'
  * predicate that owes the obligation, and any owing state reaches the page. If a
  * future `gate` ever keyed off an answer OUTSIDE the scope-owing condition, this
  * one-witness-per-obligation proof could false-pass; that would be the point to
- * enumerate more witnesses. True by the flow's current gating discipline.
+ * enumerate more witnesses. True BY CONSTRUCTION for derived gates (the default
+ * — `flow/gates.js` reads exactly the collected obligations' scope), and by
+ * gating discipline for the one authored gate (`readyForQuote`).
  *
  * SCOPE OF THE PROOF (entry-4 tension, resolved). This reasons about PAGE
  * reachability under SCOPE, not input VALIDITY. Whether a given answer is

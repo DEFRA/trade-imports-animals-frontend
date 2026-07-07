@@ -1,8 +1,8 @@
 /**
  * The modifications feature's flow-page identities — authored ONCE here as a
  * pure data LEAF that imports NOTHING. Both each controller (which spreads
- * its page into `meta`) and `flow/flow.js` (which spreads the same page and
- * adds the flow-only `gate`) import these same objects, so the `{ id, slug }`
+ * its page into `meta`) and `flow/flow.js` (which lists both pages in a
+ * section) import these same objects, so the `{ id, slug }`
  * is a shared reference rather than a string coincidence. It stays
  * import-free on purpose: were it (or flow.js) to import a controller, the
  * load-time cycle flow -> controller -> engine -> status -> flow would leave

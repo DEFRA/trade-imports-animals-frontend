@@ -497,3 +497,26 @@ Workflow-orchestrated, parent-shell verification).
   `pinActive` extraction (sweep-marked optional; a T4-family nit), `scaffoldFor` recursive-fold
   rewrite (siblings are imperative; risk > gain). Skeptics: no objections. **Byte-green: unit 157
   (22 files) / E2E 71, parent-shell verified; eslint + prettier clean.**
+
+- [x] **T11 — derive default gates from `collects`; `gate` stays as authored override. DONE — byte-green, +5 invariant tests.**
+  _Landed as:_ T0 §7 executed with one placement decision made concrete: the derivation lives in a
+  new `flow/gates.js` (`pageGatePasses` / `sectionGatePasses`) — it imports only `dispatch.js`
+  (`collectsOf` + new `isDispatchBuilt`) and `section-status.js` (`sectionObligationIds`), so no
+  cycle; navigation, the hub row filter and the simulator all consult it instead of reading `.gate`
+  raw. The four hand gates are deleted from `flow.js` (claims page also loses its now-pointless
+  spread); exactly one authored gate remains (`get-your-quote`'s `readyForQuote`); `dynamic: true`
+  flags stay (hub-presentation grouping, per T0). Empty-`collects` convention: derives to reachable
+  (quote-summary passes through to its section's authored gate). FAIL LOUD: `buildDispatch` now
+  sets a built flag (cleared on re-entry, set only on success) and a derived gate consulted before
+  boot throws, mirroring `configureReadyForQuote` — necessary because `collectsOf`'s `?? []` is
+  legitimate for quote-summary, so unbuilt was otherwise indistinguishable from collects-nothing.
+  New `flow/gates.test.js` (+5): pre-boot loud-throw; authored-override needs no index; the
+  invariant derived-gate ⟺ ¬NA for all 3 dynamic sections across all 64 `enumerateScopeStates()`
+  (covers the modifications representative-key → disjunction change); claims page gate ⟺
+  `inScope.has('claims')` across the space; empty-collects convention pinned. Stale copy fixed:
+  DESIGN.md flow listing (incl. the pre-6b `has('driverName')` drift) + gate bullet, EXTENDING.md
+  gated-collection recipe (no hand `gate:` for the default case), reachability soundness note now
+  "true by construction for derived gates", 12 `page.js` docblocks no longer claim flow adds a
+  flow-only `gate`. **Byte-green: unit 162 (23 files, was 157/22; all 157 pass unchanged) /
+  targeted E2E: shared journey (12 variants) + hub-copy specs green in parent shell (full E2E left
+  to the orchestrator); eslint + prettier clean.**

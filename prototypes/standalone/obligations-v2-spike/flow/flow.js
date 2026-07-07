@@ -21,9 +21,14 @@ import { quoteSummaryPage } from '../features/quote/page.js'
  * copy-free) because the journey returns to the hub after each section and
  * the hub renders one task per section.
  *
- * `gate` is a PURE read of the scope facts the state layer already
- * computed (`scope.inScope` / `scope.readyForQuote`) — the flow never re-derives
- * scope or mutates data.
+ * Gating is DERIVED BY DEFAULT: a section or page with no `gate` is
+ * reachable exactly when some obligation it collects is in scope (see
+ * `flow/gates.js`), so the flow never restates the model's activation rules
+ * as hand-typed `inScope.has('<key>')` strings. An authored `gate` is the
+ * OVERRIDE for flow-level facts the model cannot express; it is a PURE read
+ * of the scope facts the state layer already computed (`scope.inScope` /
+ * `scope.readyForQuote`) — the flow never re-derives scope or mutates data.
+ * The one authored gate is `get-your-quote`'s readiness roll-up.
  */
 export const sections = [
   {
@@ -36,12 +41,7 @@ export const sections = [
   },
   {
     id: 'your-driving-and-cover',
-    pages: [
-      drivingHistoryPage,
-      { ...claimsPage, gate: (scope) => scope.inScope.has('claims') },
-      coverTypePage,
-      optionalExtrasPage
-    ]
+    pages: [drivingHistoryPage, claimsPage, coverTypePage, optionalExtrasPage]
   },
   {
     id: 'add-to-your-policy',
@@ -50,19 +50,16 @@ export const sections = [
   {
     id: 'named-driver',
     dynamic: true,
-    gate: (scope) => scope.inScope.has('drivers'),
     pages: [driversPage]
   },
   {
     id: 'modifications',
     dynamic: true,
-    gate: (scope) => scope.inScope.has('modDescription'),
     pages: [modificationsDescribePage, modificationsValuePage]
   },
   {
     id: 'protected-ncd',
     dynamic: true,
-    gate: (scope) => scope.inScope.has('ncdYears'),
     pages: [protectedNcdYearsPage]
   },
   {

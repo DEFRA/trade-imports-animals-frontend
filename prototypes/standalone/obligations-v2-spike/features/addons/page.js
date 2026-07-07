@@ -1,7 +1,7 @@
 /**
  * The addons feature's flow-page identity — authored ONCE here as a pure data
  * LEAF that imports NOTHING. Both the controller (which spreads it into `meta`)
- * and `flow/flow.js` (which spreads it and adds any flow-only fields) import
+ * and `flow/flow.js` (which lists it in a section) import
  * this same object, so the `{ id, slug }` is a shared reference rather than a
  * string coincidence. It stays import-free on purpose: were it (or flow.js) to
  * import a controller, the load-time cycle flow -> controller -> engine ->

@@ -23,6 +23,7 @@ import { walkObligations } from '../registry.js'
 let pageOfObligationMap = new Map()
 let collectsByPageMap = new Map()
 let slugByPageMap = new Map()
+let dispatchBuilt = false
 
 const ID_UNSAFE = /[.[\]]/
 
@@ -49,6 +50,7 @@ const ownerOfObligation = (address) => {
 }
 
 export function buildDispatch(pages) {
+  dispatchBuilt = false
   pageOfObligationMap = new Map()
   collectsByPageMap = new Map()
   slugByPageMap = new Map()
@@ -88,7 +90,17 @@ export function buildDispatch(pages) {
   if (uncovered.length) {
     throw new Error(`Obligations collected by no page: ${uncovered.join(', ')}`)
   }
+  dispatchBuilt = true
 }
+
+/**
+ * Whether `buildDispatch` has completed successfully. The derived-gate seam
+ * (`flow/gates.js`) checks this before reading `collectsOf`, because the
+ * `?? []` fallback below is legitimate for a known page that collects nothing
+ * (quote-summary) but would silently gate EVERY step out if the whole index
+ * were simply not built yet.
+ */
+export const isDispatchBuilt = () => dispatchBuilt
 
 export const pageOfObligation = (obligationId) =>
   ownerOfObligation(obligationId)

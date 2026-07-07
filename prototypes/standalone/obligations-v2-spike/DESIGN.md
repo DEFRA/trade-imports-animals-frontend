@@ -265,7 +265,7 @@ export const sections = [
     id: 'your-driving-and-cover',
     pages: [
       { id: 'driving-history', slug: 'driving-history' },
-      { id: 'claims', slug: 'claims', gate: (s) => s.inScope.has('claims') },
+      { id: 'claims', slug: 'claims' }, // gate derived: in when 'claims' owed
       { id: 'cover-type', slug: 'cover-type' },
       { id: 'optional-extras', slug: 'optional-extras' }
     ]
@@ -273,8 +273,7 @@ export const sections = [
   { id: 'add-to-your-policy', pages: [{ id: 'addons', slug: 'addons' }] },
   {
     id: 'named-driver',
-    addon: 'named-driver',
-    gate: (s) => s.inScope.has('driverName'),
+    addon: 'named-driver', // gate derived from the section's collects
     pages: [
       { id: 'named-driver-who', slug: 'addons/named-driver/who' },
       {
@@ -285,8 +284,7 @@ export const sections = [
   },
   {
     id: 'modifications',
-    addon: 'modifications',
-    gate: (s) => s.inScope.has('modDescription'),
+    addon: 'modifications', // gate derived from the section's collects
     pages: [
       { id: 'modifications-describe', slug: 'addons/modifications/describe' },
       { id: 'modifications-value', slug: 'addons/modifications/value' }
@@ -294,8 +292,7 @@ export const sections = [
   },
   {
     id: 'protected-ncd',
-    addon: 'protected-ncd',
-    gate: (s) => s.inScope.has('ncdYears'),
+    addon: 'protected-ncd', // gate derived from the section's collects
     pages: [{ id: 'protected-ncd-years', slug: 'addons/protected-ncd/years' }]
   },
   {
@@ -306,8 +303,13 @@ export const sections = [
 ]
 ```
 
-- **`gate`** is a pure read of the scope facts the state layer already computed; the flow
-  never re-derives scope or mutates data.
+- **`gate`** defaults to a DERIVED read (`flow/gates.js`): a section or page with no
+  authored `gate` is reachable exactly when some obligation it collects is in scope —
+  the ¬Not-Applicable complement — so the flow never restates the model's activation
+  rules as hand-typed `inScope.has('<key>')` strings. An authored `gate` overrides for
+  flow-level facts the model cannot express (only `get-your-quote`'s `readyForQuote`
+  today). Either way a gate is a pure read of the scope facts the state layer already
+  computed; the flow never re-derives scope or mutates data.
 - **`navigation.nextInSection(pageId, scope)`** returns the next gated-in page in the
   _same_ section, else the hub sentinel. **`sectionEntry(sectionId, scope)`** returns the
   first gated-in page of a section. This reproduces "linear run then back to the hub".

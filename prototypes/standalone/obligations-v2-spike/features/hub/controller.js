@@ -1,5 +1,6 @@
 import { BASE, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
+import { sectionGatePasses } from '../../flow/gates.js'
 import { sectionEntry } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
 import { FULFILLED, IN_PROGRESS } from '../../engine/status.js'
@@ -93,7 +94,7 @@ const buildPickerItem = (answers, inScope) => ({
 
 const buildAddonItems = (answers, scope, inScope) =>
   sections
-    .filter((section) => section.dynamic && section.gate(scope))
+    .filter((section) => section.dynamic && sectionGatePasses(section, scope))
     .map((section) => {
       const copy = addonCopy(section.id)
       return {
