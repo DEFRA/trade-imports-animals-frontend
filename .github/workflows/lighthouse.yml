@@ -140,7 +140,7 @@ jobs:
       report-url: ${{ steps.report-url.outputs.url }}
     steps:
       - name: Download Lighthouse report artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: lighthouse-report
           path: lighthouse-report/
@@ -172,7 +172,7 @@ jobs:
     steps:
       - name: Download Lighthouse report artifact
         if: needs.lighthouse-test.result == 'success' || needs.lighthouse-test.result == 'failure'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: lighthouse-report
           path: lighthouse-report/
