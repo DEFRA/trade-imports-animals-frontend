@@ -30,6 +30,11 @@ const GROUP_ROWS = [
     title: 'Accompanying documents',
     hint: 'Certificates, permits and other documents for the consignment'
   },
+  {
+    id: 'addresses',
+    title: 'Addresses',
+    hint: 'The consignor, consignee, importer and the places of origin and destination'
+  },
   { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',

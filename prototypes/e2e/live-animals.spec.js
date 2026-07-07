@@ -264,6 +264,36 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(documentsRow).toContainText('Completed')
   })
 
+  test('addresses — the landing page lists the five parties, all Not added yet with no links', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await page.getByRole('link', { name: 'Addresses' }).click()
+    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+
+    // No select sub-page exists yet, so every party shows the Not-added
+    // state with no change link — the landing page has no dead links.
+    const parties = [
+      'Place of origin',
+      'Consignor',
+      'Consignee',
+      'Importer',
+      'Place of destination'
+    ]
+    for (const party of parties) {
+      const row = page.locator('.govuk-summary-list__row', { hasText: party })
+      await expect(row).toContainText('Not added yet')
+      await expect(row.getByRole('link')).toHaveCount(0)
+    }
+
+    // The page collects nothing: Continue returns straight to the hub.
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Get a car insurance quote' })
+    ).toBeVisible()
+  })
+
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({
     page
   }) => {

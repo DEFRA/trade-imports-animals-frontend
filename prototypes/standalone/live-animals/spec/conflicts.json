@@ -231,6 +231,14 @@
       "detail": "V4 note says region code is displayed/stored with an ISO country prefix derived from Country of Origin. M0 implements a plain 5-char input (hint: For example, FR-75) with no derived-prefix logic. Decide at a design gate whether auto-prefix behaviour is required.",
       "resolution": "Plain input stands for the prototype; ISO-prefix derivation can be a later controller improvement, not a model concern.",
       "resolvedBy": "Sam — M0 gate 2026-07-07"
+    },
+    {
+      "id": "c-026",
+      "fields": ["documents"],
+      "sources": ["confluence-v4"],
+      "detail": "V4's 'Optional - All-or-nothing' banner has no bite at the submit gate as modelled: statusOf treats a section whose only obligation is an optional collection as vacuously Fulfilled, so a half-completed document entry never blocks submission. collectionComplete models per-entry completeness but nothing consumes it for un-required collections. Design-gate call: extend the readiness rule to consume entryComplete for started entries, or accept the derived behaviour for the prototype.",
+      "resolution": null,
+      "resolvedBy": null
     }
   ]
 }

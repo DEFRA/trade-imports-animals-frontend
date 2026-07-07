@@ -9,6 +9,7 @@ import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
 import * as documentsList from './documents/list.controller.js'
 import * as documentsEntry from './documents/entry.controller.js'
+import * as addresses from './addresses/controller.js'
 import * as email from './email/controller.js'
 import * as aboutYou from './about-you/controller.js'
 import * as vehicle from './your-vehicle/controller.js'
@@ -63,6 +64,7 @@ export const allRoutes = [
   ...importPurpose.routes,
   ...documentsList.routes,
   ...documentsEntry.routes,
+  ...addresses.routes,
   ...email.routes,
   ...aboutYou.routes,
   ...vehicle.routes,
