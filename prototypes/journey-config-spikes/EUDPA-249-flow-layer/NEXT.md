@@ -90,7 +90,7 @@ The parent-layouts branch `spike/EUDPA-249-prototype-layouts` has the
 `obligations-standalone-spike`, and shared scaffolding. **Reference
 only** — not a merge target, cherry-pick fragments as needed.
 
-## The eight to-dos (in recommended order)
+## The seven to-dos (in recommended order)
 
 ### 1. Inline the obligations spike into our directory structure ✅ DONE
 
@@ -408,33 +408,7 @@ prototypes/journey-config-spikes/EUDPA-249-flow-layer/features/` → zero
   drives duplication, keep the single `domain.js`. If it aids
   navigation (my expectation), keep the split.
 
-### 3. Settle Joi vs non-Joi for validation (was to-do 2 / originally to-do 4)
-
-**Why second:** affects the shape of controllers (to-do 5), what "how
-to add X" documentation says (to-do 3+), and whether the coverage
-test in to-do 5 checks Joi schemas or domain entries.
-
-**Not a code job — a team decision.** 20-minute conversation, then
-one direction. See RECOMMENDATION.md Trade-offs table for the raw
-comparison. My tentative preference (not decided):
-
-- **Keep the internal predicate path as the source of truth** (domain
-  entries stay JSON-portable, cross-record predicates stay clean).
-- **Generate a Joi shape as a _view_ of the domain** — the
-  `controller-sketch.js` approach — so downstream services or the
-  admin UI can consume a Joi schema without duplicating the rules.
-- Update `RECOMMENDATION.md`'s "Correctness" section with the settled
-  answer.
-
-If team lands on Joi-native, the reverse: domain entries become Joi
-descriptors + custom rules, and `validate()` in runtime.js delegates
-to `.validate()` on the schema. Bigger refactor, but tests stay
-mostly intact because `format-domain-errors.js` becomes the mapping
-layer.
-
-**Verification:** whichever direction, 164 tests still green after.
-
-### 4. Mutation walkthrough — "what tests fail if we change the obligations model" (was to-do 1)
+### 3. Mutation walkthrough — "what tests fail if we change the obligations model" (was to-do 4)
 
 **Why third:** high-signal artifact for the "provable via tests"
 claim. Cheap once (1) and (2) are settled — needs stable file paths.
@@ -469,7 +443,7 @@ Total document ~1200 words.
 **Verification:** the doc's own claims are correct — apply each
 mutation, run the tests, screenshot / paste the failure. Revert.
 
-### 5. Data dictionary as a committed artefact (was to-do 3)
+### 4. Data dictionary as a committed artefact (was to-do 5)
 
 **Why fifth:** `data-dictionary-sketch.js` already builds it; we just
 need to publish it. Cheap. After the restructure, this doc lands in
@@ -494,7 +468,7 @@ there's demand.
 `data-dictionary-sketch.js buildDictionary()` output; the MD parses
 cleanly with `npx prettier --check`.
 
-### 6. "How to add X" docs + coverage test (was to-do 2)
+### 5. "How to add X" docs + coverage test (was to-do 6)
 
 **Why sixth:** freezes the extension pattern (with the restructure's
 target layout) before to-do 7 scales it. Directly parallels the
@@ -525,7 +499,7 @@ allow-listed.
 **Verification:** the coverage test fails when a required entry is
 missing and passes when it's wired.
 
-### 7. Build out the full V4 journey (was to-do 5)
+### 6. Build out the full V4 journey (was to-do 7)
 
 **Why sixth:** the big scale-up. Pattern is settled by then; execution
 is mechanical.
@@ -564,33 +538,78 @@ top-to-bottom. For each field:
 obligation + domain entry + `presents` reference; the coverage test
 from (5) passes; the browsable journey walks every subsection to F.
 
-### 8. Code reviews (was to-do 7)
+### 7. Code reviews (was to-do 8)
 
-**Not a single event — stage them.** After each of (3), (4), and (2)
-if it involved code. Then a bigger review after (6). Each of those
-milestones is small and self-contained. Trying to review the whole
-thing at the end guarantees drift.
+**Not a single event — stage them.** After each of (3), (4), (5), and
+a bigger review after (6). Each of those milestones is small and
+self-contained. Trying to review the whole thing at the end guarantees
+drift.
 
 Suggested review checklist per milestone:
 
-- Contract seam not bypassed (`grep -rn "from '../runtime.js'" browser/ | grep -v contract` should return nothing).
-- 164+ tests still green.
+- Contract seam not bypassed — nothing in `features/*` or `lib/*`
+  imports directly from `engine/index.js`, `domain/index.js`, or
+  `flow/flow.js`; everything goes through `./contract.js`. Enforce via
+  `grep -rn "from '../engine\|from '../domain\|from '../flow" features/ lib/ | grep -v contract`
+  returning nothing.
+- 345+ tests still green.
 - New tests added for new behaviour.
 - Prettier + eslint pass.
 - RECOMMENDATION.md + docs updated to match reality.
 
+## Parked — Joi adoption for the domain-driven validation path
+
+**Decision recorded:** Defra's preferred tooling is Joi. Domain-driven
+validation _should_ route through Joi. Feature controllers _should_
+be able to add bespoke Joi rules on top via a `preValidate` hook.
+
+**Execution deferred until after step 6 (V4 buildout)** because two
+design questions surface naturally in that scale-up and shape the
+Joi refactor:
+
+- **Cross-record predicates.** The V4 rule "≥ 1 animal identifier per
+  unit-record" is per-_group_, not per-field. Joi handles per-field
+  cleanly and per-group less cleanly. Design the primitive
+  (`groupPredicate`? `Joi.custom()` at page level?) against a real
+  requirement, not a guess.
+- **Line-scoped fields under Joi's static-shape assumption.** Joi
+  schemas want fixed keys; commodity-line fields want N instances of
+  the same obligation. Solvable via per-request schema build, but the
+  exact convention is easier to design when line iteration is fully
+  wired in step 6.
+
+**Scope when it's picked up** — approximately one focused day:
+
+- Port a minimal `lib/validate/run.js` from v2-spike (~30 lines);
+  adapt to our `{ code, obligation, path }` error shape.
+- Add a `buildSchema(fulfilments, ctx) → Joi.Schema` method to each
+  domain factory (`staticEnum`, `computedEnum`, `lookupEnum`,
+  `predicate`, plus the `transitedCountries` composite).
+- Rewrite `engine/index.js validate()` to call `buildSchema` + run
+  the Joi schema + translate error tree.
+- Coercion parity check — Joi's default `convert: true` differs from
+  our current strictness; either set `convert: false` or update tests.
+- Add the `preValidate` hook to `lib/page-controller.js` and a
+  `features/index.js` registry so feature controllers can extend
+  with bespoke Joi.
+- One worked example: pick a real V4 feature that needs a
+  controller-side rule and demonstrate the `preValidate` extension.
+- Update `RECOMMENDATION.md` + write `docs/validation.md`.
+
+**Verification target:** 345+ tests still green (some coercion tweaks
+expected). Browsable walk unchanged.
+
+**Reference:** [`obligations-v2-spike/lib/validate/`](https://github.com/DEFRA/trade-imports-animals-frontend/tree/spike/EUDPA-249-prototype-layouts/prototypes/standalone/obligations-v2-spike/lib/validate)
+on the parent-layouts branch — the Joi harness we adapt.
+
 ## Design questions to resolve before executing
 
-- **(1) fork vs shim** — quick call. Fork is cleaner; shim is safer if
-  parent might evolve.
-- **(2) three sub-calls during the restructure** — see the "Design
-  questions to resolve during this to-do" bullets under to-do 2:
-  per-feature vs shared templates; keep or drop `browser/`; domain
-  split vs single file. All low-risk; commit style is one PR so no
-  design decision blocks the reshape.
-- **(3) Joi vs non-Joi** — 20-minute team conversation. Blocks (6)+(7).
-- **(7) cross-record predicate shape** — deferred; will surface when V4
-  iteration hits identifier requirements. Design when it does.
+- **(1) fork vs shim** — resolved (fork).
+- **(2) three sub-calls during the restructure** — resolved (kept
+  generic template, dropped `browser/`, kept single-file `domain/` and
+  `engine/`).
+- **(Parked Joi work) cross-record predicate shape + line-scoped
+  Joi schema** — design these when step 6 forces the requirements.
 
 ## Conventions to follow
 
@@ -600,12 +619,13 @@ Suggested review checklist per milestone:
 - **Anything gated by `prototype.eudpa249.enabled`** — production ships
   nothing prototype-related. Any new files that need production reach
   must be added inside the gate too.
-- **Templates go through `browser/templates/`** — never reach into
-  `src/server/...` templates. Cherry-pick from parent-layouts if a
-  pattern exists there.
-- **Do not restate model rules in the browser layer.** Anything the
-  browser needs to know about the model goes through `browser/contract.js`.
-  If you have to reach past it, extend the contract instead.
+- **Templates go through `shared/` and `features/*/template.njk`** —
+  never reach into `src/server/...` templates. Cherry-pick from
+  parent-layouts if a pattern exists there.
+- **Do not restate model rules in the browser layer.** Anything a
+  controller / template needs to know about the model goes through
+  `./contract.js`. If you have to reach past it, extend the contract
+  instead.
 - **Test the invariants, not just the happy path.** `dump.test.js`
   snapshots catch drift; extend them when you change fixtures.
 - **Prettier + eslint pass** — husky pre-commit will enforce it, but
