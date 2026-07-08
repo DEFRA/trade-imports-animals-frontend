@@ -29,6 +29,7 @@ import {
 import { protectedNcdYearsPage } from '../features/protected-ncd/page.js'
 import { quoteSummaryPage } from '../features/quote/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
+import { declarationPage } from '../features/declaration/page.js'
 
 export const sections = [
   {
@@ -106,11 +107,12 @@ export const sections = [
     pages: [quoteSummaryPage]
   },
   // "Check and submit" (c-022 end shape: hub -> check your answers ->
-  // declaration -> submitted). No gate: the section collects nothing, so
-  // it derives reachable — a CYA you can always visit.
+  // declaration -> submitted). No gate: the CYA collects nothing and the
+  // declaration obligation is always-live, so the section derives reachable
+  // from the start — a review you can always visit.
   {
     id: 'review',
-    pages: [notificationViewPage]
+    pages: [notificationViewPage, declarationPage]
   }
 ]
 

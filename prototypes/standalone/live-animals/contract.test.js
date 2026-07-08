@@ -46,6 +46,7 @@ import * as driverEntry from './features/named-driver/driver-entry.controller.js
 import * as modDesc from './features/modifications/describe.controller.js'
 import * as modVal from './features/modifications/value.controller.js'
 import * as ncd from './features/protected-ncd/years.controller.js'
+import * as declaration from './features/declaration/controller.js'
 
 /**
  * The obligation ids a real POST handler newly commits must equal its declared
@@ -248,6 +249,15 @@ const cases = [
     handler: postHandlerOf(ncd),
     seed: { addons: ['protected-ncd'] },
     payload: { ncdYears: '5' }
+  },
+  {
+    id: 'declaration',
+    collects: declaration.meta.collects,
+    handler: postHandlerOf(declaration),
+    // The POST also attempts state.submitJourney; with no other answers the
+    // journey is not ready, so the commit lands and the submit is a no-op —
+    // exactly what this contract measures.
+    payload: { declaration: 'confirmed' }
   }
 ]
 

@@ -39,6 +39,7 @@ import * as modVal from './modifications/value.controller.js'
 import * as ncd from './protected-ncd/years.controller.js'
 import * as quote from './quote/controller.js'
 import * as cya from './check-answers/controller.js'
+import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
 import * as resume from './resume/controller.js'
 
@@ -67,7 +68,8 @@ export const dispatchPages = [
   driversHub.meta,
   modDesc.meta,
   modVal.meta,
-  ncd.meta
+  ncd.meta,
+  declaration.meta
 ]
 
 export const allRoutes = [
@@ -112,6 +114,7 @@ export const allRoutes = [
   ...ncd.routes,
   ...quote.routes,
   ...cya.routes,
+  ...declaration.routes,
   ...confirmation.routes,
   ...resume.routes
 ]

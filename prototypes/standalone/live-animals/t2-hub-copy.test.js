@@ -75,8 +75,9 @@ describe('#handler hub copy', () => {
     expect(reviewRow.hint.text).toBe(
       'Check your answers before you submit the notification'
     )
-    // The review section collects nothing, so it derives reachable on a
-    // fresh journey — the row must link out, never fall back to the hub.
+    // The review section's declaration obligation is always-live, so the
+    // section derives reachable on a fresh journey — the row must link out
+    // (entering at the CYA), never fall back to the hub.
     expect(reviewRow.href).toBe(
       '/prototype-standalone/live-animals/notification-view'
     )

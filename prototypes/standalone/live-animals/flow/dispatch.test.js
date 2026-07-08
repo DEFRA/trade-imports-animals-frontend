@@ -111,7 +111,8 @@ describe('dispatch + flow', () => {
       fullName: 'Alex',
       hadClaims: 'yes',
       claims: [{ claimType: 'accident', claimAmount: '500' }],
-      coverType: 'comprehensive'
+      coverType: 'comprehensive',
+      declaration: 'confirmed'
     }
     const { inScope } = reconcile(complete)
     expect(readyForQuote(complete, inScope)).toBe(true)

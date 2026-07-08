@@ -132,9 +132,10 @@ const buildAddonItems = (answers, scope, inScope) =>
       }
     })
 
-// "Check and submit" is a task row, not a GROUP_ROW: it collects nothing,
-// so its status derives Not applicable (rendered "Not started") and it must
-// not join the completed-tasks count, which only Fulfilled sections can move.
+// "Check and submit" is a task row, not a GROUP_ROW: the section owes only
+// the declaration (confirmed by submitting), so its tag tracks the submit —
+// Not started until the declaration is confirmed — and it must not join the
+// completed-tasks count, which counts the answer-gathering sections only.
 const buildReviewItem = (answers, scope, inScope) => ({
   title: { text: 'Check and submit' },
   hint: { text: 'Check your answers before you submit the notification' },

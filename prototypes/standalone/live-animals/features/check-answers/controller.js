@@ -1,5 +1,6 @@
 import { breadcrumbs, pagePath, TEMPLATES } from '../../config.js'
 import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
+import { nextInSection } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
 import { calculatePremium } from '../../lib/quote.js'
 import { isBlank } from '../../lib/answered.js'
@@ -304,10 +305,12 @@ const get = (request, h) => {
   return renderCya(h, answers)
 }
 
+// The CYA no longer submits — the declaration page owns state.submitJourney
+// (c-022 end shape: hub -> check your answers -> declaration -> submitted).
+// The next step derives from the review section's page order.
 const post = (request, h) => {
-  const result = state.submitJourney(request, h)
-  if (result.ok) return h.redirect(pagePath('confirmation'))
-  return renderCya(h, result.journey.answers)
+  const { scope } = state.get(request, h)
+  return h.redirect(nextInSection(page.id, scope))
 }
 
 export const routes = pageRoutes(page, { get, post })

@@ -124,7 +124,8 @@ describe('indexed obligations are first-class', () => {
       fullName: 'Alex',
       hadClaims: 'yes',
       claims: [{ claimType: 'accident', claimAmount: '500' }],
-      coverType: 'comprehensive'
+      coverType: 'comprehensive',
+      declaration: 'confirmed'
     }
     const incomplete = {
       ...complete,

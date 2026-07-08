@@ -113,7 +113,8 @@ describe('#simulateJourney', () => {
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',
-      coverType: 'comprehensive'
+      coverType: 'comprehensive',
+      declaration: 'confirmed'
     })
     expect(ready).toContain('quote-summary')
   })

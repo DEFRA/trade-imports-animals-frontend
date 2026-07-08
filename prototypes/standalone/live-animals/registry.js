@@ -18,6 +18,7 @@ import * as namedDriver from './features/named-driver/obligations.js'
 import * as modifications from './features/modifications/obligations.js'
 import * as protectedNcd from './features/protected-ncd/obligations.js'
 import * as quote from './features/quote/obligations.js'
+import * as declaration from './features/declaration/obligations.js'
 import { pathKey, valueAt } from './lib/path.js'
 
 const all = [
@@ -40,7 +41,8 @@ const all = [
   ...namedDriver.obligations,
   ...modifications.obligations,
   ...protectedNcd.obligations,
-  ...quote.obligations
+  ...quote.obligations,
+  ...declaration.obligations
 ]
 
 const byIdMap = new Map(all.map((obligation) => [obligation.id, obligation]))

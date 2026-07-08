@@ -182,7 +182,8 @@ describe('item-relative completeness gates the quote', () => {
       email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',
-      coverType: 'comprehensive'
+      coverType: 'comprehensive',
+      declaration: 'confirmed'
     }
     const missing = {
       ...base,

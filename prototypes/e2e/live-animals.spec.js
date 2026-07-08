@@ -1,6 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
+import {
+  fillAboutYou,
+  fillCoverType,
+  fillDriving,
+  fillEmail,
+  fillExtras,
+  fillVehicle
+} from './journey.js'
+
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
  * as pages land, driven by the values in
@@ -951,5 +960,176 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(summaryValue('Contact address')).toHaveText(
       values.contactAddress.name
     )
+  })
+
+  test('declaration — the full happy path submits from the declaration page and ends there, with no separate confirmation page', async ({
+    page
+  }) => {
+    // The walk covers every task on the hub, so give it room.
+    test.slow()
+    await startNotification(page)
+    const [line] = values.commodityLines
+    const arrival = values.arrivalDateAtPort
+    const save = () =>
+      page.getByRole('button', { name: 'Save and continue' }).click()
+    const task = (name) => page.getByRole('link', { name }).click()
+
+    // Origin.
+    await task('Origin of the import')
+    await page
+      .getByLabel('Country of origin')
+      .selectOption(values.countryOfOrigin)
+    await page.getByRole('radio', { name: 'Yes' }).check()
+    await page
+      .getByLabel('Region of origin code', { exact: true })
+      .fill(values.regionOfOriginCode)
+    await page
+      .getByLabel(
+        'Your internal reference number for this consignment (optional)'
+      )
+      .fill(values.internalReferenceNumber)
+    await save()
+
+    // Commodities: one line via the select and details sub-pages.
+    await task('Commodities')
+    await page.getByRole('button', { name: 'Add a commodity' }).click()
+    await page
+      .getByLabel('Commodity', { exact: true })
+      .selectOption(line.commoditySelection)
+    await page.getByRole('radio', { name: 'Domestic' }).check()
+    await page.getByRole('checkbox', { name: 'Bos taurus (Cattle)' }).check()
+    await save()
+    await page
+      .getByLabel('Number of animals')
+      .fill(line.numberOfAnimalsQuantity)
+    await page
+      .getByLabel('Number of packages (optional)')
+      .fill(line.numberOfPackages)
+    await save()
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    // About the consignment: internal market walks on to the purpose page.
+    await task('About the consignment')
+    await page.getByRole('radio', { name: 'Internal market' }).check()
+    await save()
+    await page.getByRole('radio', { name: 'Breeding' }).check()
+    await save()
+
+    // Accompanying documents are optional — the task is already Completed.
+
+    // Addresses: all five party spokes copy-commit from the landing page.
+    await task('Addresses')
+    const parties = [
+      ['Consignor', values.consignor.name],
+      ['Place of destination', values.placeOfDestination.name],
+      ['Place of origin', values.placeOfOrigin.name],
+      ['Consignee', values.consignee.name],
+      ['Importer', values.importer.name]
+    ]
+    for (const [label, name] of parties) {
+      await page
+        .locator('.govuk-summary-list__row', { hasText: label })
+        .getByRole('link', { name: 'Add' })
+        .click()
+      await page.getByRole('radio', { name }).check()
+      await save()
+    }
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    // Transport: port, travel details, transporter type, commercial select.
+    await task('Transport')
+    await page
+      .getByLabel('What is the port of entry into Great Britain?')
+      .selectOption(values.portOfEntry)
+    await page.getByLabel('Day').fill(arrival.day)
+    await page.getByLabel('Month').fill(arrival.month)
+    await page.getByLabel('Year').fill(arrival.year)
+    await save()
+    await page
+      .getByRole('radio', { name: values.meansOfTransport, exact: true })
+      .check()
+    const roadReveal = page.locator(
+      '#conditional-meansOfTransport-road-vehicle'
+    )
+    await roadReveal.getByRole('checkbox', { name: 'France' }).check()
+    await roadReveal.getByRole('checkbox', { name: 'Belgium' }).check()
+    await page
+      .getByLabel('Transport identification')
+      .fill(values.transportIdentification)
+    await page
+      .getByLabel('Transport document reference')
+      .fill(values.transportDocumentReference)
+    await save()
+    await page
+      .getByRole('radio', { name: values.transporterType, exact: true })
+      .check()
+    await save()
+    await page
+      .getByRole('radio', { name: values.commercialTransporter.name })
+      .check()
+    await save()
+
+    // Contact address.
+    await task('Contact address')
+    await page.getByRole('radio', { name: values.contactAddress.name }).check()
+    await save()
+
+    // The vendored car sections still gate readiness until their removal
+    // increments — walk them with the shared journey helpers.
+    await task('Email')
+    await fillEmail(page)
+    await save()
+    await task('About you and your vehicle')
+    await fillAboutYou(page)
+    await save()
+    await fillVehicle(page)
+    await save()
+    await task('Your driving and cover')
+    await fillDriving(page, { hadClaims: false })
+    await save()
+    await fillCoverType(page)
+    await save()
+    await fillExtras(page)
+    await save()
+
+    // Check your answers walks on to the declaration (c-022 end shape).
+    await task('Check and submit')
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Declaration' })
+    ).toBeVisible()
+
+    // The declaration is the submit-enforcement point: an unticked checkbox
+    // blocks the submit with an error.
+    await page.getByRole('button', { name: 'Submit notification' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: 'Confirm that the information is true and correct before submitting'
+      })
+    ).toBeVisible()
+
+    // Confirming submits (DRAFT to SUBMITTED) and redirects back to the
+    // declaration page — the submitted state renders THERE, with no separate
+    // confirmation page (c-022).
+    await page
+      .getByRole('checkbox', { name: /I declare that the information/ })
+      .check()
+    await page.getByRole('button', { name: 'Submit notification' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Notification submitted' })
+    ).toBeVisible()
+    expect(page.url()).toContain('/declaration')
+    const today = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+    await expect(page.getByText(`Date of declaration: ${today}`)).toBeVisible()
   })
 })

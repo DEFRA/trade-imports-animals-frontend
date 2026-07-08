@@ -11,11 +11,11 @@
     <p class="govuk-body-l">Estimated annual premium: <strong>£{{ premium }}</strong></p>
   {% endif %}
 
-  <h2 class="govuk-heading-m">Now send your application</h2>
-  <p class="govuk-body">By accepting, you confirm the details above are correct.</p>
+  <h2 class="govuk-heading-m">Now submit your notification</h2>
+  <p class="govuk-body">Continue to the declaration to submit your notification.</p>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
-    {{ govukButton({ text: "Accept and get quote" }) }}
+    {{ govukButton({ text: "Continue" }) }}
   </form>
 {% endblock %}

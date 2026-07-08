@@ -1,0 +1,81 @@
+import { pagePath, TEMPLATES } from '../../config.js'
+import { SUBMITTED } from '../../engine/store.js'
+import * as state from '../../engine/index.js'
+import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
+import * as kit from '../../shared/kit.js'
+import { declarationPage as page } from './page.js'
+import { obligations } from './obligations.js'
+
+export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+const view = `${TEMPLATES}/features/declaration/template`
+
+/** The skeleton-sourced declaration statement (c-022; V4 has no row). */
+export const DECLARATION_LABEL =
+  'I declare that the information I have provided in this notification I am submitting is true and correct.'
+
+// declaration is enforcedAt=submit AND this POST is the submit action, so
+// the mandate lands here as a save-blocking validator rather than the usual
+// blank-passes rule (skeleton parity: Joi must equal 'confirmed').
+const fields = compose(
+  requiredOneOf(
+    'declaration',
+    ['confirmed'],
+    'Confirm that the information is true and correct before submitting'
+  )
+)
+
+const dateText = (value) =>
+  new Date(value).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+
+const render = (h, values, errors = {}) =>
+  h.view(view, {
+    ...kit.base('Declaration', { backLink: pagePath(kit.CYA_SLUG) }),
+    heading: 'Declaration',
+    submitted: false,
+    declarationLabel: DECLARATION_LABEL,
+    submissionDate: dateText(Date.now()),
+    values,
+    errors,
+    errorSummary: kit.errorSummary(errors)
+  })
+
+// The submitted state renders HERE: the journey ends on the declaration
+// page with a confirmation panel — there is no separate confirmation page
+// for the live-animals journey (c-022).
+const renderSubmitted = (h, journey) =>
+  h.view(view, {
+    ...kit.base('Notification submitted'),
+    submitted: true,
+    submissionDate: dateText(journey.submittedAt),
+    returnHref: pagePath('home')
+  })
+
+const get = (request, h) => {
+  const { journey, answers } = state.get(request, h)
+  if (journey.status === SUBMITTED) return renderSubmitted(h, journey)
+  return render(h, { declaration: answers.declaration ?? '' })
+}
+
+const post = (request, h) => {
+  const { journey } = state.get(request, h)
+  // A finalised journey is frozen (writes throw) — re-show the submitted state.
+  if (journey.status === SUBMITTED) return h.redirect(pagePath(page.slug))
+
+  const payload = request.payload ?? {}
+  const values = { declaration: payload.declaration ?? '' }
+  const { errors } = validate(fields, payload)
+  if (errors) return render(h, values, errors)
+
+  state.commit(request, h, values)
+  const result = state.submitJourney(request, h)
+  // Not ready: a section is still owed — back to check your answers.
+  if (!result.ok) return h.redirect(pagePath(kit.CYA_SLUG))
+  // Skeleton shape: a valid POST submits then redirects back to /declaration.
+  return h.redirect(pagePath(page.slug))
+}
+
+export const routes = kit.pageRoutes(page, { get, post })

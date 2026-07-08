@@ -143,6 +143,7 @@
         "telephoneNumber": "+44 3000 200 301",
         "emailAddress": "enquiries@apha.example.gov.uk"
       }
-    }
+    },
+    "declaration": "confirmed"
   }
 }
