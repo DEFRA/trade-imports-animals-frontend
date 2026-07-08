@@ -3,13 +3,13 @@ import * as state from '../../engine/index.js'
 import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-import { PACKAGE_COUNT_COMMODITIES } from './obligations.js'
+import * as commodities from '../../services/commodities/index.js'
 
 const view = `${TEMPLATES}/features/commodities/details`
 
 /** Mirrors the model's numberOfPackages activation for page-side rendering. */
 export const packagesApply = (commoditySelection) =>
-  PACKAGE_COUNT_COMMODITIES.includes(commoditySelection)
+  commodities.packageCountCommodities().includes(commoditySelection)
 
 // Both counts are enforcedAt=submit: blank passes validation and
 // numberOfAnimalsQuantity stays an open requirement for the line.

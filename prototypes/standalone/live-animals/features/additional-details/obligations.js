@@ -1,16 +1,5 @@
 import { commoditySelection } from '../commodities/obligations.js'
-
-/**
- * The commodity selections that put containsUnweanedAnimals in scope. V4 lists
- * five commodity GROUPS — equines (0101), cattle (0102), pigs (0103), sheep
- * (010410) and goats (010420). The gate keys on the exact commoditySelection
- * strings the commodities feature stores (COMMODITY_OPTIONS, the V4 list
- * entries verbatim), the same convention numberOfPackages uses. Of the current
- * stubbed commodity vocabulary only Horse (0101) and Cattle (0102) fall inside
- * those groups; pigs, sheep and goats have no commodity option yet, so they
- * join this list when the MDM commodity list grows to carry them.
- */
-export const UNWEANED_ANIMAL_COMMODITIES = ['0102 - Cattle', '0101 - Horse']
+import * as commodities from '../../services/commodities/index.js'
 
 /**
  * Mandatory to submit; no activatedBy. APHA intend to make this conditional
@@ -34,7 +23,7 @@ export const containsUnweanedAnimals = {
   activatedBy: {
     obligation: commoditySelection,
     frame: 'anyItem',
-    includes: UNWEANED_ANIMAL_COMMODITIES
+    includes: commodities.unweanedCommodities()
   },
   wipeOnExit: true
 }

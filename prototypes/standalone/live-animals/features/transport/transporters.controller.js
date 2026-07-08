@@ -2,6 +2,7 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import * as transportReference from '../../services/transport-reference/index.js'
 import { transportersPage as page } from './page.js'
 import { transporterType } from './obligations.js'
 
@@ -10,18 +11,12 @@ import { transporterType } from './obligations.js'
 export const meta = { ...page, collects: [transporterType.id] }
 const view = `${TEMPLATES}/features/transport/transporters`
 
-/** V4 two-value transporter-type enum (c-012). The stored value is the V4
- *  label itself — the commercial and private transporter spokes (the next
- *  two pages) activate on these strings verbatim. */
-export const TRANSPORTER_TYPES = [
-  'Commercial transporter',
-  'Private transporter'
-]
-
 // transporterType is enforcedAt=submit: blank passes validation and the
 // obligation stays an open requirement for the status roll-up (In progress,
 // not a validation error). Only an out-of-domain value blocks the save.
-const fields = compose(oneOf('transporterType', TRANSPORTER_TYPES))
+const fields = compose(
+  oneOf('transporterType', transportReference.transporterTypes())
+)
 
 const render = (h, values, errors = {}) =>
   h.view(view, {

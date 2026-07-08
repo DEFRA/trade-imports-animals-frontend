@@ -3,10 +3,13 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
- * Boot guard: a feature obligations.js may import only SIDEWAYS — another
- * feature's obligations.js. Reads source text deliberately, not the module
- * graph — a static scan catches a forbidden import even in a feature the
- * barrel forgot to assemble.
+ * Boot guard: a feature obligations.js may import only from pure model/data
+ * seams — SIDEWAYS to another feature's obligations.js, or DOWN to a
+ * reference-data service (services/<name>/index.js), the vendored-list seam the
+ * activation gates read their membership lists from. Never a view, request,
+ * controller, engine, validator or config. Reads source text deliberately, not
+ * the module graph — a static scan catches a forbidden import even in a feature
+ * the barrel forgot to assemble.
  */
 const SPIKE_DIR = dirname(fileURLToPath(import.meta.url))
 const FEATURES_DIR = join(SPIKE_DIR, 'features')
@@ -16,6 +19,15 @@ const SPECIFIER_RE = /(?:from|import)\s*['"]([^'"]+)['"]/g
 
 export const isSidewaysObligationImport = (specifier) =>
   /(^|\/)obligations\.js$/.test(specifier)
+
+// A reference-data service seam holds only vendored lists behind pure
+// accessors — the same purity category as another obligations.js — so the
+// activation gates may read their `includes` membership lists from it.
+export const isReferenceServiceImport = (specifier) =>
+  /(^|\/)services\/[^/]+\/index\.js$/.test(specifier)
+
+const isPermittedObligationImport = (specifier) =>
+  isSidewaysObligationImport(specifier) || isReferenceServiceImport(specifier)
 
 export function assertObligationPurity() {
   const offenders = []
@@ -29,7 +41,7 @@ export function assertObligationPurity() {
       continue // a shell/ending feature (start, hub, cya, confirmation) owns no obligations
     }
     for (const match of source.matchAll(SPECIFIER_RE)) {
-      if (!isSidewaysObligationImport(match[1])) {
+      if (!isPermittedObligationImport(match[1])) {
         offenders.push(
           `features/${entry.name}/obligations.js imports "${match[1]}"`
         )
@@ -39,8 +51,9 @@ export function assertObligationPurity() {
   if (offenders.length > 0) {
     throw new Error(
       'Obligation model purity violated — a feature obligations.js may import ' +
-        'ONLY another feature obligations.js (no view, request, controller, ' +
-        `engine, validator or config): ${offenders.join('; ')}`
+        'ONLY another feature obligations.js or a reference-data service ' +
+        '(services/<name>/index.js) (no view, request, controller, engine, ' +
+        `validator or config): ${offenders.join('; ')}`
     )
   }
 }

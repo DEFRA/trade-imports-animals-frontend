@@ -2,8 +2,10 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import * as certification from '../../services/certification-purposes/index.js'
+import * as commodities from '../../services/commodities/index.js'
 import { additionalDetailsPage as page } from './page.js'
-import { obligations, UNWEANED_ANIMAL_COMMODITIES } from './obligations.js'
+import { obligations } from './obligations.js'
 
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/additional-details/template`
@@ -17,30 +19,8 @@ export const unweanedApplies = (answers) =>
   []
     .concat(answers.commodityLines ?? [])
     .some((line) =>
-      UNWEANED_ANIMAL_COMMODITIES.includes(line?.commoditySelection)
+      commodities.unweanedCommodities().includes(line?.commoditySelection)
     )
-
-/** V4 sixteen-value animals-certified-for value set (spec ruling c-009). */
-export const ANIMALS_CERTIFIED_FOR_LABEL = {
-  'further-keeping': 'Further keeping',
-  slaughter: 'Slaughter',
-  'confined-establishment': 'Confined establishment',
-  'germinal-products': 'Germinal products',
-  'registered-equine-animal': 'Registered equine animal',
-  'travelling-circus-animal-act': 'Travelling circus/animal act',
-  exhibition: 'Exhibition',
-  'event-or-activity-near-borders': 'Event or activity near borders',
-  'release-into-the-wild': 'Release into the wild',
-  'dispatch-centre': 'Dispatch centre',
-  'relaying-area-purification-centre': 'Relaying area / purification centre',
-  'ornamental-aquaculture-establishment':
-    'Ornamental aquaculture establishment',
-  'technical-use': 'Technical use',
-  'quarantine-or-similar-establishment': 'Quarantine or similar establishment',
-  'live-aquatic-animals-for-human-consumption':
-    'Live aquatic animals for human consumption',
-  other: 'Other'
-}
 
 const UNWEANED_LABEL = { yes: 'Yes', no: 'No' }
 
@@ -51,7 +31,7 @@ const UNWEANED_LABEL = { yes: 'Yes', no: 'No' }
 // nor committed.
 const certifiedField = oneOf(
   'animalsCertifiedFor',
-  Object.keys(ANIMALS_CERTIFIED_FOR_LABEL)
+  certification.certificationPurposes().map((option) => option.value)
 )
 const unweanedField = oneOf(
   'containsUnweanedAnimals',
@@ -65,13 +45,10 @@ const render = (h, values, showUnweaned, errors = {}) =>
     errors,
     errorSummary: kit.errorSummary(errors),
     showUnweaned,
-    certifiedOptions: Object.entries(ANIMALS_CERTIFIED_FOR_LABEL).map(
-      ([value, text]) => ({
-        value,
-        text,
-        checked: value === values.animalsCertifiedFor
-      })
-    ),
+    certifiedOptions: certification.certificationPurposes().map((option) => ({
+      ...option,
+      checked: option.value === values.animalsCertifiedFor
+    })),
     unweanedOptions: Object.entries(UNWEANED_LABEL).map(([value, text]) => ({
       value,
       text,

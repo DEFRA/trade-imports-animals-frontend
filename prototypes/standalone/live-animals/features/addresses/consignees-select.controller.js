@@ -3,58 +3,7 @@ import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-
-/**
- * Vendored EXEMPLAR stand-in for the consignee reference list (spec ruling
- * c-018: MDM reference data wins and this constant is the swap point). Each
- * entry carries the full V4 Standard Address Block so a selection can be
- * saved by copy (spec ruling c-020) — the chosen party's name and address
- * are copied into the `consignee` answer, never shared by reference.
- */
-export const CONSIGNEE_OPTIONS = [
-  {
-    id: 'yorkshire-dales-livestock',
-    name: 'Yorkshire Dales Livestock Ltd',
-    address: {
-      addressLine1: 'Unit 4, Auction Mart Lane',
-      addressLine2: '',
-      townOrCity: 'Skipton',
-      county: 'North Yorkshire',
-      postalOrZipCode: 'BD23 1UD',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1756 555 0192',
-      emailAddress: 'intake@yorkshire-dales-livestock.example.co.uk'
-    }
-  },
-  {
-    id: 'greenacre-farming',
-    name: 'Greenacre Farming Co',
-    address: {
-      addressLine1: 'Greenacre Farm',
-      addressLine2: 'Lower Henlade',
-      townOrCity: 'Taunton',
-      county: 'Somerset',
-      postalOrZipCode: 'TA3 5NB',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1823 555 0170',
-      emailAddress: 'office@greenacre-farming.example.co.uk'
-    }
-  },
-  {
-    id: 'border-mart-holdings',
-    name: 'Border Mart Holdings',
-    address: {
-      addressLine1: 'Rosehill Estate',
-      addressLine2: '',
-      townOrCity: 'Carlisle',
-      county: 'Cumbria',
-      postalOrZipCode: 'CA1 2RW',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1228 555 0139',
-      emailAddress: 'arrivals@border-mart.example.co.uk'
-    }
-  }
-]
+import * as addressBook from '../../services/address-book/index.js'
 
 const view = `${TEMPLATES}/features/addresses/consignees-select`
 
@@ -64,7 +13,7 @@ const view = `${TEMPLATES}/features/addresses/consignees-select`
 const fields = compose(
   oneOf(
     'consignee',
-    CONSIGNEE_OPTIONS.map((option) => option.id),
+    addressBook.parties('consignee').map((option) => option.id),
     'Select a consignee from the list'
   )
 )
@@ -88,7 +37,7 @@ const render = (h, values, errors = {}) =>
     }),
     errors,
     errorSummary: kit.errorSummary(errors),
-    consigneeOptions: CONSIGNEE_OPTIONS.map((option) => ({
+    consigneeOptions: addressBook.parties('consignee').map((option) => ({
       value: option.id,
       text: option.name,
       hint: { text: addressSummary(option.address) },
@@ -108,9 +57,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, {}, errors)
 
-  const chosen = CONSIGNEE_OPTIONS.find(
-    (option) => option.id === payload.consignee
-  )
+  const chosen = addressBook.party('consignee', payload.consignee)
   if (chosen) {
     // COPY the party into the answer (spec ruling c-020).
     state.commit(request, h, {

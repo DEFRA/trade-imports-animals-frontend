@@ -9,42 +9,7 @@ import {
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-
-/**
- * Vendored stand-in for the MDM document-type reference list — the V4
- * fourteen-entry enum, verbatim (spec ruling c-010: V4 wins over the
- * skeleton's two-type shortcut).
- */
-export const DOCUMENT_TYPE_OPTIONS = [
-  'ITAHC',
-  'Veterinary health certificate',
-  'Air waybill',
-  'Import permit',
-  'Letter of authority (Directive 2008/61/EC)',
-  'Commercial invoice',
-  'Sea waybill',
-  'Rail waybill',
-  'Bill of lading',
-  'Catch certificate',
-  'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-  'Health certificate',
-  'Journey log',
-  'Other'
-]
-
-// V4 models the attachment as a user-selected file-format enum; the real
-// service uploads a file instead (spec ruling c-004: files persist by
-// reference in a separate store). This prototype records metadata only.
-export const ATTACHMENT_TYPE_OPTIONS = [
-  'PDF',
-  'DOC',
-  'DOCX',
-  'JPG',
-  'JPEG',
-  'PNG',
-  'XLS',
-  'XLSX'
-]
+import * as documentTypes from '../../services/document-types/index.js'
 
 const view = `${TEMPLATES}/features/documents/entry`
 
@@ -52,8 +17,8 @@ const view = `${TEMPLATES}/features/documents/entry`
 // blank passes validation and stays an open requirement for the entry's
 // completeness roll-up. Only malformed values block the add.
 const fields = compose(
-  oneOf('accompanyingDocumentType', DOCUMENT_TYPE_OPTIONS),
-  oneOf('accompanyingDocumentAttachmentType', ATTACHMENT_TYPE_OPTIONS),
+  oneOf('accompanyingDocumentType', documentTypes.documentTypes()),
+  oneOf('accompanyingDocumentAttachmentType', documentTypes.attachmentTypes()),
   maxText(
     'accompanyingDocumentReference',
     58,
@@ -96,12 +61,12 @@ const render = (h, values, errors = {}) =>
     errorSummary: kit.errorSummary(errors),
     typeItems: selectItems(
       'Select a document type',
-      DOCUMENT_TYPE_OPTIONS,
+      documentTypes.documentTypes(),
       values.accompanyingDocumentType
     ),
     attachmentTypeItems: selectItems(
       'Select a file type',
-      ATTACHMENT_TYPE_OPTIONS,
+      documentTypes.attachmentTypes(),
       values.accompanyingDocumentAttachmentType
     ),
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {

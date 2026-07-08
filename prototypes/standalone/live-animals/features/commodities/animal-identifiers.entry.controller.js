@@ -3,7 +3,7 @@ import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
+import * as countries from '../../services/countries/index.js'
 import {
   animalIdentifierPassport,
   animalIdentifierTattoo,
@@ -61,11 +61,6 @@ const FALLBACK_FIELDS = [
 // The V4 Standard Address Block for permanentAddress — committed as one
 // { name, address } object (the party-record shape, c-020), the same shape as
 // the private transporter fieldGroup.
-const ADDRESS_COUNTRY_OPTIONS = [
-  'United Kingdom',
-  ...Object.values(COUNTRY_OF_ORIGIN_LABEL)
-]
-
 const ADDRESS_MANDATORY_MESSAGES = {
   nameOrOrganisationName: 'Enter a name or organisation name',
   addressLine1: 'Enter address line 1',
@@ -132,7 +127,11 @@ const addressChecks = compose(
     12,
     'Postal or zip code must be 12 characters or less'
   ),
-  oneOf('country', ADDRESS_COUNTRY_OPTIONS, 'Select a country from the list'),
+  oneOf(
+    'country',
+    countries.addressCountries(),
+    'Select a country from the list'
+  ),
   maxText(
     'telephoneNumber',
     20,
@@ -175,7 +174,7 @@ const missingAddressErrors = (values) => {
 
 const addressCountryItems = (selected) => [
   { value: '', text: 'Select a country' },
-  ...ADDRESS_COUNTRY_OPTIONS.map((name) => ({
+  ...countries.addressCountries().map((name) => ({
     value: name,
     text: name,
     selected: name === selected

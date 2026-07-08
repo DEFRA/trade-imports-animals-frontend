@@ -5,18 +5,15 @@ import * as state from '../../engine/index.js'
 import { isBlank } from '../../lib/answered.js'
 import { pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
-import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
+import * as countries from '../../services/countries/index.js'
 import { commodityLineValue } from '../commodities/list.controller.js'
 import { animalIdentifierSummary } from '../commodities/animal-identifiers.list.controller.js'
 import { documentValue } from '../documents/list.controller.js'
-import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
-import { PURPOSE_IN_INTERNAL_MARKET_LABEL } from '../import-purpose/controller.js'
-import {
-  ANIMALS_CERTIFIED_FOR_LABEL,
-  unweanedApplies
-} from '../additional-details/controller.js'
+import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
+import { unweanedApplies } from '../additional-details/controller.js'
+import * as certification from '../../services/certification-purposes/index.js'
 import { cphApplies } from '../cph-number/controller.js'
-import { OVERLAND_MEANS } from '../transport/transport-details.controller.js'
+import * as transportReference from '../../services/transport-reference/index.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -101,7 +98,7 @@ const buildRows = (answers) => {
   const rows = [
     row(
       'Country of origin',
-      COUNTRY_OF_ORIGIN_LABEL[answerOf('countryOfOrigin')] ?? '',
+      countries.originLabel(answerOf('countryOfOrigin')) ?? '',
       'countryOfOrigin'
     ),
     row(
@@ -126,23 +123,23 @@ const buildRows = (answers) => {
     ...commodityRows(answers),
     row(
       'Reason for import',
-      REASON_FOR_IMPORT_LABEL[answerOf('reasonForImport')] ?? '',
+      importReasonPurpose.reasonLabel(answerOf('reasonForImport')) ?? '',
       'reasonForImport'
     ),
     ...(answerOf('reasonForImport') === 'internal-market'
       ? [
           row(
             'Purpose in the internal market',
-            PURPOSE_IN_INTERNAL_MARKET_LABEL[
+            importReasonPurpose.purposeLabel(
               answerOf('purposeInInternalMarket')
-            ] ?? '',
+            ) ?? '',
             'purposeInInternalMarket'
           )
         ]
       : []),
     row(
       'Animals certified for',
-      ANIMALS_CERTIFIED_FOR_LABEL[answerOf('animalsCertifiedFor')] ?? '',
+      certification.certificationLabel(answerOf('animalsCertifiedFor')) ?? '',
       'animalsCertifiedFor'
     ),
     // Owed only when a triggering commodity line keeps it in scope
@@ -198,13 +195,15 @@ const buildRows = (answers) => {
       answerOf('transportDocumentReference'),
       'transportDocumentReference'
     ),
-    ...(OVERLAND_MEANS.includes(answerOf('meansOfTransport'))
+    ...(transportReference
+      .overlandMeans()
+      .includes(answerOf('meansOfTransport'))
       ? [
           row(
             'Transited countries',
             []
               .concat(answerOf('transitedCountries') ?? [])
-              .map((code) => COUNTRY_OF_ORIGIN_LABEL[code] ?? code)
+              .map((code) => countries.originLabel(code) ?? code)
               .join(', '),
             'transitedCountries'
           )

@@ -3,58 +3,7 @@ import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-
-/**
- * Vendored EXEMPLAR stand-in for the importer reference list (spec ruling
- * c-018: MDM reference data wins and this constant is the swap point). Each
- * entry carries the full V4 Standard Address Block so a selection can be
- * saved by copy (spec ruling c-020) — the chosen party's name and address
- * are copied into the `importer` answer, never shared by reference.
- */
-export const IMPORTER_OPTIONS = [
-  {
-    id: 'albion-livestock-imports',
-    name: 'Albion Livestock Imports Ltd',
-    address: {
-      addressLine1: '18 Harbour Road',
-      addressLine2: '',
-      townOrCity: 'Dover',
-      county: 'Kent',
-      postalOrZipCode: 'CT17 9BU',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1304 555 0184',
-      emailAddress: 'notifications@albion-livestock.example.co.uk'
-    }
-  },
-  {
-    id: 'severn-vale-imports',
-    name: 'Severn Vale Imports',
-    address: {
-      addressLine1: 'The Old Granary',
-      addressLine2: 'Quedgeley Trading Estate',
-      townOrCity: 'Gloucester',
-      county: 'Gloucestershire',
-      postalOrZipCode: 'GL2 4PA',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1452 555 0127',
-      emailAddress: 'imports@severn-vale.example.co.uk'
-    }
-  },
-  {
-    id: 'harwich-port-agencies',
-    name: 'Harwich Port Agencies',
-    address: {
-      addressLine1: '2 Quayside House',
-      addressLine2: '',
-      townOrCity: 'Harwich',
-      county: 'Essex',
-      postalOrZipCode: 'CO12 3HH',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1255 555 0163',
-      emailAddress: 'agency@harwich-port.example.co.uk'
-    }
-  }
-]
+import * as addressBook from '../../services/address-book/index.js'
 
 const view = `${TEMPLATES}/features/addresses/importers-select`
 
@@ -64,7 +13,7 @@ const view = `${TEMPLATES}/features/addresses/importers-select`
 const fields = compose(
   oneOf(
     'importer',
-    IMPORTER_OPTIONS.map((option) => option.id),
+    addressBook.parties('importer').map((option) => option.id),
     'Select an importer from the list'
   )
 )
@@ -88,7 +37,7 @@ const render = (h, values, errors = {}) =>
     }),
     errors,
     errorSummary: kit.errorSummary(errors),
-    importerOptions: IMPORTER_OPTIONS.map((option) => ({
+    importerOptions: addressBook.parties('importer').map((option) => ({
       value: option.id,
       text: option.name,
       hint: { text: addressSummary(option.address) },
@@ -108,9 +57,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, {}, errors)
 
-  const chosen = IMPORTER_OPTIONS.find(
-    (option) => option.id === payload.importer
-  )
+  const chosen = addressBook.party('importer', payload.importer)
   if (chosen) {
     // COPY the party into the answer (spec ruling c-020).
     state.commit(request, h, {

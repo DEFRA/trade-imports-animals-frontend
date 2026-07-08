@@ -2,8 +2,9 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import * as commodities from '../../services/commodities/index.js'
 import { cphNumberPage as page } from './page.js'
-import { obligations, CPH_COMMODITIES } from './obligations.js'
+import { obligations } from './obligations.js'
 
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/cph-number/template`
@@ -16,7 +17,9 @@ const view = `${TEMPLATES}/features/cph-number/template`
 export const cphApplies = (answers) =>
   []
     .concat(answers.commodityLines ?? [])
-    .some((line) => CPH_COMMODITIES.includes(line?.commoditySelection))
+    .some((line) =>
+      commodities.cphCommodities().includes(line?.commoditySelection)
+    )
 
 // countyParishHoldingCph is enforcedAt=submit: blank passes validation and the
 // obligation stays an open requirement for the status roll-up (In progress,

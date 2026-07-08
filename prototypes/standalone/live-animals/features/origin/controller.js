@@ -9,41 +9,17 @@ import {
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import * as countries from '../../services/countries/index.js'
 import { originPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/origin/template`
 
-/**
- * Vendored stand-in for the reference-data countries list (MDM group
- * GBNAG_SPS_EX) — the standalone prototype has no reference-data service,
- * so a representative EU, EEA and EFTA subset is authored here.
- */
-export const COUNTRY_OF_ORIGIN_LABEL = {
-  AT: 'Austria',
-  BE: 'Belgium',
-  DK: 'Denmark',
-  FR: 'France',
-  DE: 'Germany',
-  IS: 'Iceland',
-  IE: 'Ireland',
-  IT: 'Italy',
-  NL: 'Netherlands',
-  NO: 'Norway',
-  PL: 'Poland',
-  PT: 'Portugal',
-  ES: 'Spain',
-  SE: 'Sweden'
-}
-
 const countryItems = () => [
   { value: '', text: 'Select a country' },
   { text: '──────────', disabled: true },
-  ...Object.entries(COUNTRY_OF_ORIGIN_LABEL).map(([value, text]) => ({
-    value,
-    text
-  }))
+  ...countries.originCountries()
 ]
 
 // countryOfOrigin is enforcedAt=continue (spec ruling c-023): blank blocks

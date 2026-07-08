@@ -2,7 +2,7 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
+import * as countries from '../../services/countries/index.js'
 import { privateTransporterDetailsPage as page } from './page.js'
 import { privateTransporter } from './obligations.js'
 
@@ -17,18 +17,6 @@ import { privateTransporter } from './obligations.js'
  */
 export const meta = { ...page, collects: [privateTransporter.id] }
 const view = `${TEMPLATES}/features/transport/private-transporter-details`
-
-/**
- * Vendored stand-in for the MDM country list (spec ruling c-018: reference
- * data is the swap point when it lands) — the origin subset plus the United
- * Kingdom for GB-based private transporters. The stored value is the country
- * NAME verbatim, matching the copied party records ('France', 'United
- * Kingdom'), never a code.
- */
-export const TRANSPORTER_COUNTRY_OPTIONS = [
-  'United Kingdom',
-  ...Object.values(COUNTRY_OF_ORIGIN_LABEL)
-]
 
 // V4 fieldGroups.address mandates: these fields are Mandatory once an
 // address record is provided; addressLine2 and county stay optional.
@@ -75,7 +63,7 @@ const fields = compose(
   ),
   oneOf(
     'country',
-    TRANSPORTER_COUNTRY_OPTIONS,
+    countries.addressCountries(),
     'Select a country from the list'
   ),
   maxText(
@@ -108,7 +96,7 @@ const missingMandatoryErrors = (values) => {
 const countryItems = (selected) => [
   { value: '', text: 'Select a country' },
   { text: '──────────', disabled: true },
-  ...TRANSPORTER_COUNTRY_OPTIONS.map((name) => ({
+  ...countries.addressCountries().map((name) => ({
     value: name,
     text: name,
     selected: name === selected

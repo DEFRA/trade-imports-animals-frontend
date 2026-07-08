@@ -3,59 +3,7 @@ import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-
-/**
- * Vendored EXEMPLAR stand-in for the place-of-origin reference list (spec
- * ruling c-018: MDM reference data wins and this constant is the swap
- * point). Each entry carries the full V4 Standard Address Block so a
- * selection can be saved by copy (spec ruling c-020) — the chosen party's
- * name and address are copied into the `placeOfOrigin` answer, never
- * shared by reference.
- */
-export const PLACE_OF_ORIGIN_OPTIONS = [
-  {
-    id: 'ferme-des-trois-vallees',
-    name: 'Ferme des Trois Vallées',
-    address: {
-      addressLine1: '3 Chemin des Prés',
-      addressLine2: '',
-      townOrCity: 'Annecy',
-      county: '',
-      postalOrZipCode: '74000',
-      country: 'France',
-      telephoneNumber: '+33 4 50 55 01 23',
-      emailAddress: 'contact@trois-vallees.example.fr'
-    }
-  },
-  {
-    id: 'van-dijk-livestock',
-    name: 'Van Dijk Livestock BV',
-    address: {
-      addressLine1: 'Polderweg 18',
-      addressLine2: '',
-      townOrCity: 'Utrecht',
-      county: '',
-      postalOrZipCode: '3541 AB',
-      country: 'Netherlands',
-      telephoneNumber: '+31 30 555 0187',
-      emailAddress: 'export@vandijk-livestock.example.nl'
-    }
-  },
-  {
-    id: 'lindenhof-agrar',
-    name: 'Lindenhof Agrar GmbH',
-    address: {
-      addressLine1: 'Dorfstrasse 44',
-      addressLine2: 'Hof 2',
-      townOrCity: 'Münster',
-      county: '',
-      postalOrZipCode: '48143',
-      country: 'Germany',
-      telephoneNumber: '+49 251 555 0144',
-      emailAddress: 'versand@lindenhof-agrar.example.de'
-    }
-  }
-]
+import * as addressBook from '../../services/address-book/index.js'
 
 const view = `${TEMPLATES}/features/addresses/place-of-origin-select`
 
@@ -65,7 +13,7 @@ const view = `${TEMPLATES}/features/addresses/place-of-origin-select`
 const fields = compose(
   oneOf(
     'placeOfOrigin',
-    PLACE_OF_ORIGIN_OPTIONS.map((option) => option.id),
+    addressBook.parties('placeOfOrigin').map((option) => option.id),
     'Select a place of origin from the list'
   )
 )
@@ -89,12 +37,14 @@ const render = (h, values, errors = {}) =>
     }),
     errors,
     errorSummary: kit.errorSummary(errors),
-    placeOfOriginOptions: PLACE_OF_ORIGIN_OPTIONS.map((option) => ({
-      value: option.id,
-      text: option.name,
-      hint: { text: addressSummary(option.address) },
-      checked: option.name === values.selectedName
-    }))
+    placeOfOriginOptions: addressBook
+      .parties('placeOfOrigin')
+      .map((option) => ({
+        value: option.id,
+        text: option.name,
+        hint: { text: addressSummary(option.address) },
+        checked: option.name === values.selectedName
+      }))
   })
 
 const get = (request, h) => {
@@ -109,9 +59,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, {}, errors)
 
-  const chosen = PLACE_OF_ORIGIN_OPTIONS.find(
-    (option) => option.id === payload.placeOfOrigin
-  )
+  const chosen = addressBook.party('placeOfOrigin', payload.placeOfOrigin)
   if (chosen) {
     // COPY the party into the answer (spec ruling c-020).
     state.commit(request, h, {

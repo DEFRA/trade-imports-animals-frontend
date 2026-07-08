@@ -2,7 +2,8 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
+import * as transportReference from '../../services/transport-reference/index.js'
+import * as countries from '../../services/countries/index.js'
 import { transportDetailsPage as page } from './page.js'
 import {
   meansOfTransport,
@@ -24,26 +25,12 @@ export const meta = {
 }
 const view = `${TEMPLATES}/features/transport/transport-details`
 
-/** V4 four-value means-of-transport enum (provisional page, c-012). The
- *  stored value is the V4 label itself — transitedCountries' activation
- *  rule references 'Railway' and 'Road Vehicle' verbatim. */
-export const MEANS_OF_TRANSPORT = [
-  'Airplane',
-  'Railway',
-  'Road Vehicle',
-  'Vessel'
-]
-
-/** The activating subset — the template reveals the transited-countries
- *  checkboxes under exactly these radios. */
-export const OVERLAND_MEANS = ['Railway', 'Road Vehicle']
-
 export const MAX_TRANSITED_COUNTRIES = 12
 
-// Vendored stand-in for the reference-data country list (V4 valuesSource:
-// "Country list") — the same MDM subset the origin page uses.
+// The same MDM origin subset the origin page uses (V4 valuesSource:
+// "Country list"), decorated with the current checkbox selection.
 const countryOptions = (selected) =>
-  Object.entries(COUNTRY_OF_ORIGIN_LABEL).map(([value, text]) => ({
+  countries.originCountries().map(({ value, text }) => ({
     value,
     text,
     checked: selected.includes(value)
@@ -54,7 +41,7 @@ const countryOptions = (selected) =>
 // out-of-domain means, an over-length reference or an out-of-domain /
 // over-limit country selection blocks the save.
 const fields = compose(
-  oneOf('meansOfTransport', MEANS_OF_TRANSPORT),
+  oneOf('meansOfTransport', transportReference.meansOfTransport()),
   maxText(
     'transportIdentification',
     58,
@@ -70,7 +57,7 @@ const fields = compose(
 // Checkbox-array checks the Joi text validators cannot express: domain
 // membership and the V4 maxSelections cap of 12.
 const transitedCountriesErrors = (selected) => {
-  if (selected.some((code) => !(code in COUNTRY_OF_ORIGIN_LABEL))) {
+  if (selected.some((code) => countries.originLabel(code) === undefined)) {
     return { transitedCountries: 'Select countries from the list' }
   }
   if (selected.length > MAX_TRANSITED_COUNTRIES) {
