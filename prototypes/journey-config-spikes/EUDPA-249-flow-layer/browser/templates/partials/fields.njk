@@ -1,0 +1,34 @@
+{# Adapted from prototype-layouts (obligations-standalone-spike/templates/partials/fields.njk).
+
+   The generic field-widget dispatch macro. Every FieldViewItem —
+     { type: 'input' | 'textarea' | 'date' | 'radios' | 'checkboxes' | 'select',
+       args: <govuk macro arguments> }
+   — renders as exactly one govuk macro call. #}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+
+{% macro field(item) %}
+  {% if item.type == 'radios' %}
+    {{ govukRadios(item.args) }}
+  {% elif item.type == 'checkboxes' %}
+    {{ govukCheckboxes(item.args) }}
+  {% elif item.type == 'select' %}
+    {{ govukSelect(item.args) }}
+  {% elif item.type == 'date' %}
+    {{ govukDateInput(item.args) }}
+  {% elif item.type == 'textarea' %}
+    {{ govukTextarea(item.args) }}
+  {% else %}
+    {{ govukInput(item.args) }}
+  {% endif %}
+{% endmacro %}
+
+{% macro renderFields(fields) %}
+  {% for item in fields %}
+    {{ field(item) }}
+  {% endfor %}
+{% endmacro %}

@@ -1,0 +1,36 @@
+{# Adapted from prototype-layouts (obligations-standalone-spike/templates/check-your-answers.njk).
+
+   Check your answers. `rows` are a summary-list of every fulfilled
+   obligation with a Change link. `prompts` shows a soft banner for
+   still-unfulfilled mandatories a mid-journey CYA (Rulings item 2 on
+   the parent branch). #}
+
+{% extends "layout.njk" %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  {% if prompts and prompts.length %}
+    {% set stillNeededHtml %}
+      <h3 class="govuk-notification-banner__heading">{{ bannerHeading }}</h3>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for prompt in prompts %}
+          <li>
+            <a class="govuk-notification-banner__link" href="{{ prompt.href }}">{{ prompt.text }}</a>
+            {% if prompt.because and prompt.because.length %}— {{ prompt.because | join("; ") }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endset %}
+    {{ govukNotificationBanner({ html: stillNeededHtml }) }}
+  {% endif %}
+
+  {{ govukSummaryList({ rows: rows }) }}
+
+  {% if journeyState == 'fulfilled' %}
+    <p class="govuk-body">All required obligations are fulfilled. In a real service, this is where the user would submit.</p>
+  {% endif %}
+{% endblock %}

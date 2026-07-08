@@ -1,0 +1,51 @@
+{# Adapted from prototypes/standalone/obligations-standalone-spike/templates/layout.njk
+   on branch spike/EUDPA-249-prototype-layouts. #}
+
+{% extends "govuk/template.njk" %}
+
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+{% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
+
+{% block head %}
+  <meta name="csrf-token" content="{{ crumb }}">
+  <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
+{% endblock %}
+
+{% block pageTitle %}{% if errorSummary and errorSummary.length %}Error: {% endif %}{{ pageTitle }} | Live animals (EUDPA-249 flow-layer spike){% endblock %}
+
+{% block govukServiceNavigation %}
+  {{ govukServiceNavigation({
+    serviceName: "Live animals — EUDPA-249 flow-layer spike",
+    serviceUrl: "/prototype/eudpa-249/task-list"
+  }) }}
+{% endblock %}
+
+{% block beforeContent %}
+  {{ govukPhaseBanner({
+    tag: { text: "Prototype" },
+    html: 'EUDPA-249 flow-layer spike — non-functional prototype, not a real service.'
+  }) }}
+  {{ govukBreadcrumbs({
+    items: breadcrumbs if breadcrumbs else [
+      { text: "Task list", href: "/prototype/eudpa-249/task-list" },
+      { text: pageTitle }
+    ]
+  }) }}
+  {% if backLink %}
+    {{ govukBackLink({ text: "Back", href: backLink }) }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      {% block journeyContent %}{% endblock %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block bodyEnd %}
+  <script type="module" src="{{ getAssetPath('application.js') }}"></script>
+{% endblock %}

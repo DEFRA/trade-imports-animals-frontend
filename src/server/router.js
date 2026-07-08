@@ -63,6 +63,14 @@ export const router = {
         routes.push(signout)
       }
 
+      // EUDPA-249 flow-layer browsable prototype. Gated so a
+      // production build doesn't ship the /prototype/* routes.
+      if (config.get('prototype.eudpa249.enabled')) {
+        const { journeyConfigFlow } =
+          await import('../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/plugin.js')
+        routes.push(journeyConfigFlow)
+      }
+
       await server.register(routes)
 
       // Static assets

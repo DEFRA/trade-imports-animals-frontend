@@ -340,6 +340,16 @@ export const config = convict({
       default: 'http://localhost:8086',
       env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
     }
+  },
+  prototype: {
+    eudpa249: {
+      enabled: {
+        doc: 'Mount the EUDPA-249 flow-layer browsable prototype under /prototype/eudpa-249/*',
+        format: Boolean,
+        default: !isProduction,
+        env: 'PROTOTYPE_EUDPA249_ENABLED'
+      }
+    }
   }
 })
 

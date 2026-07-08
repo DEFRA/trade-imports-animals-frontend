@@ -9,22 +9,34 @@ import * as filters from './filters/filters.js'
 import * as globals from './globals/globals.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-const nunjucksEnvironment = nunjucks.configure(
-  [
-    'node_modules/govuk-frontend/dist/',
-    path.resolve(dirname, '../../server/common/templates'),
-    path.resolve(dirname, '../../server/common/components'),
-    path.resolve(dirname, '../../server')
-  ],
-  {
-    autoescape: true,
-    throwOnUndefined: false,
-    trimBlocks: true,
-    lstripBlocks: true,
-    watch: config.get('nunjucks.watch'),
-    noCache: config.get('nunjucks.noCache')
-  }
-)
+const nunjucksPaths = [
+  'node_modules/govuk-frontend/dist/',
+  path.resolve(dirname, '../../server/common/templates'),
+  path.resolve(dirname, '../../server/common/components'),
+  path.resolve(dirname, '../../server')
+]
+
+// EUDPA-249 flow-layer browsable prototype. Templates live under the
+// spike folder; adding them here (gated) lets `h.view('page')` resolve
+// to prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/templates/page.njk
+// without the plugin needing its own views instance.
+if (config.get('prototype.eudpa249.enabled')) {
+  nunjucksPaths.push(
+    path.resolve(
+      dirname,
+      '../../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/templates'
+    )
+  )
+}
+
+const nunjucksEnvironment = nunjucks.configure(nunjucksPaths, {
+  autoescape: true,
+  throwOnUndefined: false,
+  trimBlocks: true,
+  lstripBlocks: true,
+  watch: config.get('nunjucks.watch'),
+  noCache: config.get('nunjucks.noCache')
+})
 
 export const nunjucksConfig = {
   plugin: hapiVision,

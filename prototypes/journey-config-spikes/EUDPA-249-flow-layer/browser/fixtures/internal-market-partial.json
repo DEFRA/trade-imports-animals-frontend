@@ -1,0 +1,7 @@
+{
+  "description": "Country + reason filled with reason = internal-market. Purpose still to do.",
+  "fulfilments": {
+    "countryOfOrigin": "FR",
+    "reasonForImport": "internal-market"
+  }
+}
