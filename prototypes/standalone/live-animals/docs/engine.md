@@ -16,7 +16,7 @@ engine/
   read.js           read side: get / makeScope / resume (+ the boot seam)
   write.js          write side: commit, collection ops, submitJourney
   journey.js        journey-isolation seam: request -> Journey document
-  status.js         the four-status roll-up
+  status.js         the five-status roll-up
   store.js          compat shim over the records port (legacy consumers only)
   evaluate/         the pure derivation core
     reconcile.js    scope + wipe, computed fresh from answers
@@ -69,28 +69,29 @@ Two deliberate absences define the shape:
 - **No `setScope` and no `delete(otherObligation)`.** Scope is always derived
   and wipe is always applied by the engine. A page cannot assert scope or
   hand-roll a wipe.
-- **No `configureReadyForQuote`.** Boot roots (`routes.js`) import it straight
-  from `engine/read.js`, keeping the `state.*` surface stable for pages.
+- **No `configureReadyForCheckYourAnswers`.** Boot roots (`routes.js`) import it
+  straight from `engine/read.js`, keeping the `state.*` surface stable for pages.
 
 The barrel re-exports names explicitly — never `export *` — so the facade
 cannot silently widen when a source module gains an internal export.
 
 ## The boot seam
 
-Submit readiness (`readyForQuote`) needs the boot-built dispatch index and the
-flow's section list. That is flow knowledge, and the engine must not import
-`flow/`. So the roll-up is handed **in** at boot: `routes.js` calls
-`configureReadyForQuote(readyForQuote)` during plugin registration — a
-downward flow-to-engine data hand-off that keeps the engine flow-ignorant.
-(`readyForQuote` kept its name after inc-028 removed the quote feature; it now
-gates `submitJourney` in `engine/write.js` rather than the old quote section.)
+Submit readiness (`readyForCheckYourAnswers`) needs the boot-built dispatch
+index and the flow's section list. That is flow knowledge, and the engine must
+not import `flow/`. So the roll-up is handed **in** at boot: `routes.js` calls
+`configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` during plugin
+registration — a downward flow-to-engine data hand-off that keeps the engine
+flow-ignorant. (The roll-up excludes the `review` section; it gates both
+`submitJourney` in `engine/write.js` and the review section's authored gate.)
 
 The unconfigured default throws:
 
 ```js
-let readyForQuoteFn = () => {
+let readyForCheckYourAnswersFn = () => {
   throw new Error(
-    'readyForQuote not configured — call configureReadyForQuote() at boot'
+    'readyForCheckYourAnswers not configured — call ' +
+      'configureReadyForCheckYourAnswers() at boot'
   )
 }
 ```
@@ -100,14 +101,15 @@ a silent wrong answer. Do not soften the throw to `return false`.
 
 ## Status semantics
 
-`engine/status.js` rolls a set of obligation ids into one of four statuses:
+`engine/status.js` rolls a set of obligation ids into one of five statuses:
 
-| Status           | Meaning                                                |
-| ---------------- | ------------------------------------------------------ |
-| `not-applicable` | none of the ids are in scope                           |
-| `fulfilled`      | every in-scope required id is satisfied                |
-| `in-progress`    | some progress made, but a required id is still missing |
-| `not-started`    | in scope, nothing answered yet                         |
+| Status           | Meaning                                                   |
+| ---------------- | --------------------------------------------------------- |
+| `not-applicable` | none of the ids are in scope                              |
+| `fulfilled`      | every in-scope required id is satisfied                   |
+| `in-progress`    | some progress made, but a required id is still missing    |
+| `not-started`    | in scope, required ids owed, nothing answered yet         |
+| `optional`       | in scope, nothing required owed, and nothing answered yet |
 
 Two edges worth knowing:
 
@@ -116,13 +118,18 @@ Two edges worth knowing:
   `satisfied` for the started check would misreport a section whose only
   obligation is a partially filled collection (for example the commodities
   section, which collects just `commodityLines`) as Not started.
-- **A section owing nothing required is vacuously Fulfilled.** If the in-scope
-  ids include no `required` or `requiredAtLeastOne` obligation, the status is
-  `fulfilled` without checking anything else.
+- **A section owing nothing required is Optional until touched.** If the
+  in-scope ids include no `required` or `requiredAtLeastOne` obligation, the
+  status is `optional` while nothing is answered (the hub shows "Optional" and
+  it does not count towards the completed total); once ≥1 answer exists it
+  tracks `in-progress` / `fulfilled` by completeness. This is what stops a blank
+  optional section (e.g. `documents`) reading "Completed". `readyForCheckYourAnswers`
+  accepts `optional` alongside `fulfilled`/`not-applicable` — you can submit
+  with none.
 
 `status.js` is engine-pure. The flow-aware section roll-up (`sectionStatus`,
-`readyForQuote`) lives in `flow/section-status.js` and reads `statusOf`
-downward — never the reverse.
+`readyForCheckYourAnswers`) lives in `flow/section-status.js` and reads
+`statusOf` downward — never the reverse.
 
 ## Completeness semantics
 

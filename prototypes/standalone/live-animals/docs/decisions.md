@@ -146,25 +146,30 @@ from the same boot-built dispatch index the status roll-up reads
 ([`flow/gates.js`](../flow/gates.js)). An authored `gate` remains
 available as the override for flow-level facts the model cannot express.
 At the time of this decision one existed: `get-your-quote`'s
-`(scope) => scope.readyForQuote`. It went with the quote feature in
-inc-028, so no authored gate remains today; the override mechanism is
-kept in `gates.js`, dormant, for when one is next needed.
+submit-readiness gate. It went with the quote feature in
+inc-028; the override's one live use today is the `review` section's
+submit-readiness gate `(scope) => scope.readyForCheckYourAnswers` (RULE 2).
 
 ### Why
 
 Derivation makes "gate passes exactly when section status is not Not applicable"
 true **by construction** instead of by discipline. That equivalence is
 pinned exhaustively over every enumerable scope state in
-[`flow/gates.test.js`](../flow/gates.test.js). It also makes the
-reachability prover's soundness assumption (every gate is a pure read of
-computed scope) a construction rather than a convention.
+[`flow/gates.test.js`](../flow/gates.test.js), holding prerequisites
+satisfied. The default derived gate later gained a second clause — RULE 1
+flow sequencing, which reads whether earlier `enforcedAt: 'continue'`
+obligations are answered — so the reachability prover's soundness
+assumption (every gate is a pure read of computed scope) no longer holds
+by construction; the prover compensates by riding a submit-ready base
+journey (see [analysis.md](analysis.md)).
 
-`readyForQuote` is the hard counterexample to collapsing gates entirely:
-it is a completeness roll-up over every section, not expressible in the
-model's three-operator vocabulary. The gate mechanism therefore cannot be
-removed — only defaulted. (`readyForQuote` outlived its section: inc-028
-removed the get-your-quote gate but kept the roll-up as the
-submit-readiness gate consulted by `submitJourney`.)
+`readyForCheckYourAnswers` is the hard counterexample to collapsing gates
+entirely: it is a completeness roll-up over the answer sections, not
+expressible in the model's three-operator vocabulary. The gate mechanism
+therefore cannot be removed — only defaulted. (The roll-up outlived the
+quote section that inc-028 removed; it is now the submit-readiness gate
+consulted by `submitJourney` and by the `review` section's authored gate,
+and excludes the `review` section to avoid a declaration circularity.)
 
 ### Accepted costs
 
@@ -179,7 +184,7 @@ submit-readiness gate consulted by `submitJourney`.)
   for a page that collects nothing, so an unbuilt index is
   indistinguishable from "nothing collected" and would silently gate every
   step out. The derivation refuses to answer before `buildDispatch()` has
-  run, mirroring `configureReadyForQuote`'s throwing default.
+  run, mirroring `configureReadyForCheckYourAnswers`'s throwing default.
 
 ---
 
@@ -204,11 +209,12 @@ Two placements follow from this rule:
   because the model never names a page. Pages declare `collects`; boot
   inverts those declarations so the hub and check-your-answers can ask
   "which page owns obligation X" without the model knowing pages exist.
-- **`readyForQuote` is boot-injected.** Submit readiness needs the dispatch
-  index and the section list — flow knowledge the engine must not import.
-  The flow hands the function down at boot via `configureReadyForQuote`
-  ([`engine/read.js`](../engine/read.js)); the unconfigured default throws
-  loudly rather than returning a silent wrong answer.
+- **`readyForCheckYourAnswers` is boot-injected.** Submit readiness needs the
+  dispatch index and the section list — flow knowledge the engine must not
+  import. The flow hands the function down at boot via
+  `configureReadyForCheckYourAnswers` ([`engine/read.js`](../engine/read.js));
+  the unconfigured default throws loudly rather than returning a silent wrong
+  answer.
 
 ### Why
 

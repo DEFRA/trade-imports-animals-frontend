@@ -30,6 +30,182 @@ const startNotification = async (page) => {
   ).toBeVisible()
 }
 
+// countryOfOrigin is enforcedAt=continue, so answering it unlocks the
+// Commodities section (RULE 1 flow sequencing). Answer the origin section's
+// minimum from the hub and return to it. Region requirement 'No' keeps the save
+// clean without needing a region code.
+const answerCountryOfOrigin = async (page) => {
+  await page.getByRole('link', { name: 'Origin of the import' }).click()
+  await page
+    .getByLabel('Country of origin')
+    .selectOption(values.countryOfOrigin)
+  await page.getByRole('radio', { name: 'No' }).check()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Import notification service' })
+  ).toBeVisible()
+}
+
+// commoditySelection is item-level and enforcedAt=continue, so it unlocks every
+// post-commodities section (RULE 1) once ANY line fills it. Answer the country,
+// then add one commodity line. A NON-triggering commodity (Cats) is used so the
+// line does not pull the notification-level anyItem obligations (unweaned
+// animals, CPH) into scope and disturb a section the caller is about to assert.
+// Returns to the hub.
+const unlockSections = async (page) => {
+  await answerCountryOfOrigin(page)
+  await page.getByRole('link', { name: 'Commodities' }).click()
+  await page.getByRole('button', { name: 'Add a commodity' }).click()
+  await page
+    .getByLabel('Commodity', { exact: true })
+    .selectOption('01061900 - Cats')
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Description of goods' })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Commodities you have added' })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Import notification service' })
+  ).toBeVisible()
+}
+
+// Walk every answer-gathering section in the real gated order (documents stays
+// optional), leaving the journey on the hub with the review section unlocked
+// (RULE 2 submit-readiness). Uses the fixture's cattle line, which triggers the
+// notification-level unweaned-animals and CPH tail pages.
+const completeAnswerSections = async (page) => {
+  const [line] = values.commodityLines
+  const arrival = values.arrivalDateAtPort
+  const save = () =>
+    page.getByRole('button', { name: 'Save and continue' }).click()
+  const task = (name) => page.getByRole('link', { name }).click()
+
+  // Origin.
+  await task('Origin of the import')
+  await page
+    .getByLabel('Country of origin')
+    .selectOption(values.countryOfOrigin)
+  await page.getByRole('radio', { name: 'Yes' }).check()
+  await page
+    .getByLabel('Region of origin code', { exact: true })
+    .fill(values.regionOfOriginCode)
+  await page
+    .getByLabel(
+      'Your internal reference number for this consignment (optional)'
+    )
+    .fill(values.internalReferenceNumber)
+  await save()
+
+  // Commodities: one line via the select and details sub-pages, plus one
+  // animal identifier unit (inc-035).
+  await task('Commodities')
+  await page.getByRole('button', { name: 'Add a commodity' }).click()
+  await page
+    .getByLabel('Commodity', { exact: true })
+    .selectOption(line.commoditySelection)
+  await page.getByRole('radio', { name: 'Domestic' }).check()
+  await page.getByRole('checkbox', { name: 'Bos taurus (Cattle)' }).check()
+  await save()
+  await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
+  await page
+    .getByLabel('Number of packages (optional)')
+    .fill(line.numberOfPackages)
+  await save()
+  const [unit] = line.animalIdentifiers
+  await page
+    .locator('.govuk-summary-list__row', { hasText: 'Commodity 1' })
+    .getByRole('link', { name: /Animal identifiers/ })
+    .click()
+  await page.getByRole('button', { name: 'Add an animal' }).click()
+  await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
+  await page.getByRole('button', { name: 'Add animal' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+
+  // About the consignment: internal market walks reason -> purpose -> details.
+  await task('About the consignment')
+  await page.getByRole('radio', { name: 'Internal market' }).check()
+  await save()
+  await page.getByRole('radio', { name: 'Breeding' }).check()
+  await save()
+  await expect(
+    page.getByRole('heading', { name: 'Additional animal details' })
+  ).toBeVisible()
+  await page.getByRole('radio', { name: 'Slaughter' }).check()
+  await page
+    .getByRole('group', { name: 'Contains unweaned animals' })
+    .getByRole('radio', { name: 'No' })
+    .check()
+  await save()
+
+  // Addresses: the five party spokes copy-commit, then the cattle line's CPH
+  // tail page.
+  await task('Addresses')
+  const parties = [
+    ['Consignor', values.consignor.name],
+    ['Place of destination', values.placeOfDestination.name],
+    ['Place of origin', values.placeOfOrigin.name],
+    ['Consignee', values.consignee.name],
+    ['Importer', values.importer.name]
+  ]
+  for (const [label, name] of parties) {
+    await page
+      .locator('.govuk-summary-list__row', { hasText: label })
+      .getByRole('link', { name: 'Add' })
+      .click()
+    await page.getByRole('radio', { name }).check()
+    await save()
+  }
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'County Parish Holding (CPH)' })
+  ).toBeVisible()
+  await page
+    .getByLabel('County Parish Holding (CPH)')
+    .fill(values.countyParishHoldingCph)
+  await save()
+
+  // Transport: port, travel details, transporter type, commercial select.
+  await task('Transport')
+  await page
+    .getByLabel('What is the port of entry into Great Britain?')
+    .selectOption(values.portOfEntry)
+  await page.getByLabel('Day').fill(arrival.day)
+  await page.getByLabel('Month').fill(arrival.month)
+  await page.getByLabel('Year').fill(arrival.year)
+  await save()
+  await page
+    .getByRole('radio', { name: values.meansOfTransport, exact: true })
+    .check()
+  const roadReveal = page.locator('#conditional-meansOfTransport-road-vehicle')
+  await roadReveal.getByRole('checkbox', { name: 'France' }).check()
+  await roadReveal.getByRole('checkbox', { name: 'Belgium' }).check()
+  await page
+    .getByLabel('Transport identification')
+    .fill(values.transportIdentification)
+  await page
+    .getByLabel('Transport document reference')
+    .fill(values.transportDocumentReference)
+  await save()
+  await page
+    .getByRole('radio', { name: values.transporterType, exact: true })
+    .check()
+  await save()
+  await page
+    .getByRole('radio', { name: values.commercialTransporter.name })
+    .check()
+  await save()
+
+  // Contact address.
+  await task('Contact address')
+  await page.getByRole('radio', { name: values.contactAddress.name }).check()
+  await save()
+}
+
 test.describe('live-animals (page-owned spine)', () => {
   test('dashboard — entry page starts a new notification', async ({ page }) => {
     await page.goto(`${BASE}/home`)
@@ -91,6 +267,9 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
     const [line] = values.commodityLines
+
+    // Commodities is gated on countryOfOrigin (RULE 1) — answer it first.
+    await answerCountryOfOrigin(page)
 
     await page.getByRole('link', { name: 'Commodities' }).click()
     await expect(
@@ -195,6 +374,9 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // Commodities is gated on countryOfOrigin (RULE 1) — answer it first.
+    await answerCountryOfOrigin(page)
+
     // Add a Cats commodity line (only the commodity is needed to mint it; the
     // taxonomy and counts are submit-enforced, so blank saves walk through).
     await page.getByRole('link', { name: 'Commodities' }).click()
@@ -266,6 +448,10 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // The consignment section sits after commodities (RULE 1) — unlock it by
+    // answering countryOfOrigin and adding one commodity line first.
+    await unlockSections(page)
+
     await page.getByRole('link', { name: 'About the consignment' }).click()
     await expect(
       page.getByRole('heading', {
@@ -318,20 +504,23 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(consignmentRow).toContainText('Completed')
   })
 
-  test('accompanying documents — the optional collection starts Completed; adding a document lists it on the loop hub', async ({
+  test('accompanying documents — the optional collection starts Optional; adding a document completes it and lists it on the loop hub', async ({
     page
   }) => {
     await startNotification(page)
     const [doc] = values.documents
     const issued = doc.accompanyingDocumentDateOfIssue
 
-    // documents is optional (nothing required until an entry exists), so
-    // section-status derives the task as Completed before any document is
-    // added — the row is never an open requirement.
+    // The documents section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
+    // documents is the journey's optional section (nothing required until an
+    // entry exists), so once unlocked and untouched it reads Optional — NOT
+    // Completed, and it does not count towards the completed-tasks total.
     const documentsRow = page.locator('.govuk-task-list__item', {
       hasText: 'Accompanying documents'
     })
-    await expect(documentsRow).toContainText('Completed')
+    await expect(documentsRow).toContainText('Optional')
 
     await page.getByRole('link', { name: 'Accompanying documents' }).click()
     await expect(
@@ -381,7 +570,8 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(row).toContainText('ITAHC — GBHC1234567890')
 
-    // Continue returns to the hub; the optional task stays Completed.
+    // Continue returns to the hub; a complete document makes the optional task
+    // Completed (Optional -> Completed once a full entry exists).
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
@@ -394,12 +584,15 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // The addresses section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
     // All five parties are required obligations owned by the addresses
-    // landing page, so the task starts open.
+    // landing page, so once unlocked and untouched the task reads Not yet started.
     const addressesRow = page.locator('.govuk-task-list__item', {
       hasText: 'Addresses'
     })
-    await expect(addressesRow).toContainText('Not started')
+    await expect(addressesRow).toContainText('Not yet started')
 
     await page.getByRole('link', { name: 'Addresses' }).click()
     await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
@@ -512,12 +705,15 @@ test.describe('live-animals (page-owned spine)', () => {
     await startNotification(page)
     const arrival = values.arrivalDateAtPort
 
-    // All the section's fields are required (enforcedAt=submit), so the task
-    // starts open.
+    // The transport section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
+    // All the section's fields are required (enforcedAt=submit), so once
+    // unlocked and untouched the task reads Not yet started.
     const transportRow = page.locator('.govuk-task-list__item', {
       hasText: 'Transport'
     })
-    await expect(transportRow).toContainText('Not started')
+    await expect(transportRow).toContainText('Not yet started')
 
     await page.getByRole('link', { name: 'Transport' }).click()
     await expect(
@@ -603,6 +799,9 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // The transport section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
     // Every field on the two earlier pages is submit-enforced, so blank
     // saves walk straight through to the transporter-type page.
     const openTransporters = async () => {
@@ -643,7 +842,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const transportRow = page.locator('.govuk-task-list__item', {
       hasText: 'Transport'
     })
-    await expect(transportRow).toContainText('Not started')
+    await expect(transportRow).toContainText('Not yet started')
 
     // Choosing a type saves and persists on return. The private branch owes
     // the details page next — a blank save there walks on to the hub.
@@ -668,6 +867,9 @@ test.describe('live-animals (page-owned spine)', () => {
     page
   }) => {
     await startNotification(page)
+
+    // The transport section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
 
     // Every field on the two earlier pages is submit-enforced, so blank
     // saves walk straight through to the transporter-type page.
@@ -742,6 +944,9 @@ test.describe('live-animals (page-owned spine)', () => {
     page
   }) => {
     await startNotification(page)
+
+    // The transport section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
 
     // Every field on the two earlier pages is submit-enforced, so blank
     // saves walk straight through to the transporter-type page.
@@ -847,6 +1052,9 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // The transport section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
     // transport-details is the section's second page: a blank save on the
     // port page (all its fields are submit-enforced) walks straight on to it.
     const openTransportDetails = async () => {
@@ -928,12 +1136,15 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // The contact section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
     // contactAddress is a required obligation owned by the one-page contact
-    // section, so the task starts open.
+    // section, so once unlocked and untouched the task reads Not yet started.
     const contactRow = page.locator('.govuk-task-list__item', {
       hasText: 'Contact address'
     })
-    await expect(contactRow).toContainText('Not started')
+    await expect(contactRow).toContainText('Not yet started')
 
     await page.getByRole('link', { name: 'Contact address' }).click()
     await expect(
@@ -946,7 +1157,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
-    await expect(contactRow).toContainText('Not started')
+    await expect(contactRow).toContainText('Not yet started')
 
     // Happy path from the shared fixture: selecting a contact COPIES its
     // name and address into the answer (c-020) and completes the task.
@@ -970,6 +1181,10 @@ test.describe('live-animals (page-owned spine)', () => {
     page
   }) => {
     await startNotification(page)
+
+    // The consignment section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+
     const consignmentRow = page.locator('.govuk-task-list__item', {
       hasText: 'About the consignment'
     })
@@ -1033,6 +1248,10 @@ test.describe('live-animals (page-owned spine)', () => {
     page
   }) => {
     await startNotification(page)
+
+    // Commodities (used by addCommodity below) is gated on countryOfOrigin
+    // (RULE 1); each added line then unlocks the consignment section it opens.
+    await answerCountryOfOrigin(page)
 
     const certifiedFor = page.getByRole('group', {
       name: 'Animals certified for'
@@ -1104,6 +1323,10 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
+    // Commodities (used by addCommodity below) is gated on countryOfOrigin
+    // (RULE 1); each added line then unlocks the addresses section it opens.
+    await answerCountryOfOrigin(page)
+
     const cphHeading = page.getByRole('heading', {
       name: 'County Parish Holding (CPH)'
     })
@@ -1164,37 +1387,22 @@ test.describe('live-animals (page-owned spine)', () => {
   test('check and submit — the review task is on the hub and check your answers lists the answered rows', async ({
     page
   }) => {
+    test.slow()
     await startNotification(page)
 
-    // The review task is on the hub from the start — check your answers
-    // collects nothing, so it is always open to visit.
+    // The review task is on the hub from the start, but RULE 2 keeps it locked
+    // ("Cannot start yet", no link) until every answer section is submit-ready.
     const reviewRow = page.locator('.govuk-task-list__item', {
       hasText: 'Check and submit'
     })
     await expect(reviewRow).toBeVisible()
+    await expect(reviewRow).toContainText('Cannot start yet')
 
-    // Answer the origin section from the shared fixture...
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
-    await page
-      .getByLabel('Country of origin')
-      .selectOption(values.countryOfOrigin)
-    await page.getByRole('radio', { name: 'Yes' }).check()
-    await page
-      .getByLabel('Region of origin code', { exact: true })
-      .fill(values.regionOfOriginCode)
-    await page
-      .getByLabel(
-        'Your internal reference number for this consignment (optional)'
-      )
-      .fill(values.internalReferenceNumber)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    // Walk every answer section in the gated order — this satisfies
+    // readyForCheckYourAnswers and unlocks the review row.
+    await completeAnswerSections(page)
 
-    // ...and the contact section (a copied record, c-020).
-    await page.getByRole('link', { name: 'Contact address' }).click()
-    await page.getByRole('radio', { name: values.contactAddress.name }).check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-
-    // The review task opens check your answers.
+    // The review task now opens check your answers.
     await reviewRow.getByRole('link', { name: 'Check and submit' }).click()
     await expect(
       page.getByRole('heading', { name: 'Check your answers' })

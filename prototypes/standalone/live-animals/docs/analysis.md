@@ -34,7 +34,7 @@ The simulator derives scope with the real `makeScope` from `engine/index.js`, th
 
 The whole function is a dozen lines because **it re-implements nothing**. Scope comes from the engine the app uses; gating comes from the flow the app uses. There is no second copy of the rules, so the simulation cannot drift from runtime behaviour.
 
-One setup requirement: the simulator needs the same boot wiring as the app. Call `buildDispatch(dispatchPages)` and `configureReadyForQuote(readyForQuote)` first, exactly as `routes.js` does — derived gates and submit readiness both fail loud if you skip this (see [flow-and-gates.md](flow-and-gates.md)). The `beforeAll` in [`analysis/simulate.test.js`](../analysis/simulate.test.js) shows the two calls.
+One setup requirement: the simulator needs the same boot wiring as the app. Call `buildDispatch(dispatchPages)` and `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` first, exactly as `routes.js` does — derived gates and submit readiness both fail loud if you skip this (see [flow-and-gates.md](flow-and-gates.md)). The `beforeAll` in [`analysis/simulate.test.js`](../analysis/simulate.test.js) shows the two calls.
 
 ## The reachability prover
 
@@ -70,15 +70,15 @@ The prover also proves it has teeth. `proveReachability({ pagesFor })` accepts a
 
 ## The soundness condition
 
-One witness per obligation suffices only under a condition worth stating plainly:
+One witness per obligation would suffice trivially only under a condition worth stating plainly:
 
-> Every flow gate must be a pure read of scope (`scope.inScope`).
+> Every flow gate is a pure read of scope (`scope.inScope`).
 
 When that holds, page reachability is a function of the very scope predicate that owes the obligation — so any state that owes the obligation also reaches the page, and one owing state is as good as all of them.
 
-The condition holds today by construction: every gate is derived. `flow/gates.js` derives a gate from exactly the obligations the step collects, read from scope. There are no authored gates left — the last one, `get-your-quote`'s `(scope) => scope.readyForQuote`, went with the quote feature in inc-028. (`readyForQuote` survives, but as the submit-readiness gate consulted by `submitJourney`, not as a section gate; it too is a pure read of scope.)
+That condition no longer holds: flow gates now read ANSWERS as well as scope. RULE 1 (mandate-derived sequencing) gates a step on earlier `enforcedAt: 'continue'` obligations being answered, and RULE 2 gates the `review` section on submit-readiness — an authored gate `(scope) => scope.readyForCheckYourAnswers`. A scope-only witness fragment would therefore false-FAIL a step whose answer-based prerequisites are unmet.
 
-The risk sits with future authored gates. If someone writes a gate that keys off an answer outside the scope-owing condition — a raw read of the answers map, say — a single witness could false-pass, and the prover would need to enumerate more witnesses. If you are editing `flow/gates.js` or authoring a gate, keep gates as pure reads of scope. See [flow-and-gates.md](flow-and-gates.md) for the gate seam itself.
+The prover answers this the way its own soundness note always reserved — by enumerating richer witnesses. Each candidate now rides a fully submit-ready BASE journey (`submitReadySeed` in `reachability.js`), layered under the enumerated scope state and the target's own scaffold, so every step's answer-based prerequisites are met while the target's specific triggering state still wins. Blank enumerated axes are dropped before layering (activation is always positive, so no witness needs a blank axis, but a blank would defeat the RULE 2 review gate for the always-in-scope `declaration`). If you author a gate that keys off an answer this base does not already supply, extend the base or the enumeration. See [flow-and-gates.md](flow-and-gates.md) for the gate seam itself.
 
 ## What the proof deliberately does not cover
 

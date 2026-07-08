@@ -140,6 +140,99 @@ depth-2 ctx built by hand, and the no-ctx backwards-compat pins (required
 enclosing-gated field owed without ctx; same-frame and gate-free collections
 unchanged). The depth-2 wipe counterpart is in `store-ops.test.js`.
 
+## 6. `mandate.enforcedAt`-derived flow sequencing + the OPTIONAL status
+
+Two coupled hub/nav bugs (task-list tags rendered wrong; every row was a live
+link with no gating) were fixed together because they meet at the "Cannot start
+yet" state. This is the first flow-behaviour divergence from the spike: the
+engine vocabulary additions are opt-in and backwards-compatible, but the flow
+sequencing and hub rendering **change by design** — that is the bug fix.
+
+### New `enforcedAt` interpretation
+
+`features/origin/obligations.js` + `features/commodities/obligations.js`: the
+two "needed-to-PROCEED" obligations (`countryOfOrigin`, notification-level;
+`commoditySelection`, a `commodityLines` ITEM field) now carry
+`enforcedAt: 'continue'`, mirroring the spec. The engine reads this fact rather
+than hardcoding ids:
+
+- **`enforcedAt: 'continue'`** — the obligation blocks LATER flow steps until it
+  is answered. `flow/prerequisites.js` derives, for any page/section, the set of
+  `continue` obligation ids owned by a STRICTLY-EARLIER flow step, from flow
+  order (`allFlowPages`) + the dispatch index (`pageOfObligation`) + the
+  obligation's own `enforcedAt`. No hand-authored prerequisite graph — origin is
+  always open, commodities opens once `countryOfOrigin` is answered, everything
+  after commodities opens once `commoditySelection` is. A step never blocks on
+  its own `continue` obligation, only strictly-earlier ones.
+- **`enforcedAt: 'submit'`** (the default reading for every other required
+  obligation) — feeds submit-readiness only, never blocks a mid-journey step.
+
+Backwards compatible: an obligation with no `enforcedAt` is never anyone's RULE
+1 prerequisite, so existing sequencing is unchanged for every other field.
+
+### Instance-aware `scope.answered`
+
+`engine/read.js#makeScope` gains `answered(id)` — true if ANY instance of `id`
+at any depth is answered, by walking `registry.walk(answers)` (not a top-level
+`answers[id]` lookup). This is what lets a prerequisite key on an item-level
+obligation: `commoditySelection` is "answered" once ANY commodity line fills it.
+`flow/gates.js#derivedGate` gains a prerequisites clause
+(`prereqIds.every(scope.answered)`) alongside the existing in-scope reachability
+clause and the empty-collects reachable invariant; the `assertDispatchBuilt`
+fail-loud guard is unchanged.
+
+### The `review` authored gate + the `readyForQuote` → `readyForCheckYourAnswers`
+
+rename/redefinition
+
+RULE 2 gates the `review` section ("Check and submit") on submit-readiness. But
+`declaration` (collected inside the review section) rolls the review section up
+to NOT_STARTED, and the old readiness roll-up (`nonQuoteSections` = ALL sections)
+included review — so gating review on it would DEADLOCK (you confirm the
+declaration inside the very section it gates).
+
+Fix: the roll-up was redefined to EXCLUDE the review section
+(`flow/flow.js#answerSections = sections without 'review'`) and renamed
+`readyForQuote` → `readyForCheckYourAnswers` (`configureReadyForQuote` →
+`configureReadyForCheckYourAnswers`, `scope.readyForQuote` →
+`scope.readyForCheckYourAnswers`). The review section carries the flow's only
+authored gate, `gate: (scope) => scope.readyForCheckYourAnswers`. Submit safety
+is unweakened: the declaration page's own validator enforces
+`declaration === 'confirmed'` BEFORE `submitJourney` runs, so excluding
+review/declaration from the readiness roll-up does not let an unconfirmed
+journey submit — `submitJourney` still consults the renamed signal, now
+correctly meaning "every ANSWER section is ready".
+
+### The OPTIONAL status
+
+`engine/status.js` gains `OPTIONAL`. A section owing nothing required used to
+return FULFILLED unconditionally (so a blank optional `documents` section read
+"Completed" and counted towards "X of N"). It now returns OPTIONAL while
+untouched, then tracks IN_PROGRESS / FULFILLED by completeness once ≥1 entry
+exists. `readyForCheckYourAnswers` accepts OPTIONAL alongside FULFILLED/NA (you
+can submit with no documents). The hub (`features/hub/controller.js`) maps the
+GDS-canonical vocabulary: FULFILLED → plain "Completed", OPTIONAL → plain
+"Optional", IN_PROGRESS → light-blue "In progress", NOT_STARTED → **blue** "Not
+yet started", and a gated-out row → grey **text** "Cannot start yet"
+(`govuk-task-list__status--cannot-start-yet`) with NO link. `countCompletedGroups`
+still counts FULFILLED only, so a blank journey now reads "0 of 7".
+
+### Reachability prover
+
+`analysis/reachability.js`: the flow gates now read answers, so the dead-end
+prover's witnesses ride a fully submit-ready base journey (`submitReadySeed`)
+rather than scope-only fragments — the "enumerate more witnesses" hook the
+prover's soundness note always reserved for exactly this. Blank enumerated axes
+are dropped before layering (activation is always positive, so no witness needs
+a blank axis to enter scope, but a blank would defeat the RULE 2 review gate for
+the always-in-scope `declaration`). `proveReachability` stays empty and the
+teeth tests keep their teeth.
+
+Proven across `flow/gates.test.js` (RULE 1 + RULE 2, no deadlock),
+`indexed.test.js` (OPTIONAL / IN_PROGRESS / FULFILLED for an optional section),
+`t2-hub-copy.test.js` (new vocabulary, "0 of 7", Cannot-start-yet rows have no
+link), and `analysis/reachability.test.js` (recomputed pin stays green).
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

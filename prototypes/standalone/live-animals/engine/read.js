@@ -1,19 +1,40 @@
 import { currentJourney, resumeByUser } from './journey.js'
 import { reconcile } from './evaluate/reconcile.js'
+import { walk } from '../registry.js'
+import { isAnswered } from '../lib/answered.js'
+import { valueAt } from '../lib/path.js'
 
 /**
- * Handed in at boot via `configureReadyForQuote`; the default THROWS: an
- * unconfigured `makeScope` is a hard, loud failure, never a silent wrong
- * answer.
+ * Handed in at boot via `configureReadyForCheckYourAnswers`; the default
+ * THROWS: an unconfigured `makeScope` is a hard, loud failure, never a silent
+ * wrong answer.
  */
-let readyForQuoteFn = () => {
+let readyForCheckYourAnswersFn = () => {
   throw new Error(
-    'readyForQuote not configured — call configureReadyForQuote() at boot'
+    'readyForCheckYourAnswers not configured — call ' +
+      'configureReadyForCheckYourAnswers() at boot'
   )
 }
 
-export const configureReadyForQuote = (computeReadyForQuote) => {
-  readyForQuoteFn = computeReadyForQuote
+export const configureReadyForCheckYourAnswers = (compute) => {
+  readyForCheckYourAnswersFn = compute
+}
+
+/**
+ * Instance-aware answered check: true if ANY instance of `id` at any depth is
+ * answered. Walking (rather than a top-level `answers[id]` lookup) is what lets
+ * a flow prerequisite key on an item-level obligation like
+ * `commodityLines[i].commoditySelection` — answered once ANY commodity line
+ * fills it. A top-level obligation collapses to a single walk node, so this
+ * matches `isAnswered(answers[id])` for those.
+ */
+const anyInstanceAnswered = (answers, id) => {
+  for (const node of walk(answers)) {
+    if (node.obligation.id === id && isAnswered(valueAt(answers, node.path))) {
+      return true
+    }
+  }
+  return false
 }
 
 export const makeScope = (answers) => {
@@ -21,7 +42,8 @@ export const makeScope = (answers) => {
   return {
     inScope,
     has: (id) => inScope.has(id),
-    readyForQuote: readyForQuoteFn(answers, inScope)
+    answered: (id) => anyInstanceAnswered(answers, id),
+    readyForCheckYourAnswers: readyForCheckYourAnswersFn(answers, inScope)
   }
 }
 

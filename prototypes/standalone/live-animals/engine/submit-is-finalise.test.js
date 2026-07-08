@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, submitJourney } from './index.js'
 import { records, IN_PROGRESS, SUBMITTED } from './persistence/records.js'
-import { configureReadyForQuote } from './read.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 let journeyId
@@ -14,7 +14,7 @@ describe('submit is finalise', () => {
   })
 
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', () => {
-    configureReadyForQuote(() => true)
+    configureReadyForCheckYourAnswers(() => true)
     commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
     const committed = records.load({ journeyId }).answers
 
@@ -30,7 +30,7 @@ describe('submit is finalise', () => {
   })
 
   it('Should be a no-op when not ready — journey stays in-progress', () => {
-    configureReadyForQuote(() => false)
+    configureReadyForCheckYourAnswers(() => false)
     commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = submitJourney(buildRequest(), stubH())

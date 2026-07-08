@@ -82,7 +82,7 @@ export const removeEntry = (request, h, obligationId, index) =>
 export const submitJourney = (request, h) => {
   const journey = currentJourney(request, h)
   const scope = makeScope(journey.answers)
-  if (!scope.readyForQuote) return { ok: false, journey, scope }
+  if (!scope.readyForCheckYourAnswers) return { ok: false, journey, scope }
   const submitted = records.finalise(journey.journeyId)
   return { ok: true, journey: submitted, scope }
 }

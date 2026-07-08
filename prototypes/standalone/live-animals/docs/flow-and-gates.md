@@ -14,24 +14,36 @@ Each page entry is the feature's `page.js` identity leaf (`{ id, slug }`), impor
 
 - `allFlowPages` — every page across all sections, flattened, each tagged with its `sectionId`
 - `sectionOfPage(pageId)` — the first section containing the page
-- `nonQuoteSections` — the sections the `readyForQuote` roll-up iterates. It filters out `get-your-quote`, but that section (the last authored gate, and the last car-domain feature) was removed in inc-028, so the filter now matches nothing and the set spans **every** section. `readyForQuote` therefore rolls up "is every section Fulfilled or Not applicable" — exactly the submit precondition. The name and filter are kept deliberately: `readyForQuote` is a supported, repurposed capability (now the submit-readiness gate consulted by `submitJourney`), not dead code.
+- `answerSections` — the answer-gathering sections the `readyForCheckYourAnswers` roll-up iterates: every section **except** `review`. Review is excluded because it owns the `declaration` obligation, confirmed inside the review section itself — folding it into the readiness roll-up that _gates_ review would deadlock. `readyForCheckYourAnswers` rolls up "is every answer section Fulfilled, Not applicable or Optional" — the submit precondition, and the fact the review section's authored gate reads.
 
 ## Gates are derived by default
 
 A gate is a pure `(scope) => boolean` that decides whether a page or section is reachable. `flow/gates.js` exports the two evaluators, `pageGatePasses` and `sectionGatePasses`.
 
-By default no gate is authored. A step with no `gate` is reachable exactly when some obligation it collects is in scope. The derivation reads the same boot-built dispatch index the status roll-up reads (a page's `collects`, a section's pages' `collects` combined), so the flow never restates the model's activation rules as hand-typed `inScope.has('<key>')` strings.
+By default no gate is authored. A step with no `gate` is reachable when **both** clauses hold: its RULE 1 prerequisites are answered, and some obligation it collects is in scope. The derivation reads the same boot-built dispatch index the status roll-up reads (a page's `collects`, a section's pages' `collects` combined), so the flow never restates the model's activation rules as hand-typed `inScope.has('<key>')` strings.
 
-This earned its place the hard way. Four of the five gates the flow used to author were bare `inScope.has('<key>')` restatements of the obligation model, coupled to it by a raw string. If the string and the model diverged, you got a ghost Not applicable row on the hub, or a section that could never unlock. Deriving both from one source makes the invariant hold by construction:
+The in-scope clause earned its place the hard way. Four of the five gates the flow used to author were bare `inScope.has('<key>')` restatements of the obligation model, coupled to it by a raw string. If the string and the model diverged, you got a ghost Not applicable row on the hub, or a section that could never unlock. Deriving both from one source makes the invariant hold by construction:
 
-> A derived gate passes exactly when the section's status is not Not applicable.
+> Absent prerequisites, a derived gate passes exactly when the section's status is not Not applicable.
 
-`flow/gates.test.js` pins this exhaustively — it checks the equivalence for a derived section's gate across every enumerable scope state (`analysis/reachability.js`), not a sample of personas.
+`flow/gates.test.js` pins this exhaustively — it checks the equivalence for a derived section's gate across every enumerable scope state (`analysis/reachability.js`), holding prerequisites satisfied so the clause under test is isolated.
 
-Two deliberate edges:
+### RULE 1 — mandate-derived flow sequencing
 
-- **Authored gates are the override.** Write a `gate` only for a flow-level fact the model cannot express. An authored gate wins outright — the derivation is never consulted. None exists any more: the last one, `get-your-quote`'s `gate: (scope) => scope.readyForQuote`, went with the quote feature in inc-028, so every gate now derives from collects. The mechanism is kept in `gates.js`, dormant, for a future flow-level fact.
-- **Empty `collects` derives to reachable.** A step that collects nothing (the `notification-view` check-your-answers page — it is not in `dispatchPages`, so `collectsOf` returns `[]`) passes its derived gate. Restricting such a step is exactly what an authored gate would be for.
+The prerequisites clause is what stops every row from being a live link on a blank journey. It is DERIVED, not a hand-authored graph: `flow/prerequisites.js` computes, for any page or section, the `enforcedAt: 'continue'` obligation ids owned by a **strictly-earlier** flow step, from flow order + the dispatch index + each obligation's own `enforcedAt` fact. A step is available only once every such prerequisite is answered (`scope.answered`, which is instance-aware — an item-level obligation like `commodityLines[i].commoditySelection` counts as answered once **any** line fills it).
+
+So: origin is always open; commodities opens once `countryOfOrigin` is answered; every section after commodities opens once `commoditySelection` is answered. A step never blocks on its **own** continue obligation, only strictly-earlier ones — commodities is not gated by its own `commoditySelection`. An obligation with no `enforcedAt` is never a prerequisite, so this is backwards-compatible for every other field.
+
+Three deliberate edges:
+
+- **Authored gates are the override.** Write a `gate` only for a flow-level fact the model cannot express. An authored gate wins outright — the derivation is never consulted. Exactly one exists: the `review` section's `gate: (scope) => scope.readyForCheckYourAnswers` (RULE 2, below). The mechanism is otherwise dormant.
+- **Empty `collects` derives to reachable.** A step that collects nothing (the `notification-view` check-your-answers page — it is not in `dispatchPages`, so `collectsOf` returns `[]`) passes the in-scope clause of its derived gate (its prerequisites still apply). Restricting such a step further is exactly what an authored gate would be for.
+
+### RULE 2 — the review section gates on submit-readiness
+
+"Check and submit" (the `review` section) must not open until the whole notification is submit-ready. It cannot derive this from collects: its own `declaration` obligation is always in scope, so a derived gate would open it from the start. So it carries the flow's one authored gate, `(scope) => scope.readyForCheckYourAnswers`.
+
+The subtlety is a circularity: `declaration` is confirmed _inside_ the review section, so if the readiness roll-up counted the review section, gating review on it would deadlock — you could never confirm the declaration to make review reachable. That is why `readyForCheckYourAnswers` iterates `answerSections` (every section except `review`). Submit safety is unaffected: the declaration page's own validator enforces `declaration === 'confirmed'` before `submitJourney` runs, so excluding review from the readiness roll-up does not let an unconfirmed journey submit.
 
 ## Fail loud before boot
 
@@ -39,7 +51,7 @@ The derived gate refuses to answer until `buildDispatch()` has run. `flow/gates.
 
 The reason is an ambiguity: `collectsOf(pageId)` legitimately returns `[]` for a known page that collects nothing, and its `?? []` fallback would return the same for every page if the index were simply not built yet. Unbuilt and collects-nothing are indistinguishable from the caller's side. Without the guard, a derived gate consulted before boot would silently gate every page and section out — no error, just an empty journey. So `flow/dispatch.js` tracks `isDispatchBuilt()` and `flow/gates.js` checks it before every derived answer.
 
-This mirrors the engine's `configureReadyForQuote` default, which throws until boot configures it — the same fail-loud stance at both ends of the boot seam (see [architecture.md](architecture.md)).
+This mirrors the engine's `configureReadyForCheckYourAnswers` default, which throws until boot configures it — the same fail-loud stance at both ends of the boot seam (see [architecture.md](architecture.md)).
 
 ## The dispatch seam
 
@@ -91,6 +103,6 @@ Nothing here derives scope or mutates data. Navigation only reads the scope fact
 
 - `sectionObligationIds(section)` — the union of every obligation the section's pages collect
 - `sectionStatus(section, answers, inScope)` — the engine's pure `statusOf` applied to that union
-- `readyForQuote(answers, inScope)` — the submit-readiness gate: true once every section is Fulfilled or Not applicable (it iterates `nonQuoteSections`, which now spans all sections). Consulted by `submitJourney` in `engine/write.js`.
+- `readyForCheckYourAnswers(answers, inScope)` — the submit-readiness gate: true once every answer section is Fulfilled, Not applicable or Optional (it iterates `answerSections`, which excludes `review`). Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
 
-The dependency direction is one-way: flow calls the engine's `statusOf` downward, never the reverse. The engine still needs submit-readiness inside `makeScope`, so boot hands `readyForQuote` down into `engine/read.js` via `configureReadyForQuote` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.
+The dependency direction is one-way: flow calls the engine's `statusOf` downward, never the reverse. The engine still needs submit-readiness inside `makeScope`, so boot hands `readyForCheckYourAnswers` down into `engine/read.js` via `configureReadyForCheckYourAnswers` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.

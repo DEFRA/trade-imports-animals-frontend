@@ -1,10 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import { readyForQuote } from './flow/section-status.js'
+import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { registry } from './registry.js'
 import { store } from './engine/store.js'
-import { configureReadyForQuote } from './engine/read.js'
+import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import {
   driveHandler,
   postHandlerOf,
@@ -191,7 +191,7 @@ const cases = [
 describe('controller <-> model commit contract', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

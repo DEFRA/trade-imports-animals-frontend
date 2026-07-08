@@ -63,7 +63,11 @@ export const PACKAGE_COUNT_COMMODITIES = [
 
 // enforcedAt=continue (spec ruling c-023): the select page's controller
 // schema blocks Save and Continue while it is blank.
-export const commoditySelection = { id: 'commoditySelection', required: true }
+export const commoditySelection = {
+  id: 'commoditySelection',
+  required: true,
+  enforcedAt: 'continue'
+}
 
 export const typeSelection = { id: 'typeSelection', required: true }
 

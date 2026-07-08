@@ -1,7 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { reconcile } from './engine/evaluate/reconcile.js'
-import { FULFILLED, IN_PROGRESS } from './engine/status.js'
-import { readyForQuote, sectionStatus } from './flow/section-status.js'
+import { FULFILLED, IN_PROGRESS, OPTIONAL } from './engine/status.js'
+import {
+  readyForCheckYourAnswers,
+  sectionStatus
+} from './flow/section-status.js'
 import { sections } from './flow/flow.js'
 import { walkObligations } from './registry.js'
 import { buildDispatch } from './flow/dispatch.js'
@@ -10,9 +13,19 @@ import { dispatchPages } from './features/index.js'
 const commoditiesSection = sections.find(
   (section) => section.id === 'commodities'
 )
+// `documents` is the journey's optional section: a collection with no
+// `required`/`requiredAtLeastOne`, so it owes nothing until it is touched.
+const documentsSection = sections.find((section) => section.id === 'documents')
+
+const completeDocument = {
+  accompanyingDocumentType: 'health-certificate',
+  accompanyingDocumentAttachmentType: 'upload',
+  accompanyingDocumentReference: 'HC-2026-01',
+  accompanyingDocumentDateOfIssue: { day: '1', month: '2', year: '2026' }
+}
 
 describe('indexed obligations are first-class', () => {
-  // sectionStatus / readyForQuote read the dispatch index (collectsOf), so the
+  // sectionStatus / readyForCheckYourAnswers read the dispatch index (collectsOf), so the
   // boot inversion must run first — same as dispatch.test / contract.test.
   beforeAll(() => buildDispatch(dispatchPages))
 
@@ -111,8 +124,34 @@ describe('indexed obligations are first-class', () => {
       ...complete,
       commodityLines: [{ commoditySelection: '0102 - Cattle' }]
     }
-    expect(readyForQuote(complete, reconcile(complete).inScope)).toBe(true)
-    expect(readyForQuote(incomplete, reconcile(incomplete).inScope)).toBe(false)
+    expect(
+      readyForCheckYourAnswers(complete, reconcile(complete).inScope)
+    ).toBe(true)
+    expect(
+      readyForCheckYourAnswers(incomplete, reconcile(incomplete).inScope)
+    ).toBe(false)
+  })
+
+  it('Should read an untouched optional section as OPTIONAL (not Completed, does not count)', () => {
+    expect(sectionStatus(documentsSection, {}, reconcile({}).inScope)).toBe(
+      OPTIONAL
+    )
+  })
+
+  it('Should read an optional section with an incomplete entry as IN_PROGRESS', () => {
+    const answers = {
+      documents: [{ accompanyingDocumentType: 'health-certificate' }]
+    }
+    expect(
+      sectionStatus(documentsSection, answers, reconcile(answers).inScope)
+    ).toBe(IN_PROGRESS)
+  })
+
+  it('Should read an optional section with a complete entry as FULFILLED', () => {
+    const answers = { documents: [completeDocument] }
+    expect(
+      sectionStatus(documentsSection, answers, reconcile(answers).inScope)
+    ).toBe(FULFILLED)
   })
 
   it('Should roll per-item completeness into the commodities section status', () => {

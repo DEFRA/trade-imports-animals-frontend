@@ -181,9 +181,10 @@ recur.
 The hub composes each row from parts it does not own: status tags from
 the pure `sectionStatus` roll-up and hrefs from `sectionEntry` (gates
 are derived from the model by default — see the flow docs via the
-[index](README.md)). The always-reachable "Check and submit" task opens
-check your answers; submit readiness (`readyForQuote`) is enforced later,
-at the declaration POST, not by hiding a hub row.
+[index](README.md)). The "Check and submit" task is gated on submit
+readiness (`readyForCheckYourAnswers`, RULE 2): until every answer section
+is ready its hub row is locked — "Cannot start yet", no link — and the
+declaration POST re-checks readiness server-side before it will finalise.
 
 ### Loop hubs
 
@@ -234,8 +235,8 @@ depth-2 collection returns.
 - **Declaration** (`features/declaration/controller.js`) is the submit
   point and the journey's end: its POST validates the confirmation
   checkbox then calls `state.submitJourney`, which re-checks submit
-  readiness server-side (`scope.readyForQuote`) and finalises only if the
-  journey is ready. On success it redirects back to `/declaration`, where
+  readiness server-side (`scope.readyForCheckYourAnswers`) and finalises only if
+  the journey is ready. On success it redirects back to `/declaration`, where
   the submitted state renders in place — there is no separate confirmation
   page (c-022).
 - **Resume** (`features/resume/controller.js`) recovers the current
@@ -286,8 +287,8 @@ Two verbs live outside the barrel on purpose:
 
 - `startJourney` (`engine/journey.js`) — mints a fresh journey; only
   the start page uses it
-- `configureReadyForQuote` (`engine/read.js`) — boot-only injection of
-  the flow's readiness roll-up; controllers never touch it
+- `configureReadyForCheckYourAnswers` (`engine/read.js`) — boot-only injection
+  of the flow's readiness roll-up; controllers never touch it
 
 There is deliberately no `setScope` and no per-key delete. Scope is
 always derived from answers, and out-of-scope data is wiped by the

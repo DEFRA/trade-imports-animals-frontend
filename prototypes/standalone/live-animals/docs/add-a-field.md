@@ -168,8 +168,8 @@ export const exporterReference = { id: 'exporterReference', required: true }
 ```
 
 `required` is the completion fact the status roll-up reads. The section now
-shows In progress until the field is answered, and `readyForQuote` (the
-submit-readiness gate) stays false, so the journey cannot be submitted. It
+shows In progress until the field is answered, and `readyForCheckYourAnswers`
+(the submit-readiness gate) stays false, so the journey cannot be submitted. It
 does not block saving — save-blocking is a controller decision (see
 `countryOfOrigin` in `features/origin/controller.js`, the journey's only
 save-blocking field).

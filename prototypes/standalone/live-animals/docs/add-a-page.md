@@ -27,9 +27,10 @@ Once the slice is registered, the paradigm derives the rest:
   ([`flow/section-status.js`](../flow/section-status.js)) computes the
   section's tag from the obligations its pages collect. A required obligation
   drives Not started → In progress → Completed on its own.
-- **Submit gating** — `readyForQuote` (the submit-readiness gate) requires
-  every section to be Fulfilled or Not applicable, so a new section counts
-  automatically. The declaration POST re-checks readiness server-side via
+- **Submit gating** — `readyForCheckYourAnswers` (the submit-readiness gate)
+  requires every answer section to be Fulfilled, Not applicable or Optional, so
+  a new section counts automatically (the `review` section is excluded from the
+  roll-up). The declaration POST re-checks readiness server-side via
   `submitJourney` before it will finalise.
 - **Scope-exit wipe** — if the page's obligations ever leave scope, `reconcile`
   destroys their data. You never write wipe logic. See
@@ -221,7 +222,7 @@ silent runtime break.
 ## The blast radius of a required field
 
 This gotcha was validated live. A **required** obligation in an
-**always-live** section is a new in-scope gap, so `readyForQuote` (the
+**always-live** section is a new in-scope gap, so `readyForCheckYourAnswers` (the
 submit-readiness gate) turns false until it is answered. That fails every
 ready-to-submit fixture in the suite, not just your page's own tests —
 building the worked example turned four test files red at once
@@ -242,8 +243,9 @@ This journey's own spec
 walks the full journey by clicking named task links and asserting headings,
 ending on the declaration page's submitted state — there is no separate
 confirmation page (c-022). The `declaration` full-walk test completes every
-hub task, so a required new field blocks `readyForQuote` (the submit-readiness
-gate) and the final submit will not finalise until your task is done.
+hub task, so a required new field blocks `readyForCheckYourAnswers` (the
+submit-readiness gate) and the final submit will not finalise until your task is
+done.
 
 If you add a required field, extend that full walk to fill it before the
 `Check and submit` step, and add a valid value for it to

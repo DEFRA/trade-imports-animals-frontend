@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../flow/dispatch.js'
-import { readyForQuote } from '../flow/section-status.js'
-import { configureReadyForQuote } from '../engine/read.js'
+import { readyForCheckYourAnswers } from '../flow/section-status.js'
+import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { dispatchPages } from '../features/index.js'
 import {
   buildWitnesses,
@@ -14,10 +14,10 @@ import { simulateJourney } from './simulate.js'
 
 describe('reachability / dead-end prover', () => {
   // proveReachability -> simulateJourney -> makeScope eagerly computes
-  // readyForQuote, so inject the roll-up at boot alongside buildDispatch.
+  // readyForCheckYourAnswers, so inject the roll-up at boot alongside buildDispatch.
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   it('Should enumerate a small finite scope space', () => {

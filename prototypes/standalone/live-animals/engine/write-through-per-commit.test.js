@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit } from './index.js'
 import { records } from './persistence/records.js'
-import { configureReadyForQuote } from './read.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 let journeyId
@@ -10,7 +10,7 @@ const buildRequest = () => journeyRequest(journeyId)
 describe('write-through on every commit', () => {
   beforeEach(() => {
     records.clear()
-    configureReadyForQuote(() => false)
+    configureReadyForCheckYourAnswers(() => false)
     journeyId = records.create().journeyId
   })
 

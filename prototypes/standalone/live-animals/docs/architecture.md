@@ -60,17 +60,20 @@ features/  →  flow/  →  engine/
   hand-authored gates were bare `inScope.has('<key>')` restatements of the
   model, coupled by a raw string. Divergence meant a ghost Not applicable row
   or a stuck section. Deriving the default makes "gate passes exactly when
-  section status is not Not applicable" hold by construction. No authored gate
-  remains — the last one, get-your-quote's `(scope) => scope.readyForQuote`,
-  went with the quote feature in inc-028, so every gate now derives from
-  collects. The authored-gate mechanism is kept in `gates.js`, dormant, for a
-  future flow-level fact the model cannot express. The flow-aware roll-ups
-  (`sectionStatus`, `readyForQuote`) live in
+  section status is not Not applicable" hold by construction (holding RULE 1
+  prerequisites satisfied — the default gate also requires earlier
+  `enforcedAt: 'continue'` obligations to be answered). Exactly one authored
+  gate exists: the `review` section's `(scope) => scope.readyForCheckYourAnswers`
+  (submit-readiness); the car `get-your-quote` gate that once used the same
+  roll-up went with the quote feature in inc-028. The authored-gate mechanism is
+  otherwise dormant, for a future flow-level fact the model cannot express. The
+  flow-aware roll-ups (`sectionStatus`, `readyForCheckYourAnswers`) live in
   [`flow/section-status.js`](../flow/section-status.js) because they need the
-  dispatch index and the section list; `readyForQuote` is now the
-  submit-readiness gate consulted by `submitJourney`.
+  dispatch index and the section list; `readyForCheckYourAnswers` is both the
+  review section's authored gate and the submit-readiness gate consulted by
+  `submitJourney`.
 - **engine/** — the pure state core. Read, write, reconcile, completeness,
-  the four-status roll-up and the persistence ports.
+  the five-status roll-up and the persistence ports.
 
 The dependency direction is mechanically checkable: the engine imports zero
 `flow/` modules.
@@ -79,9 +82,9 @@ The dependency direction is mechanically checkable: the engine imports zero
 grep -rn "flow/" engine/   # no matches
 ```
 
-The engine has one flow-shaped need — submit readiness (`readyForQuote`) — and
-it is injected downward at boot via `configureReadyForQuote` in
-[`engine/read.js`](../engine/read.js). The unconfigured default throws, so a
+The engine has one flow-shaped need — submit readiness
+(`readyForCheckYourAnswers`) — and it is injected downward at boot via
+`configureReadyForCheckYourAnswers` in [`engine/read.js`](../engine/read.js). The unconfigured default throws, so a
 `makeScope` call before boot is a hard, loud failure rather than a silent
 wrong answer.
 
@@ -99,8 +102,9 @@ registration it runs, in order:
    declarations and coverage-asserts them: every non-system obligation, at
    every tree depth, must be collected by exactly one page. A forgotten or
    duplicated `collects` is a startup crash, not a silent runtime break.
-3. `configureReadyForQuote(readyForQuote)` — hands the flow's submit-readiness
-   roll-up into the engine, keeping the engine free of `flow/` imports.
+3. `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` — hands the
+   flow's submit-readiness roll-up into the engine, keeping the engine free of
+   `flow/` imports.
 4. `registerJourneyCookie(server)` — defines the journey cookie, path-scoped
    to the spike's base path.
 5. `server.route(allRoutes)` — registers every route assembled by
@@ -131,13 +135,13 @@ live-animals/
     gates.js              derived-default / authored-override gate seam
     dispatch.js           obligation -> owning page index, built at boot
     navigation.js         sectionEntry, nextInSection (else back to the hub)
-    section-status.js     flow-aware roll-ups: sectionStatus, readyForQuote
+    section-status.js     flow-aware roll-ups: sectionStatus, readyForCheckYourAnswers
 
   engine/                 the pure state core
     index.js              the facade barrel controllers import (import * as state)
-    read.js               get, resume, makeScope (+ configureReadyForQuote)
+    read.js               get, resume, makeScope (+ configureReadyForCheckYourAnswers)
     write.js              commit, appendEntry(At), updateEntry(At), removeEntry(At), submitJourney
-    status.js             the four-status roll-up (engine-pure)
+    status.js             the five-status roll-up (engine-pure)
     journey.js            journey-isolation seam: cookie, load-or-create, resume
     store.js              compat shim over the records port (pre-reshape consumers)
     test-support.js       shared fakes for engine and controller specs
@@ -173,8 +177,8 @@ Kept, because it is page-agnostic and the bespoke pages already leaned on it:
   only the write path persists. Keeps state reasoning testable.
 - **Nothing derived is stored.** Scope is rebuilt from the answers on every
   read, so a days-later resume self-heals to current scope.
-- **The four-status roll-up.** Not applicable / Not started / In progress /
-  Fulfilled — exactly what the hub task list and submit gating need.
+- **The five-status roll-up.** Not applicable / Optional / Not started / In
+  progress / Fulfilled — exactly what the hub task list and submit gating need.
 - **Section grouping.** The journey returns to the hub after each section and
   the hub renders one task per section.
 

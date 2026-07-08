@@ -1,9 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import { readyForQuote } from './flow/section-status.js'
+import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { store } from './engine/store.js'
-import { configureReadyForQuote } from './engine/read.js'
+import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { stubH, journeyRequest } from './engine/test-support.js'
 import { dispatchPages } from './features/index.js'
 
@@ -11,7 +11,10 @@ import { routes } from './features/hub/controller.js'
 
 /**
  * The shared E2E navigates rows by TITLE and never observes the hint — so the
- * rendered hint text must be pinned here.
+ * rendered hint text must be pinned here. This also pins the GDS-canonical
+ * task-list vocabulary the hub renders (BUG 1): blue "Not yet started", grey
+ * "Cannot start yet" text on gated rows with no link, and "0 of N" on a blank
+ * journey (an optional section reads Optional and does not count).
  */
 
 const hubHandler = routes.find((route) => route.method === 'GET').handler
@@ -21,7 +24,7 @@ const renderHub = (seed = {}) => {
   store.saveAnswers(journey.journeyId, seed)
   const h = stubH()
   hubHandler(journeyRequest(journey.journeyId), h)
-  return h.captured.view.context.items
+  return h.captured.view.context
 }
 
 const rowByTitle = (items, title) =>
@@ -30,24 +33,42 @@ const rowByTitle = (items, title) =>
 describe('#handler hub copy', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
-  it('Should render the Check and submit row linking to the check-your-answers page', () => {
-    const reviewRow = rowByTitle(renderHub(), 'Check and submit')
+  it('Should report 0 of 7 tasks completed on a blank journey', () => {
+    expect(renderHub().progressLine).toBe('You have completed 0 of 7 tasks.')
+  })
 
+  it('Should render the always-open origin row as a blue "Not yet started" tag with a link', () => {
+    const originRow = rowByTitle(renderHub().items, 'Origin of the import')
+    expect(originRow.href).toBe('/prototype-standalone/live-animals/origin')
+    expect(originRow.status).toEqual({
+      tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
+    })
+  })
+
+  it('Should render a gated row as "Cannot start yet" text with NO link', () => {
+    // commodities is gated behind countryOfOrigin (RULE 1) — blank journey locks
+    // it, so the row has no href and reads the grey "Cannot start yet" text.
+    const commoditiesRow = rowByTitle(renderHub().items, 'Commodities')
+    expect(commoditiesRow.href).toBeUndefined()
+    expect(commoditiesRow.status).toEqual({
+      text: 'Cannot start yet',
+      classes: 'govuk-task-list__status--cannot-start-yet'
+    })
+  })
+
+  it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', () => {
+    const reviewRow = rowByTitle(renderHub().items, 'Check and submit')
     expect(reviewRow.hint.text).toBe(
       'Check your answers before you submit the notification'
     )
-    // The review section's declaration obligation is always-live, so the
-    // section derives reachable on a fresh journey — the row must link out
-    // (entering at the CYA), never fall back to the hub.
-    expect(reviewRow.href).toBe(
-      '/prototype-standalone/live-animals/notification-view'
-    )
+    expect(reviewRow.href).toBeUndefined()
     expect(reviewRow.status).toEqual({
-      tag: { text: 'Not started', classes: 'govuk-tag--grey' }
+      text: 'Cannot start yet',
+      classes: 'govuk-task-list__status--cannot-start-yet'
     })
   })
 })

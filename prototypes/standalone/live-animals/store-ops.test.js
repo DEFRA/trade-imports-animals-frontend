@@ -7,10 +7,10 @@ import {
 } from './engine/index.js'
 import { store } from './engine/store.js'
 import { records } from './engine/persistence/records.js'
-import { configureReadyForQuote } from './engine/read.js'
+import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { stubH, journeyRequest } from './engine/test-support.js'
 import { buildDispatch } from './flow/dispatch.js'
-import { readyForQuote } from './flow/section-status.js'
+import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { dispatchPages } from './features/index.js'
 
 /**
@@ -41,11 +41,11 @@ const line = (commoditySelection, extra = {}) => ({
 })
 
 describe('path-addressed store ops at depth-1 (commodityLines — live carrier)', () => {
-  // `commit` -> `makeScope` eagerly computes `readyForQuote`, which reads the
+  // `commit` -> `makeScope` eagerly computes `readyForCheckYourAnswers`, which reads the
   // dispatch index — so replicate boot: build the index and inject the roll-up.
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => {
     store.clear()
@@ -177,7 +177,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
 describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => {
     store.clear()

@@ -1,23 +1,31 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../flow/dispatch.js'
-import { readyForQuote } from '../flow/section-status.js'
-import { configureReadyForQuote } from '../engine/read.js'
+import { readyForCheckYourAnswers } from '../flow/section-status.js'
+import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from './simulate.js'
 
 describe('#simulateJourney', () => {
-  // readyForQuote flows through the status roll-up, which reads the boot-built
+  // readyForCheckYourAnswers flows through the status roll-up, which reads the boot-built
   // dispatch index — so replicate boot, exactly as the app does. (It is now the
   // submit-readiness gate, not a section gate: the last authored gate,
   // get-your-quote, went in inc-028.)
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
+  // RULE 1 gates the post-commodities pages behind the two continue
+  // obligations, so a persona must answer `countryOfOrigin` and a line's
+  // `commoditySelection` before transport opens. `prereqs` seeds exactly that.
+  const prereqs = {
+    countryOfOrigin: 'FR',
+    commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+  }
+
   it('Should walk a plain persona (no transporter type) straight through', () => {
-    const pages = simulateJourney({})
+    const pages = simulateJourney(prereqs)
     expect(pages).toContain('port-of-entry')
     expect(pages).toContain('transporters')
     expect(pages).not.toContain('transporters-select')
@@ -32,6 +40,7 @@ describe('#simulateJourney', () => {
 
   it('Should insert the gated transporter spoke exactly for the chosen type', () => {
     const pages = simulateJourney({
+      ...prereqs,
       transporterType: 'Commercial transporter'
     })
     expect(pages).toContain('transporters-select')

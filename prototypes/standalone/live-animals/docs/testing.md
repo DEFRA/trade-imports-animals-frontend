@@ -40,11 +40,11 @@ This matches both the shared-spec entry for this journey (labelled `standalone o
 npm run dump:live-animals
 ```
 
-Runs `dump.js`, which prints derived scope, the wiped set, per-section status and submit readiness (`readyForQuote`) for a fixture answers map — no server, no rendering. Edit the fixture to explore the model.
+Runs `dump.js`, which prints derived scope, the wiped set, per-section status and submit readiness (`readyForCheckYourAnswers`) for a fixture answers map — no server, no rendering. Edit the fixture to explore the model.
 
 The fixture is deliberately messy. Do not tidy it. Two of its oddities are the whole point:
 
-- the second cattle line omits `numberOfPackages` — an OPTIONAL item-conditional field, so its absence does not gate the line's completeness; `whyNotReady` still shows `readyForQuote: false`, but because most sections are unanswered, not because of this line
+- the second cattle line omits `numberOfPackages` — an OPTIONAL item-conditional field, so its absence does not gate the line's completeness; `whyNotReady` still shows `readyForCheckYourAnswers: false`, but because most sections are unanswered, not because of this line
 - the fish line (not on the package-count list) carries a **stale** `numberOfPackages` — out of scope for that line, so the output shows it in `wiped`: field-level destruction inside a collection item (see [scope-and-wipe.md](scope-and-wipe.md))
 
 ## The regression net
@@ -86,18 +86,18 @@ The E2E specs navigate hub rows by **title** and never read the hint text, so hi
 
 ## The boot-replication rule
 
-The server boots the journey in `routes.js` by running, in order: `assertObligationPurity()`, `buildDispatch(dispatchPages)`, `configureReadyForQuote(readyForQuote)`. Any spec that commits answers, builds scope or reads section status must replicate the middle two in a `beforeAll`:
+The server boots the journey in `routes.js` by running, in order: `assertObligationPurity()`, `buildDispatch(dispatchPages)`, `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)`. Any spec that commits answers, builds scope or reads section status must replicate the middle two in a `beforeAll`:
 
 ```js
 beforeAll(() => {
   buildDispatch(dispatchPages)
-  configureReadyForQuote(readyForQuote)
+  configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
 })
 ```
 
 If you skip this, the engine throws — deliberately:
 
-- every scope build (`state.get`, `state.commit`, and so on) computes `readyForQuote`, and the unconfigured default in `engine/read.js` throws rather than return a silent wrong answer
+- every scope build (`state.get`, `state.commit`, and so on) computes `readyForCheckYourAnswers`, and the unconfigured default in `engine/read.js` throws rather than return a silent wrong answer
 - derived gates and section status read the dispatch index, and `flow/gates.js` refuses to answer before `buildDispatch()` has run, because an empty index would silently gate every page out
 
 See `contract.test.js` for the pattern in use, and [architecture.md](architecture.md) for why these seams exist.

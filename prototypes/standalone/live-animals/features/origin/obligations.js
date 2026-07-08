@@ -3,7 +3,11 @@
  * owed") — it does NOT block save. Save-blocking is controller-owned
  * validation; countryOfOrigin's `requiredText` is the journey's only one.
  */
-export const countryOfOrigin = { id: 'countryOfOrigin', required: true }
+export const countryOfOrigin = {
+  id: 'countryOfOrigin',
+  required: true,
+  enforcedAt: 'continue'
+}
 
 export const regionOfOriginCodeRequirement = {
   id: 'regionOfOriginCodeRequirement',

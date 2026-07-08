@@ -1,8 +1,14 @@
 import { BASE, hubPath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import { sectionEntry } from '../../flow/navigation.js'
+import { sectionGatePasses } from '../../flow/gates.js'
 import * as state from '../../engine/index.js'
-import { FULFILLED, IN_PROGRESS } from '../../engine/status.js'
+import {
+  FULFILLED,
+  IN_PROGRESS,
+  NOT_STARTED,
+  OPTIONAL
+} from '../../engine/status.js'
 import { sectionStatus } from '../../flow/section-status.js'
 import { open } from '../../shared/kit.js'
 
@@ -46,37 +52,61 @@ const GROUP_ROWS = [
   }
 ]
 
-const NOT_STARTED_TAG = {
-  tag: { text: 'Not started', classes: 'govuk-tag--grey' }
-}
+// GDS-canonical task-list vocabulary. FULFILLED and OPTIONAL are plain text (no
+// tag); IN_PROGRESS and NOT_STARTED are tags. A gated-out row is not in this map
+// — it renders "Cannot start yet" (grey text, no link) via CANNOT_START_STATUS.
 const STATUS_TAG = {
   [FULFILLED]: { text: 'Completed' },
+  [OPTIONAL]: { text: 'Optional' },
   [IN_PROGRESS]: {
     tag: { text: 'In progress', classes: 'govuk-tag--light-blue' }
+  },
+  [NOT_STARTED]: {
+    tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
   }
 }
-const statusTag = (status) => STATUS_TAG[status] ?? NOT_STARTED_TAG
+const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
+
+const CANNOT_START_STATUS = {
+  text: 'Cannot start yet',
+  classes: 'govuk-task-list__status--cannot-start-yet'
+}
 
 const sectionById = (id) => sections.find((section) => section.id === id)
 
-const buildGroupItems = (answers, scope, inScope) =>
-  GROUP_ROWS.map((row) => ({
-    title: { text: row.title },
-    hint: { text: row.hint },
-    href: sectionEntry(row.id, scope),
-    status: statusTag(sectionStatus(sectionById(row.id), answers, inScope))
-  }))
+// A gated-out (locked) row has NO link and reads "Cannot start yet"; an
+// available row links to the section's first gated-in page and shows its status.
+const buildRow = ({ id, title, hint }, answers, scope, inScope) => {
+  const section = sectionById(id)
+  const base = { title: { text: title }, hint: { text: hint } }
+  if (!sectionGatePasses(section, scope)) {
+    return { ...base, status: CANNOT_START_STATUS }
+  }
+  return {
+    ...base,
+    href: sectionEntry(id, scope),
+    status: statusTag(sectionStatus(section, answers, inScope))
+  }
+}
 
-// "Check and submit" is a task row, not a GROUP_ROW: the section owes only
-// the declaration (confirmed by submitting), so its tag tracks the submit —
-// Not started until the declaration is confirmed — and it must not join the
-// completed-tasks count, which counts the answer-gathering sections only.
-const buildReviewItem = (answers, scope, inScope) => ({
-  title: { text: 'Check and submit' },
-  hint: { text: 'Check your answers before you submit the notification' },
-  href: sectionEntry('review', scope),
-  status: statusTag(sectionStatus(sectionById('review'), answers, inScope))
-})
+const buildGroupItems = (answers, scope, inScope) =>
+  GROUP_ROWS.map((row) => buildRow(row, answers, scope, inScope))
+
+// "Check and submit" is a task row, not a GROUP_ROW: it is gated on
+// submit-readiness (RULE 2 — locked until every answer section is ready), and
+// it must not join the completed-tasks count, which counts the answer-gathering
+// sections only.
+const buildReviewItem = (answers, scope, inScope) =>
+  buildRow(
+    {
+      id: 'review',
+      title: 'Check and submit',
+      hint: 'Check your answers before you submit the notification'
+    },
+    answers,
+    scope,
+    inScope
+  )
 
 const countCompletedGroups = (answers, inScope) =>
   GROUP_ROWS.filter(

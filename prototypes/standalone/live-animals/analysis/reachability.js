@@ -8,12 +8,14 @@ import { simulateJourney } from './simulate.js'
  * Proves "no owed obligation is unreachable": one minimal witness per
  * obligation at every depth.
  *
- * SOUNDNESS: one witness per obligation suffices only because every flow gate
- * is a pure read of `inScope` — every section/page gate now derives from
- * collects (the last authored gate, get-your-quote's `readyForQuote`, went in
- * inc-028). If a future gate keys off an answer outside the scope-owing
- * condition, this proof can false-pass — that is the point to enumerate more
- * witnesses.
+ * SOUNDNESS: flow gates now read ANSWERS as well as `inScope` — RULE 1
+ * (mandate-derived sequencing) gates a step on earlier `enforcedAt: 'continue'`
+ * obligations being answered, and RULE 2 gates the review section on
+ * submit-readiness. A scope-only fragment would therefore false-FAIL a step
+ * whose answer-based prerequisites are unmet. So each witness rides a fully
+ * submit-ready BASE journey (`submitReadySeed` below) — the "enumerate more
+ * witnesses" response this note always anticipated. If a future gate keys off an
+ * answer this base does not already supply, extend the base or the enumeration.
  */
 
 /**
@@ -147,6 +149,91 @@ function scaffoldFor(templatePath) {
 }
 
 /**
+ * The flow gates now read ANSWERS, not just scope (BUG 1/BUG 2 fix):
+ * - RULE 1 gates a post-origin step until `countryOfOrigin` is answered, and a
+ *   post-commodities step until any line's `commoditySelection` is;
+ * - RULE 2 gates the `review` section (owning `declaration`) on the whole
+ *   submit-readiness roll-up.
+ *
+ * The soundness note above anticipated exactly this ("if a future gate keys off
+ * an answer outside the scope-owing condition ... enumerate more witnesses").
+ * So every witness rides a fully submit-ready BASE journey rather than a
+ * scope-only fragment — the honest way to prove an obligation behind an
+ * authored answer-based gate (`declaration`) is reachable. It is layered under
+ * the enumerated `state` (which overrides the varied activation axes) and the
+ * target's own `scaffold` (which overrides the target's activator chain), so
+ * the base never masks a witness's specific triggering state.
+ *
+ * BLANK axis values are dropped from the enumerated `state` before it is layered
+ * on: activation is always POSITIVE (an obligation enters scope when its
+ * activator IS answered to a value, never when it is blank), so no witness needs
+ * a blank axis to put its target in scope — but a blank WOULD wipe out a
+ * required field the ready base supplies and defeat the RULE 2 review gate for
+ * the always-in-scope `declaration`. Dropping blanks keeps every real activation
+ * (the non-blank axis values still override) while preserving submit-readiness.
+ */
+const withoutBlanks = (state) =>
+  Object.fromEntries(Object.entries(state).filter(([, value]) => value !== ''))
+const submitReadySeed = {
+  countryOfOrigin: 'FR',
+  regionOfOriginCodeRequirement: 'no',
+  reasonForImport: 'internal-market',
+  purposeInInternalMarket: 'breeding',
+  animalsCertifiedFor: 'slaughter',
+  containsUnweanedAnimals: 'no',
+  countyParishHoldingCph: '12/345/6789',
+  commodityLines: [
+    {
+      commoditySelection: '0102 - Cattle',
+      typeSelection: 'domestic',
+      speciesSelection: ['bos-taurus'],
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '25',
+      animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+    }
+  ],
+  consignor: {
+    name: 'Laiterie du Nord SARL',
+    address: { addressLine1: '12 Rue de la Gare', country: 'France' }
+  },
+  placeOfDestination: {
+    name: 'Tech Imports Ltd',
+    address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
+  },
+  placeOfOrigin: {
+    name: 'Ferme des Trois Vallées',
+    address: { addressLine1: '3 Chemin des Prés', country: 'France' }
+  },
+  consignee: {
+    name: 'Yorkshire Dales Livestock Ltd',
+    address: {
+      addressLine1: 'Unit 4, Auction Mart Lane',
+      country: 'United Kingdom'
+    }
+  },
+  importer: {
+    name: 'Albion Livestock Imports Ltd',
+    address: { addressLine1: '18 Harbour Road', country: 'United Kingdom' }
+  },
+  portOfEntry: 'ABERDEEN',
+  arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
+  meansOfTransport: 'Airplane',
+  transportIdentification: 'FR-892-LK',
+  transportDocumentReference: 'CMR-2026-884721',
+  transporterType: 'Commercial transporter',
+  commercialTransporter: {
+    name: 'Channel Livestock Logistics Ltd',
+    address: { addressLine1: '18 Eastern Docks', country: 'United Kingdom' },
+    approvalNumber: 'UK/DOVER/T2/00012345'
+  },
+  contactAddress: {
+    name: 'Animal and Plant Health Agency',
+    address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+  },
+  declaration: 'confirmed'
+}
+
+/**
  * `answers` is null iff no enumerated state puts the target in scope — a
  * prover bug, surfaced as a problem, never a silent skip.
  */
@@ -160,7 +247,11 @@ export function buildWitnesses() {
     const targetKey = pathKey(instancePath)
     let answers = null
     for (const state of states) {
-      const candidate = { ...state, ...scaffold }
+      const candidate = {
+        ...submitReadySeed,
+        ...withoutBlanks(state),
+        ...scaffold
+      }
       if (reconcile(candidate).inScope.has(targetKey)) {
         answers = candidate
         break

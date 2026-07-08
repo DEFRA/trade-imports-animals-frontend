@@ -1,10 +1,13 @@
 import { buildDispatch } from './flow/dispatch.js'
-import { allFlowPages, sections, nonQuoteSections } from './flow/flow.js'
+import { allFlowPages, sections, answerSections } from './flow/flow.js'
 import { dispatchPages } from './features/index.js'
 import { reconcile } from './engine/evaluate/reconcile.js'
 import { FULFILLED, NA } from './engine/status.js'
 import { entryComplete } from './engine/evaluate/complete.js'
-import { readyForQuote, sectionStatus } from './flow/section-status.js'
+import {
+  readyForCheckYourAnswers,
+  sectionStatus
+} from './flow/section-status.js'
 import { commodityLines as commodityLinesObligation } from './features/commodities/obligations.js'
 import { pathKey } from './lib/path.js'
 
@@ -63,7 +66,7 @@ const commoditiesBreakdown = (answers.commodityLines ?? []).map(
   }
 )
 
-const whyNotReady = nonQuoteSections
+const whyNotReady = answerSections
   .map((section) => ({
     section: section.id,
     status: sectionStatus(section, answers, inScope)
@@ -79,7 +82,7 @@ console.log(
         .filter((key) => key.startsWith('commodityLines'))
         .sort(),
       wiped,
-      readyForQuote: readyForQuote(answers, inScope),
+      readyForCheckYourAnswers: readyForCheckYourAnswers(answers, inScope),
       whyNotReady,
       sectionStatus: Object.fromEntries(
         sections.map((section) => [

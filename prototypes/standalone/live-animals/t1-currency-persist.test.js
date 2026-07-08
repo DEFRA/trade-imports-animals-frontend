@@ -1,9 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import { readyForQuote } from './flow/section-status.js'
+import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { store } from './engine/store.js'
-import { configureReadyForQuote } from './engine/read.js'
+import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { driveHandler } from './engine/test-support.js'
 import { dispatchPages } from './features/index.js'
 import * as state from './engine/index.js'
@@ -43,7 +43,7 @@ const syntheticCurrencyPost = (request, h) => {
 describe('T1 — cleaned currency values are persisted, not the raw payload', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -58,7 +58,7 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
 describe('T1 — error path still echoes the raw input and commits nothing', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForQuote(readyForQuote)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

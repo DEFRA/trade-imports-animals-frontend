@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { reconcile } from '../engine/evaluate/reconcile.js'
-import { readyForQuote } from './section-status.js'
+import { readyForCheckYourAnswers } from './section-status.js'
 import { buildDispatch, collectsOf, pageOfObligation } from './dispatch.js'
 import { nextInSection, sectionEntry } from './navigation.js'
 
@@ -42,12 +42,18 @@ describe('dispatch + flow', () => {
   })
 
   it('Should walk the transport section, skipping the spokes the type gates out', () => {
-    const scopeNoType = { inScope: reconcile({}).inScope }
+    // This test isolates spoke gating (transporter type), not RULE 1 flow
+    // sequencing — so satisfy the continue prerequisites unconditionally and let
+    // the in-scope reachability clause drive the assertions.
+    const answered = () => true
+    const scopeNoType = { inScope: reconcile({}).inScope, answered }
     const scopeCommercial = {
-      inScope: reconcile({ transporterType: 'Commercial transporter' }).inScope
+      inScope: reconcile({ transporterType: 'Commercial transporter' }).inScope,
+      answered
     }
     const scopePrivate = {
-      inScope: reconcile({ transporterType: 'Private transporter' }).inScope
+      inScope: reconcile({ transporterType: 'Private transporter' }).inScope,
+      answered
     }
     expect(nextInSection('transporters', scopeCommercial)).toMatch(
       /\/transporters\/select$/
@@ -66,11 +72,11 @@ describe('dispatch + flow', () => {
     // hub resolves every section row href through sectionEntry, so re-point at a
     // live multi-page section — transport enters at its always-in-scope first
     // page.
-    const scope = { inScope: reconcile({}).inScope }
+    const scope = { inScope: reconcile({}).inScope, answered: () => true }
     expect(sectionEntry('transport', scope)).toMatch(/\/port-of-entry$/)
   })
 
-  it('Should report ready-to-submit only once every section is complete (readyForQuote is now the submit gate — get-your-quote went inc-028)', () => {
+  it('Should report ready-to-submit only once every section is complete (readyForCheckYourAnswers is now the submit gate — get-your-quote went inc-028)', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
@@ -139,12 +145,14 @@ describe('dispatch + flow', () => {
       declaration: 'confirmed'
     }
     const { inScope } = reconcile(complete)
-    expect(readyForQuote(complete, inScope)).toBe(true)
+    expect(readyForCheckYourAnswers(complete, inScope)).toBe(true)
 
     const incomplete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no'
     }
-    expect(readyForQuote(incomplete, reconcile(incomplete).inScope)).toBe(false)
+    expect(
+      readyForCheckYourAnswers(incomplete, reconcile(incomplete).inScope)
+    ).toBe(false)
   })
 })
