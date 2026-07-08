@@ -18,13 +18,13 @@ describe('#currentJourney', () => {
 
   it('Should resume the same journey within a session (cookie points at a live journey)', () => {
     const first = currentJourney(buildRequest({}), recordingH())
-    store.saveAnswers(first.journeyId, { email: 'a@b.com' })
+    store.saveAnswers(first.journeyId, { countryOfOrigin: 'FR' })
     const again = currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: first.journeyId }),
       recordingH()
     )
     expect(again.journeyId).toBe(first.journeyId)
-    expect(again.answers).toEqual({ email: 'a@b.com' })
+    expect(again.answers).toEqual({ countryOfOrigin: 'FR' })
   })
 
   it('Should re-mint when the cookie points at a stale/unknown journey', () => {

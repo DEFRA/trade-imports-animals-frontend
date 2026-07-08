@@ -215,7 +215,6 @@ const buildRows = (answers) => {
     // The stored contact is a copied { name, address } object (c-020) —
     // the select side of the unresolved c-001 variant pair.
     row('Contact address', answerOf('contactAddress')?.name, 'contactAddress'),
-    row('Email', answerOf('email'), 'email'),
     row('Name', answerOf('fullName'), 'fullName'),
     row('Preferred name', answerOf('preferredName'), 'preferredName'),
     row('Telephone', answerOf('phone'), 'phone'),

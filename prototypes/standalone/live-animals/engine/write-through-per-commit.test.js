@@ -15,16 +15,18 @@ describe('write-through on every commit', () => {
   })
 
   it('Should persist to the records port on the first commit, before any submit', () => {
-    commit(buildRequest(), stubH(), { email: 'a@b.com' })
-    expect(records.load({ journeyId }).answers).toEqual({ email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    expect(records.load({ journeyId }).answers).toEqual({
+      countryOfOrigin: 'FR'
+    })
   })
 
   it('Should overwrite the durable record on a second commit', () => {
-    commit(buildRequest(), stubH(), { email: 'a@b.com' })
-    commit(buildRequest(), stubH(), { fullName: 'Alex' })
+    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    commit(buildRequest(), stubH(), { internalReferenceNumber: 'Imports456GB' })
     expect(records.load({ journeyId }).answers).toEqual({
-      email: 'a@b.com',
-      fullName: 'Alex'
+      countryOfOrigin: 'FR',
+      internalReferenceNumber: 'Imports456GB'
     })
   })
 })

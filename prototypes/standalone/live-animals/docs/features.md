@@ -25,8 +25,8 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 - **template(s)** — the feature's own Nunjucks markup (`template.njk`,
   or one per page like `modifications/describe.njk`)
 
-`features/email/` is the smallest complete example: one controller, one
-page leaf, one obligation, one template.
+`features/import-reason/` is the smallest complete example: one
+controller, one page leaf, one obligation, one template.
 
 Not every feature collects answers. The shell (`start`, `hub`) and the
 endings (`quote`, `check-answers`, `confirmation`, `resume`) render or
@@ -65,8 +65,8 @@ and never listed in `flow.js`.
 
 ## 3. The standard collecting controller
 
-Most collecting pages follow one shape. `features/email/controller.js`
-is the minimal case; `features/about-you/controller.js` adds a
+Most collecting pages follow one shape. `features/import-reason/controller.js`
+is the minimal case; `features/about-you/controller.js` adds a fuller
 validation schema. The parts, in order:
 
 1. **`meta`** — the page identity plus what it collects:
@@ -99,7 +99,7 @@ and so on) and run `validate(fields, payload)`. The state layer never
 sees a schema. All validators except `about-you`'s `fullName` are
 optional: blank saves, malformed non-blank input fails.
 
-The result is small — around 30 lines for `email`, around 95 for
+The result is small — around 60 lines for `import-reason`, around 95 for
 `about-you` with its five validators and date widget. Each controller is
 readable on its own; that is the point of the page-owned spine.
 

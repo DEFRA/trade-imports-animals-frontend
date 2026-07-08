@@ -9,9 +9,9 @@ This guide uses a worked example that was validated live on the real code: a
 `vehicle-security` page asking where the vehicle is kept overnight
 (`parkingLocation`, a required radio) and whether a tracker is fitted
 (`hasTracker`, optional). Every step names an existing feature to copy —
-[`features/email/`](../features/email/) is the smallest slice and
-[`features/cover-type/`](../features/cover-type/) shows the full validation
-pattern.
+[`features/import-reason/`](../features/import-reason/) is the smallest slice
+and [`features/cover-type/`](../features/cover-type/) shows the full
+validation pattern.
 
 ## What you get for free
 
@@ -52,7 +52,7 @@ facts the model cannot express — the only one in the journey is
 ### 1. Create the page identity leaf
 
 Create `features/vehicle-security/page.js`, copying
-[`features/email/page.js`](../features/email/page.js):
+[`features/import-reason/page.js`](../features/import-reason/page.js):
 
 ```js
 export const vehicleSecurityPage = {
@@ -70,7 +70,7 @@ reading `undefined` at boot.
 ### 2. Declare the obligations
 
 Create `features/vehicle-security/obligations.js`, copying
-[`features/email/obligations.js`](../features/email/obligations.js):
+[`features/import-reason/obligations.js`](../features/import-reason/obligations.js):
 
 ```js
 export const parkingLocation = { id: 'parkingLocation', required: true }
@@ -131,7 +131,7 @@ here, not in the model — see [validation.md](validation.md).
 ### 4. Write the template
 
 Create `features/vehicle-security/template.njk`, copying
-[`features/email/template.njk`](../features/email/template.njk). Extend the
+[`features/import-reason/template.njk`](../features/import-reason/template.njk). Extend the
 shared layout, include the shared error summary, and use govuk macros. View
 names resolve from the prototypes Nunjucks root, so the controller references
 it as `standalone/live-animals/features/vehicle-security/template`.

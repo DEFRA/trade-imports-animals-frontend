@@ -88,7 +88,7 @@ describe('wipeOrder — sibling-safe deletion order', () => {
         { claimType: 'a', claimAmount: '100' },
         { claimType: 'b', claimAmount: '200' }
       ],
-      email: 'x@y.com'
+      countryOfOrigin: 'FR'
     }
     // Mix a whole-entry array-index wipe (claims[0]) with a nested-leaf wipe on
     // a LATER sibling (claims[1].claimAmount). The nested delete must run before
@@ -96,7 +96,7 @@ describe('wipeOrder — sibling-safe deletion order', () => {
     destroyWiped(answers, ['claims[0]', 'claims[1].claimAmount'])
     expect(answers).toEqual({
       claims: [{ claimType: 'b' }],
-      email: 'x@y.com'
+      countryOfOrigin: 'FR'
     })
   })
 })

@@ -16,7 +16,6 @@ describe('#simulateJourney', () => {
 
   it('Should walk a plain persona (no claims, no add-ons) straight through', () => {
     const pages = simulateJourney({
-      email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',
       coverType: 'comprehensive'
@@ -49,7 +48,7 @@ describe('#simulateJourney', () => {
   })
 
   it('Should reveal the quote page only once the journey is ready to quote', () => {
-    const notReady = simulateJourney({ email: 'a@b.co' })
+    const notReady = simulateJourney({ countryOfOrigin: 'FR' })
     expect(notReady).not.toContain('quote-summary')
 
     const ready = simulateJourney({
@@ -110,7 +109,6 @@ describe('#simulateJourney', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'no',
       coverType: 'comprehensive',

@@ -24,12 +24,11 @@ A persona is just an answers map — the same shape the store holds. There is no
 
 ```js
 simulateJourney({
-  email: 'a@b.co',
   fullName: 'Alex',
   hadClaims: 'no',
   coverType: 'comprehensive'
 })
-// -> ['email', 'about-you', ..., 'quote-summary'] in flow order
+// -> ['origin', 'commodities', ..., 'declaration'] in flow order
 ```
 
 The simulator derives scope with the real `makeScope` from `engine/index.js`, then threads the flow section by section. It emits each page whose section gate and page gate both pass, using the real `sectionGatePasses` and `pageGatePasses` from `flow/gates.js`. That reproduces the journey shape — a linear run through each open section, back to the hub, on to the next — as one flat ordered list.

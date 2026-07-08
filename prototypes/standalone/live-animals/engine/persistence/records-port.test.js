@@ -23,14 +23,16 @@ describe('records durable port', () => {
 
   it('Should make saveAnswers durable immediately, with no finalise', () => {
     const { journeyId } = records.create({ userId: 'user-A' })
-    records.saveAnswers(journeyId, { email: 'a@b.com' })
-    expect(records.load({ journeyId }).answers).toEqual({ email: 'a@b.com' })
+    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+    expect(records.load({ journeyId }).answers).toEqual({
+      countryOfOrigin: 'FR'
+    })
     expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)
   })
 
   it('Should freeze after finalise so a later saveAnswers throws', () => {
     const { journeyId } = records.create({ userId: 'user-A' })
-    records.saveAnswers(journeyId, { email: 'a@b.com' })
+    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
     records.finalise(journeyId)
     expect(() => records.saveAnswers(journeyId, { late: true })).toThrow(
       /is submitted — writes blocked/

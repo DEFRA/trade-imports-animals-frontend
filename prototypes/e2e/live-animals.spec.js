@@ -5,7 +5,6 @@ import {
   fillAboutYou,
   fillCoverType,
   fillDriving,
-  fillEmail,
   fillExtras,
   fillVehicle
 } from './journey.js'
@@ -1076,9 +1075,6 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The vendored car sections still gate readiness until their removal
     // increments — walk them with the shared journey helpers.
-    await task('Email')
-    await fillEmail(page)
-    await save()
     await task('About you and your vehicle')
     await fillAboutYou(page)
     await save()

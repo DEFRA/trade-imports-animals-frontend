@@ -32,12 +32,7 @@ describe('reachability / dead-end prover', () => {
 
   it('Should have teeth — reporting a dead end if an owning page becomes unreachable', () => {
     // Inject a reachability oracle that pretends the named-driver pages never open.
-    const pagesFor = () => [
-      'email',
-      'about-you',
-      'driving-history',
-      'cover-type'
-    ]
+    const pagesFor = () => ['about-you', 'driving-history', 'cover-type']
     const problems = proveReachability({ pagesFor })
     expect(problems.length).toBeGreaterThan(0)
     expect(problems.map((problem) => problem.obligation)).toContain('drivers')

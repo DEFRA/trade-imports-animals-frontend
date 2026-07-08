@@ -15,7 +15,7 @@ describe('submit is finalise', () => {
 
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', () => {
     configureReadyForQuote(() => true)
-    commit(buildRequest(), stubH(), { email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
     const committed = records.load({ journeyId }).answers
 
     const result = submitJourney(buildRequest(), stubH())
@@ -31,7 +31,7 @@ describe('submit is finalise', () => {
 
   it('Should be a no-op when not ready — journey stays in-progress', () => {
     configureReadyForQuote(() => false)
-    commit(buildRequest(), stubH(), { email: 'a@b.com' })
+    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = submitJourney(buildRequest(), stubH())
 

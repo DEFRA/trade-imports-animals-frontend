@@ -32,7 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as email from './features/email/controller.js'
 import * as aboutYou from './features/about-you/controller.js'
 import * as vehicle from './features/your-vehicle/controller.js'
 import * as driving from './features/driving-history/controller.js'
@@ -166,12 +165,6 @@ const cases = [
     // copied { name, address } (c-020) — the select side of the
     // unresolved c-001 variant pair.
     payload: { contactAddress: 'animal-and-plant-health-agency' }
-  },
-  {
-    id: 'email',
-    collects: email.meta.collects,
-    handler: postHandlerOf(email),
-    payload: { email: 'alex@example.com' }
   },
   {
     id: 'about-you',

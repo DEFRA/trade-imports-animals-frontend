@@ -18,12 +18,12 @@ describe('store clone/freeze contract', () => {
 
   it('Should return a deep clone from get — mutating it never mutates stored state', () => {
     const { journeyId } = store.create()
-    store.saveAnswers(journeyId, { email: 'a@b.com', nested: { x: 1 } })
+    store.saveAnswers(journeyId, { countryOfOrigin: 'FR', nested: { x: 1 } })
     const read = store.get(journeyId)
-    read.answers.email = 'HACKED'
+    read.answers.countryOfOrigin = 'HACKED'
     read.answers.nested.x = 999
     expect(store.get(journeyId).answers).toEqual({
-      email: 'a@b.com',
+      countryOfOrigin: 'FR',
       nested: { x: 1 }
     })
   })

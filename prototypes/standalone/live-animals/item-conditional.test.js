@@ -179,7 +179,6 @@ describe('item-relative completeness gates the quote', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',
       coverType: 'comprehensive',

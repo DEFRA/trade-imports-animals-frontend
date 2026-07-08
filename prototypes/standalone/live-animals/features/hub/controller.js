@@ -45,7 +45,6 @@ const GROUP_ROWS = [
     title: 'Contact address',
     hint: 'Who we should contact about this notification'
   },
-  { id: 'email', title: 'Email', hint: 'Where we send your quote' },
   {
     id: 'about-you-and-your-vehicle',
     title: 'About you and your vehicle',

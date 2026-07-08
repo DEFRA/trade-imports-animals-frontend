@@ -15,7 +15,6 @@ import { pathKey } from './lib/path.js'
 buildDispatch(dispatchPages)
 
 const answers = {
-  email: 'alex@example.com',
   fullName: 'Alex Driver',
   hadClaims: 'yes',
   claims: [

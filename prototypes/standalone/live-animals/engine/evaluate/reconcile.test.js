@@ -6,7 +6,7 @@ describe('#reconcile', () => {
   it('Should place root obligations in scope and gate the rest', () => {
     const { inScope } = reconcile({})
     expect(inScope.has('fullName')).toBe(true)
-    expect(inScope.has('email')).toBe(true)
+    expect(inScope.has('countryOfOrigin')).toBe(true)
     expect(inScope.has('claims')).toBe(false)
     expect(inScope.has('excessAmount')).toBe(false)
     expect(inScope.has('driverName')).toBe(false)

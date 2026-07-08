@@ -13,14 +13,14 @@ describe('resume by user (cookieless)', () => {
 
   it('Should recover a saved journey with no cookie, rebuild scope, and re-pin it', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
-    records.saveAnswers(journeyId, { email: 'a@b.com' })
+    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
     const h = recordingH()
     const result = resume({ state: {}, headers: {} }, h)
 
     expect(result.journey.journeyId).toBe(journeyId)
-    expect(result.answers).toEqual({ email: 'a@b.com' })
-    expect(result.scope.has('email')).toBe(true)
+    expect(result.answers).toEqual({ countryOfOrigin: 'FR' })
+    expect(result.scope.has('countryOfOrigin')).toBe(true)
     expect(h.calls).toContainEqual([JOURNEY_COOKIE, journeyId])
   })
 

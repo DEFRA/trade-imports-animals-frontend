@@ -85,13 +85,6 @@ describe('#handler hub copy', () => {
       tag: { text: 'Not started', classes: 'govuk-tag--grey' }
     })
   })
-
-  it('Should give the Email row a hint that does not echo its title', () => {
-    const emailRow = rowByTitle(renderHub(), 'Email')
-
-    expect(emailRow.hint.text).toBe('Where we send your quote')
-    expect(emailRow.hint.text).not.toBe(emailRow.title.text)
-  })
 })
 
 describe('#addonCopy', () => {

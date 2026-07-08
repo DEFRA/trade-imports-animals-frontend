@@ -107,7 +107,6 @@ describe('dispatch + flow', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',
       claims: [{ claimType: 'accident', claimAmount: '500' }],
@@ -118,7 +117,6 @@ describe('dispatch + flow', () => {
     expect(readyForQuote(complete, inScope)).toBe(true)
 
     const incomplete = {
-      email: 'a@b.co',
       fullName: 'Alex',
       hadClaims: 'yes',
       coverType: 'comprehensive'
