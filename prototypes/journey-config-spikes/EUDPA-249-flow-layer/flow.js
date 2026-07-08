@@ -44,7 +44,7 @@ import {
   species,
   numberOfAnimals,
   numberOfPackages
-} from '../../model-spikes/obligations-v4-model/obligations.js'
+} from './obligations/obligations.js'
 
 import { certifiedForOptionsLookup } from './domain.js'
 

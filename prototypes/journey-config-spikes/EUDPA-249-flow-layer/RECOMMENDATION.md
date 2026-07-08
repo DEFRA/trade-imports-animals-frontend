@@ -2,8 +2,10 @@
 
 _Spike branch:_ `spike/EUDPA-249-flow-layer` \
 _Folder:_ `prototypes/journey-config-spikes/EUDPA-249-flow-layer/` \
-_Reads from:_ `prototypes/model-spikes/obligations-v4-model/` (EUDPA-277
-outputs — obligations manifest + evaluator)
+_Reads from:_ `./obligations/` — obligations manifest + evaluator +
+helpers forked from EUDPA-277's
+[`../../model-spikes/obligations-v4-model/`](../../model-spikes/obligations-v4-model/)
+so the spike is self-contained. See §Obligations fork below.
 
 ## Recommendation
 
@@ -392,7 +394,31 @@ output so a change to flow / domain / runtime that alters what the
 stakeholder sees in the browser also alters the dump — and the
 snapshot fails until the change is reconciled.
 
+## Obligations fork
+
+At the start of the browsable-prototype workstream we forked the
+EUDPA-277 obligations model files (`obligations.js`, `evaluator.js`,
+`helpers.js`, plus their tests) from
+`prototypes/model-spikes/obligations-v4-model/` into
+[`./obligations/`](./obligations/) so this spike stands alone. The
+parent folder is unchanged and is kept as the historical EUDPA-277
+output; any future evolution of the V4 obligations happens inside our
+fork. The parent's `obligations.md`, `GAPS.md`, and `RECOMMENDATION.md`
+are not forked — they document EUDPA-277 as it was at close and are
+referenced by path in the References section below.
+
 ## Files
+
+### Layer 1 — Obligations (forked from EUDPA-277)
+
+| File                                                                           | Purpose                                              |
+| :----------------------------------------------------------------------------- | :--------------------------------------------------- |
+| [`obligations/obligations.js`](./obligations/obligations.js)                   | V4 obligations manifest (identity + `applyTo` scope) |
+| [`obligations/evaluator.js`](./obligations/evaluator.js)                       | `createObligationEvaluator({ obligations })`         |
+| [`obligations/helpers.js`](./obligations/helpers.js)                           | `allowListed` / `branchedGate` / etc.                |
+| [`obligations/evaluator.test.js`](./obligations/evaluator.test.js)             | Evaluator integration tests                          |
+| [`obligations/evaluator.units.test.js`](./obligations/evaluator.units.test.js) | Evaluator per-function isolation tests               |
+| [`obligations/helpers.test.js`](./obligations/helpers.test.js)                 | Helper tests                                         |
 
 ### Logical model (Layers 1.25 + 2 + runtime)
 

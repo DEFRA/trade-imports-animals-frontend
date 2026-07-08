@@ -11,7 +11,7 @@
 import { changeLinkFor, statusOfJourney } from './contract.js'
 import { readState } from './state.js'
 import { forObligation } from './presentation.js'
-import { obligations as v4Obligations } from '../../../model-spikes/obligations-v4-model/obligations.js'
+import { obligations as v4Obligations } from '../obligations/obligations.js'
 import { domain } from '../domain.js'
 
 const BASE = '/prototype/eudpa-249'

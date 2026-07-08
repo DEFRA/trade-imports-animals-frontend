@@ -37,7 +37,7 @@ import {
   numberOfAnimals,
   numberOfPackages,
   cph
-} from '../../../model-spikes/obligations-v4-model/obligations.js'
+} from '../obligations/obligations.js'
 import { certifiedForOptionsLookup } from '../domain.js'
 
 export const presentation = new Map([

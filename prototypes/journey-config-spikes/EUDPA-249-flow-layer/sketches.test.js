@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { reasonForImport } from '../../model-spikes/obligations-v4-model/obligations.js'
+import { reasonForImport } from './obligations/obligations.js'
 
 import { flow } from './flow.js'
 import { pageSchema, optionListsForPage } from './controller-sketch.js'

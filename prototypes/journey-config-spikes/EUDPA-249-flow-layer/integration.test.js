@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest'
 
-import { createObligationEvaluator } from '../../model-spikes/obligations-v4-model/evaluator.js'
+import { createObligationEvaluator } from './obligations/evaluator.js'
 import {
   obligations as v4Obligations,
   reasonForImport,
@@ -33,7 +33,7 @@ import {
   transitedCountries,
   internalReferenceNumber,
   countryOfOrigin
-} from '../../model-spikes/obligations-v4-model/obligations.js'
+} from './obligations/obligations.js'
 
 import { domain, certifiedForOptionsLookup } from './domain.js'
 import { flow } from './flow.js'

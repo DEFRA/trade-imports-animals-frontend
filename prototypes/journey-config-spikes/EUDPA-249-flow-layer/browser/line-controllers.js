@@ -16,7 +16,7 @@ import {
   species,
   numberOfAnimals,
   numberOfPackages
-} from '../../../model-spikes/obligations-v4-model/obligations.js'
+} from '../obligations/obligations.js'
 import { domain } from '../domain.js'
 import { readState, addCommodityLine, deleteCommodityLine } from './state.js'
 

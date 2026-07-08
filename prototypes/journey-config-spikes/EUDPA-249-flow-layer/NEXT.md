@@ -11,11 +11,17 @@ you can execute each.
 
 - **Branch:** `spike/EUDPA-249-flow-layer`, pushed to
   `DEFRA/trade-imports-animals-frontend`.
-- **Two commits sit on top of the flow-layer PLAN commit (`67fed20`):**
+- **Commits** on top of the flow-layer PLAN commit (`67fed20`):
   - `1191ce3` — `feat(EUDPA-249): browsable V4 journey on the three-layer model`
   - `3c1b066` — `fix(EUDPA-249): auth-off default in dev + Vision path + prototype docs`
-- **Tests:** 164 spike tests + 632 existing frontend tests, all green.
-  Run `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
+  - `f47b7c3` — `docs(EUDPA-249): hand-off doc — eight to-dos incl. folder restructure`
+  - (plus the step-1 inline commit — will be here once pushed)
+- **Step 1 status:** DONE. Obligations spike forked into
+  `./obligations/`; `grep -rn 'obligations-v4-model'` returns only
+  historical doc pointers.
+- **Tests:** 345 spike tests (164 spike + 181 forked obligation tests)
+  - 632 existing frontend tests, all green.
+    Run `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
 - **Browsable demo:** `npm run dev` (auth defaults off in dev now),
   then http://localhost:3000/prototype/eudpa-249/start.
 - **The user reviews before pushing.** Local commits are fine, but do
@@ -68,36 +74,22 @@ only** — not a merge target, cherry-pick fragments as needed.
 
 ## The eight to-dos (in recommended order)
 
-### 1. Inline the obligations spike into our directory structure (was to-do 6)
+### 1. Inline the obligations spike into our directory structure ✅ DONE
 
-**Why first:** it's an enabling move. Everything else touches
-`obligations.js`; if we're going to fork it, the fork should predate
-the changes. Cross-folder imports become local imports and future work
-can iterate on the manifest freely.
+Forked `obligations.js`, `evaluator.js`, `helpers.js`, and their tests
+(`evaluator.test.js`, `evaluator.units.test.js`, `helpers.test.js`)
+from `prototypes/model-spikes/obligations-v4-model/` into
+[`./obligations/`](./obligations/). The parent folder is unchanged; the
+fork is now our source of truth. Documented in RECOMMENDATION.md
+§Obligations fork.
 
-**Approach:** copy
-`prototypes/model-spikes/obligations-v4-model/{obligations,evaluator,helpers}.js`
-into `prototypes/journey-config-spikes/EUDPA-249-flow-layer/obligations/`.
-Update every import inside our spike to point at the local copy. Leave
-the parent folder alone (it's the EUDPA-277 output). Commit as
-`chore(EUDPA-249): inline obligations model for local iteration`.
+**Verification passed:** 345 tests green
+(spike + forked-obligations); 632 existing frontend tests unaffected.
+`grep -rn "obligations-v4-model"` returns only doc pointers.
 
-**Design call to make first:** fork vs import-with-shim.
-
-- **Fork** (recommended) — full copy, full independence. Cost is
-  divergence from any future EUDPA-277 amendments; benefit is freedom
-  to iterate as we build to-do 5.
-- **Shim** — leave parent in place, add a local re-export module
-  (`obligations/index.js` re-exports from parent). Trivial to swap to
-  a fork later. Zero divergence risk today. Middle ground.
-
-The EUDPA-277 spike is documented as closed in its RECOMMENDATION.md,
-so fork is safe. Only reason to prefer shim is if the team plans to
-extend the parent manifest as part of a wider workstream.
-
-**Verification:** all 164 tests still green after the move; run
-`grep -rn "obligations-v4-model" prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
-— zero hits confirms the migration is complete.
+**Not forked:** `obligations.md` (150-page canonical doc), `GAPS.md`,
+`RECOMMENDATION.md`, `TODO.md` — all historical EUDPA-277 records;
+they stay in the parent folder and are referenced by path.
 
 ### 2. Restructure the folder layout for clarity and discoverability (NEW)
 

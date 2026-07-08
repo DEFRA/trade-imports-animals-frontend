@@ -4,7 +4,7 @@ import {
   reasonForImport,
   transporterType,
   countryOfOrigin
-} from '../../../model-spikes/obligations-v4-model/obligations.js'
+} from '../obligations/obligations.js'
 
 import { evaluateState, findPage } from './contract.js'
 import { buildFieldDescriptors } from './build-field-descriptors.js'
@@ -74,8 +74,7 @@ describe('buildFieldDescriptors', () => {
   })
 
   it('picks checkboxes for transited-countries when in scope', async () => {
-    const { meansOfTransport } =
-      await import('../../../model-spikes/obligations-v4-model/obligations.js')
+    const { meansOfTransport } = await import('../obligations/obligations.js')
     const railwayState = evaluateState({
       [meansOfTransport.id]: 'railway'
     })

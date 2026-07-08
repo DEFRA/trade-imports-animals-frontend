@@ -19,7 +19,7 @@
  * closure but their reachability is documented via metadata.
  */
 
-import { obligations } from '../../model-spikes/obligations-v4-model/obligations.js'
+import { obligations } from './obligations/obligations.js'
 import { domain, certifiedForOptionsLookup } from './domain.js'
 
 const DOMAIN_EXTRA_OBLIGATIONS = [certifiedForOptionsLookup]

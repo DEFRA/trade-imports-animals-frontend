@@ -41,7 +41,7 @@ import {
   commodityCode,
   numberOfPackages,
   cph
-} from '../../model-spikes/obligations-v4-model/obligations.js'
+} from './obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
 // Reason constants — one per distinct failure code. Exported so tests

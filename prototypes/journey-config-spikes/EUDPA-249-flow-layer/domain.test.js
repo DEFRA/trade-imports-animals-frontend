@@ -15,7 +15,7 @@ import {
   arrivalDateAtPort,
   transitedCountries,
   animalsCertifiedFor
-} from '../../model-spikes/obligations-v4-model/obligations.js'
+} from './obligations/obligations.js'
 
 import {
   domain,

@@ -10,8 +10,8 @@
  * browser layer wants to know about the model should be exposed here.
  */
 
-import { createObligationEvaluator } from '../../../model-spikes/obligations-v4-model/evaluator.js'
-import { obligations as v4Obligations } from '../../../model-spikes/obligations-v4-model/obligations.js'
+import { createObligationEvaluator } from '../obligations/evaluator.js'
+import { obligations as v4Obligations } from '../obligations/obligations.js'
 
 import {
   flow,

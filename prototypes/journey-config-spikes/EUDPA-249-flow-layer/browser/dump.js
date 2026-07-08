@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { obligations as v4Obligations } from '../../../model-spikes/obligations-v4-model/obligations.js'
+import { obligations as v4Obligations } from '../obligations/obligations.js'
 import { certifiedForOptionsLookup } from '../domain.js'
 import {
   evaluateState,
