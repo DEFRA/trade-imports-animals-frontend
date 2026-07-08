@@ -112,8 +112,8 @@ Two edges worth knowing:
 - **Started is deliberately weaker than satisfied.** A collection counts as
   started once it holds at least one entry, even an incomplete one. Using
   `satisfied` for the started check would misreport a section whose only
-  obligation is a partially filled collection (for example the named-driver
-  section, which collects just `drivers`) as Not started.
+  obligation is a partially filled collection (for example the commodities
+  section, which collects just `commodityLines`) as Not started.
 - **A section owing nothing required is vacuously Fulfilled.** If the in-scope
   ids include no `required` or `requiredAtLeastOne` obligation, the status is
   `fulfilled` without checking anything else.
@@ -139,24 +139,32 @@ functions:
   item is satisfied. Item-relative gates resolve against this entry, and a
   nested collection defers back to `collectionComplete`.
 
-### Worked example: the windscreen claim
+### Worked example: the commodity package count
 
-The nested driver-claims collection
-(`features/named-driver/obligations.js`) has three sub-obligations per
-entry: `claimType` (required), `claimAmount` (optional) and
-`windscreenProvider` (required, but activated by the sibling
-`claimType === 'windscreen'`).
+The `commodityLines` collection (`features/commodities/obligations.js`) has an
+item-conditional sub-obligation: `numberOfPackages` is owed only when the
+sibling `commoditySelection` is one of the package-count commodities
+(`activatedBy: { obligation: commoditySelection, includes: PACKAGE_COUNT_COMMODITIES }`).
 
-- An **accident** claim is complete once `claimType` is answered. The provider
-  gate does not fire for this entry, so the provider is not owed.
-- A **windscreen** claim also owes `windscreenProvider`. The entry stays
-  incomplete — and the section In progress — until the provider is named.
+- A **fish** line (not on the list) never owes a package count. The gate does
+  not fire for that entry, so a stored `numberOfPackages` is out of scope and
+  gets wiped at its exact path.
+- A **cattle** line (on the list) has `numberOfPackages` in scope. It is
+  optional, so the line is complete with or without it.
 
 `entryComplete` resolves the gate with the same sibling-identity check that
 `reconcile`'s predicate resolution uses, so completeness and scope can never
 disagree about whether a sub-obligation is owed. A sub-obligation gated on a
 non-sibling cannot be resolved from inside the entry, so it is treated as owed
 — conservative, never falsely complete.
+
+`numberOfPackages` is the only live item-conditional obligation, and it is
+INCLUDES-gated and OPTIONAL. An item-conditional field that is EQUALS-gated, or
+one that is REQUIRED (so its gate feeds completeness), or one nested at depth 2,
+is fully engine-supported but has no live carrier since the car windscreen
+claim (`drivers[i].claims[j].windscreenProvider`) was removed with the
+named-driver section — see [limits.md](limits.md). M2's `animalIdentifiers`
+restores a live depth-2 / required-sibling carrier.
 
 ## store.js is a compat shim
 

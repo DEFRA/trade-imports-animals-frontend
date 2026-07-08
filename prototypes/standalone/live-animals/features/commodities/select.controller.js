@@ -110,7 +110,7 @@ const postAdd = (request, h) => {
   if (errors) return render(h, entry, errors)
 
   // MINTS the index (identity), then hands over to the details sub-page —
-  // the multi-page entry pattern (see features/named-driver/).
+  // the multi-page entry pattern (see features/documents/ for the same shape).
   const index = state.appendEntry(request, h, 'commodityLines', {
     ...entry,
     numberOfPackages: '',

@@ -97,8 +97,9 @@ therefore self-heals: a stored obligation that has since left scope is
 simply not in scope on load, with nothing stale to reconcile away.
 
 This is the headline strength of storing nothing derived, and it is now
-a test: `engine/resume-self-heal.test.js` saves answers containing
-out-of-scope drivers data and asserts the resumed scope excludes it.
+a test: `engine/resume-self-heal.test.js` saves answers containing an
+out-of-scope `regionOfOriginCode` (its requirement answer is `no`) and
+asserts the resumed scope excludes it.
 
 ## No per-key delete, anywhere
 

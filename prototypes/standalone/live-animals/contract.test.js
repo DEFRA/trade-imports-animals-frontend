@@ -32,8 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as driversHub from './features/named-driver/drivers-hub.controller.js'
-import * as driverEntry from './features/named-driver/driver-entry.controller.js'
 import * as modDesc from './features/modifications/describe.controller.js'
 import * as modVal from './features/modifications/value.controller.js'
 import * as ncd from './features/protected-ncd/years.controller.js'
@@ -308,21 +306,6 @@ describe('controller <-> model commit contract', () => {
     }
     expect(new Set(committed)).toEqual(
       new Set(committableCollects(addresses.meta.collects))
-    )
-  })
-
-  // The HUB declares `collects: ['drivers']`, but the identity-minting write
-  // happens in the driver ENTRY sub-page's append — same shape as
-  // commodity lines.
-  it('Should commit drivers via the entry (append) handler it declares', () => {
-    expect(driversHub.meta.collects).toEqual(['drivers'])
-    const postAdd = postHandlerEndingWith(driverEntry, 'named-driver/add')
-    const result = drive(postAdd, {
-      seed: { addons: ['named-driver'] }, // keeps the drivers collection in scope
-      payload: { driverName: 'Sam Passenger', relationship: 'spouse' }
-    })
-    expect(new Set(committedIds(result))).toEqual(
-      new Set(committableCollects(driversHub.meta.collects))
     )
   })
 })

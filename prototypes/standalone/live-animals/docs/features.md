@@ -55,13 +55,13 @@ failure that surfaces as a broken hub, not an error. Each `page.js`
 carries a one-line comment pointing here; this section is the full
 story.
 
-There are 12 `page.js` files. A feature with two flow pages exports both
+There are 14 `page.js` files. A feature with two flow pages exports both
 identities from one leaf (`features/modifications/page.js` exports
 `modificationsDescribePage` and `modificationsValuePage`). A feature
 with sub-pages exports only its flow page:
-`features/named-driver/page.js` exports the drivers hub alone, because
-the driver detail, entry and claim sub-pages are reached from that hub
-and never listed in `flow.js`.
+`features/documents/page.js` exports the documents hub alone, because
+the add-a-document sub-page is reached from that hub and never listed in
+`flow.js`.
 
 ## 3. The standard collecting controller
 
@@ -185,31 +185,34 @@ widget for "a list of things", so each loop hub owns its rows and copy:
 
 - `features/commodities/list.controller.js` — top-level commodity lines
 - `features/documents/list.controller.js` — top-level documents
-- `features/named-driver/drivers-hub.controller.js` — drivers (the
-  outer loop)
-- `features/named-driver/driver-detail.controller.js` — one driver's
-  nested claims sub-hub (a loop inside a loop)
 
-All of them compose over the same facts library:
+Both compose over the same facts library:
 `state.collectionView(answers, path)` returns
 `[{ index, path, entry, complete }]` and nothing presentational. The
-path sets the depth: `['documents']`, `['drivers']`,
-`['drivers', driverIndex, 'claims']`. The controller turns those facts
-into its own rows, action links and empty-state copy.
+path sets the depth: `['commodityLines']`, `['documents']`. The
+controller turns those facts into its own rows, action links and
+empty-state copy. The engine also supports a loop inside a loop — a
+nested claims sub-hub keyed on a `['drivers', driverIndex, 'claims']`
+path — but that outer/inner-loop machinery went with the car
+named-driver section (inc-025); there is no live nested loop until M2's
+`animalIdentifiers` (see [limits.md](limits.md)).
 
-Shared form logic without a shared renderer:
-`features/named-driver/claim-entry.js` exports `claimEntryModel`,
-`claimFromPayload` and `validateClaim`, keeping the view-model, payload
-parsing and validation seam separate from rendering — the consuming
-controller still chooses its template and calls `h.view` itself.
+Shared form logic without a shared renderer was demonstrated by the car
+claim form's `claim-entry.js` (view-model, payload parsing and
+validation kept in a feature-local module, separate from rendering — the
+controller still chose its template and called `h.view` itself). That
+module was removed with named-driver; the pattern stays available for
+any future form that needs the same seam.
 
 On an add sub-page, a valid POST appends and thereby **mints** the
-entry's identity (collection, index). Until that POST the draft lives
-only in the payload — never a half-created entry in the store. Nested
-writes must validate the path index first:
-`driver-claim.controller.js`'s `validDriver` redirects on a malformed
-or out-of-range `{driver}` param, because the generic append primitive
-would otherwise fabricate a phantom driver.
+entry's identity (collection, index) — `features/commodities/select.controller.js`
+does this before handing to the details sub-page. Until that POST the
+draft lives only in the payload — never a half-created entry in the
+store. A nested add (writing under a `{driver}`-style parent index) must
+validate the parent index first, or the generic append primitive would
+fabricate a phantom parent; that guard (`driver-claim.controller.js`'s
+`validDriver`) went with named-driver and has no live carrier until a
+depth-2 collection returns.
 
 ### Endings
 

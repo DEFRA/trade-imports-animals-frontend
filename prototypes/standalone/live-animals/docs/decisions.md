@@ -17,7 +17,7 @@ passes stress-tested the result before each verdict landed.
 v1 made a config engine the spine: a UUID-keyed obligation catalogue plus a
 `flow.json` tree that owned every page's copy, rendered through one generic
 template. In practice the generic renderer failed on every page that
-mattered. The claims loop, the check-your-answers rows, the quote summary
+mattered. The commodities loop, the check-your-answers rows, the quote summary
 and the hub all dropped out of config into hand-written bypasses. The
 clearest proof: a loop's add form has no id yet, so a slot-expanding
 renderer cannot render it at all. The config engine paid off only on the
@@ -101,14 +101,17 @@ helper accepts a template name or field schema and renders it.
 ### Why
 
 The moment a shared helper turns facts into govuk rows, it has become the
-rejected generic engine under a new name. The nested-collections work
-(drivers with their own claims, depth 2) was the deliberate stress test:
-the loop-inside-a-loop is exactly where the pressure to share a renderer
+rejected generic engine under a new name. The nested-collections work (the
+car drivers each owning their own claims, depth 2) was the deliberate stress
+test: the loop-inside-a-loop is exactly where the pressure to share a renderer
 peaks. The line held — but it held by **accepting per-loop bespoke
-duplication**. The commodities and documents lists, the drivers hub and the driver-claims
-sub-hub each compose their own rows and copy over the same facts-only
-primitive. A shared row-builder was considered and rejected: it is the
-rejected design re-emerging.
+duplication**, each loop composing its own rows and copy over the same
+facts-only primitive. That depth-2 carrier was removed with the named-driver
+section (inc-025); the engine still supports the loop-inside-a-loop and M2's
+`animalIdentifiers` restores a live one (see [limits.md](limits.md)). The
+surviving commodities and documents lists hold the same line at depth 1. A
+shared row-builder was considered and rejected: it is the rejected design
+re-emerging.
 
 ### Accepted costs
 

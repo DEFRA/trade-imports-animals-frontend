@@ -9,9 +9,22 @@ The spike ends with a go verdict, but the verdict is only trustworthy if its edg
 - the referenced obligation is a sibling inside the same collection item — resolve within that item's frame
 - anything else — resolve as a top-level answer
 
-There is no third case. A nested obligation gated on a field of its enclosing frame — for example `drivers[i].claims[j].excess` depending on `drivers[i].relationship` — has no representation in the vocabulary. Supporting it would force the first genuine growth of the model: an explicit frame-hop reference.
+There is no third case. A nested obligation gated on a field of its enclosing frame — for example a future `commodityLines[i].animalIdentifiers[j].x` depending on `commodityLines[i].y` — has no representation in the vocabulary. Supporting it would force the first genuine growth of the model: an explicit frame-hop reference (the inc-030 cross-frame-conditionality model-extension gate).
 
-Conditionality is proven for indexed, same-frame and depth-2 cases. Cross-frame is the precise edge that is not proven. See [obligation-model.md](obligation-model.md) for what the vocabulary does cover.
+Conditionality is proven for indexed and same-frame cases against live carriers. Depth-2 and equals-gated / required-sibling item-conditionality are engine-supported but no longer have a live carrier — see [Depth-2 and equals-gated conditionality have no live carrier](#depth-2-and-equals-gated-conditionality-have-no-live-carrier) below. Cross-frame is the precise edge that is not modelled at all. See [obligation-model.md](obligation-model.md) for what the vocabulary does cover.
+
+## Depth-2 and equals-gated conditionality have no live carrier
+
+The car named-driver section was the last live carrier for a family of behaviours the engine still fully supports. Its removal (inc-025) left them dormant — the engine SOURCE is unchanged; only the car-domain tests and fixtures that exercised them were removed, and the coverage was honestly shrunk rather than force-re-pointed.
+
+Behaviours now engine-supported but without a live instance:
+
+- **Depth-2 nesting.** A collection item holding another collection (`drivers[i].claims[j]`). The surviving `commodityLines` is depth-1. M2's `animalIdentifiers` restores a depth-2 carrier.
+- **Equals-gated item-conditionality.** An item field owed on `sibling === value`. The surviving item-conditional (`commodityLines[i].numberOfPackages`) is INCLUDES-gated, not equals-gated.
+- **Required-sibling item-conditionality feeding completeness.** `windscreenProvider` was REQUIRED, so its gate fed `entryComplete` and could hold a section In progress / lock `readyForQuote`. `numberOfPackages` is OPTIONAL, so no live item-conditional field gates completeness.
+- **Path-addressed store ops at depth.** `appendEntryAt` / `updateEntryAt` / `removeEntryAt` on a `['drivers', i, 'claims']` path, and reconcile-driven field-level destruction inside a nested item. Live collections reach these only through the depth-1 `appendEntry` / `updateEntry` / `removeEntry` wrappers (see [engine/write.js](../engine/write.js)), covered via the commodities and documents append contracts in [contract.test.js](../contract.test.js).
+
+The synthetic-obligation tests in [nested.test.js](../nested.test.js) and [item-conditional.test.js](../item-conditional.test.js) keep the pure engine guarantees (nested-collection completeness, sibling-identity gate resolution) pinned without a car carrier. inc-029 re-points the root model / write-through fixtures at the live domain; M2 (inc-030/031) restores live depth-2 and required-sibling carriers.
 
 ## Two identity vocabularies, bridged not unified
 
@@ -30,9 +43,9 @@ The consequence: add a new sub-field to a collection item and it silently inheri
 
 ## Edit-in-place has no UI route
 
-`updateEntryAt` is a tested engine primitive (pinned in [engine/write-through-per-commit.test.js](../engine/write-through-per-commit.test.js) and [store-ops.test.js](../store-ops.test.js)), but no feature controller calls it. In the browser, collections change through add and remove only.
+`updateEntry` (and its path-addressed `updateEntryAt` primitive) is engine source, but no feature controller calls the update path — in the browser, collections change through add and remove only. The primitive lost its direct test when the car `store-ops.test.js` was removed with the named-driver section; it is re-pointed at the live domain in inc-029 (see [Depth-2 and equals-gated conditionality have no live carrier](#depth-2-and-equals-gated-conditionality-have-no-live-carrier)).
 
-Check your answers is deliberately shallow at depth: it composes one row per collection entry (Commodity N, Document N), but shows no per-entry field detail — changing an entry means going back through its loop hub. So wipes at depth (for example a driver claim changing away from windscreen) are proven at the model layer, not through a browser edit.
+Check your answers is deliberately shallow at depth: it composes one row per collection entry (Commodity N, Document N), but shows no per-entry field detail — changing an entry means going back through its loop hub. Field-level wipe inside a collection item is proven at the model layer through `commodityLines[i].numberOfPackages` (see [item-conditional.test.js](../item-conditional.test.js)); the depth-2 case (a driver claim leaving windscreen) lost its carrier with the named-driver section.
 
 ## Derived gates bake in any-in-scope semantics
 
@@ -63,9 +76,3 @@ See [persistence.md](persistence.md) for the full port contracts.
 ## Review coverage was JavaScript only
 
 The best-practices sweep that fed the cleanup covered `.js` files only. The `.njk` templates and the route wiring never got a sweep. Template-level GDS component usage, and copy correctness beyond the hub fix that was found by other means, are unexamined.
-
-## The claim form's logic lives beside its controller
-
-A driver's nested claim form imports a view-model builder, payload parser and validators from a sibling module ([features/named-driver/driver-claim.controller.js](../features/named-driver/driver-claim.controller.js) uses `features/named-driver/claim-entry.js` and its `claim-entry.njk` template — the form the removed top-level claims feature used to own).
-
-The shared pieces are logic and a value domain, not a renderer — the controller still picks its template and calls `h.view` itself. If a second consumer ever appears and the forms diverge, split them; do not grow the shared code into a renderer to avoid the split. See [features.md](features.md).

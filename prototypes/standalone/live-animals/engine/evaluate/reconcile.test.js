@@ -9,7 +9,6 @@ describe('#reconcile', () => {
     expect(inScope.has('countryOfOrigin')).toBe(true)
     expect(inScope.has('regionOfOriginCode')).toBe(false)
     expect(inScope.has('commercialTransporter')).toBe(false)
-    expect(inScope.has('driverName')).toBe(false)
   })
 
   it('Should activate the matching transporter spoke for the chosen type only', () => {
@@ -35,19 +34,6 @@ describe('#reconcile', () => {
       }
     }
     expect(reconcile(answers).wiped).toContain('commercialTransporter')
-  })
-
-  it('Should activate the drivers collection on selection and wipe it on deselect', () => {
-    const on = reconcile({ addons: ['named-driver'] }).inScope
-    expect(on.has('drivers')).toBe(true)
-    expect(on.has('modDescription')).toBe(false)
-
-    const off = reconcile({
-      addons: [],
-      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
-    })
-    expect(off.inScope.has('drivers')).toBe(false)
-    expect(off.wiped).toContain('drivers')
   })
 
   it('Should reveal and wipe regionOfOriginCode with the requirement answer', () => {

@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { reconcile } from './engine/evaluate/reconcile.js'
-import { FULFILLED, IN_PROGRESS, NOT_STARTED, NA } from './engine/status.js'
+import { FULFILLED, IN_PROGRESS } from './engine/status.js'
 import { readyForQuote, sectionStatus } from './flow/section-status.js'
 import { sections } from './flow/flow.js'
 import { walkObligations } from './registry.js'
@@ -35,29 +35,6 @@ describe('indexed obligations are first-class', () => {
     expect(inScope.has('commodityLines[0].numberOfAnimalsQuantity')).toBe(true)
     expect(inScope.has('commodityLines[1].commoditySelection')).toBe(true)
     expect(inScope.has('commodityLines[1].numberOfAnimalsQuantity')).toBe(true)
-  })
-
-  it('Should not scope any driver sub-obligation when the collection is out of scope', () => {
-    const { inScope } = reconcile({
-      addons: [],
-      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
-    })
-    expect(inScope.has('drivers')).toBe(false)
-    expect(inScope.has('drivers[0].driverName')).toBe(false)
-  })
-
-  it('Should wipe the whole collection as a single root path when it leaves scope', () => {
-    const { wiped } = reconcile({
-      addons: [],
-      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
-    })
-    const wipedKeys = wiped.map((path) =>
-      Array.isArray(path) ? path.join('.') : path
-    )
-    expect(wipedKeys).toContain('drivers')
-    expect(wiped.some((path) => Array.isArray(path) && path.length > 1)).toBe(
-      false
-    )
   })
 
   it('Should treat a commodity line with a blank required sub-field as incomplete (per-item completeness)', () => {
@@ -158,76 +135,5 @@ describe('indexed obligations are first-class', () => {
         reconcile(withCompleteLine).inScope
       )
     ).toBe(FULFILLED)
-  })
-})
-
-/**
- * The named-driver section collects exactly one obligation — the `drivers`
- * collection — so nothing else can carry the section's In Progress state. A
- * partially-filled collection MUST read In Progress, never Not Started:
- * showing "Not started" on the hub while several drivers are already entered
- * is a status lie the journey cannot tolerate.
- */
-describe('a section whose only obligation is a collection', () => {
-  beforeAll(() => buildDispatch(dispatchPages))
-
-  const namedDriverSection = sections.find(
-    (section) => section.id === 'named-driver'
-  )
-  const statusFor = (answers) =>
-    sectionStatus(namedDriverSection, answers, reconcile(answers).inScope)
-
-  it('Should be In Progress — not Not Started — while the collection is partially filled', () => {
-    const answers = {
-      addons: ['named-driver'],
-      drivers: [{ driverName: 'Priya Raman' }]
-    }
-    expect(statusFor(answers)).toBe(IN_PROGRESS)
-    expect(statusFor(answers)).not.toBe(NOT_STARTED)
-  })
-
-  it('Should be In Progress when a nested claim, deep in the tree, is the only gap', () => {
-    const answers = {
-      addons: ['named-driver'],
-      drivers: [
-        {
-          driverName: 'Marcus Webb',
-          relationship: 'child',
-          claims: [{ claimType: 'windscreen', claimAmount: '400' }]
-        }
-      ]
-    }
-    expect(statusFor(answers)).toBe(IN_PROGRESS)
-  })
-
-  it('Should be Not Started only when the collection is genuinely empty', () => {
-    expect(statusFor({ addons: ['named-driver'], drivers: [] })).toBe(
-      NOT_STARTED
-    )
-  })
-
-  it('Should be Fulfilled when every entry — and every nested entry — is complete', () => {
-    const answers = {
-      addons: ['named-driver'],
-      drivers: [
-        { driverName: 'Jordan Fielding', relationship: 'spouse', claims: [] },
-        {
-          driverName: 'Priya Raman',
-          relationship: 'named',
-          claims: [
-            {
-              claimType: 'windscreen',
-              claimAmount: '300',
-              windscreenProvider: 'autoglass'
-            }
-          ]
-        }
-      ]
-    }
-    expect(statusFor(answers)).toBe(FULFILLED)
-  })
-
-  it('Should be Not Applicable when the named-driver add-on is not selected', () => {
-    expect(statusFor({ addons: [], drivers: [] })).toBe(NA)
   })
 })

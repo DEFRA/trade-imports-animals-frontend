@@ -98,8 +98,8 @@ its whole subtree. So `reconcile` deduplicates the wiped list: a path is
 dropped when another wiped path is a strict prefix of it. The prefix test is
 `isStrictPathPrefix` in `lib/path.js`, which compares path arrays segment by
 segment. It is never a string prefix — `'documents'` must not match a
-sibling key like `documentsExtra`, and `drivers[1]` must not match
-`drivers[10]`.
+sibling key like `documentsExtra`, and `commodityLines[1]` must not match
+`commodityLines[10]`.
 
 **Delete ordering.** `destroyWiped` (`lib/path.js`) parses the keys and
 sorts them with `wipeOrder` before deleting, because `deleteAt` splices

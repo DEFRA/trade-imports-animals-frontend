@@ -4,22 +4,16 @@ import { buildDispatch } from './flow/dispatch.js'
 import { readyForQuote } from './flow/section-status.js'
 import { store } from './engine/store.js'
 import { configureReadyForQuote } from './engine/read.js'
-import {
-  driveHandler,
-  postHandlerOf,
-  postHandlerEndingWith
-} from './engine/test-support.js'
+import { driveHandler, postHandlerOf } from './engine/test-support.js'
 import { dispatchPages } from './features/index.js'
 
 import * as modVal from './features/modifications/value.controller.js'
-import * as driverClaim from './features/named-driver/driver-claim.controller.js'
 
 /**
  * Handlers must persist the validator's cleaned value, not the raw payload;
  * the error path must echo the RAW input and commit nothing.
  */
 
-const findPost = postHandlerEndingWith
 const drive = driveHandler
 
 describe('T1 — cleaned currency values are persisted, not the raw payload', () => {
@@ -35,18 +29,6 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
       payload: { modValue: '£1,500' }
     })
     expect(after.modValue).toBe('1500')
-  })
-
-  it('Should persist a nested driver claim claimAmount with £ stripped', () => {
-    const { after } = drive(findPost(driverClaim, 'claims/add'), {
-      seed: {
-        addons: ['named-driver'],
-        drivers: [{ driverName: 'Sam Passenger', relationship: 'spouse' }]
-      },
-      params: { driver: '0' },
-      payload: { claimType: 'accident', claimAmount: '£750' }
-    })
-    expect(after.drivers[0].claims[0].claimAmount).toBe('750')
   })
 })
 

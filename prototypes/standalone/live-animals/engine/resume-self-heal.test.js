@@ -15,19 +15,20 @@ describe('resume self-heal (nothing derived is stored)', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, {
       countryOfOrigin: 'FR',
-      addons: [],
-      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
+      // requirement 'no' leaves the stored region code out of scope
+      regionOfOriginCodeRequirement: 'no',
+      regionOfOriginCode: 'FR-75'
     })
 
     const result = resume({ state: {}, headers: {} }, recordingH())
 
-    expect(result.scope.has('drivers')).toBe(false)
+    expect(result.scope.has('regionOfOriginCode')).toBe(false)
     expect(result.scope.has('countryOfOrigin')).toBe(true)
   })
 
   it('Should store only the canonical record fields — nothing derived is persisted', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
-    records.saveAnswers(journeyId, { addons: [], drivers: [{ x: 1 }] })
+    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
     const result = resume({ state: {}, headers: {} }, recordingH())
 

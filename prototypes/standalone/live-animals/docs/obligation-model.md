@@ -75,13 +75,13 @@ It scans source text rather than the module graph on purpose:
 When one feature's obligation is activated by another feature's answer,
 the reference is a real JS import of the obligation constant — never a
 string or an id lookup. Live-animals currently has no cross-feature
-edge; the vendored car add-on sections (named-driver, modifications,
-protected-ncd) used to import the `addons` picker sideways, but the
-addons feature was removed in inc-024 and each survivor now carries a
-module-local identity stub (`const addons = { id: 'addons' }`) in its
-own `obligations.js` — unregistered and uncollected, so those
+edge; the vendored car add-on sections (modifications, protected-ncd —
+named-driver was removed in inc-025) used to import the `addons` picker
+sideways, but the addons feature was removed in inc-024 and each survivor
+now carries a module-local identity stub (`const addons = { id: 'addons' }`)
+in its own `obligations.js` — unregistered and uncollected, so those
 obligations can never enter scope again; the stubs die with their
-features in inc-025..027.
+features in inc-026/027.
 
 Activation always flows from a controlling answer to the details it
 unlocks, so the graph is acyclic.
@@ -103,7 +103,7 @@ closure. There are exactly three operators, interpreted in one place
 
 ```js
 { obligation: regionOfOriginCodeRequirement, equals: 'yes' } // scalar equality
-{ obligation: addons, includes: 'named-driver' }  // membership in a multi-select
+{ obligation: addons, includes: 'modifications' }  // membership in a multi-select
 { obligation: coverType, present: true }          // answered (non-blank)
 ```
 
@@ -145,8 +145,11 @@ export const commodityLines = {
 Because the items are real obligations, the engine sees them:
 per-instance scope, per-instance wipe, per-item completeness and
 dispatch coverage all descend into the item. Nesting is literal — a
-collection's item can contain another collection, and the named-driver
-feature reaches depth 2 (`drivers[i].claims[j].claimType`).
+collection's item can contain another collection. The car named-driver
+feature was the live depth-2 carrier (`drivers[i].claims[j].claimType`)
+and was removed in inc-025; the engine still supports depth 2, but no live
+obligation nests a collection until M2's `animalIdentifiers` (see
+[limits.md](limits.md)).
 
 Sub-obligation ids are frame-relative: `commoditySelection`, not
 `commodityLines.commoditySelection`. The id is the key inside each
@@ -227,7 +230,7 @@ Its surfaces, and who consumes each:
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `registry.all`                  | Every root obligation, flat, in flow order                                                                                                                                                                               | the commit contract test (`contract.test.js`) iterates it                                                          |
 | `registry.byId(id)`             | Root id → obligation                                                                                                                                                                                                     | `engine/status.js` and `engine/evaluate/complete.js` (status and completeness look-ups)                            |
-| `registry.byPath(templatePath)` | Index-free dotted address → obligation, at any depth (`drivers.claims.claimType`)                                                                                                                                        | `engine/evaluate/collection-view.js`                                                                               |
+| `registry.byPath(templatePath)` | Index-free dotted address → obligation, at any depth (`commodityLines.numberOfPackages`)                                                                                                                                 | `engine/evaluate/collection-view.js`                                                                               |
 | `walkObligations()`             | The full structural catalogue — every obligation at every depth, independent of any answers; yields `{ templatePath, obligation }`                                                                                       | `flow/dispatch.js` (`buildDispatch` coverage-asserts every non-system obligation is collected by exactly one page) |
 | `walk(answers)`                 | The per-instance catalogue — the tree materialised against a concrete answers map, one yield per stored collection entry; also yields the frame facts (`collectionAncestorKey`, `framePath`, `siblings`) reconcile needs | `engine/evaluate/reconcile.js`                                                                                     |
 

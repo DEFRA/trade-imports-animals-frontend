@@ -44,14 +44,6 @@ export const recordingH = () => {
   }
 }
 
-/**
- * Seed answers keeping the named-driver add-on selected so the `drivers`
- * collection stays IN SCOPE — otherwise a reconcile would (correctly) wipe the
- * whole out-of-scope collection and mask the path-op behaviour under test.
- */
-export const seedNamedDriver = (port, journeyId, answers) =>
-  port.saveAnswers(journeyId, { addons: ['named-driver'], ...answers })
-
 /** Drive one real controller handler against the real store. */
 export const driveHandler = (
   handler,

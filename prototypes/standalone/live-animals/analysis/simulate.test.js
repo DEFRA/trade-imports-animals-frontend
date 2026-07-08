@@ -20,7 +20,6 @@ describe('#simulateJourney', () => {
     expect(pages).toContain('transporters')
     expect(pages).not.toContain('transporters-select')
     expect(pages).not.toContain('private-transporter-details')
-    expect(pages).not.toContain('drivers')
     expect(pages).not.toContain('modifications-describe')
     expect(pages.indexOf('port-of-entry')).toBeLessThan(
       pages.indexOf('transporters')
@@ -44,10 +43,9 @@ describe('#simulateJourney', () => {
   it('Should open only the add-on section a persona selected', () => {
     // The addons picker page went in inc-024 — nothing writes this answer in
     // the running journey any more, but seeding it directly still exercises
-    // the dynamic-section gating that survives until inc-025/026/027.
-    const pages = simulateJourney({ addons: ['named-driver'] })
-    expect(pages).toContain('drivers')
-    expect(pages).not.toContain('modifications-describe')
+    // the dynamic-section gating that survives until inc-026/027.
+    const pages = simulateJourney({ addons: ['modifications'] })
+    expect(pages).toContain('modifications-describe')
     expect(pages).not.toContain('protected-ncd-years')
   })
 

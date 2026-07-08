@@ -44,15 +44,14 @@ describe('reachability / dead-end prover', () => {
   })
 
   it('Should exclude stub-activated obligations from the witness set (pending removal, never in scope)', () => {
-    // drivers/modDescription/modValue/ncdYears activate off the `addons`
-    // picker, which was removed in inc-024 — the activator survives only as
-    // an unregistered identity stub, so no enumerable state can put them in
-    // scope. They drop out of the proof until their own removal increments.
+    // modDescription/modValue/ncdYears activate off the `addons` picker, which
+    // was removed in inc-024 — the activator survives only as an unregistered
+    // identity stub, so no enumerable state can put them in scope. They drop
+    // out of the proof until their own removal increments (inc-026/027). The
+    // drivers subtree was itself removed in inc-025, so it no longer appears.
     const targets = buildWitnesses().map((witness) => witness.targetKey)
-    expect(targets).not.toContain('drivers')
     expect(targets).not.toContain('modDescription')
     expect(targets).not.toContain('ncdYears')
-    expect(targets).not.toContain('drivers[0].claims[0].windscreenProvider')
   })
 
   it('Should witness the item-conditional obligation inside a collection item (the closed hole)', () => {

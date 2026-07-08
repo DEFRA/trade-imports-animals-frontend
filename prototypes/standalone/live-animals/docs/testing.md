@@ -44,8 +44,8 @@ Runs `dump.js`, which prints derived scope, the wiped set, per-section status an
 
 The fixture is deliberately messy. Do not tidy it. Two of its oddities are the whole point:
 
-- driver 2's second claim is a windscreen claim with the provider **missing** — that one unanswered field is what drives `readyForQuote: false`, and `whyNotReady` shows the incompleteness rolling up claim → driver → section
-- driver 2's third claim is an accident carrying a **stale** provider answer — the provider is out of scope for that claim, so the output shows it in `wiped`: field-level destruction inside an item, at full depth (see [scope-and-wipe.md](scope-and-wipe.md))
+- the second cattle line omits `numberOfPackages` — an OPTIONAL item-conditional field, so its absence does not gate the line's completeness; `whyNotReady` still shows `readyForQuote: false`, but because most sections are unanswered, not because of this line
+- the fish line (not on the package-count list) carries a **stale** `numberOfPackages` — out of scope for that line, so the output shows it in `wiped`: field-level destruction inside a collection item (see [scope-and-wipe.md](scope-and-wipe.md))
 
 ## The regression net
 
@@ -100,7 +100,7 @@ If you skip this, the engine throws — deliberately:
 - every scope build (`state.get`, `state.commit`, and so on) computes `readyForQuote`, and the unconfigured default in `engine/read.js` throws rather than return a silent wrong answer
 - derived gates and section status read the dispatch index, and `flow/gates.js` refuses to answer before `buildDispatch()` has run, because an empty index would silently gate every page out
 
-See `store-ops.test.js` for the pattern in use, and [architecture.md](architecture.md) for why these seams exist.
+See `contract.test.js` for the pattern in use, and [architecture.md](architecture.md) for why these seams exist.
 
 ## Shared test helpers: engine/test-support.js
 
@@ -111,7 +111,6 @@ One module holds every shared fake. Import from it — do not hand-copy a stub i
 | `stubH()`                                          | A Hapi response-toolkit stub. `view` records the last render into `captured.view`, so a spec can assert on the rendered context; `redirect` echoes its target |
 | `journeyRequest(journeyId, overrides)`             | A request pinned to an existing journey via its cookie; pass `payload` or `params` in `overrides`                                                             |
 | `recordingH()`                                     | A cookie-recording toolkit for session-seam specs: `calls` is the ordered log of writes, `cookies` the resulting jar                                          |
-| `seedNamedDriver(port, journeyId, answers)`        | Seed answers through a persistence port with the named-driver add-on kept selected                                                                            |
 | `driveHandler(handler, { payload, seed, params })` | Mint a journey, save `seed`, invoke a real controller handler against the real store, and return before/after answers plus the response and captured view     |
 | `postHandlerOf(featureModule)`                     | The single POST handler a feature declares                                                                                                                    |
 | `postHandlerEndingWith(featureModule, suffix)`     | The POST handler whose path ends with `suffix`, for features with more than one POST route                                                                    |
@@ -120,7 +119,7 @@ The file is deliberately **not** named `.test.js`, so Vitest never collects it a
 
 ### The seeding gotcha
 
-When you seed collection answers, keep the activating answer in place. Seeding `drivers` without `addons: ['named-driver']` puts the collection out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. `seedNamedDriver` exists to make this impossible for the drivers collection; apply the same thinking to any gated obligation you seed (for example, `transporterType: 'Commercial transporter'` before seeding `commercialTransporter`).
+When you seed a gated answer, keep its activating answer in place. Seeding `commercialTransporter` without `transporterType: 'Commercial transporter'` puts it out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. The same applies to any item-conditional field (seed a `commoditySelection` on the package-count list before seeding that line's `numberOfPackages`) or any gated collection.
 
 ## The contract test
 
@@ -130,7 +129,7 @@ When you seed collection answers, keep the activating answer in place. Seeding `
 
 It drives every collecting page's real POST handler headlessly with a valid payload, then diffs the obligation ids newly written against `meta.collects` as sets.
 
-Collections are measured against the **entry append handler**. The documents list page declares `collects: ['documents']` and the drivers hub declares `collects: ['drivers']`, but the write that mints an entry's identity happens in the add sub-page's append handler — so that is the handler the contract drives.
+Collections are measured against the **entry append handler**. The documents list page declares `collects: ['documents']` and the commodities list page declares `collects: ['commodityLines']`, but the write that mints an entry's identity happens in the add sub-page's append handler — so that is the handler the contract drives.
 
 When you mis-wire a field, the failing set diff names it:
 
@@ -143,7 +142,7 @@ Either way the assertion output shows exactly which obligation drifted, on which
 
 ### Naming
 
-Engine and controller specs use `describe('#functionName ...')` for the unit under test and `it('Should ...')` titles. Follow the pattern in `t2-hub-copy.test.js` or `store-ops.test.js`.
+Engine and controller specs use `describe('#functionName ...')` for the unit under test and `it('Should ...')` titles. Follow the pattern in `t2-hub-copy.test.js` or `indexed.test.js`.
 
 ### Prove changes by running them
 

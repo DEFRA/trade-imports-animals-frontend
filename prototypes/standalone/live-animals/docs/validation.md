@@ -135,7 +135,7 @@ never a formatted string.
 - `kit.readDate(payload, name)` assembles the stored object from the
   three payload parts; `kit.dateField` builds the `govukDateInput`
   view-model, taking the inline error from the day key
-  (see `features/named-driver/driver-entry.controller.js`).
+  (see `features/transport/port-of-entry.controller.js`).
 
 ## The Joi → GDS wiring
 

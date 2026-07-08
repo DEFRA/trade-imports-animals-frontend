@@ -4,14 +4,18 @@ A collection is a repeating obligation: the user adds 0 or more entries, each
 with its own fields. This guide shows you how to add one, including a field
 that only applies to some entries.
 
-Three reference implementations exist:
+Two reference implementations exist:
 
 - [`features/documents/`](../features/documents/) — a top-level collection
   (depth 1) with the list/entry page split
 - [`features/commodities/`](../features/commodities/) — a top-level collection
   with a cardinality mandate and an item-scoped conditional field
-- [`features/named-driver/`](../features/named-driver/) — a collection inside a
-  collection (depth 2)
+
+The depth-2 case (a collection inside a collection) was the car
+`features/named-driver/` feature, removed in inc-025. The engine still
+supports nesting — see [step 7](#7-nesting-a-collection) — but there is no
+live nested collection until M2's `animalIdentifiers` (see
+[limits.md](limits.md)).
 
 Follow the steps against `features/documents/` and
 `features/commodities/` — every snippet below traces to one of them.
@@ -45,12 +49,12 @@ export const commodityLines = {
 
 The collection-level facts:
 
-- `activatedBy` (optional) puts the whole collection in scope. The `drivers`
-  collection ([`features/named-driver/obligations.js`](../features/named-driver/obligations.js))
-  carries one — it references an obligation object by identity (normally a
-  real sideways import from the owning feature; drivers' activator survives
-  only as a module-local stub since the addons picker was removed in
-  inc-024). `commodityLines` has none, so it is always live.
+- `activatedBy` (optional) puts the whole collection in scope — it references
+  an obligation object by identity (a real sideways import from the owning
+  feature). The car `drivers` collection was the live example of a gated
+  collection; it was removed in inc-025, so no live collection carries an
+  `activatedBy` today (M2 restores one — see [limits.md](limits.md)).
+  `commodityLines` and `documents` have none, so they are always live.
 - `wipeOnExit` (meaningful only with `activatedBy`) means deselecting the
   activating answer destroys the whole subtree — every entry and everything
   inside it. Data is destroyed, not hidden, so re-activating starts blank.
@@ -90,8 +94,11 @@ resolves within each entry's own frame
 `numberOfPackages` is in scope for exactly the lines whose own commodity is
 one of the listed values. Changing a line's commodity out of the list wipes
 that line's stale package count — a field-level wipe inside one instance.
-(For the `equals` flavour, see `windscreenProvider` gated on its sibling
-`claimType` in the nested driver claims.)
+(`numberOfPackages` is INCLUDES-gated and optional. The `equals` flavour and
+a REQUIRED item-conditional field were the car `windscreenProvider` gated on
+its sibling `claimType`; that carrier went with named-driver in inc-025, so
+the engine still supports both but neither has a live instance until M2 — see
+[limits.md](limits.md).)
 
 The reveal markup (show or hide the field as the user picks a value) is
 page-side, in your entry template. Scope and wipe stay model-side.
@@ -173,10 +180,11 @@ into any new nested controller.
 
 1. **Validate the parent index in nested add controllers.** The generic store
    primitive appends at whatever path you give it. An out-of-range parent
-   index would fabricate a phantom parent entry. See `validDriver` in
-   [`features/named-driver/driver-claim.controller.js`](../features/named-driver/driver-claim.controller.js):
-   a malformed or out-of-range `{driver}` param redirects to the hub instead
-   of writing.
+   index would fabricate a phantom parent entry. The car nested claim form's
+   `validDriver` guard did this — redirecting a malformed or out-of-range
+   `{driver}` param to the hub instead of writing — and went with named-driver
+   in inc-025. There is no live nested add controller today; copy this guard
+   into the first one M2 brings back (see [limits.md](limits.md)).
 2. **The engine rejects non-integer indices.** `isValidIndex` in
    [`engine/write.js`](../engine/write.js) uses `Number.isInteger` because
    `splice(NaN, 1)` coerces to `splice(0, 1)` — a malformed remove URL would
@@ -201,24 +209,30 @@ page's append handler. Add a case shaped like the existing documents one:
 
 To nest, put a collection obligation inside another collection's `item`
 list. Everything recurses — scope, wipe, completeness and dispatch coverage
-all descend with no engine changes.
-[`features/named-driver/obligations.js`](../features/named-driver/obligations.js)
-does exactly this: each driver owns a nested `claims` collection, so the
-model tree reaches `drivers[i].claims[j].claimType`.
+all descend with no engine changes. The car `features/named-driver/` feature
+did exactly this before inc-025 (each driver owned a nested `claims`
+collection, reaching `drivers[i].claims[j].claimType`); M2's
+`animalIdentifiers` under `commodityLines` will be the next live instance.
+The examples below use that planned shape.
 
 The nested sub-hub is the same library call one level deeper:
 
 ```js
-state.collectionView(answers, ['drivers', driverIndex, 'claims'])
+state.collectionView(answers, [
+  'commodityLines',
+  lineIndex,
+  'animalIdentifiers'
+])
 ```
 
 and the nested writes take a path: `state.appendEntryAt(request, h,
-['drivers', d, 'claims'], entry)`. Remember guard 1 above — validate the
-parent index first.
+['commodityLines', i, 'animalIdentifiers'], entry)`. Remember guard 1 above —
+validate the parent index first.
 
 ## The one hard limit
 
 The model cannot express cross-frame conditionality: a sub-field gated on a
-value in an enclosing frame, such as `drivers[i].claims[j].x` gated on
-`drivers[i].y`. `activatedBy` resolves same-frame siblings and top-level
-answers only. See [limits.md](limits.md).
+value in an enclosing frame, such as a future
+`commodityLines[i].animalIdentifiers[j].x` gated on `commodityLines[i].y`.
+`activatedBy` resolves same-frame siblings and top-level answers only. See
+[limits.md](limits.md).

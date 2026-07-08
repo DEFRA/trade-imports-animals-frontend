@@ -13,7 +13,6 @@ import {
   transportersSelectPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-import { driversPage } from '../features/named-driver/page.js'
 import {
   modificationsDescribePage,
   modificationsValuePage
@@ -61,11 +60,6 @@ export const sections = [
   {
     id: 'contact',
     pages: [consignmentContactSelectPage]
-  },
-  {
-    id: 'named-driver',
-    dynamic: true,
-    pages: [driversPage]
   },
   {
     id: 'modifications',

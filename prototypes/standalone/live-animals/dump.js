@@ -5,89 +5,63 @@ import { reconcile } from './engine/evaluate/reconcile.js'
 import { FULFILLED, NA } from './engine/status.js'
 import { entryComplete } from './engine/evaluate/complete.js'
 import { readyForQuote, sectionStatus } from './flow/section-status.js'
-import {
-  drivers as driversObligation,
-  driverClaims as driverClaimsObligation
-} from './features/named-driver/obligations.js'
+import { commodityLines as commodityLinesObligation } from './features/commodities/obligations.js'
 import { pathKey } from './lib/path.js'
 
 // Headless state dump — run: node prototypes/standalone/live-animals/dump.js
 buildDispatch(dispatchPages)
 
 const answers = {
-  addons: ['named-driver'],
-
-  drivers: [
+  commodityLines: [
+    // Cattle is on the package-count list, so numberOfPackages is IN scope.
     {
-      driverName: 'Jordan Fielding',
-      driverDob: '1990-05-02',
-      relationship: 'spouse',
-      claims: []
+      commoditySelection: '0102 - Cattle',
+      typeSelection: 'domestic',
+      speciesSelection: ['bos-taurus'],
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '25'
     },
 
+    // Cattle again, but numberOfPackages is MISSING — an optional item field,
+    // so its absence does not gate the line's completeness.
     {
-      driverName: 'Priya Raman',
-      driverDob: '1985-11-20',
-      relationship: 'named',
-      claims: [
-        {
-          claimType: 'windscreen',
-          claimAmount: '300',
-          windscreenProvider: 'autoglass'
-        },
-        { claimType: 'accident', claimAmount: '1200' }
-      ]
+      commoditySelection: '0102 - Cattle',
+      typeSelection: 'domestic',
+      speciesSelection: ['bos-taurus'],
+      numberOfAnimalsQuantity: '9'
     },
 
-    // Deliberately messy — do not tidy: claim [1] is a windscreen with the
-    // provider missing (drives readyForQuote:false); claim [2] is an accident
-    // carrying a STALE provider (drives the wipe demo).
+    // Deliberately messy — do not tidy: Fish is NOT on the package-count list,
+    // so numberOfPackages is out of scope for this line; the STALE value drives
+    // the wipe demo (field-level destruction inside a collection item).
     {
-      driverName: 'Marcus Webb',
-      driverDob: '1978-03-14',
-      relationship: 'child',
-      claims: [
-        {
-          claimType: 'windscreen',
-          claimAmount: '250',
-          windscreenProvider: 'nationwide'
-        },
-        { claimType: 'windscreen', claimAmount: '400' },
-        {
-          claimType: 'accident',
-          claimAmount: '900',
-          windscreenProvider: 'autoglass'
-        }
-      ]
+      commoditySelection: '0301 - Fish',
+      typeSelection: 'domestic',
+      speciesSelection: ['salmo-salar'],
+      numberOfPackages: '7',
+      numberOfAnimalsQuantity: '40'
     }
   ]
 }
 
 const { inScope, wiped } = reconcile(answers)
 
-const driversBreakdown = (answers.drivers ?? []).map((driver, driverIndex) => ({
-  driver: driver.driverName,
-  relationship: driver.relationship,
-  claimCount: (driver.claims ?? []).length,
-  complete: entryComplete(driversObligation, driver),
-  claims: (driver.claims ?? []).map((claim, claimIndex) => {
-    const providerPath = pathKey([
-      'drivers',
-      driverIndex,
-      'claims',
-      claimIndex,
-      'windscreenProvider'
+const commoditiesBreakdown = (answers.commodityLines ?? []).map(
+  (line, lineIndex) => {
+    const packagesPath = pathKey([
+      'commodityLines',
+      lineIndex,
+      'numberOfPackages'
     ])
     return {
-      path: pathKey(['drivers', driverIndex, 'claims', claimIndex]),
-      claimType: claim.claimType,
-      claimAmount: claim.claimAmount,
-      windscreenProvider: claim.windscreenProvider ?? null,
-      providerInScope: inScope.has(providerPath),
-      complete: entryComplete(driverClaimsObligation, claim)
+      path: pathKey(['commodityLines', lineIndex]),
+      commodity: line.commoditySelection,
+      numberOfPackages: line.numberOfPackages ?? null,
+      packagesInScope: inScope.has(packagesPath),
+      complete: entryComplete(commodityLinesObligation, line)
     }
-  })
-}))
+  }
+)
 
 const whyNotReady = nonQuoteSections
   .map((section) => ({
@@ -100,9 +74,9 @@ console.log(
   JSON.stringify(
     {
       answers,
-      driversBreakdown,
-      nestedScope: [...inScope]
-        .filter((key) => key.startsWith('drivers'))
+      commoditiesBreakdown,
+      indexedScope: [...inScope]
+        .filter((key) => key.startsWith('commodityLines'))
         .sort(),
       wiped,
       readyForQuote: readyForQuote(answers, inScope),

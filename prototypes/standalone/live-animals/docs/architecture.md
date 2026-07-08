@@ -181,7 +181,7 @@ Dropped, because it served the generic engine rather than the journey:
 - **Model-owned copy.** The key inversion: copy, layout and widget choice
   moved into per-page templates and controllers.
 - **The generic renderer** (one `page.njk` plus a type-to-widget registry).
-  On this journey every interesting page — the claims loop, Check your
+  On this journey every interesting page — the commodities loop, Check your
   answers, the quote, the hub — had already bypassed it with bespoke code.
   The config engine paid off only on the boring pages.
 - **The 21-export contract barrel.** It existed to feed the generic routes.

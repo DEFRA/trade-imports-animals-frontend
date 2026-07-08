@@ -21,10 +21,6 @@ import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
-import * as driversHub from './named-driver/drivers-hub.controller.js'
-import * as driverEntry from './named-driver/driver-entry.controller.js'
-import * as driverDetail from './named-driver/driver-detail.controller.js'
-import * as driverClaim from './named-driver/driver-claim.controller.js'
 import * as modDesc from './modifications/describe.controller.js'
 import * as modVal from './modifications/value.controller.js'
 import * as ncd from './protected-ncd/years.controller.js'
@@ -48,7 +44,6 @@ export const dispatchPages = [
   transportersSelect.meta,
   privateTransporterDetails.meta,
   contactSelect.meta,
-  driversHub.meta,
   modDesc.meta,
   modVal.meta,
   ncd.meta,
@@ -79,10 +74,6 @@ export const allRoutes = [
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
-  ...driversHub.routes,
-  ...driverEntry.routes,
-  ...driverDetail.routes,
-  ...driverClaim.routes,
   ...modDesc.routes,
   ...modVal.routes,
   ...ncd.routes,
