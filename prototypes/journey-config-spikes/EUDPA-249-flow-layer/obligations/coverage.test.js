@@ -45,8 +45,8 @@ const KNOWN_UNWIRED = new Set([
   'permanentAddress',
 
   // Yes/No enums from MDM — need domain entries during step 5.
-  'regionCodeRequirement',
   // containsUnweanedAnimals wired during step 4 iteration 1.
+  // regionCodeRequirement wired during step 4 iteration 2.
 
   // MDM-sourced enums — need domain entries during step 5 once the
   // MDM list is available.
@@ -56,7 +56,7 @@ const KNOWN_UNWIRED = new Set([
 
   // Free-text or integer with max-length per V4 — need domain entries
   // during step 5.
-  'regionCode',
+  // regionCode wired during step 4 iteration 2.
   'numberOfAnimals',
   'passport',
   'tattoo',

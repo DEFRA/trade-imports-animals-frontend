@@ -44,7 +44,9 @@ import {
   species,
   numberOfAnimals,
   numberOfPackages,
-  containsUnweanedAnimals
+  containsUnweanedAnimals,
+  regionCodeRequirement,
+  regionCode
 } from '../obligations/obligations.js'
 
 import { certifiedForOptionsLookup } from '../domain/index.js'
@@ -66,6 +68,17 @@ export const flow = {
             {
               page: 'country-of-origin',
               presents: [{ obligation: countryOfOrigin, mandate: 'hard' }]
+            },
+            {
+              page: 'region-code-requirement',
+              presents: [{ obligation: regionCodeRequirement, mandate: 'hard' }]
+            },
+            {
+              // In scope-mandatory when regionCodeRequirement = 'yes',
+              // in-scope-optional otherwise. Stored value is retained
+              // across gate flips (per obligations.js §Region code).
+              page: 'region-code',
+              presents: [{ obligation: regionCode, mandate: 'soft' }]
             }
           ]
         },

@@ -37,7 +37,9 @@ import {
   numberOfAnimals,
   numberOfPackages,
   cph,
-  containsUnweanedAnimals
+  containsUnweanedAnimals,
+  regionCodeRequirement,
+  regionCode
 } from '../obligations/obligations.js'
 import { certifiedForOptionsLookup } from '../domain/index.js'
 
@@ -152,6 +154,22 @@ export const presentation = new Map([
       pageTitle: 'Contains unweaned animals',
       legend: 'Are there any unweaned animals in this consignment?',
       hint: 'An unweaned animal is still dependent on its mother for milk.'
+    }
+  ],
+  [
+    regionCodeRequirement.id,
+    {
+      pageTitle: 'Region of origin code',
+      legend: 'Does the country of origin require a region code?',
+      hint: 'Some countries require an ISO region code alongside the country code.'
+    }
+  ],
+  [
+    regionCode.id,
+    {
+      pageTitle: 'Region code',
+      legend: 'Enter the region of origin code',
+      hint: 'Up to 5 characters. For example, FR-75.'
     }
   ],
   [

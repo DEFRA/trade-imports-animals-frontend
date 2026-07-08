@@ -161,7 +161,7 @@ describe('page-controller — country-of-origin', () => {
     expect(res.payload).toContain('Select a value from the list')
   })
 
-  it('POST with a valid choice redirects to next page (reason-for-import)', async () => {
+  it('POST with a valid choice redirects to next page (region-code-requirement)', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'POST',
@@ -170,7 +170,7 @@ describe('page-controller — country-of-origin', () => {
     })
     expect(res.statusCode).toBe(302)
     expect(res.headers.location).toBe(
-      '/prototype/eudpa-249/pages/reason-for-import'
+      '/prototype/eudpa-249/pages/region-code-requirement'
     )
   })
 })

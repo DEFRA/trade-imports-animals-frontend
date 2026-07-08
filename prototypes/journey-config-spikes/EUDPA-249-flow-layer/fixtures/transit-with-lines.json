@@ -2,6 +2,8 @@
   "description": "Transit journey with one commodity line for cattle.",
   "fulfilments": {
     "countryOfOrigin": "FR",
+    "regionCodeRequirement": "no",
+    "regionCode": "FR-75",
     "reasonForImport": "transit-through-eu",
     "transporterType": "commercial",
     "meansOfTransport": "road-vehicle",

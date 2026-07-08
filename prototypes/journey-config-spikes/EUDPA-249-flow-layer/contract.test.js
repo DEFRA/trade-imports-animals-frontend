@@ -3,7 +3,9 @@ import { describe, it, expect } from 'vitest'
 import {
   reasonForImport,
   countryOfOrigin,
-  purposeInInternalMarket
+  purposeInInternalMarket,
+  regionCodeRequirement,
+  regionCode
 } from './obligations/obligations.js'
 
 import {
@@ -64,6 +66,8 @@ describe('status', () => {
   it('statusOfContainer rolls up correctly', () => {
     const state = evaluateState({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75',
       [reasonForImport.id]: 'transit-through-eu'
     })
     expect(statusOfContainer(findSection('origin-and-reason'), state)).toBe(
@@ -91,9 +95,11 @@ describe('navigation', () => {
   it('nextAfter falls back to task-list once section complete', () => {
     const state = evaluateState({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75',
       [reasonForImport.id]: 'transit-through-eu'
     })
-    // Reason section is F once country + reason filled (purpose NA).
+    // Reason section is F once country + region + reason filled (purpose NA).
     const target = nextAfter(findPage('reason-for-import'), state)
     expect(target.kind).toBe('task-list')
   })

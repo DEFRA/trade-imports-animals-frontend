@@ -32,7 +32,9 @@ import {
   commodityLine,
   transitedCountries,
   internalReferenceNumber,
-  countryOfOrigin
+  countryOfOrigin,
+  regionCodeRequirement,
+  regionCode
 } from './obligations/obligations.js'
 
 import { domain, certifiedForOptionsLookup } from './domain/index.js'
@@ -246,6 +248,8 @@ describe('task list rollup', () => {
   it('origin-and-reason is F once every subsection is F', () => {
     const state = evaluate({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75',
       [reasonForImport.id]: 'internal-market',
       [purposeInInternalMarket.id]: 'breeding'
     })
@@ -257,6 +261,8 @@ describe('task list rollup', () => {
   it('origin-and-reason is F on the transit path (purpose auto-NA)', () => {
     const state = evaluate({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75',
       [reasonForImport.id]: 'transit-through-eu'
     })
     // origin subsection F; purpose-details NA; reason subsection F.
@@ -268,6 +274,7 @@ describe('task list rollup', () => {
   it('origin-and-reason is IP when reason is filled but purpose is not', () => {
     const state = evaluate({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
       [reasonForImport.id]: 'internal-market'
     })
     expect(containerStatus(findSection('origin-and-reason'), state)).toBe(
@@ -275,8 +282,12 @@ describe('task list rollup', () => {
     )
   })
 
-  it('origin subsection alone is F once country filled', () => {
-    const state = evaluate({ [countryOfOrigin.id]: 'FR' })
+  it('origin subsection alone is F once country + region-requirement + region-code filled', () => {
+    const state = evaluate({
+      [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75'
+    })
     expect(containerStatus(findSubsection('origin'), state)).toBe(
       STATUSES.FULFILLED
     )
@@ -323,6 +334,8 @@ describe('navigation', () => {
   it('firstUnfulfilledPage descends into subsections and skips fulfilled pages', () => {
     const state = evaluate({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75',
       [reasonForImport.id]: 'internal-market'
     })
     // origin F; reason-for-import F; purpose-details NS → return purpose.
@@ -334,9 +347,11 @@ describe('navigation', () => {
   it('firstUnfulfilledPage returns null when section is F (transit path)', () => {
     const state = evaluate({
       [countryOfOrigin.id]: 'FR',
+      [regionCodeRequirement.id]: 'no',
+      [regionCode.id]: 'FR-75',
       [reasonForImport.id]: 'transit-through-eu'
     })
-    // country F; reason F; purpose NA. Section F → null.
+    // country F; region-requirement F; region-code F; reason F; purpose NA. Section F → null.
     expect(
       firstUnfulfilledPage(findSection('origin-and-reason'), state)
     ).toBeNull()

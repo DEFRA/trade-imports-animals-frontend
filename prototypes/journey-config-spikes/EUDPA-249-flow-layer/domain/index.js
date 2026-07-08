@@ -41,7 +41,9 @@ import {
   commodityCode,
   numberOfPackages,
   cph,
-  containsUnweanedAnimals
+  containsUnweanedAnimals,
+  regionCodeRequirement,
+  regionCode
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -247,6 +249,17 @@ const YES_NO_LABELS = { yes: 'Yes', no: 'No' }
 export const containsUnweanedAnimalsDomain = staticEnum(YES_NO_OPTIONS, {
   labels: YES_NO_LABELS
 })
+
+export const regionCodeRequirementDomain = staticEnum(YES_NO_OPTIONS, {
+  labels: YES_NO_LABELS
+})
+
+// V4: string - max 5, ISO country prefix + region code.
+export const regionCodeDomain = predicate(
+  'string',
+  stringMaxLength(5, regionCode),
+  [reasons.stringMaxLength]
+)
 
 const MEANS_OF_TRANSPORT_OPTIONS = [
   'airplane',
@@ -490,5 +503,7 @@ export const domain = new Map([
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
   [animalsCertifiedFor.id, animalsCertifiedForDomain],
-  [containsUnweanedAnimals.id, containsUnweanedAnimalsDomain]
+  [containsUnweanedAnimals.id, containsUnweanedAnimalsDomain],
+  [regionCodeRequirement.id, regionCodeRequirementDomain],
+  [regionCode.id, regionCodeDomain]
 ])

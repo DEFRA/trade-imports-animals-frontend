@@ -87,13 +87,23 @@ misled us.
    npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/
    ```
 
-   Expected: everything green. If tests fail, common causes:
-   - A test asserted on a specific page ordering that changed
-     (`firstUnfulfilledPage`, `startPage`).
-   - A route walk asserted on a specific redirect that a new page
-     inserted before.
-   - The `KNOWN_UNWIRED` size assertion, if there is one (there isn't
-     yet, but this may become one after enough iterations).
+   Expected: green if the obligation is late in the flow (no earlier
+   assertion is invalidated); several failures if the obligation lands
+   early. Common failures and fixes:
+   - **`nextAfter` / redirect assertions** — a page inserted between
+     two existing ones changes `nextAfter(<earlier>)`. Update the
+     assertion to point at the new page.
+   - **Subsection / section status roll-up** — subsection is F only
+     when all its pages are F. If you added an in-scope-optional
+     obligation, its page stays NS until any value lands, keeping
+     the subsection IP. Fill the optional in the fixture or expectation
+     (see iteration 2's `regionCode: 'FR-75'`).
+   - **`firstUnfulfilledPage`** — the descent order changed.
+   - **`dump.test.js` snapshots** — fixtures under `fixtures/` need
+     matching values for the new obligation. Update the fixture, not
+     just the assertion.
+   - **`KNOWN_UNWIRED` orphan-check** — if step 5 was skipped, the
+     coverage test fires with a clear "missing" message.
 
 8. **Manual walk in the browser.**
 
@@ -150,7 +160,50 @@ mother for milk.'`
   save-and-continue works, CYA lists the value with a Change link.
 - **Step 9 — Committed as one atomic commit.**
 
-Refinements to this doc based on iteration 1:
+## Worked example — iteration 2: `regionCodeRequirement` + `regionCode`
+
+**Target:** wire the region-code pair, adding two new pages into an
+existing subsection (`origin`) rather than creating a new subsection.
+
+Both obligations at once because `regionCode.applyTo` gates on
+`regionCodeRequirement === 'yes'` — wiring one without the other
+leaves an unreachable page or a stateless gate.
+
+Steps executed:
+
+- **Step 1 — Confirmed.** Both already declared. `regionCodeRequirement`
+  is a Yes/No singleton; `regionCode` uses `branchedGate` — mandatory
+  when requirement=yes, optional otherwise. In-scope in both cases
+  (retain-value pattern).
+- **Step 2 — Domain entries.**
+  - `regionCodeRequirementDomain = staticEnum(YES_NO_OPTIONS, { labels: YES_NO_LABELS })`
+    — reused the consts from iteration 1. Proof that the extraction
+    was worth it.
+  - `regionCodeDomain = predicate('string', stringMaxLength(5,
+regionCode), [reasons.stringMaxLength])` — first use of the predicate
+    factory in this doc.
+- **Step 3 — Presentation.** Two entries added.
+- **Step 4 — Flow.** Both pages added as children of the **existing**
+  `origin` subsection, not a new subsection. This differs from
+  iteration 1's implicit "new subsection per new page" — a natural
+  V4 grouping ("origin" now means country + region requirement + code).
+- **Step 5 — Removed both from KNOWN_UNWIRED.**
+- **Step 6 — Fixtures.** Two updates:
+  - Both fixture JSONs (`internal-market-partial.json`,
+    `transit-with-lines.json`) needed `regionCodeRequirement: 'no'`
+    and `regionCode: 'FR-75'` for the origin subsection to be F. **This
+    is the biggest doc refinement iteration 2 landed.**
+- **Step 7 — Tests.** 10 tests fell over first run. All were
+  legitimate: assertions about origin-subsection status, redirect
+  targets, `firstUnfulfilledPage` results, and dump snapshots.
+  Updated each to include the new pages in the expected flow.
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: two new
+  pages appear between country-of-origin and reason-for-import.
+- **Step 9 — Committed atomically.**
+
+## Refinements to this doc based on iterations 1 and 2
+
+Iteration 1:
 
 - **Three files (`domain/index.js`, `lib/presentation.js`,
   `flow/flow.js`) each need an import added.** Consistent pattern:
@@ -174,8 +227,49 @@ Refinements to this doc based on iteration 1:
   what an existing page's `nextAfter` computes.
 
 Explicit step-by-step for the import bump added to the checklist
-above under each of steps 2, 3, 4. See the diffs on commit
-`<hash>` for the exact edits.
+above under each of steps 2, 3, 4.
+
+Iteration 2:
+
+- **Adding pages to an existing subsection is a distinct pattern from
+  adding a new subsection.** Iteration 1 implicitly baked in "new
+  subsection per new obligation"; iteration 2's region-code pair fits
+  naturally under the existing `origin` subsection. Step 4 above now
+  offers both options explicitly.
+- **In-scope-optional obligations count as "unfilled" until they have
+  a value.** The runtime `pageStatus` rule for `FULFILLED` is
+  "no mandatory unfilled AND at least one entry filled". An optional
+  obligation on a fresh page keeps the subsection IP until any value
+  lands. If your fixture expects section-F, fill the optional too.
+  This is why iteration 2's fixtures gained `regionCode: 'FR-75'`.
+- **Wiring a `branchedGate` obligation** usually means also wiring the
+  obligation the gate depends on. Iteration 2 wired the pair
+  `regionCodeRequirement` (gate) + `regionCode` (gated) in one commit;
+  wiring only `regionCode` would leave it stateless (always
+  in-scope-optional, no way for the user to answer "yes").
+- **Adding an obligation early in the flow breaks navigation tests.**
+  Iteration 2 broke 10 tests: `nextAfter` from country-of-origin now
+  points at region-code-requirement (was reason-for-import);
+  `origin-and-reason F` needs the new obligations filled;
+  `firstUnfulfilledPage` descent order changed; dump snapshots
+  expected new keys. All were mechanical updates once the pattern was
+  spotted. Iteration 3 should probably pick an obligation added
+  LATER in the flow to avoid the churn.
+- **Fixtures under `fixtures/` are the source of truth for
+  `dump.test.js`.** When you add an obligation that a fixture "wants",
+  update the fixture too — not just the assertion. The fixture is
+  what a stakeholder walks through in `dump.js`.
+
+Themes across both iterations:
+
+- **The import-bump / register pattern is repeated three times per
+  obligation** (domain, presentation, flow). A helper `wireObligation`
+  might be worth it after ~5 more iterations if the pattern stays
+  identical. Not yet.
+- **Yes/No is a repeat shape.** `YES_NO_OPTIONS` + `YES_NO_LABELS`
+  in `domain/index.js` is now used twice (iteration 1 +
+  iteration 2). Add more shared consts as patterns emerge (e.g. an
+  `ISO_COUNTRY_LIST` when the first address-block iteration lands).
 
 ## Adding a brand-new obligation
 
