@@ -67,8 +67,7 @@ prototypes/journey-config-spikes/EUDPA-249-flow-layer/
 │   ├── check-your-answers/          CYA
 │   ├── commodity-lines/             Bespoke Add-another UX
 │   ├── start/                       Landing redirect
-│   ├── reset/                       Session reset
-│   └── lookup/                      Seeded async lookup
+│   └── reset/                       Session reset
 ├── lib/                             Cross-feature utilities
 │   ├── page-controller.js           Generic GET/POST factory
 │   ├── build-field-descriptors.js
@@ -125,12 +124,12 @@ history through the reshape. No behaviour change.
 - Dropped `browser/` folder — top-level `routes.js`, `contract.js`,
   `dump.js` at spike root.
 - New folders: `engine/` (was `runtime.js`), `flow/` (was `flow.js`),
-  `domain/` (was `domain.js`), `features/{hub,check-your-answers,commodity-lines,start,reset,lookup}/`,
+  `domain/` (was `domain.js`), `features/{hub,check-your-answers,commodity-lines,start,reset}/`,
   `lib/` (browser JS), `shared/` + `shared/partials/` (templates),
   `fixtures/`, `docs/`.
-- Every bespoke UX concern (hub, cya, commodity-lines, start, reset,
-  lookup) has its own folder with `controller.js` + optional
-  `template.njk`. Generic form pages stay flow-driven from
+- Every bespoke UX concern (hub, cya, commodity-lines, start, reset)
+  has its own folder with `controller.js` + optional `template.njk`.
+  Generic form pages stay flow-driven from
   `flow/flow.js` + `lib/page-controller.js` + `shared/page.njk` — no
   per-page feature folder.
 - Vision + Nunjucks path in `src/config/nunjucks/nunjucks.js` now
@@ -218,7 +217,7 @@ prototypes/journey-config-spikes/EUDPA-249-flow-layer/
 │   └── *.test.js
 ├── domain/                      Layer 1.25 — split by concern
 │   ├── index.js                 Manifest keyed by obligation id
-│   ├── enums.js                 staticEnum / computedEnum / lookupEnum entries
+│   ├── enums.js                 staticEnum / computedEnum entries
 │   ├── predicates.js            V4 predicates (dates, string lengths, arrays)
 │   ├── labels.js                Domain-side labels (COUNTRY_LABELS etc.)
 │   └── *.test.js
@@ -250,8 +249,7 @@ prototypes/journey-config-spikes/EUDPA-249-flow-layer/
 │   ├── hub/                     Task list
 │   ├── check-your-answers/
 │   ├── start/                   Landing redirect
-│   ├── reset/
-│   └── lookup/                  Seeded async lookup for certifiedFor
+│   └── reset/
 ├── lib/                         Utilities shared across features
 │   ├── build-field-descriptors.js
 │   ├── field-widgets.js
@@ -563,11 +561,12 @@ the docs get refined at each):
   new one.
 - 5 — full **address block** (composite widget — pressures the
   widget dispatch table).
-- 6 — **lookup-driven obligation** (new `lookup-result`).
 
-By iteration 5-6 we'll have hit every domain factory shape and
+By iteration 5 we'll have hit every current domain factory shape and
 pressured the widget dispatch table, which is exactly the shape step
-5 was going to be anyway.
+5 was going to be anyway. If a real certificate integration lands
+before then, add a `lookup-result`-style iteration to design the
+async-fetch pattern against the real API.
 
 **Coverage test already partially exists.**
 [`obligations/coverage.test.js`](./obligations/coverage.test.js)
@@ -680,8 +679,8 @@ Joi refactor:
 - Port a minimal `lib/validate/run.js` from v2-spike (~30 lines);
   adapt to our `{ code, obligation, path }` error shape.
 - Add a `buildSchema(fulfilments, ctx) → Joi.Schema` method to each
-  domain factory (`staticEnum`, `computedEnum`, `lookupEnum`,
-  `predicate`, plus the `transitedCountries` composite).
+  domain factory (`staticEnum`, `computedEnum`, `predicate`, plus the
+  `transitedCountries` composite).
 - Rewrite `engine/index.js validate()` to call `buildSchema` + run
   the Joi schema + translate error tree.
 - Coercion parity check — Joi's default `convert: true` differs from

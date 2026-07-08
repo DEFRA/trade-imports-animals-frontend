@@ -15,6 +15,16 @@ This document captures the plan agreed in the previous session so a
 fresh session can pick up without re-derivation. Delete once execution
 starts and RECOMMENDATION.md exists.
 
+> **Post-implementation note (2026-07-08).** RECOMMENDATION.md is the
+> current source of truth. One in-scope item from this plan — the
+> async lookup pattern (`lookup-result` obligations, `lookupEnum`
+> domain factory, `certifiedForOptionsLookup`) — was **removed
+> during implementation** to reduce concept count. `animalsCertifiedFor`
+> now uses a static stub. The pattern will be reintroduced (if
+> useful) alongside a real certificate integration. See NEXT.md and
+> the `refactor(EUDPA-249): stub animalsCertifiedFor as staticEnum`
+> commit for the reasoning.
+
 ---
 
 ## Ticket

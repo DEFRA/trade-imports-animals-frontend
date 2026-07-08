@@ -12,11 +12,11 @@ so the spike is self-contained. See §Obligations fork below.
 Adopt a **three-layer architecture** for expressing journey
 configuration keyed by commodity code and country of origin:
 
-| Layer                                      | Owns                                                                                                                | Answers                                              |
-| :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------- |
-| **1 — Obligations** (as-is from EUDPA-277) | identity, cardinality, **scope** (`applyTo`)                                                                        | "Does this data field apply, given current state?"   |
-| **1.25 — Domain** (NEW)                    | per-obligation **value legality** — enum options (static / computed / lookup-driven), predicates, cross-field rules | "Is this proposed value legal, given current state?" |
-| **2 — Flow** (NEW)                         | pages, sections, presents entries; page/section/journey status; navigation                                          | "What does the user see next?"                       |
+| Layer                                      | Owns                                                                                                | Answers                                              |
+| :----------------------------------------- | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------- |
+| **1 — Obligations** (as-is from EUDPA-277) | identity, cardinality, **scope** (`applyTo`)                                                        | "Does this data field apply, given current state?"   |
+| **1.25 — Domain** (NEW)                    | per-obligation **value legality** — enum options (static / computed), predicates, cross-field rules | "Is this proposed value legal, given current state?" |
+| **2 — Flow** (NEW)                         | pages, sections, presents entries; page/section/journey status; navigation                          | "What does the user see next?"                       |
 
 Every AC bullet lands cleanly on this split:
 
@@ -39,7 +39,7 @@ domain)` resolves the current legal option set from the domain
   3. Business-facing dictionary (`data-dictionary-sketch.js`) built by
      walking obligations + domain metadata.
 
-The spike ships **164 passing tests** across ten files; the browsable
+The spike ships **388 passing tests** across 15 files; the browsable
 V1 mounts at `/prototype/eudpa-249/*` in the existing frontend
 process.
 
@@ -64,14 +64,11 @@ process.
    (`contract.js` is the only path from browser → model), tests
    (four levels: domain isolation, runtime primitives, integration,
    HTTP `server.inject`), dictionary (introspectable metadata).
-5. **Async options work the same shape.** Lookup obligations
-   (`lookup-result`) fulfil themselves via the orchestrator; domain
-   entries read them like any other sibling. No special "async" path.
-6. **Walk the browsable prototype live.** `npm run dev`,
+5. **Walk the browsable prototype live.** `npm run dev`,
    `http://localhost:3000/prototype/eudpa-249/start`. Show a stakeholder
    the flow, the task list, page + question visibility, option
    filtering, real V4 predicates, and CYA Change links.
-7. **What's out of scope** (see below).
+6. **What's out of scope** (see below).
 
 ## Key design decisions
 
@@ -94,9 +91,9 @@ set. `purposeInInternalMarketDomain` reads `reasonForImport`; the
 
 ### D2 — Data-shaped where possible; function escape hatch where computed
 
-`staticEnum` and `lookupEnum` are 100 % introspectable — the data
-dictionary can enumerate their outputs without executing code.
-`computedEnum` and `predicate` are function-shaped but carry
+`staticEnum` is 100 % introspectable — the data dictionary can
+enumerate its outputs without executing code. `computedEnum` and
+`predicate` are function-shaped but carry
 `metadata.readsFrom` and `metadata.reasons` respectively so the
 dictionary can still report reachability and possible failure codes
 statically. This mirrors the `helpers.js` "declare via helper,
@@ -126,14 +123,20 @@ at the unit-record layer and is deferred to a follow-on ticket. The
 `siblingValue` primitive is exercised via runtime unit tests using
 synthetic obligations.
 
-### D5 — Lookup-result obligations are ordinary obligations
+### D5 — Async / lookup-driven options deferred; static stub in the spike
 
-`certifiedForOptionsLookup` is a scalar obligation the orchestrator
-fulfils by writing the fetched options into `fulfilments`. The
-`animalsCertifiedFor` domain entry reads it via `lookupEnum`. The
-evaluator treats it as `single` category — no bespoke async plumbing
-in the evaluator or the runtime. Same shape as sub-journey obligations,
-same shape as MDM-sourced enums.
+`animalsCertifiedFor` uses a `staticEnum` with four hardcoded options
+(`bovine` / `ovine` / `porcine` / `equine` with labels Cattle / Sheep
+/ Pigs / Horses). In production these come from the certificate. An
+earlier revision modelled the fetch as a `lookup-result` obligation
+consumed via a `lookupEnum` domain factory, but the pattern was
+removed to keep concept count down — it's materially the same as
+`computedEnum` reading a sibling, with only the "populated
+asynchronously" bit differing (a runtime plumbing concern, not a
+model shape). When a real certificate integration lands, the fetch
+pattern should be designed against that API rather than a fake
+in-spike demo. Follow-on §Async / dynamic options for enums picks
+this up.
 
 ## Trade-offs
 
@@ -152,9 +155,9 @@ not decide them. These are the ones worth raising in playback:
 1. **Cross-field error surfacing.** Predicate errors carry `path` and
    `code`; whether they render inline, page-summary, or submit-block
    is a renderer choice. Left as-is.
-2. **Domain helper library.** We used four factories
-   (`staticEnum`, `computedEnum`, `lookupEnum`, `predicate`). If a
-   fifth shape recurs ≥ 3 times, extract it; not now.
+2. **Domain helper library.** We use three factories (`staticEnum`,
+   `computedEnum`, `predicate`). If a fourth shape recurs ≥ 3 times,
+   extract it; not now.
 3. **"Allow invalid submit" enforcement policy.** Business-side; sits
    at the controller, not in the model. Flagged for BA input.
 4. **Higher-order predicate helpers** (e.g. `whenSpecies(x, () => …)`).
@@ -167,9 +170,14 @@ not decide them. These are the ones worth raising in playback:
   lines. Turning that into a `sectionForEach` / `pagesForEach`
   primitive at the flow layer is the biggest v2 job — details in the
   Browsable prototype §Commodity-lines UX section above.
-- **`validation-result` obligations** (dynamic predicates via an
-  orchestrator-resolved obligation, parallel to `lookup-result`).
-  Natural scale-out; not needed for AC.
+- **Async / dynamic options for enums.** `animalsCertifiedFor`
+  currently uses a static stub; the real values come from the
+  certificate. When integrated, design the fetch pattern (an
+  orchestrator-resolved obligation? a synchronous per-request read
+  in `contract.js`? a pre-hook on the page?) against the real API.
+- **Dynamic predicates via orchestrator resolution.** Same shape as
+  the async-options question but for validation instead of options.
+  Not needed for AC; revisit if a real V4 predicate needs it.
 - **Complete V4 coverage.** Prototype exercises a slice (origin, reason,
   transporter, arrival, references, commodity lines). Extending is
   mechanical; the pattern doesn't change.
@@ -446,7 +454,6 @@ referenced by path in the References section below.
 | [`features/commodity-lines/controller.js`](./features/commodity-lines/controller.js)       | Bespoke commodity-lines index / add / delete (v2 backlog)                                                        |
 | [`features/start/controller.js`](./features/start/controller.js)                           | Landing redirect                                                                                                 |
 | [`features/reset/controller.js`](./features/reset/controller.js)                           | Session reset                                                                                                    |
-| [`features/lookup/controller.js`](./features/lookup/controller.js)                         | Seeded async lookup for `certifiedForOptionsLookup`                                                              |
 | [`lib/build-field-descriptors.js`](./lib/build-field-descriptors.js)                       | Pure fn — page + state → field descriptors                                                                       |
 | [`lib/field-widgets.js`](./lib/field-widgets.js)                                           | Data-shaped widget dispatch table                                                                                |
 | [`lib/format-domain-errors.js`](./lib/format-domain-errors.js)                             | Domain-error → GOV.UK `{ errorList, fieldErrors }` mapper                                                        |
@@ -462,7 +469,7 @@ referenced by path in the References section below.
 | [`features/commodity-lines/list.njk`](./features/commodity-lines/list.njk)                 | Commodity-lines index template                                                                                   |
 | Test files under `lib/`, `features/*/`, and root                                           | Widget dispatch, format-domain-errors, build-field-descriptors, contract, routes `server.inject`, dump snapshots |
 
-**Total:** 345 tests passing across 13 files (164 spike + 181 forked obligation).
+**Total:** 388 tests passing across 15 files (spike + forked obligation).
 
 ## Running the spike
 
