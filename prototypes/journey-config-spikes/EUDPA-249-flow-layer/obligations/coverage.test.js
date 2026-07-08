@@ -50,7 +50,7 @@ const KNOWN_UNWIRED = new Set([
 
   // MDM-sourced enums — need domain entries during step 5 once the
   // MDM list is available.
-  'portOfEntry',
+  // portOfEntry wired during step 4 iteration 3.
   'commodityType',
   'species',
 

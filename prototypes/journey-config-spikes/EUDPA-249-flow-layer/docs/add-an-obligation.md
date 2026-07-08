@@ -22,11 +22,22 @@ misled us.
 
 ## The checklist
 
+**Note on no-ops.** Steps 3 (presentation) and 4 (flow) can each be
+no-ops. The initial spike shipped presentation copy for every V4
+obligation, so if the copy is already accurate, step 3 is just a
+verification. And if the obligation is already presented on an
+existing page (this is common — the parent spike's `flow.js` presents
+several obligations that don't have domain entries yet), step 4 is
+also a no-op. In both cases, do the check, don't invent work. See
+iteration 3's worked example.
+
 1. **Confirm the obligation.** Look it up in `obligations/obligations.js`.
    Note the shape: is it a top-level singleton (`applyTo` at the
    root), is it `within: commodityLine` or `within: unitRecord`
    (group-scoped), does it have `applyTo` at all (structural groups
-   don't)? The answer decides which factory you use in step 2.
+   don't)? The answer decides which factory you use in step 2. Also
+   check whether the obligation is already presented on a page in
+   `flow/flow.js` — if so, step 4 is a no-op.
 
 2. **Add a domain entry** in
    [`domain/index.js`](../domain/index.js). Two edits in the same file:
@@ -160,6 +171,45 @@ mother for milk.'`
   save-and-continue works, CYA lists the value with a Change link.
 - **Step 9 — Committed as one atomic commit.**
 
+## Worked example — iteration 3: `portOfEntry`
+
+**Target:** wire `portOfEntry` — a straightforward static enum where
+the obligation is already presented on an existing page.
+
+**Twist:** step 4 (flow) AND step 3 (presentation) both turned out to
+be no-ops. `portOfEntry` was already presented on `arrival-details`
+from the initial spike, and it already had a `presentation.js` entry
+(from the initial spike's baseline of copy for every obligation). All
+the real work was in step 2 (domain entry) and step 5 (remove from
+`KNOWN_UNWIRED`).
+
+Steps executed:
+
+- **Step 1 — Confirmed.** Declared at `obligations/obligations.js:321`,
+  top-level singleton, always in scope, mandatory.
+- **Step 2 — Domain entry.** `staticEnum` over 8 UK ports of entry
+  (DVR, HUL, LGW, LHR, STN, EDI, BRS, MAN) with labels ("Port of
+  Dover", "Heathrow Airport", …). Registered in the domain manifest.
+- **Step 3 — Presentation.** _No-op — already had an entry from the
+  initial spike._ Bumped the `hint` from `null` to
+  `'Choose the UK port or airport where the animals will arrive.'`
+  now that a dropdown is being rendered.
+- **Step 4 — Flow.** _No-op — already presented on `arrival-details`
+  alongside `arrivalDateAtPort`._
+- **Step 5 — Removed from KNOWN_UNWIRED.** Down to 22 entries.
+- **Step 6 — Fixtures.** No update needed — the two fixtures already
+  had `portOfEntry: 'DVR'`, which happens to be in the new enum.
+  (Iteration 2's lesson: had the fixture value not been in the enum,
+  `dump.test.js` snapshot would have gained a domain error and required
+  a fixture update.)
+- **Step 7 — Tests.** All 385 tests green on the first go. Zero test
+  churn — the direct consequence of picking a late-in-flow obligation
+  that was already presented.
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: the
+  arrival-details page's second field ("Port of entry") is now a
+  select dropdown of 8 UK ports instead of a free-text input.
+- **Step 9 — Committed atomically.**
+
 ## Worked example — iteration 2: `regionCodeRequirement` + `regionCode`
 
 **Target:** wire the region-code pair, adding two new pages into an
@@ -260,16 +310,41 @@ Iteration 2:
   update the fixture too — not just the assertion. The fixture is
   what a stakeholder walks through in `dump.js`.
 
-Themes across both iterations:
+Iteration 3:
 
-- **The import-bump / register pattern is repeated three times per
-  obligation** (domain, presentation, flow). A helper `wireObligation`
-  might be worth it after ~5 more iterations if the pattern stays
-  identical. Not yet.
+- **Steps 3 and 4 are frequently no-ops.** The initial spike shipped
+  presentation copy for every V4 obligation, and `flow.js` already
+  presents several obligations that don't yet have domain entries.
+  `portOfEntry` was one such case — the only real work was step 2
+  (domain) and step 5 (KNOWN_UNWIRED). Now noted upfront in the
+  "Note on no-ops" section before step 1.
+- **When an obligation is already presented, fixture values may
+  already work.** Both existing fixtures had `portOfEntry: 'DVR'`,
+  which happens to be in the enum we chose. Zero fixture updates
+  needed. If the fixture value hadn't been valid, `dump.test.js`
+  would have surfaced a domain error and the fixture would need
+  updating (see iteration 2 for the pattern).
+- **Late-in-flow obligations minimise test churn.** Iteration 2
+  broke 10 tests by inserting pages between country-of-origin and
+  reason-for-import. Iteration 3 touched the arrival section and
+  broke zero tests. Rule: prefer late-in-flow obligations when the
+  goal is exercising a factory rather than exercising navigation
+  updates.
+
+Themes across all three iterations:
+
+- **The import-bump / register pattern is repeated up to three times
+  per obligation** (domain, presentation, flow — minus any no-ops). A
+  helper `wireObligation` might be worth it after ~5 more iterations
+  if the pattern stays identical. Not yet.
 - **Yes/No is a repeat shape.** `YES_NO_OPTIONS` + `YES_NO_LABELS`
-  in `domain/index.js` is now used twice (iteration 1 +
-  iteration 2). Add more shared consts as patterns emerge (e.g. an
-  `ISO_COUNTRY_LIST` when the first address-block iteration lands).
+  in `domain/index.js` was used in iterations 1 and 2. Add more shared
+  consts as patterns emerge (e.g. an `ISO_COUNTRY_LIST` when the first
+  address-block iteration lands).
+- **The `KNOWN_UNWIRED` allow-list shrinks steadily.** 26 → 25
+  (iter 1) → 23 (iter 2) → 22 (iter 3). When it hits 0 or the residual
+  is genuinely-doesn't-need-domain-entry (like `commodityLine` /
+  `unitRecord` — structural groups), step 4 is complete.
 
 ## Adding a brand-new obligation
 

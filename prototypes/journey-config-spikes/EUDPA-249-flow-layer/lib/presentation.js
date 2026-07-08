@@ -137,7 +137,7 @@ export const presentation = new Map([
     {
       pageTitle: 'Port of entry',
       legend: 'Port of entry',
-      hint: null
+      hint: 'Choose the UK port or airport where the animals will arrive.'
     }
   ],
   [

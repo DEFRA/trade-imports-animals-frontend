@@ -43,7 +43,8 @@ import {
   cph,
   containsUnweanedAnimals,
   regionCodeRequirement,
-  regionCode
+  regionCode,
+  portOfEntry
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -260,6 +261,32 @@ export const regionCodeDomain = predicate(
   stringMaxLength(5, regionCode),
   [reasons.stringMaxLength]
 )
+
+// V4: enum, MDM-sourced list of Live Animals ports of entry. Fixed
+// subset for the spike — full list comes from MDM in production.
+const PORT_OF_ENTRY_OPTIONS = [
+  'DVR',
+  'HUL',
+  'LGW',
+  'LHR',
+  'STN',
+  'EDI',
+  'BRS',
+  'MAN'
+]
+
+export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS, {
+  labels: {
+    DVR: 'Port of Dover',
+    HUL: 'Port of Hull',
+    LGW: 'Gatwick Airport',
+    LHR: 'Heathrow Airport',
+    STN: 'Stansted Airport',
+    EDI: 'Edinburgh Airport',
+    BRS: 'Bristol Airport',
+    MAN: 'Manchester Airport'
+  }
+})
 
 const MEANS_OF_TRANSPORT_OPTIONS = [
   'airplane',
@@ -505,5 +532,6 @@ export const domain = new Map([
   [animalsCertifiedFor.id, animalsCertifiedForDomain],
   [containsUnweanedAnimals.id, containsUnweanedAnimalsDomain],
   [regionCodeRequirement.id, regionCodeRequirementDomain],
-  [regionCode.id, regionCodeDomain]
+  [regionCode.id, regionCodeDomain],
+  [portOfEntry.id, portOfEntryDomain]
 ])
