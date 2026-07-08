@@ -13,6 +13,7 @@ import {
   firstUnfulfilledPage,
   STATUSES
 } from '../../engine/index.js'
+import { commodityLine } from '../../obligations/obligations.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -36,14 +37,21 @@ function firstNavigablePage(subsection, state) {
   )
 }
 
+function linesManageStatus(state) {
+  const records = state.obligations?.[commodityLine.id]?.records ?? []
+  return records.length === 0 ? STATUSES.NOT_STARTED : STATUSES.IN_PROGRESS
+}
+
 function subsectionHref(subsection, state) {
-  const page = firstNavigablePage(subsection, state)
-  if (!page) return null
   // Commodity-lines-manage subsection has a special href to the bespoke
-  // /lines controller instead of the intro page.
+  // /lines controller — resolved before falling into firstNavigablePage,
+  // because the subsection's only child is a read-only intro page that
+  // firstNavigablePage would rightly discard.
   if (subsection.id === 'commodity-lines-manage') {
     return `${BASE}/lines`
   }
+  const page = firstNavigablePage(subsection, state)
+  if (!page) return null
   return `${BASE}/pages/${page.page}`
 }
 
@@ -53,13 +61,22 @@ export const hubController = {
       const state = readState(request)
       const modelSections = sections().map((section) => {
         const items = (section.children ?? []).map((subsection) => {
-          const status = statusOfContainer(subsection, state)
+          const isLinesManage = subsection.id === 'commodity-lines-manage'
+          // The lines-manage subsection is the entry point to the
+          // bespoke commodity-lines UX; derive its status from the
+          // number of line records instead of rolling up the read-only
+          // intro page, so it doesn't parrot NA.
+          const status = isLinesManage
+            ? linesManageStatus(state)
+            : statusOfContainer(subsection, state)
           const href = subsectionHref(subsection, state)
           const item = {
             title: { text: subsection.title },
             status: { tag: STATUS_TAG[status] ?? { text: status } }
           }
-          if (href && status !== STATUSES.NOT_APPLICABLE) {
+          // Always let lines-manage be clickable; other subsections
+          // stay locked when NA.
+          if (href && (isLinesManage || status !== STATUSES.NOT_APPLICABLE)) {
             item.href = href
           }
           return item

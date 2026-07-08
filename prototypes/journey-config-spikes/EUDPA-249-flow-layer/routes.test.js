@@ -125,6 +125,25 @@ describe('start / task-list / reset', () => {
     expect(res.payload).toContain('Not started')
   })
 
+  it('GET /task-list renders the Add-commodity-lines subsection as a clickable /lines link (not NA)', async () => {
+    // Regression guard: the subsection's only child is a read-only
+    // intro page, so a naive containerStatus rollup returns NA and
+    // the hub used to strip the href. The hub now special-cases it
+    // to always show as clickable and derive status from line count.
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/task-list'
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toContain('Add commodity lines')
+    expect(res.payload).toContain('href="/prototype/eudpa-249/lines"')
+    // With no lines added yet, status is Not started, not Not applicable.
+    expect(res.payload).not.toMatch(
+      /Add commodity lines[\s\S]{0,400}Not applicable/
+    )
+  })
+
   it('POST /reset clears state and redirects back to /task-list', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {
