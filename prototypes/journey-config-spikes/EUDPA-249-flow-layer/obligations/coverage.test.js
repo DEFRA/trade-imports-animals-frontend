@@ -52,7 +52,7 @@ const KNOWN_UNWIRED = new Set([
   // MDM list is available.
   // portOfEntry wired during step 4 iteration 3.
   'commodityType',
-  'species',
+  // species wired during step 4 iteration 4.
 
   // Free-text or integer with max-length per V4 — need domain entries
   // during step 5.

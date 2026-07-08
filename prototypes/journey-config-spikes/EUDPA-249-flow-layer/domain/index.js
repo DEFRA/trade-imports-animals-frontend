@@ -44,7 +44,8 @@ import {
   containsUnweanedAnimals,
   regionCodeRequirement,
   regionCode,
-  portOfEntry
+  portOfEntry,
+  species
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -287,6 +288,54 @@ export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS, {
     MAN: 'Manchester Airport'
   }
 })
+
+// V4: multi-select enum. Options depend on the LINE's commodityCode
+// (each commodity line has its own set of eligible species). First
+// per-line computed-enum in the spike — reads ctx.path to know which
+// line's commodityCode to read.
+const SPECIES_BY_COMMODITY_CODE = {
+  '0101': ['horse'],
+  '0102': ['cattle', 'buffalo', 'bison'],
+  '0103': ['pig', 'wild-boar'],
+  '010410': ['sheep', 'lamb'],
+  '010420': ['goat'],
+  '01061900': ['dog', 'cat', 'ferret', 'rabbit'],
+  '01063100': ['owl', 'falcon', 'eagle', 'other-bird-of-prey'],
+  '01064100': ['bee']
+}
+
+const SPECIES_LABELS = {
+  horse: 'Horse',
+  cattle: 'Cattle',
+  buffalo: 'Buffalo',
+  bison: 'Bison',
+  pig: 'Pig',
+  'wild-boar': 'Wild boar',
+  sheep: 'Sheep',
+  lamb: 'Lamb',
+  goat: 'Goat',
+  dog: 'Dog',
+  cat: 'Cat',
+  ferret: 'Ferret',
+  rabbit: 'Rabbit',
+  owl: 'Owl',
+  falcon: 'Falcon',
+  eagle: 'Eagle',
+  'other-bird-of-prey': 'Other bird of prey',
+  bee: 'Bee'
+}
+
+export const speciesDomain = computedEnum(
+  (fulfilments, _ids, ctx) => {
+    // Line-scoped: `ctx.path` is the current commodity line's fulfilmentId.
+    // Read the line's commodityCode value and return that code's species.
+    const codeMap = fulfilments[commodityCode.id] ?? {}
+    const code = ctx?.path ? codeMap[ctx.path] : undefined
+    return SPECIES_BY_COMMODITY_CODE[code] ?? []
+  },
+  [commodityCode],
+  { labels: SPECIES_LABELS }
+)
 
 const MEANS_OF_TRANSPORT_OPTIONS = [
   'airplane',
@@ -533,5 +582,6 @@ export const domain = new Map([
   [containsUnweanedAnimals.id, containsUnweanedAnimalsDomain],
   [regionCodeRequirement.id, regionCodeRequirementDomain],
   [regionCode.id, regionCodeDomain],
-  [portOfEntry.id, portOfEntryDomain]
+  [portOfEntry.id, portOfEntryDomain],
+  [species.id, speciesDomain]
 ])

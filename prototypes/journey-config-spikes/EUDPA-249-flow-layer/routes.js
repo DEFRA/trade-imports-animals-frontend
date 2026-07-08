@@ -110,13 +110,14 @@ export const journeyConfigFlow = {
         })
       )
 
-      // Flow-driven pages — one GET + POST per page that presents
-      // top-level obligations. Pages with presentsForEach (per-line
-      // pages) and read-only intro pages are skipped in v1: the hub
-      // routes users into the bespoke /lines controller instead.
+      // Flow-driven pages — one GET + POST per page. Pages with
+      // `presentsForEach` fan out to one field per in-scope commodity
+      // line on the same page (single URL for all lines). Read-only
+      // intro pages (no presents, no presentsForEach) are skipped.
       for (const page of pages()) {
-        if (hasPresentsForEach(page)) continue
-        if (!page.presents || page.presents.length === 0) continue
+        const hasPresents = page.presents && page.presents.length > 0
+        const isForEach = hasPresentsForEach(page)
+        if (!hasPresents && !isForEach) continue
         const handlers = makePageController(page)
         routes.push(
           publicRoute({

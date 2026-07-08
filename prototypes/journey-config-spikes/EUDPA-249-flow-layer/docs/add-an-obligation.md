@@ -171,6 +171,69 @@ mother for milk.'`
   save-and-continue works, CYA lists the value with a Change link.
 - **Step 9 — Committed as one atomic commit.**
 
+## Worked example — iteration 4: `species` (line-scoped + computed enum + infrastructure)
+
+**Target:** wire `species` — the first line-scoped obligation, with
+options that depend on the line's `commodityCode`. Also the first
+`presentsForEach` page brought online (previously deferred to v2
+backlog per the RECOMMENDATION.md file-map).
+
+**Twist:** the domain-entry step (2) is one line of new code. The
+enabling infrastructure — turning on `presentsForEach` route
+generation, threading `path` through `optionsFor` — is where most of
+the iteration went. Once landed, every future line-scoped obligation
+(`commodityType`, `numberOfAnimals`, `numberOfPackages`, per-unit
+identifiers) reuses the same rails.
+
+Steps executed:
+
+- **Step 1 — Confirmed.** Declared at `obligations/obligations.js:394`,
+  line-scoped (`within: commodityLine`), always in scope, mandatory.
+  Already presented via `presentsForEach` on `species-details` in
+  `flow/flow.js`.
+- **Step 2 — Domain entry.** `computedEnum(fn, [commodityCode], {
+labels })` — the closure reads `ctx.path` (the current commodity line's
+  fulfilmentId), looks up `fulfilments[commodityCode.id][path]` to find
+  that line's commodity code, and returns the species list for that
+  code from a small `SPECIES_BY_COMMODITY_CODE` map (8 codes covered).
+  Species labels sit next to the map in a `SPECIES_LABELS` const.
+- **Step 3 — Presentation.** _No-op_ — species already had a
+  presentation entry from the initial spike.
+- **Step 4 — Flow.** _No-op_ — species already presented via
+  `presentsForEach: { obligation: species, forEachOf: commodityLine,
+mandate: 'hard' }` on the `species-details` page.
+- **Step 4.5 — Infrastructure (NEW for iteration 4).** Two edits:
+  - `routes.js`: dropped the `if (hasPresentsForEach(page)) continue`
+    guard. Pages with `presentsForEach` now get a route registered
+    (single URL — the page renders one field per in-scope commodity
+    line via `expandPresents`, driven by the existing
+    field-descriptors machinery).
+  - `lib/build-field-descriptors.js`: the `optionsFor()` call now
+    passes `{ path: entry.path }` in the ctx. This lets a
+    `computedEnum` domain entry read its own line's sibling
+    obligations rather than the top-level state.
+- **Step 5 — Removed species from KNOWN_UNWIRED.** Down to 21 entries.
+- **Step 6 — Fixtures.** No update needed. The
+  `transit-with-lines.json` fixture already had
+  `species: { line1: ['cattle'] }` and `commodityCode: { line1: '0102' }` —
+  cattle is in the SPECIES_BY_COMMODITY_CODE['0102'] list, so it's a
+  valid value under the new domain.
+- **Step 7 — Tests.** All 385 existing tests still green. Added two
+  new tests to `routes.test.js` proving the new route works:
+  - `GET /pages/species-details` returns 200 with no fields when no
+    commodity lines exist.
+  - After adding a line and picking `commodityCode: '0102'`, GET
+    renders a checkboxes group with Cattle/Buffalo/Bison and NOT
+    Horse (which is in the `'0101'` list).
+
+  Baseline now 387 tests.
+
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: from
+  the task list, click "Commodity line details" → "Species" — page
+  renders one Yes/No-style checkbox group per line, with species
+  options driven by each line's commodity code.
+- **Step 9 — Committed atomically.**
+
 ## Worked example — iteration 3: `portOfEntry`
 
 **Target:** wire `portOfEntry` — a straightforward static enum where
@@ -310,6 +373,38 @@ Iteration 2:
   update the fixture too — not just the assertion. The fixture is
   what a stakeholder walks through in `dump.js`.
 
+Iteration 4:
+
+- **Line-scoped obligations need `ctx.path` threaded through the
+  domain layer.** `computedEnum` closures reading sibling obligations
+  (like species reading its line's commodityCode) need the current
+  line's fulfilmentId. Fixed in `lib/build-field-descriptors.js` —
+  the `optionsFor()` call now passes `{ path: entry.path }` in ctx.
+  This is a one-time infrastructure change; every future line-scoped
+  `computedEnum` benefits.
+- **`presentsForEach` route generation was v2 backlog until now.**
+  The plugin previously skipped every `presentsForEach` page with a
+  `continue`. Iteration 4 removed the skip: pages now register with a
+  single route and `expandPresents` fans out one field per in-scope
+  commodity line at render time. Simpler than per-line routes
+  (`/pages/species-details/{lineId}`) and adequate for 1-2 line UX.
+  Per-line routes remain available as a follow-on when line counts
+  routinely exceed a handful.
+- **Existing tests can't prove the new route works.** All 385 tests
+  stayed green after enabling `presentsForEach` routing — because
+  nothing exercised the newly-registered routes. Iteration 4 added
+  two focused HTTP tests that seed a commodity line + commodity code
+  and assert species options render according to the domain's
+  computed enum. Any future line-scoped obligation should get a
+  similar route test alongside its domain entry.
+- **The initial spike had already declared the flow entries and
+  presentation copy** for every line-scoped obligation. Only domain
+  entries + the infrastructure unlock were missing. Every remaining
+  line-scoped obligation (`commodityType`, `numberOfAnimals`,
+  `numberOfPackages`, `passport`, `tattoo`, `earTag`, `horseName`,
+  `identificationDetails`, `description`, `permanentAddress`) will
+  now be a smaller iteration.
+
 Iteration 3:
 
 - **Steps 3 and 4 are frequently no-ops.** The initial spike shipped
@@ -342,9 +437,10 @@ Themes across all three iterations:
   consts as patterns emerge (e.g. an `ISO_COUNTRY_LIST` when the first
   address-block iteration lands).
 - **The `KNOWN_UNWIRED` allow-list shrinks steadily.** 26 → 25
-  (iter 1) → 23 (iter 2) → 22 (iter 3). When it hits 0 or the residual
-  is genuinely-doesn't-need-domain-entry (like `commodityLine` /
-  `unitRecord` — structural groups), step 4 is complete.
+  (iter 1) → 23 (iter 2) → 22 (iter 3) → 21 (iter 4). When it hits 0
+  or the residual is genuinely-doesn't-need-domain-entry (like
+  `commodityLine` / `unitRecord` — structural groups), step 4 is
+  complete.
 
 ## Adding a brand-new obligation
 

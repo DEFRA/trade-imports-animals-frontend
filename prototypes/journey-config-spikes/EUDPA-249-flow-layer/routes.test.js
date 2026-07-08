@@ -284,6 +284,47 @@ describe('lines-index + add', () => {
   })
 })
 
+describe('presentsForEach — species-details (iteration 4)', () => {
+  it('GET returns 200 with no commodity lines and no fields rendered', async () => {
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/pages/species-details'
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toContain('Species')
+    // No line records yet → no species-* input on the page.
+    expect(res.payload).not.toMatch(/name="species-line\d+"/)
+  })
+
+  it('GET after adding a cattle line renders one checkbox group with cattle-list options', async () => {
+    const jar = makeCookieJar()
+    // Add a commodity line and pick a cattle code.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/lines/add',
+      payload: {}
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/commodity-details',
+      payload: { 'commodityCode-line1': '0102' }
+    })
+    const res = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/pages/species-details'
+    })
+    expect(res.statusCode).toBe(200)
+    // Checkbox group for line1 present with cattle-list species labels.
+    expect(res.payload).toMatch(/name="species-line1"/)
+    expect(res.payload).toContain('Cattle')
+    expect(res.payload).toContain('Buffalo')
+    expect(res.payload).toContain('Bison')
+    // Horse (in a different commodity-code list) should NOT be present.
+    expect(res.payload).not.toContain('Horse')
+  })
+})
+
 describe('lookup — seeded animals-certified-for', () => {
   it('GET /pages/animals-certified-for/resolve seeds and redirects', async () => {
     const jar = makeCookieJar()

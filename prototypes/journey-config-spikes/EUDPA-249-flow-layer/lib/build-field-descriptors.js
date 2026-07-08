@@ -58,7 +58,9 @@ export function buildFieldDescriptors(page, state, fieldErrors = {}) {
     const presentation = forObligation(entry.obligation)
     const options =
       domainEntry?.type === 'enum'
-        ? optionsFor(entry.obligation, state.fulfilments, undefined, domain)
+        ? optionsFor(entry.obligation, state.fulfilments, undefined, domain, {
+            path: entry.path
+          })
         : []
     const value = readValue(entry, state)
     const error = fieldErrors[id]?.text
