@@ -69,6 +69,34 @@ default-branch backwards-compat pins.
   flag the frame obligations unless `commoditySelection` is reachable from
   `registry.all`.
 
+## 4. `requiredOneOf` — sibling-at-least-one group mandate (inc-032)
+
+`engine/evaluate/complete.js#entryComplete`: a collection may carry an OPT-IN
+`requiredOneOf` array naming a SUBSET of its `item` field ids. An entry is
+complete only if, on top of the existing per-field checks, at least one of the
+named fields is answered. This expresses the V4 rule "a notification must be
+submitted with at least one animal identifier PER ANIMAL" — each identifier
+field (passport / tattoo / ear tag / horse name / identification details /
+description) is individually OPTIONAL, but the group is owed once per unit
+entry. `animalIdentifiers.permanentAddress` is a sibling `item` but is
+deliberately NOT in the group, so the marker names fields explicitly rather
+than meaning "any sibling".
+
+Same-frame only: the named ids are siblings within the one entry, so the check
+reads `entry[id]` directly — no gate resolution, no enclosing-frame context.
+It is orthogonal to `requiredAtLeastOne` (which counts ENTRIES): a collection
+can carry both (as `animalIdentifiers` will), and they compose without
+interaction. The marker is read-only and never touches `reconcile` / scope /
+wipe, so no path can be orphaned by it. Backwards compatible: absent marker =
+today's per-field behaviour, byte-for-byte; `status.js` is unchanged (the
+mandate flows through `satisfied -> collectionComplete -> entryComplete`, and
+the only live carrier also has `requiredAtLeastOne`, so `isRequired` already
+counts it). Proven in `engine/evaluate/sibling-at-least-one.test.js`:
+zero-of-group incomplete, exactly-one complete, more-stays-complete,
+non-group-sibling does not satisfy, per-field required still enforced on top,
+per-entry across a collection, depth-2 nested, and the no-marker
+backwards-compat pin.
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

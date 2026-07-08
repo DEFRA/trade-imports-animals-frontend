@@ -13,17 +13,18 @@ All file paths in this document are relative to the spike root
 
 An obligation is a plain object with at most these fields:
 
-| Field                | Kind         | Meaning                                                                                                             |
-| -------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `id`                 | identity     | The obligation's name. Also the key in the answers map and the DOM field name — one string, three roles.            |
-| `required`           | mandate      | This answer is owed before the obligation counts as complete.                                                       |
-| `requiredAtLeastOne` | mandate      | A collection owes at least one entry (only meaningful with `collection: true`).                                     |
-| `collection`         | structure    | This obligation is a repeating list. Its `item` array holds the sub-obligations of each entry.                      |
-| `item`               | structure    | Real nested obligation definitions — not field-name strings (see [collections](#collections-are-a-recursive-tree)). |
-| `system`             | structure    | Computed on demand, never collected or stored (see [system and renderOnly](#system-and-renderonly-flags)).          |
-| `renderOnly`         | structure    | Presented on a page but never committed to the store.                                                               |
-| `activatedBy`        | relationship | A predicate over another obligation's answer. When it holds, this obligation is in scope.                           |
-| `wipeOnExit`         | relationship | When this obligation leaves scope, destroy its stored answer.                                                       |
+| Field                | Kind         | Meaning                                                                                                                                                                                                          |
+| -------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | identity     | The obligation's name. Also the key in the answers map and the DOM field name — one string, three roles.                                                                                                         |
+| `required`           | mandate      | This answer is owed before the obligation counts as complete.                                                                                                                                                    |
+| `requiredAtLeastOne` | mandate      | A collection owes at least one entry (only meaningful with `collection: true`).                                                                                                                                  |
+| `requiredOneOf`      | mandate      | A collection whose every entry owes at least one answer among a NAMED subset of its `item` fields (each of which stays individually optional). Only meaningful with `collection: true`; absent = no group check. |
+| `collection`         | structure    | This obligation is a repeating list. Its `item` array holds the sub-obligations of each entry.                                                                                                                   |
+| `item`               | structure    | Real nested obligation definitions — not field-name strings (see [collections](#collections-are-a-recursive-tree)).                                                                                              |
+| `system`             | structure    | Computed on demand, never collected or stored (see [system and renderOnly](#system-and-renderonly-flags)).                                                                                                       |
+| `renderOnly`         | structure    | Presented on a page but never committed to the store.                                                                                                                                                            |
+| `activatedBy`        | relationship | A predicate over another obligation's answer. When it holds, this obligation is in scope.                                                                                                                        |
+| `wipeOnExit`         | relationship | When this obligation leaves scope, destroy its stored answer.                                                                                                                                                    |
 
 That is the whole vocabulary. Because `id` doubles as the store key and
 the DOM field name, a definition, its stored answer and its form input

@@ -4,6 +4,17 @@ import { applyPredicate } from './predicate.js'
 
 export const entryComplete = (obligation, entry) => {
   const siblings = obligation.item ?? []
+  // Group mandate `requiredOneOf`: at least one of a NAMED subset of this
+  // entry's sibling fields must be answered (V4 "at least one animal
+  // identifier PER ANIMAL"). Each named field stays individually optional —
+  // the requirement bites at the group, once per entry. The named ids are
+  // same-frame siblings, so this reads `entry[id]` directly: no gate
+  // resolution, no enclosing context. Absent marker = no group check, so every
+  // pre-existing collection is byte-for-byte unchanged.
+  const groupSatisfied =
+    !obligation.requiredOneOf ||
+    obligation.requiredOneOf.some((id) => isAnswered(entry?.[id]))
+  if (!groupSatisfied) return false
   return siblings.every((subObligation) => {
     // The sibling-identity check (`siblings.includes(ref)`) is the SAME
     // criterion reconcile's `evalPredicate` uses — the two resolvers cannot
