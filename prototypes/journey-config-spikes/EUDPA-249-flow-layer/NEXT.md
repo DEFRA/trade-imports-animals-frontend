@@ -8,34 +8,131 @@ dictionary MD) are parked for after the V4 buildout.
 
 ---
 
-## Where we are
+## Where we are — session handoff (last updated 2026-07-08)
 
-- **Branch:** `spike/EUDPA-249-flow-layer`, pushed to
-  `DEFRA/trade-imports-animals-frontend`.
-- **Commits** on top of the flow-layer PLAN commit (`67fed20`):
-  - `1191ce3` — `feat(EUDPA-249): browsable V4 journey on the three-layer model`
-  - `3c1b066` — `fix(EUDPA-249): auth-off default in dev + Vision path + prototype docs`
-  - `f47b7c3` — `docs(EUDPA-249): hand-off doc — eight to-dos incl. folder restructure`
-  - (plus the step-1 inline commit — will be here once pushed)
-- **Step 1 status:** DONE. Obligations spike forked into
-  `./obligations/`; `grep -rn 'obligations-v4-model'` returns only
-  historical doc pointers.
-- **Tests:** 385 spike tests (345 pre-gap-closure + 37 in
-  `obligations/coverage.test.js` and `obligations/whitelists.test.js`
-  after round 1 + 2 uniqueness assertions after round 2 + 1
-  cycle-detection assertion after round 3)
-  - 632 existing frontend tests, all green.
-    Run `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
-- **Browsable demo:** `npm run dev` (auth defaults off in dev now),
-  then http://localhost:3000/prototype/eudpa-249/start.
-- **The user reviews before pushing.** Local commits are fine, but do
-  not push without a user go-ahead. The last push was explicitly
-  requested.
+**Branch:** `spike/EUDPA-249-flow-layer`, pushed to
+`DEFRA/trade-imports-animals-frontend`. Latest commit on origin
+`839d4fd` (doc pass); the ticket-implementation tip is `75c1c11`
+(animalsCertifiedFor static stub).
 
-Read [`RECOMMENDATION.md`](./RECOMMENDATION.md) end-to-end before doing
-anything — it explains the three-layer architecture, the contract
-seam, the browser layer, tests + convention that prove the mapping,
-the env gate, and the v2 backlog. This NEXT.md assumes you have.
+**Tests:** 388 spike + 1201 total frontend, all green.
+Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
+
+**Browsable demo:** `npm run dev` (auth defaults off in dev), then
+<http://localhost:3000/prototype/eudpa-249/start>.
+
+**Reviewer rule:** the user reviews locally before pushing. Commit
+freely; do NOT push without an explicit go-ahead.
+
+### Today's session (2026-07-08)
+
+Four commits, all pushed:
+
+- `540eec4` — hub-controller fix. `Add commodity lines` subsection
+  was rolling up to NA (its only child page is a read-only intro,
+  which pageStatus correctly returns NA for) and the hub stripped
+  the href. Now `subsectionHref` special-cases the id BEFORE the
+  firstNavigablePage null-check, `linesManageStatus()` derives status
+  from `commodityLine` record count, and the handler always renders
+  the href for that subsection.
+- `9139729` — same subsection now returns FULFILLED once ≥ 1 line
+  exists (was IN_PROGRESS forever). The "add step" is done as soon
+  as the user has added a line; per-line details are the sibling
+  `commodity-lines-details` subsection's concern.
+- `75c1c11` — removed the async-lookup pattern entirely. The
+  `certifiedForOptionsLookup` obligation was accidentally rendering
+  as a text input labelled "Loading" (no domain entry → fallback
+  widget); typing into it stored a string under an id whose consumer
+  (`lookupEnum`) then crashed on `options.map` because it expected
+  an array. Rather than papering over (remove-from-presents +
+  auto-seed on GET), decided to delete the whole pattern: it was
+  materially the same as `computedEnum` reading a sibling, with only
+  the async-populated bit differing (runtime plumbing, not a model
+  shape). `animalsCertifiedFor` is now a `staticEnum` stub with
+  `bovine` / `ovine` / `porcine` / `equine` (Cattle / Sheep / Pigs
+  / Horses). Deleted: `lookupEnum` factory, `certifiedForOptionsLookup`
+  obligation, `features/lookup/` controller, `isLookupSeeded`/
+  `markLookupSeeded` helpers, `LOOKUP_SEEDED_KEY`, `/pages/animals-
+certified-for/resolve` route, the "Loading options" presentation
+  entry. Domain factories are now three (was four): `staticEnum`,
+  `computedEnum`, `predicate`.
+- `839d4fd` — doc pass. `RECOMMENDATION.md` refreshed in-place (D5
+  recast, playback bullet dropped, D2 tightened, test counts
+  updated, features/lookup row removed, out-of-scope follow-ons
+  reframed as "Async / dynamic options for enums" + "Dynamic
+  predicates via orchestrator resolution"). `NEXT.md` — this file —
+  updated (see below). `PLAN.md` got a post-implementation note at
+  the top; body left intact as historical planning record.
+
+### Current model / architecture state
+
+- **Three layers proven end-to-end** (Obligations · Domain · Flow),
+  browsable at `/prototype/eudpa-249/*`.
+- **Contract seam** (`contract.js`) — browser layer only reads model
+  through it. Enforceable by grep:
+  `grep -rn "from '../engine\\|from '../domain\\|from '../flow" features/ lib/ | grep -v contract`
+  should return nothing.
+- **Domain factories:** `staticEnum`, `computedEnum`, `predicate`.
+  Plus the `transitedCountries` composite (built inline).
+- **Runtime primitives:** `pageStatus`, `containerStatus`,
+  `journeyState`, `firstApplicablePage`, `firstUnfulfilledPage`,
+  `firstPagePresentingObligation`, `optionsFor`, `validate`,
+  `expandPresents`.
+- **Feature folders:** `hub`, `check-your-answers`, `commodity-lines`,
+  `start`, `reset`. (`lookup/` deleted today.)
+- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 21 obligations
+  (down from 26 at spike start). Step 4 iterations whittle this.
+
+### Step 4 iterations completed
+
+1. `containsUnweanedAnimals` (new subsection)
+2. `regionCodeRequirement` + `regionCode` (added to origin
+   subsection; both wired in one iteration)
+3. `portOfEntry` (arrival subsection)
+4. `species` + presentsForEach page-routing unlock (line-scoped;
+   turned on the routes.js path that previously skipped
+   presentsForEach pages)
+
+Each iteration also refined `docs/add-an-obligation.md`.
+
+### Known limitations to raise before step 5
+
+- **numberOfPackages optional-only stays NS.** V4 says it's optional,
+  in-scope only for certain commodity codes. The runtime rule
+  `pageStatus === F requires "no mandatory unfilled AND ≥ 1 entry
+filled"` means an unfilled optional page stays NS, so
+  `commodity-lines-details` subsection can't roll up to F unless the
+  user fills the optional field. Discussed today; three options
+  (fill in walk / rule change / page-visited plumbing). No decision.
+- The **Add commodity lines** subsection currently maxes at FULFILLED
+  as soon as ≥ 1 line exists. That's the current design (add step
+  done when there's a line). If the user removes all lines, it
+  reverts to NOT_STARTED. Fine as-is.
+
+### Immediate next candidates
+
+Pick one, iterate:
+
+- `commodityType` (line-scoped MDM enum — same shape as species)
+- `numberOfAnimals` (line-scoped integer with a per-species cap
+  predicate — worth doing because it exercises predicate + line-
+  scoped storage together)
+- `numberOfPackages` (line-scoped integer, optional, applyTo-scoped
+  — pressure-tests the optional-only-NS limitation above)
+- Any of the address blocks (`placeOfOrigin`, `consignor` etc.) — a
+  composite widget that would extend `field-widgets.js` with a new
+  rule. Bigger design lift.
+
+Then step 5 (full V4 buildout).
+
+**Parked post-step-5** (unchanged): P1 Joi adoption; P2 data
+dictionary MD artefact. See below for both.
+
+Read [`RECOMMENDATION.md`](./RECOMMENDATION.md) end-to-end before
+doing anything — it explains the three-layer architecture, the
+contract seam, the browser layer, tests + convention that prove the
+mapping, the env gate, and the v2 backlog. This NEXT.md assumes you
+have.
 
 ## Path map
 
