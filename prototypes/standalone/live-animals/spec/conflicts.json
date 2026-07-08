@@ -239,6 +239,14 @@
       "detail": "V4's 'Optional - All-or-nothing' banner has no bite at the submit gate as modelled: statusOf treats a section whose only obligation is an optional collection as vacuously Fulfilled, so a half-completed document entry never blocks submission. collectionComplete models per-entry completeness but nothing consumes it for un-required collections. Design-gate call: extend the readiness rule to consume entryComplete for started entries, or accept the derived behaviour for the prototype.",
       "resolution": null,
       "resolvedBy": null
+    },
+    {
+      "id": "c-027",
+      "fields": ["animalIdentifiers"],
+      "sources": ["confluence-v4"],
+      "detail": "Collection-level conditionality gap (Sam, M1 build): animalIdentifiers is modelled activatedBy:null + requiredAtLeastOne, i.e. EVERY commodity line needs >=1 identifier. But CPH is conditional on 19 named commodities, and V4's 'Passport identifier commodities'/'Tattoo identifier commodities' lists imply identifiers are commodity-conditional (some commodity types may need none). The per-identifier-type gating is captured as cross-frame modelGap on the item fields, but the COLLECTION lacks a commodity-level activatedBy. Re-check V4 at the M2 cross-frame model-extension gate: does animalIdentifiers need a collection-level activatedBy (which commodities require identifiers at all)?",
+      "resolution": null,
+      "resolvedBy": null
     }
   ]
 }
