@@ -11,7 +11,12 @@
         "typeSelection": "domestic",
         "speciesSelection": ["bos-taurus"],
         "numberOfPackages": "5",
-        "numberOfAnimalsQuantity": "25"
+        "numberOfAnimalsQuantity": "25",
+        "animalIdentifiers": [
+          {
+            "animalIdentifierEarTag": "UK123456789012"
+          }
+        ]
       }
     ],
     "reasonForImport": "internal-market",

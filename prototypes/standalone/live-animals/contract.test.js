@@ -11,11 +11,13 @@ import {
   postHandlerEndingWith
 } from './engine/test-support.js'
 import { isAnswered } from './lib/answered.js'
+import { satisfied } from './engine/evaluate/complete.js'
 import { dispatchPages } from './features/index.js'
 
 import * as origin from './features/origin/controller.js'
 import * as commoditiesList from './features/commodities/list.controller.js'
 import * as commoditiesSelect from './features/commodities/select.controller.js'
+import * as animalIdentifiersEntry from './features/commodities/animal-identifiers.entry.controller.js'
 import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
 import * as additionalDetails from './features/additional-details/controller.js'
@@ -248,6 +250,52 @@ describe('controller <-> model commit contract', () => {
     expect(new Set(committedIds(result))).toEqual(
       new Set(committableCollects(documentsList.meta.collects))
     )
+  })
+
+  // The nested animalIdentifiers collection (depth-2) has no dispatch page of
+  // its own — it inherits the commodities page owner — so its append handler is
+  // the unit entry sub-page. Driving it proves the depth-2 append writes only
+  // the ENCLOSING-gated type fields the commodity allows, and that the unit
+  // then satisfies requiredOneOf while the required enclosing-gated
+  // permanentAddress is owed on-gate.
+  it('Should append an animal identifier unit at depth-2, writing only the commodity-gated fields', () => {
+    const postAdd = postHandlerEndingWith(
+      animalIdentifiersEntry,
+      'identifiers/add'
+    )
+    // A Cats line: passport + tattoo apply; ear tag + horse name do NOT;
+    // permanentAddress is required (Cats is on its gate).
+    const result = drive(postAdd, {
+      seed: { commodityLines: [{ commoditySelection: '01061900 - Cats' }] },
+      params: { index: '0' },
+      payload: {
+        animalIdentifierPassport: 'UK123456789',
+        // Ear tag is out of scope for Cats — the page must not commit it.
+        animalIdentifierEarTag: 'UK999',
+        nameOrOrganisationName: 'Pet Owner',
+        addressLine1: '1 Farm Lane',
+        townOrCity: 'Skipton',
+        postalOrZipCode: 'BD23 1UD',
+        country: 'United Kingdom',
+        telephoneNumber: '+44 1756 555 0192',
+        emailAddress: 'owner@example.co.uk'
+      }
+    })
+    const unit = result.after.commodityLines[0].animalIdentifiers[0]
+    expect(unit.animalIdentifierPassport).toBe('UK123456789')
+    // The enclosing gate keeps the ear tag out of scope, so it is not written.
+    expect('animalIdentifierEarTag' in unit).toBe(false)
+    expect(unit.permanentAddress.name).toBe('Pet Owner')
+
+    // requiredOneOf is met by the passport, and the on-gate permanentAddress is
+    // answered, so the whole line is complete once its other required fields are.
+    result.after.commodityLines[0] = {
+      ...result.after.commodityLines[0],
+      typeSelection: 'domestic',
+      speciesSelection: ['bos-taurus'],
+      numberOfAnimalsQuantity: '2'
+    }
+    expect(satisfied('commodityLines', result.after)).toBe(true)
   })
 
   // The addresses LANDING accretes one collect per landed spoke, but every

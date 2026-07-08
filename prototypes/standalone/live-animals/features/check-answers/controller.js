@@ -7,6 +7,7 @@ import { pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
 import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
 import { commodityLineValue } from '../commodities/list.controller.js'
+import { animalIdentifierSummary } from '../commodities/animal-identifiers.list.controller.js'
 import { documentValue } from '../documents/list.controller.js'
 import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
 import { PURPOSE_IN_INTERNAL_MARKET_LABEL } from '../import-purpose/controller.js'
@@ -25,21 +26,42 @@ const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 const changeHref = (obligationId) =>
   `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
 
-// Change links to the commodities LOOP HUB — per-line edits live there.
+// Change links to the commodities LOOP HUB — per-line edits live there. Each
+// line is followed by one row per animal identifier unit (depth-2), whose
+// Change link resolves to that line's identifiers loop hub.
 const commodityRows = (answers) =>
-  state.collectionView(answers, ['commodityLines']).map(({ index, entry }) => ({
-    key: { text: `Commodity ${index + 1}` },
-    value: { text: commodityLineValue(entry) },
-    actions: {
-      items: [
-        {
-          href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
-          text: 'Change',
-          visuallyHiddenText: `commodity ${index + 1}`
+  state
+    .collectionView(answers, ['commodityLines'])
+    .flatMap(({ index, entry }) => [
+      {
+        key: { text: `Commodity ${index + 1}` },
+        value: { text: commodityLineValue(entry) },
+        actions: {
+          items: [
+            {
+              href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
+              text: 'Change',
+              visuallyHiddenText: `commodity ${index + 1}`
+            }
+          ]
         }
-      ]
-    }
-  }))
+      },
+      ...state
+        .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
+        .map(({ index: unitIndex, entry: unit }) => ({
+          key: { text: `Commodity ${index + 1} — animal ${unitIndex + 1}` },
+          value: { text: animalIdentifierSummary(unit) },
+          actions: {
+            items: [
+              {
+                href: pagePath(`commodities/${index}/identifiers`),
+                text: 'Change',
+                visuallyHiddenText: `commodity ${index + 1} animal ${unitIndex + 1}`
+              }
+            ]
+          }
+        }))
+    ])
 
 // Change links to the documents LOOP HUB — per-document edits live there.
 const documentRows = (answers) =>

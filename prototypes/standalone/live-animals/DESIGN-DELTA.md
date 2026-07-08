@@ -52,10 +52,9 @@ default-branch backwards-compat pins.
   REQUIRED enclosing-gated unit field — `permanentAddress` — that means
   completeness would treat it as owed even on a line whose gate is off,
   diverging from scope. `entryComplete`/`collectionComplete` have no enclosing
-  context in their signatures. inc-035 (which registers `animalIdentifiers` +
-  `permanentAddress`, the first required enclosing-gated carrier) must thread
-  frame context into the completeness resolver, or the resolver-unity invariant
-  in obligation-model.md breaks. anyItem consumers are notification-level roots
+  context in their signatures. **DONE in inc-035** — see DESIGN-DELTA #5, which
+  threads an opt-in enclosing `ctx` through the completeness resolver
+  backwards-compatibly. anyItem consumers are notification-level roots
   whose completeness is driven by `inScope`, so they need no `entryComplete`
   change.
 - `analysis/reachability.js` needed no change until a frame gate was
@@ -70,9 +69,12 @@ default-branch backwards-compat pins.
   docstring now records why): the anyItem activator is not a top-level scalar
   axis, so it is seeded structurally by `scaffoldFor` rather than enumerated —
   the honest recomputed pin stays green (`proveReachability` empty,
-  `orphanedRootIds` empty) with no spurious axis. Still owed by inc-035
-  (enclosing carrier `permanentAddress`): the `scaffoldFor` enclosing-frame seed
-  and any `entryComplete` frame-context threading noted above.
+  `orphanedRootIds` empty) with no spurious axis. **The enclosing-frame seed is
+  DONE in inc-035** — `scaffoldFor` now seeds a `frame:"enclosing"` gate's
+  triggering value on the nearest ancestor frame that holds the reference (see
+  DESIGN-DELTA #5), so `permanentAddress` and the gated identifier type fields
+  get honest witnesses; the recomputed pin stays green and `orphanedRootIds`
+  stays empty (the identifier fields are collection ITEMS, not top-level roots).
 
 ## 4. `requiredOneOf` — sibling-at-least-one group mandate (inc-032)
 
@@ -101,6 +103,42 @@ zero-of-group incomplete, exactly-one complete, more-stays-complete,
 non-group-sibling does not satisfy, per-field required still enforced on top,
 per-entry across a collection, depth-2 nested, and the no-marker
 backwards-compat pin.
+
+## 5. Enclosing-frame completeness threading (inc-035)
+
+`engine/evaluate/complete.js`: `entryComplete` / `collectionComplete` gain an
+OPT-IN `ctx` parameter carrying the enclosing-frame chain, so a sub-field gated
+on an ENCLOSING frame (`activatedBy.frame === 'enclosing'`) resolves for
+completeness exactly as `reconcile`'s `evalPredicate` resolves it for scope —
+the resolver-unity invariant (obligation-model.md) now holds at depth. Needed by
+`animalIdentifiers.permanentAddress` (inc-035), the FIRST required
+enclosing-gated carrier: without it a required off-gate field is counted owed on
+every unit regardless of the enclosing commodity, so the commodities task could
+never complete on a non-Cats/Dogs line.
+
+- **Shape.** `ctx = { answers, frames }` at entry level (mirrors `evalPredicate`);
+  `collectionComplete` takes `{ answers, basePath, enclosingFrames }` and builds
+  each entry's innermost-first `frames` chain. `satisfied` seeds the root frame
+  (`{ framePath: [], siblings: registry.all }`) so live callers thread context
+  automatically.
+- **Backwards compatible.** ABSENT ctx = pre-inc-035 behaviour byte-for-byte:
+  only same-frame sibling gates resolve, a non-sibling gate falls through to the
+  per-field required check (owed, conservative). `collectionView` and the
+  synthetic unit tests (`sibling-at-least-one.test.js`) call with no ctx and are
+  unchanged. Same-frame `includes` gates (`numberOfPackages`) are unaffected —
+  they never enter the enclosing branch.
+- **Reachability.** `analysis/reachability.js#scaffoldFor` now seeds a
+  `frame:"enclosing"` gate's triggering value on the nearest ancestor frame that
+  holds the referenced obligation (a small stack refactor; the anyItem and
+  same-frame seeds are unchanged). `orphanedRootIds` stays empty — the gated
+  identifier fields are collection ITEMS, not top-level roots.
+
+Proven in `engine/evaluate/enclosing-complete.test.js`: off-gate unit does not
+owe permanentAddress, on-gate unit does (complete once answered), per-unit scope
+with no leak between sibling lines, requiredOneOf still enforced off-gate,
+depth-2 ctx built by hand, and the no-ctx backwards-compat pins (required
+enclosing-gated field owed without ctx; same-frame and gate-free collections
+unchanged). The depth-2 wipe counterpart is in `store-ops.test.js`.
 
 ## 2. Session cookie renamed (inc-001, f27b76c)
 

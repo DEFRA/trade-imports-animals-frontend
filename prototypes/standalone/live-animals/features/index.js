@@ -4,6 +4,8 @@ import * as origin from './origin/controller.js'
 import * as commoditiesList from './commodities/list.controller.js'
 import * as commoditiesSelect from './commodities/select.controller.js'
 import * as commoditiesDetails from './commodities/details.controller.js'
+import * as animalIdentifiersList from './commodities/animal-identifiers.list.controller.js'
+import * as animalIdentifiersEntry from './commodities/animal-identifiers.entry.controller.js'
 import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
 import * as additionalDetails from './additional-details/controller.js'
@@ -52,6 +54,8 @@ export const allRoutes = [
   ...commoditiesList.routes,
   ...commoditiesSelect.routes,
   ...commoditiesDetails.routes,
+  ...animalIdentifiersList.routes,
+  ...animalIdentifiersEntry.routes,
   ...importReason.routes,
   ...importPurpose.routes,
   ...additionalDetails.routes,

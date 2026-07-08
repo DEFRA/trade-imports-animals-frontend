@@ -165,3 +165,143 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     )
   })
 })
+
+/**
+ * Depth-2 store-op coverage against the live `commodityLines[i].animalIdentifiers`
+ * nested collection (inc-035). This is the net inc-025 deferred when it deleted
+ * the car `drivers[i].claims[j]` carrier: the SAME path-addressed primitives one
+ * level deeper. permanentAddress is enclosing-gated (frame:"enclosing" on the
+ * line's commoditySelection), so it witnesses field-level destruction inside a
+ * nested item when the enclosing gate leaves scope.
+ */
+describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForQuote(readyForQuote)
+  })
+  beforeEach(() => {
+    store.clear()
+    journeyId = store.create().journeyId
+  })
+
+  const identifiersPath = (lineIndex) => [
+    'commodityLines',
+    lineIndex,
+    'animalIdentifiers'
+  ]
+  const catsLine = (units = []) => ({
+    commoditySelection: '01061900 - Cats',
+    animalIdentifiers: units
+  })
+  const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
+
+  it('Should append a unit into a specific line, minting the nested index and persisting it', () => {
+    store.saveAnswers(journeyId, { commodityLines: [catsLine(), catsLine()] })
+    const first = appendEntryAt(buildRequest(), stubH(), identifiersPath(1), {
+      animalIdentifierPassport: 'UK-1'
+    })
+    expect(first).toBe(0)
+    const second = appendEntryAt(buildRequest(), stubH(), identifiersPath(1), {
+      animalIdentifierPassport: 'UK-2'
+    })
+    expect(second).toBe(1)
+    // The sibling line was untouched.
+    expect(answersNow().commodityLines[0].animalIdentifiers).toEqual([])
+    expect(
+      answersNow().commodityLines[1].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierPassport
+      )
+    ).toEqual(['UK-1', 'UK-2'])
+  })
+
+  it('Should edit a unit in place at depth-2, leaving sibling units intact', () => {
+    store.saveAnswers(journeyId, {
+      commodityLines: [
+        catsLine([
+          { animalIdentifierPassport: 'UK-1' },
+          { animalIdentifierPassport: 'UK-2' }
+        ])
+      ]
+    })
+    updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 0, {
+      animalIdentifierPassport: 'UK-1-edited'
+    })
+    expect(
+      answersNow().commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierPassport
+      )
+    ).toEqual(['UK-1-edited', 'UK-2'])
+  })
+
+  it('Should remove a unit in place at depth-2, leaving sibling units intact', () => {
+    store.saveAnswers(journeyId, {
+      commodityLines: [
+        catsLine([
+          { animalIdentifierPassport: 'UK-1' },
+          { animalIdentifierPassport: 'UK-2' }
+        ])
+      ]
+    })
+    removeEntryAt(buildRequest(), stubH(), identifiersPath(0), 0)
+    expect(
+      answersNow().commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierPassport
+      )
+    ).toEqual(['UK-2'])
+  })
+
+  it('Should ignore a non-integer nested index on remove (a malformed URL must not destroy unit 0)', () => {
+    store.saveAnswers(journeyId, {
+      commodityLines: [catsLine([{ animalIdentifierPassport: 'UK-1' }])]
+    })
+    removeEntryAt(buildRequest(), stubH(), identifiersPath(0), Number('foo'))
+    expect(
+      answersNow().commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierPassport
+      )
+    ).toEqual(['UK-1'])
+  })
+
+  it('Should ignore an out-of-range nested index on update', () => {
+    store.saveAnswers(journeyId, {
+      commodityLines: [catsLine([{ animalIdentifierPassport: 'UK-1' }])]
+    })
+    updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 5, {
+      animalIdentifierPassport: 'UK-X'
+    })
+    expect(
+      answersNow().commodityLines[0].animalIdentifiers[0]
+        .animalIdentifierPassport
+    ).toBe('UK-1')
+  })
+
+  it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', () => {
+    // A Cats line carries a unit with a passport + permanent address (both in
+    // scope for Cats). The commit flips the line to Horse — off the Cats/Dogs
+    // permanentAddress gate — while the unit still holds the stale address.
+    // commit must re-run reconcile and DELETE the nested permanentAddress
+    // (destroyed, not hidden), leaving the still-in-scope passport intact.
+    store.saveAnswers(journeyId, {
+      commodityLines: [
+        catsLine([
+          { animalIdentifierPassport: 'UK-1', permanentAddress: address }
+        ])
+      ]
+    })
+    commit(buildRequest(), stubH(), {
+      commodityLines: [
+        {
+          commoditySelection: '0101 - Horse',
+          animalIdentifiers: [
+            { animalIdentifierPassport: 'UK-1', permanentAddress: address }
+          ]
+        }
+      ]
+    })
+    const persisted = records.load({ journeyId }).answers
+    const unit = persisted.commodityLines[0].animalIdentifiers[0]
+    // Passport stays (Horse is on the passport gate); permanentAddress is gone.
+    expect(unit.animalIdentifierPassport).toBe('UK-1')
+    expect('permanentAddress' in unit).toBe(false)
+  })
+})

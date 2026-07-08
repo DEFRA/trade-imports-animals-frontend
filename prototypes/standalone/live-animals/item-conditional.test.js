@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { reconcile } from './engine/evaluate/reconcile.js'
-import { entryComplete } from './engine/evaluate/complete.js'
-import { commodityLines } from './features/commodities/obligations.js'
+import { entryComplete, satisfied } from './engine/evaluate/complete.js'
 
 /**
  * The car windscreen claim was the live carrier for the EQUALS-gated,
@@ -57,7 +56,22 @@ describe('item-scoped conditionality with a LIST target (commodity → packages)
   })
 
   it('Should not owe the optional package count for completeness either way', () => {
-    expect(entryComplete(commodityLines, line('0102 - Cattle'))).toBe(true)
-    expect(entryComplete(commodityLines, line('0301 - Fish'))).toBe(true)
+    // Completeness runs through `satisfied` (which threads enclosing-frame
+    // context, inc-035). Each line carries a valid unit — an always-in-scope
+    // identification-details identifier; neither commodity is on the Cats/Dogs
+    // permanentAddress gate — so the line is complete regardless of the
+    // (optional) package count: in scope for Cattle, out of scope for Fish.
+    const withUnit = (commoditySelection) => ({
+      commodityLines: [
+        {
+          ...line(commoditySelection),
+          animalIdentifiers: [
+            { animalIdentifierIdentificationDetails: 'Hive mark HM-1' }
+          ]
+        }
+      ]
+    })
+    expect(satisfied('commodityLines', withUnit('0102 - Cattle'))).toBe(true)
+    expect(satisfied('commodityLines', withUnit('0301 - Fish'))).toBe(true)
   })
 })

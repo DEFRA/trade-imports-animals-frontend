@@ -96,10 +96,13 @@ function scaffoldFor(templatePath) {
   const segments = templatePath.split('.')
   const scaffold = {}
   const instancePath = []
-  let forest = registry.all
-  let frame = scaffold
+  // Innermost-last stack of the frames materialised so far, each pairing the
+  // concrete object being built with the obligation list walked at that depth —
+  // so an enclosing gate can be seeded on the correct ancestor frame.
+  const frameStack = [{ frame: scaffold, forest: registry.all }]
   let inItem = false
   segments.forEach((id, i) => {
+    const { frame, forest } = frameStack[frameStack.length - 1]
     const obligation = forest.find((candidate) => candidate.id === id)
     const gate = obligation.activatedBy
     // An item-conditional gate references a SIBLING in THIS item frame — satisfy it.
@@ -116,13 +119,24 @@ function scaffoldFor(templatePath) {
         frame[collection.id] = [{ [gate.obligation.id]: gateValue(gate) }]
       }
     }
+    // A frame:"enclosing" gate references a field in an ANCESTOR frame — seed
+    // its triggering value on the nearest enclosing frame that holds it, so a
+    // gated unit field (permanentAddress) enters scope. Backwards compatible:
+    // no live obligation used frame:"enclosing" before inc-035.
+    if (gate?.frame === 'enclosing') {
+      for (let d = frameStack.length - 1; d >= 0; d--) {
+        if (frameStack[d].forest.includes(gate.obligation)) {
+          frameStack[d].frame[gate.obligation.id] = gateValue(gate)
+          break
+        }
+      }
+    }
     const isAncestorCollection =
       obligation.collection && i < segments.length - 1
     if (isAncestorCollection) {
       const entry = {}
       frame[id] = [entry]
-      frame = entry
-      forest = obligation.item
+      frameStack.push({ frame: entry, forest: obligation.item })
       inItem = true
       instancePath.push(id, 0)
     } else {

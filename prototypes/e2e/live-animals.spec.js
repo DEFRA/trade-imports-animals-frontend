@@ -140,6 +140,45 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(row).toContainText('0102 - Cattle — 25 animals')
 
+    // Every commodity line owes at least one animal identifier unit (inc-035).
+    // Open the nested loop hub from the line row and add a unit.
+    const [unit] = line.animalIdentifiers
+    await row.getByRole('link', { name: /Animal identifiers/ }).click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Animal identifiers for this commodity'
+      })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Add an animal' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add an animal' })
+    ).toBeVisible()
+
+    // The type fields that match the enclosing commodity (Cattle) are shown;
+    // the others are hidden, and Cattle is off the permanent-address gate.
+    await expect(page.getByLabel('Ear tag number')).toBeVisible()
+    await expect(page.getByLabel('Passport number')).toBeVisible()
+    await expect(page.getByLabel('Horse name')).toBeHidden()
+    await expect(page.getByLabel('Name or organisation name')).toBeHidden()
+
+    await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
+    await page.getByRole('button', { name: 'Add animal' }).click()
+
+    // Back on the nested hub with the unit summarised, then Continue returns to
+    // the commodities loop hub.
+    await expect(
+      page.getByRole('heading', {
+        name: 'Animal identifiers for this commodity'
+      })
+    ).toBeVisible()
+    await expect(
+      page.locator('.govuk-summary-list__row', { hasText: 'Animal 1' })
+    ).toContainText(unit.animalIdentifierEarTag)
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Commodities you have added' })
+    ).toBeVisible()
+
     // Continue returns to the hub with the task completed.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
@@ -149,6 +188,77 @@ test.describe('live-animals (page-owned spine)', () => {
       hasText: 'Commodities'
     })
     await expect(commoditiesRow).toContainText('Completed')
+  })
+
+  test('animal identifiers — a unit form shows only the identifier types the commodity requires, plus the permanent address for cats and dogs', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // Add a Cats commodity line (only the commodity is needed to mint it; the
+    // taxonomy and counts are submit-enforced, so blank saves walk through).
+    await page.getByRole('link', { name: 'Commodities' }).click()
+    await page.getByRole('button', { name: 'Add a commodity' }).click()
+    await page
+      .getByLabel('Commodity', { exact: true })
+      .selectOption('01061900 - Cats')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Description of goods' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Open the animal identifiers loop hub for the Cats line.
+    const catsRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Commodity 1'
+    })
+    await catsRow.getByRole('link', { name: /Animal identifiers/ }).click()
+    await page.getByRole('button', { name: 'Add an animal' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add an animal' })
+    ).toBeVisible()
+
+    // Cats gates passport + tattoo + permanent address on; ear tag + horse
+    // name are hidden (they belong to other commodities).
+    await expect(page.getByLabel('Passport number')).toBeVisible()
+    await expect(page.getByLabel('Tattoo')).toBeVisible()
+    await expect(page.getByLabel('Ear tag number')).toBeHidden()
+    await expect(page.getByLabel('Horse name')).toBeHidden()
+    await expect(page.getByLabel('Name or organisation name')).toBeVisible()
+
+    // A partial permanent address blocks the add (the fieldGroup mandates apply
+    // once the record is provided) — the same blank-vs-partial rule as the
+    // private transporter form.
+    await page.getByLabel('Passport number').fill('UK123456789')
+    await page.getByLabel('Name or organisation name').fill('Pet Owner')
+    await page.getByRole('button', { name: 'Add animal' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Enter address line 1' })
+    ).toBeVisible()
+
+    // Completing the mandatory address fields commits the unit with its
+    // { name, address } permanent address.
+    await page.getByLabel('Address line 1').fill('1 Farm Lane')
+    await page.getByLabel('Town or city').fill('Skipton')
+    await page.getByLabel('Postal or zip code').fill('BD23 1UD')
+    await page.getByLabel('Country').selectOption('United Kingdom')
+    await page.getByLabel('Telephone number').fill('+44 1756 555 0192')
+    await page.getByLabel('Email address').fill('owner@example.co.uk')
+    await page.getByRole('button', { name: 'Add animal' }).click()
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Animal identifiers for this commodity'
+      })
+    ).toBeVisible()
+    const unitRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Animal 1'
+    })
+    await expect(unitRow).toContainText('Passport: UK123456789')
+    await expect(unitRow).toContainText('Permanent address: Pet Owner')
   })
 
   test('import reason — blank saves without error (enforcedAt=submit), then the happy path completes the task', async ({
@@ -1160,6 +1270,18 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Number of packages (optional)')
       .fill(line.numberOfPackages)
     await save()
+    // Every line owes at least one animal identifier unit (inc-035): add one
+    // from the nested loop hub. Cattle is off the permanent-address gate, so an
+    // ear tag alone completes the unit.
+    const [unit] = line.animalIdentifiers
+    await page
+      .locator('.govuk-summary-list__row', { hasText: 'Commodity 1' })
+      .getByRole('link', { name: /Animal identifiers/ })
+      .click()
+    await page.getByRole('button', { name: 'Add an animal' }).click()
+    await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
+    await page.getByRole('button', { name: 'Add animal' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
 
     // About the consignment: internal market walks on to the purpose page,

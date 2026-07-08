@@ -30,6 +30,11 @@ const get = (request, h) => {
             visuallyHiddenText: `commodity ${index + 1}`
           },
           {
+            href: pagePath(`commodities/${index}/identifiers`),
+            text: 'Animal identifiers',
+            visuallyHiddenText: `for commodity ${index + 1}`
+          },
+          {
             href: pagePath(`commodities/${index}/remove`),
             text: 'Remove',
             visuallyHiddenText: `commodity ${index + 1}`

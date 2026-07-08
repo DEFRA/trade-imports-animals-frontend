@@ -54,7 +54,11 @@ describe('indexed obligations are first-class', () => {
           typeSelection: 'domestic',
           speciesSelection: ['bos-taurus'],
           numberOfPackages: '5',
-          numberOfAnimalsQuantity: '25'
+          numberOfAnimalsQuantity: '25',
+          // Every line owes >=1 unit record with >=1 identifier (inc-035);
+          // Cattle is off the Cats/Dogs permanentAddress gate, so an ear tag
+          // completes the line.
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ],
       consignor: {
@@ -122,7 +126,8 @@ describe('indexed obligations are first-class', () => {
           typeSelection: 'domestic',
           speciesSelection: ['bos-taurus'],
           numberOfPackages: '5',
-          numberOfAnimalsQuantity: '25'
+          numberOfAnimalsQuantity: '25',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ]
     }
