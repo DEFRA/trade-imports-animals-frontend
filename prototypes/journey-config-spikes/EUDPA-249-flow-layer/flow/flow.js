@@ -49,8 +49,6 @@ import {
   regionCode
 } from '../obligations/obligations.js'
 
-import { certifiedForOptionsLookup } from '../domain/index.js'
-
 export const flow = {
   id: 'live-animals-v4-slice',
   sectionEntryMode: 'firstApplicablePage',
@@ -194,14 +192,10 @@ export const flow = {
           title: 'Animals certified for',
           children: [
             {
-              // Async-driven options: the lookup obligation must be
-              // fulfilled (by the orchestrator) before options are
-              // non-empty.
+              // Options are stubbed statically in the spike; in
+              // production the certificate integration supplies them.
               page: 'animals-certified-for',
-              presents: [
-                { obligation: certifiedForOptionsLookup, mandate: 'soft' },
-                { obligation: animalsCertifiedFor, mandate: 'hard' }
-              ]
+              presents: [{ obligation: animalsCertifiedFor, mandate: 'hard' }]
             }
           ]
         }

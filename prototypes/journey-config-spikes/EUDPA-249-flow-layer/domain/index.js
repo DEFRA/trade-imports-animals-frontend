@@ -8,9 +8,7 @@
  * 2).
  *
  * Entries are pure functions of state. Same idiom as an obligation's
- * `applyTo`: read from `fulfilments` (which may include external-lookup
- * results delivered via `lookup-result` obligations — see
- * `certifiedForOptionsLookup` below).
+ * `applyTo`: read from `fulfilments`.
  *
  * Entry shapes:
  *   { type: 'enum',    options: (fulfilments, ctx?) → string[], labels? }
@@ -18,9 +16,9 @@
  *   { type: 'string',  predicate: (value, ctx) → error[], reasons: [...] }
  *   { type: 'date',    predicate: (value, ctx) → error[], reasons: [...] }
  *
- * Helper factories (`staticEnum`, `computedEnum`, `predicate`,
- * `lookupEnum`) attach a `.metadata` sidecar mirroring the obligations
- * `helpers.js` pattern — the data-dictionary sketch introspects it.
+ * Helper factories (`staticEnum`, `computedEnum`, `predicate`) attach a
+ * `.metadata` sidecar mirroring the obligations `helpers.js` pattern —
+ * the data-dictionary sketch introspects it.
  *
  * All predicates in this file map to real V4 rules from the Confluence
  * page "Live Animals Data Fields - V4" (page id 6497338582).
@@ -116,23 +114,6 @@ export function computedEnum(fn, readsFrom = [], { labels } = {}) {
   return entry
 }
 
-// Lookup-driven enum — options come from a `lookup-result` obligation's
-// fulfilment. The orchestrator resolves the lookup and writes the
-// result; here we just read it.
-export function lookupEnum(lookupObligation, { labels } = {}) {
-  const entry = {
-    type: 'enum',
-    options: (fulfilments) => fulfilments[lookupObligation.id] ?? []
-  }
-  entry.labels = labels ?? {}
-  entry.metadata = {
-    shape: 'lookupEnum',
-    lookupObligation: lookupObligation.name,
-    labels: entry.labels
-  }
-  return entry
-}
-
 // Predicate — the predicate returns an array of error objects (empty on
 // pass). `reasons` (metadata) enumerates every failure code the
 // predicate can emit so the dictionary can list them without executing
@@ -141,21 +122,6 @@ export function predicate(type, fn, reasons) {
   const entry = { type, predicate: fn, reasons }
   entry.metadata = { shape: 'predicate', reasons: reasons.map((r) => r.code) }
   return entry
-}
-
-// ---------------------------------------------------------------------------
-// Lookup-result obligation — defined here rather than in the parent
-// obligations manifest because it's a spike-specific illustration of the
-// async-options pattern. In production it would sit alongside the other
-// obligations. The evaluator treats it as an ordinary `single` category;
-// the orchestrator fulfils it by writing the fetched options into
-// `fulfilments`.
-// ---------------------------------------------------------------------------
-
-export const certifiedForOptionsLookup = {
-  id: 'lookup-a1b2c3d4-0000-4000-8000-certifiedforopts',
-  name: 'certifiedForOptionsLookup',
-  applyTo: () => ({ inScope: true, status: 'system-handled' })
 }
 
 // ---------------------------------------------------------------------------
@@ -556,9 +522,19 @@ export const transitedCountriesDomain = {
   }
 }
 
-// Lookup-driven — animalsCertifiedFor options fetched by the
-// orchestrator and written to `certifiedForOptionsLookup`.
-export const animalsCertifiedForDomain = lookupEnum(certifiedForOptionsLookup)
+// Stubbed enum — in production these options come from the certificate.
+// For the spike we hardcode four representative values so the browser
+// walk works without an upstream integration.
+export const ANIMAL_TYPE_OPTIONS = ['bovine', 'ovine', 'porcine', 'equine']
+export const ANIMAL_TYPE_LABELS = {
+  bovine: 'Cattle',
+  ovine: 'Sheep',
+  porcine: 'Pigs',
+  equine: 'Horses'
+}
+export const animalsCertifiedForDomain = staticEnum(ANIMAL_TYPE_OPTIONS, {
+  labels: ANIMAL_TYPE_LABELS
+})
 
 // ---------------------------------------------------------------------------
 // Manifest — keyed by obligation id.

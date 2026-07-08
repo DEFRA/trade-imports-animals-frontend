@@ -369,23 +369,17 @@ describe('presentsForEach — species-details (iteration 4)', () => {
   })
 })
 
-describe('lookup — seeded animals-certified-for', () => {
-  it('GET /pages/animals-certified-for/resolve seeds and redirects', async () => {
+describe('animals-certified-for — statically stubbed options', () => {
+  it('GET /pages/animals-certified-for renders the four stubbed option labels', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'GET',
-      url: '/prototype/eudpa-249/pages/animals-certified-for/resolve'
-    })
-    expect(res.statusCode).toBe(302)
-    expect(res.headers.location).toBe(
-      '/prototype/eudpa-249/pages/animals-certified-for'
-    )
-    // Now the page renders with populated checkbox labels.
-    const page = await inject(jar, {
-      method: 'GET',
       url: '/prototype/eudpa-249/pages/animals-certified-for'
     })
-    expect(page.statusCode).toBe(200)
-    expect(page.payload).toContain('bovine')
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toContain('Cattle')
+    expect(res.payload).toContain('Sheep')
+    expect(res.payload).toContain('Pigs')
+    expect(res.payload).toContain('Horses')
   })
 })

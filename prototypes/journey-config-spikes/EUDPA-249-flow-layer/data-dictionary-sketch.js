@@ -13,16 +13,14 @@
  * that could be piped into a docs site, a Confluence macro, or a
  * spreadsheet review.
  *
- * The dictionary is **derivable statically** for staticEnum + lookupEnum
- * shapes. computedEnum + predicate entries are marked "dynamic (see
- * readsFrom / reasons)" — they can't be enumerated without running the
- * closure but their reachability is documented via metadata.
+ * The dictionary is **derivable statically** for staticEnum shapes.
+ * computedEnum + predicate entries are marked "dynamic (see readsFrom /
+ * reasons)" — they can't be enumerated without running the closure but
+ * their reachability is documented via metadata.
  */
 
 import { obligations } from './obligations/obligations.js'
-import { domain, certifiedForOptionsLookup } from './domain/index.js'
-
-const DOMAIN_EXTRA_OBLIGATIONS = [certifiedForOptionsLookup]
+import { domain } from './domain/index.js'
 
 // ---------------------------------------------------------------------------
 // Obligation scope description — pulls from applyTo.metadata when the
@@ -65,10 +63,8 @@ function domainShape(entry) {
 // ---------------------------------------------------------------------------
 
 export function buildDictionary() {
-  const seen = new Set(obligations.map((o) => o.id))
   const rows = []
-
-  const push = (obligation) => {
+  for (const obligation of obligations) {
     const entry = domain.get(obligation.id)
     rows.push({
       id: obligation.id,
@@ -77,14 +73,6 @@ export function buildDictionary() {
       scope: scopeShape(obligation),
       domain: domainShape(entry) ?? { note: 'no domain entry' }
     })
-  }
-
-  for (const o of obligations) push(o)
-  // Include spike-local obligations (e.g. the lookup) so the dictionary
-  // is complete against the full three-layer state.
-  for (const o of DOMAIN_EXTRA_OBLIGATIONS) {
-    if (seen.has(o.id)) continue
-    push(o)
   }
   return { obligations: rows }
 }

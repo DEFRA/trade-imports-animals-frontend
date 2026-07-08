@@ -6,10 +6,6 @@
  *     → ObligationEvaluator (Layer 1)
  *     → runtime primitives (Layer 2) reading domain (Layer 1.25)
  *
- * The evaluator is instantiated with the parent obligations manifest
- * PLUS the spike-local `certifiedForOptionsLookup` obligation, so
- * scope, purge, and record enumeration all work end-to-end.
- *
  * Each test corresponds to one AC bullet from the plan.
  */
 
@@ -37,7 +33,7 @@ import {
   regionCode
 } from './obligations/obligations.js'
 
-import { domain, certifiedForOptionsLookup } from './domain/index.js'
+import { domain } from './domain/index.js'
 import { flow } from './flow/flow.js'
 import {
   optionsFor,
@@ -53,16 +49,13 @@ import {
 
 // ---------------------------------------------------------------------------
 // Setup — one evaluator instance, reused across scenarios via evaluate().
-// The manifest is extended with the spike-local lookup obligation so the
-// evaluator recognises its id and doesn't purge fulfilment written by
-// the orchestrator.
 // ---------------------------------------------------------------------------
 
 let evaluate
 
 beforeAll(() => {
   const evaluator = createObligationEvaluator({
-    obligations: [...v4Obligations, certifiedForOptionsLookup]
+    obligations: v4Obligations
   })
   evaluate = (fulfilments) => evaluator.evaluate(fulfilments)
 })
@@ -156,18 +149,15 @@ describe('option filtering', () => {
     ).toEqual([])
   })
 
-  it('optionsFor(animalsCertifiedFor) reads the lookup fulfilment', () => {
-    // Before the orchestrator has resolved the lookup, options are empty.
-    expect(optionsFor(animalsCertifiedFor, {}, new Map(), domain)).toEqual([])
-    // After the orchestrator writes the result:
-    expect(
-      optionsFor(
-        animalsCertifiedFor,
-        { [certifiedForOptionsLookup.id]: ['bovine', 'ovine', 'porcine'] },
-        new Map(),
-        domain
-      )
-    ).toEqual(['bovine', 'ovine', 'porcine'])
+  it('optionsFor(animalsCertifiedFor) returns the stubbed static options', () => {
+    // In production the certificate integration supplies these. For the
+    // spike, they're hardcoded in the domain module.
+    expect(optionsFor(animalsCertifiedFor, {}, new Map(), domain)).toEqual([
+      'bovine',
+      'ovine',
+      'porcine',
+      'equine'
+    ])
   })
 
   it('validate rejects a submitted value not in the current options', () => {

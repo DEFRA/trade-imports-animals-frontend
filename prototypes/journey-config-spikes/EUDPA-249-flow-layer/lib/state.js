@@ -11,7 +11,6 @@
 import { evaluateState } from '../contract.js'
 
 export const SESSION_KEY = 'prototype:eudpa-249:fulfilments'
-export const LOOKUP_SEEDED_KEY = 'prototype:eudpa-249:lookup-seeded'
 
 // ---------------------------------------------------------------------------
 // Fulfilments — the primary state
@@ -121,23 +120,9 @@ export function deleteCommodityLine(request, lineId, lineLeafObligations) {
 }
 
 // ---------------------------------------------------------------------------
-// Lookup seeding — one-shot flag so the seeded-lookup handler only
-// fires once per session and then serves the resolved page directly.
-// ---------------------------------------------------------------------------
-
-export function isLookupSeeded(request) {
-  return Boolean(request.yar?.get(LOOKUP_SEEDED_KEY))
-}
-
-export function markLookupSeeded(request) {
-  request.yar?.set(LOOKUP_SEEDED_KEY, true)
-}
-
-// ---------------------------------------------------------------------------
 // Reset
 // ---------------------------------------------------------------------------
 
 export function resetState(request) {
   request.yar?.clear(SESSION_KEY)
-  request.yar?.clear(LOOKUP_SEEDED_KEY)
 }

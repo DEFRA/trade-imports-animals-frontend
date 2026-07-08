@@ -48,13 +48,12 @@ iteration 3's worked example.
       the obligation's id. The factory you pick depends on the
       obligation's V4 semantics:
 
-   | V4 shape                                         | Factory                                    | Example                   |
-   | ------------------------------------------------ | ------------------------------------------ | ------------------------- |
-   | Yes/No or small closed enum                      | `staticEnum(options, { labels })`          | `containsUnweanedAnimals` |
-   | Enum whose options depend on another obligation  | `computedEnum(fn, readsFrom, { labels })`  | `purposeInInternalMarket` |
-   | Enum whose options come from a lookup obligation | `lookupEnum(lookupObligation, { labels })` | `animalsCertifiedFor`     |
-   | String / integer / date rule                     | `predicate(type, fn, reasons)`             | `internalReferenceNumber` |
-   | Composite (enum + predicate on the same field)   | Build inline                               | `transitedCountries`      |
+   | V4 shape                                        | Factory                                   | Example                   |
+   | ----------------------------------------------- | ----------------------------------------- | ------------------------- |
+   | Yes/No or small closed enum                     | `staticEnum(options, { labels })`         | `containsUnweanedAnimals` |
+   | Enum whose options depend on another obligation | `computedEnum(fn, readsFrom, { labels })` | `purposeInInternalMarket` |
+   | String / integer / date rule                    | `predicate(type, fn, reasons)`            | `internalReferenceNumber` |
+   | Composite (enum + predicate on the same field)  | Build inline                              | `transitedCountries`      |
 
    Register the entry in the `export const domain = new Map([...])`
    list at the bottom of the file.

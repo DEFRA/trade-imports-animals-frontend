@@ -20,7 +20,7 @@ import {
   subsectionOfPage,
   sectionOfSubsection
 } from './flow/flow.js'
-import { certifiedForOptionsLookup, domain } from './domain/index.js'
+import { domain } from './domain/index.js'
 import {
   containerStatus,
   firstApplicablePage,
@@ -34,7 +34,7 @@ import { buildFieldDescriptors } from './lib/build-field-descriptors.js'
 import { formatDomainErrors } from './lib/format-domain-errors.js'
 
 const evaluator = createObligationEvaluator({
-  obligations: [...v4Obligations, certifiedForOptionsLookup]
+  obligations: v4Obligations
 })
 
 // ---------------------------------------------------------------------------

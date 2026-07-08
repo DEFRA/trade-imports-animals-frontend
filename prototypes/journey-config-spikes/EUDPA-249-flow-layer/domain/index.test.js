@@ -33,10 +33,8 @@ import {
   arrivalDateAtPortDomain,
   transitedCountriesDomain,
   animalsCertifiedForDomain,
-  certifiedForOptionsLookup,
   staticEnum,
   computedEnum,
-  lookupEnum,
   predicate,
   reasons
 } from './index.js'
@@ -327,23 +325,27 @@ describe('transitedCountriesDomain (V4: multi-select max 12)', () => {
   })
 })
 
-describe('lookupEnum — animalsCertifiedFor', () => {
-  it('returns options fetched by the orchestrator', () => {
-    const options = animalsCertifiedForDomain.options({
-      [certifiedForOptionsLookup.id]: ['bovine', 'ovine']
+describe('staticEnum — animalsCertifiedFor', () => {
+  it('returns the four stubbed options regardless of state', () => {
+    expect(animalsCertifiedForDomain.options({})).toEqual([
+      'bovine',
+      'ovine',
+      'porcine',
+      'equine'
+    ])
+  })
+
+  it('carries human labels for the option codes', () => {
+    expect(animalsCertifiedForDomain.labels).toEqual({
+      bovine: 'Cattle',
+      ovine: 'Sheep',
+      porcine: 'Pigs',
+      equine: 'Horses'
     })
-    expect(options).toEqual(['bovine', 'ovine'])
   })
 
-  it('returns [] before the lookup is fulfilled', () => {
-    expect(animalsCertifiedForDomain.options({})).toEqual([])
-  })
-
-  it('names the lookup obligation in metadata', () => {
-    expect(animalsCertifiedForDomain.metadata.shape).toBe('lookupEnum')
-    expect(animalsCertifiedForDomain.metadata.lookupObligation).toBe(
-      'certifiedForOptionsLookup'
-    )
+  it('names its shape as staticEnum in metadata', () => {
+    expect(animalsCertifiedForDomain.metadata.shape).toBe('staticEnum')
   })
 })
 
@@ -358,13 +360,6 @@ describe('factories', () => {
     const e = computedEnum((f) => (f.flag ? ['a'] : ['b']))
     expect(e.options({ flag: true })).toEqual(['a'])
     expect(e.options({})).toEqual(['b'])
-  })
-
-  it('lookupEnum reads from the given obligation id', () => {
-    const dummy = { id: 'dummy-lookup', name: 'dummy' }
-    const e = lookupEnum(dummy)
-    expect(e.options({ [dummy.id]: ['v1'] })).toEqual(['v1'])
-    expect(e.options({})).toEqual([])
   })
 
   it('predicate carries reason codes on metadata', () => {

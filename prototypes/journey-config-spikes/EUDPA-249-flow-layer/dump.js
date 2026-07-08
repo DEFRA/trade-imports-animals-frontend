@@ -22,7 +22,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { obligations as v4Obligations } from './obligations/obligations.js'
-import { certifiedForOptionsLookup } from './domain/index.js'
 import {
   evaluateState,
   subsections,
@@ -38,9 +37,7 @@ import { STATUSES } from './engine/index.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const ALL_OBLIGATIONS_BY_NAME = new Map(
-  [...v4Obligations, certifiedForOptionsLookup].map((o) => [o.name, o])
-)
+const ALL_OBLIGATIONS_BY_NAME = new Map(v4Obligations.map((o) => [o.name, o]))
 
 function resolveFulfilments(named) {
   const out = {}

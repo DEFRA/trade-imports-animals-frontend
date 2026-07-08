@@ -3,8 +3,8 @@
  * /prototype/eudpa-249/*.
  *
  * Routes are generated at register-time by walking flow.js and emitting
- * one GET+POST per static page, plus the bespoke line / lookup / start /
- * reset / hub / cya routes.
+ * one GET+POST per static page, plus the bespoke line / start / reset /
+ * hub / cya routes.
  *
  * The plugin is registered only when
  * `config.get('prototype.eudpa249.enabled')` is true — see
@@ -22,7 +22,6 @@ import {
 } from './features/commodity-lines/controller.js'
 import { startController } from './features/start/controller.js'
 import { resetController } from './features/reset/controller.js'
-import { lookupController } from './features/lookup/controller.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -75,15 +74,6 @@ export const journeyConfigFlow = {
           method: 'POST',
           path: `${BASE}/reset`,
           ...resetController.post
-        })
-      )
-
-      // Seeded async lookup
-      routes.push(
-        publicRoute({
-          method: 'GET',
-          path: `${BASE}/pages/animals-certified-for/resolve`,
-          ...lookupController.get
         })
       )
 

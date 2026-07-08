@@ -41,7 +41,6 @@ import {
   regionCodeRequirement,
   regionCode
 } from '../obligations/obligations.js'
-import { certifiedForOptionsLookup } from '../domain/index.js'
 
 export const presentation = new Map([
   [
@@ -170,14 +169,6 @@ export const presentation = new Map([
       pageTitle: 'Region code',
       legend: 'Enter the region of origin code',
       hint: 'Up to 5 characters. For example, FR-75.'
-    }
-  ],
-  [
-    certifiedForOptionsLookup.id,
-    {
-      pageTitle: 'Loading options',
-      legend: 'Loading',
-      hint: 'The system is looking up the certified-for options.'
     }
   ],
   [

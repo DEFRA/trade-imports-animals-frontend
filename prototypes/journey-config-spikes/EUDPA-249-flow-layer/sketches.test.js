@@ -67,14 +67,13 @@ describe('optionListsForPage', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildDictionary', () => {
-  it('yields one row per obligation plus the spike-local lookup', () => {
+  it('yields one row per obligation', () => {
     const dict = buildDictionary()
     const names = dict.obligations.map((o) => o.name)
     expect(names).toContain('reasonForImport')
     expect(names).toContain('purposeInInternalMarket')
     expect(names).toContain('arrivalDateAtPort')
-    // Includes the spike-local lookup so async options are visible.
-    expect(names).toContain('certifiedForOptionsLookup')
+    expect(names).toContain('animalsCertifiedFor')
   })
 
   it('reflects the reason obligation as staticEnum', () => {
