@@ -38,6 +38,21 @@ const nunjucksEnvironment = nunjucks.configure(nunjucksPaths, {
   noCache: config.get('nunjucks.noCache')
 })
 
+// Hapi Vision has its own path list, separate from the Nunjucks
+// environment above. Vision resolves the initial template a
+// `h.view('page')` call names; only after that does Nunjucks handle
+// `extends` / `include`. Both need the spike templates directory to
+// find `page.njk`, `hub.njk`, etc.
+const visionPaths = ['server']
+if (config.get('prototype.eudpa249.enabled')) {
+  visionPaths.push(
+    path.resolve(
+      dirname,
+      '../../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/templates'
+    )
+  )
+}
+
 export const nunjucksConfig = {
   plugin: hapiVision,
   options: {
@@ -53,7 +68,7 @@ export const nunjucksConfig = {
       environment: nunjucksEnvironment
     },
     relativeTo: path.resolve(dirname, '../..'),
-    path: 'server',
+    path: visionPaths,
     isCached: config.get('isProduction'),
     context
   }

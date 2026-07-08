@@ -246,9 +246,9 @@ export const config = convict({
   },
   auth: {
     enabled: {
-      doc: 'Enable authentication (Bell + session cookie)',
+      doc: 'Enable authentication (Bell + session cookie). Defaults on in production and during tests; off in local dev so `npm run dev` does not require the Defra ID stub to boot. Set AUTH_ENABLED=true to force it on locally.',
       format: Boolean,
-      default: true,
+      default: !isDevelopment,
       env: 'AUTH_ENABLED'
     }
   },
