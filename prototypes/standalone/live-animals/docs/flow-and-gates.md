@@ -18,7 +18,7 @@ Each page entry is the feature's `page.js` identity leaf (`{ id, slug }`), impor
 
 ### `dynamic: true` is a presentation axis, not a gate
 
-One section (`protected-ncd`) carries `dynamic: true` (the others, `named-driver` and `modifications`, were removed in inc-025 and inc-026). It marked add-on rows the hub rendered only once picked — a presentation choice, distinct from the gate that decides reachability. The hub's add-on row machinery went with the `addons` picker in inc-024; nothing writes the `addons` answer any more, so this section's derived gate never passes and it renders nowhere. The marker stays on it purely as part of the vendored shape and dies with the section in inc-027 — do not use it for a live-animals section.
+No section carries `dynamic: true` any more — protected-ncd, the last one, went in inc-027 (named-driver in inc-025, modifications in inc-026). The marker flagged add-on rows the hub rendered only once picked — a presentation choice, distinct from the gate that decides reachability. The hub's add-on row machinery went with the `addons` picker in inc-024, so nothing interpreted the marker even before the sections were removed. The flow and gates still support the flag (a section with it would derive its gate the same way, and the hub could key row appearance off it), but it is currently unused — do not add it to a live-animals section.
 
 ## Gates are derived by default
 

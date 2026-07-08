@@ -61,11 +61,13 @@ describe('dispatch + flow', () => {
     )
   })
 
-  it('Should enter an addon section only at its first gated-in page', () => {
-    const scope = { inScope: reconcile({ addons: ['protected-ncd'] }).inScope }
-    expect(sectionEntry('protected-ncd', scope)).toMatch(
-      /\/addons\/protected-ncd\/years$/
-    )
+  it('Should enter a section at its first gated-in page', () => {
+    // protected-ncd was the last add-on carrier for this (removed inc-027); the
+    // hub resolves every section row href through sectionEntry, so re-point at a
+    // live multi-page section — transport enters at its always-in-scope first
+    // page.
+    const scope = { inScope: reconcile({}).inScope }
+    expect(sectionEntry('transport', scope)).toMatch(/\/port-of-entry$/)
   })
 
   it('Should unlock the quote only once every other section is complete', () => {

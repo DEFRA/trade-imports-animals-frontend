@@ -21,7 +21,6 @@ import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
-import * as ncd from './protected-ncd/years.controller.js'
 import * as quote from './quote/controller.js'
 import * as cya from './check-answers/controller.js'
 import * as declaration from './declaration/controller.js'
@@ -42,7 +41,6 @@ export const dispatchPages = [
   transportersSelect.meta,
   privateTransporterDetails.meta,
   contactSelect.meta,
-  ncd.meta,
   declaration.meta
 ]
 
@@ -70,7 +68,6 @@ export const allRoutes = [
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
-  ...ncd.routes,
   ...quote.routes,
   ...cya.routes,
   ...declaration.routes,

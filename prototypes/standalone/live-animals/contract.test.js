@@ -32,7 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as ncd from './features/protected-ncd/years.controller.js'
 import * as declaration from './features/declaration/controller.js'
 
 /**
@@ -153,13 +152,6 @@ const cases = [
     // copied { name, address } (c-020) — the select side of the
     // unresolved c-001 variant pair.
     payload: { contactAddress: 'animal-and-plant-health-agency' }
-  },
-  {
-    id: 'protected-ncd-years',
-    collects: ncd.meta.collects,
-    handler: postHandlerOf(ncd),
-    seed: { addons: ['protected-ncd'] },
-    payload: { ncdYears: '5' }
   },
   {
     id: 'declaration',

@@ -45,11 +45,14 @@ export const enumerateScopeStates = () =>
  * scope: the feature that collected the activating answer was removed and
  * nothing writes it any more (the activator survives only as a module-local
  * identity stub in the dependent feature's obligations.js). They are
- * intentionally unreachable while they await their own removal increment
- * (inc-025..027), so they drop out of the proof rather than reporting as
- * prover bugs. This set empties as the stub-bearing features are deleted.
+ * intentionally unreachable while they await their own removal increment, so
+ * they drop out of the proof rather than reporting as prover bugs. This set
+ * empties as the stub-bearing features are deleted — after inc-027 removed the
+ * `addons`-gated protected-ncd, the sole survivor is `premium` (activated off
+ * the unregistered `coverType` stub in the quote feature), and it is system so
+ * it never reaches the witness set anyway; it dies with the quote in inc-028.
  */
-const orphanedRootIds = new Set(
+export const orphanedRootIds = new Set(
   registry.all
     .filter(
       (obligation) =>

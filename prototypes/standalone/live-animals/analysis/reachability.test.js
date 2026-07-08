@@ -7,6 +7,7 @@ import { dispatchPages } from '../features/index.js'
 import {
   buildWitnesses,
   enumerateScopeStates,
+  orphanedRootIds,
   proveReachability
 } from './reachability.js'
 import { simulateJourney } from './simulate.js'
@@ -43,15 +44,15 @@ describe('reachability / dead-end prover', () => {
     ).toBe(true)
   })
 
-  it('Should exclude stub-activated obligations from the witness set (pending removal, never in scope)', () => {
-    // ncdYears activates off the `addons` picker, which was removed in inc-024
-    // — the activator survives only as an unregistered identity stub, so no
-    // enumerable state can put it in scope. It drops out of the proof until its
-    // own removal increment (inc-027). modDescription/modValue were removed
-    // with the modifications section in inc-026, and the drivers subtree in
-    // inc-025, so none of them appear.
+  it('Should exclude the last stub-activated obligation from the witness set (premium coverType stub, dies inc-028)', () => {
+    // inc-027 removed protected-ncd (ncdYears) — the last add-on section — so
+    // the self-emptying exclusion set is down to its final member: `premium`,
+    // activated off the unregistered `coverType` stub in the quote feature.
+    // It is system:true (computed, never collected) so the witness set excludes
+    // it regardless; it awaits its own removal in inc-028.
+    expect([...orphanedRootIds]).toEqual(['premium'])
     const targets = buildWitnesses().map((witness) => witness.targetKey)
-    expect(targets).not.toContain('ncdYears')
+    expect(targets).not.toContain('premium')
   })
 
   it('Should witness the item-conditional obligation inside a collection item (the closed hole)', () => {

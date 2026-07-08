@@ -169,10 +169,10 @@ import { vehicleSecurityPage } from '../features/vehicle-security/page.js'
 ```
 
 Always import the leaf — never inline a `{ id, slug }` literal here. No
-`gate`: an always-live section derives to reachable from its collects. (The
-`dynamic: true` marker on the remaining car sections is a leftover of the
-vendored add-on shape — it goes with those sections; do not use it for a
-live-animals section.)
+`gate`: an always-live section derives to reachable from its collects. (No
+section carries the `dynamic: true` add-on marker any more — protected-ncd,
+the last one, went in inc-027. The flow still supports the flag but nothing
+sets it; do not use it for a live-animals section.)
 
 ### 8. Add the check-your-answers rows
 

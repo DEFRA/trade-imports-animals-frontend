@@ -75,13 +75,13 @@ It scans source text rather than the module graph on purpose:
 When one feature's obligation is activated by another feature's answer,
 the reference is a real JS import of the obligation constant — never a
 string or an id lookup. Live-animals currently has no cross-feature
-edge; the vendored car add-on sections (protected-ncd — named-driver was
-removed in inc-025, modifications in inc-026) used to import the `addons`
-picker sideways, but the addons feature was removed in inc-024 and the
-survivor now carries a module-local identity stub
-(`const addons = { id: 'addons' }`) in its own `obligations.js` —
-unregistered and uncollected, so its obligation can never enter scope
-again; the stub dies with its feature in inc-027.
+edge; the vendored car add-on sections (named-driver, modifications,
+protected-ncd) used to import the `addons` picker sideways, but they were
+removed in inc-025..027 along with the addons feature (inc-024). The one
+vendored stub left is `coverType` in the quote feature
+(`const coverType = { id: 'coverType' }`) — the module-local activator for the
+system `premium`, unregistered and uncollected, so `premium` can never enter
+scope again; the stub dies with the quote feature in inc-028.
 
 Activation always flows from a controlling answer to the details it
 unlocks, so the graph is acyclic.
@@ -102,14 +102,15 @@ closure. There are exactly three operators, interpreted in one place
 (`engine/evaluate/predicate.js`):
 
 ```js
-{ obligation: regionOfOriginCodeRequirement, equals: 'yes' } // scalar equality
-{ obligation: addons, includes: 'protected-ncd' }  // membership in a multi-select
-{ obligation: coverType, present: true }          // answered (non-blank)
+{ obligation: regionOfOriginCodeRequirement, equals: 'yes' }        // scalar equality
+{ obligation: meansOfTransport, includes: ['Railway', 'Road Vehicle'] } // answer is one of these
+{ obligation: coverType, present: true }                           // answered (non-blank)
 ```
 
-`includes` also accepts a list target — set intersection, so a scalar
-answer reads "is one of these" (the number-of-packages commodity list in
-`features/commodities/obligations.js`):
+`includes` is set intersection, so it reads "is one of these" whether the
+answer is a scalar or a multi-select. The same operator gates an
+item-conditional obligation inside a collection — the number-of-packages
+commodity list in `features/commodities/obligations.js`:
 
 ```js
 { obligation: commoditySelection, includes: PACKAGE_COUNT_COMMODITIES }
