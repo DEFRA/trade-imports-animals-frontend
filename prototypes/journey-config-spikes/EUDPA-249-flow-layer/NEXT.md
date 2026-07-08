@@ -20,8 +20,9 @@ dictionary MD) are parked for after the V4 buildout.
 - **Step 1 status:** DONE. Obligations spike forked into
   `./obligations/`; `grep -rn 'obligations-v4-model'` returns only
   historical doc pointers.
-- **Tests:** 382 spike tests (345 pre-gap-closure + 37 in the new
-  `obligations/coverage.test.js` and `obligations/whitelists.test.js`)
+- **Tests:** 384 spike tests (345 pre-gap-closure + 37 in
+  `obligations/coverage.test.js` and `obligations/whitelists.test.js`
+  after round 1 + 2 more uniqueness assertions after round 2)
   - 632 existing frontend tests, all green.
     Run `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
 - **Browsable demo:** `npm run dev` (auth defaults off in dev now),
@@ -432,10 +433,27 @@ files:
    (3 tests; a `KNOWN_UNWIRED` allow-list carries the 26 obligations
    that step 5 will wire during V4 buildout).
 
-**Both coverage gaps closed.** Baseline now 15 test files / 382 tests
-(was 13/345). Each closure test was verified by re-applying its
-matching mutation and confirming the test fires. Full closure story
-in the "Closing the gaps" appendix of `docs/testing.md`.
+**Both round-1 coverage gaps closed** by
+[`obligations/whitelists.test.js`](./obligations/whitelists.test.js) and
+[`obligations/coverage.test.js`](./obligations/coverage.test.js).
+
+**Round 2** ran six more mutations against deeper invariants:
+category classifier, domain-manifest key alignment, structural
+`within` references, page-`presents` alignment, `within` deletion,
+duplicate obligation `name`. Five fired existing tests correctly; one
+(duplicate name) exposed a new gap, closed by two new uniqueness
+assertions in `coverage.test.js`.
+
+Two cross-mutation wins in round 2: the round-1 closure tests
+independently caught round-2 mutations they weren't designed for
+(mutation 7 fires `coverage.test.js`; mutation 8 fires
+`whitelists.test.js`).
+
+Baseline now **15 test files, 384 tests, all pass** (started at
+13/345 before round 1, 15/382 after round 1, 15/384 after round 2).
+Each closure test was verified by re-applying its matching mutation
+and confirming it fires. Full detail in
+[`docs/testing.md`](./docs/testing.md).
 
 **Follow-on for step 5:** the `KNOWN_UNWIRED` allow-list in
 `obligations/coverage.test.js` should shrink as V4 buildout adds

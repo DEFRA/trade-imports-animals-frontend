@@ -1,14 +1,15 @@
 # Testing — what proves what
 
-The spike ships 382 vitest tests across 15 files. Their job is to
+The spike ships 384 vitest tests across 15 files. Their job is to
 catch drift when the obligations / domain / flow model changes. This
-document is the receipt: five realistic mutations of the model, each
-applied to a real commit, showing exactly which tests fire.
+document is the receipt: eleven realistic mutations of the model
+applied over two rounds, each showing exactly which tests fire.
 
-Two of the five mutations originally exposed coverage gaps. Both were
-closed by new tests — see the "Closing the gaps" appendix at the end.
+Round 1 (mutations 1-5) exposed two coverage gaps; both closed. Round 2
+(mutations 6-11) exposed one more; also closed. See the appendices at
+the end for the closure story.
 
-Baseline before every mutation: **15 test files, 382 tests, all pass.**
+Baseline before every mutation: **15 test files, 384 tests, all pass.**
 Run:
 
 ```bash
@@ -339,3 +340,165 @@ new test files landed.
 The updated mutation summary table at the top of this document reflects
 the closure — mutations 3 and 5 now show 1 failing test each rather
 than 0.
+
+---
+
+## Round 2 — six more mutations, one more gap
+
+Once round 1 had shipped and the two gaps were closed, we ran a
+second batch to probe deeper invariants: the evaluator's category
+classifier, domain-manifest key alignment, `within` structural
+references, page-`presents` alignment, `within` deletion, and
+uniqueness (duplicate obligation `name`).
+
+Baseline: 15 test files, 382 tests before round 2 started. All five
+of the closure tests from round 1 were unchanged.
+
+### Mutation 6 — change the evaluator's category classifier
+
+**Change:** in `obligations/evaluator.js`, misclassify group-shaped
+obligations as `'single'`.
+
+```diff
+     } else if (obligationChildren.has(o.id)) {
+-      obligationsByCategory.set(o.id, 'group')
++      obligationsByCategory.set(o.id, 'single')
+     } else {
+```
+
+**Result:** 32 tests fail across 6 files — evaluator unit tests,
+integration tests, dump snapshots, HTTP route walks. `commodityLine`
+and `unitRecord` stop behaving as groups; downstream fan-out breaks
+at every layer.
+
+**Invariant caught:** the category classifier is at the very bottom of
+the evaluator; downstream behaviour is heavily tested against it.
+
+### Mutation 7 — misalign a domain-manifest key
+
+**Change:** in `domain/index.js`, key `reasonForImportDomain` under
+`countryOfOrigin.id` instead of `reasonForImport.id`.
+
+**Result:** 6 tests fail across 5 files. **`obligations/coverage.test.js`
+fires** — one of the round-1 closure tests — because `reasonForImport`
+is now missing from the domain map AND not on `KNOWN_UNWIRED`. The
+other five failures are downstream: contract validation, sketches,
+build-field-descriptors, domain manifest self-check. A nice
+cross-mutation win: the round-1 coverage test also catches Round 2's
+misalignment.
+
+**Invariant caught:** the domain manifest must map each key to the
+domain entry for the correctly-keyed obligation. Coverage test is
+key-aware, not just cardinality-aware.
+
+### Mutation 8 — change a `within` reference
+
+**Change:** in `obligations/obligations.js`, change `passport.within`
+from `unitRecord` to `commodityLine`.
+
+**Result:** 8 tests fail across 2 files — evaluator group-semantics
+tests (unit-record path enumeration breaks), the `whitelists.test.js`
+round-1 closure tests (records at `line1/unit1` no longer materialise
+because passport is now line-scoped, not unit-scoped). Another
+cross-mutation win: the round-1 whitelist coverage catches structural
+`within` changes.
+
+**Invariant caught:** the hierarchy of `within` references shapes
+group inference; changing a level ripples into every unit-record
+scope test.
+
+**Note:** `numberOfPackages.within` cannot be similarly mutated to
+`unitRecord` because `unitRecord` is declared later in the file — the
+mutation fails at module load with a temporal-dead-zone
+`ReferenceError`. That's its own form of catch, but a boring one.
+
+### Mutation 9 — swap a page's `presents` obligation
+
+**Change:** in `flow/flow.js`, change `reason-for-import` page's
+presented obligation from `reasonForImport` to `countryOfOrigin`.
+
+```diff
+               page: 'reason-for-import',
+-              presents: [{ obligation: reasonForImport, mandate: 'hard' }]
++              presents: [{ obligation: countryOfOrigin, mandate: 'hard' }]
+```
+
+**Result:** 11 tests fail across 5 files — contract navigation
+(`changeLinkFor` resolves to wrong page), contract validation, HTTP
+route walks (`POST /pages/country-of-origin` no longer redirects to
+`/pages/reason-for-import`), sketches, build-field-descriptors.
+
+**Invariant caught:** the wiring between page and obligation is tested
+at both the contract level and the HTTP level. A mis-wire fails at both.
+
+### Mutation 10 — delete `commodityCode`'s `within`
+
+**Change:** in `obligations/obligations.js`, remove `within: commodityLine`
+from `commodityCode`.
+
+**Result:** **164 tests fail across 7 files** — the widest impact of
+any mutation in this document. `commodityCode` is central to the V4
+model; removing its `within` breaks group inference, storage purge,
+per-line applyTo evaluation, and every downstream layer.
+
+**Invariant caught:** the load-bearing structural fields — anything
+`commodityCode`, `commodityLine`, `unitRecord` — cannot be quietly
+changed. If the test suite doesn't scream, we've missed something.
+
+### Mutation 11 — duplicate obligation name (coverage gap — **now closed**)
+
+**Change:** add a second obligation with `name: 'contactAddress'` (same
+as the real one) but a different id.
+
+**Result:** on first run, **all 382 tests still passed**. The
+evaluator only uses `id`, not `name`, so name collisions don't affect
+scope/purge/records. Downstream consumers — the data dictionary,
+`presentation.js`'s name-based lookup, `KNOWN_UNWIRED` in the round-1
+coverage test — silently take the first match and hide the collision.
+
+**Fix:** extended `obligations/coverage.test.js` with two new
+uniqueness assertions:
+
+- `has no duplicate ids in the manifest` — catches a copy-paste that
+  reused the same id (would collapse `obligationsById` map entries).
+- `has no duplicate names in the manifest` — catches this mutation
+  directly.
+
+Both verified: re-applying mutation 11 fires the duplicate-name
+assertion; a mirror mutation reusing an existing id fires the
+duplicate-id assertion.
+
+**Invariant caught after fix:** `id` and `name` are both distinct
+per-obligation across the manifest.
+
+### Round 2 summary
+
+|  #  | Mutation                         | Failing tests | Notes                                                        |
+| :-: | -------------------------------- | :-----------: | ------------------------------------------------------------ |
+|  6  | Category classifier misclassify  |      32       | Evaluator + downstream fanout                                |
+|  7  | Domain-manifest key misalignment |       6       | Round-1 coverage test **fires** (cross-mutation win)         |
+|  8  | Structural `within` change       |       8       | Round-1 whitelist test **fires** (cross-mutation win)        |
+|  9  | Page presents wrong obligation   |      11       | Contract + HTTP + descriptors                                |
+| 10  | Delete a load-bearing `within`   |      164      | Widest of all — commodityCode is central                     |
+| 11  | Duplicate obligation name        |   0 → **1**   | ~~gap~~ closed by new uniqueness tests in `coverage.test.js` |
+
+Baseline after round 2 closure: **15 test files, 384 tests, all pass.**
+Up by 2 tests (the two uniqueness assertions).
+
+### What round 2 taught us
+
+Two cross-mutation wins (7 and 8) — the round-1 closure tests
+independently caught round-2 mutations they weren't designed for. That
+suggests the closure tests are load-bearing beyond their own
+mutations, which is a stronger signal than a fresh coverage test would
+be alone.
+
+One new gap (11) — duplicate names. Fixed in-session. The `id`
+uniqueness test doesn't currently fire against any real drift because
+the imports would have already crashed if two `export const foo`
+statements shared a name, and the ids are hand-assigned; but it's
+cheap insurance for a future data-driven manifest.
+
+No structural test failed to catch a real mutation the way mutations 3
+and 5 originally did in round 1. All six round-2 mutations either fired
+directly, exposed a duplicate-name gap, or crashed at module load.

@@ -100,3 +100,36 @@ describe('coverage — every obligation is wired to domain or explicitly allow-l
     expect(orphans).toEqual([])
   })
 })
+
+describe('uniqueness — every obligation has a distinct id and name', () => {
+  it('has no duplicate ids in the manifest', () => {
+    // Duplicate ids collide in every id-keyed structure the evaluator
+    // builds (obligationsById, obligationChildren, etc.); one wins and
+    // the loser is silently invisible. A rename or copy-paste that
+    // reuses the same id must fail immediately.
+    const counts = new Map()
+    for (const o of obligations) {
+      counts.set(o.id, (counts.get(o.id) ?? 0) + 1)
+    }
+    const duplicates = [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([id, count]) => `${id} (×${count})`)
+    expect(duplicates).toEqual([])
+  })
+
+  it('has no duplicate names in the manifest', () => {
+    // Duplicate names silently corrupt every name-keyed downstream: the
+    // dictionary shows the obligation twice; `presentation.js`'s
+    // name-based lookup returns whichever entry matches first;
+    // KNOWN_UNWIRED status becomes ambiguous. Mutation 11 in
+    // docs/testing.md is exactly this.
+    const counts = new Map()
+    for (const o of obligations) {
+      counts.set(o.name, (counts.get(o.name) ?? 0) + 1)
+    }
+    const duplicates = [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([name, count]) => `${name} (×${count})`)
+    expect(duplicates).toEqual([])
+  })
+})
