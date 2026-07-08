@@ -6,7 +6,6 @@ import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
 import * as transport from './features/transport/obligations.js'
 import * as contact from './features/contact/obligations.js'
-import * as addons from './features/addons/obligations.js'
 import * as namedDriver from './features/named-driver/obligations.js'
 import * as modifications from './features/modifications/obligations.js'
 import * as protectedNcd from './features/protected-ncd/obligations.js'
@@ -23,7 +22,6 @@ const all = [
   ...addresses.obligations,
   ...transport.obligations,
   ...contact.obligations,
-  ...addons.obligations,
   ...namedDriver.obligations,
   ...modifications.obligations,
   ...protectedNcd.obligations,

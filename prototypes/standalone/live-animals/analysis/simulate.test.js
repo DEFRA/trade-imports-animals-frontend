@@ -14,7 +14,7 @@ describe('#simulateJourney', () => {
     configureReadyForQuote(readyForQuote)
   })
 
-  it('Should walk a plain persona (no transporter type, no add-ons) straight through', () => {
+  it('Should walk a plain persona (no transporter type) straight through', () => {
     const pages = simulateJourney({})
     expect(pages).toContain('port-of-entry')
     expect(pages).toContain('transporters')
@@ -25,7 +25,9 @@ describe('#simulateJourney', () => {
     expect(pages.indexOf('port-of-entry')).toBeLessThan(
       pages.indexOf('transporters')
     )
-    expect(pages.indexOf('transporters')).toBeLessThan(pages.indexOf('addons'))
+    expect(pages.indexOf('transporters')).toBeLessThan(
+      pages.indexOf('consignment-contact-select')
+    )
   })
 
   it('Should insert the gated transporter spoke exactly for the chosen type', () => {
@@ -40,6 +42,9 @@ describe('#simulateJourney', () => {
   })
 
   it('Should open only the add-on section a persona selected', () => {
+    // The addons picker page went in inc-024 — nothing writes this answer in
+    // the running journey any more, but seeding it directly still exercises
+    // the dynamic-section gating that survives until inc-025/026/027.
     const pages = simulateJourney({ addons: ['named-driver'] })
     expect(pages).toContain('drivers')
     expect(pages).not.toContain('modifications-describe')

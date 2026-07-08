@@ -32,7 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as addons from './features/addons/controller.js'
 import * as driversHub from './features/named-driver/drivers-hub.controller.js'
 import * as driverEntry from './features/named-driver/driver-entry.controller.js'
 import * as modDesc from './features/modifications/describe.controller.js'
@@ -158,12 +157,6 @@ const cases = [
     // copied { name, address } (c-020) — the select side of the
     // unresolved c-001 variant pair.
     payload: { contactAddress: 'animal-and-plant-health-agency' }
-  },
-  {
-    id: 'addons',
-    collects: addons.meta.collects,
-    handler: postHandlerOf(addons),
-    payload: { addons: ['named-driver', 'modifications', 'protected-ncd'] }
   },
   {
     id: 'modifications-describe',

@@ -1,6 +1,5 @@
 import { BASE, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
-import { sectionGatePasses } from '../../flow/gates.js'
 import { sectionEntry } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
 import { FULFILLED, IN_PROGRESS } from '../../engine/status.js'
@@ -47,36 +46,6 @@ const GROUP_ROWS = [
   }
 ]
 
-const ADDON_COPY = {
-  'named-driver': {
-    title: 'Add a named driver',
-    hint: 'People you want insured to drive your vehicle'
-  },
-  modifications: {
-    title: 'Declare vehicle modifications',
-    hint: 'Changes to your vehicle and their value'
-  },
-  'protected-ncd': {
-    title: 'Protect your no-claims discount',
-    hint: 'Keep your discount if you make a claim'
-  }
-}
-
-/**
- * Fail loud: a dynamic section with no authored copy entry is a
- * missing-copy bug, not a blank/`undefined` row.
- */
-export const addonCopy = (id) => {
-  const copy = ADDON_COPY[id]
-  if (!copy) {
-    throw new Error(
-      `No hub copy for add-on section '${id}' — add a title and hint to ` +
-        'ADDON_COPY in features/hub/controller.js'
-    )
-  }
-  return copy
-}
-
 const NOT_STARTED_TAG = {
   tag: { text: 'Not started', classes: 'govuk-tag--grey' }
 }
@@ -97,29 +66,6 @@ const buildGroupItems = (answers, scope, inScope) =>
     href: sectionEntry(row.id, scope),
     status: statusTag(sectionStatus(sectionById(row.id), answers, inScope))
   }))
-
-const buildPickerItem = (answers, inScope) => ({
-  title: { text: 'Add to your policy' },
-  href: pagePath('addons'),
-  status: statusTag(
-    'addons' in answers
-      ? FULFILLED
-      : sectionStatus(sectionById('add-to-your-policy'), answers, inScope)
-  )
-})
-
-const buildAddonItems = (answers, scope, inScope) =>
-  sections
-    .filter((section) => section.dynamic && sectionGatePasses(section, scope))
-    .map((section) => {
-      const copy = addonCopy(section.id)
-      return {
-        title: { text: copy.title },
-        hint: { text: copy.hint },
-        href: sectionEntry(section.id, scope),
-        status: statusTag(sectionStatus(section, answers, inScope))
-      }
-    })
 
 // "Check and submit" is a task row, not a GROUP_ROW: the section owes only
 // the declaration (confirmed by submitting), so its tag tracks the submit —
@@ -162,8 +108,6 @@ const handler = (request, h) => {
     progressLine: `You have completed ${countCompletedGroups(answers, inScope)} of ${GROUP_ROWS.length} tasks.`,
     items: [
       ...buildGroupItems(answers, scope, inScope),
-      buildPickerItem(answers, inScope),
-      ...buildAddonItems(answers, scope, inScope),
       buildQuoteItem(scope),
       buildReviewItem(answers, scope, inScope)
     ],

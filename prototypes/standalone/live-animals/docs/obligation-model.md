@@ -74,19 +74,22 @@ It scans source text rather than the module graph on purpose:
 
 When one feature's obligation is activated by another feature's answer,
 the reference is a real JS import of the obligation constant — never a
-string or an id lookup. The current edges:
-
-- `drivers` (named-driver) ← `addons`
-- `modDescription`, `modValue` (modifications) ← `addons`
-- `ncdYears` (protected-ncd) ← `addons`
+string or an id lookup. Live-animals currently has no cross-feature
+edge; the vendored car add-on sections (named-driver, modifications,
+protected-ncd) used to import the `addons` picker sideways, but the
+addons feature was removed in inc-024 and each survivor now carries a
+module-local identity stub (`const addons = { id: 'addons' }`) in its
+own `obligations.js` — unregistered and uncollected, so those
+obligations can never enter scope again; the stubs die with their
+features in inc-025..027.
 
 Activation always flows from a controlling answer to the details it
 unlocks, so the graph is acyclic.
 
 Real references buy three things over the UUIDs the v1 model used:
 
-- **greppable** — search for `addons` and you find the definition
-  and every relationship that depends on it
+- **greppable** — search for `commoditySelection` and you find the
+  definition and every relationship that depends on it
 - **navigable** — editors jump straight from the reference to the
   definition
 - **fail-loud** — a misspelt import throws when the module loads; a

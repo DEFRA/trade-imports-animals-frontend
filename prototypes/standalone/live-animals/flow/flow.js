@@ -13,7 +13,6 @@ import {
   transportersSelectPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-import { addonsPage } from '../features/addons/page.js'
 import { driversPage } from '../features/named-driver/page.js'
 import {
   modificationsDescribePage,
@@ -62,10 +61,6 @@ export const sections = [
   {
     id: 'contact',
     pages: [consignmentContactSelectPage]
-  },
-  {
-    id: 'add-to-your-policy',
-    pages: [addonsPage]
   },
   {
     id: 'named-driver',

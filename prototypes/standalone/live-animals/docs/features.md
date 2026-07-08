@@ -171,15 +171,10 @@ recur.
 
 - `GROUP_ROWS` — title and hint for the always-present group
   tasks
-- `ADDON_COPY` — title and hint per dynamic add-on section, looked up
-  through `addonCopy(id)`, which **throws** when a dynamic section has
-  no authored entry. A missing copy entry is a bug to surface loudly,
-  not a blank row. Do not soften the throw.
 
 The hub composes each row from parts it does not own: status tags from
-the pure `sectionStatus` roll-up, hrefs from `sectionEntry`, add-on row
-visibility from `sectionGatePasses(section, scope)` (gates are derived
-from the model by default — see the flow docs via the
+the pure `sectionStatus` roll-up and hrefs from `sectionEntry` (gates
+are derived from the model by default — see the flow docs via the
 [index](README.md)). The quote row stays inert ("Cannot start yet")
 until `scope.readyForQuote`.
 
@@ -224,7 +219,7 @@ would otherwise fabricate a phantom driver.
   `collectsFrom` correctly yields an empty set.
 - **Check your answers** (`features/check-answers/controller.js`) is
   bespoke summary composition — the norm here, not a bypass. It owns
-  row order, composed rows (Vehicle, Claim N, add-on status) and the
+  row order, composed rows (Commodity N, Document N) and the
   exact "Change <key>" accessible names. Change hrefs are **derived**
   through the dispatch seam —
   `pagePath(slugOfPage(pageOfObligation(id)))` — never hardcoded slugs,

@@ -21,7 +21,6 @@ import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
-import * as addons from './addons/controller.js'
 import * as driversHub from './named-driver/drivers-hub.controller.js'
 import * as driverEntry from './named-driver/driver-entry.controller.js'
 import * as driverDetail from './named-driver/driver-detail.controller.js'
@@ -49,7 +48,6 @@ export const dispatchPages = [
   transportersSelect.meta,
   privateTransporterDetails.meta,
   contactSelect.meta,
-  addons.meta,
   driversHub.meta,
   modDesc.meta,
   modVal.meta,
@@ -81,7 +79,6 @@ export const allRoutes = [
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
-  ...addons.routes,
   ...driversHub.routes,
   ...driverEntry.routes,
   ...driverDetail.routes,

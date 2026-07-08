@@ -32,7 +32,7 @@ The consequence: add a new sub-field to a collection item and it silently inheri
 
 `updateEntryAt` is a tested engine primitive (pinned in [engine/write-through-per-commit.test.js](../engine/write-through-per-commit.test.js) and [store-ops.test.js](../store-ops.test.js)), but no feature controller calls it. In the browser, collections change through add and remove only.
 
-Check your answers is deliberately shallow at depth: it composes top-level claim rows and names the selected add-ons, but shows no per-driver or nested-claim detail — changing a driver means going back through the drivers hub. So the "change a claim away from windscreen" wipe is proven at the model layer, not through a browser edit.
+Check your answers is deliberately shallow at depth: it composes one row per collection entry (Commodity N, Document N), but shows no per-entry field detail — changing an entry means going back through its loop hub. So wipes at depth (for example a driver claim changing away from windscreen) are proven at the model layer, not through a browser edit.
 
 ## Derived gates bake in any-in-scope semantics
 

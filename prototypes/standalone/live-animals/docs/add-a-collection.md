@@ -47,9 +47,10 @@ The collection-level facts:
 
 - `activatedBy` (optional) puts the whole collection in scope. The `drivers`
   collection ([`features/named-driver/obligations.js`](../features/named-driver/obligations.js))
-  carries one — it references a real obligation object from another feature
-  (`addons`), imported sideways. `commodityLines` has none, so it is
-  always live.
+  carries one — it references an obligation object by identity (normally a
+  real sideways import from the owning feature; drivers' activator survives
+  only as a module-local stub since the addons picker was removed in
+  inc-024). `commodityLines` has none, so it is always live.
 - `wipeOnExit` (meaningful only with `activatedBy`) means deselecting the
   activating answer destroys the whole subtree — every entry and everything
   inside it. Data is destroyed, not hidden, so re-activating starts blank.
@@ -191,10 +192,9 @@ page's append handler. Add a case shaped like the existing documents one:
 1. Assert the list page's declaration: `documentsList.meta.collects` equals
    `['documents']`.
 2. Drive the entry page's add handler with a valid payload.
-3. If the collection is gated, seed the activating answer (for drivers,
-   `{ addons: ['named-driver'] }`) so the collection stays in scope —
-   otherwise reconcile wipes the fresh write. Always-live collections need
-   no seed.
+3. If the collection is gated, seed the activating answer so the collection
+   stays in scope — otherwise reconcile wipes the fresh write. Always-live
+   collections need no seed.
 4. Assert the handler committed exactly the declared ids.
 
 ## 7. Nesting a collection

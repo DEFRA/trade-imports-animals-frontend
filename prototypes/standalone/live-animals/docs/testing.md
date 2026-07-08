@@ -82,7 +82,7 @@ The specs assert the rendered page — headings, roles, `govuk-*` classes, row t
 
 ### Why the hub hint is also pinned in a unit test
 
-The shared journey specs navigate hub rows by **title** and never read the hint text, so hint copy has no shared-spec coverage. `t2-hub-copy.test.js` renders the hub handler headlessly and pins all three add-on hints, plus the fail-loud `addonCopy` throw for a dynamic section with no authored copy. `hub-copy.spec.js` backs one of those rows at browser level. If you add an add-on section, extend both.
+The E2E specs navigate hub rows by **title** and never read the hint text, so hint copy has no E2E coverage. `t2-hub-copy.test.js` renders the hub handler headlessly and pins the Check and submit row's hint, href and starting status. If a row's hint copy matters, pin it there.
 
 ## The boot-replication rule
 

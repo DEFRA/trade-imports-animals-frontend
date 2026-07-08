@@ -169,9 +169,10 @@ import { vehicleSecurityPage } from '../features/vehicle-security/page.js'
 ```
 
 Always import the leaf — never inline a `{ id, slug }` literal here. No
-`gate`: an always-live section derives to reachable from its collects. Mark a
-section `dynamic: true` only if it should appear as an add-on task the user
-opts into.
+`gate`: an always-live section derives to reachable from its collects. (The
+`dynamic: true` marker on the remaining car sections is a leftover of the
+vendored add-on shape — it goes with those sections; do not use it for a
+live-animals section.)
 
 ### 8. Add the check-your-answers rows
 
@@ -199,10 +200,6 @@ to the `GROUP_ROWS` literal:
 The id must match the section id from step 7. `sectionStatus` supplies the
 row's tag and `sectionEntry` its href; the progress line counts over
 `GROUP_ROWS.length`, so it updates itself.
-
-For a `dynamic: true` section, add to `ADDON_COPY` instead. `addonCopy` throws
-if a dynamic section has no authored entry — a missing-copy bug fails loud
-rather than rendering a blank row.
 
 ### 10. Add a contract case
 

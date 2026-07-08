@@ -277,11 +277,16 @@ The marker is not derivable from the gate. `get-your-quote` is the
 counterexample: its gate fails for most of the journey, yet its hub row is
 always present — rendered inert as "Cannot start yet"
 ([`features/hub/controller.js`](../features/hub/controller.js)) — while a
-gated-out dynamic section has no row at all. The alternative — deriving
+gated-out dynamic section had no row at all. The alternative — deriving
 the add-on rows by exclusion, treating any section whose gate can fail as
 dynamic — was rejected: it would misclassify the quote section, and
 row-appearance is a hub presentation choice, not a scope fact. The flow
 records the choice; the hub interprets it.
+
+Status note: the hub's add-on row rendering went with the `addons`
+picker in inc-024, so nothing interprets the marker any more — it stays
+on the three vendored sections purely as part of their shape and dies
+with them in inc-025..027.
 
 ### Accepted costs
 

@@ -21,8 +21,8 @@ describe('reachability / dead-end prover', () => {
 
   it('Should enumerate a small finite scope space', () => {
     // regionOfOriginCodeRequirement(2) x reasonForImport(2)
-    // x meansOfTransport(2) x transporterType(3) x addons-subsets(8)
-    expect(enumerateScopeStates()).toHaveLength(192)
+    // x meansOfTransport(2) x transporterType(3)
+    expect(enumerateScopeStates()).toHaveLength(24)
   })
 
   it('Should prove no owed obligation is ever unreachable', () => {
@@ -30,11 +30,12 @@ describe('reachability / dead-end prover', () => {
   })
 
   it('Should have teeth — reporting a dead end if an owning page becomes unreachable', () => {
-    // Inject a reachability oracle that pretends the named-driver pages never open.
+    // Inject a reachability oracle that pretends only the first two sections'
+    // pages ever open.
     const pagesFor = () => ['origin', 'commodities']
     const problems = proveReachability({ pagesFor })
     expect(problems.length).toBeGreaterThan(0)
-    expect(problems.map((problem) => problem.obligation)).toContain('drivers')
+    expect(problems.map((problem) => problem.obligation)).toContain('documents')
     expect(
       problems.every(
         (problem) => problem.reason === 'owning-page-unreachable-in-scope'
@@ -42,32 +43,37 @@ describe('reachability / dead-end prover', () => {
     ).toBe(true)
   })
 
-  it('Should witness item-conditional obligations at both depths (the closed hole)', () => {
+  it('Should exclude stub-activated obligations from the witness set (pending removal, never in scope)', () => {
+    // drivers/modDescription/modValue/ncdYears activate off the `addons`
+    // picker, which was removed in inc-024 — the activator survives only as
+    // an unregistered identity stub, so no enumerable state can put them in
+    // scope. They drop out of the proof until their own removal increments.
     const targets = buildWitnesses().map((witness) => witness.targetKey)
-    expect(targets).toContain('commodityLines[0].numberOfPackages')
-    expect(targets).toContain('drivers[0].claims[0].windscreenProvider')
+    expect(targets).not.toContain('drivers')
+    expect(targets).not.toContain('modDescription')
+    expect(targets).not.toContain('ncdYears')
+    expect(targets).not.toContain('drivers[0].claims[0].windscreenProvider')
   })
 
-  it('Should actually put the item-conditional obligations in scope (not a null witness)', () => {
+  it('Should witness the item-conditional obligation inside a collection item (the closed hole)', () => {
+    const targets = buildWitnesses().map((witness) => witness.targetKey)
+    expect(targets).toContain('commodityLines[0].numberOfPackages')
+  })
+
+  it('Should actually put the item-conditional obligation in scope (not a null witness)', () => {
     const byKey = new Map(
       buildWitnesses().map((witness) => [witness.targetKey, witness])
     )
-    for (const key of [
-      'commodityLines[0].numberOfPackages',
-      'drivers[0].claims[0].windscreenProvider'
-    ]) {
-      expect(byKey.get(key)?.answers).not.toBeNull()
-    }
+    expect(
+      byKey.get('commodityLines[0].numberOfPackages')?.answers
+    ).not.toBeNull()
   })
 
-  it('Should have teeth at depth — biting when the commodities/drivers hub pages are dropped', () => {
-    // Drop only the two collection-hub pages — the item-conditional
-    // obligations live at depth and their DERIVED owning page is the
-    // dropped hub.
+  it('Should have teeth at depth — biting when the commodities hub page is dropped', () => {
+    // Drop only the collection-hub page — the item-conditional obligation
+    // lives at depth and its DERIVED owning page is the dropped hub.
     const pagesFor = (answers) =>
-      simulateJourney(answers).filter(
-        (pageId) => pageId !== 'commodities' && pageId !== 'drivers'
-      )
+      simulateJourney(answers).filter((pageId) => pageId !== 'commodities')
     const problems = proveReachability({ pagesFor })
     const deadEnds = problems
       .filter(
@@ -75,11 +81,9 @@ describe('reachability / dead-end prover', () => {
       )
       .map((problem) => problem.targetKey)
     expect(deadEnds).toContain('commodityLines[0].numberOfPackages')
-    expect(deadEnds).toContain('drivers[0].claims[0].windscreenProvider')
-    const windscreen = problems.find(
-      (problem) =>
-        problem.targetKey === 'drivers[0].claims[0].windscreenProvider'
+    const packages = problems.find(
+      (problem) => problem.targetKey === 'commodityLines[0].numberOfPackages'
     )
-    expect(windscreen.pageId).toBe('drivers')
+    expect(packages.pageId).toBe('commodities')
   })
 })

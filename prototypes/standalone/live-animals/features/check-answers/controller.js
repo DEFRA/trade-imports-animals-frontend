@@ -17,11 +17,6 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
 
 const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
-const ADDON_LABEL = {
-  'named-driver': 'Add a named driver',
-  modifications: 'Declare vehicle modifications',
-  'protected-ncd': 'Protect your no-claims discount'
-}
 
 const changeHref = (obligationId) =>
   `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
@@ -191,13 +186,6 @@ const buildRows = (answers) => {
     row('Contact address', answerOf('contactAddress')?.name, 'contactAddress')
   ]
 
-  const addons = []
-    .concat(answerOf('addons') ?? [])
-    .map((addon) => ADDON_LABEL[addon] ?? addon)
-
-  rows.push(
-    row('Added to policy', addons.length ? addons.join(', ') : 'None', 'addons')
-  )
   return rows
 }
 

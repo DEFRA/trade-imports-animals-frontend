@@ -14,27 +14,6 @@ import { simulateJourney } from './simulate.js'
  * is the point to enumerate more witnesses.
  */
 
-// Derived from the model via walkObligations, never re-typed — adding an
-// add-on enters the enumeration for free.
-const addonsPicker = registry.byId('addons')
-const ADDONS = [
-  ...new Set(
-    [...walkObligations()]
-      .map(({ obligation }) => obligation.activatedBy)
-      .filter((rule) => rule?.obligation === addonsPicker && 'includes' in rule)
-      .map((rule) => rule.includes)
-  )
-]
-
-const subsetsOf = (items) =>
-  items.reduce(
-    (subsets, item) => [
-      ...subsets,
-      ...subsets.map((subset) => [...subset, item])
-    ],
-    [[]]
-  )
-
 /**
  * Non-activating answers are irrelevant to scope, so this cartesian product is
  * the complete top-level space — a new top-level activator obligation must be
@@ -49,19 +28,36 @@ export const enumerateScopeStates = () =>
         // The commercial and private transporter spokes activate on DIFFERENT
         // equals-values, so (unlike an includes-list) one non-blank value
         // cannot witness both branches — the axis carries all three.
-        ['', 'Commercial transporter', 'Private transporter'].flatMap(
-          (transporterType) =>
-            subsetsOf(ADDONS).map((addons) => ({
-              regionOfOriginCodeRequirement,
-              reasonForImport,
-              meansOfTransport,
-              transporterType,
-              addons
-            }))
+        ['', 'Commercial transporter', 'Private transporter'].map(
+          (transporterType) => ({
+            regionOfOriginCodeRequirement,
+            reasonForImport,
+            meansOfTransport,
+            transporterType
+          })
         )
       )
     )
   )
+
+/**
+ * Roots whose activator obligation is no longer registered can never enter
+ * scope: the feature that collected the activating answer was removed and
+ * nothing writes it any more (the activator survives only as a module-local
+ * identity stub in the dependent feature's obligations.js). They are
+ * intentionally unreachable while they await their own removal increment
+ * (inc-025..027), so they drop out of the proof rather than reporting as
+ * prover bugs. This set empties as the stub-bearing features are deleted.
+ */
+const orphanedRootIds = new Set(
+  registry.all
+    .filter(
+      (obligation) =>
+        obligation.activatedBy &&
+        !registry.all.includes(obligation.activatedBy.obligation)
+    )
+    .map((obligation) => obligation.id)
+)
 
 const gateValue = (activatedBy) => {
   if ('equals' in activatedBy) return activatedBy.equals
@@ -111,6 +107,7 @@ export function buildWitnesses() {
   const witnesses = []
   for (const { templatePath, obligation } of walkObligations()) {
     if (obligation.system) continue
+    if (orphanedRootIds.has(templatePath.split('.')[0])) continue
     const { scaffold, instancePath } = scaffoldFor(templatePath)
     const targetKey = pathKey(instancePath)
     let answers = null

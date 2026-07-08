@@ -1,4 +1,12 @@
-import { addons } from '../addons/obligations.js'
+/**
+ * `drivers` activates on the `addons` picker including 'named-driver'. The
+ * addons feature (its collecting page and registered obligation) was removed
+ * in inc-024, so this activator's source now lives here — the identity is all
+ * the predicate reads (`answers.addons`). No page writes that answer any
+ * more, so `drivers` can no longer enter scope in the running journey; the
+ * whole named-driver feature goes in its own removal increment.
+ */
+const addons = { id: 'addons' }
 
 export const driverClaimType = { id: 'claimType', required: true }
 export const driverClaimAmount = { id: 'claimAmount' }
