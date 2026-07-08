@@ -98,7 +98,7 @@ simply not in scope on load, with nothing stale to reconcile away.
 
 This is the headline strength of storing nothing derived, and it is now
 a test: `engine/resume-self-heal.test.js` saves answers containing
-out-of-scope claims data and asserts the resumed scope excludes it.
+out-of-scope drivers data and asserts the resumed scope excludes it.
 
 ## No per-key delete, anywhere
 

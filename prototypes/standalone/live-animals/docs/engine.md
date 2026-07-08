@@ -141,9 +141,10 @@ functions:
 
 ### Worked example: the windscreen claim
 
-The claims collection (`features/claims/obligations.js`) has three
-sub-obligations per entry: `claimType` (required), `claimAmount` (optional)
-and `windscreenProvider` (required, but activated by the sibling
+The nested driver-claims collection
+(`features/named-driver/obligations.js`) has three sub-obligations per
+entry: `claimType` (required), `claimAmount` (optional) and
+`windscreenProvider` (required, but activated by the sibling
 `claimType === 'windscreen'`).
 
 - An **accident** claim is complete once `claimType` is answered. The provider

@@ -12,9 +12,7 @@ describe('obligation model purity', () => {
 
   it('Should accept a sideways import of another feature obligations.js', () => {
     expect(isSidewaysObligationImport('../addons/obligations.js')).toBe(true)
-    expect(
-      isSidewaysObligationImport('../driving-history/obligations.js')
-    ).toBe(true)
+    expect(isSidewaysObligationImport('../origin/obligations.js')).toBe(true)
   })
 
   it('Should reject any outward import (view, engine, validator, config, package)', () => {

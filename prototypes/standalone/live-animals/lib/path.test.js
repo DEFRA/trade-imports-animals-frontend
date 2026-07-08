@@ -3,47 +3,78 @@ import { deleteAt, destroyWiped, pathKey, setAt, valueAt } from './path.js'
 
 describe('path helpers', () => {
   it('Should collapse a depth-0 path to the legacy bare id', () => {
-    expect(pathKey(['claims'])).toBe('claims')
+    expect(pathKey(['commodityLines'])).toBe('commodityLines')
     expect(pathKey(['countryOfOrigin'])).toBe('countryOfOrigin')
   })
 
   it('Should encode indexed instance paths', () => {
-    expect(pathKey(['claims', 0, 'claimType'])).toBe('claims[0].claimType')
-    expect(pathKey(['claims', 2, 'claimAmount'])).toBe('claims[2].claimAmount')
+    expect(pathKey(['commodityLines', 0, 'commoditySelection'])).toBe(
+      'commodityLines[0].commoditySelection'
+    )
+    expect(pathKey(['commodityLines', 2, 'numberOfAnimalsQuantity'])).toBe(
+      'commodityLines[2].numberOfAnimalsQuantity'
+    )
   })
 
   it('Should read a value at a nested path', () => {
-    const answers = { claims: [{ claimType: 'accident', claimAmount: '500' }] }
-    expect(valueAt(answers, ['claims', 0, 'claimType'])).toBe('accident')
-    expect(valueAt(answers, ['claims', 0, 'claimAmount'])).toBe('500')
-    expect(valueAt(answers, ['claims'])).toEqual([
-      { claimType: 'accident', claimAmount: '500' }
+    const answers = {
+      commodityLines: [
+        { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' }
+      ]
+    }
+    expect(valueAt(answers, ['commodityLines', 0, 'commoditySelection'])).toBe(
+      '0102 - Cattle'
+    )
+    expect(
+      valueAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
+    ).toBe('25')
+    expect(valueAt(answers, ['commodityLines'])).toEqual([
+      { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' }
     ])
-    expect(valueAt(answers, ['claims', 5, 'claimType'])).toBeUndefined()
+    expect(
+      valueAt(answers, ['commodityLines', 5, 'commoditySelection'])
+    ).toBeUndefined()
   })
 
   it('Should set a value at a nested path without mutating the input', () => {
-    const answers = { claims: [{ claimType: 'accident' }] }
-    const next = setAt(answers, ['claims', 0, 'claimAmount'], '500')
-    expect(next.claims[0].claimAmount).toBe('500')
-    expect(answers.claims[0].claimAmount).toBeUndefined()
+    const answers = {
+      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+    }
+    const next = setAt(
+      answers,
+      ['commodityLines', 0, 'numberOfAnimalsQuantity'],
+      '25'
+    )
+    expect(next.commodityLines[0].numberOfAnimalsQuantity).toBe('25')
+    expect(answers.commodityLines[0].numberOfAnimalsQuantity).toBeUndefined()
   })
 
   it('Should delete a leaf key at a nested path', () => {
-    const answers = { claims: [{ claimType: 'accident', claimAmount: '500' }] }
-    deleteAt(answers, ['claims', 0, 'claimAmount'])
-    expect(answers.claims[0]).toEqual({ claimType: 'accident' })
+    const answers = {
+      commodityLines: [
+        { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' }
+      ]
+    }
+    deleteAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
+    expect(answers.commodityLines[0]).toEqual({
+      commoditySelection: '0102 - Cattle'
+    })
   })
 
   it('Should splice an indexed entry out when the leaf is an array index', () => {
-    const answers = { claims: [{ claimType: 'a' }, { claimType: 'b' }] }
-    deleteAt(answers, ['claims', 0])
-    expect(answers.claims).toEqual([{ claimType: 'b' }])
+    const answers = {
+      commodityLines: [{ commoditySelection: 'a' }, { commoditySelection: 'b' }]
+    }
+    deleteAt(answers, ['commodityLines', 0])
+    expect(answers.commodityLines).toEqual([{ commoditySelection: 'b' }])
   })
 
   it('Should delete a whole collection at a depth-0 path (=== delete answers.id)', () => {
-    const answers = { claims: [{ claimType: 'a' }], other: 1 }
-    deleteAt(answers, ['claims'])
+    const answers = {
+      commodityLines: [{ commoditySelection: 'a' }],
+      other: 1
+    }
+    deleteAt(answers, ['commodityLines'])
     expect(answers).toEqual({ other: 1 })
   })
 })
@@ -58,44 +89,49 @@ describe('wipeOrder — sibling-safe deletion order', () => {
 
   it('Should destroy both siblings when two array indices are wiped', () => {
     expect(
-      applyWipes({ claims: [{ id: 'a' }, { id: 'b' }] }, [
-        'claims[0]',
-        'claims[1]'
-      ]).claims
+      applyWipes({ commodityLines: [{ id: 'a' }, { id: 'b' }] }, [
+        'commodityLines[0]',
+        'commodityLines[1]'
+      ]).commodityLines
     ).toEqual([])
   })
 
   it('Should destroy every sibling when a whole array is wiped index-by-index', () => {
     expect(
-      applyWipes({ claims: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] }, [
-        'claims[0]',
-        'claims[1]',
-        'claims[2]'
-      ]).claims
+      applyWipes({ commodityLines: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] }, [
+        'commodityLines[0]',
+        'commodityLines[1]',
+        'commodityLines[2]'
+      ]).commodityLines
     ).toEqual([])
   })
 
   it('Should delete a nested field before its container entry is spliced away', () => {
-    // claims[0].x and claims[0] together: the deeper delete must run first.
-    const answers = { claims: [{ x: '1' }, { x: '2' }] }
-    applyWipes(answers, ['claims[0]', 'claims[0].x'])
-    expect(answers.claims).toEqual([{ x: '2' }])
+    // commodityLines[0].x and commodityLines[0] together: the deeper delete
+    // must run first.
+    const answers = { commodityLines: [{ x: '1' }, { x: '2' }] }
+    applyWipes(answers, ['commodityLines[0]', 'commodityLines[0].x'])
+    expect(answers.commodityLines).toEqual([{ x: '2' }])
   })
 
   it('Should delete a sibling array-index and a nested path in order via destroyWiped', () => {
     const answers = {
-      claims: [
-        { claimType: 'a', claimAmount: '100' },
-        { claimType: 'b', claimAmount: '200' }
+      commodityLines: [
+        { commoditySelection: 'a', numberOfAnimalsQuantity: '100' },
+        { commoditySelection: 'b', numberOfAnimalsQuantity: '200' }
       ],
       countryOfOrigin: 'FR'
     }
-    // Mix a whole-entry array-index wipe (claims[0]) with a nested-leaf wipe on
-    // a LATER sibling (claims[1].claimAmount). The nested delete must run before
-    // the splice, or renumbering would land it on the wrong entry.
-    destroyWiped(answers, ['claims[0]', 'claims[1].claimAmount'])
+    // Mix a whole-entry array-index wipe (commodityLines[0]) with a
+    // nested-leaf wipe on a LATER sibling (commodityLines[1].
+    // numberOfAnimalsQuantity). The nested delete must run before the
+    // splice, or renumbering would land it on the wrong entry.
+    destroyWiped(answers, [
+      'commodityLines[0]',
+      'commodityLines[1].numberOfAnimalsQuantity'
+    ])
     expect(answers).toEqual({
-      claims: [{ claimType: 'b' }],
+      commodityLines: [{ commoditySelection: 'b' }],
       countryOfOrigin: 'FR'
     })
   })

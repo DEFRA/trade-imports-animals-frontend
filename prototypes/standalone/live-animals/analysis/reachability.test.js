@@ -21,9 +21,8 @@ describe('reachability / dead-end prover', () => {
 
   it('Should enumerate a small finite scope space', () => {
     // regionOfOriginCodeRequirement(2) x reasonForImport(2)
-    // x meansOfTransport(2) x transporterType(3) x hadClaims(2)
-    // x voluntaryExcess(2) x coverType(2) x addons-subsets(8)
-    expect(enumerateScopeStates()).toHaveLength(1536)
+    // x meansOfTransport(2) x transporterType(3) x addons-subsets(8)
+    expect(enumerateScopeStates()).toHaveLength(192)
   })
 
   it('Should prove no owed obligation is ever unreachable', () => {
@@ -32,7 +31,7 @@ describe('reachability / dead-end prover', () => {
 
   it('Should have teeth — reporting a dead end if an owning page becomes unreachable', () => {
     // Inject a reachability oracle that pretends the named-driver pages never open.
-    const pagesFor = () => ['driving-history', 'cover-type']
+    const pagesFor = () => ['origin', 'commodities']
     const problems = proveReachability({ pagesFor })
     expect(problems.length).toBeGreaterThan(0)
     expect(problems.map((problem) => problem.obligation)).toContain('drivers')
@@ -43,9 +42,9 @@ describe('reachability / dead-end prover', () => {
     ).toBe(true)
   })
 
-  it('Should witness windscreenProvider at both depths (the closed hole)', () => {
+  it('Should witness item-conditional obligations at both depths (the closed hole)', () => {
     const targets = buildWitnesses().map((witness) => witness.targetKey)
-    expect(targets).toContain('claims[0].windscreenProvider')
+    expect(targets).toContain('commodityLines[0].numberOfPackages')
     expect(targets).toContain('drivers[0].claims[0].windscreenProvider')
   })
 
@@ -54,19 +53,20 @@ describe('reachability / dead-end prover', () => {
       buildWitnesses().map((witness) => [witness.targetKey, witness])
     )
     for (const key of [
-      'claims[0].windscreenProvider',
+      'commodityLines[0].numberOfPackages',
       'drivers[0].claims[0].windscreenProvider'
     ]) {
       expect(byKey.get(key)?.answers).not.toBeNull()
     }
   })
 
-  it('Should have teeth at depth — biting when the claims/drivers hub pages are dropped', () => {
-    // Drop only the two collection-hub pages — windscreenProvider lives at
-    // depth and its DERIVED owning page is the dropped hub.
+  it('Should have teeth at depth — biting when the commodities/drivers hub pages are dropped', () => {
+    // Drop only the two collection-hub pages — the item-conditional
+    // obligations live at depth and their DERIVED owning page is the
+    // dropped hub.
     const pagesFor = (answers) =>
       simulateJourney(answers).filter(
-        (pageId) => pageId !== 'claims' && pageId !== 'drivers'
+        (pageId) => pageId !== 'commodities' && pageId !== 'drivers'
       )
     const problems = proveReachability({ pagesFor })
     const deadEnds = problems
@@ -74,7 +74,7 @@ describe('reachability / dead-end prover', () => {
         (problem) => problem.reason === 'owning-page-unreachable-in-scope'
       )
       .map((problem) => problem.targetKey)
-    expect(deadEnds).toContain('claims[0].windscreenProvider')
+    expect(deadEnds).toContain('commodityLines[0].numberOfPackages')
     expect(deadEnds).toContain('drivers[0].claims[0].windscreenProvider')
     const windscreen = problems.find(
       (problem) =>

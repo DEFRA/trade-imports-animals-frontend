@@ -21,11 +21,6 @@ import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
-import * as driving from './driving-history/controller.js'
-import * as claimsList from './claims/list.controller.js'
-import * as claimsEntry from './claims/entry.controller.js'
-import * as cover from './cover-type/controller.js'
-import * as extras from './optional-extras/controller.js'
 import * as addons from './addons/controller.js'
 import * as driversHub from './named-driver/drivers-hub.controller.js'
 import * as driverEntry from './named-driver/driver-entry.controller.js'
@@ -54,10 +49,6 @@ export const dispatchPages = [
   transportersSelect.meta,
   privateTransporterDetails.meta,
   contactSelect.meta,
-  driving.meta,
-  claimsList.meta,
-  cover.meta,
-  extras.meta,
   addons.meta,
   driversHub.meta,
   modDesc.meta,
@@ -90,11 +81,6 @@ export const allRoutes = [
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
-  ...driving.routes,
-  ...claimsList.routes,
-  ...claimsEntry.routes,
-  ...cover.routes,
-  ...extras.routes,
   ...addons.routes,
   ...driversHub.routes,
   ...driverEntry.routes,

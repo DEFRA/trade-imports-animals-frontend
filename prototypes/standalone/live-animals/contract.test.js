@@ -32,11 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as driving from './features/driving-history/controller.js'
-import * as claimsList from './features/claims/list.controller.js'
-import * as claimsEntry from './features/claims/entry.controller.js'
-import * as cover from './features/cover-type/controller.js'
-import * as extras from './features/optional-extras/controller.js'
 import * as addons from './features/addons/controller.js'
 import * as driversHub from './features/named-driver/drivers-hub.controller.js'
 import * as driverEntry from './features/named-driver/driver-entry.controller.js'
@@ -165,28 +160,6 @@ const cases = [
     payload: { contactAddress: 'animal-and-plant-health-agency' }
   },
   {
-    id: 'driving-history',
-    collects: driving.meta.collects,
-    handler: postHandlerOf(driving),
-    payload: { yearsNoClaims: '3', hadClaims: 'yes', penaltyPoints: '0' }
-  },
-  {
-    id: 'cover-type',
-    collects: cover.meta.collects,
-    handler: postHandlerOf(cover),
-    payload: {
-      coverType: 'comprehensive',
-      voluntaryExcess: 'yes', // keeps excessAmount in scope on the same commit
-      excessAmount: '250'
-    }
-  },
-  {
-    id: 'optional-extras',
-    collects: extras.meta.collects,
-    handler: postHandlerOf(extras),
-    payload: { extras: ['breakdown', 'legal'] }
-  },
-  {
     id: 'addons',
     collects: addons.meta.collects,
     handler: postHandlerOf(addons),
@@ -241,25 +214,11 @@ describe('controller <-> model commit contract', () => {
     }
   )
 
-  // The LIST page declares `collects: ['claims']`, but the identity-minting
-  // write happens in the ENTRY sub-page's append — the contract is measured
-  // against the handler that actually commits.
-  it('Should commit claims via the entry (append) handler it declares', () => {
-    expect(claimsList.meta.collects).toEqual(['claims'])
-    const postAdd = postHandlerEndingWith(claimsEntry, 'claims/add')
-    const result = drive(postAdd, {
-      seed: { hadClaims: 'yes' }, // keeps the claims collection in scope
-      payload: { claimType: 'accident', claimAmount: '500' }
-    })
-    expect(new Set(committedIds(result))).toEqual(
-      new Set(committableCollects(claimsList.meta.collects))
-    )
-  })
-
   // The LIST page declares `collects: ['commodityLines']`, but the
   // identity-minting write is the SELECT sub-page's append (the details
-  // sub-page then edits the same entry) — same shape as claims. No seed:
-  // the collection is always-live.
+  // sub-page then edits the same entry) — the contract is measured against
+  // the handler that actually commits. No seed: the collection is
+  // always-live.
   it('Should commit commodity lines via the select (append) handler it declares', () => {
     expect(commoditiesList.meta.collects).toEqual(['commodityLines'])
     const postAdd = postHandlerEndingWith(
@@ -279,8 +238,8 @@ describe('controller <-> model commit contract', () => {
   })
 
   // The LIST page declares `collects: ['documents']`, but the identity-minting
-  // write is the entry sub-page's append — same shape as claims. No seed:
-  // the optional collection is always-live.
+  // write is the entry sub-page's append — same shape as commodity lines. No
+  // seed: the optional collection is always-live.
   it('Should commit documents via the entry (append) handler it declares', () => {
     expect(documentsList.meta.collects).toEqual(['documents'])
     const postAdd = postHandlerEndingWith(
@@ -304,7 +263,7 @@ describe('controller <-> model commit contract', () => {
 
   // The addresses LANDING accretes one collect per landed spoke, but every
   // write is a SELECT spoke's copy-commit (c-020) — the hub-and-spoke
-  // variant of the claims list/entry split. Each spoke commits exactly its
+  // variant of the list/entry split. Each spoke commits exactly its
   // own party, and together the spokes cover everything the landing
   // declares. No seed: the party obligations are always-live.
   it('Should commit each party via its select (copy) spoke, covering the landing collects', () => {
@@ -360,7 +319,8 @@ describe('controller <-> model commit contract', () => {
   })
 
   // The HUB declares `collects: ['drivers']`, but the identity-minting write
-  // happens in the driver ENTRY sub-page's append — same shape as claims.
+  // happens in the driver ENTRY sub-page's append — same shape as
+  // commodity lines.
   it('Should commit drivers via the entry (append) handler it declares', () => {
     expect(driversHub.meta.collects).toEqual(['drivers'])
     const postAdd = postHandlerEndingWith(driverEntry, 'named-driver/add')

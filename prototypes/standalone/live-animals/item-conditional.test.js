@@ -2,21 +2,29 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { reconcile } from './engine/evaluate/reconcile.js'
 import { entryComplete } from './engine/evaluate/complete.js'
 import { readyForQuote } from './flow/section-status.js'
-import { claims } from './features/claims/obligations.js'
+import { driverClaims } from './features/named-driver/obligations.js'
 import { commodityLines } from './features/commodities/obligations.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
 
-const claimsPersona = (types) => ({
-  hadClaims: 'yes',
-  claims: types.map((claimType) => ({ claimType, claimAmount: '100' }))
+const driverClaimsPersona = (types) => ({
+  addons: ['named-driver'],
+  drivers: [
+    {
+      driverName: 'Sam',
+      relationship: 'spouse',
+      claims: types.map((claimType) => ({ claimType, claimAmount: '100' }))
+    }
+  ]
 })
 
 describe('item-scoped conditionality (windscreen → provider)', () => {
   it('Should scope windscreenProvider for a windscreen claim only, per instance', () => {
-    const { inScope } = reconcile(claimsPersona(['accident', 'windscreen']))
-    expect(inScope.has('claims[0].windscreenProvider')).toBe(false) // accident
-    expect(inScope.has('claims[1].windscreenProvider')).toBe(true) // windscreen
+    const { inScope } = reconcile(
+      driverClaimsPersona(['accident', 'windscreen'])
+    )
+    expect(inScope.has('drivers[0].claims[0].windscreenProvider')).toBe(false) // accident
+    expect(inScope.has('drivers[0].claims[1].windscreenProvider')).toBe(true) // windscreen
   })
 
   it('Should resolve the predicate at full depth (drivers[i].claims[j])', () => {
@@ -36,31 +44,45 @@ describe('item-scoped conditionality (windscreen → provider)', () => {
 
   it('Should wipe the provider at that exact path when the claim leaves windscreen', () => {
     const { wiped } = reconcile({
-      hadClaims: 'yes',
-      claims: [
-        { claimType: 'windscreen', windscreenProvider: 'autoglass' },
-        { claimType: 'accident', windscreenProvider: 'kwik-fit' } // stale
+      addons: ['named-driver'],
+      drivers: [
+        {
+          driverName: 'Sam',
+          relationship: 'spouse',
+          claims: [
+            { claimType: 'windscreen', windscreenProvider: 'autoglass' },
+            { claimType: 'accident', windscreenProvider: 'kwik-fit' } // stale
+          ]
+        }
       ]
     })
-    expect(wiped).toContain('claims[1].windscreenProvider')
-    expect(wiped).not.toContain('claims[0].windscreenProvider')
+    expect(wiped).toContain('drivers[0].claims[1].windscreenProvider')
+    expect(wiped).not.toContain('drivers[0].claims[0].windscreenProvider')
   })
 
   it('Should keep two windscreen claims providers independent', () => {
-    const { inScope } = reconcile(claimsPersona(['windscreen', 'windscreen']))
-    expect(inScope.has('claims[0].windscreenProvider')).toBe(true)
-    expect(inScope.has('claims[1].windscreenProvider')).toBe(true)
+    const { inScope } = reconcile(
+      driverClaimsPersona(['windscreen', 'windscreen'])
+    )
+    expect(inScope.has('drivers[0].claims[0].windscreenProvider')).toBe(true)
+    expect(inScope.has('drivers[0].claims[1].windscreenProvider')).toBe(true)
   })
 
   it('Should make item-relative completeness respect the sibling', () => {
     expect(
-      entryComplete(claims, { claimType: 'windscreen', claimAmount: '100' })
+      entryComplete(driverClaims, {
+        claimType: 'windscreen',
+        claimAmount: '100'
+      })
     ).toBe(false)
     expect(
-      entryComplete(claims, { claimType: 'accident', claimAmount: '100' })
+      entryComplete(driverClaims, {
+        claimType: 'accident',
+        claimAmount: '100'
+      })
     ).toBe(true)
     expect(
-      entryComplete(claims, {
+      entryComplete(driverClaims, {
         claimType: 'windscreen',
         claimAmount: '100',
         windscreenProvider: 'autoglass'
@@ -120,7 +142,7 @@ describe('item-scoped conditionality with a LIST target (commodity → packages)
 describe('item-relative completeness gates the quote', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
-  it('Should lock readyForQuote for a windscreen claim missing its provider', () => {
+  it("Should lock readyForQuote for a driver's windscreen claim missing its provider", () => {
     const base = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
@@ -179,21 +201,32 @@ describe('item-relative completeness gates the quote', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      hadClaims: 'yes',
-      coverType: 'comprehensive',
+      addons: ['named-driver'],
       declaration: 'confirmed'
     }
     const missing = {
       ...base,
-      claims: [{ claimType: 'windscreen', claimAmount: '100' }]
+      drivers: [
+        {
+          driverName: 'Sam',
+          relationship: 'spouse',
+          claims: [{ claimType: 'windscreen', claimAmount: '100' }]
+        }
+      ]
     }
     const supplied = {
       ...base,
-      claims: [
+      drivers: [
         {
-          claimType: 'windscreen',
-          claimAmount: '100',
-          windscreenProvider: 'autoglass'
+          driverName: 'Sam',
+          relationship: 'spouse',
+          claims: [
+            {
+              claimType: 'windscreen',
+              claimAmount: '100',
+              windscreenProvider: 'autoglass'
+            }
+          ]
         }
       ]
     }

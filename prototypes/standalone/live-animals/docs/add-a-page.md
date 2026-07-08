@@ -10,7 +10,7 @@ This guide uses a worked example that was validated live on the real code: a
 (`parkingLocation`, a required radio) and whether a tracker is fitted
 (`hasTracker`, optional). Every step names an existing feature to copy —
 [`features/import-reason/`](../features/import-reason/) is the smallest slice
-and [`features/cover-type/`](../features/cover-type/) shows the full
+and [`features/origin/`](../features/origin/) shows the full
 validation pattern.
 
 ## What you get for free
@@ -87,7 +87,7 @@ not block saving. Save-blocking is a controller-owned validator. See
 ### 3. Write the controller
 
 Create `features/vehicle-security/controller.js`, copying
-[`features/cover-type/controller.js`](../features/cover-type/controller.js).
+[`features/origin/controller.js`](../features/origin/controller.js).
 The fixed shape:
 
 ```js

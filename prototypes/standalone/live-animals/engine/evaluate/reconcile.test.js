@@ -7,22 +7,34 @@ describe('#reconcile', () => {
     const { inScope } = reconcile({})
     expect(inScope.has('internalReferenceNumber')).toBe(true)
     expect(inScope.has('countryOfOrigin')).toBe(true)
-    expect(inScope.has('claims')).toBe(false)
-    expect(inScope.has('excessAmount')).toBe(false)
+    expect(inScope.has('regionOfOriginCode')).toBe(false)
+    expect(inScope.has('commercialTransporter')).toBe(false)
     expect(inScope.has('driverName')).toBe(false)
   })
 
-  it('Should activate the claims collection when hadClaims is yes', () => {
-    expect(reconcile({ hadClaims: 'yes' }).inScope.has('claims')).toBe(true)
-    expect(reconcile({ hadClaims: 'no' }).inScope.has('claims')).toBe(false)
+  it('Should activate the matching transporter spoke for the chosen type only', () => {
+    const commercial = reconcile({
+      transporterType: 'Commercial transporter'
+    }).inScope
+    expect(commercial.has('commercialTransporter')).toBe(true)
+    expect(commercial.has('privateTransporter')).toBe(false)
+
+    const privateSpoke = reconcile({
+      transporterType: 'Private transporter'
+    }).inScope
+    expect(privateSpoke.has('privateTransporter')).toBe(true)
+    expect(privateSpoke.has('commercialTransporter')).toBe(false)
   })
 
-  it('Should wipe claims data when hadClaims leaves the yes scope (destroyed, not hidden)', () => {
+  it('Should wipe a saved transporter when the type leaves its branch (destroyed, not hidden)', () => {
     const answers = {
-      hadClaims: 'no',
-      claims: [{ claimType: 'accident', claimAmount: '500' }]
+      transporterType: 'Private transporter',
+      commercialTransporter: {
+        name: 'Channel Livestock Logistics Ltd',
+        address: { addressLine1: '18 Eastern Docks' }
+      }
     }
-    expect(reconcile(answers).wiped).toContain('claims')
+    expect(reconcile(answers).wiped).toContain('commercialTransporter')
   })
 
   it('Should activate the drivers collection on selection and wipe it on deselect', () => {
@@ -38,15 +50,23 @@ describe('#reconcile', () => {
     expect(off.wiped).toContain('drivers')
   })
 
-  it('Should reveal and wipe excessAmount with the voluntaryExcess answer', () => {
+  it('Should reveal and wipe regionOfOriginCode with the requirement answer', () => {
     expect(
-      reconcile({ voluntaryExcess: 'yes' }).inScope.has('excessAmount')
+      reconcile({ regionOfOriginCodeRequirement: 'yes' }).inScope.has(
+        'regionOfOriginCode'
+      )
     ).toBe(true)
     expect(
-      reconcile({ voluntaryExcess: 'no', excessAmount: '250' }).wiped
-    ).toContain('excessAmount')
+      reconcile({
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCode: 'FR-75'
+      }).wiped
+    ).toContain('regionOfOriginCode')
   })
 
+  // coverType's collecting page went in inc-023, so no journey can answer it
+  // any more — the predicate still evaluates honestly against the answers
+  // map, which is what this pins until quote's own removal increment.
   it('Should bring the system premium into scope once cover is chosen', () => {
     expect(reconcile({}).inScope.has('premium')).toBe(false)
     expect(

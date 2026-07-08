@@ -1,8 +1,12 @@
-import { pagePath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
 import { compose, currency, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { open } from '../../shared/kit.js'
+
+/**
+ * The nested driver-claim entry form: options, labels, view-model, payload
+ * parser and validator. Moved here from the removed top-level claims feature
+ * (inc-023) — the named-driver feature is now the only consumer, until its
+ * own removal increment.
+ */
 
 export const CLAIM_TYPE_OPTIONS = [
   { value: 'accident', text: 'Accident' },
@@ -22,8 +26,6 @@ export const WINDSCREEN_PROVIDER_OPTIONS = [
 export const WINDSCREEN_PROVIDER_LABEL = Object.fromEntries(
   WINDSCREEN_PROVIDER_OPTIONS.map((option) => [option.value, option.text])
 )
-
-const view = `${TEMPLATES}/features/claims/entry`
 
 const fields = compose(
   oneOf(
@@ -56,54 +58,3 @@ export const claimFromPayload = (payload) => ({
 })
 
 export const validateClaim = (payload) => validate(fields, payload)
-
-const render = (h, values, errors = {}) =>
-  h.view(view, {
-    ...kit.base('Add a claim', { backLink: pagePath('claims') }),
-    ...claimEntryModel(values, errors)
-  })
-
-const getAdd = (request, h) => {
-  state.get(request, h)
-  return render(h, { claimType: '', claimAmount: '', windscreenProvider: '' })
-}
-
-const postAdd = (request, h) => {
-  const payload = request.payload ?? {}
-  const entry = claimFromPayload(payload)
-  const { value: clean, errors } = validateClaim(payload)
-  if (errors) return render(h, entry, errors)
-
-  // MINTS the index (identity)
-  state.appendEntry(request, h, 'claims', {
-    ...entry,
-    claimAmount: clean.claimAmount ?? ''
-  })
-  return h.redirect(pagePath('claims'))
-}
-
-const getRemove = (request, h) => {
-  state.removeEntry(request, h, 'claims', Number(request.params.index))
-  return h.redirect(pagePath('claims'))
-}
-
-export const routes = [
-  {
-    method: 'GET',
-    path: pagePath('claims/add'),
-    options: open,
-    handler: getAdd
-  },
-  {
-    method: 'POST',
-    path: pagePath('claims/add'),
-    options: open,
-    handler: postAdd
-  },
-  {
-    method: 'GET',
-    path: pagePath('claims/{index}/remove'),
-    options: open,
-    handler: getRemove
-  }
-]

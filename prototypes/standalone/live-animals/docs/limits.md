@@ -17,8 +17,8 @@ Conditionality is proven for indexed, same-frame and depth-2 cases. Cross-frame 
 
 The spike addresses obligations in two forms:
 
-- **template addresses**, index-free (`claims.claimType`) — used by dispatch coverage and `byPath` lookups
-- **instance path keys**, bracketed (`claims[0].claimType`) — used by scope and wipe
+- **template addresses**, index-free (`commodityLines.commoditySelection`) — used by dispatch coverage and `byPath` lookups
+- **instance path keys**, bracketed (`commodityLines[0].commoditySelection`) — used by scope and wipe
 
 They are bridged, not unified. `ownerOfObligation` in [flow/dispatch.js](../flow/dispatch.js) strips instance indices before looking up an owner, so a per-instance change link can still find its page. The tax is documentation and care: every surface speaks one vocabulary, and a reader has to know which. See [architecture.md](architecture.md).
 
@@ -64,8 +64,8 @@ See [persistence.md](persistence.md) for the full port contracts.
 
 The best-practices sweep that fed the cleanup covered `.js` files only. The `.njk` templates and the route wiring never got a sweep. Template-level GDS component usage, and copy correctness beyond the hub fix that was found by other means, are unexamined.
 
-## The nested claim form reuses the top-level one
+## The claim form's logic lives beside its controller
 
-A driver's nested claim form imports the claims feature's view-model builder, payload parser and validators, and renders the same entry template ([features/named-driver/driver-claim.controller.js](../features/named-driver/driver-claim.controller.js) uses `features/claims/entry`).
+A driver's nested claim form imports a view-model builder, payload parser and validators from a sibling module ([features/named-driver/driver-claim.controller.js](../features/named-driver/driver-claim.controller.js) uses `features/named-driver/claim-entry.js` and its `claim-entry.njk` template — the form the removed top-level claims feature used to own).
 
-That holds while the two forms are identical. The shared pieces are logic and a value domain, not a renderer — each controller still picks its template and calls `h.view` itself. Split them the day the forms diverge; do not grow the shared code into a renderer to avoid the split. See [features.md](features.md).
+The shared pieces are logic and a value domain, not a renderer — the controller still picks its template and calls `h.view` itself. If a second consumer ever appears and the forms diverge, split them; do not grow the shared code into a renderer to avoid the split. See [features.md](features.md).

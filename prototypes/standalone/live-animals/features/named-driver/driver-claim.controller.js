@@ -6,9 +6,9 @@ import {
   claimEntryModel,
   claimFromPayload,
   validateClaim
-} from '../claims/entry.controller.js'
+} from './claim-entry.js'
 
-const view = `${TEMPLATES}/features/claims/entry`
+const view = `${TEMPLATES}/features/named-driver/claim-entry`
 
 const driverPath = (request) => [
   'drivers',

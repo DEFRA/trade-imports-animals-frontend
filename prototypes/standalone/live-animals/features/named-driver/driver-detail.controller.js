@@ -2,7 +2,7 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-import { CLAIM_TYPE_LABEL } from '../claims/entry.controller.js'
+import { CLAIM_TYPE_LABEL } from './claim-entry.js'
 import { RELATIONSHIP_OPTIONS } from './driver-entry.controller.js'
 
 const view = `${TEMPLATES}/features/named-driver/driver-detail`

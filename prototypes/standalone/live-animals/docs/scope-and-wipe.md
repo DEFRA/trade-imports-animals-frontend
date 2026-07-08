@@ -24,10 +24,12 @@ nothing.
 The steps, as `engine/evaluate/reconcile.js` performs them:
 
 1. **Materialise the per-instance catalogue once.** `registry.walk(answers)`
-   yields one node per obligation instance — so a two-claim collection
-   presents `claims`, `claims[0].claimType` and `claims[1].claimType` as
-   distinct instances. Structure depends only on the answers (array lengths),
-   never on scope, so the walk is projected once, before the loop.
+   yields one node per obligation instance — so a two-line commodities
+   collection presents `commodityLines`,
+   `commodityLines[0].commoditySelection` and
+   `commodityLines[1].commoditySelection` as distinct instances. Structure
+   depends only on the answers (array lengths), never on scope, so the walk
+   is projected once, before the loop.
 2. **Compute `inScope` to a fixpoint.** The loop keeps passing over the nodes
    until nothing changes. An instance enters scope when its `activatedBy`
    predicate passes (or it has none). Activation references can chain — an
@@ -49,16 +51,17 @@ walked node carries. See `engine/evaluate/predicate.js`.
 ## Path vocabulary
 
 An obligation instance is addressed by a path array that mixes ids and
-indices: `['claims', 0, 'claimType']`. `pathKey` in `lib/path.js`
-stringifies it to a stable key — `claims[0].claimType` — and `parsePath`
-inverts it. These keys are the identity used by scope, wipe and the answers
-map alike.
+indices: `['commodityLines', 0, 'commoditySelection']`. `pathKey` in
+`lib/path.js` stringifies it to a stable key —
+`commodityLines[0].commoditySelection` — and `parsePath` inverts it. These
+keys are the identity used by scope, wipe and the answers map alike.
 
 **The depth-0 collapse.** A single-segment path stringifies to the bare id:
-`pathKey(['claims'])` is `'claims'`, not `'claims[0]'` or anything
-bracketed. This keeps every scalar lookup unchanged — `scope.has('claims')`
-and `scope.has('countryOfOrigin')` work exactly as they did before scope was keyed
-by path. Only genuinely nested instances pick up the bracketed form.
+`pathKey(['commodityLines'])` is `'commodityLines'`, not
+`'commodityLines[0]'` or anything bracketed. This keeps every scalar lookup
+unchanged — `scope.has('commodityLines')` and `scope.has('countryOfOrigin')`
+work exactly as they did before scope was keyed by path. Only genuinely
+nested instances pick up the bracketed form.
 
 ## The Yes-No-Yes invariant
 
@@ -94,8 +97,9 @@ for the joined-up story.
 its whole subtree. So `reconcile` deduplicates the wiped list: a path is
 dropped when another wiped path is a strict prefix of it. The prefix test is
 `isStrictPathPrefix` in `lib/path.js`, which compares path arrays segment by
-segment. It is never a string prefix — `'claims'` must not match a sibling
-key like `claimsExtra`, and `claims[1]` must not match `claims[10]`.
+segment. It is never a string prefix — `'documents'` must not match a
+sibling key like `documentsExtra`, and `drivers[1]` must not match
+`drivers[10]`.
 
 **Delete ordering.** `destroyWiped` (`lib/path.js`) parses the keys and
 sorts them with `wipeOrder` before deleting, because `deleteAt` splices

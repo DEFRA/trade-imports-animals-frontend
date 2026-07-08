@@ -25,8 +25,7 @@ A persona is just an answers map — the same shape the store holds. There is no
 ```js
 simulateJourney({
   countryOfOrigin: 'FR',
-  hadClaims: 'no',
-  coverType: 'comprehensive'
+  transporterType: 'Commercial transporter'
 })
 // -> ['origin', 'commodities', ..., 'declaration'] in flow order
 ```
@@ -51,9 +50,9 @@ An empty problems list means proven. The unit suite pins `expect(proveReachabili
 
 Collections make naive enumeration impossible — a driver can hold any number of claims, so the instance space is unbounded. The prover stays tractable by building one minimal **witness** answers map per obligation definition, at every depth (`walkObligations()` yields the full tree):
 
-- **Top-level activators** come from `enumerateScopeStates()`: every combination of the scope-controlling top-level answers (`hadClaims` × `voluntaryExcess` × `coverType` × every subset of the add-on slugs — 64 states). Non-activating answers cannot affect scope, so this product is the complete top-level space.
+- **Top-level activators** come from `enumerateScopeStates()`: every combination of the scope-controlling top-level answers (`regionOfOriginCodeRequirement` × `reasonForImport` × `meansOfTransport` × `transporterType` × every subset of the add-on slugs — 192 states). Non-activating answers cannot affect scope, so this product is the complete top-level space.
 - **Collection ancestors** each get a single representative entry at index 0 (`scaffoldFor`). Per-instance independence means instance 0 stands in for instance n: all instances of a definition share the same derived owning page.
-- **Item-conditional gates** are satisfied inside that representative entry. To witness `windscreenProvider`, the scaffold sets the sibling `claimType: 'windscreen'` in claim 0.
+- **Item-conditional gates** are satisfied inside that representative entry. To witness `numberOfPackages`, the scaffold sets the sibling `commoditySelection` to a package-count commodity in line 0 (and, at depth 2, `claimType: 'windscreen'` witnesses a driver claim's `windscreenProvider`).
 
 Each candidate witness is checked with the real `reconcile` — the prover asserts the target's instance path (for example `drivers[0].claims[0].windscreenProvider`) is genuinely in scope before testing reachability. The cost is linear in the number of obligation definitions times their item-conditional branches. It is never exponential in nesting depth or instance count, because one representative instance generalises.
 
@@ -66,7 +65,7 @@ Two maintenance facts follow from this design:
 
 The prover never skips silently. `buildWitnesses()` pairs every non-system obligation with its witness; if no enumerated state puts the target in scope, the witness is `null` and `proveReachability()` reports it as a problem with reason `no-witness-puts-in-scope`. That is surfaced as a prover bug — a hole in the enumeration — not quietly passed over. A missing owning page is reported the same way (`no-owning-page`).
 
-The prover also proves it has teeth. `proveReachability({ pagesFor })` accepts an injectable page oracle, and [`analysis/reachability.test.js`](../analysis/reachability.test.js) feeds it a flow with pages dropped. Dropping the `claims` and `drivers` collection-hub pages makes the prover report `claims[0].windscreenProvider` and `drivers[0].claims[0].windscreenProvider` as dead ends, naming the dropped hub as the derived owning page. A prover that cannot fail proves nothing; the injection point keeps that checkable.
+The prover also proves it has teeth. `proveReachability({ pagesFor })` accepts an injectable page oracle, and [`analysis/reachability.test.js`](../analysis/reachability.test.js) feeds it a flow with pages dropped. Dropping the `commodities` and `drivers` collection-hub pages makes the prover report `commodityLines[0].numberOfPackages` and `drivers[0].claims[0].windscreenProvider` as dead ends, naming the dropped hub as the derived owning page. A prover that cannot fail proves nothing; the injection point keeps that checkable.
 
 ## The soundness condition
 

@@ -76,18 +76,16 @@ When one feature's obligation is activated by another feature's answer,
 the reference is a real JS import of the obligation constant — never a
 string or an id lookup. The current edges:
 
-- `claims` ← `hadClaims` (driving-history)
 - `drivers` (named-driver) ← `addons`
 - `modDescription`, `modValue` (modifications) ← `addons`
 - `ncdYears` (protected-ncd) ← `addons`
-- `premium` (quote) ← `coverType` (cover-type)
 
 Activation always flows from a controlling answer to the details it
 unlocks, so the graph is acyclic.
 
 Real references buy three things over the UUIDs the v1 model used:
 
-- **greppable** — search for `hadClaims` and you find the definition
+- **greppable** — search for `addons` and you find the definition
   and every relationship that depends on it
 - **navigable** — editors jump straight from the reference to the
   definition
@@ -101,7 +99,7 @@ closure. There are exactly three operators, interpreted in one place
 (`engine/evaluate/predicate.js`):
 
 ```js
-{ obligation: hadClaims, equals: 'yes' }          // scalar equality
+{ obligation: regionOfOriginCodeRequirement, equals: 'yes' } // scalar equality
 { obligation: addons, includes: 'named-driver' }  // membership in a multi-select
 { obligation: coverType, present: true }          // answered (non-blank)
 ```
@@ -124,16 +122,20 @@ because controllers absorb the cases it refuses to express.
 
 A repeating list is a first-class obligation: `collection: true` plus
 an `item` array of real sub-obligation definitions. From
-`features/claims/obligations.js`:
+`features/commodities/obligations.js`:
 
 ```js
-export const claims = {
-  id: 'claims',
+export const commodityLines = {
+  id: 'commodityLines',
   collection: true,
-  item: [claimType, claimAmount, windscreenProvider],
-  activatedBy: { obligation: hadClaims, equals: 'yes' },
-  requiredAtLeastOne: true,
-  wipeOnExit: true
+  item: [
+    commoditySelection,
+    typeSelection,
+    speciesSelection,
+    numberOfPackages,
+    numberOfAnimalsQuantity
+  ],
+  requiredAtLeastOne: true
 }
 ```
 
@@ -143,29 +145,24 @@ dispatch coverage all descend into the item. Nesting is literal — a
 collection's item can contain another collection, and the named-driver
 feature reaches depth 2 (`drivers[i].claims[j].claimType`).
 
-Sub-obligation ids are frame-relative: `claimType`, not
-`claims.claimType`. The id is the key inside each entry object
-(`answers.claims[0].claimType`) and the DOM field name — the same
-three-roles-one-string rule as at the root, just relative to the entry.
-
-One aliasing note: the nested driver claims collection
-(`driverClaims` in `features/named-driver/obligations.js`) and the
-top-level claims collection both have the id `claims`. They are
-distinct obligations at distinct template addresses — `drivers.claims`
-and `claims`. Do not "deduplicate" them: sharing the id is what keeps
-the nested form's field names identical, while the definitions stay
-independent.
+Sub-obligation ids are frame-relative: `commoditySelection`, not
+`commodityLines.commoditySelection`. The id is the key inside each
+entry object (`answers.commodityLines[0].commoditySelection`) and the
+DOM field name — the same three-roles-one-string rule as at the root,
+just relative to the entry.
 
 ## Item-relative predicates
 
 A sub-obligation can be gated on a sibling field within the same entry.
-From `features/claims/obligations.js`:
+From `features/commodities/obligations.js`:
 
 ```js
-export const windscreenProvider = {
-  id: 'windscreenProvider',
-  required: true,
-  activatedBy: { obligation: claimType, equals: 'windscreen' },
+export const numberOfPackages = {
+  id: 'numberOfPackages',
+  activatedBy: {
+    obligation: commoditySelection,
+    includes: PACKAGE_COUNT_COMMODITIES
+  },
   wipeOnExit: true
 }
 ```
@@ -227,7 +224,7 @@ Its surfaces, and who consumes each:
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `registry.all`                  | Every root obligation, flat, in flow order                                                                                                                                                                               | the commit contract test (`contract.test.js`) iterates it                                                          |
 | `registry.byId(id)`             | Root id → obligation                                                                                                                                                                                                     | `engine/status.js` and `engine/evaluate/complete.js` (status and completeness look-ups)                            |
-| `registry.byPath(templatePath)` | Index-free dotted address → obligation, at any depth (`claims.claimType`)                                                                                                                                                | `engine/evaluate/collection-view.js`                                                                               |
+| `registry.byPath(templatePath)` | Index-free dotted address → obligation, at any depth (`drivers.claims.claimType`)                                                                                                                                        | `engine/evaluate/collection-view.js`                                                                               |
 | `walkObligations()`             | The full structural catalogue — every obligation at every depth, independent of any answers; yields `{ templatePath, obligation }`                                                                                       | `flow/dispatch.js` (`buildDispatch` coverage-asserts every non-system obligation is collected by exactly one page) |
 | `walk(answers)`                 | The per-instance catalogue — the tree materialised against a concrete answers map, one yield per stored collection entry; also yields the frame facts (`collectionAncestorKey`, `framePath`, `siblings`) reconcile needs | `engine/evaluate/reconcile.js`                                                                                     |
 

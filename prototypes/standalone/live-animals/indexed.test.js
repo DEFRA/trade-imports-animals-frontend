@@ -7,8 +7,8 @@ import { walkObligations } from './registry.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
 
-const drivingCoverSection = sections.find(
-  (section) => section.id === 'your-driving-and-cover'
+const commoditiesSection = sections.find(
+  (section) => section.id === 'commodities'
 )
 
 describe('indexed obligations are first-class', () => {
@@ -18,50 +18,49 @@ describe('indexed obligations are first-class', () => {
 
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {
     const addresses = [...walkObligations()].map((node) => node.templatePath)
-    expect(addresses).toContain('claims')
-    expect(addresses).toContain('claims.claimType')
-    expect(addresses).toContain('claims.claimAmount')
+    expect(addresses).toContain('commodityLines')
+    expect(addresses).toContain('commodityLines.commoditySelection')
+    expect(addresses).toContain('commodityLines.numberOfAnimalsQuantity')
   })
 
-  it('Should scope each stored claim instance path when the collection is in scope', () => {
+  it('Should scope each stored commodity line instance path when the collection is in scope', () => {
     const { inScope } = reconcile({
-      hadClaims: 'yes',
-      claims: [
-        { claimType: 'accident', claimAmount: '500' },
-        { claimType: 'theft', claimAmount: '900' }
+      commodityLines: [
+        { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' },
+        { commoditySelection: '010420 - Goats', numberOfAnimalsQuantity: '9' }
       ]
     })
-    expect(inScope.has('claims')).toBe(true)
-    expect(inScope.has('claims[0].claimType')).toBe(true)
-    expect(inScope.has('claims[0].claimAmount')).toBe(true)
-    expect(inScope.has('claims[1].claimType')).toBe(true)
-    expect(inScope.has('claims[1].claimAmount')).toBe(true)
+    expect(inScope.has('commodityLines')).toBe(true)
+    expect(inScope.has('commodityLines[0].commoditySelection')).toBe(true)
+    expect(inScope.has('commodityLines[0].numberOfAnimalsQuantity')).toBe(true)
+    expect(inScope.has('commodityLines[1].commoditySelection')).toBe(true)
+    expect(inScope.has('commodityLines[1].numberOfAnimalsQuantity')).toBe(true)
   })
 
-  it('Should not scope any claim sub-obligation when the collection is out of scope', () => {
+  it('Should not scope any driver sub-obligation when the collection is out of scope', () => {
     const { inScope } = reconcile({
-      hadClaims: 'no',
-      claims: [{ claimType: 'accident', claimAmount: '500' }]
+      addons: [],
+      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
     })
-    expect(inScope.has('claims')).toBe(false)
-    expect(inScope.has('claims[0].claimType')).toBe(false)
+    expect(inScope.has('drivers')).toBe(false)
+    expect(inScope.has('drivers[0].driverName')).toBe(false)
   })
 
   it('Should wipe the whole collection as a single root path when it leaves scope', () => {
     const { wiped } = reconcile({
-      hadClaims: 'no',
-      claims: [{ claimType: 'accident', claimAmount: '500' }]
+      addons: [],
+      drivers: [{ driverName: 'Sam', relationship: 'spouse' }]
     })
     const wipedKeys = wiped.map((path) =>
       Array.isArray(path) ? path.join('.') : path
     )
-    expect(wipedKeys).toContain('claims')
+    expect(wipedKeys).toContain('drivers')
     expect(wiped.some((path) => Array.isArray(path) && path.length > 1)).toBe(
       false
     )
   })
 
-  it('Should treat a claim with a blank required sub-field as incomplete (per-item completeness)', () => {
+  it('Should treat a commodity line with a blank required sub-field as incomplete (per-item completeness)', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
@@ -120,42 +119,43 @@ describe('indexed obligations are first-class', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      hadClaims: 'yes',
-      claims: [{ claimType: 'accident', claimAmount: '500' }],
-      coverType: 'comprehensive',
       declaration: 'confirmed'
     }
     const incomplete = {
       ...complete,
-      claims: [{ claimAmount: '500' }]
+      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
     }
     expect(readyForQuote(complete, reconcile(complete).inScope)).toBe(true)
     expect(readyForQuote(incomplete, reconcile(incomplete).inScope)).toBe(false)
   })
 
-  it('Should roll per-item completeness into the driving-and-cover section status', () => {
-    const withIncompleteClaim = {
-      hadClaims: 'yes',
-      claims: [{ claimAmount: '500' }],
-      coverType: 'comprehensive'
+  it('Should roll per-item completeness into the commodities section status', () => {
+    const withIncompleteLine = {
+      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
     }
-    const withCompleteClaim = {
-      hadClaims: 'yes',
-      claims: [{ claimType: 'accident', claimAmount: '500' }],
-      coverType: 'comprehensive'
+    const withCompleteLine = {
+      commodityLines: [
+        {
+          commoditySelection: '0102 - Cattle',
+          typeSelection: 'domestic',
+          speciesSelection: ['bos-taurus'],
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        }
+      ]
     }
     expect(
       sectionStatus(
-        drivingCoverSection,
-        withIncompleteClaim,
-        reconcile(withIncompleteClaim).inScope
+        commoditiesSection,
+        withIncompleteLine,
+        reconcile(withIncompleteLine).inScope
       )
     ).toBe(IN_PROGRESS)
     expect(
       sectionStatus(
-        drivingCoverSection,
-        withCompleteClaim,
-        reconcile(withCompleteClaim).inScope
+        commoditiesSection,
+        withCompleteLine,
+        reconcile(withCompleteLine).inScope
       )
     ).toBe(FULFILLED)
   })

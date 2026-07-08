@@ -6,10 +6,6 @@ import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
 import * as transport from './features/transport/obligations.js'
 import * as contact from './features/contact/obligations.js'
-import * as driving from './features/driving-history/obligations.js'
-import * as claims from './features/claims/obligations.js'
-import * as cover from './features/cover-type/obligations.js'
-import * as extras from './features/optional-extras/obligations.js'
 import * as addons from './features/addons/obligations.js'
 import * as namedDriver from './features/named-driver/obligations.js'
 import * as modifications from './features/modifications/obligations.js'
@@ -27,10 +23,6 @@ const all = [
   ...addresses.obligations,
   ...transport.obligations,
   ...contact.obligations,
-  ...driving.obligations,
-  ...claims.obligations,
-  ...cover.obligations,
-  ...extras.obligations,
   ...addons.obligations,
   ...namedDriver.obligations,
   ...modifications.obligations,

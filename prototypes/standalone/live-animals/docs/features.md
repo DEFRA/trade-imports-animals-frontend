@@ -14,7 +14,7 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 
 - **controller(s)** — Hapi route handlers that own GET/POST, validation,
   copy and view-models (`controller.js`, or several like
-  `claims/list.controller.js` + `claims/entry.controller.js`)
+  `documents/list.controller.js` + `documents/entry.controller.js`)
 - **`page.js`** — the page identity leaf: `{ id, slug }`, authored once,
   imported by both the controller and `flow/flow.js`. It imports nothing
   (see [section 2](#2-why-pagejs-is-import-free))
@@ -140,15 +140,16 @@ obligation (at any depth) is collected by no page. A forgotten or
 duplicated `collects` is a startup crash, not a silent runtime break.
 
 Sub-obligations inherit ownership: a collection's items belong to the
-page that collects the collection (`claims` covers
-`claims.claimType`), so a loop page's `collects` stays a single id.
+page that collects the collection (`commodityLines` covers
+`commodityLines.commoditySelection`), so a loop page's `collects` stays
+a single id.
 
 ## 5. Assembling features: features/index.js
 
 `features/index.js` is the one place every controller meets. It exports
 two lists:
 
-- **`dispatchPages`** — the `meta` of each of the 12 collecting pages.
+- **`dispatchPages`** — the `meta` of every collecting page.
   Boot passes this to `buildDispatch`, which builds the
   obligation → page index and runs the coverage assertions above.
 - **`allRoutes`** — every controller's `routes`, flattened for
@@ -168,7 +169,7 @@ recur.
 
 `features/hub/controller.js` owns all task-link copy:
 
-- `GROUP_ROWS` — title and hint for the three always-present group
+- `GROUP_ROWS` — title and hint for the always-present group
   tasks
 - `ADDON_COPY` — title and hint per dynamic add-on section, looked up
   through `addonCopy(id)`, which **throws** when a dynamic section has
@@ -187,24 +188,25 @@ until `scope.readyForQuote`.
 Repeating collections get bespoke manage-lists — there is no uniform
 widget for "a list of things", so each loop hub owns its rows and copy:
 
-- `features/claims/list.controller.js` — top-level claims
+- `features/commodities/list.controller.js` — top-level commodity lines
+- `features/documents/list.controller.js` — top-level documents
 - `features/named-driver/drivers-hub.controller.js` — drivers (the
   outer loop)
 - `features/named-driver/driver-detail.controller.js` — one driver's
   nested claims sub-hub (a loop inside a loop)
 
-All three compose over the same facts library:
+All of them compose over the same facts library:
 `state.collectionView(answers, path)` returns
 `[{ index, path, entry, complete }]` and nothing presentational. The
-path sets the depth: `['claims']`, `['drivers']`,
+path sets the depth: `['documents']`, `['drivers']`,
 `['drivers', driverIndex, 'claims']`. The controller turns those facts
 into its own rows, action links and empty-state copy.
 
-Shared form logic without a shared renderer: the claims entry controller
-exports `claimEntryModel`, `claimFromPayload` and `validateClaim` so the
-top-level loop and the nested driver-claims loop render an identical
-form — but each controller still chooses its template and calls
-`h.view` itself.
+Shared form logic without a shared renderer:
+`features/named-driver/claim-entry.js` exports `claimEntryModel`,
+`claimFromPayload` and `validateClaim`, keeping the view-model, payload
+parsing and validation seam separate from rendering — the consuming
+controller still chooses its template and calls `h.view` itself.
 
 On an add sub-page, a valid POST appends and thereby **mints** the
 entry's identity (collection, index). Until that POST the draft lives

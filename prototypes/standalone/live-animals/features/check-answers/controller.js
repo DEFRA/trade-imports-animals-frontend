@@ -6,10 +6,6 @@ import { calculatePremium } from '../../lib/quote.js'
 import { isBlank } from '../../lib/answered.js'
 import { pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
-import {
-  CLAIM_TYPE_LABEL,
-  WINDSCREEN_PROVIDER_LABEL
-} from '../claims/entry.controller.js'
 import { COUNTRY_OF_ORIGIN_LABEL } from '../origin/controller.js'
 import { commodityLineValue } from '../commodities/list.controller.js'
 import { documentValue } from '../documents/list.controller.js'
@@ -20,17 +16,6 @@ import { OVERLAND_MEANS } from '../transport/transport-details.controller.js'
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
 
-const COVER_LABEL = {
-  comprehensive: 'Comprehensive',
-  'third-party-fire-theft': 'Third party, fire and theft',
-  'third-party': 'Third party only'
-}
-const EXTRA_LABEL = {
-  breakdown: 'Breakdown cover',
-  'courtesy-car': 'Courtesy car',
-  legal: 'Motor legal protection',
-  windscreen: 'Windscreen cover'
-}
 const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 const ADDON_LABEL = {
   'named-driver': 'Add a named driver',
@@ -203,63 +188,14 @@ const buildRows = (answers) => {
       : []),
     // The stored contact is a copied { name, address } object (c-020) —
     // the select side of the unresolved c-001 variant pair.
-    row('Contact address', answerOf('contactAddress')?.name, 'contactAddress'),
-    row('Years no claims', answerOf('yearsNoClaims'), 'yearsNoClaims'),
-    row(
-      'Recent claims',
-      answerOf('hadClaims') === 'yes' ? 'Yes' : 'No',
-      'hadClaims'
-    )
+    row('Contact address', answerOf('contactAddress')?.name, 'contactAddress')
   ]
 
-  const claimsChangeHref = pagePath(slugOfPage(pageOfObligation('claims')))
-  const claims =
-    answerOf('hadClaims') === 'yes'
-      ? state.collectionView(answers, ['claims'])
-      : []
-  claims.forEach(({ index, entry }) => {
-    const label = CLAIM_TYPE_LABEL[entry.claimType] ?? NOT_PROVIDED
-    const amount = (entry.claimAmount ?? '').toString().trim()
-    const base = amount ? `${label} — £${amount}` : label
-    const provider =
-      entry.claimType === 'windscreen' && entry.windscreenProvider
-        ? ` (${WINDSCREEN_PROVIDER_LABEL[entry.windscreenProvider] ?? entry.windscreenProvider})`
-        : ''
-    rows.push({
-      key: { text: `Claim ${index + 1}` },
-      value: { text: `${base}${provider}` },
-      actions: {
-        items: [
-          {
-            href: claimsChangeHref,
-            text: 'Change',
-            visuallyHiddenText: `claim ${index + 1}`
-          }
-        ]
-      }
-    })
-  })
-
-  const excess =
-    answerOf('voluntaryExcess') === 'yes'
-      ? `£${answerOf('excessAmount') || '0'}`
-      : 'None'
-  const extras = []
-    .concat(answerOf('extras') ?? [])
-    .map((extra) => EXTRA_LABEL[extra] ?? extra)
   const addons = []
     .concat(answerOf('addons') ?? [])
     .map((addon) => ADDON_LABEL[addon] ?? addon)
 
   rows.push(
-    row('Penalty points', answerOf('penaltyPoints') || '0', 'penaltyPoints'),
-    row('Cover', COVER_LABEL[answerOf('coverType')] ?? '', 'coverType'),
-    row('Voluntary excess', excess, 'voluntaryExcess'),
-    row(
-      'Optional extras',
-      extras.length ? extras.join(', ') : 'None',
-      'extras'
-    ),
     row('Added to policy', addons.length ? addons.join(', ') : 'None', 'addons')
   )
   return rows

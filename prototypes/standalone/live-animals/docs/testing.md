@@ -49,9 +49,16 @@ The fixture is deliberately messy. Do not tidy it. Two of its oddities are the w
 
 ## The regression net
 
-### Shared journey specs
+### The live-animals spec
 
-Three specs in `prototypes/e2e/` (outside the spike folder) run against **every** prototype journey. This spike is one `JOURNEYS` entry in `prototypes/e2e/journey.js`, so it gets the same walk as every other implementation:
+`prototypes/e2e/live-animals.spec.js` is this journey's own browser-level
+net: a happy-path walk that grows one leg per increment, fed from
+`spec/fixtures/happy-path.json`, plus per-section specs pinning gates,
+loops and validation in the rendered DOM.
+
+### Shared journey specs (the car ancestors)
+
+Three specs in `prototypes/e2e/` (outside the spike folder) run against every **car-journey** prototype in `JOURNEYS` (`prototypes/e2e/journey.js`) — the ancestors this journey was forked from, including `obligations-v2-spike`. This journey is not in that list; the table below documents what the shared net pins for those journeys, because the engine under this journey is proven there too:
 
 | Spec                                  | What it pins for each journey                                                                                                                  |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -59,9 +66,9 @@ Three specs in `prototypes/e2e/` (outside the spike folder) run against **every*
 | `mandatory-fields.spec.js`            | Full name blocks save with a GDS error summary; every other About-you field is optional                                                        |
 | `invalidation.spec.js`                | Changing claims to No removes the claims data, and a yes → no → yes round trip does not rehydrate it — a direct assertion of the wipe paradigm |
 
-### Spike-only specs
+### Spike-only specs (obligations-v2 ancestor)
 
-Three more specs in `prototypes/e2e/` drive behaviour only this spike models:
+Three more specs in `prototypes/e2e/` drive the `obligations-v2-spike` ancestor, pinning engine behaviour this journey inherits:
 
 | Spec                       | What it pins                                                                                                                                                                              |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -113,7 +120,7 @@ The file is deliberately **not** named `.test.js`, so Vitest never collects it a
 
 ### The seeding gotcha
 
-When you seed collection answers, keep the activating answer in place. Seeding `drivers` without `addons: ['named-driver']` puts the collection out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. `seedNamedDriver` exists to make this impossible for the drivers collection; apply the same thinking to any gated obligation you seed (for example, `hadClaims: 'yes'` before seeding `claims`).
+When you seed collection answers, keep the activating answer in place. Seeding `drivers` without `addons: ['named-driver']` puts the collection out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. `seedNamedDriver` exists to make this impossible for the drivers collection; apply the same thinking to any gated obligation you seed (for example, `transporterType: 'Commercial transporter'` before seeding `commercialTransporter`).
 
 ## The contract test
 
@@ -123,7 +130,7 @@ When you seed collection answers, keep the activating answer in place. Seeding `
 
 It drives every collecting page's real POST handler headlessly with a valid payload, then diffs the obligation ids newly written against `meta.collects` as sets.
 
-Collections are measured against the **entry append handler**. The claims list page declares `collects: ['claims']` and the drivers hub declares `collects: ['drivers']`, but the write that mints an entry's identity happens in the add sub-page's append handler — so that is the handler the contract drives.
+Collections are measured against the **entry append handler**. The documents list page declares `collects: ['documents']` and the drivers hub declares `collects: ['drivers']`, but the write that mints an entry's identity happens in the add sub-page's append handler — so that is the handler the contract drives.
 
 When you mis-wire a field, the failing set diff names it:
 

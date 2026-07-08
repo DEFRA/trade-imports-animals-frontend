@@ -11,9 +11,7 @@ import {
 } from './engine/test-support.js'
 import { dispatchPages } from './features/index.js'
 
-import * as cover from './features/cover-type/controller.js'
 import * as modVal from './features/modifications/value.controller.js'
-import * as claimsEntry from './features/claims/entry.controller.js'
 import * as driverClaim from './features/named-driver/driver-claim.controller.js'
 
 /**
@@ -31,31 +29,12 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
   })
   beforeEach(() => store.clear())
 
-  it('Should persist cover-type excessAmount with £ and commas stripped', () => {
-    const { after } = drive(postHandlerOf(cover), {
-      payload: {
-        coverType: 'comprehensive',
-        voluntaryExcess: 'yes',
-        excessAmount: '£1,234'
-      }
-    })
-    expect(after.excessAmount).toBe('1234')
-  })
-
   it('Should persist modifications modValue with £ and commas stripped', () => {
     const { after } = drive(postHandlerOf(modVal), {
       seed: { addons: ['modifications'] },
       payload: { modValue: '£1,500' }
     })
     expect(after.modValue).toBe('1500')
-  })
-
-  it('Should persist a top-level claim claimAmount with £ stripped', () => {
-    const { after } = drive(findPost(claimsEntry, 'claims/add'), {
-      seed: { hadClaims: 'yes' },
-      payload: { claimType: 'accident', claimAmount: '£500' }
-    })
-    expect(after.claims[0].claimAmount).toBe('500')
   })
 
   it('Should persist a nested driver claim claimAmount with £ stripped', () => {
@@ -78,16 +57,13 @@ describe('T1 — error path still echoes the raw input and commits nothing', () 
   })
   beforeEach(() => store.clear())
 
-  it('Should re-render cover-type with the raw malformed amount and no commit', () => {
-    const { after, view } = drive(postHandlerOf(cover), {
-      payload: {
-        coverType: 'comprehensive',
-        voluntaryExcess: 'yes',
-        excessAmount: '£1,2x4'
-      }
+  it('Should re-render modifications-value with the raw malformed amount and no commit', () => {
+    const { after, view } = drive(postHandlerOf(modVal), {
+      seed: { addons: ['modifications'] },
+      payload: { modValue: '£1,5x0' }
     })
-    expect(view.context.values.excessAmount).toBe('£1,2x4')
-    expect(view.context.errors).toHaveProperty('excessAmount')
-    expect(after.excessAmount).toBeUndefined()
+    expect(view.context.value).toBe('£1,5x0')
+    expect(view.context.errors).toHaveProperty('modValue')
+    expect(after.modValue).toBeUndefined()
   })
 })

@@ -15,18 +15,6 @@ import { pathKey } from './lib/path.js'
 buildDispatch(dispatchPages)
 
 const answers = {
-  hadClaims: 'yes',
-  claims: [
-    {
-      claimType: 'windscreen',
-      claimAmount: '150',
-      windscreenProvider: 'national-windscreens'
-    },
-    { claimType: 'theft', claimAmount: '2000' }
-  ],
-  coverType: 'comprehensive',
-  voluntaryExcess: 'yes',
-  excessAmount: '250',
   addons: ['named-driver'],
 
   drivers: [

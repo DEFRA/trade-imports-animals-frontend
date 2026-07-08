@@ -11,34 +11,54 @@ describe('dispatch + flow', () => {
   it('Should assert coverage of every non-system obligation to exactly one page', () => {
     expect(() => buildDispatch(dispatchPages)).not.toThrow()
     expect(pageOfObligation('countryOfOrigin')).toBe('origin')
-    expect(pageOfObligation('claims')).toBe('claims')
-    expect(pageOfObligation('excessAmount')).toBe('cover-type')
+    expect(pageOfObligation('commodityLines')).toBe('commodities')
+    expect(pageOfObligation('commercialTransporter')).toBe(
+      'transporters-select'
+    )
     expect(collectsOf('origin')).toContain('countryOfOrigin')
   })
 
   it('Should crash boot when an obligation (and its derived sub-obligations) is uncovered', () => {
-    const withoutClaims = dispatchPages.filter((page) => page.id !== 'claims')
-    expect(() => buildDispatch(withoutClaims)).toThrow(/collected by no page/)
-    expect(() => buildDispatch(withoutClaims)).toThrow(/claims/)
+    const withoutCommodities = dispatchPages.filter(
+      (page) => page.id !== 'commodities'
+    )
+    expect(() => buildDispatch(withoutCommodities)).toThrow(
+      /collected by no page/
+    )
+    expect(() => buildDispatch(withoutCommodities)).toThrow(/commodityLines/)
     buildDispatch(dispatchPages) // restore the shared index for later tests
   })
 
   it('Should resolve a sub-obligation to its collection owner by template and instance address', () => {
-    expect(pageOfObligation('claims.claimType')).toBe('claims')
+    expect(pageOfObligation('commodityLines.commoditySelection')).toBe(
+      'commodities'
+    )
     // The engine addresses instances in bracketed pathKey form; ownership must
     // resolve that vocabulary too, else per-item change links break.
-    expect(pageOfObligation('claims[0].claimType')).toBe('claims')
-    expect(pageOfObligation('claims[0]')).toBe('claims')
+    expect(pageOfObligation('commodityLines[0].commoditySelection')).toBe(
+      'commodities'
+    )
+    expect(pageOfObligation('commodityLines[0]')).toBe('commodities')
   })
 
-  it('Should walk the driving-and-cover section, skipping claims when out of scope', () => {
-    const scopeNoClaims = { inScope: reconcile({ hadClaims: 'no' }).inScope }
-    const scopeClaims = { inScope: reconcile({ hadClaims: 'yes' }).inScope }
-    expect(nextInSection('driving-history', scopeClaims)).toMatch(/\/claims$/)
-    expect(nextInSection('driving-history', scopeNoClaims)).toMatch(
-      /\/cover-type$/
+  it('Should walk the transport section, skipping the spokes the type gates out', () => {
+    const scopeNoType = { inScope: reconcile({}).inScope }
+    const scopeCommercial = {
+      inScope: reconcile({ transporterType: 'Commercial transporter' }).inScope
+    }
+    const scopePrivate = {
+      inScope: reconcile({ transporterType: 'Private transporter' }).inScope
+    }
+    expect(nextInSection('transporters', scopeCommercial)).toMatch(
+      /\/transporters\/select$/
     )
-    expect(nextInSection('optional-extras', scopeClaims)).toMatch(/\/hub$/)
+    expect(nextInSection('transporters', scopePrivate)).toMatch(
+      /\/transporters\/private$/
+    )
+    expect(nextInSection('transporters', scopeNoType)).toMatch(/\/hub$/)
+    expect(nextInSection('private-transporter-details', scopePrivate)).toMatch(
+      /\/hub$/
+    )
   })
 
   it('Should enter an addon section only at its first gated-in page', () => {
@@ -107,17 +127,14 @@ describe('dispatch + flow', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      hadClaims: 'yes',
-      claims: [{ claimType: 'accident', claimAmount: '500' }],
-      coverType: 'comprehensive',
       declaration: 'confirmed'
     }
     const { inScope } = reconcile(complete)
     expect(readyForQuote(complete, inScope)).toBe(true)
 
     const incomplete = {
-      hadClaims: 'yes',
-      coverType: 'comprehensive'
+      countryOfOrigin: 'FR',
+      regionOfOriginCodeRequirement: 'no'
     }
     expect(readyForQuote(incomplete, reconcile(incomplete).inScope)).toBe(false)
   })

@@ -43,7 +43,8 @@ two questions only: what data is in scope, and is it satisfied.
 ### Why
 
 - It is the only candidate whose activation rule is a pure **data literal
-  over a real JS reference** — `{ obligation: hadClaims, equals: 'yes' }`
+  over a real JS reference** —
+  `{ obligation: regionOfOriginCodeRequirement, equals: 'yes' }`
   reads like data, with no UUID ceremony.
 - It is the only candidate with **zero copy and zero presentation identity**
   on an obligation definition.
@@ -104,7 +105,7 @@ rejected generic engine under a new name. The nested-collections work
 (drivers with their own claims, depth 2) was the deliberate stress test:
 the loop-inside-a-loop is exactly where the pressure to share a renderer
 peaks. The line held — but it held by **accepting per-loop bespoke
-duplication**. The claims list, the drivers hub and the driver-claims
+duplication**. The commodities and documents lists, the drivers hub and the driver-claims
 sub-hub each compose their own rows and copy over the same facts-only
 primitive. A shared row-builder was considered and rejected: it is the
 rejected design re-emerging.
@@ -307,7 +308,7 @@ dead duplicates of presentation. A definition now carries only identity
 (`id`), mandate facts (`required`, `requiredAtLeastOne`), structural facts
 (`collection`, `item`, `system`, `renderOnly`) and relationships
 (`activatedBy`, `wipeOnExit`) — see
-[`features/claims/obligations.js`](../features/claims/obligations.js).
+[`features/commodities/obligations.js`](../features/commodities/obligations.js).
 Validation moved to the controllers, backed by the reusable factories in
 [`lib/validate/`](../lib/validate/validators.js).
 

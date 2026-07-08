@@ -14,29 +14,29 @@ describe('#simulateJourney', () => {
     configureReadyForQuote(readyForQuote)
   })
 
-  it('Should walk a plain persona (no claims, no add-ons) straight through', () => {
-    const pages = simulateJourney({
-      hadClaims: 'no',
-      coverType: 'comprehensive'
-    })
-    expect(pages).toContain('driving-history')
-    expect(pages).toContain('cover-type')
-    expect(pages).not.toContain('claims')
+  it('Should walk a plain persona (no transporter type, no add-ons) straight through', () => {
+    const pages = simulateJourney({})
+    expect(pages).toContain('port-of-entry')
+    expect(pages).toContain('transporters')
+    expect(pages).not.toContain('transporters-select')
+    expect(pages).not.toContain('private-transporter-details')
     expect(pages).not.toContain('drivers')
     expect(pages).not.toContain('modifications-describe')
-    expect(pages.indexOf('driving-history')).toBeLessThan(
-      pages.indexOf('cover-type')
+    expect(pages.indexOf('port-of-entry')).toBeLessThan(
+      pages.indexOf('transporters')
     )
-    expect(pages.indexOf('cover-type')).toBeLessThan(pages.indexOf('addons'))
+    expect(pages.indexOf('transporters')).toBeLessThan(pages.indexOf('addons'))
   })
 
-  it('Should insert the gated claims page exactly when hadClaims is yes', () => {
-    const pages = simulateJourney({ hadClaims: 'yes' })
-    expect(pages).toContain('claims')
-    expect(pages.indexOf('driving-history')).toBeLessThan(
-      pages.indexOf('claims')
+  it('Should insert the gated transporter spoke exactly for the chosen type', () => {
+    const pages = simulateJourney({
+      transporterType: 'Commercial transporter'
+    })
+    expect(pages).toContain('transporters-select')
+    expect(pages).not.toContain('private-transporter-details')
+    expect(pages.indexOf('transporters')).toBeLessThan(
+      pages.indexOf('transporters-select')
     )
-    expect(pages.indexOf('claims')).toBeLessThan(pages.indexOf('cover-type'))
   })
 
   it('Should open only the add-on section a persona selected', () => {
@@ -108,8 +108,6 @@ describe('#simulateJourney', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      hadClaims: 'no',
-      coverType: 'comprehensive',
       declaration: 'confirmed'
     })
     expect(ready).toContain('quote-summary')

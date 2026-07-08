@@ -51,7 +51,7 @@ This mirrors the engine's `configureReadyForQuote` default, which throws until b
 
 `buildDispatch(pages)` runs once at boot (`routes.js`, with `dispatchPages` from `features/index.js`). It inverts each page's `collects` declaration — the authored source of truth — into an obligation → page map, and enforces three things:
 
-1. **Ids are path-safe.** An obligation id becomes both a store key and a segment of a dotted template address, so it must not contain `.`, `[` or `]`. A metacharacter would make addresses ambiguous — `claims.claimType` could not be told from a single stray-dotted id. Boot throws on the first unsafe id.
+1. **Ids are path-safe.** An obligation id becomes both a store key and a segment of a dotted template address, so it must not contain `.`, `[` or `]`. A metacharacter would make addresses ambiguous — `commodityLines.commoditySelection` could not be told from a single stray-dotted id. Boot throws on the first unsafe id.
 2. **No obligation has two owners.** Two pages declaring the same obligation throw at boot. See [one obligation, one page](#one-obligation-one-page) for why.
 3. **Every obligation has one owner.** Coverage walks `walkObligations()` — every non-system obligation at every depth of the tree — and asserts each resolves to an owning page. A forgotten `collects` is a startup crash, not a silent runtime hole.
 
@@ -59,14 +59,14 @@ After a successful build, three lookups are live: `pageOfObligation(id)`, `colle
 
 ### Ownership at depth is derived
 
-A collection's `collects` names only the root (`claims`), not its item fields. A sub-obligation is owned by the page that owns its nearest collection ancestor — `claims.claimType` resolves up the address chain to `claims`, and so to the claims page. This keeps coverage total without collections enumerating item ids. The accepted trade-off: you cannot redirect ownership of one field at depth to a different page.
+A collection's `collects` names only the root (`commodityLines`), not its item fields. A sub-obligation is owned by the page that owns its nearest collection ancestor — `commodityLines.commoditySelection` resolves up the address chain to `commodityLines`, and so to the commodities page. This keeps coverage total without collections enumerating item ids. The accepted trade-off: you cannot redirect ownership of one field at depth to a different page.
 
 ### Two address vocabularies
 
 `pageOfObligation` accepts both forms of an address:
 
-- the **template** form — index-free dotted paths like `claims.claimType`, as `walkObligations()` yields them
-- the **bracketed instance** form — `claims[0].claimType`, the pathKey vocabulary the engine's scope and wipe layer speaks (see [scope-and-wipe.md](scope-and-wipe.md))
+- the **template** form — index-free dotted paths like `commodityLines.commoditySelection`, as `walkObligations()` yields them
+- the **bracketed instance** form — `commodityLines[0].commoditySelection`, the pathKey vocabulary the engine's scope and wipe layer speaks (see [scope-and-wipe.md](scope-and-wipe.md))
 
 It normalises instance indices away (`[0]` → nothing) before walking the ancestor chain. This bridge is what lets a per-instance Change link on check-your-answers resolve its owning page. `flow/dispatch.test.js` pins both vocabularies.
 
@@ -85,7 +85,7 @@ One wrinkle if the shared page must sit structurally inside two sections: `secti
 - `sectionEntry(sectionId, scope)` — the first gate-passing page of a section. The hub uses it for each task's href.
 - `nextInSection(pageId, scope)` — the next gate-passing page after this one in the same section, else the hub.
 
-Together they produce the journey's shape: a linear run through a section, skipping pages whose gates fail (no claims history means no claims page), then back to the hub. `shared/kit.js`'s `nextTarget` wraps `nextInSection` with one exception — a `?change=1` request returns to check-your-answers instead.
+Together they produce the journey's shape: a linear run through a section, skipping pages whose gates fail (no commercial transporter chosen means no transporter-select page), then back to the hub. `shared/kit.js`'s `nextTarget` wraps `nextInSection` with one exception — a `?change=1` request returns to check-your-answers instead.
 
 Nothing here derives scope or mutates data. Navigation only reads the scope facts the state layer already computed.
 

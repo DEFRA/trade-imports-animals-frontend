@@ -93,13 +93,12 @@ digit string. Controllers must persist that cleaned value, not the raw
 payload:
 
 ```js
-// features/cover-type/controller.js
+// features/modifications/value.controller.js
 const { value: clean, errors } = validate(fields, payload)
-if (errors) return render(h, values, errors) // raw values echoed back
+if (errors) return render(h, value, errors) // raw value echoed back
 
 const { scope } = state.commit(request, h, {
-  ...values,
-  excessAmount: clean.excessAmount ?? ''
+  modValue: clean.modValue ?? ''
 })
 ```
 

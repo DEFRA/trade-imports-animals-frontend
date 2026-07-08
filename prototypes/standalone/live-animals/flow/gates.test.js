@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
-import { claimsPage } from '../features/claims/page.js'
+import { transportersSelectPage } from '../features/transport/page.js'
 import { quoteSummaryPage } from '../features/quote/page.js'
 import { reconcile } from '../engine/evaluate/reconcile.js'
 import { NA } from '../engine/status.js'
@@ -25,7 +25,9 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     expect(() => sectionGatePasses(dynamicSections[0], scope)).toThrow(
       /buildDispatch/
     )
-    expect(() => pageGatePasses(claimsPage, scope)).toThrow(/buildDispatch/)
+    expect(() => pageGatePasses(transportersSelectPage, scope)).toThrow(
+      /buildDispatch/
+    )
   })
 
   it('Should evaluate an authored gate without needing the dispatch index', () => {
@@ -60,11 +62,11 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
       expect(mismatches).toEqual([])
     })
 
-    it('Should pass the derived claims page gate exactly when the claims obligation is owed, in every scope state', () => {
+    it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
       for (const answers of enumerateScopeStates()) {
         const { inScope } = reconcile(answers)
-        expect(pageGatePasses(claimsPage, { inScope })).toBe(
-          inScope.has('claims')
+        expect(pageGatePasses(transportersSelectPage, { inScope })).toBe(
+          inScope.has('commercialTransporter')
         )
       }
     })

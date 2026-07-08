@@ -13,10 +13,6 @@ import {
   transportersSelectPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-import { drivingHistoryPage } from '../features/driving-history/page.js'
-import { claimsPage } from '../features/claims/page.js'
-import { coverTypePage } from '../features/cover-type/page.js'
-import { optionalExtrasPage } from '../features/optional-extras/page.js'
 import { addonsPage } from '../features/addons/page.js'
 import { driversPage } from '../features/named-driver/page.js'
 import {
@@ -66,10 +62,6 @@ export const sections = [
   {
     id: 'contact',
     pages: [consignmentContactSelectPage]
-  },
-  {
-    id: 'your-driving-and-cover',
-    pages: [drivingHistoryPage, claimsPage, coverTypePage, optionalExtrasPage]
   },
   {
     id: 'add-to-your-policy',

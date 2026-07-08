@@ -1,7 +1,7 @@
 /**
  * DEPTH-0 COLLAPSE: a single-segment path stringifies to the BARE id
- * (`['claims'] -> 'claims'`), so every existing `scope.has('claims')` keeps
- * working once scope is keyed by path.
+ * (`['commodityLines'] -> 'commodityLines'`), so every existing
+ * `scope.has('commodityLines')` keeps working once scope is keyed by path.
  */
 export const pathKey = (path) =>
   path.reduce(
@@ -51,7 +51,8 @@ export const deleteAt = (answers, path) => {
 }
 
 /** True when `prefix` is a STRICT array-segment prefix of `path` (never a
- * string-prefix — so `['claims']` does not match a sibling `claimsExtra`). */
+ * string-prefix — so `['documents']` does not match a sibling
+ * `documentsExtra`). */
 export const isStrictPathPrefix = (prefix, path) =>
   prefix.length < path.length &&
   prefix.every((segment, i) => segment === path[i])

@@ -110,20 +110,26 @@ describe('path-addressed store ops at depth', () => {
 
   it('Should destroy a windscreenProvider at its exact path on commit when a claim leaves windscreen', () => {
     // claim 0 stays windscreen; claim 1 is now accident but carries a stale
-    // provider. A commit reconciles and must DELETE claims[1].windscreenProvider
-    // (destroyed, not hidden) at that exact path, leaving claim 0's provider.
-    store.saveAnswers(journeyId, {
-      hadClaims: 'yes',
-      claims: [
-        { claimType: 'windscreen', windscreenProvider: 'autoglass' },
-        { claimType: 'accident', windscreenProvider: 'stale' }
+    // provider. A commit reconciles and must DELETE
+    // drivers[0].claims[1].windscreenProvider (destroyed, not hidden) at that
+    // exact path, leaving claim 0's provider.
+    seed({
+      drivers: [
+        {
+          driverName: 'Sam',
+          relationship: 'spouse',
+          claims: [
+            { claimType: 'windscreen', windscreenProvider: 'autoglass' },
+            { claimType: 'accident', windscreenProvider: 'stale' }
+          ]
+        }
       ]
     })
     commit(buildRequest(), stubH(), {})
     const now = answersNow()
-    expect('windscreenProvider' in now.claims[1]).toBe(false)
-    expect(now.claims[0].windscreenProvider).toBe('autoglass')
-    expect(now.claims[1].claimType).toBe('accident')
+    expect('windscreenProvider' in now.drivers[0].claims[1]).toBe(false)
+    expect(now.drivers[0].claims[0].windscreenProvider).toBe('autoglass')
+    expect(now.drivers[0].claims[1].claimType).toBe('accident')
   })
 
   it('Should not fabricate a phantom driver for a malformed/out-of-range driver index', () => {

@@ -51,22 +51,13 @@ export const enumerateScopeStates = () =>
         // cannot witness both branches — the axis carries all three.
         ['', 'Commercial transporter', 'Private transporter'].flatMap(
           (transporterType) =>
-            ['no', 'yes'].flatMap((hadClaims) =>
-              ['no', 'yes'].flatMap((voluntaryExcess) =>
-                ['', 'comprehensive'].flatMap((coverType) =>
-                  subsetsOf(ADDONS).map((addons) => ({
-                    regionOfOriginCodeRequirement,
-                    reasonForImport,
-                    meansOfTransport,
-                    transporterType,
-                    hadClaims,
-                    voluntaryExcess,
-                    coverType,
-                    addons
-                  }))
-                )
-              )
-            )
+            subsetsOf(ADDONS).map((addons) => ({
+              regionOfOriginCodeRequirement,
+              reasonForImport,
+              meansOfTransport,
+              transporterType,
+              addons
+            }))
         )
       )
     )

@@ -4,51 +4,65 @@ A collection is a repeating obligation: the user adds 0 or more entries, each
 with its own fields. This guide shows you how to add one, including a field
 that only applies to some entries.
 
-Two reference implementations exist:
+Three reference implementations exist:
 
-- [`features/claims/`](../features/claims/) — a top-level collection (depth 1)
+- [`features/documents/`](../features/documents/) — a top-level collection
+  (depth 1) with the list/entry page split
+- [`features/commodities/`](../features/commodities/) — a top-level collection
+  with a cardinality mandate and an item-scoped conditional field
 - [`features/named-driver/`](../features/named-driver/) — a collection inside a
   collection (depth 2)
 
-Follow the steps against `features/claims/` — every snippet below traces to it.
+Follow the steps against `features/documents/` and
+`features/commodities/` — every snippet below traces to one of them.
 
 ## 1. Declare the collection in the model
 
 A collection is an ordinary obligation that carries `collection: true` and a
 real `item: [...]` array of nested sub-obligations. From
-[`features/claims/obligations.js`](../features/claims/obligations.js):
+[`features/commodities/obligations.js`](../features/commodities/obligations.js):
 
 ```js
-export const claimType = { id: 'claimType', required: true }
-export const claimAmount = { id: 'claimAmount' }
+export const commoditySelection = { id: 'commoditySelection', required: true }
+export const numberOfAnimalsQuantity = {
+  id: 'numberOfAnimalsQuantity',
+  required: true
+}
 
-export const claims = {
-  id: 'claims',
+export const commodityLines = {
+  id: 'commodityLines',
   collection: true,
-  item: [claimType, claimAmount, windscreenProvider],
-  activatedBy: { obligation: hadClaims, equals: 'yes' },
-  requiredAtLeastOne: true,
-  wipeOnExit: true
+  item: [
+    commoditySelection,
+    typeSelection,
+    speciesSelection,
+    numberOfPackages,
+    numberOfAnimalsQuantity
+  ],
+  requiredAtLeastOne: true
 }
 ```
 
 The collection-level facts:
 
-- `activatedBy` puts the whole collection in scope. It references a real
-  obligation object from another feature (`hadClaims` from driving-history),
-  imported sideways.
-- `wipeOnExit` means deselecting the activating answer destroys the whole
-  subtree — every entry and everything inside it. Data is destroyed, not
-  hidden, so re-activating starts blank.
+- `activatedBy` (optional) puts the whole collection in scope. The `drivers`
+  collection ([`features/named-driver/obligations.js`](../features/named-driver/obligations.js))
+  carries one — it references a real obligation object from another feature
+  (`addons`), imported sideways. `commodityLines` has none, so it is
+  always live.
+- `wipeOnExit` (meaningful only with `activatedBy`) means deselecting the
+  activating answer destroys the whole subtree — every entry and everything
+  inside it. Data is destroyed, not hidden, so re-activating starts blank.
 - `requiredAtLeastOne` makes an in-scope collection owe at least one entry.
-  Omit it and an empty collection is complete — but every entry that does
-  exist must still be complete
+  Omit it — as `documents` does — and an empty collection is complete, but
+  every entry that does exist must still be complete
   ([`engine/evaluate/complete.js`](../engine/evaluate/complete.js)).
 
-Sub-obligation ids are frame-relative: `claimType`, not `claims.claimType`.
-The id is the key inside each entry object (`answers.claims[0].claimType`)
-and the DOM field name. Ids must be path-safe — no `.`, `[` or `]` — or boot
-throws ([`flow/dispatch.js`](../flow/dispatch.js)).
+Sub-obligation ids are frame-relative: `commoditySelection`, not
+`commodityLines.commoditySelection`. The id is the key inside each entry
+object (`answers.commodityLines[0].commoditySelection`) and the DOM field
+name. Ids must be path-safe — no `.`, `[` or `]` — or boot throws
+([`flow/dispatch.js`](../flow/dispatch.js)).
 
 ## 2. Add the item-scoped conditional field
 
@@ -57,25 +71,28 @@ a sibling — another obligation in the same `item` list. There is no new
 syntax and no marker:
 
 ```js
-export const windscreenProvider = {
-  id: 'windscreenProvider',
-  required: true,
-  activatedBy: { obligation: claimType, equals: 'windscreen' },
+export const numberOfPackages = {
+  id: 'numberOfPackages',
+  activatedBy: {
+    obligation: commoditySelection,
+    includes: PACKAGE_COUNT_COMMODITIES
+  },
   wipeOnExit: true
 }
 ```
 
 The same three operators apply as everywhere else: `equals`, `includes`,
 `present`. The engine infers item-relative resolution from sibling identity:
-because `claimType` sits in the same `item` list, the reference resolves
-within each entry's own frame
+because `commoditySelection` sits in the same `item` list, the reference
+resolves within each entry's own frame
 ([`engine/evaluate/predicate.js`](../engine/evaluate/predicate.js)). So
-`windscreenProvider` is in scope for exactly the entries whose own
-`claimType` is `'windscreen'`. Changing an entry's `claimType` away from
-`'windscreen'` wipes that entry's stale provider — a field-level wipe inside
-one instance.
+`numberOfPackages` is in scope for exactly the lines whose own commodity is
+one of the listed values. Changing a line's commodity out of the list wipes
+that line's stale package count — a field-level wipe inside one instance.
+(For the `equals` flavour, see `windscreenProvider` gated on its sibling
+`claimType` in the nested driver claims.)
 
-The reveal markup (show or hide the field as the user picks a type) is
+The reveal markup (show or hide the field as the user picks a value) is
 page-side, in your entry template. Scope and wipe stay model-side.
 
 ## 3. What the engine gives you free
@@ -83,8 +100,10 @@ page-side, in your entry template. Scope and wipe stay model-side.
 You write no engine code. Once the model declares the collection:
 
 - **Per-instance scope.** The registry walk materialises the tree against the
-  answers, so a two-claim journey yields `claims[0].claimType` and
-  `claims[1].claimType` as distinct instances, each scoped independently.
+  answers, so a two-line journey yields
+  `commodityLines[0].commoditySelection` and
+  `commodityLines[1].commoditySelection` as distinct instances, each scoped
+  independently.
 - **Per-path wipe.** `reconcile` names exactly the out-of-scope paths that
   still hold data; the write layer destroys them.
 - **Per-item completeness.** An entry is complete when every required
@@ -94,7 +113,7 @@ You write no engine code. Once the model declares the collection:
 - **Dispatch coverage at depth.** Boot asserts every obligation at every
   depth is collected by exactly one page. Sub-obligations inherit their
   owning page from the nearest collection ancestor, so your list page
-  declares only `collects: ['claims']`
+  declares only `collects: ['documents']`
   ([`flow/dispatch.js`](../flow/dispatch.js)).
 
 ## 4. Build the two pages
@@ -105,21 +124,21 @@ each loop owns its own rows and copy (see [decisions.md](decisions.md)).
 
 ### The list page (the loop hub)
 
-[`features/claims/list.controller.js`](../features/claims/list.controller.js)
+[`features/documents/list.controller.js`](../features/documents/list.controller.js)
 is the page the flow knows about. It declares the `collects`, renders the
-Claim-N rows, and offers Add / Remove / Continue.
+Document-N rows, and offers Add / Remove / Continue.
 
-`state.collectionView(answers, ['claims'])` returns facts only:
+`state.collectionView(answers, ['documents'])` returns facts only:
 `[{ index, path, entry, complete }]`. No hrefs, no labels, no row
 view-models. The controller hand-builds its rows over those facts:
 
 ```js
 const rows = state
-  .collectionView(answers, ['claims'])
+  .collectionView(answers, ['documents'])
   .map(({ index, entry }) => ({
-    key: { text: `Claim ${index + 1}` },
-    value: { text: claimValue(entry) },
-    actions: { items: [{ href: pagePath(`claims/${index}/remove`), ... }] }
+    key: { text: `Document ${index + 1}` },
+    value: { text: documentValue(entry) },
+    actions: { items: [{ href: pagePath(`accompanying-documents/${index}/remove`), ... }] }
   }))
 ```
 
@@ -128,22 +147,23 @@ otherwise Continue advances with no write.
 
 ### The entry page (add and remove)
 
-[`features/claims/entry.controller.js`](../features/claims/entry.controller.js)
+[`features/documents/entry.controller.js`](../features/documents/entry.controller.js)
 answers "the add form has no instance id yet": the valid POST appends, and
-the append mints the entry's identity `(claims, arrayIndex)`. Until that
+the append mints the entry's identity `(documents, arrayIndex)`. Until that
 POST the draft lives only in the payload — never a half-created entry in the
 store.
 
 ```js
-state.appendEntry(request, h, 'claims', {
-  ...entry,
-  claimAmount: clean.claimAmount ?? ''
-})
+state.appendEntry(request, h, 'documents', entry)
 ```
 
 `removeEntry` splices the entry — destroying its whole subtree — then
 reconciles, so anything left dangling out of scope is pruned too
 ([`engine/write.js`](../engine/write.js)).
+
+A variant: the commodities loop splits its entry across a SELECT sub-page
+(which appends) and a DETAILS sub-page (which edits the same entry in
+place) — the identity-minting write is still a single append.
 
 ## 5. Keep the guards
 
@@ -165,14 +185,16 @@ into any new nested controller.
 
 [`contract.test.js`](../contract.test.js) pins that each page commits exactly
 what it declares. Collections split that across two pages: the list page
-declares `collects: ['claims']`, but the committing write is the entry
-page's append handler. Add a case shaped like the existing claims one:
+declares `collects: ['documents']`, but the committing write is the entry
+page's append handler. Add a case shaped like the existing documents one:
 
-1. Assert the list page's declaration: `claimsList.meta.collects` equals
-   `['claims']`.
+1. Assert the list page's declaration: `documentsList.meta.collects` equals
+   `['documents']`.
 2. Drive the entry page's add handler with a valid payload.
-3. Seed the activating answer (for claims, `{ hadClaims: 'yes' }`) so the
-   collection stays in scope — otherwise reconcile wipes the fresh write.
+3. If the collection is gated, seed the activating answer (for drivers,
+   `{ addons: ['named-driver'] }`) so the collection stays in scope —
+   otherwise reconcile wipes the fresh write. Always-live collections need
+   no seed.
 4. Assert the handler committed exactly the declared ids.
 
 ## 7. Nesting a collection

@@ -91,15 +91,15 @@ describe('#ukPhone — allow-list + digit count', () => {
 })
 
 describe('#oneOf — value domain', () => {
-  const schema = oneOf('coverType', ['comprehensive', 'third-party'])
+  const schema = oneOf('typeSelection', ['domestic', 'wild'])
 
   it('Should accept a value in the domain', () => {
-    expect(run(schema, { coverType: 'comprehensive' }).errors).toBeNull()
+    expect(run(schema, { typeSelection: 'domestic' }).errors).toBeNull()
   })
 
   it('Should reject a value outside the domain', () => {
-    expect(run(schema, { coverType: 'gold-plated' }).errors).toEqual({
-      coverType: 'Select a valid option'
+    expect(run(schema, { typeSelection: 'mythical' }).errors).toEqual({
+      typeSelection: 'Select a valid option'
     })
   })
 })
