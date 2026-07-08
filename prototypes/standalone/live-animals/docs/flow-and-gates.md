@@ -14,7 +14,7 @@ Each page entry is the feature's `page.js` identity leaf (`{ id, slug }`), impor
 
 - `allFlowPages` — every page across all sections, flattened, each tagged with its `sectionId`
 - `sectionOfPage(pageId)` — the first section containing the page
-- `nonQuoteSections` — every section except `get-your-quote` (the quote-readiness roll-up iterates these)
+- `nonQuoteSections` — the sections the `readyForQuote` roll-up iterates. It filters out `get-your-quote`, but that section (the last authored gate, and the last car-domain feature) was removed in inc-028, so the filter now matches nothing and the set spans **every** section. `readyForQuote` therefore rolls up "is every section Fulfilled or Not applicable" — exactly the submit precondition. The name and filter are kept deliberately: `readyForQuote` is a supported, repurposed capability (now the submit-readiness gate consulted by `submitJourney`), not dead code.
 
 ### `dynamic: true` is a presentation axis, not a gate
 
@@ -26,7 +26,7 @@ A gate is a pure `(scope) => boolean` that decides whether a page or section is 
 
 By default no gate is authored. A step with no `gate` is reachable exactly when some obligation it collects is in scope. The derivation reads the same boot-built dispatch index the status roll-up reads (a page's `collects`, a section's pages' `collects` combined), so the flow never restates the model's activation rules as hand-typed `inScope.has('<key>')` strings.
 
-This earned its place the hard way. Four of the five gates the flow used to author were bare `inScope.has('<key>')` restatements of the obligation model, coupled to it by a raw string. If the string and the model diverged, you got a ghost Not applicable row on the hub, or a quote that could never unlock. Deriving both from one source makes the invariant hold by construction:
+This earned its place the hard way. Four of the five gates the flow used to author were bare `inScope.has('<key>')` restatements of the obligation model, coupled to it by a raw string. If the string and the model diverged, you got a ghost Not applicable row on the hub, or a section that could never unlock. Deriving both from one source makes the invariant hold by construction:
 
 > A derived gate passes exactly when the section's status is not Not applicable.
 
@@ -34,8 +34,8 @@ This earned its place the hard way. Four of the five gates the flow used to auth
 
 Two deliberate edges:
 
-- **Authored gates are the override.** Write a `gate` only for a flow-level fact the model cannot express. Exactly one exists: `get-your-quote`'s `gate: (scope) => scope.readyForQuote`. An authored gate wins outright — the derivation is never consulted.
-- **Empty `collects` derives to reachable.** A step that collects nothing (the quote-summary page — its only obligation is the `system` premium, which no page collects) passes its derived gate. Restricting such a step is exactly what an authored gate is for, and quote-summary's section has one.
+- **Authored gates are the override.** Write a `gate` only for a flow-level fact the model cannot express. An authored gate wins outright — the derivation is never consulted. None exists any more: the last one, `get-your-quote`'s `gate: (scope) => scope.readyForQuote`, went with the quote feature in inc-028, so every gate now derives from collects. The mechanism is kept in `gates.js`, dormant, for a future flow-level fact.
+- **Empty `collects` derives to reachable.** A step that collects nothing (the `notification-view` check-your-answers page — it is not in `dispatchPages`, so `collectsOf` returns `[]`) passes its derived gate. Restricting such a step is exactly what an authored gate would be for.
 
 ## Fail loud before boot
 
@@ -95,6 +95,6 @@ Nothing here derives scope or mutates data. Navigation only reads the scope fact
 
 - `sectionObligationIds(section)` — the union of every obligation the section's pages collect
 - `sectionStatus(section, answers, inScope)` — the engine's pure `statusOf` applied to that union
-- `readyForQuote(answers, inScope)` — true once every non-quote section is Fulfilled or Not applicable
+- `readyForQuote(answers, inScope)` — the submit-readiness gate: true once every section is Fulfilled or Not applicable (it iterates `nonQuoteSections`, which now spans all sections). Consulted by `submitJourney` in `engine/write.js`.
 
-The dependency direction is one-way: flow calls the engine's `statusOf` downward, never the reverse. The engine still needs quote-readiness inside `makeScope`, so boot hands `readyForQuote` down into `engine/read.js` via `configureReadyForQuote` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.
+The dependency direction is one-way: flow calls the engine's `statusOf` downward, never the reverse. The engine still needs submit-readiness inside `makeScope`, so boot hands `readyForQuote` down into `engine/read.js` via `configureReadyForQuote` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.

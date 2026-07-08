@@ -5,8 +5,8 @@ import { test, expect } from '@playwright/test'
  * Happy-path walk of the live-animals journey. Grows one leg per increment
  * as pages land, driven by the values in
  * `prototypes/standalone/live-animals/spec/fixtures/happy-path.json`.
- * Legs that still walk the vendored car-insurance journey are transitional
- * and shrink as sections are replaced.
+ * As of inc-028 no car-domain feature remains — every leg walks the
+ * live-animals journey end to end (dashboard -> tasks -> declaration -> submit).
  */
 const BASE = '/prototype-standalone/live-animals'
 
@@ -23,10 +23,10 @@ const { values } = JSON.parse(
 const startNotification = async (page) => {
   await page.goto(`${BASE}/home`)
   await page.getByRole('button', { name: 'Start a new notification' }).click()
-  // Starting a journey lands on the task list — still the vendored
-  // car-insurance hub until later increments replace it.
+  // Starting a journey lands on the task list. inc-028 removed the last
+  // car-domain feature (the quote), so the hub is now purely live-animals.
   await expect(
-    page.getByRole('heading', { name: 'Get a car insurance quote' })
+    page.getByRole('heading', { name: 'Import notification service' })
   ).toBeVisible()
 }
 
@@ -78,7 +78,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // One-page section: saving returns to the hub with the task completed.
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     const originRow = page.locator('.govuk-task-list__item', {
       hasText: 'Origin of the import'
@@ -143,7 +143,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Continue returns to the hub with the task completed.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     const commoditiesRow = page.locator('.govuk-task-list__item', {
       hasText: 'Commodities'
@@ -167,7 +167,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // the one-page section returns to the hub with the task still open.
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     const consignmentRow = page.locator('.govuk-task-list__item', {
       hasText: 'About the consignment'
@@ -188,7 +188,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(consignmentRow).toContainText('Completed')
   })
@@ -259,7 +259,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Continue returns to the hub; the optional task stays Completed.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(documentsRow).toContainText('Completed')
   })
@@ -376,7 +376,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Continue returns to the hub with all five owed parties answered.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(addressesRow).toContainText('Completed')
   })
@@ -468,7 +468,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Last page of the section: saving returns to the hub, task completed.
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(transportRow).toContainText('Completed')
   })
@@ -513,7 +513,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // returns to the hub with the task still open.
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     const transportRow = page.locator('.govuk-task-list__item', {
       hasText: 'Transport'
@@ -530,7 +530,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(transportRow).toContainText('In progress')
 
@@ -577,7 +577,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
 
     // The copy persists: walking back in re-derives the checked option from
@@ -601,7 +601,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
 
     // Back to commercial: leaving scope wiped the saved transporter — no
@@ -675,7 +675,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .fill(transporter.address.emailAddress)
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
 
     // The record persists: walking back in flattens the saved object into
@@ -704,7 +704,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
 
     // Back to private: leaving scope wiped the saved details — the form
@@ -745,7 +745,7 @@ test.describe('live-animals (page-owned spine)', () => {
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Get a car insurance quote' })
+        page.getByRole('heading', { name: 'Import notification service' })
       ).toBeVisible()
     }
     const roadReveal = page.locator(
@@ -819,7 +819,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // the one-page section returns to the hub with the task still open.
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(contactRow).toContainText('Not started')
 
@@ -829,7 +829,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('radio', { name: values.contactAddress.name }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(contactRow).toContainText('Completed')
 
@@ -866,7 +866,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('radio', { name: 'Transit' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(consignmentRow).toContainText('Completed')
 
@@ -883,7 +883,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // A blank save is not an error (enforcedAt=submit) but leaves the task open.
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Get a car insurance quote' })
+      page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(consignmentRow).not.toContainText('Completed')
   })

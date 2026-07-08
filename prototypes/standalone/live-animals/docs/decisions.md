@@ -17,7 +17,7 @@ passes stress-tested the result before each verdict landed.
 v1 made a config engine the spine: a UUID-keyed obligation catalogue plus a
 `flow.json` tree that owned every page's copy, rendered through one generic
 template. In practice the generic renderer failed on every page that
-mattered. The commodities loop, the check-your-answers rows, the quote summary
+mattered. The commodities loop, the check-your-answers rows, the declaration
 and the hub all dropped out of config into hand-written bypasses. The
 clearest proof: a loop's add form has no id yet, so a slot-expanding
 renderer cannot render it at all. The config engine paid off only on the
@@ -134,7 +134,7 @@ the one cross-file link in the codebase left as a string coincidence.
 Divergence between a gate and the model is not benign. A stale key leaves
 a section's hub row rendered when it should not exist (a ghost
 Not applicable row), or worse: the section stays owed with no hub row to
-reach it, and the quote deadlocks, because quote readiness iterates
+reach it, and submission deadlocks, because submit readiness iterates
 section **statuses** and ignores gates. The rename hazard had already
 fired once — a design doc's gate listing rotted when a key was re-pointed.
 
@@ -143,10 +143,12 @@ fired once — a design doc's gate listing rotted when a key was re-pointed.
 Delete the four hand gates. A page or section with no authored `gate` is
 reachable exactly when some obligation it collects is in scope, derived
 from the same boot-built dispatch index the status roll-up reads
-([`flow/gates.js`](../flow/gates.js)). An authored `gate` remains as the
-override for flow-level facts the model cannot express. Exactly one
-exists: `get-your-quote`'s `(scope) => scope.readyForQuote`
-([`flow/flow.js`](../flow/flow.js)).
+([`flow/gates.js`](../flow/gates.js)). An authored `gate` remains
+available as the override for flow-level facts the model cannot express.
+At the time of this decision one existed: `get-your-quote`'s
+`(scope) => scope.readyForQuote`. It went with the quote feature in
+inc-028, so no authored gate remains today; the override mechanism is
+kept in `gates.js`, dormant, for when one is next needed.
 
 ### Why
 
@@ -158,9 +160,11 @@ reachability prover's soundness assumption (every gate is a pure read of
 computed scope) a construction rather than a convention.
 
 `readyForQuote` is the hard counterexample to collapsing gates entirely:
-it is a completeness roll-up over all other sections, not expressible in
-the model's three-operator vocabulary. The gate mechanism therefore
-cannot be removed — only defaulted.
+it is a completeness roll-up over every section, not expressible in the
+model's three-operator vocabulary. The gate mechanism therefore cannot be
+removed — only defaulted. (`readyForQuote` outlived its section: inc-028
+removed the get-your-quote gate but kept the roll-up as the
+submit-readiness gate consulted by `submitJourney`.)
 
 ### Accepted costs
 
@@ -200,7 +204,7 @@ Two placements follow from this rule:
   because the model never names a page. Pages declare `collects`; boot
   inverts those declarations so the hub and check-your-answers can ask
   "which page owns obligation X" without the model knowing pages exist.
-- **`readyForQuote` is boot-injected.** Quote readiness needs the dispatch
+- **`readyForQuote` is boot-injected.** Submit readiness needs the dispatch
   index and the section list — flow knowledge the engine must not import.
   The flow hands the function down at boot via `configureReadyForQuote`
   ([`engine/read.js`](../engine/read.js)); the unconfigured default throws
@@ -276,25 +280,25 @@ gate, instead of always rendering.
 
 ### Why
 
-The marker is not derivable from the gate. `get-your-quote` is the
-counterexample: its gate fails for most of the journey, yet its hub row is
-always present — rendered inert as "Cannot start yet"
-([`features/hub/controller.js`](../features/hub/controller.js)) — while a
+The marker is not derivable from the gate. `get-your-quote` was the
+counterexample: its gate failed for most of the journey, yet its hub row
+was always present — rendered inert as "Cannot start yet" — while a
 gated-out dynamic section had no row at all. The alternative — deriving
 the add-on rows by exclusion, treating any section whose gate can fail as
-dynamic — was rejected: it would misclassify the quote section, and
+dynamic — was rejected: it would have misclassified the quote section, and
 row-appearance is a hub presentation choice, not a scope fact. The flow
 records the choice; the hub interprets it.
 
 Status note: the hub's add-on row rendering went with the `addons`
 picker in inc-024, so nothing interpreted the marker even then — it stayed
 on the three vendored sections purely as part of their shape and died with
-them in inc-025..027. No section carries `dynamic: true` now; the flag
-mechanism survives in [`flow/flow.js`](../flow/flow.js) and the gate/hub
-code but is currently unused. It is kept rather than ripped out because it
-records a real presentation axis the hub could key off again — the
-`get-your-quote` counterexample above shows it is not derivable from the
-gate.
+them in inc-025..027. The `get-your-quote` counterexample itself went with
+the quote feature in inc-028, so no car-domain section remains. No section
+carries `dynamic: true` now; the flag mechanism survives in
+[`flow/flow.js`](../flow/flow.js) and the gate/hub code but is currently
+unused. It is kept rather than ripped out because it records a real
+presentation axis the hub could key off again, distinct from the gate that
+decides reachability.
 
 ### Accepted costs
 

@@ -36,7 +36,9 @@ import * as declaration from './features/declaration/controller.js'
 
 /**
  * The obligation ids a real POST handler newly commits must equal its declared
- * `collects`, minus `renderOnly` and `system` (premium).
+ * `collects`, minus `renderOnly` and `system`. (No `system` obligation remains
+ * after inc-028 removed `premium` with the quote feature; the filter is kept
+ * generic for when one returns.)
  *
  * Gated obligations must be kept in scope by a `seed` (a pre-existing answer
  * that activates them), else `reconcile` would wipe the fresh write on commit.

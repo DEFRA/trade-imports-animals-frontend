@@ -9,9 +9,11 @@ import { simulateJourney } from './simulate.js'
  * obligation at every depth.
  *
  * SOUNDNESS: one witness per obligation suffices only because every flow gate
- * is a pure read of `inScope` / `readyForQuote`. If a future gate keys off an
- * answer outside the scope-owing condition, this proof can false-pass — that
- * is the point to enumerate more witnesses.
+ * is a pure read of `inScope` — every section/page gate now derives from
+ * collects (the last authored gate, get-your-quote's `readyForQuote`, went in
+ * inc-028). If a future gate keys off an answer outside the scope-owing
+ * condition, this proof can false-pass — that is the point to enumerate more
+ * witnesses.
  */
 
 /**
@@ -43,14 +45,17 @@ export const enumerateScopeStates = () =>
 /**
  * Roots whose activator obligation is no longer registered can never enter
  * scope: the feature that collected the activating answer was removed and
- * nothing writes it any more (the activator survives only as a module-local
- * identity stub in the dependent feature's obligations.js). They are
- * intentionally unreachable while they await their own removal increment, so
- * they drop out of the proof rather than reporting as prover bugs. This set
- * empties as the stub-bearing features are deleted — after inc-027 removed the
- * `addons`-gated protected-ncd, the sole survivor is `premium` (activated off
- * the unregistered `coverType` stub in the quote feature), and it is system so
- * it never reaches the witness set anyway; it dies with the quote in inc-028.
+ * nothing writes it any more (the activator survived only as a module-local
+ * identity stub in the dependent feature's obligations.js). Such roots were
+ * intentionally unreachable while they awaited their own removal increment, so
+ * they dropped out of the proof rather than reporting as prover bugs. The set
+ * emptied as the stub-bearing car features were deleted: named-driver (inc-025),
+ * modifications (inc-026), `addons`-gated protected-ncd (inc-027), and finally
+ * the `coverType`-gated `premium` with the whole quote feature (inc-028). It is
+ * now EMPTY — no car-domain features remain, so every registered activator
+ * resolves to a registered obligation. The mechanism is kept as a live guard:
+ * if a future feature ever leaves an unregistered activator behind, its root
+ * re-enters this set instead of failing the prover.
  */
 export const orphanedRootIds = new Set(
   registry.all

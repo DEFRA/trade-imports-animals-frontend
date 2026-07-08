@@ -32,7 +32,7 @@ Run the Playwright E2E suite (covers all prototypes, including this spike):
 npm run test:prototype
 ```
 
-Inspect the model without a server — print derived scope, wipes, section statuses and quote readiness for an editable fixture:
+Inspect the model without a server — print derived scope, wipes, section statuses and submit readiness for an editable fixture:
 
 ```
 npm run dump:live-animals

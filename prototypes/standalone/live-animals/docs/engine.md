@@ -77,11 +77,13 @@ cannot silently widen when a source module gains an internal export.
 
 ## The boot seam
 
-Quote readiness needs the boot-built dispatch index and the flow's section
-list. That is flow knowledge, and the engine must not import `flow/`. So the
-roll-up is handed **in** at boot: `routes.js` calls
+Submit readiness (`readyForQuote`) needs the boot-built dispatch index and the
+flow's section list. That is flow knowledge, and the engine must not import
+`flow/`. So the roll-up is handed **in** at boot: `routes.js` calls
 `configureReadyForQuote(readyForQuote)` during plugin registration — a
 downward flow-to-engine data hand-off that keeps the engine flow-ignorant.
+(`readyForQuote` kept its name after inc-028 removed the quote feature; it now
+gates `submitJourney` in `engine/write.js` rather than the old quote section.)
 
 The unconfigured default throws:
 

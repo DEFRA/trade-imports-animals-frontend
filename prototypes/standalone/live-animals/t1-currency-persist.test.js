@@ -15,8 +15,8 @@ import { compose, currency, validate } from './lib/validate/index.js'
  *
  * `modValue` (the modifications value page) was the last LIVE currency field
  * and went with its section in inc-026. No live journey page collects a
- * currency amount now — the quote `premium` is `system`, computed on demand
- * and never stored (get-your-quote goes in inc-028 anyway). The engine's
+ * currency amount now (the quote feature — whose `premium` was `system`,
+ * computed on demand and never stored — was removed in inc-028). The engine's
  * currency-cleaning stays (see `lib/validate` — `currency()` is unit-tested
  * in `lib/validate/validate.test.js`), so this handler-level contract is
  * exercised here against a SYNTHETIC controller only, dormant until a live

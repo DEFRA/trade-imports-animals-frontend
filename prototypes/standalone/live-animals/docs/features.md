@@ -29,9 +29,10 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 controller, one page leaf, one obligation, one template.
 
 Not every feature collects answers. The shell (`start`, `hub`) and the
-endings (`quote`, `check-answers`, `confirmation`, `resume`) render or
-act but declare no `collects` (see
-[section 6](#6-pages-own-presentation)).
+endings (`check-answers`, `resume`) render or act but declare no
+`collects` (see [section 6](#6-pages-own-presentation)). The journey ends
+on the `declaration` page's own submitted state — there is no separate
+confirmation page (c-022).
 
 ## 2. Why page.js is import-free
 
@@ -119,8 +120,10 @@ collects: kit.collectsFrom(obligations)
 ```
 
 `collectsFrom` maps the feature's real obligation objects to their ids,
-skipping `system` obligations (computed, never collected — for example
-`quote`'s `premium`).
+skipping `system` obligations (computed, never collected). No obligation
+carries the flag today — the only one was the car quote's `premium`,
+removed with the quote feature in inc-028 — but the skip stands ready for
+a future computed value.
 
 A feature that splits its obligations across pages must author an
 explicit subset per page. Transport is the worked example — each page
@@ -178,8 +181,9 @@ recur.
 The hub composes each row from parts it does not own: status tags from
 the pure `sectionStatus` roll-up and hrefs from `sectionEntry` (gates
 are derived from the model by default — see the flow docs via the
-[index](README.md)). The quote row stays inert ("Cannot start yet")
-until `scope.readyForQuote`.
+[index](README.md)). The always-reachable "Check and submit" task opens
+check your answers; submit readiness (`readyForQuote`) is enforced later,
+at the declaration POST, not by hiding a hub row.
 
 ### Loop hubs
 
@@ -219,22 +223,21 @@ depth-2 collection returns.
 
 ### Endings
 
-- **Quote** (`features/quote/controller.js`) computes the premium on
-  demand from the current answers (`lib/quote.js`). Nothing derived is
-  ever stored. Its one obligation (`premium`) is `system`, so
-  `collectsFrom` correctly yields an empty set.
 - **Check your answers** (`features/check-answers/controller.js`) is
   bespoke summary composition — the norm here, not a bypass. It owns
   row order, composed rows (Commodity N, Document N) and the
   exact "Change <key>" accessible names. Change hrefs are **derived**
   through the dispatch seam —
   `pagePath(slugOfPage(pageOfObligation(id)))` — never hardcoded slugs,
-  so a page rename cannot orphan a Change link. Its POST is the one
-  soft gate: `state.submitJourney` re-checks readiness server-side and
-  re-renders if the journey is not ready.
-- **Confirmation** (`features/confirmation/controller.js`) is the one
-  status-guarded route: a pre-submit visit redirects to the start page.
-  The reference is deterministic, so refresh re-renders identically.
+  so a page rename cannot orphan a Change link. Its POST walks on to the
+  declaration; its back link points at the hub.
+- **Declaration** (`features/declaration/controller.js`) is the submit
+  point and the journey's end: its POST validates the confirmation
+  checkbox then calls `state.submitJourney`, which re-checks submit
+  readiness server-side (`scope.readyForQuote`) and finalises only if the
+  journey is ready. On success it redirects back to `/declaration`, where
+  the submitted state renders in place — there is no separate confirmation
+  page (c-022).
 - **Resume** (`features/resume/controller.js`) recovers the current
   user's journey by identity and returns to the hub. The stub has a
   single global user and **no auth** — copy the shape, never the auth

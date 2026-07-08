@@ -125,8 +125,11 @@ Gating pages is only one use of `inScope`. Five consumers read it:
 1. **Wipe** — `commit` and `removeEntryAt` (`engine/write.js`) apply the
    `wiped` half of the same reconcile result via `destroyWiped`.
 2. **Completeness roll-up** — `readyForQuote`
-   (`flow/section-status.js`) unlocks the quote once every non-quote
-   section is fulfilled or not applicable, judged against `inScope`.
+   (`flow/section-status.js`) is the submit-readiness gate (consulted by
+   `submitJourney`): true once every section is fulfilled or not
+   applicable, judged against `inScope`. (It kept its name after the quote
+   feature was removed in inc-028; `nonQuoteSections` now spans every
+   section, so the roll-up is exactly the submit precondition.)
 3. **Status** — `statusOf` (`engine/status.js`) filters a section's
    obligation ids to those in scope; none in scope means Not applicable.
 4. **The reachability prover** — `analysis/reachability.js` reconciles a

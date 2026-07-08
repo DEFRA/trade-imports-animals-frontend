@@ -7,8 +7,10 @@ import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from './simulate.js'
 
 describe('#simulateJourney', () => {
-  // The quote-readiness gate flows through the status roll-up, which reads the
-  // boot-built dispatch index — so replicate boot, exactly as the app does.
+  // readyForQuote flows through the status roll-up, which reads the boot-built
+  // dispatch index — so replicate boot, exactly as the app does. (It is now the
+  // submit-readiness gate, not a section gate: the last authored gate,
+  // get-your-quote, went in inc-028.)
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForQuote(readyForQuote)
@@ -37,72 +39,5 @@ describe('#simulateJourney', () => {
     expect(pages.indexOf('transporters')).toBeLessThan(
       pages.indexOf('transporters-select')
     )
-  })
-
-  it('Should reveal the quote page only once the journey is ready to quote', () => {
-    const notReady = simulateJourney({ countryOfOrigin: 'FR' })
-    expect(notReady).not.toContain('quote-summary')
-
-    const ready = simulateJourney({
-      countryOfOrigin: 'FR',
-      regionOfOriginCodeRequirement: 'no',
-      reasonForImport: 'internal-market',
-      purposeInInternalMarket: 'breeding',
-      commodityLines: [
-        {
-          commoditySelection: '0102 - Cattle',
-          typeSelection: 'domestic',
-          speciesSelection: ['bos-taurus'],
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '25'
-        }
-      ],
-      consignor: {
-        name: 'Laiterie du Nord SARL',
-        address: { addressLine1: '12 Rue de la Gare', country: 'France' }
-      },
-      placeOfDestination: {
-        name: 'Tech Imports Ltd',
-        address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
-      },
-      placeOfOrigin: {
-        name: 'Ferme des Trois Vallées',
-        address: { addressLine1: '3 Chemin des Prés', country: 'France' }
-      },
-      consignee: {
-        name: 'Yorkshire Dales Livestock Ltd',
-        address: {
-          addressLine1: 'Unit 4, Auction Mart Lane',
-          country: 'United Kingdom'
-        }
-      },
-      importer: {
-        name: 'Albion Livestock Imports Ltd',
-        address: {
-          addressLine1: '18 Harbour Road',
-          country: 'United Kingdom'
-        }
-      },
-      portOfEntry: 'ABERDEEN',
-      arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-      meansOfTransport: 'Airplane',
-      transportIdentification: 'FR-892-LK',
-      transportDocumentReference: 'CMR-2026-884721',
-      transporterType: 'Commercial transporter',
-      commercialTransporter: {
-        name: 'Channel Livestock Logistics Ltd',
-        address: {
-          addressLine1: '18 Eastern Docks',
-          country: 'United Kingdom'
-        },
-        approvalNumber: 'UK/DOVER/T2/00012345'
-      },
-      contactAddress: {
-        name: 'Animal and Plant Health Agency',
-        address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
-      },
-      declaration: 'confirmed'
-    })
-    expect(ready).toContain('quote-summary')
   })
 })

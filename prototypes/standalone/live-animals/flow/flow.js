@@ -13,7 +13,6 @@ import {
   transportersSelectPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-import { quoteSummaryPage } from '../features/quote/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 
@@ -56,11 +55,6 @@ export const sections = [
     id: 'contact',
     pages: [consignmentContactSelectPage]
   },
-  {
-    id: 'get-your-quote',
-    gate: (scope) => scope.readyForQuote,
-    pages: [quoteSummaryPage]
-  },
   // "Check and submit" (c-022 end shape: hub -> check your answers ->
   // declaration -> submitted). No gate: the CYA collects nothing and the
   // declaration obligation is always-live, so the section derives reachable
@@ -78,6 +72,14 @@ export const allFlowPages = sections.flatMap((section) =>
 export const sectionOfPage = (pageId) =>
   sections.find((section) => section.pages.some((page) => page.id === pageId))
 
+// The authored `get-your-quote` gate — the last car-domain section and the
+// only `gate:` this flow ever carried — was removed in inc-028. `readyForQuote`
+// (flow/section-status.js) survives as ENGINE/FLOW machinery: it is the LIVE
+// submit-readiness gate consulted by `submitJourney` (engine/write.js), NOT a
+// section gate any more. With no quote section to exclude, this set now spans
+// every section, so the roll-up asks "is every section fulfilled or NA" — the
+// exact submit precondition. Kept as-is (name + filter) rather than renamed:
+// the capability is supported, not dead. See docs/flow-and-gates.md.
 export const nonQuoteSections = sections.filter(
   (section) => section.id !== 'get-your-quote'
 )

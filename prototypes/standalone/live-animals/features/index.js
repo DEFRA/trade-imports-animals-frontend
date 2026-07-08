@@ -21,10 +21,8 @@ import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
-import * as quote from './quote/controller.js'
 import * as cya from './check-answers/controller.js'
 import * as declaration from './declaration/controller.js'
-import * as confirmation from './confirmation/controller.js'
 import * as resume from './resume/controller.js'
 
 /** The pages whose page-side `collects` build the obligation->page index. */
@@ -68,9 +66,7 @@ export const allRoutes = [
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
-  ...quote.routes,
   ...cya.routes,
   ...declaration.routes,
-  ...confirmation.routes,
   ...resume.routes
 ]

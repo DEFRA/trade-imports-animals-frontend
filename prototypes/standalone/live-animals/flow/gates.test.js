@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
 import { transportersSelectPage } from '../features/transport/page.js'
-import { quoteSummaryPage } from '../features/quote/page.js'
+import { notificationViewPage } from '../features/check-answers/page.js'
 import { reconcile } from '../engine/evaluate/reconcile.js'
 import { enumerateScopeStates } from '../analysis/reachability.js'
 import { buildDispatch } from './dispatch.js'
@@ -11,12 +11,20 @@ import { pageGatePasses, sectionGatePasses } from './gates.js'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
   const dynamicSections = sections.filter((section) => section.dynamic)
-  const quoteSection = sections.find(
-    (section) => section.id === 'get-your-quote'
-  )
-  // Every section but the quote derives its gate from collects; grab one to
-  // exercise the pre-build fail-loud path (protected-ncd was the anchor before
-  // inc-027 removed the last dynamic section).
+  // get-your-quote was the ONLY authored `gate:` this flow ever carried, and it
+  // went with the quote feature in inc-028 — so no LIVE section exercises the
+  // authored-gate short-circuit any more. The mechanism (gates.js honouring an
+  // explicit `gate:`) is kept, so drive it with a synthetic section/page: this
+  // proves an authored gate is read WITHOUT the dispatch index, exactly as the
+  // quote section used to.
+  const syntheticGatedSection = {
+    id: 'synthetic',
+    gate: (scope) => scope.pass === true,
+    pages: []
+  }
+  const syntheticGatedPage = { id: 'synthetic', gate: (scope) => scope.pass }
+  // Every live section now derives its gate from collects; grab one to exercise
+  // the pre-build fail-loud path.
   const derivedSection = sections.find((section) => !section.gate)
 
   // These two run BEFORE the nested suite's beforeAll builds the index —
@@ -33,10 +41,19 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
   })
 
   it('Should evaluate an authored gate without needing the dispatch index', () => {
-    expect(sectionGatePasses(quoteSection, { readyForQuote: false })).toBe(
+    expect(sectionGatePasses(syntheticGatedSection, { pass: false })).toBe(
       false
     )
-    expect(sectionGatePasses(quoteSection, { readyForQuote: true })).toBe(true)
+    expect(sectionGatePasses(syntheticGatedSection, { pass: true })).toBe(true)
+    expect(pageGatePasses(syntheticGatedPage, { pass: false })).toBe(false)
+    expect(pageGatePasses(syntheticGatedPage, { pass: true })).toBe(true)
+  })
+
+  it('Should carry no authored section gate any more — every live section derives its gate from collects (T11; get-your-quote went inc-028)', () => {
+    // The only authored `gate:` was get-your-quote's `readyForQuote` roll-up.
+    // Removing it leaves the flow purely collects-derived — this guards against
+    // an authored section gate being smuggled back in.
+    expect(sections.filter((section) => section.gate)).toEqual([])
   })
 
   describe('once the dispatch index is built', () => {
@@ -61,7 +78,9 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     })
 
     it('Should derive a page that collects nothing as reachable (the empty-collects convention)', () => {
-      expect(pageGatePasses(quoteSummaryPage, { inScope: new Set() })).toBe(
+      // notification-view (the CYA) collects nothing — it is not in
+      // dispatchPages, so collectsOf returns [] and the page derives reachable.
+      expect(pageGatePasses(notificationViewPage, { inScope: new Set() })).toBe(
         true
       )
     })

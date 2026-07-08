@@ -44,13 +44,14 @@ describe('reachability / dead-end prover', () => {
     ).toBe(true)
   })
 
-  it('Should exclude the last stub-activated obligation from the witness set (premium coverType stub, dies inc-028)', () => {
-    // inc-027 removed protected-ncd (ncdYears) — the last add-on section — so
-    // the self-emptying exclusion set is down to its final member: `premium`,
-    // activated off the unregistered `coverType` stub in the quote feature.
-    // It is system:true (computed, never collected) so the witness set excludes
-    // it regardless; it awaits its own removal in inc-028.
-    expect([...orphanedRootIds]).toEqual(['premium'])
+  it('Should carry no orphaned stub-activated roots any more — the self-emptying set has emptied (inc-028 removed the last car feature)', () => {
+    // The exclusion set held roots whose activator was an unregistered stub in
+    // a not-yet-removed car feature. inc-028 removed the last of them (the
+    // `coverType`-gated `premium`, with the whole quote feature), so the set is
+    // now empty: every registered activator resolves to a registered
+    // obligation. This guards against the set silently repopulating (a feature
+    // left behind an unregistered activator) rather than failing the prover.
+    expect([...orphanedRootIds]).toEqual([])
     const targets = buildWitnesses().map((witness) => witness.targetKey)
     expect(targets).not.toContain('premium')
   })

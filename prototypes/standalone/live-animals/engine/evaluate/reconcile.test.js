@@ -49,14 +49,4 @@ describe('#reconcile', () => {
       }).wiped
     ).toContain('regionOfOriginCode')
   })
-
-  // coverType's collecting page went in inc-023, so no journey can answer it
-  // any more — the predicate still evaluates honestly against the answers
-  // map, which is what this pins until quote's own removal increment.
-  it('Should bring the system premium into scope once cover is chosen', () => {
-    expect(reconcile({}).inScope.has('premium')).toBe(false)
-    expect(
-      reconcile({ coverType: 'comprehensive' }).inScope.has('premium')
-    ).toBe(true)
-  })
 })

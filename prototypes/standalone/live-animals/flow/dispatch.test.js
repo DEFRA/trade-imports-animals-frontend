@@ -70,7 +70,7 @@ describe('dispatch + flow', () => {
     expect(sectionEntry('transport', scope)).toMatch(/\/port-of-entry$/)
   })
 
-  it('Should unlock the quote only once every other section is complete', () => {
+  it('Should report ready-to-submit only once every section is complete (readyForQuote is now the submit gate — get-your-quote went inc-028)', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',

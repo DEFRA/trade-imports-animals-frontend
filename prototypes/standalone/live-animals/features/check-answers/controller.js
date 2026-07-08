@@ -1,8 +1,7 @@
-import { breadcrumbs, pagePath, TEMPLATES } from '../../config.js'
+import { breadcrumbs, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import { nextInSection } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
-import { calculatePremium } from '../../lib/quote.js'
 import { isBlank } from '../../lib/answered.js'
 import { pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
@@ -194,8 +193,7 @@ const renderCya = (h, answers) =>
     pageTitle: 'Check your answers',
     heading: 'Check your answers',
     rows: buildRows(answers),
-    premium: calculatePremium(answers),
-    backLink: pagePath('quote-summary'),
+    backLink: hubPath(),
     breadcrumbs: breadcrumbs('Check your answers')
   })
 

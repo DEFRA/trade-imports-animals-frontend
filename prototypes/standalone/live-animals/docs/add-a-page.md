@@ -27,9 +27,10 @@ Once the slice is registered, the paradigm derives the rest:
   ([`flow/section-status.js`](../flow/section-status.js)) computes the
   section's tag from the obligations its pages collect. A required obligation
   drives Not started → In progress → Completed on its own.
-- **Quote gating** — `readyForQuote` requires every non-quote section to be
-  Fulfilled or Not applicable, so a new section counts automatically. The
-  check-your-answers POST re-checks readiness server-side.
+- **Submit gating** — `readyForQuote` (the submit-readiness gate) requires
+  every section to be Fulfilled or Not applicable, so a new section counts
+  automatically. The declaration POST re-checks readiness server-side via
+  `submitJourney` before it will finalise.
 - **Scope-exit wipe** — if the page's obligations ever leave scope, `reconcile`
   destroys their data. You never write wipe logic. See
   [scope-and-wipe.md](scope-and-wipe.md).
@@ -43,8 +44,9 @@ A page or section with no `gate` is reachable exactly when some obligation it
 collects is in scope. The gate derives from your `collects` declaration, so
 "gate passes" and "section status is not Not applicable" agree by
 construction. An authored `gate` exists only as an override for flow-level
-facts the model cannot express — the only one in the journey is
-`get-your-quote`'s readiness check. Do not add one for a normal page. See
+facts the model cannot express. The journey has none — the last one,
+`get-your-quote`'s readiness check, went with the quote feature in inc-028, so
+every gate now derives from collects. Do not add one for a normal page. See
 [flow-and-gates.md](flow-and-gates.md).
 
 ## The steps
@@ -222,34 +224,33 @@ silent runtime break.
 ## The blast radius of a required field
 
 This gotcha was validated live. A **required** obligation in an
-**always-live** section is a new in-scope gap, so `readyForQuote` turns false
-until it is answered. That fails every ready-to-quote fixture in the suite,
-not just your page's own tests — building the worked example turned four test
-files red at once ([`item-conditional.test.js`](../item-conditional.test.js),
+**always-live** section is a new in-scope gap, so `readyForQuote` (the
+submit-readiness gate) turns false until it is answered. That fails every
+ready-to-submit fixture in the suite, not just your page's own tests —
+building the worked example turned four test files red at once
+([`item-conditional.test.js`](../item-conditional.test.js),
 [`indexed.test.js`](../indexed.test.js),
 [`flow/dispatch.test.js`](../flow/dispatch.test.js) and
 [`analysis/simulate.test.js`](../analysis/simulate.test.js)). Each was fixed
 by adding `parkingLocation: 'garage'` to its ready fixture.
 
-An **optional** field has none of this reach — it never gates the quote. Reach
-for `required: true` only when the journey genuinely cannot complete without
-the answer, and budget for the fixture sweep when you do.
+An **optional** field has none of this reach — it never gates submission.
+Reach for `required: true` only when the journey genuinely cannot complete
+without the answer, and budget for the fixture sweep when you do.
 
-## The shared happy-path E2E
+## The happy-path E2E
 
-The shared spec
-([`prototypes/e2e/task-list-with-linear-tasks.spec.js`](../../../e2e/task-list-with-linear-tasks.spec.js))
-walks every prototype journey by clicking named task links and asserting
-headings. It never asserts the task count or list, so an extra hub task is
-invisible to it — with one exception. A required new field blocks
-`readyForQuote`, so the quote row stays "Cannot start yet" and the spec's
-`Get your quote` link never appears.
+This journey's own spec
+([`prototypes/e2e/live-animals.spec.js`](../../../e2e/live-animals.spec.js))
+walks the full journey by clicking named task links and asserting headings,
+ending on the declaration page's submitted state — there is no separate
+confirmation page (c-022). The `declaration` full-walk test completes every
+hub task, so a required new field blocks `readyForQuote` (the submit-readiness
+gate) and the final submit will not finalise until your task is done.
 
-If that happens, extend the walk journey-conditionally for the
-`live-animals` journey only (copy how `walkNamedDriver` in
-[`prototypes/e2e/journey.js`](../../../e2e/journey.js) branches per journey):
-click the new task and complete it before `Get your quote`. The other journeys
-stay untouched.
+If you add a required field, extend that full walk to fill it before the
+`Check and submit` step, and add a valid value for it to
+`spec/fixtures/happy-path.json` (the shared fixture the walk reads).
 
 ## Check your work
 
@@ -262,5 +263,5 @@ npm run test:prototype
 
 Both suites must be green, including your new contract case. If the unit suite
 fails wholesale with "collected by no page", revisit step 6. If only
-ready-to-quote fixtures fail, you added a required field — see the blast
+ready-to-submit fixtures fail, you added a required field — see the blast
 radius section above.

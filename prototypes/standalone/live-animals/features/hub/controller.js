@@ -1,4 +1,4 @@
-import { BASE, hubPath, pagePath, TEMPLATES } from '../../config.js'
+import { BASE, hubPath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import { sectionEntry } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
@@ -78,21 +78,6 @@ const buildReviewItem = (answers, scope, inScope) => ({
   status: statusTag(sectionStatus(sectionById('review'), answers, inScope))
 })
 
-const buildQuoteItem = (scope) =>
-  scope.readyForQuote
-    ? {
-        title: { text: 'Get your quote' },
-        href: pagePath('quote-summary'),
-        status: { tag: { text: 'Not started', classes: 'govuk-tag--grey' } }
-      }
-    : {
-        title: { text: 'Get your quote' },
-        status: {
-          text: 'Cannot start yet',
-          classes: 'govuk-task-list__status--cannot-start-yet'
-        }
-      }
-
 const countCompletedGroups = (answers, inScope) =>
   GROUP_ROWS.filter(
     (row) => sectionStatus(sectionById(row.id), answers, inScope) === FULFILLED
@@ -103,12 +88,11 @@ const handler = (request, h) => {
   const inScope = scope.inScope
 
   return h.view(view, {
-    pageTitle: 'Get a car insurance quote',
-    heading: 'Get a car insurance quote',
+    pageTitle: 'Import notification service',
+    heading: 'Import notification service',
     progressLine: `You have completed ${countCompletedGroups(answers, inScope)} of ${GROUP_ROWS.length} tasks.`,
     items: [
       ...buildGroupItems(answers, scope, inScope),
-      buildQuoteItem(scope),
       buildReviewItem(answers, scope, inScope)
     ],
     breadcrumbs: [

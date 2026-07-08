@@ -34,7 +34,7 @@ The simulator derives scope with the real `makeScope` from `engine/index.js`, th
 
 The whole function is a dozen lines because **it re-implements nothing**. Scope comes from the engine the app uses; gating comes from the flow the app uses. There is no second copy of the rules, so the simulation cannot drift from runtime behaviour.
 
-One setup requirement: the simulator needs the same boot wiring as the app. Call `buildDispatch(dispatchPages)` and `configureReadyForQuote(readyForQuote)` first, exactly as `routes.js` does — derived gates and quote readiness both fail loud if you skip this (see [flow-and-gates.md](flow-and-gates.md)). The `beforeAll` in [`analysis/simulate.test.js`](../analysis/simulate.test.js) shows the two calls.
+One setup requirement: the simulator needs the same boot wiring as the app. Call `buildDispatch(dispatchPages)` and `configureReadyForQuote(readyForQuote)` first, exactly as `routes.js` does — derived gates and submit readiness both fail loud if you skip this (see [flow-and-gates.md](flow-and-gates.md)). The `beforeAll` in [`analysis/simulate.test.js`](../analysis/simulate.test.js) shows the two calls.
 
 ## The reachability prover
 
@@ -64,7 +64,7 @@ One maintenance fact follows from this design:
 
 The prover never skips silently. `buildWitnesses()` pairs every non-system obligation with its witness; if no enumerated state puts the target in scope, the witness is `null` and `proveReachability()` reports it as a problem with reason `no-witness-puts-in-scope`. That is surfaced as a prover bug — a hole in the enumeration — not quietly passed over. A missing owning page is reported the same way (`no-owning-page`).
 
-There is one deliberate, self-emptying exclusion: an obligation whose activator obligation is no longer registered (the activator survives only as a module-local identity stub after its collecting feature was removed) can never enter scope by construction, so it drops out of the witness set instead of reporting as a prover bug. The exclusion set is derived from the registry and empties as the stub-bearing features are deleted — after inc-027 removed the `addons`-gated car sections its sole remaining member is the system `premium` (activated off the unregistered `coverType` stub), which the witness set skips as system anyway; it goes with the quote feature in inc-028.
+There is one deliberate, self-emptying exclusion: an obligation whose activator obligation is no longer registered (the activator survives only as a module-local identity stub after its collecting feature was removed) can never enter scope by construction, so it drops out of the witness set instead of reporting as a prover bug. The exclusion set is derived from the registry and emptied as the stub-bearing car features were deleted — its last member was the system `premium` (activated off the unregistered `coverType` stub), which went with the quote feature in inc-028. The set is now empty: every registered activator resolves to a registered obligation. The mechanism is kept as a live guard, so if a future feature ever leaves an unregistered activator behind, its root re-enters the exclusion set rather than failing the prover.
 
 The prover also proves it has teeth. `proveReachability({ pagesFor })` accepts an injectable page oracle, and [`analysis/reachability.test.js`](../analysis/reachability.test.js) feeds it a flow with pages dropped. Dropping the `commodities` collection-hub page makes the prover report `commodityLines[0].numberOfPackages` as a dead end, naming the dropped hub as the derived owning page. A prover that cannot fail proves nothing; the injection point keeps that checkable.
 
@@ -72,14 +72,11 @@ The prover also proves it has teeth. `proveReachability({ pagesFor })` accepts a
 
 One witness per obligation suffices only under a condition worth stating plainly:
 
-> Every flow gate must be a pure read of scope (`scope.inScope` / `scope.readyForQuote`).
+> Every flow gate must be a pure read of scope (`scope.inScope`).
 
 When that holds, page reachability is a function of the very scope predicate that owes the obligation — so any state that owes the obligation also reaches the page, and one owing state is as good as all of them.
 
-The condition holds today in two ways:
-
-- **By construction** for derived gates — the default. `flow/gates.js` derives a gate from exactly the obligations the step collects, read from scope.
-- **By discipline** for the one authored gate — `get-your-quote`'s `(scope) => scope.readyForQuote`.
+The condition holds today by construction: every gate is derived. `flow/gates.js` derives a gate from exactly the obligations the step collects, read from scope. There are no authored gates left — the last one, `get-your-quote`'s `(scope) => scope.readyForQuote`, went with the quote feature in inc-028. (`readyForQuote` survives, but as the submit-readiness gate consulted by `submitJourney`, not as a section gate; it too is a pure read of scope.)
 
 The risk sits with future authored gates. If someone writes a gate that keys off an answer outside the scope-owing condition — a raw read of the answers map, say — a single witness could false-pass, and the prover would need to enumerate more witnesses. If you are editing `flow/gates.js` or authoring a gate, keep gates as pure reads of scope. See [flow-and-gates.md](flow-and-gates.md) for the gate seam itself.
 

@@ -77,11 +77,11 @@ the reference is a real JS import of the obligation constant — never a
 string or an id lookup. Live-animals currently has no cross-feature
 edge; the vendored car add-on sections (named-driver, modifications,
 protected-ncd) used to import the `addons` picker sideways, but they were
-removed in inc-025..027 along with the addons feature (inc-024). The one
-vendored stub left is `coverType` in the quote feature
-(`const coverType = { id: 'coverType' }`) — the module-local activator for the
-system `premium`, unregistered and uncollected, so `premium` can never enter
-scope again; the stub dies with the quote feature in inc-028.
+removed in inc-025..027 along with the addons feature (inc-024). The last
+vendored stub — `coverType`, the module-local activator for the system
+`premium` in the quote feature — went with the quote feature itself in
+inc-028. No car-domain feature remains: every activator now resolves to a
+registered obligation.
 
 Activation always flows from a controlling answer to the details it
 unlocks, so the graph is acyclic.
@@ -104,8 +104,14 @@ closure. There are exactly three operators, interpreted in one place
 ```js
 { obligation: regionOfOriginCodeRequirement, equals: 'yes' }        // scalar equality
 { obligation: meansOfTransport, includes: ['Railway', 'Road Vehicle'] } // answer is one of these
-{ obligation: coverType, present: true }                           // answered (non-blank)
+{ obligation: someAnswer, present: true }                          // answered (non-blank)
 ```
+
+`present` fires on any non-blank answer. It remains fully supported by
+`engine/evaluate/predicate.js`, but no live obligation currently uses it —
+its only carrier was the car quote's `premium` (`{ obligation: coverType,
+present: true }`), removed with the quote feature in inc-028. The example
+above is illustrative.
 
 `includes` is set intersection, so it reads "is one of these" whether the
 answer is a scalar or a multi-select. The same operator gates an
@@ -201,12 +207,12 @@ reports an entry complete when it is not.
 Two flags mark obligations that exist in the model but not in the
 answers map:
 
-- **`system`** — computed on demand, never collected or stored. The
-  only one is `premium` (`features/quote/obligations.js`): the quote
-  controller calls `calculatePremium` on the current answers every
-  time the page renders. `kit.collectsFrom` filters `system`
-  obligations out of every page's `collects`, and the boot coverage
-  assertion in `flow/dispatch.js` skips them — no page owns them.
+- **`system`** — computed on demand, never collected or stored. No
+  current obligation carries the flag; the only one was the car quote's
+  `premium`, removed with the quote feature in inc-028. `kit.collectsFrom`
+  filters `system` obligations out of every page's `collects`, and the
+  boot coverage assertion in `flow/dispatch.js` skips them — no page owns
+  them. The flag stands ready for a future computed value.
 - **`renderOnly`** — presented on a page but never committed: the
   input renders, but the controller never writes it. Unlike `system`
   obligations it stays in the page's `collects` (the presenting page

@@ -6,7 +6,6 @@ import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
 import * as transport from './features/transport/obligations.js'
 import * as contact from './features/contact/obligations.js'
-import * as quote from './features/quote/obligations.js'
 import * as declaration from './features/declaration/obligations.js'
 import { pathKey, valueAt } from './lib/path.js'
 
@@ -19,7 +18,6 @@ const all = [
   ...addresses.obligations,
   ...transport.obligations,
   ...contact.obligations,
-  ...quote.obligations,
   ...declaration.obligations
 ]
 

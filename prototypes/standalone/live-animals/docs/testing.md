@@ -40,7 +40,7 @@ This matches both the shared-spec entry for this journey (labelled `standalone o
 npm run dump:live-animals
 ```
 
-Runs `dump.js`, which prints derived scope, the wiped set, per-section status and quote readiness for a fixture answers map — no server, no rendering. Edit the fixture to explore the model.
+Runs `dump.js`, which prints derived scope, the wiped set, per-section status and submit readiness (`readyForQuote`) for a fixture answers map — no server, no rendering. Edit the fixture to explore the model.
 
 The fixture is deliberately messy. Do not tidy it. Two of its oddities are the whole point:
 
@@ -125,7 +125,7 @@ When you seed a gated answer, keep its activating answer in place. Seeding `comm
 
 `contract.test.js` pins the binding the boot assertion cannot see. Boot checks that every obligation is **declared** by exactly one page's `collects`; the contract test checks each handler **honours** its declaration:
 
-> The set of obligation ids a controller actually commits must equal its declared `collects`, minus `renderOnly` and `system` (premium) obligations.
+> The set of obligation ids a controller actually commits must equal its declared `collects`, minus `renderOnly` and `system` obligations.
 
 It drives every collecting page's real POST handler headlessly with a valid payload, then diffs the obligation ids newly written against `meta.collects` as sets.
 

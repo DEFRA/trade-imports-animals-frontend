@@ -59,12 +59,16 @@ features/  →  flow/  →  engine/
   scope ([`flow/gates.js`](../flow/gates.js)). Four of the five original
   hand-authored gates were bare `inScope.has('<key>')` restatements of the
   model, coupled by a raw string. Divergence meant a ghost Not applicable row
-  or a quote deadlock. Deriving the default makes "gate passes exactly when
-  section status is not Not applicable" hold by construction. Exactly one authored
-  gate remains: get-your-quote's `(scope) => scope.readyForQuote`. The
-  flow-aware roll-ups (`sectionStatus`, `readyForQuote`) live in
+  or a stuck section. Deriving the default makes "gate passes exactly when
+  section status is not Not applicable" hold by construction. No authored gate
+  remains — the last one, get-your-quote's `(scope) => scope.readyForQuote`,
+  went with the quote feature in inc-028, so every gate now derives from
+  collects. The authored-gate mechanism is kept in `gates.js`, dormant, for a
+  future flow-level fact the model cannot express. The flow-aware roll-ups
+  (`sectionStatus`, `readyForQuote`) live in
   [`flow/section-status.js`](../flow/section-status.js) because they need the
-  dispatch index and the section list.
+  dispatch index and the section list; `readyForQuote` is now the
+  submit-readiness gate consulted by `submitJourney`.
 - **engine/** — the pure state core. Read, write, reconcile, completeness,
   the four-status roll-up and the persistence ports.
 
@@ -75,8 +79,8 @@ The dependency direction is mechanically checkable: the engine imports zero
 grep -rn "flow/" engine/   # no matches
 ```
 
-The engine has one flow-shaped need — quote readiness — and it is injected
-downward at boot via `configureReadyForQuote` in
+The engine has one flow-shaped need — submit readiness (`readyForQuote`) — and
+it is injected downward at boot via `configureReadyForQuote` in
 [`engine/read.js`](../engine/read.js). The unconfigured default throws, so a
 `makeScope` call before boot is a hard, loud failure rather than a silent
 wrong answer.
@@ -95,7 +99,7 @@ registration it runs, in order:
    declarations and coverage-asserts them: every non-system obligation, at
    every tree depth, must be collected by exactly one page. A forgotten or
    duplicated `collects` is a startup crash, not a silent runtime break.
-3. `configureReadyForQuote(readyForQuote)` — hands the flow's readiness
+3. `configureReadyForQuote(readyForQuote)` — hands the flow's submit-readiness
    roll-up into the engine, keeping the engine free of `flow/` imports.
 4. `registerJourneyCookie(server)` — defines the journey cookie, path-scoped
    to the spike's base path.
@@ -141,7 +145,7 @@ live-animals/
     persistence/          the two ports: records (durable) + session (identity)
 
   lib/                    context-free helpers: path maths, answered-ness,
-                          validate/ (Joi validators), quote.js (premium domain)
+                          validate/ (Joi validators)
   shared/                 kit.js (page library), layout.njk, error-summary.njk
   analysis/               model-level tooling: simulate.js, reachability.js
 
@@ -170,7 +174,7 @@ Kept, because it is page-agnostic and the bespoke pages already leaned on it:
 - **Nothing derived is stored.** Scope is rebuilt from the answers on every
   read, so a days-later resume self-heals to current scope.
 - **The four-status roll-up.** Not applicable / Not started / In progress /
-  Fulfilled — exactly what the hub task list and quote gating need.
+  Fulfilled — exactly what the hub task list and submit gating need.
 - **Section grouping.** The journey returns to the hub after each section and
   the hub renders one task per section.
 
@@ -182,7 +186,8 @@ Dropped, because it served the generic engine rather than the journey:
   moved into per-page templates and controllers.
 - **The generic renderer** (one `page.njk` plus a type-to-widget registry).
   On this journey every interesting page — the commodities loop, Check your
-  answers, the quote, the hub — had already bypassed it with bespoke code.
+  answers, the declaration, the hub — had already bypassed it with bespoke
+  code.
   The config engine paid off only on the boring pages.
 - **The 21-export contract barrel.** It existed to feed the generic routes.
   Controllers import the small state facade directly.
