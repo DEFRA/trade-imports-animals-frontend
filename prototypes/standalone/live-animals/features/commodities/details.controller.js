@@ -7,12 +7,9 @@ import * as commodities from '../../services/commodities/index.js'
 
 const view = `${TEMPLATES}/features/commodities/details`
 
-/** Mirrors the model's numberOfPackages activation for page-side rendering. */
 export const packagesApply = (commoditySelection) =>
   commodities.packageCountCommodities().includes(commoditySelection)
 
-// Both counts are enforcedAt=submit: blank passes validation and
-// numberOfAnimalsQuantity stays an open requirement for the line.
 const fields = compose(
   integerInRange('numberOfAnimalsQuantity', {
     min: 1,
@@ -24,11 +21,6 @@ const fields = compose(
   })
 )
 
-/**
- * Guard: the generic store primitive writes at whatever index it is given,
- * so a malformed or out-of-range `{index}` param redirects to the loop hub
- * instead of writing (see docs/add-a-collection.md, "Keep the guards").
- */
 const lineIndexOf = (request, answers) => {
   const index = Number(request.params.index)
   const lines = answers.commodityLines ?? []
@@ -75,8 +67,6 @@ const post = (request, h) => {
   state.updateEntry(request, h, 'commodityLines', index, {
     ...line,
     numberOfAnimalsQuantity: values.numberOfAnimalsQuantity,
-    // A package count is only owed (and only rendered) for the
-    // package-count commodity list — never write one out of scope.
     ...(packagesApply(line.commoditySelection)
       ? { numberOfPackages: values.numberOfPackages }
       : {})

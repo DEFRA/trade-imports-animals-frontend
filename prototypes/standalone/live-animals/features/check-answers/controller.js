@@ -23,9 +23,6 @@ const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 const changeHref = (obligationId) =>
   `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
 
-// Change links to the commodities LOOP HUB — per-line edits live there. Each
-// line is followed by one row per animal identifier unit (depth-2), whose
-// Change link resolves to that line's identifiers loop hub.
 const commodityRows = (answers) =>
   state
     .collectionView(answers, ['commodityLines'])
@@ -60,7 +57,6 @@ const commodityRows = (answers) =>
         }))
     ])
 
-// Change links to the documents LOOP HUB — per-document edits live there.
 const documentRows = (answers) =>
   state.collectionView(answers, ['documents']).map(({ index, entry }) => ({
     key: { text: `Document ${index + 1}` },
@@ -142,8 +138,6 @@ const buildRows = (answers) => {
       certification.certificationLabel(answerOf('animalsCertifiedFor')) ?? '',
       'animalsCertifiedFor'
     ),
-    // Owed only when a triggering commodity line keeps it in scope
-    // (frame:"anyItem"); the row mirrors that gate.
     ...(unweanedApplies(answers)
       ? [
           row(
@@ -154,9 +148,6 @@ const buildRows = (answers) => {
         ]
       : []),
     ...documentRows(answers),
-    // Each stored party is a copied { name, address } object (c-020); the
-    // Change link resolves to the addresses landing page, which owns the
-    // collects and links out to the select spokes.
     row('Place of origin', answerOf('placeOfOrigin')?.name, 'placeOfOrigin'),
     row('Consignor', answerOf('consignor')?.name, 'consignor'),
     row('Consignee', answerOf('consignee')?.name, 'consignee'),
@@ -166,8 +157,6 @@ const buildRows = (answers) => {
       answerOf('placeOfDestination')?.name,
       'placeOfDestination'
     ),
-    // Owed only when a triggering commodity line keeps it in scope
-    // (frame:"anyItem"); the row mirrors that gate.
     ...(cphApplies(answers)
       ? [
           row(
@@ -183,7 +172,6 @@ const buildRows = (answers) => {
       dateText(answerOf('arrivalDateAtPort')),
       'arrivalDateAtPort'
     ),
-    // The stored means IS the V4 label (no code lookup needed).
     row('Means of transport', answerOf('meansOfTransport'), 'meansOfTransport'),
     row(
       'Transport identification',
@@ -209,10 +197,7 @@ const buildRows = (answers) => {
           )
         ]
       : []),
-    // The stored type IS the V4 label (no code lookup needed).
     row('Transporter type', answerOf('transporterType'), 'transporterType'),
-    // The stored transporter is a copied { name, address, approvalNumber }
-    // object (c-020), owed only on the commercial branch of the type split.
     ...(answerOf('transporterType') === 'Commercial transporter'
       ? [
           row(
@@ -222,8 +207,6 @@ const buildRows = (answers) => {
           )
         ]
       : []),
-    // The stored private transporter is a keyed-in { name, address } object
-    // (party-record shape, c-020), owed only on the private branch.
     ...(answerOf('transporterType') === 'Private transporter'
       ? [
           row(
@@ -233,8 +216,6 @@ const buildRows = (answers) => {
           )
         ]
       : []),
-    // The stored contact is a copied { name, address } object (c-020) —
-    // the select side of the unresolved c-001 variant pair.
     row('Contact address', answerOf('contactAddress')?.name, 'contactAddress')
   ]
 
@@ -255,9 +236,6 @@ const get = (request, h) => {
   return renderCya(h, answers)
 }
 
-// The CYA no longer submits — the declaration page owns state.submitJourney
-// (c-022 end shape: hub -> check your answers -> declaration -> submitted).
-// The next step derives from the review section's page order.
 const post = (request, h) => {
   const { scope } = state.get(request, h)
   return h.redirect(nextInSection(page.id, scope))

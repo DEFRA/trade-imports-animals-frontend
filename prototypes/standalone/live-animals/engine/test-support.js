@@ -1,9 +1,6 @@
 import { store } from './store.js'
 import { JOURNEY_COOKIE } from './journey.js'
 
-/** Shared fakes for the engine and controller specs. */
-
-/** Hapi response-toolkit stub — `view` records the last render into `captured.view`. */
 export const stubH = () => {
   const captured = {}
   return {
@@ -17,7 +14,6 @@ export const stubH = () => {
   }
 }
 
-/** A request pinned to an existing journey via its cookie. */
 export const journeyRequest = (journeyId, overrides = {}) => ({
   payload: {},
   params: {},
@@ -27,7 +23,6 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides
 })
 
-/** A recording `h` for the session seam — logs `state` writes and keeps a cookie jar. */
 export const recordingH = () => {
   const cookies = {}
   const calls = []
@@ -44,7 +39,6 @@ export const recordingH = () => {
   }
 }
 
-/** Drive one real controller handler against the real store. */
 export const driveHandler = (
   handler,
   { payload = {}, seed = {}, params = {} } = {}

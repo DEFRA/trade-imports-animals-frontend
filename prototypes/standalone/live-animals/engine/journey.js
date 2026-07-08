@@ -2,14 +2,8 @@ import { BASE } from '../config.js'
 import { session, JOURNEY_COOKIE } from './persistence/session.js'
 import { records } from './persistence/records.js'
 
-/**
- * The journey-isolation seam — the one place a request is tied to a Journey
- * document.
- */
 export { JOURNEY_COOKIE } from './persistence/session.js'
 
-// Path-scoped to BASE so this spike can never read another spike's cookie, and
-// parallel browser contexts each carry their own journey.
 const cookieOptions = Object.freeze({
   path: BASE,
   ttl: null,

@@ -2,15 +2,8 @@ import Joi from 'joi'
 
 import { isRealDate } from './calendar.js'
 
-/**
- * Convention: every OPTIONAL validator lets '' (blank) through — omit
- * `.allow('')` and an optional field silently becomes save-blocking.
- * `requiredText` is the one save-blocking primitive.
- */
-
 const POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
 const VEHICLE_REG = /^[A-Za-z]{2}\d{2}\s?[A-Za-z]{3}$/
-// GDS-lenient telephone allow-list: digits, spaces and the usual punctuation.
 const PHONE_ALLOWED = /^[0-9+()\-.,;\s]+$/
 
 const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
@@ -78,11 +71,6 @@ export const ukPhone = (name, message = 'Enter a valid UK telephone number') =>
       .messages({ 'string.pattern.base': message, 'any.invalid': message })
   )
 
-/**
- * Save-blocking `oneOf`: blank AND out-of-domain both fail. Needed as one
- * primitive because composing `requiredText` with `oneOf` would merge the
- * latter's `.allow('')` into the key and let blank straight through.
- */
 export const requiredOneOf = (name, values, message) =>
   single(
     name,
@@ -106,7 +94,6 @@ export const oneOf = (name, values, message = 'Select a valid option') =>
       .messages({ 'any.only': message })
   )
 
-/** Kept as its trimmed string so the stored shape is unchanged. */
 export const integerInRange = (name, { min, max, message } = {}) =>
   single(
     name,
@@ -127,8 +114,6 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       })
   )
 
-/** Returns the cleaned string (£/commas stripped) — controllers must persist
- *  this value, not the raw payload. */
 export const currency = (name, message = 'Enter a valid amount') =>
   single(
     name,
@@ -145,8 +130,6 @@ export const currency = (name, message = 'Enter a valid amount') =>
       .messages({ 'any.invalid': message })
   )
 
-/** Blank (all three empty) passes; a partial or unreal date fails, anchored
- *  on the day part so the error summary points at the first box. */
 export const dateParts = (name, message = 'Enter a valid date') => {
   const dayKey = `${name}-day`
   const monthKey = `${name}-month`
@@ -159,7 +142,7 @@ export const dateParts = (name, message = 'Enter a valid date') => {
           String(part ?? '').trim()
         )
         const filled = parts.filter((part) => part !== '')
-        if (filled.length === 0) return day // optional — all blank passes
+        if (filled.length === 0) return day
         if (filled.length < 3) return helpers.error('any.invalid')
         const [parsedDay, parsedMonth, parsedYear] = parts.map(Number)
         if (!isRealDate(parsedYear, parsedMonth, parsedDay)) {

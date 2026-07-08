@@ -2,22 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { reconcile } from './reconcile.js'
 import { evalPredicate } from './predicate.js'
 
-/**
- * The inc-031 model-extension: `activatedBy.frame` grows scope resolution from
- * two cases (same-frame sibling / top-level answer) to four, adding
- * `frame: "enclosing"` and `frame: "anyItem"`. No live obligation carries a
- * frame gate yet — the pages that use it (permanentAddress, the unit-level
- * identifiers, countyParishHoldingCph, containsUnweanedAnimals) arrive in
- * inc-033..035 — so these specs prove the SCOPE + WIPE invariant with
- * synthetic obligations, injected via reconcile's test-only `forest` seam.
- * The shape mirrors the real one: a `commodityLines` collection whose items
- * hold `commoditySelection` and a nested `animalIdentifiers` collection.
- */
-
 const commoditySelection = { id: 'commoditySelection' }
 
-// A unit-level field gated on the ENCLOSING commodity line's selection —
-// mirrors permanentAddress (required, wiped on exit).
 const permanentAddress = {
   id: 'permanentAddress',
   required: true,
@@ -41,8 +27,6 @@ const commodityLines = {
   item: [commoditySelection, animalIdentifiers]
 }
 
-// A notification-level field gated on ANY commodity line's selection —
-// mirrors countyParishHoldingCph.
 const countyParishHoldingCph = {
   id: 'countyParishHoldingCph',
   required: true,
@@ -139,11 +123,6 @@ describe('cross-frame conditionality — frame: "anyItem" (notification field ga
   })
 })
 
-/**
- * Depth-2 "two frames out": an enclosing reference must skip the intervening
- * frame and resolve in the nearest ancestor frame that actually holds it —
- * here a top-level flag read from inside a doubly-nested collection.
- */
 describe('cross-frame conditionality — enclosing resolves two frames out', () => {
   const rootFlag = { id: 'rootFlag' }
   const deepField = {
@@ -173,12 +152,6 @@ describe('cross-frame conditionality — enclosing resolves two frames out', () 
   })
 })
 
-/**
- * Backwards compatibility: the DEFAULT (no `frame`) resolution is unchanged —
- * a same-frame sibling reads inside the entry, anything else reads the
- * top-level answer. (The full pre-M2 suite over the real registry is the
- * primary witness; this pins the two default branches directly.)
- */
 describe('activatedBy resolution — default (no frame) is unchanged', () => {
   const sibling = { id: 'sibling' }
   const frames = [

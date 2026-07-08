@@ -22,10 +22,6 @@ const countryItems = () => [
   ...countries.originCountries()
 ]
 
-// countryOfOrigin is enforcedAt=continue (spec ruling c-023): blank blocks
-// Save and Continue. Every other field here is enforcedAt=submit — blank
-// passes validation and the obligation stays an open requirement for the
-// status roll-up (In progress, not a validation error).
 const fields = compose(
   requiredText(
     'countryOfOrigin',
@@ -80,8 +76,6 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  // Committing regionOfOriginCode alongside its activating answer is safe:
-  // when the requirement is not 'yes', reconcile wipes it on the same commit.
   const { scope } = state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }

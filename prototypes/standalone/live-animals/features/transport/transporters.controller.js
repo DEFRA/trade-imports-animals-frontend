@@ -6,14 +6,9 @@ import * as transportReference from '../../services/transport-reference/index.js
 import { transportersPage as page } from './page.js'
 import { transporterType } from './obligations.js'
 
-// Explicit subset: the transport feature splits its obligations across the
-// port-of-entry, transport-details and transporters pages.
 export const meta = { ...page, collects: [transporterType.id] }
 const view = `${TEMPLATES}/features/transport/transporters`
 
-// transporterType is enforcedAt=submit: blank passes validation and the
-// obligation stays an open requirement for the status roll-up (In progress,
-// not a validation error). Only an out-of-domain value blocks the save.
 const fields = compose(
   oneOf('transporterType', transportReference.transporterTypes())
 )

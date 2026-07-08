@@ -4,15 +4,6 @@ import {
   collectionComplete
 } from './engine/evaluate/complete.js'
 
-/**
- * The engine supports nested (depth-2) collections — a collection item may
- * itself hold another collection. The car named-driver feature
- * (`drivers[i].claims[j]`) was the live carrier and was removed with its
- * section, taking the depth-2 SCOPE and dispatch-coverage witnesses with it.
- * No live obligation nests a collection until M2 adds one, so the depth-2
- * mechanics are exercised here with synthetic obligations only — the engine
- * capability stays; only the car carrier went (see docs/limits.md).
- */
 describe('nested collection completeness (synthetic — no live carrier)', () => {
   it('Should gate the parent on a required nested collection', () => {
     const requiredNested = {

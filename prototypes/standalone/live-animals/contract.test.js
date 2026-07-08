@@ -38,16 +38,6 @@ import * as privateTransporterDetails from './features/transport/private-transpo
 import * as contactSelect from './features/contact/controller.js'
 import * as declaration from './features/declaration/controller.js'
 
-/**
- * The obligation ids a real POST handler newly commits must equal its declared
- * `collects`, minus `renderOnly` and `system`. (No `system` obligation remains
- * after inc-028 removed `premium` with the quote feature; the filter is kept
- * generic for when one returns.)
- *
- * Gated obligations must be kept in scope by a `seed` (a pre-existing answer
- * that activates them), else `reconcile` would wipe the fresh write on commit.
- */
-
 const drive = driveHandler
 
 const committedIds = ({ before, after }) =>
@@ -61,9 +51,6 @@ const committableCollects = (collects) =>
     return !obligation.renderOnly && !obligation.system
   })
 
-// Payloads are VALID (an invalid payload re-renders and never commits), and
-// every committable id is filled so the declared-but-never-written direction
-// is genuinely exercised.
 const cases = [
   {
     id: 'origin',
@@ -71,7 +58,6 @@ const cases = [
     handler: postHandlerOf(origin),
     payload: {
       countryOfOrigin: 'FR',
-      // 'yes' keeps regionOfOriginCode in scope on the same commit
       regionOfOriginCodeRequirement: 'yes',
       regionOfOriginCode: 'FR-75',
       internalReferenceNumber: 'Imports456GB'
@@ -87,7 +73,6 @@ const cases = [
     id: 'import-purpose',
     collects: importPurpose.meta.collects,
     handler: postHandlerOf(importPurpose),
-    // 'internal-market' keeps purposeInInternalMarket in scope on the commit
     seed: { reasonForImport: 'internal-market' },
     payload: { purposeInInternalMarket: 'breeding' }
   },
@@ -95,8 +80,6 @@ const cases = [
     id: 'additional-details',
     collects: additionalDetails.meta.collects,
     handler: postHandlerOf(additionalDetails),
-    // A triggering commodity line keeps containsUnweanedAnimals in scope on
-    // the commit (frame:"anyItem"); without it the fresh write would be wiped.
     seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
@@ -104,8 +87,6 @@ const cases = [
     id: 'cph-number',
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
-    // A triggering commodity line keeps countyParishHoldingCph in scope on the
-    // commit (frame:"anyItem"); without it the fresh write would be wiped.
     seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
     payload: { countyParishHoldingCph: '12/345/6789' }
   },
@@ -125,7 +106,6 @@ const cases = [
     collects: transportDetails.meta.collects,
     handler: postHandlerOf(transportDetails),
     payload: {
-      // 'Road Vehicle' keeps transitedCountries in scope on the same commit
       meansOfTransport: 'Road Vehicle',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
@@ -142,9 +122,6 @@ const cases = [
     id: 'transporters-select',
     collects: transportersSelect.meta.collects,
     handler: postHandlerOf(transportersSelect),
-    // 'Commercial transporter' keeps commercialTransporter in scope on the
-    // commit; the payload is the vendored option id, the committed answer
-    // its copied { name, address, approvalNumber } (c-020).
     seed: { transporterType: 'Commercial transporter' },
     payload: { commercialTransporter: 'channel-livestock-logistics' }
   },
@@ -152,9 +129,6 @@ const cases = [
     id: 'private-transporter-details',
     collects: privateTransporterDetails.meta.collects,
     handler: postHandlerOf(privateTransporterDetails),
-    // 'Private transporter' keeps privateTransporter in scope on the commit;
-    // the keyed-in fields commit as one { name, address } object (the
-    // party-record shape, c-020).
     seed: { transporterType: 'Private transporter' },
     payload: {
       nameOrOrganisationName: 'Jean Dupont',
@@ -172,18 +146,12 @@ const cases = [
     id: 'consignment-contact-select',
     collects: contactSelect.meta.collects,
     handler: postHandlerOf(contactSelect),
-    // The payload is the vendored option id, the committed answer its
-    // copied { name, address } (c-020) — the select side of the
-    // unresolved c-001 variant pair.
     payload: { contactAddress: 'animal-and-plant-health-agency' }
   },
   {
     id: 'declaration',
     collects: declaration.meta.collects,
     handler: postHandlerOf(declaration),
-    // The POST also attempts state.submitJourney; with no other answers the
-    // journey is not ready, so the commit lands and the submit is a no-op —
-    // exactly what this contract measures.
     payload: { declaration: 'confirmed' }
   }
 ]
@@ -205,11 +173,6 @@ describe('controller <-> model commit contract', () => {
     }
   )
 
-  // The LIST page declares `collects: ['commodityLines']`, but the
-  // identity-minting write is the SELECT sub-page's append (the details
-  // sub-page then edits the same entry) — the contract is measured against
-  // the handler that actually commits. No seed: the collection is
-  // always-live.
   it('Should commit commodity lines via the select (append) handler it declares', () => {
     expect(commoditiesList.meta.collects).toEqual(['commodityLines'])
     const postAdd = postHandlerEndingWith(
@@ -228,9 +191,6 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  // The LIST page declares `collects: ['documents']`, but the identity-minting
-  // write is the entry sub-page's append — same shape as commodity lines. No
-  // seed: the optional collection is always-live.
   it('Should commit documents via the entry (append) handler it declares', () => {
     expect(documentsList.meta.collects).toEqual(['documents'])
     const postAdd = postHandlerEndingWith(
@@ -252,25 +212,16 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  // The nested animalIdentifiers collection (depth-2) has no dispatch page of
-  // its own — it inherits the commodities page owner — so its append handler is
-  // the unit entry sub-page. Driving it proves the depth-2 append writes only
-  // the ENCLOSING-gated type fields the commodity allows, and that the unit
-  // then satisfies requiredOneOf while the required enclosing-gated
-  // permanentAddress is owed on-gate.
   it('Should append an animal identifier unit at depth-2, writing only the commodity-gated fields', () => {
     const postAdd = postHandlerEndingWith(
       animalIdentifiersEntry,
       'identifiers/add'
     )
-    // A Cats line: passport + tattoo apply; ear tag + horse name do NOT;
-    // permanentAddress is required (Cats is on its gate).
     const result = drive(postAdd, {
       seed: { commodityLines: [{ commoditySelection: '01061900 - Cats' }] },
       params: { index: '0' },
       payload: {
         animalIdentifierPassport: 'UK123456789',
-        // Ear tag is out of scope for Cats — the page must not commit it.
         animalIdentifierEarTag: 'UK999',
         nameOrOrganisationName: 'Pet Owner',
         addressLine1: '1 Farm Lane',
@@ -283,12 +234,9 @@ describe('controller <-> model commit contract', () => {
     })
     const unit = result.after.commodityLines[0].animalIdentifiers[0]
     expect(unit.animalIdentifierPassport).toBe('UK123456789')
-    // The enclosing gate keeps the ear tag out of scope, so it is not written.
     expect('animalIdentifierEarTag' in unit).toBe(false)
     expect(unit.permanentAddress.name).toBe('Pet Owner')
 
-    // requiredOneOf is met by the passport, and the on-gate permanentAddress is
-    // answered, so the whole line is complete once its other required fields are.
     result.after.commodityLines[0] = {
       ...result.after.commodityLines[0],
       typeSelection: 'domestic',
@@ -298,11 +246,6 @@ describe('controller <-> model commit contract', () => {
     expect(satisfied('commodityLines', result.after)).toBe(true)
   })
 
-  // The addresses LANDING accretes one collect per landed spoke, but every
-  // write is a SELECT spoke's copy-commit (c-020) — the hub-and-spoke
-  // variant of the list/entry split. Each spoke commits exactly its
-  // own party, and together the spokes cover everything the landing
-  // declares. No seed: the party obligations are always-live.
   it('Should commit each party via its select (copy) spoke, covering the landing collects', () => {
     expect(addresses.meta.collects).toEqual([
       'consignor',

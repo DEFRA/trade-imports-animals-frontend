@@ -5,16 +5,6 @@ import { dashboardPage as page } from './page.js'
 
 const view = `${TEMPLATES}/features/dashboard/template`
 
-/**
- * Entry dashboard for the live-animals journey and the journey-start seam.
- * Collects nothing, so there is no obligations file and no dispatch
- * registration. It owns three routes:
- * - GET `${BASE}/home` renders the landing page.
- * - GET `${BASE}` (the breadcrumb target) redirects to the landing page, so
- *   the service root always lands on the dashboard.
- * - POST `${BASE}/start` resets the session and hands over to the task list —
- *   the target of the landing page's start button.
- */
 export const routes = [
   {
     method: 'GET',

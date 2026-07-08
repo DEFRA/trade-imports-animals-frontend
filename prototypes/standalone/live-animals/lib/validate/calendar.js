@@ -1,4 +1,4 @@
-/** Is (year, month, day) a real calendar date? month is 1-based (1 = January). */
+/** @param {number} month - 1-based (1 = January). */
 export const isRealDate = (year, month, day) => {
   if (![year, month, day].every(Number.isInteger)) return false
   if (month < 1 || month > 12) return false

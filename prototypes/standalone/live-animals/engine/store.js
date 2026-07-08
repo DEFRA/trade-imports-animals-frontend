@@ -1,9 +1,5 @@
 import { records } from './persistence/records.js'
 
-/**
- * COMPAT SHIM over the records port, kept for the pre-reshape consumers; new
- * code imports the ports directly.
- */
 export { IN_PROGRESS, SUBMITTED } from './persistence/records.js'
 
 export const store = {

@@ -1,9 +1,3 @@
-// Vendored MDM commodities reference data (picklist, types, species, and the commodity-keyed applicability lists) — the swap point when the real reference-data service lands (spec ruling c-018).
-
-// The vendored commodity picklist stand-in. Values are the V4 list entries
-// verbatim — code plus name — because the V4 conditional-field lists key on
-// those exact strings, and code alone is ambiguous (01061900 covers Cats, Dogs,
-// Ferrets and Rodents).
 export const COMMODITY_OPTIONS = [
   '0102 - Cattle',
   '0101 - Horse',
@@ -24,10 +18,6 @@ export const SPECIES_OPTIONS = [
   { value: 'bubalus-bubalis', text: 'Bubalus bubalis (Water buffalo)' }
 ]
 
-// V4 "Number of packages" commodity list (54 entries, spec c-021 ruling: the
-// list is treated as true and valid, including 0203 Pig Meat under safeguard
-// measure). A commodity line owes a package count only when its commodity
-// selection is one of these.
 export const PACKAGE_COUNT_COMMODITIES = [
   '01064100 - Bees',
   '01063100 - Birds of Prey- Owls',
@@ -85,13 +75,6 @@ export const PACKAGE_COUNT_COMMODITIES = [
   '0407 - SPF Eggs'
 ]
 
-// The per-identifier-type commodity lists are the VERBATIM V4 strings,
-// intersected with the vendored COMMODITY_OPTIONS stand-in above. Only options
-// that exist in that list today can actually gate; the rest join automatically
-// when the real MDM reference list lands (spec ruling c-018).
-
-// V4 Passport commodities: Donkey and asses, Horse, Ponies, Zebras, Mules,
-// Cattle, Cats, Dogs, Ferrets. Present today: Horse, Cattle, Cats, Dogs.
 export const PASSPORT_COMMODITIES = [
   '0101 - Horse',
   '0102 - Cattle',
@@ -99,31 +82,17 @@ export const PASSPORT_COMMODITIES = [
   '01061900 - Dogs'
 ]
 
-// V4 Tattoo commodities: Cats, Dogs, Ferrets, Pigs, Bovine. Present today: Cats,
-// Dogs (Ferrets, Pigs and the '0102 - Bovine' spelling join with MDM).
 export const TATTOO_COMMODITIES = ['01061900 - Cats', '01061900 - Dogs']
 
-// V4 Ear Tag commodities: Cattle, Pig (Domestic), Sheep (Domestic), Goats.
-// Present today: Cattle (Pig, Sheep, Goats join with MDM).
 export const EAR_TAG_COMMODITIES = ['0102 - Cattle']
 
-// V4 Horse Name commodity: Horse only.
 export const HORSE_NAME_COMMODITIES = ['0101 - Horse']
 
-// V4 Permanent Address commodities: Cats, Dogs, Ferrets. Present today: Cats,
-// Dogs (Ferrets joins with MDM).
 export const PERMANENT_ADDRESS_COMMODITIES = [
   '01061900 - Cats',
   '01061900 - Dogs'
 ]
 
-// V4 unweaned-animal commodity GROUPS — equines (0101), cattle (0102), pigs
-// (0103), sheep (010410), goats (010420). Present today: Horse and Cattle;
-// pigs, sheep and goats join when the MDM commodity list grows to carry them.
 export const UNWEANED_ANIMAL_COMMODITIES = ['0102 - Cattle', '0101 - Horse']
 
-// V4 CPH commodity list — 19 commodities across cattle (0102), pigs (0103),
-// sheep (010410), goats (010420) and poultry/hatching-eggs (0105*, 0407*).
-// Equines (0101) are NOT on the CPH list. Present today: Cattle only; the other
-// 18 join when the MDM commodity list grows to carry them.
 export const CPH_COMMODITIES = ['0102 - Cattle']

@@ -9,11 +9,6 @@ import { obligations } from './obligations.js'
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/cph-number/template`
 
-/**
- * Mirrors the model's countyParishHoldingCph anyItem activation for page-side
- * rendering (the check-your-answers row): true when any commodity line's
- * selection is one of the CPH commodities.
- */
 export const cphApplies = (answers) =>
   []
     .concat(answers.commodityLines ?? [])
@@ -21,11 +16,6 @@ export const cphApplies = (answers) =>
       commodities.cphCommodities().includes(line?.commoditySelection)
     )
 
-// countyParishHoldingCph is enforcedAt=submit: blank passes validation and the
-// obligation stays an open requirement for the status roll-up (In progress,
-// not a validation error). Only an over-length value blocks the save — V4
-// allows up to 11 characters including slashes (c-007: string max 11, the
-// skeleton's exactly-9-digits rule does not apply).
 const fields = compose(
   maxText(
     'countyParishHoldingCph',

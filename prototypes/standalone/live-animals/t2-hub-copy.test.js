@@ -9,14 +9,6 @@ import { dispatchPages } from './features/index.js'
 
 import { routes } from './features/hub/controller.js'
 
-/**
- * The shared E2E navigates rows by TITLE and never observes the hint — so the
- * rendered hint text must be pinned here. This also pins the GDS-canonical
- * task-list vocabulary the hub renders (BUG 1): blue "Not yet started", grey
- * "Cannot start yet" text on gated rows with no link, and "0 of N" on a blank
- * journey (an optional section reads Optional and does not count).
- */
-
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
 const renderHub = (seed = {}) => {
@@ -50,8 +42,6 @@ describe('#handler hub copy', () => {
   })
 
   it('Should render a completed section as a green "Completed" tag', () => {
-    // origin is FULFILLED once its required obligations are answered
-    // (regionOfOriginCodeRequirement "no" means regionOfOriginCode is not owed).
     const originRow = rowByTitle(
       renderHub({ countryOfOrigin: 'FR', regionOfOriginCodeRequirement: 'no' })
         .items,
@@ -63,8 +53,6 @@ describe('#handler hub copy', () => {
   })
 
   it('Should render a gated row as "Cannot start yet" text with NO link', () => {
-    // commodities is gated behind countryOfOrigin (RULE 1) — blank journey locks
-    // it, so the row has no href and reads the grey "Cannot start yet" text.
     const commoditiesRow = rowByTitle(renderHub().items, 'Commodities')
     expect(commoditiesRow.href).toBeUndefined()
     expect(commoditiesRow.status).toEqual({

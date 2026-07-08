@@ -52,10 +52,6 @@ const GROUP_ROWS = [
   }
 ]
 
-// Task-list vocabulary. OPTIONAL is plain text (no tag); FULFILLED is a green
-// tag (a deliberate override of the GDS "Completed = plain text" convention);
-// IN_PROGRESS and NOT_STARTED are tags. A gated-out row is not in this map —
-// it renders "Cannot start yet" (grey text, no link) via CANNOT_START_STATUS.
 const STATUS_TAG = {
   [FULFILLED]: { tag: { text: 'Completed', classes: 'govuk-tag--green' } },
   [OPTIONAL]: { text: 'Optional' },
@@ -75,8 +71,6 @@ const CANNOT_START_STATUS = {
 
 const sectionById = (id) => sections.find((section) => section.id === id)
 
-// A gated-out (locked) row has NO link and reads "Cannot start yet"; an
-// available row links to the section's first gated-in page and shows its status.
 const buildRow = ({ id, title, hint }, answers, scope, inScope) => {
   const section = sectionById(id)
   const base = { title: { text: title }, hint: { text: hint } }
@@ -93,10 +87,6 @@ const buildRow = ({ id, title, hint }, answers, scope, inScope) => {
 const buildGroupItems = (answers, scope, inScope) =>
   GROUP_ROWS.map((row) => buildRow(row, answers, scope, inScope))
 
-// "Check and submit" is a task row, not a GROUP_ROW: it is gated on
-// submit-readiness (RULE 2 — locked until every answer section is ready), and
-// it must not join the completed-tasks count, which counts the answer-gathering
-// sections only.
 const buildReviewItem = (answers, scope, inScope) =>
   buildRow(
     {

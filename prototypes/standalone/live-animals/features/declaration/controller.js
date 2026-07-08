@@ -9,13 +9,9 @@ import { obligations } from './obligations.js'
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/declaration/template`
 
-/** The skeleton-sourced declaration statement (c-022; V4 has no row). */
 export const DECLARATION_LABEL =
   'I declare that the information I have provided in this notification I am submitting is true and correct.'
 
-// declaration is enforcedAt=submit AND this POST is the submit action, so
-// the mandate lands here as a save-blocking validator rather than the usual
-// blank-passes rule (skeleton parity: Joi must equal 'confirmed').
 const fields = compose(
   requiredOneOf(
     'declaration',
@@ -43,9 +39,6 @@ const render = (h, values, errors = {}) =>
     errorSummary: kit.errorSummary(errors)
   })
 
-// The submitted state renders HERE: the journey ends on the declaration
-// page with a confirmation panel — there is no separate confirmation page
-// for the live-animals journey (c-022).
 const renderSubmitted = (h, journey) =>
   h.view(view, {
     ...kit.base('Notification submitted'),
@@ -62,7 +55,6 @@ const get = (request, h) => {
 
 const post = (request, h) => {
   const { journey } = state.get(request, h)
-  // A finalised journey is frozen (writes throw) — re-show the submitted state.
   if (journey.status === SUBMITTED) return h.redirect(pagePath(page.slug))
 
   const payload = request.payload ?? {}
@@ -72,9 +64,7 @@ const post = (request, h) => {
 
   state.commit(request, h, values)
   const result = state.submitJourney(request, h)
-  // Not ready: a section is still owed — back to check your answers.
   if (!result.ok) return h.redirect(pagePath(kit.CYA_SLUG))
-  // Skeleton shape: a valid POST submits then redirects back to /declaration.
   return h.redirect(pagePath(page.slug))
 }
 

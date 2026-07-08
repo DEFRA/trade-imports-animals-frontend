@@ -14,13 +14,6 @@ import {
 
 const view = `${TEMPLATES}/features/commodities/animal-identifiers-entry`
 
-/**
- * The identifier TYPE fields are gated on the ENCLOSING commodity line's
- * selection (model: frame:"enclosing"). Rendering mirrors that gate page-side
- * by reading the SAME `activatedBy.includes` list off each obligation, so the
- * page and the model cannot drift. The two free-text fallbacks are always in
- * unit scope (spec c-028, deferred negated gate — see obligations.js).
- */
 const typeApplies = (obligation, commodity) =>
   obligation.activatedBy.includes.includes(commodity)
 
@@ -58,9 +51,6 @@ const FALLBACK_FIELDS = [
   }
 ]
 
-// The V4 Standard Address Block for permanentAddress — committed as one
-// { name, address } object (the party-record shape, c-020), the same shape as
-// the private transporter fieldGroup.
 const ADDRESS_MANDATORY_MESSAGES = {
   nameOrOrganisationName: 'Enter a name or organisation name',
   addressLine1: 'Enter address line 1',
@@ -140,12 +130,6 @@ const addressChecks = compose(
   maxText('emailAddress', 254, 'Email address must be 254 characters or less')
 )
 
-/**
- * Guard: the generic store primitive appends at whatever parent path it is
- * given, so a malformed or out-of-range `{index}` would fabricate a phantom
- * commodity line. Validate it first and redirect to the commodities hub
- * otherwise (see docs/add-a-collection.md, "Keep the guards").
- */
 const lineIndexOf = (request, answers) => {
   const index = Number(request.params.index)
   const lines = answers.commodityLines ?? []
@@ -266,9 +250,6 @@ const postAdd = (request, h) => {
     return render(h, index, commodity, values, addressValues, merged)
   }
 
-  // Only in-scope fields are written: appendEntryAt does not reconcile, so an
-  // out-of-scope field would persist as an orphan (mirrors details.controller's
-  // numberOfPackages guard).
   const unit = { ...values }
   if (showAddress && addressRecordProvided(addressValues)) {
     unit.permanentAddress = {

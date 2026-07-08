@@ -12,10 +12,6 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-    {# The rail and road options share the same follow-up, so the countries
-       checkboxes are repeated per conditional (the design system's
-       repeated-conditional pattern) with a distinct idPrefix each — the
-       controller dedupes the twin submissions. #}
     {% macro transitedCountriesHtml(idPrefix) %}
       {{ govukCheckboxes({
         name: "transitedCountries",

@@ -10,11 +10,6 @@ import { obligations } from './obligations.js'
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/additional-details/template`
 
-/**
- * Mirrors the model's containsUnweanedAnimals anyItem activation for page-side
- * rendering (the check-your-answers row): true when any commodity line's
- * selection is one of the unweaned-animal commodities.
- */
 export const unweanedApplies = (answers) =>
   []
     .concat(answers.commodityLines ?? [])
@@ -24,11 +19,6 @@ export const unweanedApplies = (answers) =>
 
 const UNWEANED_LABEL = { yes: 'Yes', no: 'No' }
 
-// Both fields are enforcedAt=submit: blank passes validation and each stays an
-// open requirement for the status roll-up (In progress, not a validation
-// error). Only an out-of-domain value blocks the save. containsUnweanedAnimals
-// is validated only when it is in scope — out of scope it is neither rendered
-// nor committed.
 const certifiedField = oneOf(
   'animalsCertifiedFor',
   certification.certificationPurposes().map((option) => option.value)
@@ -82,8 +72,6 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, showUnweaned, errors)
 
-  // containsUnweanedAnimals is only owed (and only written) when a triggering
-  // commodity line keeps it in scope — never write one out of scope.
   const { scope: committed } = state.commit(request, h, {
     animalsCertifiedFor: values.animalsCertifiedFor,
     ...(showUnweaned

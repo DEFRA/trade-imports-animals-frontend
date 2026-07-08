@@ -1,8 +1,3 @@
-/**
- * `required` is the completion fact the status roll-up reads ("what is
- * owed") — it does NOT block save. Save-blocking is controller-owned
- * validation; countryOfOrigin's `requiredText` is the journey's only one.
- */
 export const countryOfOrigin = {
   id: 'countryOfOrigin',
   required: true,

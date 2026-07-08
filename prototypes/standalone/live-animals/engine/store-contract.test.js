@@ -6,8 +6,6 @@ describe('store clone/freeze contract', () => {
 
   it('Should mint a fresh in-progress journey with empty answers', () => {
     const journey = store.create()
-    // toMatchObject (not toEqual) tolerates the additive userId field without
-    // weakening the pinned fields.
     expect(journey).toMatchObject({
       journeyId: expect.any(String),
       status: IN_PROGRESS,
@@ -32,8 +30,8 @@ describe('store clone/freeze contract', () => {
     const { journeyId } = store.create()
     const input = { list: [{ a: 1 }] }
     const saved = store.saveAnswers(journeyId, input)
-    input.list[0].a = 999 // mutate the caller's object after the write
-    saved.answers.list = 'HACKED' // mutate the returned clone
+    input.list[0].a = 999
+    saved.answers.list = 'HACKED'
     expect(store.get(journeyId).answers).toEqual({ list: [{ a: 1 }] })
   })
 

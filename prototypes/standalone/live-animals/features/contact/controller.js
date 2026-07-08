@@ -9,9 +9,6 @@ import { obligations } from './obligations.js'
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/contact/template`
 
-// contactAddress is enforcedAt=submit: leaving the radios blank is "not
-// answered yet", not a validation error — the save returns to the hub with
-// nothing committed. Only an out-of-domain value blocks the save.
 const fields = compose(
   oneOf(
     'contactAddress',
@@ -47,8 +44,6 @@ const render = (h, values, errors = {}) =>
 
 const get = (request, h) => {
   const { answers } = state.get(request, h)
-  // The answer is a copy, not a reference — re-derive the checked option by
-  // matching the copied name back against the vendored list.
   return render(h, { selectedName: answers.contactAddress?.name })
 }
 
@@ -58,8 +53,6 @@ const post = (request, h) => {
   if (errors) return render(h, {}, errors)
 
   const chosen = addressBook.party('contact', payload.contactAddress)
-  // COPY the contact into the answer (spec ruling c-020); a blank save
-  // commits nothing and walks on with the current scope.
   const { scope } = chosen
     ? state.commit(request, h, {
         contactAddress: { name: chosen.name, address: { ...chosen.address } }

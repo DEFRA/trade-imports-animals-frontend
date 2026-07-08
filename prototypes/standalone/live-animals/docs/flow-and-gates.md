@@ -106,3 +106,7 @@ Nothing here derives scope or mutates data. Navigation only reads the scope fact
 - `readyForCheckYourAnswers(answers, inScope)` — the submit-readiness gate: true once every answer section is Fulfilled, Not applicable or Optional (it iterates `answerSections`, which excludes `review`). Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
 
 The dependency direction is one-way: flow calls the engine's `statusOf` downward, never the reverse. The engine still needs submit-readiness inside `makeScope`, so boot hands `readyForCheckYourAnswers` down into `engine/read.js` via `configureReadyForCheckYourAnswers` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.
+
+## Twin-conditional dedupe footgun
+
+On `transport-details`, the rail and road means-of-transport radios each reveal their own copy of the transited-countries checkboxes (the govuk-frontend repeated-conditional pattern — one checkbox group per radio, each with a distinct `idPrefix`). Both hidden twins post under the same `transitedCountries` name, so a submission can carry the code twice. The POST handler must dedupe with `[...new Set(...)]` before committing — without it, duplicate country codes persist into the store.

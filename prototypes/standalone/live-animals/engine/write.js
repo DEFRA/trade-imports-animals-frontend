@@ -4,18 +4,6 @@ import { makeScope } from './read.js'
 import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 
-/**
- * There is deliberately NO `setScope` and NO `delete(otherObligation)` —
- * scope-exit wipe is derived by `reconcile` alone and applied by
- * `destroyWiped`, so a page physically cannot hand-roll a wipe.
- */
-
-/**
- * True only for a real in-range integer index into `list`. `Number.isInteger`
- * rejects `NaN` and non-integers UP FRONT: without it `splice(NaN, 1)` coerces
- * to `splice(0, 1)` and would destroy the WRONG (first) instance on a malformed
- * `.../foo/remove` URL. Guards edit-in-place and remove alike.
- */
 const isValidIndex = (index, list) =>
   Number.isInteger(index) && index >= 0 && index < list.length
 
@@ -28,10 +16,6 @@ export const commit = (request, h, patch) => {
   return { answers, scope: makeScope(answers) }
 }
 
-/**
- * No reconcile here: an append only adds scope, never removes it, so nothing
- * can be wiped by adding.
- */
 export const appendEntryAt = (request, h, collectionPath, entry) => {
   const journey = currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []
@@ -52,10 +36,6 @@ export const updateEntryAt = (request, h, collectionPath, index, entry) => {
   records.saveAnswers(journey.journeyId, answers)
 }
 
-/**
- * Splice destroys the whole subtree, then reconcile prunes anything left
- * dangling out of scope — removal is destroyed-not-hidden.
- */
 export const removeEntryAt = (request, h, collectionPath, index) => {
   const journey = currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []

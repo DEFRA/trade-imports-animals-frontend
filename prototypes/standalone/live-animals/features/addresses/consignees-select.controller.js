@@ -7,9 +7,6 @@ import * as addressBook from '../../services/address-book/index.js'
 
 const view = `${TEMPLATES}/features/addresses/consignees-select`
 
-// consignee is enforcedAt=submit: leaving the radios blank is "not answered
-// yet", not a validation error — the save returns to the landing page with
-// nothing committed. Only an out-of-domain value blocks the save.
 const fields = compose(
   oneOf(
     'consignee',
@@ -47,8 +44,6 @@ const render = (h, values, errors = {}) =>
 
 const get = (request, h) => {
   const { answers } = state.get(request, h)
-  // The answer is a copy, not a reference — re-derive the checked option by
-  // matching the copied name back against the vendored list.
   return render(h, { selectedName: answers.consignee?.name })
 }
 
@@ -59,7 +54,6 @@ const post = (request, h) => {
 
   const chosen = addressBook.party('consignee', payload.consignee)
   if (chosen) {
-    // COPY the party into the answer (spec ruling c-020).
     state.commit(request, h, {
       consignee: { name: chosen.name, address: { ...chosen.address } }
     })

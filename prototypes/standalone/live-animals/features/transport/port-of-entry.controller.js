@@ -11,8 +11,6 @@ import * as ports from '../../services/ports/index.js'
 import { portOfEntryPage as page } from './page.js'
 import { arrivalDateAtPort, portOfEntry } from './obligations.js'
 
-// Explicit subset: the transport feature splits its obligations across the
-// port-of-entry and transport-details pages.
 export const meta = {
   ...page,
   collects: [portOfEntry.id, arrivalDateAtPort.id]
@@ -29,10 +27,6 @@ const portItems = (selected) => [
   }))
 ]
 
-// Both fields are enforcedAt=submit (V4 "Mandatory to submit"): blank passes
-// validation and stays an open requirement for the status roll-up. Only an
-// out-of-domain port or a partial/unreal date blocks the save. The date is
-// arrival at the PORT of entry, not the final destination (spec ruling c-011).
 const fields = compose(
   oneOf('portOfEntry', ports.list()),
   dateParts('arrivalDateAtPort', 'Enter a real arrival date')

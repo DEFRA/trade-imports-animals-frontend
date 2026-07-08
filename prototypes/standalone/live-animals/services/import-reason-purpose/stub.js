@@ -1,6 +1,3 @@
-// Vendored MDM / fixed policy value sets for import reason + internal-market purpose — the swap point when the real reference-data service lands.
-
-// V4 five-value reason-for-import enum (spec ruling c-008).
 export const REASON_FOR_IMPORT_LABEL = {
   'internal-market': 'Internal market',
   'transhipment-or-onward-travel': 'Transhipment or onward travel',
@@ -9,7 +6,6 @@ export const REASON_FOR_IMPORT_LABEL = {
   'temporary-admission-horses': 'Temporary admission horses'
 }
 
-// V4 eleven-value internal-market purpose enum (provisional page, c-012).
 export const PURPOSE_IN_INTERNAL_MARKET_LABEL = {
   'transfer-of-ownership-sale-gift': 'Transfer of ownership - Sale/gift',
   'transfer-of-ownership-rescue': 'Transfer of ownership - Rescue',

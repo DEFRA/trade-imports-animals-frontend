@@ -41,10 +41,6 @@ export const sections = [
   },
   {
     id: 'addresses',
-    // cphNumber is a conditionally-scoped tail page (frame:"anyItem" on a
-    // commodity line) — walked after the addresses landing when a CPH
-    // commodity is in the lines, skipped otherwise (the derived gate). The
-    // party-select spokes stay routes-only and never join this array.
     pages: [addressesPage, cphNumberPage]
   },
   {
@@ -61,14 +57,6 @@ export const sections = [
     id: 'contact',
     pages: [consignmentContactSelectPage]
   },
-  // "Check and submit" (c-022 end shape: hub -> check your answers ->
-  // declaration -> submitted). Authored gate: the review section is reachable
-  // only once every answer-gathering section is submit-ready. It CANNOT derive
-  // this from collects — the section's own `declaration` obligation is
-  // always-in-scope, so a derived gate would open it from the start; and gating
-  // it on the full submit-readiness roll-up would deadlock (you confirm the
-  // declaration inside the very section it gates), which is why
-  // `readyForCheckYourAnswers` excludes this section. See docs/flow-and-gates.md.
   {
     id: 'review',
     gate: (scope) => scope.readyForCheckYourAnswers,
@@ -83,13 +71,6 @@ export const allFlowPages = sections.flatMap((section) =>
 export const sectionOfPage = (pageId) =>
   sections.find((section) => section.pages.some((page) => page.id === pageId))
 
-// The sections `readyForCheckYourAnswers` (flow/section-status.js) rolls up:
-// every answer-gathering section EXCEPT `review`. Review is excluded because it
-// owns the `declaration` obligation, confirmed inside the review section
-// itself — folding it into the readiness roll-up that GATES review would
-// deadlock. Submit safety is unaffected: the declaration page's own validator
-// enforces `declaration === 'confirmed'` before `submitJourney` runs. See
-// docs/flow-and-gates.md.
 export const answerSections = sections.filter(
   (section) => section.id !== 'review'
 )

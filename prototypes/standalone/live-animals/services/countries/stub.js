@@ -1,4 +1,3 @@
-// Vendored MDM countries (EU/EEA/EFTA reference list, MDM group GBNAG_SPS_EX) — the swap point when the real reference-data service lands (spec ruling c-018).
 export const COUNTRY_LABELS = {
   AT: 'Austria',
   BE: 'Belgium',

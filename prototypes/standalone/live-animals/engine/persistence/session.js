@@ -1,7 +1,3 @@
-/**
- * SESSION — the session/identity port (stub): who is the user, and which
- * journey is active this session.
- */
 export const STUB_USER = 'stub-user-0001'
 export const STUB_USER_HEADER = 'x-stub-user'
 export const JOURNEY_COOKIE = 'liveAnimalsJourneyId'

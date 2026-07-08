@@ -1,24 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { entryComplete, collectionComplete } from './complete.js'
 
-/**
- * The inc-032 model-extension: a `requiredOneOf` group mandate on a collection.
- * It names a SUBSET of the entry's sibling fields and requires that at least
- * one of them be answered per entry — the V4 "a notification must be submitted
- * with at least one animal identifier PER ANIMAL" rule, where each identifier
- * field (passport / tattoo / ear tag / ...) is individually OPTIONAL but the
- * group is owed. No live obligation carries it yet — `animalIdentifiers` and
- * its fields are registered by inc-035 — so the mechanics are proven here with
- * synthetic obligations, mirroring nested.test.js / cross-frame.test.js.
- *
- * The identifier fields are same-frame siblings within one unit entry, so this
- * needs no enclosing-frame context (unlike inc-035's completeness threading).
- */
-
-// Mirrors the animalIdentifiers unit collection: six individually-optional
-// identifier fields, at least one owed per entry, plus a sibling that is NOT
-// part of the identifier group (permanentAddress) to prove the group is a
-// named subset, not "any sibling".
 const idGroup = [
   'animalIdentifierPassport',
   'animalIdentifierTattoo',
@@ -47,7 +29,6 @@ const animalIdentifiers = {
 describe('requiredOneOf group mandate (synthetic — no live carrier)', () => {
   it('Should treat an entry with ZERO of the group answered as incomplete', () => {
     expect(entryComplete(animalIdentifiers, {})).toBe(false)
-    // Blank strings and empty arrays are not answers.
     expect(
       entryComplete(animalIdentifiers, {
         animalIdentifierPassport: '',
@@ -82,16 +63,12 @@ describe('requiredOneOf group mandate (synthetic — no live carrier)', () => {
   })
 
   it('Should NOT count a sibling outside the named group towards the mandate', () => {
-    // permanentAddress is a sibling item but not in requiredOneOf, so answering
-    // it alone leaves the identifier group unsatisfied.
     expect(
       entryComplete(animalIdentifiers, { permanentAddress: '1 Farm Lane' })
     ).toBe(false)
   })
 
   it('Should still enforce per-field required fields on top of the group', () => {
-    // The group check is additive, not a replacement: a required sibling left
-    // blank keeps the entry incomplete even when the group is satisfied.
     const withRequiredSibling = {
       ...animalIdentifiers,
       item: [...animalIdentifiers.item, { id: 'unitCount', required: true }]
@@ -123,9 +100,6 @@ describe('requiredOneOf group mandate (synthetic — no live carrier)', () => {
   })
 
   it('Should apply the group per entry at depth-2 (nested requiredOneOf)', () => {
-    // A nested collection carrying its own requiredOneOf is resolved through
-    // collectionComplete -> entryComplete recursion; each level consults its
-    // own obligation.requiredOneOf, so the mandate holds two frames in.
     const line = {
       id: 'commodityLines',
       item: [animalIdentifiers],
@@ -146,9 +120,6 @@ describe('requiredOneOf group mandate (synthetic — no live carrier)', () => {
 
 describe('requiredOneOf backwards compatibility', () => {
   it('Should behave exactly as today for a collection WITHOUT the marker', () => {
-    // No requiredOneOf: an entry of all-optional fields is complete even when
-    // every field is blank (pre-inc-032 behaviour), and a blank REQUIRED field
-    // still fails.
     const noMarker = {
       id: 'commodityLines',
       collection: true,

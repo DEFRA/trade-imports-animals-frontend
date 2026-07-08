@@ -13,8 +13,6 @@ import { dispatchPages } from './features/index.js'
 const commoditiesSection = sections.find(
   (section) => section.id === 'commodities'
 )
-// `documents` is the journey's optional section: a collection with no
-// `required`/`requiredAtLeastOne`, so it owes nothing until it is touched.
 const documentsSection = sections.find((section) => section.id === 'documents')
 
 const completeDocument = {
@@ -25,8 +23,6 @@ const completeDocument = {
 }
 
 describe('indexed obligations are first-class', () => {
-  // sectionStatus / readyForCheckYourAnswers read the dispatch index (collectsOf), so the
-  // boot inversion must run first — same as dispatch.test / contract.test.
   beforeAll(() => buildDispatch(dispatchPages))
 
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {
@@ -57,8 +53,6 @@ describe('indexed obligations are first-class', () => {
       reasonForImport: 'internal-market',
       purposeInInternalMarket: 'breeding',
       animalsCertifiedFor: 'slaughter',
-      // '0102 - Cattle' triggers containsUnweanedAnimals and
-      // countyParishHoldingCph (both frame:"anyItem").
       containsUnweanedAnimals: 'no',
       countyParishHoldingCph: '12/345/6789',
       commodityLines: [
@@ -68,9 +62,6 @@ describe('indexed obligations are first-class', () => {
           speciesSelection: ['bos-taurus'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25',
-          // Every line owes >=1 unit record with >=1 identifier (inc-035);
-          // Cattle is off the Cats/Dogs permanentAddress gate, so an ear tag
-          // completes the line.
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ],

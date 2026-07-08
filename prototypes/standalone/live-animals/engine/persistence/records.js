@@ -1,12 +1,5 @@
 import { randomUUID } from 'node:crypto'
 
-/**
- * RECORDS — the durable persistence port (in-memory stub). Records are
- * deep-copied across the boundary both ways (`structuredClone`) so callers can
- * never mutate stored state by reference. There is NO delete-a-key surface,
- * only whole-map `saveAnswers`, so scope-exit wipe stays derived by `reconcile`
- * — the ports cannot hand-roll a wipe.
- */
 export const IN_PROGRESS = 'in-progress'
 export const SUBMITTED = 'submitted'
 
@@ -21,10 +14,6 @@ const assertWritable = (journey) => {
   }
 }
 
-/**
- * The single gate in front of every mutating op — unknown id throws, submitted
- * throws (the one-way freeze) — so no writer can skip either check.
- */
 const loadWritable = (journeyId) => {
   const journey = journeys.get(journeyId)
   if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
@@ -33,7 +22,6 @@ const loadWritable = (journeyId) => {
 }
 
 export const records = {
-  /** Zero-arg tolerated (userId -> null) so the legacy shim's `store.create()` still works. */
   create({ userId } = {}) {
     const journey = {
       journeyId: randomUUID(),
@@ -72,7 +60,6 @@ export const records = {
     return structuredClone(journey)
   },
 
-  /** Test hygiene only. */
   clear() {
     journeys.clear()
     byUser.clear()

@@ -7,20 +7,6 @@ import { obligations } from './obligations.js'
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/addresses/template`
 
-/**
- * Landing page for the addresses section — the hub of a hub-and-spoke:
- * it summarises the consignment's parties and links out to one select
- * sub-page per party. The landing OWNS the section's party collects (its
- * `meta` accretes one obligation per landed spoke), but the write happens
- * on each spoke's POST — the same list-owns/entry-commits split as the
- * claims and documents loop hubs. The spokes stay routes-only and never
- * join the section's pages array in flow.js, so Continue here always
- * returns to the hub.
- *
- * Each select increment fills its party's `href` (the sub-page slug) as
- * the page lands; a party with no `href` yet renders as "Not added yet"
- * text with no link, so the landing page never shows a dead link.
- */
 const PARTY_ROWS = [
   {
     id: 'placeOfOrigin',

@@ -7,18 +7,11 @@ import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from './simulate.js'
 
 describe('#simulateJourney', () => {
-  // readyForCheckYourAnswers flows through the status roll-up, which reads the boot-built
-  // dispatch index — so replicate boot, exactly as the app does. (It is now the
-  // submit-readiness gate, not a section gate: the last authored gate,
-  // get-your-quote, went in inc-028.)
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
-  // RULE 1 gates the post-commodities pages behind the two continue
-  // obligations, so a persona must answer `countryOfOrigin` and a line's
-  // `commoditySelection` before transport opens. `prereqs` seeds exactly that.
   const prereqs = {
     countryOfOrigin: 'FR',
     commodityLines: [{ commoditySelection: '0102 - Cattle' }]

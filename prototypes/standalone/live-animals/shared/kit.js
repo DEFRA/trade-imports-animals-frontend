@@ -1,16 +1,10 @@
 import { breadcrumbs, LAYOUT, pagePath } from '../config.js'
 import { nextInSection } from '../flow/navigation.js'
 
-/**
- * Library, not framework: kit helpers are independently callable and never
- * accept a template/schema and render — a helper that owns WHAT renders has
- * crossed into engine territory and is rejected.
- */
 export const open = { auth: false }
 
 export const CYA_SLUG = 'notification-view'
 
-/** Default `collects`: a feature's whole non-system obligation set. */
 export const collectsFrom = (obligations) =>
   obligations
     .filter((obligation) => !obligation.system)

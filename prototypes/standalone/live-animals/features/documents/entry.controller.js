@@ -13,9 +13,6 @@ import * as documentTypes from '../../services/document-types/index.js'
 
 const view = `${TEMPLATES}/features/documents/entry`
 
-// Every document field is enforcedAt=submit (V4 all-or-nothing block):
-// blank passes validation and stays an open requirement for the entry's
-// completeness roll-up. Only malformed values block the add.
 const fields = compose(
   oneOf('accompanyingDocumentType', documentTypes.documentTypes()),
   oneOf('accompanyingDocumentAttachmentType', documentTypes.attachmentTypes()),
@@ -93,7 +90,6 @@ const postAdd = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, entry, errors)
 
-  // MINTS the index (identity)
   state.appendEntry(request, h, 'documents', entry)
   return h.redirect(pagePath('accompanying-documents'))
 }

@@ -1,6 +1,3 @@
-// BASE is the mount path the SHARED Playwright specs walk — changing it
-// breaks E2E outside this folder. View names resolve from the prototypes/
-// Nunjucks root, so a template name is the spike-relative path.
 export const BASE = '/prototype-standalone/live-animals'
 
 export const TEMPLATES = 'standalone/live-animals'

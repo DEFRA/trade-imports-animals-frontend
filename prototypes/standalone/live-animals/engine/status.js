@@ -13,10 +13,6 @@ const isRequired = (id) => {
   return Boolean(obligation?.required || obligation?.requiredAtLeastOne)
 }
 
-/** Deliberately WEAKER than `satisfied`: a collection is started once it holds
- * ≥1 entry, even an incomplete one. Using `satisfied` here would misreport a
- * section whose only obligation is a partially-filled collection as Not
- * Started. */
 const isStarted = (id, answers) => isAnswered(answers[id])
 
 export const statusOf = (obligationIds, answers, inScope) => {
@@ -24,9 +20,6 @@ export const statusOf = (obligationIds, answers, inScope) => {
   if (inScopeIds.length === 0) return NA
 
   const required = inScopeIds.filter(isRequired)
-  // A section owing nothing required is OPTIONAL until it is touched: unstarted
-  // it reads Optional (and does not count towards "X of N"); once ≥1 answer
-  // exists it tracks completeness like any other section.
   if (required.length === 0) {
     const started = inScopeIds.some((id) => isStarted(id, answers))
     if (!started) return OPTIONAL

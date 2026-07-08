@@ -26,15 +26,13 @@ describe('dispatch + flow', () => {
       /collected by no page/
     )
     expect(() => buildDispatch(withoutCommodities)).toThrow(/commodityLines/)
-    buildDispatch(dispatchPages) // restore the shared index for later tests
+    buildDispatch(dispatchPages)
   })
 
   it('Should resolve a sub-obligation to its collection owner by template and instance address', () => {
     expect(pageOfObligation('commodityLines.commoditySelection')).toBe(
       'commodities'
     )
-    // The engine addresses instances in bracketed pathKey form; ownership must
-    // resolve that vocabulary too, else per-item change links break.
     expect(pageOfObligation('commodityLines[0].commoditySelection')).toBe(
       'commodities'
     )
@@ -42,9 +40,6 @@ describe('dispatch + flow', () => {
   })
 
   it('Should walk the transport section, skipping the spokes the type gates out', () => {
-    // This test isolates spoke gating (transporter type), not RULE 1 flow
-    // sequencing — so satisfy the continue prerequisites unconditionally and let
-    // the in-scope reachability clause drive the assertions.
     const answered = () => true
     const scopeNoType = { inScope: reconcile({}).inScope, answered }
     const scopeCommercial = {
@@ -68,23 +63,17 @@ describe('dispatch + flow', () => {
   })
 
   it('Should enter a section at its first gated-in page', () => {
-    // protected-ncd was the last add-on carrier for this (removed inc-027); the
-    // hub resolves every section row href through sectionEntry, so re-point at a
-    // live multi-page section — transport enters at its always-in-scope first
-    // page.
     const scope = { inScope: reconcile({}).inScope, answered: () => true }
     expect(sectionEntry('transport', scope)).toMatch(/\/port-of-entry$/)
   })
 
-  it('Should report ready-to-submit only once every section is complete (readyForCheckYourAnswers is now the submit gate — get-your-quote went inc-028)', () => {
+  it('Should report ready-to-submit only once every section is complete', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
       reasonForImport: 'internal-market',
       purposeInInternalMarket: 'breeding',
       animalsCertifiedFor: 'slaughter',
-      // '0102 - Cattle' triggers containsUnweanedAnimals and
-      // countyParishHoldingCph (both frame:"anyItem").
       containsUnweanedAnimals: 'no',
       countyParishHoldingCph: '12/345/6789',
       commodityLines: [
@@ -94,7 +83,6 @@ describe('dispatch + flow', () => {
           speciesSelection: ['bos-taurus'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25',
-          // Every line owes >=1 unit record with >=1 identifier (inc-035).
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ],

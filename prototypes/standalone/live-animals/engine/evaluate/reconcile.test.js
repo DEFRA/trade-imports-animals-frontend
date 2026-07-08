@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { reconcile } from './reconcile.js'
 
-/** The scope + scope-exit-wipe invariants — pure, page-agnostic. */
 describe('#reconcile', () => {
   it('Should place root obligations in scope and gate the rest', () => {
     const { inScope } = reconcile({})

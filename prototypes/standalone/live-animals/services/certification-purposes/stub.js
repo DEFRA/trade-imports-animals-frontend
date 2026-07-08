@@ -1,4 +1,3 @@
-// Vendored MDM certification purposes — the swap point when the real reference-data service lands (spec ruling c-009).
 export const CERTIFICATION_PURPOSES = {
   'further-keeping': 'Further keeping',
   slaughter: 'Slaughter',

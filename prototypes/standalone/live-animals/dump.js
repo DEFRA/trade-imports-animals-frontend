@@ -11,12 +11,10 @@ import {
 import { commodityLines as commodityLinesObligation } from './features/commodities/obligations.js'
 import { pathKey } from './lib/path.js'
 
-// Headless state dump — run: node prototypes/standalone/live-animals/dump.js
 buildDispatch(dispatchPages)
 
 const answers = {
   commodityLines: [
-    // Cattle is on the package-count list, so numberOfPackages is IN scope.
     {
       commoditySelection: '0102 - Cattle',
       typeSelection: 'domestic',
@@ -25,8 +23,6 @@ const answers = {
       numberOfAnimalsQuantity: '25'
     },
 
-    // Cattle again, but numberOfPackages is MISSING — an optional item field,
-    // so its absence does not gate the line's completeness.
     {
       commoditySelection: '0102 - Cattle',
       typeSelection: 'domestic',
@@ -34,9 +30,6 @@ const answers = {
       numberOfAnimalsQuantity: '9'
     },
 
-    // Deliberately messy — do not tidy: Fish is NOT on the package-count list,
-    // so numberOfPackages is out of scope for this line; the STALE value drives
-    // the wipe demo (field-level destruction inside a collection item).
     {
       commoditySelection: '0301 - Fish',
       typeSelection: 'domestic',

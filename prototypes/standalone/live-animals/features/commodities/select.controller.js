@@ -12,10 +12,6 @@ import * as commodities from '../../services/commodities/index.js'
 
 const view = `${TEMPLATES}/features/commodities/select`
 
-// commoditySelection is enforcedAt=continue (spec ruling c-023): blank
-// blocks Save and Continue. typeSelection and speciesSelection are
-// enforcedAt=submit — blank passes validation and each stays an open
-// requirement for the line's completeness roll-up.
 const fields = compose(
   requiredOneOf('commoditySelection', commodities.list(), 'Select a commodity'),
   oneOf(
@@ -78,8 +74,6 @@ const postAdd = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, entry, errors)
 
-  // MINTS the index (identity), then hands over to the details sub-page —
-  // the multi-page entry pattern (see features/documents/ for the same shape).
   const index = state.appendEntry(request, h, 'commodityLines', {
     ...entry,
     numberOfPackages: '',

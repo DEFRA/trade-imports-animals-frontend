@@ -80,8 +80,6 @@ describe('path helpers', () => {
 })
 
 describe('wipeOrder — sibling-safe deletion order', () => {
-  // Drive the REAL exported `destroyWiped` rather than re-deriving its
-  // map/sort/delete body inline.
   const applyWipes = (answers, keys) => {
     destroyWiped(answers, keys)
     return answers
@@ -107,8 +105,6 @@ describe('wipeOrder — sibling-safe deletion order', () => {
   })
 
   it('Should delete a nested field before its container entry is spliced away', () => {
-    // commodityLines[0].x and commodityLines[0] together: the deeper delete
-    // must run first.
     const answers = { commodityLines: [{ x: '1' }, { x: '2' }] }
     applyWipes(answers, ['commodityLines[0]', 'commodityLines[0].x'])
     expect(answers.commodityLines).toEqual([{ x: '2' }])
@@ -122,10 +118,6 @@ describe('wipeOrder — sibling-safe deletion order', () => {
       ],
       countryOfOrigin: 'FR'
     }
-    // Mix a whole-entry array-index wipe (commodityLines[0]) with a
-    // nested-leaf wipe on a LATER sibling (commodityLines[1].
-    // numberOfAnimalsQuantity). The nested delete must run before the
-    // splice, or renumbering would land it on the wrong entry.
     destroyWiped(answers, [
       'commodityLines[0]',
       'commodityLines[1].numberOfAnimalsQuantity'

@@ -13,25 +13,10 @@ import { buildDispatch } from './flow/dispatch.js'
 import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { dispatchPages } from './features/index.js'
 
-/**
- * Depth-1 store-op coverage against the live `commodityLines` collection.
- *
- * This net was lost when inc-025 deleted the car `store-ops.test.js` along
- * with its depth-2 `drivers[i].claims[j]` carrier. The depth-2 mechanics have
- * no live carrier until M2 (see docs/limits.md), but the DEPTH-1 behaviour —
- * the `isValidIndex` guard on `updateEntryAt`/`removeEntryAt`, and
- * write-through-on-mutation where a `commit` re-runs `reconcile` and persists
- * — does have a live carrier now: `commodityLines`, whose `numberOfPackages`
- * is INCLUDES-gated on `commoditySelection`. The engine source is unchanged;
- * this only restores the test net against the live domain.
- */
-
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const answersNow = () => store.get(journeyId).answers
 
-// A valid commodity line. Cattle is on the package-count list, so a
-// numberOfPackages on a Cattle line is in scope; Fish is off the list.
 const line = (commoditySelection, extra = {}) => ({
   commoditySelection,
   typeSelection: 'domestic',
@@ -41,8 +26,6 @@ const line = (commoditySelection, extra = {}) => ({
 })
 
 describe('path-addressed store ops at depth-1 (commodityLines — live carrier)', () => {
-  // `commit` -> `makeScope` eagerly computes `readyForCheckYourAnswers`, which reads the
-  // dispatch index — so replicate boot: build the index and inject the roll-up.
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
@@ -100,7 +83,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
     })
-    removeEntryAt(buildRequest(), stubH(), ['commodityLines'], Number('foo')) // NaN
+    removeEntryAt(buildRequest(), stubH(), ['commodityLines'], Number('foo'))
     expect(
       answersNow().commodityLines.map((entry) => entry.commoditySelection)
     ).toEqual(['0102 - Cattle', '010420 - Goats'])
@@ -118,7 +101,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       buildRequest(),
       stubH(),
       ['commodityLines'],
-      Number('foo'), // NaN
+      Number('foo'),
       line('0301 - Fish')
     )
     expect(answersNow().commodityLines).toEqual([line('0102 - Cattle')])
@@ -137,11 +120,6 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should write through a commit that mutates a line, re-running reconcile and destroying the now-out-of-scope package count at its exact path', () => {
-    // A Cattle line carries a package count (Cattle is on the list, so it is in
-    // scope). The commit mutates the line to Fish — off the list — while it
-    // still carries the stale count. commit must re-run reconcile and DELETE
-    // commodityLines[0].numberOfPackages (destroyed, not hidden), persisting the
-    // result to the durable record.
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle', { numberOfPackages: '5' })]
     })
@@ -166,14 +144,6 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 })
 
-/**
- * Depth-2 store-op coverage against the live `commodityLines[i].animalIdentifiers`
- * nested collection (inc-035). This is the net inc-025 deferred when it deleted
- * the car `drivers[i].claims[j]` carrier: the SAME path-addressed primitives one
- * level deeper. permanentAddress is enclosing-gated (frame:"enclosing" on the
- * line's commoditySelection), so it witnesses field-level destruction inside a
- * nested item when the enclosing gate leaves scope.
- */
 describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
@@ -205,7 +175,6 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
       animalIdentifierPassport: 'UK-2'
     })
     expect(second).toBe(1)
-    // The sibling line was untouched.
     expect(answersNow().commodityLines[0].animalIdentifiers).toEqual([])
     expect(
       answersNow().commodityLines[1].animalIdentifiers.map(
@@ -276,11 +245,6 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', () => {
-    // A Cats line carries a unit with a passport + permanent address (both in
-    // scope for Cats). The commit flips the line to Horse — off the Cats/Dogs
-    // permanentAddress gate — while the unit still holds the stale address.
-    // commit must re-run reconcile and DELETE the nested permanentAddress
-    // (destroyed, not hidden), leaving the still-in-scope passport intact.
     store.saveAnswers(journeyId, {
       commodityLines: [
         catsLine([
@@ -300,7 +264,6 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     })
     const persisted = records.load({ journeyId }).answers
     const unit = persisted.commodityLines[0].animalIdentifiers[0]
-    // Passport stays (Horse is on the passport gate); permanentAddress is gone.
     expect(unit.animalIdentifierPassport).toBe('UK-1')
     expect('permanentAddress' in unit).toBe(false)
   })

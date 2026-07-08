@@ -39,18 +39,6 @@ export function* walkObligations(forest = all, basePath = []) {
   }
 }
 
-/**
- * Yielded-field contract consumed by reconcile:
- * `collectionAncestorKey` — pathKey of the nearest enclosing collection (null
- * at the root); reconcile gates a sub-obligation's scope on its collection
- * being in scope. `frames` — this instance's frame chain, INNERMOST-FIRST:
- * each `{ framePath, siblings }` pairs a concrete frame path (with indices)
- * with the obligation list walked at that depth. `frames[0]` is the node's own
- * frame (its `activatedBy` sibling frame today); the tail is its enclosing
- * frames out to the root. reconcile resolves an item-relative `activatedBy` at
- * this exact instance from `frames[0]`, and a `frame: "enclosing"` / `frame:
- * "anyItem"` reference by walking the chain (see engine/evaluate/predicate.js).
- */
 export function* walk(
   answers,
   forest = all,

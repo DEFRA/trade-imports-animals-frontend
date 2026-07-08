@@ -12,10 +12,6 @@ const ancestorTemplate = (templatePath) => {
   return dot === -1 ? null : templatePath.slice(0, dot)
 }
 
-// Accepts BOTH the template form (`claims.claimType`) and the bracketed
-// INSTANCE form the engine's scope/wipe layer speaks (`claims[0].claimType`)
-// — the index normalisation exists so a per-instance change link can resolve
-// its owning page.
 const ownerOfObligation = (address) => {
   let current = address.replace(/\[\d+\]/g, '')
   while (current !== null) {
@@ -33,8 +29,6 @@ export function buildDispatch(pages) {
   collectsByPageMap = new Map()
   slugByPageMap = new Map()
 
-  // An id is a store key AND a segment of a dotted template address — a path
-  // metacharacter in it would make addresses ambiguous.
   for (const { templatePath, obligation } of walkObligations()) {
     if (ID_UNSAFE.test(obligation.id)) {
       throw new Error(
@@ -70,9 +64,6 @@ export function buildDispatch(pages) {
   dispatchBuilt = true
 }
 
-// Checked by flow/gates.js before it reads `collectsOf`: the `?? []` fallback
-// below is legitimate for a page that collects nothing (quote-summary) but
-// would silently gate EVERY step out if the whole index were unbuilt.
 export const isDispatchBuilt = () => dispatchBuilt
 
 export const pageOfObligation = (obligationId) =>

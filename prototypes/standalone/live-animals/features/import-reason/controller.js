@@ -9,9 +9,6 @@ import { obligations } from './obligations.js'
 export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/import-reason/template`
 
-// reasonForImport is enforcedAt=submit: blank passes validation and the
-// obligation stays an open requirement for the status roll-up (In progress,
-// not a validation error). Only an out-of-domain value blocks the save.
 const fields = compose(
   oneOf(
     'reasonForImport',

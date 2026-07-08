@@ -1,9 +1,3 @@
-/**
- * The state facade every page imports (`import * as state`). Names are
- * re-exported EXPLICITLY (never `export *`) so the facade surface cannot
- * silently widen; `configureReadyForCheckYourAnswers` is deliberately NOT
- * re-exported — boot roots import it straight from `./read.js`.
- */
 export { get, makeScope, resume } from './read.js'
 export {
   commit,

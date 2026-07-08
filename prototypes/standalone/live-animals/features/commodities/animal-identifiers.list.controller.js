@@ -14,8 +14,6 @@ const IDENTIFIER_LABELS = {
   animalIdentifierDescription: 'Description'
 }
 
-/** One human summary line per unit — the answered identifiers plus a permanent
- * address marker. Shared with the check-your-answers per-unit rows. */
 export const animalIdentifierSummary = (unit) => {
   const parts = Object.entries(IDENTIFIER_LABELS)
     .filter(([id]) => (unit[id] ?? '').toString().trim() !== '')

@@ -1,8 +1,3 @@
-// Vendored saved-party reference data (trader profile / gov.identity saved parties) — the swap point when the real saved-parties service lands (spec ruling c-018).
-
-// Each entry carries the full V4 Standard Address Block so a selection can be
-// saved by copy (spec ruling c-020) — the chosen party's name and address are
-// copied into the answer, never shared by reference.
 export const CONSIGNOR_OPTIONS = [
   {
     id: 'laiterie-du-nord',
@@ -228,10 +223,6 @@ export const DESTINATION_OPTIONS = [
   }
 ]
 
-// Seeded from the skeleton's mock-contacts.json. V4's two contact-address
-// variants share one anchor (c-001, unresolved): only the select-from-
-// gov.identity side is stubbed; the user-created variant is NOT built until
-// c-001 is ruled on.
 export const CONTACT_OPTIONS = [
   {
     id: 'animal-and-plant-health-agency',
@@ -277,9 +268,6 @@ export const CONTACT_OPTIONS = [
   }
 ]
 
-// V4 leaves the source list TBC (unresolved inline comment on that clause);
-// per spec ruling c-018 reference data wins. Each entry carries the full V4
-// Standard Address Block plus the transporter's approval number.
 export const COMMERCIAL_TRANSPORTER_OPTIONS = [
   {
     id: 'channel-livestock-logistics',

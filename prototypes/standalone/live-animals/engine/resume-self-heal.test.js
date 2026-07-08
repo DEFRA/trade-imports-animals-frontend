@@ -15,7 +15,6 @@ describe('resume self-heal (nothing derived is stored)', () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, {
       countryOfOrigin: 'FR',
-      // requirement 'no' leaves the stored region code out of scope
       regionOfOriginCodeRequirement: 'no',
       regionOfOriginCode: 'FR-75'
     })

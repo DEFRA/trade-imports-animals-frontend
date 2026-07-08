@@ -13,25 +13,14 @@ import { readyForCheckYourAnswers } from './section-status.js'
 import { pageGatePasses, sectionGatePasses } from './gates.js'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
-  // get-your-quote was the ONLY authored `gate:` this flow ever carried, and it
-  // went with the quote feature in inc-028 — so no LIVE section exercises the
-  // authored-gate short-circuit any more. The mechanism (gates.js honouring an
-  // explicit `gate:`) is kept, so drive it with a synthetic section/page: this
-  // proves an authored gate is read WITHOUT the dispatch index, exactly as the
-  // quote section used to.
   const syntheticGatedSection = {
     id: 'synthetic',
     gate: (scope) => scope.pass === true,
     pages: []
   }
   const syntheticGatedPage = { id: 'synthetic', gate: (scope) => scope.pass }
-  // Every live section now derives its gate from collects; grab one to exercise
-  // the pre-build fail-loud path.
   const derivedSection = sections.find((section) => !section.gate)
 
-  // These two run BEFORE the nested suite's beforeAll builds the index —
-  // this file's module registry is fresh (vitest isolates per file), so the
-  // dispatch index really is unbuilt here.
   it('Should fail loud when a derived gate is consulted before the dispatch index is built', () => {
     const scope = { inScope: new Set() }
     expect(() => sectionGatePasses(derivedSection, scope)).toThrow(
@@ -52,11 +41,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
   })
 
   it('Should author exactly one section gate — the review section (RULE 2 submit-readiness)', () => {
-    // The review section is the ONLY authored `gate:`: it gates on
-    // submit-readiness, a flow-level fact the collects-derivation cannot express
-    // (its own always-in-scope declaration would open it from the start). Every
-    // other section stays purely collects-derived — this guards against a second
-    // authored gate being smuggled back in.
     const authored = sections.filter((section) => section.gate)
     expect(authored.map((section) => section.id)).toEqual(['review'])
   })
@@ -65,8 +49,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     beforeAll(() => buildDispatch(dispatchPages))
 
     it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
-      // Isolate spoke gating from RULE 1: satisfy the continue prerequisites
-      // unconditionally so the assertion pins the in-scope reachability clause.
       const answered = () => true
       for (const answers of enumerateScopeStates()) {
         const { inScope } = reconcile(answers)
@@ -77,9 +59,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     })
 
     it('Should derive a page that collects nothing as reachable (the empty-collects convention)', () => {
-      // notification-view (the CYA) collects nothing — it is not in
-      // dispatchPages, so collectsOf returns [] and the page derives reachable
-      // once its prerequisites are met.
       expect(
         pageGatePasses(notificationViewPage, {
           inScope: new Set(),
@@ -110,8 +89,6 @@ describe('RULE 1 — mandate-derived flow sequencing', () => {
   })
 
   it('Should NOT block commodities on its own continue obligation (commoditySelection)', () => {
-    // commoditySelection is owned by commodities itself, so it is not a
-    // strictly-earlier prerequisite — countryOfOrigin alone opens the section.
     expect(gatePasses('commodities', { countryOfOrigin: 'FR' })).toBe(true)
   })
 
@@ -124,9 +101,7 @@ describe('RULE 1 — mandate-derived flow sequencing', () => {
       'contact'
     ]
     const originOnly = { countryOfOrigin: 'FR' }
-    // A commodity line with a blank commoditySelection does NOT answer it.
     const blankLine = { countryOfOrigin: 'FR', commodityLines: [{}] }
-    // Item-level: ANY line filling commoditySelection satisfies the prerequisite.
     const filledLine = {
       countryOfOrigin: 'FR',
       commodityLines: [{}, { commoditySelection: '0102 - Cattle' }]
@@ -139,9 +114,6 @@ describe('RULE 1 — mandate-derived flow sequencing', () => {
   })
 
   it('Should leave an obligation without enforcedAt unaffected by RULE 1 (backwards-compat)', () => {
-    // `documents` (optional collection) carries no enforcedAt obligation, so it
-    // never itself becomes anyone's prerequisite — the sections after it open on
-    // commoditySelection alone, regardless of whether any document exists.
     const noDocuments = {
       countryOfOrigin: 'FR',
       commodityLines: [{ commoditySelection: '0102 - Cattle' }]
@@ -160,8 +132,6 @@ describe('RULE 2 — review gates on submit-readiness (no deadlock)', () => {
 
   const reviewSection = sections.find((section) => section.id === 'review')
 
-  // Every answer section fulfilled/optional — declaration DELIBERATELY absent,
-  // to prove the review gate does not wait on the obligation confirmed inside it.
   const allAnswerSectionsReady = {
     countryOfOrigin: 'FR',
     regionOfOriginCodeRequirement: 'no',

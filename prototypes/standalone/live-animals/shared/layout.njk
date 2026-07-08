@@ -5,18 +5,18 @@
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 
-{% set spikeHome = "/prototype-standalone/live-animals/task-list-with-linear-tasks" %}
+{% set spikeHome = "/prototype-standalone/live-animals" %}
 
 {% block head %}
   <meta name="csrf-token" content="{{ crumb }}">
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block pageTitle %}{% if errorSummary %}Error: {% endif %}{{ pageTitle }} | Car insurance (obligations v2, standalone){% endblock %}
+{% block pageTitle %}{% if errorSummary %}Error: {% endif %}{{ pageTitle }} | Import notification service (standalone){% endblock %}
 
 {% block govukServiceNavigation %}
   {{ govukServiceNavigation({
-    serviceName: "Car insurance — obligations v2 (standalone, page-owned spine)",
+    serviceName: "Import notification service (standalone)",
     serviceUrl: spikeHome
   }) }}
 {% endblock %}
