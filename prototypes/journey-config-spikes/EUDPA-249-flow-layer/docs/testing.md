@@ -1,15 +1,17 @@
 # Testing — what proves what
 
-The spike ships 384 vitest tests across 15 files. Their job is to
+The spike ships 385 vitest tests across 15 files. Their job is to
 catch drift when the obligations / domain / flow model changes. This
-document is the receipt: eleven realistic mutations of the model
-applied over two rounds, each showing exactly which tests fire.
+document is the receipt: sixteen realistic mutations of the model
+applied over three rounds, each showing exactly which tests fire.
 
-Round 1 (mutations 1-5) exposed two coverage gaps; both closed. Round 2
-(mutations 6-11) exposed one more; also closed. See the appendices at
-the end for the closure story.
+Round 1 (mutations 1-5) exposed two coverage gaps; both closed.
+Round 2 (mutations 6-11) exposed one more gap; also closed.
+Round 3 (mutations 12-16) exposed one more gap (closed) and one
+deferred to UX-review. See the round summaries at the end for the
+full closure story.
 
-Baseline before every mutation: **15 test files, 384 tests, all pass.**
+Baseline before every mutation: **15 test files, 385 tests, all pass.**
 Run:
 
 ```bash
@@ -502,3 +504,141 @@ cheap insurance for a future data-driven manifest.
 No structural test failed to catch a real mutation the way mutations 3
 and 5 originally did in round 1. All six round-2 mutations either fired
 directly, exposed a duplicate-name gap, or crashed at module load.
+
+---
+
+## Round 3 — five more mutations, one more closed gap, one deferred
+
+Round 3 probed at the corners: `flow.js` page-name uniqueness, obligation
+manifest ordering, self-referential `within`, evaluator-helper semantics
+(`allowListed` inversion), and presentation-copy changes.
+
+Baseline before round 3: **15 test files, 384 tests, all pass.**
+
+### Mutation 12 — duplicate page name in `flow.js`
+
+**Change:** in `flow/flow.js`, rename `purpose-details` to
+`reason-for-import` — two pages now share a name in the same tree.
+
+**Result:** 13 tests fail across 6 files. Interestingly, `routes.test.js`
+also **skips 14 tests** because Hapi rejects the duplicate route
+registration at `server.initialize()` with
+`AssertError: New route /prototype/eudpa-249/pages/reason-for-import conflicts with existing`,
+which crashes the entire test file's `beforeAll` hook.
+
+**Invariant caught:** page-name uniqueness — enforced structurally by
+Hapi at route registration, and by the contract-navigation tests
+(`changeLinkFor`, `nextAfter`) which resolve to the first match and
+fail sanity checks.
+
+### Mutation 13 — reorder the obligations manifest
+
+**Change:** in `obligations/obligations.js`, reorder the top of the
+`obligations = [ ... ]` array — `countryOfOrigin` moves to slot 4,
+`reasonForImport` to slot 1, etc.
+
+**Result:** **all 384 tests pass.** Confirmed the doc-level claim that
+manifest order is not load-bearing — the evaluator builds
+`obligationsById` and `obligationChildren` maps from `within`
+references, not from array position.
+
+**Invariant confirmed:** manifest reorder is a safe no-op. Useful data
+point when refactoring the manifest during V4 buildout.
+
+### Mutation 14 — circular `within` self-loop (~~coverage gap~~ **closed**)
+
+**Change:** in `obligations/obligations.js`, after `commodityLine` is
+declared, mutate `commodityLine.within = commodityLine`.
+
+**Result:** **the test suite hangs.** `buildAncestorGroups` walks
+`while (cur) cur = cur.within` and never terminates. `pkill -f vitest`
+required to abort.
+
+This is worse than mutation 3 or 5 originally were in round 1 —
+uncaught AND catastrophic-at-CI. Closed by a new assertion in
+`obligations/coverage.test.js`:
+
+```js
+describe('structural integrity — no cycles in `within` references', () => {
+  it('every obligation has a within-chain that terminates in null', () => {
+    // Walk each obligation's `within` chain with a seen-set and a
+    // max-depth bound. Any cycle fails deterministically in ~ms
+    // before the evaluator is ever built.
+    ...
+  })
+})
+```
+
+**Proof it works:** re-apply the mutation. The new test fires in 3 ms
+and reports `commodityLine → cycle at commodityLine`; no hang.
+
+**Invariant caught after fix:** `within` chains terminate in null.
+
+### Mutation 15 — invert `allowListed`'s matcher
+
+**Change:** in `obligations/helpers.js`, change
+`(value) => values.includes(value)` to
+`(value) => !values.includes(value)`. Every commodity-code gate now
+inverts.
+
+**Result:** 48 tests fail across 3 files. The evaluator's own V4 suite
+carries the burden — `numberOfPackages` `is out of scope when no line
+has a package-count commodity code` now shows scope; `cph is mandatory
+in scope on a cattle line` now shows out-of-scope; etc.
+
+**Invariant caught:** the helper's semantics are heavily tested at
+the evaluator's V4-scenario layer. Changing the primitive breaks the
+scenarios.
+
+### Mutation 16 — subtle presentation-copy change (**gap — deferred**)
+
+**Change:** in `lib/presentation.js`, change `countryOfOrigin.pageTitle`
+from `'Country of origin'` to `'Country of origin (subtly changed)'`.
+The substring `'Country of origin'` is preserved — matches the case-
+sensitive `expect(res.payload).toContain('Country of origin')`
+assertion in `routes.test.js`.
+
+**Result:** **all 385 tests pass** (baseline is 385 after the round-3
+closure).
+
+Note: an obvious change like `'MUTATED — country of origin'` (lowercase
+`c`) IS caught because the substring assertion is case-sensitive. But
+anything that preserves the tested substring slips through.
+
+**Gap — not closed.** Presentation copy is UX territory:
+
+- A snapshot test on rendered HTML would catch it, but would fire on
+  unrelated CSS/HTML changes.
+- A per-entry equality check in `presentation.js` would duplicate the
+  copy in two places.
+- Neither is worth the maintenance burden for a spike whose PR review
+  process already catches copy changes.
+
+Recorded here so future maintainers know the gap exists and can
+decide when to invest.
+
+### Round 3 summary
+
+|  #  | Mutation                        | Failing tests | Notes                                               |
+| :-: | ------------------------------- | :-----------: | --------------------------------------------------- |
+| 12  | Duplicate page name in flow     |      13       | + 14 skipped (route conflict crashes `beforeAll`)   |
+| 13  | Reorder manifest                |       0       | Safe no-op (confirmed doc claim)                    |
+| 14  | Circular `within` (self-loop)   |   ∞ → **1**   | ~~gap~~ closed by cycle-detection test              |
+| 15  | Invert `allowListed` matcher    |      48       | Helper semantics well-covered by evaluator V4 suite |
+| 16  | Subtle presentation-copy change |       0       | **Gap deferred** — UX-review territory              |
+
+Baseline after round 3: **15 test files, 385 tests, all pass** (up 1
+from the cycle-detection test).
+
+### What round 3 taught us
+
+- The evaluator hangs (worse than fails) on a circular `within`. Now
+  caught in 3 ms by a lightweight assertion.
+- Manifest ordering is safe to change during refactors — good.
+- Presentation-copy drift slips through the current test suite for
+  anything subtler than a case-change. Deferred as UX-review
+  territory.
+
+Across three rounds and 16 mutations, four gaps found (mutations
+3, 5, 11, 14 originally), three closed in-session (3, 5, 11, 14), one
+deferred (16 — presentation copy).

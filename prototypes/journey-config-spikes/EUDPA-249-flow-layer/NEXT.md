@@ -20,9 +20,10 @@ dictionary MD) are parked for after the V4 buildout.
 - **Step 1 status:** DONE. Obligations spike forked into
   `./obligations/`; `grep -rn 'obligations-v4-model'` returns only
   historical doc pointers.
-- **Tests:** 384 spike tests (345 pre-gap-closure + 37 in
+- **Tests:** 385 spike tests (345 pre-gap-closure + 37 in
   `obligations/coverage.test.js` and `obligations/whitelists.test.js`
-  after round 1 + 2 more uniqueness assertions after round 2)
+  after round 1 + 2 uniqueness assertions after round 2 + 1
+  cycle-detection assertion after round 3)
   - 632 existing frontend tests, all green.
     Run `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
 - **Browsable demo:** `npm run dev` (auth defaults off in dev now),
@@ -442,18 +443,28 @@ category classifier, domain-manifest key alignment, structural
 `within` references, page-`presents` alignment, `within` deletion,
 duplicate obligation `name`. Five fired existing tests correctly; one
 (duplicate name) exposed a new gap, closed by two new uniqueness
-assertions in `coverage.test.js`.
+assertions in `coverage.test.js`. Two cross-mutation wins: the
+round-1 closure tests independently caught round-2 mutations they
+weren't designed for.
 
-Two cross-mutation wins in round 2: the round-1 closure tests
-independently caught round-2 mutations they weren't designed for
-(mutation 7 fires `coverage.test.js`; mutation 8 fires
-`whitelists.test.js`).
+**Round 3** ran five more mutations against corners: duplicate page
+name in flow, manifest reorder, circular `within` self-loop,
+`allowListed` helper inversion, subtle presentation-copy change.
+Findings:
 
-Baseline now **15 test files, 384 tests, all pass** (started at
-13/345 before round 1, 15/382 after round 1, 15/384 after round 2).
-Each closure test was verified by re-applying its matching mutation
-and confirming it fires. Full detail in
-[`docs/testing.md`](./docs/testing.md).
+- Circular `within` **hangs the test suite** rather than failing —
+  worse than uncaught. Closed by a cycle-detection test in
+  `coverage.test.js` that fires in 3 ms.
+- Subtle presentation-copy change slips through (only obvious changes
+  are caught). **Deferred as UX-review territory** — snapshot tests
+  or per-entry equality would fire on false positives.
+- Manifest reorder confirmed safe (no-op), matching the doc claim.
+
+Baseline now **15 test files, 385 tests, all pass** (started at
+13/345 before round 1, 15/382 after round 1, 15/384 after round 2,
+15/385 after round 3). Full detail in
+[`docs/testing.md`](./docs/testing.md). Across three rounds and 16
+mutations, four gaps found, three closed, one deferred to UX review.
 
 **Follow-on for step 5:** the `KNOWN_UNWIRED` allow-list in
 `obligations/coverage.test.js` should shrink as V4 buildout adds

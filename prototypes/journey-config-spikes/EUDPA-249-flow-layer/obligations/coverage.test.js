@@ -101,6 +101,37 @@ describe('coverage — every obligation is wired to domain or explicitly allow-l
   })
 })
 
+describe('structural integrity — no cycles in `within` references', () => {
+  it('every obligation has a within-chain that terminates in null', () => {
+    // Without this, a self-loop or a cycle in the manifest hangs the
+    // whole evaluator: buildAncestorGroups walks `while (cur) cur =
+    // cur.within` and never terminates. The test guards against
+    // regressions by walking each chain with a max-depth bound and a
+    // seen-set. Any cycle fails deterministically before the evaluator
+    // is ever built.
+    const problems = []
+    for (const o of obligations) {
+      const seen = new Set()
+      let cur = o.within
+      let depth = 0
+      while (cur) {
+        if (seen.has(cur.id)) {
+          problems.push(`${o.name} → cycle at ${cur.name}`)
+          break
+        }
+        seen.add(cur.id)
+        cur = cur.within
+        depth += 1
+        if (depth > 100) {
+          problems.push(`${o.name} → chain deeper than 100 (likely cycle)`)
+          break
+        }
+      }
+    }
+    expect(problems).toEqual([])
+  })
+})
+
 describe('uniqueness — every obligation has a distinct id and name', () => {
   it('has no duplicate ids in the manifest', () => {
     // Duplicate ids collide in every id-keyed structure the evaluator
