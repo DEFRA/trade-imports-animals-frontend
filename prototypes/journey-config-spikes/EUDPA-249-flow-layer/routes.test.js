@@ -144,6 +144,31 @@ describe('start / task-list / reset', () => {
     )
   })
 
+  it('GET /task-list shows the Add-commodity-lines subsection as Completed once a line has been added', async () => {
+    // Regression guard for the "add step is done as soon as ≥ 1 line
+    // exists" rule. Per-line details still gate the sibling
+    // commodity-lines-details subsection; this one only measures the
+    // add step.
+    const jar = makeCookieJar()
+    const addRes = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/lines/add'
+    })
+    expect([200, 302, 303]).toContain(addRes.statusCode)
+
+    const listRes = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/task-list'
+    })
+    expect(listRes.statusCode).toBe(200)
+    // The status tag next to "Add commodity lines" should now be
+    // "Completed", not "Not started" or "In progress".
+    expect(listRes.payload).toMatch(/Add commodity lines[\s\S]{0,400}Completed/)
+    expect(listRes.payload).not.toMatch(
+      /Add commodity lines[\s\S]{0,400}Not started/
+    )
+  })
+
   it('POST /reset clears state and redirects back to /task-list', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {

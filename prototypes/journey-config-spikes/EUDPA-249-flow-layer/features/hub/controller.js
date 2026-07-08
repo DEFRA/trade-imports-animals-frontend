@@ -38,8 +38,14 @@ function firstNavigablePage(subsection, state) {
 }
 
 function linesManageStatus(state) {
+  // "Add commodity lines" is the user's ADD step, not the fill step.
+  // Zero lines = Not started; ≥ 1 line = Completed. The per-line
+  // details (commodity code, species, counts) live under the
+  // separate `commodity-lines-details` subsection and drive its own
+  // rollup — this subsection only measures "has the user added a
+  // line yet".
   const records = state.obligations?.[commodityLine.id]?.records ?? []
-  return records.length === 0 ? STATUSES.NOT_STARTED : STATUSES.IN_PROGRESS
+  return records.length === 0 ? STATUSES.NOT_STARTED : STATUSES.FULFILLED
 }
 
 function subsectionHref(subsection, state) {
