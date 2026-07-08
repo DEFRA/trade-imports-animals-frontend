@@ -3,6 +3,7 @@ import { originPage } from '../features/origin/page.js'
 import { commoditiesPage } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
+import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
 import {
@@ -31,7 +32,7 @@ export const sections = [
   },
   {
     id: 'consignment',
-    pages: [importReasonPage, importPurposePage]
+    pages: [importReasonPage, importPurposePage, additionalDetailsPage]
   },
   {
     id: 'documents',

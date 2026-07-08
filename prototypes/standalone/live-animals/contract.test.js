@@ -18,6 +18,7 @@ import * as commoditiesList from './features/commodities/list.controller.js'
 import * as commoditiesSelect from './features/commodities/select.controller.js'
 import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
+import * as additionalDetails from './features/additional-details/controller.js'
 import * as documentsList from './features/documents/list.controller.js'
 import * as documentsEntry from './features/documents/entry.controller.js'
 import * as addresses from './features/addresses/controller.js'
@@ -86,6 +87,15 @@ const cases = [
     // 'internal-market' keeps purposeInInternalMarket in scope on the commit
     seed: { reasonForImport: 'internal-market' },
     payload: { purposeInInternalMarket: 'breeding' }
+  },
+  {
+    id: 'additional-details',
+    collects: additionalDetails.meta.collects,
+    handler: postHandlerOf(additionalDetails),
+    // A triggering commodity line keeps containsUnweanedAnimals in scope on
+    // the commit (frame:"anyItem"); without it the fresh write would be wiped.
+    seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
+    payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
   {
     id: 'port-of-entry',

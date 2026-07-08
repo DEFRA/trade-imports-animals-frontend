@@ -163,8 +163,16 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
 
-    // reasonForImport is enforcedAt=submit — a blank save is not an error;
-    // the one-page section returns to the hub with the task still open.
+    // reasonForImport is enforcedAt=submit — a blank save is not an error; the
+    // section walks on to its tail, the additional-details page.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Additional animal details' })
+    ).toBeVisible()
+
+    // A blank save there is not an error either (both fields are
+    // enforcedAt=submit); the section returns to the hub with the task still
+    // open — animalsCertifiedFor is required and unanswered.
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
@@ -175,8 +183,9 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(consignmentRow).not.toContainText('Completed')
 
     // Happy path from the shared fixture. Choosing the internal market
-    // activates purposeInInternalMarket, so the section walks on to the
-    // purpose page instead of returning to the hub.
+    // activates purposeInInternalMarket, so the section walks reason ->
+    // purpose -> additional details; answering the certified-for question
+    // completes the task.
     await page.getByRole('link', { name: 'About the consignment' }).click()
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -185,6 +194,12 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Purpose in the internal market' })
     ).toBeVisible()
     await page.getByRole('radio', { name: 'Breeding' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Additional animal details' })
+    ).toBeVisible()
+    await page.getByRole('radio', { name: 'Slaughter' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(
@@ -849,7 +864,8 @@ test.describe('live-animals (page-owned spine)', () => {
       hasText: 'About the consignment'
     })
 
-    // Internal market: the purpose page opens and completes the task.
+    // Internal market: the purpose page opens; answering it and the
+    // certified-for question on the tail page completes the task.
     await page.getByRole('link', { name: 'About the consignment' }).click()
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -858,12 +874,22 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page.getByRole('radio', { name: 'Breeding' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Additional animal details' })
+    ).toBeVisible()
+    await page.getByRole('radio', { name: 'Slaughter' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(consignmentRow).toContainText('Completed')
 
-    // Another reason: the purpose is no longer owed — saving returns
-    // straight to the hub, skipping the purpose page, task still complete.
+    // Another reason: the purpose is no longer owed — saving skips the purpose
+    // page and walks on to the tail page; the certified-for answer persists, so
+    // a save there returns to the hub with the task still complete.
     await page.getByRole('link', { name: 'About the consignment' }).click()
     await page.getByRole('radio', { name: 'Transit' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Additional animal details' })
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
@@ -880,12 +906,87 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
 
-    // A blank save is not an error (enforcedAt=submit) but leaves the task open.
+    // A blank purpose save is not an error (enforcedAt=submit) but walks on to
+    // the tail page; saving through it leaves the task open (purpose unowed).
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Additional animal details' })
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(consignmentRow).not.toContainText('Completed')
+  })
+
+  test('additional details — the unweaned-animals question shows only when a triggering commodity line exists', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    const certifiedFor = page.getByRole('group', {
+      name: 'Animals certified for'
+    })
+    const unweaned = page.getByRole('group', {
+      name: 'Contains unweaned animals'
+    })
+
+    // A commodity line for the given code, taking the fewest steps: only the
+    // commodity is required to mint the line (the taxonomy and counts are
+    // submit-enforced, so blank saves walk through).
+    const addCommodity = async (commodity) => {
+      await page.goto(`${BASE}/hub`)
+      await page.getByRole('link', { name: 'Commodities' }).click()
+      // "Add a commodity" for the first line, "Add another commodity" after.
+      await page
+        .getByRole('button', { name: /Add a(nother)? commodity/ })
+        .click()
+      await page
+        .getByLabel('Commodity', { exact: true })
+        .selectOption(commodity)
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Description of goods' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Commodities you have added' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Import notification service' })
+      ).toBeVisible()
+    }
+
+    // A blank reason (enforcedAt=submit) walks straight to the tail page,
+    // skipping the internal-market purpose page.
+    const openAdditionalDetails = async () => {
+      await page.goto(`${BASE}/hub`)
+      await page.getByRole('link', { name: 'About the consignment' }).click()
+      await expect(
+        page.getByRole('heading', {
+          name: 'What is the main reason for importing the animals?'
+        })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Additional animal details' })
+      ).toBeVisible()
+    }
+
+    // A non-triggering commodity (cats): the certified-for question shows, but
+    // the notification-level unweaned-animals question is out of scope.
+    await addCommodity('01061900 - Cats')
+    await openAdditionalDetails()
+    await expect(certifiedFor).toBeVisible()
+    await expect(unweaned).toBeHidden()
+
+    // Adding a triggering commodity (cattle) brings the unweaned-animals
+    // question into scope across the commodity lines (frame:"anyItem").
+    await addCommodity('0102 - Cattle')
+    await openAdditionalDetails()
+    await expect(certifiedFor).toBeVisible()
+    await expect(unweaned).toBeVisible()
   })
 
   test('check and submit — the review task is on the hub and check your answers lists the answered rows', async ({
@@ -999,11 +1100,25 @@ test.describe('live-animals (page-owned spine)', () => {
     await save()
     await page.getByRole('button', { name: 'Continue' }).click()
 
-    // About the consignment: internal market walks on to the purpose page.
+    // About the consignment: internal market walks on to the purpose page,
+    // then the additional-details tail.
     await task('About the consignment')
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await save()
     await page.getByRole('radio', { name: 'Breeding' }).check()
+    await save()
+
+    // Additional animal details: the certified-for question always shows; the
+    // cattle line added above triggers the notification-level unweaned-animals
+    // question across the commodity lines.
+    await expect(
+      page.getByRole('heading', { name: 'Additional animal details' })
+    ).toBeVisible()
+    await page.getByRole('radio', { name: 'Slaughter' }).check()
+    await page
+      .getByRole('group', { name: 'Contains unweaned animals' })
+      .getByRole('radio', { name: 'No' })
+      .check()
     await save()
 
     // Accompanying documents are optional — the task is already Completed.

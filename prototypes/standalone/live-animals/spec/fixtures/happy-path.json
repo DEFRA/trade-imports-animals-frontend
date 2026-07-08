@@ -16,6 +16,8 @@
     ],
     "reasonForImport": "internal-market",
     "purposeInInternalMarket": "breeding",
+    "animalsCertifiedFor": "slaughter",
+    "containsUnweanedAnimals": "no",
     "documents": [
       {
         "accompanyingDocumentType": "ITAHC",

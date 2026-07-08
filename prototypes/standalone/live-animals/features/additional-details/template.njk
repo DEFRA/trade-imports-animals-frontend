@@ -1,0 +1,43 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">Additional animal details</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "animalsCertifiedFor",
+      fieldset: {
+        legend: {
+          text: "Animals certified for",
+          classes: "govuk-fieldset__legend--s"
+        }
+      },
+      hint: { text: "You will find this on the health certificate." },
+      errorMessage: errors.animalsCertifiedFor and { text: errors.animalsCertifiedFor },
+      items: certifiedOptions
+    }) }}
+
+    {% if showUnweaned %}
+      {{ govukRadios({
+        name: "containsUnweanedAnimals",
+        fieldset: {
+          legend: {
+            text: "Contains unweaned animals",
+            classes: "govuk-fieldset__legend--s"
+          }
+        },
+        hint: { text: "These are animals that are still feeding from their mother." },
+        errorMessage: errors.containsUnweanedAnimals and { text: errors.containsUnweanedAnimals },
+        items: unweanedOptions
+      }) }}
+    {% endif %}
+
+    {{ govukButton({ text: "Save and continue" }) }}
+  </form>
+{% endblock %}

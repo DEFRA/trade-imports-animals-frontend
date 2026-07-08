@@ -10,6 +10,10 @@ import { commodityLineValue } from '../commodities/list.controller.js'
 import { documentValue } from '../documents/list.controller.js'
 import { REASON_FOR_IMPORT_LABEL } from '../import-reason/controller.js'
 import { PURPOSE_IN_INTERNAL_MARKET_LABEL } from '../import-purpose/controller.js'
+import {
+  ANIMALS_CERTIFIED_FOR_LABEL,
+  unweanedApplies
+} from '../additional-details/controller.js'
 import { OVERLAND_MEANS } from '../transport/transport-details.controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
@@ -110,6 +114,22 @@ const buildRows = (answers) => {
               answerOf('purposeInInternalMarket')
             ] ?? '',
             'purposeInInternalMarket'
+          )
+        ]
+      : []),
+    row(
+      'Animals certified for',
+      ANIMALS_CERTIFIED_FOR_LABEL[answerOf('animalsCertifiedFor')] ?? '',
+      'animalsCertifiedFor'
+    ),
+    // Owed only when a triggering commodity line keeps it in scope
+    // (frame:"anyItem"); the row mirrors that gate.
+    ...(unweanedApplies(answers)
+      ? [
+          row(
+            'Contains unweaned animals',
+            YES_NO_LABEL[answerOf('containsUnweanedAnimals')] ?? '',
+            'containsUnweanedAnimals'
           )
         ]
       : []),

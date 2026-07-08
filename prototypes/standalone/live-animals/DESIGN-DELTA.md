@@ -58,16 +58,21 @@ default-branch backwards-compat pins.
   in obligation-model.md breaks. anyItem consumers are notification-level roots
   whose completeness is driven by `inScope`, so they need no `entryComplete`
   change.
-- `analysis/reachability.js` needs NO change now (no frame gate is registered,
-  so `buildWitnesses` never scaffolds one; `gateValue` is predicate-type based
-  and frame-agnostic). When inc-033..035 register frame-gated obligations, that
-  increment must extend `scaffoldFor` (satisfy an enclosing gate by seeding the
-  ancestor frame; satisfy an anyItem gate by seeding one triggering collection
-  entry) and `enumerateScopeStates` (the activator `commoditySelection` lives
-  inside commodityLines items, not at top level) — otherwise the prover
-  under-enumerates and can false-pass/false-fail. `orphanedRootIds` will also
-  flag the frame obligations unless `commoditySelection` is reachable from
-  `registry.all`.
+- `analysis/reachability.js` needed no change until a frame gate was
+  registered. inc-033 registered the first — `containsUnweanedAnimals`
+  (frame:"anyItem") — and extended the prover accordingly: `scaffoldFor` now
+  seeds ONE triggering collection entry for an anyItem gate (the enclosing-gate
+  seed is still owed by inc-035), and `orphanedRootIds` now checks activator
+  membership against EVERY registered obligation (walkObligations), not just the
+  top-level `registry.all`, so a commodityLines ITEM activator like
+  `commoditySelection` is recognised and the anyItem root is not wrongly
+  orphaned. `enumerateScopeStates` was left a pure top-level cartesian (its
+  docstring now records why): the anyItem activator is not a top-level scalar
+  axis, so it is seeded structurally by `scaffoldFor` rather than enumerated —
+  the honest recomputed pin stays green (`proveReachability` empty,
+  `orphanedRootIds` empty) with no spurious axis. Still owed by inc-035
+  (enclosing carrier `permanentAddress`): the `scaffoldFor` enclosing-frame seed
+  and any `entryComplete` frame-context threading noted above.
 
 ## 4. `requiredOneOf` — sibling-at-least-one group mandate (inc-032)
 

@@ -6,6 +6,7 @@ import * as commoditiesSelect from './commodities/select.controller.js'
 import * as commoditiesDetails from './commodities/details.controller.js'
 import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
+import * as additionalDetails from './additional-details/controller.js'
 import * as documentsList from './documents/list.controller.js'
 import * as documentsEntry from './documents/entry.controller.js'
 import * as addresses from './addresses/controller.js'
@@ -30,6 +31,7 @@ export const dispatchPages = [
   commoditiesList.meta,
   importReason.meta,
   importPurpose.meta,
+  additionalDetails.meta,
   documentsList.meta,
   addresses.meta,
   portOfEntry.meta,
@@ -50,6 +52,7 @@ export const allRoutes = [
   ...commoditiesDetails.routes,
   ...importReason.routes,
   ...importPurpose.routes,
+  ...additionalDetails.routes,
   ...documentsList.routes,
   ...documentsEntry.routes,
   ...addresses.routes,

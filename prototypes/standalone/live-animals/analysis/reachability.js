@@ -18,8 +18,14 @@ import { simulateJourney } from './simulate.js'
 
 /**
  * Non-activating answers are irrelevant to scope, so this cartesian product is
- * the complete top-level space — a new top-level activator obligation must be
+ * the complete top-level space — a new TOP-LEVEL activator obligation must be
  * added here or the prover silently under-enumerates.
+ *
+ * Frame-gated activators are NOT enumerated here: they do not live at the top
+ * level. containsUnweanedAnimals gates on `commoditySelection`, a commodityLines
+ * ITEM field (frame:"anyItem"), which cannot be a scalar cartesian axis. Its
+ * triggering state is seeded structurally, per witness, by `scaffoldFor`
+ * (one triggering collection entry) — so this list stays a top-level product.
  */
 export const enumerateScopeStates = () =>
   ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
@@ -56,13 +62,23 @@ export const enumerateScopeStates = () =>
  * resolves to a registered obligation. The mechanism is kept as a live guard:
  * if a future feature ever leaves an unregistered activator behind, its root
  * re-enters this set instead of failing the prover.
+ *
+ * Membership is checked against EVERY registered obligation at any depth (via
+ * walkObligations), not just the top-level `registry.all`: a frame-gated root
+ * like containsUnweanedAnimals activates on `commoditySelection`, which is a
+ * commodityLines ITEM field, not a top-level obligation. A depth-only lookup
+ * would wrongly orphan it; walking the whole forest recognises the activator.
  */
+const registeredObligations = new Set(
+  [...walkObligations()].map((node) => node.obligation)
+)
+
 export const orphanedRootIds = new Set(
   registry.all
     .filter(
       (obligation) =>
         obligation.activatedBy &&
-        !registry.all.includes(obligation.activatedBy.obligation)
+        !registeredObligations.has(obligation.activatedBy.obligation)
     )
     .map((obligation) => obligation.id)
 )
@@ -89,6 +105,16 @@ function scaffoldFor(templatePath) {
     // An item-conditional gate references a SIBLING in THIS item frame — satisfy it.
     if (inItem && gate && forest.includes(gate.obligation)) {
       frame[gate.obligation.id] = gateValue(gate)
+    }
+    // A frame:"anyItem" gate references a field in the ITEMS of a collection
+    // living in this frame — seed ONE triggering entry so ANY-item holds.
+    if (gate?.frame === 'anyItem') {
+      const collection = forest.find((candidate) =>
+        candidate.item?.includes(gate.obligation)
+      )
+      if (collection) {
+        frame[collection.id] = [{ [gate.obligation.id]: gateValue(gate) }]
+      }
     }
     const isAncestorCollection =
       obligation.collection && i < segments.length - 1
