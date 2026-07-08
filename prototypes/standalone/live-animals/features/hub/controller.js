@@ -52,11 +52,12 @@ const GROUP_ROWS = [
   }
 ]
 
-// GDS-canonical task-list vocabulary. FULFILLED and OPTIONAL are plain text (no
-// tag); IN_PROGRESS and NOT_STARTED are tags. A gated-out row is not in this map
-// — it renders "Cannot start yet" (grey text, no link) via CANNOT_START_STATUS.
+// Task-list vocabulary. OPTIONAL is plain text (no tag); FULFILLED is a green
+// tag (a deliberate override of the GDS "Completed = plain text" convention);
+// IN_PROGRESS and NOT_STARTED are tags. A gated-out row is not in this map —
+// it renders "Cannot start yet" (grey text, no link) via CANNOT_START_STATUS.
 const STATUS_TAG = {
-  [FULFILLED]: { text: 'Completed' },
+  [FULFILLED]: { tag: { text: 'Completed', classes: 'govuk-tag--green' } },
   [OPTIONAL]: { text: 'Optional' },
   [IN_PROGRESS]: {
     tag: { text: 'In progress', classes: 'govuk-tag--light-blue' }

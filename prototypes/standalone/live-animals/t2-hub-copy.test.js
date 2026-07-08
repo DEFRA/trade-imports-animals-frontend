@@ -49,6 +49,19 @@ describe('#handler hub copy', () => {
     })
   })
 
+  it('Should render a completed section as a green "Completed" tag', () => {
+    // origin is FULFILLED once its required obligations are answered
+    // (regionOfOriginCodeRequirement "no" means regionOfOriginCode is not owed).
+    const originRow = rowByTitle(
+      renderHub({ countryOfOrigin: 'FR', regionOfOriginCodeRequirement: 'no' })
+        .items,
+      'Origin of the import'
+    )
+    expect(originRow.status).toEqual({
+      tag: { text: 'Completed', classes: 'govuk-tag--green' }
+    })
+  })
+
   it('Should render a gated row as "Cannot start yet" text with NO link', () => {
     // commodities is gated behind countryOfOrigin (RULE 1) — blank journey locks
     // it, so the row has no href and reads the grey "Cannot start yet" text.

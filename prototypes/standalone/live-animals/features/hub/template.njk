@@ -5,5 +5,5 @@
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
   <p class="govuk-body">{{ progressLine }}</p>
 
-  {{ govukTaskList({ items: items }) }}
+  {{ govukTaskList({ items: items, classes: "app-task-list" }) }}
 {% endblock %}

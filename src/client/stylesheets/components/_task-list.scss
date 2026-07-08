@@ -1,0 +1,6 @@
+// govuk-frontend's task list puts no white-space rule on the status cell, so a
+// long task hint can squeeze the status onto a second line. Hold the status on
+// one line; the hint gives way and wraps first.
+.app-task-list .govuk-task-list__status {
+  white-space: nowrap;
+}
