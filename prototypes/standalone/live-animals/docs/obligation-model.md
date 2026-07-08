@@ -44,9 +44,9 @@ the facts the engine actually evaluates.
 `required: true` is a completion fact: the status roll-up reads it to
 decide whether a section is fulfilled. It does not stop a user saving a
 blank form. Save-blocking rules are a controller concern, written as
-validators — the journey's only hard mandate is `fullName`, expressed
-as a `requiredText` rule in `features/about-you/controller.js`, not as
-an obligation flag.
+validators — the journey's only hard mandate is `countryOfOrigin`,
+expressed as a `requiredText` rule in `features/origin/controller.js`,
+not as an obligation flag.
 
 See [validation.md](validation.md) for the validation seam.
 
@@ -203,12 +203,13 @@ answers map:
   time the page renders. `kit.collectsFrom` filters `system`
   obligations out of every page's `collects`, and the boot coverage
   assertion in `flow/dispatch.js` skips them — no page owns them.
-- **`renderOnly`** — presented on a page but never committed. The only
-  one is `vehiclePhoto` (`features/your-vehicle/obligations.js`): the
-  file input renders, but the controller never writes it. Unlike
-  `system` obligations it stays in the page's `collects` (the vehicle
-  page owns it), and the commit contract test (`contract.test.js`)
-  excludes it from the "committed equals collects" check.
+- **`renderOnly`** — presented on a page but never committed: the
+  input renders, but the controller never writes it. Unlike `system`
+  obligations it stays in the page's `collects` (the presenting page
+  owns it), and the commit contract test (`contract.test.js`)
+  excludes it from the "committed equals collects" check. No current
+  obligation carries the flag; the contract stands ready for one that
+  does.
 
 Both flags enforce the same principle: nothing derived or decorative is
 ever stored. See the persistence documentation for the wider

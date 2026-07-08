@@ -46,11 +46,6 @@ const GROUP_ROWS = [
     hint: 'Who we should contact about this notification'
   },
   {
-    id: 'about-you-and-your-vehicle',
-    title: 'About you and your vehicle',
-    hint: 'About you, Your vehicle'
-  },
-  {
     id: 'your-driving-and-cover',
     title: 'Your driving and cover',
     hint: 'Driving history, Choose your cover, Optional extras'

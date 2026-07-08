@@ -12,16 +12,23 @@ Each collecting controller composes its own field → validator map from
 the shared library and runs it against its own payload:
 
 ```js
-// features/about-you/controller.js
+// features/origin/controller.js
 const fields = compose(
-  requiredText('fullName', 'Enter your full name'),
-  ukPhone('phone'),
-  postcode('postcode'),
-  oneOf(
-    'country',
-    COUNTRIES.map((country) => country.value)
+  requiredText(
+    'countryOfOrigin',
+    'Select the country where the animal originates from'
   ),
-  dateParts('dateOfBirth')
+  oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
+  maxText(
+    'regionOfOriginCode',
+    5,
+    'Region of origin code must be 5 characters or less'
+  ),
+  maxText(
+    'internalReferenceNumber',
+    58,
+    'Internal reference must be 58 characters or less'
+  )
 )
 ```
 
@@ -52,10 +59,11 @@ The journey splits "must not save malformed" from "must be answered to
 finish". They live in different places.
 
 **Save-blocking (hard).** `requiredText` is the one save-blocking
-primitive. Exactly one field uses it: `fullName` on the about-you page.
-Every other validator is optional: it carries `.allow('')`, so a blank
-value saves, and only a malformed non-blank value fails. A user can
-walk the whole journey saving blanks, apart from their name.
+primitive. Exactly one field uses it: `countryOfOrigin` on the origin
+page (spec ruling c-023: `enforcedAt=continue`). Every other validator
+is optional: it carries `.allow('')`, so a blank value saves, and only
+a malformed non-blank value fails. A user can walk the whole journey
+saving blanks, apart from the country of origin.
 
 Follow the convention when adding a validator: an optional factory must
 allow `''`. Leave that out and the field silently becomes
@@ -73,7 +81,7 @@ collection), not in any schema. The engine checks it in two places:
   soft gate, not the real check.
 
 So `required: true` never blocks a save, and a Joi rule never decides
-completion. See `features/about-you/obligations.js` for the def-side
+completion. See `features/origin/obligations.js` for the def-side
 note.
 
 ## Normalising validators: persist the clean value
@@ -85,13 +93,13 @@ digit string. Controllers must persist that cleaned value, not the raw
 payload:
 
 ```js
-// features/your-vehicle/controller.js
+// features/cover-type/controller.js
 const { value: clean, errors } = validate(fields, payload)
 if (errors) return render(h, values, errors) // raw values echoed back
 
 const { scope } = state.commit(request, h, {
   ...values,
-  estimatedValue: clean.estimatedValue ?? ''
+  excessAmount: clean.excessAmount ?? ''
 })
 ```
 
@@ -100,10 +108,9 @@ The two halves of the contract:
 - **Success path: commit the cleaned string.** This was a real
   regression. Handlers once discarded the cleaned value and persisted
   the raw payload. `'£9,000'` then reached the premium maths, where
-  `Number('£9,000')` is `NaN`, the value loading fell to 0, and the
-  quote came out underpriced (480 instead of 570).
-  `t1-currency-persist.test.js` now pins the stored value and the
-  premium consequence for every currency field.
+  `Number('£9,000')` is `NaN`, the loading fell to 0, and the quote
+  came out underpriced. `t1-currency-persist.test.js` now pins the
+  stored value for every currency field.
 - **Error path: echo the raw input.** A malformed amount re-renders the
   user's own text (`'£9,00x'`, not a half-cleaned version) and commits
   nothing. The same test file pins this too.

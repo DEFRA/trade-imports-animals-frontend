@@ -20,12 +20,6 @@ import { OVERLAND_MEANS } from '../transport/transport-details.controller.js'
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
 
-const COUNTRY_LABEL = {
-  england: 'England',
-  scotland: 'Scotland',
-  wales: 'Wales',
-  'northern-ireland': 'Northern Ireland'
-}
 const COVER_LABEL = {
   comprehensive: 'Comprehensive',
   'third-party-fire-theft': 'Third party, fire and theft',
@@ -81,7 +75,6 @@ const documentRows = (answers) =>
 
 const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`
-const currency = (value) => (isBlank(value) ? NOT_PROVIDED : `£${value}`)
 
 const buildRows = (answers) => {
   const answerOf = (id) => answers[id]
@@ -99,10 +92,6 @@ const buildRows = (answers) => {
     }
   })
 
-  const vehicle = ['make', 'model', 'year']
-    .map(answerOf)
-    .filter((part) => !isBlank(part))
-    .join(' ')
   const rows = [
     row(
       'Country of origin',
@@ -215,19 +204,6 @@ const buildRows = (answers) => {
     // The stored contact is a copied { name, address } object (c-020) —
     // the select side of the unresolved c-001 variant pair.
     row('Contact address', answerOf('contactAddress')?.name, 'contactAddress'),
-    row('Name', answerOf('fullName'), 'fullName'),
-    row('Preferred name', answerOf('preferredName'), 'preferredName'),
-    row('Telephone', answerOf('phone'), 'phone'),
-    row('Postcode', answerOf('postcode'), 'postcode'),
-    row('Country', COUNTRY_LABEL[answerOf('country')] ?? '', 'country'),
-    row('Date of birth', dateText(answerOf('dateOfBirth')), 'dateOfBirth'),
-    row('Registration', answerOf('registration'), 'registration'),
-    row('Vehicle', vehicle, 'make'),
-    row(
-      'Estimated value',
-      currency(answerOf('estimatedValue')),
-      'estimatedValue'
-    ),
     row('Years no claims', answerOf('yearsNoClaims'), 'yearsNoClaims'),
     row(
       'Recent claims',

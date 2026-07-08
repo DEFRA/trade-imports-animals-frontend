@@ -57,7 +57,7 @@ map alike.
 **The depth-0 collapse.** A single-segment path stringifies to the bare id:
 `pathKey(['claims'])` is `'claims'`, not `'claims[0]'` or anything
 bracketed. This keeps every scalar lookup unchanged — `scope.has('claims')`
-and `scope.has('fullName')` work exactly as they did before scope was keyed
+and `scope.has('countryOfOrigin')` work exactly as they did before scope was keyed
 by path. Only genuinely nested instances pick up the bracketed form.
 
 ## The Yes-No-Yes invariant

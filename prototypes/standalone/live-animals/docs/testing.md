@@ -119,7 +119,7 @@ When you seed collection answers, keep the activating answer in place. Seeding `
 
 `contract.test.js` pins the binding the boot assertion cannot see. Boot checks that every obligation is **declared** by exactly one page's `collects`; the contract test checks each handler **honours** its declaration:
 
-> The set of obligation ids a controller actually commits must equal its declared `collects`, minus `renderOnly` (vehiclePhoto) and `system` (premium) obligations.
+> The set of obligation ids a controller actually commits must equal its declared `collects`, minus `renderOnly` and `system` (premium) obligations.
 
 It drives every collecting page's real POST handler headlessly with a valid payload, then diffs the obligation ids newly written against `meta.collects` as sets.
 

@@ -1,13 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
-import {
-  fillAboutYou,
-  fillCoverType,
-  fillDriving,
-  fillExtras,
-  fillVehicle
-} from './journey.js'
+import { fillCoverType, fillDriving, fillExtras } from './journey.js'
 
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
@@ -1075,11 +1069,6 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The vendored car sections still gate readiness until their removal
     // increments — walk them with the shared journey helpers.
-    await task('About you and your vehicle')
-    await fillAboutYou(page)
-    await save()
-    await fillVehicle(page)
-    await save()
     await task('Your driving and cover')
     await fillDriving(page, { hadClaims: false })
     await save()

@@ -13,8 +13,6 @@ import {
   transportersSelectPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-import { aboutYouPage } from '../features/about-you/page.js'
-import { yourVehiclePage } from '../features/your-vehicle/page.js'
 import { drivingHistoryPage } from '../features/driving-history/page.js'
 import { claimsPage } from '../features/claims/page.js'
 import { coverTypePage } from '../features/cover-type/page.js'
@@ -68,10 +66,6 @@ export const sections = [
   {
     id: 'contact',
     pages: [consignmentContactSelectPage]
-  },
-  {
-    id: 'about-you-and-your-vehicle',
-    pages: [aboutYouPage, yourVehiclePage]
   },
   {
     id: 'your-driving-and-cover',

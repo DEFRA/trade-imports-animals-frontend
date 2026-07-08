@@ -21,8 +21,6 @@ import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
-import * as aboutYou from './about-you/controller.js'
-import * as vehicle from './your-vehicle/controller.js'
 import * as driving from './driving-history/controller.js'
 import * as claimsList from './claims/list.controller.js'
 import * as claimsEntry from './claims/entry.controller.js'
@@ -56,8 +54,6 @@ export const dispatchPages = [
   transportersSelect.meta,
   privateTransporterDetails.meta,
   contactSelect.meta,
-  aboutYou.meta,
-  vehicle.meta,
   driving.meta,
   claimsList.meta,
   cover.meta,
@@ -94,8 +90,6 @@ export const allRoutes = [
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
-  ...aboutYou.routes,
-  ...vehicle.routes,
   ...driving.routes,
   ...claimsList.routes,
   ...claimsEntry.routes,

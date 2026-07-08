@@ -32,8 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as aboutYou from './features/about-you/controller.js'
-import * as vehicle from './features/your-vehicle/controller.js'
 import * as driving from './features/driving-history/controller.js'
 import * as claimsList from './features/claims/list.controller.js'
 import * as claimsEntry from './features/claims/entry.controller.js'
@@ -49,7 +47,7 @@ import * as declaration from './features/declaration/controller.js'
 
 /**
  * The obligation ids a real POST handler newly commits must equal its declared
- * `collects`, minus `renderOnly` (vehiclePhoto) and `system` (premium).
+ * `collects`, minus `renderOnly` and `system` (premium).
  *
  * Gated obligations must be kept in scope by a `seed` (a pre-existing answer
  * that activates them), else `reconcile` would wipe the fresh write on commit.
@@ -165,34 +163,6 @@ const cases = [
     // copied { name, address } (c-020) — the select side of the
     // unresolved c-001 variant pair.
     payload: { contactAddress: 'animal-and-plant-health-agency' }
-  },
-  {
-    id: 'about-you',
-    collects: aboutYou.meta.collects,
-    handler: postHandlerOf(aboutYou),
-    payload: {
-      fullName: 'Alex Driver',
-      preferredName: 'Al',
-      phone: '01632 960001',
-      postcode: 'SW1A 1AA',
-      country: 'england',
-      'dateOfBirth-day': '4',
-      'dateOfBirth-month': '9',
-      'dateOfBirth-year': '1990'
-    }
-  },
-  {
-    id: 'your-vehicle',
-    collects: vehicle.meta.collects,
-    handler: postHandlerOf(vehicle),
-    payload: {
-      registration: 'AB12 CDE',
-      make: 'Ford',
-      model: 'Focus',
-      year: '2015',
-      estimatedValue: '9000',
-      vehiclePhoto: 'photo.jpg' // must NOT be committed
-    }
   },
   {
     id: 'driving-history',

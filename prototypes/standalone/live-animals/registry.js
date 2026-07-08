@@ -6,8 +6,6 @@ import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
 import * as transport from './features/transport/obligations.js'
 import * as contact from './features/contact/obligations.js'
-import * as aboutYou from './features/about-you/obligations.js'
-import * as vehicle from './features/your-vehicle/obligations.js'
 import * as driving from './features/driving-history/obligations.js'
 import * as claims from './features/claims/obligations.js'
 import * as cover from './features/cover-type/obligations.js'
@@ -29,8 +27,6 @@ const all = [
   ...addresses.obligations,
   ...transport.obligations,
   ...contact.obligations,
-  ...aboutYou.obligations,
-  ...vehicle.obligations,
   ...driving.obligations,
   ...claims.obligations,
   ...cover.obligations,

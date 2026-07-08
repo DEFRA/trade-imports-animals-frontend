@@ -9,10 +9,8 @@ import {
   postHandlerOf,
   postHandlerEndingWith
 } from './engine/test-support.js'
-import { calculatePremium } from './lib/quote.js'
 import { dispatchPages } from './features/index.js'
 
-import * as vehicle from './features/your-vehicle/controller.js'
 import * as cover from './features/cover-type/controller.js'
 import * as modVal from './features/modifications/value.controller.js'
 import * as claimsEntry from './features/claims/entry.controller.js'
@@ -32,25 +30,6 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
     configureReadyForQuote(readyForQuote)
   })
   beforeEach(() => store.clear())
-
-  it('Should persist your-vehicle estimatedValue with £ and commas stripped', () => {
-    const { after } = drive(postHandlerOf(vehicle), {
-      payload: { estimatedValue: '£9,000' }
-    })
-    expect(after.estimatedValue).toBe('9000')
-  })
-
-  it('Should feed the cleaned estimatedValue into the premium value-loading', () => {
-    const { after } = drive(postHandlerOf(vehicle), {
-      payload: { estimatedValue: '£9,000' }
-    })
-    // Cleaned '9000' → valueLoading round(9000 * 0.01) = 90 → base 480 + 90 = 570.
-    // Raw '£9,000' → Number(...) NaN → loading 0 → 480 (the underpriced bug).
-    expect(calculatePremium(after)).toBe(570)
-    expect(calculatePremium(after)).not.toBe(
-      calculatePremium({ estimatedValue: '£9,000' })
-    )
-  })
 
   it('Should persist cover-type excessAmount with £ and commas stripped', () => {
     const { after } = drive(postHandlerOf(cover), {
@@ -110,14 +89,5 @@ describe('T1 — error path still echoes the raw input and commits nothing', () 
     expect(view.context.values.excessAmount).toBe('£1,2x4')
     expect(view.context.errors).toHaveProperty('excessAmount')
     expect(after.excessAmount).toBeUndefined()
-  })
-
-  it('Should re-render your-vehicle with the raw malformed amount and no commit', () => {
-    const { after, view } = drive(postHandlerOf(vehicle), {
-      payload: { estimatedValue: '£9,00x' }
-    })
-    expect(view.context.values.estimatedValue).toBe('£9,00x')
-    expect(view.context.errors).toHaveProperty('estimatedValue')
-    expect(after.estimatedValue).toBeUndefined()
   })
 })

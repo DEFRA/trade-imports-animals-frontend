@@ -1,8 +1,9 @@
 # How to add a field to an existing page
 
 This guide walks through adding one optional field to a page that already
-exists. The worked example adds `mileage` (estimated annual mileage) to the
-Your vehicle page. Every step names the real file to edit.
+exists. The worked example adds `exporterReference` (the exporter's own
+reference for the consignment) to the Origin page. Every step names the real
+file to edit.
 
 The model never renders. Declaring an obligation buys you the state-layer
 behaviour only: the field joins scope, `reconcile` preserves or wipes its
@@ -20,27 +21,25 @@ To add a repeating collection rather than a single field, see
 
 ## 1. Declare the obligation
 
-Add a one-line def to the feature's model, `features/your-vehicle/obligations.js`,
+Add a one-line def to the feature's model, `features/origin/obligations.js`,
 and include it in the exported `obligations` array:
 
 ```js
-export const mileage = { id: 'mileage' }
+export const exporterReference = { id: 'exporterReference' }
 
 export const obligations = [
-  registration,
-  make,
-  model,
-  year,
-  estimatedValue,
-  mileage,
-  vehiclePhoto
+  countryOfOrigin,
+  regionOfOriginCodeRequirement,
+  regionOfOriginCode,
+  internalReferenceNumber,
+  exporterReference
 ]
 ```
 
 Order in the array does not matter — the contract test is set-based and the
 Check your answers page hand-orders its own rows.
 
-You do not edit `registry.js`. It spreads `...vehicle.obligations`, so growing
+You do not edit `registry.js`. It spreads `...origin.obligations`, so growing
 the array is enough. You do not edit the page's `collects` either: the
 controller declares `collects: kit.collectsFrom(obligations)`, which derives
 the list from the same array.
@@ -53,17 +52,19 @@ new id to the page that owns it.
 
 ## 2. Wire the controller
 
-Three small edits in `features/your-vehicle/controller.js`.
+Three small edits in `features/origin/controller.js`.
 
 Add a format validator to the page's schema. Validators are optional by
 default: a blank field still saves, a malformed non-blank value is caught.
 
 ```js
 const fields = compose(
-  vehicleReg('registration'),
-  integerInRange('year', { min: 1900, max: 2100 }),
-  currency('estimatedValue'),
-  integerInRange('mileage', { min: 0, max: 200000 })
+  // ...the existing origin validators...
+  maxText(
+    'exporterReference',
+    30,
+    'Exporter reference must be 30 characters or less'
+  )
 )
 ```
 
@@ -71,29 +72,28 @@ Seed the field in the GET view-model, so a returning user sees their saved
 answer:
 
 ```js
-mileage: answers.mileage ?? ''
+exporterReference: answers.exporterReference ?? ''
 ```
 
 Read it in the POST value map, so `state.commit` persists it:
 
 ```js
-mileage: (payload.mileage ?? '').trim()
+exporterReference: (payload.exporterReference ?? '').trim()
 ```
 
 ## 3. Render it
 
-Add a govuk macro to `features/your-vehicle/template.njk`. This template
+Add a govuk macro to `features/origin/template.njk`. This template
 already imports `govukInput`:
 
 ```njk
 {{ govukInput({
-  id: "mileage", name: "mileage",
-  label: { text: "Estimated annual mileage" },
-  hint: { text: "Optional. The number of miles you expect to drive in a year" },
-  classes: "govuk-input--width-5",
-  inputmode: "numeric",
-  value: values.mileage,
-  errorMessage: errors.mileage and { text: errors.mileage }
+  id: "exporterReference", name: "exporterReference",
+  label: { text: "Exporter reference (optional)" },
+  hint: { text: "The exporter's own reference for this consignment" },
+  classes: "govuk-input--width-10",
+  value: values.exporterReference,
+  errorMessage: errors.exporterReference and { text: errors.exporterReference }
 }) }}
 ```
 
@@ -103,13 +103,13 @@ Check your answers is bespoke composition. Add one `row(...)` inside
 `buildRows` in `features/check-answers/controller.js`:
 
 ```js
-row('Annual mileage', answerOf('mileage'), 'mileage'),
+row('Exporter reference', answerOf('exporterReference'), 'exporterReference'),
 ```
 
 The third argument is the obligation id. The row's Change link resolves the
 owning page through the dispatch seam — `changeHref` calls
-`pageOfObligation('mileage')` against the index built at boot from every
-page's `collects`. You never hardcode a slug.
+`pageOfObligation('exporterReference')` against the index built at boot from
+every page's `collects`. You never hardcode a slug.
 
 ## 5. Let the contract test name the last edit
 
@@ -119,16 +119,16 @@ Run the unit suite from the repo root:
 npm run test:live-animals
 ```
 
-Exactly one test fails: the `your-vehicle` case in `contract.test.js`. That
+Exactly one test fails: the `origin` case in `contract.test.js`. That
 test drives the page's real POST handler with a synthetic payload and asserts
 the handler commits exactly the obligation ids the page declares. Your new id
 is now declared but absent from the payload, so it is never committed — the
 test fails and names the file.
 
-Add one line to the `your-vehicle` case's payload:
+Add one line to the `origin` case's payload:
 
 ```js
-mileage: '8000'
+exporterReference: 'EXP-2026-0142'
 ```
 
 Re-run the suite. Everything passes.
@@ -164,26 +164,27 @@ server at startup rather than failing silently.
 Requiredness is a one-word model change:
 
 ```js
-export const mileage = { id: 'mileage', required: true }
+export const exporterReference = { id: 'exporterReference', required: true }
 ```
 
 `required` is the completion fact the status roll-up reads. The section now
 shows In progress until the field is answered, and `readyForQuote` stays
 false. It does not block saving — save-blocking is a controller decision
-(see `fullName` in `features/about-you/controller.js`, the journey's only
-save-blocking field).
+(see `countryOfOrigin` in `features/origin/controller.js`, the journey's
+only save-blocking field).
 
 Two follow-ons:
 
-- Make the validator reject blank. Compose `requiredText('mileage', '...')`
-  with the format check in the controller's schema.
+- Make the validator reject blank. Compose
+  `requiredText('exporterReference', '...')` with the format check in the
+  controller's schema.
 - Teach the shared E2E walk to fill it. The specs in `prototypes/e2e/` walk
   every journey with the same helpers in `prototypes/e2e/journey.js`, and the
   other journeys do not have your field. Fill it only when present:
 
 ```js
-const mileage = page.getByLabel('Estimated annual mileage')
-if (await mileage.count()) await mileage.fill('8000')
+const reference = page.getByLabel('Exporter reference (optional)')
+if (await reference.count()) await reference.fill('EXP-2026-0142')
 ```
 
 Then run `npm run test:prototype` from the repo root.
@@ -191,13 +192,14 @@ Then run `npm run test:prototype` from the repo root.
 ## Variation: make the field conditional
 
 A conditional field adds two facts to its def and reveal markup to its page.
-The reference example is `excessAmount` in
-`features/cover-type/obligations.js`:
+The reference example is `regionOfOriginCode` in
+`features/origin/obligations.js`:
 
 ```js
-export const excessAmount = {
-  id: 'excessAmount',
-  activatedBy: { obligation: voluntaryExcess, equals: 'yes' },
+export const regionOfOriginCode = {
+  id: 'regionOfOriginCode',
+  required: true,
+  activatedBy: { obligation: regionOfOriginCodeRequirement, equals: 'yes' },
   wipeOnExit: true
 }
 ```
@@ -205,7 +207,7 @@ export const excessAmount = {
 `activatedBy` puts the field in scope only while the referenced answer
 matches. `wipeOnExit` destroys its value when it leaves scope, so re-entering
 scope starts blank. The reveal markup stays page-side —
-`features/cover-type/template.njk` nests the input inside a govuk radios
+`features/origin/template.njk` nests the input inside a govuk radios
 `conditional` block. The model owns scope and wipe; the page owns how the
 reveal looks.
 

@@ -10,10 +10,10 @@ describe('dispatch + flow', () => {
 
   it('Should assert coverage of every non-system obligation to exactly one page', () => {
     expect(() => buildDispatch(dispatchPages)).not.toThrow()
-    expect(pageOfObligation('fullName')).toBe('about-you')
+    expect(pageOfObligation('countryOfOrigin')).toBe('origin')
     expect(pageOfObligation('claims')).toBe('claims')
     expect(pageOfObligation('excessAmount')).toBe('cover-type')
-    expect(collectsOf('about-you')).toContain('fullName')
+    expect(collectsOf('origin')).toContain('countryOfOrigin')
   })
 
   it('Should crash boot when an obligation (and its derived sub-obligations) is uncovered', () => {
@@ -107,7 +107,6 @@ describe('dispatch + flow', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      fullName: 'Alex',
       hadClaims: 'yes',
       claims: [{ claimType: 'accident', claimAmount: '500' }],
       coverType: 'comprehensive',
@@ -117,7 +116,6 @@ describe('dispatch + flow', () => {
     expect(readyForQuote(complete, inScope)).toBe(true)
 
     const incomplete = {
-      fullName: 'Alex',
       hadClaims: 'yes',
       coverType: 'comprehensive'
     }

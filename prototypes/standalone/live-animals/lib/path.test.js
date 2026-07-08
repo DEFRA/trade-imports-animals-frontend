@@ -4,7 +4,7 @@ import { deleteAt, destroyWiped, pathKey, setAt, valueAt } from './path.js'
 describe('path helpers', () => {
   it('Should collapse a depth-0 path to the legacy bare id', () => {
     expect(pathKey(['claims'])).toBe('claims')
-    expect(pathKey(['fullName'])).toBe('fullName')
+    expect(pathKey(['countryOfOrigin'])).toBe('countryOfOrigin')
   })
 
   it('Should encode indexed instance paths', () => {

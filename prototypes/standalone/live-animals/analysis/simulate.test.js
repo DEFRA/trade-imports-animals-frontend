@@ -16,7 +16,6 @@ describe('#simulateJourney', () => {
 
   it('Should walk a plain persona (no claims, no add-ons) straight through', () => {
     const pages = simulateJourney({
-      fullName: 'Alex',
       hadClaims: 'no',
       coverType: 'comprehensive'
     })
@@ -109,7 +108,6 @@ describe('#simulateJourney', () => {
         name: 'Animal and Plant Health Agency',
         address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
       },
-      fullName: 'Alex',
       hadClaims: 'no',
       coverType: 'comprehensive',
       declaration: 'confirmed'

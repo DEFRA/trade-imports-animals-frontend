@@ -24,7 +24,7 @@ A persona is just an answers map — the same shape the store holds. There is no
 
 ```js
 simulateJourney({
-  fullName: 'Alex',
+  countryOfOrigin: 'FR',
   hadClaims: 'no',
   coverType: 'comprehensive'
 })
