@@ -111,6 +111,7 @@
                 </ul>'
             },
             classes: "govuk-!-width-three-quarters",
+            attributes: { maxlength: "58" },
             value: transportIdentification if transportIdentification,
             errorMessage: fieldErrors["transportIdentification"] if fieldErrors
           }) }}
@@ -126,6 +127,7 @@
               text: "Enter the reference number on the air waybill, bill of lading, sea waybill, road consignment note (CMR) or other transport document."
             },
             classes: "govuk-!-width-three-quarters",
+            attributes: { maxlength: "58" },
             value: transportDocumentReference if transportDocumentReference,
             errorMessage: fieldErrors["transportDocumentReference"] if fieldErrors
           }) }}
