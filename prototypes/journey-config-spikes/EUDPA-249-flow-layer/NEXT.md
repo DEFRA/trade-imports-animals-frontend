@@ -409,7 +409,36 @@ prototypes/journey-config-spikes/EUDPA-249-flow-layer/features/` → zero
   drives duplication, keep the single `domain.js`. If it aids
   navigation (my expectation), keep the split.
 
-### 3. Mutation walkthrough — "what tests fail if we change the obligations model" (was to-do 4)
+### 3. Mutation walkthrough — "what tests fail if we change the obligations model" ✅ DONE
+
+Written up in [`docs/testing.md`](./docs/testing.md). Five mutations
+applied against HEAD `71bb020`, each with recorded diff, failing-test
+list, sample error output, and invariant claim:
+
+1. **Rename an obligation** → 9 test files fail with
+   `ReferenceError` at module load.
+2. **Change enum options** → 4 tests fail across model, integration,
+   HTTP layers.
+3. **Widen a whitelist** → **coverage gap**, no test fails.
+4. **Flip a scope-gate predicate** → 15 tests fail across 6 files —
+   the strongest evidence of "provable via tests".
+5. **Add an unwired obligation** → **coverage gap**, no test fails.
+   `coverageReport()` DOES surface the missing entry — just not as an
+   assertion yet.
+
+**Two coverage gaps** exposed by the walkthrough. Both are closed by
+to-do 4 (`coverageReport()` becomes a failing test) and to-do 5 (V4
+buildout exercises the `numberOfPackages` scope path in mutation 3).
+Neither is a spike defect — they're signals-that-need-turning-into-tests.
+
+**Original detail — the 5 candidate mutations from planning stage —
+preserved below in case future work wants to expand the walkthrough.**
+
+---
+
+**Original why (kept for context):** high-signal artifact for the
+"provable via tests" claim. Cheap once (1) and (2) are settled — needs
+stable file paths.
 
 **Why third:** high-signal artifact for the "provable via tests"
 claim. Cheap once (1) and (2) are settled — needs stable file paths.
