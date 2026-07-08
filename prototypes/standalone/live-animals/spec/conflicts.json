@@ -245,6 +245,17 @@
       "fields": ["animalIdentifiers"],
       "sources": ["confluence-v4"],
       "detail": "Collection-level conditionality gap (Sam, M1 build): animalIdentifiers is modelled activatedBy:null + requiredAtLeastOne, i.e. EVERY commodity line needs >=1 identifier. But CPH is conditional on 19 named commodities, and V4's 'Passport identifier commodities'/'Tattoo identifier commodities' lists imply identifiers are commodity-conditional (some commodity types may need none). The per-identifier-type gating is captured as cross-frame modelGap on the item fields, but the COLLECTION lacks a commodity-level activatedBy. Re-check V4 at the M2 cross-frame model-extension gate: does animalIdentifiers need a collection-level activatedBy (which commodities require identifiers at all)?",
+      "resolution": "V4 re-read: collection is ALWAYS present (no collection-level activatedBy). Banner 'Mandatory to Submit - At least one … per animal' is universal; passport/tattoo/ear-tag/horse-name lists gate only the identifier-TYPE fields (frame:enclosing on species), and free-text fallback fields (Identification details / Description, 'shown when commodity has no specific identifier type') guarantee poultry/eggs etc. always satisfy 'at least one'. Spec's activatedBy:null on the collection is CORRECT — keep requiredAtLeastOne + sibling-at-least-one; gate only the type fields.",
+      "resolvedBy": "Claude (V4 re-read) — M2, on Sam's standing crack-on authority"
+    },
+    {
+      "id": "c-028",
+      "fields": [
+        "animalIdentifierIdentificationDetails",
+        "animalIdentifierDescription"
+      ],
+      "sources": ["confluence-v4"],
+      "detail": "PO ruling needed (surfaced by inc-031). The two free-text fallback identifier fields are 'shown when the commodity has NO specific identifier type' — a NEGATED cross-frame condition with no explicit commodity list, which the frame:enclosing/anyItem vocabulary cannot express (no includes list to gate on). inc-035 will render them ALWAYS-in-scope within a unit as the conservative prototype choice (slightly over-shows when a typed identifier applies, but 'at least one' still holds). Real options for later: (a) extend vocabulary with negated cross-frame gating, or (b) derive the fallback's negated set from the union of the typed-identifier lists. Also raise the V4 internal contradictions: per-field Mandatory column says 'Optional' while the block banner says mandatory-at-least-one; the field->type mapping is 'pending review by Monica' (not PO-signed-off); poultry/eggs identifier type is inferred from the fallback, not stated.",
       "resolution": null,
       "resolvedBy": null
     }
