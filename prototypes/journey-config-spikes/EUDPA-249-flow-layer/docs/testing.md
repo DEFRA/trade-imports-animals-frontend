@@ -1,11 +1,14 @@
 # Testing — what proves what
 
-The spike ships 345 vitest tests across 13 files. Their job is to
+The spike ships 382 vitest tests across 15 files. Their job is to
 catch drift when the obligations / domain / flow model changes. This
 document is the receipt: five realistic mutations of the model, each
 applied to a real commit, showing exactly which tests fire.
 
-Baseline before every mutation: **13 test files, 345 tests, all pass.**
+Two of the five mutations originally exposed coverage gaps. Both were
+closed by new tests — see the "Closing the gaps" appendix at the end.
+
+Baseline before every mutation: **15 test files, 382 tests, all pass.**
 Run:
 
 ```bash
@@ -89,7 +92,7 @@ for enum options. Change the source, and behaviour changes everywhere
 
 ---
 
-## Mutation 3 — widen an obligation whitelist (**coverage gap!**)
+## Mutation 3 — widen an obligation whitelist (~~coverage gap~~ **closed — see appendix**)
 
 **Change:** widen `PACKAGE_COUNT_COMMODITIES` in
 `obligations/obligations.js` from four commodity codes to six.
@@ -169,7 +172,7 @@ in the whole walkthrough.
 
 ---
 
-## Mutation 5 — add a new obligation, leave it unwired (**coverage gap!**)
+## Mutation 5 — add a new obligation, leave it unwired (~~coverage gap~~ **closed — see appendix**)
 
 **Change:** add a new mandatory singleton obligation
 `insurancePolicyNumber` to the manifest, but **do not** wire it into
@@ -210,20 +213,18 @@ has a domain entry, is on an explicit allow-list, or fails the build.
 
 ## Summary — what the five mutations prove
 
-|  #  | Mutation               | Failing files | Failing tests | Invariant                                    |
-| :-: | ---------------------- | :-----------: | :-----------: | -------------------------------------------- |
-|  1  | Rename obligation      |       9       | catastrophic  | Identity graph checked at module load        |
-|  2  | Change enum options    |       4       |       4       | Domain is single source of truth for options |
-|  3  | Widen whitelist        |       0       |       0       | **Coverage gap** — closed by step 4          |
-|  4  | Flip scope-gate        |       6       |      15       | Scope changes ripple through every layer     |
-|  5  | Add unwired obligation |       0       |       0       | **Coverage gap** — closed by step 4          |
+|  #  | Mutation               | Failing files | Failing tests | Invariant                                                   |
+| :-: | ---------------------- | :-----------: | :-----------: | ----------------------------------------------------------- |
+|  1  | Rename obligation      |       9       | catastrophic  | Identity graph checked at module load                       |
+|  2  | Change enum options    |       4       |       4       | Domain is single source of truth for options                |
+|  3  | Widen whitelist        |       1       |       1       | ~~Coverage gap~~ — closed by `whitelists.test.js`           |
+|  4  | Flip scope-gate        |       6       |      15       | Scope changes ripple through every layer                    |
+|  5  | Add unwired obligation |       1       |       1       | ~~Coverage gap~~ — closed by `obligations/coverage.test.js` |
 
-Two coverage gaps discovered. Both are naturally closed by the coverage
-test scheduled in step 4 (`coverageReport()` as an assertion) and by
-the fuller V4 walk in step 5 (which will exercise `numberOfPackages`
-scope across multiple commodity codes). Neither is a spike defect —
-they're both signals-that-need-turning-into-tests, which is the point
-of running this walkthrough.
+Two coverage gaps were discovered in the original run — mutations 3
+and 5 fell through. Both are now closed by new tests, added in the
+same session as this walkthrough. See "Closing the gaps" below for
+what the closure covers and how to prove it fires.
 
 ## How to reproduce
 
@@ -252,7 +253,89 @@ Same pattern for the other four; the diff blocks above are pasteable.
 - Not full mutation testing (Stryker, etc.). Five hand-picked
   mutations against the specific invariants we claim to prove.
 - Not a claim that the test suite is complete — mutations 3 and 5
-  explicitly demonstrate gaps.
+  originally demonstrated real gaps. The closure appendix records how
+  each was fixed.
 - Not a one-off. Re-run this walkthrough after major model changes
   to confirm the invariants still hold and the coverage story hasn't
   slipped.
+
+---
+
+## Closing the gaps
+
+The two coverage gaps mutations 3 and 5 originally exposed are now
+closed by new tests. Both tests were added in the same session as
+this walkthrough, and both were verified by re-applying the exact
+mutations they cover.
+
+### Gap 3 — whitelist widening
+
+**Closed by:** [`obligations/whitelists.test.js`](../obligations/whitelists.test.js) (34 tests).
+
+The test covers all seven commodity-code-scoped obligations:
+
+- `PACKAGE_COUNT_COMMODITIES → numberOfPackages` (line-scoped)
+- `CPH_REQUIRED_COMMODITIES → cph` (top-level `anyAllowListed`)
+- `PASSPORT_COMMODITIES → passport` (unit-record-scoped)
+- `TATTOO_COMMODITIES → tattoo` (unit-record-scoped)
+- `EAR_TAG_COMMODITIES → earTag` (unit-record-scoped)
+- `HORSE_NAME_COMMODITIES → horseName` (unit-record-scoped)
+- `PERMANENT_ADDRESS_COMMODITIES → permanentAddress` (unit-record-scoped)
+
+For each pair, the test scripts a state with the given commodity
+code, evaluates, and asserts the gated obligation is in scope. Plus
+a control code assertion (a synthetic code not in any V4 whitelist)
+verifies the negative path.
+
+**The key anti-drift move:** the test also compares each imported
+whitelist against a hard-coded `EXPECTED` map. Iterating the imported
+list alone would just add passing cases when the list widens — the
+equality check against the `EXPECTED` map is what catches drift.
+
+**Proof it works:** re-apply mutation 3 (widen `PACKAGE_COUNT_COMMODITIES`
+to add `'0103'` and `'010410'`). The test
+`PACKAGE_COUNT_COMMODITIES contains exactly the expected codes` fails;
+the two new positive cases pass but the equality check fires.
+
+To intentionally change a whitelist:
+
+1. edit the constant in `obligations.js`
+2. update the matching `EXPECTED` entry in `whitelists.test.js`
+3. re-run tests — new positive cases pass, drift check passes
+
+Any single-file edit fails the drift check. That's the invariant.
+
+### Gap 5 — unwired obligation
+
+**Closed by:** [`obligations/coverage.test.js`](../obligations/coverage.test.js) (3 tests).
+
+Every obligation in the manifest must be either:
+
+- wired to a `domain/index.js` entry (has legal-value semantics), OR
+- explicitly present on the `KNOWN_UNWIRED` allow-list.
+
+The allow-list has ~26 current entries (standard address blocks,
+group containers, per-unit identifiers, accompanying-document block)
+— each represents V4 work parked for step 5 (V4 buildout). As step 5
+wires each, the entry gets removed from `KNOWN_UNWIRED`.
+
+Two anti-drift guards:
+
+- **The allow-list can't contain obligations that were later wired.**
+  Wire something, remove it from the allow-list, or the check fires.
+- **The allow-list can't contain orphans.** Rename an obligation, and
+  the corresponding `KNOWN_UNWIRED` entry must be updated too.
+
+**Proof it works:** re-apply mutation 5 (add
+`insurancePolicyNumber` to the manifest, don't wire it). The test
+`has no obligation that lacks both a domain entry and an allow-list entry`
+fails, listing `insurancePolicyNumber` in the received-missing array.
+
+### Baseline after gap-closing
+
+**15 test files, 382 tests, all pass.** Up from 13/345 before the two
+new test files landed.
+
+The updated mutation summary table at the top of this document reflects
+the closure — mutations 3 and 5 now show 1 failing test each rather
+than 0.
