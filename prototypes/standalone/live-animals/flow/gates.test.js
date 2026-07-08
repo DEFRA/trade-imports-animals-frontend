@@ -41,10 +41,9 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     beforeAll(() => buildDispatch(dispatchPages))
 
     it('Should pass a derived section gate exactly when the section is not Not Applicable, in every scope state', () => {
-      // Non-vacuity: the surviving add-on sections are the derived section
-      // gates (named-driver was removed in inc-025).
+      // Non-vacuity: the surviving add-on section is the derived section gate
+      // (named-driver removed inc-025, modifications inc-026).
       expect(dynamicSections.map((section) => section.id)).toEqual([
-        'modifications',
         'protected-ncd'
       ])
 

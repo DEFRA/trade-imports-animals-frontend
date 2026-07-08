@@ -20,7 +20,7 @@ describe('#simulateJourney', () => {
     expect(pages).toContain('transporters')
     expect(pages).not.toContain('transporters-select')
     expect(pages).not.toContain('private-transporter-details')
-    expect(pages).not.toContain('modifications-describe')
+    expect(pages).not.toContain('protected-ncd-years')
     expect(pages.indexOf('port-of-entry')).toBeLessThan(
       pages.indexOf('transporters')
     )
@@ -40,13 +40,13 @@ describe('#simulateJourney', () => {
     )
   })
 
-  it('Should open only the add-on section a persona selected', () => {
+  it('Should open the add-on section a persona selected', () => {
     // The addons picker page went in inc-024 — nothing writes this answer in
     // the running journey any more, but seeding it directly still exercises
-    // the dynamic-section gating that survives until inc-026/027.
-    const pages = simulateJourney({ addons: ['modifications'] })
-    expect(pages).toContain('modifications-describe')
-    expect(pages).not.toContain('protected-ncd-years')
+    // the dynamic-section gating that survives until inc-027. protected-ncd is
+    // the last surviving add-on (modifications went in inc-026).
+    const pages = simulateJourney({ addons: ['protected-ncd'] })
+    expect(pages).toContain('protected-ncd-years')
   })
 
   it('Should reveal the quote page only once the journey is ready to quote', () => {

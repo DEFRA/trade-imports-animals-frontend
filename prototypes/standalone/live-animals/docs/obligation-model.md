@@ -75,13 +75,13 @@ It scans source text rather than the module graph on purpose:
 When one feature's obligation is activated by another feature's answer,
 the reference is a real JS import of the obligation constant — never a
 string or an id lookup. Live-animals currently has no cross-feature
-edge; the vendored car add-on sections (modifications, protected-ncd —
-named-driver was removed in inc-025) used to import the `addons` picker
-sideways, but the addons feature was removed in inc-024 and each survivor
-now carries a module-local identity stub (`const addons = { id: 'addons' }`)
-in its own `obligations.js` — unregistered and uncollected, so those
-obligations can never enter scope again; the stubs die with their
-features in inc-026/027.
+edge; the vendored car add-on sections (protected-ncd — named-driver was
+removed in inc-025, modifications in inc-026) used to import the `addons`
+picker sideways, but the addons feature was removed in inc-024 and the
+survivor now carries a module-local identity stub
+(`const addons = { id: 'addons' }`) in its own `obligations.js` —
+unregistered and uncollected, so its obligation can never enter scope
+again; the stub dies with its feature in inc-027.
 
 Activation always flows from a controlling answer to the details it
 unlocks, so the graph is acyclic.
@@ -103,7 +103,7 @@ closure. There are exactly three operators, interpreted in one place
 
 ```js
 { obligation: regionOfOriginCodeRequirement, equals: 'yes' } // scalar equality
-{ obligation: addons, includes: 'modifications' }  // membership in a multi-select
+{ obligation: addons, includes: 'protected-ncd' }  // membership in a multi-select
 { obligation: coverType, present: true }          // answered (non-blank)
 ```
 

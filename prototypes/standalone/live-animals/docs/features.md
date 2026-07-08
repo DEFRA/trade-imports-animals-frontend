@@ -23,7 +23,7 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
   validation. Boot rejects any outward import
   (`obligation-purity.js`)
 - **template(s)** — the feature's own Nunjucks markup (`template.njk`,
-  or one per page like `modifications/describe.njk`)
+  or one per page like `transport/port-of-entry.njk`)
 
 `features/import-reason/` is the smallest complete example: one
 controller, one page leaf, one obligation, one template.
@@ -55,9 +55,9 @@ failure that surfaces as a broken hub, not an error. Each `page.js`
 carries a one-line comment pointing here; this section is the full
 story.
 
-There are 14 `page.js` files. A feature with two flow pages exports both
-identities from one leaf (`features/modifications/page.js` exports
-`modificationsDescribePage` and `modificationsValuePage`). A feature
+There are 13 `page.js` files. A feature with several flow pages exports
+every identity from one leaf (`features/transport/page.js` exports
+`portOfEntryPage`, `transportDetailsPage` and the rest). A feature
 with sub-pages exports only its flow page:
 `features/documents/page.js` exports the documents hub alone, because
 the add-a-document sub-page is reached from that hub and never listed in
@@ -123,15 +123,18 @@ skipping `system` obligations (computed, never collected — for example
 `quote`'s `premium`).
 
 A feature that splits its obligations across pages must author an
-explicit subset per page. Modifications is the worked example — two
-pages, one obligation each:
+explicit subset per page. Transport is the worked example — each page
+declares the ids it owns:
 
 ```js
-// features/modifications/describe.controller.js
-export const meta = { ...page, collects: [modDescription.id] }
+// features/transport/transporters.controller.js
+export const meta = { ...page, collects: [transporterType.id] }
 
-// features/modifications/value.controller.js
-export const meta = { ...page, collects: [modValue.id] }
+// features/transport/port-of-entry.controller.js
+export const meta = {
+  ...page,
+  collects: [portOfEntry.id, arrivalDateAtPort.id]
+}
 ```
 
 Get this wrong and boot fails, by design. `buildDispatch` throws if two

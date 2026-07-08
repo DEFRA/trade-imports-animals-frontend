@@ -4,17 +4,41 @@ import { buildDispatch } from './flow/dispatch.js'
 import { readyForQuote } from './flow/section-status.js'
 import { store } from './engine/store.js'
 import { configureReadyForQuote } from './engine/read.js'
-import { driveHandler, postHandlerOf } from './engine/test-support.js'
+import { driveHandler } from './engine/test-support.js'
 import { dispatchPages } from './features/index.js'
-
-import * as modVal from './features/modifications/value.controller.js'
+import * as state from './engine/index.js'
+import { compose, currency, validate } from './lib/validate/index.js'
 
 /**
  * Handlers must persist the validator's cleaned value, not the raw payload;
  * the error path must echo the RAW input and commit nothing.
+ *
+ * `modValue` (the modifications value page) was the last LIVE currency field
+ * and went with its section in inc-026. No live journey page collects a
+ * currency amount now — the quote `premium` is `system`, computed on demand
+ * and never stored (get-your-quote goes in inc-028 anyway). The engine's
+ * currency-cleaning stays (see `lib/validate` — `currency()` is unit-tested
+ * in `lib/validate/validate.test.js`), so this handler-level contract is
+ * exercised here against a SYNTHETIC controller only, dormant until a live
+ * currency field returns (see docs/limits.md).
  */
 
 const drive = driveHandler
+
+// A throwaway controller idiomatic to the real currency pages: validate the
+// amount, persist the CLEANED value on success, re-render the RAW input and
+// commit nothing on error. `syntheticAmount` is not a registered obligation,
+// so reconcile never scopes or wipes it — it simply round-trips the store.
+const fields = compose(currency('syntheticAmount'))
+
+const syntheticCurrencyPost = (request, h) => {
+  const payload = request.payload ?? {}
+  const raw = (payload.syntheticAmount ?? '').trim()
+  const { value: clean, errors } = validate(fields, payload)
+  if (errors) return h.view('synthetic', { value: raw, errors })
+  state.commit(request, h, { syntheticAmount: clean.syntheticAmount ?? '' })
+  return h.redirect('/next')
+}
 
 describe('T1 — cleaned currency values are persisted, not the raw payload', () => {
   beforeAll(() => {
@@ -23,12 +47,11 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
   })
   beforeEach(() => store.clear())
 
-  it('Should persist modifications modValue with £ and commas stripped', () => {
-    const { after } = drive(postHandlerOf(modVal), {
-      seed: { addons: ['modifications'] },
-      payload: { modValue: '£1,500' }
+  it('Should persist a currency amount with £ and commas stripped', () => {
+    const { after } = drive(syntheticCurrencyPost, {
+      payload: { syntheticAmount: '£1,500' }
     })
-    expect(after.modValue).toBe('1500')
+    expect(after.syntheticAmount).toBe('1500')
   })
 })
 
@@ -39,13 +62,12 @@ describe('T1 — error path still echoes the raw input and commits nothing', () 
   })
   beforeEach(() => store.clear())
 
-  it('Should re-render modifications-value with the raw malformed amount and no commit', () => {
-    const { after, view } = drive(postHandlerOf(modVal), {
-      seed: { addons: ['modifications'] },
-      payload: { modValue: '£1,5x0' }
+  it('Should re-render with the raw malformed amount and no commit', () => {
+    const { after, view } = drive(syntheticCurrencyPost, {
+      payload: { syntheticAmount: '£1,5x0' }
     })
     expect(view.context.value).toBe('£1,5x0')
-    expect(view.context.errors).toHaveProperty('modValue')
-    expect(after.modValue).toBeUndefined()
+    expect(view.context.errors).toHaveProperty('syntheticAmount')
+    expect(after.syntheticAmount).toBeUndefined()
   })
 })

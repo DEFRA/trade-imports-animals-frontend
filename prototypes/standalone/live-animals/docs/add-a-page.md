@@ -125,7 +125,7 @@ export const routes = kit.pageRoutes(page, { get, post })
 dispatch index, the status roll-up and the derived gate. `kit.collectsFrom`
 takes the feature's whole non-system obligation set; author an explicit subset
 only when a feature splits its obligations across pages (see
-[`features/modifications/`](../features/modifications/)). Validation lives
+[`features/transport/`](../features/transport/)). Validation lives
 here, not in the model — see [validation.md](validation.md).
 
 ### 4. Write the template

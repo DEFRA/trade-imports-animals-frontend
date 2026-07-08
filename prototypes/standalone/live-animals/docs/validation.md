@@ -89,27 +89,27 @@ note.
 Two validators return a changed value, and the contract matters.
 
 **`currency`** strips `£`, commas and spaces and returns the cleaned
-digit string. Controllers must persist that cleaned value, not the raw
-payload:
+digit string. A controller collecting a currency amount must persist
+that cleaned value, not the raw payload:
 
 ```js
-// features/modifications/value.controller.js
+// the idiom every currency page follows
 const { value: clean, errors } = validate(fields, payload)
 if (errors) return render(h, value, errors) // raw value echoed back
 
-const { scope } = state.commit(request, h, {
-  modValue: clean.modValue ?? ''
-})
+state.commit(request, h, { amount: clean.amount ?? '' })
 ```
 
 The two halves of the contract:
 
 - **Success path: commit the cleaned string.** This was a real
   regression. Handlers once discarded the cleaned value and persisted
-  the raw payload. `'£9,000'` then reached the premium maths, where
-  `Number('£9,000')` is `NaN`, the loading fell to 0, and the quote
-  came out underpriced. `t1-currency-persist.test.js` now pins the
-  stored value for every currency field.
+  the raw payload, so a stored `'£9,000'` reached downstream arithmetic
+  as `Number('£9,000')` — `NaN`. No live-animals page collects a
+  currency amount today (the car modifications value field was the last,
+  removed inc-026), so `t1-currency-persist.test.js` pins the stored
+  value against a synthetic currency controller — see
+  [limits.md](limits.md).
 - **Error path: echo the raw input.** A malformed amount re-renders the
   user's own text (`'£9,00x'`, not a half-cleaned version) and commits
   nothing. The same test file pins this too.

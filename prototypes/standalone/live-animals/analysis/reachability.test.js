@@ -44,13 +44,13 @@ describe('reachability / dead-end prover', () => {
   })
 
   it('Should exclude stub-activated obligations from the witness set (pending removal, never in scope)', () => {
-    // modDescription/modValue/ncdYears activate off the `addons` picker, which
-    // was removed in inc-024 — the activator survives only as an unregistered
-    // identity stub, so no enumerable state can put them in scope. They drop
-    // out of the proof until their own removal increments (inc-026/027). The
-    // drivers subtree was itself removed in inc-025, so it no longer appears.
+    // ncdYears activates off the `addons` picker, which was removed in inc-024
+    // — the activator survives only as an unregistered identity stub, so no
+    // enumerable state can put it in scope. It drops out of the proof until its
+    // own removal increment (inc-027). modDescription/modValue were removed
+    // with the modifications section in inc-026, and the drivers subtree in
+    // inc-025, so none of them appear.
     const targets = buildWitnesses().map((witness) => witness.targetKey)
-    expect(targets).not.toContain('modDescription')
     expect(targets).not.toContain('ncdYears')
   })
 

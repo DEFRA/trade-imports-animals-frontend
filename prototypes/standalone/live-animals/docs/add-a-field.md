@@ -45,9 +45,9 @@ controller declares `collects: kit.collectsFrom(obligations)`, which derives
 the list from the same array.
 
 The one exception is a feature that splits its obligations across pages.
-Modifications does this — each of its two controllers lists an explicit
-subset, for example `collects: [modDescription.id]` in
-`features/modifications/describe.controller.js`. In a split feature, add the
+Transport does this — each of its controllers lists an explicit subset, for
+example `collects: [transporterType.id]` in
+`features/transport/transporters.controller.js`. In a split feature, add the
 new id to the page that owns it.
 
 ## 2. Wire the controller

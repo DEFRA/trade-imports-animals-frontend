@@ -62,9 +62,9 @@ describe('dispatch + flow', () => {
   })
 
   it('Should enter an addon section only at its first gated-in page', () => {
-    const scope = { inScope: reconcile({ addons: ['modifications'] }).inScope }
-    expect(sectionEntry('modifications', scope)).toMatch(
-      /\/addons\/modifications\/describe$/
+    const scope = { inScope: reconcile({ addons: ['protected-ncd'] }).inScope }
+    expect(sectionEntry('protected-ncd', scope)).toMatch(
+      /\/addons\/protected-ncd\/years$/
     )
   })
 

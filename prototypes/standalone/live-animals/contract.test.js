@@ -32,8 +32,6 @@ import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
 import * as contactSelect from './features/contact/controller.js'
-import * as modDesc from './features/modifications/describe.controller.js'
-import * as modVal from './features/modifications/value.controller.js'
 import * as ncd from './features/protected-ncd/years.controller.js'
 import * as declaration from './features/declaration/controller.js'
 
@@ -155,20 +153,6 @@ const cases = [
     // copied { name, address } (c-020) — the select side of the
     // unresolved c-001 variant pair.
     payload: { contactAddress: 'animal-and-plant-health-agency' }
-  },
-  {
-    id: 'modifications-describe',
-    collects: modDesc.meta.collects,
-    handler: postHandlerOf(modDesc),
-    seed: { addons: ['modifications'] },
-    payload: { modDescription: 'Lowered suspension and alloy wheels' }
-  },
-  {
-    id: 'modifications-value',
-    collects: modVal.meta.collects,
-    handler: postHandlerOf(modVal),
-    seed: { addons: ['modifications'] },
-    payload: { modValue: '1500' }
   },
   {
     id: 'protected-ncd-years',

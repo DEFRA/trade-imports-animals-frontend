@@ -13,10 +13,6 @@ import {
   transportersSelectPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
-import {
-  modificationsDescribePage,
-  modificationsValuePage
-} from '../features/modifications/page.js'
 import { protectedNcdYearsPage } from '../features/protected-ncd/page.js'
 import { quoteSummaryPage } from '../features/quote/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
@@ -60,11 +56,6 @@ export const sections = [
   {
     id: 'contact',
     pages: [consignmentContactSelectPage]
-  },
-  {
-    id: 'modifications',
-    dynamic: true,
-    pages: [modificationsDescribePage, modificationsValuePage]
   },
   {
     id: 'protected-ncd',

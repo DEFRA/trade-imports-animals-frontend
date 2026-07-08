@@ -45,7 +45,7 @@ describe('optional validators save blank (the mandate split)', () => {
     ['year', integerInRange('year', { min: 1900, max: 2100 })],
     ['estimatedValue', currency('estimatedValue')],
     ['country', oneOf('country', ['england', 'wales'])],
-    ['modDescription', maxText('modDescription', 200)]
+    ['description', maxText('description', 200)]
   ])('Should pass %s when blank', (field, schema) => {
     expect(run(schema, { [field]: '' }).errors).toBeNull()
   })
@@ -165,16 +165,16 @@ describe('#currency — positive amount, £/commas stripped', () => {
 })
 
 describe('#maxText — length cap', () => {
-  const schema = maxText('modDescription', 10)
+  const schema = maxText('description', 10)
 
   it('Should accept text within the cap', () => {
-    expect(run(schema, { modDescription: 'short' }).errors).toBeNull()
+    expect(run(schema, { description: 'short' }).errors).toBeNull()
   })
 
   it('Should reject text over the cap', () => {
     expect(
-      run(schema, { modDescription: 'far too long to allow' }).errors
-    ).toHaveProperty('modDescription')
+      run(schema, { description: 'far too long to allow' }).errors
+    ).toHaveProperty('description')
   })
 })
 

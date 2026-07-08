@@ -6,7 +6,6 @@ import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
 import * as transport from './features/transport/obligations.js'
 import * as contact from './features/contact/obligations.js'
-import * as modifications from './features/modifications/obligations.js'
 import * as protectedNcd from './features/protected-ncd/obligations.js'
 import * as quote from './features/quote/obligations.js'
 import * as declaration from './features/declaration/obligations.js'
@@ -21,7 +20,6 @@ const all = [
   ...addresses.obligations,
   ...transport.obligations,
   ...contact.obligations,
-  ...modifications.obligations,
   ...protectedNcd.obligations,
   ...quote.obligations,
   ...declaration.obligations

@@ -26,6 +26,12 @@ Behaviours now engine-supported but without a live instance:
 
 The synthetic-obligation tests in [nested.test.js](../nested.test.js) and [item-conditional.test.js](../item-conditional.test.js) keep the pure engine guarantees (nested-collection completeness, sibling-identity gate resolution) pinned without a car carrier. inc-029 re-points the root model / write-through fixtures at the live domain; M2 (inc-030/031) restores live depth-2 and required-sibling carriers.
 
+## Currency cleaning has no live carrier
+
+The car modifications value page (`modValue`) was the last LIVE field that ran the `currency()` validator — cleaning `£1,500` to `1500` on the way into the store and echoing the raw input back on a malformed amount. It went with the modifications section in inc-026. No live-animals field collects a currency amount, and the only other currency in the domain — the quote `premium` — is `system`, computed on demand and never stored (and get-your-quote itself goes in inc-028).
+
+The engine capability is unchanged: `currency()` lives in [lib/validate/validators.js](../lib/validate/validators.js) and is unit-tested directly in [lib/validate/validate.test.js](../lib/validate/validate.test.js). The handler-level T1 guarantee — a controller persists the CLEANED value and, on error, re-renders the RAW input committing nothing — is kept pinned in [t1-currency-persist.test.js](../t1-currency-persist.test.js) against a SYNTHETIC currency controller only, dormant until a live-animals currency field returns.
+
 ## Two identity vocabularies, bridged not unified
 
 The spike addresses obligations in two forms:
