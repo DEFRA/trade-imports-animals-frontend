@@ -1,0 +1,219 @@
+# How to add an obligation to the V4 journey
+
+Adding a new V4 field to the browsable prototype is a fixed sequence
+of ~6 file edits. This doc is the checklist. Skip a step and either
+tests fail or the field never appears in the UI — both loud enough to
+catch the omission.
+
+The doc is co-evolved with the code. Each iteration of step 4 in
+`NEXT.md` refines the doc by running through it and recording where it
+misled us.
+
+## Prerequisites
+
+- The obligation you want to add is already declared in
+  [`obligations/obligations.js`](../obligations/obligations.js). This
+  is almost always true — the parent EUDPA-277 spike declared ~42 V4
+  obligations. If yours isn't there, add it (its own mini-checklist
+  below in "Adding a brand-new obligation").
+- The obligation is on the `KNOWN_UNWIRED` allow-list in
+  [`obligations/coverage.test.js`](../obligations/coverage.test.js).
+  You'll remove it at the end.
+
+## The checklist
+
+1. **Confirm the obligation.** Look it up in `obligations/obligations.js`.
+   Note the shape: is it a top-level singleton (`applyTo` at the
+   root), is it `within: commodityLine` or `within: unitRecord`
+   (group-scoped), does it have `applyTo` at all (structural groups
+   don't)? The answer decides which factory you use in step 2.
+
+2. **Add a domain entry** in
+   [`domain/index.js`](../domain/index.js). Two edits in the same file:
+   1. **Import the obligation** at the top of the file — add its name
+      to the `import { ... } from '../obligations/obligations.js'`
+      block.
+   2. **Declare the domain entry.** One entry per obligation, keyed by
+      the obligation's id. The factory you pick depends on the
+      obligation's V4 semantics:
+
+   | V4 shape                                         | Factory                                    | Example                   |
+   | ------------------------------------------------ | ------------------------------------------ | ------------------------- |
+   | Yes/No or small closed enum                      | `staticEnum(options, { labels })`          | `containsUnweanedAnimals` |
+   | Enum whose options depend on another obligation  | `computedEnum(fn, readsFrom, { labels })`  | `purposeInInternalMarket` |
+   | Enum whose options come from a lookup obligation | `lookupEnum(lookupObligation, { labels })` | `animalsCertifiedFor`     |
+   | String / integer / date rule                     | `predicate(type, fn, reasons)`             | `internalReferenceNumber` |
+   | Composite (enum + predicate on the same field)   | Build inline                               | `transitedCountries`      |
+
+   Register the entry in the `export const domain = new Map([...])`
+   list at the bottom of the file.
+
+3. **Add presentation copy** in
+   [`lib/presentation.js`](../lib/presentation.js). Same two-edit
+   pattern: import the obligation at the top of the file, then add an
+   entry keyed by `obligation.id` with `pageTitle`, `legend`, and
+   optional `hint`. `pageTitle` is used when the obligation is the
+   sole presented entry on a page; `legend` is the fieldset legend.
+
+4. **Present the obligation on a page** in
+   [`flow/flow.js`](../flow/flow.js). Same two-edit pattern: import at
+   the top of the file, then either:
+   - Add a `presents` entry to an existing page, OR
+   - Add a new page. If the obligation is a natural section-opener
+     (e.g. one page for one obligation), add a new subsection with a
+     single-page child. See the existing pages for shape.
+
+   `mandate` on the presents entry is separate from the obligation's
+   engine-level `status`. Default `mandate` is `soft` — engine keeps
+   the obligation in scope but the page doesn't block save-and-continue.
+   Use `hard` when this specific page must not advance without an
+   answer.
+
+5. **Remove from `KNOWN_UNWIRED`** in
+   [`obligations/coverage.test.js`](../obligations/coverage.test.js).
+   Simply delete the name from the set. The `coverage.test.js` suite
+   should still pass — if not, either the domain entry is missing or
+   the obligation is on the list under a wrong name.
+
+6. **Update snapshot fixtures if needed** in
+   [`fixtures/`](../fixtures/). The `dump.test.js` snapshots stringify
+   the model state; new pages / new obligations change the shape.
+   Run `npx vitest run dump.test.js` and update the snapshot if the
+   diff is intentional.
+
+7. **Run the full test suite.**
+
+   ```bash
+   npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/
+   ```
+
+   Expected: everything green. If tests fail, common causes:
+   - A test asserted on a specific page ordering that changed
+     (`firstUnfulfilledPage`, `startPage`).
+   - A route walk asserted on a specific redirect that a new page
+     inserted before.
+   - The `KNOWN_UNWIRED` size assertion, if there is one (there isn't
+     yet, but this may become one after enough iterations).
+
+8. **Manual walk in the browser.**
+
+   ```bash
+   npm run dev
+   # http://localhost:3000/prototype/eudpa-249/start
+   ```
+
+   Click through. The new page should appear at the expected point in
+   the flow. Fill it, save-and-continue, ensure it reaches CYA and
+   shows the value there with a working Change link.
+
+9. **Commit atomically.** One commit per iteration:
+
+   ```
+   feat(EUDPA-249): add <obligationName> + refine docs/add-an-obligation.md
+   ```
+
+## Worked example — iteration 1: `containsUnweanedAnimals`
+
+_This section is written by iteration 1 as it runs. Subsequent
+iterations may add their own examples below, or replace this with a
+tighter example if a later iteration is a cleaner demonstrator._
+
+**Target:** add `containsUnweanedAnimals` as a Yes/No question in a
+new subsection under `arrival`.
+
+Steps executed (record what actually happened):
+
+- **Step 1 — Confirmed.** Declared at
+  `obligations/obligations.js:188`, always in scope, mandatory,
+  no `within`, no group semantics. A top-level singleton.
+- **Step 2 — Domain entry.** Used `staticEnum(['yes', 'no'], {
+labels: { yes: 'Yes', no: 'No' } })`. Registered in the domain
+  manifest.
+- **Step 3 — Presentation.** Added `pageTitle: 'Contains unweaned
+animals'`, `legend: 'Are there any unweaned animals in this
+consignment?'`, `hint: 'An animal that is still dependent on its
+mother for milk.'`
+- **Step 4 — Flow.** Added a new subsection `unweaned` under the
+  existing `arrival` section, containing a single page
+  `contains-unweaned-animals`.
+- **Step 5 — Removed from KNOWN_UNWIRED.** One line deleted.
+- **Step 6 — Fixtures.** `dump.test.js` snapshots did not need
+  updating because the new subsection is NA / NS depending on
+  fixture state, and the snapshot files are keyed by subsection id.
+- **Step 7 — Tests.** All 385 tests green on the first go. No route
+  test asserted on a specific redirect that broke; `dump.test.js`
+  snapshots didn't cover the new subsection so passed silently (see
+  "Refinements" below).
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: new
+  "About the animals" subsection appears under Arrival on the task
+  list, `contains-unweaned-animals` page shows Yes/No radios,
+  save-and-continue works, CYA lists the value with a Change link.
+- **Step 9 — Committed as one atomic commit.**
+
+Refinements to this doc based on iteration 1:
+
+- **Three files (`domain/index.js`, `lib/presentation.js`,
+  `flow/flow.js`) each need an import added.** Consistent pattern:
+  add to the top-of-file `import { ... } from
+'../obligations/obligations.js'`. Worth spelling out explicitly in
+  each step above so a fresh contributor doesn't forget one.
+- **The Yes/No pattern was extracted into shared consts** in
+  `domain/index.js`: `YES_NO_OPTIONS = ['yes', 'no']` and
+  `YES_NO_LABELS = { yes: 'Yes', no: 'No' }`. Later Yes/No obligations
+  (`regionCodeRequirement` is the obvious next) can reuse them without
+  restating the literals. Similar pattern likely for other repeat
+  shapes.
+- **`dump.test.js` snapshots don't cover the new subsection.** The
+  snapshots key by subsection id and only assert on subsections the
+  test explicitly names. A new subsection sits silently in the dump
+  output without being checked. Not a defect but a note: if
+  positioning matters, add a `statusPerSubsection` key assertion.
+- **`routes.test.js` uses label-based navigation** (`getByLabel` /
+  substring matches), not ordinal-based. New pages don't break the
+  redirect chain assertions — they only fire if the new page changes
+  what an existing page's `nextAfter` computes.
+
+Explicit step-by-step for the import bump added to the checklist
+above under each of steps 2, 3, 4. See the diffs on commit
+`<hash>` for the exact edits.
+
+## Adding a brand-new obligation
+
+This case is rarer than "wire an existing obligation" — usually the
+V4 obligation already exists in `obligations/obligations.js`. If it
+doesn't:
+
+1. Pick a stable UUID (any valid v4 UUID — `uuidgen` on macOS works).
+2. Choose the shape:
+   - Top-level singleton with an `applyTo` returning `{ inScope, status,
+reasons? }`.
+   - `within: commodityLine` for a line-scoped field with `status`.
+   - `within: unitRecord` for a unit-scoped field.
+   - `applyTo` using an allow-list helper if the scope depends on
+     another obligation's value.
+3. Add to the `export const obligations = [ ... ]` list at the bottom
+   of `obligations/obligations.js`.
+4. Then follow the standard checklist above.
+
+Note: `obligations/coverage.test.js` will fire immediately with an
+"obligation lacks domain and allow-list entry" error until you wire
+it. That's the correct catch — it's why we added that test.
+
+## Gotchas
+
+_This section accumulates real problems iteration by iteration.
+Currently empty; iteration 1 will populate it if any come up._
+
+## What this doc does not cover
+
+- Adding a **new page** without a new obligation (i.e. presenting an
+  existing obligation on a new page too). See `docs/add-a-page.md`
+  (not yet written).
+- Adding a **new subsection** or **new section** as its own
+  structural change. Included as a sub-step of the checklist above
+  because the two usually happen together; a dedicated
+  `docs/add-a-subsection.md` will materialise when iteration 2+ has
+  a case that separates them.
+- Bespoke controllers (features/ folders). Those are for UX flows
+  that don't fit the generic form-page pattern — hub, CYA,
+  commodity-lines add/list/delete, etc.

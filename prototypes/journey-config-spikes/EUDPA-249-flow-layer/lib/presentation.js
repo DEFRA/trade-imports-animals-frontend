@@ -36,7 +36,8 @@ import {
   species,
   numberOfAnimals,
   numberOfPackages,
-  cph
+  cph,
+  containsUnweanedAnimals
 } from '../obligations/obligations.js'
 import { certifiedForOptionsLookup } from '../domain/index.js'
 
@@ -143,6 +144,14 @@ export const presentation = new Map([
       pageTitle: 'Animals certified for',
       legend: 'What are the animals certified for?',
       hint: 'Options are loaded from the certificate.'
+    }
+  ],
+  [
+    containsUnweanedAnimals.id,
+    {
+      pageTitle: 'Contains unweaned animals',
+      legend: 'Are there any unweaned animals in this consignment?',
+      hint: 'An unweaned animal is still dependent on its mother for milk.'
     }
   ],
   [

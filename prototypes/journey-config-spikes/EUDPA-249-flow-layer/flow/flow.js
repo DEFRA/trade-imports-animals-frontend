@@ -43,7 +43,8 @@ import {
   commodityCode,
   species,
   numberOfAnimals,
-  numberOfPackages
+  numberOfPackages,
+  containsUnweanedAnimals
 } from '../obligations/obligations.js'
 
 import { certifiedForOptionsLookup } from '../domain/index.js'
@@ -157,6 +158,19 @@ export const flow = {
               presents: [
                 { obligation: arrivalDateAtPort, mandate: 'hard' },
                 { obligation: portOfEntry, mandate: 'hard' }
+              ]
+            }
+          ]
+        },
+        {
+          kind: 'subsection',
+          id: 'unweaned',
+          title: 'About the animals',
+          children: [
+            {
+              page: 'contains-unweaned-animals',
+              presents: [
+                { obligation: containsUnweanedAnimals, mandate: 'hard' }
               ]
             }
           ]

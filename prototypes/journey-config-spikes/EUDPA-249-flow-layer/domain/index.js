@@ -40,7 +40,8 @@ import {
   countryOfOrigin,
   commodityCode,
   numberOfPackages,
-  cph
+  cph,
+  containsUnweanedAnimals
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -238,6 +239,13 @@ export const transporterTypeDomain = staticEnum(TRANSPORTER_TYPE_OPTIONS, {
     commercial: 'Commercial transporter',
     private: 'Private transporter'
   }
+})
+
+const YES_NO_OPTIONS = ['yes', 'no']
+const YES_NO_LABELS = { yes: 'Yes', no: 'No' }
+
+export const containsUnweanedAnimalsDomain = staticEnum(YES_NO_OPTIONS, {
+  labels: YES_NO_LABELS
 })
 
 const MEANS_OF_TRANSPORT_OPTIONS = [
@@ -481,5 +489,6 @@ export const domain = new Map([
   [numberOfPackages.id, numberOfPackagesDomain],
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
-  [animalsCertifiedFor.id, animalsCertifiedForDomain]
+  [animalsCertifiedFor.id, animalsCertifiedForDomain],
+  [containsUnweanedAnimals.id, containsUnweanedAnimalsDomain]
 ])

@@ -46,7 +46,7 @@ const KNOWN_UNWIRED = new Set([
 
   // Yes/No enums from MDM — need domain entries during step 5.
   'regionCodeRequirement',
-  'containsUnweanedAnimals',
+  // containsUnweanedAnimals wired during step 4 iteration 1.
 
   // MDM-sourced enums — need domain entries during step 5 once the
   // MDM list is available.
