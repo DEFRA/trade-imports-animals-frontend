@@ -38,7 +38,7 @@ import {
   numberOfPackages,
   cph
 } from '../obligations/obligations.js'
-import { certifiedForOptionsLookup } from '../domain.js'
+import { certifiedForOptionsLookup } from '../domain/index.js'
 
 export const presentation = new Map([
   [

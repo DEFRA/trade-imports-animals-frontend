@@ -12,8 +12,8 @@
  * group's record set) end up in the output.
  */
 
-import { domain } from '../domain.js'
-import { expandPresents, optionsFor } from '../runtime.js'
+import { domain } from '../domain/index.js'
+import { expandPresents, optionsFor } from '../engine/index.js'
 import { pickWidget } from './field-widgets.js'
 import { forObligation } from './presentation.js'
 

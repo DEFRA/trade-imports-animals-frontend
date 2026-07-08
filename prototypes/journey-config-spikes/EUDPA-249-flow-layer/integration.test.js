@@ -35,8 +35,8 @@ import {
   countryOfOrigin
 } from './obligations/obligations.js'
 
-import { domain, certifiedForOptionsLookup } from './domain.js'
-import { flow } from './flow.js'
+import { domain, certifiedForOptionsLookup } from './domain/index.js'
+import { flow } from './flow/flow.js'
 import {
   optionsFor,
   validate,
@@ -47,7 +47,7 @@ import {
   firstUnfulfilledPage,
   firstPagePresentingObligation,
   STATUSES
-} from './runtime.js'
+} from './engine/index.js'
 
 // ---------------------------------------------------------------------------
 // Setup — one evaluator instance, reused across scenarios via evaluate().

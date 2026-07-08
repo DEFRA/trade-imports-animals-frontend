@@ -21,8 +21,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { obligations as v4Obligations } from '../obligations/obligations.js'
-import { certifiedForOptionsLookup } from '../domain.js'
+import { obligations as v4Obligations } from './obligations/obligations.js'
+import { certifiedForOptionsLookup } from './domain/index.js'
 import {
   evaluateState,
   subsections,
@@ -34,7 +34,7 @@ import {
   changeLinkFor,
   pages as walkAllPages
 } from './contract.js'
-import { STATUSES } from '../runtime.js'
+import { STATUSES } from './engine/index.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 

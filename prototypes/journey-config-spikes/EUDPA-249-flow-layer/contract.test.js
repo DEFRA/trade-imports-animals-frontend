@@ -4,7 +4,7 @@ import {
   reasonForImport,
   countryOfOrigin,
   purposeInInternalMarket
-} from '../obligations/obligations.js'
+} from './obligations/obligations.js'
 
 import {
   evaluateState,
@@ -23,7 +23,7 @@ import {
   validatePagePayload
 } from './contract.js'
 
-import { STATUSES } from '../runtime.js'
+import { STATUSES } from './engine/index.js'
 
 describe('structural queries', () => {
   it('findPage locates by page name', () => {

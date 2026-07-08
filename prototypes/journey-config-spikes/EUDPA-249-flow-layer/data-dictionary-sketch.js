@@ -20,7 +20,7 @@
  */
 
 import { obligations } from './obligations/obligations.js'
-import { domain, certifiedForOptionsLookup } from './domain.js'
+import { domain, certifiedForOptionsLookup } from './domain/index.js'
 
 const DOMAIN_EXTRA_OBLIGATIONS = [certifiedForOptionsLookup]
 

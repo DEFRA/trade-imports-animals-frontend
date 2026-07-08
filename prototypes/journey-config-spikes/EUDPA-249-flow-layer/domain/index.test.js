@@ -15,7 +15,7 @@ import {
   arrivalDateAtPort,
   transitedCountries,
   animalsCertifiedFor
-} from './obligations/obligations.js'
+} from '../obligations/obligations.js'
 
 import {
   domain,
@@ -39,7 +39,7 @@ import {
   lookupEnum,
   predicate,
   reasons
-} from './domain.js'
+} from './index.js'
 
 // A trivial context-builder mirroring the shape runtime.validate builds.
 const buildCtx = ({ fulfilments = {}, path = null } = {}) => ({

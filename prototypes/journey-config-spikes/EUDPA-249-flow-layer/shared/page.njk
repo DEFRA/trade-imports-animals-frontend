@@ -4,12 +4,12 @@
    from a pageViewModel context ({ heading, buttonText, fields, backLink })
    plus optional errorSummary. Zero hardcoded copy. #}
 
-{% extends "layout.njk" %}
+{% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "partials/fields.njk" import renderFields %}
+{% from "shared/partials/fields.njk" import renderFields %}
 
 {% block journeyContent %}
-  {% include "partials/error-summary.njk" %}
+  {% include "shared/partials/error-summary.njk" %}
 
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 

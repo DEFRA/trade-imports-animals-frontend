@@ -67,7 +67,7 @@ export const router = {
       // production build doesn't ship the /prototype/* routes.
       if (config.get('prototype.eudpa249.enabled')) {
         const { journeyConfigFlow } =
-          await import('../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/plugin.js')
+          await import('../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/routes.js')
         routes.push(journeyConfigFlow)
       }
 

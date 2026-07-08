@@ -11,7 +11,7 @@ import {
   firstPagePresentingObligation,
   expandPresents,
   STATUSES
-} from './runtime.js'
+} from './index.js'
 
 // ---------------------------------------------------------------------------
 // Synthetic obligations + domain — the whole point is that the runtime

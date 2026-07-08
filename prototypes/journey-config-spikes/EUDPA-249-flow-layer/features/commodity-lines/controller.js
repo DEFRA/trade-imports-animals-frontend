@@ -16,9 +16,13 @@ import {
   species,
   numberOfAnimals,
   numberOfPackages
-} from '../obligations/obligations.js'
-import { domain } from '../domain.js'
-import { readState, addCommodityLine, deleteCommodityLine } from './state.js'
+} from '../../obligations/obligations.js'
+import { domain } from '../../domain/index.js'
+import {
+  readState,
+  addCommodityLine,
+  deleteCommodityLine
+} from '../../lib/state.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -56,7 +60,7 @@ export const linesIndexController = {
           }
         }
       })
-      return h.view('lines-list', {
+      return h.view('features/commodity-lines/list', {
         layout: 'layout.njk',
         pageTitle: 'Commodity lines',
         heading: 'Commodity lines',

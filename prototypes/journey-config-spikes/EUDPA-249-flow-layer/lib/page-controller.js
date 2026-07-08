@@ -16,7 +16,7 @@ import {
   nextAfter,
   validatePagePayload,
   findPage
-} from './contract.js'
+} from '../contract.js'
 import { readState, writeAnswer } from './state.js'
 import { pageCopy, forObligation } from './presentation.js'
 
@@ -48,7 +48,7 @@ export function makePageController(page) {
       handler(request, h) {
         const state = readState(request)
         const descriptors = fieldsForPage(page, state)
-        return h.view('page', {
+        return h.view('shared/page', {
           layout: 'layout.njk',
           pageTitle: pageTitle(page),
           heading: pageTitle(page),
@@ -66,7 +66,7 @@ export function makePageController(page) {
         if (!result.ok) {
           const descriptors = fieldsForPage(page, state, result.fieldErrors)
           return h
-            .view('page', {
+            .view('shared/page', {
               layout: 'layout.njk',
               pageTitle: pageTitle(page),
               heading: pageTitle(page),

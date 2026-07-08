@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import { reasonForImport } from './obligations/obligations.js'
 
-import { flow } from './flow.js'
+import { flow } from './flow/flow.js'
 import { pageSchema, optionListsForPage } from './controller-sketch.js'
 import { buildDictionary, coverageReport } from './data-dictionary-sketch.js'
 

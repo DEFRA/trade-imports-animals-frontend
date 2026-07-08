@@ -8,7 +8,7 @@
  * `request.yar` directly.
  */
 
-import { evaluateState } from './contract.js'
+import { evaluateState } from '../contract.js'
 
 export const SESSION_KEY = 'prototype:eudpa-249:fulfilments'
 export const LOOKUP_SEEDED_KEY = 'prototype:eudpa-249:lookup-seeded'

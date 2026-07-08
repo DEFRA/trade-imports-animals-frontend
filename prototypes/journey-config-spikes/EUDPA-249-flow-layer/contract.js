@@ -10,8 +10,8 @@
  * browser layer wants to know about the model should be exposed here.
  */
 
-import { createObligationEvaluator } from '../obligations/evaluator.js'
-import { obligations as v4Obligations } from '../obligations/obligations.js'
+import { createObligationEvaluator } from './obligations/evaluator.js'
+import { obligations as v4Obligations } from './obligations/obligations.js'
 
 import {
   flow,
@@ -19,8 +19,8 @@ import {
   walkSubsections,
   subsectionOfPage,
   sectionOfSubsection
-} from '../flow.js'
-import { certifiedForOptionsLookup, domain } from '../domain.js'
+} from './flow/flow.js'
+import { certifiedForOptionsLookup, domain } from './domain/index.js'
 import {
   containerStatus,
   firstApplicablePage,
@@ -29,9 +29,9 @@ import {
   journeyState,
   pageStatus,
   validate as validateObligation
-} from '../runtime.js'
-import { buildFieldDescriptors } from './build-field-descriptors.js'
-import { formatDomainErrors } from './format-domain-errors.js'
+} from './engine/index.js'
+import { buildFieldDescriptors } from './lib/build-field-descriptors.js'
+import { formatDomainErrors } from './lib/format-domain-errors.js'
 
 const evaluator = createObligationEvaluator({
   obligations: [...v4Obligations, certifiedForOptionsLookup]

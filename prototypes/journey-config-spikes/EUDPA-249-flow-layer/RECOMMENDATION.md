@@ -30,7 +30,7 @@ domain)` resolves the current legal option set from the domain
   entry. The browser layer uses the same call to build the widget
   (radios / select / checkboxes) and to derive validation.
 - **Correctness** — three independent lines of defence:
-  1. Contract seam (`browser/contract.js`) — the only place the browser
+  1. Contract seam (`contract.js`) — the only place the browser
      layer reads model information; enforced by convention + tests.
   2. Tests at four levels — domain isolation, runtime primitives with
      synthetic fixtures, integration through the real V4 slice, and
@@ -61,7 +61,7 @@ process.
      add a presents entry to `flow.js`.
      Nothing else moves.
 4. **Correctness is enforced three ways** — contract seam
-   (`browser/contract.js` is the only path from browser → model), tests
+   (`contract.js` is the only path from browser → model), tests
    (four levels: domain isolation, runtime primitives, integration,
    HTTP `server.inject`), dictionary (introspectable metadata).
 5. **Async options work the same shape.** Lookup obligations
@@ -163,7 +163,7 @@ not decide them. These are the ones worth raising in playback:
 ## Out of scope — natural follow-ons
 
 - **Flow-driven line iteration.** V1 has bespoke
-  `browser/line-controllers.js` for Add / list / delete of commodity
+  `features/commodity-lines/controller.js` for Add / list / delete of commodity
   lines. Turning that into a `sectionForEach` / `pagesForEach`
   primitive at the flow layer is the biggest v2 job — details in the
   Browsable prototype §Commodity-lines UX section above.
@@ -194,19 +194,19 @@ not decide them. These are the ones worth raising in playback:
               runtime.js
               ▲            ▲              ▲
               │            │              │
-     data-dictionary-sketch          browser/contract.js
+     data-dictionary-sketch          contract.js
                                           ▲
                                           │
-                                    browser/*-controller.js
-                                    browser/templates/*.njk
+                                    features/*-controller.js
+                                    shared/*.njk
 ```
 
 - `domain.js` and `flow.js` both import symbols from the parent
   obligations manifest — same source of truth for identity.
 - `runtime.js` reads all three plus the ObligationEvaluator's output;
   every primitive is a pure function of its inputs.
-- `browser/contract.js` is the seam — everything downstream (controllers
-  - templates) only talks to `contract.js`; nothing in `browser/*`
+- `contract.js` is the seam — everything downstream (controllers
+  - templates) only talks to `contract.js`; nothing in `*`
     reaches into `runtime.js` or `domain.js` directly. See the
     Browsable prototype §How the logical model maps to controllers/HTML/JS.
 - `controller-sketch.js` (kept as a historical artifact — a JOI
@@ -262,7 +262,7 @@ so the same Playwright spec runs against every variant via a
 `JOURNEYS` array.
 
 None of those spikes model V4 fields. Rather than lift-and-shift, we
-implemented [`browser/contract.js`](./browser/contract.js) as a **thin
+implemented [`contract.js`](./contract.js) as a **thin
 adapter**: it exposes the same vocabulary (`statusOfContainer`,
 `nextAfter`, `fieldsForPage`, `validatePagePayload`, etc.) on top of my
 three-layer split. Controllers and templates only import from
@@ -292,12 +292,12 @@ mechanisms achieve that:
 
 1. **Convention: the browser layer imports only from `contract.js`.**
    No controller reads `runtime.js` or `domain.js` directly. Grep for
-   `from '../runtime.js'` or `from '../domain.js'` inside `browser/*` —
+   `from '../engine/index.js'` or `from '../domain/index.js'` inside `*` —
    only `contract.js` and `state.js` do. If a future controller needs
    model information the contract doesn't expose, the contract grows a
    function rather than the seam being bypassed.
 2. **Convention: templates render `FieldViewItem`s only.** The
-   [`field-widgets.js`](./browser/field-widgets.js) dispatch table is
+   [`field-widgets.js`](./lib/field-widgets.js) dispatch table is
    the _only_ place a govuk widget is chosen. Templates
    (`partials/fields.njk`) do a shape-based dispatch on
    `item.type`; they never look at obligations or domain entries. A
@@ -306,9 +306,9 @@ mechanisms achieve that:
 3. **Tests: three levels of coverage.**
    - Pure-model tests (`domain.test.js`, `runtime.test.js`) prove
      every primitive answers correctly on synthetic fixtures.
-   - Contract tests (`browser/contract.test.js`) prove every function
+   - Contract tests (`contract.test.js`) prove every function
      on the seam returns the right shape for real V4 pages + states.
-   - HTTP tests (`browser/plugin.test.js`) drive real routes via
+   - HTTP tests (`routes.test.js`) drive real routes via
      `server.inject` and a cookie jar and assert that page-level
      behaviour (visibility, option filtering, error rendering, redirect
      chains) matches the model.
@@ -340,13 +340,13 @@ prototype-related; a `docker exec ... env` check confirms
 in production).
 
 Auth is opted-out per route (`options: { auth: false }` in
-[`plugin.js`](./browser/plugin.js)) so the demo works whether or not
+[`plugin.js`](./routes.js)) so the demo works whether or not
 the host frontend has auth turned on.
 
 ### Commodity-lines UX (bespoke — v2 backlog)
 
 Commodity lines are the one place a bespoke controller lives.
-`browser/line-controllers.js` handles:
+`features/commodity-lines/controller.js` handles:
 
 - `GET /lines` — list existing lines (a summary-list of line ids +
   chosen commodity codes).
@@ -376,7 +376,7 @@ None of these change the three-layer thesis; they scale it.
 
 ### Headless proof (dump.js)
 
-[`browser/dump.js`](./browser/dump.js) is the parallel of the parent
+[`dump.js`](./dump.js) is the parallel of the parent
 branch's `dump.js`: given a fixture, print a JSON view of the logical
 state. Nothing about rendering — every question a stakeholder can ask
 in the browser (what's applicable, what's in progress, what's next,
@@ -384,12 +384,12 @@ what's missing, where does a Change link go) has a corresponding key
 in the dump output.
 
 ```bash
-node prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/dump.js empty
-node prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/dump.js internal-market-partial
-node prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/dump.js transit-with-lines
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js empty
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js internal-market-partial
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js transit-with-lines
 ```
 
-Snapshots in [`browser/dump.test.js`](./browser/dump.test.js) pin the
+Snapshots in [`dump.test.js`](./dump.test.js) pin the
 output so a change to flow / domain / runtime that alters what the
 stakeholder sees in the browser also alters the dump — and the
 snapshot fails until the change is reconciled.
@@ -420,42 +420,49 @@ referenced by path in the References section below.
 | [`obligations/evaluator.units.test.js`](./obligations/evaluator.units.test.js) | Evaluator per-function isolation tests               |
 | [`obligations/helpers.test.js`](./obligations/helpers.test.js)                 | Helper tests                                         |
 
-### Logical model (Layers 1.25 + 2 + runtime)
+### Layer 1.25 (Domain), Layer 2 (Flow), Engine (runtime primitives)
 
 | File                                                       | Purpose                                            |
 | :--------------------------------------------------------- | :------------------------------------------------- |
-| [`domain.js`](./domain.js)                                 | Layer 1.25 constraint declarations + factories     |
-| [`flow.js`](./flow.js)                                     | Layer 2 sections + subsections + pages + presents  |
-| [`runtime.js`](./runtime.js)                               | JourneyEvaluator + domain primitives               |
+| [`domain/index.js`](./domain/index.js)                     | Layer 1.25 constraint declarations + factories     |
+| [`flow/flow.js`](./flow/flow.js)                           | Layer 2 sections + subsections + pages + presents  |
+| [`engine/index.js`](./engine/index.js)                     | JourneyEvaluator + domain primitives (runtime)     |
 | [`controller-sketch.js`](./controller-sketch.js)           | JOI-shaped page schema composition sketch          |
 | [`data-dictionary-sketch.js`](./data-dictionary-sketch.js) | Stakeholder dictionary + coverage report           |
-| [`domain.test.js`](./domain.test.js)                       | Domain unit tests (real V4 predicates)             |
-| [`runtime.test.js`](./runtime.test.js)                     | Runtime primitive tests over synthetic obligations |
+| [`domain/index.test.js`](./domain/index.test.js)           | Domain unit tests (real V4 predicates)             |
+| [`engine/index.test.js`](./engine/index.test.js)           | Runtime primitive tests over synthetic obligations |
 | [`integration.test.js`](./integration.test.js)             | End-to-end V4 slice through all three model layers |
 | [`sketches.test.js`](./sketches.test.js)                   | Sketches tests                                     |
 
-### Browser layer (contract seam + Hapi plugin + templates)
+### Browser layer (contract seam + Hapi plugin + features + shared)
 
-| File                                                                         | Purpose                                                                                                        |
-| :--------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
-| [`browser/plugin.js`](./browser/plugin.js)                                   | Hapi plugin; walks `flow.js` and registers routes                                                              |
-| [`browser/contract.js`](./browser/contract.js)                               | Contract seam — every browser call to the model goes through here                                              |
-| [`browser/page-controller.js`](./browser/page-controller.js)                 | Generic GET/POST handler for a static page                                                                     |
-| [`browser/hub-controller.js`](./browser/hub-controller.js)                   | Task-list handler                                                                                              |
-| [`browser/cya-controller.js`](./browser/cya-controller.js)                   | Check-your-answers handler                                                                                     |
-| [`browser/line-controllers.js`](./browser/line-controllers.js)               | Bespoke commodity-lines index / add / delete (v2 backlog)                                                      |
-| [`browser/misc-controllers.js`](./browser/misc-controllers.js)               | start / reset / seeded async lookup                                                                            |
-| [`browser/build-field-descriptors.js`](./browser/build-field-descriptors.js) | Pure fn — page + state → field descriptors                                                                     |
-| [`browser/field-widgets.js`](./browser/field-widgets.js)                     | Data-shaped widget dispatch table                                                                              |
-| [`browser/format-domain-errors.js`](./browser/format-domain-errors.js)       | Domain-error → GOV.UK `{ errorList, fieldErrors }` mapper                                                      |
-| [`browser/presentation.js`](./browser/presentation.js)                       | Per-obligation `{ pageTitle, legend, hint }` copy                                                              |
-| [`browser/state.js`](./browser/state.js)                                     | `@hapi/yar` session wrappers + line-management helpers                                                         |
-| [`browser/dump.js`](./browser/dump.js)                                       | Headless CLI proof + programmatic `report(fixture)`                                                            |
-| [`browser/fixtures/*.json`](./browser/fixtures/)                             | Three named fulfilment fixtures                                                                                |
-| [`browser/templates/*.njk`](./browser/templates/)                            | layout / page / hub / cya / lines-list / partials                                                              |
-| Test files under `browser/`                                                  | Widget dispatch, format-domain-errors, build-field-descriptors, contract, plugin server.inject, dump snapshots |
+| File                                                                                       | Purpose                                                                                                          |
+| :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| [`routes.js`](./routes.js)                                                                 | Hapi plugin; walks `flow/flow.js` and registers routes                                                           |
+| [`contract.js`](./contract.js)                                                             | Contract seam — every browser call to the model goes through here                                                |
+| [`lib/page-controller.js`](./lib/page-controller.js)                                       | Generic GET/POST handler factory for a static page                                                               |
+| [`features/hub/controller.js`](./features/hub/controller.js)                               | Task-list handler                                                                                                |
+| [`features/check-your-answers/controller.js`](./features/check-your-answers/controller.js) | Check-your-answers handler                                                                                       |
+| [`features/commodity-lines/controller.js`](./features/commodity-lines/controller.js)       | Bespoke commodity-lines index / add / delete (v2 backlog)                                                        |
+| [`features/start/controller.js`](./features/start/controller.js)                           | Landing redirect                                                                                                 |
+| [`features/reset/controller.js`](./features/reset/controller.js)                           | Session reset                                                                                                    |
+| [`features/lookup/controller.js`](./features/lookup/controller.js)                         | Seeded async lookup for `certifiedForOptionsLookup`                                                              |
+| [`lib/build-field-descriptors.js`](./lib/build-field-descriptors.js)                       | Pure fn — page + state → field descriptors                                                                       |
+| [`lib/field-widgets.js`](./lib/field-widgets.js)                                           | Data-shaped widget dispatch table                                                                                |
+| [`lib/format-domain-errors.js`](./lib/format-domain-errors.js)                             | Domain-error → GOV.UK `{ errorList, fieldErrors }` mapper                                                        |
+| [`lib/presentation.js`](./lib/presentation.js)                                             | Per-obligation `{ pageTitle, legend, hint }` copy                                                                |
+| [`lib/state.js`](./lib/state.js)                                                           | `@hapi/yar` session wrappers + line-management helpers                                                           |
+| [`dump.js`](./dump.js)                                                                     | Headless CLI proof + programmatic `report(fixture)`                                                              |
+| [`fixtures/*.json`](./fixtures/)                                                           | Three named fulfilment fixtures                                                                                  |
+| [`shared/layout.njk`](./shared/layout.njk)                                                 | Base layout — extends `govuk/template.njk`                                                                       |
+| [`shared/page.njk`](./shared/page.njk)                                                     | Generic form page (used by every flow-driven page)                                                               |
+| [`shared/partials/{fields,error-summary}.njk`](./shared/partials/)                         | Field-widget dispatch + GOV.UK error summary                                                                     |
+| [`features/hub/template.njk`](./features/hub/template.njk)                                 | Task-list template                                                                                               |
+| [`features/check-your-answers/template.njk`](./features/check-your-answers/template.njk)   | CYA template                                                                                                     |
+| [`features/commodity-lines/list.njk`](./features/commodity-lines/list.njk)                 | Commodity-lines index template                                                                                   |
+| Test files under `lib/`, `features/*/`, and root                                           | Widget dispatch, format-domain-errors, build-field-descriptors, contract, routes `server.inject`, dump snapshots |
 
-**Total:** 164 tests passing across 10 files.
+**Total:** 345 tests passing across 13 files (164 spike + 181 forked obligation).
 
 ## Running the spike
 
@@ -465,8 +472,12 @@ cd repos/trade-imports-animals-frontend
 # Full test suite for the spike
 npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/
 
-# Just the browser layer
-npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/
+# Just the browser layer (lib + features + routes + contract + dump)
+npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/lib/ \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/features/ \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/routes.test.js \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/contract.test.js \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.test.js
 
 # Watch mode
 npx vitest prototypes/journey-config-spikes/EUDPA-249-flow-layer/
@@ -476,7 +487,7 @@ npm run dev
 # then http://localhost:3000/prototype/eudpa-249/start
 
 # Headless proof — no browser required
-node prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/dump.js internal-market-partial
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js internal-market-partial
 ```
 
 `npm run dev` defaults auth off (see

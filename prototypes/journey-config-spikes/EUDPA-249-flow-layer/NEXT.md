@@ -37,35 +37,53 @@ the env gate, and the v2 backlog. This NEXT.md assumes you have.
 
 ```
 prototypes/journey-config-spikes/EUDPA-249-flow-layer/
-├── domain.js                        Layer 1.25 constraint declarations
-├── flow.js                          Layer 2 section/subsection/page tree
-├── runtime.js                       Pure primitives (pageStatus, etc.)
+├── routes.js                        Hapi plugin
+├── contract.js                      The seam — browser ↔ model
+├── dump.js                          Headless proof (CLI + report())
 ├── controller-sketch.js             JOI composition sketch (historical)
-├── data-dictionary-sketch.js        Dictionary builder — feeds to-do 3
+├── data-dictionary-sketch.js        Dictionary builder — feeds to-do 5
 ├── RECOMMENDATION.md                Design write-up
 ├── PLAN.md                          Original spike plan (historical)
 ├── NEXT.md                          This file
-├── *.test.js                        Model-layer tests
-└── browser/
-    ├── plugin.js                    Hapi plugin
-    ├── contract.js                  The seam — browser ↔ model
-    ├── {page,hub,cya,line,misc}-controller[s].js
-    ├── build-field-descriptors.js
-    ├── field-widgets.js             Widget dispatch table
-    ├── format-domain-errors.js
-    ├── presentation.js              Human copy
-    ├── state.js                     yar session wrappers
-    ├── dump.js                      Headless proof
-    ├── fixtures/*.json              Named fulfilment fixtures
-    ├── templates/*.njk              Cherry-picked from prototype-layouts
-    └── *.test.js                    Widget / contract / plugin / dump tests
+├── integration.test.js              Cross-cutting integration test
+├── sketches.test.js                 Sketch tests
+├── contract.test.js                 Contract seam tests
+├── dump.test.js                     Dump snapshot tests
+├── routes.test.js                   Hapi server.inject integration tests
+├── obligations/                     Forked from EUDPA-277 (step 1)
+│   └── {obligations,evaluator,helpers}.js + *.test.js
+├── engine/                          Runtime primitives
+│   └── index.{js,test.js}
+├── flow/                            Flow declarations
+│   └── flow.js
+├── domain/                          Layer 1.25 constraint declarations
+│   └── index.{js,test.js}
+├── features/                        One folder per bespoke UX concern
+│   ├── hub/                         Task list
+│   ├── check-your-answers/          CYA
+│   ├── commodity-lines/             Bespoke Add-another UX
+│   ├── start/                       Landing redirect
+│   ├── reset/                       Session reset
+│   └── lookup/                      Seeded async lookup
+├── lib/                             Cross-feature utilities
+│   ├── page-controller.js           Generic GET/POST factory
+│   ├── build-field-descriptors.js
+│   ├── field-widgets.js
+│   ├── format-domain-errors.js
+│   ├── presentation.js
+│   └── state.js
+├── shared/                          Cross-feature templates
+│   ├── layout.njk
+│   ├── page.njk
+│   └── partials/{fields,error-summary}.njk
+├── fixtures/                        Named fulfilment fixtures
+└── docs/                            Topic-per-file (feeds to-dos 4-6)
 ```
 
-The parent EUDPA-277 obligations model lives at
-`prototypes/model-spikes/obligations-v4-model/`. Everything in
-`domain.js`, `flow.js`, `browser/contract.js`, `browser/plugin.test.js`
-imports from it via `../../model-spikes/obligations-v4-model/` — that
-cross-folder import goes away in to-do 6.
+The parent EUDPA-277 obligations spike lives at
+`prototypes/model-spikes/obligations-v4-model/`. It's unchanged; we
+forked its source + tests into `./obligations/` during step 1 and now
+consume the local copy exclusively.
 
 The parent-layouts branch `spike/EUDPA-249-prototype-layouts` has the
 14-function `contract` interface, four alternative model-spikes (a-d),
@@ -91,12 +109,58 @@ fork is now our source of truth. Documented in RECOMMENDATION.md
 `RECOMMENDATION.md`, `TODO.md` — all historical EUDPA-277 records;
 they stay in the parent folder and are referenced by path.
 
-### 2. Restructure the folder layout for clarity and discoverability (NEW)
+### 2. Restructure the folder layout for clarity and discoverability ✅ DONE
 
-**Why second:** doing it before everything downstream (Joi call, docs,
-V4 scale-up) means every follow-up references stable paths. Doing it
-after (1) means the parent-spike files are already local and can be
-moved cleanly.
+Done in a single commit — see the git log for `refactor(EUDPA-249):
+feature-first folder layout inspired by obligations-v2-spike`. Every
+file moved with `git mv` where possible so `git log --follow` traces
+history through the reshape. No behaviour change.
+
+**What landed:**
+
+- Dropped `browser/` folder — top-level `routes.js`, `contract.js`,
+  `dump.js` at spike root.
+- New folders: `engine/` (was `runtime.js`), `flow/` (was `flow.js`),
+  `domain/` (was `domain.js`), `features/{hub,check-your-answers,commodity-lines,start,reset,lookup}/`,
+  `lib/` (browser JS), `shared/` + `shared/partials/` (templates),
+  `fixtures/`, `docs/`.
+- Every bespoke UX concern (hub, cya, commodity-lines, start, reset,
+  lookup) has its own folder with `controller.js` + optional
+  `template.njk`. Generic form pages stay flow-driven from
+  `flow/flow.js` + `lib/page-controller.js` + `shared/page.njk` — no
+  per-page feature folder.
+- Vision + Nunjucks path in `src/config/nunjucks/nunjucks.js` now
+  points at the spike root so `h.view('shared/page')` and
+  `h.view('features/hub/template')` both resolve.
+- `src/server/router.js` import switched from
+  `browser/plugin.js` to `routes.js`.
+
+**Design questions resolved:**
+
+- Per-feature template vs shared generic: **kept the generic**
+  (`shared/page.njk`) for every static form page; only bespoke
+  features get their own template.
+- Whether to keep `browser/` as a folder name: **dropped it**.
+- Whether `domain/` splits or stays as one file: **kept as
+  `domain/index.js`** (single file inside the folder). Ditto
+  `engine/index.js`. A per-primitive split under `engine/` (page-status,
+  container-status, navigation, etc.) is available as a follow-on
+  polish; deferred.
+
+**Verification passed:** 345 spike tests + 632 existing frontend tests
+green. Browsable walk still works at
+http://localhost:3000/prototype/eudpa-249/start.
+
+Original detail preserved below for context; the "Approach" and
+"Design questions to resolve during this to-do" sections apply to
+future restructures if similar work happens again.
+
+---
+
+**Original why:** doing it before everything downstream (Joi call,
+docs, V4 scale-up) means every follow-up references stable paths.
+Doing it after (1) means the parent-spike files are already local and
+can be moved cleanly.
 
 **Reference:** the `obligations-v2-spike` folder on the parent-layouts
 branch —

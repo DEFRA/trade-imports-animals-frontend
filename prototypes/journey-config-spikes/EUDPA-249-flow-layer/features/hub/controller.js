@@ -6,13 +6,13 @@
  * page in the subsection (or the first applicable page as a fallback).
  */
 
-import { sections, statusOfContainer, statusOfJourney } from './contract.js'
-import { readState } from './state.js'
+import { sections, statusOfContainer, statusOfJourney } from '../../contract.js'
+import { readState } from '../../lib/state.js'
 import {
   firstApplicablePage,
   firstUnfulfilledPage,
   STATUSES
-} from '../runtime.js'
+} from '../../engine/index.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -75,7 +75,7 @@ export const hubController = {
             ? 'All required sections are complete.'
             : 'You are part-way through this journey.'
 
-      return h.view('hub', {
+      return h.view('features/hub/template', {
         layout: 'layout.njk',
         pageTitle: 'Task list',
         heading: 'Live animals — EUDPA-249 flow-layer prototype',

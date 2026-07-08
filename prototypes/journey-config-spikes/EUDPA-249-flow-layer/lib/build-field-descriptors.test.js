@@ -6,7 +6,7 @@ import {
   countryOfOrigin
 } from '../obligations/obligations.js'
 
-import { evaluateState, findPage } from './contract.js'
+import { evaluateState, findPage } from '../contract.js'
 import { buildFieldDescriptors } from './build-field-descriptors.js'
 
 let state

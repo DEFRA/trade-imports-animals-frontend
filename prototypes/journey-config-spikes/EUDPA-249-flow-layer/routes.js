@@ -12,19 +12,17 @@
  */
 
 import { pages } from './contract.js'
-import { makePageController } from './page-controller.js'
-import { hubController } from './hub-controller.js'
-import { cyaController } from './cya-controller.js'
+import { makePageController } from './lib/page-controller.js'
+import { hubController } from './features/hub/controller.js'
+import { cyaController } from './features/check-your-answers/controller.js'
 import {
   linesIndexController,
   linesAddController,
   linesDeleteController
-} from './line-controllers.js'
-import {
-  startController,
-  resetController,
-  lookupController
-} from './misc-controllers.js'
+} from './features/commodity-lines/controller.js'
+import { startController } from './features/start/controller.js'
+import { resetController } from './features/reset/controller.js'
+import { lookupController } from './features/lookup/controller.js'
 
 const BASE = '/prototype/eudpa-249'
 

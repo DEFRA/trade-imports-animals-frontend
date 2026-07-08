@@ -17,10 +17,10 @@ import nunjucks from 'nunjucks'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { journeyConfigFlow } from './plugin.js'
+import { journeyConfigFlow } from './routes.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootDir = path.resolve(dirname, '../../../../')
+const rootDir = path.resolve(dirname, '../../../')
 
 async function makeServer() {
   const server = Hapi.server({ port: 0 })
@@ -38,13 +38,10 @@ async function makeServer() {
     Vision
   ])
   const nunjucksEnvironment = nunjucks.configure(
-    [
-      path.join(rootDir, 'node_modules/govuk-frontend/dist/'),
-      path.join(dirname, 'templates')
-    ],
+    [path.join(rootDir, 'node_modules/govuk-frontend/dist/'), dirname],
     { autoescape: true, throwOnUndefined: false }
   )
-  // Register an asset-path filter stub so layout.njk's `getAssetPath`
+  // Register an asset-path filter stub so shared/layout.njk's `getAssetPath`
   // filter call doesn't blow up during rendering.
   nunjucksEnvironment.addGlobal('getAssetPath', (p) => `/public/${p}`)
   server.views({
@@ -58,7 +55,7 @@ async function makeServer() {
     },
     compileOptions: { environment: nunjucksEnvironment },
     relativeTo: dirname,
-    path: 'templates',
+    path: '.',
     isCached: false
   })
   await server.register(journeyConfigFlow)

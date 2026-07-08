@@ -12,8 +12,8 @@
  * shape mirrors what Joi would give.
  */
 
-import { domain } from './domain.js'
-import { optionsFor } from './runtime.js'
+import { domain } from './domain/index.js'
+import { optionsFor } from './engine/index.js'
 
 // ---------------------------------------------------------------------------
 // A minimal Joi stand-in — same fluent shape as the real thing, no

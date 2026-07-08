@@ -8,11 +8,11 @@
  * (mid-journey CYA pattern from the parent branch).
  */
 
-import { changeLinkFor, statusOfJourney } from './contract.js'
-import { readState } from './state.js'
-import { forObligation } from './presentation.js'
-import { obligations as v4Obligations } from '../obligations/obligations.js'
-import { domain } from '../domain.js'
+import { changeLinkFor, statusOfJourney } from '../../contract.js'
+import { readState } from '../../lib/state.js'
+import { forObligation } from '../../lib/presentation.js'
+import { obligations as v4Obligations } from '../../obligations/obligations.js'
+import { domain } from '../../domain/index.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -77,7 +77,7 @@ export const cyaController = {
         })
       }
 
-      return h.view('check-your-answers', {
+      return h.view('features/check-your-answers/template', {
         layout: 'layout.njk',
         pageTitle: 'Check your answers',
         heading: 'Check your answers',

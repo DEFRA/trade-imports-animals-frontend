@@ -16,15 +16,16 @@ const nunjucksPaths = [
   path.resolve(dirname, '../../server')
 ]
 
-// EUDPA-249 flow-layer browsable prototype. Templates live under the
-// spike folder; adding them here (gated) lets `h.view('page')` resolve
-// to prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/templates/page.njk
-// without the plugin needing its own views instance.
+// EUDPA-249 flow-layer browsable prototype. Templates live at
+// `shared/*.njk` and `features/*/template.njk` under the spike root;
+// adding the spike root here (gated) lets `h.view('shared/page')` and
+// `h.view('features/hub/template')` resolve without a per-plugin views
+// instance.
 if (config.get('prototype.eudpa249.enabled')) {
   nunjucksPaths.push(
     path.resolve(
       dirname,
-      '../../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/templates'
+      '../../../prototypes/journey-config-spikes/EUDPA-249-flow-layer'
     )
   )
 }
@@ -48,7 +49,7 @@ if (config.get('prototype.eudpa249.enabled')) {
   visionPaths.push(
     path.resolve(
       dirname,
-      '../../../prototypes/journey-config-spikes/EUDPA-249-flow-layer/browser/templates'
+      '../../../prototypes/journey-config-spikes/EUDPA-249-flow-layer'
     )
   )
 }

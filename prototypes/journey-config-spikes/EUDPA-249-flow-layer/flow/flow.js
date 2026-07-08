@@ -44,9 +44,9 @@ import {
   species,
   numberOfAnimals,
   numberOfPackages
-} from './obligations/obligations.js'
+} from '../obligations/obligations.js'
 
-import { certifiedForOptionsLookup } from './domain.js'
+import { certifiedForOptionsLookup } from '../domain/index.js'
 
 export const flow = {
   id: 'live-animals-v4-slice',
