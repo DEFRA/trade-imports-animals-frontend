@@ -512,36 +512,84 @@ Total document ~1200 words.
 **Verification:** the doc's own claims are correct — apply each
 mutation, run the tests, screenshot / paste the failure. Revert.
 
-### 4. "How to add X" docs + coverage test (was to-do 6)
+### 4. "How to add X" docs + coverage test — iterative
 
 **Why fourth:** freezes the extension pattern (with the restructure's
 target layout) before the V4 buildout scales it. Directly parallels
 the `docs/add-a-collection.md`, `add-a-field.md`, `add-a-page.md` set
 in the v2-spike reference.
 
-**Deliverables (all under `docs/`):**
+**Step 4 is iterative, not a one-shot doc.** Each iteration:
 
-- `docs/add-obligation.md` — the walkthrough for adding a new V4 data
-  field. Steps: obligations.js entry (identity + applyTo + within if
-  grouped) → domain.js entry (if it has legal-value semantics) →
-  flow.js `presents` entry on a page → optional presentation.js copy
-  → tests. Include a worked example (pick a real V4 field the current
-  slice doesn't cover — e.g. `contactAddress` breakdown).
-- `docs/add-page.md` — flow.js changes only; how presents / mandate /
-  path work.
-- `docs/add-subsection.md` — flow.js + hub tag consequences.
+1. Pick a real target — one new obligation, page, or subsection.
+2. Follow the docs as they stand today (or write the first-cut skeleton
+   if this is iteration 1).
+3. Implement the target — obligation entry, domain, presentation,
+   flow, tests.
+4. Fold "what actually happened" back into the docs — worked example
+   sections, gotchas, refinements.
+5. Verify: `npx vitest run` + `npm run dev` and click through.
+6. One atomic commit per iteration.
 
-**Coverage test to promote:** `data-dictionary-sketch.js
-coverageReport()` currently returns a `{ missing: [...] }` list. Turn
-that into a _failing_ test (`data-dictionary-sketch.test.js`)
-that asserts every obligation with an in-scope status in the current
-V4 slice has either a domain entry OR is on an allow-list of "text
-fallback OK" obligations (short strings, free-text). New obligations
-without a domain entry fail the build until they're either wired or
-allow-listed.
+Iteration 2 finds where iteration 1's docs fell short. By ~iteration
+3-4 the docs are honest; iteration 5+ is pure step-5 scale-up done
+under docs that already work.
 
-**Verification:** the coverage test fails when a required entry is
-missing and passes when it's wired.
+**Step 4 iterated enough delivers a substantial chunk of step 5.**
+The line between them blurs. When the docs stabilise and the coverage
+test's `KNOWN_UNWIRED` list has shrunk to zero (or to obligations
+that legitimately need no domain entry), step 4 is complete and step
+5's remaining scope is whatever full V4 hasn't been touched yet.
+
+**Recommended first iteration:** add `containsUnweanedAnimals` as a
+single page in a new subsection under the existing `arrival` section.
+
+- Yes/No enum, notification-level, always-mandatory. Simplest domain
+  shape (`staticEnum(['yes', 'no'], { labels: ... })`).
+- Currently in `KNOWN_UNWIRED` — removing it is a satisfying exercise
+  of step 3's coverage machinery.
+- New subsection exercises subsection-level plumbing without also
+  inventing top-level section copy.
+- Docs land as first-cut `docs/add-an-obligation.md`.
+
+**Suggested later iterations** (rough order of increasing complexity;
+the docs get refined at each):
+
+- 2 — obligation with a **predicate** (e.g. `regionCode` — max-5
+  string, conditional on `regionCodeRequirement`).
+- 3 — obligation with a **computed enum** (options depend on another
+  obligation).
+- 4 — obligation that **presents on an existing page** rather than a
+  new one.
+- 5 — full **address block** (composite widget — pressures the
+  widget dispatch table).
+- 6 — **lookup-driven obligation** (new `lookup-result`).
+
+By iteration 5-6 we'll have hit every domain factory shape and
+pressured the widget dispatch table, which is exactly the shape step
+5 was going to be anyway.
+
+**Coverage test already partially exists.**
+[`obligations/coverage.test.js`](./obligations/coverage.test.js)
+(added in step 3) asserts every obligation is either wired to a
+domain entry or on the `KNOWN_UNWIRED` allow-list. Step 4's coverage
+test just extends it — currently the allow-list carries ~26 entries
+for the V4 buildout to whittle down. Each iteration removes at least
+one entry.
+
+**Deliverables at the end of step 4 (however many iterations):**
+
+- `docs/add-an-obligation.md` — refined by real use.
+- `docs/add-a-page.md` — probably a shorter doc that references the
+  obligation doc for the shared checklist steps.
+- `docs/add-a-subsection.md` — likewise.
+- ~5-10 new obligations properly wired, matching whichever iterations
+  we ran.
+- `KNOWN_UNWIRED` shrinking towards zero.
+
+**Verification:** at each iteration, the browsable walk includes the
+new page(s); every test file green; `KNOWN_UNWIRED` entry count
+strictly decreases.
 
 ### 5. Build out the full V4 journey (was to-do 7)
 
