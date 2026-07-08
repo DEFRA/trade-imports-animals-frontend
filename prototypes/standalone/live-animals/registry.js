@@ -5,6 +5,7 @@ import * as importPurpose from './features/import-purpose/obligations.js'
 import * as additionalDetails from './features/additional-details/obligations.js'
 import * as documents from './features/documents/obligations.js'
 import * as addresses from './features/addresses/obligations.js'
+import * as cphNumber from './features/cph-number/obligations.js'
 import * as transport from './features/transport/obligations.js'
 import * as contact from './features/contact/obligations.js'
 import * as declaration from './features/declaration/obligations.js'
@@ -18,6 +19,7 @@ const all = [
   ...additionalDetails.obligations,
   ...documents.obligations,
   ...addresses.obligations,
+  ...cphNumber.obligations,
   ...transport.obligations,
   ...contact.obligations,
   ...declaration.obligations

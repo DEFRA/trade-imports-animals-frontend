@@ -95,6 +95,7 @@
         "emailAddress": "notifications@albion-livestock.example.co.uk"
       }
     },
+    "countyParishHoldingCph": "12/345/6789",
     "portOfEntry": "ABERDEEN",
     "arrivalDateAtPort": {
       "day": "12",

@@ -27,6 +27,7 @@ import * as destinationsSelect from './features/addresses/destinations-select.co
 import * as placeOfOriginSelect from './features/addresses/place-of-origin-select.controller.js'
 import * as consigneesSelect from './features/addresses/consignees-select.controller.js'
 import * as importersSelect from './features/addresses/importers-select.controller.js'
+import * as cphNumber from './features/cph-number/controller.js'
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as transportDetails from './features/transport/transport-details.controller.js'
 import * as transporters from './features/transport/transporters.controller.js'
@@ -96,6 +97,15 @@ const cases = [
     // the commit (frame:"anyItem"); without it the fresh write would be wiped.
     seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
+  },
+  {
+    id: 'cph-number',
+    collects: cphNumber.meta.collects,
+    handler: postHandlerOf(cphNumber),
+    // A triggering commodity line keeps countyParishHoldingCph in scope on the
+    // commit (frame:"anyItem"); without it the fresh write would be wiped.
+    seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
+    payload: { countyParishHoldingCph: '12/345/6789' }
   },
   {
     id: 'port-of-entry',

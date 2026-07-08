@@ -14,6 +14,7 @@ import {
   ANIMALS_CERTIFIED_FOR_LABEL,
   unweanedApplies
 } from '../additional-details/controller.js'
+import { cphApplies } from '../cph-number/controller.js'
 import { OVERLAND_MEANS } from '../transport/transport-details.controller.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
@@ -146,6 +147,17 @@ const buildRows = (answers) => {
       answerOf('placeOfDestination')?.name,
       'placeOfDestination'
     ),
+    // Owed only when a triggering commodity line keeps it in scope
+    // (frame:"anyItem"); the row mirrors that gate.
+    ...(cphApplies(answers)
+      ? [
+          row(
+            'County Parish Holding (CPH)',
+            answerOf('countyParishHoldingCph'),
+            'countyParishHoldingCph'
+          )
+        ]
+      : []),
     row('Port of entry', answerOf('portOfEntry'), 'portOfEntry'),
     row(
       'Arrival date at port of entry',

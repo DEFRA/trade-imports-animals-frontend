@@ -44,8 +44,10 @@ describe('indexed obligations are first-class', () => {
       reasonForImport: 'internal-market',
       purposeInInternalMarket: 'breeding',
       animalsCertifiedFor: 'slaughter',
-      // '0102 - Cattle' triggers containsUnweanedAnimals (frame:"anyItem").
+      // '0102 - Cattle' triggers containsUnweanedAnimals and
+      // countyParishHoldingCph (both frame:"anyItem").
       containsUnweanedAnimals: 'no',
+      countyParishHoldingCph: '12/345/6789',
       commodityLines: [
         {
           commoditySelection: '0102 - Cattle',

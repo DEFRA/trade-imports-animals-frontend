@@ -6,6 +6,7 @@ import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
+import { cphNumberPage } from '../features/cph-number/page.js'
 import {
   portOfEntryPage,
   privateTransporterDetailsPage,
@@ -40,7 +41,11 @@ export const sections = [
   },
   {
     id: 'addresses',
-    pages: [addressesPage]
+    // cphNumber is a conditionally-scoped tail page (frame:"anyItem" on a
+    // commodity line) — walked after the addresses landing when a CPH
+    // commodity is in the lines, skipped otherwise (the derived gate). The
+    // party-select spokes stay routes-only and never join this array.
+    pages: [addressesPage, cphNumberPage]
   },
   {
     id: 'transport',

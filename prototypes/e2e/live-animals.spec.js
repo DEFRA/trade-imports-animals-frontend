@@ -989,6 +989,68 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(unweaned).toBeVisible()
   })
 
+  test('CPH number — the CPH page shows only when a CPH-triggering commodity line exists', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    const cphHeading = page.getByRole('heading', {
+      name: 'County Parish Holding (CPH)'
+    })
+    const hubHeading = page.getByRole('heading', {
+      name: 'Import notification service'
+    })
+
+    // A commodity line for the given code, taking the fewest steps: only the
+    // commodity is required to mint the line (the taxonomy and counts are
+    // submit-enforced, so blank saves walk through).
+    const addCommodity = async (commodity) => {
+      await page.goto(`${BASE}/hub`)
+      await page.getByRole('link', { name: 'Commodities' }).click()
+      // "Add a commodity" for the first line, "Add another commodity" after.
+      await page
+        .getByRole('button', { name: /Add a(nother)? commodity/ })
+        .click()
+      await page
+        .getByLabel('Commodity', { exact: true })
+        .selectOption(commodity)
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Description of goods' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Commodities you have added' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Continue' }).click()
+      await expect(hubHeading).toBeVisible()
+    }
+
+    // The addresses landing Continue walks to the CPH tail page when CPH is in
+    // scope, else straight back to the hub (the derived gate).
+    const continueThroughAddresses = async () => {
+      await page.goto(`${BASE}/hub`)
+      await page.getByRole('link', { name: 'Addresses' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Addresses' })
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'Continue' }).click()
+    }
+
+    // A non-triggering commodity (cats): CPH is out of scope, so Continue from
+    // the addresses landing returns straight to the hub — no CPH page.
+    await addCommodity('01061900 - Cats')
+    await continueThroughAddresses()
+    await expect(hubHeading).toBeVisible()
+    await expect(cphHeading).toBeHidden()
+
+    // Adding a triggering commodity (cattle) brings CPH into scope across the
+    // commodity lines (frame:"anyItem") — the addresses section walks to it.
+    await addCommodity('0102 - Cattle')
+    await continueThroughAddresses()
+    await expect(cphHeading).toBeVisible()
+  })
+
   test('check and submit — the review task is on the hub and check your answers lists the answered rows', async ({
     page
   }) => {
@@ -1140,7 +1202,16 @@ test.describe('live-animals (page-owned spine)', () => {
       await page.getByRole('radio', { name }).check()
       await save()
     }
+    // The cattle line added above triggers the notification-level CPH question
+    // (frame:"anyItem"), so the addresses section walks on to the CPH tail page.
     await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'County Parish Holding (CPH)' })
+    ).toBeVisible()
+    await page
+      .getByLabel('County Parish Holding (CPH)')
+      .fill(values.countyParishHoldingCph)
+    await save()
 
     // Transport: port, travel details, transporter type, commercial select.
     await task('Transport')
