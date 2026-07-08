@@ -202,6 +202,33 @@ the entry, so `entryComplete` treats it as owed. Conservative: the
 engine may ask for an answer it did not strictly need, but it never
 reports an entry complete when it is not.
 
+## Cross-frame predicates (`frame`)
+
+A predicate can also reference an obligation in a DIFFERENT frame, by
+adding an OPT-IN `frame` key (inc-031, see DESIGN-DELTA #3):
+
+- `frame: "enclosing"` — the reference lives in an ENCLOSING frame.
+  Resolution walks strictly outward to the nearest ancestor frame that
+  holds it. Used by the unit-level identifiers and `permanentAddress`,
+  gated on the enclosing `commodityLines[i].commoditySelection`.
+- `frame: "anyItem"` — the reference lives in the ITEMS of a collection;
+  the predicate holds if ANY item satisfies it. Used by the
+  notification-level `countyParishHoldingCph` / `containsUnweanedAnimals`.
+
+Absence of `frame` is exactly today's two-case resolver, unchanged. The
+resolver walks the node's frame chain (`frames`, innermost-first, from
+[registry.js](../registry.js)#walk) rather than a single frame.
+
+The resolver-unity invariant applies with one M2 caveat: `evalPredicate`
+(scope) now honours `frame`, but `entryComplete` (completeness) still
+resolves same-frame siblings only — it has no enclosing context in its
+signature. For a REQUIRED enclosing-gated unit field this diverges
+(completeness would treat it as owed off-gate); the increment that
+registers the first such carrier (`permanentAddress`, inc-035) must
+thread frame context into `entryComplete`. anyItem consumers are
+notification-level roots whose completeness is driven by scope, so they
+are unaffected.
+
 ## system and renderOnly flags
 
 Two flags mark obligations that exist in the model but not in the

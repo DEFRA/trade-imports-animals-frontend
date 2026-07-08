@@ -2,16 +2,20 @@
 
 The spike ends with a go verdict, but the verdict is only trustworthy if its edges are named. This page records what the paradigm does not do, what it does at a cost, and where the first growth would have to happen. None of these broke the spike. All of them are real.
 
-## Cross-frame conditionality is unmodelled
+## Cross-frame conditionality (modelled in inc-031)
 
-`activatedBy` resolves a reference in exactly two ways (see [engine/evaluate/predicate.js](../engine/evaluate/predicate.js)):
+`activatedBy` resolves a reference in four ways, keyed by an OPT-IN `frame`
+(see [engine/evaluate/predicate.js](../engine/evaluate/predicate.js) and DESIGN-DELTA #3):
 
-- the referenced obligation is a sibling inside the same collection item — resolve within that item's frame
-- anything else — resolve as a top-level answer
+- no `frame` — the referenced obligation is a sibling inside the same collection item → resolve within that item's frame; anything else → resolve as a top-level answer (the pre-M2 behaviour, unchanged)
+- `frame: "enclosing"` — resolve in the nearest ENCLOSING frame that holds the reference (walks outward, so it works two frames out)
+- `frame: "anyItem"` — the reference lives in the ITEMS of a collection; the predicate holds if ANY item satisfies it
 
-There is no third case. A nested obligation gated on a field of its enclosing frame — for example a future `commodityLines[i].animalIdentifiers[j].x` depending on `commodityLines[i].y` — has no representation in the vocabulary. Supporting it would force the first genuine growth of the model: an explicit frame-hop reference (the inc-030 cross-frame-conditionality model-extension gate).
+This was the first genuine growth of the model. A nested obligation gated on a field of its enclosing frame — `commodityLines[i].animalIdentifiers[j].permanentAddress` depending on `commodityLines[i].commoditySelection` — is now expressible via `frame: "enclosing"`, and a notification-level field gated across all commodity lines (`countyParishHoldingCph`) via `frame: "anyItem"`.
 
-Conditionality is proven for indexed and same-frame cases against live carriers. Depth-2 and equals-gated / required-sibling item-conditionality are engine-supported but no longer have a live carrier — see [Depth-2 and equals-gated conditionality have no live carrier](#depth-2-and-equals-gated-conditionality-have-no-live-carrier) below. Cross-frame is the precise edge that is not modelled at all. See [obligation-model.md](obligation-model.md) for what the vocabulary does cover.
+The SCOPE + WIPE resolution is done and proven (`engine/evaluate/cross-frame.test.js`), but with SYNTHETIC obligations — no live carrier is registered until inc-033..035. Two follow-ons are deliberately deferred to the carrier increments (see DESIGN-DELTA #3): `complete.js#entryComplete` does not yet resolve enclosing gates (a required enclosing-gated field would be treated as owed even off-gate), and `analysis/reachability.js` will need extending once a frame gate is registered.
+
+Conditionality is proven for indexed and same-frame cases against live carriers, and for cross-frame cases against synthetic ones. Depth-2 and equals-gated / required-sibling item-conditionality are engine-supported but do not yet have a live carrier — see [Depth-2 and equals-gated conditionality have no live carrier](#depth-2-and-equals-gated-conditionality-have-no-live-carrier) below. See [obligation-model.md](obligation-model.md) for what the vocabulary covers.
 
 ## Depth-2 and equals-gated conditionality have no live carrier
 

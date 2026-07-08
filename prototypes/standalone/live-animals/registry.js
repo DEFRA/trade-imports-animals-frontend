@@ -39,15 +39,20 @@ export function* walkObligations(forest = all, basePath = []) {
  * Yielded-field contract consumed by reconcile:
  * `collectionAncestorKey` — pathKey of the nearest enclosing collection (null
  * at the root); reconcile gates a sub-obligation's scope on its collection
- * being in scope. `framePath` (this item's frame) and `siblings` (the
- * obligation list it was walked from) together let reconcile resolve an
- * item-relative `activatedBy` at this exact instance.
+ * being in scope. `frames` — this instance's frame chain, INNERMOST-FIRST:
+ * each `{ framePath, siblings }` pairs a concrete frame path (with indices)
+ * with the obligation list walked at that depth. `frames[0]` is the node's own
+ * frame (its `activatedBy` sibling frame today); the tail is its enclosing
+ * frames out to the root. reconcile resolves an item-relative `activatedBy` at
+ * this exact instance from `frames[0]`, and a `frame: "enclosing"` / `frame:
+ * "anyItem"` reference by walking the chain (see engine/evaluate/predicate.js).
  */
 export function* walk(
   answers,
   forest = all,
   basePath = [],
-  ancestorKey = null
+  ancestorKey = null,
+  frames = [{ framePath: basePath, siblings: forest }]
 ) {
   for (const obligation of forest) {
     const path = [...basePath, obligation.id]
@@ -55,14 +60,17 @@ export function* walk(
       path,
       obligation,
       collectionAncestorKey: ancestorKey,
-      framePath: basePath,
-      siblings: forest
+      frames
     }
     if (obligation.item) {
       const entries = valueAt(answers, path) ?? []
       const key = pathKey(path)
       for (let i = 0; i < entries.length; i++) {
-        yield* walk(answers, obligation.item, [...path, i], key)
+        const itemFramePath = [...path, i]
+        yield* walk(answers, obligation.item, itemFramePath, key, [
+          { framePath: itemFramePath, siblings: obligation.item },
+          ...frames
+        ])
       }
     }
   }
