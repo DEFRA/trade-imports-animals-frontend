@@ -9,27 +9,44 @@ import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { saveNotification } from '../common/helpers/notification-helpers.js'
+import { portsOfEntryClient } from '../common/clients/ports-of-entry-client.js'
+import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
 const PAGE_TITLE = 'Entry point and arrival at destination'
 const VIEW = 'port-of-entry/index'
 
+async function buildPortItems(traceId) {
+  const ports = await portsOfEntryClient.getPortsOfEntry(traceId)
+  return [
+    { value: '', text: 'Select port of entry' },
+    { text: '──────────', disabled: true },
+    ...ports.map(({ code, name }) => ({
+      value: code,
+      text: `${name} (${code})`
+    }))
+  ]
+}
+
 export const portOfEntryController = {
   get: {
-    handler(_request, h) {
+    async handler(_request, h) {
       const portOfEntry = getSessionValue(_request, sessionKeys.portOfEntry)
       const arrivalDate = getSessionValue(_request, sessionKeys.arrivalDate)
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
       )
+      const traceId = getTraceId() ?? ''
+      const portItems = await buildPortItems(traceId)
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         portOfEntry,
         arrivalDate,
-        referenceNumber
+        referenceNumber,
+        portItems
       })
     }
   },
@@ -43,6 +60,8 @@ export const portOfEntryController = {
         _request,
         sessionKeys.referenceNumber
       )
+      const traceId = getTraceId() ?? ''
+      const portItems = await buildPortItems(traceId)
 
       const { error } = portOfEntrySchema.validate(_request.payload, {
         abortEarly: false
@@ -60,6 +79,7 @@ export const portOfEntryController = {
               year: arrivalYear
             },
             referenceNumber,
+            portItems,
             errorList: formattedErrors.errorList,
             fieldErrors: formattedErrors.fieldErrors
           })
@@ -84,6 +104,7 @@ export const portOfEntryController = {
             portOfEntry,
             arrivalDate,
             referenceNumber,
+            portItems,
             errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
