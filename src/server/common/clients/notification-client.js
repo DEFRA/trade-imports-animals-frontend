@@ -71,47 +71,28 @@ function setAddresses(notification, request) {
 }
 
 function setTransport(notification, request) {
-  const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
-  const arrivalDateIso = getIsoArrivalDate(
-    getSessionValue(request, sessionKeys.arrivalDate)
-  )
-  const meansOfTransport = getSessionValue(
-    request,
-    sessionKeys.meansOfTransport
-  )
-  const transportIdentification = getSessionValue(
-    request,
-    sessionKeys.transportIdentification
-  )
-  const transportDocumentReference = getSessionValue(
-    request,
-    sessionKeys.transportDocumentReference
+  const fields = {
+    portOfEntry: getSessionValue(request, sessionKeys.portOfEntry),
+    arrivalDate: getIsoArrivalDate(
+      getSessionValue(request, sessionKeys.arrivalDate)
+    ),
+    meansOfTransport: getSessionValue(request, sessionKeys.meansOfTransport),
+    transportIdentification: getSessionValue(
+      request,
+      sessionKeys.transportIdentification
+    ),
+    transportDocumentReference: getSessionValue(
+      request,
+      sessionKeys.transportDocumentReference
+    )
+  }
+
+  const transport = Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value)
   )
 
-  if (
-    portOfEntry ||
-    arrivalDateIso ||
-    meansOfTransport ||
-    transportIdentification ||
-    transportDocumentReference
-  ) {
-    notification.transport = {}
-    if (portOfEntry) {
-      notification.transport.portOfEntry = portOfEntry
-    }
-    if (arrivalDateIso) {
-      notification.transport.arrivalDate = arrivalDateIso
-    }
-    if (meansOfTransport) {
-      notification.transport.meansOfTransport = meansOfTransport
-    }
-    if (transportIdentification) {
-      notification.transport.transportIdentification = transportIdentification
-    }
-    if (transportDocumentReference) {
-      notification.transport.transportDocumentReference =
-        transportDocumentReference
-    }
+  if (Object.keys(transport).length > 0) {
+    notification.transport = transport
   }
 }
 
