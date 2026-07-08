@@ -263,54 +263,7 @@ explicit decision. Recorded as a concession, not a breakage.
 
 ---
 
-## 6. The `dynamic` marker is not the gate
-
-### Context
-
-After gate derivation (decision 3), the three add-on sections carry only
-`dynamic: true` in [`flow/flow.js`](../flow/flow.js). It is tempting to
-see that flag as redundant with the gate.
-
-### Decision
-
-Keep `dynamic` as a separate marker. It answers a different question on a
-different axis: a **gate** says whether a step is reachable now; `dynamic`
-says the hub row for this section **appears and disappears** with its
-gate, instead of always rendering.
-
-### Why
-
-The marker is not derivable from the gate. `get-your-quote` was the
-counterexample: its gate failed for most of the journey, yet its hub row
-was always present — rendered inert as "Cannot start yet" — while a
-gated-out dynamic section had no row at all. The alternative — deriving
-the add-on rows by exclusion, treating any section whose gate can fail as
-dynamic — was rejected: it would have misclassified the quote section, and
-row-appearance is a hub presentation choice, not a scope fact. The flow
-records the choice; the hub interprets it.
-
-Status note: the hub's add-on row rendering went with the `addons`
-picker in inc-024, so nothing interpreted the marker even then — it stayed
-on the three vendored sections purely as part of their shape and died with
-them in inc-025..027. The `get-your-quote` counterexample itself went with
-the quote feature in inc-028, so no car-domain section remains. No section
-carries `dynamic: true` now; the flag mechanism survives in
-[`flow/flow.js`](../flow/flow.js) and the gate/hub code but is currently
-unused. It is kept rather than ripped out because it records a real
-presentation axis the hub could key off again, distinct from the gate that
-decides reachability.
-
-### Accepted costs
-
-One extra flag to keep honest. [`flow/gates.test.js`](../flow/gates.test.js)
-now pins the dynamic-section list as empty — a regression guard against the
-marker silently returning, since after inc-027 no live section's derived
-gate ever goes Not Applicable and the old add-on biconditional has no
-carrier.
-
----
-
-## 7. Obligation definitions carry no types, options or copy (resolved)
+## 6. Obligation definitions carry no types, options or copy (resolved)
 
 ### Context
 

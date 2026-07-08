@@ -1,5 +1,4 @@
 import * as dashboard from './dashboard/controller.js'
-import * as start from './start/controller.js'
 import * as hub from './hub/controller.js'
 import * as origin from './origin/controller.js'
 import * as commoditiesList from './commodities/list.controller.js'
@@ -44,7 +43,6 @@ export const dispatchPages = [
 
 export const allRoutes = [
   ...dashboard.routes,
-  ...start.routes,
   ...hub.routes,
   ...origin.routes,
   ...commoditiesList.routes,

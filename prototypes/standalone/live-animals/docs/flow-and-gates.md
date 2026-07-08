@@ -16,10 +16,6 @@ Each page entry is the feature's `page.js` identity leaf (`{ id, slug }`), impor
 - `sectionOfPage(pageId)` — the first section containing the page
 - `nonQuoteSections` — the sections the `readyForQuote` roll-up iterates. It filters out `get-your-quote`, but that section (the last authored gate, and the last car-domain feature) was removed in inc-028, so the filter now matches nothing and the set spans **every** section. `readyForQuote` therefore rolls up "is every section Fulfilled or Not applicable" — exactly the submit precondition. The name and filter are kept deliberately: `readyForQuote` is a supported, repurposed capability (now the submit-readiness gate consulted by `submitJourney`), not dead code.
 
-### `dynamic: true` is a presentation axis, not a gate
-
-No section carries `dynamic: true` any more — protected-ncd, the last one, went in inc-027 (named-driver in inc-025, modifications in inc-026). The marker flagged add-on rows the hub rendered only once picked — a presentation choice, distinct from the gate that decides reachability. The hub's add-on row machinery went with the `addons` picker in inc-024, so nothing interpreted the marker even before the sections were removed. The flow and gates still support the flag (a section with it would derive its gate the same way, and the hub could key row appearance off it), but it is currently unused — do not add it to a live-animals section.
-
 ## Gates are derived by default
 
 A gate is a pure `(scope) => boolean` that decides whether a page or section is reachable. `flow/gates.js` exports the two evaluators, `pageGatePasses` and `sectionGatePasses`.
@@ -30,7 +26,7 @@ This earned its place the hard way. Four of the five gates the flow used to auth
 
 > A derived gate passes exactly when the section's status is not Not applicable.
 
-`flow/gates.test.js` pins this exhaustively — it checks the equivalence for every dynamic section across every enumerable scope state (`analysis/reachability.js`), not a sample of personas.
+`flow/gates.test.js` pins this exhaustively — it checks the equivalence for a derived section's gate across every enumerable scope state (`analysis/reachability.js`), not a sample of personas.
 
 Two deliberate edges:
 

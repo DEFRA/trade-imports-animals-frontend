@@ -10,7 +10,6 @@ import { sections } from './flow.js'
 import { pageGatePasses, sectionGatePasses } from './gates.js'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
-  const dynamicSections = sections.filter((section) => section.dynamic)
   // get-your-quote was the ONLY authored `gate:` this flow ever carried, and it
   // went with the quote feature in inc-028 — so no LIVE section exercises the
   // authored-gate short-circuit any more. The mechanism (gates.js honouring an
@@ -58,15 +57,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
   describe('once the dispatch index is built', () => {
     beforeAll(() => buildDispatch(dispatchPages))
-
-    it('Should carry no dynamic-marked section any more — the add-on marker is unused after inc-027', () => {
-      // protected-ncd was the last `dynamic: true` section (named-driver went
-      // inc-025, modifications inc-026). The marker mechanism still exists in
-      // flow.js/gates but nothing sets it now, and no live section's derived
-      // gate ever goes Not Applicable — so the old add-on biconditional has no
-      // carrier. This guards against the marker silently returning.
-      expect(dynamicSections).toEqual([])
-    })
 
     it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
       for (const answers of enumerateScopeStates()) {
