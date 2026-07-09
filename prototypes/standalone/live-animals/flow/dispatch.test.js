@@ -1,8 +1,14 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { reconcile } from '../engine/evaluate/reconcile.js'
+import * as registry from '../registry.js'
 import { readyForCheckYourAnswers } from './section-status.js'
-import { buildDispatch, collectsOf, pageOfObligation } from './dispatch.js'
+import {
+  buildDispatch,
+  collectsOf,
+  pageOfObligation,
+  slugOfPage
+} from './dispatch.js'
 import { nextInSection, sectionEntry } from './navigation.js'
 
 describe('dispatch + flow', () => {
@@ -16,6 +22,51 @@ describe('dispatch + flow', () => {
       'transporters-select'
     )
     expect(collectsOf('origin')).toContain('countryOfOrigin')
+    expect(slugOfPage('origin')).toBe('origin')
+  })
+
+  it('Should crash boot when an obligation id carries a path metacharacter', () => {
+    const spy = vi
+      .spyOn(registry, 'walkObligations')
+      .mockImplementation(function* () {
+        yield {
+          templatePath: 'commodityLines.animalIdentifiers',
+          obligation: { id: 'bad.id' }
+        }
+      })
+    try {
+      expect(() => buildDispatch([{ id: 'x', collects: [] }])).toThrow(
+        /contains a path metacharacter/
+      )
+      expect(() => buildDispatch([{ id: 'x', collects: [] }])).toThrow(
+        /"bad\.id"/
+      )
+    } finally {
+      spy.mockRestore()
+      buildDispatch(dispatchPages)
+    }
+  })
+
+  it('Should crash boot when a single obligation is collected by two pages', () => {
+    const twoOwners = [
+      { id: 'a', collects: ['countryOfOrigin'] },
+      { id: 'b', collects: ['countryOfOrigin'] }
+    ]
+    try {
+      expect(() => buildDispatch(twoOwners)).toThrow(/collected by two pages/)
+      expect(() => buildDispatch(twoOwners)).toThrow(/"a" and "b"/)
+    } finally {
+      buildDispatch(dispatchPages)
+    }
+  })
+
+  it('Should fall back to the hub when the page belongs to no section', () => {
+    expect(
+      nextInSection('not-a-real-page', {
+        inScope: new Set(),
+        answered: () => true
+      })
+    ).toMatch(/\/hub$/)
   })
 
   it('Should crash boot when an obligation (and its derived sub-obligations) is uncovered', () => {

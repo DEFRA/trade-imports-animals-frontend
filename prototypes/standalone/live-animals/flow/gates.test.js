@@ -40,9 +40,19 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     expect(pageGatePasses(syntheticGatedPage, { pass: true })).toBe(true)
   })
 
-  it('Should author exactly one section gate — the review section (RULE 2 submit-readiness)', () => {
-    const authored = sections.filter((section) => section.gate)
-    expect(authored.map((section) => section.id)).toEqual(['review'])
+  it('Should author a gate on the review section alone — every other section derives its gate from the dispatch index', () => {
+    const review = sections.find((section) => section.id === 'review')
+    expect(sectionGatePasses(review, { readyForCheckYourAnswers: false })).toBe(
+      false
+    )
+    expect(sectionGatePasses(review, { readyForCheckYourAnswers: true })).toBe(
+      true
+    )
+    for (const section of sections.filter((s) => s.id !== 'review')) {
+      expect(() =>
+        sectionGatePasses(section, { inScope: new Set(), answered: () => true })
+      ).toThrow(/buildDispatch/)
+    }
   })
 
   describe('once the dispatch index is built', () => {
