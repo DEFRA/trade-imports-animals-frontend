@@ -282,6 +282,25 @@ describe('pageStatus', () => {
     expect(pageStatus(page, st)).toBe(STATUSES.FULFILLED)
   })
 
+  it('F when every in-scope entry is optional and none are filled (optional-only page)', () => {
+    // Completion-mandate semantics: an in-scope-optional obligation
+    // does not need to be fulfilled for the journey to complete, so a
+    // page whose only in-scope entries are optional is F immediately.
+    // Whether the user should visit such a page before we call it
+    // Complete is a display-layer question, parked in NEXT.md.
+    const page = {
+      page: 'x',
+      presents: [{ obligation: reasonOb }, { obligation: purposeOb }]
+    }
+    const st = state({
+      obligations: impls([
+        { obligation: reasonOb, impl: { inScope: true, status: 'optional' } },
+        { obligation: purposeOb, impl: { inScope: true, status: 'optional' } }
+      ])
+    })
+    expect(pageStatus(page, st)).toBe(STATUSES.FULFILLED)
+  })
+
   it('handles presentsForEach with a path-scoped fulfilment', () => {
     const page = {
       page: 'x',
@@ -365,6 +384,24 @@ describe('containerStatus', () => {
         state()
       )
     ).toBe(STATUSES.NOT_APPLICABLE)
+  })
+
+  it('rolls up F when every child page is optional-only and none are filled', () => {
+    // Subsection-level restatement of the pageStatus rule: if every
+    // in-scope entry under the subsection is completion-optional,
+    // the subsection is F without the user having touched anything.
+    const optionalPage = {
+      page: 'opt',
+      presents: [{ obligation: reasonOb }]
+    }
+    const stOptionalOnly = state({
+      obligations: impls([
+        { obligation: reasonOb, impl: { inScope: true, status: 'optional' } }
+      ])
+    })
+    expect(containerStatus({ children: [optionalPage] }, stOptionalOnly)).toBe(
+      STATUSES.FULFILLED
+    )
   })
 })
 

@@ -97,13 +97,30 @@ Each iteration also refined `docs/add-an-obligation.md`.
 
 ### Known limitations to raise before step 5
 
-- **numberOfPackages optional-only stays NS.** V4 says it's optional,
-  in-scope only for certain commodity codes. The runtime rule
-  `pageStatus === F requires "no mandatory unfilled AND ≥ 1 entry
-filled"` means an unfilled optional page stays NS, so
-  `commodity-lines-details` subsection can't roll up to F unless the
-  user fills the optional field. Discussed today; three options
-  (fill in walk / rule change / page-visited plumbing). No decision.
+- **Optional-only page/subsection completion — resolved.** Previously
+  the `pageStatus === F` rule required "no mandatory unfilled AND ≥ 1
+  entry filled", which meant an in-scope-optional page stayed NS until
+  the user typed something. That conflated _completion-mandate_ (does
+  the journey need this to reach F?) with _submit-mandate_ (must the
+  user fill this to leave the page?). Fixed: `pageStatus === F ⇔ every
+in-scope mandatory entry is fulfilled`. An in-scope-optional page is
+  F immediately; a mixed page reaches F once its mandatories land.
+  See `engine/index.test.js` "optional-only page" case + walk in
+  `e2e-walk.test.js` which no longer POSTs `numberOfPackages-line1`.
+  A residual display-layer question — "should the user visit an
+  optional-only page before we call it Complete?" — is parked below.
+  Two cascade fixes fell out of the rule change, both latent bugs
+  that the previous over-filled walk had masked:
+  1. `containerStatus` (and `journeyState`) added an empty-session
+     guard — a container mixing F (from optional-only defaults) with
+     NS (mandatory unfilled) now returns NS when nothing under it has
+     been touched, rather than the misleading IP.
+  2. The CYA controller was reading `impl.status` to decide whether
+     an unfilled obligation should raise a "you still need to
+     complete" prompt. For line-scoped obligations (like
+     `numberOfPackages`) status lives on `records[].status`, not on
+     the impl, so unfilled optionals were falsely flagged as
+     mandatory. Fixed by preferring `obligation.status` when set.
 - The **Add commodity lines** subsection currently maxes at FULFILLED
   as soon as ≥ 1 line exists. That's the current design (add step
   done when there's a line). If the user removes all lines, it
@@ -118,7 +135,7 @@ Pick one, iterate:
   predicate — worth doing because it exercises predicate + line-
   scoped storage together)
 - `numberOfPackages` (line-scoped integer, optional, applyTo-scoped
-  — pressure-tests the optional-only-NS limitation above)
+  — now the canonical example of the completion-optional page shape)
 - Any of the address blocks (`placeOfOrigin`, `consignor` etc.) — a
   composite widget that would extend `field-widgets.js` with a new
   rule. Bigger design lift.
@@ -747,8 +764,39 @@ Suggested review checklist per milestone:
 
 ## Parked — pick up after step 5 (V4 buildout)
 
-Two items intentionally deferred until the V4 buildout has run and
+Three items intentionally deferred until the V4 buildout has run and
 its outcomes are visible.
+
+### P0. UX for optional-only pages/subsections — should the user visit before we call it Complete?
+
+**Context:** the model-layer rule change (see resolved limitation
+above) means an in-scope-optional-only page rolls up to F immediately;
+`firstUnfulfilledPage` skips it and the task list shows Completed
+without the user ever seeing the page. That is model-correct — the
+journey genuinely doesn't need the field — but it's a UX call whether
+"Completed" implies "user has visited and consciously left blank."
+
+**Scope when it's picked up** — approximately half a day:
+
+- Confirm from V4 buildout whether any _subsection_ ends up entirely
+  optional-only (no mandatories anywhere in it). The residual UX
+  concern only bites for those; mixed subsections are fine as-is.
+- If yes, decide between:
+  1. Live with "Completed" for unvisited optional-only containers
+     (matches the model; simple; CYA Change link exposes the page).
+  2. Add a dedicated "Optional" tag to the task-list widget for
+     containers whose F derives from having no in-scope mandatories.
+     View-layer only; runtime rule unchanged.
+  3. Visited-plumbing at the view layer: a per-session `visited` set,
+     read only by the hub controller when deciding whether to show
+     "Completed" or "Not started" for an optional-only container.
+     No engine change.
+- Update `docs/add-an-obligation.md` "Subsection / section status
+  roll-up" bullet with whichever we pick.
+
+**Reference:** the completion-mandate vs submit-mandate distinction
+that motivated the underlying rule change; the resolved-limitation
+block earlier in this file.
 
 ### P1. Joi adoption for the domain-driven validation path
 

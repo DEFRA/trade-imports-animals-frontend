@@ -45,7 +45,13 @@ export const cyaController = {
         const presentation = forObligation(obligation)
         const changePage = changeLinkFor(oblId)
         const href = changePage ? `${BASE}/pages/${changePage.page}` : null
-        const isMandatory = (impl.status ?? 'mandatory') === 'mandatory'
+        // Prefer the obligation's declared status (set at the top level
+        // for line-scoped obligations like numberOfPackages where impl
+        // carries `records[].status` instead of a top-level `impl.status`);
+        // fall back to impl for scoped obligations that only surface their
+        // status via applyTo.
+        const isMandatory =
+          (obligation.status ?? impl.status ?? 'mandatory') === 'mandatory'
         if (
           stored === undefined ||
           stored === null ||

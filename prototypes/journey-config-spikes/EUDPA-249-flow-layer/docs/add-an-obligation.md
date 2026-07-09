@@ -103,11 +103,14 @@ iteration 3's worked example.
    - **`nextAfter` / redirect assertions** — a page inserted between
      two existing ones changes `nextAfter(<earlier>)`. Update the
      assertion to point at the new page.
-   - **Subsection / section status roll-up** — subsection is F only
-     when all its pages are F. If you added an in-scope-optional
-     obligation, its page stays NS until any value lands, keeping
-     the subsection IP. Fill the optional in the fixture or expectation
-     (see iteration 2's `regionCode: 'FR-75'`).
+   - **Subsection / section status roll-up** — subsection is F once
+     every mandatory-in-scope obligation across its pages is filled.
+     In-scope-optional obligations do not gate F: an optional-only
+     page is F immediately, and a mixed page is F once its mandatories
+     land. If you added an in-scope-optional obligation and a fixture
+     is now over-filled, you can safely drop the value (or leave it —
+     both walk to F). If you added a mandatory, the fixture almost
+     certainly needs a value for it.
    - **`firstUnfulfilledPage`** — the descent order changed.
    - **`dump.test.js` snapshots** — fixtures under `fixtures/` need
      matching values for the new obligation. Update the fixture, not

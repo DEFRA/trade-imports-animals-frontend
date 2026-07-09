@@ -268,11 +268,16 @@ export function pageStatus(page, state) {
     return !hasFulfilment(e, state)
   })
 
-  // Fulfilled iff (a) every in-scope mandatory presented entry is
-  // filled AND (b) at least one entry is filled. The "at least one"
-  // condition prevents optional-only subsections from turning up as
-  // F on session start before the user has actually done anything.
-  if (mandatoryUnfilled.length === 0 && filled.length > 0) {
+  // Fulfilled iff every in-scope MANDATORY presented entry is filled.
+  // The obligation's `status` (mandatory | optional) is completion-
+  // mandate: it determines whether the journey needs the field to
+  // reach F. An in-scope optional obligation that stays blank does
+  // not block F — an optional-only page/subsection therefore rolls
+  // up to F immediately once nothing mandatory is in scope, which
+  // is the correct model-layer semantic. (Whether the user should
+  // still visit such a page before we call it Complete is a
+  // separate display-layer question — see NEXT.md parked to-do.)
+  if (mandatoryUnfilled.length === 0) {
     return STATUSES.FULFILLED
   }
   if (filled.length === 0) return STATUSES.NOT_STARTED
@@ -282,6 +287,12 @@ export function pageStatus(page, state) {
 /**
  * Container (Section / SubSection) status per Status-propagation rules.
  * Delegates to pageStatus at leaves.
+ *
+ * Note: an empty session in a container whose children mix F (from
+ * optional-only pages defaulting to F) with NS (mandatories still
+ * unfilled) would model as IP, which is misleading — no user action
+ * has happened yet. We honour the user's perspective by returning NS
+ * until the container has been touched. Same pattern as journeyState.
  */
 export function containerStatus(container, state) {
   if (isPage(container)) return pageStatus(container, state)
@@ -293,10 +304,49 @@ export function containerStatus(container, state) {
   const hasF = applicable.includes(STATUSES.FULFILLED)
   const hasIP = applicable.includes(STATUSES.IN_PROGRESS)
   const hasNS = applicable.includes(STATUSES.NOT_STARTED)
-  if (hasIP) return STATUSES.IN_PROGRESS
-  if (hasF && hasNS) return STATUSES.IN_PROGRESS
+  if (hasIP) {
+    if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
+    return STATUSES.IN_PROGRESS
+  }
+  if (hasF && hasNS) {
+    if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
+    return STATUSES.IN_PROGRESS
+  }
   if (hasF) return STATUSES.FULFILLED
   return STATUSES.NOT_STARTED
+}
+
+/** True iff any obligation presented under this container has a
+ *  non-empty stored value in state.fulfilments. */
+function hasFulfilmentInContainer(container, state) {
+  const fulfilments = state?.fulfilments ?? {}
+  const seen = new Set()
+  const visit = (node) => {
+    if (node.page !== undefined) {
+      for (const entry of node.presents ?? []) {
+        seen.add(entry.obligation.id)
+      }
+      if (node.presentsForEach) {
+        seen.add(node.presentsForEach.obligation.id)
+      }
+    }
+    for (const child of node.children ?? []) visit(child)
+  }
+  visit(container)
+  for (const oblId of seen) {
+    const v = fulfilments[oblId]
+    if (v === undefined || v === null || v === '') continue
+    if (Array.isArray(v)) {
+      if (v.length > 0) return true
+      continue
+    }
+    if (typeof v === 'object') {
+      if (Object.keys(v).length > 0) return true
+      continue
+    }
+    return true
+  }
+  return false
 }
 
 /**
@@ -314,7 +364,23 @@ export function journeyState(flow, state, submitted = false) {
   if (applicable.every((s) => s === STATUSES.NOT_STARTED)) {
     return STATUSES.NOT_STARTED
   }
+  // Optional-only sections (e.g. a References section whose only
+  // obligation is completion-optional) model as F immediately, which
+  // would otherwise push the empty-session rollup to IP. At journey
+  // level we honour the user's perspective: NS until they've filled
+  // something. Once any fulfilment lands, we're genuinely IP.
+  if (!hasAnyFulfilment(state)) return STATUSES.NOT_STARTED
   return STATUSES.IN_PROGRESS
+}
+
+function hasAnyFulfilment(state) {
+  const values = Object.values(state?.fulfilments ?? {})
+  return values.some((v) => {
+    if (v === undefined || v === null || v === '') return false
+    if (Array.isArray(v)) return v.length > 0
+    if (typeof v === 'object') return Object.keys(v).length > 0
+    return true
+  })
 }
 
 export { STATUSES }

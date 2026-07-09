@@ -140,11 +140,15 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     const jar = makeCookieJar()
 
     // -- Section 1: origin + reason --------------------------------------
+    // NB. region-code is intentionally skipped — regionCode is
+    // completion-optional so /start jumps past it under the
+    // pageStatus rule. Same reasoning for transited-countries,
+    // internal-reference and number-of-packages below. The pattern:
+    // any obligation with `status: 'optional'` (or flow-level
+    // `mandate: 'soft'` that resolves to optional at runtime) has
+    // its page rolled up to F immediately once in scope.
     await fill(jar, 'country-of-origin', { countryOfOrigin: 'FR' })
     await fill(jar, 'region-code-requirement', { regionCodeRequirement: 'no' })
-    // regionCode is soft (in-scope-optional when requirement=no); the
-    // flow still routes through the page in declared order.
-    await fill(jar, 'region-code', { regionCode: 'FR-75' })
     await fill(jar, 'reason-for-import', { reasonForImport: 'internal-market' })
     await fill(jar, 'purpose-details', {
       purposeInInternalMarket: 'breeding'
@@ -160,10 +164,7 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       transportIdentification: 'REG-123',
       transportDocumentReference: 'DOC-456'
     })
-    // transitedCountries is soft, in-scope-optional on road-vehicle.
-    await fill(jar, 'transited-countries', {
-      transitedCountries: ['FR', 'BE']
-    })
+    // transited-countries omitted — see soft/optional note above.
 
     // -- Section 3: arrival ---------------------------------------------
     await fill(jar, 'arrival-details', {
@@ -178,9 +179,7 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     })
 
     // -- Section 4: references ------------------------------------------
-    await fill(jar, 'internal-reference', {
-      internalReferenceNumber: 'MYREF-001'
-    })
+    // internal-reference omitted — internalReferenceNumber is optional.
 
     // -- Section 5: commodity lines -------------------------------------
     // Minting a line is bespoke `/lines/add`, not a flow page. Once ≥1
@@ -196,9 +195,12 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     await fill(jar, 'commodity-details', { 'commodityCode-line1': '0102' })
     await fill(jar, 'species-details', { 'species-line1': ['cattle'] })
     await fill(jar, 'number-of-animals', { 'numberOfAnimals-line1': 25 })
-    // 0102 is on the package-count whitelist, so number-of-packages
-    // is in-scope-optional. Fill it so the subsection rolls up to F.
-    await fill(jar, 'number-of-packages', { 'numberOfPackages-line1': 3 })
+    // NB. number-of-packages is intentionally NOT filled. 0102 puts
+    // numberOfPackages in scope, but its completion-mandate is
+    // optional — under the pageStatus rule the page is F immediately
+    // after number-of-animals lands and /start now routes to
+    // /task-list. Filling it would make the next fill() assertion
+    // fail with "expected route to number-of-packages, got task-list".
 
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {
@@ -230,9 +232,11 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     expect(cya.payload).toContain('France') // countryOfOrigin FR
     expect(cya.payload).toContain('Breeding') // purposeInInternalMarket
     expect(cya.payload).toContain('Road vehicle') // meansOfTransport
-    expect(cya.payload).toContain('MYREF-001') // internalReferenceNumber
     expect(cya.payload).toContain('line1: Cattle') // commodityCode-line1
-    // The "you still need to complete" banner should be absent.
+    // Optional obligations we intentionally skipped should NOT render
+    // as CYA rows (unfilled → cya-controller drops the row and no
+    // "you still need to complete" prompt is raised for optionals).
+    expect(cya.payload).not.toContain('MYREF-001')
     expect(cya.payload).not.toContain(
       'You still need to complete some sections'
     )
@@ -246,7 +250,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     // -- Section 1: origin + reason --------------------------------------
     await fill(jar, 'country-of-origin', { countryOfOrigin: 'FR' })
     await fill(jar, 'region-code-requirement', { regionCodeRequirement: 'no' })
-    await fill(jar, 'region-code', { regionCode: 'FR-75' })
+    // region-code omitted — completion-optional; /start skips.
     await fill(jar, 'reason-for-import', {
       reasonForImport: 'transit-through-eu'
     })
@@ -264,9 +268,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       transportIdentification: 'REG-123',
       transportDocumentReference: 'DOC-456'
     })
-    await fill(jar, 'transited-countries', {
-      transitedCountries: ['FR', 'BE']
-    })
+    // transited-countries omitted — completion-optional; /start skips.
 
     // -- Section 3: arrival ---------------------------------------------
     await fill(jar, 'arrival-details', {
@@ -281,9 +283,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     })
 
     // -- Section 4: references ------------------------------------------
-    await fill(jar, 'internal-reference', {
-      internalReferenceNumber: 'MYREF-002'
-    })
+    // internal-reference omitted — internalReferenceNumber is optional.
 
     // -- Section 5: commodity lines -------------------------------------
     const addRes = await inject(jar, {
@@ -296,7 +296,8 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     await fill(jar, 'commodity-details', { 'commodityCode-line1': '0102' })
     await fill(jar, 'species-details', { 'species-line1': ['cattle'] })
     await fill(jar, 'number-of-animals', { 'numberOfAnimals-line1': 25 })
-    await fill(jar, 'number-of-packages', { 'numberOfPackages-line1': 3 })
+    // number-of-packages omitted intentionally — see internal-market
+    // walk above for the optional-completion-mandate rationale.
 
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {
@@ -328,8 +329,8 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     expect(cya.payload).not.toContain('Breeding')
     expect(cya.payload).not.toContain('Fattening')
     expect(cya.payload).toContain('Road vehicle') // meansOfTransport
-    expect(cya.payload).toContain('MYREF-002') // internalReferenceNumber
     expect(cya.payload).toContain('line1: Cattle')
+    expect(cya.payload).not.toContain('MYREF-002')
     expect(cya.payload).not.toContain(
       'You still need to complete some sections'
     )
