@@ -212,8 +212,8 @@ const addressValuesFromPayload = (payload) =>
     ADDRESS_FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
 
-const getAdd = (request, h) => {
-  const { answers } = state.get(request, h)
+const getAdd = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
@@ -226,8 +226,8 @@ const getAdd = (request, h) => {
   return render(h, index, commodity, values, blankAddress())
 }
 
-const postAdd = (request, h) => {
-  const { answers } = state.get(request, h)
+const postAdd = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
@@ -267,7 +267,7 @@ const postAdd = (request, h) => {
     }
   }
 
-  state.appendEntryAt(
+  await state.appendEntryAt(
     request,
     h,
     ['commodityLines', index, 'animalIdentifiers'],
@@ -276,11 +276,11 @@ const postAdd = (request, h) => {
   return h.redirect(pagePath(`commodities/${index}/identifiers`))
 }
 
-const getRemove = (request, h) => {
-  const { answers } = state.get(request, h)
+const getRemove = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
-  state.removeEntryAt(
+  await state.removeEntryAt(
     request,
     h,
     ['commodityLines', index, 'animalIdentifiers'],

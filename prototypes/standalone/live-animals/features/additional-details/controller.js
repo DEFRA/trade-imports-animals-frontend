@@ -46,8 +46,8 @@ const render = (h, values, showUnweaned, errors = {}) =>
     }))
   })
 
-const get = (request, h) => {
-  const { answers, scope } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers, scope } = await state.get(request, h)
   return render(
     h,
     {
@@ -58,8 +58,8 @@ const get = (request, h) => {
   )
 }
 
-const post = (request, h) => {
-  const { scope } = state.get(request, h)
+const post = async (request, h) => {
+  const { scope } = await state.get(request, h)
   const showUnweaned = scope.has('containsUnweanedAnimals')
   const payload = request.payload ?? {}
   const values = {
@@ -72,7 +72,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, showUnweaned, errors)
 
-  const { scope: committed } = state.commit(request, h, {
+  const { scope: committed } = await state.commit(request, h, {
     animalsCertifiedFor: values.animalsCertifiedFor,
     ...(showUnweaned
       ? { containsUnweanedAnimals: values.containsUnweanedAnimals }

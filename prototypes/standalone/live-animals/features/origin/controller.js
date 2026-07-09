@@ -55,8 +55,8 @@ const render = (h, values, errors = {}) =>
     countryItems: countryItems()
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, {
     countryOfOrigin: answers.countryOfOrigin ?? '',
     regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
@@ -65,7 +65,7 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = {
     countryOfOrigin: payload.countryOfOrigin ?? '',
@@ -76,7 +76,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  const { scope } = state.commit(request, h, values)
+  const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

@@ -13,8 +13,8 @@ export const documentValue = (entry) => {
   return reference ? `${type} — ${reference}` : type
 }
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const rows = state
     .collectionView(answers, ['documents'])
     .map(({ index, entry }) => ({
@@ -40,12 +40,12 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.action === 'add') {
     return h.redirect(pagePath('accompanying-documents/add'))
   }
-  const { scope } = state.get(request, h)
+  const { scope } = await state.get(request, h)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

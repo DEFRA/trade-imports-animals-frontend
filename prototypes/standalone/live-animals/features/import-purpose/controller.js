@@ -28,14 +28,14 @@ const render = (h, values, errors = {}) =>
     }))
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, {
     purposeInInternalMarket: answers.purposeInInternalMarket ?? ''
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = {
     purposeInInternalMarket: payload.purposeInInternalMarket ?? ''
@@ -43,7 +43,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  const { scope } = state.commit(request, h, values)
+  const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

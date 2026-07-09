@@ -47,14 +47,14 @@ const renderSubmitted = (h, journey) =>
     returnHref: pagePath('home')
   })
 
-const get = (request, h) => {
-  const { journey, answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { journey, answers } = await state.get(request, h)
   if (journey.status === SUBMITTED) return renderSubmitted(h, journey)
   return render(h, { declaration: answers.declaration ?? '' })
 }
 
-const post = (request, h) => {
-  const { journey } = state.get(request, h)
+const post = async (request, h) => {
+  const { journey } = await state.get(request, h)
   if (journey.status === SUBMITTED) return h.redirect(pagePath(page.slug))
 
   const payload = request.payload ?? {}
@@ -62,8 +62,8 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  state.commit(request, h, values)
-  const result = state.submitJourney(request, h)
+  await state.commit(request, h, values)
+  const result = await state.submitJourney(request, h)
   if (!result.ok) return h.redirect(pagePath(kit.CYA_SLUG))
   return h.redirect(pagePath(page.slug))
 }

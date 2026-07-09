@@ -42,8 +42,8 @@ const partyRow = (party, answers) => {
   }
 }
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return h.view(view, {
     ...kit.base('Addresses', { backLink: hubPath() }),
     heading: 'Addresses',
@@ -51,8 +51,8 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
-  const { scope } = state.get(request, h)
+const post = async (request, h) => {
+  const { scope } = await state.get(request, h)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

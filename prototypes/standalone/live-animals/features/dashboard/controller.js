@@ -32,8 +32,8 @@ export const routes = [
     method: 'POST',
     path: startPath(),
     options: open,
-    handler: (request, h) => {
-      startJourney(request, h)
+    handler: async (request, h) => {
+      await startJourney(request, h)
       return h.redirect(hubPath())
     }
   }

@@ -32,14 +32,14 @@ const render = (h, values, errors = {}) =>
     errorSummary: kit.errorSummary(errors)
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, {
     countyParishHoldingCph: answers.countyParishHoldingCph ?? ''
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = {
     countyParishHoldingCph: payload.countyParishHoldingCph ?? ''
@@ -47,7 +47,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  const { scope } = state.commit(request, h, values)
+  const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

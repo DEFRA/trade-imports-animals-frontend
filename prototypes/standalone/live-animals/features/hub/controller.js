@@ -104,8 +104,8 @@ const countCompletedGroups = (answers, inScope) =>
     (row) => sectionStatus(sectionById(row.id), answers, inScope) === FULFILLED
   ).length
 
-const handler = (request, h) => {
-  const { answers, scope } = state.get(request, h)
+const handler = async (request, h) => {
+  const { answers, scope } = await state.get(request, h)
   const inScope = scope.inScope
 
   return h.view(view, {

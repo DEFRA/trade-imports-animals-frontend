@@ -46,8 +46,8 @@ describe('POST origin — invalid payload', () => {
 
   it.each(cases)(
     'Should re-render $name with its message and commit nothing',
-    ({ payload, field, message }) => {
-      const result = driveHandler(post, { payload })
+    async ({ payload, field, message }) => {
+      const result = await driveHandler(post, { payload })
       expect(result.view.context.errors[field]).toBe(message)
       expect(result.after).toEqual(result.before)
     }

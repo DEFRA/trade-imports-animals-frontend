@@ -27,8 +27,8 @@ describe('POST documents/entry — invalid payload', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should re-render an unreal date of issue with its message and append nothing', () => {
-    const result = driveHandler(postAdd, {
+  it('Should re-render an unreal date of issue with its message and append nothing', async () => {
+    const result = await driveHandler(postAdd, {
       payload: {
         'accompanyingDocumentDateOfIssue-day': '31',
         'accompanyingDocumentDateOfIssue-month': '2',

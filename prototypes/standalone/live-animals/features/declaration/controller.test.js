@@ -24,8 +24,8 @@ describe('POST declaration — invalid payload', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should re-render an unconfirmed declaration with its message and commit nothing', () => {
-    const result = driveHandler(post, { payload: { declaration: '' } })
+  it('Should re-render an unconfirmed declaration with its message and commit nothing', async () => {
+    const result = await driveHandler(post, { payload: { declaration: '' } })
     expect(result.view.context.errors.declaration).toBe(
       'Confirm that the information is true and correct before submitting'
     )

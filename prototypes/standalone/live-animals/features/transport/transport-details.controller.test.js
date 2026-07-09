@@ -47,8 +47,8 @@ describe('POST transport-details — invalid payload', () => {
 
   it.each(cases)(
     'Should re-render with the transitedCountries message for $name and commit nothing',
-    ({ payload, message }) => {
-      const result = driveHandler(post, { payload })
+    async ({ payload, message }) => {
+      const result = await driveHandler(post, { payload })
       expect(result.view.context.errors.transitedCountries).toBe(message)
       expect(result.after).toEqual(result.before)
     }

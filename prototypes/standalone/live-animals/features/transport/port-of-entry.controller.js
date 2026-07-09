@@ -48,15 +48,15 @@ const render = (h, values, errors = {}) =>
     })
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, {
     portOfEntry: answers.portOfEntry ?? '',
     arrivalDateAtPort: answers.arrivalDateAtPort ?? {}
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = {
     portOfEntry: payload.portOfEntry ?? '',
@@ -65,7 +65,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
-  const { scope } = state.commit(request, h, values)
+  const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

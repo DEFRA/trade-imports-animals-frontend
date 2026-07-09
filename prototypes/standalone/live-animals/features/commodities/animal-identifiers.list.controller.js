@@ -32,8 +32,8 @@ const lineIndexOf = (request, answers) => {
     : null
 }
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
@@ -69,8 +69,8 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
-  const { answers } = state.get(request, h)
+const post = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   if ((request.payload ?? {}).action === 'add') {

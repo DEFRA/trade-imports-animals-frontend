@@ -15,11 +15,11 @@ import { routes } from './features/hub/controller.js'
 
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
-const renderHub = (seed = {}) => {
+const renderHub = async (seed = {}) => {
   const journey = store.create()
   store.saveAnswers(journey.journeyId, seed)
   const h = stubH()
-  hubHandler(journeyRequest(journey.journeyId), h)
+  await hubHandler(journeyRequest(journey.journeyId), h)
   return h.captured.view.context
 }
 
@@ -35,22 +35,31 @@ describe('#handler hub copy', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should report 0 of 7 tasks completed on a blank journey', () => {
-    expect(renderHub().progressLine).toBe('You have completed 0 of 7 tasks.')
+  it('Should report 0 of 7 tasks completed on a blank journey', async () => {
+    expect((await renderHub()).progressLine).toBe(
+      'You have completed 0 of 7 tasks.'
+    )
   })
 
-  it('Should render the always-open origin row as a blue "Not yet started" tag with a link', () => {
-    const originRow = rowByTitle(renderHub().items, 'Origin of the import')
+  it('Should render the always-open origin row as a blue "Not yet started" tag with a link', async () => {
+    const originRow = rowByTitle(
+      (await renderHub()).items,
+      'Origin of the import'
+    )
     expect(originRow.href).toBe('/prototype-standalone/live-animals/origin')
     expect(originRow.status).toEqual({
       tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
     })
   })
 
-  it('Should render a completed section as a green "Completed" tag', () => {
+  it('Should render a completed section as a green "Completed" tag', async () => {
     const originRow = rowByTitle(
-      renderHub({ countryOfOrigin: 'FR', regionOfOriginCodeRequirement: 'no' })
-        .items,
+      (
+        await renderHub({
+          countryOfOrigin: 'FR',
+          regionOfOriginCodeRequirement: 'no'
+        })
+      ).items,
       'Origin of the import'
     )
     expect(originRow.status).toEqual({
@@ -58,8 +67,8 @@ describe('#handler hub copy', () => {
     })
   })
 
-  it('Should render a gated row as "Cannot start yet" text with NO link', () => {
-    const commoditiesRow = rowByTitle(renderHub().items, 'Commodities')
+  it('Should render a gated row as "Cannot start yet" text with NO link', async () => {
+    const commoditiesRow = rowByTitle((await renderHub()).items, 'Commodities')
     expect(commoditiesRow.href).toBeUndefined()
     expect(commoditiesRow.status).toEqual({
       text: 'Cannot start yet',
@@ -67,8 +76,8 @@ describe('#handler hub copy', () => {
     })
   })
 
-  it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', () => {
-    const reviewRow = rowByTitle(renderHub().items, 'Check and submit')
+  it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', async () => {
+    const reviewRow = rowByTitle((await renderHub()).items, 'Check and submit')
     expect(reviewRow.hint.text).toBe(
       'Check your answers before you submit the notification'
     )

@@ -68,8 +68,8 @@ const render = (h, values, errors = {}) =>
     countryOptions: countryOptions(values.transitedCountries)
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, {
     meansOfTransport: answers.meansOfTransport ?? '',
     transportIdentification: answers.transportIdentification ?? '',
@@ -78,7 +78,7 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = {
     meansOfTransport: payload.meansOfTransport ?? '',
@@ -97,7 +97,7 @@ const post = (request, h) => {
   }
   if (Object.keys(allErrors).length > 0) return render(h, values, allErrors)
 
-  const { scope } = state.commit(request, h, values)
+  const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

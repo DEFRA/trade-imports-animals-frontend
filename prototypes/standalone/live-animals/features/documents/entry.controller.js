@@ -74,8 +74,8 @@ const render = (h, values, errors = {}) =>
     })
   })
 
-const getAdd = (request, h) => {
-  state.get(request, h)
+const getAdd = async (request, h) => {
+  await state.get(request, h)
   return render(h, {
     accompanyingDocumentType: '',
     accompanyingDocumentAttachmentType: '',
@@ -84,18 +84,18 @@ const getAdd = (request, h) => {
   })
 }
 
-const postAdd = (request, h) => {
+const postAdd = async (request, h) => {
   const payload = request.payload ?? {}
   const entry = documentFromPayload(payload)
   const { errors } = validate(fields, payload)
   if (errors) return render(h, entry, errors)
 
-  state.appendEntry(request, h, 'documents', entry)
+  await state.appendEntry(request, h, 'documents', entry)
   return h.redirect(pagePath('accompanying-documents'))
 }
 
-const getRemove = (request, h) => {
-  state.removeEntry(request, h, 'documents', Number(request.params.index))
+const getRemove = async (request, h) => {
+  await state.removeEntry(request, h, 'documents', Number(request.params.index))
   return h.redirect(pagePath('accompanying-documents'))
 }
 

@@ -171,21 +171,21 @@ describe('controller <-> model commit contract', () => {
 
   it.each(cases)(
     'Should commit exactly the committable collects for $id',
-    ({ collects, handler, payload, seed }) => {
-      const result = drive(handler, { payload, seed })
+    async ({ collects, handler, payload, seed }) => {
+      const result = await drive(handler, { payload, seed })
       expect(new Set(committedIds(result))).toEqual(
         new Set(committableCollects(collects))
       )
     }
   )
 
-  it('Should commit commodity lines via the select (append) handler it declares', () => {
+  it('Should commit commodity lines via the select (append) handler it declares', async () => {
     expect(commoditiesList.meta.collects).toEqual(['commodityLines'])
     const postAdd = postHandlerEndingWith(
       commoditiesSelect,
       'commodities/select'
     )
-    const result = drive(postAdd, {
+    const result = await drive(postAdd, {
       payload: {
         commoditySelection: '0102 - Cattle',
         typeSelection: 'domestic',
@@ -197,13 +197,13 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  it('Should commit documents via the entry (append) handler it declares', () => {
+  it('Should commit documents via the entry (append) handler it declares', async () => {
     expect(documentsList.meta.collects).toEqual(['documents'])
     const postAdd = postHandlerEndingWith(
       documentsEntry,
       'accompanying-documents/add'
     )
-    const result = drive(postAdd, {
+    const result = await drive(postAdd, {
       payload: {
         accompanyingDocumentType: 'ITAHC',
         accompanyingDocumentAttachmentType: 'PDF',
@@ -218,12 +218,12 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  it('Should append an animal identifier unit at depth-2, writing only the commodity-gated fields', () => {
+  it('Should append an animal identifier unit at depth-2, writing only the commodity-gated fields', async () => {
     const postAdd = postHandlerEndingWith(
       animalIdentifiersEntry,
       'identifiers/add'
     )
-    const result = drive(postAdd, {
+    const result = await drive(postAdd, {
       seed: { commodityLines: [{ commoditySelection: '01061900 - Cats' }] },
       params: { index: '0' },
       payload: {
@@ -252,7 +252,7 @@ describe('controller <-> model commit contract', () => {
     expect(satisfied('commodityLines', result.after)).toBe(true)
   })
 
-  it('Should commit each party via its select (copy) spoke, covering the landing collects', () => {
+  it('Should commit each party via its select (copy) spoke, covering the landing collects', async () => {
     expect(addresses.meta.collects).toEqual([
       'consignor',
       'placeOfDestination',
@@ -295,7 +295,9 @@ describe('controller <-> model commit contract', () => {
     ]
     const committed = []
     for (const { module, slug, payload, commits } of spokes) {
-      const result = drive(postHandlerEndingWith(module, slug), { payload })
+      const result = await drive(postHandlerEndingWith(module, slug), {
+        payload
+      })
       expect(committedIds(result)).toEqual(commits)
       committed.push(...committedIds(result))
     }

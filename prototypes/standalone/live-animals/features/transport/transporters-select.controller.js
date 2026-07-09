@@ -48,12 +48,12 @@ const render = (h, values, errors = {}) =>
       }))
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, { selectedName: answers.commercialTransporter?.name })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const { errors } = validate(fields, payload)
   if (errors) return render(h, {}, errors)
@@ -62,7 +62,7 @@ const post = (request, h) => {
     'commercialTransporter',
     payload.commercialTransporter
   )
-  const { scope } = chosen
+  const { scope } = await (chosen
     ? state.commit(request, h, {
         commercialTransporter: {
           name: chosen.name,
@@ -70,7 +70,7 @@ const post = (request, h) => {
           approvalNumber: chosen.approvalNumber
         }
       })
-    : state.get(request, h)
+    : state.get(request, h))
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

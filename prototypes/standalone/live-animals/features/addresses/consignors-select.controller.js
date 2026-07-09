@@ -42,19 +42,19 @@ const render = (h, values, errors = {}) =>
     }))
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, { selectedName: answers.consignor?.name })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const { errors } = validate(fields, payload)
   if (errors) return render(h, {}, errors)
 
   const chosen = addressBook.party('consignor', payload.consignor)
   if (chosen) {
-    state.commit(request, h, {
+    await state.commit(request, h, {
       consignor: { name: chosen.name, address: { ...chosen.address } }
     })
   }

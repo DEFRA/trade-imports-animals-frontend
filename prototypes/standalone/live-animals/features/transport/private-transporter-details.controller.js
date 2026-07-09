@@ -91,8 +91,8 @@ const render = (h, values, errors = {}) =>
     countryItems: countryItems(values.country)
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const saved = answers.privateTransporter
   return render(h, {
     nameOrOrganisationName: saved?.name ?? '',
@@ -107,7 +107,7 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = Object.fromEntries(
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
@@ -122,7 +122,7 @@ const post = (request, h) => {
   )
   if (Object.keys(allErrors).length > 0) return render(h, values, allErrors)
 
-  const { scope } = recordProvided(values)
+  const { scope } = await (recordProvided(values)
     ? state.commit(request, h, {
         privateTransporter: {
           name: values.nameOrOrganisationName,
@@ -138,7 +138,7 @@ const post = (request, h) => {
           }
         }
       })
-    : state.get(request, h)
+    : state.get(request, h))
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

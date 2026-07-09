@@ -231,13 +231,13 @@ const renderCya = (h, answers) =>
     breadcrumbs: breadcrumbs('Check your answers')
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return renderCya(h, answers)
 }
 
-const post = (request, h) => {
-  const { scope } = state.get(request, h)
+const post = async (request, h) => {
+  const { scope } = await state.get(request, h)
   return h.redirect(nextInSection(page.id, scope))
 }
 

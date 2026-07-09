@@ -17,12 +17,14 @@ const drive = driveHandler
 
 const fields = compose(currency('syntheticAmount'))
 
-const syntheticCurrencyPost = (request, h) => {
+const syntheticCurrencyPost = async (request, h) => {
   const payload = request.payload ?? {}
   const raw = (payload.syntheticAmount ?? '').trim()
   const { value: clean, errors } = validate(fields, payload)
   if (errors) return h.view('synthetic', { value: raw, errors })
-  state.commit(request, h, { syntheticAmount: clean.syntheticAmount ?? '' })
+  await state.commit(request, h, {
+    syntheticAmount: clean.syntheticAmount ?? ''
+  })
   return h.redirect('/next')
 }
 
@@ -35,8 +37,8 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
   })
   beforeEach(() => store.clear())
 
-  it('Should persist a currency amount with £ and commas stripped', () => {
-    const { after } = drive(syntheticCurrencyPost, {
+  it('Should persist a currency amount with £ and commas stripped', async () => {
+    const { after } = await drive(syntheticCurrencyPost, {
       payload: { syntheticAmount: '£1,500' }
     })
     expect(after.syntheticAmount).toBe('1500')
@@ -52,8 +54,8 @@ describe('T1 — error path still echoes the raw input and commits nothing', () 
   })
   beforeEach(() => store.clear())
 
-  it('Should re-render with the raw malformed amount and no commit', () => {
-    const { after, view } = drive(syntheticCurrencyPost, {
+  it('Should re-render with the raw malformed amount and no commit', async () => {
+    const { after, view } = await drive(syntheticCurrencyPost, {
       payload: { syntheticAmount: '£1,5x0' }
     })
     expect(view.context.value).toBe('£1,5x0')

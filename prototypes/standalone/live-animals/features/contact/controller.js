@@ -42,22 +42,22 @@ const render = (h, values, errors = {}) =>
     }))
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   return render(h, { selectedName: answers.contactAddress?.name })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   const { errors } = validate(fields, payload)
   if (errors) return render(h, {}, errors)
 
   const chosen = addressBook.party('contact', payload.contactAddress)
-  const { scope } = chosen
+  const { scope } = await (chosen
     ? state.commit(request, h, {
         contactAddress: { name: chosen.name, address: { ...chosen.address } }
       })
-    : state.get(request, h)
+    : state.get(request, h))
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 

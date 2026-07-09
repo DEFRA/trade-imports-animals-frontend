@@ -15,8 +15,8 @@ export const commodityLineValue = (entry) => {
   return `${commodity} — ${quantity} ${quantity === '1' ? 'animal' : 'animals'}`
 }
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const rows = state
     .collectionView(answers, ['commodityLines'])
     .map(({ index, entry }) => ({
@@ -52,17 +52,22 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
+const post = async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.action === 'add') {
     return h.redirect(pagePath('commodities/select'))
   }
-  const { scope } = state.get(request, h)
+  const { scope } = await state.get(request, h)
   return h.redirect(kit.nextTarget(request, page, scope))
 }
 
-const getRemove = (request, h) => {
-  state.removeEntry(request, h, 'commodityLines', Number(request.params.index))
+const getRemove = async (request, h) => {
+  await state.removeEntry(
+    request,
+    h,
+    'commodityLines',
+    Number(request.params.index)
+  )
   return h.redirect(pagePath('commodities'))
 }
 

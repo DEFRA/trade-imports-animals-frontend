@@ -55,8 +55,8 @@ const render = (h, values, errors = {}) =>
     }))
   })
 
-const getAdd = (request, h) => {
-  state.get(request, h)
+const getAdd = async (request, h) => {
+  await state.get(request, h)
   return render(h, {
     commoditySelection: '',
     typeSelection: '',
@@ -64,7 +64,7 @@ const getAdd = (request, h) => {
   })
 }
 
-const postAdd = (request, h) => {
+const postAdd = async (request, h) => {
   const payload = request.payload ?? {}
   const entry = {
     commoditySelection: payload.commoditySelection ?? '',
@@ -74,7 +74,7 @@ const postAdd = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, entry, errors)
 
-  const index = state.appendEntry(request, h, 'commodityLines', {
+  const index = await state.appendEntry(request, h, 'commodityLines', {
     ...entry,
     numberOfPackages: '',
     numberOfAnimalsQuantity: ''

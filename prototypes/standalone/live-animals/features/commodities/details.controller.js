@@ -40,8 +40,8 @@ const render = (h, line, values, errors = {}) =>
     errorSummary: kit.errorSummary(errors)
   })
 
-const get = (request, h) => {
-  const { answers } = state.get(request, h)
+const get = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const line = answers.commodityLines[index]
@@ -51,8 +51,8 @@ const get = (request, h) => {
   })
 }
 
-const post = (request, h) => {
-  const { answers } = state.get(request, h)
+const post = async (request, h) => {
+  const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const line = answers.commodityLines[index]
@@ -64,7 +64,7 @@ const post = (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) return render(h, line, values, errors)
 
-  state.updateEntry(request, h, 'commodityLines', index, {
+  await state.updateEntry(request, h, 'commodityLines', index, {
     ...line,
     numberOfAnimalsQuantity: values.numberOfAnimalsQuantity,
     ...(packagesApply(line.commoditySelection)
