@@ -38,6 +38,7 @@
     "dump:obligations-v2-spike": "node prototypes/standalone/obligations-v2-spike/dump.js",
     "test:live-animals": "TZ=UTC vitest run prototypes/standalone/live-animals --no-coverage",
     "dump:live-animals": "node prototypes/standalone/live-animals/dump.js",
+    "capture:live-animals": "node prototypes/standalone/live-animals/services/_capture/capture.js",
     "lighthouse": "lhci autorun",
     "test:watch": "TZ=UTC vitest",
     "security-audit": "npm audit --audit-level=high",
