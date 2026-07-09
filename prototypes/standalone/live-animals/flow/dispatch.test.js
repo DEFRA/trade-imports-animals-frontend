@@ -112,7 +112,7 @@ describe('dispatch + flow', () => {
           country: 'United Kingdom'
         }
       },
-      portOfEntry: 'ABERDEEN',
+      portOfEntry: 'Aberdeen Airport',
       arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
       meansOfTransport: 'Airplane',
       transportIdentification: 'FR-892-LK',

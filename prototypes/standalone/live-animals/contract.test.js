@@ -95,7 +95,7 @@ const cases = [
     collects: portOfEntry.meta.collects,
     handler: postHandlerOf(portOfEntry),
     payload: {
-      portOfEntry: 'ABERDEEN',
+      portOfEntry: 'Aberdeen Airport',
       'arrivalDateAtPort-day': '12',
       'arrivalDateAtPort-month': '12',
       'arrivalDateAtPort-year': '2026'

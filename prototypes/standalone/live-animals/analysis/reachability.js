@@ -128,7 +128,7 @@ const submitReadySeed = {
     name: 'Albion Livestock Imports Ltd',
     address: { addressLine1: '18 Harbour Road', country: 'United Kingdom' }
   },
-  portOfEntry: 'ABERDEEN',
+  portOfEntry: 'Aberdeen Airport',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
   meansOfTransport: 'Airplane',
   transportIdentification: 'FR-892-LK',
