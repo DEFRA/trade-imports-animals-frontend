@@ -237,7 +237,7 @@ describe('#notificationClient', () => {
         expect(body.transport.arrivalDate).toBeUndefined()
       })
 
-      test('Should nest consignmentContactAddress under consignment.contact', async () => {
+      test('Should send consignmentContactAddress as flat consignment field', async () => {
         const consignmentContactAddress = {
           name: 'Animal and Plant Health Agency',
           address: {
@@ -260,7 +260,58 @@ describe('#notificationClient', () => {
         await notificationClient.save(mockRequest, traceId)
 
         const body = JSON.parse(fetch.mock.calls[0][1].body)
-        expect(body.consignment).toEqual({ contact: consignmentContactAddress })
+        expect(body.consignment).toEqual(consignmentContactAddress)
+      })
+
+      test('Should include placeOfOrigin, consignee, importer in payload when set in session', async () => {
+        const placeOfOrigin = {
+          name: 'Origin Farm',
+          address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
+        }
+        const consignee = {
+          name: 'British Livestock Ltd',
+          address: {
+            addressLine1: '10 Market Street',
+            country: 'United Kingdom'
+          }
+        }
+        const importer = {
+          name: 'Import Co UK',
+          address: { addressLine1: '20 Trade Road', country: 'United Kingdom' }
+        }
+
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const data = { placeOfOrigin, consignee, importer }
+          return data[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.placeOfOrigin).toEqual(placeOfOrigin)
+        expect(body.consignee).toEqual(consignee)
+        expect(body.importer).toEqual(importer)
+      })
+
+      test('Should omit placeOfOrigin, consignee, importer from payload when not in session', async () => {
+        mockGetSessionValue.mockReturnValue(null)
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.placeOfOrigin).toBeUndefined()
+        expect(body.consignee).toBeUndefined()
+        expect(body.importer).toBeUndefined()
       })
 
       test('Should nest transporter under transport when transporter is set without port or date', async () => {
@@ -362,6 +413,114 @@ describe('#notificationClient', () => {
           )
         ).rejects.toMatchObject({
           message: 'Failed to submit notification',
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
+  describe('amend', () => {
+    const referenceNumber = 'REF-AMD-1'
+
+    describe('When amend is called with a valid reference number', () => {
+      test('Should send POST request to the amend endpoint and return the response', async () => {
+        const responseBody = { referenceNumber, status: 'AMEND' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.amend(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications/REF-AMD-1/amend',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            }
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When amend request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request'
+        })
+
+        await expect(
+          notificationClient.amend(mockRequest, referenceNumber, traceId)
+        ).rejects.toMatchObject({
+          message: 'Failed to amend notification',
+          status: 400,
+          statusText: 'Bad Request'
+        })
+
+        expect(mockLoggerError).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
+  describe('cancelAmend', () => {
+    const referenceNumber = 'REF-CAN-1'
+
+    describe('When cancelAmend is called with a valid reference number', () => {
+      test('Should send POST request to the cancel-amend endpoint and return the response', async () => {
+        const responseBody = { referenceNumber, status: 'SUBMITTED' }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue(responseBody)
+        })
+
+        const result = await notificationClient.cancelAmend(
+          mockRequest,
+          referenceNumber,
+          traceId
+        )
+
+        expect(fetch).toHaveBeenCalledTimes(1)
+        expect(fetch).toHaveBeenCalledWith(
+          'http://mock-backend/notifications/REF-CAN-1/cancel-amend',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-trace-id': traceId
+            }
+          }
+        )
+        expect(result).toEqual(responseBody)
+      })
+    })
+
+    describe('When cancelAmend request fails', () => {
+      test('Should throw an error with status details when the request fails', async () => {
+        fetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+
+        await expect(
+          notificationClient.cancelAmend(mockRequest, referenceNumber, traceId)
+        ).rejects.toMatchObject({
+          message: 'Failed to cancel amendment',
           status: 404,
           statusText: 'Not Found'
         })
@@ -635,7 +794,7 @@ describe('#notificationClient', () => {
         )
       })
 
-      test('Should hydrate consignmentContactAddress from consignment.contact', async () => {
+      test('Should hydrate consignmentContactAddress from flat consignment field', async () => {
         const contact = {
           name: 'Animal and Plant Health Agency',
           address: {
@@ -646,7 +805,7 @@ describe('#notificationClient', () => {
 
         fetch.mockResolvedValueOnce({
           ok: true,
-          json: vi.fn().mockResolvedValue({ consignment: { contact } })
+          json: vi.fn().mockResolvedValue({ consignment: contact })
         })
 
         await notificationClient.get(mockRequest, referenceNumber, traceId)
@@ -655,6 +814,49 @@ describe('#notificationClient', () => {
           mockRequest,
           sessionKeys.consignmentContactAddress,
           contact
+        )
+      })
+
+      test('Should hydrate placeOfOrigin, consignee, importer from response into session', async () => {
+        const placeOfOrigin = {
+          name: 'Origin Farm',
+          address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
+        }
+        const consignee = {
+          name: 'British Livestock Ltd',
+          address: {
+            addressLine1: '10 Market Street',
+            country: 'United Kingdom'
+          }
+        }
+        const importer = {
+          name: 'Import Co UK',
+          address: { addressLine1: '20 Trade Road', country: 'United Kingdom' }
+        }
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi
+            .fn()
+            .mockResolvedValue({ placeOfOrigin, consignee, importer })
+        })
+
+        await notificationClient.get(mockRequest, referenceNumber, traceId)
+
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.placeOfOrigin,
+          placeOfOrigin
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.consignee,
+          consignee
+        )
+        expect(mockSetSessionValue).toHaveBeenCalledWith(
+          mockRequest,
+          sessionKeys.importer,
+          importer
         )
       })
 

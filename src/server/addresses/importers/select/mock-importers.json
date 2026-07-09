@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Import Co UK",
+    "address": {
+      "addressLine1": "20 Trade Road",
+      "addressLine2": "London EC1A 1BB",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "GB Animal Imports",
+    "address": {
+      "addressLine1": "5 Port Way",
+      "addressLine2": "Dover CT16 3AQ",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "Highland Import Services",
+    "address": {
+      "addressLine1": "12 Glen Road",
+      "addressLine2": "Inverness IV1 1JN",
+      "country": "United Kingdom"
+    }
+  }
+]

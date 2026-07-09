@@ -17,6 +17,8 @@ import { cphNumber } from './cph-number/index.js'
 import { portOfEntry } from './port-of-entry/index.js'
 import { transporter } from './transporters/index.js'
 import { declaration } from './declaration/index.js'
+import { notificationAmend } from './notification-amend/index.js'
+import { notificationCancelAmend } from './notification-cancel-amend/index.js'
 import { notificationCopy } from './notification-copy/index.js'
 import { notificationDelete } from './notification-delete/index.js'
 import { notificationView } from './notification-view/index.js'
@@ -52,6 +54,8 @@ export const router = {
         portOfEntry,
         transporter,
         declaration,
+        notificationAmend,
+        notificationCancelAmend,
         notificationCopy,
         notificationDelete,
         notificationView

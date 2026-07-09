@@ -13,8 +13,28 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
   })
 }))
 
+vi.mock('../common/clients/ports-of-entry-client.js', () => ({
+  portsOfEntryClient: {
+    getPortsOfEntry: vi.fn().mockResolvedValue([
+      { code: 'GBABE', name: 'Aberdeen' },
+      { code: 'GBEDI', name: 'Edinburgh' }
+    ])
+  }
+}))
+
+vi.mock('@defra/hapi-tracing', () => ({
+  getTraceId: vi.fn().mockReturnValue('test-trace-id')
+}))
+
+const expectedPortItems = [
+  { value: '', text: 'Select port of entry' },
+  { text: '──────────', disabled: true },
+  { value: 'GBABE', text: 'Aberdeen (GBABE)' },
+  { value: 'GBEDI', text: 'Edinburgh (GBEDI)' }
+]
+
 const validPayload = {
-  portOfEntry: 'ABERDEEN',
+  portOfEntry: 'GBABE',
   'arrivalDate-day': 27,
   'arrivalDate-month': 3,
   'arrivalDate-year': 2026
@@ -22,10 +42,10 @@ const validPayload = {
 
 describe('portOfEntryController', () => {
   describe('GET /port-of-entry', () => {
-    test('renders view with portOfEntry, arrivalDate and referenceNumber from session', () => {
+    test('renders view with portOfEntry, arrivalDate, referenceNumber and portItems from session', async () => {
       const get = vi.fn((key) => {
         const values = {
-          portOfEntry: 'ABERDEEN',
+          portOfEntry: 'GBABE',
           arrivalDate: { day: 27, month: 3, year: 2026 },
           referenceNumber: 'REF-123'
         }
@@ -34,29 +54,31 @@ describe('portOfEntryController', () => {
       const request = { yar: { get } }
       const h = { view: vi.fn((template, data) => ({ template, data })) }
 
-      const response = portOfEntryController.get.handler(request, h)
+      const response = await portOfEntryController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith('port-of-entry/index', {
         pageTitle: 'Entry point and arrival at destination',
-        portOfEntry: 'ABERDEEN',
+        portOfEntry: 'GBABE',
         arrivalDate: { day: 27, month: 3, year: 2026 },
-        referenceNumber: 'REF-123'
+        referenceNumber: 'REF-123',
+        portItems: expectedPortItems
       })
       expect(response.template).toBe('port-of-entry/index')
     })
 
-    test('renders view with null values when session is empty', () => {
+    test('renders view with null values and portItems when session is empty', async () => {
       const get = vi.fn(() => null)
       const request = { yar: { get } }
       const h = { view: vi.fn((template, data) => ({ template, data })) }
 
-      portOfEntryController.get.handler(request, h)
+      await portOfEntryController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith('port-of-entry/index', {
         pageTitle: 'Entry point and arrival at destination',
         portOfEntry: null,
         arrivalDate: null,
-        referenceNumber: null
+        referenceNumber: null,
+        portItems: expectedPortItems
       })
     })
   })
@@ -76,7 +98,7 @@ describe('portOfEntryController', () => {
 
       const response = await portOfEntryController.post.handler(request, h)
 
-      expect(set).toHaveBeenCalledWith(sessionKeys.portOfEntry, 'ABERDEEN')
+      expect(set).toHaveBeenCalledWith(sessionKeys.portOfEntry, 'GBABE')
       expect(set).toHaveBeenCalledWith(sessionKeys.arrivalDate, {
         day: 27,
         month: 3,
@@ -92,7 +114,7 @@ describe('portOfEntryController', () => {
       expect(response).toEqual({ statusCode: 302, location: '/transporters' })
     })
 
-    test('returns 400 with error list when arrival day is out of range', async () => {
+    test('returns 400 with error list and portItems when arrival day is out of range', async () => {
       const set = vi.fn()
       const get = vi.fn(() => null)
       const request = {
@@ -116,6 +138,7 @@ describe('portOfEntryController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
+          portItems: expectedPortItems,
           errorList: expect.arrayContaining([
             expect.objectContaining({ text: 'Enter a valid day' })
           ])
@@ -144,6 +167,7 @@ describe('portOfEntryController', () => {
       expect(h.view).toHaveBeenCalledWith(
         'port-of-entry/index',
         expect.objectContaining({
+          portItems: expectedPortItems,
           errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
         })
       )

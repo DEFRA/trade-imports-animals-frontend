@@ -44,3 +44,39 @@ export const submitNotification = async (request, logger, referenceNumber) => {
     throw err
   }
 }
+
+export const amendNotification = async (request, logger, referenceNumber) => {
+  const traceId = getTraceId() ?? ''
+  try {
+    const response = await notificationClient.amend(
+      request,
+      referenceNumber,
+      traceId
+    )
+    logger.info(`Notification moved to amend: ${referenceNumber}`)
+    return response
+  } catch (err) {
+    logger.error(`Failed to amend notification: ${err.message}`)
+    throw err
+  }
+}
+
+export const cancelAmendNotification = async (
+  request,
+  logger,
+  referenceNumber
+) => {
+  const traceId = getTraceId() ?? ''
+  try {
+    const response = await notificationClient.cancelAmend(
+      request,
+      referenceNumber,
+      traceId
+    )
+    logger.info(`Amendment cancelled for notification: ${referenceNumber}`)
+    return response
+  } catch (err) {
+    logger.error(`Failed to cancel amendment: ${err.message}`)
+    throw err
+  }
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Origin Farm",
+    "address": {
+      "addressLine1": "1 Farm Lane",
+      "addressLine2": "County Clare",
+      "country": "Ireland"
+    }
+  },
+  {
+    "name": "Nordic Livestock AS",
+    "address": {
+      "addressLine1": "Fjordveien 12",
+      "addressLine2": "4010 Stavanger",
+      "country": "Norway"
+    }
+  },
+  {
+    "name": "Ferme des Alpes SARL",
+    "address": {
+      "addressLine1": "Route des Alpes 45",
+      "addressLine2": "74000 Annecy",
+      "country": "France"
+    }
+  }
+]

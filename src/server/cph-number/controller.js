@@ -30,22 +30,26 @@ export const cphNumberController = {
   },
   post: {
     async handler(_request, h) {
-      const { cphNumber } = _request.payload
+      const { cphNumber: rawCphNumber } = _request.payload
+      const cphNumber = rawCphNumber
+        ? rawCphNumber.replace(/\//g, '')
+        : rawCphNumber
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
       )
 
-      const { error } = cphNumberSchema.validate(_request.payload, {
-        abortEarly: false
-      })
+      const { error } = cphNumberSchema.validate(
+        { cphNumber, crumb: _request.payload.crumb },
+        { abortEarly: false }
+      )
 
       if (error) {
         const formattedErrors = formatValidationErrors(error)
         return h
           .view('cph-number/index', {
             pageTitle: 'Add the County Parish Holding number (CPH)',
-            cphNumber,
+            cphNumber: rawCphNumber,
             referenceNumber,
             errorList: formattedErrors.errorList,
             fieldErrors: formattedErrors.fieldErrors
@@ -69,7 +73,7 @@ export const cphNumberController = {
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/port-of-entry')
+      return h.redirect('/addresses')
     }
   }
 }

@@ -16,7 +16,10 @@ export const notificationView = {
           options: {
             validate: {
               query: Joi.object({
-                error: Joi.string().valid('copy').optional()
+                error: Joi.string().valid('copy').optional(),
+                cancelled: Joi.string().valid('1').optional(),
+                sort: Joi.string().optional(),
+                page: Joi.number().integer().min(1).optional()
               })
             }
           },

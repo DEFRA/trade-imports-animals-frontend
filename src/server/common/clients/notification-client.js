@@ -55,13 +55,18 @@ function setAdditionalDetails(notification, request) {
 }
 
 function setAddresses(notification, request) {
-  const selectedConsignor = getSessionValue(request, sessionKeys.consignor)
-  const selectedDestination = getSessionValue(request, sessionKeys.destination)
-  if (selectedConsignor) {
-    notification.consignor = selectedConsignor
-  }
-  if (selectedDestination) {
-    notification.destination = selectedDestination
+  const addressKeys = [
+    sessionKeys.placeOfOrigin,
+    sessionKeys.consignor,
+    sessionKeys.consignee,
+    sessionKeys.importer,
+    sessionKeys.destination
+  ]
+  for (const key of addressKeys) {
+    const value = getSessionValue(request, key)
+    if (value) {
+      notification[key] = value
+    }
   }
 }
 
@@ -98,10 +103,7 @@ function setConsignmentContactAddress(notification, request) {
     sessionKeys.consignmentContactAddress
   )
   if (consignmentContactAddress) {
-    if (!notification.consignment) {
-      notification.consignment = {}
-    }
-    notification.consignment.contact = consignmentContactAddress
+    notification.consignment = consignmentContactAddress
   }
 }
 
@@ -197,7 +199,10 @@ const NOTIFICATION_SESSION_KEYS = [
   sessionKeys.referenceNumber,
   sessionKeys.commodity,
   sessionKeys.reasonForImport,
+  sessionKeys.placeOfOrigin,
   sessionKeys.consignor,
+  sessionKeys.consignee,
+  sessionKeys.importer,
   sessionKeys.destination,
   sessionKeys.cphNumber
 ]
@@ -227,7 +232,7 @@ function setNotificationSessionValues(request, notification) {
   if (transporter) {
     setSessionValue(request, sessionKeys.transporter, transporter)
   }
-  const consignmentContact = notification.consignment?.contact
+  const consignmentContact = notification.consignment
   if (consignmentContact) {
     setSessionValue(
       request,
@@ -290,6 +295,55 @@ export const notificationClient = {
       error.status = response.status
       error.statusText = response.statusText
       logger.error(`Failed to submit notification: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
+  },
+
+  async amend(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/amend`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to amend notification')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to amend notification: ${error.message}`)
+      throw error
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Cancels an in-progress amendment and restores the submitted notification.
+   */
+  async cancelAmend(_request, referenceNumber, traceId) {
+    const response = await fetch(
+      `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/cancel-amend`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [tracingHeader]: traceId
+        }
+      }
+    )
+
+    if (!response.ok) {
+      const error = new Error('Failed to cancel amendment')
+      error.status = response.status
+      error.statusText = response.statusText
+      logger.error(`Failed to cancel amendment: ${error.message}`)
       throw error
     }
 

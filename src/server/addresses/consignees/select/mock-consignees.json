@@ -1,0 +1,26 @@
+[
+  {
+    "name": "British Livestock Ltd",
+    "address": {
+      "addressLine1": "10 Market Street",
+      "addressLine2": "Leeds LS1 6HB",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "Northern Farms Co",
+    "address": {
+      "addressLine1": "22 Barn Road",
+      "addressLine2": "York YO1 8AB",
+      "country": "United Kingdom"
+    }
+  },
+  {
+    "name": "Agri Imports PLC",
+    "address": {
+      "addressLine1": "88 Grain Wharf",
+      "addressLine2": "Bristol BS1 4RQ",
+      "country": "United Kingdom"
+    }
+  }
+]

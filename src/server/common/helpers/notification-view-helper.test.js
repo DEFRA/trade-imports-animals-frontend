@@ -179,6 +179,26 @@ describe('#mapNotificationToView', () => {
       )
     })
 
+    test('Should map placeOfOrigin from flat placeOfOrigin operator field', () => {
+      const placeOfOrigin = {
+        name: 'Origin Farm',
+        address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
+      }
+      const { addresses } = mapNotificationToView({ placeOfOrigin })
+      expect(addresses.placeOfOrigin).toContain('Origin Farm')
+      expect(addresses.placeOfOrigin).toContain('Ireland')
+    })
+
+    test('Should map consignment from flat consignment field', () => {
+      const consignment = {
+        name: 'Animal and Plant Health Agency',
+        address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+      }
+      const { addresses } = mapNotificationToView({ consignment })
+      expect(addresses.consignment).toContain('Animal and Plant Health Agency')
+      expect(addresses.consignment).toContain('United Kingdom')
+    })
+
     test('Should map cphNumber', () => {
       expect(mapNotificationToView(notification).cphNumber).toBe('12/343/R783')
     })
@@ -241,12 +261,12 @@ describe('#mapNotificationToView', () => {
 
     test('Should return Not provided for all address fields', () => {
       expect(viewModel.addresses).toEqual({
-        placeOfOrigin: NOT_PROVIDED,
+        placeOfOrigin: NOT_PROVIDED, // no placeOfOrigin operator set
         consignor: NOT_PROVIDED,
         consignee: NOT_PROVIDED,
         importer: NOT_PROVIDED,
         placeOfDestination: NOT_PROVIDED,
-        contactDetails: NOT_PROVIDED
+        consignment: NOT_PROVIDED
       })
     })
 

@@ -30,7 +30,7 @@
       </p>
     {% else %}
       <p class="govuk-body">
-        <a href="{{ params.href }}" class="govuk-link govuk-link--no-visited-state" id="{{ params.addId }}" aria-describedby="{{ params.key }}-hint">Add a {{ params.heading | lower }}</a>
+        <a href="{{ params.href }}" class="govuk-link govuk-link--no-visited-state" id="{{ params.addId }}" aria-describedby="{{ params.key }}-hint">{{ params.addText if params.addText else 'Add a ' + (params.heading | lower) }}</a>
       </p>
     {% endif %}
   </fieldset>

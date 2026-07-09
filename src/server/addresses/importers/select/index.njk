@@ -1,0 +1,68 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block pageContent %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/addresses"
+  }) }}
+
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ heading: pageTitle }) }}
+
+  <div class="govuk-body" data-testid="app-page-body">
+
+    {% if errorList %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: errorList
+      }) }}
+    {% endif %}
+
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+      {% set radioItems = [] %}
+      {% for importer in importers %}
+        {% set addressHtml %}
+          {% if importer.name %}<strong>{{ importer.name }}</strong><br>{% endif %}
+          {{ importer.address.addressLine1 }}<br>
+          {% if importer.address.addressLine2 %}{{ importer.address.addressLine2 }}<br>{% endif %}
+          {% if importer.address.addressLine3 %}{{ importer.address.addressLine3 }}<br>{% endif %}
+          {% if importer.address.postcode %}{{ importer.address.postcode }}<br>{% endif %}
+          {{ importer.address.country }}
+        {% endset %}
+        {% set _ = radioItems.push({
+          value: loop.index0,
+          checked: loop.index0 == selectedImporterId,
+          html: addressHtml
+        }) %}
+      {% endfor %}
+
+      {{ govukRadios({
+        idPrefix: "importer",
+        name: "importer",
+        fieldset: {
+          legend: {
+            text: "Select an importer",
+            classes: "govuk-fieldset__legend--m"
+          }
+        },
+        hint: {
+          html: 'If the correct address is not shown, <a href="#" class="govuk-link">add a new address</a>, then return to this page.'
+        },
+        errorMessage: fieldErrors.importer if fieldErrors,
+        items: radioItems
+      }) }}
+
+      <div class="govuk-button-group">
+        {{ govukButton({
+          text: "Save and continue"
+        }) }}
+      </div>
+
+    </form>
+  </div>
+{% endblock %}
