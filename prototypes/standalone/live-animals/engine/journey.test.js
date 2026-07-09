@@ -16,18 +16,18 @@ describe('#currentJourney', () => {
     store.clear()
   })
 
-  it('Should mint a fresh journey and pin it in the cookie when none is present', () => {
+  it('Should mint a fresh journey and pin it in the cookie when none is present', async () => {
     const h = recordingH()
-    const journey = currentJourney(buildRequest({}), h)
+    const journey = await currentJourney(buildRequest({}), h)
     expect(journey.journeyId).toEqual(expect.any(String))
     expect(journey.status).toBe(IN_PROGRESS)
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 
-  it('Should resume the same journey within a session (cookie points at a live journey)', () => {
-    const first = currentJourney(buildRequest({}), recordingH())
+  it('Should resume the same journey within a session (cookie points at a live journey)', async () => {
+    const first = await currentJourney(buildRequest({}), recordingH())
     store.saveAnswers(first.journeyId, { countryOfOrigin: 'FR' })
-    const again = currentJourney(
+    const again = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: first.journeyId }),
       recordingH()
     )
@@ -35,9 +35,9 @@ describe('#currentJourney', () => {
     expect(again.answers).toEqual({ countryOfOrigin: 'FR' })
   })
 
-  it('Should re-mint when the cookie points at a stale/unknown journey', () => {
+  it('Should re-mint when the cookie points at a stale/unknown journey', async () => {
     const h = recordingH()
-    const journey = currentJourney(
+    const journey = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: 'gone-1234' }),
       h
     )
@@ -46,17 +46,17 @@ describe('#currentJourney', () => {
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 
-  it('Should keep parallel cookies isolated — no cross-talk between two journeys', () => {
-    const journeyA = currentJourney(buildRequest({}), recordingH())
-    const journeyB = currentJourney(buildRequest({}), recordingH())
+  it('Should keep parallel cookies isolated — no cross-talk between two journeys', async () => {
+    const journeyA = await currentJourney(buildRequest({}), recordingH())
+    const journeyB = await currentJourney(buildRequest({}), recordingH())
     expect(journeyA.journeyId).not.toBe(journeyB.journeyId)
     store.saveAnswers(journeyA.journeyId, { who: 'A' })
     store.saveAnswers(journeyB.journeyId, { who: 'B' })
-    const journeyAResumed = currentJourney(
+    const journeyAResumed = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: journeyA.journeyId }),
       recordingH()
     )
-    const journeyBResumed = currentJourney(
+    const journeyBResumed = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: journeyB.journeyId }),
       recordingH()
     )

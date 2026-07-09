@@ -40,6 +40,8 @@ const readViewOf = (journey) => ({
   scope: makeScope(journey.answers)
 })
 
-export const get = (request, h) => readViewOf(currentJourney(request, h))
+export const get = async (request, h) =>
+  readViewOf(await currentJourney(request, h))
 
-export const resume = (request, h) => readViewOf(resumeByUser(request, h))
+export const resume = async (request, h) =>
+  readViewOf(await resumeByUser(request, h))

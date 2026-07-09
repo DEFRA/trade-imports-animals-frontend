@@ -15,7 +15,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  it('Should re-derive scope on resume, excluding a now-out-of-scope obligation', () => {
+  it('Should re-derive scope on resume, excluding a now-out-of-scope obligation', async () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, {
       countryOfOrigin: 'FR',
@@ -23,17 +23,17 @@ describe('resume self-heal (nothing derived is stored)', () => {
       regionOfOriginCode: 'FR-75'
     })
 
-    const result = resume({ state: {}, headers: {} }, recordingH())
+    const result = await resume({ state: {}, headers: {} }, recordingH())
 
     expect(result.scope.has('regionOfOriginCode')).toBe(false)
     expect(result.scope.has('countryOfOrigin')).toBe(true)
   })
 
-  it('Should store only the canonical record fields — nothing derived is persisted', () => {
+  it('Should store only the canonical record fields — nothing derived is persisted', async () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
-    const result = resume({ state: {}, headers: {} }, recordingH())
+    const result = await resume({ state: {}, headers: {} }, recordingH())
 
     expect(Object.keys(result.journey).sort()).toEqual([
       'answers',

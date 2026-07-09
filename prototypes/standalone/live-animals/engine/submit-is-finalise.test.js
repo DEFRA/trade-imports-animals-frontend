@@ -23,27 +23,27 @@ describe('submit is finalise', () => {
     journeyId = records.create().journeyId
   })
 
-  it('Should flip to submitted, keep answers byte-equal, and freeze further writes', () => {
+  it('Should flip to submitted, keep answers byte-equal, and freeze further writes', async () => {
     configureReadyForCheckYourAnswers(() => true)
-    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
     const committed = records.load({ journeyId }).answers
 
-    const result = submitJourney(buildRequest(), stubH())
+    const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(true)
     expect(result.journey.status).toBe(SUBMITTED)
     expect(result.journey.submittedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     expect(result.journey.answers).toEqual(committed)
-    expect(() => commit(buildRequest(), stubH(), { late: true })).toThrow(
-      /is submitted — writes blocked/
-    )
+    await expect(
+      commit(buildRequest(), stubH(), { late: true })
+    ).rejects.toThrow(/is submitted — writes blocked/)
   })
 
-  it('Should be a no-op when not ready — journey stays in-progress', () => {
+  it('Should be a no-op when not ready — journey stays in-progress', async () => {
     configureReadyForCheckYourAnswers(() => false)
-    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
-    const result = submitJourney(buildRequest(), stubH())
+    const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(false)
     expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)

@@ -19,12 +19,12 @@ describe('resume by user (cookieless)', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  it('Should recover a saved journey with no cookie, rebuild scope, and re-pin it', () => {
+  it('Should recover a saved journey with no cookie, rebuild scope, and re-pin it', async () => {
     const { journeyId } = records.create({ userId: STUB_USER })
     records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
     const h = recordingH()
-    const result = resume({ state: {}, headers: {} }, h)
+    const result = await resume({ state: {}, headers: {} }, h)
 
     expect(result.journey.journeyId).toBe(journeyId)
     expect(result.answers).toEqual({ countryOfOrigin: 'FR' })
@@ -32,9 +32,9 @@ describe('resume by user (cookieless)', () => {
     expect(h.calls).toContainEqual([JOURNEY_COOKIE, journeyId])
   })
 
-  it('Should mint a fresh journey when the user has none to resume', () => {
+  it('Should mint a fresh journey when the user has none to resume', async () => {
     const h = recordingH()
-    const result = resume({ state: {}, headers: {} }, h)
+    const result = await resume({ state: {}, headers: {} }, h)
     expect(result.journey.journeyId).toEqual(expect.any(String))
     expect(records.load({ userId: STUB_USER }).journeyId).toBe(
       result.journey.journeyId

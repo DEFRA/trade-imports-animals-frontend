@@ -40,14 +40,20 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     journeyId = store.create().journeyId
   })
 
-  it('Should append a commodity line, minting the next index and persisting it', () => {
-    const first = appendEntryAt(buildRequest(), stubH(), ['commodityLines'], {
-      commoditySelection: '0102 - Cattle'
-    })
+  it('Should append a commodity line, minting the next index and persisting it', async () => {
+    const first = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      ['commodityLines'],
+      { commoditySelection: '0102 - Cattle' }
+    )
     expect(first).toBe(0)
-    const second = appendEntryAt(buildRequest(), stubH(), ['commodityLines'], {
-      commoditySelection: '010420 - Goats'
-    })
+    const second = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      ['commodityLines'],
+      { commoditySelection: '010420 - Goats' }
+    )
     expect(second).toBe(1)
     expect(answersNow().commodityLines).toEqual([
       { commoditySelection: '0102 - Cattle' },
@@ -55,11 +61,11 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     ])
   })
 
-  it('Should edit a commodity line in place, leaving siblings intact', () => {
+  it('Should edit a commodity line in place, leaving siblings intact', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
     })
-    updateEntryAt(
+    await updateEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
@@ -74,35 +80,40 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     )
   })
 
-  it('Should remove a commodity line in place, leaving siblings intact', () => {
+  it('Should remove a commodity line in place, leaving siblings intact', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
     })
-    removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
+    await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
     expect(
       answersNow().commodityLines.map((entry) => entry.commoditySelection)
     ).toEqual(['010420 - Goats'])
   })
 
-  it('Should ignore a non-integer index on remove (a malformed URL must not destroy instance 0)', () => {
+  it('Should ignore a non-integer index on remove (a malformed URL must not destroy instance 0)', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
     })
-    removeEntryAt(buildRequest(), stubH(), ['commodityLines'], Number('foo'))
+    await removeEntryAt(
+      buildRequest(),
+      stubH(),
+      ['commodityLines'],
+      Number('foo')
+    )
     expect(
       answersNow().commodityLines.map((entry) => entry.commoditySelection)
     ).toEqual(['0102 - Cattle', '010420 - Goats'])
   })
 
-  it('Should ignore an out-of-range index on remove', () => {
+  it('Should ignore an out-of-range index on remove', async () => {
     store.saveAnswers(journeyId, { commodityLines: [line('0102 - Cattle')] })
-    removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 5)
+    await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 5)
     expect(answersNow().commodityLines).toEqual([line('0102 - Cattle')])
   })
 
-  it('Should ignore a non-integer index on update', () => {
+  it('Should ignore a non-integer index on update', async () => {
     store.saveAnswers(journeyId, { commodityLines: [line('0102 - Cattle')] })
-    updateEntryAt(
+    await updateEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
@@ -112,9 +123,9 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     expect(answersNow().commodityLines).toEqual([line('0102 - Cattle')])
   })
 
-  it('Should ignore an out-of-range index on update', () => {
+  it('Should ignore an out-of-range index on update', async () => {
     store.saveAnswers(journeyId, { commodityLines: [line('0102 - Cattle')] })
-    updateEntryAt(
+    await updateEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
@@ -124,11 +135,11 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     expect(answersNow().commodityLines).toEqual([line('0102 - Cattle')])
   })
 
-  it('Should write through a commit that mutates a line, re-running reconcile and destroying the now-out-of-scope package count at its exact path', () => {
+  it('Should write through a commit that mutates a line, re-running reconcile and destroying the now-out-of-scope package count at its exact path', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle', { numberOfPackages: '5' })]
     })
-    commit(buildRequest(), stubH(), {
+    await commit(buildRequest(), stubH(), {
       commodityLines: [line('0301 - Fish', { numberOfPackages: '5' })]
     })
     const persisted = records.load({ journeyId }).answers
@@ -136,11 +147,11 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     expect('numberOfPackages' in persisted.commodityLines[0]).toBe(false)
   })
 
-  it('Should preserve an in-scope package count when a commit leaves the line on the list', () => {
+  it('Should preserve an in-scope package count when a commit leaves the line on the list', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [line('0102 - Cattle', { numberOfPackages: '5' })]
     })
-    commit(buildRequest(), stubH(), {
+    await commit(buildRequest(), stubH(), {
       commodityLines: [line('0102 - Cattle', { numberOfPackages: '9' })]
     })
     expect(records.load({ journeyId }).answers.commodityLines[0]).toEqual(
@@ -172,15 +183,21 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
   const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
-  it('Should append a unit into a specific line, minting the nested index and persisting it', () => {
+  it('Should append a unit into a specific line, minting the nested index and persisting it', async () => {
     store.saveAnswers(journeyId, { commodityLines: [catsLine(), catsLine()] })
-    const first = appendEntryAt(buildRequest(), stubH(), identifiersPath(1), {
-      animalIdentifierPassport: 'UK-1'
-    })
+    const first = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(1),
+      { animalIdentifierPassport: 'UK-1' }
+    )
     expect(first).toBe(0)
-    const second = appendEntryAt(buildRequest(), stubH(), identifiersPath(1), {
-      animalIdentifierPassport: 'UK-2'
-    })
+    const second = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(1),
+      { animalIdentifierPassport: 'UK-2' }
+    )
     expect(second).toBe(1)
     expect(answersNow().commodityLines[0].animalIdentifiers).toEqual([])
     expect(
@@ -190,7 +207,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toEqual(['UK-1', 'UK-2'])
   })
 
-  it('Should edit a unit in place at depth-2, leaving sibling units intact', () => {
+  it('Should edit a unit in place at depth-2, leaving sibling units intact', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [
         catsLine([
@@ -199,7 +216,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
         ])
       ]
     })
-    updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 0, {
+    await updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 0, {
       animalIdentifierPassport: 'UK-1-edited'
     })
     expect(
@@ -209,7 +226,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toEqual(['UK-1-edited', 'UK-2'])
   })
 
-  it('Should remove a unit in place at depth-2, leaving sibling units intact', () => {
+  it('Should remove a unit in place at depth-2, leaving sibling units intact', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [
         catsLine([
@@ -218,7 +235,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
         ])
       ]
     })
-    removeEntryAt(buildRequest(), stubH(), identifiersPath(0), 0)
+    await removeEntryAt(buildRequest(), stubH(), identifiersPath(0), 0)
     expect(
       answersNow().commodityLines[0].animalIdentifiers.map(
         (unit) => unit.animalIdentifierPassport
@@ -226,11 +243,16 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toEqual(['UK-2'])
   })
 
-  it('Should ignore a non-integer nested index on remove (a malformed URL must not destroy unit 0)', () => {
+  it('Should ignore a non-integer nested index on remove (a malformed URL must not destroy unit 0)', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [catsLine([{ animalIdentifierPassport: 'UK-1' }])]
     })
-    removeEntryAt(buildRequest(), stubH(), identifiersPath(0), Number('foo'))
+    await removeEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(0),
+      Number('foo')
+    )
     expect(
       answersNow().commodityLines[0].animalIdentifiers.map(
         (unit) => unit.animalIdentifierPassport
@@ -238,11 +260,11 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toEqual(['UK-1'])
   })
 
-  it('Should ignore an out-of-range nested index on update', () => {
+  it('Should ignore an out-of-range nested index on update', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [catsLine([{ animalIdentifierPassport: 'UK-1' }])]
     })
-    updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 5, {
+    await updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 5, {
       animalIdentifierPassport: 'UK-X'
     })
     expect(
@@ -251,7 +273,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toBe('UK-1')
   })
 
-  it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', () => {
+  it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', async () => {
     store.saveAnswers(journeyId, {
       commodityLines: [
         catsLine([
@@ -259,7 +281,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
         ])
       ]
     })
-    commit(buildRequest(), stubH(), {
+    await commit(buildRequest(), stubH(), {
       commodityLines: [
         {
           commoditySelection: '0101 - Horse',

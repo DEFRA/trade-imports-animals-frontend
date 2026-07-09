@@ -21,7 +21,7 @@ describe('#get — per-request read view', () => {
   })
   afterEach(() => store.clear())
 
-  it('Should return the seeded answers verbatim with scope derived from them', () => {
+  it('Should return the seeded answers verbatim with scope derived from them', async () => {
     const seed = {
       countryOfOrigin: 'FR',
       transporterType: 'Commercial transporter'
@@ -29,7 +29,7 @@ describe('#get — per-request read view', () => {
     const journey = store.create()
     store.saveAnswers(journey.journeyId, seed)
 
-    const view = get(journeyRequest(journey.journeyId), recordingH())
+    const view = await get(journeyRequest(journey.journeyId), recordingH())
 
     expect(view.journey.journeyId).toBe(journey.journeyId)
     expect(view.answers).toEqual(seed)
@@ -38,10 +38,10 @@ describe('#get — per-request read view', () => {
     expect(view.scope.has('commercialTransporter')).toBe(true)
   })
 
-  it('Should start a journey and pin the journey cookie when none is active', () => {
+  it('Should start a journey and pin the journey cookie when none is active', async () => {
     const h = recordingH()
 
-    const view = get(journeyRequest(undefined, { state: {} }), h)
+    const view = await get(journeyRequest(undefined, { state: {} }), h)
 
     expect(view.journey.journeyId).toBeTruthy()
     expect(h.cookies[JOURNEY_COOKIE]).toBe(view.journey.journeyId)

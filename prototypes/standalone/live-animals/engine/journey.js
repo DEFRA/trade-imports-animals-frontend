@@ -18,21 +18,25 @@ const cookieOptions = Object.freeze({
 export const registerJourneyCookie = (server) =>
   server.state(JOURNEY_COOKIE, cookieOptions)
 
-export const startJourney = (request, h) => {
-  const journey = records.create({ userId: session.userId(request) })
-  session.setActiveJourney(h, journey.journeyId)
+export const startJourney = async (request, h) => {
+  const journey = await records.create({
+    userId: await session.userId(request)
+  })
+  await session.setActiveJourney(h, journey.journeyId)
   return journey
 }
 
-export const currentJourney = (request, h) => {
-  const journeyId = session.activeJourneyId(request)
-  if (journeyId && records.has(journeyId)) return records.load({ journeyId })
+export const currentJourney = async (request, h) => {
+  const journeyId = await session.activeJourneyId(request)
+  if (journeyId && (await records.has(journeyId))) {
+    return records.load({ journeyId })
+  }
   return startJourney(request, h)
 }
 
-export const resumeByUser = (request, h) => {
-  const journey = records.load({ userId: session.userId(request) })
+export const resumeByUser = async (request, h) => {
+  const journey = await records.load({ userId: await session.userId(request) })
   if (!journey) return startJourney(request, h)
-  session.setActiveJourney(h, journey.journeyId)
+  await session.setActiveJourney(h, journey.journeyId)
   return journey
 }

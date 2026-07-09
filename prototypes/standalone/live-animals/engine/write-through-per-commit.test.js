@@ -19,16 +19,18 @@ describe('write-through on every commit', () => {
     journeyId = records.create().journeyId
   })
 
-  it('Should persist to the records port on the first commit, before any submit', () => {
-    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+  it('Should persist to the records port on the first commit, before any submit', async () => {
+    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
     expect(records.load({ journeyId }).answers).toEqual({
       countryOfOrigin: 'FR'
     })
   })
 
-  it('Should overwrite the durable record on a second commit', () => {
-    commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
-    commit(buildRequest(), stubH(), { internalReferenceNumber: 'Imports456GB' })
+  it('Should overwrite the durable record on a second commit', async () => {
+    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    await commit(buildRequest(), stubH(), {
+      internalReferenceNumber: 'Imports456GB'
+    })
     expect(records.load({ journeyId }).answers).toEqual({
       countryOfOrigin: 'FR',
       internalReferenceNumber: 'Imports456GB'
