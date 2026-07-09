@@ -1,11 +1,21 @@
 import { COUNTRY_LABELS } from './stub.js'
+import { fetchCountries } from './client.js'
+import { isRealMode } from '../mode.js'
 
-export const originLabel = (code) => COUNTRY_LABELS[code]
+let labels = { ...COUNTRY_LABELS }
+
+export const prime = async () => {
+  if (!isRealMode()) return
+  const countries = await fetchCountries()
+  labels = Object.fromEntries(countries.map(({ code, name }) => [code, name]))
+}
+
+export const originLabel = (code) => labels[code]
 
 export const originCountries = () =>
-  Object.entries(COUNTRY_LABELS).map(([value, text]) => ({ value, text }))
+  Object.entries(labels).map(([value, text]) => ({ value, text }))
 
 export const addressCountries = () => [
   'United Kingdom',
-  ...Object.values(COUNTRY_LABELS)
+  ...Object.values(labels)
 ]
