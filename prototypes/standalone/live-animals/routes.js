@@ -5,6 +5,8 @@ import { assertObligationPurity } from './obligation-purity.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { records } from './services/persistence/records/index.js'
+import { configureSession } from './engine/persistence/session.js'
+import { session } from './services/persistence/session/index.js'
 import { registerJourneyCookie } from './engine/journey.js'
 import { isRealMode } from './services/mode.js'
 import * as countries from './services/countries/index.js'
@@ -18,6 +20,7 @@ export const liveAnimals = {
       buildDispatch(dispatchPages)
       configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
       configureRecords(records)
+      configureSession(session)
       registerJourneyCookie(server)
       if (isRealMode()) {
         await countries.prime()

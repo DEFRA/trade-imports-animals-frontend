@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { JOURNEY_COOKIE, session } from './session.js'
-import { recordingH } from '../test-support.js'
+import { session } from './stub.js'
+import { JOURNEY_COOKIE } from '../../../engine/persistence/session.js'
+import { recordingH } from '../../../engine/test-support.js'
 
 describe('#session.clearActive', () => {
   it('Should remove the journey cookie via h.unstate', () => {

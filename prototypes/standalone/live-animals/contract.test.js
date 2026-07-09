@@ -5,7 +5,9 @@ import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { registry } from './registry.js'
 import { store } from './engine/store.js'
 import { configureRecords } from './engine/persistence/records.js'
+import { configureSession } from './engine/persistence/session.js'
 import { records as recordsStub } from './services/persistence/records/stub.js'
+import { session as sessionStub } from './services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import {
   driveHandler,
@@ -161,6 +163,7 @@ const cases = [
 describe('controller <-> model commit contract', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
+    configureSession(sessionStub)
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })

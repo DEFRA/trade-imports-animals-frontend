@@ -6,7 +6,9 @@ import {
   IN_PROGRESS,
   SUBMITTED
 } from './persistence/records.js'
+import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
+import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
@@ -16,6 +18,7 @@ const buildRequest = () => journeyRequest(journeyId)
 describe('submit is finalise', () => {
   beforeEach(() => {
     configureRecords(recordsStub)
+    configureSession(sessionStub)
     records.clear()
     journeyId = records.create().journeyId
   })

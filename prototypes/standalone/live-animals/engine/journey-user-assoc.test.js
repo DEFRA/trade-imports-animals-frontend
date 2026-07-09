@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { currentJourney } from './journey.js'
 import { records, configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
-import { session, STUB_USER, STUB_USER_HEADER } from './persistence/session.js'
+import { session as sessionStub } from '../services/persistence/session/stub.js'
+import {
+  session,
+  configureSession,
+  STUB_USER,
+  STUB_USER_HEADER
+} from './persistence/session.js'
 import { recordingH } from './test-support.js'
 
 const buildRequest = (headers = {}) => ({ state: {}, headers })
@@ -10,6 +16,7 @@ const buildRequest = (headers = {}) => ({ state: {}, headers })
 describe('journey-user association', () => {
   beforeEach(() => {
     configureRecords(recordsStub)
+    configureSession(sessionStub)
     records.clear()
   })
 
