@@ -19,10 +19,14 @@
  *     this obligation returns a 400 with the flow-supplied required
  *     message. Distinct from the obligation's `status` field, which is
  *     the *completion-mandate* (does the journey need this to reach F?).
- *   - `errors.required` supplies the copy for the required-field error
- *     when `mandatoryToSaveAndContinue` is true. Bare English string
- *     today, matching the rest of the spike's user-facing text — see
- *     NEXT.md P0.5 for spike-wide i18n.
+ *   - `errors.required` supplies a message KEY resolved via
+ *     `lib/i18n.js` (`t(key)` → `locales/en.json`). Missing keys
+ *     render as the raw dotted-path in the UI; the coverage test in
+ *     `i18n-coverage.test.js` walks flow.js and asserts each key is
+ *     defined.
+ *
+ * Section / subsection nodes carry `titleKey` (a message key), not a
+ * literal `title`. The hub controller resolves it via `t()`.
  *
  * The V4 slice below is driven by the two ticket drivers, country of
  * origin and commodity code:
@@ -67,12 +71,12 @@ export const flow = {
     {
       kind: 'section',
       id: 'origin-and-reason',
-      title: 'Country of origin and reason',
+      titleKey: 'flow.section.origin-and-reason.title',
       children: [
         {
           kind: 'subsection',
           id: 'origin',
-          title: 'Country of origin',
+          titleKey: 'flow.subsection.origin.title',
           children: [
             {
               page: 'country-of-origin',
@@ -82,13 +86,13 @@ export const flow = {
                   // First worked example of the flow-level
                   // submit-mandate: leaving the field blank on POST
                   // returns a 400 with the flow-supplied message.
-                  // See lib/format-domain-errors.js for how `message`
-                  // overrides code-keyed copy. Every other presents
-                  // entry defaults to `mandatoryToSaveAndContinue: false`
-                  // so blank saves-and-continues succeed as they did.
+                  // The `required` value is a message key resolved via
+                  // `lib/i18n.js` — see `locales/en.json`. Missing keys
+                  // render as the dotted path in the UI and are
+                  // caught in CI by `i18n-coverage.test.js`.
                   mandatoryToSaveAndContinue: true,
                   errors: {
-                    required: 'Enter a country of origin'
+                    required: 'errors.countryOfOrigin.required'
                   }
                 }
               ]
@@ -110,7 +114,7 @@ export const flow = {
         {
           kind: 'subsection',
           id: 'reason',
-          title: 'Reason for import',
+          titleKey: 'flow.subsection.reason.title',
           children: [
             {
               page: 'reason-for-import',
@@ -130,12 +134,12 @@ export const flow = {
     {
       kind: 'section',
       id: 'transporter',
-      title: 'Transporter and transport',
+      titleKey: 'flow.section.transporter.title',
       children: [
         {
           kind: 'subsection',
           id: 'transporter-type',
-          title: 'Transporter type',
+          titleKey: 'flow.subsection.transporter-type.title',
           children: [
             {
               page: 'transporter-type',
@@ -156,7 +160,7 @@ export const flow = {
         {
           kind: 'subsection',
           id: 'transport',
-          title: 'Transport details',
+          titleKey: 'flow.subsection.transport.title',
           children: [
             {
               page: 'means-of-transport',
@@ -182,12 +186,12 @@ export const flow = {
     {
       kind: 'section',
       id: 'arrival',
-      title: 'Arrival',
+      titleKey: 'flow.section.arrival.title',
       children: [
         {
           kind: 'subsection',
           id: 'arrival-at-port',
-          title: 'Arrival at port',
+          titleKey: 'flow.subsection.arrival-at-port.title',
           children: [
             {
               page: 'arrival-details',
@@ -201,7 +205,7 @@ export const flow = {
         {
           kind: 'subsection',
           id: 'unweaned',
-          title: 'About the animals',
+          titleKey: 'flow.subsection.unweaned.title',
           children: [
             {
               page: 'contains-unweaned-animals',
@@ -212,7 +216,7 @@ export const flow = {
         {
           kind: 'subsection',
           id: 'certified-for',
-          title: 'Animals certified for',
+          titleKey: 'flow.subsection.certified-for.title',
           children: [
             {
               // Options are stubbed statically in the spike; in
@@ -227,12 +231,12 @@ export const flow = {
     {
       kind: 'section',
       id: 'references',
-      title: 'References',
+      titleKey: 'flow.section.references.title',
       children: [
         {
           kind: 'subsection',
           id: 'trader-reference',
-          title: 'Your reference',
+          titleKey: 'flow.subsection.trader-reference.title',
           children: [
             {
               page: 'internal-reference',
@@ -245,12 +249,12 @@ export const flow = {
     {
       kind: 'section',
       id: 'commodity-lines',
-      title: 'Commodity lines',
+      titleKey: 'flow.section.commodity-lines.title',
       children: [
         {
           kind: 'subsection',
           id: 'commodity-lines-manage',
-          title: 'Add commodity lines',
+          titleKey: 'flow.subsection.commodity-lines-manage.title',
           children: [
             {
               // Read-only intro — NA in status terms; renders for
@@ -264,7 +268,7 @@ export const flow = {
         {
           kind: 'subsection',
           id: 'commodity-lines-details',
-          title: 'Commodity line details',
+          titleKey: 'flow.subsection.commodity-lines-details.title',
           children: [
             {
               page: 'commodity-details',

@@ -1,0 +1,58 @@
+{
+  "flow": {
+    "section": {
+      "origin-and-reason": {
+        "title": "Country of origin and reason"
+      },
+      "transporter": {
+        "title": "Transporter and transport"
+      },
+      "arrival": {
+        "title": "Arrival"
+      },
+      "references": {
+        "title": "References"
+      },
+      "commodity-lines": {
+        "title": "Commodity lines"
+      }
+    },
+    "subsection": {
+      "origin": {
+        "title": "Country of origin"
+      },
+      "reason": {
+        "title": "Reason for import"
+      },
+      "transporter-type": {
+        "title": "Transporter type"
+      },
+      "transport": {
+        "title": "Transport details"
+      },
+      "arrival-at-port": {
+        "title": "Arrival at port"
+      },
+      "unweaned": {
+        "title": "About the animals"
+      },
+      "certified-for": {
+        "title": "Animals certified for"
+      },
+      "trader-reference": {
+        "title": "Your reference"
+      },
+      "commodity-lines-manage": {
+        "title": "Add commodity lines"
+      },
+      "commodity-lines-details": {
+        "title": "Commodity line details"
+      }
+    }
+  },
+  "errors": {
+    "countryOfOrigin": {
+      "required": "Enter a country of origin"
+    }
+  }
+}

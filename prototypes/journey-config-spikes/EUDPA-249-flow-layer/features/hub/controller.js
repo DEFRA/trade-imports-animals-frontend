@@ -14,6 +14,7 @@ import {
   STATUSES
 } from '../../engine/index.js'
 import { commodityLine } from '../../obligations/obligations.js'
+import { t } from '../../lib/i18n.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -77,7 +78,7 @@ export const hubController = {
             : statusOfContainer(subsection, state)
           const href = subsectionHref(subsection, state)
           const item = {
-            title: { text: subsection.title },
+            title: { text: t(subsection.titleKey) },
             status: { tag: STATUS_TAG[status] ?? { text: status } }
           }
           // Always let lines-manage be clickable; other subsections
@@ -87,7 +88,7 @@ export const hubController = {
           }
           return item
         })
-        return { title: section.title, items }
+        return { title: t(section.titleKey), items }
       })
 
       const overall = statusOfJourney(state)

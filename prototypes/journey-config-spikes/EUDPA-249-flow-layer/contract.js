@@ -32,6 +32,7 @@ import {
 } from './engine/index.js'
 import { buildFieldDescriptors } from './lib/build-field-descriptors.js'
 import { formatDomainErrors } from './lib/format-domain-errors.js'
+import { t } from './lib/i18n.js'
 
 const evaluator = createObligationEvaluator({
   obligations: v4Obligations
@@ -162,11 +163,12 @@ export function validatePagePayload(page, payload, state) {
     // on undefined would only add noise. See flow.js for property
     // semantics; distinct from obligation.status (completion-mandate).
     if (descriptor.mandatoryToSaveAndContinue && isBlank(value)) {
+      const key = descriptor.errors?.required
       errors.push({
         code: 'flow.required',
         obligation: descriptor.obligation.name,
         path: descriptor.path,
-        message: descriptor.errors?.required ?? 'This field is required'
+        message: key ? t(key) : 'This field is required'
       })
       continue
     }
