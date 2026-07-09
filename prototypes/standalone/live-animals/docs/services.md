@@ -3,14 +3,44 @@
 Each external backing system the prototype reads reference data from gets one
 service under `services/<name>/`, folder-per-service:
 
-- `services/<name>/index.js` — the stable interface the controllers call.
-  Controllers depend on this seam only; it holds no data.
-- `services/<name>/stub.js` — the vendored reference data, standing in for the
-  real system. This is the only file that gets replaced when the real backing
-  system lands. A one-line comment at the top names that system (the swap point).
+- `services/<name>/index.js` — the stable, synchronous interface the controllers
+  call. Controllers depend on this seam only; it holds no data.
+- `services/<name>/stub.js` — the vendored reference data, standing in for the real
+  system (the swap point). The backing system is named per service in the table
+  below, not in an inline comment.
+- `services/<name>/client.js` — present only where a real backend exists (`countries`,
+  `ports`); fetches the live reference data.
 
-Controllers consume the interface and hold no inline reference-data constants.
-Each service's real backing system is documented here, not inline in code.
+Controllers consume the interface and hold no inline reference-data constants. Each
+service's real backing system is documented here, not inline in code.
+
+## Run mode
+
+A global `LIVE_ANIMALS_MODE` (`stub` | `real`, default `stub`, read in
+`services/mode.js`) decides what backs the seam. In `stub` mode every service serves
+its `stub.js` data. In `real` mode the services that have a `client.js` (`countries`,
+`ports`) are primed once at boot — `routes.js` `register` awaits each service's
+`prime()`, which fetches from reference-data and caches the result — so the interface
+stays synchronous and no consumer changes. A failed prime fails boot loudly (no silent
+fallback to stub). Services with no real backend keep serving their vendored data in
+both modes.
+
+## Stub completeness vs the real frontend
+
+Real data is adopted only where the real source is **richer** than the prototype:
+`countries` (14 → 31 live entries) and `ports` (3 → 78) were captured from
+reference-data. For the other services the real frontend currently holds only a
+**skeleton subset** while the prototype models the full V4 set, so the prototype keeps
+the fuller data (the "fullest stub") — item-8 adoption does **not** regress it to the
+skeleton:
+
+- `certification-purposes` — prototype 16-value V4 set; real frontend 3.
+- `document-types` — prototype 14 V4 document types; real frontend 2.
+- `import-reason-purpose` — prototype 5 reasons + 11 purposes (V4); real frontend 2
+  reasons, no purpose.
+
+When a real MDM service for these lands, reconcile toward it / V4 — do not adopt the
+interim frontend skeleton.
 
 Storage shape is not uniform across these enums. Most code→label enums
 (`certification-purposes`, `import-reason-purpose`, `countries`) store the code
