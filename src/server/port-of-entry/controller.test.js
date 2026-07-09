@@ -37,16 +37,22 @@ const validPayload = {
   portOfEntry: 'GBABE',
   'arrivalDate-day': 27,
   'arrivalDate-month': 3,
-  'arrivalDate-year': 2026
+  'arrivalDate-year': 2026,
+  meansOfTransport: 'VESSEL',
+  transportIdentification: 'Vessel Poseidon',
+  transportDocumentReference: 'BILL-OF-LADING-001'
 }
 
 describe('portOfEntryController', () => {
   describe('GET /port-of-entry', () => {
-    test('renders view with portOfEntry, arrivalDate, referenceNumber and portItems from session', async () => {
+    test('renders view with transport fields, referenceNumber and portItems from session', async () => {
       const get = vi.fn((key) => {
         const values = {
           portOfEntry: 'GBABE',
           arrivalDate: { day: 27, month: 3, year: 2026 },
+          meansOfTransport: 'VESSEL',
+          transportIdentification: 'Vessel Poseidon',
+          transportDocumentReference: 'BILL-OF-LADING-001',
           referenceNumber: 'REF-123'
         }
         return values[key] ?? null
@@ -57,9 +63,12 @@ describe('portOfEntryController', () => {
       const response = await portOfEntryController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith('port-of-entry/index', {
-        pageTitle: 'Entry point and arrival at destination',
+        pageTitle: 'Arrival details',
         portOfEntry: 'GBABE',
         arrivalDate: { day: 27, month: 3, year: 2026 },
+        meansOfTransport: 'VESSEL',
+        transportIdentification: 'Vessel Poseidon',
+        transportDocumentReference: 'BILL-OF-LADING-001',
         referenceNumber: 'REF-123',
         portItems: expectedPortItems
       })
@@ -74,9 +83,12 @@ describe('portOfEntryController', () => {
       await portOfEntryController.get.handler(request, h)
 
       expect(h.view).toHaveBeenCalledWith('port-of-entry/index', {
-        pageTitle: 'Entry point and arrival at destination',
+        pageTitle: 'Arrival details',
         portOfEntry: null,
         arrivalDate: null,
+        meansOfTransport: null,
+        transportIdentification: null,
+        transportDocumentReference: null,
         referenceNumber: null,
         portItems: expectedPortItems
       })
@@ -104,6 +116,15 @@ describe('portOfEntryController', () => {
         month: 3,
         year: 2026
       })
+      expect(set).toHaveBeenCalledWith(sessionKeys.meansOfTransport, 'VESSEL')
+      expect(set).toHaveBeenCalledWith(
+        sessionKeys.transportIdentification,
+        'Vessel Poseidon'
+      )
+      expect(set).toHaveBeenCalledWith(
+        sessionKeys.transportDocumentReference,
+        'BILL-OF-LADING-001'
+      )
       expect(saveNotification).toHaveBeenCalledWith(
         request,
         expect.objectContaining({
@@ -141,6 +162,39 @@ describe('portOfEntryController', () => {
           portItems: expectedPortItems,
           errorList: expect.arrayContaining([
             expect.objectContaining({ text: 'Enter a valid day' })
+          ])
+        })
+      )
+      expect(response.statusCode).toBe(400)
+    })
+
+    test('returns 400 with error list when means of transport is missing', async () => {
+      const set = vi.fn()
+      const get = vi.fn(() => null)
+      const { meansOfTransport, ...payloadWithoutTransport } = validPayload
+      const request = {
+        payload: payloadWithoutTransport,
+        yar: { set, get }
+      }
+      const h = {
+        view: vi.fn((template, data) => ({
+          template,
+          data,
+          code: vi.fn(function (statusCode) {
+            return { ...this, statusCode }
+          })
+        })),
+        redirect: vi.fn()
+      }
+
+      const response = await portOfEntryController.post.handler(request, h)
+
+      expect(set).not.toHaveBeenCalled()
+      expect(h.view).toHaveBeenCalledWith(
+        'port-of-entry/index',
+        expect.objectContaining({
+          errorList: expect.arrayContaining([
+            expect.objectContaining({ text: 'Select a means of transport' })
           ])
         })
       )

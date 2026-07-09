@@ -14,7 +14,7 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 const logger = createLogger()
 
-const PAGE_TITLE = 'Entry point and arrival at destination'
+const PAGE_TITLE = 'Arrival details'
 const VIEW = 'port-of-entry/index'
 
 async function buildPortItems(traceId) {
@@ -29,11 +29,57 @@ async function buildPortItems(traceId) {
   ]
 }
 
+function readTransportFields(payload) {
+  return {
+    portOfEntry: payload.portOfEntry,
+    arrivalDate: {
+      day: payload['arrivalDate-day'],
+      month: payload['arrivalDate-month'],
+      year: payload['arrivalDate-year']
+    },
+    meansOfTransport: payload.meansOfTransport,
+    transportIdentification: payload.transportIdentification,
+    transportDocumentReference: payload.transportDocumentReference
+  }
+}
+
+function persistTransportFields(_request, fields) {
+  setSessionValue(_request, sessionKeys.portOfEntry, fields.portOfEntry)
+  setSessionValue(_request, sessionKeys.arrivalDate, fields.arrivalDate)
+  setSessionValue(
+    _request,
+    sessionKeys.meansOfTransport,
+    fields.meansOfTransport
+  )
+  setSessionValue(
+    _request,
+    sessionKeys.transportIdentification,
+    fields.transportIdentification
+  )
+  setSessionValue(
+    _request,
+    sessionKeys.transportDocumentReference,
+    fields.transportDocumentReference
+  )
+}
+
 export const portOfEntryController = {
   get: {
     async handler(_request, h) {
       const portOfEntry = getSessionValue(_request, sessionKeys.portOfEntry)
       const arrivalDate = getSessionValue(_request, sessionKeys.arrivalDate)
+      const meansOfTransport = getSessionValue(
+        _request,
+        sessionKeys.meansOfTransport
+      )
+      const transportIdentification = getSessionValue(
+        _request,
+        sessionKeys.transportIdentification
+      )
+      const transportDocumentReference = getSessionValue(
+        _request,
+        sessionKeys.transportDocumentReference
+      )
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
@@ -45,6 +91,9 @@ export const portOfEntryController = {
         pageTitle: PAGE_TITLE,
         portOfEntry,
         arrivalDate,
+        meansOfTransport,
+        transportIdentification,
+        transportDocumentReference,
         referenceNumber,
         portItems
       })
@@ -52,10 +101,7 @@ export const portOfEntryController = {
   },
   post: {
     async handler(_request, h) {
-      const portOfEntry = _request.payload.portOfEntry
-      const arrivalDay = _request.payload['arrivalDate-day']
-      const arrivalMonth = _request.payload['arrivalDate-month']
-      const arrivalYear = _request.payload['arrivalDate-year']
+      const fields = readTransportFields(_request.payload)
       const referenceNumber = getSessionValue(
         _request,
         sessionKeys.referenceNumber
@@ -72,12 +118,7 @@ export const portOfEntryController = {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
-            portOfEntry,
-            arrivalDate: {
-              day: arrivalDay,
-              month: arrivalMonth,
-              year: arrivalYear
-            },
+            ...fields,
             referenceNumber,
             portItems,
             errorList: formattedErrors.errorList,
@@ -86,14 +127,8 @@ export const portOfEntryController = {
           .code(statusCodes.badRequest)
       }
 
-      const arrivalDate = {
-        day: arrivalDay,
-        month: arrivalMonth,
-        year: arrivalYear
-      }
-      setSessionValue(_request, sessionKeys.portOfEntry, portOfEntry)
-      setSessionValue(_request, sessionKeys.arrivalDate, arrivalDate)
-      logger.info(`Port of entry saved: ${portOfEntry}`)
+      persistTransportFields(_request, fields)
+      logger.info(`Port of entry saved: ${fields.portOfEntry}`)
 
       try {
         await saveNotification(_request, logger)
@@ -101,8 +136,7 @@ export const portOfEntryController = {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
-            portOfEntry,
-            arrivalDate,
+            ...fields,
             referenceNumber,
             portItems,
             errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]

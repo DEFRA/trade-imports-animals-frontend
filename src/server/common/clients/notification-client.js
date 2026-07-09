@@ -71,19 +71,28 @@ function setAddresses(notification, request) {
 }
 
 function setTransport(notification, request) {
-  const portOfEntry = getSessionValue(request, sessionKeys.portOfEntry)
-  const arrivalDateIso = getIsoArrivalDate(
-    getSessionValue(request, sessionKeys.arrivalDate)
+  const fields = {
+    portOfEntry: getSessionValue(request, sessionKeys.portOfEntry),
+    arrivalDate: getIsoArrivalDate(
+      getSessionValue(request, sessionKeys.arrivalDate)
+    ),
+    meansOfTransport: getSessionValue(request, sessionKeys.meansOfTransport),
+    transportIdentification: getSessionValue(
+      request,
+      sessionKeys.transportIdentification
+    ),
+    transportDocumentReference: getSessionValue(
+      request,
+      sessionKeys.transportDocumentReference
+    )
+  }
+
+  const transport = Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value)
   )
 
-  if (portOfEntry || arrivalDateIso) {
-    notification.transport = {}
-    if (portOfEntry) {
-      notification.transport.portOfEntry = portOfEntry
-    }
-    if (arrivalDateIso) {
-      notification.transport.arrivalDate = arrivalDateIso
-    }
+  if (Object.keys(transport).length > 0) {
+    notification.transport = transport
   }
 }
 
@@ -192,6 +201,27 @@ function setTransportValues(request, transport) {
       month: Number(m),
       year: Number(y)
     })
+  }
+  if (transport.meansOfTransport) {
+    setSessionValue(
+      request,
+      sessionKeys.meansOfTransport,
+      transport.meansOfTransport
+    )
+  }
+  if (transport.transportIdentification) {
+    setSessionValue(
+      request,
+      sessionKeys.transportIdentification,
+      transport.transportIdentification
+    )
+  }
+  if (transport.transportDocumentReference) {
+    setSessionValue(
+      request,
+      sessionKeys.transportDocumentReference,
+      transport.transportDocumentReference
+    )
   }
 }
 
