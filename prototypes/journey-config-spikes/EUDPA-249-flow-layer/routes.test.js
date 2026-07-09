@@ -217,6 +217,37 @@ describe('page-controller — country-of-origin', () => {
       '/prototype/eudpa-249/pages/region-code-requirement'
     )
   })
+
+  it('POST with a blank value returns 400 with the flow-supplied required message', async () => {
+    // countryOfOrigin is the first (and today only) obligation flagged
+    // `mandatoryToSaveAndContinue: true`. Its flow-entry `errors.required`
+    // string wins over any code-keyed COPY entry.
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/country-of-origin',
+      payload: {}
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('There is a problem')
+    expect(res.payload).toContain('Enter a country of origin')
+  })
+})
+
+describe('page-controller — mandatoryToSaveAndContinue default', () => {
+  it('POST with a blank value to a page WITHOUT the flag still redirects on', async () => {
+    // Baseline behaviour: without mandatoryToSaveAndContinue: true,
+    // a blank POST validates (domain allows unset) and the controller
+    // redirects to the next flow page. Proves the property defaults
+    // to false and only opts in per-flow-entry.
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/region-code-requirement',
+      payload: {}
+    })
+    expect(res.statusCode).toBe(302)
+  })
 })
 
 describe('page-controller — option filtering', () => {

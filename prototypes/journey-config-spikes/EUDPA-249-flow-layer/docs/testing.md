@@ -421,8 +421,8 @@ presented obligation from `reasonForImport` to `countryOfOrigin`.
 
 ```diff
                page: 'reason-for-import',
--              presents: [{ obligation: reasonForImport, mandate: 'hard' }]
-+              presents: [{ obligation: countryOfOrigin, mandate: 'hard' }]
+-              presents: [{ obligation: reasonForImport }]
++              presents: [{ obligation: countryOfOrigin }]
 ```
 
 **Result:** 11 tests fail across 5 files — contract navigation

@@ -155,6 +155,21 @@ export function validatePagePayload(page, payload, state) {
       path: descriptor.path,
       value
     }
+    // Flow-level submit-mandate: reject blank submissions with the
+    // flow-supplied required message before running the domain check.
+    // Skip the domain check on blank required — the required error is
+    // the one the user needs to see; running an enum/predicate check
+    // on undefined would only add noise. See flow.js for property
+    // semantics; distinct from obligation.status (completion-mandate).
+    if (descriptor.mandatoryToSaveAndContinue && isBlank(value)) {
+      errors.push({
+        code: 'flow.required',
+        obligation: descriptor.obligation.name,
+        path: descriptor.path,
+        message: descriptor.errors?.required ?? 'This field is required'
+      })
+      continue
+    }
     const perFieldErrors = validateObligation(
       descriptor.obligation,
       value,
@@ -166,6 +181,13 @@ export function validatePagePayload(page, payload, state) {
   }
   const { errorList, fieldErrors } = formatDomainErrors(errors)
   return { ok: errors.length === 0, errors, errorList, fieldErrors, values }
+}
+
+function isBlank(value) {
+  if (value === undefined || value === null) return true
+  if (typeof value === 'string' && value === '') return true
+  if (Array.isArray(value) && value.length === 0) return true
+  return false
 }
 
 function coerceValue(descriptor, raw) {

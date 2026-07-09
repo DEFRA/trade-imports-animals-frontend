@@ -174,19 +174,41 @@ function impls(entries) {
 }
 
 describe('expandPresents', () => {
-  it('normalises static presents entries', () => {
+  it('normalises static presents entries with defaults', () => {
     const page = {
       page: 'x',
-      presents: [{ obligation: reasonOb, mandate: 'hard' }]
+      presents: [{ obligation: reasonOb }]
     }
     expect(expandPresents(page, state())).toEqual([
-      { obligation: reasonOb, path: null, mandate: 'hard' }
+      {
+        obligation: reasonOb,
+        path: null,
+        mandatoryToSaveAndContinue: false,
+        errors: null
+      }
     ])
   })
 
-  it('defaults mandate to soft', () => {
-    const page = { page: 'x', presents: [{ obligation: reasonOb }] }
-    expect(expandPresents(page, state())[0].mandate).toBe('soft')
+  it('passes through mandatoryToSaveAndContinue + errors from a static entry', () => {
+    // Flow-level submit-mandate. See flow.js §Presents entries.
+    const page = {
+      page: 'x',
+      presents: [
+        {
+          obligation: reasonOb,
+          mandatoryToSaveAndContinue: true,
+          errors: { required: 'Choose a reason' }
+        }
+      ]
+    }
+    expect(expandPresents(page, state())).toEqual([
+      {
+        obligation: reasonOb,
+        path: null,
+        mandatoryToSaveAndContinue: true,
+        errors: { required: 'Choose a reason' }
+      }
+    ])
   })
 
   it('expands presentsForEach across group records', () => {
@@ -194,8 +216,7 @@ describe('expandPresents', () => {
       page: 'x',
       presentsForEach: {
         obligation: numOb,
-        forEachOf: lineGroup,
-        mandate: 'hard'
+        forEachOf: lineGroup
       }
     }
     const st = state({
@@ -210,8 +231,18 @@ describe('expandPresents', () => {
       ])
     })
     expect(expandPresents(page, st)).toEqual([
-      { obligation: numOb, path: 'line1', mandate: 'hard' },
-      { obligation: numOb, path: 'line2', mandate: 'hard' }
+      {
+        obligation: numOb,
+        path: 'line1',
+        mandatoryToSaveAndContinue: false,
+        errors: null
+      },
+      {
+        obligation: numOb,
+        path: 'line2',
+        mandatoryToSaveAndContinue: false,
+        errors: null
+      }
     ])
   })
 })

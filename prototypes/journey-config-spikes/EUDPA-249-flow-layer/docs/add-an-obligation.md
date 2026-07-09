@@ -73,11 +73,13 @@ iteration 3's worked example.
      (e.g. one page for one obligation), add a new subsection with a
      single-page child. See the existing pages for shape.
 
-   `mandate` on the presents entry is separate from the obligation's
-   engine-level `status`. Default `mandate` is `soft` — engine keeps
-   the obligation in scope but the page doesn't block save-and-continue.
-   Use `hard` when this specific page must not advance without an
-   answer.
+   `mandatoryToSaveAndContinue` on the presents entry is separate from
+   the obligation's engine-level `status`. Default is `false` — the
+   page validates against the domain but doesn't block save-and-
+   continue on a blank submission. Set it to `true` (with a paired
+   `errors.required` message) when this specific page must not advance
+   without an answer. See §Making a field mandatory-to-save-and-
+   continue below for the full story.
 
 5. **Remove from `KNOWN_UNWIRED`** in
    [`obligations/coverage.test.js`](../obligations/coverage.test.js).
@@ -202,8 +204,8 @@ labels })` — the closure reads `ctx.path` (the current commodity line's
 - **Step 3 — Presentation.** _No-op_ — species already had a
   presentation entry from the initial spike.
 - **Step 4 — Flow.** _No-op_ — species already presented via
-  `presentsForEach: { obligation: species, forEachOf: commodityLine,
-mandate: 'hard' }` on the `species-details` page.
+  `presentsForEach: { obligation: species, forEachOf: commodityLine }`
+  on the `species-details` page.
 - **Step 4.5 — Infrastructure (NEW for iteration 4).** Two edits:
   - `routes.js`: dropped the `if (hasPresentsForEach(page)) continue`
     guard. Pages with `presentsForEach` now get a route registered
@@ -465,6 +467,65 @@ reasons? }`.
 Note: `obligations/coverage.test.js` will fire immediately with an
 "obligation lacks domain and allow-list entry" error until you wire
 it. That's the correct catch — it's why we added that test.
+
+## Making a field mandatory-to-save-and-continue
+
+Two orthogonal mandate concepts exist in the model, so it's worth
+being explicit which one you want when adding an obligation:
+
+- **Completion-mandate** — does the _journey_ need this filled to
+  reach F? Set on the obligation itself, via `status: 'mandatory' |
+'optional'` (top-level or via `applyTo`). Enforced by
+  `pageStatus`/`containerStatus`/`journeyState`.
+- **Submit-mandate** — must the _user_ fill this before hitting Save
+  and continue on this page? Set on the flow-entry, via
+  `mandatoryToSaveAndContinue: true`. Default false — leaving the
+  field blank on POST validates through and redirects on. When true,
+  a blank POST returns a 400 with the flow-supplied required
+  message; the domain check runs on non-blank input as normal.
+
+The two are independent. A field can be:
+
+|                  | completion-optional                                                                                 | completion-mandatory                       |
+| ---------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| submit-optional  | fill any time, or not at all (e.g. internal reference)                                              | fill any time — journey blocks at F rollup |
+| submit-mandatory | must fill _here_, can be blank as far as F cares (rare — usually you want completion-mandatory too) | must fill here AND fill somewhere for F    |
+
+### Shape
+
+```js
+{
+  page: 'country-of-origin',
+  presents: [
+    {
+      obligation: countryOfOrigin,
+      mandatoryToSaveAndContinue: true,
+      errors: {
+        required: 'Enter a country of origin'
+      }
+    }
+  ]
+}
+```
+
+`errors.required` is a bare English string today. Once spike-wide
+i18n lands (see `NEXT.md` P0.5) it becomes a locale-keyed object
+(`{ en: '...', cy: '...' }`) resolved by a `t()` helper — no shape
+change at the flow-declaration site, just a swap of scalar for map.
+
+### When to use it
+
+Reach for `mandatoryToSaveAndContinue: true` when the UX design says
+"the user must not be allowed past this page without a value." Common
+cases: journey-driving fields whose value gates every downstream
+page's routing (`countryOfOrigin`, `commodityCode`), or safety-
+critical inputs that must not be silently blank.
+
+Do NOT reach for it by default. Making every mandatory field
+submit-mandatory encourages users to type placeholders to get past
+error pages; it also fights the GDS "let people save partial
+progress" pattern. Prefer completion-mandate at F-rollup for most
+required fields.
 
 ## Gotchas
 

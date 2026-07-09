@@ -169,12 +169,16 @@ export function firstPagePresentingObligation(flow, obligationId) {
 
 /**
  * Expand a Page's `presents` + `presentsForEach` into a flat list of
- * `{ obligation, path, mandate }` entries.
+ * `{ obligation, path, mandatoryToSaveAndContinue, errors }` entries.
  *
  * `presentsForEach` expands to one virtual entry per group-instance
  * present in the current post-purge state — read from
  * `state.obligations[groupId].records`. When the group has zero in-
  * scope records the page collapses to NA via the pageStatus rule.
+ *
+ * Flow-level flags (`mandatoryToSaveAndContinue`, `errors`) flow
+ * through untouched so `build-field-descriptors` + `validatePagePayload`
+ * can consume them. See flow.js for the property semantics.
  */
 export function expandPresents(page, state) {
   const out = []
@@ -182,7 +186,8 @@ export function expandPresents(page, state) {
     out.push({
       obligation: entry.obligation,
       path: entry.path ?? null,
-      mandate: entry.mandate ?? 'soft'
+      mandatoryToSaveAndContinue: entry.mandatoryToSaveAndContinue ?? false,
+      errors: entry.errors ?? null
     })
   }
   const forEach = page.presentsForEach
@@ -193,7 +198,8 @@ export function expandPresents(page, state) {
       out.push({
         obligation: forEach.obligation,
         path: record.fulfilmentId,
-        mandate: forEach.mandate ?? 'soft'
+        mandatoryToSaveAndContinue: forEach.mandatoryToSaveAndContinue ?? false,
+        errors: forEach.errors ?? null
       })
     }
   }

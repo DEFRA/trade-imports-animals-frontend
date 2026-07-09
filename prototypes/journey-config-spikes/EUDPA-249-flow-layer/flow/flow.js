@@ -7,11 +7,22 @@
  * pages in declared order.
  *
  * Presents entries:
- *   { obligation, mandate?: 'hard' | 'soft' }        — top-level
- *   { obligation, path, mandate? }                   — group-scoped
+ *   { obligation, mandatoryToSaveAndContinue?: boolean, errors?: object }
  *
  * `presentsForEach` expands to one virtual entry per in-scope
  * group-instance record — used here for the per-commodity-line pages.
+ *
+ * Property semantics:
+ *   - `obligation` is the model-layer obligation the page presents.
+ *   - `mandatoryToSaveAndContinue` (default false) is the *submit-
+ *     mandate* — when true, POSTing the page with a blank value for
+ *     this obligation returns a 400 with the flow-supplied required
+ *     message. Distinct from the obligation's `status` field, which is
+ *     the *completion-mandate* (does the journey need this to reach F?).
+ *   - `errors.required` supplies the copy for the required-field error
+ *     when `mandatoryToSaveAndContinue` is true. Bare English string
+ *     today, matching the rest of the spike's user-facing text — see
+ *     NEXT.md P0.5 for spike-wide i18n.
  *
  * The V4 slice below is driven by the two ticket drivers, country of
  * origin and commodity code:
@@ -65,18 +76,34 @@ export const flow = {
           children: [
             {
               page: 'country-of-origin',
-              presents: [{ obligation: countryOfOrigin, mandate: 'hard' }]
+              presents: [
+                {
+                  obligation: countryOfOrigin,
+                  // First worked example of the flow-level
+                  // submit-mandate: leaving the field blank on POST
+                  // returns a 400 with the flow-supplied message.
+                  // See lib/format-domain-errors.js for how `message`
+                  // overrides code-keyed copy. Every other presents
+                  // entry defaults to `mandatoryToSaveAndContinue: false`
+                  // so blank saves-and-continues succeed as they did.
+                  mandatoryToSaveAndContinue: true,
+                  errors: {
+                    required: 'Enter a country of origin'
+                  }
+                }
+              ]
             },
             {
               page: 'region-code-requirement',
-              presents: [{ obligation: regionCodeRequirement, mandate: 'hard' }]
+              presents: [{ obligation: regionCodeRequirement }]
             },
             {
-              // In scope-mandatory when regionCodeRequirement = 'yes',
-              // in-scope-optional otherwise. Stored value is retained
-              // across gate flips (per obligations.js §Region code).
+              // Obligation is in-scope-mandatory when
+              // regionCodeRequirement = 'yes', in-scope-optional
+              // otherwise (see obligations.js §Region code); stored
+              // value is retained across gate flips.
               page: 'region-code',
-              presents: [{ obligation: regionCode, mandate: 'soft' }]
+              presents: [{ obligation: regionCode }]
             }
           ]
         },
@@ -87,16 +114,14 @@ export const flow = {
           children: [
             {
               page: 'reason-for-import',
-              presents: [{ obligation: reasonForImport, mandate: 'hard' }]
+              presents: [{ obligation: reasonForImport }]
             },
             {
               // Question visibility: rendered but out-of-scope (NA) when
               // reasonForImport !== 'internal-market' — the obligation's
               // applyTo drives that; the flow just presents it.
               page: 'purpose-details',
-              presents: [
-                { obligation: purposeInInternalMarket, mandate: 'hard' }
-              ]
+              presents: [{ obligation: purposeInInternalMarket }]
             }
           ]
         }
@@ -114,7 +139,7 @@ export const flow = {
           children: [
             {
               page: 'transporter-type',
-              presents: [{ obligation: transporterType, mandate: 'hard' }]
+              presents: [{ obligation: transporterType }]
             },
             {
               // Two obligations on one page — only one of them is ever in
@@ -122,8 +147,8 @@ export const flow = {
               // via obligation scope, no flow-side branching required.
               page: 'transporter-details',
               presents: [
-                { obligation: commercialTransporter, mandate: 'hard' },
-                { obligation: privateTransporter, mandate: 'hard' }
+                { obligation: commercialTransporter },
+                { obligation: privateTransporter }
               ]
             }
           ]
@@ -135,20 +160,20 @@ export const flow = {
           children: [
             {
               page: 'means-of-transport',
-              presents: [{ obligation: meansOfTransport, mandate: 'hard' }]
+              presents: [{ obligation: meansOfTransport }]
             },
             {
               page: 'transport-identification',
               presents: [
-                { obligation: transportIdentification, mandate: 'hard' },
-                { obligation: transportDocumentReference, mandate: 'hard' }
+                { obligation: transportIdentification },
+                { obligation: transportDocumentReference }
               ]
             },
             {
               // In-scope-optional when meansOfTransport is railway or
               // road-vehicle; out-of-scope otherwise. Domain caps at 12.
               page: 'transited-countries',
-              presents: [{ obligation: transitedCountries, mandate: 'soft' }]
+              presents: [{ obligation: transitedCountries }]
             }
           ]
         }
@@ -167,8 +192,8 @@ export const flow = {
             {
               page: 'arrival-details',
               presents: [
-                { obligation: arrivalDateAtPort, mandate: 'hard' },
-                { obligation: portOfEntry, mandate: 'hard' }
+                { obligation: arrivalDateAtPort },
+                { obligation: portOfEntry }
               ]
             }
           ]
@@ -180,9 +205,7 @@ export const flow = {
           children: [
             {
               page: 'contains-unweaned-animals',
-              presents: [
-                { obligation: containsUnweanedAnimals, mandate: 'hard' }
-              ]
+              presents: [{ obligation: containsUnweanedAnimals }]
             }
           ]
         },
@@ -195,7 +218,7 @@ export const flow = {
               // Options are stubbed statically in the spike; in
               // production the certificate integration supplies them.
               page: 'animals-certified-for',
-              presents: [{ obligation: animalsCertifiedFor, mandate: 'hard' }]
+              presents: [{ obligation: animalsCertifiedFor }]
             }
           ]
         }
@@ -213,9 +236,7 @@ export const flow = {
           children: [
             {
               page: 'internal-reference',
-              presents: [
-                { obligation: internalReferenceNumber, mandate: 'soft' }
-              ]
+              presents: [{ obligation: internalReferenceNumber }]
             }
           ]
         }
@@ -249,24 +270,21 @@ export const flow = {
               page: 'commodity-details',
               presentsForEach: {
                 obligation: commodityCode,
-                forEachOf: commodityLine,
-                mandate: 'hard'
+                forEachOf: commodityLine
               }
             },
             {
               page: 'species-details',
               presentsForEach: {
                 obligation: species,
-                forEachOf: commodityLine,
-                mandate: 'hard'
+                forEachOf: commodityLine
               }
             },
             {
               page: 'number-of-animals',
               presentsForEach: {
                 obligation: numberOfAnimals,
-                forEachOf: commodityLine,
-                mandate: 'hard'
+                forEachOf: commodityLine
               }
             },
             {
@@ -275,8 +293,7 @@ export const flow = {
               page: 'number-of-packages',
               presentsForEach: {
                 obligation: numberOfPackages,
-                forEachOf: commodityLine,
-                mandate: 'soft'
+                forEachOf: commodityLine
               }
             }
           ]

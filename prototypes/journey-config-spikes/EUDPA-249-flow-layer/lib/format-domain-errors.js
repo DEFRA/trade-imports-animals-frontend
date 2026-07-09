@@ -29,6 +29,12 @@ const COPY = {
 }
 
 export function textFor(error) {
+  // Flow-level errors (e.g. code: 'flow.required') carry a pre-resolved
+  // `message` string from the flow declaration — bare English today,
+  // locale-keyed once spike-wide i18n lands (see NEXT.md P0.5). Prefer
+  // it over the code-keyed COPY table so flow authors own their
+  // wording without polluting the domain-error copy.
+  if (error.message) return error.message
   const copy = COPY[error.code]
   return copy ? copy(error) : `Invalid: ${error.code}`
 }
