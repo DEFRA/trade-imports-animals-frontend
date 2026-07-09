@@ -13,8 +13,8 @@ describe('store clone/freeze contract', () => {
     expect(Object.isFrozen(store)).toBe(true)
   })
 
-  it('Should mint a fresh in-progress journey with empty answers', () => {
-    const journey = store.create()
+  it('Should mint a fresh in-progress journey with empty answers', async () => {
+    const journey = await store.create()
     expect(journey).toMatchObject({
       journeyId: expect.any(String),
       status: IN_PROGRESS,
@@ -23,56 +23,61 @@ describe('store clone/freeze contract', () => {
     })
   })
 
-  it('Should return a deep clone from get — mutating it never mutates stored state', () => {
-    const { journeyId } = store.create()
-    store.saveAnswers(journeyId, { countryOfOrigin: 'FR', nested: { x: 1 } })
-    const read = store.get(journeyId)
+  it('Should return a deep clone from get — mutating it never mutates stored state', async () => {
+    const { journeyId } = await store.create()
+    await store.saveAnswers(journeyId, {
+      countryOfOrigin: 'FR',
+      nested: { x: 1 }
+    })
+    const read = await store.get(journeyId)
     read.answers.countryOfOrigin = 'HACKED'
     read.answers.nested.x = 999
-    expect(store.get(journeyId).answers).toEqual({
+    expect((await store.get(journeyId)).answers).toEqual({
       countryOfOrigin: 'FR',
       nested: { x: 1 }
     })
   })
 
-  it('Should copy the input by value and return a deep clone from saveAnswers', () => {
-    const { journeyId } = store.create()
+  it('Should copy the input by value and return a deep clone from saveAnswers', async () => {
+    const { journeyId } = await store.create()
     const input = { list: [{ a: 1 }] }
-    const saved = store.saveAnswers(journeyId, input)
+    const saved = await store.saveAnswers(journeyId, input)
     input.list[0].a = 999
     saved.answers.list = 'HACKED'
-    expect(store.get(journeyId).answers).toEqual({ list: [{ a: 1 }] })
+    expect((await store.get(journeyId)).answers).toEqual({ list: [{ a: 1 }] })
   })
 
-  it('Should freeze on submit — saveAnswers and re-submit both throw once submitted', () => {
-    const { journeyId } = store.create()
-    store.submit(journeyId)
-    expect(() => store.saveAnswers(journeyId, { late: true })).toThrow(
+  it('Should freeze on submit — saveAnswers and re-submit both throw once submitted', async () => {
+    const { journeyId } = await store.create()
+    await store.submit(journeyId)
+    await expect(store.saveAnswers(journeyId, { late: true })).rejects.toThrow(
       /is submitted — writes blocked/
     )
-    expect(() => store.submit(journeyId)).toThrow(
+    await expect(store.submit(journeyId)).rejects.toThrow(
       /is submitted — writes blocked/
     )
   })
 
-  it('Should flip status to submitted and stamp submittedAt on submit', () => {
-    const { journeyId } = store.create()
-    const submitted = store.submit(journeyId)
+  it('Should flip status to submitted and stamp submittedAt on submit', async () => {
+    const { journeyId } = await store.create()
+    const submitted = await store.submit(journeyId)
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toEqual(expect.any(String))
   })
 
-  it('Should treat unknown ids honestly — get undefined, saveAnswers throws', () => {
-    expect(store.get('nope')).toBeUndefined()
-    expect(() => store.saveAnswers('nope', {})).toThrow(/Unknown journey/)
-    expect(store.has('nope')).toBe(false)
+  it('Should treat unknown ids honestly — get undefined, saveAnswers throws', async () => {
+    expect(await store.get('nope')).toBeUndefined()
+    await expect(store.saveAnswers('nope', {})).rejects.toThrow(
+      /Unknown journey/
+    )
+    expect(await store.has('nope')).toBe(false)
   })
 
-  it('Should reflect membership via has() and clear()', () => {
-    const { journeyId } = store.create()
-    expect(store.has(journeyId)).toBe(true)
-    store.clear()
-    expect(store.has(journeyId)).toBe(false)
-    expect(store.get(journeyId)).toBeUndefined()
+  it('Should reflect membership via has() and clear()', async () => {
+    const { journeyId } = await store.create()
+    expect(await store.has(journeyId)).toBe(true)
+    await store.clear()
+    expect(await store.has(journeyId)).toBe(false)
+    expect(await store.get(journeyId)).toBeUndefined()
   })
 })

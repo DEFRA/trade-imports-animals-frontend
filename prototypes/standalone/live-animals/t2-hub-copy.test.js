@@ -16,8 +16,8 @@ import { routes } from './features/hub/controller.js'
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
 const renderHub = async (seed = {}) => {
-  const journey = store.create()
-  store.saveAnswers(journey.journeyId, seed)
+  const journey = await store.create()
+  await store.saveAnswers(journey.journeyId, seed)
   const h = stubH()
   await hubHandler(journeyRequest(journey.journeyId), h)
   return h.captured.view.context

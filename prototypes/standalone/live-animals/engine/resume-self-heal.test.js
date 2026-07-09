@@ -8,16 +8,16 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { recordingH } from './test-support.js'
 
 describe('resume self-heal (nothing derived is stored)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
-    records.clear()
+    await records.clear()
     configureReadyForCheckYourAnswers(() => false)
   })
 
   it('Should re-derive scope on resume, excluding a now-out-of-scope obligation', async () => {
-    const { journeyId } = records.create({ userId: STUB_USER })
-    records.saveAnswers(journeyId, {
+    const { journeyId } = await records.create({ userId: STUB_USER })
+    await records.saveAnswers(journeyId, {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
       regionOfOriginCode: 'FR-75'
@@ -30,8 +30,8 @@ describe('resume self-heal (nothing derived is stored)', () => {
   })
 
   it('Should store only the canonical record fields — nothing derived is persisted', async () => {
-    const { journeyId } = records.create({ userId: STUB_USER })
-    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+    const { journeyId } = await records.create({ userId: STUB_USER })
+    await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
     const result = await resume({ state: {}, headers: {} }, recordingH())
 

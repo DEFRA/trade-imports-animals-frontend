@@ -11,17 +11,17 @@ let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
 describe('write-through on every commit', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
-    records.clear()
+    await records.clear()
     configureReadyForCheckYourAnswers(() => false)
-    journeyId = records.create().journeyId
+    journeyId = (await records.create()).journeyId
   })
 
   it('Should persist to the records port on the first commit, before any submit', async () => {
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
-    expect(records.load({ journeyId }).answers).toEqual({
+    expect((await records.load({ journeyId })).answers).toEqual({
       countryOfOrigin: 'FR'
     })
   })
@@ -31,7 +31,7 @@ describe('write-through on every commit', () => {
     await commit(buildRequest(), stubH(), {
       internalReferenceNumber: 'Imports456GB'
     })
-    expect(records.load({ journeyId }).answers).toEqual({
+    expect((await records.load({ journeyId })).answers).toEqual({
       countryOfOrigin: 'FR',
       internalReferenceNumber: 'Imports456GB'
     })

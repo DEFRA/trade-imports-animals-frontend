@@ -5,19 +5,19 @@ import {
 } from '../../../engine/persistence/session.js'
 
 export const session = {
-  userId(request) {
+  async userId(request) {
     return request?.headers?.[STUB_USER_HEADER] ?? STUB_USER
   },
 
-  activeJourneyId(request) {
+  async activeJourneyId(request) {
     return request?.state?.[JOURNEY_COOKIE]
   },
 
-  setActiveJourney(h, journeyId) {
+  async setActiveJourney(h, journeyId) {
     h.state(JOURNEY_COOKIE, journeyId)
   },
 
-  clearActive(h) {
+  async clearActive(h) {
     h.unstate(JOURNEY_COOKIE)
   }
 }

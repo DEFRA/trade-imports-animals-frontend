@@ -12,16 +12,16 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { recordingH } from './test-support.js'
 
 describe('resume by user (cookieless)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
-    records.clear()
+    await records.clear()
     configureReadyForCheckYourAnswers(() => false)
   })
 
   it('Should recover a saved journey with no cookie, rebuild scope, and re-pin it', async () => {
-    const { journeyId } = records.create({ userId: STUB_USER })
-    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+    const { journeyId } = await records.create({ userId: STUB_USER })
+    await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
     const h = recordingH()
     const result = await resume({ state: {}, headers: {} }, h)
@@ -36,7 +36,7 @@ describe('resume by user (cookieless)', () => {
     const h = recordingH()
     const result = await resume({ state: {}, headers: {} }, h)
     expect(result.journey.journeyId).toEqual(expect.any(String))
-    expect(records.load({ userId: STUB_USER }).journeyId).toBe(
+    expect((await records.load({ userId: STUB_USER })).journeyId).toBe(
       result.journey.journeyId
     )
   })

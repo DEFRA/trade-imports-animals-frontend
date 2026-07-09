@@ -20,7 +20,7 @@ const loadWritable = (journeyId) => {
 }
 
 export const records = {
-  create({ userId } = {}) {
+  async create({ userId } = {}) {
     const journey = {
       journeyId: randomUUID(),
       userId: userId ?? null,
@@ -33,7 +33,7 @@ export const records = {
     return structuredClone(journey)
   },
 
-  load({ journeyId, userId } = {}) {
+  async load({ journeyId, userId } = {}) {
     const resolvedJourneyId =
       journeyId ?? (userId != null ? byUser.get(userId) : undefined)
     if (resolvedJourneyId == null) return undefined
@@ -41,24 +41,24 @@ export const records = {
     return journey ? structuredClone(journey) : undefined
   },
 
-  has(journeyId) {
+  async has(journeyId) {
     return journeys.has(journeyId)
   },
 
-  saveAnswers(journeyId, answers) {
+  async saveAnswers(journeyId, answers) {
     const journey = loadWritable(journeyId)
     journey.answers = structuredClone(answers ?? {})
     return structuredClone(journey)
   },
 
-  finalise(journeyId) {
+  async finalise(journeyId) {
     const journey = loadWritable(journeyId)
     journey.status = SUBMITTED
     journey.submittedAt = new Date().toISOString()
     return structuredClone(journey)
   },
 
-  clear() {
+  async clear() {
     journeys.clear()
     byUser.clear()
   }

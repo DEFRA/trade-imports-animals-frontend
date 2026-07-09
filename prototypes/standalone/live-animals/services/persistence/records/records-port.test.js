@@ -5,38 +5,40 @@ import { IN_PROGRESS } from '../../../engine/persistence/records.js'
 describe('records durable port', () => {
   beforeEach(() => records.clear())
 
-  it('Should mint a record stamped with its user and index it by user', () => {
-    const journey = records.create({ userId: 'user-A' })
+  it('Should mint a record stamped with its user and index it by user', async () => {
+    const journey = await records.create({ userId: 'user-A' })
     expect(journey).toMatchObject({ userId: 'user-A', status: IN_PROGRESS })
-    expect(records.load({ userId: 'user-A' }).journeyId).toBe(journey.journeyId)
+    expect((await records.load({ userId: 'user-A' })).journeyId).toBe(
+      journey.journeyId
+    )
   })
 
-  it('Should resolve load polymorphically by journeyId or by userId', () => {
-    const { journeyId } = records.create({ userId: 'user-A' })
-    expect(records.load({ journeyId }).journeyId).toBe(journeyId)
-    expect(records.load({ userId: 'user-A' }).journeyId).toBe(journeyId)
+  it('Should resolve load polymorphically by journeyId or by userId', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    expect((await records.load({ journeyId })).journeyId).toBe(journeyId)
+    expect((await records.load({ userId: 'user-A' })).journeyId).toBe(journeyId)
   })
 
-  it('Should return undefined from load for an unknown user', () => {
-    records.create({ userId: 'user-A' })
-    expect(records.load({ userId: 'nobody' })).toBeUndefined()
+  it('Should return undefined from load for an unknown user', async () => {
+    await records.create({ userId: 'user-A' })
+    expect(await records.load({ userId: 'nobody' })).toBeUndefined()
   })
 
-  it('Should make saveAnswers durable immediately, with no finalise', () => {
-    const { journeyId } = records.create({ userId: 'user-A' })
-    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
-    expect(records.load({ journeyId }).answers).toEqual({
+  it('Should make saveAnswers durable immediately, with no finalise', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+    expect((await records.load({ journeyId })).answers).toEqual({
       countryOfOrigin: 'FR'
     })
-    expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)
+    expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
   })
 
-  it('Should freeze after finalise so a later saveAnswers throws', () => {
-    const { journeyId } = records.create({ userId: 'user-A' })
-    records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
-    records.finalise(journeyId)
-    expect(() => records.saveAnswers(journeyId, { late: true })).toThrow(
-      /is submitted — writes blocked/
-    )
+  it('Should freeze after finalise so a later saveAnswers throws', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+    await records.finalise(journeyId)
+    await expect(
+      records.saveAnswers(journeyId, { late: true })
+    ).rejects.toThrow(/is submitted — writes blocked/)
   })
 })

@@ -10,10 +10,10 @@ import { recordingH } from './test-support.js'
 const buildRequest = (cookies) => ({ state: { ...cookies }, headers: {} })
 
 describe('#currentJourney', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
-    store.clear()
+    await store.clear()
   })
 
   it('Should mint a fresh journey and pin it in the cookie when none is present', async () => {
@@ -26,7 +26,7 @@ describe('#currentJourney', () => {
 
   it('Should resume the same journey within a session (cookie points at a live journey)', async () => {
     const first = await currentJourney(buildRequest({}), recordingH())
-    store.saveAnswers(first.journeyId, { countryOfOrigin: 'FR' })
+    await store.saveAnswers(first.journeyId, { countryOfOrigin: 'FR' })
     const again = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: first.journeyId }),
       recordingH()
@@ -42,7 +42,7 @@ describe('#currentJourney', () => {
       h
     )
     expect(journey.journeyId).not.toBe('gone-1234')
-    expect(store.has(journey.journeyId)).toBe(true)
+    expect(await store.has(journey.journeyId)).toBe(true)
     expect(h.cookies[JOURNEY_COOKIE]).toBe(journey.journeyId)
   })
 
@@ -50,8 +50,8 @@ describe('#currentJourney', () => {
     const journeyA = await currentJourney(buildRequest({}), recordingH())
     const journeyB = await currentJourney(buildRequest({}), recordingH())
     expect(journeyA.journeyId).not.toBe(journeyB.journeyId)
-    store.saveAnswers(journeyA.journeyId, { who: 'A' })
-    store.saveAnswers(journeyB.journeyId, { who: 'B' })
+    await store.saveAnswers(journeyA.journeyId, { who: 'A' })
+    await store.saveAnswers(journeyB.journeyId, { who: 'B' })
     const journeyAResumed = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: journeyA.journeyId }),
       recordingH()

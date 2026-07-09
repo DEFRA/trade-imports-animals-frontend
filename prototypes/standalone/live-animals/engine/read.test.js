@@ -26,8 +26,8 @@ describe('#get — per-request read view', () => {
       countryOfOrigin: 'FR',
       transporterType: 'Commercial transporter'
     }
-    const journey = store.create()
-    store.saveAnswers(journey.journeyId, seed)
+    const journey = await store.create()
+    await store.saveAnswers(journey.journeyId, seed)
 
     const view = await get(journeyRequest(journey.journeyId), recordingH())
 

@@ -16,17 +16,17 @@ let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
 describe('submit is finalise', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
-    records.clear()
-    journeyId = records.create().journeyId
+    await records.clear()
+    journeyId = (await records.create()).journeyId
   })
 
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', async () => {
     configureReadyForCheckYourAnswers(() => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
-    const committed = records.load({ journeyId }).answers
+    const committed = (await records.load({ journeyId })).answers
 
     const result = await submitJourney(buildRequest(), stubH())
 
@@ -46,6 +46,6 @@ describe('submit is finalise', () => {
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(false)
-    expect(records.load({ journeyId }).status).toBe(IN_PROGRESS)
+    expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
   })
 })
