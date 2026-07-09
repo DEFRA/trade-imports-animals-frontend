@@ -1,20 +1,17 @@
 /**
  * Presentation — per-obligation human copy for the browsable prototype.
  *
- * Keyed by obligation id. Each entry may carry:
- *   pageTitle:   the <h1> and browser-tab title for a page whose sole
- *                presented obligation is this one.
- *   legend:      the fieldset legend for radios / checkboxes / date, or
- *                the input label for text / date.
- *   hint:        under-the-legend guidance text.
- *
- * The domain entry's `labels` map (attached by the factory helpers) is
- * the source of truth for enum option copy; presentation.js does not
- * duplicate them.
+ * The map values below store MESSAGE KEYS resolved via `lib/i18n.js`
+ * (`t(key)` → `locales/en.json`). `forObligation()` / `pageCopy()`
+ * return resolved English strings, so consumers don't have to know
+ * about keys. See NEXT.md P0.5 for the roadmap to Welsh support.
  *
  * When no entry exists for an obligation, `humaniseId` is the fallback:
  *   'internal-market' → 'Internal market'
  *   'reasonForImport' → 'Reason for import'
+ *
+ * Entries omit `hintKey` when there's genuinely no hint (rather than
+ * carrying a null key that would need a null-valued en.json entry).
  */
 
 import {
@@ -41,192 +38,200 @@ import {
   regionCodeRequirement,
   regionCode
 } from '../obligations/obligations.js'
+import { t } from './i18n.js'
 
-export const presentation = new Map([
+/**
+ * Registry of message keys keyed by obligation id. Every entry has a
+ * `pageTitleKey` and a `legendKey`; `hintKey` is optional (present only
+ * for obligations that have a hint).
+ *
+ * Coverage test in `i18n-coverage.test.js` walks this map and asserts
+ * every key resolves in `locales/en.json`.
+ */
+export const OBLIGATION_KEYS = new Map([
   [
     countryOfOrigin.id,
     {
-      pageTitle: 'Country of origin',
-      legend: 'Which country are the animals coming from?',
-      hint: 'The country the animals were kept in before this consignment.'
+      pageTitleKey: 'presentation.countryOfOrigin.pageTitle',
+      legendKey: 'presentation.countryOfOrigin.legend',
+      hintKey: 'presentation.countryOfOrigin.hint'
     }
   ],
   [
     reasonForImport.id,
     {
-      pageTitle: 'Reason for import',
-      legend: 'Why are the animals being imported?',
-      hint: null
+      pageTitleKey: 'presentation.reasonForImport.pageTitle',
+      legendKey: 'presentation.reasonForImport.legend'
     }
   ],
   [
     purposeInInternalMarket.id,
     {
-      pageTitle: 'Purpose in the internal market',
-      legend: 'What is the purpose of the internal-market movement?',
-      hint: 'Only shown when the reason for import is Internal market.'
+      pageTitleKey: 'presentation.purposeInInternalMarket.pageTitle',
+      legendKey: 'presentation.purposeInInternalMarket.legend',
+      hintKey: 'presentation.purposeInInternalMarket.hint'
     }
   ],
   [
     transporterType.id,
     {
-      pageTitle: 'Type of transporter',
-      legend: 'What kind of transporter is bringing the animals?',
-      hint: null
+      pageTitleKey: 'presentation.transporterType.pageTitle',
+      legendKey: 'presentation.transporterType.legend'
     }
   ],
   [
     commercialTransporter.id,
     {
-      pageTitle: 'Commercial transporter',
-      legend: 'Commercial transporter details',
-      hint: 'The approved commercial carrier used for this consignment.'
+      pageTitleKey: 'presentation.commercialTransporter.pageTitle',
+      legendKey: 'presentation.commercialTransporter.legend',
+      hintKey: 'presentation.commercialTransporter.hint'
     }
   ],
   [
     privateTransporter.id,
     {
-      pageTitle: 'Private transporter',
-      legend: 'Private transporter details',
-      hint: 'The private-transporter contact details for this consignment.'
+      pageTitleKey: 'presentation.privateTransporter.pageTitle',
+      legendKey: 'presentation.privateTransporter.legend',
+      hintKey: 'presentation.privateTransporter.hint'
     }
   ],
   [
     meansOfTransport.id,
     {
-      pageTitle: 'Means of transport',
-      legend: 'How are the animals being transported?',
-      hint: null
+      pageTitleKey: 'presentation.meansOfTransport.pageTitle',
+      legendKey: 'presentation.meansOfTransport.legend'
     }
   ],
   [
     transportIdentification.id,
     {
-      pageTitle: 'Transport identification',
-      legend: 'Transport identification',
-      hint: 'Vehicle registration, vessel name, flight number, or similar.'
+      pageTitleKey: 'presentation.transportIdentification.pageTitle',
+      legendKey: 'presentation.transportIdentification.legend',
+      hintKey: 'presentation.transportIdentification.hint'
     }
   ],
   [
     transportDocumentReference.id,
     {
-      pageTitle: 'Transport document reference',
-      legend: 'Transport document reference',
-      hint: 'A CMR, bill of lading, or equivalent document reference.'
+      pageTitleKey: 'presentation.transportDocumentReference.pageTitle',
+      legendKey: 'presentation.transportDocumentReference.legend',
+      hintKey: 'presentation.transportDocumentReference.hint'
     }
   ],
   [
     transitedCountries.id,
     {
-      pageTitle: 'Transited countries',
-      legend: 'Which countries have the animals travelled through?',
-      hint: 'Select up to 12 countries.'
+      pageTitleKey: 'presentation.transitedCountries.pageTitle',
+      legendKey: 'presentation.transitedCountries.legend',
+      hintKey: 'presentation.transitedCountries.hint'
     }
   ],
   [
     arrivalDateAtPort.id,
     {
-      pageTitle: 'Arrival at port',
-      legend: 'Expected arrival date at the port of entry',
-      hint: 'DD/MM/YYYY.'
+      pageTitleKey: 'presentation.arrivalDateAtPort.pageTitle',
+      legendKey: 'presentation.arrivalDateAtPort.legend',
+      hintKey: 'presentation.arrivalDateAtPort.hint'
     }
   ],
   [
     portOfEntry.id,
     {
-      pageTitle: 'Port of entry',
-      legend: 'Port of entry',
-      hint: 'Choose the UK port or airport where the animals will arrive.'
+      pageTitleKey: 'presentation.portOfEntry.pageTitle',
+      legendKey: 'presentation.portOfEntry.legend',
+      hintKey: 'presentation.portOfEntry.hint'
     }
   ],
   [
     animalsCertifiedFor.id,
     {
-      pageTitle: 'Animals certified for',
-      legend: 'What are the animals certified for?',
-      hint: 'Options are loaded from the certificate.'
+      pageTitleKey: 'presentation.animalsCertifiedFor.pageTitle',
+      legendKey: 'presentation.animalsCertifiedFor.legend',
+      hintKey: 'presentation.animalsCertifiedFor.hint'
     }
   ],
   [
     containsUnweanedAnimals.id,
     {
-      pageTitle: 'Contains unweaned animals',
-      legend: 'Are there any unweaned animals in this consignment?',
-      hint: 'An unweaned animal is still dependent on its mother for milk.'
+      pageTitleKey: 'presentation.containsUnweanedAnimals.pageTitle',
+      legendKey: 'presentation.containsUnweanedAnimals.legend',
+      hintKey: 'presentation.containsUnweanedAnimals.hint'
     }
   ],
   [
     regionCodeRequirement.id,
     {
-      pageTitle: 'Region of origin code',
-      legend: 'Does the country of origin require a region code?',
-      hint: 'Some countries require an ISO region code alongside the country code.'
+      pageTitleKey: 'presentation.regionCodeRequirement.pageTitle',
+      legendKey: 'presentation.regionCodeRequirement.legend',
+      hintKey: 'presentation.regionCodeRequirement.hint'
     }
   ],
   [
     regionCode.id,
     {
-      pageTitle: 'Region code',
-      legend: 'Enter the region of origin code',
-      hint: 'Up to 5 characters. For example, FR-75.'
+      pageTitleKey: 'presentation.regionCode.pageTitle',
+      legendKey: 'presentation.regionCode.legend',
+      hintKey: 'presentation.regionCode.hint'
     }
   ],
   [
     internalReferenceNumber.id,
     {
-      pageTitle: 'Your reference',
-      legend: 'Your reference for this consignment (optional)',
-      hint: 'A trader reference (max 58 characters).'
+      pageTitleKey: 'presentation.internalReferenceNumber.pageTitle',
+      legendKey: 'presentation.internalReferenceNumber.legend',
+      hintKey: 'presentation.internalReferenceNumber.hint'
     }
   ],
   [
     commodityCode.id,
     {
-      pageTitle: 'Commodity code',
-      legend: 'Commodity code',
-      hint: 'The V4 commodity code for this line.'
+      pageTitleKey: 'presentation.commodityCode.pageTitle',
+      legendKey: 'presentation.commodityCode.legend',
+      hintKey: 'presentation.commodityCode.hint'
     }
   ],
   [
     species.id,
     {
-      pageTitle: 'Species',
-      legend: 'Which species are on this line?',
-      hint: 'Select all that apply.'
+      pageTitleKey: 'presentation.species.pageTitle',
+      legendKey: 'presentation.species.legend',
+      hintKey: 'presentation.species.hint'
     }
   ],
   [
     numberOfAnimals.id,
     {
-      pageTitle: 'Number of animals',
-      legend: 'How many animals are on this line?',
-      hint: null
+      pageTitleKey: 'presentation.numberOfAnimals.pageTitle',
+      legendKey: 'presentation.numberOfAnimals.legend'
     }
   ],
   [
     numberOfPackages.id,
     {
-      pageTitle: 'Number of packages',
-      legend: 'Number of packages (optional)',
-      hint: null
+      pageTitleKey: 'presentation.numberOfPackages.pageTitle',
+      legendKey: 'presentation.numberOfPackages.legend'
     }
   ],
   [
     cph.id,
     {
-      pageTitle: 'County Parish Holding (CPH)',
-      legend: 'CPH',
-      hint: 'Required for cattle, pigs, sheep and goats. Max 11 characters.'
+      pageTitleKey: 'presentation.cph.pageTitle',
+      legendKey: 'presentation.cph.legend',
+      hintKey: 'presentation.cph.hint'
     }
   ]
 ])
 
-const PAGE_COPY = new Map([
+/**
+ * PAGE_COPY — copy for non-obligation-driven pages (currently just the
+ * read-only commodity-lines intro).
+ */
+export const PAGE_KEYS = new Map([
   [
     'commodity-lines-intro',
     {
-      pageTitle: 'Commodity lines',
-      lead: 'You need to add at least one commodity line. Each line captures a commodity code, the type, species and count.'
+      pageTitleKey: 'pageCopy.commodity-lines-intro.pageTitle',
+      leadKey: 'pageCopy.commodity-lines-intro.lead'
     }
   ]
 ])
@@ -241,15 +246,26 @@ export function humaniseId(id) {
 }
 
 export function pageCopy(pageName) {
-  return PAGE_COPY.get(pageName) ?? { pageTitle: humaniseId(pageName) }
+  const entry = PAGE_KEYS.get(pageName)
+  if (!entry) return { pageTitle: humaniseId(pageName) }
+  return {
+    pageTitle: t(entry.pageTitleKey),
+    lead: t(entry.leadKey)
+  }
 }
 
 export function forObligation(obligation) {
-  return (
-    presentation.get(obligation.id) ?? {
+  const entry = OBLIGATION_KEYS.get(obligation.id)
+  if (!entry) {
+    return {
       pageTitle: humaniseId(obligation.name),
       legend: humaniseId(obligation.name),
       hint: null
     }
-  )
+  }
+  return {
+    pageTitle: t(entry.pageTitleKey),
+    legend: t(entry.legendKey),
+    hint: entry.hintKey ? t(entry.hintKey) : null
+  }
 }

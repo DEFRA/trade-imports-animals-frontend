@@ -50,6 +50,119 @@
       }
     }
   },
+  "presentation": {
+    "countryOfOrigin": {
+      "pageTitle": "Country of origin",
+      "legend": "Which country are the animals coming from?",
+      "hint": "The country the animals were kept in before this consignment."
+    },
+    "reasonForImport": {
+      "pageTitle": "Reason for import",
+      "legend": "Why are the animals being imported?"
+    },
+    "purposeInInternalMarket": {
+      "pageTitle": "Purpose in the internal market",
+      "legend": "What is the purpose of the internal-market movement?",
+      "hint": "Only shown when the reason for import is Internal market."
+    },
+    "transporterType": {
+      "pageTitle": "Type of transporter",
+      "legend": "What kind of transporter is bringing the animals?"
+    },
+    "commercialTransporter": {
+      "pageTitle": "Commercial transporter",
+      "legend": "Commercial transporter details",
+      "hint": "The approved commercial carrier used for this consignment."
+    },
+    "privateTransporter": {
+      "pageTitle": "Private transporter",
+      "legend": "Private transporter details",
+      "hint": "The private-transporter contact details for this consignment."
+    },
+    "meansOfTransport": {
+      "pageTitle": "Means of transport",
+      "legend": "How are the animals being transported?"
+    },
+    "transportIdentification": {
+      "pageTitle": "Transport identification",
+      "legend": "Transport identification",
+      "hint": "Vehicle registration, vessel name, flight number, or similar."
+    },
+    "transportDocumentReference": {
+      "pageTitle": "Transport document reference",
+      "legend": "Transport document reference",
+      "hint": "A CMR, bill of lading, or equivalent document reference."
+    },
+    "transitedCountries": {
+      "pageTitle": "Transited countries",
+      "legend": "Which countries have the animals travelled through?",
+      "hint": "Select up to 12 countries."
+    },
+    "arrivalDateAtPort": {
+      "pageTitle": "Arrival at port",
+      "legend": "Expected arrival date at the port of entry",
+      "hint": "DD/MM/YYYY."
+    },
+    "portOfEntry": {
+      "pageTitle": "Port of entry",
+      "legend": "Port of entry",
+      "hint": "Choose the UK port or airport where the animals will arrive."
+    },
+    "animalsCertifiedFor": {
+      "pageTitle": "Animals certified for",
+      "legend": "What are the animals certified for?",
+      "hint": "Options are loaded from the certificate."
+    },
+    "containsUnweanedAnimals": {
+      "pageTitle": "Contains unweaned animals",
+      "legend": "Are there any unweaned animals in this consignment?",
+      "hint": "An unweaned animal is still dependent on its mother for milk."
+    },
+    "regionCodeRequirement": {
+      "pageTitle": "Region of origin code",
+      "legend": "Does the country of origin require a region code?",
+      "hint": "Some countries require an ISO region code alongside the country code."
+    },
+    "regionCode": {
+      "pageTitle": "Region code",
+      "legend": "Enter the region of origin code",
+      "hint": "Up to 5 characters. For example, FR-75."
+    },
+    "internalReferenceNumber": {
+      "pageTitle": "Your reference",
+      "legend": "Your reference for this consignment (optional)",
+      "hint": "A trader reference (max 58 characters)."
+    },
+    "commodityCode": {
+      "pageTitle": "Commodity code",
+      "legend": "Commodity code",
+      "hint": "The V4 commodity code for this line."
+    },
+    "species": {
+      "pageTitle": "Species",
+      "legend": "Which species are on this line?",
+      "hint": "Select all that apply."
+    },
+    "numberOfAnimals": {
+      "pageTitle": "Number of animals",
+      "legend": "How many animals are on this line?"
+    },
+    "numberOfPackages": {
+      "pageTitle": "Number of packages",
+      "legend": "Number of packages (optional)"
+    },
+    "cph": {
+      "pageTitle": "County Parish Holding (CPH)",
+      "legend": "CPH",
+      "hint": "Required for cattle, pigs, sheep and goats. Max 11 characters."
+    }
+  },
+  "pageCopy": {
+    "commodity-lines-intro": {
+      "pageTitle": "Commodity lines",
+      "lead": "You need to add at least one commodity line. Each line captures a commodity code, the type, species and count."
+    }
+  },
   "errors": {
     "countryOfOrigin": {
       "required": "Enter a country of origin"

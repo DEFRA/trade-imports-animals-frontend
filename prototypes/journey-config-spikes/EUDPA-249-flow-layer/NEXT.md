@@ -798,47 +798,50 @@ journey genuinely doesn't need the field — but it's a UX call whether
 that motivated the underlying rule change; the resolved-limitation
 block earlier in this file.
 
-### P0.5. Spike-wide multi-language (Welsh) support
+### P0.5. Spike-wide multi-language (Welsh) support — IN PROGRESS
 
-**Context:** every user-facing string in the spike is a bare English
-literal today — flow section/subsection titles (`flow/flow.js`),
-page copy in `lib/presentation.js` (`pageTitle`, `legend`, `hint`),
-enum labels in `domain/index.js` (`COUNTRY_LABELS`,
-`SPECIES_LABELS`, `YES_NO_LABELS`, etc.), CYA controller strings,
-templates, and the new `errors.required` string on the country-of-
-origin flow entry. The `mandatoryToSaveAndContinue` feature added
-the first flow-authored error message and deliberately followed the
-surrounding convention (bare string) rather than locale-key one
-field in isolation.
+**Chosen convention:** translation-key + locale JSON. `lib/i18n.js`
+exports `t(key)` which resolves against `locales/en.json` via a
+dotted-path lookup. Missing keys return the raw dotted-path (visible
+red flag in the UI). `hasKey(key)` is used by
+`i18n-coverage.test.js` — a build-time gate that walks every
+key-carrying source and asserts each key resolves. Welsh support
+adds `locales/cy.json` + a locale getter reading from request; no
+declaration-site changes needed.
 
-**Why parked:** Welsh support is a real Defra digital requirement
-and this is a spike-wide change, not a one-file swap. Doing it
-piecemeal creates inconsistency (some strings locale-keyed, some
-not) and locks in the wrong shape before we've picked a resolver
-convention.
+**Progress:**
 
-**Scope when it's picked up** — approximately one focused day:
+- ✅ Flow structural — section/subsection `titleKey` on every node;
+  `errors.required` on countryOfOrigin submit-mandate.
+- ✅ `lib/presentation.js` — `OBLIGATION_KEYS` + `PAGE_KEYS`, all 22
+  obligation entries + the commodity-lines-intro page-copy entry.
+  `forObligation()` / `pageCopy()` resolve to strings internally, so
+  consumers are unchanged.
+- ⏳ Domain enum labels (`COUNTRY_LABELS`, `SPECIES_LABELS`,
+  `YES_NO_LABELS`, `ANIMAL_TYPE_LABELS`, plus inline `labels: {...}`
+  blocks in each factory call). Consumers at
+  `lib/field-widgets.js` (3 call sites) and
+  `features/check-your-answers/controller.js` (3 call sites) need to
+  wrap `labels[value]` in `t()`.
+- ⏳ `lib/format-domain-errors.js` COPY table — each error code's
+  message becomes a key resolved via `t()`. `textFor()` already
+  prefers `error.message` for flow-supplied copy.
+- ⏳ Hub controller chrome — `'Task list'`, `'Live animals —
+EUDPA-249 flow-layer prototype'`, `'Complete each section...'`,
+  progressLine variants, `'Check your answers so far'`,
+  `'Reset the demo'`.
+- ⏳ CYA controller chrome — `'Check your answers'`, banner heading,
+  `'Enter a value for X'` prompt.
+- ⏳ Templates (`shared/layout.njk`, hub + CYA templates) —
+  `'Prototype'` phase-banner tag, `'Back'`, `'Task list'` breadcrumb,
+  service name. Needs either a nunjucks `t()` global or controller-
+  resolved chrome via view context (leaning towards the latter to
+  keep templates dumb).
+- ⏳ Locale threading — reading locale from request headers /
+  session / query param and passing to `t()`. Currently English only.
+- ⏳ Add `locales/cy.json` (translator-populated).
 
-- Pick the resolver convention. Two shapes to choose from:
-  1. **Inline locale-keyed objects** at declaration sites — e.g.
-     `title: { en: 'Country of origin', cy: 'Gwlad tarddiad' }`.
-     Simplest for a spike, all copy visible in-source.
-  2. **Translation-key + locale JSON files** — `title: 't.origin.title'`
-     resolving via `locales/{en,cy}.json`. GOV.UK / hapi-i18n
-     convention; scales for translators.
-- Add a tiny `lib/i18n.js` with `resolveMessage(msgObjOrKey, locale)`
-  and a locale getter that reads from request headers or session
-  (`hapi-locale` or the equivalent).
-- Convert every user-facing string in the spike to the chosen shape.
-  Whichever we pick, the `errors.required` string on
-  `country-of-origin` becomes the first worked example.
-- Thread the locale through the page-controller into
-  `validatePagePayload` + `fieldsForPage` so error messages resolve
-  against the user's locale.
-- Update `docs/add-an-obligation.md` "Making a field mandatory-to-
-  save-and-continue" section to remove the "bare string today" caveat.
-
-**Verification target:** the browsable walk works with
+**Verification target when complete:** the browsable walk works with
 `?lang=cy` (or however locale gets threaded) with every string
 Welsh; falls back to English gracefully when a locale is missing
 for a given key.

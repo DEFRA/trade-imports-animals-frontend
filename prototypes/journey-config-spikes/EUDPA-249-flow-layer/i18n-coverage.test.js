@@ -1,27 +1,33 @@
 /**
  * i18n coverage — walk every message key referenced from the flow
- * declaration and assert it resolves in `locales/en.json`.
+ * declaration + the presentation manifest and assert each resolves in
+ * `locales/en.json`.
  *
  * Missing keys have soft runtime behaviour (`t()` returns the raw
  * dotted-path), which is a visible-in-UI red flag but not a build-time
  * failure. This test is the build-time gate.
  *
- * The walk covers:
- *   - `titleKey` on every section and subsection node
- *   - `errors.required` (a key) on every presents / presentsForEach
- *     entry that carries `mandatoryToSaveAndContinue: true`
+ * Sources walked:
+ *   - `flow.js`: `titleKey` on every section/subsection node;
+ *     `errors.required` on every presents / presentsForEach entry with
+ *     `mandatoryToSaveAndContinue: true`.
+ *   - `presentation.js`: `pageTitleKey`, `legendKey`, optional `hintKey`
+ *     on every OBLIGATION_KEYS entry; `pageTitleKey` + `leadKey` on
+ *     every PAGE_KEYS entry.
  *
- * Extend when a new key-carrying property is added to the flow shape.
- * (Commit 2 will extend this test to walk presentation.js as well.)
+ * Extend when a new key-carrying property is added to the flow shape,
+ * or when a new copy source is introduced (domain labels, hub/CYA
+ * controller chrome, formatDomainErrors — all follow in later commits).
  */
 
 import { describe, it, expect } from 'vitest'
 import { flow } from './flow/flow.js'
 import { hasKey } from './lib/i18n.js'
+import { OBLIGATION_KEYS, PAGE_KEYS } from './lib/presentation.js'
 
-function collectKeys(node, out = []) {
+function collectFlowKeys(node, out = []) {
   if (node.titleKey) out.push(node.titleKey)
-  for (const child of node.children ?? []) collectKeys(child, out)
+  for (const child of node.children ?? []) collectFlowKeys(child, out)
   for (const entry of node.presents ?? []) {
     if (entry.errors?.required) out.push(entry.errors.required)
   }
@@ -30,14 +36,44 @@ function collectKeys(node, out = []) {
   return out
 }
 
+function collectPresentationKeys() {
+  const keys = []
+  for (const entry of OBLIGATION_KEYS.values()) {
+    if (entry.pageTitleKey) keys.push(entry.pageTitleKey)
+    if (entry.legendKey) keys.push(entry.legendKey)
+    if (entry.hintKey) keys.push(entry.hintKey)
+  }
+  for (const entry of PAGE_KEYS.values()) {
+    if (entry.pageTitleKey) keys.push(entry.pageTitleKey)
+    if (entry.leadKey) keys.push(entry.leadKey)
+  }
+  return keys
+}
+
 describe('i18n coverage — flow.js', () => {
-  const keys = flow.sections.flatMap((section) => collectKeys(section))
+  const keys = flow.sections.flatMap((section) => collectFlowKeys(section))
 
   it('collects at least one key (guards against a silent walk regression)', () => {
     expect(keys.length).toBeGreaterThan(0)
   })
 
   it('every message key referenced from flow.js resolves in locales/en.json', () => {
+    const missing = keys.filter((key) => !hasKey(key))
+    expect(
+      missing,
+      `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`
+    ).toEqual([])
+  })
+})
+
+describe('i18n coverage — presentation.js', () => {
+  const keys = collectPresentationKeys()
+
+  it('collects at least one key (guards against a silent walk regression)', () => {
+    expect(keys.length).toBeGreaterThan(0)
+  })
+
+  it('every message key referenced from presentation.js resolves in locales/en.json', () => {
     const missing = keys.filter((key) => !hasKey(key))
     expect(
       missing,
