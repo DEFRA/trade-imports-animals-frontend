@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { store, IN_PROGRESS, SUBMITTED } from './store.js'
+import { configureRecords } from './persistence/records.js'
+import { records as recordsStub } from '../services/persistence/records/stub.js'
 
 describe('store clone/freeze contract', () => {
-  beforeEach(() => store.clear())
+  beforeEach(() => {
+    configureRecords(recordsStub)
+    store.clear()
+  })
 
   it('Should be a frozen surface — methods cannot be reassigned', () => {
     expect(Object.isFrozen(store)).toBe(true)

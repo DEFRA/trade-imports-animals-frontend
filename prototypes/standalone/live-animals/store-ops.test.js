@@ -6,7 +6,8 @@ import {
   updateEntryAt
 } from './engine/index.js'
 import { store } from './engine/store.js'
-import { records } from './engine/persistence/records.js'
+import { records, configureRecords } from './engine/persistence/records.js'
+import { records as recordsStub } from './services/persistence/records/stub.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { stubH, journeyRequest } from './engine/test-support.js'
 import { buildDispatch } from './flow/dispatch.js'
@@ -27,6 +28,7 @@ const line = (commoditySelection, extra = {}) => ({
 
 describe('path-addressed store ops at depth-1 (commodityLines — live carrier)', () => {
   beforeAll(() => {
+    configureRecords(recordsStub)
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
@@ -146,6 +148,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
 
 describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
   beforeAll(() => {
+    configureRecords(recordsStub)
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })

@@ -4,6 +4,8 @@ import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import { store } from '../../engine/store.js'
+import { configureRecords } from '../../engine/persistence/records.js'
+import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { driveHandler } from '../../engine/test-support.js'
 import { hubPath } from '../../config.js'
 import { dispatchPages } from '../../features/index.js'
@@ -68,6 +70,7 @@ const fullSeed = {
 
 describe('#buildRows (check-answers GET)', () => {
   beforeAll(() => {
+    configureRecords(recordsStub)
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })

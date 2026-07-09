@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, submitJourney } from './index.js'
-import { records, IN_PROGRESS, SUBMITTED } from './persistence/records.js'
+import {
+  records,
+  configureRecords,
+  IN_PROGRESS,
+  SUBMITTED
+} from './persistence/records.js'
+import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
@@ -9,6 +15,7 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('submit is finalise', () => {
   beforeEach(() => {
+    configureRecords(recordsStub)
     records.clear()
     journeyId = records.create().journeyId
   })

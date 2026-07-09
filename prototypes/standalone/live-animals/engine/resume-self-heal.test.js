@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { resume } from './index.js'
-import { records } from './persistence/records.js'
+import { records, configureRecords } from './persistence/records.js'
+import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { STUB_USER } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { recordingH } from './test-support.js'
 
 describe('resume self-heal (nothing derived is stored)', () => {
   beforeEach(() => {
+    configureRecords(recordsStub)
     records.clear()
     configureReadyForCheckYourAnswers(() => false)
   })

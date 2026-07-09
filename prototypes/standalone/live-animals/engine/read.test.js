@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { configureReadyForCheckYourAnswers, get, makeScope } from './read.js'
 import { store } from './store.js'
+import { configureRecords } from './persistence/records.js'
+import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { journeyRequest, recordingH } from './test-support.js'
 import { JOURNEY_COOKIE } from './persistence/session.js'
 
@@ -11,7 +13,10 @@ describe('#makeScope', () => {
 })
 
 describe('#get — per-request read view', () => {
-  beforeAll(() => configureReadyForCheckYourAnswers(() => false))
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureReadyForCheckYourAnswers(() => false)
+  })
   afterEach(() => store.clear())
 
   it('Should return the seeded answers verbatim with scope derived from them', () => {

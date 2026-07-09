@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentJourney, JOURNEY_COOKIE } from './journey.js'
 import { store, IN_PROGRESS } from './store.js'
+import { configureRecords } from './persistence/records.js'
+import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { recordingH } from './test-support.js'
 
 const buildRequest = (cookies) => ({ state: { ...cookies }, headers: {} })
 
 describe('#currentJourney', () => {
-  beforeEach(() => store.clear())
+  beforeEach(() => {
+    configureRecords(recordsStub)
+    store.clear()
+  })
 
   it('Should mint a fresh journey and pin it in the cookie when none is present', () => {
     const h = recordingH()

@@ -1,67 +1,40 @@
-import { randomUUID } from 'node:crypto'
-
 export const IN_PROGRESS = 'in-progress'
 export const SUBMITTED = 'submitted'
 
-const journeys = new Map()
-const byUser = new Map()
-
-const assertWritable = (journey) => {
-  if (journey.status === SUBMITTED) {
-    throw new Error(
-      `Journey "${journey.journeyId}" is submitted — writes blocked`
-    )
-  }
+const unconfigured = () => {
+  throw new Error('records not configured — call configureRecords() at boot')
 }
 
-const loadWritable = (journeyId) => {
-  const journey = journeys.get(journeyId)
-  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
-  assertWritable(journey)
-  return journey
+let impl = {
+  create: unconfigured,
+  load: unconfigured,
+  has: unconfigured,
+  saveAnswers: unconfigured,
+  finalise: unconfigured,
+  clear: unconfigured
+}
+
+export const configureRecords = (newImpl) => {
+  impl = newImpl
 }
 
 export const records = {
-  create({ userId } = {}) {
-    const journey = {
-      journeyId: randomUUID(),
-      userId: userId ?? null,
-      status: IN_PROGRESS,
-      submittedAt: null,
-      answers: {}
-    }
-    journeys.set(journey.journeyId, journey)
-    if (journey.userId != null) byUser.set(journey.userId, journey.journeyId)
-    return structuredClone(journey)
+  create(...args) {
+    return impl.create(...args)
   },
-
-  load({ journeyId, userId } = {}) {
-    const resolvedJourneyId =
-      journeyId ?? (userId != null ? byUser.get(userId) : undefined)
-    if (resolvedJourneyId == null) return undefined
-    const journey = journeys.get(resolvedJourneyId)
-    return journey ? structuredClone(journey) : undefined
+  load(...args) {
+    return impl.load(...args)
   },
-
-  has(journeyId) {
-    return journeys.has(journeyId)
+  has(...args) {
+    return impl.has(...args)
   },
-
-  saveAnswers(journeyId, answers) {
-    const journey = loadWritable(journeyId)
-    journey.answers = structuredClone(answers ?? {})
-    return structuredClone(journey)
+  saveAnswers(...args) {
+    return impl.saveAnswers(...args)
   },
-
-  finalise(journeyId) {
-    const journey = loadWritable(journeyId)
-    journey.status = SUBMITTED
-    journey.submittedAt = new Date().toISOString()
-    return structuredClone(journey)
+  finalise(...args) {
+    return impl.finalise(...args)
   },
-
-  clear() {
-    journeys.clear()
-    byUser.clear()
+  clear(...args) {
+    return impl.clear(...args)
   }
 }

@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentJourney } from './journey.js'
-import { records } from './persistence/records.js'
+import { records, configureRecords } from './persistence/records.js'
+import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session, STUB_USER, STUB_USER_HEADER } from './persistence/session.js'
 import { recordingH } from './test-support.js'
 
 const buildRequest = (headers = {}) => ({ state: {}, headers })
 
 describe('journey-user association', () => {
-  beforeEach(() => records.clear())
+  beforeEach(() => {
+    configureRecords(recordsStub)
+    records.clear()
+  })
 
   it('Should stamp the session user on a journey minted through the facade', () => {
     const journey = currentJourney(buildRequest(), recordingH())

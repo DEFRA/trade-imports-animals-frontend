@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { records, IN_PROGRESS } from './records.js'
+import { records } from './stub.js'
+import { IN_PROGRESS } from '../../../engine/persistence/records.js'
 
 describe('records durable port', () => {
   beforeEach(() => records.clear())

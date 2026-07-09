@@ -3,6 +3,8 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
+import { configureRecords } from '../../engine/persistence/records.js'
+import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import { driveHandler, postHandlerOf } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
@@ -13,6 +15,7 @@ const post = postHandlerOf(declaration)
 
 describe('POST declaration — invalid payload', () => {
   beforeAll(() => {
+    configureRecords(recordsStub)
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
