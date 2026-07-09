@@ -4,6 +4,10 @@ import { store, IN_PROGRESS, SUBMITTED } from './store.js'
 describe('store clone/freeze contract', () => {
   beforeEach(() => store.clear())
 
+  it('Should be a frozen surface — methods cannot be reassigned', () => {
+    expect(Object.isFrozen(store)).toBe(true)
+  })
+
   it('Should mint a fresh in-progress journey with empty answers', () => {
     const journey = store.create()
     expect(journey).toMatchObject({

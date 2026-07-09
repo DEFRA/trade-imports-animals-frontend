@@ -1,5 +1,5 @@
 import { pagePath, TEMPLATES } from '../../config.js'
-import { SUBMITTED } from '../../engine/store.js'
+import { SUBMITTED } from '../../engine/persistence/records.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
