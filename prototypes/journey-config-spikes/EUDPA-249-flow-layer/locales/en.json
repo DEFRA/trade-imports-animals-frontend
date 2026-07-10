@@ -332,7 +332,8 @@
       "integerMin": "Enter a whole number of at least {min}",
       "integerMaxDigits": "Enter a whole number with no more than {maxDigits} digits",
       "dateFormat": "Enter a valid date in DD/MM/YYYY format",
-      "arrayMaxSelections": "Select no more than {max} items (you selected {actual})"
+      "arrayMaxSelections": "Select no more than {max} items (you selected {actual})",
+      "numberOfAnimalsSpeciesCap": "Enter no more than {max} animals for the selected species (you entered {actual})"
     }
   }
 }

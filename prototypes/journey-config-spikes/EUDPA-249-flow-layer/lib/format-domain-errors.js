@@ -44,6 +44,11 @@ const COPY = {
     t('errors.domain.arrayMaxSelections', {
       max: error.max,
       actual: error.actual
+    }),
+  'domain.numberOfAnimals.speciesCap': (error) =>
+    t('errors.domain.numberOfAnimalsSpeciesCap', {
+      max: error.max,
+      actual: error.actual
     })
 }
 
@@ -61,7 +66,8 @@ export const FORMAT_ERROR_KEYS = [
   'errors.domain.integerMin',
   'errors.domain.integerMaxDigits',
   'errors.domain.dateFormat',
-  'errors.domain.arrayMaxSelections'
+  'errors.domain.arrayMaxSelections',
+  'errors.domain.numberOfAnimalsSpeciesCap'
 ]
 
 export function textFor(error) {

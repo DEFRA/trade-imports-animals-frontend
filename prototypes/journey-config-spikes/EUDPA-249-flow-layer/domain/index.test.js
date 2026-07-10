@@ -12,6 +12,7 @@ import {
   transportDocumentReference,
   cph,
   numberOfPackages,
+  species,
   arrivalDateAtPort,
   transitedCountries,
   animalsCertifiedFor
@@ -30,6 +31,8 @@ import {
   transportDocumentReferenceDomain,
   cphDomain,
   numberOfPackagesDomain,
+  numberOfAnimalsDomain,
+  SPECIES_ANIMAL_CAP,
   arrivalDateAtPortDomain,
   transitedCountriesDomain,
   animalsCertifiedForDomain,
@@ -229,6 +232,117 @@ describe('predicate — numberOfPackages (V4: integer, max 10 digits)', () => {
     expect(
       numberOfPackagesDomain.predicate(10_000_000_000, buildCtx())[0].code
     ).toBe(reasons.integerMaxDigits.code)
+  })
+})
+
+describe('predicate — numberOfAnimals (V4: integer, per-species cap)', () => {
+  const line1 = { path: 'line1' }
+  const ctxWithSpecies = (selected) =>
+    buildCtx({
+      fulfilments: { [species.id]: { line1: selected } },
+      path: 'line1'
+    })
+
+  it('passes an empty / unset value (mandatory-blank is caught upstream, not here)', () => {
+    expect(numberOfAnimalsDomain.predicate(undefined, buildCtx(line1))).toEqual(
+      []
+    )
+    expect(numberOfAnimalsDomain.predicate('', buildCtx(line1))).toEqual([])
+  })
+
+  it('rejects 0 and negatives with integerMin', () => {
+    expect(numberOfAnimalsDomain.predicate(0, buildCtx(line1))[0].code).toBe(
+      reasons.integerMin.code
+    )
+    expect(numberOfAnimalsDomain.predicate(-5, buildCtx(line1))[0].code).toBe(
+      reasons.integerMin.code
+    )
+  })
+
+  it('rejects non-integers with integerMin', () => {
+    expect(numberOfAnimalsDomain.predicate(1.5, buildCtx(line1))[0].code).toBe(
+      reasons.integerMin.code
+    )
+  })
+
+  it('passes when no species selected (no cap to enforce)', () => {
+    expect(numberOfAnimalsDomain.predicate(5000, buildCtx(line1))).toEqual([])
+  })
+
+  it('passes a value under the per-species cap for a single species', () => {
+    // Cattle cap 300.
+    expect(
+      numberOfAnimalsDomain.predicate(25, ctxWithSpecies(['cattle']))
+    ).toEqual([])
+  })
+
+  it('rejects a value over the per-species cap with the speciesCap code', () => {
+    // Cattle cap 300 — 500 exceeds.
+    const errs = numberOfAnimalsDomain.predicate(
+      500,
+      ctxWithSpecies(['cattle'])
+    )
+    expect(errs).toHaveLength(1)
+    expect(errs[0].code).toBe(reasons.numberOfAnimalsSpeciesCap.code)
+    expect(errs[0].max).toBe(300)
+    expect(errs[0].actual).toBe(500)
+  })
+
+  it('applies the MIN cap across a multi-species selection', () => {
+    // Cattle 300 + buffalo 300 → 300. 400 exceeds.
+    expect(
+      numberOfAnimalsDomain.predicate(
+        400,
+        ctxWithSpecies(['cattle', 'buffalo'])
+      )[0].code
+    ).toBe(reasons.numberOfAnimalsSpeciesCap.code)
+  })
+
+  it('a small-animal species (rabbit cap 100) enforces its lower cap on a mixed line', () => {
+    // Cattle 300 + rabbit 100 → line cap 100. 150 exceeds.
+    const errs = numberOfAnimalsDomain.predicate(
+      150,
+      ctxWithSpecies(['cattle', 'rabbit'])
+    )
+    expect(errs[0].max).toBe(100)
+  })
+
+  it('does not cross-contaminate between lines', () => {
+    // line1 species = owl (cap 20); check that line2 with cattle (300)
+    // is not affected by line1.
+    const st = buildCtx({
+      fulfilments: { [species.id]: { line1: ['owl'], line2: ['cattle'] } },
+      path: 'line2'
+    })
+    expect(numberOfAnimalsDomain.predicate(200, st)).toEqual([])
+  })
+
+  it('SPECIES_ANIMAL_CAP covers every species option in SPECIES_LABELS territory', () => {
+    // Guard: if step 4 later adds a new species, the cap map must be
+    // extended so we don't silently miss a species during validation.
+    const expected = [
+      'horse',
+      'cattle',
+      'buffalo',
+      'bison',
+      'pig',
+      'wild-boar',
+      'sheep',
+      'lamb',
+      'goat',
+      'dog',
+      'cat',
+      'ferret',
+      'rabbit',
+      'owl',
+      'falcon',
+      'eagle',
+      'other-bird-of-prey',
+      'bee'
+    ]
+    for (const s of expected) {
+      expect(typeof SPECIES_ANIMAL_CAP[s]).toBe('number')
+    }
   })
 })
 

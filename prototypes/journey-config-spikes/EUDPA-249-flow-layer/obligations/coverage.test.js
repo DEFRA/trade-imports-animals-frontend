@@ -57,7 +57,8 @@ const KNOWN_UNWIRED = new Set([
   // Free-text or integer with max-length per V4 — need domain entries
   // during step 5.
   // regionCode wired during step 4 iteration 2.
-  'numberOfAnimals',
+  // numberOfAnimals wired during step 4 iteration 5 (integer + per-
+  // species cap predicate — see docs/add-an-obligation.md).
   'passport',
   'tattoo',
   'earTag',

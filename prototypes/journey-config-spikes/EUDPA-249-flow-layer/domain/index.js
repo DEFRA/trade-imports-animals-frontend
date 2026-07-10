@@ -38,6 +38,7 @@ import {
   countryOfOrigin,
   commodityCode,
   numberOfPackages,
+  numberOfAnimals,
   cph,
   containsUnweanedAnimals,
   regionCodeRequirement,
@@ -79,6 +80,11 @@ export const reasons = {
   arrayMaxSelections: {
     code: 'domain.array.maxSelections',
     explanation: 'too many items selected'
+  },
+  numberOfAnimalsSpeciesCap: {
+    code: 'domain.numberOfAnimals.speciesCap',
+    explanation:
+      'value exceeds the per-species animal-count cap for the least-permissive selected species on this line'
   }
 }
 
@@ -473,6 +479,77 @@ export const numberOfPackagesDomain = predicate(
   [reasons.integerMin, reasons.integerMaxDigits]
 )
 
+// V4: numeric - one commodity line's animal count. Per-species caps
+// come from MDM in production; the values here are illustrative for
+// the spike (they let us exercise the cross-field predicate mechanism
+// end-to-end). When a line's species is a multi-select, the effective
+// cap is the MIN across the selected species — the least-permissive
+// species enforces its limit on the whole line.
+export const SPECIES_ANIMAL_CAP = {
+  horse: 100,
+  cattle: 300,
+  buffalo: 300,
+  bison: 300,
+  pig: 500,
+  'wild-boar': 500,
+  sheep: 800,
+  lamb: 800,
+  goat: 500,
+  dog: 50,
+  cat: 50,
+  ferret: 50,
+  rabbit: 100,
+  owl: 20,
+  falcon: 20,
+  eagle: 20,
+  'other-bird-of-prey': 20,
+  bee: 1000
+}
+
+function speciesCap(selectedSpecies) {
+  const caps = (selectedSpecies ?? [])
+    .map((s) => SPECIES_ANIMAL_CAP[s])
+    .filter((c) => typeof c === 'number')
+  if (caps.length === 0) return null
+  return Math.min(...caps)
+}
+
+export const numberOfAnimalsDomain = predicate(
+  'integer',
+  (value, ctx) => {
+    if (value === undefined || value === null || value === '') return []
+    if (!Number.isInteger(value) || value < 1) {
+      return [
+        {
+          code: reasons.integerMin.code,
+          obligation: numberOfAnimals.name,
+          path: ctx.path,
+          min: 1
+        }
+      ]
+    }
+    // Per-species cap. `ctx.siblingValue(species)` resolves to the
+    // species selection for THIS commodity line (path-scoped) — a
+    // different line's species doesn't cross-contaminate. See engine
+    // tests §resolves siblings scoped by path.
+    const selectedSpecies = ctx.siblingValue(species) ?? []
+    const cap = speciesCap(selectedSpecies)
+    if (cap !== null && value > cap) {
+      return [
+        {
+          code: reasons.numberOfAnimalsSpeciesCap.code,
+          obligation: numberOfAnimals.name,
+          path: ctx.path,
+          max: cap,
+          actual: value
+        }
+      ]
+    }
+    return []
+  },
+  [reasons.integerMin, reasons.numberOfAnimalsSpeciesCap]
+)
+
 // V4: date, DD/MM/YYYY, calendar-valid.
 export const arrivalDateAtPortDomain = predicate(
   'date',
@@ -557,6 +634,7 @@ export const domain = new Map([
   [transportDocumentReference.id, transportDocumentReferenceDomain],
   [cph.id, cphDomain],
   [numberOfPackages.id, numberOfPackagesDomain],
+  [numberOfAnimals.id, numberOfAnimalsDomain],
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
   [animalsCertifiedFor.id, animalsCertifiedForDomain],

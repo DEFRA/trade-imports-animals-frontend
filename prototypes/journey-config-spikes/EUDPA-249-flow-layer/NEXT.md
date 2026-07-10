@@ -80,7 +80,7 @@ certified-for/resolve` route, the "Loading options" presentation
   `expandPresents`.
 - **Feature folders:** `hub`, `check-your-answers`, `commodity-lines`,
   `start`, `reset`. (`lookup/` deleted today.)
-- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 21 obligations
+- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 20 obligations
   (down from 26 at spike start). Step 4 iterations whittle this.
 
 ### Step 4 iterations completed
@@ -92,6 +92,10 @@ certified-for/resolve` route, the "Loading options" presentation
 4. `species` + presentsForEach page-routing unlock (line-scoped;
    turned on the routes.js path that previously skipped
    presentsForEach pages)
+5. `numberOfAnimals` (line-scoped integer + per-species cap cross-
+   field predicate — first predicate that emits a NEW failure code,
+   so the doc now covers the en.json + FORMAT_ERROR_KEYS + COPY
+   dispatcher trio to add per new code)
 
 Each iteration also refined `docs/add-an-obligation.md`.
 
@@ -131,14 +135,17 @@ in-scope mandatory entry is fulfilled`. An in-scope-optional page is
 Pick one, iterate:
 
 - `commodityType` (line-scoped MDM enum — same shape as species)
-- `numberOfAnimals` (line-scoped integer with a per-species cap
-  predicate — worth doing because it exercises predicate + line-
-  scoped storage together)
 - `numberOfPackages` (line-scoped integer, optional, applyTo-scoped
-  — now the canonical example of the completion-optional page shape)
+  — now the canonical example of the completion-optional page shape.
+  Already wired via `numberOfPackagesDomain` so this is basically a
+  no-op unless we want to add a per-line-code cap similar to what
+  iteration 5 did for numberOfAnimals)
 - Any of the address blocks (`placeOfOrigin`, `consignor` etc.) — a
   composite widget that would extend `field-widgets.js` with a new
   rule. Bigger design lift.
+- Per-unit obligations under `unitRecord` (`passport`, `tattoo`,
+  `earTag`, etc.) — first depth-2 line → unit fan-out, deferred to
+  step 5 unless a specific one is worth demoing sooner.
 
 Then step 5 (full V4 buildout).
 
