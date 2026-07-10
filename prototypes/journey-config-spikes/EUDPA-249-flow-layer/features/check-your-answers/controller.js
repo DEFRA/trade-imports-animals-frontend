@@ -35,12 +35,22 @@ function lineNumber(lineId) {
  * row with its own Change URL.
  */
 function formatSingle(value, obligation) {
-  const labels = domain.get(obligation.id)?.labels
+  const domainEntry = domain.get(obligation.id)
+  const labels = domainEntry?.labels
   // `tOrNull` (not `t`) so a mistyped label key falls through to the
   // raw stored code rather than shipping the dotted-path to the UI.
   const label = (v) => tOrNull(labels?.[v]) ?? v
   if (value === undefined || value === null) return ''
   if (Array.isArray(value)) return value.map(label).join(', ')
+  // Address-block composite value — join the non-empty sub-fields with
+  // comma separators for a single-line CYA summary. Order follows the
+  // domain entry's subFields declaration.
+  if (typeof value === 'object' && domainEntry?.type === 'address') {
+    const parts = (domainEntry.subFields ?? [])
+      .map((sub) => value[sub])
+      .filter((v) => typeof v === 'string' && v.trim() !== '')
+    return parts.join(', ')
+  }
   return String(label(value))
 }
 
@@ -48,6 +58,15 @@ function isBlankLeaf(value) {
   if (value === undefined || value === null) return true
   if (typeof value === 'string' && value === '') return true
   if (Array.isArray(value) && value.length === 0) return true
+  // Composite value (e.g. address block) with all leaves blank is
+  // treated as unfilled — the row would otherwise render as a comma
+  // sequence with no content, and the still-needed prompt would be
+  // wrongly suppressed for a mandatory obligation.
+  if (typeof value === 'object' && Object.keys(value).length > 0) {
+    return Object.values(value).every(
+      (v) => v === undefined || v === null || v === ''
+    )
+  }
   return false
 }
 

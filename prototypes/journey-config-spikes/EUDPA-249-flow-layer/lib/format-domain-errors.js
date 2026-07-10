@@ -49,6 +49,10 @@ const COPY = {
     t('errors.domain.numberOfAnimalsSpeciesCap', {
       max: error.max,
       actual: error.actual
+    }),
+  'domain.address.subFieldRequired': (error) =>
+    t('errors.domain.addressSubFieldRequired', {
+      subField: t(`presentation.address.subField.${error.subField}`)
     })
 }
 
@@ -68,6 +72,7 @@ export const FORMAT_ERROR_KEYS = [
   'errors.domain.dateFormat',
   'errors.domain.arrayMaxSelections',
   'errors.domain.numberOfAnimalsSpeciesCap',
+  'errors.domain.addressSubFieldRequired',
   'errors.domain.unknownCode',
   'errors.defaultRequired'
 ]
@@ -90,9 +95,14 @@ export function textFor(error) {
  * navigates precisely to that record's input.
  */
 export function hrefFor(error) {
-  const anchor = error.path
+  // Address-block sub-field errors anchor at the specific sub-input
+  // (`${obligation}__${subField}` for singletons or
+  // `${obligation}-${path}__${subField}` for line-scoped composites)
+  // so the error summary jumps straight to the missing input.
+  const base = error.path
     ? `${error.obligation}-${error.path}`
     : error.obligation
+  const anchor = error.subField ? `${base}__${error.subField}` : base
   return `#${anchor}`
 }
 
@@ -109,9 +119,12 @@ export function formatDomainErrors(errors) {
     const text = textFor(error)
     const href = hrefFor(error)
     errorList.push({ text, href })
-    const key = error.path
+    const base = error.path
       ? `${error.obligation}-${error.path}`
       : error.obligation
+    // Address sub-field errors get a per-sub-input key so the widget
+    // renders the inline error on the exact input the user missed.
+    const key = error.subField ? `${base}__${error.subField}` : base
     fieldErrors[key] = { text }
   }
   return { errorList, fieldErrors }

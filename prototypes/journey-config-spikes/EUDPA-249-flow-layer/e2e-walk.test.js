@@ -177,7 +177,10 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     // -- Section 2: transporter + transport ------------------------------
     await fill(jar, 'transporter-type', { transporterType: 'commercial' })
     await fill(jar, 'transporter-details', {
-      commercialTransporter: 'ACME Transport, Farm Lane, EX1 1AA'
+      commercialTransporter__name: 'ACME Transport Ltd',
+      commercialTransporter__addressLine1: 'Farm Lane',
+      commercialTransporter__town: 'Exeter',
+      commercialTransporter__postcode: 'EX1 1AA'
     })
     await fill(jar, 'means-of-transport', { meansOfTransport: 'road-vehicle' })
     await fill(jar, 'transport-identification', {
@@ -299,7 +302,10 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     // -- Section 2: transporter + transport ------------------------------
     await fill(jar, 'transporter-type', { transporterType: 'commercial' })
     await fill(jar, 'transporter-details', {
-      commercialTransporter: 'ACME Transport, Farm Lane, EX1 1AA'
+      commercialTransporter__name: 'ACME Transport Ltd',
+      commercialTransporter__addressLine1: 'Farm Lane',
+      commercialTransporter__town: 'Exeter',
+      commercialTransporter__postcode: 'EX1 1AA'
     })
     await fill(jar, 'means-of-transport', { meansOfTransport: 'road-vehicle' })
     await fill(jar, 'transport-identification', {

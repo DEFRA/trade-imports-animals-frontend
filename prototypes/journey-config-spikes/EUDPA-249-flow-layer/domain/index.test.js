@@ -27,6 +27,7 @@ import {
   countryOfOriginDomain,
   commodityCodeDomain,
   commodityTypeDomain,
+  commercialTransporterDomain,
   internalReferenceNumberDomain,
   transportIdentificationDomain,
   transportDocumentReferenceDomain,
@@ -155,6 +156,70 @@ describe('staticEnum — commodityCode', () => {
       ])
     )
     expect(t(commodityCodeDomain.labels['0102'])).toContain('Cattle')
+  })
+})
+
+describe('addressBlock — commercialTransporter (step 4 iteration 7)', () => {
+  it('exposes type/subFields/required metadata for the widget layer', () => {
+    expect(commercialTransporterDomain.type).toBe('address')
+    expect(commercialTransporterDomain.subFields).toEqual([
+      'name',
+      'addressLine1',
+      'town',
+      'postcode'
+    ])
+    expect(commercialTransporterDomain.required).toEqual([
+      'name',
+      'addressLine1',
+      'town',
+      'postcode'
+    ])
+    expect(commercialTransporterDomain.metadata.shape).toBe('addressBlock')
+  })
+
+  it('passes an all-filled composite value', () => {
+    expect(
+      commercialTransporterDomain.predicate(
+        {
+          name: 'ACME',
+          addressLine1: 'Farm Lane',
+          town: 'Exeter',
+          postcode: 'EX1 1AA'
+        },
+        buildCtx()
+      )
+    ).toEqual([])
+  })
+
+  it('passes undefined / null — blank is handled upstream, not here', () => {
+    expect(
+      commercialTransporterDomain.predicate(undefined, buildCtx())
+    ).toEqual([])
+    expect(commercialTransporterDomain.predicate(null, buildCtx())).toEqual([])
+  })
+
+  it('emits one addressSubFieldRequired error per empty required sub-field', () => {
+    const errs = commercialTransporterDomain.predicate(
+      { name: 'ACME', addressLine1: '', town: '', postcode: 'EX1 1AA' },
+      buildCtx()
+    )
+    expect(errs).toHaveLength(2)
+    expect(errs.map((e) => e.subField).sort()).toEqual(['addressLine1', 'town'])
+    for (const err of errs) {
+      expect(err.code).toBe(reasons.addressSubFieldRequired.code)
+      expect(err.obligation).toBe('commercialTransporter')
+    }
+  })
+
+  it('rejects a non-object composite value gracefully (returns [])', () => {
+    // Widget layer should never send a non-object, but the predicate
+    // must not crash on unexpected input.
+    expect(
+      commercialTransporterDomain.predicate('a string', buildCtx())
+    ).toEqual([])
+    expect(
+      commercialTransporterDomain.predicate(['array', 'value'], buildCtx())
+    ).toEqual([])
   })
 })
 

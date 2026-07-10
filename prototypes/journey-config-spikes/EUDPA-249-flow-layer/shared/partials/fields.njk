@@ -10,6 +10,7 @@
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
 
 {% macro field(item) %}
   {% if item.type == 'radios' %}
@@ -22,6 +23,13 @@
     {{ govukDateInput(item.args) }}
   {% elif item.type == 'textarea' %}
     {{ govukTextarea(item.args) }}
+  {% elif item.type == 'address' %}
+    {% call govukFieldset({ legend: item.args.legend or { text: '' } }) %}
+      {% if item.args.hint %}<div class="govuk-hint">{{ item.args.hint.text }}</div>{% endif %}
+      {% for sub in item.args.subFields %}
+        {{ govukInput(sub) }}
+      {% endfor %}
+    {% endcall %}
   {% else %}
     {{ govukInput(item.args) }}
   {% endif %}

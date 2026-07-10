@@ -40,7 +40,8 @@ const KNOWN_UNWIRED = new Set([
   'importer',
   'placeOfDestination',
   'contactAddress',
-  'commercialTransporter',
+  // commercialTransporter wired during step 4 iteration 7 (address
+  // block composite widget — first worked example of the new type).
   'privateTransporter',
   'permanentAddress',
 

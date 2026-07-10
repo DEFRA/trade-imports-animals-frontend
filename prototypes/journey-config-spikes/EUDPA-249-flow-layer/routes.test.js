@@ -310,6 +310,116 @@ describe('page-controller — question visibility (transporter)', () => {
   })
 })
 
+describe('page-controller — address-block composite widget (commercialTransporter)', () => {
+  async function setUpCommercial(jar) {
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-type',
+      payload: { transporterType: 'commercial' }
+    })
+  }
+
+  it('GET renders four sub-inputs inside a fieldset (name, addressLine1, town, postcode)', async () => {
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/pages/transporter-details'
+    })
+    expect(res.statusCode).toBe(200)
+    // Each sub-field renders a named input at `commercialTransporter__<sub>`.
+    expect(res.payload).toContain('name="commercialTransporter__name"')
+    expect(res.payload).toContain('name="commercialTransporter__addressLine1"')
+    expect(res.payload).toContain('name="commercialTransporter__town"')
+    expect(res.payload).toContain('name="commercialTransporter__postcode"')
+    // Sub-field labels come from `presentation.address.subField.*` via t().
+    expect(res.payload).toContain('Business or organisation name')
+    expect(res.payload).toContain('Address line 1')
+    expect(res.payload).toContain('Town or city')
+    expect(res.payload).toContain('Postcode')
+  })
+
+  it('POST with all sub-fields blank returns 400 with one error per required sub-field', async () => {
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-details',
+      payload: {}
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('There is a problem')
+    // One "Enter {subField}" per required sub-field.
+    expect(res.payload).toContain('Enter Business or organisation name')
+    expect(res.payload).toContain('Enter Address line 1')
+    expect(res.payload).toContain('Enter Town or city')
+    expect(res.payload).toContain('Enter Postcode')
+    // Error-summary anchors target the sub-inputs specifically.
+    expect(res.payload).toContain('#commercialTransporter__name')
+    expect(res.payload).toContain('#commercialTransporter__postcode')
+  })
+
+  it('POST with only some sub-fields blank returns 400 with just those errors', async () => {
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-details',
+      payload: {
+        commercialTransporter__name: 'ACME',
+        commercialTransporter__addressLine1: '',
+        commercialTransporter__town: 'Exeter',
+        commercialTransporter__postcode: ''
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Enter Address line 1')
+    expect(res.payload).toContain('Enter Postcode')
+    expect(res.payload).not.toContain('Enter Business or organisation name')
+    expect(res.payload).not.toContain('Enter Town or city')
+  })
+
+  it('POST with all sub-fields filled redirects to the next page', async () => {
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-details',
+      payload: {
+        commercialTransporter__name: 'ACME',
+        commercialTransporter__addressLine1: 'Farm Lane',
+        commercialTransporter__town: 'Exeter',
+        commercialTransporter__postcode: 'EX1 1AA'
+      }
+    })
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe(
+      '/prototype/eudpa-249/pages/means-of-transport'
+    )
+  })
+
+  it('CYA renders the composite value as a comma-joined summary', async () => {
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-details',
+      payload: {
+        commercialTransporter__name: 'ACME',
+        commercialTransporter__addressLine1: 'Farm Lane',
+        commercialTransporter__town: 'Exeter',
+        commercialTransporter__postcode: 'EX1 1AA'
+      }
+    })
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/check-your-answers'
+    })
+    expect(cya.statusCode).toBe(200)
+    expect(cya.payload).toContain('ACME, Farm Lane, Exeter, EX1 1AA')
+  })
+})
+
 describe('page-controller — real V4 predicates', () => {
   it('arrival-details rejects a badly-formatted date', async () => {
     const jar = makeCookieJar()

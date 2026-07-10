@@ -140,6 +140,41 @@ export const rules = [
     }
   },
   {
+    id: 'address',
+    build({ entry, id, value, legend, hint, fieldErrors }) {
+      // Composite widget — renders one govukInput per sub-field inside
+      // a fieldset legend. The stored value is a plain object keyed by
+      // sub-field name. Sub-field errors surface via a per-sub-field
+      // fieldErrors lookup keyed by `${id}__${subField}`.
+      if (entry?.type !== 'address') return null
+      const subFields = entry.subFields ?? []
+      const stored = value && typeof value === 'object' ? value : {}
+      return {
+        type: 'address',
+        args: {
+          id,
+          legend: legend ? { text: legend } : undefined,
+          hint: hint ? { text: hint } : undefined,
+          subFields: subFields.map((sub) => {
+            const subId = `${id}__${sub}`
+            const subError = fieldErrors?.[subId]?.text
+            return {
+              id: subId,
+              name: subId,
+              label: {
+                text: t(`presentation.address.subField.${sub}`),
+                classes: 'govuk-label--s'
+              },
+              value: stored[sub] ?? '',
+              autocomplete: sub === 'postcode' ? 'postal-code' : undefined,
+              errorMessage: subError ? { text: subError } : undefined
+            }
+          })
+        }
+      }
+    }
+  },
+  {
     id: 'date',
     build({ entry, id, value, legend, hint, error }) {
       if (entry?.type !== 'date') return null

@@ -602,7 +602,10 @@ describe('commodity-lines — /start integration', () => {
       method: 'POST',
       url: `${BASE}/pages/transporter-details`,
       payload: {
-        commercialTransporter: 'ACME'
+        commercialTransporter__name: 'ACME',
+        commercialTransporter__addressLine1: 'Farm Lane',
+        commercialTransporter__town: 'Exeter',
+        commercialTransporter__postcode: 'EX1 1AA'
       }
     })
     await inject(jar, {

@@ -173,8 +173,21 @@ export function validatePagePayload(page, payload, state, options = {}) {
     const id = descriptor.path
       ? `${descriptor.obligation.name}-${descriptor.path}`
       : descriptor.obligation.name
-    const raw = payload?.[id]
-    const value = coerceValue(descriptor, raw)
+    let value
+    if (descriptor.widget === 'address') {
+      // Address-block composite: gather one payload entry per sub-field
+      // (`${id}__${sub}`) into a plain object. Predicate checks each
+      // required sub-field and emits per-sub-field errors so the error
+      // summary + inline errors surface the exact missing input.
+      value = {}
+      for (const sub of descriptor.subFields ?? []) {
+        const raw = payload?.[`${id}__${sub}`]
+        value[sub] = typeof raw === 'string' ? raw.trim() : (raw ?? '')
+      }
+    } else {
+      const raw = payload?.[id]
+      value = coerceValue(descriptor, raw)
+    }
     values[id] = {
       obligation: descriptor.obligation,
       path: descriptor.path,

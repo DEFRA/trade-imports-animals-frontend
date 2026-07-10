@@ -112,6 +112,17 @@ function collectDomainLabelKeys() {
   return [...keys]
 }
 
+function collectAddressSubFieldKeys() {
+  const keys = new Set()
+  for (const entry of domain.values()) {
+    if (entry?.type !== 'address') continue
+    for (const sub of entry.subFields ?? []) {
+      keys.add(`presentation.address.subField.${sub}`)
+    }
+  }
+  return [...keys]
+}
+
 describe('i18n coverage — flow.js', () => {
   const keys = flow.sections.flatMap((section) => collectFlowKeys(section))
 
@@ -152,6 +163,22 @@ describe('i18n coverage — domain enum labels', () => {
   })
 
   it('every label message key referenced from domain/index.js resolves in locales/en.json', () => {
+    const missing = keys.filter((key) => !hasKey(key))
+    expect(
+      missing,
+      `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`
+    ).toEqual([])
+  })
+})
+
+describe('i18n coverage — address-block sub-field labels', () => {
+  const keys = collectAddressSubFieldKeys()
+
+  it('collects at least one key (guards against a silent walk regression)', () => {
+    expect(keys.length).toBeGreaterThan(0)
+  })
+
+  it('every address sub-field label key resolves in locales/en.json', () => {
     const missing = keys.filter((key) => !hasKey(key))
     expect(
       missing,

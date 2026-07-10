@@ -45,7 +45,8 @@ import {
   regionCodeRequirement,
   regionCode,
   portOfEntry,
-  species
+  species,
+  commercialTransporter
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,10 @@ export const reasons = {
     code: 'domain.numberOfAnimals.speciesCap',
     explanation:
       'value exceeds the per-species animal-count cap for the least-permissive selected species on this line'
+  },
+  addressSubFieldRequired: {
+    code: 'domain.address.subFieldRequired',
+    explanation: 'a required sub-field of the address is missing or blank'
   }
 }
 
@@ -129,6 +134,42 @@ export function predicate(type, fn, reasons) {
   const entry = { type, predicate: fn, reasons }
   entry.metadata = { shape: 'predicate', reasons: reasons.map((r) => r.code) }
   return entry
+}
+
+// Address-block composite. Value is a plain object keyed by sub-field
+// name; the widget renders one govukInput per subField, the payload
+// gatherer collects `${id}__${subField}` fields into that object.
+// Fires `addressSubFieldRequired` per empty required sub-field so the
+// error summary + inline errors surface the exact missing field.
+export function addressBlock(obligation, { subFields, required } = {}) {
+  return {
+    type: 'address',
+    subFields,
+    required,
+    predicate: (value, ctx) => {
+      if (value === undefined || value === null) return []
+      if (typeof value !== 'object' || Array.isArray(value)) return []
+      const errors = []
+      for (const sub of required ?? []) {
+        const leaf = value[sub]
+        if (leaf === undefined || leaf === null || leaf === '') {
+          errors.push({
+            code: reasons.addressSubFieldRequired.code,
+            obligation: obligation.name,
+            path: ctx.path,
+            subField: sub
+          })
+        }
+      }
+      return errors
+    },
+    metadata: {
+      shape: 'addressBlock',
+      subFields,
+      required,
+      reasons: [reasons.addressSubFieldRequired.code]
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -574,6 +615,19 @@ export const numberOfAnimalsDomain = predicate(
   [reasons.integerMin, reasons.numberOfAnimalsSpeciesCap]
 )
 
+// V4: address block — organisation name + address line 1 + town +
+// postcode as the mandatory core for the spike. Real V4 shape has
+// more sub-fields (address line 2, county, country, telephone,
+// email); we can extend without touching the widget infrastructure.
+// Step 4 iteration 7 wires commercialTransporter as first worked
+// example; the remaining depth-1 address blocks reuse this factory.
+const ADDRESS_SUB_FIELDS = ['name', 'addressLine1', 'town', 'postcode']
+
+export const commercialTransporterDomain = addressBlock(commercialTransporter, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
 // V4: date, DD/MM/YYYY, calendar-valid.
 export const arrivalDateAtPortDomain = predicate(
   'date',
@@ -660,6 +714,7 @@ export const domain = new Map([
   [cph.id, cphDomain],
   [numberOfPackages.id, numberOfPackagesDomain],
   [numberOfAnimals.id, numberOfAnimalsDomain],
+  [commercialTransporter.id, commercialTransporterDomain],
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
   [animalsCertifiedFor.id, animalsCertifiedForDomain],

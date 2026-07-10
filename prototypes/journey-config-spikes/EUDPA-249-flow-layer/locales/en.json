@@ -160,6 +160,14 @@
       "pageTitle": "County Parish Holding (CPH)",
       "legend": "CPH",
       "hint": "Required for cattle, pigs, sheep and goats. Max 11 characters."
+    },
+    "address": {
+      "subField": {
+        "name": "Business or organisation name",
+        "addressLine1": "Address line 1",
+        "town": "Town or city",
+        "postcode": "Postcode"
+      }
     }
   },
   "pageCopy": {
@@ -349,6 +357,7 @@
       "dateFormat": "Enter a valid date in DD/MM/YYYY format",
       "arrayMaxSelections": "Select no more than {max} items (you selected {actual})",
       "numberOfAnimalsSpeciesCap": "Enter no more than {max} animals for the selected species (you entered {actual})",
+      "addressSubFieldRequired": "Enter {subField}",
       "unknownCode": "This value could not be validated (error code: {code})"
     },
     "defaultRequired": "This field is required"

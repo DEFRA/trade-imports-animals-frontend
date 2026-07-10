@@ -73,7 +73,10 @@ export function buildFieldDescriptors(page, state, fieldErrors = {}) {
       legend: presentation.legend,
       hint: presentation.hint,
       labels: domainEntry?.labels,
-      error
+      error,
+      // Whole fieldErrors map for widgets (e.g. address block) that
+      // need to look up per-sub-field errors keyed by `${id}__${sub}`.
+      fieldErrors
     })
     if (!chosen) continue
     out.push({
@@ -82,6 +85,7 @@ export function buildFieldDescriptors(page, state, fieldErrors = {}) {
       mandatoryToSaveAndContinue: entry.mandatoryToSaveAndContinue,
       errors: entry.errors,
       widget: chosen.rule,
+      subFields: domainEntry?.subFields ?? null,
       view: chosen.view
     })
   }
