@@ -30,6 +30,20 @@ const failed = (action, response) => {
 const mapStatus = (backendStatus) =>
   backendStatus === BACKEND_SUBMITTED ? SUBMITTED : IN_PROGRESS
 
+const stripNulls = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(stripNulls)
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== null && v !== undefined)
+        .map(([key, v]) => [key, stripNulls(v)])
+    )
+  }
+  return value
+}
+
 const marshal = (notification, userId = null) => {
   const status = mapStatus(notification.status)
   return {
@@ -37,7 +51,7 @@ const marshal = (notification, userId = null) => {
     userId,
     status,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
-    answers: notificationToAnswers(notification)
+    answers: stripNulls(notificationToAnswers(notification))
   }
 }
 
