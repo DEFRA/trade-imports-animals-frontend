@@ -25,6 +25,7 @@ import { flow } from './flow/flow.js'
 import { hasKey } from './lib/i18n.js'
 import { OBLIGATION_KEYS, PAGE_KEYS } from './lib/presentation.js'
 import { domain } from './domain/index.js'
+import { FORMAT_ERROR_KEYS } from './lib/format-domain-errors.js'
 
 function collectFlowKeys(node, out = []) {
   if (node.titleKey) out.push(node.titleKey)
@@ -104,6 +105,20 @@ describe('i18n coverage — domain enum labels', () => {
 
   it('every label message key referenced from domain/index.js resolves in locales/en.json', () => {
     const missing = keys.filter((key) => !hasKey(key))
+    expect(
+      missing,
+      `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`
+    ).toEqual([])
+  })
+})
+
+describe('i18n coverage — formatDomainErrors COPY', () => {
+  it('collects at least one key (guards against a silent regression)', () => {
+    expect(FORMAT_ERROR_KEYS.length).toBeGreaterThan(0)
+  })
+
+  it('every key referenced from format-domain-errors.js resolves in locales/en.json', () => {
+    const missing = FORMAT_ERROR_KEYS.filter((key) => !hasKey(key))
     expect(
       missing,
       `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`

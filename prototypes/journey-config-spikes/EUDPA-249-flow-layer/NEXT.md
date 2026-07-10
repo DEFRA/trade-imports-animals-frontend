@@ -825,11 +825,13 @@ declaration-site changes needed.
   and `features/check-your-answers/controller.js` wrap
   `labels[value]` in `t()`. Coverage test walks the domain manifest
   and asserts every label key resolves.
-- ⏳ `lib/format-domain-errors.js` COPY table — each error code's
-  message becomes a key resolved via `t()`. `textFor()` already
-  prefers `error.message` for flow-supplied copy. Parameterised
-  messages (with `{max}` / `{actual}` etc.) need a small
-  interpolator in `lib/i18n.js`.
+- ✅ `lib/format-domain-errors.js` COPY table — dispatchers pick a
+  key + supply params via `t()`. Parameterised messages
+  (`{max}` / `{actual}` etc.) handled by a `{name}` interpolator
+  added to `lib/i18n.js`; missing params render as `{name}` in the
+  output as a visible bug signal. New `FORMAT_ERROR_KEYS` export
+  drives the coverage test; a new `lib/i18n.test.js` pins the
+  resolver + interpolator semantics.
 - ⏳ Hub controller chrome — `'Task list'`, `'Live animals —
 EUDPA-249 flow-layer prototype'`, `'Complete each section...'`,
   progressLine variants, `'Check your answers so far'`,

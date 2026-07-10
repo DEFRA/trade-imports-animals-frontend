@@ -5,35 +5,71 @@
  * Domain errors look like:
  *   { code, obligation, path?, max?, min?, actual?, invalid?, options? }
  *
- * The rendered text is derived from a small per-code copy table; the
+ * The rendered text is derived from a small per-code dispatcher; the
  * `href` is the fragment link into the field's rendered id
  * (`#<obligationName>` for singletons; `#<obligationName>-<path>` for
  * per-record fields).
+ *
+ * Copy for every dispatcher lives in `locales/en.json` under
+ * `errors.domain.*`; the dispatcher chooses a key + supplies params
+ * (`{max}`, `{actual}` etc.) and `t()` handles interpolation. See
+ * `FORMAT_ERROR_KEYS` for the list the coverage test walks.
  */
 
+import { t } from './i18n.js'
+
 const COPY = {
-  'domain.enum.notInOptions': ({ invalid, options }) =>
-    `Select a value from the list${
-      options && options.length ? ` (invalid: ${invalid?.join(', ')})` : ''
-    }`,
-  'domain.string.maxLength': ({ max, actual }) =>
-    `Enter no more than ${max} characters (you entered ${actual})`,
-  'domain.string.required': () => 'Enter a value',
-  'domain.integer.min': ({ min }) =>
-    `Enter a whole number of at least ${min ?? 1}`,
-  'domain.integer.maxDigits': ({ maxDigits }) =>
-    `Enter a whole number with no more than ${maxDigits} digits`,
-  'domain.date.format': () => 'Enter a valid date in DD/MM/YYYY format',
-  'domain.array.maxSelections': ({ max, actual }) =>
-    `Select no more than ${max} items (you selected ${actual})`
+  'domain.enum.notInOptions': (error) => {
+    // Two variants — one that includes the invalid selection(s) and a
+    // plain fallback. Picked in JS because the two templates are
+    // structurally different, not just parametrically.
+    const key =
+      error.options && error.options.length
+        ? 'errors.domain.enumNotInOptions.withInvalid'
+        : 'errors.domain.enumNotInOptions.plain'
+    return t(key, { invalid: error.invalid?.join(', ') ?? '' })
+  },
+  'domain.string.maxLength': (error) =>
+    t('errors.domain.stringMaxLength', {
+      max: error.max,
+      actual: error.actual
+    }),
+  'domain.string.required': () => t('errors.domain.stringRequired'),
+  'domain.integer.min': (error) =>
+    t('errors.domain.integerMin', { min: error.min ?? 1 }),
+  'domain.integer.maxDigits': (error) =>
+    t('errors.domain.integerMaxDigits', { maxDigits: error.maxDigits }),
+  'domain.date.format': () => t('errors.domain.dateFormat'),
+  'domain.array.maxSelections': (error) =>
+    t('errors.domain.arrayMaxSelections', {
+      max: error.max,
+      actual: error.actual
+    })
 }
+
+/**
+ * List of every message key referenced from the COPY dispatchers.
+ * Exported so `i18n-coverage.test.js` can walk it and assert each
+ * key resolves in `locales/en.json` without having to run every
+ * dispatcher.
+ */
+export const FORMAT_ERROR_KEYS = [
+  'errors.domain.enumNotInOptions.plain',
+  'errors.domain.enumNotInOptions.withInvalid',
+  'errors.domain.stringMaxLength',
+  'errors.domain.stringRequired',
+  'errors.domain.integerMin',
+  'errors.domain.integerMaxDigits',
+  'errors.domain.dateFormat',
+  'errors.domain.arrayMaxSelections'
+]
 
 export function textFor(error) {
   // Flow-level errors (e.g. code: 'flow.required') carry a pre-resolved
-  // `message` string from the flow declaration — bare English today,
-  // locale-keyed once spike-wide i18n lands (see NEXT.md P0.5). Prefer
-  // it over the code-keyed COPY table so flow authors own their
-  // wording without polluting the domain-error copy.
+  // `message` string from the flow declaration — already looked up via
+  // `t()` at the call site (see contract.js validatePagePayload).
+  // Prefer it over the code-keyed COPY table so flow authors own
+  // their wording without polluting the domain-error copy.
   if (error.message) return error.message
   const copy = COPY[error.code]
   return copy ? copy(error) : `Invalid: ${error.code}`

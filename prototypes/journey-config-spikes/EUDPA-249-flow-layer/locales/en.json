@@ -267,6 +267,18 @@
   "errors": {
     "countryOfOrigin": {
       "required": "Enter a country of origin"
+    },
+    "domain": {
+      "enumNotInOptions": {
+        "plain": "Select a value from the list",
+        "withInvalid": "Select a value from the list (invalid: {invalid})"
+      },
+      "stringMaxLength": "Enter no more than {max} characters (you entered {actual})",
+      "stringRequired": "Enter a value",
+      "integerMin": "Enter a whole number of at least {min}",
+      "integerMaxDigits": "Enter a whole number with no more than {maxDigits} digits",
+      "dateFormat": "Enter a valid date in DD/MM/YYYY format",
+      "arrayMaxSelections": "Select no more than {max} items (you selected {actual})"
     }
   }
 }

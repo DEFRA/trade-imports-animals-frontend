@@ -41,11 +41,23 @@ function lookup(key) {
 
 /** Translate a message key. Missing keys return the key itself as a
  *  visible fallback — the coverage test in i18n-coverage.test.js is
- *  the real safety net. */
-export function t(key) {
+ *  the real safety net. When `params` is supplied, `{name}`
+ *  placeholders in the template are substituted; unresolved
+ *  placeholders render as `{name}` so the omission is visible. */
+export function t(key, params) {
   if (key === null || key === undefined) return key
   const value = lookup(key)
-  return value ?? key
+  if (value === undefined) return key
+  if (params) return interpolate(value, params)
+  return value
+}
+
+function interpolate(template, params) {
+  return template.replace(/\{(\w+)\}/g, (_, name) =>
+    params[name] !== undefined && params[name] !== null
+      ? String(params[name])
+      : `{${name}}`
+  )
 }
 
 /** True iff a key resolves to a string in the current locale. Used by
