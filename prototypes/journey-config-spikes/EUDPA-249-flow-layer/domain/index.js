@@ -46,7 +46,14 @@ import {
   regionCode,
   portOfEntry,
   species,
-  commercialTransporter
+  commercialTransporter,
+  privateTransporter,
+  placeOfOrigin,
+  consignor,
+  consignee,
+  importer,
+  placeOfDestination,
+  contactAddress
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -628,6 +635,41 @@ export const commercialTransporterDomain = addressBlock(commercialTransporter, {
   required: ADDRESS_SUB_FIELDS
 })
 
+export const privateTransporterDomain = addressBlock(privateTransporter, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
+export const placeOfOriginDomain = addressBlock(placeOfOrigin, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
+export const consignorDomain = addressBlock(consignor, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
+export const consigneeDomain = addressBlock(consignee, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
+export const importerDomain = addressBlock(importer, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
+export const placeOfDestinationDomain = addressBlock(placeOfDestination, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
+export const contactAddressDomain = addressBlock(contactAddress, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
 // V4: date, DD/MM/YYYY, calendar-valid.
 export const arrivalDateAtPortDomain = predicate(
   'date',
@@ -715,6 +757,13 @@ export const domain = new Map([
   [numberOfPackages.id, numberOfPackagesDomain],
   [numberOfAnimals.id, numberOfAnimalsDomain],
   [commercialTransporter.id, commercialTransporterDomain],
+  [privateTransporter.id, privateTransporterDomain],
+  [placeOfOrigin.id, placeOfOriginDomain],
+  [consignor.id, consignorDomain],
+  [consignee.id, consigneeDomain],
+  [importer.id, importerDomain],
+  [placeOfDestination.id, placeOfDestinationDomain],
+  [contactAddress.id, contactAddressDomain],
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
   [animalsCertifiedFor.id, animalsCertifiedForDomain],

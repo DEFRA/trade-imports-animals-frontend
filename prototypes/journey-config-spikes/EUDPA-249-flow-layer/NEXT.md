@@ -80,8 +80,11 @@ certified-for/resolve` route, the "Loading options" presentation
   `expandPresents`.
 - **Feature folders:** `hub`, `check-your-answers`, `commodity-lines`,
   `start`, `reset`. (`lookup/` deleted today.)
-- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 18 obligations
+- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 11 obligations
   (down from 26 at spike start). Step 4 iterations whittle this.
+  Only `permanentAddress` remains from the address-block family —
+  it's `within: unitRecord` and needs depth-2 per-unit infrastructure
+  not yet built.
 
 ### Step 4 iterations completed
 
@@ -100,17 +103,22 @@ certified-for/resolve` route, the "Loading options" presentation
    MDM values — cheapest possible line-scoped-enum iteration,
    proves the pipeline settles once i18n + line-major
    infrastructure are in place)
-7. `commercialTransporter` (Phase A of the address-block chunk —
-   introduces the composite `addressBlock` domain factory, new
-   `address` widget rule, per-sub-field payload gathering in
-   `validatePagePayload`, per-sub-field error anchors + inline
-   errors, CYA multi-value formatting, and a comma-joined summary
-   for the composite value. First worked example; Phase B wires
-   the remaining 7 depth-1 address blocks — placeOfOrigin,
-   consignor, consignee, importer, placeOfDestination,
-   contactAddress, privateTransporter. `permanentAddress` stays
-   parked — it's `within: unitRecord` and needs depth-2 per-unit
-   infrastructure that's not built yet.)
+7. Address blocks — Phase A + Phase B. Phase A introduced the
+   composite `addressBlock` domain factory, new `address` widget
+   rule, per-sub-field payload gathering in `validatePagePayload`,
+   per-sub-field error anchors + inline errors, CYA multi-value
+   formatting, and a comma-joined summary for the composite value.
+   `commercialTransporter` wired as the first worked example.
+   Phase B wired the remaining 7 depth-1 address blocks
+   (`privateTransporter`, `placeOfOrigin`, `consignor`, `consignee`,
+   `importer`, `placeOfDestination`, `contactAddress`) — all use
+   the same `addressBlock(obligation, { subFields: [...], required:
+[...] })` factory. New "Trader details" section on the task
+   list with `origin-details` + `destination-details` subsections;
+   new `contact` subsection in the existing "References" section.
+   Task list grew from 10 → 13 subsections.
+   `permanentAddress` stays parked — it's `within: unitRecord` and
+   needs depth-2 per-unit infrastructure that's not built yet.
 
 Each iteration also refined `docs/add-an-obligation.md`.
 
@@ -167,9 +175,6 @@ Pick one, iterate:
   Already wired via `numberOfPackagesDomain` so this is basically a
   no-op unless we want to add a per-line-code cap similar to what
   iteration 5 did for numberOfAnimals)
-- Any of the address blocks (`placeOfOrigin`, `consignor` etc.) — a
-  composite widget that would extend `field-widgets.js` with a new
-  rule. Bigger design lift.
 - Per-unit obligations under `unitRecord` (`passport`, `tattoo`,
   `earTag`, etc.) — first depth-2 line → unit fan-out, deferred to
   step 5 unless a specific one is worth demoing sooner.

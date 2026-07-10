@@ -201,7 +201,48 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       animalsCertifiedFor: 'bovine'
     })
 
-    // -- Section 4: references ------------------------------------------
+    // -- Section 4: trader details --------------------------------------
+    // Five address blocks (place of origin, consignor, consignee,
+    // importer, place of destination). Each renders 4 sub-fields.
+    await fill(jar, 'place-of-origin', {
+      placeOfOrigin__name: 'Origin Farm Ltd',
+      placeOfOrigin__addressLine1: '1 Farm Lane',
+      placeOfOrigin__town: 'Exeter',
+      placeOfOrigin__postcode: 'EX1 1AA'
+    })
+    await fill(jar, 'consignor', {
+      consignor__name: 'Sender Co',
+      consignor__addressLine1: '2 Sender Street',
+      consignor__town: 'Bristol',
+      consignor__postcode: 'BS1 1BB'
+    })
+    await fill(jar, 'consignee', {
+      consignee__name: 'Receiver Ltd',
+      consignee__addressLine1: '3 Receiver Road',
+      consignee__town: 'Leeds',
+      consignee__postcode: 'LS1 1CC'
+    })
+    await fill(jar, 'importer', {
+      importer__name: 'Importer Trading',
+      importer__addressLine1: '4 Import Way',
+      importer__town: 'Cardiff',
+      importer__postcode: 'CF1 1DD'
+    })
+    await fill(jar, 'place-of-destination', {
+      placeOfDestination__name: 'Destination Farm',
+      placeOfDestination__addressLine1: '5 Destination Lane',
+      placeOfDestination__town: 'Manchester',
+      placeOfDestination__postcode: 'M1 1EE'
+    })
+
+    // -- Section 5: references ------------------------------------------
+    // contact-address is required; internal-reference is optional.
+    await fill(jar, 'contact-address', {
+      contactAddress__name: 'Contact Person',
+      contactAddress__addressLine1: '6 Contact Close',
+      contactAddress__town: 'Glasgow',
+      contactAddress__postcode: 'G1 1FF'
+    })
     // internal-reference omitted — internalReferenceNumber is optional.
 
     // -- Section 5: commodity lines -------------------------------------
@@ -245,16 +286,17 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       url: `${BASE}/task-list`
     })
     expect(list.statusCode).toBe(200)
-    // 10 subsections total (origin, reason, transporter-type, transport,
-    // arrival-at-port, unweaned, certified-for, trader-reference,
+    // 13 subsections total (origin, reason, transporter-type, transport,
+    // arrival-at-port, unweaned, certified-for, origin-details,
+    // destination-details, contact, trader-reference,
     // commodity-lines-manage, commodity-lines-details) — each should
     // render a Completed status tag. A numeric assertion catches new
     // subsections being added without their fulfilment being wired.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 10 Completed tags on the task list, got ${completedCount}`
-    ).toBe(10)
+      `expected 13 Completed tags on the task list, got ${completedCount}`
+    ).toBe(13)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 
@@ -326,7 +368,48 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       animalsCertifiedFor: 'bovine'
     })
 
-    // -- Section 4: references ------------------------------------------
+    // -- Section 4: trader details --------------------------------------
+    // Five address blocks (place of origin, consignor, consignee,
+    // importer, place of destination). Each renders 4 sub-fields.
+    await fill(jar, 'place-of-origin', {
+      placeOfOrigin__name: 'Origin Farm Ltd',
+      placeOfOrigin__addressLine1: '1 Farm Lane',
+      placeOfOrigin__town: 'Exeter',
+      placeOfOrigin__postcode: 'EX1 1AA'
+    })
+    await fill(jar, 'consignor', {
+      consignor__name: 'Sender Co',
+      consignor__addressLine1: '2 Sender Street',
+      consignor__town: 'Bristol',
+      consignor__postcode: 'BS1 1BB'
+    })
+    await fill(jar, 'consignee', {
+      consignee__name: 'Receiver Ltd',
+      consignee__addressLine1: '3 Receiver Road',
+      consignee__town: 'Leeds',
+      consignee__postcode: 'LS1 1CC'
+    })
+    await fill(jar, 'importer', {
+      importer__name: 'Importer Trading',
+      importer__addressLine1: '4 Import Way',
+      importer__town: 'Cardiff',
+      importer__postcode: 'CF1 1DD'
+    })
+    await fill(jar, 'place-of-destination', {
+      placeOfDestination__name: 'Destination Farm',
+      placeOfDestination__addressLine1: '5 Destination Lane',
+      placeOfDestination__town: 'Manchester',
+      placeOfDestination__postcode: 'M1 1EE'
+    })
+
+    // -- Section 5: references ------------------------------------------
+    // contact-address is required; internal-reference is optional.
+    await fill(jar, 'contact-address', {
+      contactAddress__name: 'Contact Person',
+      contactAddress__addressLine1: '6 Contact Close',
+      contactAddress__town: 'Glasgow',
+      contactAddress__postcode: 'G1 1FF'
+    })
     // internal-reference omitted — internalReferenceNumber is optional.
 
     // -- Section 5: commodity lines -------------------------------------
@@ -364,15 +447,15 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       url: `${BASE}/task-list`
     })
     expect(list.statusCode).toBe(200)
-    // 10 subsections — same as internal-market. The `reason` subsection
+    // 13 subsections — same as internal-market. The `reason` subsection
     // rolls up to F once reason-for-import is filled because
     // purposeInInternalMarket goes NA and NA obligations don't hold
     // the subsection open.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 10 Completed tags on the task list, got ${completedCount}`
-    ).toBe(10)
+      `expected 13 Completed tags on the task list, got ${completedCount}`
+    ).toBe(13)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 

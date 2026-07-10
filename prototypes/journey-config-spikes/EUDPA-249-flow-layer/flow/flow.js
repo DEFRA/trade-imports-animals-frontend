@@ -58,6 +58,12 @@ import {
   commodityCode,
   commodityType,
   species,
+  placeOfOrigin,
+  consignor,
+  consignee,
+  importer,
+  placeOfDestination,
+  contactAddress,
   numberOfAnimals,
   numberOfPackages,
   containsUnweanedAnimals,
@@ -231,9 +237,61 @@ export const flow = {
     },
     {
       kind: 'section',
+      id: 'trader-details',
+      titleKey: 'flow.section.trader-details.title',
+      children: [
+        {
+          kind: 'subsection',
+          id: 'origin-details',
+          titleKey: 'flow.subsection.origin-details.title',
+          children: [
+            {
+              page: 'place-of-origin',
+              presents: [{ obligation: placeOfOrigin }]
+            },
+            {
+              page: 'consignor',
+              presents: [{ obligation: consignor }]
+            }
+          ]
+        },
+        {
+          kind: 'subsection',
+          id: 'destination-details',
+          titleKey: 'flow.subsection.destination-details.title',
+          children: [
+            {
+              page: 'consignee',
+              presents: [{ obligation: consignee }]
+            },
+            {
+              page: 'importer',
+              presents: [{ obligation: importer }]
+            },
+            {
+              page: 'place-of-destination',
+              presents: [{ obligation: placeOfDestination }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      kind: 'section',
       id: 'references',
       titleKey: 'flow.section.references.title',
       children: [
+        {
+          kind: 'subsection',
+          id: 'contact',
+          titleKey: 'flow.subsection.contact.title',
+          children: [
+            {
+              page: 'contact-address',
+              presents: [{ obligation: contactAddress }]
+            }
+          ]
+        },
         {
           kind: 'subsection',
           id: 'trader-reference',

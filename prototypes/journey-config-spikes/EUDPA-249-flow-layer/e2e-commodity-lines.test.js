@@ -639,6 +639,29 @@ describe('commodity-lines — /start integration', () => {
       url: `${BASE}/pages/animals-certified-for`,
       payload: { animalsCertifiedFor: 'bovine' }
     })
+    // Trader details section — 5 address blocks + contact address.
+    // All mandatory, all need to be filled for /start to skip forward
+    // to the commodity-lines section.
+    const address = (prefix) => ({
+      [`${prefix}__name`]: 'X',
+      [`${prefix}__addressLine1`]: 'X',
+      [`${prefix}__town`]: 'X',
+      [`${prefix}__postcode`]: 'X'
+    })
+    for (const [page, prefix] of [
+      ['place-of-origin', 'placeOfOrigin'],
+      ['consignor', 'consignor'],
+      ['consignee', 'consignee'],
+      ['importer', 'importer'],
+      ['place-of-destination', 'placeOfDestination'],
+      ['contact-address', 'contactAddress']
+    ]) {
+      await inject(jar, {
+        method: 'POST',
+        url: `${BASE}/pages/${page}`,
+        payload: address(prefix)
+      })
+    }
     // Add a commodity line — its commodity-details page is now the
     // next unfulfilled thing.
     await addLine(jar)

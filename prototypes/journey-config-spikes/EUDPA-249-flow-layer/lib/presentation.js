@@ -20,6 +20,12 @@ import {
   transporterType,
   commercialTransporter,
   privateTransporter,
+  placeOfOrigin,
+  consignor,
+  consignee,
+  importer,
+  placeOfDestination,
+  contactAddress,
   meansOfTransport,
   transportIdentification,
   transportDocumentReference,
@@ -181,6 +187,54 @@ export const OBLIGATION_KEYS = new Map([
       pageTitleKey: 'presentation.internalReferenceNumber.pageTitle',
       legendKey: 'presentation.internalReferenceNumber.legend',
       hintKey: 'presentation.internalReferenceNumber.hint'
+    }
+  ],
+  [
+    placeOfOrigin.id,
+    {
+      pageTitleKey: 'presentation.placeOfOrigin.pageTitle',
+      legendKey: 'presentation.placeOfOrigin.legend',
+      hintKey: 'presentation.placeOfOrigin.hint'
+    }
+  ],
+  [
+    consignor.id,
+    {
+      pageTitleKey: 'presentation.consignor.pageTitle',
+      legendKey: 'presentation.consignor.legend',
+      hintKey: 'presentation.consignor.hint'
+    }
+  ],
+  [
+    consignee.id,
+    {
+      pageTitleKey: 'presentation.consignee.pageTitle',
+      legendKey: 'presentation.consignee.legend',
+      hintKey: 'presentation.consignee.hint'
+    }
+  ],
+  [
+    importer.id,
+    {
+      pageTitleKey: 'presentation.importer.pageTitle',
+      legendKey: 'presentation.importer.legend',
+      hintKey: 'presentation.importer.hint'
+    }
+  ],
+  [
+    placeOfDestination.id,
+    {
+      pageTitleKey: 'presentation.placeOfDestination.pageTitle',
+      legendKey: 'presentation.placeOfDestination.legend',
+      hintKey: 'presentation.placeOfDestination.hint'
+    }
+  ],
+  [
+    contactAddress.id,
+    {
+      pageTitleKey: 'presentation.contactAddress.pageTitle',
+      legendKey: 'presentation.contactAddress.legend',
+      hintKey: 'presentation.contactAddress.hint'
     }
   ],
   [

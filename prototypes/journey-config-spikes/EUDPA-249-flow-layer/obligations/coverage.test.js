@@ -30,19 +30,12 @@ const KNOWN_UNWIRED = new Set([
   'commodityLine',
   'unitRecord',
 
-  // Standard address blocks — composite `{ name, addressLine1, ...,
-  // country, telephone, email }` value; field-level validation is out
-  // of scope of the obligation model (per obligations.js comment).
-  // Will get a composite widget + validators during step 5.
-  'placeOfOrigin',
-  'consignor',
-  'consignee',
-  'importer',
-  'placeOfDestination',
-  'contactAddress',
-  // commercialTransporter wired during step 4 iteration 7 (address
-  // block composite widget — first worked example of the new type).
-  'privateTransporter',
+  // Standard address blocks wired during step 4 iteration 7:
+  // - Phase A: commercialTransporter (first worked example).
+  // - Phase B: privateTransporter, placeOfOrigin, consignor, consignee,
+  //   importer, placeOfDestination, contactAddress.
+  // permanentAddress stays parked — it's `within: unitRecord` and needs
+  // depth-2 per-unit infrastructure not yet built.
   'permanentAddress',
 
   // Yes/No enums from MDM — need domain entries during step 5.

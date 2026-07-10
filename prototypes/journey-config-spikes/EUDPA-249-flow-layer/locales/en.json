@@ -10,6 +10,9 @@
       "arrival": {
         "title": "Arrival"
       },
+      "trader-details": {
+        "title": "Trader details"
+      },
       "references": {
         "title": "References"
       },
@@ -38,6 +41,15 @@
       },
       "certified-for": {
         "title": "Animals certified for"
+      },
+      "origin-details": {
+        "title": "Place of origin and consignor"
+      },
+      "destination-details": {
+        "title": "Consignee, importer and destination"
+      },
+      "contact": {
+        "title": "Contact address"
       },
       "trader-reference": {
         "title": "Your reference"
@@ -132,6 +144,36 @@
       "pageTitle": "Your reference",
       "legend": "Your reference for this consignment (optional)",
       "hint": "A trader reference (max 58 characters)."
+    },
+    "placeOfOrigin": {
+      "pageTitle": "Place of origin",
+      "legend": "Where the animals were kept before this consignment",
+      "hint": "The holding, farm or premises the animals came from."
+    },
+    "consignor": {
+      "pageTitle": "Consignor",
+      "legend": "Who is sending this consignment",
+      "hint": "The person or organisation dispatching the animals."
+    },
+    "consignee": {
+      "pageTitle": "Consignee",
+      "legend": "Who will receive this consignment",
+      "hint": "The person or organisation the animals are being sent to."
+    },
+    "importer": {
+      "pageTitle": "Importer",
+      "legend": "Declared importer for this consignment",
+      "hint": "The trader responsible for the import declaration."
+    },
+    "placeOfDestination": {
+      "pageTitle": "Place of destination",
+      "legend": "Where the animals will be kept after arrival",
+      "hint": "The holding, farm or premises the animals will be delivered to."
+    },
+    "contactAddress": {
+      "pageTitle": "Contact address",
+      "legend": "Contact address for this consignment",
+      "hint": "Point of contact if we need to reach you about this consignment."
     },
     "commodityCode": {
       "pageTitle": "Commodity code",
