@@ -52,6 +52,20 @@ export function t(key, params) {
   return value
 }
 
+/** Translate a message key, but return `null` when the key is missing
+ *  or unset. Used by callers that already have a non-i18n fallback
+ *  (e.g. `tOrNull(labels?.[v]) ?? v` on an enum widget — the raw code
+ *  is the honest fallback if the label lookup misses, not the dotted-
+ *  path a translator would want to see). Complements `t()`, which
+ *  bakes in the "visible dotted-path on miss" behaviour. */
+export function tOrNull(key, params) {
+  if (key === null || key === undefined) return null
+  const value = lookup(key)
+  if (value === undefined) return null
+  if (params) return interpolate(value, params)
+  return value
+}
+
 function interpolate(template, params) {
   return template.replace(/\{(\w+)\}/g, (_, name) =>
     params[name] !== undefined && params[name] !== null

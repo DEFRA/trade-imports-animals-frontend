@@ -74,6 +74,7 @@ export function makePageController(page) {
               layout: 'layout.njk',
               pageTitle: pageTitle(page),
               heading: pageTitle(page),
+              buttonText: t('chrome.saveAndContinue'),
               fields: descriptors.map((d) => d.view),
               backLink: backLinkFor(page),
               errorSummary: result.errorList,

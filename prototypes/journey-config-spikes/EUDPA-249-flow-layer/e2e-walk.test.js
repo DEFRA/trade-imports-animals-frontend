@@ -263,7 +263,11 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     expect(cya.payload).toContain('France') // countryOfOrigin FR
     expect(cya.payload).toContain('Breeding') // purposeInInternalMarket
     expect(cya.payload).toContain('Road vehicle') // meansOfTransport
-    expect(cya.payload).toContain('line1: Cattle') // commodityCode-line1
+    // Line-scoped obligations render as per-line rows: one row per line
+    // with key "Commodity code (commodity line 1)" and per-line Change
+    // URL. Value is the resolved label alone (not a "line1: X" string).
+    expect(cya.payload).toContain('Cattle (0102)') // commodityCode-line1 row
+    expect(cya.payload).toMatch(/Commodity code[\s\S]{0,400}commodity line 1/)
     // Optional obligations we intentionally skipped should NOT render
     // as CYA rows (unfilled → cya-controller drops the row and no
     // "you still need to complete" prompt is raised for optionals).
@@ -372,7 +376,10 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     expect(cya.payload).not.toContain('Breeding')
     expect(cya.payload).not.toContain('Fattening')
     expect(cya.payload).toContain('Road vehicle') // meansOfTransport
-    expect(cya.payload).toContain('line1: Cattle')
+    // Line-scoped commodity code renders as per-line row (see internal-
+    // market walk above for the shape).
+    expect(cya.payload).toContain('Cattle (0102)')
+    expect(cya.payload).toMatch(/Commodity code[\s\S]{0,400}commodity line 1/)
     expect(cya.payload).not.toContain('MYREF-002')
     expect(cya.payload).not.toContain(
       'You still need to complete some sections'

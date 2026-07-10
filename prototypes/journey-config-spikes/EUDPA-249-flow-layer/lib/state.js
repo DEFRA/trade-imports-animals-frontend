@@ -11,6 +11,7 @@
 import { evaluateState } from '../contract.js'
 
 export const SESSION_KEY = 'prototype:eudpa-249:fulfilments'
+export const NEXT_LINE_ID_KEY = 'prototype:eudpa-249:next-line-id'
 
 // ---------------------------------------------------------------------------
 // Fulfilments — the primary state
@@ -74,10 +75,17 @@ export function writeAnswer(request, values) {
 // Commodity lines — bespoke helpers used by the line controllers.
 // ---------------------------------------------------------------------------
 
-function newLineId(existing) {
-  let n = 1
-  while (existing.has(`line${n}`)) n += 1
-  return `line${n}`
+/** Session-scoped counter for the next line id. Kept in its own yar
+ *  key rather than derived from current fulfilments so a Delete
+ *  cannot recycle the id — silent rehydration of any per-line state
+ *  whose obligation is missing from LINE_LEAF_OBLIGATIONS would
+ *  otherwise be possible. */
+function readNextLineId(request) {
+  return request.yar?.get(NEXT_LINE_ID_KEY) ?? 1
+}
+
+function writeNextLineId(request, n) {
+  request.yar?.set(NEXT_LINE_ID_KEY, n)
 }
 
 export function addCommodityLine(
@@ -86,19 +94,20 @@ export function addCommodityLine(
   seedObligation
 ) {
   const fulfilments = { ...readFulfilments(request) }
+  const n = readNextLineId(request)
+  const id = `line${n}`
   // Seed a placeholder record for the line so the ObligationEvaluator
   // recognises the line as existing. The obligations model tracks a
   // group instance by its descendants' composite-key prefixes; we seed
   // a placeholder on the seedObligation (commodityCode) with an empty
   // string value. Real value comes from the per-line-detail pages.
-  const existing = new Set(Object.keys(fulfilments[seedObligation.id] ?? {}))
-  const id = newLineId(existing)
   const seed = {
     ...(fulfilments[seedObligation.id] ?? {}),
     [id]: ''
   }
   fulfilments[seedObligation.id] = seed
   writeFulfilments(request, fulfilments)
+  writeNextLineId(request, n + 1)
   return id
 }
 
@@ -125,4 +134,5 @@ export function deleteCommodityLine(request, lineId, lineLeafObligations) {
 
 export function resetState(request) {
   request.yar?.clear(SESSION_KEY)
+  request.yar?.clear(NEXT_LINE_ID_KEY)
 }

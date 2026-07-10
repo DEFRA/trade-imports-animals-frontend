@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { t, hasKey } from './i18n.js'
+import { t, tOrNull, hasKey } from './i18n.js'
 
 describe('t() — key resolution', () => {
   it('returns the resolved string for a known key', () => {
@@ -46,6 +46,31 @@ describe('t() — parameter interpolation', () => {
     expect(t('errors.domain.integerMin', { min: '3' })).toBe(
       'Enter a whole number of at least 3'
     )
+  })
+})
+
+describe('tOrNull — variant that returns null on miss', () => {
+  it('returns the resolved string for a known key', () => {
+    expect(tOrNull('flow.section.origin-and-reason.title')).toBe(
+      'Country of origin and reason'
+    )
+  })
+
+  it('returns null (not the raw dotted-path) for a missing key', () => {
+    // The whole point of tOrNull vs t: callers with their own fallback
+    // (labels?.[v] ?? v etc.) should see null on miss so `??` fires.
+    expect(tOrNull('this.key.does.not.exist')).toBe(null)
+  })
+
+  it('returns null for null / undefined input', () => {
+    expect(tOrNull(null)).toBe(null)
+    expect(tOrNull(undefined)).toBe(null)
+  })
+
+  it('interpolates params when the key resolves', () => {
+    expect(
+      tOrNull('errors.domain.stringMaxLength', { max: 5, actual: 6 })
+    ).toBe('Enter no more than 5 characters (you entered 6)')
   })
 })
 

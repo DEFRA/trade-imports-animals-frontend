@@ -454,6 +454,10 @@ export const cphDomain = predicate('string', stringMaxLength(11, cph), [
 export const numberOfPackagesDomain = predicate(
   'integer',
   (value, ctx) => {
+    // Blank passes — numberOfPackages is completion-optional. A blank
+    // submission on a Change loop must not error. See NEXT.md
+    // resolved-limitation block on optional-only page completion.
+    if (value === undefined || value === null || value === '') return []
     if (!Number.isInteger(value) || value < 1) {
       return [
         {

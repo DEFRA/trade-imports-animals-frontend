@@ -3,9 +3,13 @@
  *
  * Walks the fulfilments map + the state.obligations impl to build a
  * summary-list of every filled obligation. Change links resolve via
- * `changeLinkFor` (firstPagePresentingObligation). A soft
- * "you still need to..." banner shows still-unfulfilled mandatories
- * (mid-journey CYA pattern from the parent branch).
+ * `changeLinkFor` (firstPagePresentingObligation). Line-scoped
+ * obligations (presentsForEach pages) emit ONE row per line record
+ * with per-line Change URLs (`/lines/{lineId}/{page}`); singleton
+ * obligations emit one row with a `/pages/{page}` URL.
+ *
+ * A soft "you still need to..." banner shows still-unfulfilled
+ * mandatories (mid-journey CYA pattern from the parent branch).
  */
 
 import { changeLinkFor, statusOfJourney } from '../../contract.js'
@@ -13,27 +17,87 @@ import { readState } from '../../lib/state.js'
 import { forObligation } from '../../lib/presentation.js'
 import { obligations as v4Obligations } from '../../obligations/obligations.js'
 import { domain } from '../../domain/index.js'
-import { t } from '../../lib/i18n.js'
+import { t, tOrNull } from '../../lib/i18n.js'
 import { chrome } from '../../lib/chrome.js'
 
 const BASE = '/prototype/eudpa-249'
 
-function formatValue(value, obligation) {
-  // `labels[v]` is a message key (see domain/index.js); resolve via
-  // `t()` and fall through to the raw stored value if the code has no
-  // label at all.
+function lineNumber(lineId) {
+  // 'line1' → 1. Falls back to the raw id if the format changes.
+  const match = /^line(\d+)$/.exec(lineId)
+  return match ? Number(match[1]) : lineId
+}
+
+/**
+ * Format a scalar or array value against an obligation's labels map.
+ * Callers must NOT pass a per-line object (`{ line1: ... }`) — those
+ * are unpacked at the row-emission site so each line renders its own
+ * row with its own Change URL.
+ */
+function formatSingle(value, obligation) {
   const labels = domain.get(obligation.id)?.labels
-  const label = (v) => t(labels?.[v]) ?? v
+  // `tOrNull` (not `t`) so a mistyped label key falls through to the
+  // raw stored code rather than shipping the dotted-path to the UI.
+  const label = (v) => tOrNull(labels?.[v]) ?? v
   if (value === undefined || value === null) return ''
-  if (Array.isArray(value)) {
-    return value.map(label).join(', ')
-  }
-  if (typeof value === 'object') {
-    return Object.entries(value)
-      .map(([lineId, v]) => `${lineId}: ${label(v)}`)
-      .join('; ')
-  }
+  if (Array.isArray(value)) return value.map(label).join(', ')
   return String(label(value))
+}
+
+function isBlankLeaf(value) {
+  if (value === undefined || value === null) return true
+  if (typeof value === 'string' && value === '') return true
+  if (Array.isArray(value) && value.length === 0) return true
+  return false
+}
+
+function isMandatoryOnRecord(obligation, impl, record) {
+  return (
+    (obligation.status ?? record?.status ?? impl.status ?? 'mandatory') ===
+    'mandatory'
+  )
+}
+
+function hrefForChange(oblId, lineId) {
+  const changePage = changeLinkFor(oblId)
+  if (!changePage) return null
+  if (changePage.presentsForEach) {
+    if (!lineId) return null
+    return `${BASE}/lines/${lineId}/${changePage.page}`
+  }
+  return `${BASE}/pages/${changePage.page}`
+}
+
+function pushPrompt(prompts, presentation, href, lineId) {
+  const label = lineId
+    ? `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
+    : presentation.pageTitle
+  prompts.push({
+    text: t('cya.promptEnterValue', { label }),
+    href,
+    because: []
+  })
+}
+
+function pushRow(rows, presentation, valueText, href, lineId) {
+  const keyText = lineId
+    ? `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
+    : presentation.pageTitle
+  rows.push({
+    key: { text: keyText },
+    value: { text: valueText },
+    actions: href
+      ? {
+          items: [
+            {
+              href,
+              text: t('cya.changeLinkText'),
+              visuallyHiddenText: keyText
+            }
+          ]
+        }
+      : undefined
+  })
 }
 
 export const cyaController = {
@@ -47,48 +111,53 @@ export const cyaController = {
       for (const [oblId, impl] of Object.entries(state.obligations)) {
         const obligation = obligationsById.get(oblId)
         if (!obligation || !impl.inScope) continue
-        const stored = state.fulfilments[oblId]
         const presentation = forObligation(obligation)
-        const changePage = changeLinkFor(oblId)
-        const href = changePage ? `${BASE}/pages/${changePage.page}` : null
-        // Prefer the obligation's declared status (set at the top level
-        // for line-scoped obligations like numberOfPackages where impl
-        // carries `records[].status` instead of a top-level `impl.status`);
-        // fall back to impl for scoped obligations that only surface their
-        // status via applyTo.
-        const isMandatory =
-          (obligation.status ?? impl.status ?? 'mandatory') === 'mandatory'
-        if (
-          stored === undefined ||
-          stored === null ||
-          (typeof stored === 'string' && stored === '')
-        ) {
-          if (isMandatory && href) {
-            prompts.push({
-              text: t('cya.promptEnterValue', {
-                label: presentation.pageTitle
-              }),
+        const stored = state.fulfilments[oblId]
+
+        // Line-scoped obligations (presentsForEach pages) — one row per
+        // record with a per-line Change URL. The group container
+        // itself (commodityLine) hits this branch too; its records are
+        // walked but each has a blank leaf and a null Change URL, so
+        // the loop passes through without emitting rows or prompts.
+        if (Array.isArray(impl.records)) {
+          for (const record of impl.records) {
+            const lineId = record.fulfilmentId
+            if (!lineId) continue
+            const leaf = stored?.[lineId]
+            const href = hrefForChange(oblId, lineId)
+            const mandatory = isMandatoryOnRecord(obligation, impl, record)
+            if (isBlankLeaf(leaf)) {
+              if (mandatory && href) {
+                pushPrompt(prompts, presentation, href, lineId)
+              }
+              continue
+            }
+            pushRow(
+              rows,
+              presentation,
+              formatSingle(leaf, obligation),
               href,
-              because: []
-            })
+              lineId
+            )
           }
           continue
         }
-        rows.push({
-          key: { text: presentation.pageTitle },
-          value: { text: formatValue(stored, obligation) },
-          actions: href
-            ? {
-                items: [
-                  {
-                    href,
-                    text: t('cya.changeLinkText'),
-                    visuallyHiddenText: presentation.pageTitle
-                  }
-                ]
-              }
-            : undefined
-        })
+
+        // Singleton case — one row per obligation.
+        const href = hrefForChange(oblId, null)
+        const mandatory =
+          (obligation.status ?? impl.status ?? 'mandatory') === 'mandatory'
+        if (isBlankLeaf(stored)) {
+          if (mandatory && href) pushPrompt(prompts, presentation, href, null)
+          continue
+        }
+        pushRow(
+          rows,
+          presentation,
+          formatSingle(stored, obligation),
+          href,
+          null
+        )
       }
 
       return h.view('features/check-your-answers/template', {

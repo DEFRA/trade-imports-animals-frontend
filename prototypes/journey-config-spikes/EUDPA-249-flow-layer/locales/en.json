@@ -270,6 +270,7 @@
     "back": "Back",
     "saveAndContinue": "Save and continue",
     "errorSummaryTitle": "There is a problem",
+    "selectPlaceholder": "- Select -",
     "phaseBanner": {
       "tag": "Prototype",
       "html": "EUDPA-249 flow-layer spike — non-functional prototype, not a real service."
@@ -310,17 +311,16 @@
     "pageTitle": "Commodity lines",
     "heading": "Commodity lines",
     "lead": "Add one or more commodity lines. Each line captures a commodity code, species, and count.",
-    "codeNotChosen": "- Not chosen yet -",
     "notFilled": "-",
     "changeLinkText": "Change",
-    "changeLinkHidden": "commodity code for {lineId}",
+    "changeLinkHidden": "{label} for commodity line {n}",
     "breadcrumbSelf": "Commodity lines",
     "empty": "No commodity lines added yet.",
     "addButton": "Add a commodity line",
     "backToTaskList": "Back to task list",
     "lineHeading": "Commodity line {n}",
     "deleteButton": "Delete this line",
-    "deleteHidden": "Delete {lineId}"
+    "deleteHidden": "Delete commodity line {n}"
   },
   "errors": {
     "countryOfOrigin": {
@@ -337,7 +337,9 @@
       "integerMaxDigits": "Enter a whole number with no more than {maxDigits} digits",
       "dateFormat": "Enter a valid date in DD/MM/YYYY format",
       "arrayMaxSelections": "Select no more than {max} items (you selected {actual})",
-      "numberOfAnimalsSpeciesCap": "Enter no more than {max} animals for the selected species (you entered {actual})"
-    }
+      "numberOfAnimalsSpeciesCap": "Enter no more than {max} animals for the selected species (you entered {actual})",
+      "unknownCode": "This value could not be validated (error code: {code})"
+    },
+    "defaultRequired": "This field is required"
   }
 }

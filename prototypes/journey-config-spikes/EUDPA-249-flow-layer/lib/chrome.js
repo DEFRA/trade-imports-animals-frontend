@@ -25,6 +25,7 @@ export const CHROME_KEYS = [
   'chrome.back',
   'chrome.saveAndContinue',
   'chrome.errorSummaryTitle',
+  'chrome.selectPlaceholder',
   'chrome.phaseBanner.tag',
   'chrome.phaseBanner.html',
   'chrome.pageTitle.errorPrefix',

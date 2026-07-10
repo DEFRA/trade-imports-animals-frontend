@@ -63,7 +63,6 @@ const COMMODITY_LINES_KEYS = [
   'commodityLines.pageTitle',
   'commodityLines.heading',
   'commodityLines.lead',
-  'commodityLines.codeNotChosen',
   'commodityLines.notFilled',
   'commodityLines.changeLinkText',
   'commodityLines.changeLinkHidden',

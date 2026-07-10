@@ -33,10 +33,13 @@ describe('textFor', () => {
     ).toBe('Select no more than 12 items (you selected 13)')
   })
 
-  it('falls back to a generic message for unknown codes', () => {
+  it('falls back to a generic i18n-resolved message for unknown codes', () => {
+    // Fallback text now goes through t() so a translator sees it. The
+    // template `errors.domain.unknownCode` includes the raw code so the
+    // developer / reviewer can still trace which code fell through.
     expect(
       textFor({ code: 'domain.unknown.thing', obligation: 'x' })
-    ).toContain('Invalid: domain.unknown.thing')
+    ).toContain('domain.unknown.thing')
   })
 })
 

@@ -192,7 +192,7 @@ export function validatePagePayload(page, payload, state, options = {}) {
         code: 'flow.required',
         obligation: descriptor.obligation.name,
         path: descriptor.path,
-        message: key ? t(key) : 'This field is required'
+        message: key ? t(key) : t('errors.defaultRequired')
       })
       continue
     }

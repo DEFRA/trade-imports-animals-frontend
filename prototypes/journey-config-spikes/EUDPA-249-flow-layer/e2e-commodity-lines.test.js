@@ -357,4 +357,288 @@ describe('commodity-lines — /lines summary rendering', () => {
     // Change link for the commodity-code row goes to that line's page.
     expect(list.payload).toContain(`${BASE}/lines/line1/commodity-details`)
   })
+
+  it('renders a blank cell as the notFilled placeholder for a multi-select that was saved empty', async () => {
+    // Regression: labelFor previously returned '' for an empty array,
+    // and `label ?? t('commodityLines.notFilled')` (nullish coalesce)
+    // treated '' as non-nullish → the cell rendered blank instead of
+    // the '-' placeholder. Fix: labelFor returns null for empty arrays.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    // POST species-details with no checkboxes ticked → species stored
+    // as [] (coerceValue for checkboxes turns '' into []).
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/species-details`,
+      payload: {}
+    })
+
+    const list = await getLines(jar)
+    // Species row's value is the notFilled placeholder, not an empty
+    // cell. Look for it in the row's neighbourhood.
+    expect(list.payload).toMatch(/Species[\s\S]{0,400}-/)
+  })
+
+  it('per-row Change link uses human-friendly aria-label ("Commodity code for commodity line 1")', async () => {
+    // Regression: the visuallyHiddenText used to be a hardcoded English
+    // template literal with the raw internal lineId. Fixed to use
+    // `commodityLines.changeLinkHidden` via t() with {label, n} params.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+
+    const list = await getLines(jar)
+    expect(list.payload).toContain('Commodity code for commodity line 1')
+    // Raw internal id must not leak into the aria-label.
+    expect(list.payload).not.toContain('Commodity code for line1')
+  })
+
+  it('Delete button aria-label uses the human line number ("Delete commodity line 1")', async () => {
+    // Regression: previously interpolated raw {lineId} = 'line1'.
+    // Now interpolates lineNumber(lineId) = 1 via {n}.
+    const jar = makeCookieJar()
+    await addLine(jar)
+
+    const list = await getLines(jar)
+    expect(list.payload).toContain('Delete commodity line 1')
+    expect(list.payload).not.toContain('Delete line1')
+  })
+})
+
+describe('commodity-lines — line-scoped controller guards', () => {
+  it('GET /lines/{id}/number-of-packages redirects to /lines when the line has a non-whitelisted commodity code', async () => {
+    // Regression: previously rendered an empty form (no fields, just a
+    // Save button). Fixed to redirect to /lines when the target
+    // obligation is out of scope for that line.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0103' // Pig — NOT on PACKAGE_COUNT_COMMODITIES
+    })
+    const res = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/lines/line1/number-of-packages`
+    })
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe(`${BASE}/lines`)
+  })
+
+  it('POST /lines/{id}/number-of-packages redirects to /lines when the line is out of scope', async () => {
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0103'
+    })
+    const res = await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/number-of-packages`,
+      payload: { 'numberOfPackages-line1': 5 }
+    })
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe(`${BASE}/lines`)
+  })
+})
+
+describe('commodity-lines — id stability under delete/add', () => {
+  it('newLineId is monotonic — a second Add after Delete does not recycle line1', async () => {
+    // Regression: previous newLineId picked the lowest free slot; a
+    // Delete-then-Add cycle would reuse 'line1', silently rehydrating
+    // any per-line state whose obligation was missing from
+    // LINE_LEAF_OBLIGATIONS. Fixed to always pick highest-seen + 1.
+    const jar = makeCookieJar()
+    const l1 = await addLine(jar)
+    expect(l1).toBe('line1')
+    await fillLinePage(jar, l1, 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    // Delete line1.
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/delete`,
+      payload: {}
+    })
+    // Add another line — should NOT be 'line1' again.
+    const l2 = await addLine(jar)
+    expect(l2).not.toBe('line1')
+    expect(l2).toBe('line2')
+  })
+})
+
+describe('commodity-lines — CYA change link + prompt', () => {
+  it('CYA Change link for a line-scoped obligation resolves to /lines/{id}/{page} (not /pages/{page})', async () => {
+    // Regression: CYA previously built href as /pages/{page} unconditionally.
+    // For presentsForEach pages the flow-major URLs no longer exist; the
+    // Change link would 404. Fixed: hrefForChange picks
+    // /lines/{lineId}/{page} when the change page has presentsForEach.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.statusCode).toBe(200)
+    // The row's Change link points at the per-line URL.
+    expect(cya.payload).toContain(`${BASE}/lines/line1/commodity-details`)
+    // And the flow-major URL is NOT emitted for that obligation.
+    expect(cya.payload).not.toContain(`${BASE}/pages/commodity-details`)
+  })
+
+  it('CYA renders one row per line for a line-scoped obligation (multi-line case)', async () => {
+    const jar = makeCookieJar()
+    // Two lines.
+    const l1 = await addLine(jar)
+    await fillLinePage(jar, l1, 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    const l2 = await addLine(jar)
+    await fillLinePage(jar, l2, 'commodity-details', {
+      'commodityCode-line2': '0103'
+    })
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    // One row per line, each with its own value and its own Change URL.
+    expect(cya.payload).toContain('Cattle (0102)')
+    expect(cya.payload).toContain('Pig (0103)')
+    expect(cya.payload).toContain(`${BASE}/lines/line1/commodity-details`)
+    expect(cya.payload).toContain(`${BASE}/lines/line2/commodity-details`)
+    // Line numbers appear in the row keys.
+    expect(cya.payload).toMatch(/Commodity code[\s\S]{0,400}commodity line 1/)
+    expect(cya.payload).toMatch(/Commodity code[\s\S]{0,400}commodity line 2/)
+  })
+
+  it('does NOT emit a spurious row for a line-scoped mandatory that has only the addCommodityLine seed placeholder', async () => {
+    // Regression: previously, `POST /lines/add` seeded
+    // commodityCode.line1 = ''. CYA's emptiness check treated the
+    // wrapping object `{line1: ''}` as non-empty and rendered
+    // 'line1: ' as a Change-link row (and suppressed the still-needed
+    // prompt because stored was truthy). Fix: unpack per-record, check
+    // each leaf independently.
+    const jar = makeCookieJar()
+    await addLine(jar) // mints line1, seeds commodityCode.line1 = ''
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.statusCode).toBe(200)
+    // No 'line1: ' row for commodityCode (the row would appear only if
+    // the leaf were filled).
+    expect(cya.payload).not.toMatch(/Commodity code[\s\S]{0,60}line1:/)
+    // The still-needed prompt SHOULD fire for line1's commodityCode
+    // (it's mandatory + blank + has a Change URL).
+    expect(cya.payload).toContain('You still need to complete some sections')
+    expect(cya.payload).toContain('Commodity code')
+  })
+
+  it('CYA resolves labels correctly for a per-line multi-select (e.g. species with two selections)', async () => {
+    // Regression: previously, formatValue's typeof===object branch
+    // called label(v) where v was an array; `labels?.[[a,b]]` coerced
+    // the array to a comma string and never matched. The row rendered
+    // as raw codes ('cattle,buffalo') instead of 'Cattle, Buffalo'.
+    // Fix: unpack per-record; formatSingle handles arrays correctly.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    // Pick two species — cattle + buffalo (both in the 0102 list).
+    await fillLinePage(jar, 'line1', 'species-details', {
+      'species-line1': ['cattle', 'buffalo']
+    })
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.payload).toContain('Cattle, Buffalo')
+    // Raw codes must NOT leak.
+    expect(cya.payload).not.toContain('cattle,buffalo')
+  })
+})
+
+describe('commodity-lines — /start integration', () => {
+  it('GET /start redirects to /lines (not /pages/{name}) when the first unfulfilled page is presentsForEach', async () => {
+    // Regression: /start unconditionally redirected to /pages/{first.page}.
+    // For presentsForEach pages there's no /pages/{name} route → 404.
+    // Fixed: if first.page has presentsForEach, redirect to /lines.
+    const jar = makeCookieJar()
+    // Fill all static sections so /start would land on the first
+    // commodity-line page.
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/country-of-origin`,
+      payload: { countryOfOrigin: 'FR' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/region-code-requirement`,
+      payload: { regionCodeRequirement: 'no' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/reason-for-import`,
+      payload: { reasonForImport: 'transit-through-eu' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/transporter-type`,
+      payload: { transporterType: 'commercial' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/transporter-details`,
+      payload: {
+        commercialTransporter: 'ACME'
+      }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/means-of-transport`,
+      payload: { meansOfTransport: 'road-vehicle' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/transport-identification`,
+      payload: {
+        transportIdentification: 'REG-1',
+        transportDocumentReference: 'DOC-1'
+      }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/arrival-details`,
+      payload: {
+        arrivalDateAtPort: '12/12/2026',
+        portOfEntry: 'DVR'
+      }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/contains-unweaned-animals`,
+      payload: { containsUnweanedAnimals: 'no' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/animals-certified-for`,
+      payload: { animalsCertifiedFor: 'bovine' }
+    })
+    // Add a commodity line — its commodity-details page is now the
+    // next unfulfilled thing.
+    await addLine(jar)
+    // /start should route to /lines (not /pages/commodity-details).
+    const res = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/start`
+    })
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe(`${BASE}/lines`)
+  })
 })

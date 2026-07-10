@@ -14,7 +14,7 @@
  * `t()` before rendering. Missing keys render as the raw dotted-path.
  */
 
-import { t } from './i18n.js'
+import { t, tOrNull } from './i18n.js'
 
 const OBLIGATION_MULTI = new Set([
   // Obligations whose stored value is an array — either enum-multi or a
@@ -54,7 +54,7 @@ export const rules = [
           hint: hint ? { text: hint } : undefined,
           items: options.map((v) => ({
             value: v,
-            text: t(labels?.[v]) ?? v,
+            text: tOrNull(labels?.[v]) ?? v,
             checked: Array.isArray(value) && value.includes(v)
           })),
           errorMessage: error ? { text: error } : undefined
@@ -89,7 +89,7 @@ export const rules = [
           hint: hint ? { text: hint } : undefined,
           items: options.map((v) => ({
             value: v,
-            text: t(labels?.[v]) ?? v,
+            text: tOrNull(labels?.[v]) ?? v,
             checked: value === v
           })),
           errorMessage: error ? { text: error } : undefined
@@ -125,12 +125,12 @@ export const rules = [
           items: [
             {
               value: '',
-              text: '- Select -',
+              text: t('chrome.selectPlaceholder'),
               selected: value === undefined || value === ''
             },
             ...options.map((v) => ({
               value: v,
-              text: t(labels?.[v]) ?? v,
+              text: tOrNull(labels?.[v]) ?? v,
               selected: value === v
             }))
           ],

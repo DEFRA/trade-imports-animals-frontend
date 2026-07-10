@@ -25,7 +25,7 @@ import {
   addCommodityLine,
   deleteCommodityLine
 } from '../../lib/state.js'
-import { t } from '../../lib/i18n.js'
+import { t, tOrNull } from '../../lib/i18n.js'
 import { chrome } from '../../lib/chrome.js'
 import { forObligation } from '../../lib/presentation.js'
 
@@ -52,8 +52,14 @@ const LINE_PAGES = [
 
 function labelFor(obligation, value) {
   if (value === undefined || value === null || value === '') return null
+  // Empty array (multi-select cleared) counts as unfilled so the row
+  // falls through to the notFilled placeholder instead of rendering
+  // an empty cell.
+  if (Array.isArray(value) && value.length === 0) return null
   const labels = domain.get(obligation.id)?.labels
-  const resolve = (v) => t(labels?.[v]) ?? v
+  // `tOrNull` (not `t`) so that a mistyped label key falls through to
+  // the raw stored code rather than shipping the dotted-path to the UI.
+  const resolve = (v) => tOrNull(labels?.[v]) ?? v
   if (Array.isArray(value)) return value.map(resolve).join(', ')
   return String(resolve(value))
 }
@@ -85,7 +91,10 @@ function summariseLine(state, lineId) {
           {
             href: `${BASE}/lines/${lineId}/${pageName}`,
             text: t('commodityLines.changeLinkText'),
-            visuallyHiddenText: `${forObligation(obligation).pageTitle} for ${lineId}`
+            visuallyHiddenText: t('commodityLines.changeLinkHidden', {
+              label: forObligation(obligation).pageTitle,
+              n: lineNumber(lineId)
+            })
           }
         ]
       }
@@ -98,7 +107,7 @@ function summariseLine(state, lineId) {
     deleteHref: `${BASE}/lines/${lineId}/delete`,
     deleteButtonText: t('commodityLines.deleteButton'),
     deleteVisuallyHiddenText: t('commodityLines.deleteHidden', {
-      lineId
+      n: lineNumber(lineId)
     })
   }
 }

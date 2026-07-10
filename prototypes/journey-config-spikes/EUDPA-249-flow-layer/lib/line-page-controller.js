@@ -50,6 +50,21 @@ function lineExists(state, lineId) {
   return records.some((r) => r.fulfilmentId === lineId)
 }
 
+/** True iff the flow page's presented obligation is in scope FOR the
+ *  target line. numberOfPackages is applyTo-scoped by commodity code —
+ *  a line whose code is not on the whitelist has no record for
+ *  numberOfPackages, and a URL like /lines/{pigLine}/number-of-packages
+ *  would otherwise render an empty form + a POST that silently
+ *  writes nothing. */
+function obligationInScopeForLine(page, state, lineId) {
+  const obligation = page.presentsForEach?.obligation
+  if (!obligation) return true
+  const impl = state.obligations?.[obligation.id]
+  if (!impl?.inScope) return false
+  const records = impl.records ?? []
+  return records.some((r) => r.fulfilmentId === lineId)
+}
+
 export function makeLinePageController(page) {
   return {
     get: {
@@ -57,6 +72,9 @@ export function makeLinePageController(page) {
         const { lineId } = request.params
         const state = readState(request)
         if (!lineExists(state, lineId)) {
+          return h.redirect(`${BASE}/lines`)
+        }
+        if (!obligationInScopeForLine(page, state, lineId)) {
           return h.redirect(`${BASE}/lines`)
         }
         const descriptors = fieldsForPage(page, state, {}, { lineId })
@@ -77,6 +95,9 @@ export function makeLinePageController(page) {
         const { lineId } = request.params
         const state = readState(request)
         if (!lineExists(state, lineId)) {
+          return h.redirect(`${BASE}/lines`)
+        }
+        if (!obligationInScopeForLine(page, state, lineId)) {
           return h.redirect(`${BASE}/lines`)
         }
         const result = validatePagePayload(page, request.payload, state, {

@@ -193,7 +193,7 @@ describe('page-controller — country-of-origin', () => {
     expect(res.payload).toContain('France') // label for FR
   })
 
-  it('POST with invalid choice re-renders 400 with error summary', async () => {
+  it('POST with invalid choice re-renders 400 with error summary and a labelled submit button', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'POST',
@@ -203,6 +203,9 @@ describe('page-controller — country-of-origin', () => {
     expect(res.statusCode).toBe(400)
     expect(res.payload).toContain('There is a problem')
     expect(res.payload).toContain('Select a value from the list')
+    // Regression guard: the POST-error re-render must include buttonText
+    // (was dropped in the i18n phase-5 refactor; caught by code review).
+    expect(res.payload).toContain('Save and continue')
   })
 
   it('POST with a valid choice redirects to next page (region-code-requirement)', async () => {

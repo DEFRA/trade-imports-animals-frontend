@@ -67,7 +67,9 @@ export const FORMAT_ERROR_KEYS = [
   'errors.domain.integerMaxDigits',
   'errors.domain.dateFormat',
   'errors.domain.arrayMaxSelections',
-  'errors.domain.numberOfAnimalsSpeciesCap'
+  'errors.domain.numberOfAnimalsSpeciesCap',
+  'errors.domain.unknownCode',
+  'errors.defaultRequired'
 ]
 
 export function textFor(error) {
@@ -78,7 +80,8 @@ export function textFor(error) {
   // their wording without polluting the domain-error copy.
   if (error.message) return error.message
   const copy = COPY[error.code]
-  return copy ? copy(error) : `Invalid: ${error.code}`
+  if (copy) return copy(error)
+  return t('errors.domain.unknownCode', { code: error.code })
 }
 
 /**

@@ -233,6 +233,15 @@ describe('predicate — numberOfPackages (V4: integer, max 10 digits)', () => {
       numberOfPackagesDomain.predicate(10_000_000_000, buildCtx())[0].code
     ).toBe(reasons.integerMaxDigits.code)
   })
+
+  it('passes an empty / unset value — numberOfPackages is completion-optional', () => {
+    // Regression guard: Change-loop on the optional field must not
+    // 400. See NEXT.md resolved-limitation block on optional-only
+    // page completion.
+    expect(numberOfPackagesDomain.predicate(undefined, buildCtx())).toEqual([])
+    expect(numberOfPackagesDomain.predicate('', buildCtx())).toEqual([])
+    expect(numberOfPackagesDomain.predicate(null, buildCtx())).toEqual([])
+  })
 })
 
 describe('predicate — numberOfAnimals (V4: integer, per-species cap)', () => {

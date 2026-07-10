@@ -6,24 +6,40 @@ const integerEntry = { type: 'integer' }
 const dateEntry = { type: 'date' }
 
 describe('pickWidget', () => {
-  it('picks radios for a small single-select enum', () => {
+  it('picks radios for a small single-select enum and resolves labels via t()', () => {
+    // Labels are message keys per the i18n convention (see domain/index.js).
+    // Missing-in-en keys fall through to the raw stored code so a widget
+    // never ships a dotted-path as its rendered label.
     const chosen = pickWidget({
-      obligation: { name: 'reasonForImport' },
+      obligation: { name: 'containsUnweanedAnimals' },
       entry: enumEntry,
-      options: ['a', 'b', 'c'],
-      id: 'reasonForImport',
+      options: ['yes', 'no'],
+      id: 'containsUnweanedAnimals',
       value: undefined,
       legend: 'Reason',
       hint: null,
-      labels: { a: 'Alpha', b: 'Beta', c: 'Gamma' }
+      labels: { yes: 'domain.yesNo.yes', no: 'domain.yesNo.no' }
     })
     expect(chosen.rule).toBe('radios')
     expect(chosen.view.type).toBe('radios')
-    expect(chosen.view.args.items.map((i) => i.text)).toEqual([
-      'Alpha',
-      'Beta',
-      'Gamma'
-    ])
+    expect(chosen.view.args.items.map((i) => i.text)).toEqual(['Yes', 'No'])
+  })
+
+  it('renders the raw stored code when a labels key is missing in en.json', () => {
+    // Regression guard for the widget fallback: a mistyped label key
+    // must NOT ship the dotted-path to the UI. tOrNull returns null on
+    // miss so `?? v` falls through to the raw value.
+    const chosen = pickWidget({
+      obligation: { name: 'unknown' },
+      entry: enumEntry,
+      options: ['a', 'b'],
+      id: 'unknown',
+      value: undefined,
+      legend: 'X',
+      hint: null,
+      labels: { a: 'no.such.key', b: 'other.missing.key' }
+    })
+    expect(chosen.view.args.items.map((i) => i.text)).toEqual(['a', 'b'])
   })
 
   it('picks select for enum with more than RADIO_MAX options', () => {
