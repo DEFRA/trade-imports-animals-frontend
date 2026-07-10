@@ -64,12 +64,16 @@ const COMMODITY_LINES_KEYS = [
   'commodityLines.heading',
   'commodityLines.lead',
   'commodityLines.codeNotChosen',
+  'commodityLines.notFilled',
   'commodityLines.changeLinkText',
   'commodityLines.changeLinkHidden',
   'commodityLines.breadcrumbSelf',
   'commodityLines.empty',
   'commodityLines.addButton',
-  'commodityLines.backToTaskList'
+  'commodityLines.backToTaskList',
+  'commodityLines.lineHeading',
+  'commodityLines.deleteButton',
+  'commodityLines.deleteHidden'
 ]
 
 function collectFlowKeys(node, out = []) {

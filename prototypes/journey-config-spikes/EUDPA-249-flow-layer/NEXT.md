@@ -129,6 +129,19 @@ in-scope mandatory entry is fulfilled`. An in-scope-optional page is
   as soon as ≥ 1 line exists. That's the current design (add step
   done when there's a line). If the user removes all lines, it
   reverts to NOT_STARTED. Fine as-is.
+- **Commodity-line pages are line-major.** Retired the flow-major
+  `presentsForEach` URLs (`/pages/commodity-details` etc. — those
+  rendered one input per line on a single page) in favour of
+  `/lines/{lineId}/{pageName}`. Line-scoped page controller lives at
+  `lib/line-page-controller.js`; new engine primitive
+  `firstUnfulfilledPageForLine` + contract seam `nextAfterForLine`
+  drive per-line navigation. POST `/lines/add` mints and 302s
+  straight into the new line's first per-line page (add-then-fill).
+  On save, next unfilled mandatory in the same subsection wins;
+  when the line is done, 302 to `/lines`. The `/lines` list renders
+  a summary block per line with per-row Change (→ specific page for
+  that obligation on that line) and a per-line Delete form.
+  `presentsForEach` is unchanged in the model — only the URL layer.
 
 ### Immediate next candidates
 

@@ -67,11 +67,15 @@ function linesManageStatus(state) {
 }
 
 function subsectionHref(subsection, state) {
-  // Commodity-lines-manage subsection has a special href to the bespoke
-  // /lines controller — resolved before falling into firstNavigablePage,
-  // because the subsection's only child is a read-only intro page that
-  // firstNavigablePage would rightly discard.
-  if (subsection.id === 'commodity-lines-manage') {
+  // Both commodity-lines subsections route into the bespoke /lines
+  // list — the flow-major "one page per obligation across all lines"
+  // URLs have been retired in favour of the line-major
+  // `/lines/{id}/{page}` shape (see routes.js). Users pick a line
+  // from the list and walk THAT line's pages sequentially.
+  if (
+    subsection.id === 'commodity-lines-manage' ||
+    subsection.id === 'commodity-lines-details'
+  ) {
     return `${BASE}/lines`
   }
   const page = firstNavigablePage(subsection, state)

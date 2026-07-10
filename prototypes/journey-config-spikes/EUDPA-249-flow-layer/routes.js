@@ -13,6 +13,7 @@
 
 import { pages } from './contract.js'
 import { makePageController } from './lib/page-controller.js'
+import { makeLinePageController } from './lib/line-page-controller.js'
 import { hubController } from './features/hub/controller.js'
 import { cyaController } from './features/check-your-answers/controller.js'
 import {
@@ -100,14 +101,41 @@ export const journeyConfigFlow = {
         })
       )
 
-      // Flow-driven pages — one GET + POST per page. Pages with
-      // `presentsForEach` fan out to one field per in-scope commodity
-      // line on the same page (single URL for all lines). Read-only
-      // intro pages (no presents, no presentsForEach) are skipped.
+      // Flow-driven pages.
+      //
+      //   Static `presents` pages → one GET + POST at `/pages/{name}`
+      //     via the generic page controller.
+      //   `presentsForEach` pages (currently only the per-commodity-line
+      //     details pages) → one GET + POST at `/lines/{lineId}/{name}`
+      //     via the line-scoped page controller. The user reaches
+      //     these by clicking into a specific line from `/lines`; the
+      //     flow-major "all lines on one page" URL is no longer
+      //     registered.
+      //
+      // Read-only intro pages (no presents, no presentsForEach) are
+      // skipped entirely.
       for (const page of pages()) {
         const hasPresents = page.presents && page.presents.length > 0
         const isForEach = hasPresentsForEach(page)
-        if (!hasPresents && !isForEach) continue
+        if (isForEach) {
+          const handlers = makeLinePageController(page)
+          routes.push(
+            publicRoute({
+              method: 'GET',
+              path: `${BASE}/lines/{lineId}/${page.page}`,
+              ...handlers.get
+            })
+          )
+          routes.push(
+            publicRoute({
+              method: 'POST',
+              path: `${BASE}/lines/{lineId}/${page.page}`,
+              ...handlers.post
+            })
+          )
+          continue
+        }
+        if (!hasPresents) continue
         const handlers = makePageController(page)
         routes.push(
           publicRoute({

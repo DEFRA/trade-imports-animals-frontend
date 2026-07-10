@@ -341,7 +341,7 @@ describe('lines-index + add', () => {
     expect(res.payload).toContain('No commodity lines added yet.')
   })
 
-  it('POST /lines/add mints a line and redirects back to /lines', async () => {
+  it('POST /lines/add mints a line and add-then-fill redirects into its first per-line page', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'POST',
@@ -349,48 +349,52 @@ describe('lines-index + add', () => {
       payload: {}
     })
     expect(res.statusCode).toBe(302)
-    expect(res.headers.location).toBe('/prototype/eudpa-249/lines')
-    // Follow up: after add, /lines shows a line1 row.
+    // Line-major add-then-fill: mint + jump straight into the new
+    // line's first per-line page rather than returning to the list.
+    expect(res.headers.location).toBe(
+      '/prototype/eudpa-249/lines/line1/commodity-details'
+    )
+    // Follow up: /lines now shows a summary block for line1.
     const listing = await inject(jar, {
       method: 'GET',
       url: '/prototype/eudpa-249/lines'
     })
-    expect(listing.payload).toContain('line1')
+    expect(listing.payload).toContain('Commodity line 1')
   })
 })
 
-describe('presentsForEach — species-details (iteration 4)', () => {
-  it('GET returns 200 with no commodity lines and no fields rendered', async () => {
+describe('line-page-controller — species-details (line-scoped rendering)', () => {
+  it('GET /lines/{id}/species-details 302s to /lines when the line does not exist', async () => {
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'GET',
-      url: '/prototype/eudpa-249/pages/species-details'
+      url: '/prototype/eudpa-249/lines/line1/species-details'
     })
-    expect(res.statusCode).toBe(200)
-    expect(res.payload).toContain('Species')
-    // No line records yet → no species-* input on the page.
-    expect(res.payload).not.toMatch(/name="species-line\d+"/)
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe('/prototype/eudpa-249/lines')
   })
 
   it('GET after adding a cattle line renders one checkbox group with cattle-list options', async () => {
     const jar = makeCookieJar()
-    // Add a commodity line and pick a cattle code.
+    // Add a commodity line (mints line1) — the add-then-fill redirect
+    // lands us at commodity-details for line1.
     await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/lines/add',
       payload: {}
     })
+    // Pick a cattle code on that line.
     await inject(jar, {
       method: 'POST',
-      url: '/prototype/eudpa-249/pages/commodity-details',
+      url: '/prototype/eudpa-249/lines/line1/commodity-details',
       payload: { 'commodityCode-line1': '0102' }
     })
     const res = await inject(jar, {
       method: 'GET',
-      url: '/prototype/eudpa-249/pages/species-details'
+      url: '/prototype/eudpa-249/lines/line1/species-details'
     })
     expect(res.statusCode).toBe(200)
-    // Checkbox group for line1 present with cattle-list species labels.
+    // Line-scoped: one field for THIS line only.
     expect(res.payload).toMatch(/name="species-line1"/)
     expect(res.payload).toContain('Cattle')
     expect(res.payload).toContain('Buffalo')

@@ -136,6 +136,35 @@ export function firstUnfulfilledPage(root, state) {
 }
 
 /**
+ * Line-scoped analogue of `firstUnfulfilledPage`. Walks the pages of a
+ * subsection (or any container) in declared order and returns the first
+ * `presentsForEach` page where THIS line has an in-scope mandatory
+ * obligation that is unfilled. Optional-status obligations are skipped
+ * (their record.status is 'optional'). Used by the line-scoped page
+ * controller to walk a single line's mandatories.
+ */
+export function firstUnfulfilledPageForLine(root, state, lineId) {
+  if (isPage(root)) {
+    const forEach = root.presentsForEach
+    if (!forEach) return null
+    const impl = state.obligations?.[forEach.obligation.id]
+    if (!impl?.inScope) return null
+    const record = impl.records?.find((r) => r.fulfilmentId === lineId)
+    if (!record) return null
+    if ((record.status ?? 'mandatory') !== 'mandatory') return null
+    const stored = state.fulfilments?.[forEach.obligation.id]?.[lineId]
+    if (stored === undefined || stored === null || stored === '') return root
+    if (Array.isArray(stored) && stored.length === 0) return root
+    return null
+  }
+  for (const child of root.children ?? []) {
+    const hit = firstUnfulfilledPageForLine(child, state, lineId)
+    if (hit) return hit
+  }
+  return null
+}
+
+/**
  * Depth-first walk over every section, returns the first Page whose
  * `presents` (post-expansion) references the given obligation id. Used
  * for CYA Change links.

@@ -135,6 +135,26 @@ async function fill(jar, expectedPage, payload) {
   return postRes.headers.location
 }
 
+/**
+ * Line-scoped counterpart to `fill()`: POST to
+ * `/lines/{lineId}/{pageName}` and assert the redirect target. By
+ * default we expect the next per-line page in declared order
+ * (`commodity-details → species-details → number-of-animals`); on the
+ * last page pass `{ expectedNext }` to assert the redirect back to
+ * `/lines`.
+ */
+async function fillLinePage(jar, lineId, pageName, payload, opts = {}) {
+  const url = `${BASE}/lines/${lineId}/${pageName}`
+  const res = await inject(jar, { method: 'POST', url, payload })
+  expect(res.statusCode, `POST ${url} payload=${JSON.stringify(payload)}`).toBe(
+    302
+  )
+  if (opts.expectedNext) {
+    expect(res.headers.location, `POST ${url} → next`).toBe(opts.expectedNext)
+  }
+  return res.headers.location
+}
+
 describe('happy-path e2e walk — internal-market with 1 commodity line', () => {
   it('walks /start → every page → /task-list all Completed → CYA', async () => {
     const jar = makeCookieJar()
@@ -182,25 +202,36 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     // internal-reference omitted — internalReferenceNumber is optional.
 
     // -- Section 5: commodity lines -------------------------------------
-    // Minting a line is bespoke `/lines/add`, not a flow page. Once ≥1
-    // line exists the presentsForEach pages come into scope and /start
-    // routes to the first of them.
+    // Minting a line is bespoke `/lines/add`; add-then-fill redirects
+    // straight into the new line's first per-line page. Each per-line
+    // page then walks to the next unfulfilled mandatory in the same
+    // subsection, or to `/lines` when the line's mandatories are done.
+    // NB. number-of-packages is intentionally NOT visited on the walk
+    // — its completion-mandate is optional, so nextAfterForLine skips
+    // it and redirects to /lines after number-of-animals.
     const addRes = await inject(jar, {
       method: 'POST',
       url: `${BASE}/lines/add`,
       payload: {}
     })
     expect(addRes.statusCode).toBe(302)
+    expect(addRes.headers.location).toBe(
+      `${BASE}/lines/line1/commodity-details`
+    )
 
-    await fill(jar, 'commodity-details', { 'commodityCode-line1': '0102' })
-    await fill(jar, 'species-details', { 'species-line1': ['cattle'] })
-    await fill(jar, 'number-of-animals', { 'numberOfAnimals-line1': 25 })
-    // NB. number-of-packages is intentionally NOT filled. 0102 puts
-    // numberOfPackages in scope, but its completion-mandate is
-    // optional — under the pageStatus rule the page is F immediately
-    // after number-of-animals lands and /start now routes to
-    // /task-list. Filling it would make the next fill() assertion
-    // fail with "expected route to number-of-packages, got task-list".
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    await fillLinePage(jar, 'line1', 'species-details', {
+      'species-line1': ['cattle']
+    })
+    await fillLinePage(
+      jar,
+      'line1',
+      'number-of-animals',
+      { 'numberOfAnimals-line1': 25 },
+      { expectedNext: `${BASE}/lines` }
+    )
 
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {
@@ -286,18 +317,30 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     // internal-reference omitted — internalReferenceNumber is optional.
 
     // -- Section 5: commodity lines -------------------------------------
+    // Same line-major add-then-fill shape as the internal-market walk.
     const addRes = await inject(jar, {
       method: 'POST',
       url: `${BASE}/lines/add`,
       payload: {}
     })
     expect(addRes.statusCode).toBe(302)
+    expect(addRes.headers.location).toBe(
+      `${BASE}/lines/line1/commodity-details`
+    )
 
-    await fill(jar, 'commodity-details', { 'commodityCode-line1': '0102' })
-    await fill(jar, 'species-details', { 'species-line1': ['cattle'] })
-    await fill(jar, 'number-of-animals', { 'numberOfAnimals-line1': 25 })
-    // number-of-packages omitted intentionally — see internal-market
-    // walk above for the optional-completion-mandate rationale.
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    await fillLinePage(jar, 'line1', 'species-details', {
+      'species-line1': ['cattle']
+    })
+    await fillLinePage(
+      jar,
+      'line1',
+      'number-of-animals',
+      { 'numberOfAnimals-line1': 25 },
+      { expectedNext: `${BASE}/lines` }
+    )
 
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {

@@ -25,6 +25,7 @@ import {
   containerStatus,
   firstApplicablePage,
   firstUnfulfilledPage,
+  firstUnfulfilledPageForLine,
   firstPagePresentingObligation,
   journeyState,
   pageStatus,
@@ -121,6 +122,23 @@ export function nextAfter(page, state) {
   return { kind: 'task-list' }
 }
 
+/**
+ * After saving on `page` for a specific commodity line, where do we
+ * send the user? Next unfulfilled per-line page in the same subsection,
+ * or (when the line is done) the /lines list. Used by the line-scoped
+ * page controller — flow-major navigation but line-scoped.
+ */
+export function nextAfterForLine(page, state, lineId) {
+  const subsection = subsectionOfPage(page.page)
+  if (subsection) {
+    const inSub = firstUnfulfilledPageForLine(subsection, state, lineId)
+    if (inSub && inSub.page !== page.page) {
+      return { kind: 'line-page', page: inSub, lineId }
+    }
+  }
+  return { kind: 'lines-list' }
+}
+
 /** Where does the Change link for an obligation go? */
 export function changeLinkFor(obligationId) {
   return firstPagePresentingObligation(flow, obligationId)
@@ -130,8 +148,12 @@ export function changeLinkFor(obligationId) {
 // Field-view building + validation
 // ---------------------------------------------------------------------------
 
-export function fieldsForPage(page, state, fieldErrors = {}) {
-  return buildFieldDescriptors(page, state, fieldErrors)
+export function fieldsForPage(page, state, fieldErrors = {}, options = {}) {
+  const all = buildFieldDescriptors(page, state, fieldErrors)
+  if (options.lineId == null) return all
+  // Line-scoped rendering: filter presentsForEach-expanded descriptors
+  // to just the target line so /lines/{id}/... only shows one field.
+  return all.filter((d) => d.path === options.lineId)
 }
 
 /**
@@ -139,10 +161,12 @@ export function fieldsForPage(page, state, fieldErrors = {}) {
  * Returns `{ ok, errors, errorList, fieldErrors, values }`.
  *
  * `values` is the coerced-to-obligation-shape map of what the user
- * submitted, ready to be written into fulfilments.
+ * submitted, ready to be written into fulfilments. Passing
+ * `{ lineId }` restricts validation + writes to that one line's
+ * fields (used by the line-scoped page controller).
  */
-export function validatePagePayload(page, payload, state) {
-  const descriptors = fieldsForPage(page, state)
+export function validatePagePayload(page, payload, state, options = {}) {
+  const descriptors = fieldsForPage(page, state, {}, options)
   const errors = []
   const values = {}
   for (const descriptor of descriptors) {

@@ -1,6 +1,7 @@
-{# Commodity-lines index page — bespoke because the flow layer doesn't
-   yet model an Add-another primitive. Lists existing lines with a
-   Change link and offers an Add-another button. #}
+{# Commodity-lines index — line-major. One summary block per line
+   with per-row Change links (to that line's specific page) and a
+   per-line Delete form. Add-a-line button mints a new line and
+   redirects into its first per-line page (see linesAddController). #}
 
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
@@ -12,7 +13,18 @@
   {% if lead %}<p class="govuk-body">{{ lead }}</p>{% endif %}
 
   {% if lines and lines.length %}
-    {{ govukSummaryList({ rows: lines }) }}
+    {% for line in lines %}
+      <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ line.title }}</h2>
+      {{ govukSummaryList({ rows: line.rows }) }}
+      <form method="post" action="{{ line.deleteHref }}" novalidate class="govuk-!-margin-bottom-6">
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        {{ govukButton({
+          text: line.deleteButtonText,
+          classes: "govuk-button--warning govuk-button--secondary",
+          attributes: { "aria-label": line.deleteVisuallyHiddenText }
+        }) }}
+      </form>
+    {% endfor %}
   {% else %}
     <p class="govuk-body">{{ emptyText }}</p>
   {% endif %}

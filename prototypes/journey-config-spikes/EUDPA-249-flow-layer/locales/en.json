@@ -311,12 +311,16 @@
     "heading": "Commodity lines",
     "lead": "Add one or more commodity lines. Each line captures a commodity code, species, and count.",
     "codeNotChosen": "- Not chosen yet -",
+    "notFilled": "-",
     "changeLinkText": "Change",
     "changeLinkHidden": "commodity code for {lineId}",
     "breadcrumbSelf": "Commodity lines",
     "empty": "No commodity lines added yet.",
     "addButton": "Add a commodity line",
-    "backToTaskList": "Back to task list"
+    "backToTaskList": "Back to task list",
+    "lineHeading": "Commodity line {n}",
+    "deleteButton": "Delete this line",
+    "deleteHidden": "Delete {lineId}"
   },
   "errors": {
     "countryOfOrigin": {
