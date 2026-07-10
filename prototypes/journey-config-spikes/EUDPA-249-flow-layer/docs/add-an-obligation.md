@@ -58,12 +58,59 @@ iteration 3's worked example.
    Register the entry in the `export const domain = new Map([...])`
    list at the bottom of the file.
 
-3. **Add presentation copy** in
-   [`lib/presentation.js`](../lib/presentation.js). Same two-edit
-   pattern: import the obligation at the top of the file, then add an
-   entry keyed by `obligation.id` with `pageTitle`, `legend`, and
-   optional `hint`. `pageTitle` is used when the obligation is the
-   sole presented entry on a page; `legend` is the fieldset legend.
+   **If the entry has a `labels` map** (enum shapes), its values are
+   message keys, not literal strings. Follow the convention
+   `domain.<bucket>.<code>` where `<bucket>` is the enum concept:
+   `domain.country.*`, `domain.species.*`, `domain.yesNo.*`, etc.
+   Reuse an existing bucket when the same codes appear across
+   obligations (e.g. `regionCodeRequirement` and
+   `containsUnweanedAnimals` both use `domain.yesNo.*`). See step 3
+   for adding the actual English strings.
+
+3. **Add presentation copy** to `locales/en.json` and register keys
+   in [`lib/presentation.js`](../lib/presentation.js).
+   1. **In `locales/en.json`:** add a bucket under `presentation.`
+      keyed by the obligation's `name` (camelCase):
+
+      ```json
+      "presentation": {
+        "myObligation": {
+          "pageTitle": "My obligation",
+          "legend": "How do you want to describe it?",
+          "hint": "Optional guidance under the legend."
+        }
+      }
+      ```
+
+      Omit the `hint` key entirely if the field has no hint (rather
+      than `null`).
+
+      If step 2 added a `labels` map, also add the English strings
+      under the matching `domain.<bucket>.*` bucket in en.json.
+
+   2. **In `lib/presentation.js`:** import the obligation, then add
+      an entry to `OBLIGATION_KEYS` that stores the keys, not literal
+      strings:
+
+      ```js
+      ;[
+        myObligation.id,
+        {
+          pageTitleKey: 'presentation.myObligation.pageTitle',
+          legendKey: 'presentation.myObligation.legend',
+          hintKey: 'presentation.myObligation.hint' // omit if no hint
+        }
+      ]
+      ```
+
+      Consumers (page-controller, CYA, widget builders) resolve via
+      `t()` — you don't touch them.
+
+   3. **`i18n-coverage.test.js` will fail** if any key referenced
+      from flow.js, presentation.js, or the domain manifest is
+      missing from en.json. Read the failure list, fix en.json.
+      Missing keys also render as their raw dotted-path in the
+      browser (visible red flag) so a manual walk catches them too.
 
 4. **Present the obligation on a page** in
    [`flow/flow.js`](../flow/flow.js). Same two-edit pattern: import at
@@ -73,13 +120,19 @@ iteration 3's worked example.
      (e.g. one page for one obligation), add a new subsection with a
      single-page child. See the existing pages for shape.
 
+   If you add a **new section or subsection**, its `titleKey` field
+   must reference `flow.section.<id>.title` or
+   `flow.subsection.<id>.title` and en.json must carry the copy.
+
    `mandatoryToSaveAndContinue` on the presents entry is separate from
    the obligation's engine-level `status`. Default is `false` — the
    page validates against the domain but doesn't block save-and-
    continue on a blank submission. Set it to `true` (with a paired
-   `errors.required` message) when this specific page must not advance
-   without an answer. See §Making a field mandatory-to-save-and-
-   continue below for the full story.
+   `errors.<obligationName>.required` message KEY under
+   `errors: { required: 'errors.myObligation.required' }`, and the
+   English string in en.json) when this specific page must not
+   advance without an answer. See §Making a field mandatory-to-save-
+   and-continue below for the full story.
 
 5. **Remove from `KNOWN_UNWIRED`** in
    [`obligations/coverage.test.js`](../obligations/coverage.test.js).
@@ -501,17 +554,27 @@ The two are independent. A field can be:
       obligation: countryOfOrigin,
       mandatoryToSaveAndContinue: true,
       errors: {
-        required: 'Enter a country of origin'
+        required: 'errors.countryOfOrigin.required'
       }
     }
   ]
 }
 ```
 
-`errors.required` is a bare English string today. Once spike-wide
-i18n lands (see `NEXT.md` P0.5) it becomes a locale-keyed object
-(`{ en: '...', cy: '...' }`) resolved by a `t()` helper — no shape
-change at the flow-declaration site, just a swap of scalar for map.
+`errors.required` is a **message key**, resolved via `lib/i18n.js`
+(`t(key)` → `locales/en.json`). Add the English string to
+`locales/en.json`:
+
+```json
+"errors": {
+  "countryOfOrigin": {
+    "required": "Enter a country of origin"
+  }
+}
+```
+
+Missing keys render as their raw dotted-path in the UI (visible red
+flag) and are caught in CI by `i18n-coverage.test.js`.
 
 ### When to use it
 
