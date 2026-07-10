@@ -12,11 +12,7 @@
  *   POST /lines/{id}/delete      → drop the line's leaf values
  */
 
-import {
-  commodityLine,
-  commodityCode,
-  obligations as v4Obligations
-} from '../../obligations/obligations.js'
+import { commodityLine, commodityCode } from '../../obligations/obligations.js'
 import { flow } from '../../flow/flow.js'
 import { domain } from '../../domain/index.js'
 import {
@@ -30,17 +26,6 @@ import { forObligation } from '../../lib/presentation.js'
 
 const BASE = '/prototype/eudpa-249'
 
-// Every leaf obligation whose stored value is keyed by commodity-line
-// fulfilmentId. Derived at import time from the obligations manifest so
-// a new `within: commodityLine` obligation is automatically dropped on
-// Delete — previously this was a hand-maintained list and iteration 6
-// (commodityType) forgot to add itself, leaving stale line records
-// behind after Delete. Regression guard: `every` obligation with
-// `within === commodityLine` must be in this list.
-const LINE_LEAF_OBLIGATIONS = v4Obligations.filter(
-  (o) => o.within === commodityLine
-)
-
 /** The per-line pages a line walks through, in declared order. Derived
  *  at import time from the flow's `commodity-lines-details` subsection
  *  so a new presentsForEach page inserted in the flow automatically
@@ -50,7 +35,18 @@ const LINE_LEAF_OBLIGATIONS = v4Obligations.filter(
  *  block. Reads scope from state so a conditionally-applicable
  *  obligation like numberOfPackages appears only for lines whose
  *  commodity code puts it in scope. */
-const LINE_PAGES = deriveLinePages(flow)
+export const LINE_PAGES = deriveLinePages(flow)
+
+/** Every leaf obligation whose stored value is keyed by commodity-line
+ *  fulfilmentId — derived from LINE_PAGES so the two lists cannot drift
+ *  apart. Previously this used `within === commodityLine` on the raw
+ *  obligations manifest, which (a) pulled in `unitRecord` (a group,
+ *  not a leaf) and (b) missed depth-2 leaves whose `within` is
+ *  `unitRecord`. Depth-2 leaves aren't presented yet in the spike, so
+ *  Delete only needs the depth-1 leaves LINE_PAGES already enumerates;
+ *  when per-unit pages get wired we'll need to also purge composite-
+ *  key fulfilments for the within: unitRecord leaves. */
+export const LINE_LEAF_OBLIGATIONS = LINE_PAGES.map((p) => p.obligation)
 
 function deriveLinePages(flowNode) {
   const details = findSubsection(flowNode, 'commodity-lines-details')
