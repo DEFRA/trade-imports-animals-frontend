@@ -5,6 +5,7 @@ import { Engine as CatboxRedis } from '@hapi/catbox-redis'
 import { Redis } from 'ioredis'
 import { GenericContainer } from 'testcontainers'
 import { session } from './real.js'
+import { runsIt } from '../it-mode.js'
 
 let container
 let client
@@ -61,7 +62,7 @@ const buildServer = async () => {
 
 const cookieOf = (res) => res.headers['set-cookie']?.[0]?.split(';')[0]
 
-describe.skipIf(!process.env.REDIS_TC_IT)(
+describe.skipIf(!runsIt('testcontainer'))(
   'real session adapter over testcontainers Redis',
   () => {
     beforeAll(async () => {

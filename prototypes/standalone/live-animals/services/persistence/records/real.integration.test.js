@@ -1,15 +1,17 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { records } from './real.js'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import { runsIt } from '../it-mode.js'
 
 // Gated backend integration test for the REAL records adapter (S3c).
 //
-// Skips entirely unless RECORDS_REAL_IT is set, so the default hermetic
-// `npm run test:live-animals` run adds ZERO running tests here. Run it only
-// against a live stack backend (the adapter itself reads
-// TRADE_IMPORTS_ANIMALS_BACKEND_URL, default http://localhost:8085):
+// Runs under LIVE_ANIMALS_IT=real (or =all); the default (stubs/unset)
+// skips it, so the default hermetic `npm run test:live-animals` run adds
+// ZERO running tests here. Run it only against a live stack backend (the
+// adapter itself reads TRADE_IMPORTS_ANIMALS_BACKEND_URL, default
+// http://localhost:8085):
 //
-//   RECORDS_REAL_IT=1 npm run test:live-animals -- real.integration
+//   LIVE_ANIMALS_IT=real npm run test:live-animals -- real.integration
 //
 // There is no records.clear() against a real Mongo, so every case mints its
 // own journey and derives unique userIds from a per-run prefix.
@@ -23,7 +25,7 @@ const uniqueUserId = () => `${runPrefix}-${seq++}`
 
 const REF_PATTERN = /^GBN-AG-\d{2}-[A-Z0-9]{6}$/
 
-describe.skipIf(!process.env.RECORDS_REAL_IT)(
+describe.skipIf(!runsIt('real'))(
   'real records adapter over the live backend + Mongo',
   () => {
     beforeAll(async () => {
