@@ -18,20 +18,48 @@ const cookieOptions = Object.freeze({
 export const registerJourneyCookie = (server) =>
   server.state(JOURNEY_COOKIE, cookieOptions)
 
+const JOURNEY_MEMO = Symbol('liveAnimalsCurrentJourney')
+
+const memoRead = (request) => request?.app?.[JOURNEY_MEMO]
+
+const memoWrite = (request, journey) => {
+  if (request?.app) {
+    request.app[JOURNEY_MEMO] = journey
+  }
+}
+
 export const startJourney = async (request, h) => {
   const journey = await records.create({
     userId: await session.userId(request)
   })
   await session.setActiveJourney(h, journey.journeyId)
+  memoWrite(request, journey)
   return journey
 }
 
 export const currentJourney = async (request, h) => {
+  const cached = memoRead(request)
+  if (cached) {
+    return structuredClone(cached)
+  }
   const journeyId = await session.activeJourneyId(request)
-  if (journeyId && (await records.has(journeyId))) {
-    return records.load({ journeyId })
+  const loaded = journeyId ? await records.load({ journeyId }) : undefined
+  if (loaded) {
+    memoWrite(request, loaded)
+    return structuredClone(loaded)
   }
   return startJourney(request, h)
+}
+
+export const saveJourneyAnswers = async (request, journeyId, answers) => {
+  const cached = memoRead(request)
+  const known = cached?.journeyId === journeyId ? cached : undefined
+  const saved = await records.saveAnswers(journeyId, answers, { known })
+  memoWrite(
+    request,
+    known ? { ...known, answers: structuredClone(answers) } : saved
+  )
+  return saved
 }
 
 export const resumeByUser = async (request, h) => {

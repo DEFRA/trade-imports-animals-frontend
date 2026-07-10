@@ -114,12 +114,18 @@ export const records = {
     return (await getNotification(journeyId)) !== undefined
   },
 
-  async saveAnswers(journeyId, answers) {
-    const existing = await getNotification(journeyId)
-    if (existing === undefined) {
-      throw new Error(`Unknown journey "${journeyId}"`)
-    }
-    if (mapStatus(existing.status) === SUBMITTED) {
+  async saveAnswers(journeyId, answers, { known } = {}) {
+    const status =
+      known != null && known.journeyId === journeyId
+        ? known.status
+        : await (async () => {
+            const existing = await getNotification(journeyId)
+            if (existing === undefined) {
+              throw new Error(`Unknown journey "${journeyId}"`)
+            }
+            return mapStatus(existing.status)
+          })()
+    if (status === SUBMITTED) {
       throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
     }
 

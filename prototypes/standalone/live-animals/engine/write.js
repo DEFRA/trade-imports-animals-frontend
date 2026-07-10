@@ -1,4 +1,4 @@
-import { currentJourney } from './journey.js'
+import { currentJourney, saveJourneyAnswers } from './journey.js'
 import { reconcile } from './evaluate/reconcile.js'
 import { makeScope } from './read.js'
 import { records } from './persistence/records.js'
@@ -12,7 +12,7 @@ export const commit = async (request, h, patch) => {
   const answers = { ...journey.answers, ...patch }
   const { wiped } = reconcile(answers)
   destroyWiped(answers, wiped)
-  await records.saveAnswers(journey.journeyId, answers)
+  await saveJourneyAnswers(request, journey.journeyId, answers)
   return { answers, scope: makeScope(answers) }
 }
 
@@ -20,7 +20,7 @@ export const appendEntryAt = async (request, h, collectionPath, entry) => {
   const journey = await currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []
   const answers = setAt(journey.answers, collectionPath, [...list, entry])
-  await records.saveAnswers(journey.journeyId, answers)
+  await saveJourneyAnswers(request, journey.journeyId, answers)
   return list.length
 }
 
@@ -39,7 +39,7 @@ export const updateEntryAt = async (
     collectionPath,
     list.with(index, entry)
   )
-  await records.saveAnswers(journey.journeyId, answers)
+  await saveJourneyAnswers(request, journey.journeyId, answers)
 }
 
 export const removeEntryAt = async (request, h, collectionPath, index) => {
@@ -53,7 +53,7 @@ export const removeEntryAt = async (request, h, collectionPath, index) => {
   )
   const { wiped } = reconcile(answers)
   destroyWiped(answers, wiped)
-  await records.saveAnswers(journey.journeyId, answers)
+  await saveJourneyAnswers(request, journey.journeyId, answers)
 }
 
 export const appendEntry = async (request, h, obligationId, entry) =>
