@@ -33,6 +33,7 @@ import {
 } from './engine/index.js'
 import { buildFieldDescriptors } from './lib/build-field-descriptors.js'
 import { formatDomainErrors } from './lib/format-domain-errors.js'
+import { isBlankValue } from './lib/is-blank-value.js'
 import { t } from './lib/i18n.js'
 
 const evaluator = createObligationEvaluator({
@@ -199,7 +200,7 @@ export function validatePagePayload(page, payload, state, options = {}) {
     // the one the user needs to see; running an enum/predicate check
     // on undefined would only add noise. See flow.js for property
     // semantics; distinct from obligation.status (completion-mandate).
-    if (descriptor.mandatoryToSaveAndContinue && isBlank(value)) {
+    if (descriptor.mandatoryToSaveAndContinue && isBlankValue(value)) {
       const key = descriptor.errors?.required
       errors.push({
         code: 'flow.required',
@@ -220,13 +221,6 @@ export function validatePagePayload(page, payload, state, options = {}) {
   }
   const { errorList, fieldErrors } = formatDomainErrors(errors)
   return { ok: errors.length === 0, errors, errorList, fieldErrors, values }
-}
-
-function isBlank(value) {
-  if (value === undefined || value === null) return true
-  if (typeof value === 'string' && value === '') return true
-  if (Array.isArray(value) && value.length === 0) return true
-  return false
 }
 
 function coerceValue(descriptor, raw) {
