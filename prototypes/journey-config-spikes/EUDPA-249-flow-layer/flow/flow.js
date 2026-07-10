@@ -68,7 +68,11 @@ import {
   numberOfPackages,
   containsUnweanedAnimals,
   regionCodeRequirement,
-  regionCode
+  regionCode,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue
 } from '../obligations/obligations.js'
 
 export const flow = {
@@ -300,6 +304,28 @@ export const flow = {
             {
               page: 'internal-reference',
               presents: [{ obligation: internalReferenceNumber }]
+            }
+          ]
+        },
+        {
+          // Accompanying-document all-or-nothing block. The four fields
+          // share a `branchedGate` applyTo (see obligations.js): all
+          // optional when nothing is filled, all mandatory the moment
+          // any single field is filled. Presented on one page so the
+          // status-flip is intuitive — the user sees the four fields
+          // together and can leave them all blank or fill them all.
+          kind: 'subsection',
+          id: 'accompanying-documents',
+          titleKey: 'flow.subsection.accompanying-documents.title',
+          children: [
+            {
+              page: 'accompanying-documents',
+              presents: [
+                { obligation: accompanyingDocumentType },
+                { obligation: accompanyingDocumentAttachmentType },
+                { obligation: accompanyingDocumentReference },
+                { obligation: accompanyingDocumentDateOfIssue }
+              ]
             }
           ]
         }

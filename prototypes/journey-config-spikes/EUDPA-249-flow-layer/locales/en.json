@@ -54,6 +54,9 @@
       "trader-reference": {
         "title": "Your reference"
       },
+      "accompanying-documents": {
+        "title": "Accompanying documents"
+      },
       "commodity-lines-manage": {
         "title": "Add commodity lines"
       },
@@ -203,6 +206,26 @@
       "legend": "CPH",
       "hint": "Required for cattle, pigs, sheep and goats. Max 11 characters."
     },
+    "accompanyingDocumentType": {
+      "pageTitle": "Document type",
+      "legend": "Type of accompanying document",
+      "hint": "The kind of document that supports this consignment."
+    },
+    "accompanyingDocumentAttachmentType": {
+      "pageTitle": "Attachment format",
+      "legend": "How is the document supplied?",
+      "hint": "Physical original / physical copy / digital PDF / digital signed."
+    },
+    "accompanyingDocumentReference": {
+      "pageTitle": "Document reference",
+      "legend": "Reference on the document",
+      "hint": "The reference or ID printed on the document (max 40 characters)."
+    },
+    "accompanyingDocumentDateOfIssue": {
+      "pageTitle": "Date of issue",
+      "legend": "When was the document issued?",
+      "hint": "DD/MM/YYYY."
+    },
     "address": {
       "subField": {
         "name": "Business or organisation name",
@@ -323,6 +346,18 @@
       "ovine": "Sheep",
       "porcine": "Pigs",
       "equine": "Horses"
+    },
+    "accompanyingDocumentType": {
+      "health-certificate": "Health certificate",
+      "commercial-invoice": "Commercial invoice",
+      "transport-document": "Transport document",
+      "other": "Other"
+    },
+    "accompanyingDocumentAttachmentType": {
+      "physical-original": "Physical original",
+      "physical-copy": "Physical copy",
+      "digital-pdf": "Digital PDF",
+      "digital-signed": "Digital, signed"
     }
   },
   "chrome": {

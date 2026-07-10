@@ -244,6 +244,29 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       contactAddress__postcode: 'G1 1FF'
     })
     // internal-reference omitted — internalReferenceNumber is optional.
+    // Accompanying-documents: this walk exercises the branchedGate
+    // all-mandatory branch — filling one field flips all four to
+    // mandatory and the domain checks the enum + string-max + date
+    // predicates all fire cleanly. See the transit walk below for the
+    // all-optional branch (subsection F without any submission).
+    //
+    // Posted directly (not via `fill()`) because the branchedGate
+    // starts all four fields optional, so /start skips the page —
+    // the user reaches it voluntarily via the task-list.
+    const accompRes = await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/accompanying-documents`,
+      payload: {
+        accompanyingDocumentType: 'health-certificate',
+        accompanyingDocumentAttachmentType: 'physical-original',
+        accompanyingDocumentReference: 'HC-2026-00042',
+        accompanyingDocumentDateOfIssue: '01/06/2026'
+      }
+    })
+    expect(
+      accompRes.statusCode,
+      `POST /pages/accompanying-documents (all 4 fields filled) failed`
+    ).toBe(302)
 
     // -- Section 5: commodity lines -------------------------------------
     // Minting a line is bespoke `/lines/add`; add-then-fill redirects
@@ -286,17 +309,18 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       url: `${BASE}/task-list`
     })
     expect(list.statusCode).toBe(200)
-    // 13 subsections total (origin, reason, transporter-type, transport,
+    // 14 subsections total (origin, reason, transporter-type, transport,
     // arrival-at-port, unweaned, certified-for, origin-details,
     // destination-details, contact, trader-reference,
-    // commodity-lines-manage, commodity-lines-details) — each should
-    // render a Completed status tag. A numeric assertion catches new
-    // subsections being added without their fulfilment being wired.
+    // accompanying-documents, commodity-lines-manage,
+    // commodity-lines-details) — each should render a Completed status
+    // tag. A numeric assertion catches new subsections being added
+    // without their fulfilment being wired.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 13 Completed tags on the task list, got ${completedCount}`
-    ).toBe(13)
+      `expected 14 Completed tags on the task list, got ${completedCount}`
+    ).toBe(14)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 
@@ -411,6 +435,11 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       contactAddress__postcode: 'G1 1FF'
     })
     // internal-reference omitted — internalReferenceNumber is optional.
+    // Accompanying-documents intentionally NOT visited on this walk —
+    // its branchedGate applyTo makes all four fields optional as long
+    // as none is filled, so the subsection rolls up to F trivially
+    // without any submission. Complements the internal-market walk
+    // above which exercises the all-mandatory branch.
 
     // -- Section 5: commodity lines -------------------------------------
     // Same line-major add-then-fill shape as the internal-market walk.
@@ -447,15 +476,18 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       url: `${BASE}/task-list`
     })
     expect(list.statusCode).toBe(200)
-    // 13 subsections — same as internal-market. The `reason` subsection
+    // 14 subsections — same as internal-market. The `reason` subsection
     // rolls up to F once reason-for-import is filled because
     // purposeInInternalMarket goes NA and NA obligations don't hold
-    // the subsection open.
+    // the subsection open. The new `accompanying-documents` subsection
+    // is F because branchedGate keeps all four fields optional while
+    // none has been filled (see the block comment on the fill step
+    // above).
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 13 Completed tags on the task list, got ${completedCount}`
-    ).toBe(13)
+      `expected 14 Completed tags on the task list, got ${completedCount}`
+    ).toBe(14)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 

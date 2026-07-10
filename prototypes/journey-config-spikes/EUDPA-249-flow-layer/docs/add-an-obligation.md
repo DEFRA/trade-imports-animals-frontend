@@ -447,6 +447,122 @@ Steps executed:
   flow page + a small domain entry. Nothing else in the pipeline needs
   touching. Good sign the model is settling.
 
+## Worked example — iteration 8: accompanying-document block (branchedGate + multi-obligation page)
+
+**Target:** wire the four accompanying-document obligations
+(`accompanyingDocumentType`, `accompanyingDocumentAttachmentType`,
+`accompanyingDocumentReference`, `accompanyingDocumentDateOfIssue`) as
+a single-page subsection. First iteration where four obligations sit
+on one page, and first time we exercise the `branchedGate` applyTo
+end-to-end.
+
+**Twist:** the four obligations share a `branchedGate(predicate,
+whenTrue, whenFalse)` applyTo in `obligations.js`. `whenFalse` is
+`{ inScope: true, status: 'optional' }`; the predicate flips to
+`whenTrue` (`{ inScope: true, status: 'mandatory' }`) the moment
+_any_ of the four has a fulfilment. At rest, the whole page is
+optional-only, so:
+
+1. `pageStatus` rolls the page up to F immediately (nothing mandatory
+   in scope → mandatoryUnfilled is empty). The subsection is F on the
+   task list without the user visiting the page.
+2. `firstUnfulfilledPage` skips it, so `/start` never routes here —
+   the user reaches the page voluntarily via the task-list link.
+3. Once the user submits _any_ non-blank field, the branchedGate flips
+   all four to mandatory and any still-blank ones become fulfilled-
+   blocking.
+
+The e2e walk-test needed a POST-directly step (not the `/start`-driven
+`fill()` helper) to exercise this because the walk covers _mandatory_
+navigation and the page is voluntary at rest. The internal-market walk
+POSTs directly with all four filled to exercise the all-mandatory
+branch; the transit walk skips the page to exercise the all-optional
+branch.
+
+Steps executed:
+
+- **Step 1 — Confirmed.** All four declared at
+  `obligations/obligations.js:621-643`, notification-level (no
+  `within`), share `accompanyingDocumentBlockApplyTo` via
+  `branchedGate`.
+- **Step 2 — Domain entries.** Four entries:
+  - `accompanyingDocumentTypeDomain` — `staticEnum` with 4
+    illustrative values (health-certificate / commercial-invoice /
+    transport-document / other) and labels under
+    `domain.accompanyingDocumentType.*`.
+  - `accompanyingDocumentAttachmentTypeDomain` — `staticEnum` with 4
+    values (physical-original / physical-copy / digital-pdf /
+    digital-signed).
+  - `accompanyingDocumentReferenceDomain` — `predicate('string',
+stringMaxLength(40, ...))`. Blank passes so an all-blank
+    submission on the page (the branchedGate optional branch) doesn't
+    error.
+  - `accompanyingDocumentDateOfIssueDomain` — `predicate('date',
+DD/MM/YYYY calendar-valid ...)`. Same shape as
+    `arrivalDateAtPortDomain`; blank passes.
+
+  All four registered in the domain manifest.
+
+- **Step 3 — Presentation.** 4 new buckets in `locales/en.json`
+  (`presentation.accompanyingDocument*`), 4 `OBLIGATION_KEYS` entries
+  in `lib/presentation.js`, and 2 new domain-label buckets
+  (`domain.accompanyingDocumentType.*`,
+  `domain.accompanyingDocumentAttachmentType.*`).
+- **Step 4 — Flow.** New subsection `accompanying-documents` under
+  the existing `references` section, with a single page presenting
+  all four obligations:
+
+  ```js
+  {
+    kind: 'subsection',
+    id: 'accompanying-documents',
+    titleKey: 'flow.subsection.accompanying-documents.title',
+    children: [
+      {
+        page: 'accompanying-documents',
+        presents: [
+          { obligation: accompanyingDocumentType },
+          { obligation: accompanyingDocumentAttachmentType },
+          { obligation: accompanyingDocumentReference },
+          { obligation: accompanyingDocumentDateOfIssue }
+        ]
+      }
+    ]
+  }
+  ```
+
+  The multi-obligation `presents` pattern (four entries on one page)
+  was already proven by `arrival-details` (date + port on one page);
+  no new infrastructure needed. New
+  `flow.subsection.accompanying-documents.title` entry in en.json.
+
+- **Step 5 — Removed all four from `KNOWN_UNWIRED`.** Down to 8
+  entries (2 group containers + 6 within-unitRecord leaves; only
+  `permanentAddress` from the address family remains, blocked on
+  depth-2 per-unit infrastructure).
+- **Step 6 — Fixtures.** No update.
+- **Step 7 — Tests.** Both walks in `e2e-walk.test.js` updated —
+  internal-market POSTs the page directly with all four filled
+  (exercises the all-mandatory branch of `branchedGate`); transit
+  skips the page (exercises the all-optional branch). Terminal task-
+  list assertion bumped from 13 to 14 Completed subsections. All 487
+  tests green.
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: from
+  the task list, "Accompanying documents" is Completed on entry
+  (nothing filled); clicking through renders four fields (2 radios +
+  1 text input + 1 date input); submitting any single field flips
+  the subsection to In progress until the other three are filled;
+  submitting all four returns to Completed.
+- **Step 9 — Committed atomically.**
+
+**Refinement to the doc:** the branchedGate + multi-obligation page
+combination is the first time the walk-test framework couldn't cover
+the surface end-to-end via `fill()` — the branchedGate all-optional
+branch keeps the page voluntary, so `/start` never routes there. The
+`POST /pages/{name}` direct-post pattern used here is the correct
+substitute for any voluntary page: it demonstrates what the user does
+after clicking a task-list link, without threading through `/start`.
+
 ## Worked example — iteration 3: `portOfEntry`
 
 **Target:** wire `portOfEntry` — a straightforward static enum where

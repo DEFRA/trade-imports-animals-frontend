@@ -58,14 +58,15 @@ const KNOWN_UNWIRED = new Set([
   'earTag',
   'horseName',
   'identificationDetails',
-  'description',
+  'description'
 
-  // Accompanying-document all-or-nothing block — four fields sharing
-  // an applyTo. Step 5 wires domain entries per field.
-  'accompanyingDocumentType',
-  'accompanyingDocumentAttachmentType',
-  'accompanyingDocumentReference',
-  'accompanyingDocumentDateOfIssue'
+  // Accompanying-document all-or-nothing block wired during step 4
+  // iteration 8 — four fields sharing a `branchedGate` applyTo, all
+  // presented on a single page in a new "Accompanying documents"
+  // subsection under References. Domain: two staticEnum stubs
+  // (documentType, attachmentType), a string-max-40 predicate
+  // (reference) and a DD/MM/YYYY calendar-valid predicate
+  // (dateOfIssue).
 ])
 
 describe('coverage — every obligation is wired to domain or explicitly allow-listed', () => {

@@ -53,7 +53,11 @@ import {
   consignee,
   importer,
   placeOfDestination,
-  contactAddress
+  contactAddress,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue
 } from '../obligations/obligations.js'
 
 // ---------------------------------------------------------------------------
@@ -488,6 +492,53 @@ export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS, {
   }
 })
 
+// V4: accompanying document type — MDM enum. Illustrative values for
+// the spike; real MDM ontology comes from production.
+const ACCOMPANYING_DOCUMENT_TYPE_OPTIONS = [
+  'health-certificate',
+  'commercial-invoice',
+  'transport-document',
+  'other'
+]
+
+export const accompanyingDocumentTypeDomain = staticEnum(
+  ACCOMPANYING_DOCUMENT_TYPE_OPTIONS,
+  {
+    labels: {
+      'health-certificate':
+        'domain.accompanyingDocumentType.health-certificate',
+      'commercial-invoice':
+        'domain.accompanyingDocumentType.commercial-invoice',
+      'transport-document':
+        'domain.accompanyingDocumentType.transport-document',
+      other: 'domain.accompanyingDocumentType.other'
+    }
+  }
+)
+
+// V4: attachment format — MDM enum. Illustrative values.
+const ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS = [
+  'physical-original',
+  'physical-copy',
+  'digital-pdf',
+  'digital-signed'
+]
+
+export const accompanyingDocumentAttachmentTypeDomain = staticEnum(
+  ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS,
+  {
+    labels: {
+      'physical-original':
+        'domain.accompanyingDocumentAttachmentType.physical-original',
+      'physical-copy':
+        'domain.accompanyingDocumentAttachmentType.physical-copy',
+      'digital-pdf': 'domain.accompanyingDocumentAttachmentType.digital-pdf',
+      'digital-signed':
+        'domain.accompanyingDocumentAttachmentType.digital-signed'
+    }
+  }
+)
+
 // ---------------------------------------------------------------------------
 // V4 predicates — one per real rule.
 // ---------------------------------------------------------------------------
@@ -670,6 +721,37 @@ export const contactAddressDomain = addressBlock(contactAddress, {
   required: ADDRESS_SUB_FIELDS
 })
 
+// V4: accompanying document reference — free-text, max 40. Blank
+// passes so an all-optional submission on the accompanying-documents
+// page doesn't error before the branchedGate flips the block to
+// mandatory (see obligations.js accompanyingDocumentBlockApplyTo).
+export const accompanyingDocumentReferenceDomain = predicate(
+  'string',
+  stringMaxLength(40, accompanyingDocumentReference),
+  [reasons.stringMaxLength]
+)
+
+// V4: accompanying document date of issue — DD/MM/YYYY, calendar-valid.
+// Same shape as arrivalDateAtPortDomain; blank passes.
+export const accompanyingDocumentDateOfIssueDomain = predicate(
+  'date',
+  (value, ctx) => {
+    if (value === undefined || value === null || value === '') return []
+    const parsed = parseDdMmYyyy(value)
+    if (!parsed) {
+      return [
+        {
+          code: reasons.dateFormat.code,
+          obligation: accompanyingDocumentDateOfIssue.name,
+          path: ctx.path
+        }
+      ]
+    }
+    return []
+  },
+  [reasons.dateFormat]
+)
+
 // V4: date, DD/MM/YYYY, calendar-valid.
 export const arrivalDateAtPortDomain = predicate(
   'date',
@@ -771,5 +853,12 @@ export const domain = new Map([
   [regionCodeRequirement.id, regionCodeRequirementDomain],
   [regionCode.id, regionCodeDomain],
   [portOfEntry.id, portOfEntryDomain],
-  [species.id, speciesDomain]
+  [species.id, speciesDomain],
+  [accompanyingDocumentType.id, accompanyingDocumentTypeDomain],
+  [
+    accompanyingDocumentAttachmentType.id,
+    accompanyingDocumentAttachmentTypeDomain
+  ],
+  [accompanyingDocumentReference.id, accompanyingDocumentReferenceDomain],
+  [accompanyingDocumentDateOfIssue.id, accompanyingDocumentDateOfIssueDomain]
 ])

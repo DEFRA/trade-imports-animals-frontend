@@ -43,7 +43,11 @@ import {
   cph,
   containsUnweanedAnimals,
   regionCodeRequirement,
-  regionCode
+  regionCode,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue
 } from '../obligations/obligations.js'
 import { t } from './i18n.js'
 
@@ -281,6 +285,38 @@ export const OBLIGATION_KEYS = new Map([
       pageTitleKey: 'presentation.cph.pageTitle',
       legendKey: 'presentation.cph.legend',
       hintKey: 'presentation.cph.hint'
+    }
+  ],
+  [
+    accompanyingDocumentType.id,
+    {
+      pageTitleKey: 'presentation.accompanyingDocumentType.pageTitle',
+      legendKey: 'presentation.accompanyingDocumentType.legend',
+      hintKey: 'presentation.accompanyingDocumentType.hint'
+    }
+  ],
+  [
+    accompanyingDocumentAttachmentType.id,
+    {
+      pageTitleKey: 'presentation.accompanyingDocumentAttachmentType.pageTitle',
+      legendKey: 'presentation.accompanyingDocumentAttachmentType.legend',
+      hintKey: 'presentation.accompanyingDocumentAttachmentType.hint'
+    }
+  ],
+  [
+    accompanyingDocumentReference.id,
+    {
+      pageTitleKey: 'presentation.accompanyingDocumentReference.pageTitle',
+      legendKey: 'presentation.accompanyingDocumentReference.legend',
+      hintKey: 'presentation.accompanyingDocumentReference.hint'
+    }
+  ],
+  [
+    accompanyingDocumentDateOfIssue.id,
+    {
+      pageTitleKey: 'presentation.accompanyingDocumentDateOfIssue.pageTitle',
+      legendKey: 'presentation.accompanyingDocumentDateOfIssue.legend',
+      hintKey: 'presentation.accompanyingDocumentDateOfIssue.hint'
     }
   ]
 ])
