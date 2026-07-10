@@ -19,6 +19,7 @@ import { obligations as v4Obligations } from '../../obligations/obligations.js'
 import { domain } from '../../domain/index.js'
 import { t, tOrNull } from '../../lib/i18n.js'
 import { chrome } from '../../lib/chrome.js'
+import { isBlankValue } from '../../lib/is-blank-value.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -52,22 +53,6 @@ function formatSingle(value, obligation) {
     return parts.join(', ')
   }
   return String(label(value))
-}
-
-function isBlankLeaf(value) {
-  if (value === undefined || value === null) return true
-  if (typeof value === 'string' && value === '') return true
-  if (Array.isArray(value) && value.length === 0) return true
-  // Composite value (e.g. address block) with all leaves blank is
-  // treated as unfilled — the row would otherwise render as a comma
-  // sequence with no content, and the still-needed prompt would be
-  // wrongly suppressed for a mandatory obligation.
-  if (typeof value === 'object' && Object.keys(value).length > 0) {
-    return Object.values(value).every(
-      (v) => v === undefined || v === null || v === ''
-    )
-  }
-  return false
 }
 
 function isMandatoryOnRecord(obligation, impl, record) {
@@ -145,7 +130,7 @@ export const cyaController = {
             const leaf = stored?.[lineId]
             const href = hrefForChange(oblId, lineId)
             const mandatory = isMandatoryOnRecord(obligation, impl, record)
-            if (isBlankLeaf(leaf)) {
+            if (isBlankValue(leaf)) {
               if (mandatory && href) {
                 pushPrompt(prompts, presentation, href, lineId)
               }
@@ -166,7 +151,7 @@ export const cyaController = {
         const href = hrefForChange(oblId, null)
         const mandatory =
           (obligation.status ?? impl.status ?? 'mandatory') === 'mandatory'
-        if (isBlankLeaf(stored)) {
+        if (isBlankValue(stored)) {
           if (mandatory && href) pushPrompt(prompts, presentation, href, null)
           continue
         }
