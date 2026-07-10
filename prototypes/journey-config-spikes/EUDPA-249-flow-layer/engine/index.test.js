@@ -363,6 +363,89 @@ describe('pageStatus', () => {
     })
     expect(pageStatus(page, st)).toBe(STATUSES.FULFILLED)
   })
+
+  // ---- hasFulfilment composite-blank regressions (Fix #7) ----
+
+  it('singleton composite `{}` counts as NOT filled → NS (Fix #7 regression)', () => {
+    // Previously hasFulfilment returned true iff
+    // `Object.keys(stored).length > 0`, so `{}` was mis-classified as
+    // filled and a mandatory singleton composite would roll up to F
+    // instead of staying NS.
+    const addrOb = { id: 'addr', name: 'addr' }
+    const page = { page: 'x', presents: [{ obligation: addrOb }] }
+    const st = state({
+      fulfilments: { [addrOb.id]: {} },
+      obligations: impls([
+        { obligation: addrOb, impl: { inScope: true, status: 'mandatory' } }
+      ])
+    })
+    expect(pageStatus(page, st)).toBe(STATUSES.NOT_STARTED)
+  })
+
+  it('singleton composite with all-blank sub-fields counts as NOT filled → NS (Fix #7 regression)', () => {
+    const addrOb = { id: 'addr', name: 'addr' }
+    const page = { page: 'x', presents: [{ obligation: addrOb }] }
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: { name: '', addressLine1: '', town: '', postcode: '' }
+      },
+      obligations: impls([
+        { obligation: addrOb, impl: { inScope: true, status: 'mandatory' } }
+      ])
+    })
+    expect(pageStatus(page, st)).toBe(STATUSES.NOT_STARTED)
+  })
+
+  it('per-line composite with all-blank sub-fields counts as NOT filled → NS (Fix #7 regression)', () => {
+    // Same story for path-scoped fulfilments: the per-record catch-all
+    // used to `return true` on any object, so an all-empty address
+    // hanging off `line1` rolled up to F.
+    const addrOb = { id: 'addr', name: 'addr', within: lineGroup }
+    const page = {
+      page: 'x',
+      presentsForEach: { obligation: addrOb, forEachOf: lineGroup }
+    }
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: {
+          line1: { name: '', addressLine1: '', town: '', postcode: '' }
+        }
+      },
+      obligations: impls([
+        {
+          obligation: lineGroup,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1' }] }
+        },
+        {
+          obligation: addrOb,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1', status: 'mandatory' }]
+          }
+        }
+      ])
+    })
+    expect(pageStatus(page, st)).toBe(STATUSES.NOT_STARTED)
+  })
+
+  it('singleton composite with one sub-field filled → F', () => {
+    const addrOb = { id: 'addr', name: 'addr' }
+    const page = { page: 'x', presents: [{ obligation: addrOb }] }
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: {
+          name: '',
+          addressLine1: '10 High St',
+          town: '',
+          postcode: ''
+        }
+      },
+      obligations: impls([
+        { obligation: addrOb, impl: { inScope: true, status: 'mandatory' } }
+      ])
+    })
+    expect(pageStatus(page, st)).toBe(STATUSES.FULFILLED)
+  })
 })
 
 // ---------------------------------------------------------------------------

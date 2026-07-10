@@ -269,19 +269,21 @@ function entryInScope(entry, state) {
 
 function hasFulfilment(entry, state) {
   const stored = state.fulfilments?.[entry.obligation.id]
-  if (stored === undefined || stored === null) return false
   if (entry.path === null) {
-    if (typeof stored === 'string') return stored.length > 0
-    if (Array.isArray(stored)) return stored.length > 0
-    if (typeof stored === 'object') return Object.keys(stored).length > 0
-    return true
+    // Singleton obligation — `stored` IS the value being checked.
+    return !isBlankValue(stored)
   }
-  if (typeof stored !== 'object' || Array.isArray(stored)) return false
-  const record = stored[entry.path]
-  if (record === undefined || record === null) return false
-  if (typeof record === 'string') return record.length > 0
-  if (Array.isArray(record)) return record.length > 0
-  return true
+  // Path-scoped obligation — `stored` is a `{ fulfilmentId: value }`
+  // map. If it's not a plain map, the record can't exist.
+  if (
+    stored === undefined ||
+    stored === null ||
+    typeof stored !== 'object' ||
+    Array.isArray(stored)
+  ) {
+    return false
+  }
+  return !isBlankValue(stored[entry.path])
 }
 
 /**
