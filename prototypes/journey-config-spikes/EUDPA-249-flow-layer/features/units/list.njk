@@ -1,7 +1,8 @@
-{# Commodity-lines index — line-major. One summary block per line
-   with per-row Change links (to that line's specific page) and a
-   per-line Delete form. Add-a-line button mints a new line and
-   redirects into its first per-line page (see linesAddController). #}
+{# Units index for a single commodity line — depth-2. One summary
+   block per unit with per-row Change links (into that unit's
+   specific page) and a per-unit Delete form. Add mints a new unit
+   and redirects into its first per-unit page (see
+   linesUnitsAddController). #}
 
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
@@ -12,21 +13,16 @@
 
   {% if lead %}<p class="govuk-body">{{ lead }}</p>{% endif %}
 
-  {% if lines and lines.length %}
-    {% for line in lines %}
-      <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ line.title }}</h2>
-      {{ govukSummaryList({ rows: line.rows }) }}
-      {% if line.manageAnimalsHref %}
-        <p class="govuk-body">
-          <a class="govuk-link" href="{{ line.manageAnimalsHref }}">{{ line.manageAnimalsText }}</a>
-        </p>
-      {% endif %}
-      <form method="post" action="{{ line.deleteHref }}" novalidate class="govuk-!-margin-bottom-6">
+  {% if units and units.length %}
+    {% for unit in units %}
+      <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ unit.title }}</h2>
+      {{ govukSummaryList({ rows: unit.rows }) }}
+      <form method="post" action="{{ unit.deleteHref }}" novalidate class="govuk-!-margin-bottom-6">
         <input type="hidden" name="crumb" value="{{ crumb }}" />
         {{ govukButton({
-          text: line.deleteButtonText,
+          text: unit.deleteButtonText,
           classes: "govuk-button--warning govuk-button--secondary",
-          attributes: { "aria-label": line.deleteVisuallyHiddenText }
+          attributes: { "aria-label": unit.deleteVisuallyHiddenText }
         }) }}
       </form>
     {% endfor %}

@@ -563,6 +563,118 @@ branch keeps the page voluntary, so `/start` never routes there. The
 substitute for any voluntary page: it demonstrates what the user does
 after clicking a task-list link, without threading through `/start`.
 
+## Worked example — iteration 9: `permanentAddress` (first depth-2 obligation — line → unit fan-out)
+
+**Target:** wire `permanentAddress` — the ONLY mandatory unit-scoped
+obligation in the manifest. Allow-listed to commodity code `01061900`
+(Cats / Dogs / Ferrets). Same composite-widget shape as the iteration-7
+address blocks, but keyed by a composite fulfilmentId
+`${lineId}/${unitId}` under the evaluator's PATH_DELIMITER.
+
+**Twist:** this is the first depth-2 obligation, so 90% of the
+iteration was foundational plumbing:
+
+- **State ops (Phase A).** `addUnitRecord(lineId, seedObligation)` +
+  `deleteUnitRecord(lineId, unitId, unitLeafObligations)` in
+  `lib/state.js`, mirroring `addCommodityLine` / `deleteCommodityLine`
+  but keyed by the composite. Per-line unit-id counter (yar key
+  `NEXT_UNIT_ID_BY_LINE_KEY`) keeps ids monotonic per line so a Delete
+  can't recycle. `deleteCommodityLine` now CASCADES: it purges every
+  unit fulfilment whose composite key starts with `${lineId}/` even
+  if the caller forgot to pass a unit obligation.
+- **Engine primitive (Phase A).** `firstUnfulfilledPageForUnit(root,
+state, lineId, unitId)` in `engine/index.js`, analogue of the
+  line-scoped primitive. Uses the shared `isBlankValue` helper so a
+  composite address with all-empty sub-fields is treated as unfilled.
+- **Contract seam (Phase A).** `nextAfterForUnit(page, state, lineId,
+unitId)` returns `{ kind: 'unit-page' ... }` or `{ kind:
+'units-list', lineId }`.
+- **Unit-scoped page controller (Phase B).** `lib/unit-page-controller.js`
+  mirrors `line-page-controller.js`. Uses `fieldsForPage(..., {
+lineId: compositeKey })` — the existing option filters descriptors
+  by `d.path === options.lineId`, so passing the composite string as
+  `lineId` works without a new API. Same shape carries through
+  `validatePagePayload`. The field ids end up as
+  `permanentAddress-line1/unit1` and address sub-fields as
+  `permanentAddress-line1/unit1__addressLine1` — the `/` doesn't
+  break form encoding or hapi's payload parser.
+- **Units UX (Phase B).** `features/units/{controller.js, list.njk}`
+  emits `/lines/{lineId}/units` (list), POST
+  `/lines/{lineId}/units/add` (mint + add-then-fill redirect), POST
+  `/lines/{lineId}/units/{unitId}/delete`. Derives `UNIT_PAGES` +
+  `UNIT_LEAF_OBLIGATIONS` from the flow using the same
+  `presentsForEach.forEachOf === unitRecord` walk — same
+  drift-free discipline as the commodity-lines controller.
+- **Routing (Phase B).** `routes.js` branches the `presentsForEach`
+  loop by `page.presentsForEach.forEachOf`: `commodityLine` →
+  `makeLinePageController`; `unitRecord` →
+  `makeUnitPageController` at `/lines/{lineId}/units/{unitId}/{name}`.
+- **Discoverability.** The `/lines` per-line summary block gains a
+  "Manage animals on this line" link when the line's commodity code
+  opens a wired unit-scoped obligation. Gated via
+  `lineHasWiredUnitObligation` in the commodity-lines controller,
+  which introspects `applyTo.metadata` (exposed by the `allowListed`
+  helper) rather than executing the closure. Reason: at add-time no
+  unit exists yet, so the runtime `impl.inScope` is `false` for the
+  very obligation we want to seed on (chicken-and-egg — the
+  evaluator's projection over empty `unitRecord.records` returns
+  `[]`). Same metadata approach powers `pickSeedObligationForLine` in
+  the units controller.
+
+**Domain / presentation / flow (Phase C) — small on their own:**
+
+- **Step 1 — Confirmed.** Declared at `obligations/obligations.js:576`,
+  `within: unitRecord` (which is `within: commodityLine`, so depth-2),
+  mandatory, `applyTo` = `allowListed(commodityCode,
+PERMANENT_ADDRESS_COMMODITIES, unitRecord, [...])` where
+  `PERMANENT_ADDRESS_COMMODITIES = ['01061900']`.
+- **Step 2 — Domain entry.** `addressBlock(permanentAddress, {
+subFields: ADDRESS_SUB_FIELDS, required: ADDRESS_SUB_FIELDS })` —
+  same shape as the seven iteration-7 address blocks. Registered in
+  the manifest.
+- **Step 3 — Presentation.** New `presentation.permanentAddress.*`
+  bucket + `OBLIGATION_KEYS[permanentAddress.id]`.
+- **Step 4 — Flow.** New subsection `per-unit-records` under the
+  existing `commodity-lines` section with a single page whose
+  `presentsForEach.forEachOf === unitRecord` (routing picks that up
+  and registers the depth-2 URL). New
+  `flow.subsection.per-unit-records.title` key. Hub controller's
+  `subsectionHref` extended so the task-list click goes to `/lines`
+  (the depth-1 UX bootstraps the depth-2 UX via the Manage animals
+  link).
+- **Step 5 — Removed permanentAddress from KNOWN_UNWIRED.** Down to
+  6 entries — all `within: unitRecord` optional identifier
+  obligations (passport, tattoo, earTag, horseName,
+  identificationDetails, description) that step 5 will wire.
+- **Step 6 — Fixtures.** No update.
+- **Step 7 — Tests.** New `e2e-units.test.js` covering: Manage animals
+  link visibility (present for 01061900, absent for 0102);
+  add-then-fill loop end-to-end; per-line unit-id increment; delete
+  a unit; delete the parent line cascades and purges every unit
+  fulfilment. Plus 13 unit-level tests added in Phase A
+  (`lib/state.test.js` + additions to `engine/index.test.js`).
+
+  Baseline now 506 tests.
+
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: add a
+  commodity line, pick commodity code "Cats or Dogs or Ferrets
+  (01061900)"; back to /lines; a "Manage animals on this line" link
+  now shows below the summary rows; click through to
+  `/lines/line1/units`; empty state with an Add button; click Add →
+  land on `/lines/line1/units/unit1/permanent-address` composite
+  form (4 sub-fields); fill and save; back to units list showing
+  Animal 1 summary block; delete the unit; back to empty state.
+
+- **Step 9 — Committed as three atomic commits (Phase A / B / C).**
+
+**Refinement to the doc:** the depth-2 fan-out required new engine +
+state + routing infrastructure (Phase A) before the domain / flow work
+became a small edit (Phase C — comparable in size to iteration 6
+`commodityType`). Same three-phase shape as iteration 7 (address
+blocks Phase A introduced the widget, Phase B wired the rest). Once
+the pattern is settled, the remaining 6 unit-scoped obligations
+should be mechanical additions in step 5.
+
 ## Worked example — iteration 3: `portOfEntry`
 
 **Target:** wire `portOfEntry` — a straightforward static enum where

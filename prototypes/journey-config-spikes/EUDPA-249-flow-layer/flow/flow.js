@@ -69,6 +69,8 @@ import {
   containsUnweanedAnimals,
   regionCodeRequirement,
   regionCode,
+  unitRecord,
+  permanentAddress,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -390,6 +392,28 @@ export const flow = {
               presentsForEach: {
                 obligation: numberOfPackages,
                 forEachOf: commodityLine
+              }
+            }
+          ]
+        },
+        {
+          // Depth-2 per-unit records. Conditional per line — in scope
+          // only when the line's commodityCode opens a unit-scoped
+          // obligation (currently 01061900 for permanentAddress; step
+          // 5 will add passport, tattoo, earTag ...). The subsection
+          // rolls up NA whenever no line has a unit-scoped obligation
+          // in scope. Task-list clickthrough goes to `/lines` (see
+          // hub controller subsectionHref); from there the user picks
+          // a line and manages its animals at `/lines/{lineId}/units`.
+          kind: 'subsection',
+          id: 'per-unit-records',
+          titleKey: 'flow.subsection.per-unit-records.title',
+          children: [
+            {
+              page: 'permanent-address',
+              presentsForEach: {
+                obligation: permanentAddress,
+                forEachOf: unitRecord
               }
             }
           ]

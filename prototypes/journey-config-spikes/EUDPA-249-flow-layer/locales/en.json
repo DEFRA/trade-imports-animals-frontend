@@ -62,6 +62,9 @@
       },
       "commodity-lines-details": {
         "title": "Commodity line details"
+      },
+      "per-unit-records": {
+        "title": "Per-animal records"
       }
     }
   },
@@ -205,6 +208,11 @@
       "pageTitle": "County Parish Holding (CPH)",
       "legend": "CPH",
       "hint": "Required for cattle, pigs, sheep and goats. Max 11 characters."
+    },
+    "permanentAddress": {
+      "pageTitle": "Permanent address",
+      "legend": "Permanent address of this animal",
+      "hint": "Required for cats, dogs and ferrets. The animal's home address before this consignment."
     },
     "accompanyingDocumentType": {
       "pageTitle": "Document type",
@@ -416,7 +424,23 @@
     "backToTaskList": "Back to task list",
     "lineHeading": "Commodity line {n}",
     "deleteButton": "Delete this line",
-    "deleteHidden": "Delete commodity line {n}"
+    "deleteHidden": "Delete commodity line {n}",
+    "manageAnimalsButton": "Manage animals on this line"
+  },
+  "units": {
+    "pageTitle": "Animals on commodity line {lineN}",
+    "heading": "Animals on commodity line {lineN}",
+    "lead": "Add one entry per animal (or per group). Some commodity codes require per-animal identifiers.",
+    "notFilled": "-",
+    "changeLinkText": "Change",
+    "changeLinkHidden": "{label} for animal {unitN} on commodity line {lineN}",
+    "breadcrumbSelf": "Animals on commodity line {lineN}",
+    "empty": "No animals added yet for this commodity line.",
+    "addButton": "Add an animal",
+    "backToLines": "Back to commodity lines",
+    "unitHeading": "Animal {unitN} on commodity line {lineN}",
+    "deleteButton": "Delete this animal",
+    "deleteHidden": "Delete animal {unitN} on commodity line {lineN}"
   },
   "errors": {
     "countryOfOrigin": {

@@ -123,12 +123,13 @@ describe('coverageReport', () => {
     const report = coverageReport()
     expect(report.total).toBeGreaterThan(0)
     expect(report.withDomainEntry).toBeGreaterThan(0)
-    // permanentAddress is `within: unitRecord` — depth-2 per-unit
-    // infrastructure isn't built yet, so it stays without a domain
-    // entry (see obligations/coverage.test.js KNOWN_UNWIRED). This
-    // guard tolerates further whittling as long as at least one
-    // obligation remains uncovered.
+    // 6 unit-scoped identifier obligations (passport, tattoo,
+    // earTag, horseName, identificationDetails, description) stay
+    // without a domain entry until step 5's V4 buildout wires them
+    // (see obligations/coverage.test.js KNOWN_UNWIRED). This guard
+    // tolerates further whittling as long as at least one obligation
+    // remains uncovered.
     expect(report.missing.length).toBeGreaterThan(0)
-    expect(report.missing).toContain('permanentAddress')
+    expect(report.missing).toContain('passport')
   })
 })

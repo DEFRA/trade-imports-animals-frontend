@@ -12,7 +12,12 @@
  *   POST /lines/{id}/delete      → drop the line's leaf values
  */
 
-import { commodityLine, commodityCode } from '../../obligations/obligations.js'
+import {
+  commodityLine,
+  commodityCode,
+  unitRecord,
+  obligations as v4Obligations
+} from '../../obligations/obligations.js'
 import { flow } from '../../flow/flow.js'
 import { domain } from '../../domain/index.js'
 import {
@@ -95,6 +100,37 @@ function lineNumber(lineId) {
   return match ? Number(match[1]) : lineId
 }
 
+/** True iff this line's commodityCode opens any WIRED unit-scoped
+ *  obligation — i.e. clicking Manage animals will lead to a page the
+ *  user can actually fill. Uses the allowListed helper's exposed
+ *  metadata rather than executing the applyTo closure, so we can tell
+ *  at rest without hallucinating a fake unit record. If step 5 wires
+ *  more unit obligations, this generalises automatically because we
+ *  iterate the manifest. */
+function lineHasWiredUnitObligation(state, lineId) {
+  const lineCode = state.fulfilments?.[commodityCode.id]?.[lineId]
+  if (!lineCode) return false
+  const unitObligations = v4Obligations.filter((o) => o.within === unitRecord)
+  for (const obligation of unitObligations) {
+    if (!domain.has(obligation.id)) continue
+    const meta = obligation.applyTo?.metadata
+    if (!meta) continue
+    if (meta.type === 'allowListed' && meta.values?.includes(lineCode)) {
+      return true
+    }
+    if (meta.type === 'allowListedByPredicate') {
+      // The inverse-gate case (identificationDetails / description).
+      // Step 5 will wire these; when it does, the metadata will let us
+      // ask the predicate directly. For iteration 9 there are no
+      // wired allowListedByPredicate obligations, so we conservatively
+      // return true here — the units list gracefully renders nothing
+      // if the caller can't seed.
+      return true
+    }
+  }
+  return false
+}
+
 function summariseLine(state, lineId) {
   const rows = []
   for (const { pageName, obligation } of LINE_PAGES) {
@@ -118,6 +154,7 @@ function summariseLine(state, lineId) {
       }
     })
   }
+  const showManageAnimals = lineHasWiredUnitObligation(state, lineId)
   return {
     lineId,
     title: t('commodityLines.lineHeading', { n: lineNumber(lineId) }),
@@ -126,7 +163,13 @@ function summariseLine(state, lineId) {
     deleteButtonText: t('commodityLines.deleteButton'),
     deleteVisuallyHiddenText: t('commodityLines.deleteHidden', {
       n: lineNumber(lineId)
-    })
+    }),
+    manageAnimalsHref: showManageAnimals
+      ? `${BASE}/lines/${lineId}/units`
+      : null,
+    manageAnimalsText: showManageAnimals
+      ? t('commodityLines.manageAnimalsButton')
+      : null
   }
 }
 

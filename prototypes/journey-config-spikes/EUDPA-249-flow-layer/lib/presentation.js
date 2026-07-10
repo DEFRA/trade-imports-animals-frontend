@@ -44,6 +44,7 @@ import {
   containsUnweanedAnimals,
   regionCodeRequirement,
   regionCode,
+  permanentAddress,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -285,6 +286,14 @@ export const OBLIGATION_KEYS = new Map([
       pageTitleKey: 'presentation.cph.pageTitle',
       legendKey: 'presentation.cph.legend',
       hintKey: 'presentation.cph.hint'
+    }
+  ],
+  [
+    permanentAddress.id,
+    {
+      pageTitleKey: 'presentation.permanentAddress.pageTitle',
+      legendKey: 'presentation.permanentAddress.legend',
+      hintKey: 'presentation.permanentAddress.hint'
     }
   ],
   [

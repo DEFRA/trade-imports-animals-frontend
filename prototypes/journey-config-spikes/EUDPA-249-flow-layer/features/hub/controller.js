@@ -67,14 +67,18 @@ function linesManageStatus(state) {
 }
 
 function subsectionHref(subsection, state) {
-  // Both commodity-lines subsections route into the bespoke /lines
-  // list — the flow-major "one page per obligation across all lines"
-  // URLs have been retired in favour of the line-major
-  // `/lines/{id}/{page}` shape (see routes.js). Users pick a line
-  // from the list and walk THAT line's pages sequentially.
+  // All commodity-lines subsections (line management, per-line
+  // details, and depth-2 per-unit records) route into the bespoke
+  // `/lines` list — the flow-major "one page per obligation across
+  // all lines" URLs have been retired in favour of the line-major
+  // `/lines/{id}/{page}` and `/lines/{id}/units/{unitId}/{page}`
+  // shapes (see routes.js). Users pick a line from the list and
+  // walk THAT line's pages sequentially, then click into its
+  // Manage animals link for the per-unit pages.
   if (
     subsection.id === 'commodity-lines-manage' ||
-    subsection.id === 'commodity-lines-details'
+    subsection.id === 'commodity-lines-details' ||
+    subsection.id === 'per-unit-records'
   ) {
     return `${BASE}/lines`
   }

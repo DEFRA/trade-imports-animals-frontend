@@ -34,9 +34,11 @@ const KNOWN_UNWIRED = new Set([
   // - Phase A: commercialTransporter (first worked example).
   // - Phase B: privateTransporter, placeOfOrigin, consignor, consignee,
   //   importer, placeOfDestination, contactAddress.
-  // permanentAddress stays parked — it's `within: unitRecord` and needs
-  // depth-2 per-unit infrastructure not yet built.
-  'permanentAddress',
+  // permanentAddress wired during step 4 iteration 9 phase C — first
+  // depth-2 obligation. `within: unitRecord` (which is
+  // `within: commodityLine`), allow-listed to commodity code
+  // 01061900 (Cats / Dogs / Ferrets). Composite fulfilment key
+  // `${lineId}/${unitId}` per the evaluator's PATH_DELIMITER.
 
   // Yes/No enums from MDM — need domain entries during step 5.
   // containsUnweanedAnimals wired during step 4 iteration 1.

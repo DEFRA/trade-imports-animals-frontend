@@ -54,6 +54,7 @@ import {
   importer,
   placeOfDestination,
   contactAddress,
+  permanentAddress,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -721,6 +722,17 @@ export const contactAddressDomain = addressBlock(contactAddress, {
   required: ADDRESS_SUB_FIELDS
 })
 
+// V4: permanent address for a per-animal unit — the ONLY mandatory
+// unit-scoped obligation in the manifest. Allow-listed to commodity
+// code 01061900 (Cats / Dogs / Ferrets); other commodities have no
+// permanent-address requirement. Same subField shape as the depth-1
+// address blocks. First depth-2 obligation wired end-to-end (iter 9
+// phase C). See docs/add-an-obligation.md iteration 9.
+export const permanentAddressDomain = addressBlock(permanentAddress, {
+  subFields: ADDRESS_SUB_FIELDS,
+  required: ADDRESS_SUB_FIELDS
+})
+
 // V4: accompanying document reference — free-text, max 40. Blank
 // passes so an all-optional submission on the accompanying-documents
 // page doesn't error before the branchedGate flips the block to
@@ -846,6 +858,7 @@ export const domain = new Map([
   [importer.id, importerDomain],
   [placeOfDestination.id, placeOfDestinationDomain],
   [contactAddress.id, contactAddressDomain],
+  [permanentAddress.id, permanentAddressDomain],
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
   [animalsCertifiedFor.id, animalsCertifiedForDomain],

@@ -12,8 +12,10 @@
  */
 
 import { pages } from './contract.js'
+import { unitRecord } from './obligations/obligations.js'
 import { makePageController } from './lib/page-controller.js'
 import { makeLinePageController } from './lib/line-page-controller.js'
+import { makeUnitPageController } from './lib/unit-page-controller.js'
 import { hubController } from './features/hub/controller.js'
 import { cyaController } from './features/check-your-answers/controller.js'
 import {
@@ -21,6 +23,11 @@ import {
   linesAddController,
   linesDeleteController
 } from './features/commodity-lines/controller.js'
+import {
+  linesUnitsIndexController,
+  linesUnitsAddController,
+  linesUnitsDeleteController
+} from './features/units/controller.js'
 import { startController } from './features/start/controller.js'
 import { resetController } from './features/reset/controller.js'
 
@@ -101,16 +108,42 @@ export const journeyConfigFlow = {
         })
       )
 
+      // Per-line units index / add / delete (bespoke, depth-2).
+      routes.push(
+        publicRoute({
+          method: 'GET',
+          path: `${BASE}/lines/{lineId}/units`,
+          ...linesUnitsIndexController.get
+        })
+      )
+      routes.push(
+        publicRoute({
+          method: 'POST',
+          path: `${BASE}/lines/{lineId}/units/add`,
+          ...linesUnitsAddController.post
+        })
+      )
+      routes.push(
+        publicRoute({
+          method: 'POST',
+          path: `${BASE}/lines/{lineId}/units/{unitId}/delete`,
+          ...linesUnitsDeleteController.post
+        })
+      )
+
       // Flow-driven pages.
       //
       //   Static `presents` pages → one GET + POST at `/pages/{name}`
       //     via the generic page controller.
-      //   `presentsForEach` pages (currently only the per-commodity-line
-      //     details pages) → one GET + POST at `/lines/{lineId}/{name}`
-      //     via the line-scoped page controller. The user reaches
-      //     these by clicking into a specific line from `/lines`; the
-      //     flow-major "all lines on one page" URL is no longer
-      //     registered.
+      //   `presentsForEach` pages fan out by `forEachOf`:
+      //     - `forEachOf: commodityLine` → `/lines/{lineId}/{name}`
+      //       via the line-scoped page controller.
+      //     - `forEachOf: unitRecord`   → `/lines/{lineId}/units/{unitId}/{name}`
+      //       via the unit-scoped page controller (depth-2 fan-out).
+      //   The user reaches these by clicking into a specific line
+      //   from `/lines`, or a specific unit from `/lines/{lineId}/units`.
+      //   The flow-major "all instances on one page" URL is no longer
+      //   registered for either level.
       //
       // Read-only intro pages (no presents, no presentsForEach) are
       // skipped entirely.
@@ -118,6 +151,24 @@ export const journeyConfigFlow = {
         const hasPresents = page.presents && page.presents.length > 0
         const isForEach = hasPresentsForEach(page)
         if (isForEach) {
+          if (page.presentsForEach.forEachOf === unitRecord) {
+            const handlers = makeUnitPageController(page)
+            routes.push(
+              publicRoute({
+                method: 'GET',
+                path: `${BASE}/lines/{lineId}/units/{unitId}/${page.page}`,
+                ...handlers.get
+              })
+            )
+            routes.push(
+              publicRoute({
+                method: 'POST',
+                path: `${BASE}/lines/{lineId}/units/{unitId}/${page.page}`,
+                ...handlers.post
+              })
+            )
+            continue
+          }
           const handlers = makeLinePageController(page)
           routes.push(
             publicRoute({
