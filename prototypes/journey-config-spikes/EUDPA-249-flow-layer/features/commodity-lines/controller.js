@@ -17,7 +17,8 @@ import {
   commodityCode,
   species,
   numberOfAnimals,
-  numberOfPackages
+  numberOfPackages,
+  obligations as v4Obligations
 } from '../../obligations/obligations.js'
 import { domain } from '../../domain/index.js'
 import {
@@ -31,12 +32,16 @@ import { forObligation } from '../../lib/presentation.js'
 
 const BASE = '/prototype/eudpa-249'
 
-const LINE_LEAF_OBLIGATIONS = [
-  commodityCode,
-  species,
-  numberOfAnimals,
-  numberOfPackages
-]
+// Every leaf obligation whose stored value is keyed by commodity-line
+// fulfilmentId. Derived at import time from the obligations manifest so
+// a new `within: commodityLine` obligation is automatically dropped on
+// Delete — previously this was a hand-maintained list and iteration 6
+// (commodityType) forgot to add itself, leaving stale line records
+// behind after Delete. Regression guard: `every` obligation with
+// `within === commodityLine` must be in this list.
+const LINE_LEAF_OBLIGATIONS = v4Obligations.filter(
+  (o) => o.within === commodityLine
+)
 
 /** The per-line pages a line walks through, in declared order. Each
  *  entry pairs the flow page name with its obligation so we can render

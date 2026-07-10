@@ -218,6 +218,54 @@ describe('commodity-lines — delete', () => {
     expect(list.payload).toContain('Pig (0103)')
     expect(list.payload).toContain('Commodity line 2')
   })
+
+  it('deletes ALL line-scoped leaves — a fully-filled line disappears cleanly after Delete', async () => {
+    // Regression: LINE_LEAF_OBLIGATIONS used to be a hand-maintained
+    // list; iteration 6 (commodityType) forgot to add itself, so Delete
+    // left commodityType.line1 behind. The evaluator then still saw a
+    // record for line1 via that leaf, so the line stubbornly reappeared
+    // in the summary and the commodity-lines subsections stayed
+    // Completed. Fix: derive the list from `within === commodityLine`.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    // Fill every line-scoped mandatory in the current flow.
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    await fillLinePage(jar, 'line1', 'commodity-type', {
+      'commodityType-line1': 'meat-producing'
+    })
+    await fillLinePage(jar, 'line1', 'species-details', {
+      'species-line1': ['cattle']
+    })
+    await fillLinePage(jar, 'line1', 'number-of-animals', {
+      'numberOfAnimals-line1': 25
+    })
+
+    // Delete the line.
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/delete`,
+      payload: {}
+    })
+
+    // /lines shows the empty state — no lingering summary block.
+    const list = await getLines(jar)
+    expect(list.payload).toContain('No commodity lines added yet.')
+    expect(list.payload).not.toContain('Commodity line 1')
+    expect(list.payload).not.toContain('Cattle (0102)')
+
+    // Task list: commodity-lines subsections roll back — no longer Completed.
+    // (Add commodity lines returns to Not started; Commodity line details
+    // returns to Not applicable because no lines exist.)
+    const taskList = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/task-list`
+    })
+    expect(taskList.payload).toMatch(
+      /Add commodity lines[\s\S]{0,400}Not started/
+    )
+  })
 })
 
 // ---------------------------------------------------------------------------
