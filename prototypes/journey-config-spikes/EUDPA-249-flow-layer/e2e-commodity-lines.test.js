@@ -462,6 +462,30 @@ describe('commodity-lines — /lines summary rendering', () => {
     expect(list.payload).toContain('Delete commodity line 1')
     expect(list.payload).not.toContain('Delete line1')
   })
+
+  it('per-line summary includes a Commodity type row after the user picks a type', async () => {
+    // Regression: LINE_PAGES used to be a hand-maintained list and
+    // iteration 6 (commodityType) forgot to extend it, so /lines
+    // silently omitted the Commodity type row even after the user set
+    // a value. LINE_PAGES is now derived from the flow's
+    // commodity-lines-details subsection.
+    const jar = makeCookieJar()
+    await addLine(jar)
+    await fillLinePage(jar, 'line1', 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    await fillLinePage(jar, 'line1', 'commodity-type', {
+      'commodityType-line1': 'meat-producing'
+    })
+
+    const list = await getLines(jar)
+    // Row title (the presentation.commodityType.pageTitle key) appears.
+    expect(list.payload).toContain('Commodity type')
+    // Value resolves via the domain labels map through t().
+    expect(list.payload).toContain('Meat-producing')
+    // Change link for the row goes to the per-line commodity-type page.
+    expect(list.payload).toContain(`${BASE}/lines/line1/commodity-type`)
+  })
 })
 
 describe('commodity-lines — line-scoped controller guards', () => {

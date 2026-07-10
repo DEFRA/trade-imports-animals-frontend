@@ -15,11 +15,9 @@
 import {
   commodityLine,
   commodityCode,
-  species,
-  numberOfAnimals,
-  numberOfPackages,
   obligations as v4Obligations
 } from '../../obligations/obligations.js'
+import { flow } from '../../flow/flow.js'
 import { domain } from '../../domain/index.js'
 import {
   readState,
@@ -43,17 +41,36 @@ const LINE_LEAF_OBLIGATIONS = v4Obligations.filter(
   (o) => o.within === commodityLine
 )
 
-/** The per-line pages a line walks through, in declared order. Each
- *  entry pairs the flow page name with its obligation so we can render
- *  a summary row + Change link. Reads scope from state so a
- *  conditionally-applicable obligation like numberOfPackages appears
- *  only for lines whose commodity code puts it in scope. */
-const LINE_PAGES = [
-  { pageName: 'commodity-details', obligation: commodityCode },
-  { pageName: 'species-details', obligation: species },
-  { pageName: 'number-of-animals', obligation: numberOfAnimals },
-  { pageName: 'number-of-packages', obligation: numberOfPackages }
-]
+/** The per-line pages a line walks through, in declared order. Derived
+ *  at import time from the flow's `commodity-lines-details` subsection
+ *  so a new presentsForEach page inserted in the flow automatically
+ *  appears in the /lines summary — previously this was a hand-maintained
+ *  list and iteration 6 (commodityType) forgot to add itself, so the
+ *  Commodity type row was silently missing from every line's summary
+ *  block. Reads scope from state so a conditionally-applicable
+ *  obligation like numberOfPackages appears only for lines whose
+ *  commodity code puts it in scope. */
+const LINE_PAGES = deriveLinePages(flow)
+
+function deriveLinePages(flowNode) {
+  const details = findSubsection(flowNode, 'commodity-lines-details')
+  if (!details) return []
+  return (details.children ?? [])
+    .filter((page) => page.presentsForEach)
+    .map((page) => ({
+      pageName: page.page,
+      obligation: page.presentsForEach.obligation
+    }))
+}
+
+function findSubsection(node, id) {
+  if (node.kind === 'subsection' && node.id === id) return node
+  for (const child of node.children ?? node.sections ?? []) {
+    const hit = findSubsection(child, id)
+    if (hit) return hit
+  }
+  return null
+}
 
 function labelFor(obligation, value) {
   if (value === undefined || value === null || value === '') return null
