@@ -14,6 +14,7 @@
     "dev:debug": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:debug",
     "docker:dev": "npm run dev",
     "prototype": "FEATURES_PROTOTYPES_ENABLED=true AUTH_ENABLED=false npm run dev",
+    "prototype:real": "LIVE_ANIMALS_MODE=real SESSION_CACHE_ENGINE=redis REDIS_HOST=127.0.0.1 npm run prototype",
     "prototype:serve": "npm run build:frontend && FEATURES_PROTOTYPES_ENABLED=true AUTH_ENABLED=false NODE_ENV=development node .",
     "prototype:reset": "node -e \"require('node:fs').writeFileSync('prototypes/shared/data/quotes.json','[]\\n')\"",
     "test:prototype": "DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test",
