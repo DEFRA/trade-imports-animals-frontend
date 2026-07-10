@@ -21,14 +21,14 @@
 
   {% if cyaHref %}
     <p class="govuk-body">
-      <a class="govuk-link" href="{{ cyaHref }}">Check your answers so far</a>
+      <a class="govuk-link" href="{{ cyaHref }}">{{ cyaLinkText }}</a>
     </p>
   {% endif %}
 
   {% if resetHref %}
     <form method="post" action="{{ resetHref }}" novalidate class="govuk-!-margin-top-6">
       <input type="hidden" name="crumb" value="{{ crumb }}" />
-      {{ govukButton({ text: "Reset the demo", classes: "govuk-button--warning" }) }}
+      {{ govukButton({ text: resetButtonText, classes: "govuk-button--warning" }) }}
     </form>
   {% endif %}
 {% endblock %}

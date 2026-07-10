@@ -264,6 +264,60 @@
       "equine": "Horses"
     }
   },
+  "chrome": {
+    "serviceName": "Live animals — EUDPA-249 flow-layer spike",
+    "taskList": "Task list",
+    "back": "Back",
+    "saveAndContinue": "Save and continue",
+    "errorSummaryTitle": "There is a problem",
+    "phaseBanner": {
+      "tag": "Prototype",
+      "html": "EUDPA-249 flow-layer spike — non-functional prototype, not a real service."
+    },
+    "pageTitle": {
+      "errorPrefix": "Error: ",
+      "suffix": "Live animals (EUDPA-249 flow-layer spike)"
+    }
+  },
+  "hub": {
+    "pageTitle": "Task list",
+    "heading": "Live animals — EUDPA-249 flow-layer prototype",
+    "lead": "Complete each section. Your progress is saved as you go.",
+    "progress": {
+      "notStarted": "You have not started this journey yet.",
+      "fulfilled": "All required sections are complete.",
+      "inProgress": "You are part-way through this journey."
+    },
+    "status": {
+      "notApplicable": "Not applicable",
+      "notStarted": "Not started",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "submitted": "Submitted"
+    },
+    "checkYourAnswersLink": "Check your answers so far",
+    "resetButton": "Reset the demo"
+  },
+  "cya": {
+    "pageTitle": "Check your answers",
+    "heading": "Check your answers",
+    "bannerHeading": "You still need to complete some sections",
+    "changeLinkText": "Change",
+    "promptEnterValue": "Enter a value for {label}",
+    "submitReady": "All required obligations are fulfilled. In a real service, this is where the user would submit."
+  },
+  "commodityLines": {
+    "pageTitle": "Commodity lines",
+    "heading": "Commodity lines",
+    "lead": "Add one or more commodity lines. Each line captures a commodity code, species, and count.",
+    "codeNotChosen": "- Not chosen yet -",
+    "changeLinkText": "Change",
+    "changeLinkHidden": "commodity code for {lineId}",
+    "breadcrumbSelf": "Commodity lines",
+    "empty": "No commodity lines added yet.",
+    "addButton": "Add a commodity line",
+    "backToTaskList": "Back to task list"
+  },
   "errors": {
     "countryOfOrigin": {
       "required": "Enter a country of origin"

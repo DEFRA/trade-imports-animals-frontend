@@ -14,17 +14,17 @@
   {% if lines and lines.length %}
     {{ govukSummaryList({ rows: lines }) }}
   {% else %}
-    <p class="govuk-body">No commodity lines added yet.</p>
+    <p class="govuk-body">{{ emptyText }}</p>
   {% endif %}
 
   <form method="post" action="{{ addHref }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
-    {{ govukButton({ text: "Add a commodity line", classes: "govuk-button--secondary" }) }}
+    {{ govukButton({ text: addButtonText, classes: "govuk-button--secondary" }) }}
   </form>
 
   {% if backLink %}
     <p class="govuk-body">
-      <a class="govuk-link" href="{{ backLink }}">Back to task list</a>
+      <a class="govuk-link" href="{{ backLink }}">{{ backLinkText }}</a>
     </p>
   {% endif %}
 {% endblock %}

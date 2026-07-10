@@ -23,6 +23,8 @@ import {
   addCommodityLine,
   deleteCommodityLine
 } from '../../lib/state.js'
+import { t } from '../../lib/i18n.js'
+import { chrome } from '../../lib/chrome.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -34,8 +36,10 @@ const LINE_LEAF_OBLIGATIONS = [
 ]
 
 function formatCode(value) {
-  if (!value) return '- Not chosen yet -'
-  return domain.get(commodityCode.id)?.labels?.[value] ?? value
+  if (!value) return t('commodityLines.codeNotChosen')
+  // Label values are message keys (see domain/index.js) — resolve via
+  // `t()`, fall through to the raw code if the label map has no entry.
+  return t(domain.get(commodityCode.id)?.labels?.[value]) ?? value
 }
 
 export const linesIndexController = {
@@ -53,25 +57,31 @@ export const linesIndexController = {
             items: [
               {
                 href: `${BASE}/pages/commodity-details?line=${r.fulfilmentId}`,
-                text: 'Change',
-                visuallyHiddenText: `commodity code for ${r.fulfilmentId}`
+                text: t('commodityLines.changeLinkText'),
+                visuallyHiddenText: t('commodityLines.changeLinkHidden', {
+                  lineId: r.fulfilmentId
+                })
               }
             ]
           }
         }
       })
       return h.view('features/commodity-lines/list', {
+        chrome: chrome(),
         layout: 'layout.njk',
-        pageTitle: 'Commodity lines',
-        heading: 'Commodity lines',
-        lead: 'Add one or more commodity lines. Each line captures a commodity code, species, and count.',
+        pageTitle: t('commodityLines.pageTitle'),
+        heading: t('commodityLines.heading'),
+        lead: t('commodityLines.lead'),
+        emptyText: t('commodityLines.empty'),
+        addButtonText: t('commodityLines.addButton'),
+        backLinkText: t('commodityLines.backToTaskList'),
         lines,
         addHref: `${BASE}/lines/add`,
         backLink: `${BASE}/task-list`,
         crumb: request.plugins?.crumb ?? null,
         breadcrumbs: [
-          { text: 'Task list', href: `${BASE}/task-list` },
-          { text: 'Commodity lines' }
+          { text: t('chrome.taskList'), href: `${BASE}/task-list` },
+          { text: t('commodityLines.breadcrumbSelf') }
         ]
       })
     }

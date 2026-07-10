@@ -31,6 +31,6 @@
   {{ govukSummaryList({ rows: rows }) }}
 
   {% if journeyState == 'fulfilled' %}
-    <p class="govuk-body">All required obligations are fulfilled. In a real service, this is where the user would submit.</p>
+    <p class="govuk-body">{{ submitReadyText }}</p>
   {% endif %}
 {% endblock %}

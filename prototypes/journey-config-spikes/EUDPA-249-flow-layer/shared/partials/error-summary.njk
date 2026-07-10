@@ -5,7 +5,7 @@
 
 {% if errorSummary and errorSummary.length %}
   {{ govukErrorSummary({
-    titleText: errorSummaryTitle or "There is a problem",
+    titleText: chrome.errorSummaryTitle,
     errorList: errorSummary
   }) }}
 {% endif %}

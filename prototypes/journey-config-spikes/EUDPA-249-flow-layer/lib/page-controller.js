@@ -19,6 +19,8 @@ import {
 } from '../contract.js'
 import { readState, writeAnswer } from './state.js'
 import { pageCopy, forObligation } from './presentation.js'
+import { chrome } from './chrome.js'
+import { t } from './i18n.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -49,10 +51,11 @@ export function makePageController(page) {
         const state = readState(request)
         const descriptors = fieldsForPage(page, state)
         return h.view('shared/page', {
+          chrome: chrome(),
           layout: 'layout.njk',
           pageTitle: pageTitle(page),
           heading: pageTitle(page),
-          buttonText: 'Save and continue',
+          buttonText: t('chrome.saveAndContinue'),
           fields: descriptors.map((d) => d.view),
           backLink: backLinkFor(page),
           crumb: request.plugins?.crumb ?? null
@@ -67,10 +70,10 @@ export function makePageController(page) {
           const descriptors = fieldsForPage(page, state, result.fieldErrors)
           return h
             .view('shared/page', {
+              chrome: chrome(),
               layout: 'layout.njk',
               pageTitle: pageTitle(page),
               heading: pageTitle(page),
-              buttonText: 'Save and continue',
               fields: descriptors.map((d) => d.view),
               backLink: backLinkFor(page),
               errorSummary: result.errorList,

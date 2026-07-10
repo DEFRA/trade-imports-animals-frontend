@@ -14,6 +14,7 @@ import { forObligation } from '../../lib/presentation.js'
 import { obligations as v4Obligations } from '../../obligations/obligations.js'
 import { domain } from '../../domain/index.js'
 import { t } from '../../lib/i18n.js'
+import { chrome } from '../../lib/chrome.js'
 
 const BASE = '/prototype/eudpa-249'
 
@@ -64,7 +65,9 @@ export const cyaController = {
         ) {
           if (isMandatory && href) {
             prompts.push({
-              text: `Enter a value for ${presentation.pageTitle}`,
+              text: t('cya.promptEnterValue', {
+                label: presentation.pageTitle
+              }),
               href,
               because: []
             })
@@ -79,7 +82,7 @@ export const cyaController = {
                 items: [
                   {
                     href,
-                    text: 'Change',
+                    text: t('cya.changeLinkText'),
                     visuallyHiddenText: presentation.pageTitle
                   }
                 ]
@@ -89,17 +92,19 @@ export const cyaController = {
       }
 
       return h.view('features/check-your-answers/template', {
+        chrome: chrome(),
         layout: 'layout.njk',
-        pageTitle: 'Check your answers',
-        heading: 'Check your answers',
+        pageTitle: t('cya.pageTitle'),
+        heading: t('cya.heading'),
         rows,
         prompts,
-        bannerHeading: 'You still need to complete some sections',
+        bannerHeading: t('cya.bannerHeading'),
+        submitReadyText: t('cya.submitReady'),
         journeyState: statusOfJourney(state),
         crumb: request.plugins?.crumb ?? null,
         breadcrumbs: [
-          { text: 'Task list', href: `${BASE}/task-list` },
-          { text: 'Check your answers' }
+          { text: t('chrome.taskList'), href: `${BASE}/task-list` },
+          { text: t('cya.heading') }
         ]
       })
     }

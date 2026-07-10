@@ -13,28 +13,28 @@
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block pageTitle %}{% if errorSummary and errorSummary.length %}Error: {% endif %}{{ pageTitle }} | Live animals (EUDPA-249 flow-layer spike){% endblock %}
+{% block pageTitle %}{% if errorSummary and errorSummary.length %}{{ chrome.pageTitleErrorPrefix }}{% endif %}{{ pageTitle }} | {{ chrome.pageTitleSuffix }}{% endblock %}
 
 {% block govukServiceNavigation %}
   {{ govukServiceNavigation({
-    serviceName: "Live animals — EUDPA-249 flow-layer spike",
-    serviceUrl: "/prototype/eudpa-249/task-list"
+    serviceName: chrome.serviceName,
+    serviceUrl: chrome.serviceUrl
   }) }}
 {% endblock %}
 
 {% block beforeContent %}
   {{ govukPhaseBanner({
-    tag: { text: "Prototype" },
-    html: 'EUDPA-249 flow-layer spike — non-functional prototype, not a real service.'
+    tag: { text: chrome.phaseBannerTag },
+    html: chrome.phaseBannerHtml
   }) }}
   {{ govukBreadcrumbs({
     items: breadcrumbs if breadcrumbs else [
-      { text: "Task list", href: "/prototype/eudpa-249/task-list" },
+      { text: chrome.taskListText, href: chrome.serviceUrl },
       { text: pageTitle }
     ]
   }) }}
   {% if backLink %}
-    {{ govukBackLink({ text: "Back", href: backLink }) }}
+    {{ govukBackLink({ text: chrome.backText, href: backLink }) }}
   {% endif %}
 {% endblock %}
 

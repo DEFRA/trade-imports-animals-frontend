@@ -15,21 +15,38 @@ import {
 } from '../../engine/index.js'
 import { commodityLine } from '../../obligations/obligations.js'
 import { t } from '../../lib/i18n.js'
+import { chrome } from '../../lib/chrome.js'
 
 const BASE = '/prototype/eudpa-249'
 
-const STATUS_TAG = {
-  [STATUSES.NOT_APPLICABLE]: {
-    text: 'Not applicable',
-    classes: 'govuk-tag--grey'
-  },
-  [STATUSES.NOT_STARTED]: { text: 'Not started', classes: 'govuk-tag--blue' },
-  [STATUSES.IN_PROGRESS]: {
-    text: 'In progress',
-    classes: 'govuk-tag--light-blue'
-  },
-  [STATUSES.FULFILLED]: { text: 'Completed', classes: '' },
-  [STATUSES.SUBMITTED]: { text: 'Submitted', classes: 'govuk-tag--green' }
+// Status → { text, classes }. `text` resolves via t() at render time
+// (inside statusTagFor); the classes stay hard-coded because they are
+// GDS component styling, not user-facing copy.
+const STATUS_CLASSES = {
+  [STATUSES.NOT_APPLICABLE]: 'govuk-tag--grey',
+  [STATUSES.NOT_STARTED]: 'govuk-tag--blue',
+  [STATUSES.IN_PROGRESS]: 'govuk-tag--light-blue',
+  [STATUSES.FULFILLED]: '',
+  [STATUSES.SUBMITTED]: 'govuk-tag--green'
+}
+
+const STATUS_TEXT_KEY = {
+  [STATUSES.NOT_APPLICABLE]: 'hub.status.notApplicable',
+  [STATUSES.NOT_STARTED]: 'hub.status.notStarted',
+  [STATUSES.IN_PROGRESS]: 'hub.status.inProgress',
+  [STATUSES.FULFILLED]: 'hub.status.completed',
+  [STATUSES.SUBMITTED]: 'hub.status.submitted'
+}
+
+function statusTagFor(status) {
+  const key = STATUS_TEXT_KEY[status]
+  if (!key) return { text: status }
+  return { text: t(key), classes: STATUS_CLASSES[status] }
+}
+
+const PROGRESS_KEY = {
+  [STATUSES.NOT_STARTED]: 'hub.progress.notStarted',
+  [STATUSES.FULFILLED]: 'hub.progress.fulfilled'
 }
 
 function firstNavigablePage(subsection, state) {
@@ -79,7 +96,7 @@ export const hubController = {
           const href = subsectionHref(subsection, state)
           const item = {
             title: { text: t(subsection.titleKey) },
-            status: { tag: STATUS_TAG[status] ?? { text: status } }
+            status: { tag: statusTagFor(status) }
           }
           // Always let lines-manage be clickable; other subsections
           // stay locked when NA.
@@ -92,24 +109,22 @@ export const hubController = {
       })
 
       const overall = statusOfJourney(state)
-      const progressLine =
-        overall === STATUSES.NOT_STARTED
-          ? 'You have not started this journey yet.'
-          : overall === STATUSES.FULFILLED
-            ? 'All required sections are complete.'
-            : 'You are part-way through this journey.'
+      const progressLine = t(PROGRESS_KEY[overall] ?? 'hub.progress.inProgress')
 
       return h.view('features/hub/template', {
+        chrome: chrome(),
         layout: 'layout.njk',
-        pageTitle: 'Task list',
-        heading: 'Live animals — EUDPA-249 flow-layer prototype',
-        lead: 'Complete each section. Your progress is saved as you go.',
+        pageTitle: t('hub.pageTitle'),
+        heading: t('hub.heading'),
+        lead: t('hub.lead'),
         progressLine,
         sections: modelSections,
         cyaHref: `${BASE}/check-your-answers`,
+        cyaLinkText: t('hub.checkYourAnswersLink'),
         resetHref: `${BASE}/reset`,
+        resetButtonText: t('hub.resetButton'),
         crumb: request.plugins?.crumb ?? null,
-        breadcrumbs: [{ text: 'Task list' }]
+        breadcrumbs: [{ text: t('chrome.taskList') }]
       })
     }
   }

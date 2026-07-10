@@ -832,19 +832,31 @@ declaration-site changes needed.
   output as a visible bug signal. New `FORMAT_ERROR_KEYS` export
   drives the coverage test; a new `lib/i18n.test.js` pins the
   resolver + interpolator semantics.
-- ⏳ Hub controller chrome — `'Task list'`, `'Live animals —
-EUDPA-249 flow-layer prototype'`, `'Complete each section...'`,
-  progressLine variants, `'Check your answers so far'`,
-  `'Reset the demo'`.
-- ⏳ CYA controller chrome — `'Check your answers'`, banner heading,
-  `'Enter a value for X'` prompt.
-- ⏳ Templates (`shared/layout.njk`, hub + CYA templates) —
-  `'Prototype'` phase-banner tag, `'Back'`, `'Task list'` breadcrumb,
-  service name. Needs either a nunjucks `t()` global or controller-
-  resolved chrome via view context (leaning towards the latter to
-  keep templates dumb).
+- ✅ Hub controller chrome — pageTitle / heading / lead, progressLine
+  variants, status tag copy (per-status keyed lookup) and both
+  hub-template strings (`'Check your answers so far'`,
+  `'Reset the demo'`) all via `t()`. Bucket:
+  `hub.pageTitle`, `hub.heading`, `hub.lead`, `hub.progress.*`,
+  `hub.status.*`, `hub.checkYourAnswersLink`, `hub.resetButton`.
+- ✅ CYA controller chrome — page title / heading / banner heading /
+  change link / prompt text (parameterised `{label}`) /
+  submit-ready sentence all via `t()`. Bucket: `cya.*`.
+- ✅ Commodity-lines controller + template — page title / heading /
+  lead / empty / add button / back link / change link / "code not
+  chosen" fallback. Also fixed a latent bug where `formatCode` read
+  labels directly instead of via `t()`. Bucket: `commodityLines.*`.
+- ✅ Templates (`shared/layout.njk`, `shared/partials/error-summary.njk`,
+  hub + CYA + commodity-lines templates) — every hardcoded string
+  now sourced from the view context. Shared chrome (phase banner
+  tag / html, service name / URL, breadcrumb "Task list", back
+  link, save-and-continue button text, error-summary title,
+  page-title error prefix and suffix) lives in a new `lib/chrome.js`
+  helper — every render-time controller does
+  `chrome: chrome()` and the layout reads `{{ chrome.* }}`.
 - ⏳ Locale threading — reading locale from request headers /
   session / query param and passing to `t()`. Currently English only.
+  Approach when picked up: `chrome()` gains a `request` argument and
+  passes locale down; `t()` gains a `locale` param.
 - ⏳ Add `locales/cy.json` (translator-populated).
 
 **Verification target when complete:** the browsable walk works with

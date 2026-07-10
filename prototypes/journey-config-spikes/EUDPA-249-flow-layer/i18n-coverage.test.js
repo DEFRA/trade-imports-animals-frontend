@@ -26,6 +26,51 @@ import { hasKey } from './lib/i18n.js'
 import { OBLIGATION_KEYS, PAGE_KEYS } from './lib/presentation.js'
 import { domain } from './domain/index.js'
 import { FORMAT_ERROR_KEYS } from './lib/format-domain-errors.js'
+import { CHROME_KEYS } from './lib/chrome.js'
+
+/**
+ * Static lists of keys used by the hub / CYA / commodity-lines
+ * controllers + their templates. Keep in sync with the `t()` calls in
+ * those files. When a key is added and the coverage test fires here
+ * with "missing", either add it to en.json or drop the reference.
+ */
+const HUB_KEYS = [
+  'hub.pageTitle',
+  'hub.heading',
+  'hub.lead',
+  'hub.progress.notStarted',
+  'hub.progress.fulfilled',
+  'hub.progress.inProgress',
+  'hub.status.notApplicable',
+  'hub.status.notStarted',
+  'hub.status.inProgress',
+  'hub.status.completed',
+  'hub.status.submitted',
+  'hub.checkYourAnswersLink',
+  'hub.resetButton'
+]
+
+const CYA_KEYS = [
+  'cya.pageTitle',
+  'cya.heading',
+  'cya.bannerHeading',
+  'cya.changeLinkText',
+  'cya.promptEnterValue',
+  'cya.submitReady'
+]
+
+const COMMODITY_LINES_KEYS = [
+  'commodityLines.pageTitle',
+  'commodityLines.heading',
+  'commodityLines.lead',
+  'commodityLines.codeNotChosen',
+  'commodityLines.changeLinkText',
+  'commodityLines.changeLinkHidden',
+  'commodityLines.breadcrumbSelf',
+  'commodityLines.empty',
+  'commodityLines.addButton',
+  'commodityLines.backToTaskList'
+]
 
 function collectFlowKeys(node, out = []) {
   if (node.titleKey) out.push(node.titleKey)
@@ -124,4 +169,23 @@ describe('i18n coverage — formatDomainErrors COPY', () => {
       `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`
     ).toEqual([])
   })
+})
+
+describe('i18n coverage — chrome + controller keys', () => {
+  const cases = [
+    ['chrome', CHROME_KEYS],
+    ['hub controller / template', HUB_KEYS],
+    ['CYA controller / template', CYA_KEYS],
+    ['commodity-lines controller / template', COMMODITY_LINES_KEYS]
+  ]
+
+  for (const [name, keys] of cases) {
+    it(`${name} keys all resolve in locales/en.json`, () => {
+      const missing = keys.filter((key) => !hasKey(key))
+      expect(
+        missing,
+        `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`
+      ).toEqual([])
+    })
+  }
 })
