@@ -166,6 +166,40 @@ export function firstUnfulfilledPageForLine(root, state, lineId) {
 }
 
 /**
+ * Unit-scoped analogue of `firstUnfulfilledPageForLine`. Walks the
+ * pages of a subsection (or any container) in declared order and
+ * returns the first `presentsForEach` page where the composite
+ * `${lineId}/${unitId}` record has an in-scope mandatory obligation
+ * that is unfilled. Optional-status obligations are skipped.
+ *
+ * Composite key: unit-scoped fulfilments live in
+ * `state.fulfilments[obligation.id][`${lineId}/${unitId}`]` per the
+ * obligations/evaluator.js PATH_DELIMITER convention. Records on
+ * `state.obligations[obligation.id].records[].fulfilmentId` carry the
+ * same composite string.
+ */
+export function firstUnfulfilledPageForUnit(root, state, lineId, unitId) {
+  const compositeKey = `${lineId}/${unitId}`
+  if (isPage(root)) {
+    const forEach = root.presentsForEach
+    if (!forEach) return null
+    const impl = state.obligations?.[forEach.obligation.id]
+    if (!impl?.inScope) return null
+    const record = impl.records?.find((r) => r.fulfilmentId === compositeKey)
+    if (!record) return null
+    if ((record.status ?? 'mandatory') !== 'mandatory') return null
+    const stored = state.fulfilments?.[forEach.obligation.id]?.[compositeKey]
+    if (isBlankValue(stored)) return root
+    return null
+  }
+  for (const child of root.children ?? []) {
+    const hit = firstUnfulfilledPageForUnit(child, state, lineId, unitId)
+    if (hit) return hit
+  }
+  return null
+}
+
+/**
  * Depth-first walk over every section, returns the first Page whose
  * `presents` (post-expansion) references the given obligation id. Used
  * for CYA Change links.

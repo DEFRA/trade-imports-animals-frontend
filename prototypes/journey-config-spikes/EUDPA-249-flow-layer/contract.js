@@ -26,6 +26,7 @@ import {
   firstApplicablePage,
   firstUnfulfilledPage,
   firstUnfulfilledPageForLine,
+  firstUnfulfilledPageForUnit,
   firstPagePresentingObligation,
   journeyState,
   pageStatus,
@@ -138,6 +139,23 @@ export function nextAfterForLine(page, state, lineId) {
     }
   }
   return { kind: 'lines-list' }
+}
+
+/**
+ * Unit-scoped analogue of `nextAfterForLine`. After saving on `page`
+ * for a specific commodity line and unit, where do we send the user?
+ * Next unfulfilled per-unit page in the same subsection, or (when the
+ * unit is done) the /lines/{lineId}/units list.
+ */
+export function nextAfterForUnit(page, state, lineId, unitId) {
+  const subsection = subsectionOfPage(page.page)
+  if (subsection) {
+    const inSub = firstUnfulfilledPageForUnit(subsection, state, lineId, unitId)
+    if (inSub && inSub.page !== page.page) {
+      return { kind: 'unit-page', page: inSub, lineId, unitId }
+    }
+  }
+  return { kind: 'units-list', lineId }
 }
 
 /** Where does the Change link for an obligation go? */

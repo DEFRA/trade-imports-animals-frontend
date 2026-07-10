@@ -9,6 +9,7 @@ import {
   firstApplicablePage,
   firstUnfulfilledPage,
   firstUnfulfilledPageForLine,
+  firstUnfulfilledPageForUnit,
   firstPagePresentingObligation,
   expandPresents,
   STATUSES
@@ -716,6 +717,132 @@ describe('firstUnfulfilledPageForLine', () => {
       obligations: withRecord()
     })
     expect(firstUnfulfilledPageForLine(makeContainer(), st, 'line1')).toBeNull()
+  })
+})
+
+describe('firstUnfulfilledPageForUnit', () => {
+  // Depth-2 fan-out — unit records live under commodity lines with
+  // composite keys `${lineId}/${unitId}`. Mirrors the shape used by
+  // permanent-address / passport / ear-tag in the manifest.
+  const unitRecord = { id: 'unit-group', name: 'unitRecord' }
+  const addrOb = { id: 'permanent-address', name: 'permanentAddress' }
+
+  const makeContainer = () => ({
+    children: [
+      {
+        page: 'permanent-address',
+        presentsForEach: { obligation: addrOb, forEachOf: unitRecord }
+      }
+    ]
+  })
+
+  const withRecord = () =>
+    impls([
+      {
+        obligation: unitRecord,
+        impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+      },
+      {
+        obligation: addrOb,
+        impl: {
+          inScope: true,
+          records: [{ fulfilmentId: 'line1/unit1', status: 'mandatory' }]
+        }
+      }
+    ])
+
+  it('returns the page when the unit has no fulfilment yet', () => {
+    const st = state({ obligations: withRecord() })
+    expect(
+      firstUnfulfilledPageForUnit(makeContainer(), st, 'line1', 'unit1').page
+    ).toBe('permanent-address')
+  })
+
+  it('returns null when the composite fulfilment is filled', () => {
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: { 'line1/unit1': { addressLine1: '10 High St' } }
+      },
+      obligations: withRecord()
+    })
+    expect(
+      firstUnfulfilledPageForUnit(makeContainer(), st, 'line1', 'unit1')
+    ).toBeNull()
+  })
+
+  it('returns the page when the composite fulfilment is all-blank', () => {
+    // Same isBlankValue semantics as depth-1: `{}` and
+    // `{ name: '' }` count as unfilled.
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: { 'line1/unit1': { name: '', addressLine1: '' } }
+      },
+      obligations: withRecord()
+    })
+    expect(
+      firstUnfulfilledPageForUnit(makeContainer(), st, 'line1', 'unit1').page
+    ).toBe('permanent-address')
+  })
+
+  it('scopes to the requested (line, unit) — does not cross to another unit', () => {
+    // line1/unit1 is filled; line1/unit2 is unfilled. Asking about
+    // unit1 returns null; asking about unit2 returns the page.
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: {
+          'line1/unit1': { addressLine1: '10 High St' }
+        }
+      },
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: {
+            inScope: true,
+            records: [
+              { fulfilmentId: 'line1/unit1' },
+              { fulfilmentId: 'line1/unit2' }
+            ]
+          }
+        },
+        {
+          obligation: addrOb,
+          impl: {
+            inScope: true,
+            records: [
+              { fulfilmentId: 'line1/unit1', status: 'mandatory' },
+              { fulfilmentId: 'line1/unit2', status: 'mandatory' }
+            ]
+          }
+        }
+      ])
+    })
+    expect(
+      firstUnfulfilledPageForUnit(makeContainer(), st, 'line1', 'unit1')
+    ).toBeNull()
+    expect(
+      firstUnfulfilledPageForUnit(makeContainer(), st, 'line1', 'unit2').page
+    ).toBe('permanent-address')
+  })
+
+  it('skips optional records', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        {
+          obligation: addrOb,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    expect(
+      firstUnfulfilledPageForUnit(makeContainer(), st, 'line1', 'unit1')
+    ).toBeNull()
   })
 })
 
