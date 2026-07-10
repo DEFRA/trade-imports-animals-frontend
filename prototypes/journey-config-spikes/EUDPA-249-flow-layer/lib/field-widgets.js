@@ -9,7 +9,12 @@
  *     args: <govuk macro arguments> }
  *
  * consumed only by templates/partials/fields.njk.
+ *
+ * `labels[value]` is a message key (see domain/index.js); resolve via
+ * `t()` before rendering. Missing keys render as the raw dotted-path.
  */
+
+import { t } from './i18n.js'
 
 const OBLIGATION_MULTI = new Set([
   // Obligations whose stored value is an array — either enum-multi or a
@@ -49,7 +54,7 @@ export const rules = [
           hint: hint ? { text: hint } : undefined,
           items: options.map((v) => ({
             value: v,
-            text: labels?.[v] ?? v,
+            text: t(labels?.[v]) ?? v,
             checked: Array.isArray(value) && value.includes(v)
           })),
           errorMessage: error ? { text: error } : undefined
@@ -84,7 +89,7 @@ export const rules = [
           hint: hint ? { text: hint } : undefined,
           items: options.map((v) => ({
             value: v,
-            text: labels?.[v] ?? v,
+            text: t(labels?.[v]) ?? v,
             checked: value === v
           })),
           errorMessage: error ? { text: error } : undefined
@@ -125,7 +130,7 @@ export const rules = [
             },
             ...options.map((v) => ({
               value: v,
-              text: labels?.[v] ?? v,
+              text: t(labels?.[v]) ?? v,
               selected: value === v
             }))
           ],

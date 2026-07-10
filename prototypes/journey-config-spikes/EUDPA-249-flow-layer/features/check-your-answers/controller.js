@@ -13,21 +13,26 @@ import { readState } from '../../lib/state.js'
 import { forObligation } from '../../lib/presentation.js'
 import { obligations as v4Obligations } from '../../obligations/obligations.js'
 import { domain } from '../../domain/index.js'
+import { t } from '../../lib/i18n.js'
 
 const BASE = '/prototype/eudpa-249'
 
 function formatValue(value, obligation) {
+  // `labels[v]` is a message key (see domain/index.js); resolve via
+  // `t()` and fall through to the raw stored value if the code has no
+  // label at all.
   const labels = domain.get(obligation.id)?.labels
+  const label = (v) => t(labels?.[v]) ?? v
   if (value === undefined || value === null) return ''
   if (Array.isArray(value)) {
-    return value.map((v) => labels?.[v] ?? v).join(', ')
+    return value.map(label).join(', ')
   }
   if (typeof value === 'object') {
     return Object.entries(value)
-      .map(([lineId, v]) => `${lineId}: ${labels?.[v] ?? v}`)
+      .map(([lineId, v]) => `${lineId}: ${label(v)}`)
       .join('; ')
   }
-  return String(labels?.[value] ?? value)
+  return String(label(value))
 }
 
 export const cyaController = {

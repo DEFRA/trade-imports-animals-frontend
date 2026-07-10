@@ -178,10 +178,10 @@ const REASON_FOR_IMPORT_OPTIONS = [
 
 export const reasonForImportDomain = staticEnum(REASON_FOR_IMPORT_OPTIONS, {
   labels: {
-    'internal-market': 'Internal market',
-    'transit-through-eu': 'Transit through the EU',
-    'temporary-admission': 'Temporary admission',
-    're-entry-after-refusal': 'Re-entry after refusal'
+    'internal-market': 'domain.reasonForImport.internal-market',
+    'transit-through-eu': 'domain.reasonForImport.transit-through-eu',
+    'temporary-admission': 'domain.reasonForImport.temporary-admission',
+    're-entry-after-refusal': 'domain.reasonForImport.re-entry-after-refusal'
   }
 })
 
@@ -194,10 +194,10 @@ export const purposeInInternalMarketDomain = computedEnum(
   [reasonForImport],
   {
     labels: {
-      breeding: 'Breeding',
-      slaughter: 'Slaughter',
-      fattening: 'Fattening',
-      other: 'Other'
+      breeding: 'domain.purpose.breeding',
+      slaughter: 'domain.purpose.slaughter',
+      fattening: 'domain.purpose.fattening',
+      other: 'domain.purpose.other'
     }
   }
 )
@@ -206,13 +206,18 @@ const TRANSPORTER_TYPE_OPTIONS = ['commercial', 'private']
 
 export const transporterTypeDomain = staticEnum(TRANSPORTER_TYPE_OPTIONS, {
   labels: {
-    commercial: 'Commercial transporter',
-    private: 'Private transporter'
+    commercial: 'domain.transporterType.commercial',
+    private: 'domain.transporterType.private'
   }
 })
 
 const YES_NO_OPTIONS = ['yes', 'no']
-const YES_NO_LABELS = { yes: 'Yes', no: 'No' }
+// Values are message keys resolved via `lib/i18n.js` at render time
+// (see `lib/field-widgets.js` and the CYA controller). Same shape as
+// COUNTRY_LABELS, SPECIES_LABELS, etc. — every enum label map holds
+// keys, not literals. Coverage test in `i18n-coverage.test.js`
+// walks the domain manifest and asserts each key resolves.
+const YES_NO_LABELS = { yes: 'domain.yesNo.yes', no: 'domain.yesNo.no' }
 
 export const containsUnweanedAnimalsDomain = staticEnum(YES_NO_OPTIONS, {
   labels: YES_NO_LABELS
@@ -244,14 +249,14 @@ const PORT_OF_ENTRY_OPTIONS = [
 
 export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS, {
   labels: {
-    DVR: 'Port of Dover',
-    HUL: 'Port of Hull',
-    LGW: 'Gatwick Airport',
-    LHR: 'Heathrow Airport',
-    STN: 'Stansted Airport',
-    EDI: 'Edinburgh Airport',
-    BRS: 'Bristol Airport',
-    MAN: 'Manchester Airport'
+    DVR: 'domain.portOfEntry.DVR',
+    HUL: 'domain.portOfEntry.HUL',
+    LGW: 'domain.portOfEntry.LGW',
+    LHR: 'domain.portOfEntry.LHR',
+    STN: 'domain.portOfEntry.STN',
+    EDI: 'domain.portOfEntry.EDI',
+    BRS: 'domain.portOfEntry.BRS',
+    MAN: 'domain.portOfEntry.MAN'
   }
 })
 
@@ -271,24 +276,24 @@ const SPECIES_BY_COMMODITY_CODE = {
 }
 
 const SPECIES_LABELS = {
-  horse: 'Horse',
-  cattle: 'Cattle',
-  buffalo: 'Buffalo',
-  bison: 'Bison',
-  pig: 'Pig',
-  'wild-boar': 'Wild boar',
-  sheep: 'Sheep',
-  lamb: 'Lamb',
-  goat: 'Goat',
-  dog: 'Dog',
-  cat: 'Cat',
-  ferret: 'Ferret',
-  rabbit: 'Rabbit',
-  owl: 'Owl',
-  falcon: 'Falcon',
-  eagle: 'Eagle',
-  'other-bird-of-prey': 'Other bird of prey',
-  bee: 'Bee'
+  horse: 'domain.species.horse',
+  cattle: 'domain.species.cattle',
+  buffalo: 'domain.species.buffalo',
+  bison: 'domain.species.bison',
+  pig: 'domain.species.pig',
+  'wild-boar': 'domain.species.wild-boar',
+  sheep: 'domain.species.sheep',
+  lamb: 'domain.species.lamb',
+  goat: 'domain.species.goat',
+  dog: 'domain.species.dog',
+  cat: 'domain.species.cat',
+  ferret: 'domain.species.ferret',
+  rabbit: 'domain.species.rabbit',
+  owl: 'domain.species.owl',
+  falcon: 'domain.species.falcon',
+  eagle: 'domain.species.eagle',
+  'other-bird-of-prey': 'domain.species.other-bird-of-prey',
+  bee: 'domain.species.bee'
 }
 
 export const speciesDomain = computedEnum(
@@ -312,10 +317,10 @@ const MEANS_OF_TRANSPORT_OPTIONS = [
 
 export const meansOfTransportDomain = staticEnum(MEANS_OF_TRANSPORT_OPTIONS, {
   labels: {
-    airplane: 'Airplane',
-    railway: 'Railway',
-    'road-vehicle': 'Road vehicle',
-    vessel: 'Vessel'
+    airplane: 'domain.meansOfTransport.airplane',
+    railway: 'domain.meansOfTransport.railway',
+    'road-vehicle': 'domain.meansOfTransport.road-vehicle',
+    vessel: 'domain.meansOfTransport.vessel'
   }
 })
 
@@ -350,31 +355,31 @@ const COUNTRY_OPTIONS = [
 ]
 
 const COUNTRY_LABELS = {
-  AT: 'Austria',
-  BE: 'Belgium',
-  BG: 'Bulgaria',
-  CH: 'Switzerland',
-  CZ: 'Czech Republic',
-  DE: 'Germany',
-  DK: 'Denmark',
-  EE: 'Estonia',
-  ES: 'Spain',
-  FI: 'Finland',
-  FR: 'France',
-  GR: 'Greece',
-  HR: 'Croatia',
-  HU: 'Hungary',
-  IE: 'Ireland',
-  IT: 'Italy',
-  LU: 'Luxembourg',
-  NL: 'Netherlands',
-  NO: 'Norway',
-  PL: 'Poland',
-  PT: 'Portugal',
-  RO: 'Romania',
-  SE: 'Sweden',
-  SI: 'Slovenia',
-  SK: 'Slovakia'
+  AT: 'domain.country.AT',
+  BE: 'domain.country.BE',
+  BG: 'domain.country.BG',
+  CH: 'domain.country.CH',
+  CZ: 'domain.country.CZ',
+  DE: 'domain.country.DE',
+  DK: 'domain.country.DK',
+  EE: 'domain.country.EE',
+  ES: 'domain.country.ES',
+  FI: 'domain.country.FI',
+  FR: 'domain.country.FR',
+  GR: 'domain.country.GR',
+  HR: 'domain.country.HR',
+  HU: 'domain.country.HU',
+  IE: 'domain.country.IE',
+  IT: 'domain.country.IT',
+  LU: 'domain.country.LU',
+  NL: 'domain.country.NL',
+  NO: 'domain.country.NO',
+  PL: 'domain.country.PL',
+  PT: 'domain.country.PT',
+  RO: 'domain.country.RO',
+  SE: 'domain.country.SE',
+  SI: 'domain.country.SI',
+  SK: 'domain.country.SK'
 }
 
 export const countryOfOriginDomain = staticEnum(COUNTRY_OPTIONS, {
@@ -398,14 +403,14 @@ const COMMODITY_OPTIONS = [
 
 export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS, {
   labels: {
-    '0101': 'Horse (0101)',
-    '0102': 'Cattle (0102)',
-    '0103': 'Pig (0103)',
-    '010410': 'Sheep (010410)',
-    '010420': 'Goats (010420)',
-    '01061900': 'Cats, Dogs or Ferrets (01061900)',
-    '01063100': 'Birds of prey (01063100)',
-    '01064100': 'Bees (01064100)'
+    '0101': 'domain.commodityCode.0101',
+    '0102': 'domain.commodityCode.0102',
+    '0103': 'domain.commodityCode.0103',
+    '010410': 'domain.commodityCode.010410',
+    '010420': 'domain.commodityCode.010420',
+    '01061900': 'domain.commodityCode.01061900',
+    '01063100': 'domain.commodityCode.01063100',
+    '01064100': 'domain.commodityCode.01064100'
   }
 })
 
@@ -527,10 +532,10 @@ export const transitedCountriesDomain = {
 // walk works without an upstream integration.
 export const ANIMAL_TYPE_OPTIONS = ['bovine', 'ovine', 'porcine', 'equine']
 export const ANIMAL_TYPE_LABELS = {
-  bovine: 'Cattle',
-  ovine: 'Sheep',
-  porcine: 'Pigs',
-  equine: 'Horses'
+  bovine: 'domain.animalType.bovine',
+  ovine: 'domain.animalType.ovine',
+  porcine: 'domain.animalType.porcine',
+  equine: 'domain.animalType.equine'
 }
 export const animalsCertifiedForDomain = staticEnum(ANIMAL_TYPE_OPTIONS, {
   labels: ANIMAL_TYPE_LABELS

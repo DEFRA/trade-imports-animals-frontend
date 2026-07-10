@@ -817,15 +817,19 @@ declaration-site changes needed.
   obligation entries + the commodity-lines-intro page-copy entry.
   `forObligation()` / `pageCopy()` resolve to strings internally, so
   consumers are unchanged.
-- ⏳ Domain enum labels (`COUNTRY_LABELS`, `SPECIES_LABELS`,
-  `YES_NO_LABELS`, `ANIMAL_TYPE_LABELS`, plus inline `labels: {...}`
-  blocks in each factory call). Consumers at
-  `lib/field-widgets.js` (3 call sites) and
-  `features/check-your-answers/controller.js` (3 call sites) need to
-  wrap `labels[value]` in `t()`.
+- ✅ Domain enum labels — `COUNTRY_LABELS`, `SPECIES_LABELS`,
+  `YES_NO_LABELS`, `ANIMAL_TYPE_LABELS`, plus the 6 inline
+  `labels: {...}` blocks (reasonForImport, purposeInInternalMarket,
+  transporterType, portOfEntry, meansOfTransport, commodityCode).
+  Values are now message keys; consumers at `lib/field-widgets.js`
+  and `features/check-your-answers/controller.js` wrap
+  `labels[value]` in `t()`. Coverage test walks the domain manifest
+  and asserts every label key resolves.
 - ⏳ `lib/format-domain-errors.js` COPY table — each error code's
   message becomes a key resolved via `t()`. `textFor()` already
-  prefers `error.message` for flow-supplied copy.
+  prefers `error.message` for flow-supplied copy. Parameterised
+  messages (with `{max}` / `{actual}` etc.) need a small
+  interpolator in `lib/i18n.js`.
 - ⏳ Hub controller chrome — `'Task list'`, `'Live animals —
 EUDPA-249 flow-layer prototype'`, `'Complete each section...'`,
   progressLine variants, `'Check your answers so far'`,

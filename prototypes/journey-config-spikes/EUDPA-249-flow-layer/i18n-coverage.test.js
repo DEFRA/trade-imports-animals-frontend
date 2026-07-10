@@ -24,6 +24,7 @@ import { describe, it, expect } from 'vitest'
 import { flow } from './flow/flow.js'
 import { hasKey } from './lib/i18n.js'
 import { OBLIGATION_KEYS, PAGE_KEYS } from './lib/presentation.js'
+import { domain } from './domain/index.js'
 
 function collectFlowKeys(node, out = []) {
   if (node.titleKey) out.push(node.titleKey)
@@ -50,6 +51,18 @@ function collectPresentationKeys() {
   return keys
 }
 
+function collectDomainLabelKeys() {
+  const keys = new Set()
+  for (const entry of domain.values()) {
+    const labels = entry?.labels
+    if (!labels) continue
+    for (const value of Object.values(labels)) {
+      if (typeof value === 'string') keys.add(value)
+    }
+  }
+  return [...keys]
+}
+
 describe('i18n coverage — flow.js', () => {
   const keys = flow.sections.flatMap((section) => collectFlowKeys(section))
 
@@ -74,6 +87,22 @@ describe('i18n coverage — presentation.js', () => {
   })
 
   it('every message key referenced from presentation.js resolves in locales/en.json', () => {
+    const missing = keys.filter((key) => !hasKey(key))
+    expect(
+      missing,
+      `missing keys in locales/en.json:\n  ${missing.join('\n  ')}`
+    ).toEqual([])
+  })
+})
+
+describe('i18n coverage — domain enum labels', () => {
+  const keys = collectDomainLabelKeys()
+
+  it('collects at least one key (guards against a silent walk regression)', () => {
+    expect(keys.length).toBeGreaterThan(0)
+  })
+
+  it('every label message key referenced from domain/index.js resolves in locales/en.json', () => {
     const missing = keys.filter((key) => !hasKey(key))
     expect(
       missing,

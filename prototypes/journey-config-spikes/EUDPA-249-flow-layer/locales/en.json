@@ -163,6 +163,107 @@
       "lead": "You need to add at least one commodity line. Each line captures a commodity code, the type, species and count."
     }
   },
+  "domain": {
+    "country": {
+      "AT": "Austria",
+      "BE": "Belgium",
+      "BG": "Bulgaria",
+      "CH": "Switzerland",
+      "CZ": "Czech Republic",
+      "DE": "Germany",
+      "DK": "Denmark",
+      "EE": "Estonia",
+      "ES": "Spain",
+      "FI": "Finland",
+      "FR": "France",
+      "GR": "Greece",
+      "HR": "Croatia",
+      "HU": "Hungary",
+      "IE": "Ireland",
+      "IT": "Italy",
+      "LU": "Luxembourg",
+      "NL": "Netherlands",
+      "NO": "Norway",
+      "PL": "Poland",
+      "PT": "Portugal",
+      "RO": "Romania",
+      "SE": "Sweden",
+      "SI": "Slovenia",
+      "SK": "Slovakia"
+    },
+    "species": {
+      "horse": "Horse",
+      "cattle": "Cattle",
+      "buffalo": "Buffalo",
+      "bison": "Bison",
+      "pig": "Pig",
+      "wild-boar": "Wild boar",
+      "sheep": "Sheep",
+      "lamb": "Lamb",
+      "goat": "Goat",
+      "dog": "Dog",
+      "cat": "Cat",
+      "ferret": "Ferret",
+      "rabbit": "Rabbit",
+      "owl": "Owl",
+      "falcon": "Falcon",
+      "eagle": "Eagle",
+      "other-bird-of-prey": "Other bird of prey",
+      "bee": "Bee"
+    },
+    "reasonForImport": {
+      "internal-market": "Internal market",
+      "transit-through-eu": "Transit through the EU",
+      "temporary-admission": "Temporary admission",
+      "re-entry-after-refusal": "Re-entry after refusal"
+    },
+    "purpose": {
+      "breeding": "Breeding",
+      "slaughter": "Slaughter",
+      "fattening": "Fattening",
+      "other": "Other"
+    },
+    "transporterType": {
+      "commercial": "Commercial transporter",
+      "private": "Private transporter"
+    },
+    "yesNo": {
+      "yes": "Yes",
+      "no": "No"
+    },
+    "portOfEntry": {
+      "DVR": "Port of Dover",
+      "HUL": "Port of Hull",
+      "LGW": "Gatwick Airport",
+      "LHR": "Heathrow Airport",
+      "STN": "Stansted Airport",
+      "EDI": "Edinburgh Airport",
+      "BRS": "Bristol Airport",
+      "MAN": "Manchester Airport"
+    },
+    "meansOfTransport": {
+      "airplane": "Airplane",
+      "railway": "Railway",
+      "road-vehicle": "Road vehicle",
+      "vessel": "Vessel"
+    },
+    "commodityCode": {
+      "0101": "Horse (0101)",
+      "0102": "Cattle (0102)",
+      "0103": "Pig (0103)",
+      "010410": "Sheep (010410)",
+      "010420": "Goats (010420)",
+      "01061900": "Cats, Dogs or Ferrets (01061900)",
+      "01063100": "Birds of prey (01063100)",
+      "01064100": "Bees (01064100)"
+    },
+    "animalType": {
+      "bovine": "Cattle",
+      "ovine": "Sheep",
+      "porcine": "Pigs",
+      "equine": "Horses"
+    }
+  },
   "errors": {
     "countryOfOrigin": {
       "required": "Enter a country of origin"

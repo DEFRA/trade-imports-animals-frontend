@@ -38,6 +38,7 @@ import {
   predicate,
   reasons
 } from './index.js'
+import { t } from '../lib/i18n.js'
 
 // A trivial context-builder mirroring the shape runtime.validate builds.
 const buildCtx = ({ fulfilments = {}, path = null } = {}) => ({
@@ -89,9 +90,11 @@ describe('staticEnum — reasonForImport', () => {
     )
   })
 
-  it('attaches shape + labels metadata', () => {
+  it('attaches shape + labels metadata (labels are message keys)', () => {
     expect(reasonForImportDomain.metadata.shape).toBe('staticEnum')
-    expect(reasonForImportDomain.labels['internal-market']).toBe(
+    // Labels values are message keys — resolve via t() to check both
+    // that the key is set and that en.json carries the copy.
+    expect(t(reasonForImportDomain.labels['internal-market'])).toBe(
       'Internal market'
     )
   })
@@ -121,7 +124,7 @@ describe('computedEnum — purposeInInternalMarket', () => {
   })
 
   it('exposes labels for the sub-values', () => {
-    expect(purposeInInternalMarketDomain.labels.breeding).toBe('Breeding')
+    expect(t(purposeInInternalMarketDomain.labels.breeding)).toBe('Breeding')
   })
 })
 
@@ -130,7 +133,7 @@ describe('staticEnum — countryOfOrigin', () => {
     const options = countryOfOriginDomain.options({})
     expect(options.length).toBeGreaterThanOrEqual(13)
     expect(options).toContain('FR')
-    expect(countryOfOriginDomain.labels.FR).toBe('France')
+    expect(t(countryOfOriginDomain.labels.FR)).toBe('France')
   })
 })
 
@@ -147,7 +150,7 @@ describe('staticEnum — commodityCode', () => {
         '01061900'
       ])
     )
-    expect(commodityCodeDomain.labels['0102']).toContain('Cattle')
+    expect(t(commodityCodeDomain.labels['0102'])).toContain('Cattle')
   })
 })
 
@@ -335,13 +338,14 @@ describe('staticEnum — animalsCertifiedFor', () => {
     ])
   })
 
-  it('carries human labels for the option codes', () => {
-    expect(animalsCertifiedForDomain.labels).toEqual({
-      bovine: 'Cattle',
-      ovine: 'Sheep',
-      porcine: 'Pigs',
-      equine: 'Horses'
-    })
+  it('carries human labels for the option codes (via message keys)', () => {
+    // Under the i18n refactor, `labels` values are message keys that
+    // resolve via t() to the English strings.
+    const labels = animalsCertifiedForDomain.labels
+    expect(t(labels.bovine)).toBe('Cattle')
+    expect(t(labels.ovine)).toBe('Sheep')
+    expect(t(labels.porcine)).toBe('Pigs')
+    expect(t(labels.equine)).toBe('Horses')
   })
 
   it('names its shape as staticEnum in metadata', () => {
