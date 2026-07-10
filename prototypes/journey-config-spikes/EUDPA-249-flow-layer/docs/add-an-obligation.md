@@ -368,6 +368,85 @@ adds a failure code) is the first time we've hit it — earlier
 iterations used only pre-existing reason codes. Noted so step 5
 knows to expect this trio of edits per new failure code.
 
+## Worked example — iteration 6: `commodityType` (line-scoped static enum)
+
+**Target:** wire `commodityType` — a line-scoped mandatory enum with a
+small closed option list. Same shape as `species` in terms of scope
+(line-scoped, `presentsForEach` page under `commodity-lines-details`)
+but options are static (no cross-field dependency), matching
+`commodityCode`. First iteration to combine `staticEnum` factory with
+`presentsForEach` under the line-major URL shape introduced in the
+"line-major commodity-line pages" refactor.
+
+**Twist:** every mechanism is already in place. Domain factory (static
+enum), line-major routing (`/lines/{lineId}/commodity-type` registered
+automatically by the `presentsForEach` branch in routes.js), i18n
+resolution, and coverage all work off existing infrastructure. This
+iteration is the cheapest possible line-scoped-enum addition — mostly
+one entry per file.
+
+Steps executed:
+
+- **Step 1 — Confirmed.** Declared at `obligations/obligations.js:385`,
+  line-scoped (`within: commodityLine`), always in scope, mandatory,
+  no `applyTo`.
+- **Step 2 — Domain entry.**
+  `staticEnum(COMMODITY_TYPE_OPTIONS, { labels })` with 4 illustrative
+  MDM values (`meat-producing`, `dairy-producing`, `breeding-stock`,
+  `other`) and labels stored as message keys pointing at the new
+  `domain.commodityType.*` bucket in `locales/en.json`. Registered in
+  the domain manifest between `commodityCodeDomain` and the predicate
+  block.
+- **Step 3 — Presentation.** Added `presentation.commodityType.*`
+  (pageTitle / legend / hint) to `locales/en.json` and imported +
+  registered `OBLIGATION_KEYS[commodityType.id]` in `lib/presentation.js`.
+- **Step 4 — Flow.** Imported `commodityType` and inserted a
+  `presentsForEach` page between `commodity-details` and
+  `species-details` in `commodity-lines-details`:
+
+  ```js
+  {
+    page: 'commodity-type',
+    presentsForEach: {
+      obligation: commodityType,
+      forEachOf: commodityLine
+    }
+  }
+  ```
+
+  Semantic order: pick the commodity code, then its type, then the
+  species that apply. The page name follows the count-obligation
+  convention (`number-of-animals`) rather than the `-details` suffix.
+
+- **Step 5 — Removed `commodityType` from KNOWN_UNWIRED.** Down to
+  19 entries.
+- **Step 6 — Fixtures.** No update. The two happy-path walks in
+  `e2e-walk.test.js` gained one new `fillLinePage` step
+  (`commodity-type` with `commodityType-line1: 'meat-producing'`); two
+  tests in `e2e-commodity-lines.test.js` that walked all four
+  mandatory pages also gained the same step. The Change-flow test
+  that only touched `commodity-details` and the multi-select test
+  that stopped at `species-details` were unaffected — no need to
+  extend those.
+- **Step 7 — Tests.** 5 new domain-unit tests (options list, label
+  resolution for each code, generic label-resolution coverage). No
+  new e2e file — the walks + existing commodity-lines tests already
+  exercise the URL / navigation / rendering paths for any new
+  presentsForEach page. Baseline now 456 tests.
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: after
+  picking a commodity code on line 1, the next per-line page is
+  Commodity type, rendering four radios (Meat-producing / Dairy-
+  producing / Breeding stock / Other). After picking one and saving,
+  the flow continues to Species.
+- **Step 9 — Committed atomically.**
+
+**Refinement to the doc:** this iteration confirms that with the i18n
+
+- line-major infrastructure in place, adding a line-scoped static enum
+  is essentially a JSON edit + a single presentation entry + a single
+  flow page + a small domain entry. Nothing else in the pipeline needs
+  touching. Good sign the model is settling.
+
 ## Worked example — iteration 3: `portOfEntry`
 
 **Target:** wire `portOfEntry` — a straightforward static enum where

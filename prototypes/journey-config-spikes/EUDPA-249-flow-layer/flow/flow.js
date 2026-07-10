@@ -56,6 +56,7 @@ import {
   countryOfOrigin,
   commodityLine,
   commodityCode,
+  commodityType,
   species,
   numberOfAnimals,
   numberOfPackages,
@@ -274,6 +275,13 @@ export const flow = {
               page: 'commodity-details',
               presentsForEach: {
                 obligation: commodityCode,
+                forEachOf: commodityLine
+              }
+            },
+            {
+              page: 'commodity-type',
+              presentsForEach: {
+                obligation: commodityType,
                 forEachOf: commodityLine
               }
             },

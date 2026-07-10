@@ -80,7 +80,7 @@ certified-for/resolve` route, the "Loading options" presentation
   `expandPresents`.
 - **Feature folders:** `hub`, `check-your-answers`, `commodity-lines`,
   `start`, `reset`. (`lookup/` deleted today.)
-- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 20 obligations
+- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 19 obligations
   (down from 26 at spike start). Step 4 iterations whittle this.
 
 ### Step 4 iterations completed
@@ -96,6 +96,10 @@ certified-for/resolve` route, the "Loading options" presentation
    field predicate — first predicate that emits a NEW failure code,
    so the doc now covers the en.json + FORMAT_ERROR_KEYS + COPY
    dispatcher trio to add per new code)
+6. `commodityType` (line-scoped static enum with 4 illustrative
+   MDM values — cheapest possible line-scoped-enum iteration,
+   proves the pipeline settles once i18n + line-major
+   infrastructure are in place)
 
 Each iteration also refined `docs/add-an-obligation.md`.
 
@@ -147,7 +151,6 @@ in-scope mandatory entry is fulfilled`. An in-scope-optional page is
 
 Pick one, iterate:
 
-- `commodityType` (line-scoped MDM enum — same shape as species)
 - `numberOfPackages` (line-scoped integer, optional, applyTo-scoped
   — now the canonical example of the completion-optional page shape.
   Already wired via `numberOfPackagesDomain` so this is basically a

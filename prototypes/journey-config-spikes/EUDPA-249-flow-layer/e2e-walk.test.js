@@ -222,6 +222,9 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     await fillLinePage(jar, 'line1', 'commodity-details', {
       'commodityCode-line1': '0102'
     })
+    await fillLinePage(jar, 'line1', 'commodity-type', {
+      'commodityType-line1': 'meat-producing'
+    })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
     })
@@ -334,6 +337,9 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
 
     await fillLinePage(jar, 'line1', 'commodity-details', {
       'commodityCode-line1': '0102'
+    })
+    await fillLinePage(jar, 'line1', 'commodity-type', {
+      'commodityType-line1': 'meat-producing'
     })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']

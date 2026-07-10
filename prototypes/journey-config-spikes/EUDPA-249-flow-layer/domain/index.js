@@ -37,6 +37,7 @@ import {
   animalsCertifiedFor,
   countryOfOrigin,
   commodityCode,
+  commodityType,
   numberOfPackages,
   numberOfAnimals,
   cph,
@@ -420,6 +421,25 @@ export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS, {
   }
 })
 
+// V4: commodity type — MDM enum, small closed list.
+// Illustrative values for the spike; real MDM ontology comes from
+// production. Small enough (4) to render as radios rather than a select.
+const COMMODITY_TYPE_OPTIONS = [
+  'meat-producing',
+  'dairy-producing',
+  'breeding-stock',
+  'other'
+]
+
+export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS, {
+  labels: {
+    'meat-producing': 'domain.commodityType.meat-producing',
+    'dairy-producing': 'domain.commodityType.dairy-producing',
+    'breeding-stock': 'domain.commodityType.breeding-stock',
+    other: 'domain.commodityType.other'
+  }
+})
+
 // ---------------------------------------------------------------------------
 // V4 predicates — one per real rule.
 // ---------------------------------------------------------------------------
@@ -633,6 +653,7 @@ export const domain = new Map([
   [meansOfTransport.id, meansOfTransportDomain],
   [countryOfOrigin.id, countryOfOriginDomain],
   [commodityCode.id, commodityCodeDomain],
+  [commodityType.id, commodityTypeDomain],
   [internalReferenceNumber.id, internalReferenceNumberDomain],
   [transportIdentification.id, transportIdentificationDomain],
   [transportDocumentReference.id, transportDocumentReferenceDomain],

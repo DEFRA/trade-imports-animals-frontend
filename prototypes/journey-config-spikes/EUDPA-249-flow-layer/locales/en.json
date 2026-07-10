@@ -138,6 +138,11 @@
       "legend": "Commodity code",
       "hint": "The V4 commodity code for this line."
     },
+    "commodityType": {
+      "pageTitle": "Commodity type",
+      "legend": "What type is this commodity?",
+      "hint": "Choose the category that best describes this line."
+    },
     "species": {
       "pageTitle": "Species",
       "legend": "Which species are on this line?",
@@ -256,6 +261,12 @@
       "01061900": "Cats, Dogs or Ferrets (01061900)",
       "01063100": "Birds of prey (01063100)",
       "01064100": "Bees (01064100)"
+    },
+    "commodityType": {
+      "meat-producing": "Meat-producing",
+      "dairy-producing": "Dairy-producing",
+      "breeding-stock": "Breeding stock",
+      "other": "Other"
     },
     "animalType": {
       "bovine": "Cattle",

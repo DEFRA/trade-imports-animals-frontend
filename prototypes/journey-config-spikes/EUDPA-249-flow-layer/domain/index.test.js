@@ -26,6 +26,7 @@ import {
   meansOfTransportDomain,
   countryOfOriginDomain,
   commodityCodeDomain,
+  commodityTypeDomain,
   internalReferenceNumberDomain,
   transportIdentificationDomain,
   transportDocumentReferenceDomain,
@@ -154,6 +155,40 @@ describe('staticEnum — commodityCode', () => {
       ])
     )
     expect(t(commodityCodeDomain.labels['0102'])).toContain('Cattle')
+  })
+})
+
+describe('staticEnum — commodityType (step 4 iteration 6)', () => {
+  it('exposes a small closed enum of commodity-type codes', () => {
+    const options = commodityTypeDomain.options({})
+    expect(options).toEqual([
+      'meat-producing',
+      'dairy-producing',
+      'breeding-stock',
+      'other'
+    ])
+  })
+
+  it('every code resolves to a human label via t()', () => {
+    for (const code of commodityTypeDomain.options({})) {
+      const resolved = t(commodityTypeDomain.labels[code])
+      // Resolved to English string — not the raw dotted-path.
+      expect(resolved).not.toContain('domain.commodityType')
+      expect(typeof resolved).toBe('string')
+    }
+  })
+
+  it('resolves labels for each specific code', () => {
+    expect(t(commodityTypeDomain.labels['meat-producing'])).toBe(
+      'Meat-producing'
+    )
+    expect(t(commodityTypeDomain.labels['dairy-producing'])).toBe(
+      'Dairy-producing'
+    )
+    expect(t(commodityTypeDomain.labels['breeding-stock'])).toBe(
+      'Breeding stock'
+    )
+    expect(t(commodityTypeDomain.labels.other)).toBe('Other')
   })
 })
 

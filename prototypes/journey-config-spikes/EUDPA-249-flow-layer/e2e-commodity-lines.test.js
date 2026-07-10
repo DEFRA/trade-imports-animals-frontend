@@ -252,6 +252,9 @@ describe('commodity-lines — Change flow', () => {
     await fillLinePage(jar, 'line1', 'commodity-details', {
       'commodityCode-line1': '0102'
     })
+    await fillLinePage(jar, 'line1', 'commodity-type', {
+      'commodityType-line1': 'meat-producing'
+    })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
     })
@@ -285,6 +288,9 @@ describe('commodity-lines — number-of-packages (optional + applyTo-scoped)', (
     await addLine(jar)
     await fillLinePage(jar, 'line1', 'commodity-details', {
       'commodityCode-line1': '0102'
+    })
+    await fillLinePage(jar, 'line1', 'commodity-type', {
+      'commodityType-line1': 'meat-producing'
     })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']

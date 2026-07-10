@@ -30,6 +30,7 @@ import {
   internalReferenceNumber,
   countryOfOrigin,
   commodityCode,
+  commodityType,
   species,
   numberOfAnimals,
   numberOfPackages,
@@ -188,6 +189,14 @@ export const OBLIGATION_KEYS = new Map([
       pageTitleKey: 'presentation.commodityCode.pageTitle',
       legendKey: 'presentation.commodityCode.legend',
       hintKey: 'presentation.commodityCode.hint'
+    }
+  ],
+  [
+    commodityType.id,
+    {
+      pageTitleKey: 'presentation.commodityType.pageTitle',
+      legendKey: 'presentation.commodityType.legend',
+      hintKey: 'presentation.commodityType.hint'
     }
   ],
   [

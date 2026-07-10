@@ -51,8 +51,8 @@ const KNOWN_UNWIRED = new Set([
   // MDM-sourced enums — need domain entries during step 5 once the
   // MDM list is available.
   // portOfEntry wired during step 4 iteration 3.
-  'commodityType',
   // species wired during step 4 iteration 4.
+  // commodityType wired during step 4 iteration 6 (line-scoped enum).
 
   // Free-text or integer with max-length per V4 — need domain entries
   // during step 5.
