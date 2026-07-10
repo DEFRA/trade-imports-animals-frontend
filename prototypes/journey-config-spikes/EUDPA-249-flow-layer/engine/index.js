@@ -23,6 +23,8 @@
  * returns: `{ fulfilments, obligations: implicationsByObligation }`.
  */
 
+import { isBlankValue } from '../lib/is-blank-value.js'
+
 // ---------------------------------------------------------------------------
 // Domain primitives
 // ---------------------------------------------------------------------------
@@ -153,8 +155,7 @@ export function firstUnfulfilledPageForLine(root, state, lineId) {
     if (!record) return null
     if ((record.status ?? 'mandatory') !== 'mandatory') return null
     const stored = state.fulfilments?.[forEach.obligation.id]?.[lineId]
-    if (stored === undefined || stored === null || stored === '') return root
-    if (Array.isArray(stored) && stored.length === 0) return root
+    if (isBlankValue(stored)) return root
     return null
   }
   for (const child of root.children ?? []) {

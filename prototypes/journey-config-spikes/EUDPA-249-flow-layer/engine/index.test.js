@@ -8,6 +8,7 @@ import {
   journeyState,
   firstApplicablePage,
   firstUnfulfilledPage,
+  firstUnfulfilledPageForLine,
   firstPagePresentingObligation,
   expandPresents,
   STATUSES
@@ -549,6 +550,89 @@ describe('firstUnfulfilledPage', () => {
     // differ; documented in obligations.md §Primitive tests.
     expect(firstUnfulfilledPage(linearFlow.sections[0], st).page).toBe('a')
     expect(firstApplicablePage(linearFlow.sections[0]).page).toBe('intro')
+  })
+})
+
+describe('firstUnfulfilledPageForLine', () => {
+  // Synthetic composite-value obligation — models an address block whose
+  // stored value is `{ name, addressLine1, ... }`.
+  const addrOb = { id: 'addr', name: 'addr', within: lineGroup }
+
+  const makeContainer = () => ({
+    children: [
+      {
+        page: 'addr-page',
+        presentsForEach: { obligation: addrOb, forEachOf: lineGroup }
+      }
+    ]
+  })
+
+  const withRecord = () =>
+    impls([
+      {
+        obligation: lineGroup,
+        impl: { inScope: true, records: [{ fulfilmentId: 'line1' }] }
+      },
+      {
+        obligation: addrOb,
+        impl: {
+          inScope: true,
+          records: [{ fulfilmentId: 'line1', status: 'mandatory' }]
+        }
+      }
+    ])
+
+  it('returns the page when the line has no fulfilment yet', () => {
+    const st = state({ obligations: withRecord() })
+    expect(firstUnfulfilledPageForLine(makeContainer(), st, 'line1').page).toBe(
+      'addr-page'
+    )
+  })
+
+  it('returns the page when the composite is `{}` (Fix #6 regression)', () => {
+    // Previously the inline blank-check was
+    //   stored === undefined || null || '' || (Array && length === 0)
+    // — an empty object slipped through as "filled", so
+    // firstUnfulfilledPageForLine skipped past the address page and
+    // callers would send the user to /lines instead of back to fill it.
+    const st = state({
+      fulfilments: { [addrOb.id]: { line1: {} } },
+      obligations: withRecord()
+    })
+    expect(firstUnfulfilledPageForLine(makeContainer(), st, 'line1').page).toBe(
+      'addr-page'
+    )
+  })
+
+  it('returns the page when every sub-field of the composite is blank (Fix #6 regression)', () => {
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: {
+          line1: { name: '', addressLine1: '', town: '', postcode: '' }
+        }
+      },
+      obligations: withRecord()
+    })
+    expect(firstUnfulfilledPageForLine(makeContainer(), st, 'line1').page).toBe(
+      'addr-page'
+    )
+  })
+
+  it('returns null when at least one sub-field of the composite is filled', () => {
+    const st = state({
+      fulfilments: {
+        [addrOb.id]: {
+          line1: {
+            name: '',
+            addressLine1: '10 High St',
+            town: '',
+            postcode: ''
+          }
+        }
+      },
+      obligations: withRecord()
+    })
+    expect(firstUnfulfilledPageForLine(makeContainer(), st, 'line1')).toBeNull()
   })
 })
 
