@@ -32,9 +32,11 @@ application document per `journeyId`, held in an in-memory `Map`.
   operation. An unknown id throws. A submitted record throws. No writer
   can skip either check. (Read-side `load` returns `undefined` for an
   unknown id instead of throwing.)
-- `load` is polymorphic: `load({ journeyId })` fetches by id,
-  `load({ userId })` fetches the user's active journey through the
-  `byUser` index.
+- `load` is polymorphic: `load({ journeyId })` fetches by id.
+  `load({ userId })` is a stub/demo-only resume-by-identity — it fetches
+  the user's active journey through the `byUser` index. In REAL mode
+  there is no resume-by-user: `load({ userId })` returns `undefined` and
+  issues no list read (see [Resume by user is stub-only](#resume-by-user-is-stub-only)).
 - `clear()` exists for test hygiene only.
 
 ## Record shape and lifecycle
@@ -67,7 +69,10 @@ request is tied to a journey document.
   it as active. Every Start-now begins a new journey.
 - `resumeByUser` recovers the journey by identity alone:
   `records.load({ userId })`, no cookie needed. It then re-pins the
-  cookie so the session carries on normally.
+  cookie so the session carries on normally. This is stub/demo-only: in
+  REAL mode `load({ userId })` returns `undefined`, so `resumeByUser`
+  falls back to `startJourney` and `/resume` simply starts a fresh
+  draft.
 
 The cookie is path-scoped to `BASE` (see `config.js`), so this spike can
 never read another spike's cookie, and parallel browser contexts each
@@ -136,3 +141,24 @@ Two things the stubs do not answer:
   active journey per user, last-writer-wins. Whether a user can hold
   several drafts is an open product question, not a decision this spike
   has made.
+
+## Resume by user is stub-only
+
+Resume-by-identity (`load({ userId })` → the `byUser` index) is a stub
+demo affordance. The real production FE has no resume-by-user path — it
+resumes only by `referenceNumber` (a session-held one for an in-flight
+draft, or one the user picks from a list). The REAL adapter mirrors
+this: `load({ userId })` returns `undefined` and does no list read, so
+`resumeByUser` falls back to `startJourney` and `/resume` starts a fresh
+draft.
+
+This is also a safety fix. An earlier REAL adapter answered
+`load({ userId })` with a global-newest read
+(`GET /notifications?sort=updated,desc`, returning `list[0]`), which
+had no per-user filter — a resuming user would get whoever's
+notification was updated last, a cross-user leak.
+
+**Backend follow-up.** Closing per-user scoping properly (rather than
+removing the path) would need a backend owner field on the notification
+— set on `POST`, e.g. via a `User-Id` header — plus a by-user list
+filter on the read. That is out of scope for this spike.

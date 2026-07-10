@@ -65,17 +65,6 @@ const getNotification = async (referenceNumber) => {
   return response.json()
 }
 
-const newestForUser = async () => {
-  const response = await fetch(`${notificationsUrl}?sort=updated,desc`, {
-    method: 'GET',
-    headers: headers()
-  })
-  if (!response.ok) throw failed('list notifications', response)
-  const page = await response.json()
-  const list = page?.notifications ?? page?.content ?? []
-  return list[0]
-}
-
 export const records = {
   async create({ userId } = {}) {
     const response = await fetch(notificationsUrl, {
@@ -101,12 +90,6 @@ export const records = {
         ? undefined
         : marshal(notification, userId ?? null)
     }
-    if (userId != null) {
-      const notification = await newestForUser()
-      return notification === undefined
-        ? undefined
-        : marshal(notification, userId)
-    }
     return undefined
   },
 
@@ -115,16 +98,16 @@ export const records = {
   },
 
   async saveAnswers(journeyId, answers, { known } = {}) {
-    const status =
-      known != null && known.journeyId === journeyId
-        ? known.status
-        : await (async () => {
-            const existing = await getNotification(journeyId)
-            if (existing === undefined) {
-              throw new Error(`Unknown journey "${journeyId}"`)
-            }
-            return mapStatus(existing.status)
-          })()
+    let status
+    if (known != null && known.journeyId === journeyId) {
+      status = known.status
+    } else {
+      const existing = await getNotification(journeyId)
+      if (existing === undefined) {
+        throw new Error(`Unknown journey "${journeyId}"`)
+      }
+      status = mapStatus(existing.status)
+    }
     if (status === SUBMITTED) {
       throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
     }
