@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test'
 import {
   JOURNEYS,
-  goToStart,
   resetSession,
   fillCountryOfOrigin,
   fillRegionCodeRequirement,
@@ -29,12 +28,12 @@ import {
  * documents block) and transit (skips it, leaving that subsection
  * tagged Optional under the 5-way status alphabet).
  *
- * The specs are the browser-level analogue of `e2e-walk.test.js`;
- * they demonstrate the journey in a real browser and record a
- * demo video. The `expect` assertions at the terminals are minimal
- * — the vitest suite already exercises every controller — because
- * the Playwright suite's primary purpose is the DEMO, not the
- * assertion depth.
+ * Each fill helper navigates to its own page URL rather than chaining
+ * off the previous submit's redirect. The reason: `nextAfter` returns
+ * the user to the task list once a subsection is done, so chaining
+ * would land on the task list between subsections. Explicit navigation
+ * keeps the shape linear and matches the URL-per-fill idiom that
+ * makes the trace viewer easy to reason about.
  */
 
 for (const journey of JOURNEYS) {
@@ -46,55 +45,56 @@ for (const journey of JOURNEYS) {
     test('internal-market happy path with 1 commodity line, accompanying documents filled', async ({
       page
     }) => {
-      await goToStart(page, journey)
-
       // Section 1 — origin + reason
-      await fillCountryOfOrigin(page, { country: 'FR' })
-      await fillRegionCodeRequirement(page, { answer: 'no' })
-      await fillReasonForImport(page, { reason: 'internal-market' })
-      await fillPurposeInInternalMarket(page, { purpose: 'breeding' })
+      await fillCountryOfOrigin(page, journey, { country: 'FR' })
+      await fillRegionCodeRequirement(page, journey, { answer: 'no' })
+      await fillReasonForImport(page, journey, { reason: 'internal-market' })
+      await fillPurposeInInternalMarket(page, journey, { purpose: 'breeding' })
 
       // Section 2 — transporter + transport
-      await fillTransporterType(page, { transporterType: 'commercial' })
-      await fillCommercialTransporterDetails(page)
-      await fillMeansOfTransport(page)
-      await fillTransportIdentification(page)
+      await fillTransporterType(page, journey, {
+        transporterType: 'commercial'
+      })
+      await fillCommercialTransporterDetails(page, journey)
+      await fillMeansOfTransport(page, journey)
+      await fillTransportIdentification(page, journey)
 
       // Section 3 — arrival
-      await fillArrivalDetails(page)
-      await fillContainsUnweanedAnimals(page)
-      await fillAnimalsCertifiedFor(page)
+      await fillArrivalDetails(page, journey)
+      await fillContainsUnweanedAnimals(page, journey)
+      await fillAnimalsCertifiedFor(page, journey)
 
       // Section 4 — trader details (5 address blocks)
-      await fillTraderAddress(page, 'placeOfOrigin', {
+      await fillTraderAddress(page, journey, 'placeOfOrigin', {
         name: 'Origin Farm Ltd'
       })
-      await fillTraderAddress(page, 'consignor', { name: 'Sender Co' })
-      await fillTraderAddress(page, 'consignee', { name: 'Receiver Ltd' })
-      await fillTraderAddress(page, 'importer', { name: 'Importer Trading' })
-      await fillTraderAddress(page, 'placeOfDestination', {
+      await fillTraderAddress(page, journey, 'consignor', { name: 'Sender Co' })
+      await fillTraderAddress(page, journey, 'consignee', {
+        name: 'Receiver Ltd'
+      })
+      await fillTraderAddress(page, journey, 'importer', {
+        name: 'Importer Trading'
+      })
+      await fillTraderAddress(page, journey, 'placeOfDestination', {
         name: 'Destination Farm'
       })
 
       // Section 5 — references (contact address; walk skips
       // internal-reference → trader-reference subsection stays Optional)
-      await fillTraderAddress(page, 'contactAddress', {
+      await fillTraderAddress(page, journey, 'contactAddress', {
         name: 'Contact Person'
       })
 
-      // Accompanying-documents — user reaches it voluntarily from the
-      // hub (branchedGate starts all four fields optional so /start
-      // skips the page). This walk fills it to exercise the branched
-      // "all mandatory once any is filled" gate.
-      await page.goto(`${journey.base}/pages/accompanying-documents`)
-      await fillAccompanyingDocuments(page)
+      // Accompanying-documents — exercises the branchedGate
+      // "all-mandatory once any is filled" branch.
+      await fillAccompanyingDocuments(page, journey)
 
       // Section 6 — commodity lines
       await addCommodityLine(page, journey)
-      await fillCommodityCode(page)
-      await fillCommodityType(page)
-      await fillSpecies(page)
-      await fillNumberOfAnimals(page)
+      await fillCommodityCode(page, journey)
+      await fillCommodityType(page, journey)
+      await fillSpecies(page, journey)
+      await fillNumberOfAnimals(page, journey)
 
       // Terminal — task list should show 13 Completed + 1 Optional
       // (trader-reference, unfilled).
@@ -126,44 +126,49 @@ for (const journey of JOURNEYS) {
     test('transit happy path skipping accompanying documents surfaces two Optional tags', async ({
       page
     }) => {
-      await goToStart(page, journey)
-
-      await fillCountryOfOrigin(page, { country: 'FR' })
-      await fillRegionCodeRequirement(page, { answer: 'no' })
-      await fillReasonForImport(page, { reason: 'transit' })
+      await fillCountryOfOrigin(page, journey, { country: 'FR' })
+      await fillRegionCodeRequirement(page, journey, { answer: 'no' })
+      await fillReasonForImport(page, journey, { reason: 'transit' })
       // NB: no purpose-details step — purposeInInternalMarket is NA
-      // on transit, so /start skips it.
+      // on transit, so /start would skip it. The trader still needs to
+      // walk the remaining sections.
 
-      await fillTransporterType(page, { transporterType: 'commercial' })
-      await fillCommercialTransporterDetails(page)
-      await fillMeansOfTransport(page)
-      await fillTransportIdentification(page)
+      await fillTransporterType(page, journey, {
+        transporterType: 'commercial'
+      })
+      await fillCommercialTransporterDetails(page, journey)
+      await fillMeansOfTransport(page, journey)
+      await fillTransportIdentification(page, journey)
 
-      await fillArrivalDetails(page)
-      await fillContainsUnweanedAnimals(page)
-      await fillAnimalsCertifiedFor(page)
+      await fillArrivalDetails(page, journey)
+      await fillContainsUnweanedAnimals(page, journey)
+      await fillAnimalsCertifiedFor(page, journey)
 
-      await fillTraderAddress(page, 'placeOfOrigin', {
+      await fillTraderAddress(page, journey, 'placeOfOrigin', {
         name: 'Origin Farm Ltd'
       })
-      await fillTraderAddress(page, 'consignor', { name: 'Sender Co' })
-      await fillTraderAddress(page, 'consignee', { name: 'Receiver Ltd' })
-      await fillTraderAddress(page, 'importer', { name: 'Importer Trading' })
-      await fillTraderAddress(page, 'placeOfDestination', {
+      await fillTraderAddress(page, journey, 'consignor', { name: 'Sender Co' })
+      await fillTraderAddress(page, journey, 'consignee', {
+        name: 'Receiver Ltd'
+      })
+      await fillTraderAddress(page, journey, 'importer', {
+        name: 'Importer Trading'
+      })
+      await fillTraderAddress(page, journey, 'placeOfDestination', {
         name: 'Destination Farm'
       })
 
-      await fillTraderAddress(page, 'contactAddress', {
+      await fillTraderAddress(page, journey, 'contactAddress', {
         name: 'Contact Person'
       })
       // internal-reference AND accompanying-documents both skipped —
       // both subsections stay Optional under the 5-way alphabet.
 
       await addCommodityLine(page, journey)
-      await fillCommodityCode(page)
-      await fillCommodityType(page)
-      await fillSpecies(page)
-      await fillNumberOfAnimals(page)
+      await fillCommodityCode(page, journey)
+      await fillCommodityType(page, journey)
+      await fillSpecies(page, journey)
+      await fillNumberOfAnimals(page, journey)
 
       // Terminal — 12 Completed + 2 Optional. Matches the vitest
       // e2e-walk.test.js "transit-through-EU" case.
