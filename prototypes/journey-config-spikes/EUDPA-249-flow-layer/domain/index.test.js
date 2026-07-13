@@ -15,7 +15,13 @@ import {
   species,
   arrivalDateAtPort,
   transitedCountries,
-  animalsCertifiedFor
+  animalsCertifiedFor,
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description
 } from '../obligations/obligations.js'
 
 import {
@@ -38,6 +44,12 @@ import {
   arrivalDateAtPortDomain,
   transitedCountriesDomain,
   animalsCertifiedForDomain,
+  passportDomain,
+  tattooDomain,
+  earTagDomain,
+  horseNameDomain,
+  identificationDetailsDomain,
+  descriptionDomain,
   staticEnum,
   computedEnum,
   predicate,
@@ -294,6 +306,43 @@ describe('predicate — transportIdentification / transportDocumentReference (V4
         .code
     ).toBe(reasons.stringMaxLength.code)
   })
+})
+
+describe('predicate — per-unit identifiers (V4: string max 58, step 5a)', () => {
+  // Iteration 10 shipped these with conservative defaults (40 for
+  // structured ids, 100 for free-text). V4 spec (Confluence page
+  // 6497338582) pins every one to `string - max 58`. Step 5a
+  // tightened the domain rules to match. These tests pin the current
+  // limit so a future edit to the wrong number fails loudly.
+  const identifierDomains = [
+    ['passport', passportDomain, passport],
+    ['tattoo', tattooDomain, tattoo],
+    ['earTag', earTagDomain, earTag],
+    ['horseName', horseNameDomain, horseName],
+    [
+      'identificationDetails',
+      identificationDetailsDomain,
+      identificationDetails
+    ],
+    ['description', descriptionDomain, description]
+  ]
+
+  for (const [name, domainEntry, obligation] of identifierDomains) {
+    describe(`${name} — max 58`, () => {
+      it('passes exactly 58 characters', () => {
+        expect(domainEntry.predicate('x'.repeat(58), buildCtx())).toEqual([])
+      })
+
+      it('rejects 59 characters (regression against the old 40 / 100 caps)', () => {
+        const errs = domainEntry.predicate('x'.repeat(59), buildCtx())
+        expect(errs).toHaveLength(1)
+        expect(errs[0].code).toBe(reasons.stringMaxLength.code)
+        expect(errs[0].max).toBe(58)
+        expect(errs[0].actual).toBe(59)
+        expect(errs[0].obligation).toBe(obligation.name)
+      })
+    })
+  }
 })
 
 describe('predicate — cph (V4: string max 11)', () => {

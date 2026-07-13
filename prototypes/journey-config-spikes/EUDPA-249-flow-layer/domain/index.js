@@ -741,35 +741,37 @@ export const permanentAddressDomain = addressBlock(permanentAddress, {
 
 // V4 per-unit identifier obligations — wired in iteration 10 on top of
 // the depth-2 infrastructure iteration 9 laid down. All optional
-// (completion-mandate). String rules; the V4 spec doesn't pin an exact
-// max length for most of these, so we use conservative defaults big
-// enough to hold realistic identifiers (40 for structured ids,
-// 100 for free-text description).
+// (completion-mandate). String rules; V4 spec (Confluence page
+// 6497338582) pins each to `string - max 58`. Iteration 10 shipped
+// with conservative defaults (40 for structured ids, 100 for
+// free-text) as placeholders; step 5a tightens them to the spec.
 
 // V4: passport number for a per-animal unit. Allow-listed to horses
-// (0101), cattle (0102), cats/dogs/ferrets (01061900).
+// (0101), cattle (0102), cats/dogs/ferrets (01061900). `string - max
+// 58` per V4.
 export const passportDomain = predicate(
   'string',
-  stringMaxLength(40, passport),
+  stringMaxLength(58, passport),
   [reasons.stringMaxLength]
 )
 
 // V4: tattoo identifier. Allow-listed to cats/dogs/ferrets
-// (01061900), pigs (0103), cattle (0102).
-export const tattooDomain = predicate('string', stringMaxLength(40, tattoo), [
+// (01061900), pigs (0103), cattle (0102). `string - max 58` per V4.
+export const tattooDomain = predicate('string', stringMaxLength(58, tattoo), [
   reasons.stringMaxLength
 ])
 
 // V4: ear-tag identifier. Allow-listed to cattle (0102), pigs (0103),
-// sheep (010410), goats (010420).
-export const earTagDomain = predicate('string', stringMaxLength(40, earTag), [
+// sheep (010410), goats (010420). `string - max 58` per V4.
+export const earTagDomain = predicate('string', stringMaxLength(58, earTag), [
   reasons.stringMaxLength
 ])
 
-// V4: horse name. Allow-listed to horses (0101) only.
+// V4: horse name. Allow-listed to horses (0101) only. `string - max
+// 58` per V4.
 export const horseNameDomain = predicate(
   'string',
-  stringMaxLength(40, horseName),
+  stringMaxLength(58, horseName),
   [reasons.stringMaxLength]
 )
 
@@ -778,17 +780,18 @@ export const horseNameDomain = predicate(
 // First wired obligation using that gate; see obligations/helpers.js
 // where `predicate` is now exposed on the metadata so browser-side
 // helpers can evaluate the gate without executing the applyTo
-// closure.
+// closure. `string - max 58` per V4.
 export const identificationDetailsDomain = predicate(
   'string',
-  stringMaxLength(100, identificationDetails),
+  stringMaxLength(58, identificationDetails),
   [reasons.stringMaxLength]
 )
 
-// V4: free-text description — same inverse gate as identificationDetails.
+// V4: free-text description — same inverse gate as
+// identificationDetails. `string - max 58` per V4.
 export const descriptionDomain = predicate(
   'string',
-  stringMaxLength(100, description),
+  stringMaxLength(58, description),
   [reasons.stringMaxLength]
 )
 

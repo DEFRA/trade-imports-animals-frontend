@@ -217,32 +217,32 @@
     "passport": {
       "pageTitle": "Passport number",
       "legend": "Passport number for this animal",
-      "hint": "For horses, cattle, and pet cats/dogs/ferrets. Up to 40 characters."
+      "hint": "For horses, cattle, and pet cats/dogs/ferrets. Up to 58 characters."
     },
     "tattoo": {
       "pageTitle": "Tattoo",
       "legend": "Tattoo identifier for this animal",
-      "hint": "For pigs, cattle, and pet cats/dogs/ferrets. Up to 40 characters."
+      "hint": "For pigs, cattle, and pet cats/dogs/ferrets. Up to 58 characters."
     },
     "earTag": {
       "pageTitle": "Ear tag",
       "legend": "Ear tag number for this animal",
-      "hint": "For cattle, pigs, sheep and goats. Up to 40 characters."
+      "hint": "For cattle, pigs, sheep and goats. Up to 58 characters."
     },
     "horseName": {
       "pageTitle": "Horse name",
       "legend": "Name of this horse",
-      "hint": "For horses only. Up to 40 characters."
+      "hint": "For horses only. Up to 58 characters."
     },
     "identificationDetails": {
       "pageTitle": "Identification details",
       "legend": "How is this animal identified?",
-      "hint": "Free-text identifier for animals without a specific identifier. Up to 100 characters."
+      "hint": "Free-text identifier for animals without a specific identifier. Up to 58 characters."
     },
     "description": {
       "pageTitle": "Description",
       "legend": "Describe this animal",
-      "hint": "Free-text description. Up to 100 characters."
+      "hint": "Free-text description. Up to 58 characters."
     },
     "accompanyingDocumentType": {
       "pageTitle": "Document type",

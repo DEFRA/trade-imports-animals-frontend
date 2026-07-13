@@ -176,7 +176,29 @@ for (const { name, codes, gated } of UNIT_SCOPED_WHITELISTS) {
 
 const EXPECTED = {
   PACKAGE_COUNT_COMMODITIES: ['01064100', '01063100', '01061900', '0102'],
-  CPH_REQUIRED_COMMODITIES: ['0102', '0103', '010410', '010420'],
+  CPH_REQUIRED_COMMODITIES: [
+    // Mammals
+    '0102',
+    '0103',
+    '010410',
+    '010420',
+    // Poultry — Day-old chicks
+    '01051111',
+    '01051200',
+    '01051300',
+    '01051400',
+    '01051500',
+    // Poultry — Adult Birds
+    '01059400',
+    '01059910',
+    '01059920',
+    '01059930',
+    '01059950',
+    // Poultry — Hatching eggs
+    '04071100',
+    '04071911',
+    '04071919'
+  ],
   PASSPORT_COMMODITIES: ['0101', '0102', '01061900'],
   TATTOO_COMMODITIES: ['01061900', '0103', '0102'],
   EAR_TAG_COMMODITIES: ['0102', '0103', '010410', '010420'],

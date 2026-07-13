@@ -432,11 +432,31 @@ export const numberOfPackages = {
 // CPH — notification-level single, aggregated across commodity lines.
 // -----------------------------------------------------------------------------
 
+// V4 CPH whitelist per Confluence page 6497338582 (updated
+// 2026-07-07). Spec lists 19 species/product rows but the codes
+// collapse to 17 unique values — 01059920/01059930 duplicate at
+// species level (Geese and Turkeys share 04071911; Ducks and
+// Guinea Fowl share 04071919). Iteration 10 shipped with the
+// 4 mammal codes only; step 5a expands to the full whitelist so
+// Poultry consignments correctly gate on CPH.
 export const CPH_REQUIRED_COMMODITIES = [
   '0102', // Cattle
   '0103', // Pig (Domestic)
   '010410', // Sheep (Domestic)
-  '010420' // Goats
+  '010420', // Goats
+  '01051111', // Poultry — Day-old chicks — Chickens
+  '01051200', // Poultry — Day-old chicks — Turkeys
+  '01051300', // Poultry — Day-old chicks — Ducks
+  '01051400', // Poultry — Day-old chicks — Geese
+  '01051500', // Poultry — Day-old chicks — Guinea Fowl
+  '01059400', // Poultry — Adult Birds — Chickens
+  '01059910', // Poultry — Adult Birds — Ducks
+  '01059920', // Poultry — Adult Birds — Geese
+  '01059930', // Poultry — Adult Birds — Turkeys
+  '01059950', // Poultry — Adult Birds — Guinea Fowl
+  '04071100', // Poultry — Hatching eggs — Chickens
+  '04071911', // Poultry — Hatching eggs — Geese / Turkeys
+  '04071919' //  Poultry — Hatching eggs — Ducks / Guinea Fowl
 ]
 
 export const cph = {
