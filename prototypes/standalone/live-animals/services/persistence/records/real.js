@@ -1,9 +1,6 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
-import {
-  answersToTargetNotification,
-  targetNotificationToAnswers
-} from './notification-mapper.js'
+import { toNotification, toAnswers } from './mapper.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
@@ -51,7 +48,7 @@ const marshal = (notification, userId = null) => {
     userId,
     status,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
-    answers: stripNulls(targetNotificationToAnswers(notification))
+    answers: stripNulls(toAnswers(notification))
   }
 }
 
@@ -112,7 +109,7 @@ export const records = {
       throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
     }
 
-    const notification = answersToTargetNotification({
+    const notification = toNotification({
       ...answers,
       referenceNumber: journeyId
     })
