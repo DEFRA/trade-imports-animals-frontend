@@ -39,14 +39,21 @@ domain)` resolves the current legal option set from the domain
   3. Business-facing dictionary (`data-dictionary-sketch.js`) built by
      walking obligations + domain metadata.
 
-The spike ships **509 passing tests** across 23 files; the browsable
+The spike ships **564 passing tests** across 23 files; the browsable
 journey mounts at `/prototype/eudpa-249/*` in the existing frontend
-process. Every V4 leaf obligation in the manifest (39 of 41) is
-wired to a domain entry, presentation copy, and a flow page; the
-two exempt entries are the structural group containers
-(`commodityLine`, `unitRecord`). Step 4 completed across 10
-iterations documented in
-[`docs/add-an-obligation.md`](./docs/add-an-obligation.md).
+process. Every V4 leaf obligation in the manifest that has a flow
+presence (40 of 44) is wired to a domain entry, presentation copy,
+and a flow page; the 4 exempt entries are the 2 structural group
+containers (`commodityLine`, `unitRecord`) and 2 system-populated
+fields (`poApprovedReferenceNumber`, `responsiblePersonForLoad`)
+whose value legality is enforced upstream — see
+`obligations/coverage.test.js` for the allow-list narrative. Step 4
+completed across 10 iterations documented in
+[`docs/add-an-obligation.md`](./docs/add-an-obligation.md); step 5
+tightened the wired set against the V4 spec across 5 sub-steps
+(identifier caps, group invariant, missing obligations + enum
+expansions, `animalsCertifiedFor` semantic overhaul, and expanding
+the standard address block from 4 sub-fields to 9).
 
 ## Playback script (5 minutes)
 
@@ -59,11 +66,11 @@ iterations documented in
    as the parent spike.
 3. **One change lands in one place.** Walk through:
    - "The purpose sub-values change when reason is transit":
-     edit `PURPOSE_BY_REASON` in `domain.js`.
+     edit `PURPOSE_BY_REASON` in `domain/index.js`.
    - "This new commodity code needs a package count":
      edit `PACKAGE_COUNT_COMMODITIES` in the obligations manifest.
    - "This page shows one extra question":
-     add a presents entry to `flow.js`.
+     add a presents entry to `flow/flow.js`.
      Nothing else moves.
 4. **Correctness is enforced three ways** — contract seam
    (`contract.js` is the only path from browser → model), tests
@@ -189,11 +196,6 @@ not decide them. These are the ones worth raising in playback:
 - **Dynamic predicates via orchestrator resolution.** Same shape as
   the async-options question but for validation instead of options.
   Not needed for AC; revisit if a real V4 predicate needs it.
-- **V4 spec verification.** Every V4 leaf is wired but with
-  conservative defaults for some rules (e.g. `stringMaxLength` on
-  the per-unit identifiers). A step-5 pass against the Confluence
-  V4 spec (page id 6497338582) would tighten domain rules to the
-  spec's exact values and confirm nothing is missing.
 - **Playwright cross-variant harness.** The parent-layouts branch runs
   one Playwright spec against every model-spike variant via a
   `JOURNEYS` array. Adding our V4 variant to that harness is a natural
@@ -204,13 +206,9 @@ not decide them. These are the ones worth raising in playback:
   the request through `t()` and adding `locales/cy.json` remains.
 - **Joi adoption for domain-driven validation.** The domain layer
   currently runs bespoke predicates. Porting to Joi (with a
-  `preValidate` hook for controller-side rules) is a
-  post-step-5 deliverable. Design questions surface naturally
-  during V4 spec verification — see `NEXT.md` §P1.
-- **Composite-widget UX polish.** A second code review flagged 6
-  polish items on the address-block widget (aria-describedby on
-  hint, fieldset error state, POST-error input re-population, CYA
-  fallback for non-address composites). Deferred; ~half a day.
+  `preValidate` hook for controller-side rules) is a post-step-5
+  deliverable — see `NEXT.md` §P1 for the design questions the V4
+  buildout sharpened.
 - **Journey configuration** (flag-driven variance) — explicitly out of
   scope for this ticket per the retitle. A future concern; noted here
   so it does not creep in.
@@ -218,31 +216,33 @@ not decide them. These are the ones worth raising in playback:
 ## How the artefacts hang together
 
 ```
-              obligations.js (EUDPA-277 spike output)
+             obligations/obligations.js (forked from EUDPA-277)
               ▲   ▲   ▲            ▲
               │   │   │            │
-    domain.js │   │   │  flow.js   │
+domain/index.js   │   │  flow/flow.js
       ▲       │   │   │    ▲       │
       │       │   │   │    │       │
       └───────┴───┴───┴────┴───────┘
-              runtime.js
+              engine/index.js
               ▲            ▲              ▲
               │            │              │
      data-dictionary-sketch          contract.js
                                           ▲
                                           │
-                                    features/*-controller.js
+                                    features/*/controller.js
+                                    lib/*.js
                                     shared/*.njk
 ```
 
-- `domain.js` and `flow.js` both import symbols from the parent
-  obligations manifest — same source of truth for identity.
-- `runtime.js` reads all three plus the ObligationEvaluator's output;
-  every primitive is a pure function of its inputs.
-- `contract.js` is the seam — everything downstream (controllers
-  - templates) only talks to `contract.js`; nothing in `*`
-    reaches into `runtime.js` or `domain.js` directly. See the
-    Browsable prototype §How the logical model maps to controllers/HTML/JS.
+- `domain/index.js` and `flow/flow.js` both import symbols from the
+  forked obligations manifest — same source of truth for identity.
+- `engine/index.js` reads all three plus the ObligationEvaluator's
+  output; every primitive is a pure function of its inputs.
+- `contract.js` is the seam — everything downstream (controllers +
+  lib helpers + templates) only talks to `contract.js`; nothing in
+  `features/*` or `lib/*` reaches into `engine/index.js` or
+  `domain/index.js` directly. See the Browsable prototype §How the
+  logical model maps to controllers/HTML/JS.
 - `controller-sketch.js` (kept as a historical artifact — a JOI
   composition sketch) demonstrates that the same primitives can drive
   a JOI-schema shape. The real browser layer went with an internal
@@ -255,9 +255,9 @@ not decide them. These are the ones worth raising in playback:
 
 The spike ships with a real, clickable journey mounted at
 `/prototype/eudpa-249/*`. Every controller reads scope from the
-obligations model, options + validation from `domain.js`, and page
-composition from `flow.js` through the runtime primitives — nothing
-is restated in the browser layer.
+obligations model, options + validation from `domain/index.js`, and
+page composition from `flow/flow.js` through the engine primitives —
+nothing is restated in the browser layer.
 
 ### What you can walk
 
@@ -339,11 +339,13 @@ The AC asks for a mapping "provable via tests and convention". Three
 mechanisms achieve that:
 
 1. **Convention: the browser layer imports only from `contract.js`.**
-   No controller reads `runtime.js` or `domain.js` directly. Grep for
-   `from '../engine/index.js'` or `from '../domain/index.js'` inside `*` —
-   only `contract.js` and `state.js` do. If a future controller needs
-   model information the contract doesn't expose, the contract grows a
-   function rather than the seam being bypassed.
+   No controller reads `engine/index.js` or `domain/index.js`
+   directly. Grep for
+   `from '../engine/index.js'` or `from '../domain/index.js'` inside
+   `features/*` or `lib/*` — only `contract.js` and `state.js` do. If
+   a future controller needs model information the contract doesn't
+   expose, the contract grows a function rather than the seam being
+   bypassed.
 2. **Convention: templates render `FieldViewItem`s only.** The
    [`field-widgets.js`](./lib/field-widgets.js) dispatch table is
    the _only_ place a govuk widget is chosen. Templates
@@ -361,10 +363,12 @@ mechanisms achieve that:
      behaviour (visibility, option filtering, error rendering, redirect
      chains) matches the model.
 
-Together they establish: change a `presents` entry in `flow.js` →
-controller + template output changes without editing either; add a
-predicate to `domain.js` → error summary + inline field error appear
-without editing any error-formatting code.
+Together they establish: change a `presents` entry in
+`flow/flow.js` → controller + template output changes without
+editing either; add a predicate to `domain/index.js` → error summary
+
+- inline field error appear without editing any error-formatting
+  code.
 
 ### Env gate + CDP production behaviour
 
@@ -550,15 +554,20 @@ referenced by path in the References section below.
 | [`features/commodity-lines/list.njk`](./features/commodity-lines/list.njk)                 | Commodity-lines index template                                                                                   |
 | Test files under `lib/`, `features/*/`, and root                                           | Widget dispatch, format-domain-errors, build-field-descriptors, contract, routes `server.inject`, dump snapshots |
 
-**Total:** 509 tests passing across 23 files (spike + forked
-obligations + iterations 1–10).
+**Total:** 564 tests passing across 23 files (spike + forked
+obligations + step 4 iterations 1–10 + step 5 iterations a–e).
 
-Not enumerated above but landed during the browsable prototype
-workstream: `features/units/` (depth-2 UX), `lib/unit-page-controller.js`,
-`lib/is-blank-value.js`, additional test files (`e2e-walk.test.js`,
-`e2e-commodity-lines.test.js`, `e2e-units.test.js`,
-`lib/state.test.js`), and the `locales/en.json` +
-`i18n-coverage.test.js` pair.
+Not enumerated above but landed during the browsable prototype +
+step-5 workstream: `features/units/` (depth-2 UX),
+`lib/unit-page-controller.js`, `lib/is-blank-value.js`, additional
+test files (`e2e-walk.test.js`, `e2e-commodity-lines.test.js`,
+`e2e-units.test.js`, `lib/state.test.js`,
+`format-domain-errors.test.js`), and the `locales/en.json` +
+`i18n-coverage.test.js` pair. Step 5 added `groupInvariantErrors`
+to the engine (first cross-record predicate) and `isComplete(value)`
+to the address-block domain factory (structural completeness the
+CYA and task list read to distinguish "in progress" from
+"completed" for the composite widget).
 
 ## Running the spike
 

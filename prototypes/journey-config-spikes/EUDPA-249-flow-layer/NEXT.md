@@ -12,10 +12,10 @@ dictionary MD) are parked for after the V4 buildout.
 
 **Branch:** `spike/EUDPA-249-flow-layer`, pushed to
 `DEFRA/trade-imports-animals-frontend`. Latest commit on origin
-`7ca279e` (commodity-line label ordinal fix). 79 commits ahead of
-`main`.
+`389f2f0` (composite-widget UX polish bucket cleared). 89 commits
+ahead of `main`.
 
-**Tests:** 511 spike tests across 23 files, all green.
+**Tests:** 564 spike tests across 23 files, all green.
 Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
 
 **Browsable demo:** `npm run dev` (auth defaults off in dev), then
@@ -26,63 +26,83 @@ freely; do NOT push without an explicit go-ahead.
 
 ### What landed since the last handoff
 
-**Step 4 iterations 8, 9, and 10 completed — the leaf portion of
-KNOWN_UNWIRED is now empty.**
+**Step 5 (V4 spec verification) completed across iterations 5a–e,
+plus a mandate-model refactor and the composite-widget UX polish
+bucket. Step 5's exit criterion — "the V4 spec is faithfully
+represented across obligations, domain, and flow" — is met.**
 
-- **Iteration 8** (`9d8c029`) — accompanying-document block. Four
-  fields sharing a `branchedGate` `applyTo` (all-optional at rest,
-  all-mandatory once any is filled) presented on one page in a new
-  `accompanying-documents` subsection under References. First
-  worked example of `branchedGate` + multi-obligation page. Task
-  list: 13 → 14 subsections.
-- **Iteration 9** (`d410bc3`, `15ebfe7`) — first depth-2 obligation
-  (`permanentAddress`) end-to-end. Three phases:
-  - **Phase A** (state + engine + contract): `addUnitRecord` /
-    `deleteUnitRecord` in `lib/state.js` keyed by composite
-    `${lineId}/${unitId}` with a per-line session-monotonic unit
-    counter (`NEXT_UNIT_ID_BY_LINE_KEY`). `deleteCommodityLine`
-    now cascades into every unit key prefixed by the line. New
-    engine primitive `firstUnfulfilledPageForUnit`. New contract
-    seam `nextAfterForUnit`.
-  - **Phase B** (UX + routes): `features/units/` for
-    `/lines/{lineId}/units` (list) + `/lines/{lineId}/units/add`
-    (mint + add-then-fill) + `/lines/{lineId}/units/{unitId}/delete`.
-    New `lib/unit-page-controller.js` mirrors the line-scoped page
-    controller. `routes.js` branches `presentsForEach` on
-    `forEachOf` (line vs unit). `/lines` summary block emits a
-    "Manage animals on this line" link when the line's commodity
-    code opens a wired unit-scoped obligation.
-  - **Phase C** (worked example): `permanentAddressDomain` via the
-    iteration-7 `addressBlock` factory. New `per-unit-records`
-    subsection. Task list: 14 → 15.
-- **Iteration 10** (`0a2cc31`) — remaining six unit-scoped
-  obligations in one commit: `passport`, `tattoo`, `earTag`,
-  `horseName` (`allowListed` on different code whitelists);
-  `identificationDetails`, `description` (`allowListedByPredicate`
-  inverse-gate — first wired obligations using that gate). Two
-  small design fixes fell out:
-  1. `obligations/helpers.js` — `allowListedByPredicate.metadata`
-     now exposes the `predicate` function so browser-side helpers
-     (`pickSeedObligationForLine`, `lineHasWiredUnitObligation`)
-     can ask "would this value be admitted?" without executing the
-     whole `applyTo` closure.
-  2. `features/units/controller.js` — `pickSeedObligationForLine`
-     now walks unit obligations in TWO passes (mandatory first,
-     then optional) so add-then-fill drops the user on a page they
-     MUST complete rather than a first-declared optional
-     (`permanentAddress` is declared last in the manifest but is
-     the only mandatory unit obligation).
-- **Ordinal-label fixes** (`55e5124`, `7ca279e`) — both the units
-  list (depth-2) and the commodity-lines list (depth-1) used to
-  render "Animal N" / "Commodity line N" from the internal id,
-  which broke after a delete: surviving records kept gappy ids
-  (`unit2 + unit3`, `line2`) and displayed as "Animal 2" +
-  "Animal 3" or "Commodity line 2" for what the user perceived as
-  the first record. Both now use the 1-based ordinal position in
-  the current list; URLs still key on the internal id so per-record
-  routes stay stable. The units page's parent-line reference
-  (heading + breadcrumb) also renumbers via a new
-  `lineDisplayIndex` helper in `features/units/controller.js`.
+- **Step 5a** (`d8b800c`) — V4 spec conformance sweep on identifier
+  caps + CPH: `stringMaxLength` values tightened to spec-exact
+  limits on the six unit identifier obligations (passport, tattoo,
+  earTag, horseName, identificationDetails, description) and on
+  `cph`. Conservative defaults replaced with the values the V4
+  Confluence page 6497338582 quotes.
+- **Step 5b** (`e34484b`) — group invariant "at least one animal
+  identifier per unit-record". New engine primitive
+  `groupInvariantErrors` reads `unitRecord.requires.anyOf` and emits
+  a domain error per unit missing all identifiers. First cross-record
+  predicate in the model — pattern documented in
+  `docs/add-an-obligation.md`. CYA surfaces the error inline;
+  page-save happy path unchanged.
+- **Step 5c** (`7a9e54b`) — 2 missing obligations added for V4
+  completeness (`poApprovedReferenceNumber`,
+  `responsiblePersonForLoad`) declared but NOT presented in the flow
+  (system-populated upstream — `KNOWN_UNWIRED` records why). Plus 2
+  enum spec expansions: `meansOfTransport` gains rail; `portOfEntry`
+  gains the four remaining V4 ports.
+- **Step 5d** (`08366f6`) — `animalsCertifiedFor` semantic overhaul.
+  The obligation is a lookup by certificate type (upstream MDM), not
+  a static enum. Stubbed as `staticEnum` for now with a doc comment
+  explaining the eventual lookup pattern; enum entry retained so the
+  page still renders. `NEXT.md` and `RECOMMENDATION.md` had
+  narrative on a hypothetical "lookup pattern" primitive — both
+  scrubbed of that speculation in `839d4fd`.
+- **Step 5e** (`be9ab56`) — expand the standard address block from
+  4 sub-fields to the V4 spec's 9 (name, addressLine1,
+  addressLine2, addressLine3, town, postCode, country, telephone,
+  email). Per-sub-field rules land in `subFieldRules`
+  (`maxLength`, `emailFormat`, `enum` for country). All 8 address
+  obligations updated; the address widget dispatch and CYA
+  formatter handle every rule uniformly.
+- **Mandate audit — interpretation A** (`f622981`) — audited every
+  page against the V4 spec's "Mandatory to submit" vs "Mandatory to
+  proceed" distinction. Renamed the flow flag
+  `mandatoryToSaveAndContinue` → `mandatoryToProceed` across 26
+  refs / 9 files (mechanical). Corrected 7 pages under-enforced +
+  3 addresses whose parent-level mandate now holds the fort;
+  removed the flag from `countryOfOrigin` (M-to-submit per spec).
+  `addressBlock` predicate rewritten to validate only user-supplied
+  sub-fields (interpretation A) — blank sub-fields no longer fire
+  page-save required errors. `isComplete(value)` added on the
+  entry for CYA to consult structural completeness.
+- **Address blank-save + structural completeness on task list**
+  (`bd87413`) — user bug report: transporter address rejected an
+  intentionally blank save. Fixed by dropping `mandatoryToProceed`
+  from all 3 M-to-proceed address entries; `hasFulfilment` in the
+  engine now consults `domain.get(id).isComplete(value)` for
+  address obligations so the task list shows "In progress" for
+  partial-but-not-complete addresses rather than "Completed".
+- **POST-error input preservation** (`4818fee`) — user bug report:
+  entering an invalid address then hitting Save wiped every field.
+  Traced to the POST-error re-render pathway reading stored
+  fulfilment rather than the submitted values. Now threads
+  `result.values` into `buildFieldDescriptors` across all three
+  page controllers (`page-controller`, `line-page-controller`,
+  `unit-page-controller`). Widget renders the user's typed value
+  on error, not the last-stored value.
+- **2nd code-review deferred bucket cleared** (`389f2f0`) — the
+  six composite-widget UX polish items (#3, #9-#13) that had been
+  carried on the pending list:
+  - #3 address-widget hint has `aria-describedby` + id on hint
+  - #9 non-address composite renders as `JSON.stringify` not
+    `[object Object]`
+  - #10 aggregate error state (`govuk-form-group--error` wraps
+    fieldset when any sub-input errors)
+  - #11 address legend uses `govuk-fieldset__legend--m`
+  - #12 non-string sub-field values now render via `String()`
+    coercion (defensive; no live obligation exercises it)
+  - #13 `formatDomainErrors` only extends anchors with
+    `__${subField}` for known address-family error codes
 
 ### Current model / architecture state
 
@@ -106,12 +126,26 @@ KNOWN_UNWIRED is now empty.**
   `/lines/{lineId}/{name}`; per-unit at
   `/lines/{lineId}/units/{unitId}/{name}`. Bespoke UX at `/lines`
   and `/lines/{lineId}/units`.
-- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 2 entries —
-  `commodityLine` + `unitRecord`, both structural group containers
-  (permanent exempt; they carry no value directly). The leaf
-  portion is empty. Step 4's stated exit criterion — "docs stabilise
-  - `KNOWN_UNWIRED` shrunk to zero or to obligations that
-    legitimately need no domain entry" — is met.
+- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 4 entries.
+  Two structural group containers (`commodityLine`, `unitRecord`)
+  that carry no value directly, and two system-populated fields
+  added during step 5c (`poApprovedReferenceNumber`,
+  `responsiblePersonForLoad`) whose value legality is enforced
+  upstream and which therefore have no domain entry AND no flow
+  presence. Step 4's stated exit criterion — "docs stabilise +
+  `KNOWN_UNWIRED` shrunk to zero or to obligations that legitimately
+  need no domain entry" — is met. Step 5's V4-spec-verification
+  exit criterion is also met.
+- **Mandate model:** `mandatoryToProceed: true` on a flow presents
+  entry blocks page save until the field is non-blank (the
+  page-save contract). `obligation.status: 'mandatory'` drives the
+  submit-mandate rollup — CYA emits a prompt if a mandatory
+  obligation is in scope but unfulfilled (spike-wide) and the hub's
+  section rollup consults it. The two are independent: a
+  submit-mandate field can be blank at page save; a proceed-mandate
+  field must be non-blank at page save but can still be structurally
+  incomplete (relevant to `addressBlock`, where `isComplete(value)`
+  is the CYA-side check).
 
 ### Step 4 iterations completed
 
@@ -158,6 +192,23 @@ KNOWN_UNWIRED is now empty.**
 
 Each iteration also refined `docs/add-an-obligation.md`.
 
+### Step 5 iterations completed
+
+1. **5a** — tighten identifier caps + CPH to spec-exact values.
+2. **5b** — group invariant "≥ 1 identifier per unit-record" (first
+   cross-record predicate; `groupInvariantErrors` engine primitive).
+3. **5c** — 2 missing V4 obligations (`poApprovedReferenceNumber`,
+   `responsiblePersonForLoad`) declared but not presented; 2 enum
+   expansions (`meansOfTransport` gains rail, `portOfEntry` gains 4
+   more V4 ports).
+4. **5d** — `animalsCertifiedFor` semantic overhaul (stubbed as a
+   staticEnum with a lookup-pattern note in the code; the real
+   values come from a certificate-type lookup once integrated).
+5. **5e** — expand standard address block from 4 sub-fields to 9
+   (V4 spec: adds addressLine2, addressLine3, telephone, email,
+   plus per-sub-field `maxLength` / `emailFormat` / country `enum`
+   rules).
+
 ### Known limitations still open
 
 - **Optional-only completion — display-layer question is parked.**
@@ -169,30 +220,25 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
 - **Add commodity lines** subsection maxes at FULFILLED as soon as
   ≥ 1 line exists (add step done when there's a line). Reverts to
   NOT_STARTED if the user deletes all lines. Fine as-is.
-- **Second-code-review deferred bucket** (findings #3, #8-#13) —
-  composite-widget UX polish (aria-describedby on address hint,
-  fieldset error state, POST-error input re-population, non-address
-  object fallback in CYA `formatSingle`, etc.). Not blockers.
+- **`animalsCertifiedFor` is a stubbed static enum.** The real V4
+  values come from a certificate-type lookup (MDM). Stepped in as a
+  staticEnum with a doc comment; the eventual pattern is the same
+  async-fetch question the other MDM enums share.
 
 ### Immediate next candidates
 
-Step 4 is complete for wiring. `KNOWN_UNWIRED` is at its theoretical
-minimum (the 2 structural group containers, permanent exempt). Next
-work sits above step 4 — pick one:
+Steps 4 and 5 are complete. Next work is small polish + parked
+follow-ons — pick one:
 
-- **Step 5 — verify against V4 spec.** With every leaf wired, step 5
-  becomes a review pass: walk the Confluence V4 field list (page id 6497338582) against the manifest and flow, confirm nothing is
-  missing, tighten domain rules where the spec is more precise than
-  the spike's conservative defaults (e.g. exact `stringMaxLength`
-  values, real MDM enum options). Small scope, high value.
-- **Doc pass** — this file + `RECOMMENDATION.md` had a partial refresh
-  at 2026-07-13; some sections (file map, playback script) still
-  reference an earlier state. A full pass would take an hour.
-- **P0 — optional-only visited-before-Complete decision.** See below.
+- **P0 — optional-only visited-before-Complete decision.** See
+  below. This is a UX call that the V4 buildout has now sharpened:
+  a couple of subsections end up entirely optional-only. Half a day.
 - **P0.5 — Welsh locale threading.** Infrastructure done; needs the
   request → `t()` locale param plumbing plus `cy.json`. See below.
-- **Deferred composite-widget UX polish.** ~half a day to close the
-  bucket.
+- **Playwright cross-variant harness.** Add the V4 variant to the
+  parent-layouts branch's `JOURNEYS` array so the shared spec runs
+  against the spike. Natural follow-on now that the flow is
+  stable. See `RECOMMENDATION.md` §Out of scope.
 
 **Parked** (unchanged): P1 Joi adoption; P2 data dictionary MD
 artefact. See below.
@@ -1042,27 +1088,27 @@ slice we ship today.
 
 ## Where the current commits sit
 
-Head at `7ca279e`; 79 commits ahead of `main`. Recent tip:
+Head at `389f2f0`; 89 commits ahead of `main`. Recent tip:
 
 ```
+* 389f2f0 fix(EUDPA-249): clear composite-widget UX polish bucket (2nd code review #3, #9-#13)
+* 4818fee fix(EUDPA-249): POST-error re-render preserves user input across all page controllers
+* bd87413 fix(EUDPA-249): address pages allow blank save; task-list reflects structural completeness
+* f622981 fix(EUDPA-249): align mandate flags to V4 spec (interpretation A on addressBlock)
+* be9ab56 feat(EUDPA-249): step 5e — expand address block to V4 standard (9 sub-fields, mixed rules)
+* 08366f6 fix(EUDPA-249): step 5d — animalsCertifiedFor semantic overhaul
+* 7a9e54b fix(EUDPA-249): step 5c — 2 missing obligations + 2 enum spec expansions
+* d8b800c fix(EUDPA-249): step 5a — tighten V4 spec conformance
+* e34484b feat(EUDPA-249): step 5b — group invariant "at least one Animal Identifier per unit-record"
+* 6cedc93 docs(EUDPA-249): NEXT.md — clear the commodity-line off-by-one line
 * 7ca279e fix(EUDPA-249): commodity-line labels track ordinal position, not internal line id
 * 2fbb309 docs(EUDPA-249): refresh NEXT.md + RECOMMENDATION.md for step-4-complete state
 * 55e5124 fix(EUDPA-249): units list labels track ordinal position, not internal unit id
 * 0a2cc31 feat(EUDPA-249): step 4 iteration 10 — six per-unit identifier obligations
 * 15ebfe7 feat(EUDPA-249): step 4 iteration 9 phases B + C — units UX + permanentAddress worked example
 * d410bc3 feat(EUDPA-249): step 4 iteration 9 phase A — unit-record state + engine + contract
-* 9d8c029 feat(EUDPA-249): step 4 iteration 8 — accompanying-document block
-* 0b137a5 fix(EUDPA-249): hasFulfilment uses isBlankValue for composite fulfilments
-* be073b7 fix(EUDPA-249): firstUnfulfilledPageForLine uses isBlankValue for composites
-* dd84725 fix(EUDPA-249): CYA uses shared isBlankValue helper
-* 310bfc5 fix(EUDPA-249): shared isBlankValue helper + use in contract.js
-* 64cc385 fix(EUDPA-249): derive LINE_LEAF_OBLIGATIONS from LINE_PAGES
-* 9d1aea2 fix(EUDPA-249): derive LINE_PAGES from flow so /lines shows commodity type row
-* fa5719b feat(EUDPA-249): step 4 iteration 7 phase B — wire remaining 7 address blocks
-* 11961ba feat(EUDPA-249): step 4 iteration 7 phase A — address-block infrastructure
-* b00f877 feat(EUDPA-249): step 4 iteration 6 — wire commodityType
 ```
 
-`git log --oneline main..HEAD` for the full 77-commit history.
+`git log --oneline main..HEAD` for the full 89-commit history.
 
 Pushed to origin/spike/EUDPA-249-flow-layer.
