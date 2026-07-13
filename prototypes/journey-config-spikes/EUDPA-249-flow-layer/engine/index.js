@@ -24,6 +24,7 @@
  */
 
 import { isBlankValue } from '../lib/is-blank-value.js'
+import { domain } from '../domain/index.js'
 
 // ---------------------------------------------------------------------------
 // Domain primitives
@@ -301,11 +302,26 @@ function entryInScope(entry, state) {
   return records.some((r) => r.fulfilmentId === entry.path)
 }
 
+/** Check whether a single value counts as "fulfilled" for an
+ *  obligation. Address obligations delegate to `domainEntry.isComplete`
+ *  so a partially-filled composite (some required sub-fields still
+ *  blank) is treated as unfilled — the task list keeps the containing
+ *  subsection In progress and CYA emits a "Complete the address"
+ *  prompt. Non-address obligations fall back to the shared
+ *  isBlankValue helper. */
+function isValueFulfilled(oblId, value) {
+  const entry = domain.get(oblId)
+  if (entry?.type === 'address' && typeof entry.isComplete === 'function') {
+    return entry.isComplete(value)
+  }
+  return !isBlankValue(value)
+}
+
 function hasFulfilment(entry, state) {
   const stored = state.fulfilments?.[entry.obligation.id]
   if (entry.path === null) {
     // Singleton obligation — `stored` IS the value being checked.
-    return !isBlankValue(stored)
+    return isValueFulfilled(entry.obligation.id, stored)
   }
   // Path-scoped obligation — `stored` is a `{ fulfilmentId: value }`
   // map. If it's not a plain map, the record can't exist.
@@ -317,7 +333,7 @@ function hasFulfilment(entry, state) {
   ) {
     return false
   }
-  return !isBlankValue(stored[entry.path])
+  return isValueFulfilled(entry.obligation.id, stored[entry.path])
 }
 
 /**

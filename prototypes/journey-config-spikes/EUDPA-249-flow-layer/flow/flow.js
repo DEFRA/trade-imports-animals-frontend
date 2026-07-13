@@ -175,24 +175,19 @@ export const flow = {
               // scope depending on transporterType. Question visibility
               // via obligation scope, no flow-side branching required.
               //
-              // V4: both are "Mandatory to proceed". The parent-level
-              // mandate blocks blank submissions with a single error
-              // ("Provide the … transporter address"). Sub-field
-              // completeness (email, telephone, …) is a CYA prompt,
-              // not a page-save block — see interpretation A note on
-              // addressBlock in domain/index.js.
+              // No `mandatoryToProceed` flag: the user can save the
+              // page blank and come back later. Completeness of an
+              // address is a task-list / CYA concern — the address is
+              // considered fulfilled only when every required
+              // sub-field is filled (see `hasFulfilment` in
+              // engine/index.js which consults `domainEntry.isComplete`
+              // for address obligations). Partial fills therefore keep
+              // the subsection In progress and the CYA prompt "Complete
+              // the … address" surfaces until it's fully filled.
               page: 'transporter-details',
               presents: [
-                {
-                  obligation: commercialTransporter,
-                  mandatoryToProceed: true,
-                  errors: { required: 'errors.commercialTransporter.required' }
-                },
-                {
-                  obligation: privateTransporter,
-                  mandatoryToProceed: true,
-                  errors: { required: 'errors.privateTransporter.required' }
-                }
+                { obligation: commercialTransporter },
+                { obligation: privateTransporter }
               ]
             }
           ]
@@ -327,18 +322,13 @@ export const flow = {
           titleKey: 'flow.subsection.contact.title',
           children: [
             {
-              // V4: "Mandatory to proceed". Blank submission blocked
-              // by parent-level mandate; sub-field completeness (email,
-              // telephone, country, …) surfaced as CYA prompts, not
-              // page-save blocks (interpretation A on addressBlock).
+              // No `mandatoryToProceed` flag — see the transporter-
+              // details entry above for the rationale. Blank save
+              // allowed; task-list stays In progress until the address
+              // is structurally complete (all required sub-fields
+              // filled).
               page: 'contact-address',
-              presents: [
-                {
-                  obligation: contactAddress,
-                  mandatoryToProceed: true,
-                  errors: { required: 'errors.contactAddress.required' }
-                }
-              ]
+              presents: [{ obligation: contactAddress }]
             }
           ]
         },

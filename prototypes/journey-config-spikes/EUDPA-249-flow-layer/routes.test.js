@@ -354,16 +354,13 @@ describe('page-controller — address-block composite widget (commercialTranspor
     expect(res.payload).toContain('Postcode')
   })
 
-  it('POST with all sub-fields blank returns 400 with ONE parent-level required error (not per-sub-field)', async () => {
-    // Regression against the pre-audit behaviour: the addressBlock
-    // predicate used to emit one `addressSubFieldRequired` per empty
-    // required sub-field, flattening V4's two-layer model into
-    // per-sub-field M-to-proceed. Under interpretation A of the V4
-    // Standard Address Block validation table ("The validation below
-    // applies once the address record is provided"), a fully-blank
-    // POST is handled by the parent obligation's `mandatoryToProceed`
-    // flag emitting a single "Provide the …" error via flow.required
-    // — see flow.js commercialTransporter presents entry.
+  it('POST with all sub-fields blank redirects on (no page-save block on addresses)', async () => {
+    // User requirement: address pages must allow blank save; the
+    // user comes back later via a Change link or task-list click.
+    // Completeness is enforced by `hasFulfilment` consulting
+    // `domainEntry.isComplete` (engine/index.js) — a blank or
+    // partial address keeps the containing subsection In progress
+    // and surfaces a CYA prompt.
     const jar = makeCookieJar()
     await setUpCommercial(jar)
     const res = await inject(jar, {
@@ -371,13 +368,15 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/pages/transporter-details',
       payload: {}
     })
-    expect(res.statusCode).toBe(400)
-    expect(res.payload).toContain('There is a problem')
-    expect(res.payload).toContain('Provide the commercial transporter address')
-    // Old per-sub-field messages MUST NOT appear.
+    expect(res.statusCode).toBe(302)
+    // Old per-sub-field messages must not appear.
     expect(res.payload).not.toContain('Enter Business or organisation name')
     expect(res.payload).not.toContain('Enter Address line 1')
     expect(res.payload).not.toContain('Enter Postcode')
+    // Old parent-level error must not appear either.
+    expect(res.payload).not.toContain(
+      'Provide the commercial transporter address'
+    )
   })
 
   it('POST with only some sub-fields blank redirects on (interpretation A) — completeness deferred to CYA', async () => {
@@ -496,6 +495,68 @@ describe('page-controller — address-block composite widget (commercialTranspor
     expect(cya.payload).toContain('Complete the Place of origin address')
     expect(cya.payload).toContain(
       'href="/prototype/eudpa-249/pages/place-of-origin"'
+    )
+  })
+
+  it('partial address keeps the containing subsection In progress on the task list', async () => {
+    // Regression against the user-reported bug: a partial address
+    // (name only) was previously treated as fulfilled — hasFulfilment
+    // returned true because isBlankValue was false. That marked the
+    // Place of origin subsection as Completed on the task list, and
+    // /start skipped past the address page so the user couldn't
+    // navigate back. Fix: hasFulfilment now consults
+    // `domain.get(id).isComplete(value)` for address obligations,
+    // so a partial address is unfulfilled → subsection In progress
+    // → clickable → /start returns to it.
+    const jar = makeCookieJar()
+    // Fill only one field on the address.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/place-of-origin',
+      payload: { placeOfOrigin__name: 'Farm 42' }
+    })
+    // Task list: the subsection must NOT be Completed.
+    const tasks = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/task-list'
+    })
+    expect(tasks.payload).toContain('Place of origin and consignor')
+    expect(tasks.payload).not.toMatch(
+      /Place of origin and consignor[\s\S]{0,400}Completed/
+    )
+    // Filling it fully flips the subsection to Completed.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/place-of-origin',
+      payload: {
+        placeOfOrigin__name: 'Farm 42',
+        placeOfOrigin__addressLine1: '1 Farm Lane',
+        placeOfOrigin__town: 'Exeter',
+        placeOfOrigin__postcode: 'EX1 1AA',
+        placeOfOrigin__country: 'GB',
+        placeOfOrigin__telephone: '+44 1234 567890',
+        placeOfOrigin__email: 'ops@farm.example'
+      }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/consignor',
+      payload: {
+        consignor__name: 'Sender',
+        consignor__addressLine1: '2 Sender St',
+        consignor__town: 'Bristol',
+        consignor__postcode: 'BS1 1BB',
+        consignor__country: 'GB',
+        consignor__telephone: '+44 1234 567890',
+        consignor__email: 'ops@sender.example'
+      }
+    })
+    const tasks2 = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/task-list'
+    })
+    expect(tasks2.payload).toMatch(
+      /Place of origin and consignor[\s\S]{0,400}Completed/
     )
   })
 })
