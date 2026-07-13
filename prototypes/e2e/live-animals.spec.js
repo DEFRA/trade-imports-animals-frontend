@@ -6,7 +6,8 @@ import { test, expect } from '@playwright/test'
  * as pages land, driven by the values in
  * `prototypes/standalone/live-animals/spec/fixtures/happy-path.json`.
  * As of inc-028 no car-domain feature remains — every leg walks the
- * live-animals journey end to end (dashboard -> tasks -> declaration -> submit).
+ * live-animals journey end to end (dashboard -> tasks -> declaration ->
+ * submit -> confirmation).
  */
 const BASE = '/prototype-standalone/live-animals'
 
@@ -1550,7 +1551,7 @@ test.describe('live-animals (page-owned spine)', () => {
     )
   })
 
-  test('declaration — the full happy path submits from the declaration page and ends there, with no separate confirmation page', async ({
+  test('declaration — the full happy path submits from the declaration page and lands on the confirmation page', async ({
     page
   }) => {
     // The walk covers every task on the hub, so give it room.
@@ -1722,22 +1723,37 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
 
-    // Confirming submits (DRAFT to SUBMITTED) and redirects back to the
-    // declaration page — the submitted state renders THERE, with no separate
-    // confirmation page (c-022).
+    // Confirming submits (DRAFT to SUBMITTED) and redirects to the dedicated
+    // confirmation page (c-022 superseded at M3-16): a GDS confirmation panel
+    // carrying the notification's reference number.
     await page
       .getByRole('checkbox', { name: /I declare that the information/ })
       .check()
     await page.getByRole('button', { name: 'Submit notification' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Notification submitted' })
+      page.getByRole('heading', { name: 'Import notification submitted' })
     ).toBeVisible()
-    expect(page.url()).toContain('/declaration')
+    expect(page.url()).toContain('/confirmation')
+    await expect(page.getByText('Your reference number')).toBeVisible()
     const today = new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     })
     await expect(page.getByText(`Date of declaration: ${today}`)).toBeVisible()
+
+    // Per the c-029 amend-and-resubmit ruling the page carries dashboard
+    // guidance, never an outstanding-items checklist.
+    await expect(
+      page.getByRole('link', { name: 'Return to your dashboard' })
+    ).toBeVisible()
+
+    // A revisit to the declaration of a submitted notification lands back on
+    // the confirmation page.
+    await page.goto(page.url().replace('/confirmation', '/declaration'))
+    await expect(
+      page.getByRole('heading', { name: 'Import notification submitted' })
+    ).toBeVisible()
+    expect(page.url()).toContain('/confirmation')
   })
 })

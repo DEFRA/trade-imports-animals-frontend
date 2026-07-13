@@ -29,10 +29,10 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 controller, one page leaf, one obligation, one template.
 
 Not every feature collects answers. The shell (`start`, `hub`) and the
-endings (`check-answers`, `resume`) render or act but declare no
-`collects` (see [section 6](#6-pages-own-presentation)). The journey ends
-on the `declaration` page's own submitted state — there is no separate
-confirmation page (c-022).
+endings (`check-answers`, `confirmation`, `resume`) render or act but
+declare no `collects` (see [section 6](#6-pages-own-presentation)). The
+journey ends on the `confirmation` page (c-022 superseded at M3-16): the
+declaration POST redirects there after a successful submit.
 
 ## 2. Why page.js is import-free
 
@@ -233,12 +233,16 @@ depth-2 collection returns.
   so a page rename cannot orphan a Change link. Its POST walks on to the
   declaration; its back link points at the hub.
 - **Declaration** (`features/declaration/controller.js`) is the submit
-  point and the journey's end: its POST validates the confirmation
-  checkbox then calls `state.submitJourney`, which re-checks submit
-  readiness server-side (`scope.readyForCheckYourAnswers`) and finalises only if
-  the journey is ready. On success it redirects back to `/declaration`, where
-  the submitted state renders in place — there is no separate confirmation
-  page (c-022).
+  point: its POST validates the confirmation checkbox then calls
+  `state.submitJourney`, which re-checks submit readiness server-side
+  (`scope.readyForCheckYourAnswers`) and finalises only if the journey is
+  ready. On success it redirects to `/confirmation`.
+- **Confirmation** (`features/confirmation/controller.js`) is the
+  journey's end: a GDS confirmation panel with the notification's
+  reference number, transport guidance and amend-from-the-dashboard
+  guidance (c-029 — no outstanding-items checklist). It renders only for
+  a submitted notification; any other access redirects to the hub, and a
+  declaration GET on a submitted notification redirects here.
 - **Resume** (`features/resume/controller.js`) recovers the current
   user's journey by identity and returns to the hub. The stub has a
   single global user and **no auth** — copy the shape, never the auth

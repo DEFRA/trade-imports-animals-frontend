@@ -241,8 +241,9 @@ without the answer, and budget for the fixture sweep when you do.
 This journey's own spec
 ([`prototypes/e2e/live-animals.spec.js`](../../../e2e/live-animals.spec.js))
 walks the full journey by clicking named task links and asserting headings,
-ending on the declaration page's submitted state — there is no separate
-confirmation page (c-022). The `declaration` full-walk test completes every
+ending on the confirmation page's panel (c-022 superseded at M3-16: the
+declaration POST redirects to `confirmation` after a successful submit).
+The `declaration` full-walk test completes every
 hub task, so a required new field blocks `readyForCheckYourAnswers` (the
 submit-readiness gate) and the final submit will not finalise until your task is
 done.

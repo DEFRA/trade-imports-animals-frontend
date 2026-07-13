@@ -19,6 +19,7 @@ import {
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
+import { confirmationPage } from '../features/confirmation/page.js'
 
 export const sections = [
   {
@@ -63,7 +64,7 @@ export const sections = [
   {
     id: 'review',
     gate: (scope) => scope.readyForCheckYourAnswers,
-    pages: [notificationViewPage, declarationPage]
+    pages: [notificationViewPage, declarationPage, confirmationPage]
   }
 ]
 

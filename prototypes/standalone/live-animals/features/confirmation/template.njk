@@ -1,0 +1,40 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+
+{% block journeyContent %}
+  {% set referencePanelHtml %}Your reference number<br><strong>{{ referenceNumber }}</strong>{% endset %}
+  {{ govukPanel({
+    titleText: "Import notification submitted",
+    html: referencePanelHtml
+  }) }}
+
+  <p class="govuk-body">Date of declaration: {{ submissionDate }}</p>
+
+  <h2 class="govuk-heading-m">Transporting the consignment</h2>
+  <p class="govuk-body">Tell the transporter that this consignment must go directly to the place of destination on entry to Great Britain.</p>
+  <p class="govuk-body">The animals or consignment may need to be inspected.</p>
+  <p class="govuk-body">If so, the animals must stay at the place of destination for either:</p>
+  <ul class="govuk-list govuk-list--bullet">
+    <li>the time stated on the health certificate</li>
+    <li>48 hours if no time is specified</li>
+  </ul>
+
+  <h2 class="govuk-heading-m">How to view or amend this notification</h2>
+  <p class="govuk-body">You can view or amend this notification from your dashboard and resubmit it.</p>
+  <p class="govuk-body">
+    <a class="govuk-link" href="{{ dashboardHref }}">Return to your dashboard</a>
+  </p>
+
+  <h2 class="govuk-heading-m">Getting help</h2>
+  <p class="govuk-body">To get help with import notifications for live animals or germinal products, email <a class="govuk-link" href="mailto:importsriskmanagement@apha.gov.uk">importsriskmanagement@apha.gov.uk</a>.</p>
+  <p class="govuk-body">Contact the Animal and Plant Health Agency (APHA) if you need technical help with this service:</p>
+  <ul class="govuk-list govuk-list--bullet">
+    <li>Telephone: 0330 041 6999</li>
+    <li>Email: <a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">APHAServiceDesk@apha.gov.uk</a></li>
+  </ul>
+  <p class="govuk-body">Monday to Friday, 8:30am to 5pm, except bank holidays</p>
+  <p class="govuk-body">If you need help with your customs declaration, <a class="govuk-link" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact">contact HMRC</a>.</p>
+  <p class="govuk-body">
+    <a class="govuk-link" href="https://www.gov.uk/call-charges">Find out about call charges</a>
+  </p>
+{% endblock %}
