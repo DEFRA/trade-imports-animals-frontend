@@ -18,6 +18,7 @@
     "prototype:serve": "npm run build:frontend && FEATURES_PROTOTYPES_ENABLED=true AUTH_ENABLED=false NODE_ENV=development node .",
     "prototype:reset": "node -e \"require('node:fs').writeFileSync('prototypes/shared/data/quotes.json','[]\\n')\"",
     "test:prototype": "DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test",
+    "test:prototype:parity": "playwright test --config playwright.parity.config.js",
     "test:prototype:demo": "DEMO_SLOWMO=600 DEMO_PACE_MS=1500 playwright test",
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",

@@ -9,6 +9,9 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './prototypes/e2e',
   testMatch: '**/*.spec.js',
+  // The persistence-parity compare needs a REAL-mode server; it has its own
+  // config (playwright.parity.config.js) and must not run in the demo suite.
+  testIgnore: '**/skeleton-vs-prototype-mongo.spec.js',
   // Journeys are independent (each owns its own quote id) and the JSON store is
   // synchronous, so they can run in parallel even though each is slow.
   fullyParallel: true,
