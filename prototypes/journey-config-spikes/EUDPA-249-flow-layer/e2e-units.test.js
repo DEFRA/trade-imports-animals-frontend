@@ -403,3 +403,101 @@ describe('units — add / fill / list / delete', () => {
     expect(lines.payload).not.toContain('1 Delete Way')
   })
 })
+
+describe('units — V4 "at least one Animal Identifier per unit" invariant', () => {
+  // Wires the group invariant end-to-end: the per-unit-records
+  // subsection stays IP (blocking task-list Completion) until every
+  // in-scope unit has ≥1 identifier, and CYA renders a prompt with a
+  // Change link into the units index.
+  it('subsection stays In progress when a cattle unit has no identifiers, F when one is filled', async () => {
+    const jar = makeCookieJar()
+    // Cattle line — passport / tattoo / earTag all in scope for the
+    // unit; permanentAddress out of scope (that's pets-only). None
+    // filled → invariant violated.
+    const lineId = await addLineWithCode(jar, '0102')
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/${lineId}/units/add`,
+      payload: {}
+    })
+    // Task list at this point: per-unit-records must not be
+    // Completed.
+    let tasks = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/task-list`
+    })
+    // The subsection heading always appears; assert its status is
+    // NOT "Completed". Simplest heuristic: look at the block near the
+    // heading.
+    const subsection = /Per-animal records[\s\S]{0,600}/.exec(
+      tasks.payload
+    )?.[0]
+    expect(subsection, 'per-unit-records block missing').toBeTruthy()
+    expect(subsection).not.toContain('Completed')
+
+    // CYA renders the group-invariant prompt.
+    let cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.payload).toContain(
+      'Add at least one identifier for animal 1 on commodity line 1'
+    )
+    // The Change link goes to the units index.
+    expect(cya.payload).toContain(`${BASE}/lines/${lineId}/units`)
+
+    // Fill an ear-tag on unit1 (the seed obligation for cattle after
+    // iter 10 is passport — first optional match — so the add-then-
+    // fill redirect landed on passport. Post directly to the ear-tag
+    // page to satisfy the invariant via any identifier.)
+    const fieldId = `earTag-${lineId}/unit1`
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/${lineId}/units/unit1/ear-tag`,
+      payload: { [fieldId]: 'UK-CATTLE-42' }
+    })
+    // Task list now shows per-unit-records Completed.
+    tasks = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/task-list`
+    })
+    const subsectionAfter = /Per-animal records[\s\S]{0,600}/.exec(
+      tasks.payload
+    )?.[0]
+    expect(subsectionAfter).toContain('Completed')
+    // CYA prompt gone.
+    cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.payload).not.toContain(
+      'Add at least one identifier for animal 1 on commodity line 1'
+    )
+  })
+
+  it('surfaces one prompt per violating unit, using ordinal positions', async () => {
+    const jar = makeCookieJar()
+    const lineId = await addLineWithCode(jar, '0102')
+    // Three units, none with identifiers.
+    for (let i = 0; i < 3; i++) {
+      await inject(jar, {
+        method: 'POST',
+        url: `${BASE}/lines/${lineId}/units/add`,
+        payload: {}
+      })
+    }
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.payload).toContain(
+      'Add at least one identifier for animal 1 on commodity line 1'
+    )
+    expect(cya.payload).toContain(
+      'Add at least one identifier for animal 2 on commodity line 1'
+    )
+    expect(cya.payload).toContain(
+      'Add at least one identifier for animal 3 on commodity line 1'
+    )
+  })
+})

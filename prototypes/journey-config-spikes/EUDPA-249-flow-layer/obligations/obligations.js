@@ -459,8 +459,34 @@ export const cph = {
 export const unitRecord = {
   id: '385d6e7f-8091-4eb5-8234-8ef506172940',
   name: 'unitRecord',
-  within: commodityLine
+  within: commodityLine,
   // No applyTo — structural user-driven group, always in scope.
+  //
+  // V4 spec (Confluence page 6497338582): "Field Block - Mandatory
+  // to Submit - At least one Animal Identifier". Every unit-record
+  // must carry ≥ 1 of the six identifier obligations. The concrete
+  // list is left as a lazy getter so this file doesn't force a
+  // circular import against the identifier obligations declared
+  // below. Consumers call `requires.anyOf()` to get the array.
+  //
+  // Engine primitive `groupInvariantErrors` walks in-scope
+  // instances and emits one error per instance that violates the
+  // invariant. `containerStatus` treats a violating instance as
+  // "not fulfilled" so the per-unit-records subsection stays IP
+  // until the user fixes it. See engine/index.js.
+  requires: {
+    get anyOf() {
+      return [
+        passport,
+        tattoo,
+        earTag,
+        horseName,
+        identificationDetails,
+        description
+      ]
+    },
+    errorCode: 'obligation.unitRecord.identifiersRequired'
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -11,6 +11,8 @@ import {
   firstUnfulfilledPageForLine,
   firstUnfulfilledPageForUnit,
   firstPagePresentingObligation,
+  groupInvariantErrors,
+  groupInvariantErrorsForContainer,
   expandPresents,
   STATUSES
 } from './index.js'
@@ -861,5 +863,266 @@ describe('firstPagePresentingObligation', () => {
 
   it('returns null when nothing presents the obligation', () => {
     expect(firstPagePresentingObligation(linearFlow, 'missing')).toBeNull()
+  })
+})
+
+describe('groupInvariantErrors (V4 requires.anyOf)', () => {
+  // Depth-2 fan-out — every unit-record must carry ≥ 1 identifier.
+  // Mirrors the shape used by unitRecord.requires in obligations.js.
+  const unitRecord = { id: 'unit-group', name: 'unitRecord' }
+  const passport = { id: 'passport', name: 'passport' }
+  const earTag = { id: 'ear-tag', name: 'earTag' }
+
+  // Group carries the invariant.
+  const groupWithRequires = {
+    ...unitRecord,
+    requires: {
+      anyOf: [passport, earTag],
+      errorCode: 'obligation.unitRecord.identifiersRequired'
+    }
+  }
+
+  it('empty list when no group carries `requires`', () => {
+    const groupNoRequires = { ...unitRecord }
+    const st = state({
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        }
+      ])
+    })
+    expect(groupInvariantErrors(groupNoRequires, st)).toEqual([])
+  })
+
+  it('empty list when the group is out of scope', () => {
+    const st = state({
+      obligations: impls([{ obligation: unitRecord, impl: { inScope: false } }])
+    })
+    expect(groupInvariantErrors(groupWithRequires, st)).toEqual([])
+  })
+
+  it('empty list when no `requires.anyOf` leaf is in scope for this instance', () => {
+    // A unit whose commodity code opens NEITHER passport nor earTag
+    // has nothing to satisfy; treat as vacuous. In practice iter 10's
+    // catch-all (identificationDetails/description) makes this rare
+    // but the check must be correct in isolation.
+    const st = state({
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        { obligation: passport, impl: { inScope: false } },
+        { obligation: earTag, impl: { inScope: false } }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithRequires, st)).toEqual([])
+  })
+
+  it('one error per in-scope instance with all required leaves blank', () => {
+    const st = state({
+      // Two in-scope units on line1; neither has a passport or earTag
+      // filled.
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: {
+            inScope: true,
+            records: [
+              { fulfilmentId: 'line1/unit1' },
+              { fulfilmentId: 'line1/unit2' }
+            ]
+          }
+        },
+        {
+          obligation: passport,
+          impl: {
+            inScope: true,
+            records: [
+              { fulfilmentId: 'line1/unit1', status: 'optional' },
+              { fulfilmentId: 'line1/unit2', status: 'optional' }
+            ]
+          }
+        },
+        {
+          obligation: earTag,
+          impl: {
+            inScope: true,
+            records: [
+              { fulfilmentId: 'line1/unit1', status: 'optional' },
+              { fulfilmentId: 'line1/unit2', status: 'optional' }
+            ]
+          }
+        }
+      ])
+    })
+    const errors = groupInvariantErrors(groupWithRequires, st)
+    expect(errors).toHaveLength(2)
+    expect(errors[0]).toEqual({
+      code: 'obligation.unitRecord.identifiersRequired',
+      groupId: unitRecord.id,
+      groupName: 'unitRecord',
+      instanceId: 'line1/unit1'
+    })
+    expect(errors[1].instanceId).toBe('line1/unit2')
+  })
+
+  it('no error when at least one required leaf is filled', () => {
+    const st = state({
+      fulfilments: { [passport.id]: { 'line1/unit1': 'PP-001' } },
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        {
+          obligation: passport,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        },
+        {
+          obligation: earTag,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithRequires, st)).toEqual([])
+  })
+
+  it('treats an all-blank composite value as unfilled (uses isBlankValue)', () => {
+    // Regression: a composite address record with all-empty
+    // sub-fields must not "satisfy" the invariant.
+    const st = state({
+      fulfilments: {
+        [passport.id]: {
+          'line1/unit1': { name: '', addressLine1: '', town: '', postcode: '' }
+        }
+      },
+      obligations: impls([
+        {
+          obligation: unitRecord,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        {
+          obligation: passport,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithRequires, st)).toHaveLength(1)
+  })
+})
+
+describe('containerStatus with group invariants', () => {
+  // Same synthetic setup as groupInvariantErrors — a container whose
+  // pages present unitRecord-scoped obligations should stay IP when
+  // any unit violates its `requires` invariant, even when every page
+  // is individually F (all leaves optional).
+  const unitRecord = { id: 'unit-group', name: 'unitRecord' }
+  const passport = { id: 'passport', name: 'passport' }
+
+  const groupWithRequires = {
+    ...unitRecord,
+    requires: {
+      anyOf: [passport],
+      errorCode: 'obligation.unitRecord.identifiersRequired'
+    }
+  }
+
+  const container = {
+    children: [
+      {
+        page: 'passport',
+        presentsForEach: { obligation: passport, forEachOf: groupWithRequires }
+      }
+    ]
+  }
+
+  it('subsection with unfilled required-any-of stays IN_PROGRESS (blocks F)', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: groupWithRequires,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        {
+          obligation: passport,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    // Without the invariant check, the page (optional-only) would roll
+    // up to F. The invariant blocks it — but note the "empty session"
+    // NS guard: since nothing under the container has any fulfilment,
+    // status is NS not IP.
+    expect(containerStatus(container, st)).toBe(STATUSES.NOT_STARTED)
+  })
+
+  it('subsection with any leaf filled satisfies the invariant → F', () => {
+    const st = state({
+      fulfilments: { [passport.id]: { 'line1/unit1': 'PP-001' } },
+      obligations: impls([
+        {
+          obligation: groupWithRequires,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        {
+          obligation: passport,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    expect(containerStatus(container, st)).toBe(STATUSES.FULFILLED)
+  })
+})
+
+describe('groupInvariantErrorsForContainer scoping', () => {
+  const unitRecord = { id: 'unit-group', name: 'unitRecord' }
+  const passport = { id: 'passport', name: 'passport' }
+  const groupWithRequires = {
+    ...unitRecord,
+    requires: {
+      anyOf: [passport],
+      errorCode: 'obligation.unitRecord.identifiersRequired'
+    }
+  }
+
+  it('only walks groups referenced by a presentsForEach.forEachOf under this container', () => {
+    // A container that DOESN'T present anything for the group returns
+    // empty even if the group is globally violating.
+    const st = state({
+      obligations: impls([
+        {
+          obligation: groupWithRequires,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+        },
+        {
+          obligation: passport,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    const containerElsewhere = {
+      children: [{ page: 'x', presents: [{ obligation: passport }] }]
+    }
+    expect(groupInvariantErrorsForContainer(containerElsewhere, st)).toEqual([])
   })
 })

@@ -28,6 +28,7 @@ import {
   firstUnfulfilledPageForLine,
   firstUnfulfilledPageForUnit,
   firstPagePresentingObligation,
+  groupInvariantErrors,
   journeyState,
   pageStatus,
   validate as validateObligation
@@ -161,6 +162,31 @@ export function nextAfterForUnit(page, state, lineId, unitId) {
 /** Where does the Change link for an obligation go? */
 export function changeLinkFor(obligationId) {
   return firstPagePresentingObligation(flow, obligationId)
+}
+
+// ---------------------------------------------------------------------------
+// Group invariants — cross-obligation rules declared on a group
+// obligation via `requires.anyOf`. Used to enforce the V4 "at least
+// one Animal Identifier per unit-record" rule.
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns errors for every in-scope group instance that violates its
+ * `requires.anyOf` invariant. Aggregated across every group in the
+ * manifest that declares `requires`. Empty when nothing is violated
+ * (or when no groups declare `requires` — the empty-manifest case).
+ *
+ * Shape: `[{ code, groupId, groupName, instanceId }]`. Callers map
+ * `instanceId` to a human label (e.g. "Animal 1 on commodity line 2")
+ * before rendering.
+ */
+export function groupInvariantErrorsForState(state) {
+  const groupsWithRequires = v4Obligations.filter((o) => o?.requires?.anyOf)
+  const out = []
+  for (const group of groupsWithRequires) {
+    out.push(...groupInvariantErrors(group, state))
+  }
+  return out
 }
 
 // ---------------------------------------------------------------------------

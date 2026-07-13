@@ -439,6 +439,7 @@
     "bannerHeading": "You still need to complete some sections",
     "changeLinkText": "Change",
     "promptEnterValue": "Enter a value for {label}",
+    "promptGroupInvariant": "Add at least one identifier for animal {unitN} on commodity line {lineN}",
     "submitReady": "All required obligations are fulfilled. In a real service, this is where the user would submit."
   },
   "commodityLines": {

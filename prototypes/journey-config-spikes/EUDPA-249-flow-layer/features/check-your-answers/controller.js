@@ -12,10 +12,18 @@
  * mandatories (mid-journey CYA pattern from the parent branch).
  */
 
-import { changeLinkFor, statusOfJourney } from '../../contract.js'
+import {
+  changeLinkFor,
+  groupInvariantErrorsForState,
+  statusOfJourney
+} from '../../contract.js'
 import { readState } from '../../lib/state.js'
 import { forObligation } from '../../lib/presentation.js'
-import { obligations as v4Obligations } from '../../obligations/obligations.js'
+import {
+  commodityLine,
+  unitRecord,
+  obligations as v4Obligations
+} from '../../obligations/obligations.js'
 import { domain } from '../../domain/index.js'
 import { t, tOrNull } from '../../lib/i18n.js'
 import { chrome } from '../../lib/chrome.js'
@@ -27,6 +35,25 @@ function lineNumber(lineId) {
   // 'line1' → 1. Falls back to the raw id if the format changes.
   const match = /^line(\d+)$/.exec(lineId)
   return match ? Number(match[1]) : lineId
+}
+
+/** 1-based ordinal position of `lineId` in the current commodityLine
+ *  records list — same convention used across the units index and the
+ *  /lines summary blocks. */
+function ordinalOfLineId(state, lineId) {
+  const records = state.obligations?.[commodityLine.id]?.records ?? []
+  const idx = records.findIndex((r) => r.fulfilmentId === lineId)
+  return idx >= 0 ? idx + 1 : lineId
+}
+
+/** 1-based ordinal position of a unit within its parent line, matching
+ *  the units index page's rendering. */
+function ordinalOfUnitId(state, lineId, unitId) {
+  const compositeKey = `${lineId}/${unitId}`
+  const records = state.obligations?.[unitRecord.id]?.records ?? []
+  const perLine = records.filter((r) => r.fulfilmentId.startsWith(`${lineId}/`))
+  const idx = perLine.findIndex((r) => r.fulfilmentId === compositeKey)
+  return idx >= 0 ? idx + 1 : unitId
 }
 
 /**
@@ -162,6 +189,29 @@ export const cyaController = {
           href,
           null
         )
+      }
+
+      // Group-invariant prompts — currently just the V4 "at least one
+      // Animal Identifier per unit-record" rule. Each violating unit
+      // gets a prompt with a Change link into the parent line's
+      // units index, where the user picks a specific unit and fills
+      // any one identifier. The composite instanceId is
+      // `${lineId}/${unitId}`. We surface the human ordinal position
+      // for both — the CYA copy reads "Animal 1 on commodity line 2"
+      // the same way the units list page does.
+      for (const err of groupInvariantErrorsForState(state)) {
+        const [lineId, unitId] = err.instanceId.split('/')
+        if (!lineId || !unitId) continue
+        const lineIx = ordinalOfLineId(state, lineId)
+        const unitIx = ordinalOfUnitId(state, lineId, unitId)
+        prompts.push({
+          text: t('cya.promptGroupInvariant', {
+            lineN: lineIx,
+            unitN: unitIx
+          }),
+          href: `${BASE}/lines/${lineId}/units`,
+          because: []
+        })
       }
 
       return h.view('features/check-your-answers/template', {

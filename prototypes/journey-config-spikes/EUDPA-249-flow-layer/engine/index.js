@@ -365,6 +365,13 @@ export function pageStatus(page, state) {
  * unfilled) would model as IP, which is misleading — no user action
  * has happened yet. We honour the user's perspective by returning NS
  * until the container has been touched. Same pattern as journeyState.
+ *
+ * Group-level invariants: if a container includes pages driven by a
+ * `presentsForEach` over a group whose `requires` is unsatisfied for
+ * any in-scope instance, the container CANNOT reach F even when every
+ * page-level status is F. This is how the V4 "at least one Animal
+ * Identifier per unit-record" rule blocks completion — see
+ * `groupInvariantErrorsForContainer` below.
  */
 export function containerStatus(container, state) {
   if (isPage(container)) return pageStatus(container, state)
@@ -376,6 +383,15 @@ export function containerStatus(container, state) {
   const hasF = applicable.includes(STATUSES.FULFILLED)
   const hasIP = applicable.includes(STATUSES.IN_PROGRESS)
   const hasNS = applicable.includes(STATUSES.NOT_STARTED)
+  // Group-invariant check first: even a container whose pages are
+  // all F stays IP if any in-scope group instance violates its
+  // `requires` invariant. Uses `hasFulfilmentInContainer` to keep the
+  // empty-session case as NS.
+  const groupErrors = groupInvariantErrorsForContainer(container, state)
+  if (groupErrors.length > 0) {
+    if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
+    return STATUSES.IN_PROGRESS
+  }
   if (hasIP) {
     if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
     return STATUSES.IN_PROGRESS
@@ -386,6 +402,82 @@ export function containerStatus(container, state) {
   }
   if (hasF) return STATUSES.FULFILLED
   return STATUSES.NOT_STARTED
+}
+
+/**
+ * groupInvariantErrors(group, state)
+ *   → [{ code, groupId, groupName, instanceId }]
+ *
+ * For a group obligation carrying `requires.anyOf`, returns one error
+ * per in-scope instance where NONE of the required leaves has a
+ * fulfilment (and where the instance has at least one required leaf
+ * in scope — otherwise the invariant is vacuously satisfied). Same
+ * `isBlankValue` semantics as `hasFulfilment` so composite-address
+ * all-blank values are treated as unfilled.
+ *
+ * This is the primitive the V4 "at least one Animal Identifier per
+ * unit-record" rule rides on. `unitRecord.requires = { anyOf: [
+ * passport, tattoo, earTag, horseName, identificationDetails,
+ * description ] }` in obligations.js.
+ */
+export function groupInvariantErrors(group, state) {
+  if (!group?.requires?.anyOf) return []
+  const groupImpl = state.obligations?.[group.id]
+  if (!groupImpl?.inScope) return []
+  const errors = []
+  for (const record of groupImpl.records ?? []) {
+    const instanceId = record.fulfilmentId
+    const inScopeLeaves = group.requires.anyOf.filter((leaf) => {
+      const impl = state.obligations?.[leaf.id]
+      if (!impl?.inScope) return false
+      return (impl.records ?? []).some((r) => r.fulfilmentId === instanceId)
+    })
+    if (inScopeLeaves.length === 0) continue
+    const anyFilled = inScopeLeaves.some((leaf) => {
+      const stored = state.fulfilments?.[leaf.id]?.[instanceId]
+      return !isBlankValue(stored)
+    })
+    if (!anyFilled) {
+      errors.push({
+        code: group.requires.errorCode,
+        groupId: group.id,
+        groupName: group.name,
+        instanceId
+      })
+    }
+  }
+  return errors
+}
+
+/** Collect every group obligation referenced by a
+ *  `presentsForEach.forEachOf` node under this container. Used to
+ *  scope group-invariant checks to only the groups a container
+ *  actually surfaces. */
+function collectGroupsPresentedIn(container) {
+  const groups = new Map()
+  const visit = (node) => {
+    if (node.presentsForEach?.forEachOf) {
+      const g = node.presentsForEach.forEachOf
+      groups.set(g.id, g)
+    }
+    for (const child of node.children ?? []) visit(child)
+  }
+  visit(container)
+  return [...groups.values()]
+}
+
+/** Union of `groupInvariantErrors` across every group presented under
+ *  this container. Empty when the container doesn't touch a group
+ *  with `requires` or when every in-scope instance satisfies it. */
+export function groupInvariantErrorsForContainer(container, state) {
+  if (isPage(container)) return []
+  const groups = collectGroupsPresentedIn(container)
+  const out = []
+  for (const group of groups) {
+    if (!group.requires) continue
+    out.push(...groupInvariantErrors(group, state))
+  }
+  return out
 }
 
 /** True iff any obligation presented under this container has a
