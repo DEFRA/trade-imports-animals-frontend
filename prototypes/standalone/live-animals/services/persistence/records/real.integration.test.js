@@ -5,6 +5,14 @@ import { runsIt } from '../it-mode.js'
 
 // Gated backend integration test for the REAL records adapter (S3c).
 //
+// The adapter is wired to Mapper B (answersToTargetNotification /
+// targetNotificationToAnswers). Mapper B is a superset of Mapper A on the
+// backend-storable set, so the storable answers below (species earTag/passport,
+// the collapsed transporter object, the party addresses) must round-trip
+// through the real backend; its Stage-2 extras (regionCode, purpose, the split
+// transport fields, per-animal identifiers beyond earTag/passport, documents)
+// have no backend home yet and are expected to drop.
+//
 // Runs under LIVE_ANIMALS_IT=real (or =all); the default (stubs/unset)
 // skips it, so the default hermetic `npm run test:live-animals` run adds
 // ZERO running tests here. Run it only against a live stack backend (the
@@ -58,11 +66,13 @@ describe.skipIf(!runsIt('real'))(
       expect(loaded.answers.commodityLines).toBeUndefined()
     })
 
-    it('Should persist a saveAnswers write-through and re-read the mapped subset', async () => {
+    it('Should persist the Mapper B storable set write-through and re-read it', async () => {
       const { journeyId } = await records.create({ userId: uniqueUserId() })
 
       const answers = {
         countryOfOrigin: 'FR',
+        // Stage-2 extra: origin.regionCode has no backend home.
+        regionOfOriginCode: 'FR-75',
         placeOfOrigin: {
           name: 'Origin Farm',
           address: {
@@ -72,6 +82,18 @@ describe.skipIf(!runsIt('real'))(
           }
         },
         arrivalDateAtPort: { day: 14, month: 3, year: 2026 },
+        transporterType: 'Commercial transporter',
+        commercialTransporter: {
+          name: 'Transporter Co',
+          approvalNumber: 'UK/NEWCA/T1/00090953',
+          address: {
+            addressLine1: '7 Route One',
+            city: 'Dover',
+            country: 'GB'
+          }
+        },
+        // Stage-2 extra: purpose has no backend home.
+        purposeInInternalMarket: 'Breeding',
         commodityLines: [
           {
             commoditySelection: 'live-bovine',
@@ -82,7 +104,9 @@ describe.skipIf(!runsIt('real'))(
             animalIdentifiers: [
               {
                 animalIdentifierEarTag: 'UK123456700001',
-                animalIdentifierPassport: 'PP-001'
+                animalIdentifierPassport: 'PP-001',
+                // Stage-2 extra: identifiers beyond earTag/passport have no home.
+                animalIdentifierTattoo: 'AB1234'
               }
             ]
           }
@@ -92,9 +116,7 @@ describe.skipIf(!runsIt('real'))(
       await records.saveAnswers(journeyId, answers)
       const loaded = await records.load({ journeyId })
 
-      // Mapped subset only — the gap fields (extra animalIdentifiers beyond
-      // earTag/passport, Tier-B keys) are known-lossy against the real backend
-      // (Mapper A) and are deliberately not asserted here.
+      // Storable set survives the real backend.
       expect(loaded.answers.countryOfOrigin).toBe('FR')
       expect(loaded.answers.placeOfOrigin).toEqual(answers.placeOfOrigin)
       expect(loaded.answers.arrivalDateAtPort).toEqual({
@@ -102,6 +124,13 @@ describe.skipIf(!runsIt('real'))(
         month: 3,
         year: 2026
       })
+      // The collapsed Transporter (name/address/approvalNumber/type) round-trips.
+      expect(loaded.answers.transporterType).toBe('Commercial transporter')
+      expect(loaded.answers.commercialTransporter).toEqual(
+        answers.commercialTransporter
+      )
+      // commodityCode drops, so commoditySelection is recovered from the
+      // commodity name; species earTag/passport survive on the species entry.
       expect(loaded.answers.commodityLines).toEqual([
         {
           commoditySelection: 'live-bovine',
@@ -117,6 +146,14 @@ describe.skipIf(!runsIt('real'))(
           ]
         }
       ])
+
+      // Stage-2 extras have no backend home yet and drop (documenting the gap).
+      expect(loaded.answers.regionOfOriginCode).toBeUndefined()
+      expect(loaded.answers.purposeInInternalMarket).toBeUndefined()
+      expect(
+        loaded.answers.commodityLines[0].animalIdentifiers[0]
+          .animalIdentifierTattoo
+      ).toBeUndefined()
     })
 
     it('Should full-replace on a second saveAnswers so dropped keys are gone', async () => {

@@ -258,13 +258,7 @@ const targetCommodityFromLines = (lines) => {
         typeOfCommodity: line.typeSelection,
         totalNoOfAnimals: line.numberOfAnimalsQuantity,
         totalNoOfPackages: line.numberOfPackages,
-        species:
-          line.speciesSelection === undefined
-            ? undefined
-            : line.speciesSelection.map((species) => ({
-                value: species,
-                text: species
-              })),
+        species: speciesFromLineA(line),
         animalIdentifiers:
           line.animalIdentifiers === undefined
             ? undefined
@@ -274,13 +268,24 @@ const targetCommodityFromLines = (lines) => {
   }
 }
 
+const identifiersFromSpecies = (species = []) => {
+  const units = species.map((entry) =>
+    compact({
+      animalIdentifierEarTag: entry.earTag,
+      animalIdentifierPassport: entry.passport
+    })
+  )
+  return units.some((unit) => Object.keys(unit).length > 0) ? units : undefined
+}
+
 const targetLinesFromCommodity = (commodity) => {
   if (!commodity || !Array.isArray(commodity.commodityComplement)) {
     return undefined
   }
-  return commodity.commodityComplement.map((complement) =>
+  return commodity.commodityComplement.map((complement, index) =>
     compact({
-      commoditySelection: complement.commodityCode,
+      commoditySelection:
+        complement.commodityCode ?? (index === 0 ? commodity.name : undefined),
       typeSelection: complement.typeOfCommodity,
       speciesSelection:
         complement.species === undefined
@@ -290,7 +295,7 @@ const targetLinesFromCommodity = (commodity) => {
       numberOfAnimalsQuantity: complement.totalNoOfAnimals,
       animalIdentifiers:
         complement.animalIdentifiers === undefined
-          ? undefined
+          ? identifiersFromSpecies(complement.species)
           : complement.animalIdentifiers.map(unitFromTarget)
     })
   )
@@ -318,6 +323,38 @@ const documentsFromTarget = (documents) => {
       accompanyingDocumentDateOfIssue: doc.dateOfIssue
     })
   )
+}
+
+const targetTransporter = (answers) => {
+  const source = answers.commercialTransporter ?? answers.privateTransporter
+  return orUndefined(
+    compact({
+      name: source?.name,
+      address: source?.address,
+      approvalNumber: source?.approvalNumber,
+      type: answers.transporterType
+    })
+  )
+}
+
+const transporterToAnswers = (transporter) => {
+  const out = {}
+  if (transporter.type !== undefined) out.transporterType = transporter.type
+  const party = orUndefined(
+    compact({
+      name: transporter.name,
+      address: transporter.address,
+      approvalNumber: transporter.approvalNumber
+    })
+  )
+  if (party) {
+    if (transporter.type === 'Private transporter') {
+      out.privateTransporter = party
+    } else {
+      out.commercialTransporter = party
+    }
+  }
+  return out
 }
 
 export const answersToTargetNotification = (answers = {}) => {
@@ -382,9 +419,7 @@ export const answersToTargetNotification = (answers = {}) => {
     compact({
       portOfEntry: answers.portOfEntry,
       arrivalDate: isoFromDateParts(answers.arrivalDateAtPort),
-      transporter: answers.commercialTransporter,
-      transporterType: answers.transporterType,
-      privateTransporter: answers.privateTransporter,
+      transporter: targetTransporter(answers),
       meansOfTransport: answers.meansOfTransport,
       transportIdentification: answers.transportIdentification,
       transportDocumentReference: answers.transportDocumentReference,
@@ -472,13 +507,7 @@ export const targetNotificationToAnswers = (notification = {}) => {
     answers.arrivalDateAtPort = datePartsFromIso(transport.arrivalDate)
   }
   if (transport?.transporter !== undefined) {
-    answers.commercialTransporter = transport.transporter
-  }
-  if (transport?.transporterType !== undefined) {
-    answers.transporterType = transport.transporterType
-  }
-  if (transport?.privateTransporter !== undefined) {
-    answers.privateTransporter = transport.privateTransporter
+    Object.assign(answers, transporterToAnswers(transport.transporter))
   }
   if (transport?.meansOfTransport !== undefined) {
     answers.meansOfTransport = transport.meansOfTransport

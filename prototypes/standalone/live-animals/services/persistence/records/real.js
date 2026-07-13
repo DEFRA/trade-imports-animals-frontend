@@ -1,8 +1,8 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 import {
-  answersToNotification,
-  notificationToAnswers
+  answersToTargetNotification,
+  targetNotificationToAnswers
 } from './notification-mapper.js'
 
 const backendBaseUrl =
@@ -51,7 +51,7 @@ const marshal = (notification, userId = null) => {
     userId,
     status,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
-    answers: stripNulls(notificationToAnswers(notification))
+    answers: stripNulls(targetNotificationToAnswers(notification))
   }
 }
 
@@ -112,7 +112,7 @@ export const records = {
       throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
     }
 
-    const notification = answersToNotification({
+    const notification = answersToTargetNotification({
       ...answers,
       referenceNumber: journeyId
     })
