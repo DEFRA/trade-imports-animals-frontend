@@ -53,6 +53,21 @@ const COPY = {
   'domain.address.subFieldRequired': (error) =>
     t('errors.domain.addressSubFieldRequired', {
       subField: t(`presentation.address.subField.${error.subField}`)
+    }),
+  // Step 5e — per-sub-field V4 rules on the standard address block.
+  'domain.address.subFieldMaxLength': (error) =>
+    t('errors.domain.addressSubFieldMaxLength', {
+      subField: t(`presentation.address.subField.${error.subField}`),
+      max: error.max,
+      actual: error.actual
+    }),
+  'domain.address.subFieldEmailFormat': (error) =>
+    t('errors.domain.addressSubFieldEmailFormat', {
+      subField: t(`presentation.address.subField.${error.subField}`)
+    }),
+  'domain.address.subFieldEnumInvalid': (error) =>
+    t('errors.domain.addressSubFieldEnumInvalid', {
+      subField: t(`presentation.address.subField.${error.subField}`)
     })
 }
 
@@ -73,6 +88,9 @@ export const FORMAT_ERROR_KEYS = [
   'errors.domain.arrayMaxSelections',
   'errors.domain.numberOfAnimalsSpeciesCap',
   'errors.domain.addressSubFieldRequired',
+  'errors.domain.addressSubFieldMaxLength',
+  'errors.domain.addressSubFieldEmailFormat',
+  'errors.domain.addressSubFieldEnumInvalid',
   'errors.domain.unknownCode',
   'errors.defaultRequired'
 ]

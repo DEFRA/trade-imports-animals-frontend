@@ -72,11 +72,22 @@ function formatSingle(value, obligation) {
   if (Array.isArray(value)) return value.map(label).join(', ')
   // Address-block composite value — join the non-empty sub-fields with
   // comma separators for a single-line CYA summary. Order follows the
-  // domain entry's subFields declaration.
+  // domain entry's subFields declaration. Enum sub-fields (country) are
+  // resolved via their per-sub-field labels map so the summary reads
+  // "United Kingdom" not "GB".
   if (typeof value === 'object' && domainEntry?.type === 'address') {
+    const rules = domainEntry.subFieldRules ?? {}
     const parts = (domainEntry.subFields ?? [])
-      .map((sub) => value[sub])
-      .filter((v) => typeof v === 'string' && v.trim() !== '')
+      .map((sub) => {
+        const raw = value[sub]
+        if (typeof raw !== 'string' || raw.trim() === '') return null
+        const rule = rules[sub]
+        if (rule?.type === 'enum' && rule.labels) {
+          return tOrNull(rule.labels[raw]) ?? raw
+        }
+        return raw
+      })
+      .filter((v) => v !== null)
     return parts.join(', ')
   }
   return String(label(value))

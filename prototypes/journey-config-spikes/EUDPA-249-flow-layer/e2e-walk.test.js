@@ -178,9 +178,13 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     await fill(jar, 'transporter-type', { transporterType: 'commercial' })
     await fill(jar, 'transporter-details', {
       commercialTransporter__name: 'ACME Transport Ltd',
+      commercialTransporter__transporterAuthorisationNumber: 'UK/AUTH/2026/001',
       commercialTransporter__addressLine1: 'Farm Lane',
       commercialTransporter__town: 'Exeter',
-      commercialTransporter__postcode: 'EX1 1AA'
+      commercialTransporter__postcode: 'EX1 1AA',
+      commercialTransporter__country: 'GB',
+      commercialTransporter__telephone: '+44 1234 567890',
+      commercialTransporter__email: 'contact@example.com'
     })
     await fill(jar, 'means-of-transport', { meansOfTransport: 'road-vehicle' })
     await fill(jar, 'transport-identification', {
@@ -208,31 +212,46 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       placeOfOrigin__name: 'Origin Farm Ltd',
       placeOfOrigin__addressLine1: '1 Farm Lane',
       placeOfOrigin__town: 'Exeter',
-      placeOfOrigin__postcode: 'EX1 1AA'
+      placeOfOrigin__postcode: 'EX1 1AA',
+      placeOfOrigin__country: 'GB',
+      placeOfOrigin__telephone: '+44 1234 567890',
+      placeOfOrigin__email: 'contact@example.com'
     })
     await fill(jar, 'consignor', {
       consignor__name: 'Sender Co',
       consignor__addressLine1: '2 Sender Street',
       consignor__town: 'Bristol',
-      consignor__postcode: 'BS1 1BB'
+      consignor__postcode: 'BS1 1BB',
+      consignor__country: 'GB',
+      consignor__telephone: '+44 1234 567890',
+      consignor__email: 'contact@example.com'
     })
     await fill(jar, 'consignee', {
       consignee__name: 'Receiver Ltd',
       consignee__addressLine1: '3 Receiver Road',
       consignee__town: 'Leeds',
-      consignee__postcode: 'LS1 1CC'
+      consignee__postcode: 'LS1 1CC',
+      consignee__country: 'GB',
+      consignee__telephone: '+44 1234 567890',
+      consignee__email: 'contact@example.com'
     })
     await fill(jar, 'importer', {
       importer__name: 'Importer Trading',
       importer__addressLine1: '4 Import Way',
       importer__town: 'Cardiff',
-      importer__postcode: 'CF1 1DD'
+      importer__postcode: 'CF1 1DD',
+      importer__country: 'GB',
+      importer__telephone: '+44 1234 567890',
+      importer__email: 'contact@example.com'
     })
     await fill(jar, 'place-of-destination', {
       placeOfDestination__name: 'Destination Farm',
       placeOfDestination__addressLine1: '5 Destination Lane',
       placeOfDestination__town: 'Manchester',
-      placeOfDestination__postcode: 'M1 1EE'
+      placeOfDestination__postcode: 'M1 1EE',
+      placeOfDestination__country: 'GB',
+      placeOfDestination__telephone: '+44 1234 567890',
+      placeOfDestination__email: 'contact@example.com'
     })
 
     // -- Section 5: references ------------------------------------------
@@ -241,7 +260,10 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       contactAddress__name: 'Contact Person',
       contactAddress__addressLine1: '6 Contact Close',
       contactAddress__town: 'Glasgow',
-      contactAddress__postcode: 'G1 1FF'
+      contactAddress__postcode: 'G1 1FF',
+      contactAddress__country: 'GB',
+      contactAddress__telephone: '+44 1234 567890',
+      contactAddress__email: 'contact@example.com'
     })
     // internal-reference omitted — internalReferenceNumber is optional.
     // Accompanying-documents: this walk exercises the branchedGate
@@ -369,9 +391,13 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     await fill(jar, 'transporter-type', { transporterType: 'commercial' })
     await fill(jar, 'transporter-details', {
       commercialTransporter__name: 'ACME Transport Ltd',
+      commercialTransporter__transporterAuthorisationNumber: 'UK/AUTH/2026/001',
       commercialTransporter__addressLine1: 'Farm Lane',
       commercialTransporter__town: 'Exeter',
-      commercialTransporter__postcode: 'EX1 1AA'
+      commercialTransporter__postcode: 'EX1 1AA',
+      commercialTransporter__country: 'GB',
+      commercialTransporter__telephone: '+44 1234 567890',
+      commercialTransporter__email: 'contact@example.com'
     })
     await fill(jar, 'means-of-transport', { meansOfTransport: 'road-vehicle' })
     await fill(jar, 'transport-identification', {
@@ -399,31 +425,46 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       placeOfOrigin__name: 'Origin Farm Ltd',
       placeOfOrigin__addressLine1: '1 Farm Lane',
       placeOfOrigin__town: 'Exeter',
-      placeOfOrigin__postcode: 'EX1 1AA'
+      placeOfOrigin__postcode: 'EX1 1AA',
+      placeOfOrigin__country: 'GB',
+      placeOfOrigin__telephone: '+44 1234 567890',
+      placeOfOrigin__email: 'contact@example.com'
     })
     await fill(jar, 'consignor', {
       consignor__name: 'Sender Co',
       consignor__addressLine1: '2 Sender Street',
       consignor__town: 'Bristol',
-      consignor__postcode: 'BS1 1BB'
+      consignor__postcode: 'BS1 1BB',
+      consignor__country: 'GB',
+      consignor__telephone: '+44 1234 567890',
+      consignor__email: 'contact@example.com'
     })
     await fill(jar, 'consignee', {
       consignee__name: 'Receiver Ltd',
       consignee__addressLine1: '3 Receiver Road',
       consignee__town: 'Leeds',
-      consignee__postcode: 'LS1 1CC'
+      consignee__postcode: 'LS1 1CC',
+      consignee__country: 'GB',
+      consignee__telephone: '+44 1234 567890',
+      consignee__email: 'contact@example.com'
     })
     await fill(jar, 'importer', {
       importer__name: 'Importer Trading',
       importer__addressLine1: '4 Import Way',
       importer__town: 'Cardiff',
-      importer__postcode: 'CF1 1DD'
+      importer__postcode: 'CF1 1DD',
+      importer__country: 'GB',
+      importer__telephone: '+44 1234 567890',
+      importer__email: 'contact@example.com'
     })
     await fill(jar, 'place-of-destination', {
       placeOfDestination__name: 'Destination Farm',
       placeOfDestination__addressLine1: '5 Destination Lane',
       placeOfDestination__town: 'Manchester',
-      placeOfDestination__postcode: 'M1 1EE'
+      placeOfDestination__postcode: 'M1 1EE',
+      placeOfDestination__country: 'GB',
+      placeOfDestination__telephone: '+44 1234 567890',
+      placeOfDestination__email: 'contact@example.com'
     })
 
     // -- Section 5: references ------------------------------------------
@@ -432,7 +473,10 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       contactAddress__name: 'Contact Person',
       contactAddress__addressLine1: '6 Contact Close',
       contactAddress__town: 'Glasgow',
-      contactAddress__postcode: 'G1 1FF'
+      contactAddress__postcode: 'G1 1FF',
+      contactAddress__country: 'GB',
+      contactAddress__telephone: '+44 1234 567890',
+      contactAddress__email: 'contact@example.com'
     })
     // internal-reference omitted — internalReferenceNumber is optional.
     // Accompanying-documents intentionally NOT visited on this walk —

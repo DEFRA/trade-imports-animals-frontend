@@ -238,35 +238,66 @@ describe('staticEnum — commodityCode', () => {
   })
 })
 
-describe('addressBlock — commercialTransporter (step 4 iteration 7)', () => {
-  it('exposes type/subFields/required metadata for the widget layer', () => {
+describe('addressBlock — commercialTransporter (V4 standard address block + auth number)', () => {
+  // Step 5e widened this from the 4-mandatory-string stub to the V4
+  // standard address block (9 sub-fields, mixed mandatory/optional,
+  // per-sub-field max-lengths, country MDM enum, telephone / email
+  // types). commercialTransporter carries an extra
+  // `transporterAuthorisationNumber` beyond the base 9.
+  const fullValid = {
+    name: 'ACME',
+    transporterAuthorisationNumber: 'UK/AUTH/2026/001',
+    addressLine1: 'Farm Lane',
+    town: 'Exeter',
+    postcode: 'EX1 1AA',
+    country: 'GB',
+    telephone: '+44 1234 567890',
+    email: 'ops@acme.example'
+  }
+
+  it('exposes type/subFields/required/subFieldRules metadata for the widget layer', () => {
     expect(commercialTransporterDomain.type).toBe('address')
     expect(commercialTransporterDomain.subFields).toEqual([
       'name',
+      'transporterAuthorisationNumber',
       'addressLine1',
+      'addressLine2',
       'town',
-      'postcode'
+      'county',
+      'postcode',
+      'country',
+      'telephone',
+      'email'
     ])
     expect(commercialTransporterDomain.required).toEqual([
       'name',
+      'transporterAuthorisationNumber',
       'addressLine1',
       'town',
-      'postcode'
+      'postcode',
+      'country',
+      'telephone',
+      'email'
     ])
+    expect(commercialTransporterDomain.subFieldRules.postcode).toEqual({
+      type: 'string',
+      maxLength: 12
+    })
+    expect(commercialTransporterDomain.subFieldRules.country.type).toBe('enum')
+    expect(commercialTransporterDomain.subFieldRules.telephone).toEqual({
+      type: 'telephone',
+      maxLength: 20
+    })
+    expect(commercialTransporterDomain.subFieldRules.email).toEqual({
+      type: 'email',
+      maxLength: 254
+    })
     expect(commercialTransporterDomain.metadata.shape).toBe('addressBlock')
   })
 
-  it('passes an all-filled composite value', () => {
+  it('passes an all-filled composite value with every V4 sub-field', () => {
     expect(
-      commercialTransporterDomain.predicate(
-        {
-          name: 'ACME',
-          addressLine1: 'Farm Lane',
-          town: 'Exeter',
-          postcode: 'EX1 1AA'
-        },
-        buildCtx()
-      )
+      commercialTransporterDomain.predicate(fullValid, buildCtx())
     ).toEqual([])
   })
 
@@ -279,7 +310,11 @@ describe('addressBlock — commercialTransporter (step 4 iteration 7)', () => {
 
   it('emits one addressSubFieldRequired error per empty required sub-field', () => {
     const errs = commercialTransporterDomain.predicate(
-      { name: 'ACME', addressLine1: '', town: '', postcode: 'EX1 1AA' },
+      {
+        ...fullValid,
+        addressLine1: '',
+        town: ''
+      },
       buildCtx()
     )
     expect(errs).toHaveLength(2)
@@ -288,6 +323,55 @@ describe('addressBlock — commercialTransporter (step 4 iteration 7)', () => {
       expect(err.code).toBe(reasons.addressSubFieldRequired.code)
       expect(err.obligation).toBe('commercialTransporter')
     }
+  })
+
+  it('does NOT emit an error for a blank OPTIONAL sub-field (addressLine2 / county)', () => {
+    expect(
+      commercialTransporterDomain.predicate(fullValid, buildCtx())
+    ).toEqual([])
+    // Adding blank optional fields explicitly should still pass.
+    expect(
+      commercialTransporterDomain.predicate(
+        { ...fullValid, addressLine2: '', county: '' },
+        buildCtx()
+      )
+    ).toEqual([])
+  })
+
+  it('rejects a sub-field that exceeds its V4 max-length', () => {
+    // postcode max 12 per V4; 13 chars should fire.
+    const errs = commercialTransporterDomain.predicate(
+      { ...fullValid, postcode: 'X'.repeat(13) },
+      buildCtx()
+    )
+    expect(errs).toHaveLength(1)
+    expect(errs[0]).toMatchObject({
+      code: reasons.addressSubFieldMaxLength.code,
+      subField: 'postcode',
+      max: 12,
+      actual: 13
+    })
+  })
+
+  it('rejects a malformed email sub-field (missing @)', () => {
+    const errs = commercialTransporterDomain.predicate(
+      { ...fullValid, email: 'no-at-sign' },
+      buildCtx()
+    )
+    expect(errs).toHaveLength(1)
+    expect(errs[0].code).toBe(reasons.addressSubFieldEmailFormat.code)
+    expect(errs[0].subField).toBe('email')
+  })
+
+  it('rejects a country sub-field not in the MDM enum', () => {
+    const errs = commercialTransporterDomain.predicate(
+      { ...fullValid, country: 'ZZ' },
+      buildCtx()
+    )
+    expect(errs).toHaveLength(1)
+    expect(errs[0].code).toBe(reasons.addressSubFieldEnumInvalid.code)
+    expect(errs[0].subField).toBe('country')
+    expect(errs[0].invalid).toBe('ZZ')
   })
 
   it('rejects a non-object composite value gracefully (returns [])', () => {

@@ -27,7 +27,11 @@
     {% call govukFieldset({ legend: item.args.legend or { text: '' } }) %}
       {% if item.args.hint %}<div class="govuk-hint">{{ item.args.hint.text }}</div>{% endif %}
       {% for sub in item.args.subFields %}
-        {{ govukInput(sub) }}
+        {% if sub.widget == 'select' %}
+          {{ govukSelect(sub) }}
+        {% else %}
+          {{ govukInput(sub) }}
+        {% endif %}
       {% endfor %}
     {% endcall %}
   {% else %}

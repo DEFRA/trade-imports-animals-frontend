@@ -367,6 +367,8 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/pages/transporter-details',
       payload: {
         commercialTransporter__name: 'ACME',
+        commercialTransporter__transporterAuthorisationNumber:
+          'UK/AUTH/2026/001',
         commercialTransporter__addressLine1: '',
         commercialTransporter__town: 'Exeter',
         commercialTransporter__postcode: ''
@@ -387,9 +389,14 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/pages/transporter-details',
       payload: {
         commercialTransporter__name: 'ACME',
+        commercialTransporter__transporterAuthorisationNumber:
+          'UK/AUTH/2026/001',
         commercialTransporter__addressLine1: 'Farm Lane',
         commercialTransporter__town: 'Exeter',
-        commercialTransporter__postcode: 'EX1 1AA'
+        commercialTransporter__postcode: 'EX1 1AA',
+        commercialTransporter__country: 'GB',
+        commercialTransporter__telephone: '+44 1234 567890',
+        commercialTransporter__email: 'contact@example.com'
       }
     })
     expect(res.statusCode).toBe(302)
@@ -406,9 +413,14 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/pages/transporter-details',
       payload: {
         commercialTransporter__name: 'ACME',
+        commercialTransporter__transporterAuthorisationNumber:
+          'UK/AUTH/2026/001',
         commercialTransporter__addressLine1: 'Farm Lane',
         commercialTransporter__town: 'Exeter',
-        commercialTransporter__postcode: 'EX1 1AA'
+        commercialTransporter__postcode: 'EX1 1AA',
+        commercialTransporter__country: 'GB',
+        commercialTransporter__telephone: '+44 1234 567890',
+        commercialTransporter__email: 'contact@example.com'
       }
     })
     const cya = await inject(jar, {
@@ -416,7 +428,14 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/check-your-answers'
     })
     expect(cya.statusCode).toBe(200)
-    expect(cya.payload).toContain('ACME, Farm Lane, Exeter, EX1 1AA')
+    // Post step 5e, CYA renders every non-blank V4 sub-field in
+    // subFields order — including the transporter authorisation
+    // number and the resolved country label ("United Kingdom" not
+    // "GB"). Optional blank sub-fields (addressLine2 / county) are
+    // skipped.
+    expect(cya.payload).toContain(
+      'ACME, UK/AUTH/2026/001, Farm Lane, Exeter, EX1 1AA, United Kingdom, +44 1234 567890, contact@example.com'
+    )
   })
 })
 

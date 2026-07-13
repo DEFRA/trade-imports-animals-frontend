@@ -16,6 +16,43 @@
 
 import { t, tOrNull } from './i18n.js'
 
+/** UI-hint attributes for an address-block sub-field. Keeps the
+ *  widget rule readable — every sub-field with a `type` in the
+ *  domain rule map picks up the right HTML type + autocomplete +
+ *  inputmode without inline branching. */
+function uiHintsFor(sub, rule) {
+  if (rule?.type === 'email') {
+    return {
+      type: 'email',
+      autocomplete: 'email',
+      spellcheck: false,
+      classes: 'govuk-input--width-30'
+    }
+  }
+  if (rule?.type === 'telephone') {
+    return {
+      type: 'tel',
+      autocomplete: 'tel',
+      classes: 'govuk-input--width-20'
+    }
+  }
+  if (sub === 'postcode') {
+    return {
+      autocomplete: 'postal-code',
+      classes: 'govuk-input--width-10'
+    }
+  }
+  if (sub === 'addressLine1' || sub === 'addressLine2') {
+    return {
+      autocomplete: sub === 'addressLine1' ? 'address-line1' : 'address-line2'
+    }
+  }
+  if (sub === 'town') return { autocomplete: 'address-level2' }
+  if (sub === 'county') return { autocomplete: 'address-level1' }
+  if (sub === 'name') return { autocomplete: 'organization' }
+  return {}
+}
+
 const OBLIGATION_MULTI = new Set([
   // Obligations whose stored value is an array — either enum-multi or a
   // stored set. Marks them for checkbox-widget dispatch.
@@ -142,12 +179,17 @@ export const rules = [
   {
     id: 'address',
     build({ entry, id, value, legend, hint, fieldErrors }) {
-      // Composite widget — renders one govukInput per sub-field inside
-      // a fieldset legend. The stored value is a plain object keyed by
-      // sub-field name. Sub-field errors surface via a per-sub-field
-      // fieldErrors lookup keyed by `${id}__${subField}`.
+      // Composite widget — renders one govukInput or govukSelect per
+      // sub-field inside a fieldset legend. The stored value is a plain
+      // object keyed by sub-field name. Sub-field errors surface via a
+      // per-sub-field fieldErrors lookup keyed by `${id}__${subField}`.
+      // Per-sub-field rules (from entry.subFieldRules, added in step 5e)
+      // pick the underlying input type + wire up option lists for
+      // enum sub-fields (country in the V4 standard block).
       if (entry?.type !== 'address') return null
       const subFields = entry.subFields ?? []
+      const subFieldRules = entry.subFieldRules ?? {}
+      const requiredSet = new Set(entry.required ?? [])
       const stored = value && typeof value === 'object' ? value : {}
       return {
         type: 'address',
@@ -158,16 +200,49 @@ export const rules = [
           subFields: subFields.map((sub) => {
             const subId = `${id}__${sub}`
             const subError = fieldErrors?.[subId]?.text
-            return {
+            const rule = subFieldRules[sub] ?? {}
+            const optional = !requiredSet.has(sub)
+            const label = {
+              text:
+                t(`presentation.address.subField.${sub}`) +
+                (optional ? ' (optional)' : ''),
+              classes: 'govuk-label--s'
+            }
+            const common = {
               id: subId,
               name: subId,
-              label: {
-                text: t(`presentation.address.subField.${sub}`),
-                classes: 'govuk-label--s'
-              },
+              label,
               value: stored[sub] ?? '',
-              autocomplete: sub === 'postcode' ? 'postal-code' : undefined,
               errorMessage: subError ? { text: subError } : undefined
+            }
+            if (rule.type === 'enum' && Array.isArray(rule.options)) {
+              // Country and other MDM enum sub-fields render as a
+              // govuk select with the placeholder + labelled options.
+              return {
+                ...common,
+                widget: 'select',
+                items: [
+                  {
+                    value: '',
+                    text: t('chrome.selectPlaceholder'),
+                    selected: !stored[sub]
+                  },
+                  ...rule.options.map((v) => ({
+                    value: v,
+                    text: tOrNull(rule.labels?.[v]) ?? v,
+                    selected: stored[sub] === v
+                  }))
+                ]
+              }
+            }
+            // String / telephone / email — plain govukInput with type,
+            // inputmode, autocomplete, spellcheck adjusted per sub-
+            // field so browser UX matches expectations.
+            const uiHints = uiHintsFor(sub, rule)
+            return {
+              ...common,
+              widget: 'input',
+              ...uiHints
             }
           })
         }

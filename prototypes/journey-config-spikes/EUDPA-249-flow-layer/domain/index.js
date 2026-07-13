@@ -109,6 +109,23 @@ export const reasons = {
   addressSubFieldRequired: {
     code: 'domain.address.subFieldRequired',
     explanation: 'a required sub-field of the address is missing or blank'
+  },
+  // Step 5e — per-sub-field V4 rules expressed as their own reason
+  // codes so the error summary maps them to distinct messages.
+  addressSubFieldMaxLength: {
+    code: 'domain.address.subFieldMaxLength',
+    explanation:
+      'a sub-field of the address exceeds its per-V4-field maximum length'
+  },
+  addressSubFieldEmailFormat: {
+    code: 'domain.address.subFieldEmailFormat',
+    explanation:
+      'a sub-field of the address expected an email format (must contain @)'
+  },
+  addressSubFieldEnumInvalid: {
+    code: 'domain.address.subFieldEnumInvalid',
+    explanation:
+      'a sub-field of the address expected a value from the MDM enum list'
   }
 }
 
@@ -155,28 +172,90 @@ export function predicate(type, fn, reasons) {
 }
 
 // Address-block composite. Value is a plain object keyed by sub-field
-// name; the widget renders one govukInput per subField, the payload
-// gatherer collects `${id}__${subField}` fields into that object.
-// Fires `addressSubFieldRequired` per empty required sub-field so the
-// error summary + inline errors surface the exact missing field.
-export function addressBlock(obligation, { subFields, required } = {}) {
+// name; the widget renders one govukInput / govukSelect per subField,
+// the payload gatherer collects `${id}__${subField}` fields into that
+// object. Per-sub-field rules come from `subFieldRules` (map keyed by
+// sub-field name) — that carries maxLength / type / options so the
+// predicate can enforce V4 field-level rules (max-length caps, email
+// format, MDM country enum). Fires distinct reason codes per rule so
+// the error summary can surface the right message per field:
+//
+//   - addressSubFieldRequired  — empty required sub-field
+//   - addressSubFieldMaxLength — value exceeds V4 max
+//   - addressSubFieldEmailFormat — email sub-field must contain @
+//   - addressSubFieldEnumInvalid — country not in MDM list
+//
+// Step 5e widened the shape from 4 all-mandatory string fields to the
+// V4 standard address block (9 fields — 6 required, 3 optional, mixed
+// max-lengths). `commercialTransporter` carries an extra
+// `transporterAuthorisationNumber` sub-field beyond the base set.
+export function addressBlock(
+  obligation,
+  { subFields, required, subFieldRules = {} } = {}
+) {
   return {
     type: 'address',
     subFields,
     required,
+    subFieldRules,
     predicate: (value, ctx) => {
       if (value === undefined || value === null) return []
       if (typeof value !== 'object' || Array.isArray(value)) return []
       const errors = []
-      for (const sub of required ?? []) {
+      const requiredSet = new Set(required ?? [])
+      for (const sub of subFields ?? []) {
         const leaf = value[sub]
-        if (leaf === undefined || leaf === null || leaf === '') {
+        const isBlank = leaf === undefined || leaf === null || leaf === ''
+        // Required check first — an empty required field short-circuits
+        // the rest of the rules for that sub-field.
+        if (isBlank && requiredSet.has(sub)) {
           errors.push({
             code: reasons.addressSubFieldRequired.code,
             obligation: obligation.name,
             path: ctx.path,
             subField: sub
           })
+          continue
+        }
+        if (isBlank) continue
+        const rule = subFieldRules[sub]
+        if (!rule) continue
+        // Max-length check applies to every rule that carries one.
+        if (
+          typeof rule.maxLength === 'number' &&
+          typeof leaf === 'string' &&
+          leaf.length > rule.maxLength
+        ) {
+          errors.push({
+            code: reasons.addressSubFieldMaxLength.code,
+            obligation: obligation.name,
+            path: ctx.path,
+            subField: sub,
+            max: rule.maxLength,
+            actual: leaf.length
+          })
+        }
+        // Email format — cheapest useful check for the spike.
+        if (rule.type === 'email' && !String(leaf).includes('@')) {
+          errors.push({
+            code: reasons.addressSubFieldEmailFormat.code,
+            obligation: obligation.name,
+            path: ctx.path,
+            subField: sub
+          })
+        }
+        // MDM country enum — sub-field value must be one of the
+        // rule's options.
+        if (rule.type === 'enum' && Array.isArray(rule.options)) {
+          if (!rule.options.includes(leaf)) {
+            errors.push({
+              code: reasons.addressSubFieldEnumInvalid.code,
+              obligation: obligation.name,
+              path: ctx.path,
+              subField: sub,
+              invalid: leaf
+            })
+          }
         }
       }
       return errors
@@ -185,7 +264,13 @@ export function addressBlock(obligation, { subFields, required } = {}) {
       shape: 'addressBlock',
       subFields,
       required,
-      reasons: [reasons.addressSubFieldRequired.code]
+      subFieldRules,
+      reasons: [
+        reasons.addressSubFieldRequired.code,
+        reasons.addressSubFieldMaxLength.code,
+        reasons.addressSubFieldEmailFormat.code,
+        reasons.addressSubFieldEnumInvalid.code
+      ]
     }
   }
 }
@@ -429,6 +514,12 @@ export const meansOfTransportDomain = staticEnum(MEANS_OF_TRANSPORT_OPTIONS, {
 
 // Country list — enough EU + neighbours to demonstrate the > 12 cap on
 // transitedCountries and to serve as the country-of-origin picker.
+// Step 5e note: this list serves BOTH the `countryOfOrigin` obligation
+// (values restricted to EU/EEA/EFTA per V4) AND every address block's
+// `country` sub-field. UK addresses are common on both sides of the
+// journey (destination + contact addresses within GB); GB is included
+// here so both obligations can share the option list without the
+// address-block picker missing an obvious choice.
 const COUNTRY_OPTIONS = [
   'AT',
   'BE',
@@ -441,6 +532,7 @@ const COUNTRY_OPTIONS = [
   'ES',
   'FI',
   'FR',
+  'GB',
   'GR',
   'HR',
   'HU',
@@ -469,6 +561,7 @@ const COUNTRY_LABELS = {
   ES: 'domain.country.ES',
   FI: 'domain.country.FI',
   FR: 'domain.country.FR',
+  GB: 'domain.country.GB',
   GR: 'domain.country.GR',
   HR: 'domain.country.HR',
   HU: 'domain.country.HU',
@@ -717,52 +810,141 @@ export const numberOfAnimalsDomain = predicate(
   [reasons.integerMin, reasons.numberOfAnimalsSpeciesCap]
 )
 
-// V4: address block — organisation name + address line 1 + town +
-// postcode as the mandatory core for the spike. Real V4 shape has
-// more sub-fields (address line 2, county, country, telephone,
-// email); we can extend without touching the widget infrastructure.
-// Step 4 iteration 7 wires commercialTransporter as first worked
-// example; the remaining depth-1 address blocks reuse this factory.
-const ADDRESS_SUB_FIELDS = ['name', 'addressLine1', 'town', 'postcode']
+// V4 standard address block — 9 sub-fields per Confluence page
+// 6497338582. Step 5e widened this from the 4-mandatory-string stub
+// (name / addressLine1 / town / postcode) to the full spec: 6
+// mandatory, 3 optional, mixed max-lengths, country as an MDM enum,
+// telephone + email with their own semantics.
+//
+//   Sub-field     | Type       | Max | M/O |
+//   --------------+------------+-----+-----+
+//   name          | string     | 255 |  M  | Name or Organisation name
+//   addressLine1  | string     | 255 |  M  |
+//   addressLine2  | string     | 255 |  O  |
+//   town          | string     | 100 |  M  | Town or city
+//   county        | string     | 100 |  O  |
+//   postcode      | string     |  12 |  M  |
+//   country       | enum (MDM) |  —  |  M  | Reuses COUNTRY_OPTIONS
+//   telephone     | telephone  |  20 |  M  |
+//   email         | email      | 254 |  M  |
+//
+// commercialTransporter carries an extra `transporterAuthorisationNumber`
+// (string max 255, mandatory) inserted after `addressLine1`.
+// V4 spec: "only displayed when a user manually creates a commercial
+// transporter from NI" — the spike shows it unconditionally.
+const ADDRESS_SUB_FIELDS = [
+  'name',
+  'addressLine1',
+  'addressLine2',
+  'town',
+  'county',
+  'postcode',
+  'country',
+  'telephone',
+  'email'
+]
+
+const ADDRESS_REQUIRED_SUB_FIELDS = [
+  'name',
+  'addressLine1',
+  'town',
+  'postcode',
+  'country',
+  'telephone',
+  'email'
+]
+
+const ADDRESS_SUB_FIELD_RULES = {
+  name: { type: 'string', maxLength: 255 },
+  addressLine1: { type: 'string', maxLength: 255 },
+  addressLine2: { type: 'string', maxLength: 255 },
+  town: { type: 'string', maxLength: 100 },
+  county: { type: 'string', maxLength: 100 },
+  postcode: { type: 'string', maxLength: 12 },
+  country: { type: 'enum', options: COUNTRY_OPTIONS, labels: COUNTRY_LABELS },
+  telephone: { type: 'telephone', maxLength: 20 },
+  email: { type: 'email', maxLength: 254 }
+}
+
+// commercialTransporter — insert transporterAuthorisationNumber after
+// addressLine1 in the render order. Mandatory sub-field per V4 spec
+// when a user manually creates the transporter (NI). The rule map
+// clones the base + adds one entry.
+const COMMERCIAL_TRANSPORTER_SUB_FIELDS = [
+  'name',
+  'transporterAuthorisationNumber',
+  'addressLine1',
+  'addressLine2',
+  'town',
+  'county',
+  'postcode',
+  'country',
+  'telephone',
+  'email'
+]
+
+const COMMERCIAL_TRANSPORTER_REQUIRED = [
+  'name',
+  'transporterAuthorisationNumber',
+  'addressLine1',
+  'town',
+  'postcode',
+  'country',
+  'telephone',
+  'email'
+]
+
+const COMMERCIAL_TRANSPORTER_SUB_FIELD_RULES = {
+  ...ADDRESS_SUB_FIELD_RULES,
+  transporterAuthorisationNumber: { type: 'string', maxLength: 255 }
+}
 
 export const commercialTransporterDomain = addressBlock(commercialTransporter, {
-  subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  subFields: COMMERCIAL_TRANSPORTER_SUB_FIELDS,
+  required: COMMERCIAL_TRANSPORTER_REQUIRED,
+  subFieldRules: COMMERCIAL_TRANSPORTER_SUB_FIELD_RULES
 })
 
 export const privateTransporterDomain = addressBlock(privateTransporter, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 export const placeOfOriginDomain = addressBlock(placeOfOrigin, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 export const consignorDomain = addressBlock(consignor, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 export const consigneeDomain = addressBlock(consignee, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 export const importerDomain = addressBlock(importer, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 export const placeOfDestinationDomain = addressBlock(placeOfDestination, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 export const contactAddressDomain = addressBlock(contactAddress, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 // V4: permanent address for a per-animal unit — the ONLY mandatory
@@ -773,7 +955,8 @@ export const contactAddressDomain = addressBlock(contactAddress, {
 // phase C). See docs/add-an-obligation.md iteration 9.
 export const permanentAddressDomain = addressBlock(permanentAddress, {
   subFields: ADDRESS_SUB_FIELDS,
-  required: ADDRESS_SUB_FIELDS
+  required: ADDRESS_REQUIRED_SUB_FIELDS,
+  subFieldRules: ADDRESS_SUB_FIELD_RULES
 })
 
 // V4 per-unit identifier obligations — wired in iteration 10 on top of

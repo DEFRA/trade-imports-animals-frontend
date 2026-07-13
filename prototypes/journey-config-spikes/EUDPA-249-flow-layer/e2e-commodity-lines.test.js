@@ -771,9 +771,14 @@ describe('commodity-lines — /start integration', () => {
       url: `${BASE}/pages/transporter-details`,
       payload: {
         commercialTransporter__name: 'ACME',
+        commercialTransporter__transporterAuthorisationNumber:
+          'UK/AUTH/2026/001',
         commercialTransporter__addressLine1: 'Farm Lane',
         commercialTransporter__town: 'Exeter',
-        commercialTransporter__postcode: 'EX1 1AA'
+        commercialTransporter__postcode: 'EX1 1AA',
+        commercialTransporter__country: 'GB',
+        commercialTransporter__telephone: '+44 1234 567890',
+        commercialTransporter__email: 'contact@example.com'
       }
     })
     await inject(jar, {
@@ -810,11 +815,15 @@ describe('commodity-lines — /start integration', () => {
     // Trader details section — 5 address blocks + contact address.
     // All mandatory, all need to be filled for /start to skip forward
     // to the commodity-lines section.
+    // V4 standard address block — 7 mandatory sub-fields.
     const address = (prefix) => ({
       [`${prefix}__name`]: 'X',
       [`${prefix}__addressLine1`]: 'X',
       [`${prefix}__town`]: 'X',
-      [`${prefix}__postcode`]: 'X'
+      [`${prefix}__postcode`]: 'X',
+      [`${prefix}__country`]: 'GB',
+      [`${prefix}__telephone`]: '+44 1234 567890',
+      [`${prefix}__email`]: 'contact@example.com'
     })
     for (const [page, prefix] of [
       ['place-of-origin', 'placeOfOrigin'],

@@ -226,7 +226,10 @@ describe('units — add / fill / list / delete', () => {
         [`${fieldPrefix}__name`]: 'Muffin the Ferret',
         [`${fieldPrefix}__addressLine1`]: '12 Cage Lane',
         [`${fieldPrefix}__town`]: 'Reading',
-        [`${fieldPrefix}__postcode`]: 'RG1 1AA'
+        [`${fieldPrefix}__postcode`]: 'RG1 1AA',
+        [`${fieldPrefix}__country`]: 'GB',
+        [`${fieldPrefix}__telephone`]: '+44 118 555 0000',
+        [`${fieldPrefix}__email`]: 'owner@example.com'
       }
     })
     expect(fillRes.statusCode).toBe(302)
@@ -340,7 +343,10 @@ describe('units — add / fill / list / delete', () => {
         [`${fieldPrefix}__name`]: 'Rover',
         [`${fieldPrefix}__addressLine1`]: '5 Bark Road',
         [`${fieldPrefix}__town`]: 'Slough',
-        [`${fieldPrefix}__postcode`]: 'SL1 1BB'
+        [`${fieldPrefix}__postcode`]: 'SL1 1BB',
+        [`${fieldPrefix}__country`]: 'GB',
+        [`${fieldPrefix}__telephone`]: '+44 118 555 0000',
+        [`${fieldPrefix}__email`]: 'owner@example.com'
       }
     })
 
@@ -384,7 +390,10 @@ describe('units — add / fill / list / delete', () => {
         [`${fieldPrefix}__name`]: 'Bin',
         [`${fieldPrefix}__addressLine1`]: '1 Delete Way',
         [`${fieldPrefix}__town`]: 'Nowhere',
-        [`${fieldPrefix}__postcode`]: 'ZZ1 1ZZ'
+        [`${fieldPrefix}__postcode`]: 'ZZ1 1ZZ',
+        [`${fieldPrefix}__country`]: 'GB',
+        [`${fieldPrefix}__telephone`]: '+44 118 555 0000',
+        [`${fieldPrefix}__email`]: 'owner@example.com'
       }
     })
     // Delete the parent commodity line.

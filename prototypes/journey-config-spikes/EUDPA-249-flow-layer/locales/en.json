@@ -267,9 +267,15 @@
     "address": {
       "subField": {
         "name": "Business or organisation name",
+        "transporterAuthorisationNumber": "Transporter authorisation number",
         "addressLine1": "Address line 1",
+        "addressLine2": "Address line 2",
         "town": "Town or city",
-        "postcode": "Postcode"
+        "county": "County",
+        "postcode": "Postcode",
+        "country": "Country",
+        "telephone": "Telephone number",
+        "email": "Email address"
       }
     }
   },
@@ -292,6 +298,7 @@
       "ES": "Spain",
       "FI": "Finland",
       "FR": "France",
+      "GB": "United Kingdom",
       "GR": "Greece",
       "HR": "Croatia",
       "HU": "Hungary",
@@ -510,6 +517,9 @@
       "arrayMaxSelections": "Select no more than {max} items (you selected {actual})",
       "numberOfAnimalsSpeciesCap": "Enter no more than {max} animals for the selected species (you entered {actual})",
       "addressSubFieldRequired": "Enter {subField}",
+      "addressSubFieldMaxLength": "{subField} must be {max} characters or fewer (you entered {actual})",
+      "addressSubFieldEmailFormat": "{subField} must be a valid email address",
+      "addressSubFieldEnumInvalid": "Choose a value from the list for {subField}",
       "unknownCode": "This value could not be validated (error code: {code})"
     },
     "defaultRequired": "This field is required"

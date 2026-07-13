@@ -64,15 +64,25 @@ function labelFor(obligation, value) {
   if (Array.isArray(value) && value.length === 0) return null
   const domainEntry = domain.get(obligation.id)
   // Composite address value — join non-empty sub-fields with commas
-  // for a single-line summary. Same convention as CYA's formatSingle.
+  // for a single-line summary. Same convention as CYA's formatSingle;
+  // resolves enum sub-fields via their per-sub-field labels map.
   if (
     typeof value === 'object' &&
     !Array.isArray(value) &&
     domainEntry?.type === 'address'
   ) {
+    const rules = domainEntry.subFieldRules ?? {}
     const parts = (domainEntry.subFields ?? [])
-      .map((sub) => value[sub])
-      .filter((v) => typeof v === 'string' && v.trim() !== '')
+      .map((sub) => {
+        const raw = value[sub]
+        if (typeof raw !== 'string' || raw.trim() === '') return null
+        const rule = rules[sub]
+        if (rule?.type === 'enum' && rule.labels) {
+          return tOrNull(rule.labels[raw]) ?? raw
+        }
+        return raw
+      })
+      .filter((v) => v !== null)
     return parts.length ? parts.join(', ') : null
   }
   const labels = domainEntry?.labels
