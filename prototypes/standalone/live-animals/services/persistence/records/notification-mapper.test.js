@@ -119,7 +119,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
           species: [
             {
               value: 'bos-taurus',
-              text: 'bos-taurus',
+              text: 'Bos taurus (Cattle)',
               noOfAnimals: '25',
               noOfPackages: '5',
               earTag: 'UK123456789012',
@@ -128,6 +128,57 @@ describe('Mapper A — current backend notification (as-is)', () => {
           ]
         }
       ]
+    })
+  })
+
+  it('Should place every storable answer in its skeleton field home', () => {
+    const notification = answersToNotification({
+      ...mappedAnswers(),
+      transporterType: 'Commercial transporter'
+    })
+
+    expect(notification.origin).toEqual({
+      countryCode: 'FR',
+      requiresRegionCode: 'Yes',
+      internalReference: 'Imports456GB'
+    })
+    expect(notification.additionalDetails).toEqual({
+      certifiedFor: 'Further keeping',
+      unweanedAnimals: 'No'
+    })
+    expect(notification.reasonForImport).toBe('Internal market')
+    expect(notification.placeOfOrigin).toEqual(
+      address('Origin Farm', '1 Farm Lane')
+    )
+    expect(notification.consignor).toEqual(
+      address('Consignor Ltd', '2 Depot Road')
+    )
+    expect(notification.consignee).toEqual(
+      address('Consignee Ltd', '3 Dock Street')
+    )
+    expect(notification.importer).toEqual(address('Importer Ltd', '4 Port Way'))
+    expect(notification.destination).toEqual(
+      address('Destination Farm', '5 Field Lane')
+    )
+    expect(notification.consignment).toEqual(
+      address('Contact Person', '6 High Street')
+    )
+    expect(notification.cphNumber).toBe('12/345/6789')
+    expect(notification.transport.portOfEntry).toBe('ABERDEEN')
+    expect(notification.transport.arrivalDate).toBe('2026-12-12')
+    expect(notification.transport.transporter).toEqual({
+      name: 'Transporter Co',
+      approvalNumber: 'UK/NEWCA/T1/00090953',
+      address: { addressLine1: '7 Route One' },
+      type: 'Commercial transporter'
+    })
+    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
+      value: 'bos-taurus',
+      text: 'Bos taurus (Cattle)',
+      noOfAnimals: '25',
+      noOfPackages: '5',
+      earTag: 'UK123456789012',
+      passport: 'UK123456789'
     })
   })
 
@@ -150,6 +201,12 @@ describe('Mapper A — current backend notification (as-is)', () => {
       'arrivalDate',
       'transporter'
     ])
+    expect(
+      'commodityCode' in notification.commodity.commodityComplement[0]
+    ).toBe(false)
+    expect(
+      'animalIdentifiers' in notification.commodity.commodityComplement[0]
+    ).toBe(false)
   })
 
   it('Should keep only earTag and passport on the species entry, dropping the five unit identifiers', () => {
@@ -158,7 +215,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
 
     expect(species).toEqual({
       value: 'bos-taurus',
-      text: 'bos-taurus',
+      text: 'Bos taurus (Cattle)',
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -172,11 +229,13 @@ describe('Mapper A — current backend notification (as-is)', () => {
     const recovered = notificationToAnswers(answersToNotification(answers))
 
     expect(recovered).not.toEqual(answers)
+    // transporterType is no longer a gap — it is stored as transporter.type and
+    // recovered — so it is absent from this dropped-keys list. privateTransporter
+    // still drops: only the commercial variant survives the single Transporter.
     for (const key of [
       'responsiblePersonForLoad',
       'regionOfOriginCode',
       'purposeInInternalMarket',
-      'transporterType',
       'privateTransporter',
       'meansOfTransport',
       'transportIdentification',
@@ -346,12 +405,24 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
     const notification = answersToTargetNotification(mappedAnswers())
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
       value: 'bos-taurus',
-      text: 'bos-taurus',
+      text: 'Bos taurus (Cattle)',
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
       passport: 'UK123456789'
     })
+  })
+
+  it('Should be a superset of Mapper A — B contains every field A produces, plus extras', () => {
+    const answers = allAnswers()
+    const a = answersToNotification(answers)
+    const b = answersToTargetNotification(answers)
+
+    expect(b).toMatchObject(a)
+    // ...plus the extras A has no home for.
+    expect(b.purpose).toBe('Breeding')
+    expect(b.documents).toBeDefined()
+    expect(b.commodity.commodityComplement[0].commodityCode).toBeDefined()
   })
 
   it('Should collapse a private transporter into the single Transporter, then restore it', () => {
