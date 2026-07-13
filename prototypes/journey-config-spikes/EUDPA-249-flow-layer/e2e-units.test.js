@@ -271,6 +271,59 @@ describe('units — add / fill / list / delete', () => {
     expect(list.payload).toContain('Animal 2 on commodity line 1')
   })
 
+  it('unit labels use the ordinal position, not the internal unit id (renumbers after Delete)', async () => {
+    // Regression: display used to interpolate the internal unit id
+    // (unit1, unit2, ...). Because ids are session-monotonic (no
+    // recycling by design), after deleting the first unit the
+    // surviving units keep ids unit2 + unit3 and rendered as "Animal
+    // 2" + "Animal 3" — jarring when the user's mental model is
+    // "1st and 2nd animal". Fixed: the label uses the 1-based
+    // ordinal position in the current list. The URLs stay keyed by
+    // the internal id so per-unit routes remain stable.
+    const jar = makeCookieJar()
+    const lineId = await addLineWithCode(jar, '01061900')
+    // Add three units.
+    for (let i = 0; i < 3; i++) {
+      await inject(jar, {
+        method: 'POST',
+        url: `${BASE}/lines/${lineId}/units/add`,
+        payload: {}
+      })
+    }
+    let list = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/lines/${lineId}/units`
+    })
+    // Sanity: three units, all shown.
+    expect(list.payload).toContain('Animal 1 on commodity line 1')
+    expect(list.payload).toContain('Animal 2 on commodity line 1')
+    expect(list.payload).toContain('Animal 3 on commodity line 1')
+
+    // Delete the FIRST unit (internal id unit1).
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/${lineId}/units/unit1/delete`,
+      payload: {}
+    })
+    list = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/lines/${lineId}/units`
+    })
+    // Two units remain (internal ids unit2 + unit3) but they display
+    // as Animal 1 + Animal 2 — the display tracks the ordinal
+    // position, not the internal id.
+    expect(list.payload).toContain('Animal 1 on commodity line 1')
+    expect(list.payload).toContain('Animal 2 on commodity line 1')
+    expect(list.payload).not.toContain('Animal 3 on commodity line 1')
+    // URLs still use the internal ids — routes stay stable.
+    expect(list.payload).toContain(
+      `${BASE}/lines/${lineId}/units/unit2/permanent-address`
+    )
+    expect(list.payload).toContain(
+      `${BASE}/lines/${lineId}/units/unit3/permanent-address`
+    )
+  })
+
   it('deleting a unit removes its summary block and its fulfilments', async () => {
     const jar = makeCookieJar()
     const lineId = await addLineWithCode(jar, '01061900')

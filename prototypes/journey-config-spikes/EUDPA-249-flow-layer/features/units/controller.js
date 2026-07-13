@@ -94,12 +94,16 @@ function lineNumber(lineId) {
   return match ? Number(match[1]) : lineId
 }
 
-function unitNumber(unitId) {
-  const match = /^unit(\d+)$/.exec(unitId)
-  return match ? Number(match[1]) : unitId
-}
-
-function summariseUnit(state, lineId, unitId) {
+function summariseUnit(state, lineId, unitId, displayIndex) {
+  // Display label uses the 1-based ORDINAL position of this unit in
+  // the current /lines/{lineId}/units list, not the internal unit id.
+  // Reason: unit ids are session-monotonic (no recycling — see
+  // lib/state.js NEXT_UNIT_ID_BY_LINE_KEY) so after a delete or a
+  // commodity-code change that purges an earlier seed, the surviving
+  // units can have internal ids like unit2 + unit3. Rendering "Animal
+  // 2" and "Animal 3" for what the user perceives as the 1st and 2nd
+  // animal is confusing. The URL stays keyed by the internal id
+  // because URLs must be stable across renumbering.
   const rows = []
   for (const { pageName, obligation } of UNIT_PAGES) {
     if (!inScopeForUnit(state, obligation, lineId, unitId)) continue
@@ -117,7 +121,7 @@ function summariseUnit(state, lineId, unitId) {
             visuallyHiddenText: t('units.changeLinkHidden', {
               label: forObligation(obligation).pageTitle,
               lineN: lineNumber(lineId),
-              unitN: unitNumber(unitId)
+              unitN: displayIndex
             })
           }
         ]
@@ -128,14 +132,14 @@ function summariseUnit(state, lineId, unitId) {
     unitId,
     title: t('units.unitHeading', {
       lineN: lineNumber(lineId),
-      unitN: unitNumber(unitId)
+      unitN: displayIndex
     }),
     rows,
     deleteHref: `${BASE}/lines/${lineId}/units/${unitId}/delete`,
     deleteButtonText: t('units.deleteButton'),
     deleteVisuallyHiddenText: t('units.deleteHidden', {
       lineN: lineNumber(lineId),
-      unitN: unitNumber(unitId)
+      unitN: displayIndex
     })
   }
 }
@@ -205,9 +209,9 @@ export const linesUnitsIndexController = {
       const unitRecords = (impl?.records ?? []).filter((r) =>
         r.fulfilmentId.startsWith(`${lineId}/`)
       )
-      const units = unitRecords.map((r) => {
+      const units = unitRecords.map((r, i) => {
         const unitId = r.fulfilmentId.slice(lineId.length + 1)
-        return summariseUnit(state, lineId, unitId)
+        return summariseUnit(state, lineId, unitId, i + 1)
       })
       return h.view('features/units/list', {
         chrome: chrome(),
