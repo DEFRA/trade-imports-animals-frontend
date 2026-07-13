@@ -26,9 +26,9 @@
     {
       "id": "figma",
       "type": "figma",
-      "ref": null,
-      "fetchedAt": null,
-      "status": "pending"
+      "ref": "39-page design export — extract at workareas/journey-builder/EUDPA-249/extract.figma.json",
+      "fetchedAt": "2026-07-10T00:00:00Z",
+      "status": "extracted"
     },
     {
       "id": "heroku-prototype",
@@ -103,7 +103,7 @@
       "id": "in-scope-but-optional-questions",
       "source": "ixd-canvas",
       "status": "adopted",
-      "detail": "Canvas: 'Questions can be in scope but optional - e.g. bring your own label/reference number.' Matches the model's empty mandate {} - used for internalReferenceNumber, numberOfPackages, transitedCountries and the individual animal identifier fields."
+      "detail": "Canvas: 'Questions can be in scope but optional - e.g. bring your own label/reference number.' Matches the model's empty mandate {} - used for internalReferenceNumber, numberOfPackages and the individual animal identifier fields. (transitedCountries was an example until the c-038 ruling made it required-when-active at M3-00.)"
     },
     {
       "id": "page-exits-to-next-task",
@@ -146,6 +146,36 @@
       "source": "ixd-canvas",
       "status": "adopted",
       "detail": "Canvas open question: 'Save by copy, by reference, or both? E.g. address example.' The spec's address fieldGroup usages assume copy semantics by default; recorded as conflict c-020 against all six address-block obligations. | Ruling (spec gate 2026-07-07): save by copy. Matches the spec's address fieldGroup copy semantics."
+    },
+    {
+      "id": "task-page-exit-semantics",
+      "source": "figma",
+      "status": "adopted",
+      "detail": "Design (A4, f-016/f-046/f-063/f-099): every task page offers three exits - 'Save and continue' (primary submit), 'Save and return to hub' (secondary named submit that commits then redirects to the hub) and 'Cancel and return to hub' (link, no commit). Design query recorded: the export is inconsistent with its own pattern - sections 03 (animal identifiers) and 05 (addresses) lack the secondary/cancel affordances. Delivered by M3-09 (MODEL_EXTENDER, shared page-kit POST handling); new POST surfaces must route through state.commit -> engine/write.js per the write-path discipline."
+    },
+    {
+      "id": "change-from-cya-collection-round-trip",
+      "source": "figma",
+      "status": "adopted",
+      "detail": "Design (A5, f-108): Change links from the check-your-answers review must carry return-to-review semantics for COLLECTION routes too - commodity, identifier and document edits entered via a CYA Change link return to the review, not just scalar rows. Delivered by M3-10 (MODEL_EXTENDER, kit.nextTarget round-trip through the collection routes)."
+    },
+    {
+      "id": "amend-and-resubmit-post-submit",
+      "source": "figma",
+      "status": "adopted",
+      "detail": "Post-submit model (c-029 ruling, Sam 2026-07-13): amend-and-resubmit. A user can submit, later reopen the notification from the dashboard, amend it and resubmit; every resubmission passes the same submit gate. NOT a post-submit top-up of a frozen record - amendment is a status transition back into an editable state, then declaration again. This is what the design's 'finish before arrival' confirmation copy actually means; submit-before-complete and any new post-submit enforcement point (e.g. enforcedAt arrival) are rejected. Persistence note: the RECORDS-adapter freeze blocks writes to SUBMITTED - the amend action needs a sanctioned unfreeze transition (records.amend port method; backend POST /notifications/{ref}/amend exists upstream), never a freeze bypass. Delivered via M3-18 (dashboard amend action) + M3-16 (confirmation copy)."
+    },
+    {
+      "id": "linear-opening-run-then-hub",
+      "source": "figma",
+      "status": "adopted",
+      "detail": "Journey entry architecture (c-040 resolved: adopt the pre-hub linear run). The journey opens linear: entry filter (importTypeFilter) -> origin (draft created + reference minted at the origin POST, as the spec already does) -> About-the-consignment run -> hub as the resting state thereafter. Matches the ixd-canvas 'linear followed by task list' behaviour (see linear-then-task-list), now settled by design evidence (f-094). Flow-layer/MODEL_EXTENDER change: a linear-vs-hub-mediated presentation mode in the flow layer, not new obligation vocabulary."
+    },
+    {
+      "id": "design-export-interpretive-rule",
+      "source": "figma",
+      "status": "adopted",
+      "detail": "Interpretive rule (Sam 2026-07-13): the design export's HTML is authoritative for copy, option content, conditional-reveal wiring and interaction shape - NEVER for data contracts. Input names, value attributes and form wiring in the export are Figma-export artifacts (several pages have no real inputs at all). Any finding leg that treats them as a submit/wire contract is void - first casualty: c-030's 'submits slugs not codes' leg, struck; the spec's commodity codes stand unopposed."
     }
   ],
   "fieldGroups": {
@@ -176,7 +206,15 @@
           "title": "Import notification service",
           "gate": null,
           "collects": [],
-          "notes": "Paginated, sortable list of existing notifications; POST /start-journey resets the whole session then redirects to origin. Also hosts copy and delete actions (notification-copy / notification-delete)."
+          "notes": "Paginated, sortable list of existing notifications; POST /start-journey resets the whole session then redirects to origin. Also hosts copy and delete actions (notification-copy / notification-delete). M3 (c-029 ruling): row actions gain amend-and-resubmit on SUBMITTED notifications - amend transitions the notification back to an editable state and re-enters the journey; resubmission goes through declaration and the same submit gate (M3-18; the amend transition must go through the persistence freeze adapter as a sanctioned status change)."
+        },
+        {
+          "id": "importTypeFilter",
+          "slug": "import-type",
+          "title": "What are you importing?",
+          "gate": null,
+          "collects": ["importType"],
+          "notes": "Service entry filter (design 01-01; c-032 resolved: adopt). Live animals proceeds into the journey; POAO / HRFNAO / plants route to a 'not available in this prototype' holding page (chrome, not a journey page). Opens the pre-hub linear run per c-040: filter -> origin (draft created + reference minted at the origin POST) -> About-the-consignment run -> hub as resting state."
         }
       ]
     },
@@ -211,7 +249,7 @@
           "title": "Select a commodity",
           "gate": null,
           "collects": ["commodityLines"],
-          "notes": "Entry page for the commodityLines collection - member fields (commoditySelection, typeSelection, speciesSelection, numberOfPackages, numberOfAnimalsQuantity, animalIdentifiers) are covered via the collection's item[]."
+          "notes": "Entry page for the commodityLines collection - member fields (commoditySelection, typeSelection, speciesSelection, numberOfPackages, numberOfAnimalsQuantity, animalIdentifiers) are covered via the collection's item[]. RESTRUCTURE TARGET (c-030 resolved): one search page with cross-code multi-select species tokens creating several commodity lines in one pass (batch-create - MODEL_EXTENDER, after M3-0A), replacing the one-line-at-a-time loop; typeSelection drops out of the flow per c-037 (search-first multi-select subsumes it)."
         },
         {
           "id": "commoditiesSelect",
@@ -227,7 +265,7 @@
           "title": "Description of goods",
           "gate": null,
           "collects": [],
-          "notes": "Collects numberOfAnimalsQuantity and numberOfPackages for the current commodity line (covered via commodityLines.item). Skeleton renders one row per selected species and recomputes derived subtotals (c-003)."
+          "notes": "Collects numberOfAnimalsQuantity and numberOfPackages for the current commodity line (covered via commodityLines.item). Skeleton renders one row per selected species and recomputes derived subtotals (c-003). RESTRUCTURE TARGET (c-030 resolved): one consolidated details page with PER-SPECIES quantity blocks (design 01-14 'Consignment details'); mappers consolidate counts up to V4's commodity-level number (Mapper A skeleton-exact, Mapper B lossless)."
         },
         {
           "id": "animalIdentification",
@@ -235,7 +273,7 @@
           "title": "Enter animal identification details",
           "gate": null,
           "collects": [],
-          "notes": "Entry surface for the nested animalIdentifiers unit collection (covered via commodityLines.item -> animalIdentifiers.item). Skeleton shows one table per selected species with ear tag and passport inputs only (c-003)."
+          "notes": "Entry surface for the nested animalIdentifiers unit collection (covered via commodityLines.item -> animalIdentifiers.item). Skeleton shows one table per selected species with ear tag and passport inputs only (c-003). RESTRUCTURE TARGET (c-031 resolved): count-driven N-of-M loop ('Enter details for {species} N of M', M = the per-species count per c-030) with 'Save and finish' + 'Save and add another' exits; per-species cards per the design (MODEL_EXTENDER cardinality link, after M3-0A and with/after the commodities restructure)."
         }
       ]
     },
@@ -249,8 +287,8 @@
           "slug": "import-reason",
           "title": "Reason for import",
           "gate": null,
-          "collects": ["reasonForImport"],
-          "notes": "Skeleton heading: What is the main reason for importing the animals? Sits at skeleton step 4, interleaved mid-commodity (c-019); grouped here under the skeleton's About the consignment page group."
+          "collects": ["reasonForImport", "destinationCountry", "exitBcp"],
+          "notes": "Skeleton heading: What is the main reason for importing the animals? Sits at skeleton step 4, interleaved mid-commodity (c-019); grouped here under the skeleton's About the consignment page group. M3 (c-033 resolved): also collects the destinationCountry and exitBcp conditional reveals (design 01-08/01-09). Per-option hints on the reason radios adopted from the design (f-009, A10; hint copy in extract.figma.json page 01-06) - applied at M3-02."
         },
         {
           "id": "importPurpose",
@@ -259,7 +297,7 @@
           "gate": null,
           "collects": ["purposeInInternalMarket"],
           "provisionalCopy": true,
-          "notes": "Invented page (no skeleton counterpart, c-012): conditional follow-up shown when reasonForImport = Internal market."
+          "notes": "Invented page (no skeleton counterpart, c-012): conditional follow-up shown when reasonForImport = Internal market. Per-option hints adopted from the design where drawn (f-009, A10; extract.figma.json page 01-07 shows the 11 purpose options) - applied at M3-02."
         },
         {
           "id": "additionalDetails",
@@ -279,10 +317,10 @@
         {
           "id": "accompanyingDocuments",
           "slug": "accompanying-documents",
-          "title": "Accompanying documents",
+          "title": "Upload documents",
           "gate": null,
           "collects": ["documents"],
-          "notes": "Entry page for the documents collection (upload loop: add/remove one document per POST; Continue enabled only when no scan is PENDING or REJECTED). Item fields covered via documents.item."
+          "notes": "Entry page for the documents collection (upload loop: add/remove one document per POST; Continue enabled only when no scan is PENDING or REJECTED). Item fields covered via documents.item. Title 'Upload documents' adopted from the design (f-065, A10). A3 (f-062): SINGLE-PAGE add-another loop confirmed - spec and design agree; the prototype's two-page list+entry split is the outlier (merged at M3-12); read-back table columns reference / type / date (+ scan status per c-034) with per-row Remove. A11 (f-064): the design's ITAHC intro + expander body copy is missing from the export - blocked on content from the design team."
         }
       ]
     },
@@ -294,53 +332,50 @@
         {
           "id": "addresses",
           "slug": "addresses",
-          "title": "Addresses",
+          "title": "Consignment addresses",
           "gate": null,
           "collects": [],
-          "notes": "Hub page: renders sections for place of origin, consignor/exporter, consignee, importer, place of destination and CPH with Add/Change links to the select spokes; collects nothing itself. Skeleton hub POST swallows save failures (c-006) and three of its spokes are dead (c-005)."
+          "notes": "Hub page: renders sections for place of origin, consignor/exporter, consignee, importer, place of destination and CPH with Add/Change links to the select spokes; collects nothing itself. Skeleton hub POST swallows save failures (c-006) and three of its spokes are dead (c-005). M3 copy (f-054, A10): hub retitled 'Consignment addresses'; per-section hints adopted from the design (extract.figma.json page 05-01). A11 (f-055): fraud warning via govukWarningText - 'Providing a false address is an act...' per the design. A8 (f-052/f-105): the CPH row appears on this hub ONLY when the countyParishHoldingCph gate passes (M3-13, keeping the sequential fallback). c-036 (resolved): the select spokes become address-book pickers (search + pagination + radio-per-row + View details, server-side selection so pagination is no-JS safe) with an 'Add a new address' button to the createAddress page."
         },
         {
           "id": "consignorsSelect",
           "slug": "consignors/select",
-          "title": "Search for an existing consignor or exporter",
+          "title": "Consignor or exporter",
           "gate": null,
           "collects": ["consignor"],
-          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-consignors.json."
+          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-consignors.json. Title = party name per the design (f-054, A10; design 05-04, caption 'Consignment addresses'). Becomes an address-book picker per c-036."
         },
         {
           "id": "destinationsSelect",
           "slug": "destinations/select",
-          "title": "Search for a place of destination",
+          "title": "Place of destination",
           "gate": null,
           "collects": ["placeOfDestination"],
-          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-destinations.json."
+          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-destinations.json. Title = party name per the design (f-054, A10). The design export omits this spoke page (f-051/f-080) - treated as an export omission, assume the shared picker pattern of spokes 03-06; confirm with designer. Becomes an address-book picker per c-036."
         },
         {
           "id": "placeOfOriginSelect",
           "slug": "place-of-origin/select",
-          "title": "Search for a place of origin",
+          "title": "Place of origin",
           "gate": null,
           "collects": ["placeOfOrigin"],
-          "provisionalCopy": true,
-          "notes": "Invented page: the skeleton hub links to /place-of-origin/select but the route is unregistered (dead spoke, c-005)."
+          "notes": "Invented page: the skeleton hub links to /place-of-origin/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-03 'Place of origin', caption 'Consignment addresses') - provisionalCopy cleared. Becomes an address-book picker per c-036."
         },
         {
           "id": "consigneesSelect",
           "slug": "consignees/select",
-          "title": "Search for a consignee",
+          "title": "Consignee",
           "gate": null,
           "collects": ["consignee"],
-          "provisionalCopy": true,
-          "notes": "Invented page: the skeleton hub links to /consignees/select but the route is unregistered (dead spoke, c-005)."
+          "notes": "Invented page: the skeleton hub links to /consignees/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-05 'Consignee') - provisionalCopy cleared. Becomes an address-book picker per c-036."
         },
         {
           "id": "importersSelect",
           "slug": "importers/select",
-          "title": "Search for an importer",
+          "title": "Importer",
           "gate": null,
           "collects": ["importer"],
-          "provisionalCopy": true,
-          "notes": "Invented page: the skeleton hub links to /importers/select but the route is unregistered (dead spoke, c-005)."
+          "notes": "Invented page: the skeleton hub links to /importers/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-06 'Importer') - provisionalCopy cleared. Becomes an address-book picker per c-036."
         },
         {
           "id": "cphNumber",
@@ -348,7 +383,16 @@
           "title": "Add the County Parish Holding number (CPH)",
           "gate": null,
           "collects": ["countyParishHoldingCph"],
-          "notes": "Presented as an addresses-hub spoke but the skeleton POST jumps straight to /port-of-entry, short-circuiting the hub (c-019). Only shown when a CPH-required commodity is selected (cross-frame gate, modelGap)."
+          "notes": "Presented as an addresses-hub spoke but the skeleton POST jumps straight to /port-of-entry, short-circuiting the hub (c-019). Only shown when a CPH-required commodity is selected (cross-frame gate, modelGap). A11 (f-056): the design adds a 'What is a CPH number?' govukDetails disclosure whose body copy is missing from the export - blocked on content from the design team. Hint stays V4 format per f-053 (A12, design-QA query only)."
+        },
+        {
+          "id": "createAddress",
+          "slug": "addresses/create",
+          "title": "Add a new address",
+          "gate": null,
+          "collects": [],
+          "provisionalCopy": true,
+          "notes": "Shared create-new-address form (c-036 resolved): the V4 Standard Address Block (9 fields, fieldGroup address) entered manually, reachable from every address-book picker spoke's 'Add a new address' button. Collects nothing itself - the created record is committed by the invoking spoke's obligation (save by copy per c-020). Closes the modelled-nowhere hole behind the design's dead 'Add a new address' button and gives OPEN c-001's user-created contact-address variant its missing surface. Designer still owes the drawn page (hence provisionalCopy). Addressing is treated as a self-contained stubbed sub-service - do not over-invest in integration plumbing (Sam, c-036)."
         }
       ]
     },
@@ -360,10 +404,10 @@
         {
           "id": "portOfEntry",
           "slug": "port-of-entry",
-          "title": "Entry point and arrival at destination",
+          "title": "Arrival details",
           "gate": null,
           "collects": ["portOfEntry", "arrivalDateAtPort"],
-          "notes": "Skeleton template page group: Transport. Title keeps the skeleton's arrival-at-destination wording, but V4 defines arrival date AT PORT (c-011) - copy to reconcile with Figma."
+          "notes": "Skeleton template page group: Transport. Title 'Arrival details' adopted from the design (f-047, A10) - closes the c-011 copy-to-reconcile note. MERGE TARGET (c-038 resolved): this page and transportDetails collapse into one 'Arrival details' page collecting portOfEntry, arrivalDateAtPort, meansOfTransport, transportIdentification and transportDocumentReference - both page ids are retained until the physical merge increment (Tranche D arrival-details merge)."
         },
         {
           "id": "transportDetails",
@@ -373,11 +417,17 @@
           "collects": [
             "meansOfTransport",
             "transportIdentification",
-            "transportDocumentReference",
-            "transitedCountries"
+            "transportDocumentReference"
           ],
-          "provisionalCopy": true,
-          "notes": "Invented page (no skeleton counterpart, c-012) for the four V4 transport fields; transitedCountries reveals only for Railway/Road Vehicle."
+          "notes": "Invented page (no skeleton counterpart, c-012) for the V4 transport fields; guidance hints adopted from the design so provisionalCopy is cleared (f-048, A10). transitedCountries moved to the dedicated transit-countries page (A1, c-038). MERGE TARGET (c-038 resolved): this page and portOfEntry collapse into one 'Arrival details' page collecting portOfEntry, arrivalDateAtPort, meansOfTransport, transportIdentification and transportDocumentReference - both page ids are retained until the physical merge increment (Tranche D arrival-details merge); widgets stay GDS (radios for meansOfTransport, date parts for arrival date; the design's select and JS date-picker are quietly ignored per the govuk-toolbox rule)."
+        },
+        {
+          "id": "transitCountries",
+          "slug": "transit-countries",
+          "title": "Which countries will the consignment travel through?",
+          "gate": null,
+          "collects": ["transitedCountries"],
+          "notes": "Dedicated conditional page (design 04-02..04; A1 + c-038 resolved): shown only when meansOfTransport is Railway or Road Vehicle - page-level conditionality derives from the transitedCountries obligation's activatedBy, recorded in notes per the importPurpose convention. Design copy: label 'Enter all countries', hint 'You can add up to 12 countries'. Capture target: add-another select rows progressively enhanced with the M3-20 accessible-autocomplete pattern, not a JS-only widget (c-038); checkboxes stand until that increment lands."
         },
         {
           "id": "transporters",
@@ -432,7 +482,7 @@
           "title": "Notification details",
           "gate": null,
           "collects": [],
-          "notes": "CYA hub: re-fetches the notification from the backend and re-hydrates every session key; summary cards with Change links to each step; Confirm and submit only when status is DRAFT."
+          "notes": "CYA hub: re-fetches the notification from the backend and re-hydrates every session key; summary cards with Change links to each step; Confirm and submit only when status is DRAFT. A9 (f-069/f-107/f-073, M3-15): design's sectioned structure adopted - numbered sections rendered as govukSummaryCard groups, per-species cards with read-only identifier tables, card-level Change for collections, entity-attribute expansion; keep 'Not provided' over 'N/A' pending design confirmation; labels rendered via the services label() helpers, never hardcoded strings. Collection Change links carry return-to-review semantics (behaviour change-from-cya-collection-round-trip)."
         },
         {
           "id": "declaration",
@@ -440,7 +490,15 @@
           "title": "Declaration",
           "gate": null,
           "collects": ["declaration"],
-          "notes": "POST validates the confirmation checkbox then calls the submit endpoint (DRAFT to SUBMITTED) and redirects back to /declaration - no separate confirmation page (c-022)."
+          "notes": "POST validates the confirmation checkbox then calls the submit endpoint (DRAFT to SUBMITTED). Redirect target updated at M3 (A2; c-022 superseded): redirects to the confirmation page instead of back to /declaration (M3-16; declaration copy + CTA rename follow at M3-17)."
+        },
+        {
+          "id": "confirmation",
+          "slug": "confirmation",
+          "title": "Import notification submitted",
+          "gate": null,
+          "collects": [],
+          "notes": "Post-declaration confirmation page (design 07-04; A2, c-022 superseded). Collects nothing; displays referenceNumber in a govukPanel confirmation panel plus 'Transporting the consignment' and help/contact guidance. Per the c-029 ruling: NO outstanding-items checklist - replaced with 'you can amend this notification from the dashboard and resubmit' guidance (the design's conditional to-do list read submit-before-complete, which was rejected; amend-and-resubmit is the post-submit model)."
         }
       ]
     }
@@ -454,7 +512,7 @@
       "mandateRaw": "N/A",
       "system": true,
       "label": "Reference Number",
-      "notes": "System-assigned by the backend on first successful save (origin POST). Format GBN-AG-YY-XXXXXX: GBN = Great Britain Notification, AG = Animals and Germinals, YY = two-digit allocation year, body = six-character Crockford base32 non-guessable identifier. Displayed as a caption on every subsequent page and used in /notification-view/{referenceNumber}.",
+      "notes": "System-assigned by the backend on first successful save (origin POST). Format GBN-AG-YY-XXXXXX: GBN = Great Britain Notification, AG = Animals and Germinals, YY = two-digit allocation year, body = six-character Crockford base32 non-guessable identifier. Displayed as a caption on every subsequent page and used in /notification-view/{referenceNumber}. A7 display notes (f-100/f-025/f-019/f-036/f-093): Draft status govuk-tag + reference strip shown on the hub and ALL post-origin task pages (the caption rule above already requires this and the prototype is failing it - M3-08, shared layout partial reading from currentJourney); reference also shown in the confirmation page's govukPanel. Canonical format stays GBN-AG-YY-XXXXXX; the design's GBN.GB.2026.* examples are flagged to design as export inconsistencies. Stub create should mint GBN-AG-format ids for stub/real parity (currently a raw UUID).",
       "provenance": [
         {
           "source": "confluence-v4",
@@ -504,6 +562,7 @@
         "widget": "select",
         "valuesSource": "Named MDM list of EU, EEA and EFTA countries (skeleton uses reference-data countries client, group GBNAG_SPS_EX, with blank placeholder and disabled divider row)"
       },
+      "notes": "A6 (f-002/f-092): keep widget select over the same MDM list; progressive enhancement - accessible-autocomplete layered over the select (M3-20, the canary for the pattern; degrades to the plain select with JS off). Layer over services/countries; the validation oneOf list must not stay frozen at module import against real-mode prime().",
       "provenance": [
         {
           "source": "confluence-v4",
@@ -524,13 +583,13 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Mandatory to submit",
-      "label": "Region of origin code requirement",
+      "label": "Does the consignment have a region of origin code?",
       "input": {
         "widget": "radios",
         "values": ["Yes", "No"],
         "hint": "If a region of origin code is required it will be shown on your health certificate."
       },
-      "notes": "Skeleton (requiresRegionCode) defaults to no and accepts an empty answer; V4 makes it mandatory to submit - V4 wins (see c-006).",
+      "notes": "Skeleton (requiresRegionCode) defaults to no and accepts an empty answer; V4 makes it mandatory to submit - V4 wins (see c-006). Legend adopted from the design ('have' question form, f-004, A10; design 01-03/01-05) - M3-01.",
       "provenance": [
         {
           "source": "confluence-v4",
@@ -577,15 +636,15 @@
       "kind": "scalar",
       "mandate": {},
       "mandateRaw": "Optional",
-      "label": "Internal reference number",
+      "label": "Your internal reference for this consignment",
       "input": {
         "widget": "input",
         "maxLength": 58,
         "pattern": "^[a-zA-Z0-9]*$",
-        "hint": "Enter any internal reference number you want to use to identify this consignment, or leave blank.",
+        "hint": "Enter any internal reference you want to use to identify this consignment, or leave blank.",
         "example": "Imports456_GB"
       },
-      "notes": "Optional trader-entered reference for the consignment. V4 carries an unresolved inline comment on the Mandatory cell ('Optional'). NB: V4 example Imports456_GB contains an underscore, which the skeleton's alphanumeric-only pattern would reject.",
+      "notes": "Optional trader-entered reference for the consignment. V4 carries an unresolved inline comment on the Mandatory cell ('Optional'). NB: V4 example Imports456_GB contains an underscore, which the skeleton's alphanumeric-only pattern would reject. Label/hint adopted from the design, dropping 'number' (f-005, A10; design 01-03 'Your internal reference for this consignment (optional)') - the rendered label carries the standard '(optional)' suffix; M3-01.",
       "provenance": [
         {
           "source": "confluence-v4",
@@ -606,7 +665,7 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Mandatory to submit",
-      "label": "Animals certified for",
+      "label": "What are the animals certified for?",
       "input": {
         "widget": "radios",
         "values": [
@@ -627,9 +686,9 @@
           "Live aquatic animals for human consumption",
           "Other"
         ],
-        "hint": "You will find this on the health certificate."
+        "hint": "You'll find this on the health certificate."
       },
-      "notes": "PO approval pending: APHA intend to make this conditional for some commodities - pending confirmation. Unresolved inline comment on field name.",
+      "notes": "PO approval pending: APHA intend to make this conditional for some commodities - pending confirmation. Unresolved inline comment on field name. Question-form legend + hint adopted from the design (f-018, A10; design 01-18) - M3-03.",
       "conflicts": ["c-009"],
       "provenance": [
         {
@@ -651,7 +710,7 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Mandatory to submit",
-      "label": "Contains Unweaned Animals",
+      "label": "Does the consignment contain any unweaned animals?",
       "input": {
         "widget": "radios",
         "values": ["Yes", "No"],
@@ -670,7 +729,7 @@
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
-      "notes": "Notification-level field gated on commodity selections made inside the commodityLines collection - the reverse of the proposed frame:enclosing direction; frame:anyItem is proposed vocabulary meaning shown when any commodity line matches. PO approval pending.",
+      "notes": "Notification-level field gated on commodity selections made inside the commodityLines collection - the reverse of the proposed frame:enclosing direction; frame:anyItem is proposed vocabulary meaning shown when any commodity line matches. PO approval pending. Question-form legend adopted from the design (f-018, A10; design 01-18) - M3-03.",
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1066,12 +1125,14 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Mandatory to submit",
-      "label": "Port of Entry",
+      "label": "Port of entry",
       "input": {
         "widget": "select",
-        "valuesSource": "Named MDM live animal ports of entry list (skeleton hardcodes ABERDEEN / EAST MIDLANDS AIRPORT / EDINBURGH)"
+        "valuesSource": "Named MDM live animal ports of entry list (skeleton hardcodes ABERDEEN / EAST MIDLANDS AIRPORT / EDINBURGH)",
+        "hint": "Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code."
       },
-      "conflicts": ["c-018"],
+      "notes": "A6 (f-044): keep widget select over the MDM ports list; progressive enhancement - accessible-autocomplete over the select, search by name or code (M3-21, rolls out the M3-20 pattern once verified). Hint adopted from the design (design 04-01). Port persists the CODE (real-mode encoding baseline).",
+      "conflicts": ["c-018", "c-038"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1092,14 +1153,15 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Mandatory to submit",
-      "label": "Arrival date at Port",
+      "label": "Arrival date at port of entry",
       "input": {
         "widget": "date-parts",
         "validation": "Must be a valid date in DD/MM/YYYY format",
-        "example": "12/12/2026"
+        "example": "12/12/2026",
+        "hint": "The expected date of arrival at the port of entry. For example, 27/3/2026"
       },
-      "notes": "Unresolved inline comment on field name. Skeleton asks for arrival at final destination with lax validation (see c-011).",
-      "conflicts": ["c-011"],
+      "notes": "Unresolved inline comment on field name. Skeleton asks for arrival at final destination with lax validation (see c-011). Label/hint adopted from the design (f-047, A10; design 04-01) - closes the c-011 copy note. Widget stays GDS date-parts per c-038: the design's single-input JS date-picker is quietly ignored (govuk-toolbox rule).",
+      "conflicts": ["c-011", "c-038"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1120,13 +1182,13 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Mandatory to proceed",
-      "label": "Means of transport",
+      "label": "Means of transport to the port of entry",
       "input": {
         "widget": "radios",
         "values": ["Airplane", "Railway", "Road Vehicle", "Vessel"]
       },
-      "notes": "Not present in the skeleton (see c-012); collected on an invented provisional page.",
-      "conflicts": ["c-012"],
+      "notes": "Not present in the skeleton (see c-012); collected on an invented provisional page. Label adopted from the design (design 04-01, A10). Widget stays GDS radios per c-038: the design's select is quietly ignored (govuk-toolbox rule).",
+      "conflicts": ["c-012", "c-038"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1147,9 +1209,10 @@
       "input": {
         "widget": "input",
         "maxLength": 58,
-        "example": "FR-892-LK"
+        "example": "FR-892-LK",
+        "hint": "To identify the means of transport, enter (one of the following): flight number; train number; road vehicle registration number; vessel name (for ferries, also the road vehicle registration number)"
       },
-      "notes": "Free-text transport identifier. Not present in the skeleton (see c-012).",
+      "notes": "Free-text transport identifier. Not present in the skeleton (see c-012). Per-mode guidance hint adopted from the design (f-048, A10; design 04-01) - M3-05.",
       "conflicts": ["c-012"],
       "provenance": [
         {
@@ -1171,9 +1234,10 @@
       "input": {
         "widget": "input",
         "maxLength": 58,
-        "example": "CMR-2026-884721"
+        "example": "CMR-2026-884721",
+        "hint": "Enter the reference number on the air waybill, bill of lading, sea waybill, road consignment note (CMR) or other transport document."
       },
-      "notes": "Free-text transport document reference. Not present in the skeleton (see c-012).",
+      "notes": "Free-text transport document reference. Not present in the skeleton (see c-012). Document-types guidance hint adopted from the design (f-048, A10; design 04-01) - M3-05.",
       "conflicts": ["c-012"],
       "provenance": [
         {
@@ -1186,8 +1250,11 @@
       "id": "transitedCountries",
       "appliesAt": "notification",
       "kind": "scalar",
-      "mandate": {},
-      "mandateRaw": "Optional",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "V4: Conditions cell 'Conditional: required when Means of transport is Railway or Road Vehicle. Optional multi-select.' vs Mandatory cell 'Optional' - tension resolved toward required by c-038",
       "label": "Transited Countries",
       "activatedBy": {
         "obligation": "meansOfTransport",
@@ -1200,8 +1267,8 @@
         "maxSelections": 12,
         "example": "France, Belgium"
       },
-      "notes": "V4 tension recorded verbatim: Conditions cell says 'Conditional: required when Means of transport is Railway or Road Vehicle. Optional multi-select.' while the Mandatory cell says Optional - both clauses carry unresolved inline comments. Modelled as optional but only shown for Railway/Road Vehicle. Not present in the skeleton (see c-012).",
-      "conflicts": ["c-012"],
+      "notes": "V4 tension (both clauses carried unresolved inline comments) RESOLVED by c-038: REQUIRED when active, i.e. when meansOfTransport is Railway or Road Vehicle (the activatedBy gate; required-when-active is the standard activatedBy + required mandate). Collected on the dedicated transit-countries page (A1; design 04-02..04). Not present in the skeleton (see c-012). Design copy: 'Enter all countries' / hint 'You can add up to 12 countries'. Capture target per c-038: add-another select rows with the M3-20 accessible-autocomplete progressive enhancement; checkboxes + maxSelections 12 stand until that increment.",
+      "conflicts": ["c-012", "c-038"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1223,8 +1290,8 @@
         "widget": "checkboxes",
         "values": ["confirmed"]
       },
-      "notes": "Skeleton-only field: not persisted; a valid POST calls POST /notifications/{referenceNumber}/submit (DRAFT to SUBMITTED) and redirects back to /declaration with no separate confirmation page. Shows Date of declaration as today (en-GB).",
-      "conflicts": ["c-022"],
+      "notes": "Skeleton-only field: not persisted; a valid POST calls POST /notifications/{referenceNumber}/submit (DRAFT to SUBMITTED). Shows Date of declaration as today (en-GB). M3 (A2; c-022 superseded in part): redirects to the confirmation page after submit (M3-16); declaration copy + CTA rename at M3-17. Resubmission after a dashboard amend passes this same gate (c-029, behaviour amend-and-resubmit-post-submit).",
+      "conflicts": ["c-022", "c-029"],
       "provenance": [
         {
           "source": "skeleton",
@@ -1250,8 +1317,8 @@
         "numberOfAnimalsQuantity",
         "animalIdentifiers"
       ],
-      "notes": "V4 data-level model: a commodity code plus its taxonomy chain (Type, Class, Species) plus a quantity; things true at the specific commodity line level. Skeleton supports exactly one line (commodityComplement single-element array) - see c-003.",
-      "conflicts": ["c-003"],
+      "notes": "V4 data-level model: a commodity code plus its taxonomy chain (Type, Class, Species) plus a quantity; things true at the specific commodity line level. Skeleton supports exactly one line (commodityComplement single-element array) - see c-003. M3 (c-030 resolved): batch selection adopted - one search page, multi-select species across commodity codes, several commodity lines created in one pass (MODEL_EXTENDER batch-create, after M3-0A); the 1..N hierarchy itself stands. Derived stat cards on the hub sum numberOfAnimalsQuantity / numberOfPackages over the lines - display only, no new obligation (A8/f-024, M3-14).",
+      "conflicts": ["c-003", "c-030"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1283,8 +1350,8 @@
         "permanentAddress"
       ],
       "modelGap": "sibling-at-least-one",
-      "notes": "V4 Level 3: Unit record - 0..N per commodity line, carrying per-animal identifiers and per-animal Permanent Address. Banner rule: a notification must be submitted with at least one animal identifier PER ANIMAL - the at-least-one applies across the sibling identifier fields within each unit record, not just to the item count (hence modelGap sibling-at-least-one). Each identifier field is individually Optional.",
-      "conflicts": ["c-002", "c-003"],
+      "notes": "V4 Level 3: Unit record - 0..N per commodity line, carrying per-animal identifiers and per-animal Permanent Address. Banner rule: a notification must be submitted with at least one animal identifier PER ANIMAL - the at-least-one applies across the sibling identifier fields within each unit record, not just to the item count (hence modelGap sibling-at-least-one). Each identifier field is individually Optional. M3 mandate refinements (rulings, no new structural vocabulary here - the cardinality syntax is a MODEL_EXTENDER increment): (1) FLOOR per c-031: at least one identifier record PER SPECIES at submit (refines c-029's per-commodity-line floor; 1 record for 100 animals still passes); (2) CAP per c-031: records capped at the per-species declared animal count (collection cardinality link, max = sibling count field; counter UX 'Enter details for {species} N of M'); (3) count-drop blocks with a GDS error naming the species and linking to its identifier list - never silently trim; (4) loop exits: 'Save and finish' + 'Save and add another' (c-031). Fallback free-text fields gate via negated cross-frame gating at M3-0A (c-028 direction).",
+      "conflicts": ["c-002", "c-003", "c-029", "c-031"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1309,8 +1376,8 @@
         "accompanyingDocumentReference",
         "accompanyingDocumentDateOfIssue"
       ],
-      "notes": "A notification can be submitted without an accompanying document, but once a document type is selected the attachment, reference and date of issue are mandatory to proceed (all-or-nothing per item - item fields carry required:true within an item). Skeleton mechanics: upload loop with per-document remove, max 10 documents, 10 MB cap, virus-scan polling (REJECTED must be removed before Continue); documents never enter buildNotificationPayload (see c-004).",
-      "conflicts": ["c-004", "c-010"],
+      "notes": "A notification can be submitted without an accompanying document, but once a document type is selected the attachment, reference and date of issue are mandatory to proceed (all-or-nothing per item - item fields carry required:true within an item). Skeleton mechanics: upload loop with per-document remove, virus-scan polling (REJECTED must be removed before Continue); documents never enter buildNotificationPayload (see c-004). M3 (c-034 resolved): REAL cdp-uploader upload leg adopted - reuse the skeleton's integration; real mode uses the workspace stack's cdp-uploader docker image, stub mode uses canned scan-state transitions via the LIVE_ANIMALS_MODE stub|real switch. Widget: standard govukFileUpload - NO drag-and-drop (not GDS). Attachment type derived from the uploaded file (source User->System, see accompanyingDocumentAttachmentType). Limits: 50MB per file per the design (supersedes the earlier 10MB CDP-nginx-cap note; verify the stack's uploader/nginx config honours 50MB when building); max 10 documents (V4) stands - the design's 15 is flagged to design. Scan-status tags, REJECTED-blocking and size/limit error states kept even though the design didn't draw them (f-091). A3 (f-062): single-page add-another loop with read-back table (reference / type / date / status, per-row Remove) - M3-12.",
+      "conflicts": ["c-004", "c-010", "c-034"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1365,8 +1432,8 @@
         "valuesSource": "MDM; where applicable for given commodity the user can filter species by type",
         "example": "Game"
       },
-      "notes": "Applicability is data-driven from MDM ('where applicable for given commodity') - not expressible as an activatedBy equals/includes rule, so no activatedBy is wired. Unresolved inline comment on the Example cell (Game). Skeleton offers only Domestic from mock-species.json and posts the type text, not its numeric value (see c-018).",
-      "conflicts": ["c-018"],
+      "notes": "Applicability is data-driven from MDM ('where applicable for given commodity') - not expressible as an activatedBy equals/includes rule, so no activatedBy is wired. Unresolved inline comment on the Example cell (Game). Skeleton offers only Domestic from mock-species.json and posts the type text, not its numeric value (see c-018). PENDING-PO-DROP (c-037 resolved): the design's search-first multi-select subsumes this filter's purpose; the page is dropped from the journey but the obligation STAYS in the spec until PO signs off dropping a V4 mandatory-to-proceed field.",
+      "conflicts": ["c-018", "c-037"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1418,7 +1485,8 @@
         "widget": "input",
         "inputmode": "numeric",
         "maxLength": 10,
-        "example": "1, 25, 5000"
+        "example": "1, 25, 5000",
+        "hint": "Such as crates, bags or boxes"
       },
       "activatedBy": {
         "obligation": "commoditySelection",
@@ -1480,8 +1548,8 @@
         ]
       },
       "wipeOnExit": true,
-      "notes": "Shown where package count applies to the selected commodity (54-entry list, same commodity-line frame so activatedBy is natively expressible). List includes 0203 Pig Meat, a product (see c-021). Unresolved inline comments on field name and on 0203. Skeleton models this per species with derived subtotals (see c-003).",
-      "conflicts": ["c-021", "c-003"],
+      "notes": "Shown where package count applies to the selected commodity (54-entry list, same commodity-line frame so activatedBy is natively expressible). List includes 0203 Pig Meat, a product (see c-021). Unresolved inline comments on field name and on 0203. M3 GRAIN (c-030 resolved): captured PER SPECIES, not per commodity line (design 01-14 per-species quantity blocks; the skeleton's per-species model is now the requirement, partially superseding c-003) - Mapper A consolidates per-species counts UP to V4's commodity-level number, Mapper B keeps the per-species detail; raise the grain with PO/Monica as V4 feedback. Hint 'Such as crates, bags or boxes' adopted from the design (f-013, A10); optionality + '(optional)' suffix kept - M3-07.",
+      "conflicts": ["c-021", "c-003", "c-030"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1509,8 +1577,8 @@
         "validation": "whole number, max 9223372036854775807 (int64)",
         "example": "1, 25, 5000"
       },
-      "notes": "Unresolved inline comments on field name and on the int64 max in the Type cell; PO approval pending. Skeleton collects this per species and derives a subtotal (see c-003).",
-      "conflicts": ["c-003"],
+      "notes": "Unresolved inline comments on field name and on the int64 max in the Type cell; PO approval pending. M3 GRAIN (c-030 resolved): captured PER SPECIES, not per commodity line (design 01-14; the skeleton's per-species model is now the requirement, partially superseding c-003) - Mapper A consolidates per-species counts UP to V4's commodity-level number, Mapper B keeps the per-species detail; raise the grain with PO/Monica as V4 feedback (the V4 commodity-level row is PO-pending anyway). Also drives the c-031 identifier cap: per-species declared count = M in the N-of-M identifier loop.",
+      "conflicts": ["c-003", "c-030", "c-031"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1724,8 +1792,8 @@
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
-      "notes": "Required per animal when the enclosing commodity line is Cats, Dogs or Ferrets (frame:enclosing); a different address can be entered for each animal, so it lives on the unit record alongside the identifiers (V4 Level 3 prose). Standard address block. Unresolved inline comment on field name. Not present in the skeleton (see c-012).",
-      "conflicts": ["c-012"],
+      "notes": "Required per animal when the enclosing commodity line is Cats, Dogs or Ferrets (frame:enclosing); a different address can be entered for each animal, so it lives on the unit record alongside the identifiers (V4 Level 3 prose). Standard address block. Unresolved inline comment on field name. Not present in the skeleton (see c-012). c-039 resolved (V4 wins, no build): the per-animal model stands as already built; the design's notification-level 'Roles and addresses' row is raised with the designer as an error (acceptable variant: read-only roll-up display of per-animal data on review).",
+      "conflicts": ["c-012", "c-039"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1783,14 +1851,11 @@
         "required": true,
         "enforcedAt": "submit"
       },
-      "mandateRaw": "All-or-nothing",
+      "mandateRaw": "All-or-nothing (V4 source User - flipped to System by c-034; raise with PO as V4 feedback)",
+      "system": true,
       "label": "Accompanying Document: Attachment Type",
-      "input": {
-        "widget": "select",
-        "values": ["PDF", "DOC", "DOCX", "JPG", "JPEG", "PNG", "XLS", "XLSX"]
-      },
-      "notes": "Required within a document item (all-or-nothing block). Skeleton implements this as an actual file upload instead - allowed extensions pdf/doc/docx/jpeg/jpg/png/xls/xlsx, max 10 MB (decimal, under the CDP nginx 10 MiB cap), uploaded to the document service and virus-scanned (see c-010). Unresolved inline comments on field name and Mandatory cell.",
-      "conflicts": ["c-010"],
+      "notes": "Required within a document item (all-or-nothing block). SOURCE FLIP (c-034 resolved): derived by the system from the uploaded file, not user-selected - the V4 attachment-type select goes away; the V4 payload field stays populated with the derived value (domain: PDF / DOC / DOCX / JPG / JPEG / PNG / XLS / XLSX, matching the skeleton's allowed upload extensions). Raise the User->System source flip with PO as V4 feedback. Skeleton already implements the upload variant - uploaded to the document service and virus-scanned (see c-010/c-034); file-size limit now 50MB per the design (c-034). Unresolved inline comments on field name and Mandatory cell.",
+      "conflicts": ["c-010", "c-034"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1855,6 +1920,90 @@
         {
           "source": "skeleton",
           "ref": "src/server/accompanying-documents/partial-date-validator.js:29"
+        }
+      ]
+    },
+    {
+      "id": "importType",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "continue"
+      },
+      "mandateRaw": "Not in V4 - design-sourced entry filter (c-032); required to enter the service",
+      "label": "What are you importing?",
+      "input": {
+        "widget": "radios",
+        "values": [
+          "Live animals or germinal products",
+          "Products of animal origin or animal by-products",
+          "High-risk food or feed of non-animal origin",
+          "Plants, plant products or other objects"
+        ]
+      },
+      "notes": "Service entry filter (c-032 resolved: adopt). Canonical field name importType chosen at M3-00 - the export used importType and importing inconsistently, and HTML names are artifacts per the interpretive rule. Canonical value set: live-animals | poao | hrfnao | plants (from the export's input value attributes; display labels above). Only live-animals proceeds into this journey; the other three route to a holding page. Not persisted to the V4 notification payload - it is a service-routing answer, not notification data.",
+      "conflicts": ["c-032"],
+      "provenance": [
+        {
+          "source": "figma",
+          "ref": "pages/01-about-the-consignment/01-what-are-you-importing"
+        }
+      ]
+    },
+    {
+      "id": "destinationCountry",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Not in V4 - design-sourced (c-033); flagged to PO as a V4 amendment",
+      "label": "Destination country",
+      "activatedBy": {
+        "obligation": "reasonForImport",
+        "includes": ["Transhipment or onward travel", "Transit"]
+      },
+      "wipeOnExit": true,
+      "input": {
+        "widget": "select",
+        "valuesSource": "MDM country list (export contains only a Select one placeholder)"
+      },
+      "notes": "Conditional reveal on the reason-for-import page when the reason is Transhipment or onward travel, or Transit (design 01-08/01-09; c-033 resolved: build now, PO flag). No V4 backing - flagged to PO as a V4 amendment; removable in one increment if rejected. Canonical spelling is transhipment (the export's transshipment value on page 01-08 is an artifact per the interpretive rule).",
+      "conflicts": ["c-033"],
+      "provenance": [
+        {
+          "source": "figma",
+          "ref": "pages/01-about-the-consignment/08-what-is-the-main-reason-for-importing-the-animals-destination-country"
+        }
+      ]
+    },
+    {
+      "id": "exitBcp",
+      "appliesAt": "notification",
+      "kind": "scalar",
+      "mandate": {
+        "required": true,
+        "enforcedAt": "submit"
+      },
+      "mandateRaw": "Not in V4 - design-sourced (c-033); flagged to PO as a V4 amendment",
+      "label": "Exit border control post",
+      "activatedBy": {
+        "obligation": "reasonForImport",
+        "equals": "Transit"
+      },
+      "wipeOnExit": true,
+      "input": {
+        "widget": "select",
+        "valuesSource": "Exit BCP list - source TBC (export contains only a Select one placeholder)"
+      },
+      "notes": "Conditional reveal on the reason-for-import page when the reason is Transit (design 01-09; c-033 resolved: build now, PO flag). No V4 backing - flagged to PO as a V4 amendment; removable in one increment if rejected.",
+      "conflicts": ["c-033"],
+      "provenance": [
+        {
+          "source": "figma",
+          "ref": "pages/01-about-the-consignment/09-what-is-the-main-reason-for-importing-the-animals-transit"
         }
       ]
     }
