@@ -48,7 +48,7 @@ const marshal = (notification, userId = null) => {
     userId,
     status,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
-    answers: stripNulls(toAnswers(notification))
+    answers: toAnswers(stripNulls(notification))
   }
 }
 
