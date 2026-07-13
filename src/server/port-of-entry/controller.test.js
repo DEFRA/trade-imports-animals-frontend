@@ -135,6 +135,43 @@ describe('portOfEntryController', () => {
       expect(response).toEqual({ statusCode: 302, location: '/transporters' })
     })
 
+    test('redirects to transited countries when means of transport is railway', async () => {
+      const set = vi.fn()
+      const get = vi.fn(() => null)
+      const request = {
+        payload: { ...validPayload, meansOfTransport: 'RAILWAY' },
+        yar: { set, get }
+      }
+      const h = {
+        view: vi.fn(),
+        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+      }
+
+      const response = await portOfEntryController.post.handler(request, h)
+
+      expect(response).toEqual({
+        statusCode: 302,
+        location: '/transited-countries'
+      })
+    })
+
+    test('clears transited countries from session when means of transport is vessel', async () => {
+      const set = vi.fn()
+      const get = vi.fn(() => null)
+      const request = {
+        payload: validPayload,
+        yar: { set, get }
+      }
+      const h = {
+        view: vi.fn(),
+        redirect: vi.fn((location) => ({ statusCode: 302, location }))
+      }
+
+      await portOfEntryController.post.handler(request, h)
+
+      expect(set).toHaveBeenCalledWith(sessionKeys.transitedCountries, null)
+    })
+
     test('returns 400 with error list and portItems when arrival day is out of range', async () => {
       const set = vi.fn()
       const get = vi.fn(() => null)

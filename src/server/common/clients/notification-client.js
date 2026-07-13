@@ -2,6 +2,7 @@ import { config } from '../../../config/config.js'
 import { createLogger } from '../helpers/logging/logger.js'
 import { getSessionValue, setSessionValue } from '../helpers/session-helpers.js'
 import { sessionKeys } from '../constants/session-keys.js'
+import { requiresTransitedCountries } from '../helpers/transport-routing.js'
 
 const tradeImportsAnimalsBackendUrl = config.get(
   'tradeImportsAnimalsBackendApi.baseUrl'
@@ -71,12 +72,21 @@ function setAddresses(notification, request) {
 }
 
 function setTransport(notification, request) {
+  const meansOfTransport = getSessionValue(
+    request,
+    sessionKeys.meansOfTransport
+  )
+  const transitedCountries = getSessionValue(
+    request,
+    sessionKeys.transitedCountries
+  )
+
   const fields = {
     portOfEntry: getSessionValue(request, sessionKeys.portOfEntry),
     arrivalDate: getIsoArrivalDate(
       getSessionValue(request, sessionKeys.arrivalDate)
     ),
-    meansOfTransport: getSessionValue(request, sessionKeys.meansOfTransport),
+    meansOfTransport,
     transportIdentification: getSessionValue(
       request,
       sessionKeys.transportIdentification
@@ -84,7 +94,11 @@ function setTransport(notification, request) {
     transportDocumentReference: getSessionValue(
       request,
       sessionKeys.transportDocumentReference
-    )
+    ),
+    transitedCountries:
+      requiresTransitedCountries(meansOfTransport) && transitedCountries?.length
+        ? transitedCountries
+        : undefined
   }
 
   const transport = Object.fromEntries(
@@ -221,6 +235,13 @@ function setTransportValues(request, transport) {
       request,
       sessionKeys.transportDocumentReference,
       transport.transportDocumentReference
+    )
+  }
+  if (transport.transitedCountries) {
+    setSessionValue(
+      request,
+      sessionKeys.transitedCountries,
+      transport.transitedCountries
     )
   }
 }

@@ -7,6 +7,28 @@ const tradeImportsReferenceDataUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
+async function fetchCountries(url, traceId) {
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      [tracingHeader]: traceId
+    }
+  })
+
+  if (!response.ok) {
+    const error = new Error('Failed to get countries')
+    error.status = response.status
+    error.statusText = response.statusText
+
+    logger.error(`Failed to get countries: ${error.message}`)
+
+    throw error
+  }
+
+  return response.json()
+}
+
 export const countriesClient = {
   /**
    * Retrieves a list of countries from the reference data API,
@@ -21,24 +43,16 @@ export const countriesClient = {
       }
     }
 
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        [tracingHeader]: traceId
-      }
-    })
+    return fetchCountries(url, traceId)
+  },
 
-    if (!response.ok) {
-      const error = new Error('Failed to get countries')
-      error.status = response.status
-      error.statusText = response.statusText
+  /**
+   * Retrieves ISO countries from the reference data API (MDM system=ISO).
+   */
+  async getIsoCountries(traceId) {
+    const url = new URL(`${tradeImportsReferenceDataUrl}/countries`)
+    url.searchParams.set('system', 'ISO')
 
-      logger.error(`Failed to get countries: ${error.message}`)
-
-      throw error
-    }
-
-    return response.json()
+    return fetchCountries(url, traceId)
   }
 }

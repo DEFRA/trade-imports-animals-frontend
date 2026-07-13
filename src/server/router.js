@@ -15,6 +15,7 @@ import { animalsIdentificationDetails } from './commodities/identification/index
 import { addresses } from './addresses/index.js'
 import { cphNumber } from './cph-number/index.js'
 import { portOfEntry } from './port-of-entry/index.js'
+import { transitedCountries } from './transited-countries/index.js'
 import { transporter } from './transporters/index.js'
 import { declaration } from './declaration/index.js'
 import { notificationAmend } from './notification-amend/index.js'
@@ -50,6 +51,7 @@ export const router = {
         addresses,
         cphNumber,
         portOfEntry,
+        transitedCountries,
         transporter,
         declaration,
         notificationAmend,
