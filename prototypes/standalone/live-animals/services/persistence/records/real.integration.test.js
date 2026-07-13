@@ -5,13 +5,13 @@ import { runsIt } from '../it-mode.js'
 
 // Gated backend integration test for the REAL records adapter (S3c).
 //
-// The adapter is wired to Mapper B (answersToTargetNotification /
-// targetNotificationToAnswers). Mapper B is a superset of Mapper A on the
-// backend-storable set, so the storable answers below (species earTag/passport,
-// the collapsed transporter object, the party addresses) must round-trip
-// through the real backend; its Stage-2 extras (regionCode, purpose, the split
-// transport fields, per-animal identifiers beyond earTag/passport, documents)
-// have no backend home yet and are expected to drop.
+// The adapter defaults to Mapper A (skeleton-exact, storable-only:
+// answersToTargetNotification / targetNotificationToAnswers). Mapper A maps
+// only the backend-storable set, so the storable answers below (species
+// earTag/passport, the collapsed transporter object, the party addresses) must
+// round-trip through the real backend; the Stage-2 extras (regionCode, purpose,
+// the split transport fields, per-animal identifiers beyond earTag/passport,
+// documents) are never mapped by Mapper A and are expected to drop.
 //
 // Runs under LIVE_ANIMALS_IT=real (or =all); the default (stubs/unset)
 // skips it, so the default hermetic `npm run test:live-animals` run adds
@@ -66,7 +66,7 @@ describe.skipIf(!runsIt('real'))(
       expect(loaded.answers.commodityLines).toBeUndefined()
     })
 
-    it('Should persist the Mapper B storable set write-through and re-read it', async () => {
+    it('Should persist the Mapper A storable set write-through and re-read it', async () => {
       const { journeyId } = await records.create({ userId: uniqueUserId() })
 
       const answers = {
@@ -99,8 +99,8 @@ describe.skipIf(!runsIt('real'))(
             commoditySelection: 'live-bovine',
             typeSelection: 'breeding',
             speciesSelection: ['Cattle'],
-            numberOfPackages: 3,
-            numberOfAnimalsQuantity: 5,
+            numberOfPackages: '3',
+            numberOfAnimalsQuantity: '5',
             animalIdentifiers: [
               {
                 animalIdentifierEarTag: 'UK123456700001',
@@ -136,8 +136,8 @@ describe.skipIf(!runsIt('real'))(
           commoditySelection: 'live-bovine',
           typeSelection: 'breeding',
           speciesSelection: ['Cattle'],
-          numberOfPackages: 3,
-          numberOfAnimalsQuantity: 5,
+          numberOfPackages: '3',
+          numberOfAnimalsQuantity: '5',
           animalIdentifiers: [
             {
               animalIdentifierEarTag: 'UK123456700001',

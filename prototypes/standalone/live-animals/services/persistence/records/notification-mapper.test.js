@@ -114,8 +114,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
       commodityComplement: [
         {
           typeOfCommodity: 'domestic',
-          totalNoOfAnimals: '25',
-          totalNoOfPackages: '5',
+          totalNoOfAnimals: 25,
+          totalNoOfPackages: 5,
           species: [
             {
               value: 'bos-taurus',

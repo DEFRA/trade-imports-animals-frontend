@@ -108,11 +108,16 @@ const transporterToAnswers = (transporter) => {
 // Mapper A — skeleton-exact backend notification
 // ---------------------------------------------------------------------------
 
+// Skeleton parity: the commodity-complement totals are numbers in the
+// notification (the skeleton computes them via a lodash sum), while the
+// per-species noOfAnimals/noOfPackages stay the raw string answers.
+const toNum = (v) => (v == null ? undefined : Number(v))
+
 const baseComplementFromLine = (line) =>
   compact({
     typeOfCommodity: line.typeSelection,
-    totalNoOfAnimals: line.numberOfAnimalsQuantity,
-    totalNoOfPackages: line.numberOfPackages,
+    totalNoOfAnimals: toNum(line.numberOfAnimalsQuantity),
+    totalNoOfPackages: toNum(line.numberOfPackages),
     species: speciesFromLine(line)
   })
 
@@ -198,8 +203,14 @@ const linesFromCommodityA = (commodity) => {
       speciesSelection: complement.species
         ? complement.species.map((entry) => entry.value)
         : undefined,
-      numberOfPackages: complement.totalNoOfPackages,
-      numberOfAnimalsQuantity: complement.totalNoOfAnimals,
+      numberOfPackages:
+        complement.totalNoOfPackages == null
+          ? undefined
+          : String(complement.totalNoOfPackages),
+      numberOfAnimalsQuantity:
+        complement.totalNoOfAnimals == null
+          ? undefined
+          : String(complement.totalNoOfAnimals),
       animalIdentifiers: identifiersFromSpecies(complement.species)
     })
   )
