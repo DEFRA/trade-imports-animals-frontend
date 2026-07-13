@@ -308,7 +308,14 @@ describe('addressBlock — commercialTransporter (V4 standard address block + au
     expect(commercialTransporterDomain.predicate(null, buildCtx())).toEqual([])
   })
 
-  it('emits one addressSubFieldRequired error per empty required sub-field', () => {
+  it('does NOT emit required errors for blank required sub-fields (V4 spec interpretation A)', () => {
+    // Regression: predicate used to emit one addressSubFieldRequired
+    // per empty required sub-field. V4 spec Standard Address Block:
+    // "The validation below applies once the address record is
+    // provided" — interpretation A validates only user-supplied
+    // sub-fields. Completeness is enforced at CYA via `isComplete`
+    // + the promptCompleteAddress prompt. Parent-level mandate on
+    // the flow presents entry blocks fully-blank submissions.
     const errs = commercialTransporterDomain.predicate(
       {
         ...fullValid,
@@ -317,12 +324,39 @@ describe('addressBlock — commercialTransporter (V4 standard address block + au
       },
       buildCtx()
     )
-    expect(errs).toHaveLength(2)
-    expect(errs.map((e) => e.subField).sort()).toEqual(['addressLine1', 'town'])
-    for (const err of errs) {
-      expect(err.code).toBe(reasons.addressSubFieldRequired.code)
-      expect(err.obligation).toBe('commercialTransporter')
-    }
+    expect(errs).toEqual([])
+    // But isComplete correctly reports the address as incomplete —
+    // that's the completeness signal CYA uses.
+    expect(
+      commercialTransporterDomain.isComplete({
+        ...fullValid,
+        addressLine1: '',
+        town: ''
+      })
+    ).toBe(false)
+    expect(commercialTransporterDomain.isComplete(fullValid)).toBe(true)
+  })
+
+  it('isComplete: true iff every required sub-field is a non-blank string', () => {
+    expect(commercialTransporterDomain.isComplete(fullValid)).toBe(true)
+    // Blank optional (addressLine2 / county) doesn't affect
+    // completeness.
+    expect(
+      commercialTransporterDomain.isComplete({
+        ...fullValid,
+        addressLine2: '',
+        county: ''
+      })
+    ).toBe(true)
+    // Blank required sub-field → not complete.
+    expect(
+      commercialTransporterDomain.isComplete({ ...fullValid, telephone: '' })
+    ).toBe(false)
+    // Undefined / null / non-object → not complete.
+    expect(commercialTransporterDomain.isComplete(undefined)).toBe(false)
+    expect(commercialTransporterDomain.isComplete(null)).toBe(false)
+    expect(commercialTransporterDomain.isComplete('string')).toBe(false)
+    expect(commercialTransporterDomain.isComplete([])).toBe(false)
   })
 
   it('does NOT emit an error for a blank OPTIONAL sub-field (addressLine2 / county)', () => {

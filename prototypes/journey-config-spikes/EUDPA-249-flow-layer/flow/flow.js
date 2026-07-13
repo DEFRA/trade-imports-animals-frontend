@@ -7,14 +7,14 @@
  * pages in declared order.
  *
  * Presents entries:
- *   { obligation, mandatoryToSaveAndContinue?: boolean, errors?: object }
+ *   { obligation, mandatoryToProceed?: boolean, errors?: object }
  *
  * `presentsForEach` expands to one virtual entry per in-scope
  * group-instance record — used here for the per-commodity-line pages.
  *
  * Property semantics:
  *   - `obligation` is the model-layer obligation the page presents.
- *   - `mandatoryToSaveAndContinue` (default false) is the *submit-
+ *   - `mandatoryToProceed` (default false) is the *submit-
  *     mandate* — when true, POSTing the page with a blank value for
  *     this obligation returns a 400 with the flow-supplied required
  *     message. Distinct from the obligation's `status` field, which is
@@ -99,22 +99,12 @@ export const flow = {
           children: [
             {
               page: 'country-of-origin',
-              presents: [
-                {
-                  obligation: countryOfOrigin,
-                  // First worked example of the flow-level
-                  // submit-mandate: leaving the field blank on POST
-                  // returns a 400 with the flow-supplied message.
-                  // The `required` value is a message key resolved via
-                  // `lib/i18n.js` — see `locales/en.json`. Missing keys
-                  // render as the dotted path in the UI and are
-                  // caught in CI by `i18n-coverage.test.js`.
-                  mandatoryToSaveAndContinue: true,
-                  errors: {
-                    required: 'errors.countryOfOrigin.required'
-                  }
-                }
-              ]
+              // V4 spec (Confluence page 6497338582): "Mandatory to
+              // submit". No page-save block; completion enforced at
+              // journey-submit time via CYA prompts. Was previously
+              // marked mandatoryToProceed by mistake — corrected in
+              // the spec-conformance mandate audit.
+              presents: [{ obligation: countryOfOrigin }]
             },
             {
               page: 'region-code-requirement',
@@ -125,8 +115,15 @@ export const flow = {
               // regionCodeRequirement = 'yes', in-scope-optional
               // otherwise (see obligations.js §Region code); stored
               // value is retained across gate flips.
+              // V4: "Mandatory to proceed".
               page: 'region-code',
-              presents: [{ obligation: regionCode }]
+              presents: [
+                {
+                  obligation: regionCode,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.regionCode.required' }
+                }
+              ]
             }
           ]
         },
@@ -143,8 +140,17 @@ export const flow = {
               // Question visibility: rendered but out-of-scope (NA) when
               // reasonForImport !== 'internal-market' — the obligation's
               // applyTo drives that; the flow just presents it.
+              // V4: "Mandatory to proceed".
               page: 'purpose-details',
-              presents: [{ obligation: purposeInInternalMarket }]
+              presents: [
+                {
+                  obligation: purposeInInternalMarket,
+                  mandatoryToProceed: true,
+                  errors: {
+                    required: 'errors.purposeInInternalMarket.required'
+                  }
+                }
+              ]
             }
           ]
         }
@@ -168,10 +174,25 @@ export const flow = {
               // Two obligations on one page — only one of them is ever in
               // scope depending on transporterType. Question visibility
               // via obligation scope, no flow-side branching required.
+              //
+              // V4: both are "Mandatory to proceed". The parent-level
+              // mandate blocks blank submissions with a single error
+              // ("Provide the … transporter address"). Sub-field
+              // completeness (email, telephone, …) is a CYA prompt,
+              // not a page-save block — see interpretation A note on
+              // addressBlock in domain/index.js.
               page: 'transporter-details',
               presents: [
-                { obligation: commercialTransporter },
-                { obligation: privateTransporter }
+                {
+                  obligation: commercialTransporter,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.commercialTransporter.required' }
+                },
+                {
+                  obligation: privateTransporter,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.privateTransporter.required' }
+                }
               ]
             }
           ]
@@ -182,8 +203,15 @@ export const flow = {
           titleKey: 'flow.subsection.transport.title',
           children: [
             {
+              // V4: "Mandatory to proceed".
               page: 'means-of-transport',
-              presents: [{ obligation: meansOfTransport }]
+              presents: [
+                {
+                  obligation: meansOfTransport,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.meansOfTransport.required' }
+                }
+              ]
             },
             {
               page: 'transport-identification',
@@ -299,8 +327,18 @@ export const flow = {
           titleKey: 'flow.subsection.contact.title',
           children: [
             {
+              // V4: "Mandatory to proceed". Blank submission blocked
+              // by parent-level mandate; sub-field completeness (email,
+              // telephone, country, …) surfaced as CYA prompts, not
+              // page-save blocks (interpretation A on addressBlock).
               page: 'contact-address',
-              presents: [{ obligation: contactAddress }]
+              presents: [
+                {
+                  obligation: contactAddress,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.contactAddress.required' }
+                }
+              ]
             }
           ]
         },
@@ -364,31 +402,42 @@ export const flow = {
           titleKey: 'flow.subsection.commodity-lines-details.title',
           children: [
             {
+              // V4: "Mandatory to proceed" per the Commodity selection
+              // row. Same applies to Type / Species / Number of
+              // animals below.
               page: 'commodity-details',
               presentsForEach: {
                 obligation: commodityCode,
-                forEachOf: commodityLine
+                forEachOf: commodityLine,
+                mandatoryToProceed: true,
+                errors: { required: 'errors.commodityCode.required' }
               }
             },
             {
               page: 'commodity-type',
               presentsForEach: {
                 obligation: commodityType,
-                forEachOf: commodityLine
+                forEachOf: commodityLine,
+                mandatoryToProceed: true,
+                errors: { required: 'errors.commodityType.required' }
               }
             },
             {
               page: 'species-details',
               presentsForEach: {
                 obligation: species,
-                forEachOf: commodityLine
+                forEachOf: commodityLine,
+                mandatoryToProceed: true,
+                errors: { required: 'errors.species.required' }
               }
             },
             {
               page: 'number-of-animals',
               presentsForEach: {
                 obligation: numberOfAnimals,
-                forEachOf: commodityLine
+                forEachOf: commodityLine,
+                mandatoryToProceed: true,
+                errors: { required: 'errors.numberOfAnimals.required' }
               }
             },
             {

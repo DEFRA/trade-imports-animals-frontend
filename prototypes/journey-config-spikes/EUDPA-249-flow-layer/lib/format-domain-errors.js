@@ -50,11 +50,12 @@ const COPY = {
       max: error.max,
       actual: error.actual
     }),
-  'domain.address.subFieldRequired': (error) =>
-    t('errors.domain.addressSubFieldRequired', {
-      subField: t(`presentation.address.subField.${error.subField}`)
-    }),
-  // Step 5e — per-sub-field V4 rules on the standard address block.
+  // Per-sub-field V4 rules on the standard address block (step 5e).
+  // Note: `addressSubFieldRequired` was retired when the addressBlock
+  // predicate switched to interpretation A (validate only user-
+  // supplied sub-fields). Completeness of required sub-fields is
+  // enforced at CYA time via `cya.promptCompleteAddress`, not by a
+  // page-save error.
   'domain.address.subFieldMaxLength': (error) =>
     t('errors.domain.addressSubFieldMaxLength', {
       subField: t(`presentation.address.subField.${error.subField}`),
@@ -87,7 +88,6 @@ export const FORMAT_ERROR_KEYS = [
   'errors.domain.dateFormat',
   'errors.domain.arrayMaxSelections',
   'errors.domain.numberOfAnimalsSpeciesCap',
-  'errors.domain.addressSubFieldRequired',
   'errors.domain.addressSubFieldMaxLength',
   'errors.domain.addressSubFieldEmailFormat',
   'errors.domain.addressSubFieldEnumInvalid',

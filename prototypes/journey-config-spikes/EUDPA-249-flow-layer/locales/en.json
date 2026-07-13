@@ -466,6 +466,8 @@
     "bannerHeading": "You still need to complete some sections",
     "changeLinkText": "Change",
     "promptEnterValue": "Enter a value for {label}",
+    "promptCompleteAddress": "Complete the {label} address",
+    "promptCompleteAddressForUnit": "Complete the permanent address for animal {unitN} on commodity line {lineN}",
     "promptGroupInvariant": "Add at least one identifier for animal {unitN} on commodity line {lineN}",
     "submitReady": "All required obligations are fulfilled. In a real service, this is where the user would submit."
   },
@@ -503,6 +505,36 @@
   "errors": {
     "countryOfOrigin": {
       "required": "Enter a country of origin"
+    },
+    "regionCode": {
+      "required": "Enter the region of origin code"
+    },
+    "purposeInInternalMarket": {
+      "required": "Choose the purpose in the internal market"
+    },
+    "meansOfTransport": {
+      "required": "Choose the means of transport"
+    },
+    "commodityCode": {
+      "required": "Choose a commodity code"
+    },
+    "commodityType": {
+      "required": "Choose a commodity type"
+    },
+    "species": {
+      "required": "Choose at least one species"
+    },
+    "numberOfAnimals": {
+      "required": "Enter the number of animals"
+    },
+    "commercialTransporter": {
+      "required": "Provide the commercial transporter address"
+    },
+    "privateTransporter": {
+      "required": "Provide the private transporter address"
+    },
+    "contactAddress": {
+      "required": "Provide the contact address"
     },
     "domain": {
       "enumNotInOptions": {

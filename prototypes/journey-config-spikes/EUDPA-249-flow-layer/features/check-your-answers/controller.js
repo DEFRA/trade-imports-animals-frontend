@@ -121,6 +121,24 @@ function pushPrompt(prompts, presentation, href, lineId) {
   })
 }
 
+/** Emit "Complete the permanent address for animal N on commodity
+ *  line M" — used when a per-unit permanent-address record is
+ *  present but structurally incomplete (some required sub-field is
+ *  still blank). Link goes to the specific per-unit page so the user
+ *  can jump straight in. Only used for permanentAddress today. */
+function pushAddressUnitPrompt(prompts, state, compositeKey) {
+  const [lineId, unitId] = compositeKey.split('/')
+  if (!lineId || !unitId) return
+  prompts.push({
+    text: t('cya.promptCompleteAddressForUnit', {
+      lineN: ordinalOfLineId(state, lineId),
+      unitN: ordinalOfUnitId(state, lineId, unitId)
+    }),
+    href: `${BASE}/lines/${lineId}/units/${unitId}/permanent-address`,
+    because: []
+  })
+}
+
 function pushRow(rows, presentation, valueText, href, lineId) {
   const keyText = lineId
     ? `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
@@ -156,6 +174,8 @@ export const cyaController = {
         const presentation = forObligation(obligation)
         const stored = state.fulfilments[oblId]
 
+        const domainEntry = domain.get(oblId)
+
         // Line-scoped obligations (presentsForEach pages) — one row per
         // record with a per-line Change URL. The group container
         // itself (commodityLine) hits this branch too; its records are
@@ -172,6 +192,22 @@ export const cyaController = {
               if (mandatory && href) {
                 pushPrompt(prompts, presentation, href, lineId)
               }
+              continue
+            }
+            // Address structural-completeness prompt — the leaf has
+            // some value, but a required sub-field is blank. Under
+            // interpretation A on addressBlock this is caught here,
+            // not at page save. The only line-scoped address today
+            // is permanentAddress (composite key `line/unit`); the
+            // prompt uses ordinal labels for both the line and the
+            // unit within it.
+            if (
+              mandatory &&
+              domainEntry?.type === 'address' &&
+              typeof domainEntry.isComplete === 'function' &&
+              !domainEntry.isComplete(leaf)
+            ) {
+              pushAddressUnitPrompt(prompts, state, lineId)
               continue
             }
             pushRow(
@@ -191,6 +227,26 @@ export const cyaController = {
           (obligation.status ?? impl.status ?? 'mandatory') === 'mandatory'
         if (isBlankValue(stored)) {
           if (mandatory && href) pushPrompt(prompts, presentation, href, null)
+          continue
+        }
+        // Address structural-completeness prompt (singleton). Any
+        // depth-1 address block whose stored value is present but
+        // missing required sub-fields renders as a "Complete the …
+        // address" prompt with a Change link to the address page.
+        if (
+          mandatory &&
+          href &&
+          domainEntry?.type === 'address' &&
+          typeof domainEntry.isComplete === 'function' &&
+          !domainEntry.isComplete(stored)
+        ) {
+          prompts.push({
+            text: t('cya.promptCompleteAddress', {
+              label: presentation.pageTitle
+            }),
+            href,
+            because: []
+          })
           continue
         }
         pushRow(

@@ -244,7 +244,7 @@ export function validatePagePayload(page, payload, state, options = {}) {
     // the one the user needs to see; running an enum/predicate check
     // on undefined would only add noise. See flow.js for property
     // semantics; distinct from obligation.status (completion-mandate).
-    if (descriptor.mandatoryToSaveAndContinue && isBlankValue(value)) {
+    if (descriptor.mandatoryToProceed && isBlankValue(value)) {
       const key = descriptor.errors?.required
       errors.push({
         code: 'flow.required',

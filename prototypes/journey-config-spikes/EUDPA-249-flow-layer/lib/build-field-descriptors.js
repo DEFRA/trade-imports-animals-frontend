@@ -4,7 +4,7 @@
  * logical-model → controller-input seam.
  *
  * A FieldDescriptor is:
- *   { obligation, path, mandatoryToSaveAndContinue, errors, widget, view }
+ *   { obligation, path, mandatoryToProceed, errors, widget, view }
  * where `view` is the `FieldViewItem` shape consumed by partials/fields.njk.
  *
  * The build respects obligation scope: only entries whose obligation
@@ -43,7 +43,7 @@ function readValue(entry, state) {
 
 /**
  * buildFieldDescriptors(page, state, fieldErrors?)
- *   → [{ obligation, path, mandatoryToSaveAndContinue, errors, widget, view }]
+ *   → [{ obligation, path, mandatoryToProceed, errors, widget, view }]
  *
  * `fieldErrors` (optional) is the `{ [id]: { text } }` map from
  * formatDomainErrors — one entry is injected into each rule's build ctx.
@@ -82,7 +82,7 @@ export function buildFieldDescriptors(page, state, fieldErrors = {}) {
     out.push({
       obligation: entry.obligation,
       path: entry.path,
-      mandatoryToSaveAndContinue: entry.mandatoryToSaveAndContinue,
+      mandatoryToProceed: entry.mandatoryToProceed,
       errors: entry.errors,
       widget: chosen.rule,
       subFields: domainEntry?.subFields ?? null,

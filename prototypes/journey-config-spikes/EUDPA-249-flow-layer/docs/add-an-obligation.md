@@ -124,7 +124,7 @@ iteration 3's worked example.
    must reference `flow.section.<id>.title` or
    `flow.subsection.<id>.title` and en.json must carry the copy.
 
-   `mandatoryToSaveAndContinue` on the presents entry is separate from
+   `mandatoryToProceed` on the presents entry is separate from
    the obligation's engine-level `status`. Default is `false` — the
    page validates against the domain but doesn't block save-and-
    continue on a blank submission. Set it to `true` (with a paired
@@ -1023,7 +1023,7 @@ being explicit which one you want when adding an obligation:
   `pageStatus`/`containerStatus`/`journeyState`.
 - **Submit-mandate** — must the _user_ fill this before hitting Save
   and continue on this page? Set on the flow-entry, via
-  `mandatoryToSaveAndContinue: true`. Default false — leaving the
+  `mandatoryToProceed: true`. Default false — leaving the
   field blank on POST validates through and redirects on. When true,
   a blank POST returns a 400 with the flow-supplied required
   message; the domain check runs on non-blank input as normal.
@@ -1043,7 +1043,7 @@ The two are independent. A field can be:
   presents: [
     {
       obligation: countryOfOrigin,
-      mandatoryToSaveAndContinue: true,
+      mandatoryToProceed: true,
       errors: {
         required: 'errors.countryOfOrigin.required'
       }
@@ -1069,7 +1069,7 @@ flag) and are caught in CI by `i18n-coverage.test.js`.
 
 ### When to use it
 
-Reach for `mandatoryToSaveAndContinue: true` when the UX design says
+Reach for `mandatoryToProceed: true` when the UX design says
 "the user must not be allowed past this page without a value." Common
 cases: journey-driving fields whose value gates every downstream
 page's routing (`countryOfOrigin`, `commodityCode`), or safety-

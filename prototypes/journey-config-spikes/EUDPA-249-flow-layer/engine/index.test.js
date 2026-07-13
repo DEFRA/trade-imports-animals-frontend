@@ -187,20 +187,20 @@ describe('expandPresents', () => {
       {
         obligation: reasonOb,
         path: null,
-        mandatoryToSaveAndContinue: false,
+        mandatoryToProceed: false,
         errors: null
       }
     ])
   })
 
-  it('passes through mandatoryToSaveAndContinue + errors from a static entry', () => {
+  it('passes through mandatoryToProceed + errors from a static entry', () => {
     // Flow-level submit-mandate. See flow.js §Presents entries.
     const page = {
       page: 'x',
       presents: [
         {
           obligation: reasonOb,
-          mandatoryToSaveAndContinue: true,
+          mandatoryToProceed: true,
           errors: { required: 'Choose a reason' }
         }
       ]
@@ -209,7 +209,7 @@ describe('expandPresents', () => {
       {
         obligation: reasonOb,
         path: null,
-        mandatoryToSaveAndContinue: true,
+        mandatoryToProceed: true,
         errors: { required: 'Choose a reason' }
       }
     ])
@@ -238,13 +238,13 @@ describe('expandPresents', () => {
       {
         obligation: numOb,
         path: 'line1',
-        mandatoryToSaveAndContinue: false,
+        mandatoryToProceed: false,
         errors: null
       },
       {
         obligation: numOb,
         path: 'line2',
-        mandatoryToSaveAndContinue: false,
+        mandatoryToProceed: false,
         errors: null
       }
     ])

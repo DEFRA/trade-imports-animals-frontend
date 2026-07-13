@@ -10,7 +10,7 @@
  * Sources walked:
  *   - `flow.js`: `titleKey` on every section/subsection node;
  *     `errors.required` on every presents / presentsForEach entry with
- *     `mandatoryToSaveAndContinue: true`.
+ *     `mandatoryToProceed: true`.
  *   - `presentation.js`: `pageTitleKey`, `legendKey`, optional `hintKey`
  *     on every OBLIGATION_KEYS entry; `pageTitleKey` + `leadKey` on
  *     every PAGE_KEYS entry.

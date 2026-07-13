@@ -180,10 +180,20 @@ export function predicate(type, fn, reasons) {
 // format, MDM country enum). Fires distinct reason codes per rule so
 // the error summary can surface the right message per field:
 //
-//   - addressSubFieldRequired  — empty required sub-field
 //   - addressSubFieldMaxLength — value exceeds V4 max
 //   - addressSubFieldEmailFormat — email sub-field must contain @
 //   - addressSubFieldEnumInvalid — country not in MDM list
+//
+// V4-spec compliance note (interpretation A of the Standard Address
+// Block validation table): "The validation below applies once the
+// address record is provided." Concretely: the predicate validates
+// ONLY user-supplied sub-fields (max-length, email format, enum
+// membership). Blank sub-fields do NOT fire required errors at page
+// save — completeness is checked by `isComplete(value)` and surfaced
+// at CYA time via a "Complete the … address" prompt. Whether the
+// user can save the page at all with a fully blank address is
+// governed by the parent obligation's `mandatoryToProceed` flag on
+// the flow presents entry.
 //
 // Step 5e widened the shape from 4 all-mandatory string fields to the
 // V4 standard address block (9 fields — 6 required, 3 optional, mixed
@@ -193,31 +203,32 @@ export function addressBlock(
   obligation,
   { subFields, required, subFieldRules = {} } = {}
 ) {
+  const isComplete = (value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return false
+    }
+    for (const sub of required ?? []) {
+      const leaf = value[sub]
+      if (typeof leaf !== 'string' || leaf.trim() === '') return false
+    }
+    return true
+  }
   return {
     type: 'address',
     subFields,
     required,
     subFieldRules,
+    isComplete,
     predicate: (value, ctx) => {
       if (value === undefined || value === null) return []
       if (typeof value !== 'object' || Array.isArray(value)) return []
       const errors = []
-      const requiredSet = new Set(required ?? [])
       for (const sub of subFields ?? []) {
         const leaf = value[sub]
-        const isBlank = leaf === undefined || leaf === null || leaf === ''
-        // Required check first — an empty required field short-circuits
-        // the rest of the rules for that sub-field.
-        if (isBlank && requiredSet.has(sub)) {
-          errors.push({
-            code: reasons.addressSubFieldRequired.code,
-            obligation: obligation.name,
-            path: ctx.path,
-            subField: sub
-          })
-          continue
-        }
-        if (isBlank) continue
+        // Interpretation A: skip validation of blank sub-fields.
+        // Required rules don't fire at page save; they surface as
+        // completeness prompts on CYA via `isComplete(value)`.
+        if (leaf === undefined || leaf === null || leaf === '') continue
         const rule = subFieldRules[sub]
         if (!rule) continue
         // Max-length check applies to every rule that carries one.
@@ -266,7 +277,6 @@ export function addressBlock(
       required,
       subFieldRules,
       reasons: [
-        reasons.addressSubFieldRequired.code,
         reasons.addressSubFieldMaxLength.code,
         reasons.addressSubFieldEmailFormat.code,
         reasons.addressSubFieldEnumInvalid.code

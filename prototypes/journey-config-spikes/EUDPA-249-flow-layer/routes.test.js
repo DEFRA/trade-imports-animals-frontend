@@ -221,25 +221,25 @@ describe('page-controller — country-of-origin', () => {
     )
   })
 
-  it('POST with a blank value returns 400 with the flow-supplied required message', async () => {
-    // countryOfOrigin is the first (and today only) obligation flagged
-    // `mandatoryToSaveAndContinue: true`. Its flow-entry `errors.required`
-    // string wins over any code-keyed COPY entry.
+  it('POST with a blank value redirects on — countryOfOrigin is M-to-submit per V4', async () => {
+    // Regression: countryOfOrigin was previously (incorrectly) marked
+    // `mandatoryToProceed: true`. V4 spec (Confluence 6497338582)
+    // says "Mandatory to submit" — the page saves blank; completion
+    // is enforced at CYA time via a prompt, not at page save. Was
+    // corrected in the mandate audit fix.
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/pages/country-of-origin',
       payload: {}
     })
-    expect(res.statusCode).toBe(400)
-    expect(res.payload).toContain('There is a problem')
-    expect(res.payload).toContain('Enter a country of origin')
+    expect(res.statusCode).toBe(302)
   })
 })
 
-describe('page-controller — mandatoryToSaveAndContinue default', () => {
+describe('page-controller — mandatoryToProceed default', () => {
   it('POST with a blank value to a page WITHOUT the flag still redirects on', async () => {
-    // Baseline behaviour: without mandatoryToSaveAndContinue: true,
+    // Baseline behaviour: without mandatoryToProceed: true,
     // a blank POST validates (domain allows unset) and the controller
     // redirects to the next flow page. Proves the property defaults
     // to false and only opts in per-flow-entry.
@@ -250,6 +250,21 @@ describe('page-controller — mandatoryToSaveAndContinue default', () => {
       payload: {}
     })
     expect(res.statusCode).toBe(302)
+  })
+
+  it('POST with a blank value to a page WITH the flag returns 400 with the flow-supplied required message', async () => {
+    // meansOfTransport is V4 "Mandatory to proceed" — the mandate
+    // audit added `mandatoryToProceed: true` on its presents entry
+    // with `errors.required: 'errors.meansOfTransport.required'`.
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/means-of-transport',
+      payload: {}
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('There is a problem')
+    expect(res.payload).toContain('Choose the means of transport')
   })
 })
 
@@ -339,7 +354,16 @@ describe('page-controller — address-block composite widget (commercialTranspor
     expect(res.payload).toContain('Postcode')
   })
 
-  it('POST with all sub-fields blank returns 400 with one error per required sub-field', async () => {
+  it('POST with all sub-fields blank returns 400 with ONE parent-level required error (not per-sub-field)', async () => {
+    // Regression against the pre-audit behaviour: the addressBlock
+    // predicate used to emit one `addressSubFieldRequired` per empty
+    // required sub-field, flattening V4's two-layer model into
+    // per-sub-field M-to-proceed. Under interpretation A of the V4
+    // Standard Address Block validation table ("The validation below
+    // applies once the address record is provided"), a fully-blank
+    // POST is handled by the parent obligation's `mandatoryToProceed`
+    // flag emitting a single "Provide the …" error via flow.required
+    // — see flow.js commercialTransporter presents entry.
     const jar = makeCookieJar()
     await setUpCommercial(jar)
     const res = await inject(jar, {
@@ -349,17 +373,20 @@ describe('page-controller — address-block composite widget (commercialTranspor
     })
     expect(res.statusCode).toBe(400)
     expect(res.payload).toContain('There is a problem')
-    // One "Enter {subField}" per required sub-field.
-    expect(res.payload).toContain('Enter Business or organisation name')
-    expect(res.payload).toContain('Enter Address line 1')
-    expect(res.payload).toContain('Enter Town or city')
-    expect(res.payload).toContain('Enter Postcode')
-    // Error-summary anchors target the sub-inputs specifically.
-    expect(res.payload).toContain('#commercialTransporter__name')
-    expect(res.payload).toContain('#commercialTransporter__postcode')
+    expect(res.payload).toContain('Provide the commercial transporter address')
+    // Old per-sub-field messages MUST NOT appear.
+    expect(res.payload).not.toContain('Enter Business or organisation name')
+    expect(res.payload).not.toContain('Enter Address line 1')
+    expect(res.payload).not.toContain('Enter Postcode')
   })
 
-  it('POST with only some sub-fields blank returns 400 with just those errors', async () => {
+  it('POST with only some sub-fields blank redirects on (interpretation A) — completeness deferred to CYA', async () => {
+    // V4 spec Standard Address Block: "The validation below applies
+    // once the address record is provided." Under interpretation A
+    // the predicate validates only user-supplied sub-fields (max
+    // length, email format, enum membership). Blank sub-fields never
+    // fire required errors at page save — completeness is caught by
+    // the CYA `promptCompleteAddress` prompt, not at this POST.
     const jar = makeCookieJar()
     await setUpCommercial(jar)
     const res = await inject(jar, {
@@ -374,11 +401,13 @@ describe('page-controller — address-block composite widget (commercialTranspor
         commercialTransporter__postcode: ''
       }
     })
-    expect(res.statusCode).toBe(400)
-    expect(res.payload).toContain('Enter Address line 1')
-    expect(res.payload).toContain('Enter Postcode')
-    expect(res.payload).not.toContain('Enter Business or organisation name')
-    expect(res.payload).not.toContain('Enter Town or city')
+    expect(res.statusCode).toBe(302)
+    // CYA prompt surfaces the completeness gap.
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/check-your-answers'
+    })
+    expect(cya.payload).toContain('Complete the Commercial transporter address')
   })
 
   it('POST with all sub-fields filled redirects to the next page', async () => {
@@ -435,6 +464,38 @@ describe('page-controller — address-block composite widget (commercialTranspor
     // skipped.
     expect(cya.payload).toContain(
       'ACME, UK/AUTH/2026/001, Farm Lane, Exeter, EX1 1AA, United Kingdom, +44 1234 567890, contact@example.com'
+    )
+  })
+
+  it('M-to-submit address (placeOfOrigin): blank POST redirects on; partial fill surfaces a CYA completeness prompt', async () => {
+    // V4 spec: placeOfOrigin is "Mandatory to submit" — the page
+    // saves blank (no page-level block), and completeness comes
+    // from CYA. This differs from commercialTransporter which is
+    // "Mandatory to proceed" (parent-level block on fully-blank).
+    const jar = makeCookieJar()
+    // Blank POST → 302 (M-to-submit, no page block).
+    const blank = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/place-of-origin',
+      payload: {}
+    })
+    expect(blank.statusCode).toBe(302)
+    // Now fill only the name — a partial address.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/place-of-origin',
+      payload: {
+        placeOfOrigin__name: 'Farm 42'
+      }
+    })
+    // CYA surfaces the completeness prompt with a Change link back.
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/check-your-answers'
+    })
+    expect(cya.payload).toContain('Complete the Place of origin address')
+    expect(cya.payload).toContain(
+      'href="/prototype/eudpa-249/pages/place-of-origin"'
     )
   })
 })
