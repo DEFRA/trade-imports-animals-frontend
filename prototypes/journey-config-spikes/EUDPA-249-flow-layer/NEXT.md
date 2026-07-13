@@ -12,9 +12,10 @@ dictionary MD) are parked for after the V4 buildout.
 
 **Branch:** `spike/EUDPA-249-flow-layer`, pushed to
 `DEFRA/trade-imports-animals-frontend`. Latest commit on origin
-`55e5124` (units label ordinal fix). 77 commits ahead of `main`.
+`7ca279e` (commodity-line label ordinal fix). 79 commits ahead of
+`main`.
 
-**Tests:** 509 spike tests across 23 files, all green.
+**Tests:** 511 spike tests across 23 files, all green.
 Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
 
 **Browsable demo:** `npm run dev` (auth defaults off in dev), then
@@ -71,13 +72,17 @@ KNOWN_UNWIRED is now empty.**
      MUST complete rather than a first-declared optional
      (`permanentAddress` is declared last in the manifest but is
      the only mandatory unit obligation).
-- **Units label ordinal fix** (`55e5124`) — the `/lines/{lineId}/units`
-  list rendered "Animal N" from the internal unit id, which broke
-  after a delete or scope-changing edit (surviving units had gappy
-  ids like `unit2 + unit3`). Display now uses the 1-based ordinal
-  position in the current list; URLs still key on the internal id.
-  Same latent issue exists on commodity-line labels but no test
-  surfaces it today.
+- **Ordinal-label fixes** (`55e5124`, `7ca279e`) — both the units
+  list (depth-2) and the commodity-lines list (depth-1) used to
+  render "Animal N" / "Commodity line N" from the internal id,
+  which broke after a delete: surviving records kept gappy ids
+  (`unit2 + unit3`, `line2`) and displayed as "Animal 2" +
+  "Animal 3" or "Commodity line 2" for what the user perceived as
+  the first record. Both now use the 1-based ordinal position in
+  the current list; URLs still key on the internal id so per-record
+  routes stay stable. The units page's parent-line reference
+  (heading + breadcrumb) also renumbers via a new
+  `lineDisplayIndex` helper in `features/units/controller.js`.
 
 ### Current model / architecture state
 
@@ -164,14 +169,6 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
 - **Add commodity lines** subsection maxes at FULFILLED as soon as
   ≥ 1 line exists (add step done when there's a line). Reverts to
   NOT_STARTED if the user deletes all lines. Fine as-is.
-- **Commodity-line label off-by-one** — same latent issue the units
-  label fix (`55e5124`) resolved for depth-2. The commodity-line
-  display label interpolates `lineNumber(lineId)` from the internal
-  id; after a delete-then-add flow the surviving line has a gappy
-  id (e.g. `line2`) and renders as "Commodity line 2" even when
-  it's the only line. Not surfaced by any test today because walks
-  don't exercise delete-then-add on lines. Same one-line ordinal
-  fix applies to `features/commodity-lines/controller.js`.
 - **Second-code-review deferred bucket** (findings #3, #8-#13) —
   composite-widget UX polish (aria-describedby on address hint,
   fieldset error state, POST-error input re-population, non-address
@@ -1045,9 +1042,11 @@ slice we ship today.
 
 ## Where the current commits sit
 
-Head at `55e5124`; 77 commits ahead of `main`. Recent tip:
+Head at `7ca279e`; 79 commits ahead of `main`. Recent tip:
 
 ```
+* 7ca279e fix(EUDPA-249): commodity-line labels track ordinal position, not internal line id
+* 2fbb309 docs(EUDPA-249): refresh NEXT.md + RECOMMENDATION.md for step-4-complete state
 * 55e5124 fix(EUDPA-249): units list labels track ordinal position, not internal unit id
 * 0a2cc31 feat(EUDPA-249): step 4 iteration 10 — six per-unit identifier obligations
 * 15ebfe7 feat(EUDPA-249): step 4 iteration 9 phases B + C — units UX + permanentAddress worked example
