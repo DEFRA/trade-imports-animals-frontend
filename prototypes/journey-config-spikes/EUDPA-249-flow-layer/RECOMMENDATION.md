@@ -39,9 +39,14 @@ domain)` resolves the current legal option set from the domain
   3. Business-facing dictionary (`data-dictionary-sketch.js`) built by
      walking obligations + domain metadata.
 
-The spike ships **388 passing tests** across 15 files; the browsable
-V1 mounts at `/prototype/eudpa-249/*` in the existing frontend
-process.
+The spike ships **509 passing tests** across 23 files; the browsable
+journey mounts at `/prototype/eudpa-249/*` in the existing frontend
+process. Every V4 leaf obligation in the manifest (39 of 41) is
+wired to a domain entry, presentation copy, and a flow page; the
+two exempt entries are the structural group containers
+(`commodityLine`, `unitRecord`). Step 4 completed across 10
+iterations documented in
+[`docs/add-an-obligation.md`](./docs/add-an-obligation.md).
 
 ## Playback script (5 minutes)
 
@@ -165,26 +170,47 @@ not decide them. These are the ones worth raising in playback:
 
 ## Out of scope — natural follow-ons
 
-- **Flow-driven line iteration.** V1 has bespoke
-  `features/commodity-lines/controller.js` for Add / list / delete of commodity
-  lines. Turning that into a `sectionForEach` / `pagesForEach`
-  primitive at the flow layer is the biggest v2 job — details in the
-  Browsable prototype §Commodity-lines UX section above.
+- **Flow-primitive Add-another.** Both commodity lines and per-unit
+  records use bespoke controllers (`features/commodity-lines/`,
+  `features/units/`). Turning either into a declarative
+  `sectionForEach` / `pagesForEach` primitive at the flow layer
+  would eliminate a controller pair per level. See the
+  Browsable prototype §Commodity-lines UX + depth-2 unit-record UX
+  section for the trade-off (bespoke controllers cost less than a
+  generalised primitive at 2 depth levels; promote if a 3rd
+  Add-another shape appears).
 - **Async / dynamic options for enums.** `animalsCertifiedFor`
   currently uses a static stub; the real values come from the
   certificate. When integrated, design the fetch pattern (an
   orchestrator-resolved obligation? a synchronous per-request read
   in `contract.js`? a pre-hook on the page?) against the real API.
+  Same shape applies to `commodityType` / `commodityCode` /
+  `species` / `portOfEntry` once the MDM lists arrive.
 - **Dynamic predicates via orchestrator resolution.** Same shape as
   the async-options question but for validation instead of options.
   Not needed for AC; revisit if a real V4 predicate needs it.
-- **Complete V4 coverage.** Prototype exercises a slice (origin, reason,
-  transporter, arrival, references, commodity lines). Extending is
-  mechanical; the pattern doesn't change.
+- **V4 spec verification.** Every V4 leaf is wired but with
+  conservative defaults for some rules (e.g. `stringMaxLength` on
+  the per-unit identifiers). A step-5 pass against the Confluence
+  V4 spec (page id 6497338582) would tighten domain rules to the
+  spec's exact values and confirm nothing is missing.
 - **Playwright cross-variant harness.** The parent-layouts branch runs
   one Playwright spec against every model-spike variant via a
   `JOURNEYS` array. Adding our V4 variant to that harness is a natural
   next step.
+- **Welsh locale threading.** i18n infrastructure is complete
+  (`lib/i18n.js` + `locales/en.json` + `i18n-coverage.test.js`
+  covering every declaration-site key). Threading a locale from
+  the request through `t()` and adding `locales/cy.json` remains.
+- **Joi adoption for domain-driven validation.** The domain layer
+  currently runs bespoke predicates. Porting to Joi (with a
+  `preValidate` hook for controller-side rules) is a
+  post-step-5 deliverable. Design questions surface naturally
+  during V4 spec verification — see `NEXT.md` §P1.
+- **Composite-widget UX polish.** A second code review flagged 6
+  polish items on the address-block widget (aria-describedby on
+  hint, fieldset error state, POST-error input re-population, CYA
+  fallback for non-address composites). Deferred; ~half a day.
 - **Journey configuration** (flag-driven variance) — explicitly out of
   scope for this ticket per the retitle. A future concern; noted here
   so it does not creep in.
@@ -236,9 +262,23 @@ is restated in the browser layer.
 ### What you can walk
 
 - `/prototype/eudpa-249/start` → redirects to the first unfulfilled page.
-- `/prototype/eudpa-249/task-list` → sections + subsection status tags.
-- `/prototype/eudpa-249/pages/<pageName>` → the flow-driven form pages.
-- `/prototype/eudpa-249/lines` → commodity-lines index (add / list).
+- `/prototype/eudpa-249/task-list` → 6 sections / 15 subsections with
+  status tags.
+- `/prototype/eudpa-249/pages/<pageName>` → the flow-driven form pages
+  (single-obligation and multi-obligation, including the
+  address-block composite widget and the 4-field
+  accompanying-documents page).
+- `/prototype/eudpa-249/lines` → commodity-lines index (add / list /
+  delete + per-line Manage animals link).
+- `/prototype/eudpa-249/lines/{lineId}/{pageName}` → per-line
+  detail pages (commodity code, type, species, animal count,
+  packages).
+- `/prototype/eudpa-249/lines/{lineId}/units` → per-line units
+  index (add / list / delete for depth-2 records).
+- `/prototype/eudpa-249/lines/{lineId}/units/{unitId}/{pageName}`
+  → per-unit detail pages (permanent address for pets;
+  passport / tattoo / ear-tag / horse-name / identification
+  details / description gated by commodity code).
 - `/prototype/eudpa-249/check-your-answers` → CYA with Change links.
 - `POST /prototype/eudpa-249/reset` → wipes session for the demo.
 
@@ -351,36 +391,77 @@ Auth is opted-out per route (`options: { auth: false }` in
 [`plugin.js`](./routes.js)) so the demo works whether or not
 the host frontend has auth turned on.
 
-### Commodity-lines UX (bespoke — v2 backlog)
+### Commodity-lines UX (line-major) + depth-2 unit-record UX
 
-Commodity lines are the one place a bespoke controller lives.
-`features/commodity-lines/controller.js` handles:
+Commodity lines and per-unit records are the two places bespoke
+controllers live. Both feature folders host a small controller +
+list template; the underlying model is unchanged (`presentsForEach`
+in `flow.js` with `forEachOf` set to `commodityLine` or `unitRecord`),
+and the plugin's route walker branches on the `forEachOf` obligation
+to emit URLs at the right depth.
 
-- `GET /lines` — list existing lines (a summary-list of line ids +
-  chosen commodity codes).
-- `POST /lines/add` — mint `line1`, `line2`, … via `addLine` in
-  `state.js`, seed a placeholder record on `commodityCode` so the
-  evaluator recognises the line, redirect back to `/lines`.
-- `POST /lines/{id}/delete` — clear the line's leaf records.
+**Depth-1 — `features/commodity-lines/`:**
 
-This is the equivalent of the parent branch's hand-written
-`claimsRoutes`. It exists because the flow layer doesn't yet model an
-"Add-another" primitive. Each per-line detail page (`commodity-details`,
-`species-details`, `number-of-animals`, `number-of-packages`) is
-declared with `presentsForEach` in `flow.js` but the plugin skips
-them from route generation in v1.
+- `GET /lines` — one summary block per line with per-row Change
+  links (to that line's specific per-line page) and a per-line
+  Delete form. Emits a "Manage animals on this line" link
+  conditionally on whether the line's commodity code opens any
+  wired unit-scoped obligation.
+- `POST /lines/add` — mints `line1`, `line2`, … via `addCommodityLine`
+  in `lib/state.js`, seeds a placeholder record on `commodityCode`,
+  and redirects straight into the new line's first per-line page.
+- `POST /lines/{id}/delete` — clears the line's leaf records AND
+  cascades into every unit fulfilment keyed by
+  `${lineId}/...` (see below).
 
-**V2 backlog for lines** (single natural extension):
+Per-line pages are registered at `/lines/{lineId}/{pageName}` via
+`lib/line-page-controller.js`. Navigation uses the runtime primitive
+`firstUnfulfilledPageForLine` and the contract seam `nextAfterForLine`.
+`presentsForEach: { obligation, forEachOf: commodityLine }` in
+`flow.js` drives the same URLs the router registers.
 
-1. Extend the flow layer with a `sectionForEach` / `pagesForEach`
-   primitive that expands per-line pages generically.
-2. Move Add-another / delete into the flow model as user-driven-group
-   affordances, so `line-controllers.js` disappears.
-3. Wire per-line routes at `/lines/{id}/{pageName}` via a generalised
-   `makePageController(page, { path })`.
-4. Add Playwright coverage that walks a two-line scenario end-to-end.
+**Depth-2 — `features/units/`:**
 
-None of these change the three-layer thesis; they scale it.
+- `GET /lines/{lineId}/units` — one summary block per unit that
+  belongs to the line, with per-row Change links (to that unit's
+  specific page) and a per-unit Delete form. Display labels use
+  the ordinal position in the current list, not the internal id,
+  so surviving units after a delete renumber cleanly (URLs still
+  key on the internal id).
+- `POST /lines/{lineId}/units/add` — mints `unit1`, `unit2`, …
+  via `addUnitRecord`, seeds on the first WIRED unit-scoped
+  obligation the line's commodity code opens (mandatory first,
+  then optional), redirects straight into the new unit's first
+  per-unit page.
+- `POST /lines/{lineId}/units/{unitId}/delete` — drops every
+  unit-scoped leaf keyed by the composite `${lineId}/${unitId}`.
+
+Per-unit pages are registered at
+`/lines/{lineId}/units/{unitId}/{pageName}` via
+`lib/unit-page-controller.js`. Navigation uses the runtime
+primitive `firstUnfulfilledPageForUnit` and the contract seam
+`nextAfterForUnit`. Fulfilment storage uses the same flat
+composite-key convention as the obligations evaluator (`{lineId}/
+{unitId}` under the shared `/` delimiter).
+
+**Session-monotonic ids on both levels.** Line ids and per-line
+unit ids never recycle: separate yar keys track the next id
+(`NEXT_LINE_ID_KEY`, `NEXT_UNIT_ID_BY_LINE_KEY`), and `Delete`
+does not decrement them. Reason: silent rehydration of any
+per-record state whose obligation was missed by the delete
+sweep would otherwise be possible. Display labels track ordinal
+position so this internal detail doesn't leak to users.
+
+**Not adopted from v2 backlog.** The earlier "v2 backlog" bullet
+list proposed a `sectionForEach` / `pagesForEach` primitive at the
+flow layer to make Add-another declarative and retire the bespoke
+controllers. That work was NOT taken; the bespoke controllers stayed
+and the flow model kept `presentsForEach` as a page-level primitive.
+The reason is scope: with two levels of Add-another to prove
+(commodity lines and unit records), a bespoke controller pair per
+level cost less than a generalised flow primitive that would have
+needed to handle add/delete/list UX declaratively. If a third level
+of Add-another appears, promote the pattern.
 
 ### Headless proof (dump.js)
 
@@ -469,7 +550,15 @@ referenced by path in the References section below.
 | [`features/commodity-lines/list.njk`](./features/commodity-lines/list.njk)                 | Commodity-lines index template                                                                                   |
 | Test files under `lib/`, `features/*/`, and root                                           | Widget dispatch, format-domain-errors, build-field-descriptors, contract, routes `server.inject`, dump snapshots |
 
-**Total:** 388 tests passing across 15 files (spike + forked obligation).
+**Total:** 509 tests passing across 23 files (spike + forked
+obligations + iterations 1–10).
+
+Not enumerated above but landed during the browsable prototype
+workstream: `features/units/` (depth-2 UX), `lib/unit-page-controller.js`,
+`lib/is-blank-value.js`, additional test files (`e2e-walk.test.js`,
+`e2e-commodity-lines.test.js`, `e2e-units.test.js`,
+`lib/state.test.js`), and the `locales/en.json` +
+`i18n-coverage.test.js` pair.
 
 ## Running the spike
 

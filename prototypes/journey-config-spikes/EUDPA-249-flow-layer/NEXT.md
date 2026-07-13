@@ -8,14 +8,13 @@ dictionary MD) are parked for after the V4 buildout.
 
 ---
 
-## Where we are — session handoff (last updated 2026-07-08)
+## Where we are — session handoff (last updated 2026-07-13)
 
 **Branch:** `spike/EUDPA-249-flow-layer`, pushed to
 `DEFRA/trade-imports-animals-frontend`. Latest commit on origin
-`839d4fd` (doc pass); the ticket-implementation tip is `75c1c11`
-(animalsCertifiedFor static stub).
+`55e5124` (units label ordinal fix). 77 commits ahead of `main`.
 
-**Tests:** 388 spike + 1201 total frontend, all green.
+**Tests:** 509 spike tests across 23 files, all green.
 Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
 
 **Browsable demo:** `npm run dev` (auth defaults off in dev), then
@@ -24,45 +23,61 @@ Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
 **Reviewer rule:** the user reviews locally before pushing. Commit
 freely; do NOT push without an explicit go-ahead.
 
-### Today's session (2026-07-08)
+### What landed since the last handoff
 
-Four commits, all pushed:
+**Step 4 iterations 8, 9, and 10 completed — the leaf portion of
+KNOWN_UNWIRED is now empty.**
 
-- `540eec4` — hub-controller fix. `Add commodity lines` subsection
-  was rolling up to NA (its only child page is a read-only intro,
-  which pageStatus correctly returns NA for) and the hub stripped
-  the href. Now `subsectionHref` special-cases the id BEFORE the
-  firstNavigablePage null-check, `linesManageStatus()` derives status
-  from `commodityLine` record count, and the handler always renders
-  the href for that subsection.
-- `9139729` — same subsection now returns FULFILLED once ≥ 1 line
-  exists (was IN_PROGRESS forever). The "add step" is done as soon
-  as the user has added a line; per-line details are the sibling
-  `commodity-lines-details` subsection's concern.
-- `75c1c11` — removed the async-lookup pattern entirely. The
-  `certifiedForOptionsLookup` obligation was accidentally rendering
-  as a text input labelled "Loading" (no domain entry → fallback
-  widget); typing into it stored a string under an id whose consumer
-  (`lookupEnum`) then crashed on `options.map` because it expected
-  an array. Rather than papering over (remove-from-presents +
-  auto-seed on GET), decided to delete the whole pattern: it was
-  materially the same as `computedEnum` reading a sibling, with only
-  the async-populated bit differing (runtime plumbing, not a model
-  shape). `animalsCertifiedFor` is now a `staticEnum` stub with
-  `bovine` / `ovine` / `porcine` / `equine` (Cattle / Sheep / Pigs
-  / Horses). Deleted: `lookupEnum` factory, `certifiedForOptionsLookup`
-  obligation, `features/lookup/` controller, `isLookupSeeded`/
-  `markLookupSeeded` helpers, `LOOKUP_SEEDED_KEY`, `/pages/animals-
-certified-for/resolve` route, the "Loading options" presentation
-  entry. Domain factories are now three (was four): `staticEnum`,
-  `computedEnum`, `predicate`.
-- `839d4fd` — doc pass. `RECOMMENDATION.md` refreshed in-place (D5
-  recast, playback bullet dropped, D2 tightened, test counts
-  updated, features/lookup row removed, out-of-scope follow-ons
-  reframed as "Async / dynamic options for enums" + "Dynamic
-  predicates via orchestrator resolution"). `NEXT.md` — this file —
-  updated (see below). `PLAN.md` got a post-implementation note at
-  the top; body left intact as historical planning record.
+- **Iteration 8** (`9d8c029`) — accompanying-document block. Four
+  fields sharing a `branchedGate` `applyTo` (all-optional at rest,
+  all-mandatory once any is filled) presented on one page in a new
+  `accompanying-documents` subsection under References. First
+  worked example of `branchedGate` + multi-obligation page. Task
+  list: 13 → 14 subsections.
+- **Iteration 9** (`d410bc3`, `15ebfe7`) — first depth-2 obligation
+  (`permanentAddress`) end-to-end. Three phases:
+  - **Phase A** (state + engine + contract): `addUnitRecord` /
+    `deleteUnitRecord` in `lib/state.js` keyed by composite
+    `${lineId}/${unitId}` with a per-line session-monotonic unit
+    counter (`NEXT_UNIT_ID_BY_LINE_KEY`). `deleteCommodityLine`
+    now cascades into every unit key prefixed by the line. New
+    engine primitive `firstUnfulfilledPageForUnit`. New contract
+    seam `nextAfterForUnit`.
+  - **Phase B** (UX + routes): `features/units/` for
+    `/lines/{lineId}/units` (list) + `/lines/{lineId}/units/add`
+    (mint + add-then-fill) + `/lines/{lineId}/units/{unitId}/delete`.
+    New `lib/unit-page-controller.js` mirrors the line-scoped page
+    controller. `routes.js` branches `presentsForEach` on
+    `forEachOf` (line vs unit). `/lines` summary block emits a
+    "Manage animals on this line" link when the line's commodity
+    code opens a wired unit-scoped obligation.
+  - **Phase C** (worked example): `permanentAddressDomain` via the
+    iteration-7 `addressBlock` factory. New `per-unit-records`
+    subsection. Task list: 14 → 15.
+- **Iteration 10** (`0a2cc31`) — remaining six unit-scoped
+  obligations in one commit: `passport`, `tattoo`, `earTag`,
+  `horseName` (`allowListed` on different code whitelists);
+  `identificationDetails`, `description` (`allowListedByPredicate`
+  inverse-gate — first wired obligations using that gate). Two
+  small design fixes fell out:
+  1. `obligations/helpers.js` — `allowListedByPredicate.metadata`
+     now exposes the `predicate` function so browser-side helpers
+     (`pickSeedObligationForLine`, `lineHasWiredUnitObligation`)
+     can ask "would this value be admitted?" without executing the
+     whole `applyTo` closure.
+  2. `features/units/controller.js` — `pickSeedObligationForLine`
+     now walks unit obligations in TWO passes (mandatory first,
+     then optional) so add-then-fill drops the user on a page they
+     MUST complete rather than a first-declared optional
+     (`permanentAddress` is declared last in the manifest but is
+     the only mandatory unit obligation).
+- **Units label ordinal fix** (`55e5124`) — the `/lines/{lineId}/units`
+  list rendered "Animal N" from the internal unit id, which broke
+  after a delete or scope-changing edit (surviving units had gappy
+  ids like `unit2 + unit3`). Display now uses the 1-based ordinal
+  position in the current list; URLs still key on the internal id.
+  Same latent issue exists on commodity-line labels but no test
+  surfaces it today.
 
 ### Current model / architecture state
 
@@ -72,19 +87,26 @@ certified-for/resolve` route, the "Loading options" presentation
   through it. Enforceable by grep:
   `grep -rn "from '../engine\\|from '../domain\\|from '../flow" features/ lib/ | grep -v contract`
   should return nothing.
-- **Domain factories:** `staticEnum`, `computedEnum`, `predicate`.
-  Plus the `transitedCountries` composite (built inline).
+- **Domain factories:** `staticEnum`, `computedEnum`, `predicate`,
+  `addressBlock` (composite widget). Plus the `transitedCountries`
+  composite (built inline).
 - **Runtime primitives:** `pageStatus`, `containerStatus`,
   `journeyState`, `firstApplicablePage`, `firstUnfulfilledPage`,
-  `firstPagePresentingObligation`, `optionsFor`, `validate`,
-  `expandPresents`.
-- **Feature folders:** `hub`, `check-your-answers`, `commodity-lines`,
-  `start`, `reset`. (`lookup/` deleted today.)
-- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 11 obligations
-  (down from 26 at spike start). Step 4 iterations whittle this.
-  Only `permanentAddress` remains from the address-block family —
-  it's `within: unitRecord` and needs depth-2 per-unit infrastructure
-  not yet built.
+  `firstUnfulfilledPageForLine`, `firstUnfulfilledPageForUnit`
+  (depth-2, new in iter 9), `firstPagePresentingObligation`,
+  `optionsFor`, `validate`, `expandPresents`.
+- **Feature folders:** `hub`, `check-your-answers`,
+  `commodity-lines`, `units` (new in iter 9), `start`, `reset`.
+- **URL shapes:** flow pages at `/pages/{name}`; per-line at
+  `/lines/{lineId}/{name}`; per-unit at
+  `/lines/{lineId}/units/{unitId}/{name}`. Bespoke UX at `/lines`
+  and `/lines/{lineId}/units`.
+- **KNOWN_UNWIRED** in `obligations/coverage.test.js`: 2 entries —
+  `commodityLine` + `unitRecord`, both structural group containers
+  (permanent exempt; they carry no value directly). The leaf
+  portion is empty. Step 4's stated exit criterion — "docs stabilise
+  - `KNOWN_UNWIRED` shrunk to zero or to obligations that
+    legitimately need no domain entry" — is met.
 
 ### Step 4 iterations completed
 
@@ -92,12 +114,12 @@ certified-for/resolve` route, the "Loading options" presentation
 2. `regionCodeRequirement` + `regionCode` (added to origin
    subsection; both wired in one iteration)
 3. `portOfEntry` (arrival subsection)
-4. `species` + presentsForEach page-routing unlock (line-scoped;
-   turned on the routes.js path that previously skipped
+4. `species` + `presentsForEach` page-routing unlock (line-scoped;
+   turned on the `routes.js` path that previously skipped
    presentsForEach pages)
 5. `numberOfAnimals` (line-scoped integer + per-species cap cross-
    field predicate — first predicate that emits a NEW failure code,
-   so the doc now covers the en.json + FORMAT_ERROR_KEYS + COPY
+   so the doc now covers the en.json + `FORMAT_ERROR_KEYS` + COPY
    dispatcher trio to add per new code)
 6. `commodityType` (line-scoped static enum with 4 illustrative
    MDM values — cheapest possible line-scoped-enum iteration,
@@ -112,77 +134,71 @@ certified-for/resolve` route, the "Loading options" presentation
    Phase B wired the remaining 7 depth-1 address blocks
    (`privateTransporter`, `placeOfOrigin`, `consignor`, `consignee`,
    `importer`, `placeOfDestination`, `contactAddress`) — all use
-   the same `addressBlock(obligation, { subFields: [...], required:
-[...] })` factory. New "Trader details" section on the task
-   list with `origin-details` + `destination-details` subsections;
-   new `contact` subsection in the existing "References" section.
-   Task list grew from 10 → 13 subsections.
-   `permanentAddress` stays parked — it's `within: unitRecord` and
-   needs depth-2 per-unit infrastructure that's not built yet.
+   the same `addressBlock(obligation, { subFields, required })`
+   factory. New "Trader details" section on the task list; task
+   list grew from 10 → 13 subsections.
+8. Accompanying-document block — 4 obligations sharing a
+   `branchedGate` applyTo, one page in a new
+   `accompanying-documents` subsection under References. First
+   worked example of `branchedGate` + multi-obligation page.
+9. `permanentAddress` — first depth-2 obligation. Three-phase:
+   engine + state + contract plumbing (Phase A); units UX +
+   routes (Phase B); domain + flow wiring (Phase C). New
+   `per-unit-records` subsection under commodity-lines.
+10. Six remaining unit-scoped obligations wired atomically:
+    `passport`, `tattoo`, `earTag`, `horseName`,
+    `identificationDetails`, `description`. First wired
+    `allowListedByPredicate` obligations; helpers.js metadata
+    upgraded to expose the predicate.
 
 Each iteration also refined `docs/add-an-obligation.md`.
 
-### Known limitations to raise before step 5
+### Known limitations still open
 
-- **Optional-only page/subsection completion — resolved.** Previously
-  the `pageStatus === F` rule required "no mandatory unfilled AND ≥ 1
-  entry filled", which meant an in-scope-optional page stayed NS until
-  the user typed something. That conflated _completion-mandate_ (does
-  the journey need this to reach F?) with _submit-mandate_ (must the
-  user fill this to leave the page?). Fixed: `pageStatus === F ⇔ every
-in-scope mandatory entry is fulfilled`. An in-scope-optional page is
-  F immediately; a mixed page reaches F once its mandatories land.
-  See `engine/index.test.js` "optional-only page" case + walk in
-  `e2e-walk.test.js` which no longer POSTs `numberOfPackages-line1`.
-  A residual display-layer question — "should the user visit an
-  optional-only page before we call it Complete?" — is parked below.
-  Two cascade fixes fell out of the rule change, both latent bugs
-  that the previous over-filled walk had masked:
-  1. `containerStatus` (and `journeyState`) added an empty-session
-     guard — a container mixing F (from optional-only defaults) with
-     NS (mandatory unfilled) now returns NS when nothing under it has
-     been touched, rather than the misleading IP.
-  2. The CYA controller was reading `impl.status` to decide whether
-     an unfilled obligation should raise a "you still need to
-     complete" prompt. For line-scoped obligations (like
-     `numberOfPackages`) status lives on `records[].status`, not on
-     the impl, so unfilled optionals were falsely flagged as
-     mandatory. Fixed by preferring `obligation.status` when set.
-- The **Add commodity lines** subsection currently maxes at FULFILLED
-  as soon as ≥ 1 line exists. That's the current design (add step
-  done when there's a line). If the user removes all lines, it
-  reverts to NOT_STARTED. Fine as-is.
-- **Commodity-line pages are line-major.** Retired the flow-major
-  `presentsForEach` URLs (`/pages/commodity-details` etc. — those
-  rendered one input per line on a single page) in favour of
-  `/lines/{lineId}/{pageName}`. Line-scoped page controller lives at
-  `lib/line-page-controller.js`; new engine primitive
-  `firstUnfulfilledPageForLine` + contract seam `nextAfterForLine`
-  drive per-line navigation. POST `/lines/add` mints and 302s
-  straight into the new line's first per-line page (add-then-fill).
-  On save, next unfilled mandatory in the same subsection wins;
-  when the line is done, 302 to `/lines`. The `/lines` list renders
-  a summary block per line with per-row Change (→ specific page for
-  that obligation on that line) and a per-line Delete form.
-  `presentsForEach` is unchanged in the model — only the URL layer.
+- **Optional-only completion — display-layer question is parked.**
+  The model rule is settled: `pageStatus === F ⇔ every in-scope
+mandatory entry is fulfilled`. An in-scope-optional page is F
+  immediately. A residual UX question — "should the user visit an
+  optional-only page before we call it Complete?" — is parked under
+  P0 below. See `engine/index.test.js` "optional-only page" case.
+- **Add commodity lines** subsection maxes at FULFILLED as soon as
+  ≥ 1 line exists (add step done when there's a line). Reverts to
+  NOT_STARTED if the user deletes all lines. Fine as-is.
+- **Commodity-line label off-by-one** — same latent issue the units
+  label fix (`55e5124`) resolved for depth-2. The commodity-line
+  display label interpolates `lineNumber(lineId)` from the internal
+  id; after a delete-then-add flow the surviving line has a gappy
+  id (e.g. `line2`) and renders as "Commodity line 2" even when
+  it's the only line. Not surfaced by any test today because walks
+  don't exercise delete-then-add on lines. Same one-line ordinal
+  fix applies to `features/commodity-lines/controller.js`.
+- **Second-code-review deferred bucket** (findings #3, #8-#13) —
+  composite-widget UX polish (aria-describedby on address hint,
+  fieldset error state, POST-error input re-population, non-address
+  object fallback in CYA `formatSingle`, etc.). Not blockers.
 
 ### Immediate next candidates
 
-Pick one, iterate:
+Step 4 is complete for wiring. `KNOWN_UNWIRED` is at its theoretical
+minimum (the 2 structural group containers, permanent exempt). Next
+work sits above step 4 — pick one:
 
-- `numberOfPackages` (line-scoped integer, optional, applyTo-scoped
-  — now the canonical example of the completion-optional page shape.
-  Already wired via `numberOfPackagesDomain` so this is basically a
-  no-op unless we want to add a per-line-code cap similar to what
-  iteration 5 did for numberOfAnimals)
-- Per-unit obligations under `unitRecord` (`passport`, `tattoo`,
-  `earTag`, etc.) — first depth-2 line → unit fan-out, deferred to
-  step 5 unless a specific one is worth demoing sooner.
+- **Step 5 — verify against V4 spec.** With every leaf wired, step 5
+  becomes a review pass: walk the Confluence V4 field list (page id 6497338582) against the manifest and flow, confirm nothing is
+  missing, tighten domain rules where the spec is more precise than
+  the spike's conservative defaults (e.g. exact `stringMaxLength`
+  values, real MDM enum options). Small scope, high value.
+- **Doc pass** — this file + `RECOMMENDATION.md` had a partial refresh
+  at 2026-07-13; some sections (file map, playback script) still
+  reference an earlier state. A full pass would take an hour.
+- **P0 — optional-only visited-before-Complete decision.** See below.
+- **P0.5 — Welsh locale threading.** Infrastructure done; needs the
+  request → `t()` locale param plumbing plus `cy.json`. See below.
+- **Deferred composite-widget UX polish.** ~half a day to close the
+  bucket.
 
-Then step 5 (full V4 buildout).
-
-**Parked post-step-5** (unchanged): P1 Joi adoption; P2 data
-dictionary MD artefact. See below for both.
+**Parked** (unchanged): P1 Joi adoption; P2 data dictionary MD
+artefact. See below.
 
 Read [`RECOMMENDATION.md`](./RECOMMENDATION.md) end-to-end before
 doing anything — it explains the three-layer architecture, the
@@ -1029,12 +1045,25 @@ slice we ship today.
 
 ## Where the current commits sit
 
+Head at `55e5124`; 77 commits ahead of `main`. Recent tip:
+
 ```
-* 3c1b066 fix(EUDPA-249): auth-off default in dev + Vision path + prototype docs
-* 1191ce3 feat(EUDPA-249): browsable V4 journey on the three-layer model
-* 67fed20 chore(EUDPA-249): flow-layer spike PLAN.md
-* cc8135f docs(EUDPA-277): update obligations.md to reflect V4 spike changes
-  ...
+* 55e5124 fix(EUDPA-249): units list labels track ordinal position, not internal unit id
+* 0a2cc31 feat(EUDPA-249): step 4 iteration 10 — six per-unit identifier obligations
+* 15ebfe7 feat(EUDPA-249): step 4 iteration 9 phases B + C — units UX + permanentAddress worked example
+* d410bc3 feat(EUDPA-249): step 4 iteration 9 phase A — unit-record state + engine + contract
+* 9d8c029 feat(EUDPA-249): step 4 iteration 8 — accompanying-document block
+* 0b137a5 fix(EUDPA-249): hasFulfilment uses isBlankValue for composite fulfilments
+* be073b7 fix(EUDPA-249): firstUnfulfilledPageForLine uses isBlankValue for composites
+* dd84725 fix(EUDPA-249): CYA uses shared isBlankValue helper
+* 310bfc5 fix(EUDPA-249): shared isBlankValue helper + use in contract.js
+* 64cc385 fix(EUDPA-249): derive LINE_LEAF_OBLIGATIONS from LINE_PAGES
+* 9d1aea2 fix(EUDPA-249): derive LINE_PAGES from flow so /lines shows commodity type row
+* fa5719b feat(EUDPA-249): step 4 iteration 7 phase B — wire remaining 7 address blocks
+* 11961ba feat(EUDPA-249): step 4 iteration 7 phase A — address-block infrastructure
+* b00f877 feat(EUDPA-249): step 4 iteration 6 — wire commodityType
 ```
+
+`git log --oneline main..HEAD` for the full 77-commit history.
 
 Pushed to origin/spike/EUDPA-249-flow-layer.
