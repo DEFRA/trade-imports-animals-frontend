@@ -41,11 +41,12 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
+  const rawCphNumber = payload.countyParishHoldingCph ?? ''
   const values = {
-    countyParishHoldingCph: payload.countyParishHoldingCph ?? ''
+    countyParishHoldingCph: rawCphNumber.replace(/\//g, '')
   }
-  const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  const { errors } = validate(fields, values)
+  if (errors) return render(h, { countyParishHoldingCph: rawCphNumber }, errors)
 
   const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))
