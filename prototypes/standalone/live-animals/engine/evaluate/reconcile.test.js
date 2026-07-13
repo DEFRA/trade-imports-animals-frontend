@@ -12,13 +12,13 @@ describe('#reconcile', () => {
 
   it('Should activate the matching transporter spoke for the chosen type only', () => {
     const commercial = reconcile({
-      transporterType: 'Commercial transporter'
+      transporterType: 'Commercial'
     }).inScope
     expect(commercial.has('commercialTransporter')).toBe(true)
     expect(commercial.has('privateTransporter')).toBe(false)
 
     const privateSpoke = reconcile({
-      transporterType: 'Private transporter'
+      transporterType: 'Private'
     }).inScope
     expect(privateSpoke.has('privateTransporter')).toBe(true)
     expect(privateSpoke.has('commercialTransporter')).toBe(false)
@@ -26,10 +26,10 @@ describe('#reconcile', () => {
 
   it('Should wipe a saved transporter when the type leaves its branch (destroyed, not hidden)', () => {
     const answers = {
-      transporterType: 'Private transporter',
+      transporterType: 'Private',
       commercialTransporter: {
-        name: 'Channel Livestock Logistics Ltd',
-        address: { addressLine1: '18 Eastern Docks' }
+        name: 'García Livestock Transport SL',
+        address: { addressLine1: '43 East Hague Extension' }
       }
     }
     expect(reconcile(answers).wiped).toContain('commercialTransporter')

@@ -24,7 +24,7 @@ describe('#get — per-request read view', () => {
   it('Should return the seeded answers verbatim with scope derived from them', async () => {
     const seed = {
       countryOfOrigin: 'FR',
-      transporterType: 'Commercial transporter'
+      transporterType: 'Commercial'
     }
     const journey = await store.create()
     await store.saveAnswers(journey.journeyId, seed)

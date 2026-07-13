@@ -1,16 +1,12 @@
 export const CONSIGNOR_OPTIONS = [
   {
-    id: 'laiterie-du-nord',
-    name: 'Laiterie du Nord SARL',
+    id: 'astra-rosales',
+    name: 'Astra Rosales',
     address: {
-      addressLine1: '12 Rue de la Gare',
-      addressLine2: '',
-      townOrCity: 'Lille',
-      county: '',
-      postalOrZipCode: '59000',
-      country: 'France',
-      telephoneNumber: '+33 3 20 61 10 10',
-      emailAddress: 'exports@laiterie-du-nord.example.com'
+      addressLine1: '43 East Hague Extension',
+      addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
+      addressLine3: 'Quasoccaecat ut ear, 30055',
+      country: 'Switzerland'
     }
   },
   {
@@ -18,179 +14,119 @@ export const CONSIGNOR_OPTIONS = [
     name: 'EuroStore Services',
     address: {
       addressLine1: 'Rue de la Loi 200',
-      addressLine2: '',
-      townOrCity: 'Brussels',
-      county: '',
-      postalOrZipCode: '1040',
-      country: 'Belgium',
-      telephoneNumber: '+32 2 555 12 34',
-      emailAddress: 'dispatch@eurostore.example.be'
+      addressLine2: '1040 Brussels',
+      country: 'Belgium'
     }
   },
   {
-    id: 'alpenhof-viehhandel',
-    name: 'Alpenhof Viehhandel GmbH',
+    id: 'laiterie-du-nord',
+    name: 'Laiterie du Nord SARL',
     address: {
-      addressLine1: 'Bahnhofstrasse 5',
-      addressLine2: 'Haus B',
-      townOrCity: 'Bern',
-      county: '',
-      postalOrZipCode: '3011',
-      country: 'Switzerland',
-      telephoneNumber: '+41 31 555 00 11',
-      emailAddress: 'office@alpenhof.example.ch'
+      addressLine1: '12 Rue de la Gare',
+      addressLine2: '59000 Lille',
+      country: 'France'
     }
   }
 ]
 
 export const CONSIGNEE_OPTIONS = [
   {
-    id: 'yorkshire-dales-livestock',
-    name: 'Yorkshire Dales Livestock Ltd',
+    id: 'british-livestock',
+    name: 'British Livestock Ltd',
     address: {
-      addressLine1: 'Unit 4, Auction Mart Lane',
-      addressLine2: '',
-      townOrCity: 'Skipton',
-      county: 'North Yorkshire',
-      postalOrZipCode: 'BD23 1UD',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1756 555 0192',
-      emailAddress: 'intake@yorkshire-dales-livestock.example.co.uk'
+      addressLine1: '10 Market Street',
+      addressLine2: 'Leeds LS1 6HB',
+      country: 'United Kingdom'
     }
   },
   {
-    id: 'greenacre-farming',
-    name: 'Greenacre Farming Co',
+    id: 'northern-farms',
+    name: 'Northern Farms Co',
     address: {
-      addressLine1: 'Greenacre Farm',
-      addressLine2: 'Lower Henlade',
-      townOrCity: 'Taunton',
-      county: 'Somerset',
-      postalOrZipCode: 'TA3 5NB',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1823 555 0170',
-      emailAddress: 'office@greenacre-farming.example.co.uk'
+      addressLine1: '22 Barn Road',
+      addressLine2: 'York YO1 8AB',
+      country: 'United Kingdom'
     }
   },
   {
-    id: 'border-mart-holdings',
-    name: 'Border Mart Holdings',
+    id: 'agri-imports',
+    name: 'Agri Imports PLC',
     address: {
-      addressLine1: 'Rosehill Estate',
-      addressLine2: '',
-      townOrCity: 'Carlisle',
-      county: 'Cumbria',
-      postalOrZipCode: 'CA1 2RW',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1228 555 0139',
-      emailAddress: 'arrivals@border-mart.example.co.uk'
+      addressLine1: '88 Grain Wharf',
+      addressLine2: 'Bristol BS1 4RQ',
+      country: 'United Kingdom'
     }
   }
 ]
 
 export const IMPORTER_OPTIONS = [
   {
-    id: 'albion-livestock-imports',
-    name: 'Albion Livestock Imports Ltd',
+    id: 'import-co-uk',
+    name: 'Import Co UK',
     address: {
-      addressLine1: '18 Harbour Road',
-      addressLine2: '',
-      townOrCity: 'Dover',
-      county: 'Kent',
-      postalOrZipCode: 'CT17 9BU',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1304 555 0184',
-      emailAddress: 'notifications@albion-livestock.example.co.uk'
+      addressLine1: '20 Trade Road',
+      addressLine2: 'London EC1A 1BB',
+      country: 'United Kingdom'
     }
   },
   {
-    id: 'severn-vale-imports',
-    name: 'Severn Vale Imports',
+    id: 'gb-animal-imports',
+    name: 'GB Animal Imports',
     address: {
-      addressLine1: 'The Old Granary',
-      addressLine2: 'Quedgeley Trading Estate',
-      townOrCity: 'Gloucester',
-      county: 'Gloucestershire',
-      postalOrZipCode: 'GL2 4PA',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1452 555 0127',
-      emailAddress: 'imports@severn-vale.example.co.uk'
+      addressLine1: '5 Port Way',
+      addressLine2: 'Dover CT16 3AQ',
+      country: 'United Kingdom'
     }
   },
   {
-    id: 'harwich-port-agencies',
-    name: 'Harwich Port Agencies',
+    id: 'highland-import-services',
+    name: 'Highland Import Services',
     address: {
-      addressLine1: '2 Quayside House',
-      addressLine2: '',
-      townOrCity: 'Harwich',
-      county: 'Essex',
-      postalOrZipCode: 'CO12 3HH',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1255 555 0163',
-      emailAddress: 'agency@harwich-port.example.co.uk'
+      addressLine1: '12 Glen Road',
+      addressLine2: 'Inverness IV1 1JN',
+      country: 'United Kingdom'
     }
   }
 ]
 
 export const PLACE_OF_ORIGIN_OPTIONS = [
   {
-    id: 'ferme-des-trois-vallees',
-    name: 'Ferme des Trois Vallées',
+    id: 'origin-farm',
+    name: 'Origin Farm',
     address: {
-      addressLine1: '3 Chemin des Prés',
-      addressLine2: '',
-      townOrCity: 'Annecy',
-      county: '',
-      postalOrZipCode: '74000',
-      country: 'France',
-      telephoneNumber: '+33 4 50 55 01 23',
-      emailAddress: 'contact@trois-vallees.example.fr'
+      addressLine1: '1 Farm Lane',
+      addressLine2: 'County Clare',
+      country: 'Ireland'
     }
   },
   {
-    id: 'van-dijk-livestock',
-    name: 'Van Dijk Livestock BV',
+    id: 'nordic-livestock',
+    name: 'Nordic Livestock AS',
     address: {
-      addressLine1: 'Polderweg 18',
-      addressLine2: '',
-      townOrCity: 'Utrecht',
-      county: '',
-      postalOrZipCode: '3541 AB',
-      country: 'Netherlands',
-      telephoneNumber: '+31 30 555 0187',
-      emailAddress: 'export@vandijk-livestock.example.nl'
+      addressLine1: 'Fjordveien 12',
+      addressLine2: '4010 Stavanger',
+      country: 'Norway'
     }
   },
   {
-    id: 'lindenhof-agrar',
-    name: 'Lindenhof Agrar GmbH',
+    id: 'ferme-des-alpes',
+    name: 'Ferme des Alpes SARL',
     address: {
-      addressLine1: 'Dorfstrasse 44',
-      addressLine2: 'Hof 2',
-      townOrCity: 'Münster',
-      county: '',
-      postalOrZipCode: '48143',
-      country: 'Germany',
-      telephoneNumber: '+49 251 555 0144',
-      emailAddress: 'versand@lindenhof-agrar.example.de'
+      addressLine1: 'Route des Alpes 45',
+      addressLine2: '74000 Annecy',
+      country: 'France'
     }
   }
 ]
 
 export const DESTINATION_OPTIONS = [
   {
-    id: 'tech-imports-ltd',
+    id: 'tech-imports',
     name: 'Tech Imports Ltd',
     address: {
       addressLine1: '643 Main Street',
-      addressLine2: '',
-      townOrCity: 'Birmingham',
-      county: 'West Midlands',
-      postalOrZipCode: 'B1 3AZ',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 121 555 0143',
-      emailAddress: 'goods-in@tech-imports.example.co.uk'
+      addressLine2: 'Birmingham G1 3AZ',
+      country: 'United Kingdom'
     }
   },
   {
@@ -198,27 +134,17 @@ export const DESTINATION_OPTIONS = [
     name: 'United Commerce',
     address: {
       addressLine1: '446 Church Lane',
-      addressLine2: '',
-      townOrCity: 'Manchester',
-      county: 'Greater Manchester',
-      postalOrZipCode: 'M1 2JE',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 161 555 0446',
-      emailAddress: 'deliveries@united-commerce.example.co.uk'
+      addressLine2: 'Manchester S1 2JE',
+      country: 'United Kingdom'
     }
   },
   {
-    id: 'global-trading-co',
+    id: 'global-trading',
     name: 'Global Trading Co',
     address: {
       addressLine1: '945 Main Street',
-      addressLine2: 'Unit 4',
-      townOrCity: 'London',
-      county: '',
-      postalOrZipCode: 'E1 5AB',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 20 7946 0945',
-      emailAddress: 'warehouse@global-trading.example.co.uk'
+      addressLine2: 'London LS1 5AB',
+      country: 'United Kingdom'
     }
   }
 ]
@@ -230,88 +156,52 @@ export const CONTACT_OPTIONS = [
     address: {
       addressLine1: 'Woodham Lane',
       addressLine2: 'New Haw',
-      townOrCity: 'Addlestone',
-      county: 'Surrey',
-      postalOrZipCode: 'KT15 3NB',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 3000 200 301',
-      emailAddress: 'enquiries@apha.example.gov.uk'
+      addressLine3: 'Addlestone, KT15 3NB',
+      country: 'United Kingdom'
     }
   },
   {
     id: 'eurostore-services',
     name: 'EuroStore Services',
     address: {
-      addressLine1: 'Rue de la Loi 200',
-      addressLine2: '',
-      townOrCity: 'Brussels',
-      county: '',
-      postalOrZipCode: '1040',
-      country: 'Belgium',
-      telephoneNumber: '+32 2 555 12 34',
-      emailAddress: 'dispatch@eurostore.example.be'
+      addressLine1: '8448 Gleason Creek',
+      addressLine2: 'Apt. 221',
+      addressLine3: 'Hyattmouth, 72183',
+      country: 'France'
     }
   },
   {
     id: 'laiterie-du-nord',
     name: 'Laiterie du Nord SARL',
     address: {
-      addressLine1: '12 Rue de la Gare',
-      addressLine2: '',
-      townOrCity: 'Lille',
-      county: '',
-      postalOrZipCode: '59000',
-      country: 'France',
-      telephoneNumber: '+33 3 20 61 10 10',
-      emailAddress: 'exports@laiterie-du-nord.example.com'
+      addressLine1: '4295 Michele Courts',
+      addressLine2: 'Suite 479',
+      addressLine3: 'Kesslerbury, 528272',
+      country: 'Albania'
     }
   }
 ]
 
 export const COMMERCIAL_TRANSPORTER_OPTIONS = [
   {
-    id: 'channel-livestock-logistics',
-    name: 'Channel Livestock Logistics Ltd',
-    approvalNumber: 'UK/DOVER/T2/00012345',
+    id: 'garcia-livestock-transport',
+    name: 'García Livestock Transport SL',
+    approvalNumber: 'ES-T2-45001294',
     address: {
-      addressLine1: '18 Eastern Docks',
-      addressLine2: '',
-      townOrCity: 'Dover',
-      county: 'Kent',
-      postalOrZipCode: 'CT16 1JA',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1304 555 0171',
-      emailAddress: 'bookings@channel-livestock.example.co.uk'
+      addressLine1: '43 East Hague Extension',
+      addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
+      addressLine3: 'Quasoccaecat ut ear, 30055',
+      country: 'Switzerland'
     }
   },
   {
-    id: 'transeuropa-animaux',
-    name: 'TransEuropa Animaux SARL',
-    approvalNumber: 'FR/CALAI/T2/00067890',
+    id: 'j-and-g-campbell',
+    name: 'J & G Campbell LTD',
+    approvalNumber: 'UK/BURY/T2/00104115',
     address: {
-      addressLine1: '4 Quai de la Marine',
-      addressLine2: '',
-      townOrCity: 'Calais',
-      county: '',
-      postalOrZipCode: '62100',
-      country: 'France',
-      telephoneNumber: '+33 3 21 55 01 62',
-      emailAddress: 'dispatch@transeuropa-animaux.example.fr'
-    }
-  },
-  {
-    id: 'lagan-valley-haulage',
-    name: 'Lagan Valley Haulage Ltd',
-    approvalNumber: 'UK/NEWCA/T1/00090953',
-    address: {
-      addressLine1: 'Unit 7, Harbour Estate',
-      addressLine2: '',
-      townOrCity: 'Belfast',
-      county: 'County Antrim',
-      postalOrZipCode: 'BT3 9DT',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 28 9055 0148',
-      emailAddress: 'office@lagan-valley-haulage.example.co.uk'
+      addressLine1: 'Rue de la Loi 200',
+      addressLine2: '1040 Brussels',
+      country: 'Belgium'
     }
   }
 ]

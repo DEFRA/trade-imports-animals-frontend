@@ -119,7 +119,7 @@ The file is deliberately **not** named `.test.js`, so Vitest never collects it a
 
 ### The seeding gotcha
 
-When you seed a gated answer, keep its activating answer in place. Seeding `commercialTransporter` without `transporterType: 'Commercial transporter'` puts it out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. The same applies to any item-conditional field (seed a `commoditySelection` on the package-count list before seeding that line's `numberOfPackages`) or any gated collection.
+When you seed a gated answer, keep its activating answer in place. Seeding `commercialTransporter` without `transporterType: 'Commercial'` puts it out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. The same applies to any item-conditional field (seed a `commoditySelection` on the package-count list before seeding that line's `numberOfPackages`) or any gated collection.
 
 ## The contract test
 

@@ -66,28 +66,31 @@ describe('indexed obligations are first-class', () => {
         }
       ],
       consignor: {
-        name: 'Laiterie du Nord SARL',
-        address: { addressLine1: '12 Rue de la Gare', country: 'France' }
+        name: 'Astra Rosales',
+        address: {
+          addressLine1: '43 East Hague Extension',
+          country: 'Switzerland'
+        }
       },
       placeOfDestination: {
         name: 'Tech Imports Ltd',
         address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
       },
       placeOfOrigin: {
-        name: 'Ferme des Trois Vallées',
-        address: { addressLine1: '3 Chemin des Prés', country: 'France' }
+        name: 'Origin Farm',
+        address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
       },
       consignee: {
-        name: 'Yorkshire Dales Livestock Ltd',
+        name: 'British Livestock Ltd',
         address: {
-          addressLine1: 'Unit 4, Auction Mart Lane',
+          addressLine1: '10 Market Street',
           country: 'United Kingdom'
         }
       },
       importer: {
-        name: 'Albion Livestock Imports Ltd',
+        name: 'Import Co UK',
         address: {
-          addressLine1: '18 Harbour Road',
+          addressLine1: '20 Trade Road',
           country: 'United Kingdom'
         }
       },
@@ -96,14 +99,14 @@ describe('indexed obligations are first-class', () => {
       meansOfTransport: 'Airplane',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
-      transporterType: 'Commercial transporter',
+      transporterType: 'Commercial',
       commercialTransporter: {
-        name: 'Channel Livestock Logistics Ltd',
+        name: 'García Livestock Transport SL',
         address: {
-          addressLine1: '18 Eastern Docks',
-          country: 'United Kingdom'
+          addressLine1: '43 East Hague Extension',
+          country: 'Switzerland'
         },
-        approvalNumber: 'UK/DOVER/T2/00012345'
+        approvalNumber: 'ES-T2-45001294'
       },
       contactAddress: {
         name: 'Animal and Plant Health Agency',

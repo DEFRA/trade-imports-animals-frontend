@@ -34,7 +34,7 @@ describe('#simulateJourney', () => {
   it('Should insert the gated transporter spoke exactly for the chosen type', () => {
     const pages = simulateJourney({
       ...prereqs,
-      transporterType: 'Commercial transporter'
+      transporterType: 'Commercial'
     })
     expect(pages).toContain('transporters-select')
     expect(pages).not.toContain('private-transporter-details')

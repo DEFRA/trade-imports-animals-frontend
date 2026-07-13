@@ -821,10 +821,10 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Both V4 types are offered; nothing is pre-selected.
     const commercial = page.getByRole('radio', {
-      name: 'Commercial transporter'
+      name: 'Commercial'
     })
     const privateType = page.getByRole('radio', {
-      name: 'Private transporter'
+      name: 'Private'
     })
     await expect(commercial).not.toBeChecked()
     await expect(privateType).not.toBeChecked()
@@ -892,7 +892,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Commercial transporter: the select page opens; choosing a transporter
     // copies its name, address and approval number into the answer (c-020).
     await openTransporters()
-    await page.getByRole('radio', { name: 'Commercial transporter' }).check()
+    await page.getByRole('radio', { name: 'Commercial' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(selectHeading).toBeVisible()
     await page
@@ -917,7 +917,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // type skips it and walks on to the private details page; a blank save
     // there returns to the hub.
     await openTransporters()
-    await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('radio', { name: 'Private' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Private transporter details' })
@@ -930,7 +930,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Back to commercial: leaving scope wiped the saved transporter — no
     // radio is pre-selected on the select page.
     await openTransporters()
-    await page.getByRole('radio', { name: 'Commercial transporter' }).check()
+    await page.getByRole('radio', { name: 'Commercial' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(selectHeading).toBeVisible()
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
@@ -971,7 +971,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // save — the fieldGroup's mandates apply once the record is provided —
     // naming the missing mandatory fields.
     await openTransporters()
-    await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('radio', { name: 'Private' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(detailsHeading).toBeVisible()
     await page.getByLabel('Name or organisation name').fill(transporter.name)
@@ -1021,7 +1021,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // the type walks to the commercial select page instead; a blank save
     // there returns to the hub.
     await openTransporters()
-    await page.getByRole('radio', { name: 'Commercial transporter' }).check()
+    await page.getByRole('radio', { name: 'Commercial' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', {
@@ -1036,7 +1036,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Back to private: leaving scope wiped the saved details — the form
     // renders empty.
     await openTransporters()
-    await page.getByRole('radio', { name: 'Private transporter' }).check()
+    await page.getByRole('radio', { name: 'Private' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(detailsHeading).toBeVisible()
     await expect(page.getByLabel('Name or organisation name')).toHaveValue('')

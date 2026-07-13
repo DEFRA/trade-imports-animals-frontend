@@ -65,7 +65,7 @@ const consignment = {
   port: 'ABERDEEN',
   arrival: { day: 12, month: 12, year: 2026 },
   transporter: {
-    type: 'Commercial transporter',
+    type: 'Commercial',
     name: 'Transporter Co',
     approvalNumber: 'UK/NEWCA/T1/00090953',
     address: { addressLine1: '7 Route One' }

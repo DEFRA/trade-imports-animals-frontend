@@ -54,10 +54,10 @@ const fullSeed = {
       accompanyingDocumentReference: 'GBHC1234567890'
     }
   ],
-  placeOfOrigin: { name: 'Ferme des Trois Vallees' },
-  consignor: { name: 'Laiterie du Nord' },
-  consignee: { name: 'Yorkshire Dales Livestock' },
-  importer: { name: 'Albion Livestock Imports' },
+  placeOfOrigin: { name: 'Origin Farm' },
+  consignor: { name: 'Astra Rosales' },
+  consignee: { name: 'British Livestock Ltd' },
+  importer: { name: 'Import Co UK' },
   placeOfDestination: { name: 'Tech Imports Ltd' },
   countyParishHoldingCph: '12/345/6789',
   portOfEntry: 'Aberdeen Airport',
@@ -66,8 +66,8 @@ const fullSeed = {
   transportIdentification: 'FR-892-LK',
   transportDocumentReference: 'CMR-2026-884721',
   transitedCountries: ['FR', 'BE'],
-  transporterType: 'Commercial transporter',
-  commercialTransporter: { name: 'Channel Livestock Logistics' },
+  transporterType: 'Commercial',
+  commercialTransporter: { name: 'García Livestock Transport SL' },
   contactAddress: { name: 'Animal and Plant Health Agency' }
 }
 
@@ -101,7 +101,7 @@ describe('#buildRows (check-answers GET)', () => {
       )
     })
 
-    it('Should include the internal-market purpose row when the reason is internal-market', async () => {
+    it('Should include the internal-market purpose row when the reason is internalMarket', async () => {
       expect(
         valueOf(await rowsFor(fullSeed), 'Purpose in the internal market')
       ).toBe('Breeding')
@@ -128,7 +128,7 @@ describe('#buildRows (check-answers GET)', () => {
     it('Should include the commercial-transporter row and omit the private one when the type is commercial', async () => {
       const rows = await rowsFor(fullSeed)
       expect(valueOf(rows, 'Commercial transporter')).toBe(
-        'Channel Livestock Logistics'
+        'García Livestock Transport SL'
       )
       expect(keysOf(rows)).not.toContain('Private transporter')
     })
@@ -155,7 +155,7 @@ describe('#buildRows (check-answers GET)', () => {
 
     it('Should read party rows from the stored party name', async () => {
       const rows = await rowsFor(fullSeed)
-      expect(valueOf(rows, 'Consignor')).toBe('Laiterie du Nord')
+      expect(valueOf(rows, 'Consignor')).toBe('Astra Rosales')
       expect(valueOf(rows, 'Place of destination')).toBe('Tech Imports Ltd')
       expect(valueOf(rows, 'Contact address')).toBe(
         'Animal and Plant Health Agency'
@@ -193,7 +193,7 @@ describe('#buildRows (check-answers GET)', () => {
       reasonForImport: 'transit',
       commodityLines: [{ commoditySelection: 'Fish' }],
       meansOfTransport: 'Airplane',
-      transporterType: 'Private transporter',
+      transporterType: 'Private',
       privateTransporter: { name: 'Jean Dupont' }
     }
 
@@ -203,7 +203,7 @@ describe('#buildRows (check-answers GET)', () => {
       )
     })
 
-    it('Should omit the internal-market purpose row when the reason is not internal-market', async () => {
+    it('Should omit the internal-market purpose row when the reason is not internalMarket', async () => {
       expect(keysOf(await rowsFor(gatedOffSeed))).not.toContain(
         'Purpose in the internal market'
       )

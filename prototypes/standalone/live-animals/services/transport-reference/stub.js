@@ -5,7 +5,4 @@ export const MEANS_OF_TRANSPORT = [
   'Vessel'
 ]
 export const OVERLAND_MEANS = ['Railway', 'Road Vehicle']
-export const TRANSPORTER_TYPES = [
-  'Commercial transporter',
-  'Private transporter'
-]
+export const TRANSPORTER_TYPES = ['Commercial', 'Private']

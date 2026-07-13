@@ -25,7 +25,7 @@ A persona is just an answers map — the same shape the store holds. There is no
 ```js
 simulateJourney({
   countryOfOrigin: 'FR',
-  transporterType: 'Commercial transporter'
+  transporterType: 'Commercial'
 })
 // -> ['origin', 'commodities', ..., 'declaration'] in flow order
 ```

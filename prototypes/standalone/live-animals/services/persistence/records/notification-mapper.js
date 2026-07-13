@@ -99,7 +99,7 @@ const transporterToAnswers = (transporter) => {
     })
   )
   if (party) {
-    if (transporter.type === 'Private transporter') {
+    if (transporter.type === 'Private') {
       out.privateTransporter = party
     } else {
       out.commercialTransporter = party

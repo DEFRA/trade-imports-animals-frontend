@@ -82,7 +82,7 @@ describe.skipIf(!runsIt('real'))(
           }
         },
         arrivalDateAtPort: { day: 14, month: 3, year: 2026 },
-        transporterType: 'Commercial transporter',
+        transporterType: 'Commercial',
         commercialTransporter: {
           name: 'Transporter Co',
           approvalNumber: 'UK/NEWCA/T1/00090953',
@@ -125,7 +125,7 @@ describe.skipIf(!runsIt('real'))(
         year: 2026
       })
       // The collapsed Transporter (name/address/approvalNumber/type) round-trips.
-      expect(loaded.answers.transporterType).toBe('Commercial transporter')
+      expect(loaded.answers.transporterType).toBe('Commercial')
       expect(loaded.answers.commercialTransporter).toEqual(
         answers.commercialTransporter
       )

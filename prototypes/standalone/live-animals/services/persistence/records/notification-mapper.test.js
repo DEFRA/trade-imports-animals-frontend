@@ -62,7 +62,7 @@ const answersWithGaps = () => ({
   responsiblePersonForLoad: { responsiblePerson: 'Auth User' },
   regionOfOriginCode: 'FR-75',
   purposeInInternalMarket: 'Breeding',
-  transporterType: 'Commercial transporter',
+  transporterType: 'Commercial',
   privateTransporter: address('Jane Private', '9 Private Road'),
   meansOfTransport: 'Road Vehicle',
   transportIdentification: 'FR-892-LK',
@@ -134,7 +134,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
   it('Should place every storable answer in its skeleton field home', () => {
     const notification = answersToNotification({
       ...mappedAnswers(),
-      transporterType: 'Commercial transporter'
+      transporterType: 'Commercial'
     })
 
     expect(notification.origin).toEqual({
@@ -170,7 +170,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       name: 'Transporter Co',
       approvalNumber: 'UK/NEWCA/T1/00090953',
       address: { addressLine1: '7 Route One' },
-      type: 'Commercial transporter'
+      type: 'Commercial'
     })
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
       value: '1148346',
@@ -283,7 +283,7 @@ const allAnswers = () => ({
   importer: address('Importer Ltd', '4 Port Way'),
   placeOfDestination: address('Destination Farm', '5 Field Lane'),
   contactAddress: address('Contact Person', '6 High Street'),
-  transporterType: 'Commercial transporter',
+  transporterType: 'Commercial',
   commercialTransporter: {
     name: 'Transporter Co',
     approvalNumber: 'UK/NEWCA/T1/00090953',
@@ -366,7 +366,7 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
         name: 'Transporter Co',
         approvalNumber: 'UK/NEWCA/T1/00090953',
         address: { addressLine1: '7 Route One' },
-        type: 'Commercial transporter'
+        type: 'Commercial'
       },
       meansOfTransport: 'Road Vehicle',
       transportIdentification: 'FR-892-LK',
@@ -427,7 +427,7 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
 
   it('Should collapse a private transporter into the single Transporter, then restore it', () => {
     const answers = {
-      transporterType: 'Private transporter',
+      transporterType: 'Private',
       privateTransporter: {
         name: 'Jane Private',
         address: { addressLine1: '9 Private Road' }
@@ -437,7 +437,7 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
     expect(notification.transport.transporter).toEqual({
       name: 'Jane Private',
       address: { addressLine1: '9 Private Road' },
-      type: 'Private transporter'
+      type: 'Private'
     })
     expect(targetNotificationToAnswers(notification)).toEqual(answers)
   })
@@ -527,7 +527,7 @@ const storableSubset = (notification) => {
 // the collapsed Transporter carries a type. This is the backend-storable set.
 const storableAnswers = () => ({
   ...mappedAnswers(),
-  transporterType: 'Commercial transporter'
+  transporterType: 'Commercial'
 })
 
 describe('Mapper B storable superset — survives the real backend field set', () => {
@@ -555,7 +555,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
     const recovered = targetNotificationToAnswers(
       storableSubset(answersToTargetNotification(storableAnswers()))
     )
-    expect(recovered.transporterType).toBe('Commercial transporter')
+    expect(recovered.transporterType).toBe('Commercial')
     expect(recovered.commercialTransporter).toEqual({
       name: 'Transporter Co',
       approvalNumber: 'UK/NEWCA/T1/00090953',

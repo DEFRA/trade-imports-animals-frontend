@@ -30,7 +30,7 @@ export const commercialTransporter = {
   required: true,
   activatedBy: {
     obligation: transporterType,
-    equals: 'Commercial transporter'
+    equals: 'Commercial'
   },
   wipeOnExit: true
 }
@@ -40,7 +40,7 @@ export const privateTransporter = {
   required: true,
   activatedBy: {
     obligation: transporterType,
-    equals: 'Private transporter'
+    equals: 'Private'
   },
   wipeOnExit: true
 }

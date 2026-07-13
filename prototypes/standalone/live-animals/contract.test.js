@@ -120,20 +120,20 @@ const cases = [
     id: 'transporters',
     collects: transporters.meta.collects,
     handler: postHandlerOf(transporters),
-    payload: { transporterType: 'Commercial transporter' }
+    payload: { transporterType: 'Commercial' }
   },
   {
     id: 'transporters-select',
     collects: transportersSelect.meta.collects,
     handler: postHandlerOf(transportersSelect),
-    seed: { transporterType: 'Commercial transporter' },
-    payload: { commercialTransporter: 'channel-livestock-logistics' }
+    seed: { transporterType: 'Commercial' },
+    payload: { commercialTransporter: 'garcia-livestock-transport' }
   },
   {
     id: 'private-transporter-details',
     collects: privateTransporterDetails.meta.collects,
     handler: postHandlerOf(privateTransporterDetails),
-    seed: { transporterType: 'Private transporter' },
+    seed: { transporterType: 'Private' },
     payload: {
       nameOrOrganisationName: 'Jean Dupont',
       addressLine1: '12 Rue des Fermes',
@@ -271,25 +271,25 @@ describe('controller <-> model commit contract', () => {
       {
         module: destinationsSelect,
         slug: 'destinations/select',
-        payload: { placeOfDestination: 'tech-imports-ltd' },
+        payload: { placeOfDestination: 'tech-imports' },
         commits: ['placeOfDestination']
       },
       {
         module: placeOfOriginSelect,
         slug: 'place-of-origin/select',
-        payload: { placeOfOrigin: 'ferme-des-trois-vallees' },
+        payload: { placeOfOrigin: 'origin-farm' },
         commits: ['placeOfOrigin']
       },
       {
         module: consigneesSelect,
         slug: 'consignees/select',
-        payload: { consignee: 'yorkshire-dales-livestock' },
+        payload: { consignee: 'british-livestock' },
         commits: ['consignee']
       },
       {
         module: importersSelect,
         slug: 'importers/select',
-        payload: { importer: 'albion-livestock-imports' },
+        payload: { importer: 'import-co-uk' },
         commits: ['importer']
       }
     ]

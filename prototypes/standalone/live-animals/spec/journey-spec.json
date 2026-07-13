@@ -923,7 +923,7 @@
       "label": "Transporter type",
       "input": {
         "widget": "radios",
-        "values": ["Commercial transporter", "Private transporter"]
+        "values": ["Commercial", "Private"]
       },
       "notes": "User must select one transporter type. Skeleton has no type split - a single mock transporter select (see c-012).",
       "conflicts": ["c-012"],
@@ -949,7 +949,7 @@
       },
       "activatedBy": {
         "obligation": "transporterType",
-        "equals": "Commercial transporter"
+        "equals": "Commercial"
       },
       "wipeOnExit": true,
       "input": {
@@ -990,7 +990,7 @@
       },
       "activatedBy": {
         "obligation": "transporterType",
-        "equals": "Private transporter"
+        "equals": "Private"
       },
       "wipeOnExit": true,
       "notes": "Standard address block; single entry for the consignment. Not present in the skeleton (see c-012); collected on an invented provisional page.",

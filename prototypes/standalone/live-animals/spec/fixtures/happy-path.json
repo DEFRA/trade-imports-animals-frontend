@@ -36,68 +36,44 @@
       }
     ],
     "consignor": {
-      "name": "Laiterie du Nord SARL",
+      "name": "Astra Rosales",
       "address": {
-        "addressLine1": "12 Rue de la Gare",
-        "addressLine2": "",
-        "townOrCity": "Lille",
-        "county": "",
-        "postalOrZipCode": "59000",
-        "country": "France",
-        "telephoneNumber": "+33 3 20 61 10 10",
-        "emailAddress": "exports@laiterie-du-nord.example.com"
+        "addressLine1": "43 East Hague Extension",
+        "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+        "addressLine3": "Quasoccaecat ut ear, 30055",
+        "country": "Switzerland"
       }
     },
     "placeOfDestination": {
       "name": "Tech Imports Ltd",
       "address": {
         "addressLine1": "643 Main Street",
-        "addressLine2": "",
-        "townOrCity": "Birmingham",
-        "county": "West Midlands",
-        "postalOrZipCode": "B1 3AZ",
-        "country": "United Kingdom",
-        "telephoneNumber": "+44 121 555 0143",
-        "emailAddress": "goods-in@tech-imports.example.co.uk"
+        "addressLine2": "Birmingham G1 3AZ",
+        "country": "United Kingdom"
       }
     },
     "placeOfOrigin": {
-      "name": "Ferme des Trois Vallées",
+      "name": "Origin Farm",
       "address": {
-        "addressLine1": "3 Chemin des Prés",
-        "addressLine2": "",
-        "townOrCity": "Annecy",
-        "county": "",
-        "postalOrZipCode": "74000",
-        "country": "France",
-        "telephoneNumber": "+33 4 50 55 01 23",
-        "emailAddress": "contact@trois-vallees.example.fr"
+        "addressLine1": "1 Farm Lane",
+        "addressLine2": "County Clare",
+        "country": "Ireland"
       }
     },
     "consignee": {
-      "name": "Yorkshire Dales Livestock Ltd",
+      "name": "British Livestock Ltd",
       "address": {
-        "addressLine1": "Unit 4, Auction Mart Lane",
-        "addressLine2": "",
-        "townOrCity": "Skipton",
-        "county": "North Yorkshire",
-        "postalOrZipCode": "BD23 1UD",
-        "country": "United Kingdom",
-        "telephoneNumber": "+44 1756 555 0192",
-        "emailAddress": "intake@yorkshire-dales-livestock.example.co.uk"
+        "addressLine1": "10 Market Street",
+        "addressLine2": "Leeds LS1 6HB",
+        "country": "United Kingdom"
       }
     },
     "importer": {
-      "name": "Albion Livestock Imports Ltd",
+      "name": "Import Co UK",
       "address": {
-        "addressLine1": "18 Harbour Road",
-        "addressLine2": "",
-        "townOrCity": "Dover",
-        "county": "Kent",
-        "postalOrZipCode": "CT17 9BU",
-        "country": "United Kingdom",
-        "telephoneNumber": "+44 1304 555 0184",
-        "emailAddress": "notifications@albion-livestock.example.co.uk"
+        "addressLine1": "20 Trade Road",
+        "addressLine2": "London EC1A 1BB",
+        "country": "United Kingdom"
       }
     },
     "countyParishHoldingCph": "12/345/6789",
@@ -111,19 +87,15 @@
     "transportIdentification": "FR-892-LK",
     "transportDocumentReference": "CMR-2026-884721",
     "transitedCountries": ["FR", "BE"],
-    "transporterType": "Commercial transporter",
+    "transporterType": "Commercial",
     "commercialTransporter": {
-      "name": "Channel Livestock Logistics Ltd",
-      "approvalNumber": "UK/DOVER/T2/00012345",
+      "name": "García Livestock Transport SL",
+      "approvalNumber": "ES-T2-45001294",
       "address": {
-        "addressLine1": "18 Eastern Docks",
-        "addressLine2": "",
-        "townOrCity": "Dover",
-        "county": "Kent",
-        "postalOrZipCode": "CT16 1JA",
-        "country": "United Kingdom",
-        "telephoneNumber": "+44 1304 555 0171",
-        "emailAddress": "bookings@channel-livestock.example.co.uk"
+        "addressLine1": "43 East Hague Extension",
+        "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+        "addressLine3": "Quasoccaecat ut ear, 30055",
+        "country": "Switzerland"
       }
     },
     "privateTransporter": {
@@ -144,12 +116,8 @@
       "address": {
         "addressLine1": "Woodham Lane",
         "addressLine2": "New Haw",
-        "townOrCity": "Addlestone",
-        "county": "Surrey",
-        "postalOrZipCode": "KT15 3NB",
-        "country": "United Kingdom",
-        "telephoneNumber": "+44 3000 200 301",
-        "emailAddress": "enquiries@apha.example.gov.uk"
+        "addressLine3": "Addlestone, KT15 3NB",
+        "country": "United Kingdom"
       }
     },
     "declaration": "confirmed"

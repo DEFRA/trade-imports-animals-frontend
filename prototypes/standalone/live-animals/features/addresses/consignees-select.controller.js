@@ -19,12 +19,10 @@ const addressSummary = (address) =>
   [
     address.addressLine1,
     address.addressLine2,
-    address.townOrCity,
-    address.county,
-    address.postalOrZipCode,
+    address.addressLine3,
     address.country
   ]
-    .filter((part) => part !== '')
+    .filter((part) => part)
     .join(', ')
 
 const render = (h, values, errors = {}) =>

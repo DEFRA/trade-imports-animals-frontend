@@ -198,7 +198,7 @@ const buildRows = (answers) => {
         ]
       : []),
     row('Transporter type', answerOf('transporterType'), 'transporterType'),
-    ...(answerOf('transporterType') === 'Commercial transporter'
+    ...(answerOf('transporterType') === 'Commercial'
       ? [
           row(
             'Commercial transporter',
@@ -207,7 +207,7 @@ const buildRows = (answers) => {
           )
         ]
       : []),
-    ...(answerOf('transporterType') === 'Private transporter'
+    ...(answerOf('transporterType') === 'Private'
       ? [
           row(
             'Private transporter',
