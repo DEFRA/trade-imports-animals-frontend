@@ -917,19 +917,43 @@ export const transitedCountriesDomain = {
   }
 }
 
-// Stubbed enum — in production these options come from the certificate.
-// For the spike we hardcode four representative values so the browser
-// walk works without an upstream integration.
-export const ANIMAL_TYPE_OPTIONS = ['bovine', 'ovine', 'porcine', 'equine']
-export const ANIMAL_TYPE_LABELS = {
-  bovine: 'domain.animalType.bovine',
-  ovine: 'domain.animalType.ovine',
-  porcine: 'domain.animalType.porcine',
-  equine: 'domain.animalType.equine'
-}
-export const animalsCertifiedForDomain = staticEnum(ANIMAL_TYPE_OPTIONS, {
-  labels: ANIMAL_TYPE_LABELS
-})
+// V4 spec (Confluence page 6497338582): the 16 PURPOSES an animal
+// can be certified for. Step 5d replaced the earlier stub which used
+// 4 SPECIES codes (bovine / ovine / porcine / equine) — that was a
+// semantic mismatch: this obligation asks "what has this animal been
+// certified for?", not "what species is it?".
+//
+// In production these values come from the certificate. For the
+// browsable prototype we hardcode the V4 canonical list so CYA and the
+// task list read the right way.
+export const ANIMALS_CERTIFIED_FOR_OPTIONS = [
+  'further-keeping',
+  'slaughter',
+  'confined-establishment',
+  'germinal-products',
+  'registered-equine-animal',
+  'travelling-circus-or-animal-act',
+  'exhibition',
+  'event-or-activity-near-borders',
+  'release-into-the-wild',
+  'dispatch-centre',
+  'relaying-area-or-purification-centre',
+  'ornamental-aquaculture-establishment',
+  'technical-use',
+  'quarantine-or-similar-establishment',
+  'live-aquatic-animals-for-human-consumption',
+  'other'
+]
+export const ANIMALS_CERTIFIED_FOR_LABELS = Object.fromEntries(
+  ANIMALS_CERTIFIED_FOR_OPTIONS.map((code) => [
+    code,
+    `domain.animalsCertifiedFor.${code}`
+  ])
+)
+export const animalsCertifiedForDomain = staticEnum(
+  ANIMALS_CERTIFIED_FOR_OPTIONS,
+  { labels: ANIMALS_CERTIFIED_FOR_LABELS }
+)
 
 // ---------------------------------------------------------------------------
 // Manifest — keyed by obligation id.

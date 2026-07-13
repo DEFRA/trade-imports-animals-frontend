@@ -805,7 +805,7 @@ describe('commodity-lines — /start integration', () => {
     await inject(jar, {
       method: 'POST',
       url: `${BASE}/pages/animals-certified-for`,
-      payload: { animalsCertifiedFor: 'bovine' }
+      payload: { animalsCertifiedFor: 'slaughter' }
     })
     // Trader details section — 5 address blocks + contact address.
     // All mandatory, all need to be filled for /start to skip forward

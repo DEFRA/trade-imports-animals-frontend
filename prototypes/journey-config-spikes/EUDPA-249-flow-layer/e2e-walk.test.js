@@ -198,7 +198,7 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       containsUnweanedAnimals: 'no'
     })
     await fill(jar, 'animals-certified-for', {
-      animalsCertifiedFor: 'bovine'
+      animalsCertifiedFor: 'slaughter'
     })
 
     // -- Section 4: trader details --------------------------------------
@@ -389,7 +389,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       containsUnweanedAnimals: 'no'
     })
     await fill(jar, 'animals-certified-for', {
-      animalsCertifiedFor: 'bovine'
+      animalsCertifiedFor: 'slaughter'
     })
 
     // -- Section 4: trader details --------------------------------------

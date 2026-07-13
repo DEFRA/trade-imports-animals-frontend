@@ -667,24 +667,52 @@ describe('transitedCountriesDomain (V4: multi-select max 12)', () => {
   })
 })
 
-describe('staticEnum — animalsCertifiedFor', () => {
-  it('returns the four stubbed options regardless of state', () => {
+describe('staticEnum — animalsCertifiedFor (V4: 15 certified-for purposes)', () => {
+  // Step 5d overhauled this: previously stubbed with 4 SPECIES codes
+  // (bovine / ovine / porcine / equine — semantic mismatch, the
+  // obligation asks "certified for WHAT?", not "what species?"). V4
+  // spec is 15 PURPOSES (Slaughter, Confined establishment,
+  // Registered equine animal, ...).
+  it('returns the 15 V4 purpose options regardless of state', () => {
     expect(animalsCertifiedForDomain.options({})).toEqual([
-      'bovine',
-      'ovine',
-      'porcine',
-      'equine'
+      'further-keeping',
+      'slaughter',
+      'confined-establishment',
+      'germinal-products',
+      'registered-equine-animal',
+      'travelling-circus-or-animal-act',
+      'exhibition',
+      'event-or-activity-near-borders',
+      'release-into-the-wild',
+      'dispatch-centre',
+      'relaying-area-or-purification-centre',
+      'ornamental-aquaculture-establishment',
+      'technical-use',
+      'quarantine-or-similar-establishment',
+      'live-aquatic-animals-for-human-consumption',
+      'other'
     ])
+    // No leaked species stubs.
+    for (const bad of ['bovine', 'ovine', 'porcine', 'equine']) {
+      expect(animalsCertifiedForDomain.options({})).not.toContain(bad)
+    }
   })
 
-  it('carries human labels for the option codes (via message keys)', () => {
-    // Under the i18n refactor, `labels` values are message keys that
-    // resolve via t() to the English strings.
+  it('every code resolves to a human label via t()', () => {
+    for (const code of animalsCertifiedForDomain.options({})) {
+      const resolved = t(animalsCertifiedForDomain.labels[code])
+      expect(resolved, `${code} did not resolve`).toBeTruthy()
+      expect(resolved).not.toContain('domain.animalsCertifiedFor')
+    }
+    // Spot-check a couple against the V4 spec strings.
     const labels = animalsCertifiedForDomain.labels
-    expect(t(labels.bovine)).toBe('Cattle')
-    expect(t(labels.ovine)).toBe('Sheep')
-    expect(t(labels.porcine)).toBe('Pigs')
-    expect(t(labels.equine)).toBe('Horses')
+    expect(t(labels.slaughter)).toBe('Slaughter')
+    expect(t(labels['registered-equine-animal'])).toBe(
+      'Registered equine animal'
+    )
+    expect(t(labels['travelling-circus-or-animal-act'])).toBe(
+      'Travelling circus/animal act'
+    )
   })
 
   it('names its shape as staticEnum in metadata', () => {

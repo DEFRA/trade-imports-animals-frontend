@@ -161,15 +161,16 @@ describe('option filtering', () => {
     ).toEqual([])
   })
 
-  it('optionsFor(animalsCertifiedFor) returns the stubbed static options', () => {
-    // In production the certificate integration supplies these. For the
-    // spike, they're hardcoded in the domain module.
-    expect(optionsFor(animalsCertifiedFor, {}, new Map(), domain)).toEqual([
-      'bovine',
-      'ovine',
-      'porcine',
-      'equine'
-    ])
+  it('optionsFor(animalsCertifiedFor) returns the 15 V4 purpose options', () => {
+    // Step 5d overhauled this from a 4-species stub to the 15 V4
+    // purposes (Slaughter, Registered equine animal, ...). In
+    // production the certificate integration supplies them; for the
+    // spike they're hardcoded in the domain module.
+    const options = optionsFor(animalsCertifiedFor, {}, new Map(), domain)
+    expect(options).toHaveLength(16)
+    expect(options).toContain('slaughter')
+    expect(options).toContain('further-keeping')
+    expect(options).not.toContain('bovine')
   })
 
   it('validate rejects a submitted value not in the current options', () => {

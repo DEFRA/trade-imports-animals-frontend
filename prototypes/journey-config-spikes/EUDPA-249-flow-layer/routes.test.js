@@ -517,17 +517,24 @@ describe('line-page-controller — species-details (line-scoped rendering)', () 
   })
 })
 
-describe('animals-certified-for — statically stubbed options', () => {
-  it('GET /pages/animals-certified-for renders the four stubbed option labels', async () => {
+describe('animals-certified-for — statically stubbed options (V4: 16 purposes, step 5d)', () => {
+  it('GET /pages/animals-certified-for renders V4 purpose labels', async () => {
+    // Step 5d overhauled this from a 4-species stub (Cattle/Sheep/
+    // Pigs/Horses) to the 16 V4 purposes. Real MDM lists come from
+    // the certificate in production.
     const jar = makeCookieJar()
     const res = await inject(jar, {
       method: 'GET',
       url: '/prototype/eudpa-249/pages/animals-certified-for'
     })
     expect(res.statusCode).toBe(200)
-    expect(res.payload).toContain('Cattle')
-    expect(res.payload).toContain('Sheep')
-    expect(res.payload).toContain('Pigs')
-    expect(res.payload).toContain('Horses')
+    // Spot-check a few of the new labels.
+    expect(res.payload).toContain('Slaughter')
+    expect(res.payload).toContain('Further keeping')
+    expect(res.payload).toContain('Registered equine animal')
+    expect(res.payload).toContain('Travelling circus/animal act')
+    // The old stubs are gone.
+    expect(res.payload).not.toContain('>Cattle<')
+    expect(res.payload).not.toContain('>Sheep<')
   })
 })
