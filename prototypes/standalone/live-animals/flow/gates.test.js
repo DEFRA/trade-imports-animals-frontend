@@ -145,7 +145,7 @@ describe('RULE 2 — review gates on submit-readiness (no deadlock)', () => {
   const allAnswerSectionsReady = {
     countryOfOrigin: 'FR',
     regionOfOriginCodeRequirement: 'no',
-    reasonForImport: 'internal-market',
+    reasonForImport: 'internalMarket',
     purposeInInternalMarket: 'breeding',
     animalsCertifiedFor: 'slaughter',
     containsUnweanedAnimals: 'no',

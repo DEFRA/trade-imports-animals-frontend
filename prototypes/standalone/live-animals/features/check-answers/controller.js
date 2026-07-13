@@ -122,7 +122,7 @@ const buildRows = (answers) => {
       importReasonPurpose.reasonLabel(answerOf('reasonForImport')) ?? '',
       'reasonForImport'
     ),
-    ...(answerOf('reasonForImport') === 'internal-market'
+    ...(answerOf('reasonForImport') === 'internalMarket'
       ? [
           row(
             'Purpose in the internal market',

@@ -122,7 +122,7 @@ describe('dispatch + flow', () => {
     const complete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no',
-      reasonForImport: 'internal-market',
+      reasonForImport: 'internalMarket',
       purposeInInternalMarket: 'breeding',
       animalsCertifiedFor: 'slaughter',
       containsUnweanedAnimals: 'no',

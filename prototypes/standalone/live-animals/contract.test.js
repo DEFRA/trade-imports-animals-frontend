@@ -71,13 +71,13 @@ const cases = [
     id: 'import-reason',
     collects: importReason.meta.collects,
     handler: postHandlerOf(importReason),
-    payload: { reasonForImport: 'internal-market' }
+    payload: { reasonForImport: 'internalMarket' }
   },
   {
     id: 'import-purpose',
     collects: importPurpose.meta.collects,
     handler: postHandlerOf(importPurpose),
-    seed: { reasonForImport: 'internal-market' },
+    seed: { reasonForImport: 'internalMarket' },
     payload: { purposeInInternalMarket: 'breeding' }
   },
   {

@@ -1,9 +1,9 @@
 export const REASON_FOR_IMPORT_LABEL = {
-  'internal-market': 'Internal market',
-  'transhipment-or-onward-travel': 'Transhipment or onward travel',
+  internalMarket: 'Internal market',
+  transhipmentOrOnwardTravel: 'Transhipment or onward travel',
   transit: 'Transit',
-  're-entry': 'Re-entry',
-  'temporary-admission-horses': 'Temporary admission horses'
+  reEntry: 'Re-entry',
+  temporaryAdmissionHorses: 'Temporary admission horses'
 }
 
 export const PURPOSE_IN_INTERNAL_MARKET_LABEL = {

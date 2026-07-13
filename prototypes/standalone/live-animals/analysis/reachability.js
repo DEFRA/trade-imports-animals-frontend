@@ -6,7 +6,7 @@ import { simulateJourney } from './simulate.js'
 
 export const enumerateScopeStates = () =>
   ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
-    ['', 'internal-market'].flatMap((reasonForImport) =>
+    ['', 'internalMarket'].flatMap((reasonForImport) =>
       ['', 'Road Vehicle'].flatMap((meansOfTransport) =>
         ['', 'Commercial transporter', 'Private transporter'].map(
           (transporterType) => ({
@@ -90,7 +90,7 @@ const withoutBlanks = (state) =>
 const submitReadySeed = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'no',
-  reasonForImport: 'internal-market',
+  reasonForImport: 'internalMarket',
   purposeInInternalMarket: 'breeding',
   animalsCertifiedFor: 'slaughter',
   containsUnweanedAnimals: 'no',

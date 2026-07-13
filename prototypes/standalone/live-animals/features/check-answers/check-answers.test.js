@@ -44,7 +44,7 @@ const fullSeed = {
       ]
     }
   ],
-  reasonForImport: 'internal-market',
+  reasonForImport: 'internalMarket',
   purposeInInternalMarket: 'breeding',
   animalsCertifiedFor: 'slaughter',
   containsUnweanedAnimals: 'no',
