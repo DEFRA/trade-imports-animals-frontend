@@ -123,13 +123,13 @@ describe('coverageReport', () => {
     const report = coverageReport()
     expect(report.total).toBeGreaterThan(0)
     expect(report.withDomainEntry).toBeGreaterThan(0)
-    // 6 unit-scoped identifier obligations (passport, tattoo,
-    // earTag, horseName, identificationDetails, description) stay
-    // without a domain entry until step 5's V4 buildout wires them
-    // (see obligations/coverage.test.js KNOWN_UNWIRED). This guard
-    // tolerates further whittling as long as at least one obligation
-    // remains uncovered.
-    expect(report.missing.length).toBeGreaterThan(0)
-    expect(report.missing).toContain('passport')
+    // After iteration 10 the only uncovered obligations are the two
+    // structural group containers (commodityLine, unitRecord) — they
+    // never need a domain entry because they carry no value directly;
+    // their descendants do. The report exposes them as "missing" and
+    // the invariant we care about is that they're the ONLY thing
+    // left. If a new leaf obligation lands without a domain entry,
+    // this length assertion fires.
+    expect(report.missing).toEqual(['commodityLine', 'unitRecord'])
   })
 })

@@ -55,6 +55,12 @@ import {
   placeOfDestination,
   contactAddress,
   permanentAddress,
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -733,6 +739,59 @@ export const permanentAddressDomain = addressBlock(permanentAddress, {
   required: ADDRESS_SUB_FIELDS
 })
 
+// V4 per-unit identifier obligations — wired in iteration 10 on top of
+// the depth-2 infrastructure iteration 9 laid down. All optional
+// (completion-mandate). String rules; the V4 spec doesn't pin an exact
+// max length for most of these, so we use conservative defaults big
+// enough to hold realistic identifiers (40 for structured ids,
+// 100 for free-text description).
+
+// V4: passport number for a per-animal unit. Allow-listed to horses
+// (0101), cattle (0102), cats/dogs/ferrets (01061900).
+export const passportDomain = predicate(
+  'string',
+  stringMaxLength(40, passport),
+  [reasons.stringMaxLength]
+)
+
+// V4: tattoo identifier. Allow-listed to cats/dogs/ferrets
+// (01061900), pigs (0103), cattle (0102).
+export const tattooDomain = predicate('string', stringMaxLength(40, tattoo), [
+  reasons.stringMaxLength
+])
+
+// V4: ear-tag identifier. Allow-listed to cattle (0102), pigs (0103),
+// sheep (010410), goats (010420).
+export const earTagDomain = predicate('string', stringMaxLength(40, earTag), [
+  reasons.stringMaxLength
+])
+
+// V4: horse name. Allow-listed to horses (0101) only.
+export const horseNameDomain = predicate(
+  'string',
+  stringMaxLength(40, horseName),
+  [reasons.stringMaxLength]
+)
+
+// V4: free-text identification details — fallback for commodity codes
+// with NO specific identifier (allowListedByPredicate inverse gate).
+// First wired obligation using that gate; see obligations/helpers.js
+// where `predicate` is now exposed on the metadata so browser-side
+// helpers can evaluate the gate without executing the applyTo
+// closure.
+export const identificationDetailsDomain = predicate(
+  'string',
+  stringMaxLength(100, identificationDetails),
+  [reasons.stringMaxLength]
+)
+
+// V4: free-text description — same inverse gate as identificationDetails.
+export const descriptionDomain = predicate(
+  'string',
+  stringMaxLength(100, description),
+  [reasons.stringMaxLength]
+)
+
 // V4: accompanying document reference — free-text, max 40. Blank
 // passes so an all-optional submission on the accompanying-documents
 // page doesn't error before the branchedGate flips the block to
@@ -859,6 +918,12 @@ export const domain = new Map([
   [placeOfDestination.id, placeOfDestinationDomain],
   [contactAddress.id, contactAddressDomain],
   [permanentAddress.id, permanentAddressDomain],
+  [passport.id, passportDomain],
+  [tattoo.id, tattooDomain],
+  [earTag.id, earTagDomain],
+  [horseName.id, horseNameDomain],
+  [identificationDetails.id, identificationDetailsDomain],
+  [description.id, descriptionDomain],
   [arrivalDateAtPort.id, arrivalDateAtPortDomain],
   [transitedCountries.id, transitedCountriesDomain],
   [animalsCertifiedFor.id, animalsCertifiedForDomain],

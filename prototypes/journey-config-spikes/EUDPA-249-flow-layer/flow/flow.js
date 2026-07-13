@@ -71,6 +71,12 @@ import {
   regionCode,
   unitRecord,
   permanentAddress,
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -413,6 +419,65 @@ export const flow = {
               page: 'permanent-address',
               presentsForEach: {
                 obligation: permanentAddress,
+                forEachOf: unitRecord
+              }
+            },
+            {
+              // Per-unit identifiers wired in iteration 10. Each is
+              // optional (completion-mandate) and gated to specific
+              // commodity codes via the obligation's applyTo:
+              //   passport         → horse / cattle / pet
+              //   tattoo           → pet / pig / cattle
+              //   earTag           → cattle / pig / sheep / goat
+              //   horseName        → horse only
+              // A given unit only sees the pages for its parent line's
+              // commodity code — pageStatus rolls them out of scope
+              // for units whose code isn't on the whitelist. Ordering
+              // matches obligations.js declaration order.
+              page: 'passport',
+              presentsForEach: {
+                obligation: passport,
+                forEachOf: unitRecord
+              }
+            },
+            {
+              page: 'tattoo',
+              presentsForEach: {
+                obligation: tattoo,
+                forEachOf: unitRecord
+              }
+            },
+            {
+              page: 'ear-tag',
+              presentsForEach: {
+                obligation: earTag,
+                forEachOf: unitRecord
+              }
+            },
+            {
+              page: 'horse-name',
+              presentsForEach: {
+                obligation: horseName,
+                forEachOf: unitRecord
+              }
+            },
+            {
+              // Inverse-gate fallback pages — apply on units whose
+              // parent line's commodity code is NOT in any specific-
+              // identifier whitelist (e.g. birds of prey, bees).
+              // First wired obligations using allowListedByPredicate;
+              // browser-side helpers evaluate the predicate via the
+              // metadata sidecar (see obligations/helpers.js).
+              page: 'identification-details',
+              presentsForEach: {
+                obligation: identificationDetails,
+                forEachOf: unitRecord
+              }
+            },
+            {
+              page: 'description',
+              presentsForEach: {
+                obligation: description,
                 forEachOf: unitRecord
               }
             }

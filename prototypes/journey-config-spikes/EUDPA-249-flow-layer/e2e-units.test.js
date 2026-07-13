@@ -144,13 +144,46 @@ describe('units — line-with-unit-obligations shows Manage animals link', () =>
     expect(list.payload).toContain(`${BASE}/lines/${lineId}/units`)
   })
 
-  it('does NOT show the link on a line whose commodity code has no wired unit obligation (0102, cattle)', async () => {
-    // Cattle (0102) is on PASSPORT_COMMODITIES / TATTOO_COMMODITIES /
-    // EAR_TAG_COMMODITIES in the manifest, but none of those are
-    // wired to domain entries in iteration 9. The link only appears
-    // when a wired obligation matches, so cattle should not show it.
+  it('shows the link on a cattle line (allowListed passport/tattoo/earTag)', async () => {
+    // Iteration 10 wired passport, tattoo, earTag — cattle (0102) is
+    // on all three whitelists. The link now appears on every line
+    // whose commodity code opens ANY wired unit obligation.
     const jar = makeCookieJar()
     const lineId = await addLineWithCode(jar, '0102')
+    const list = await inject(jar, { method: 'GET', url: `${BASE}/lines` })
+    expect(list.payload).toContain('Manage animals on this line')
+    expect(list.payload).toContain(`${BASE}/lines/${lineId}/units`)
+  })
+
+  it('shows the link on a birds-of-prey line (allowListedByPredicate identificationDetails)', async () => {
+    // Iteration 10 also wired identificationDetails + description via
+    // the inverse-gate predicate — they apply to codes NOT on any
+    // specific-identifier whitelist. Birds of prey (01063100) is
+    // such a code, so the link appears via the predicate branch.
+    const jar = makeCookieJar()
+    const lineId = await addLineWithCode(jar, '01063100')
+    const list = await inject(jar, { method: 'GET', url: `${BASE}/lines` })
+    expect(list.payload).toContain('Manage animals on this line')
+    expect(list.payload).toContain(`${BASE}/lines/${lineId}/units`)
+  })
+
+  it('does NOT show the link on a line with no commodity code set yet', async () => {
+    // Before commodityCode is chosen, no unit obligation can be
+    // resolved for the line — the metadata check short-circuits on
+    // `if (!lineCode) return false`. Every line has some unit
+    // obligation in scope AFTER a code is picked (identificationDetails
+    // + description is a catch-all via the inverse gate), so this is
+    // the only path that hides the link in practice after iter 10.
+    const jar = makeCookieJar()
+    const addRes = await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/add`,
+      payload: {}
+    })
+    const match = /\/lines\/(line\d+)\/commodity-details$/.exec(
+      addRes.headers.location
+    )
+    const lineId = match[1]
     const list = await inject(jar, { method: 'GET', url: `${BASE}/lines` })
     expect(list.payload).not.toContain(`${BASE}/lines/${lineId}/units`)
     expect(list.payload).not.toContain('Manage animals on this line')

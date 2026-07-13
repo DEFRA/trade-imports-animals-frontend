@@ -80,6 +80,12 @@ export function allowListedByPredicate(
   fn.metadata = {
     type: 'allowListedByPredicate',
     obligation: gateObligation.id,
+    // Expose the predicate so callers can ask "would this value be
+    // admitted?" without executing the whole applyTo closure (which
+    // requires evaluator state). Used by browser-side helpers like
+    // features/units/pickSeedObligationForLine to decide whether a
+    // fresh line's commodity code opens this obligation.
+    predicate,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null
   }

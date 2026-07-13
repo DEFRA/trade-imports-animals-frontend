@@ -28,7 +28,7 @@ const KNOWN_UNWIRED = new Set([
   // Group containers — no direct value at this level; children carry
   // the semantics. commodityLine + unitRecord are structural.
   'commodityLine',
-  'unitRecord',
+  'unitRecord'
 
   // Standard address blocks wired during step 4 iteration 7:
   // - Phase A: commercialTransporter (first worked example).
@@ -50,17 +50,14 @@ const KNOWN_UNWIRED = new Set([
   // species wired during step 4 iteration 4.
   // commodityType wired during step 4 iteration 6 (line-scoped enum).
 
-  // Free-text or integer with max-length per V4 — need domain entries
-  // during step 5.
-  // regionCode wired during step 4 iteration 2.
-  // numberOfAnimals wired during step 4 iteration 5 (integer + per-
-  // species cap predicate — see docs/add-an-obligation.md).
-  'passport',
-  'tattoo',
-  'earTag',
-  'horseName',
-  'identificationDetails',
-  'description'
+  // Free-text or integer with max-length per V4:
+  // - regionCode wired during step 4 iteration 2.
+  // - numberOfAnimals wired during step 4 iteration 5 (integer + per-
+  //   species cap predicate — see docs/add-an-obligation.md).
+  // - passport, tattoo, earTag, horseName wired during step 4
+  //   iteration 10 (allowListed per-unit identifiers).
+  // - identificationDetails, description wired during step 4
+  //   iteration 10 (first allowListedByPredicate wired obligations).
 
   // Accompanying-document all-or-nothing block wired during step 4
   // iteration 8 — four fields sharing a `branchedGate` applyTo, all

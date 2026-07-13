@@ -109,15 +109,26 @@ describe('allowListedByPredicate', () => {
     expect(decision).toEqual({ inScope: true, records: ['line1/unit1'] })
   })
 
-  it('exposes metadata (predicate is opaque; projection is captured)', () => {
+  it('exposes metadata (predicate is captured for browser-side use; projection is captured)', () => {
+    // The predicate is now surfaced on the metadata sidecar so
+    // browser-side helpers can ask "would this value be admitted?"
+    // without executing the whole applyTo closure. See
+    // features/units/controller.js pickSeedObligationForLine +
+    // features/commodity-lines/controller.js lineHasWiredUnitObligation
+    // where iter 10 relies on this to resolve inverse-gate obligations
+    // (identificationDetails / description).
     const isVowel = (v) => 'aeiou'.includes(v)
     const gate = allowListedByPredicate(codeObl, isVowel, groupObl)
     expect(gate.metadata).toEqual({
       type: 'allowListedByPredicate',
       obligation: codeObl.id,
+      predicate: isVowel,
       projection: groupObl.id,
       reasons: null
     })
+    // Predicate is the exact function reference.
+    expect(gate.metadata.predicate('a')).toBe(true)
+    expect(gate.metadata.predicate('b')).toBe(false)
   })
 })
 

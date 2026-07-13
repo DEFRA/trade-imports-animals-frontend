@@ -118,13 +118,11 @@ function lineHasWiredUnitObligation(state, lineId) {
     if (meta.type === 'allowListed' && meta.values?.includes(lineCode)) {
       return true
     }
-    if (meta.type === 'allowListedByPredicate') {
-      // The inverse-gate case (identificationDetails / description).
-      // Step 5 will wire these; when it does, the metadata will let us
-      // ask the predicate directly. For iteration 9 there are no
-      // wired allowListedByPredicate obligations, so we conservatively
-      // return true here — the units list gracefully renders nothing
-      // if the caller can't seed.
+    if (meta.type === 'allowListedByPredicate' && meta.predicate?.(lineCode)) {
+      // Inverse-gate case (identificationDetails / description) —
+      // helpers.js exposes the predicate on the metadata so we can
+      // ask "would this code be admitted?" without executing the
+      // whole applyTo closure.
       return true
     }
   }

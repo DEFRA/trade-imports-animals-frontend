@@ -675,6 +675,113 @@ blocks Phase A introduced the widget, Phase B wired the rest). Once
 the pattern is settled, the remaining 6 unit-scoped obligations
 should be mechanical additions in step 5.
 
+## Worked example — iteration 10: the six per-unit identifier obligations (`allowListed` × 4 + `allowListedByPredicate` × 2)
+
+**Target:** wire all six remaining per-unit obligations in one atomic
+commit — `passport`, `tattoo`, `earTag`, `horseName` (`allowListed` on
+different commodity-code whitelists) and `identificationDetails`,
+`description` (`allowListedByPredicate` inverse-gate, applying to codes
+NOT on any specific-identifier whitelist). Empties the leaf portion of
+`KNOWN_UNWIRED`; only the two group containers (`commodityLine`,
+`unitRecord`) remain.
+
+**Twist:** first iteration to wire an `allowListedByPredicate`
+obligation. Iteration 9's browser-side helpers (`pickSeedObligationForLine`,
+`lineHasWiredUnitObligation`) had a stub `if (meta.type ===
+'allowListedByPredicate') return true` because there were no wired
+obligations using that gate. Now that there are two, the stub needed
+to actually evaluate the predicate against the line's commodity code —
+but the metadata sidecar built by the helper only carried
+`{ type, obligation, projection, reasons }`. Fix: expose the predicate
+on the metadata (one-line edit in `obligations/helpers.js`) so
+callers can ask "would this value be admitted?" without executing the
+whole `applyTo` closure. Same discipline as `allowListed` which
+exposes `values` for the same reason.
+
+Second insight: `pickSeedObligationForLine` used to walk unit
+obligations in manifest-declaration order and seed on the first match.
+`permanentAddress` is declared LAST in the manifest but is the only
+mandatory unit obligation — before iter 10, a pets line (`01061900`)
+had permanentAddress as the only match, so it worked. After iter 10 a
+pets line matches passport / tattoo / permanentAddress; declaration
+order would seed on passport (optional) instead. Fix: two-pass
+iteration — mandatory obligations first, then optional. Add-then-fill
+now drops the user on a page they MUST complete.
+
+Steps executed:
+
+- **Step 1 — Confirmed.** All six declared at
+  `obligations/obligations.js:501-574`, `within: unitRecord`,
+  `status: 'optional'`. Applies via `allowListed(commodityCode,
+LIST, unitRecord, [reason])` for four, `allowListedByPredicate`
+  for the last two.
+- **Step 2 — Domain entries.** Six predicate entries in
+  `domain/index.js`, each `predicate('string', stringMaxLength(N,
+obligation), [reasons.stringMaxLength])`. Structured identifiers
+  (passport / tattoo / earTag / horseName) max 40; free-text
+  fallbacks (identificationDetails / description) max 100. V4
+  doesn't pin exact lengths for most of these — the numbers are
+  conservative defaults we can tighten when the spec settles.
+- **Step 3 — Presentation.** Six `presentation.*` buckets in
+  `locales/en.json` + six `OBLIGATION_KEYS` entries.
+- **Step 4 — Flow.** Six new `presentsForEach: { obligation,
+forEachOf: unitRecord }` pages appended to the existing
+  `per-unit-records` subsection, ordered by obligations.js
+  declaration order. Routes.js's `forEachOf === unitRecord` branch
+  registers them at `/lines/{lineId}/units/{unitId}/{page}`
+  automatically — no route changes.
+- **Step 4.5 — Metadata + seed-picker upgrades.** One-line
+  `predicate` exposure on `allowListedByPredicate` metadata in
+  `obligations/helpers.js`; two-pass mandatory-first ordering in
+  `pickSeedObligationForLine`; both browser-side helpers upgraded
+  from `return true` stubs to `meta.predicate?.(lineCode)`.
+- **Step 5 — Cleared six entries from KNOWN_UNWIRED.** Down to 2 —
+  the group containers (permanent exempt).
+- **Step 6 — Fixtures.** No update.
+- **Step 7 — Tests.** `e2e-units.test.js` — the negative "no
+  Manage animals for cattle" case was invalidated (iter 10 wires
+  passport/tattoo/earTag, so cattle now matches). Replaced with:
+  (a) positive test for cattle (allowListed match), (b) positive
+  test for birds-of-prey (allowListedByPredicate inverse-gate
+  match), (c) negative test for a line with no commodity code
+  chosen (the only path left that hides the link). `sketches.test.js`
+  coverageReport assertion tightened to `equal(['commodityLine',
+'unitRecord'])` — the two structural group containers are now
+  the ONLY things without a domain entry. `obligations/helpers.test.js`
+  metadata assertion extended to check the exposed predicate is
+  callable.
+
+  Baseline now 508 tests.
+
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected:
+  every commodity code now shows the "Manage animals on this line"
+  link; add a unit under a cattle line and you land on Passport
+  (optional); add a unit under a pets line and you land on
+  Permanent address (mandatory) — the two-pass seed-picker at
+  work. All six identifier pages render one text input each; the
+  applyTo filter means a given unit only sees the pages for its
+  parent line's commodity code (e.g. horse units see Passport +
+  Horse name; sheep units see Ear tag; birds-of-prey units see
+  Identification details + Description).
+- **Step 9 — Committed atomically.**
+
+**Refinement to the doc:** three lessons that generalise for step 5:
+
+1. When a new obligation lands using a helper (`allowListed`,
+   `allowListedByPredicate`, ...) that browser-side code introspects,
+   check that the helper exposes enough metadata on `applyTo.metadata`
+   for the introspection to work. Add a predicate/value/callback field
+   to the metadata rather than duplicating the gate logic outside.
+2. Manifest-declaration order is not a design signal for UX. Order
+   the add-then-fill seed by _status_ (mandatory first) so the user
+   lands on what they must complete, not what happens to be declared
+   earlier.
+3. Negative tests that assert absence of a feature ("does not show X
+   in this case") get invalidated when subsequent iterations wire the
+   feature to cover that case. Rework them to test the last remaining
+   absence path (here: "no commodity code chosen") rather than
+   deleting the coverage.
+
 ## Worked example — iteration 3: `portOfEntry`
 
 **Target:** wire `portOfEntry` — a straightforward static enum where

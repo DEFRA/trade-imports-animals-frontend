@@ -158,22 +158,36 @@ function lineExists(state, lineId) {
 function pickSeedObligationForLine(state, lineId) {
   const lineCode = state.fulfilments?.[commodityCode.id]?.[lineId]
   if (!lineCode) return null
+  // Prefer mandatory obligations first so add-then-fill drops the
+  // user on a page they MUST complete rather than a first-listed
+  // optional. permanentAddress is currently the ONLY mandatory
+  // unit-scoped obligation, and it happens to be declared last in
+  // the manifest — without this two-pass we'd redirect to passport
+  // (optional, declared earlier) even on a pets line where
+  // permanentAddress must be filled.
   const unitObligations = v4Obligations.filter((o) => o.within === unitRecord)
-  for (const obligation of unitObligations) {
-    if (!domain.has(obligation.id)) continue
-    const meta = obligation.applyTo?.metadata
-    if (!meta) continue
-    if (meta.type === 'allowListed' && meta.values?.includes(lineCode)) {
-      return obligation
-    }
-    if (meta.type === 'allowListedByPredicate') {
-      // The inverse-gate case (identificationDetails / description
-      // in step 5). No wired allowListedByPredicate obligations in
-      // iteration 9; conservatively accept — the evaluator's post-
-      // purge step drops the seed if the line's code doesn't
-      // actually open this obligation, and the caller shows an
-      // empty units list.
-      return obligation
+  const byStatus = [
+    unitObligations.filter((o) => o.status === 'mandatory'),
+    unitObligations.filter((o) => o.status !== 'mandatory')
+  ]
+  for (const bucket of byStatus) {
+    for (const obligation of bucket) {
+      if (!domain.has(obligation.id)) continue
+      const meta = obligation.applyTo?.metadata
+      if (!meta) continue
+      if (meta.type === 'allowListed' && meta.values?.includes(lineCode)) {
+        return obligation
+      }
+      if (
+        meta.type === 'allowListedByPredicate' &&
+        meta.predicate?.(lineCode)
+      ) {
+        // Inverse-gate case (identificationDetails / description) —
+        // helpers.js exposes the predicate on the metadata so we can
+        // ask "would this code be admitted?" without executing the
+        // whole applyTo closure.
+        return obligation
+      }
     }
   }
   return null

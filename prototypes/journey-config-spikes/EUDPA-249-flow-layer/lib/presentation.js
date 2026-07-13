@@ -45,6 +45,12 @@ import {
   regionCodeRequirement,
   regionCode,
   permanentAddress,
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -294,6 +300,54 @@ export const OBLIGATION_KEYS = new Map([
       pageTitleKey: 'presentation.permanentAddress.pageTitle',
       legendKey: 'presentation.permanentAddress.legend',
       hintKey: 'presentation.permanentAddress.hint'
+    }
+  ],
+  [
+    passport.id,
+    {
+      pageTitleKey: 'presentation.passport.pageTitle',
+      legendKey: 'presentation.passport.legend',
+      hintKey: 'presentation.passport.hint'
+    }
+  ],
+  [
+    tattoo.id,
+    {
+      pageTitleKey: 'presentation.tattoo.pageTitle',
+      legendKey: 'presentation.tattoo.legend',
+      hintKey: 'presentation.tattoo.hint'
+    }
+  ],
+  [
+    earTag.id,
+    {
+      pageTitleKey: 'presentation.earTag.pageTitle',
+      legendKey: 'presentation.earTag.legend',
+      hintKey: 'presentation.earTag.hint'
+    }
+  ],
+  [
+    horseName.id,
+    {
+      pageTitleKey: 'presentation.horseName.pageTitle',
+      legendKey: 'presentation.horseName.legend',
+      hintKey: 'presentation.horseName.hint'
+    }
+  ],
+  [
+    identificationDetails.id,
+    {
+      pageTitleKey: 'presentation.identificationDetails.pageTitle',
+      legendKey: 'presentation.identificationDetails.legend',
+      hintKey: 'presentation.identificationDetails.hint'
+    }
+  ],
+  [
+    description.id,
+    {
+      pageTitleKey: 'presentation.description.pageTitle',
+      legendKey: 'presentation.description.legend',
+      hintKey: 'presentation.description.hint'
     }
   ],
   [
