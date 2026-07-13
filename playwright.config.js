@@ -6,6 +6,8 @@ import { defineConfig, devices } from '@playwright/test'
  * records a video, so after every iteration there is a fresh playback of each
  * journey. Run with `npm run test:prototype`.
  */
+const port = Number(process.env.PORT ?? 3000)
+
 export default defineConfig({
   testDir: './prototypes/e2e',
   testMatch: '**/*.spec.js',
@@ -19,7 +21,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${port}`,
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
     // Slow each action down so the demo video is watchable. Override with
@@ -40,7 +42,7 @@ export default defineConfig({
     // A stable, pre-built one-shot server (not the watch-mode dev server, which
     // answers before assets are built and can restart under test load).
     command: 'npm run prototype:serve',
-    url: 'http://localhost:3000/prototype',
+    url: `http://localhost:${port}/prototype`,
     timeout: 180_000,
     reuseExistingServer: false
   }

@@ -1,3 +1,4 @@
+import * as importTypeFilter from './features/import-type-filter/obligations.js'
 import * as origin from './features/origin/obligations.js'
 import * as commodities from './features/commodities/obligations.js'
 import * as importReason from './features/import-reason/obligations.js'
@@ -12,6 +13,7 @@ import * as declaration from './features/declaration/obligations.js'
 import { pathKey, valueAt } from './lib/path.js'
 
 const all = [
+  ...importTypeFilter.obligations,
   ...origin.obligations,
   ...commodities.obligations,
   ...importReason.obligations,

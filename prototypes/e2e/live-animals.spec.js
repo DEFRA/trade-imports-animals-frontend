@@ -214,6 +214,62 @@ test.describe('live-animals (page-owned spine)', () => {
     await startNotification(page)
   })
 
+  test('import type — a blank answer blocks Continue, a non-live-animals answer routes to the holding page, live animals proceeds', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // The entry filter is the service front door (c-032). Until the linear
+    // opening run lands (inc-060) nothing links to it, so navigate directly.
+    await page.goto(`${BASE}/import-type`)
+    await expect(
+      page.getByRole('heading', { name: 'What are you importing?' })
+    ).toBeVisible()
+
+    // importType is enforcedAt=continue — a blank Continue must fail.
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Select what you are importing' })
+    ).toBeVisible()
+
+    // A non-live-animals type routes to the not-available holding page.
+    await page
+      .getByRole('radio', {
+        name: 'Products of animal origin or animal by-products'
+      })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'You cannot use this service' })
+    ).toBeVisible()
+
+    // The holding page offers a way back to change the answer.
+    await page
+      .getByRole('link', { name: 'Go back and change your answer' })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'What are you importing?' })
+    ).toBeVisible()
+
+    // Live animals proceeds into the journey (the hub until inc-060 rewires
+    // the opening run), and the answer persists on return.
+    await page
+      .getByRole('radio', { name: 'Live animals or germinal products' })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+
+    await page.goto(`${BASE}/import-type`)
+    await expect(
+      page.getByRole('radio', { name: 'Live animals or germinal products' })
+    ).toBeChecked()
+  })
+
   test('origin — blank country blocks Save and Continue, then the happy path completes the task', async ({
     page
   }) => {

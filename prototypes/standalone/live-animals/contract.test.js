@@ -18,6 +18,7 @@ import { isAnswered } from './lib/answered.js'
 import { satisfied } from './engine/evaluate/complete.js'
 import { dispatchPages } from './features/index.js'
 
+import * as importTypeFilter from './features/import-type-filter/controller.js'
 import * as origin from './features/origin/controller.js'
 import * as commoditiesList from './features/commodities/list.controller.js'
 import * as commoditiesSelect from './features/commodities/select.controller.js'
@@ -56,6 +57,12 @@ const committableCollects = (collects) =>
   })
 
 const cases = [
+  {
+    id: 'import-type-filter',
+    collects: importTypeFilter.meta.collects,
+    handler: postHandlerOf(importTypeFilter),
+    payload: { importType: 'live-animals' }
+  },
   {
     id: 'origin',
     collects: origin.meta.collects,

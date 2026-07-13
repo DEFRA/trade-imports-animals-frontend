@@ -1,4 +1,5 @@
 import { dashboardPage } from '../features/dashboard/page.js'
+import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { originPage } from '../features/origin/page.js'
 import { commoditiesPage } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
@@ -21,7 +22,7 @@ import { declarationPage } from '../features/declaration/page.js'
 export const sections = [
   {
     id: 'start',
-    pages: [dashboardPage]
+    pages: [dashboardPage, importTypeFilterPage]
   },
   {
     id: 'origin',

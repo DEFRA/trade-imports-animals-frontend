@@ -1,4 +1,5 @@
 import * as dashboard from './dashboard/controller.js'
+import * as importTypeFilter from './import-type-filter/controller.js'
 import * as hub from './hub/controller.js'
 import * as origin from './origin/controller.js'
 import * as commoditiesList from './commodities/list.controller.js'
@@ -30,6 +31,7 @@ import * as resume from './resume/controller.js'
 
 /** The pages whose page-side `collects` build the obligation->page index. */
 export const dispatchPages = [
+  importTypeFilter.meta,
   origin.meta,
   commoditiesList.meta,
   importReason.meta,
@@ -49,6 +51,7 @@ export const dispatchPages = [
 
 export const allRoutes = [
   ...dashboard.routes,
+  ...importTypeFilter.routes,
   ...hub.routes,
   ...origin.routes,
   ...commoditiesList.routes,
