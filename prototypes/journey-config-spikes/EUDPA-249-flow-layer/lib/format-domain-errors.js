@@ -1,0 +1,164 @@
+/**
+ * Convert domain-layer error records into the { errorList, fieldErrors }
+ * shape the GOV.UK error summary + inline error macros consume.
+ *
+ * Domain errors look like:
+ *   { code, obligation, path?, max?, min?, actual?, invalid?, options? }
+ *
+ * The rendered text is derived from a small per-code dispatcher; the
+ * `href` is the fragment link into the field's rendered id
+ * (`#<obligationName>` for singletons; `#<obligationName>-<path>` for
+ * per-record fields).
+ *
+ * Copy for every dispatcher lives in `locales/en.json` under
+ * `errors.domain.*`; the dispatcher chooses a key + supplies params
+ * (`{max}`, `{actual}` etc.) and `t()` handles interpolation. See
+ * `FORMAT_ERROR_KEYS` for the list the coverage test walks.
+ */
+
+import { t } from './i18n.js'
+
+const COPY = {
+  'domain.enum.notInOptions': (error) => {
+    // Two variants — one that includes the invalid selection(s) and a
+    // plain fallback. Picked in JS because the two templates are
+    // structurally different, not just parametrically.
+    const key =
+      error.options && error.options.length
+        ? 'errors.domain.enumNotInOptions.withInvalid'
+        : 'errors.domain.enumNotInOptions.plain'
+    return t(key, { invalid: error.invalid?.join(', ') ?? '' })
+  },
+  'domain.string.maxLength': (error) =>
+    t('errors.domain.stringMaxLength', {
+      max: error.max,
+      actual: error.actual
+    }),
+  'domain.string.required': () => t('errors.domain.stringRequired'),
+  'domain.integer.min': (error) =>
+    t('errors.domain.integerMin', { min: error.min ?? 1 }),
+  'domain.integer.maxDigits': (error) =>
+    t('errors.domain.integerMaxDigits', { maxDigits: error.maxDigits }),
+  'domain.date.format': () => t('errors.domain.dateFormat'),
+  'domain.array.maxSelections': (error) =>
+    t('errors.domain.arrayMaxSelections', {
+      max: error.max,
+      actual: error.actual
+    }),
+  'domain.numberOfAnimals.speciesCap': (error) =>
+    t('errors.domain.numberOfAnimalsSpeciesCap', {
+      max: error.max,
+      actual: error.actual
+    }),
+  // Per-sub-field V4 rules on the standard address block (step 5e).
+  // Note: `addressSubFieldRequired` was retired when the addressBlock
+  // predicate switched to interpretation A (validate only user-
+  // supplied sub-fields). Completeness of required sub-fields is
+  // enforced at CYA time via `cya.promptCompleteAddress`, not by a
+  // page-save error.
+  'domain.address.subFieldMaxLength': (error) =>
+    t('errors.domain.addressSubFieldMaxLength', {
+      subField: t(`presentation.address.subField.${error.subField}`),
+      max: error.max,
+      actual: error.actual
+    }),
+  'domain.address.subFieldEmailFormat': (error) =>
+    t('errors.domain.addressSubFieldEmailFormat', {
+      subField: t(`presentation.address.subField.${error.subField}`)
+    }),
+  'domain.address.subFieldEnumInvalid': (error) =>
+    t('errors.domain.addressSubFieldEnumInvalid', {
+      subField: t(`presentation.address.subField.${error.subField}`)
+    })
+}
+
+/**
+ * List of every message key referenced from the COPY dispatchers.
+ * Exported so `i18n-coverage.test.js` can walk it and assert each
+ * key resolves in `locales/en.json` without having to run every
+ * dispatcher.
+ */
+export const FORMAT_ERROR_KEYS = [
+  'errors.domain.enumNotInOptions.plain',
+  'errors.domain.enumNotInOptions.withInvalid',
+  'errors.domain.stringMaxLength',
+  'errors.domain.stringRequired',
+  'errors.domain.integerMin',
+  'errors.domain.integerMaxDigits',
+  'errors.domain.dateFormat',
+  'errors.domain.arrayMaxSelections',
+  'errors.domain.numberOfAnimalsSpeciesCap',
+  'errors.domain.addressSubFieldMaxLength',
+  'errors.domain.addressSubFieldEmailFormat',
+  'errors.domain.addressSubFieldEnumInvalid',
+  'errors.domain.unknownCode',
+  'errors.defaultRequired'
+]
+
+export function textFor(error) {
+  // Flow-level errors (e.g. code: 'flow.required') carry a pre-resolved
+  // `message` string from the flow declaration — already looked up via
+  // `t()` at the call site (see contract.js validatePagePayload).
+  // Prefer it over the code-keyed COPY table so flow authors own
+  // their wording without polluting the domain-error copy.
+  if (error.message) return error.message
+  const copy = COPY[error.code]
+  if (copy) return copy(error)
+  return t('errors.domain.unknownCode', { code: error.code })
+}
+
+// 2nd-code-review #13: gate the `__${subField}` anchor extension on
+// KNOWN address-block error codes. Prevents a rogue caller that sets
+// error.subField on a non-composite error from producing a broken
+// anchor like `#countryOfOrigin__something`.
+const ADDRESS_ERROR_CODES = new Set([
+  'domain.address.subFieldRequired',
+  'domain.address.subFieldMaxLength',
+  'domain.address.subFieldEmailFormat',
+  'domain.address.subFieldEnumInvalid'
+])
+
+/**
+ * hrefFor — computes the fragment link. If we're rendering a
+ * per-record page, the field id includes the path so the fragment
+ * navigates precisely to that record's input.
+ */
+export function hrefFor(error) {
+  // Address-block sub-field errors anchor at the specific sub-input
+  // (`${obligation}__${subField}` for singletons or
+  // `${obligation}-${path}__${subField}` for line-scoped composites)
+  // so the error summary jumps straight to the missing input.
+  const base = error.path
+    ? `${error.obligation}-${error.path}`
+    : error.obligation
+  const useSubField = error.subField && ADDRESS_ERROR_CODES.has(error.code)
+  const anchor = useSubField ? `${base}__${error.subField}` : base
+  return `#${anchor}`
+}
+
+/**
+ * formatDomainErrors — takes an array of domain-error records, returns
+ * `{ errorList, fieldErrors }`. Mirrors `formatValidationErrors` in
+ * `src/server/common/helpers/validation-helpers.js` so the same GOV.UK
+ * error-summary macro works unchanged.
+ */
+export function formatDomainErrors(errors) {
+  const errorList = []
+  const fieldErrors = {}
+  for (const error of errors) {
+    const text = textFor(error)
+    const href = hrefFor(error)
+    errorList.push({ text, href })
+    const base = error.path
+      ? `${error.obligation}-${error.path}`
+      : error.obligation
+    // Address sub-field errors get a per-sub-input key so the widget
+    // renders the inline error on the exact input the user missed.
+    // Same #13 gate as hrefFor above: only extend the key when the
+    // error code is an address-family code.
+    const useSubField = error.subField && ADDRESS_ERROR_CODES.has(error.code)
+    const key = useSubField ? `${base}__${error.subField}` : base
+    fieldErrors[key] = { text }
+  }
+  return { errorList, fieldErrors }
+}

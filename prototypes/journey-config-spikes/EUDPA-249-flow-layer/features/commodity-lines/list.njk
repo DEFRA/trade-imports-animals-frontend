@@ -1,0 +1,47 @@
+{# Commodity-lines index — line-major. One summary block per line
+   with per-row Change links (to that line's specific page) and a
+   per-line Delete form. Add-a-line button mints a new line and
+   redirects into its first per-line page (see linesAddController). #}
+
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  {% if lead %}<p class="govuk-body">{{ lead }}</p>{% endif %}
+
+  {% if lines and lines.length %}
+    {% for line in lines %}
+      <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ line.title }}</h2>
+      {{ govukSummaryList({ rows: line.rows }) }}
+      {% if line.manageAnimalsHref %}
+        <p class="govuk-body">
+          <a class="govuk-link" href="{{ line.manageAnimalsHref }}">{{ line.manageAnimalsText }}</a>
+        </p>
+      {% endif %}
+      <form method="post" action="{{ line.deleteHref }}" novalidate class="govuk-!-margin-bottom-6">
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        {{ govukButton({
+          text: line.deleteButtonText,
+          classes: "govuk-button--warning govuk-button--secondary",
+          attributes: { "aria-label": line.deleteVisuallyHiddenText }
+        }) }}
+      </form>
+    {% endfor %}
+  {% else %}
+    <p class="govuk-body">{{ emptyText }}</p>
+  {% endif %}
+
+  <form method="post" action="{{ addHref }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: addButtonText, classes: "govuk-button--secondary" }) }}
+  </form>
+
+  {% if backLink %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ backLink }}">{{ backLinkText }}</a>
+    </p>
+  {% endif %}
+{% endblock %}

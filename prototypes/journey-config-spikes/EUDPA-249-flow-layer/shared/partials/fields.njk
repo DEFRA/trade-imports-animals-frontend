@@ -1,0 +1,50 @@
+{# Adapted from prototype-layouts (obligations-standalone-spike/templates/partials/fields.njk).
+
+   The generic field-widget dispatch macro. Every FieldViewItem —
+     { type: 'input' | 'textarea' | 'date' | 'radios' | 'checkboxes' | 'select',
+       args: <govuk macro arguments> }
+   — renders as exactly one govuk macro call. #}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+
+{% macro field(item) %}
+  {% if item.type == 'radios' %}
+    {{ govukRadios(item.args) }}
+  {% elif item.type == 'checkboxes' %}
+    {{ govukCheckboxes(item.args) }}
+  {% elif item.type == 'select' %}
+    {{ govukSelect(item.args) }}
+  {% elif item.type == 'date' %}
+    {{ govukDateInput(item.args) }}
+  {% elif item.type == 'textarea' %}
+    {{ govukTextarea(item.args) }}
+  {% elif item.type == 'address' %}
+    <div class="govuk-form-group{% if item.args.hasErrors %} govuk-form-group--error{% endif %}">
+      {% call govukFieldset({ legend: item.args.legend or { text: '' }, describedBy: item.args.describedBy }) %}
+        {% if item.args.hint %}
+          <div id="{{ item.args.hint.id }}" class="govuk-hint">{{ item.args.hint.text }}</div>
+        {% endif %}
+        {% for sub in item.args.subFields %}
+          {% if sub.widget == 'select' %}
+            {{ govukSelect(sub) }}
+          {% else %}
+            {{ govukInput(sub) }}
+          {% endif %}
+        {% endfor %}
+      {% endcall %}
+    </div>
+  {% else %}
+    {{ govukInput(item.args) }}
+  {% endif %}
+{% endmacro %}
+
+{% macro renderFields(fields) %}
+  {% for item in fields %}
+    {{ field(item) }}
+  {% endfor %}
+{% endmacro %}

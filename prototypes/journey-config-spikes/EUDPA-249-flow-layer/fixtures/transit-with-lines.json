@@ -1,0 +1,16 @@
+{
+  "description": "Transit journey with one commodity line for cattle.",
+  "fulfilments": {
+    "countryOfOrigin": "FR",
+    "regionCodeRequirement": "no",
+    "regionCode": "FR-75",
+    "reasonForImport": "transit-through-eu",
+    "transporterType": "commercial",
+    "meansOfTransport": "road-vehicle",
+    "arrivalDateAtPort": "12/12/2026",
+    "portOfEntry": "DVR",
+    "commodityCode": { "line1": "0102" },
+    "species": { "line1": ["cattle"] },
+    "numberOfAnimals": { "line1": 25 }
+  }
+}

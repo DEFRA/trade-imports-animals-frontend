@@ -1,0 +1,11 @@
+{# Adapted from prototype-layouts (obligations-standalone-spike/templates/partials/error-summary.njk).
+
+   Standard GDS error summary. errorSummary = [{ text, href }]. #}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% if errorSummary and errorSummary.length %}
+  {{ govukErrorSummary({
+    titleText: chrome.errorSummaryTitle,
+    errorList: errorSummary
+  }) }}
+{% endif %}

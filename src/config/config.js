@@ -246,9 +246,9 @@ export const config = convict({
   },
   auth: {
     enabled: {
-      doc: 'Enable authentication (Bell + session cookie)',
+      doc: 'Enable authentication (Bell + session cookie). Defaults on in production and during tests; off in local dev so `npm run dev` does not require the Defra ID stub to boot. Set AUTH_ENABLED=true to force it on locally.',
       format: Boolean,
-      default: true,
+      default: !isDevelopment,
       env: 'AUTH_ENABLED'
     }
   },
@@ -339,6 +339,16 @@ export const config = convict({
       format: String,
       default: 'http://localhost:8086',
       env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
+    }
+  },
+  prototype: {
+    eudpa249: {
+      enabled: {
+        doc: 'Mount the EUDPA-249 flow-layer browsable prototype under /prototype/eudpa-249/*',
+        format: Boolean,
+        default: !isProduction,
+        env: 'PROTOTYPE_EUDPA249_ENABLED'
+      }
     }
   }
 })

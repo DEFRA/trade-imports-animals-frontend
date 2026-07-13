@@ -1,0 +1,9 @@
+{
+  "description": "Country + region-code-requirement + reason filled with reason = internal-market. Purpose still to do.",
+  "fulfilments": {
+    "countryOfOrigin": "FR",
+    "regionCodeRequirement": "no",
+    "regionCode": "FR-75",
+    "reasonForImport": "internal-market"
+  }
+}

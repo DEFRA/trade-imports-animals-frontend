@@ -1,0 +1,34 @@
+{# Adapted from prototype-layouts (obligations-standalone-spike/templates/hub.njk).
+
+   Task-list hub. One item per subsection (grouped by section heading);
+   each item shows status and links to its first navigable page. #}
+
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+
+  {% if lead %}<p class="govuk-body">{{ lead }}</p>{% endif %}
+
+  <p class="govuk-body">{{ progressLine }}</p>
+
+  {% for section in sections %}
+    <h2 class="govuk-heading-l">{{ section.title }}</h2>
+    {{ govukTaskList({ items: section.items }) }}
+  {% endfor %}
+
+  {% if cyaHref %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ cyaHref }}">{{ cyaLinkText }}</a>
+    </p>
+  {% endif %}
+
+  {% if resetHref %}
+    <form method="post" action="{{ resetHref }}" novalidate class="govuk-!-margin-top-6">
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ govukButton({ text: resetButtonText, classes: "govuk-button--warning" }) }}
+    </form>
+  {% endif %}
+{% endblock %}
