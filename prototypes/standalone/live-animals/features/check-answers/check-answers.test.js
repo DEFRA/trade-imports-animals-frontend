@@ -171,7 +171,7 @@ describe('#buildRows (check-answers GET)', () => {
         /\/import-purpose\?change=1$/
       )
       expect(changeHrefOf(rows, 'Transited countries')).toMatch(
-        /\/transport-details\?change=1$/
+        /\/transit-countries\?change=1$/
       )
       expect(changeHrefOf(rows, 'Commercial transporter')).toMatch(
         /\/transporters\/select\?change=1$/

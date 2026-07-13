@@ -8,6 +8,11 @@ export const transportDetailsPage = {
   slug: 'transport-details'
 }
 
+export const transitCountriesPage = {
+  id: 'transit-countries',
+  slug: 'transit-countries'
+}
+
 export const transportersPage = {
   id: 'transporters',
   slug: 'transporters'

@@ -37,6 +37,7 @@ import * as importersSelect from './features/addresses/importers-select.controll
 import * as cphNumber from './features/cph-number/controller.js'
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as transportDetails from './features/transport/transport-details.controller.js'
+import * as transitCountries from './features/transport/transit-countries.controller.js'
 import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
 import * as privateTransporterDetails from './features/transport/private-transporter-details.controller.js'
@@ -119,9 +120,15 @@ const cases = [
     payload: {
       meansOfTransport: 'Road Vehicle',
       transportIdentification: 'FR-892-LK',
-      transportDocumentReference: 'CMR-2026-884721',
-      transitedCountries: ['FR', 'BE']
+      transportDocumentReference: 'CMR-2026-884721'
     }
+  },
+  {
+    id: 'transit-countries',
+    collects: transitCountries.meta.collects,
+    handler: postHandlerOf(transitCountries),
+    seed: { meansOfTransport: 'Road Vehicle' },
+    payload: { transitedCountries: ['FR', 'BE'] }
   },
   {
     id: 'transporters',

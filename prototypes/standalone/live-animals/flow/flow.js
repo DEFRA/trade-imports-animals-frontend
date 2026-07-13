@@ -11,6 +11,7 @@ import { cphNumberPage } from '../features/cph-number/page.js'
 import {
   portOfEntryPage,
   privateTransporterDetailsPage,
+  transitCountriesPage,
   transportDetailsPage,
   transportersPage,
   transportersSelectPage
@@ -49,6 +50,7 @@ export const sections = [
     pages: [
       portOfEntryPage,
       transportDetailsPage,
+      transitCountriesPage,
       transportersPage,
       transportersSelectPage,
       privateTransporterDetailsPage

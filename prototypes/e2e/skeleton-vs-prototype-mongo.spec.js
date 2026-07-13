@@ -170,7 +170,8 @@ const drivePrototype = async (page) => {
   await page.getByLabel('County Parish Holding (CPH)').fill(shared.cph)
   await save()
 
-  // Transport — port, arrival date, travel details, transporter.
+  // Transport — port, arrival date, travel details, transit countries,
+  // transporter.
   await task('Transport')
   await page
     .getByLabel('What is the port of entry into Great Britain?')
@@ -182,15 +183,18 @@ const drivePrototype = async (page) => {
   await page
     .getByRole('radio', { name: values.meansOfTransport, exact: true })
     .check()
-  const roadReveal = page.locator('#conditional-meansOfTransport-road-vehicle')
-  await roadReveal.getByRole('checkbox', { name: 'France' }).check()
-  await roadReveal.getByRole('checkbox', { name: 'Belgium' }).check()
   await page
     .getByLabel('Transport identification')
     .fill(values.transportIdentification)
   await page
     .getByLabel('Transport document reference')
     .fill(values.transportDocumentReference)
+  await save()
+  // One country in a single save: Mapper A (the skeleton-exact parity pin)
+  // does not round-trip meansOfTransport/transitedCountries between requests,
+  // so the add-another round-trip cannot retain a selection in real mode —
+  // and the skeleton-shape compare never includes transited countries anyway.
+  await page.getByLabel('Enter all countries').selectOption({ label: 'France' })
   await save()
   await page
     .getByRole('radio', { name: values.transporterType, exact: true })

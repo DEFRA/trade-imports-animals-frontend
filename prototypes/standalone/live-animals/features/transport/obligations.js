@@ -16,6 +16,7 @@ export const transportDocumentReference = {
 
 export const transitedCountries = {
   id: 'transitedCountries',
+  required: true,
   activatedBy: {
     obligation: meansOfTransport,
     includes: ['Railway', 'Road Vehicle']
