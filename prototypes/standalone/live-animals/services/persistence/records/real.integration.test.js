@@ -6,7 +6,7 @@ import { runsIt } from '../it-mode.js'
 // Gated backend integration test for the REAL records adapter (S3c).
 //
 // The adapter defaults to Mapper A (skeleton-exact, storable-only:
-// answersToTargetNotification / targetNotificationToAnswers). Mapper A maps
+// answersToNotification / notificationToAnswers). Mapper A maps
 // only the backend-storable set, so the storable answers below (species
 // earTag/passport, the collapsed transporter object, the party addresses) must
 // round-trip through the real backend; the Stage-2 extras (regionCode, purpose,
@@ -20,6 +20,9 @@ import { runsIt } from '../it-mode.js'
 // http://localhost:8085):
 //
 //   LIVE_ANIMALS_IT=real npm run test:live-animals -- real.integration
+//
+// The Mapper B case additionally requires the branch's extended backend (a
+// dev-mode stack build with the additive extras fields), not the :latest image.
 //
 // There is no records.clear() against a real Mongo, so every case mints its
 // own journey and derives unique userIds from a per-run prefix.
@@ -195,6 +198,92 @@ describe.skipIf(!runsIt('real'))(
         await records.load({ journeyId: 'GBN-AG-99-ZZZZZZ' })
       ).toBeUndefined()
       expect(await records.has('GBN-AG-99-ZZZZZZ')).toBe(false)
+    })
+
+    it('Should persist the Mapper B extras through the extended backend and re-read them', async () => {
+      // The mapper selector reads LIVE_ANIMALS_MAPPER at call time, so opt
+      // into Mapper B for this case only and restore the default afterwards —
+      // the other cases must keep running under Mapper A.
+      const previousMapper = process.env.LIVE_ANIMALS_MAPPER
+      process.env.LIVE_ANIMALS_MAPPER = 'b'
+      try {
+        const { journeyId } = await records.create({ userId: uniqueUserId() })
+
+        const answers = {
+          countryOfOrigin: 'FR',
+          regionOfOriginCode: 'FR-75',
+          purposeInInternalMarket: 'breeding',
+          meansOfTransport: 'Road Vehicle',
+          transportIdentification: 'FR-892-LK',
+          transportDocumentReference: 'CMR-2026-884721',
+          transitedCountries: ['FR', 'BE'],
+          transporterType: 'Commercial',
+          commercialTransporter: {
+            name: 'Transporter Co',
+            approvalNumber: 'UK/NEWCA/T1/00090953',
+            address: {
+              addressLine1: '7 Route One',
+              city: 'Dover',
+              country: 'GB'
+            }
+          },
+          documents: [
+            {
+              accompanyingDocumentType: 'ITAHC',
+              accompanyingDocumentAttachmentType: 'PDF',
+              accompanyingDocumentReference: 'GBHC1234567890',
+              accompanyingDocumentDateOfIssue: '2025-12-12'
+            }
+          ],
+          commodityLines: [
+            {
+              commoditySelection: 'Cow',
+              typeSelection: 'Domestic',
+              speciesSelection: ['1148346'],
+              numberOfPackages: '3',
+              numberOfAnimalsQuantity: '5',
+              animalIdentifiers: [
+                {
+                  animalIdentifierEarTag: 'UK123456700001',
+                  animalIdentifierPassport: 'PP-001',
+                  animalIdentifierTattoo: 'AB1234',
+                  horseName: 'Dobbin',
+                  animalIdentifierIdentificationDetails: 'Chip 981000012345678',
+                  animalIdentifierDescription: 'Brown cow'
+                }
+              ]
+            }
+          ]
+        }
+
+        await records.saveAnswers(journeyId, answers)
+        const loaded = await records.load({ journeyId })
+
+        // The extras have backend homes on the extended backend and survive.
+        expect(loaded.answers.regionOfOriginCode).toBe('FR-75')
+        expect(loaded.answers.purposeInInternalMarket).toBe('breeding')
+        expect(loaded.answers.meansOfTransport).toBe('Road Vehicle')
+        expect(loaded.answers.transportIdentification).toBe('FR-892-LK')
+        expect(loaded.answers.transportDocumentReference).toBe(
+          'CMR-2026-884721'
+        )
+        expect(loaded.answers.transitedCountries).toEqual(['FR', 'BE'])
+        expect(loaded.answers.documents).toEqual(answers.documents)
+        // The full identifier unit round-trips, including the fields Mapper A
+        // drops (tattoo, horseName, identificationDetails, description).
+        expect(loaded.answers.commodityLines[0].animalIdentifiers).toEqual(
+          answers.commodityLines[0].animalIdentifiers
+        )
+        // commodityCode ('0102') now persists, so commoditySelection is
+        // recovered from the code, not just the commodity name.
+        expect(loaded.answers.commodityLines[0].commoditySelection).toBe('Cow')
+      } finally {
+        if (previousMapper === undefined) {
+          delete process.env.LIVE_ANIMALS_MAPPER
+        } else {
+          process.env.LIVE_ANIMALS_MAPPER = previousMapper
+        }
+      }
     })
   }
 )
