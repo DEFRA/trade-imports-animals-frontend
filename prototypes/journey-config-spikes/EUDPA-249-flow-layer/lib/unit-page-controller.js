@@ -78,10 +78,22 @@ function obligationInScopeForUnit(page, state, lineId, unitId) {
 
 // Line-scoped fieldsForPage takes an { lineId }; the unit variant
 // wants the composite path key so descriptors are filtered to just
-// this (line, unit) record.
-function fieldsForUnit(page, state, fieldErrors, lineId, unitId) {
+// this (line, unit) record. `submittedValues` (optional) forwards
+// the just-submitted `values` map on the POST-error branch so the
+// re-render preserves what the user typed.
+function fieldsForUnit(
+  page,
+  state,
+  fieldErrors,
+  lineId,
+  unitId,
+  submittedValues = null
+) {
   const compositeKey = `${lineId}/${unitId}`
-  return fieldsForPage(page, state, fieldErrors, { lineId: compositeKey })
+  return fieldsForPage(page, state, fieldErrors, {
+    lineId: compositeKey,
+    submittedValues
+  })
 }
 
 export function makeUnitPageController(page) {
@@ -124,12 +136,14 @@ export function makeUnitPageController(page) {
           lineId: compositeKey
         })
         if (!result.ok) {
+          // Preserve user input on re-render (see page-controller.js).
           const descriptors = fieldsForUnit(
             page,
             state,
             result.fieldErrors,
             lineId,
-            unitId
+            unitId,
+            result.values
           )
           return h
             .view('shared/page', {

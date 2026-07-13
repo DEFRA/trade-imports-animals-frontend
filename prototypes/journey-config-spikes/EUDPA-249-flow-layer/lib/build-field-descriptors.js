@@ -42,13 +42,25 @@ function readValue(entry, state) {
 }
 
 /**
- * buildFieldDescriptors(page, state, fieldErrors?)
+ * buildFieldDescriptors(page, state, fieldErrors?, submittedValues?)
  *   → [{ obligation, path, mandatoryToProceed, errors, widget, view }]
  *
  * `fieldErrors` (optional) is the `{ [id]: { text } }` map from
  * formatDomainErrors — one entry is injected into each rule's build ctx.
+ *
+ * `submittedValues` (optional) is the `values` map from
+ * `contract.validatePagePayload` — `{ [id]: { obligation, path, value } }`.
+ * When present, the widget's `value` is taken from THIS map instead of
+ * from the stored state so a POST-error re-render preserves what the
+ * user just typed. Without it, the widget falls back to `readValue`
+ * (stored state) — the GET path.
  */
-export function buildFieldDescriptors(page, state, fieldErrors = {}) {
+export function buildFieldDescriptors(
+  page,
+  state,
+  fieldErrors = {},
+  submittedValues = null
+) {
   const entries = expandPresents(page, state)
   const out = []
   for (const entry of entries) {
@@ -62,7 +74,12 @@ export function buildFieldDescriptors(page, state, fieldErrors = {}) {
             path: entry.path
           })
         : []
-    const value = readValue(entry, state)
+    // Prefer the just-submitted value (POST-error re-render) over the
+    // stored value (GET / first render). Preserves user input on
+    // validation failure — fixes 2nd-code-review finding #8.
+    const value = submittedValues?.[id]
+      ? submittedValues[id].value
+      : readValue(entry, state)
     const error = fieldErrors[id]?.text
     const chosen = pickWidget({
       obligation: entry.obligation,

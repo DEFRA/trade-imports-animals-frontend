@@ -194,7 +194,17 @@ export function groupInvariantErrorsForState(state) {
 // ---------------------------------------------------------------------------
 
 export function fieldsForPage(page, state, fieldErrors = {}, options = {}) {
-  const all = buildFieldDescriptors(page, state, fieldErrors)
+  // `options.submittedValues` (optional) — pass through the
+  // just-submitted values so a POST-error re-render shows the user's
+  // typed input rather than the stored (or blank) state. See
+  // buildFieldDescriptors for the semantics; page controllers pass
+  // this on their 400 branch.
+  const all = buildFieldDescriptors(
+    page,
+    state,
+    fieldErrors,
+    options.submittedValues ?? null
+  )
   if (options.lineId == null) return all
   // Line-scoped rendering: filter presentsForEach-expanded descriptors
   // to just the target line so /lines/{id}/... only shows one field.

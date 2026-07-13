@@ -67,7 +67,12 @@ export function makePageController(page) {
         const state = readState(request)
         const result = validatePagePayload(page, request.payload, state)
         if (!result.ok) {
-          const descriptors = fieldsForPage(page, state, result.fieldErrors)
+          // Preserve user input on re-render: pass the submitted
+          // `values` map through so widgets show what the user just
+          // typed, not the stored (or blank) state.
+          const descriptors = fieldsForPage(page, state, result.fieldErrors, {
+            submittedValues: result.values
+          })
           return h
             .view('shared/page', {
               chrome: chrome(),

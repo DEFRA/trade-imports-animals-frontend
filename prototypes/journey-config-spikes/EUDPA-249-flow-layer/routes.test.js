@@ -409,6 +409,44 @@ describe('page-controller — address-block composite widget (commercialTranspor
     expect(cya.payload).toContain('Complete the Commercial transporter address')
   })
 
+  it('POST with a bad sub-field re-renders 400 preserving every typed sub-field (composite input preserved)', async () => {
+    // Regression against the 2nd-code-review finding #8: pre-fix,
+    // any POST error re-render read the STORED state and wiped every
+    // sub-field the user had just typed. Fix in build-field-descriptors
+    // pulls the value from result.values (submittedValues) instead.
+    // See lib/build-field-descriptors.js.
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-details',
+      payload: {
+        commercialTransporter__name: 'ACME',
+        commercialTransporter__transporterAuthorisationNumber:
+          'UK/AUTH/2026/001',
+        commercialTransporter__addressLine1: 'Farm Lane',
+        commercialTransporter__town: 'Exeter',
+        commercialTransporter__postcode: 'EX1 1AA',
+        commercialTransporter__country: 'GB',
+        commercialTransporter__telephone: '+44 1234 567890',
+        // Bad email — no `@` — will fire addressSubFieldEmailFormat.
+        commercialTransporter__email: 'not-an-email'
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    // Each govukInput renders `value="..."` — verify every typed
+    // sub-field is preserved verbatim.
+    expect(res.payload).toContain('value="ACME"')
+    expect(res.payload).toContain('value="UK/AUTH/2026/001"')
+    expect(res.payload).toContain('value="Farm Lane"')
+    expect(res.payload).toContain('value="Exeter"')
+    expect(res.payload).toContain('value="EX1 1AA"')
+    expect(res.payload).toContain('value="+44 1234 567890"')
+    expect(res.payload).toContain('value="not-an-email"')
+    // Country is a govukSelect — GB shows as `selected`.
+    expect(res.payload).toMatch(/value="GB"[^>]*selected/)
+  })
+
   it('POST with all sub-fields filled redirects to the next page', async () => {
     const jar = makeCookieJar()
     await setUpCommercial(jar)
@@ -626,6 +664,40 @@ describe('line-page-controller — species-details (line-scoped rendering)', () 
     })
     expect(res.statusCode).toBe(302)
     expect(res.headers.location).toBe('/prototype/eudpa-249/lines')
+  })
+
+  it('POST with an out-of-cap animal count re-renders 400 preserving the typed number (line-page controller)', async () => {
+    // Regression: same as the /pages/ finding but via the line-page
+    // controller path — proves the fix applies to /lines/{id}/{page}
+    // too. numberOfAnimals has a per-species cap; an over-cap
+    // integer fires a domain predicate error → 400 → the input
+    // should re-render with the typed value.
+    const jar = makeCookieJar()
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/lines/add',
+      payload: {}
+    })
+    // Set cattle so numberOfAnimals is in-scope and species-capped.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/lines/line1/commodity-details',
+      payload: { 'commodityCode-line1': '0102' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/lines/line1/species-details',
+      payload: { 'species-line1': ['cattle'] }
+    })
+    // Way over the per-species cap → domain predicate fires.
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/lines/line1/number-of-animals',
+      payload: { 'numberOfAnimals-line1': '9999999999' }
+    })
+    expect(res.statusCode).toBe(400)
+    // The govukInput's value attribute carries the typed number.
+    expect(res.payload).toContain('value="9999999999"')
   })
 
   it('GET after adding a cattle line renders one checkbox group with cattle-list options', async () => {

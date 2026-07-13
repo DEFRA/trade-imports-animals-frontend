@@ -104,8 +104,10 @@ export function makeLinePageController(page) {
           lineId
         })
         if (!result.ok) {
+          // Preserve user input on re-render (see page-controller.js).
           const descriptors = fieldsForPage(page, state, result.fieldErrors, {
-            lineId
+            lineId,
+            submittedValues: result.values
           })
           return h
             .view('shared/page', {
