@@ -22,8 +22,8 @@ const answersNow = async () => (await store.get(journeyId)).answers
 
 const line = (commoditySelection, extra = {}) => ({
   commoditySelection,
-  typeSelection: 'domestic',
-  speciesSelection: ['bos-taurus'],
+  typeSelection: 'Domestic',
+  speciesSelection: ['1148346'],
   numberOfAnimalsQuantity: '25',
   ...extra
 })
@@ -45,7 +45,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       buildRequest(),
       stubH(),
       ['commodityLines'],
-      { commoditySelection: '0102 - Cattle' }
+      { commoditySelection: 'Cow' }
     )
     expect(first).toBe(0)
     const second = await appendEntryAt(
@@ -56,24 +56,24 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     )
     expect(second).toBe(1)
     expect((await answersNow()).commodityLines).toEqual([
-      { commoditySelection: '0102 - Cattle' },
+      { commoditySelection: 'Cow' },
       { commoditySelection: '010420 - Goats' }
     ])
   })
 
   it('Should edit a commodity line in place, leaving siblings intact', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
+      commodityLines: [line('Cow'), line('010420 - Goats')]
     })
     await updateEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
       0,
-      line('0101 - Horse')
+      line('Horse')
     )
     expect((await answersNow()).commodityLines[0].commoditySelection).toBe(
-      '0101 - Horse'
+      'Horse'
     )
     expect((await answersNow()).commodityLines[1].commoditySelection).toBe(
       '010420 - Goats'
@@ -82,7 +82,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
 
   it('Should remove a commodity line in place, leaving siblings intact', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
+      commodityLines: [line('Cow'), line('010420 - Goats')]
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
     expect(
@@ -94,7 +94,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
 
   it('Should ignore a non-integer index on remove (a malformed URL must not destroy instance 0)', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle'), line('010420 - Goats')]
+      commodityLines: [line('Cow'), line('010420 - Goats')]
     })
     await removeEntryAt(
       buildRequest(),
@@ -106,67 +106,67 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       (await answersNow()).commodityLines.map(
         (entry) => entry.commoditySelection
       )
-    ).toEqual(['0102 - Cattle', '010420 - Goats'])
+    ).toEqual(['Cow', '010420 - Goats'])
   })
 
   it('Should ignore an out-of-range index on remove', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle')]
+      commodityLines: [line('Cow')]
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 5)
-    expect((await answersNow()).commodityLines).toEqual([line('0102 - Cattle')])
+    expect((await answersNow()).commodityLines).toEqual([line('Cow')])
   })
 
   it('Should ignore a non-integer index on update', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle')]
+      commodityLines: [line('Cow')]
     })
     await updateEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
       Number('foo'),
-      line('0301 - Fish')
+      line('Fish')
     )
-    expect((await answersNow()).commodityLines).toEqual([line('0102 - Cattle')])
+    expect((await answersNow()).commodityLines).toEqual([line('Cow')])
   })
 
   it('Should ignore an out-of-range index on update', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle')]
+      commodityLines: [line('Cow')]
     })
     await updateEntryAt(
       buildRequest(),
       stubH(),
       ['commodityLines'],
       5,
-      line('0301 - Fish')
+      line('Fish')
     )
-    expect((await answersNow()).commodityLines).toEqual([line('0102 - Cattle')])
+    expect((await answersNow()).commodityLines).toEqual([line('Cow')])
   })
 
   it('Should write through a commit that mutates a line, re-running reconcile and destroying the now-out-of-scope package count at its exact path', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle', { numberOfPackages: '5' })]
+      commodityLines: [line('Cow', { numberOfPackages: '5' })]
     })
     await commit(buildRequest(), stubH(), {
-      commodityLines: [line('0301 - Fish', { numberOfPackages: '5' })]
+      commodityLines: [line('Fish', { numberOfPackages: '5' })]
     })
     const persisted = (await records.load({ journeyId })).answers
-    expect(persisted.commodityLines[0].commoditySelection).toBe('0301 - Fish')
+    expect(persisted.commodityLines[0].commoditySelection).toBe('Fish')
     expect('numberOfPackages' in persisted.commodityLines[0]).toBe(false)
   })
 
   it('Should preserve an in-scope package count when a commit leaves the line on the list', async () => {
     await store.saveAnswers(journeyId, {
-      commodityLines: [line('0102 - Cattle', { numberOfPackages: '5' })]
+      commodityLines: [line('Cow', { numberOfPackages: '5' })]
     })
     await commit(buildRequest(), stubH(), {
-      commodityLines: [line('0102 - Cattle', { numberOfPackages: '9' })]
+      commodityLines: [line('Cow', { numberOfPackages: '9' })]
     })
     expect(
       (await records.load({ journeyId })).answers.commodityLines[0]
-    ).toEqual(line('0102 - Cattle', { numberOfPackages: '9' }))
+    ).toEqual(line('Cow', { numberOfPackages: '9' }))
   })
 })
 
@@ -188,7 +188,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     'animalIdentifiers'
   ]
   const catsLine = (units = []) => ({
-    commoditySelection: '01061900 - Cats',
+    commoditySelection: 'Cat',
     animalIdentifiers: units
   })
   const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
@@ -296,7 +296,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     await commit(buildRequest(), stubH(), {
       commodityLines: [
         {
-          commoditySelection: '0101 - Horse',
+          commoditySelection: 'Horse',
           animalIdentifiers: [
             { animalIdentifierPassport: 'UK-1', permanentAddress: address }
           ]

@@ -19,17 +19,17 @@ describe('path helpers', () => {
   it('Should read a value at a nested path', () => {
     const answers = {
       commodityLines: [
-        { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' }
+        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
       ]
     }
     expect(valueAt(answers, ['commodityLines', 0, 'commoditySelection'])).toBe(
-      '0102 - Cattle'
+      'Cow'
     )
     expect(
       valueAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
     ).toBe('25')
     expect(valueAt(answers, ['commodityLines'])).toEqual([
-      { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' }
+      { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
     ])
     expect(
       valueAt(answers, ['commodityLines', 5, 'commoditySelection'])
@@ -38,7 +38,7 @@ describe('path helpers', () => {
 
   it('Should set a value at a nested path without mutating the input', () => {
     const answers = {
-      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+      commodityLines: [{ commoditySelection: 'Cow' }]
     }
     const next = setAt(
       answers,
@@ -52,12 +52,12 @@ describe('path helpers', () => {
   it('Should delete a leaf key at a nested path', () => {
     const answers = {
       commodityLines: [
-        { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' }
+        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
       ]
     }
     deleteAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
     expect(answers.commodityLines[0]).toEqual({
-      commoditySelection: '0102 - Cattle'
+      commoditySelection: 'Cow'
     })
   })
 

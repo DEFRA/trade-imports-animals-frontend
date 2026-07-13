@@ -56,9 +56,7 @@ const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'Commodities' }).click()
   await page.getByRole('button', { name: 'Add a commodity' }).click()
-  await page
-    .getByLabel('Commodity', { exact: true })
-    .selectOption('01061900 - Cats')
+  await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(
     page.getByRole('heading', { name: 'Description of goods' })
@@ -108,7 +106,7 @@ const completeAnswerSections = async (page) => {
     .getByLabel('Commodity', { exact: true })
     .selectOption(line.commoditySelection)
   await page.getByRole('radio', { name: 'Domestic' }).check()
-  await page.getByRole('checkbox', { name: 'Bos taurus (Cattle)' }).check()
+  await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
   await save()
   await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
   await page
@@ -295,7 +293,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Commodity', { exact: true })
       .selectOption(line.commoditySelection)
     await page.getByRole('radio', { name: 'Domestic' }).check()
-    await page.getByRole('checkbox', { name: 'Bos taurus (Cattle)' }).check()
+    await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     // Second entry sub-page: the counts for the line just minted.
@@ -317,7 +315,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const row = page.locator('.govuk-summary-list__row', {
       hasText: 'Commodity 1'
     })
-    await expect(row).toContainText('0102 - Cattle — 25 animals')
+    await expect(row).toContainText('Cow — 25 animals')
 
     // Every commodity line owes at least one animal identifier unit (inc-035).
     // Open the nested loop hub from the line row and add a unit.
@@ -381,9 +379,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // taxonomy and counts are submit-enforced, so blank saves walk through).
     await page.getByRole('link', { name: 'Commodities' }).click()
     await page.getByRole('button', { name: 'Add a commodity' }).click()
-    await page
-      .getByLabel('Commodity', { exact: true })
-      .selectOption('01061900 - Cats')
+    await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Description of goods' })
@@ -1305,14 +1301,14 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // A non-triggering commodity (cats): the certified-for question shows, but
     // the notification-level unweaned-animals question is out of scope.
-    await addCommodity('01061900 - Cats')
+    await addCommodity('Cat')
     await openAdditionalDetails()
     await expect(certifiedFor).toBeVisible()
     await expect(unweaned).toBeHidden()
 
     // Adding a triggering commodity (cattle) brings the unweaned-animals
     // question into scope across the commodity lines (frame:"anyItem").
-    await addCommodity('0102 - Cattle')
+    await addCommodity('Cow')
     await openAdditionalDetails()
     await expect(certifiedFor).toBeVisible()
     await expect(unweaned).toBeVisible()
@@ -1372,14 +1368,14 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // A non-triggering commodity (cats): CPH is out of scope, so Continue from
     // the addresses landing returns straight to the hub — no CPH page.
-    await addCommodity('01061900 - Cats')
+    await addCommodity('Cat')
     await continueThroughAddresses()
     await expect(hubHeading).toBeVisible()
     await expect(cphHeading).toBeHidden()
 
     // Adding a triggering commodity (cattle) brings CPH into scope across the
     // commodity lines (frame:"anyItem") — the addresses section walks to it.
-    await addCommodity('0102 - Cattle')
+    await addCommodity('Cow')
     await continueThroughAddresses()
     await expect(cphHeading).toBeVisible()
   })
@@ -1469,7 +1465,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Commodity', { exact: true })
       .selectOption(line.commoditySelection)
     await page.getByRole('radio', { name: 'Domestic' }).check()
-    await page.getByRole('checkbox', { name: 'Bos taurus (Cattle)' }).check()
+    await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
     await save()
     await page
       .getByLabel('Number of animals')

@@ -12,7 +12,11 @@
 // obligations. It reuses Mapper A's builders and layers the extras on top; it is
 // not wired to the real POST beyond the storable set.
 
-import { speciesLabel } from '../../commodities/index.js'
+import {
+  speciesLabel,
+  commodityCodeFor,
+  commodityNameFor
+} from '../../commodities/index.js'
 
 const compact = (obj) => {
   const out = {}
@@ -319,7 +323,8 @@ const targetCommodityFromLines = (lines) => {
     commodityComplement: base.commodityComplement.map((complement, index) => {
       const line = lines[index]
       return compact({
-        commodityCode: line.commoditySelection,
+        commodityCode:
+          commodityCodeFor(line.commoditySelection) ?? line.commoditySelection,
         ...complement,
         animalIdentifiers:
           line.animalIdentifiers === undefined
@@ -337,7 +342,11 @@ const targetLinesFromCommodity = (commodity) => {
     const complement = commodity.commodityComplement[index]
     return compact({
       ...line,
-      commoditySelection: complement.commodityCode ?? line.commoditySelection,
+      commoditySelection:
+        complement.commodityCode === undefined
+          ? line.commoditySelection
+          : (commodityNameFor(complement.commodityCode) ??
+            complement.commodityCode),
       animalIdentifiers:
         complement.animalIdentifiers === undefined
           ? line.animalIdentifiers

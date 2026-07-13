@@ -91,10 +91,10 @@ describe('#ukPhone — allow-list + digit count', () => {
 })
 
 describe('#oneOf — value domain', () => {
-  const schema = oneOf('typeSelection', ['domestic', 'wild'])
+  const schema = oneOf('typeSelection', ['Domestic', 'wild'])
 
   it('Should accept a value in the domain', () => {
-    expect(run(schema, { typeSelection: 'domestic' }).errors).toBeNull()
+    expect(run(schema, { typeSelection: 'Domestic' }).errors).toBeNull()
   })
 
   it('Should reject a value outside the domain', () => {
@@ -107,14 +107,12 @@ describe('#oneOf — value domain', () => {
 describe('#requiredOneOf — save-blocking value domain', () => {
   const schema = requiredOneOf(
     'commoditySelection',
-    ['0102 - Cattle', '0301 - Fish'],
+    ['Cow', 'Fish'],
     'Select a commodity'
   )
 
   it('Should accept a value in the domain', () => {
-    expect(
-      run(schema, { commoditySelection: '0102 - Cattle' }).errors
-    ).toBeNull()
+    expect(run(schema, { commoditySelection: 'Cow' }).errors).toBeNull()
   })
 
   it('Should block blank and missing values — unlike composing requiredText with oneOf', () => {

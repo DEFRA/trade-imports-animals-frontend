@@ -34,7 +34,7 @@ const fullSeed = {
   internalReferenceNumber: 'Imports456GB',
   commodityLines: [
     {
-      commoditySelection: '0102 - Cattle',
+      commoditySelection: 'Cow',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
         {
@@ -135,7 +135,7 @@ describe('#buildRows (check-answers GET)', () => {
 
     it('Should render one row per commodity line with quantity, plus a nested animal-identifier row', async () => {
       const rows = await rowsFor(fullSeed)
-      expect(valueOf(rows, 'Commodity 1')).toBe('0102 - Cattle — 25 animals')
+      expect(valueOf(rows, 'Commodity 1')).toBe('Cow — 25 animals')
       expect(valueOf(rows, 'Commodity 1 — animal 1')).toBe(
         'Passport: UK123456789, Permanent address: Pet Owner'
       )
@@ -191,7 +191,7 @@ describe('#buildRows (check-answers GET)', () => {
     const gatedOffSeed = {
       regionOfOriginCodeRequirement: 'no',
       reasonForImport: 'transit',
-      commodityLines: [{ commoditySelection: '0301 - Fish' }],
+      commodityLines: [{ commoditySelection: 'Fish' }],
       meansOfTransport: 'Airplane',
       transporterType: 'Private transporter',
       privateTransporter: { name: 'Jean Dupont' }
@@ -262,7 +262,7 @@ describe('#buildRows (check-answers GET)', () => {
       const { response } = await driveHandler(postHandler, {
         seed: {
           countryOfOrigin: 'FR',
-          commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+          commodityLines: [{ commoditySelection: 'Cow' }]
         }
       })
       expect(response.redirect).toMatch(/\/declaration$/)

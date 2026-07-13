@@ -26,7 +26,7 @@ describe('POST commodities/select — invalid payload', () => {
 
   it('Should re-render a missing commoditySelection with its message and append nothing', async () => {
     const result = await driveHandler(postAdd, {
-      payload: { typeSelection: 'domestic' }
+      payload: { typeSelection: 'Domestic' }
     })
     expect(result.view.context.errors.commoditySelection).toBe(
       'Select a commodity'

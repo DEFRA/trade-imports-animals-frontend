@@ -1021,7 +1021,7 @@
         "obligation": "commoditySelection",
         "frame": "anyItem",
         "includes": [
-          "0102 - Cattle",
+          "Cow",
           "0103 - Pig (Domestic)",
           "010410 - Sheep (Domestic)",
           "010420 - Goats",
@@ -1392,7 +1392,7 @@
         "widget": "checkboxes",
         "valuesSource": "MDM species for the selected commodity/type",
         "hint": "Select all that apply.",
-        "example": "Bison bison (Bison); Bos spp. (Cattle species); Bos taurus (Cattle); Bubalus bubalis (Water buffalo)"
+        "example": "Bison bison; Bos spp.; Bos taurus; Bubalus bubalis"
       },
       "notes": "User may select one or more species up to the agreed maximum (maximum not stated in V4). Skeleton stores each selection as {value, text} from mock-species.json and carries per-species values over on reselect (see c-017).",
       "conflicts": ["c-017"],
@@ -1427,9 +1427,9 @@
           "01063100 - Birds of Prey- Owls",
           "01063100 - Birds of Prey- Falcons",
           "01063100 - Birds of Prey- Other",
-          "01061900 - Cats",
-          "0102 - Cattle",
-          "01061900 - Dogs",
+          "Cat",
+          "Cow",
+          "Dog",
           "05119985 - Embryos/Ova - Cattle",
           "05119985 - Embryos/Ova - Goat",
           "05119985 - Embryos/Ova - Horse",
@@ -1442,7 +1442,7 @@
           "01063980 - Game Birds - Day old chicks - Pheasant",
           "04071919 - Game Birds - Hatching eggs - Pheasant and Partridge",
           "010420 - Goats",
-          "0101 - Horse",
+          "Horse",
           "0101 - Donkey",
           "01064900 - Insects and other invertebrates",
           "01064900 - Asian Hornet",
@@ -1539,13 +1539,13 @@
         "frame": "enclosing",
         "includes": [
           "0101 - Donkey and asses",
-          "0101 - Horse",
+          "Horse",
           "0101 - Ponies",
           "0101 - Zebras",
           "0101 - Mules, hinnies or other hybrids",
-          "0102 - Cattle",
-          "01061900 - Cats",
-          "01061900 - Dogs",
+          "Cow",
+          "Cat",
+          "Dog",
           "01061900 - Ferrets"
         ]
       },
@@ -1580,8 +1580,8 @@
         "obligation": "commoditySelection",
         "frame": "enclosing",
         "includes": [
-          "01061900 - Cats",
-          "01061900 - Dogs",
+          "Cat",
+          "Dog",
           "01061900 - Ferrets",
           "0103 - Pigs",
           "0102 - Bovine"
@@ -1614,7 +1614,7 @@
         "obligation": "commoditySelection",
         "frame": "enclosing",
         "includes": [
-          "0102 - Cattle",
+          "Cow",
           "0103 - Pig (Domestic)",
           "010410 - Sheep (Domestic)",
           "010420 - Goats"
@@ -1648,7 +1648,7 @@
       "activatedBy": {
         "obligation": "commoditySelection",
         "frame": "enclosing",
-        "includes": ["0101 - Horse"]
+        "includes": ["Horse"]
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
@@ -1720,7 +1720,7 @@
       "activatedBy": {
         "obligation": "commoditySelection",
         "frame": "enclosing",
-        "includes": ["01061900 - Cats", "01061900 - Dogs", "01061900 - Ferrets"]
+        "includes": ["Cat", "Dog", "01061900 - Ferrets"]
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",

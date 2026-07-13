@@ -1,5 +1,6 @@
 import {
   COMMODITY_OPTIONS,
+  COMMODITY_CODES,
   TYPE_OPTIONS,
   SPECIES_OPTIONS,
   PACKAGE_COUNT_COMMODITIES,
@@ -13,6 +14,11 @@ import {
 } from './stub.js'
 
 export const list = () => COMMODITY_OPTIONS
+
+export const commodityCodeFor = (name) => COMMODITY_CODES[name]
+
+export const commodityNameFor = (code) =>
+  Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
 
 export const types = () => TYPE_OPTIONS
 

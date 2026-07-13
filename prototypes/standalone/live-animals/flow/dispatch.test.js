@@ -129,9 +129,9 @@ describe('dispatch + flow', () => {
       countyParishHoldingCph: '12/345/6789',
       commodityLines: [
         {
-          commoditySelection: '0102 - Cattle',
-          typeSelection: 'domestic',
-          speciesSelection: ['bos-taurus'],
+          commoditySelection: 'Cow',
+          typeSelection: 'Domestic',
+          speciesSelection: ['1148346'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]

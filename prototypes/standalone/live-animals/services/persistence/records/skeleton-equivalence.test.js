@@ -74,12 +74,12 @@ const consignment = {
   // line totals are the same quantity — the two systems then only differ (if at
   // all) in how they store/type that quantity, not in aggregation logic.
   commodity: {
-    name: '0102 - Cattle',
-    typeOfCommodity: 'domestic',
+    name: 'Cow',
+    typeOfCommodity: 'Domestic',
     // value + resolved display text captured identically by both systems.
-    // 'Bos taurus (Cattle)' is what the prototype's SPECIES_OPTIONS resolves for
-    // 'bos-taurus' (and therefore what Mapper A re-derives via speciesLabel).
-    species: { value: 'bos-taurus', text: 'Bos taurus (Cattle)' },
+    // 'Bos taurus' is what the prototype's SPECIES_OPTIONS resolves for
+    // '1148346' (and therefore what Mapper A re-derives via speciesLabel).
+    species: { value: '1148346', text: 'Bos taurus' },
     noOfAnimals: '25',
     noOfPackages: '5',
     earTag: 'UK123456789012',

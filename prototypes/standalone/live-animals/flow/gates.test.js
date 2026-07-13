@@ -114,7 +114,7 @@ describe('RULE 1 — mandate-derived flow sequencing', () => {
     const blankLine = { countryOfOrigin: 'FR', commodityLines: [{}] }
     const filledLine = {
       countryOfOrigin: 'FR',
-      commodityLines: [{}, { commoditySelection: '0102 - Cattle' }]
+      commodityLines: [{}, { commoditySelection: 'Cow' }]
     }
     for (const id of afterCommodities) {
       expect(gatePasses(id, originOnly)).toBe(false)
@@ -126,7 +126,7 @@ describe('RULE 1 — mandate-derived flow sequencing', () => {
   it('Should leave an obligation without enforcedAt unaffected by RULE 1 (backwards-compat)', () => {
     const noDocuments = {
       countryOfOrigin: 'FR',
-      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+      commodityLines: [{ commoditySelection: 'Cow' }]
     }
     expect(gatePasses('addresses', noDocuments)).toBe(true)
     expect(gatePasses('transport', noDocuments)).toBe(true)
@@ -152,9 +152,9 @@ describe('RULE 2 — review gates on submit-readiness (no deadlock)', () => {
     countyParishHoldingCph: '12/345/6789',
     commodityLines: [
       {
-        commoditySelection: '0102 - Cattle',
-        typeSelection: 'domestic',
-        speciesSelection: ['bos-taurus'],
+        commoditySelection: 'Cow',
+        typeSelection: 'Domestic',
+        speciesSelection: ['1148346'],
         numberOfPackages: '5',
         numberOfAnimalsQuantity: '25',
         animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]

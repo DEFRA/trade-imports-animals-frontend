@@ -35,7 +35,7 @@ describe('indexed obligations are first-class', () => {
   it('Should scope each stored commodity line instance path when the collection is in scope', () => {
     const { inScope } = reconcile({
       commodityLines: [
-        { commoditySelection: '0102 - Cattle', numberOfAnimalsQuantity: '25' },
+        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' },
         { commoditySelection: '010420 - Goats', numberOfAnimalsQuantity: '9' }
       ]
     })
@@ -57,9 +57,9 @@ describe('indexed obligations are first-class', () => {
       countyParishHoldingCph: '12/345/6789',
       commodityLines: [
         {
-          commoditySelection: '0102 - Cattle',
-          typeSelection: 'domestic',
-          speciesSelection: ['bos-taurus'],
+          commoditySelection: 'Cow',
+          typeSelection: 'Domestic',
+          speciesSelection: ['1148346'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -113,7 +113,7 @@ describe('indexed obligations are first-class', () => {
     }
     const incomplete = {
       ...complete,
-      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+      commodityLines: [{ commoditySelection: 'Cow' }]
     }
     expect(
       readyForCheckYourAnswers(complete, reconcile(complete).inScope)
@@ -147,14 +147,14 @@ describe('indexed obligations are first-class', () => {
 
   it('Should roll per-item completeness into the commodities section status', () => {
     const withIncompleteLine = {
-      commodityLines: [{ commoditySelection: '0102 - Cattle' }]
+      commodityLines: [{ commoditySelection: 'Cow' }]
     }
     const withCompleteLine = {
       commodityLines: [
         {
-          commoditySelection: '0102 - Cattle',
-          typeSelection: 'domestic',
-          speciesSelection: ['bos-taurus'],
+          commoditySelection: 'Cow',
+          typeSelection: 'Domestic',
+          speciesSelection: ['1148346'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]

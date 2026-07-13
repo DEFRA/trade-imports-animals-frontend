@@ -19,14 +19,14 @@ describe('item-scoped conditionality — sibling-identity resolution', () => {
 describe('item-scoped conditionality with a LIST target (commodity → packages)', () => {
   const line = (commoditySelection) => ({
     commoditySelection,
-    typeSelection: 'domestic',
-    speciesSelection: ['bos-taurus'],
+    typeSelection: 'Domestic',
+    speciesSelection: ['1148346'],
     numberOfAnimalsQuantity: '25'
   })
 
   it('Should scope numberOfPackages per instance when the commodity is one of the list', () => {
     const { inScope } = reconcile({
-      commodityLines: [line('0102 - Cattle'), line('0301 - Fish')]
+      commodityLines: [line('Cow'), line('Fish')]
     })
     expect(inScope.has('commodityLines[0].numberOfPackages')).toBe(true)
     expect(inScope.has('commodityLines[1].numberOfPackages')).toBe(false)
@@ -35,8 +35,8 @@ describe('item-scoped conditionality with a LIST target (commodity → packages)
   it('Should wipe a stale package count when the commodity leaves the list', () => {
     const { wiped } = reconcile({
       commodityLines: [
-        { ...line('0102 - Cattle'), numberOfPackages: '5' },
-        { ...line('0301 - Fish'), numberOfPackages: '9' }
+        { ...line('Cow'), numberOfPackages: '5' },
+        { ...line('Fish'), numberOfPackages: '9' }
       ]
     })
     expect(wiped).toContain('commodityLines[1].numberOfPackages')
@@ -54,7 +54,7 @@ describe('item-scoped conditionality with a LIST target (commodity → packages)
         }
       ]
     })
-    expect(satisfied('commodityLines', withUnit('0102 - Cattle'))).toBe(true)
-    expect(satisfied('commodityLines', withUnit('0301 - Fish'))).toBe(true)
+    expect(satisfied('commodityLines', withUnit('Cow'))).toBe(true)
+    expect(satisfied('commodityLines', withUnit('Fish'))).toBe(true)
   })
 })

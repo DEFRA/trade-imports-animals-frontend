@@ -39,9 +39,9 @@ const mappedAnswers = () => ({
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   commodityLines: [
     {
-      commoditySelection: '0102 - Cattle',
-      typeSelection: 'domestic',
-      speciesSelection: ['bos-taurus'],
+      commoditySelection: 'Cow',
+      typeSelection: 'Domestic',
+      speciesSelection: ['1148346'],
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -79,9 +79,9 @@ const answersWithGaps = () => ({
   ],
   commodityLines: [
     {
-      commoditySelection: '0102 - Cattle',
-      typeSelection: 'domestic',
-      speciesSelection: ['bos-taurus'],
+      commoditySelection: 'Cow',
+      typeSelection: 'Domestic',
+      speciesSelection: ['1148346'],
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -110,16 +110,16 @@ describe('Mapper A — current backend notification (as-is)', () => {
   it('Should reshape a commodity line into the fixed backend commodity shape', () => {
     const { commodity } = answersToNotification(mappedAnswers())
     expect(commodity).toEqual({
-      name: '0102 - Cattle',
+      name: 'Cow',
       commodityComplement: [
         {
-          typeOfCommodity: 'domestic',
+          typeOfCommodity: 'Domestic',
           totalNoOfAnimals: 25,
           totalNoOfPackages: 5,
           species: [
             {
-              value: 'bos-taurus',
-              text: 'Bos taurus (Cattle)',
+              value: '1148346',
+              text: 'Bos taurus',
               noOfAnimals: '25',
               noOfPackages: '5',
               earTag: 'UK123456789012',
@@ -173,8 +173,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
       type: 'Commercial transporter'
     })
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
-      value: 'bos-taurus',
-      text: 'Bos taurus (Cattle)',
+      value: '1148346',
+      text: 'Bos taurus',
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -214,8 +214,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
     const species = notification.commodity.commodityComplement[0].species[0]
 
     expect(species).toEqual({
-      value: 'bos-taurus',
-      text: 'Bos taurus (Cattle)',
+      value: '1148346',
+      text: 'Bos taurus',
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -299,9 +299,9 @@ const allAnswers = () => ({
   declaration: ['confirmed'],
   commodityLines: [
     {
-      commoditySelection: '0102 - Cattle',
-      typeSelection: 'domestic',
-      speciesSelection: ['bos-taurus'],
+      commoditySelection: 'Cow',
+      typeSelection: 'Domestic',
+      speciesSelection: ['1148346'],
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -316,8 +316,8 @@ const allAnswers = () => ({
       ]
     },
     {
-      commoditySelection: '01061900 - Cats',
-      typeSelection: 'domestic',
+      commoditySelection: 'Cat',
+      typeSelection: 'Domestic',
       speciesSelection: ['felis-catus'],
       numberOfAnimalsQuantity: '2',
       animalIdentifiers: [
@@ -387,8 +387,8 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
     const complements = notification.commodity.commodityComplement
 
     expect(complements).toHaveLength(2)
-    expect(complements[0].commodityCode).toBe('0102 - Cattle')
-    expect(complements[1].commodityCode).toBe('01061900 - Cats')
+    expect(complements[0].commodityCode).toBe('0102')
+    expect(complements[1].commodityCode).toBe('01061900')
     expect(complements[0].animalIdentifiers).toEqual([
       { earTag: 'UK123456789012', passport: 'UK123456789' },
       { tattoo: 'AB1234', description: 'Brown cow' }
@@ -404,8 +404,8 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
   it('Should carry the storable species fields Mapper A does (counts + earTag/passport)', () => {
     const notification = answersToTargetNotification(mappedAnswers())
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
-      value: 'bos-taurus',
-      text: 'Bos taurus (Cattle)',
+      value: '1148346',
+      text: 'Bos taurus',
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',

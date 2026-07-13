@@ -4,16 +4,16 @@ import { collectionView } from './collection-view.js'
 const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
 const completeLine = {
-  commoditySelection: '0102 - Cattle',
-  typeSelection: 'domestic',
-  speciesSelection: ['bos-taurus'],
+  commoditySelection: 'Cow',
+  typeSelection: 'Domestic',
+  speciesSelection: ['1148346'],
   numberOfAnimalsQuantity: '25',
   animalIdentifiers: [
     { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
   ]
 }
 
-const incompleteLine = { commoditySelection: '0102 - Cattle' }
+const incompleteLine = { commoditySelection: 'Cow' }
 
 describe('#collectionView', () => {
   it('Should map each stored entry to {index, path, entry} in order', () => {

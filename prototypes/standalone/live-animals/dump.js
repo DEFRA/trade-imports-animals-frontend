@@ -16,23 +16,23 @@ buildDispatch(dispatchPages)
 const answers = {
   commodityLines: [
     {
-      commoditySelection: '0102 - Cattle',
-      typeSelection: 'domestic',
-      speciesSelection: ['bos-taurus'],
+      commoditySelection: 'Cow',
+      typeSelection: 'Domestic',
+      speciesSelection: ['1148346'],
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25'
     },
 
     {
-      commoditySelection: '0102 - Cattle',
-      typeSelection: 'domestic',
-      speciesSelection: ['bos-taurus'],
+      commoditySelection: 'Cow',
+      typeSelection: 'Domestic',
+      speciesSelection: ['1148346'],
       numberOfAnimalsQuantity: '9'
     },
 
     {
-      commoditySelection: '0301 - Fish',
-      typeSelection: 'domestic',
+      commoditySelection: 'Fish',
+      typeSelection: 'Domestic',
       speciesSelection: ['salmo-salar'],
       numberOfPackages: '7',
       numberOfAnimalsQuantity: '40'

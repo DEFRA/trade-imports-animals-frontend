@@ -8,8 +8,8 @@ import {
 
 const line = (commoditySelection, units) => ({
   commoditySelection,
-  typeSelection: 'domestic',
-  speciesSelection: ['bos-taurus'],
+  typeSelection: 'Domestic',
+  speciesSelection: ['1148346'],
   numberOfAnimalsQuantity: '25',
   animalIdentifiers: units
 })
@@ -20,7 +20,7 @@ describe('enclosing-gated completeness — permanentAddress owed matches scope',
   it('(a) Should NOT count permanentAddress owed on an OFF-gate unit (Horse: no Cats/Dogs gate)', () => {
     expect(
       satisfied('commodityLines', {
-        commodityLines: [line('0101 - Horse', [{ horseName: 'Dobbin' }])]
+        commodityLines: [line('Horse', [{ horseName: 'Dobbin' }])]
       })
     ).toBe(true)
   })
@@ -28,15 +28,13 @@ describe('enclosing-gated completeness — permanentAddress owed matches scope',
   it('(b) Should count permanentAddress owed on an ON-gate unit (Cats), complete once answered', () => {
     expect(
       satisfied('commodityLines', {
-        commodityLines: [
-          line('01061900 - Cats', [{ animalIdentifierPassport: 'UK-1' }])
-        ]
+        commodityLines: [line('Cat', [{ animalIdentifierPassport: 'UK-1' }])]
       })
     ).toBe(false)
     expect(
       satisfied('commodityLines', {
         commodityLines: [
-          line('01061900 - Cats', [
+          line('Cat', [
             { animalIdentifierPassport: 'UK-1', permanentAddress: address }
           ])
         ]
@@ -48,8 +46,8 @@ describe('enclosing-gated completeness — permanentAddress owed matches scope',
     expect(
       satisfied('commodityLines', {
         commodityLines: [
-          line('0101 - Horse', [{ horseName: 'Dobbin' }]),
-          line('01061900 - Cats', [{ animalIdentifierPassport: 'UK-1' }])
+          line('Horse', [{ horseName: 'Dobbin' }]),
+          line('Cat', [{ animalIdentifierPassport: 'UK-1' }])
         ]
       })
     ).toBe(false)
@@ -58,7 +56,7 @@ describe('enclosing-gated completeness — permanentAddress owed matches scope',
   it('Should still enforce the requiredOneOf group on an off-gate unit', () => {
     expect(
       satisfied('commodityLines', {
-        commodityLines: [line('0101 - Horse', [{}])]
+        commodityLines: [line('Horse', [{}])]
       })
     ).toBe(false)
   })
@@ -77,7 +75,7 @@ describe('enclosing-gated completeness — depth-2 ctx built by hand', () => {
   })
 
   it('Should treat permanentAddress as owed on a Cats unit and satisfied when answered', () => {
-    const ctx = ctxFor('01061900 - Cats')
+    const ctx = ctxFor('Cat')
     expect(
       collectionComplete(
         animalIdentifiers,
@@ -99,7 +97,7 @@ describe('enclosing-gated completeness — depth-2 ctx built by hand', () => {
       collectionComplete(
         animalIdentifiers,
         [{ horseName: 'Dobbin' }],
-        ctxFor('0101 - Horse')
+        ctxFor('Horse')
       )
     ).toBe(true)
   })
@@ -122,7 +120,7 @@ describe('backwards compatibility — no ctx is the pre-inc-035 default', () => 
 
   it('Should leave same-frame completeness unchanged (a required same-frame field still owed)', () => {
     const incompleteLine = {
-      ...line('0101 - Horse', [{ horseName: 'Dobbin' }]),
+      ...line('Horse', [{ horseName: 'Dobbin' }]),
       numberOfAnimalsQuantity: ''
     }
     expect(

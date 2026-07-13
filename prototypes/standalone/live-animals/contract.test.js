@@ -84,14 +84,14 @@ const cases = [
     id: 'additional-details',
     collects: additionalDetails.meta.collects,
     handler: postHandlerOf(additionalDetails),
-    seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
+    seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
     payload: { animalsCertifiedFor: 'slaughter', containsUnweanedAnimals: 'no' }
   },
   {
     id: 'cph-number',
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
-    seed: { commodityLines: [{ commoditySelection: '0102 - Cattle' }] },
+    seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
     payload: { countyParishHoldingCph: '12/345/6789' }
   },
   {
@@ -187,9 +187,9 @@ describe('controller <-> model commit contract', () => {
     )
     const result = await drive(postAdd, {
       payload: {
-        commoditySelection: '0102 - Cattle',
-        typeSelection: 'domestic',
-        speciesSelection: ['bos-taurus']
+        commoditySelection: 'Cow',
+        typeSelection: 'Domestic',
+        speciesSelection: ['1148346']
       }
     })
     expect(new Set(committedIds(result))).toEqual(
@@ -224,7 +224,7 @@ describe('controller <-> model commit contract', () => {
       'identifiers/add'
     )
     const result = await drive(postAdd, {
-      seed: { commodityLines: [{ commoditySelection: '01061900 - Cats' }] },
+      seed: { commodityLines: [{ commoditySelection: 'Cat' }] },
       params: { index: '0' },
       payload: {
         animalIdentifierPassport: 'UK123456789',
@@ -245,8 +245,8 @@ describe('controller <-> model commit contract', () => {
 
     result.after.commodityLines[0] = {
       ...result.after.commodityLines[0],
-      typeSelection: 'domestic',
-      speciesSelection: ['bos-taurus'],
+      typeSelection: 'Domestic',
+      speciesSelection: ['1148346'],
       numberOfAnimalsQuantity: '2'
     }
     expect(satisfied('commodityLines', result.after)).toBe(true)
