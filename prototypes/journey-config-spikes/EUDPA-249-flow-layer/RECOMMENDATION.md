@@ -196,10 +196,13 @@ not decide them. These are the ones worth raising in playback:
 - **Dynamic predicates via orchestrator resolution.** Same shape as
   the async-options question but for validation instead of options.
   Not needed for AC; revisit if a real V4 predicate needs it.
-- **Playwright cross-variant harness.** The parent-layouts branch runs
-  one Playwright spec against every model-spike variant via a
-  `JOURNEYS` array. Adding our V4 variant to that harness is a natural
-  next step.
+- **Playwright cross-variant harness landed as a self-contained
+  suite** in this branch under `e2e/` — mirrors the parent-layouts
+  branch's data-driven `JOURNEYS`-array shape but scoped to the V4
+  variant. Adds real form events + real navigation + recorded video
+  demos on top of the vitest+inject coverage. See `e2e/README.md`.
+  A second variant (e.g. a Joi-adopted rerun) can be added by
+  declaring one entry in `e2e/journey.js`.
 - **Welsh locale threading.** i18n infrastructure is complete
   (`lib/i18n.js` + `locales/en.json` + `i18n-coverage.test.js`
   covering every declaration-site key). Threading a locale from

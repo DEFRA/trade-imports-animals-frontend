@@ -226,16 +226,19 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
 
 ### Immediate next candidates
 
-Steps 4 and 5 are complete. P0 is now resolved (see the "Optional"
-status alphabet extension recorded below). Next work is polish +
-parked follow-ons — pick one:
+Steps 4 and 5 are complete. P0 is now resolved. Playwright cross-
+variant harness landed as a self-contained suite in this branch (see
+`e2e/` folder + `playwright.config.js`). Next work is small polish
 
-- **P0.5 — Welsh locale threading.** Infrastructure done; needs the
+- parked follow-ons — pick one:
+
+* **P0.5 — Welsh locale threading.** Infrastructure done; needs the
   request → `t()` locale param plumbing plus `cy.json`. See below.
-- **Playwright cross-variant harness.** Add the V4 variant to the
-  parent-layouts branch's `JOURNEYS` array so the shared spec runs
-  against the spike. Natural follow-on now that the flow is
-  stable. See `RECOMMENDATION.md` §Out of scope.
+* **Add a second variant to the Playwright JOURNEYS array.** The
+  shape is data-driven off `e2e/journey.js`; extending to (say) a
+  Joi-adopted rerun or a comparison against the pre-P0 status
+  alphabet is one array entry plus (if page copy diverges) small
+  guards inside the fill helpers.
 
 **Parked** (unchanged): P1 Joi adoption; P2 data dictionary MD
 artefact. See below.
