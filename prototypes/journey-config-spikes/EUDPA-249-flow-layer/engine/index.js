@@ -7,9 +7,9 @@
  *
  *   1. JourneyEvaluator primitives (implementing the design captured in
  *      the parent EUDPA-277 spike doc §The JourneyEvaluator):
- *        - pageStatus(page, state)                       → NA / NS / IP / F
- *        - containerStatus(container, state)             → NA / NS / IP / F
- *        - journeyState(flow, state, submitted?)         → NS / IP / F / S
+ *        - pageStatus(page, state)                       → NA / Optional / NS / IP / F
+ *        - containerStatus(container, state)             → NA / Optional / NS / IP / F
+ *        - journeyState(flow, state, submitted?)         → Optional / NS / IP / F / S
  *        - firstApplicablePage(root)                     → Page | null
  *        - firstUnfulfilledPage(root, state)             → Page | null
  *        - firstPagePresentingObligation(flow, oblId)    → Page | null
@@ -274,6 +274,7 @@ export function expandPresents(page, state) {
 const STATUSES = {
   NOT_APPLICABLE: 'not-applicable',
   NOT_STARTED: 'not-started',
+  OPTIONAL: 'optional',
   IN_PROGRESS: 'in-progress',
   FULFILLED: 'fulfilled',
   SUBMITTED: 'submitted'
@@ -337,87 +338,115 @@ function hasFulfilment(entry, state) {
 }
 
 /**
- * Page status per Recursive Fulfilled §. A page is:
- *   - NA if no presents entries are in scope (read-only pages qualify);
- *   - F  if every in-scope mandatory entry is fulfilled;
- *   - NS if none of the in-scope entries are fulfilled;
- *   - IP otherwise (some fulfilments present, work still to do).
+ * 5-way status classifier — shared by pageStatus and containerStatus.
+ * Takes the flat list of in-scope presented entries (whether from a
+ * single page or aggregated across a subtree) plus the count of
+ * unsatisfied group-invariant instances (0 at page level; the count
+ * of `groupInvariantErrors` at container level).
+ *
+ * Rules (mutually exclusive, exhaustive):
+ *   - NA        no in-scope obligations at all.
+ *   - Optional  no in-scope MANDATORY obligation, at least one in-scope
+ *               OPTIONAL obligation, nothing filled. Signals "there's
+ *               opt-in room here, you haven't engaged yet." (No visited
+ *               plumbing — engagement is measured by ≥ 1 fulfilment,
+ *               same as everywhere else.)
+ *   - NS        at least one mandatory concern, nothing filled.
+ *   - IP        at least one mandatory concern still unsatisfied, at
+ *               least one obligation filled.
+ *   - F         either only optional in scope with ≥ 1 filled, OR all
+ *               mandatory concerns satisfied.
+ *
+ * Group-invariant errors (e.g. "≥ 1 identifier per unit") count as
+ * additional unsatisfied mandatory concerns — an unfilled invariant
+ * blocks F the same way an unfilled mandatory obligation would. The
+ * count-based encoding lets a single classifier serve every level.
  */
-export function pageStatus(page, state) {
-  const entries = expandPresents(page, state)
-  const inScope = entries.filter((e) => entryInScope(e, state))
-  if (inScope.length === 0) return STATUSES.NOT_APPLICABLE
+function classifyEntries(inScope, state, groupErrorCount) {
+  if (inScope.length === 0 && groupErrorCount === 0) {
+    return STATUSES.NOT_APPLICABLE
+  }
 
   const filled = inScope.filter((e) => hasFulfilment(e, state))
-  const mandatoryUnfilled = inScope.filter((e) => {
-    if (effectiveStatus(e.obligation, e.path, state) !== 'mandatory') {
-      return false
-    }
-    return !hasFulfilment(e, state)
-  })
+  const mandatoryInScope = inScope.filter(
+    (e) => effectiveStatus(e.obligation, e.path, state) === 'mandatory'
+  )
+  const mandatoryUnfilled = mandatoryInScope.filter(
+    (e) => !hasFulfilment(e, state)
+  )
+  const totalMandatoryConcerns = mandatoryInScope.length + groupErrorCount
+  const totalMandatoryUnsatisfied = mandatoryUnfilled.length + groupErrorCount
 
-  // Fulfilled iff every in-scope MANDATORY presented entry is filled.
-  // The obligation's `status` (mandatory | optional) is completion-
-  // mandate: it determines whether the journey needs the field to
-  // reach F. An in-scope optional obligation that stays blank does
-  // not block F — an optional-only page/subsection therefore rolls
-  // up to F immediately once nothing mandatory is in scope, which
-  // is the correct model-layer semantic. (Whether the user should
-  // still visit such a page before we call it Complete is a
-  // separate display-layer question — see NEXT.md parked to-do.)
-  if (mandatoryUnfilled.length === 0) {
-    return STATUSES.FULFILLED
+  if (totalMandatoryConcerns > 0) {
+    if (totalMandatoryUnsatisfied === 0) return STATUSES.FULFILLED
+    if (filled.length === 0) return STATUSES.NOT_STARTED
+    return STATUSES.IN_PROGRESS
   }
-  if (filled.length === 0) return STATUSES.NOT_STARTED
-  return STATUSES.IN_PROGRESS
+  // Only optional obligations are in scope — Case A.
+  if (filled.length === 0) return STATUSES.OPTIONAL
+  return STATUSES.FULFILLED
 }
 
 /**
- * Container (Section / SubSection) status per Status-propagation rules.
- * Delegates to pageStatus at leaves.
+ * Page status — 5-way classifier over the page's in-scope presented
+ * entries. Group-invariant errors are container-level (a single page
+ * cannot enforce "≥ 1 across the group" on its own), so pageStatus
+ * always passes 0.
  *
- * Note: an empty session in a container whose children mix F (from
- * optional-only pages defaulting to F) with NS (mandatories still
- * unfilled) would model as IP, which is misleading — no user action
- * has happened yet. We honour the user's perspective by returning NS
- * until the container has been touched. Same pattern as journeyState.
+ * See classifyEntries for the alphabet.
+ */
+export function pageStatus(page, state) {
+  const inScope = expandPresents(page, state).filter((e) =>
+    entryInScope(e, state)
+  )
+  return classifyEntries(inScope, state, 0)
+}
+
+/**
+ * Container status — re-derives over the subtree's collected in-scope
+ * presented entries rather than rolling up child statuses. Same 5-way
+ * classifier that pageStatus uses.
  *
- * Group-level invariants: if a container includes pages driven by a
- * `presentsForEach` over a group whose `requires` is unsatisfied for
- * any in-scope instance, the container CANNOT reach F even when every
- * page-level status is F. This is how the V4 "at least one Animal
- * Identifier per unit-record" rule blocks completion — see
+ * Why re-derive rather than roll up:
+ *   - The alphabet is 5-way (NA / Optional / NS / IP / F), and roll-up
+ *     precedence rules for the mix cases (e.g. Optional + NS + F) get
+ *     fiddly. The classifier is uniform at every level.
+ *   - The old "empty-session clamp" (returning NS while any subtree
+ *     leaf is untouched) goes away — the classifier already returns
+ *     Optional / NS naturally for the "nothing filled yet" case,
+ *     depending on whether any mandatory is in scope.
+ *
+ * Group-invariant errors are counted here: if a container's subtree
+ * presents a group with unsatisfied `requires`, each violating instance
+ * adds one to the mandatory-concern total. That keeps a container with
+ * every leaf filled but a missing group invariant out of F. See
  * `groupInvariantErrorsForContainer` below.
  */
 export function containerStatus(container, state) {
   if (isPage(container)) return pageStatus(container, state)
-  const childStatuses = (container.children ?? []).map((c) =>
-    containerStatus(c, state)
-  )
-  const applicable = childStatuses.filter((s) => s !== STATUSES.NOT_APPLICABLE)
-  if (applicable.length === 0) return STATUSES.NOT_APPLICABLE
-  const hasF = applicable.includes(STATUSES.FULFILLED)
-  const hasIP = applicable.includes(STATUSES.IN_PROGRESS)
-  const hasNS = applicable.includes(STATUSES.NOT_STARTED)
-  // Group-invariant check first: even a container whose pages are
-  // all F stays IP if any in-scope group instance violates its
-  // `requires` invariant. Uses `hasFulfilmentInContainer` to keep the
-  // empty-session case as NS.
+  const inScope = collectInScopePresentedEntries(container, state)
   const groupErrors = groupInvariantErrorsForContainer(container, state)
-  if (groupErrors.length > 0) {
-    if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
-    return STATUSES.IN_PROGRESS
+  return classifyEntries(inScope, state, groupErrors.length)
+}
+
+/** Walk `container`'s subtree, collect every page's in-scope presented
+ *  entries into a flat list. Used by containerStatus + journeyState so
+ *  the 5-way classifier operates on the subtree's obligations directly
+ *  (rather than rolling up child statuses). */
+function collectInScopePresentedEntries(container, state) {
+  const out = []
+  const visit = (node) => {
+    if (isPage(node)) {
+      const entries = expandPresents(node, state).filter((e) =>
+        entryInScope(e, state)
+      )
+      out.push(...entries)
+      return
+    }
+    for (const child of node.children ?? []) visit(child)
   }
-  if (hasIP) {
-    if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
-    return STATUSES.IN_PROGRESS
-  }
-  if (hasF && hasNS) {
-    if (!hasFulfilmentInContainer(container, state)) return STATUSES.NOT_STARTED
-    return STATUSES.IN_PROGRESS
-  }
-  if (hasF) return STATUSES.FULFILLED
-  return STATUSES.NOT_STARTED
+  visit(container)
+  return out
 }
 
 /**
@@ -496,71 +525,33 @@ export function groupInvariantErrorsForContainer(container, state) {
   return out
 }
 
-/** True iff any obligation presented under this container has a
- *  non-empty stored value in state.fulfilments. */
-function hasFulfilmentInContainer(container, state) {
-  const fulfilments = state?.fulfilments ?? {}
-  const seen = new Set()
-  const visit = (node) => {
-    if (node.page !== undefined) {
-      for (const entry of node.presents ?? []) {
-        seen.add(entry.obligation.id)
-      }
-      if (node.presentsForEach) {
-        seen.add(node.presentsForEach.obligation.id)
-      }
-    }
-    for (const child of node.children ?? []) visit(child)
-  }
-  visit(container)
-  for (const oblId of seen) {
-    const v = fulfilments[oblId]
-    if (v === undefined || v === null || v === '') continue
-    if (Array.isArray(v)) {
-      if (v.length > 0) return true
-      continue
-    }
-    if (typeof v === 'object') {
-      if (Object.keys(v).length > 0) return true
-      continue
-    }
-    return true
-  }
-  return false
-}
-
 /**
  * Journey status. `submitted` short-circuits to SUBMITTED — the F→S
  * transition is a user-driven event, not a derivable status.
+ *
+ * Everything else runs through the same 5-way classifier that page and
+ * container statuses use, over every in-scope presented entry in the
+ * whole flow. In practice V4 has mandatory obligations somewhere in
+ * every journey, so `journeyState` will never actually return Optional
+ * — but the rule is written for symmetry with `pageStatus` /
+ * `containerStatus` and to keep the alphabet coherent.
  */
 export function journeyState(flow, state, submitted = false) {
   if (submitted) return STATUSES.SUBMITTED
-  const statuses = (flow.sections ?? []).map((s) => containerStatus(s, state))
-  const applicable = statuses.filter((s) => s !== STATUSES.NOT_APPLICABLE)
-  if (applicable.length === 0) return STATUSES.NOT_STARTED
-  if (applicable.every((s) => s === STATUSES.FULFILLED)) {
-    return STATUSES.FULFILLED
+  const inScope = []
+  let groupErrorCount = 0
+  for (const section of flow.sections ?? []) {
+    inScope.push(...collectInScopePresentedEntries(section, state))
+    groupErrorCount += groupInvariantErrorsForContainer(section, state).length
   }
-  if (applicable.every((s) => s === STATUSES.NOT_STARTED)) {
+  // Empty flow modelled as NS rather than NA to match the current
+  // "journey starts here" affordance — a journey with no sections at
+  // all is not a meaningful application-domain state, but the caller
+  // (`/start` handler) expects a non-NA return.
+  if (inScope.length === 0 && groupErrorCount === 0) {
     return STATUSES.NOT_STARTED
   }
-  // Optional-only sections (e.g. a References section whose only
-  // obligation is completion-optional) model as F immediately, which
-  // would otherwise push the empty-session rollup to IP. At journey
-  // level we honour the user's perspective: NS until they've filled
-  // something. Once any fulfilment lands, we're genuinely IP.
-  if (!hasAnyFulfilment(state)) return STATUSES.NOT_STARTED
-  return STATUSES.IN_PROGRESS
-}
-
-function hasAnyFulfilment(state) {
-  const values = Object.values(state?.fulfilments ?? {})
-  return values.some((v) => {
-    if (v === undefined || v === null || v === '') return false
-    if (Array.isArray(v)) return v.length > 0
-    if (typeof v === 'object') return Object.keys(v).length > 0
-    return true
-  })
+  return classifyEntries(inScope, state, groupErrorCount)
 }
 
 export { STATUSES }

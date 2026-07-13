@@ -25,6 +25,7 @@ const BASE = '/prototype/eudpa-249'
 const STATUS_CLASSES = {
   [STATUSES.NOT_APPLICABLE]: 'govuk-tag--grey',
   [STATUSES.NOT_STARTED]: 'govuk-tag--blue',
+  [STATUSES.OPTIONAL]: 'govuk-tag--turquoise',
   [STATUSES.IN_PROGRESS]: 'govuk-tag--light-blue',
   [STATUSES.FULFILLED]: '',
   [STATUSES.SUBMITTED]: 'govuk-tag--green'
@@ -33,6 +34,7 @@ const STATUS_CLASSES = {
 const STATUS_TEXT_KEY = {
   [STATUSES.NOT_APPLICABLE]: 'hub.status.notApplicable',
   [STATUSES.NOT_STARTED]: 'hub.status.notStarted',
+  [STATUSES.OPTIONAL]: 'hub.status.optional',
   [STATUSES.IN_PROGRESS]: 'hub.status.inProgress',
   [STATUSES.FULFILLED]: 'hub.status.completed',
   [STATUSES.SUBMITTED]: 'hub.status.submitted'

@@ -158,14 +158,15 @@ iteration 3's worked example.
    - **`nextAfter` / redirect assertions** — a page inserted between
      two existing ones changes `nextAfter(<earlier>)`. Update the
      assertion to point at the new page.
-   - **Subsection / section status roll-up** — subsection is F once
-     every mandatory-in-scope obligation across its pages is filled.
-     In-scope-optional obligations do not gate F: an optional-only
-     page is F immediately, and a mixed page is F once its mandatories
-     land. If you added an in-scope-optional obligation and a fixture
-     is now over-filled, you can safely drop the value (or leave it —
-     both walk to F). If you added a mandatory, the fixture almost
-     certainly needs a value for it.
+   - **Subsection / section status roll-up** — see §Status alphabet
+     below for the full 5-way rule. Quick summary for a fixture
+     landing on this step: adding a MANDATORY obligation typically
+     requires a fixture value or the roll-up drops F → NS/IP; adding
+     an OPTIONAL obligation to a subsection that already has any
+     mandatory concern does not change the roll-up; adding an OPTIONAL
+     obligation to a purely-optional subsection means the subsection
+     will read "Optional" until the user fills something (rather than
+     the old vacuous F).
    - **`firstUnfulfilledPage`** — the descent order changed.
    - **`dump.test.js` snapshots** — fixtures under `fixtures/` need
      matching values for the new obligation. Update the fixture, not
@@ -897,12 +898,16 @@ Iteration 2:
   subsection per new obligation"; iteration 2's region-code pair fits
   naturally under the existing `origin` subsection. Step 4 above now
   offers both options explicitly.
-- **In-scope-optional obligations count as "unfilled" until they have
-  a value.** The runtime `pageStatus` rule for `FULFILLED` is
-  "no mandatory unfilled AND at least one entry filled". An optional
-  obligation on a fresh page keeps the subsection IP until any value
-  lands. If your fixture expects section-F, fill the optional too.
-  This is why iteration 2's fixtures gained `regionCode: 'FR-75'`.
+- **In-scope-optional obligations are visible on the task list under
+  the 5-way alphabet.** A mixed page (mandatory + optional) reaches F
+  the moment every mandatory is filled — an untouched optional does
+  not gate F. A purely-optional page/subsection reads "Optional" until
+  the user fills any obligation, at which point it flips to F. See
+  §Status alphabet below for the exhaustive rule. Iteration 2's
+  fixtures added `regionCode: 'FR-75'` when the fixture wanted the
+  subsection to read F specifically because the fixture put the
+  page into the mixed shape; a fixture that wants "Optional" instead
+  just leaves the optional blank.
 - **Wiring a `branchedGate` obligation** usually means also wiring the
   obligation the gate depends on. Iteration 2 wired the pair
   `regionCodeRequirement` (gate) + `regionCode` (gated) in one commit;
@@ -1080,6 +1085,69 @@ submit-mandatory encourages users to type placeholders to get past
 error pages; it also fights the GDS "let people save partial
 progress" pattern. Prefer completion-mandate at F-rollup for most
 required fields.
+
+## Status alphabet — page, container, journey
+
+Every page, subsection, section, and the journey itself surface a
+single derived status through the same 5-way alphabet. The rules are
+computed by `classifyEntries` in `engine/index.js` — one classifier
+that runs at page level over a single page's presented entries,
+at container level over a subtree's collected entries, and at journey
+level over every section's entries combined. The alphabet:
+
+| Status         | When it fires                                                             | Task-list tag             |
+| :------------- | :------------------------------------------------------------------------ | :------------------------ |
+| Not applicable | No obligations are in scope at all.                                       | `govuk-tag--grey`         |
+| Not started    | At least one mandatory concern in scope, nothing filled anywhere.         | `govuk-tag--blue`         |
+| Optional       | Only optional obligations in scope, none filled.                          | `govuk-tag--turquoise`    |
+| In progress    | At least one mandatory concern still unsatisfied, some obligation filled. | `govuk-tag--light-blue`   |
+| Complete       | Either only optional in scope and ≥ 1 filled, or every mandatory filled.  | (no tag — GOV.UK default) |
+
+A "mandatory concern" means an in-scope obligation with
+`status: 'mandatory'` OR (at container/journey level) any unsatisfied
+group-invariant instance from a `presentsForEach.forEachOf.requires`
+group (e.g. "≥ 1 identifier per unit-record"). Group errors count
+identically to unfilled mandatory obligations for classification.
+
+**Design notes worth being explicit about:**
+
+1. **No visited-plumbing.** "Optional" doesn't need a per-session
+   "user visited this page" flag. Engagement is measured by fulfilment
+   count, same as everywhere else. A user who visits an Optional page
+   and consciously leaves everything blank sees the tag stay Optional.
+   Filling any obligation flips it to Complete.
+2. **Case classification is dynamic.** Whether a page (or subtree) is
+   "only optional" depends on the current fulfilment state via
+   `applyTo`. A page declared with 1 mandatory + 3 optional obligations
+   whose mandatory falls out of scope is effectively optional-only for
+   that render.
+3. **Optional pages are skipped by `firstUnfulfilledPage`.** Same as
+   Complete pages. The Optional tag surfaces the invitation to visit;
+   the `/start` redirect and the Continue affordance don't force it.
+   Users reach Optional pages via the task list (or a CYA change link).
+4. **Optional at container level only surfaces on purely-optional
+   subtrees.** A subsection with any in-scope mandatory anywhere in
+   its pages falls into the mandatory-branch of the classifier
+   (NS/IP/Complete). This is deliberate: on mixed subsections the
+   mandatory work IS the primary story, and the "invitation to add
+   more" from an optional sub-page gets absorbed into Complete once
+   the mandatory bar is met. Stakeholders asking "why doesn't a mixed
+   subsection tell me there's more?" — because "Done" is defined by
+   the mandatory bar, not by every field being touched.
+5. **The historical "empty-session clamp" is gone.** The old
+   `containerStatus` clamped to Not started when nothing had been
+   touched — necessary because vacuously-F optional-only children
+   would otherwise push a purely-untouched subsection to In progress.
+   The 5-way classifier makes this natural: nothing filled + at least
+   one mandatory anywhere = NS; nothing filled + only optional = Optional.
+   No clamp needed.
+6. **Design record.** The status alphabet was expanded from 4 → 5
+   values during the P0 UX fix (2026-07-13). Prior to that, an
+   untouched optional-only page/subsection read Completed via a
+   vacuous match on "no mandatory unfilled" — model-correct but
+   confusing on the task list. The Optional tag makes the surface
+   read honestly; the underlying invariants (F ⇒ every mandatory
+   satisfied) are unchanged.
 
 ## Gotchas
 

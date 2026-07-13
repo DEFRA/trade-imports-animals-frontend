@@ -10,12 +10,11 @@ dictionary MD) are parked for after the V4 buildout.
 
 ## Where we are — session handoff (last updated 2026-07-13)
 
-**Branch:** `spike/EUDPA-249-flow-layer`, pushed to
-`DEFRA/trade-imports-animals-frontend`. Latest commit on origin
-`389f2f0` (composite-widget UX polish bucket cleared). 89 commits
-ahead of `main`.
+**Branch:** `spike/EUDPA-249-flow-layer`. Latest commit that has been
+pushed: `591007d` (docs refresh); one uncommitted change on top
+extending the status alphabet to 5 values (P0 resolution).
 
-**Tests:** 564 spike tests across 23 files, all green.
+**Tests:** 566 spike tests across 23 files, all green.
 Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
 
 **Browsable demo:** `npm run dev` (auth defaults off in dev), then
@@ -227,12 +226,10 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
 
 ### Immediate next candidates
 
-Steps 4 and 5 are complete. Next work is small polish + parked
-follow-ons — pick one:
+Steps 4 and 5 are complete. P0 is now resolved (see the "Optional"
+status alphabet extension recorded below). Next work is polish +
+parked follow-ons — pick one:
 
-- **P0 — optional-only visited-before-Complete decision.** See
-  below. This is a UX call that the V4 buildout has now sharpened:
-  a couple of subsections end up entirely optional-only. Half a day.
 - **P0.5 — Welsh locale threading.** Infrastructure done; needs the
   request → `t()` locale param plumbing plus `cy.json`. See below.
 - **Playwright cross-variant harness.** Add the V4 variant to the
@@ -865,36 +862,54 @@ Suggested review checklist per milestone:
 Four items intentionally deferred until the V4 buildout has run and
 its outcomes are visible.
 
-### P0. UX for optional-only pages/subsections — should the user visit before we call it Complete?
+### P0. Optional-only page/subsection UX — RESOLVED (2026-07-13)
 
-**Context:** the model-layer rule change (see resolved limitation
-above) means an in-scope-optional-only page rolls up to F immediately;
-`firstUnfulfilledPage` skips it and the task list shows Completed
-without the user ever seeing the page. That is model-correct — the
-journey genuinely doesn't need the field — but it's a UX call whether
-"Completed" implies "user has visited and consciously left blank."
+**Outcome:** the model gained a fifth status value, `Optional`.
 
-**Scope when it's picked up** — approximately half a day:
+The old alphabet was 4-way (NA / NS / IP / F). An untouched
+optional-only page hit F vacuously ("no mandatory unfilled" was
+vacuously true), so the task list read "Completed" without the user
+having engaged. That was model-correct but read as false confidence.
+The new alphabet extends the classifier to 5 values:
 
-- Confirm from V4 buildout whether any _subsection_ ends up entirely
-  optional-only (no mandatories anywhere in it). The residual UX
-  concern only bites for those; mixed subsections are fine as-is.
-- If yes, decide between:
-  1. Live with "Completed" for unvisited optional-only containers
-     (matches the model; simple; CYA Change link exposes the page).
-  2. Add a dedicated "Optional" tag to the task-list widget for
-     containers whose F derives from having no in-scope mandatories.
-     View-layer only; runtime rule unchanged.
-  3. Visited-plumbing at the view layer: a per-session `visited` set,
-     read only by the hub controller when deciding whether to show
-     "Completed" or "Not started" for an optional-only container.
-     No engine change.
-- Update `docs/add-an-obligation.md` "Subsection / section status
-  roll-up" bullet with whichever we pick.
+- **NA** — no obligations in scope.
+- **NS** — at least one mandatory concern in scope, nothing filled.
+- **Optional** — only optional obligations in scope, none filled.
+- **IP** — at least one mandatory concern still unsatisfied, some
+  obligation filled.
+- **F** — either only optional in scope and ≥ 1 filled, or every
+  mandatory concern satisfied.
 
-**Reference:** the completion-mandate vs submit-mandate distinction
-that motivated the underlying rule change; the resolved-limitation
-block earlier in this file.
+The same 5-way classifier runs at page, container, and journey level
+(`classifyEntries` in `engine/index.js`). At container level it re-
+derives over the subtree's in-scope obligations rather than rolling
+up child statuses; the old empty-session clamp goes away as a
+consequence.
+
+**Design decisions locked in:**
+
+1. **Navigation.** `firstUnfulfilledPage` skips Optional pages (same
+   as F). The Optional tag surfaces the invitation to visit; `/start`
+   and Continue don't force it.
+2. **Journey-level rollup.** Same classifier. In practice V4 has
+   mandatories somewhere in every journey, so `journeyState` will
+   never actually return Optional — but the rule is written for
+   symmetry with page/container.
+3. **No visited-plumbing.** Engagement is measured by fulfilment
+   count, not by a per-session visited flag.
+4. **Tag colour.** `govuk-tag--turquoise` — distinct from NS (blue)
+   and IP (light-blue).
+
+**Documentation:** the full alphabet + design notes live in
+`docs/add-an-obligation.md` §Status alphabet — page, container,
+journey.
+
+**Landed in commit(s):** engine + hub controller + i18n +
+`docs/add-an-obligation.md` update in one commit; test suite grew
+564 → 566 (two new engine tests covering Optional at page + container
+level). Two e2e-walk assertions updated to expect Optional tags on
+purely-optional subsections whose walk deliberately skipped them
+(previously vacuously-F).
 
 ### P0.5. Spike-wide multi-language (Welsh) support — IN PROGRESS
 

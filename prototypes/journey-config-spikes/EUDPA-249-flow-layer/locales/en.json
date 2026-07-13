@@ -453,6 +453,7 @@
     "status": {
       "notApplicable": "Not applicable",
       "notStarted": "Not started",
+      "optional": "Optional",
       "inProgress": "In progress",
       "completed": "Completed",
       "submitted": "Submitted"

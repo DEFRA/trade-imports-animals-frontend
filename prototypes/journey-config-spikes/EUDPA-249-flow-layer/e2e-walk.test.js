@@ -331,18 +331,27 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       url: `${BASE}/task-list`
     })
     expect(list.statusCode).toBe(200)
-    // 14 subsections total (origin, reason, transporter-type, transport,
-    // arrival-at-port, unweaned, certified-for, origin-details,
-    // destination-details, contact, trader-reference,
-    // accompanying-documents, commodity-lines-manage,
-    // commodity-lines-details) — each should render a Completed status
-    // tag. A numeric assertion catches new subsections being added
-    // without their fulfilment being wired.
+    // 14 subsections total. 13 read Completed. The one exception is
+    // `trader-reference` — its only obligation (internalReferenceNumber)
+    // is completion-optional and the walk deliberately skips it, so
+    // the subsection reads Optional under the 5-way alphabet (Case A —
+    // no mandatory in scope, nothing filled). Under the old alphabet
+    // this was vacuously F; the Optional tag is the visible surface
+    // of the P0 UX fix. Note that `accompanying-documents` IS filled
+    // on this walk (exercises branchedGate's all-mandatory branch), so
+    // it reads Completed — the transit walk below skips it and picks
+    // up the second Optional tag. A numeric assertion catches new
+    // subsections being added without their fulfilment being wired.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 14 Completed tags on the task list, got ${completedCount}`
-    ).toBe(14)
+      `expected 13 Completed tags on the task list, got ${completedCount}`
+    ).toBe(13)
+    const optionalCount = (list.payload.match(/Optional/g) ?? []).length
+    expect(
+      optionalCount,
+      `expected 1 Optional tag on the task list, got ${optionalCount}`
+    ).toBe(1)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 
@@ -520,18 +529,24 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       url: `${BASE}/task-list`
     })
     expect(list.statusCode).toBe(200)
-    // 14 subsections — same as internal-market. The `reason` subsection
-    // rolls up to F once reason-for-import is filled because
-    // purposeInInternalMarket goes NA and NA obligations don't hold
-    // the subsection open. The new `accompanying-documents` subsection
-    // is F because branchedGate keeps all four fields optional while
-    // none has been filled (see the block comment on the fill step
-    // above).
+    // 14 subsections — same as internal-market. 12 read Completed;
+    // TWO read Optional. The internal-market walk above filled
+    // `accompanying-documents` and left only `trader-reference`
+    // untouched; this walk deliberately skips both. Both are
+    // optional-only subsections, so under the 5-way alphabet they
+    // read Optional (Case A). The `reason` subsection still rolls up
+    // to F once reason-for-import is filled — purposeInInternalMarket
+    // goes NA, and NA obligations don't hold the subsection open.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 14 Completed tags on the task list, got ${completedCount}`
-    ).toBe(14)
+      `expected 12 Completed tags on the task list, got ${completedCount}`
+    ).toBe(12)
+    const optionalCount = (list.payload.match(/Optional/g) ?? []).length
+    expect(
+      optionalCount,
+      `expected 2 Optional tags on the task list, got ${optionalCount}`
+    ).toBe(2)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 
