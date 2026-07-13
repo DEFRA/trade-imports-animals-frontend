@@ -115,6 +115,29 @@ describe('staticEnum — reasonForImport', () => {
       'Internal market'
     )
   })
+
+  it('carries all 5 V4 codes (step 5c spec conformance)', () => {
+    // Regression: iteration-1 stub had 4 mismatched codes
+    // (transit-through-eu vs V4 `transit`, temporary-admission vs V4
+    // `temporary-admission-horses`, re-entry-after-refusal vs V4
+    // `re-entry`, and V4's `transhipment-or-onward-travel` was
+    // absent). Step 5c renamed / added.
+    expect(reasonForImportDomain.options({})).toEqual([
+      'internal-market',
+      'transhipment-or-onward-travel',
+      'transit',
+      're-entry',
+      'temporary-admission-horses'
+    ])
+    // Every label resolves to English copy via t().
+    expect(t(reasonForImportDomain.labels.transit)).toBe('Transit')
+    expect(
+      t(reasonForImportDomain.labels['transhipment-or-onward-travel'])
+    ).toBe('Transhipment or onward travel')
+    expect(t(reasonForImportDomain.labels['temporary-admission-horses'])).toBe(
+      'Temporary admission (horses)'
+    )
+  })
 })
 
 describe('computedEnum — purposeInInternalMarket', () => {
@@ -122,13 +145,25 @@ describe('computedEnum — purposeInInternalMarket', () => {
     const options = purposeInInternalMarketDomain.options({
       [reasonForImport.id]: 'internal-market'
     })
-    expect(options).toEqual(['breeding', 'slaughter', 'fattening', 'other'])
+    expect(options).toEqual([
+      'transfer-of-ownership-sale-or-gift',
+      'transfer-of-ownership-rescue',
+      'breeding',
+      'research',
+      'racing-competition-show-or-training',
+      'approved-premises-or-body',
+      'companion-animal-not-for-resale-or-rehoming',
+      'production',
+      'slaughter',
+      'fattening',
+      'restocking'
+    ])
   })
 
   it('returns [] when reason is anything else or unset', () => {
     expect(
       purposeInInternalMarketDomain.options({
-        [reasonForImport.id]: 'transit-through-eu'
+        [reasonForImport.id]: 'transit'
       })
     ).toEqual([])
     expect(purposeInInternalMarketDomain.options({})).toEqual([])
@@ -142,6 +177,38 @@ describe('computedEnum — purposeInInternalMarket', () => {
 
   it('exposes labels for the sub-values', () => {
     expect(t(purposeInInternalMarketDomain.labels.breeding)).toBe('Breeding')
+  })
+
+  it('carries all 11 V4 codes (step 5c spec conformance)', () => {
+    // Regression: iteration-1 stub had 4 values (breeding, slaughter,
+    // fattening, other) — `other` doesn't exist in V4 and 8 real V4
+    // values were missing. Step 5c widened to the full 11 values.
+    const options = purposeInInternalMarketDomain.options({
+      [reasonForImport.id]: 'internal-market'
+    })
+    expect(options).toHaveLength(11)
+    expect(options).not.toContain('other')
+    // Every label resolves.
+    for (const code of options) {
+      const resolved = t(purposeInInternalMarketDomain.labels[code])
+      expect(resolved, `${code} did not resolve`).toBeTruthy()
+      expect(resolved).not.toContain('domain.purpose.')
+    }
+    // Spot-check a few of the newly-added V4 values.
+    expect(
+      t(
+        purposeInInternalMarketDomain.labels[
+          'transfer-of-ownership-sale-or-gift'
+        ]
+      )
+    ).toBe('Transfer of ownership - Sale or gift')
+    expect(
+      t(
+        purposeInInternalMarketDomain.labels[
+          'companion-animal-not-for-resale-or-rehoming'
+        ]
+      )
+    ).toBe('Companion animal not for resale or rehoming')
   })
 })
 

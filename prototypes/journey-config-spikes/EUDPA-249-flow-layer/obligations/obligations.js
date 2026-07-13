@@ -15,9 +15,23 @@
  * story: any obligation's applyTo can be exercised as a plain function
  * call with plain inputs (no evaluator, no resolver, no obligationsById).
  *
- * System-populated fields (Reference Number, gov.identity-fed
- * Responsible Person, MDM-sourced enum values) are stubbed in test
- * fixtures rather than modelled as obligations.
+ * System-populated fields are declared but NOT presented in the flow
+ * layer:
+ *   - `poApprovedReferenceNumber` — system-minted at notification
+ *     creation time. Format `GBN-AG-YY-XXXXXX` (Crockford base32 body).
+ *   - `responsiblePersonForLoad` — consumed from gov.identity on
+ *     authentication. Composite (person + telephone + email + org name
+ *     + org address + org telephone).
+ * Both are listed on the V4 spec so the manifest reflects them. Their
+ * value legality is enforced upstream (the system that mints the id;
+ * gov.identity for the person), so neither carries a domain entry;
+ * both are on the `KNOWN_UNWIRED` allow-list in `coverage.test.js`
+ * with a reason.
+ *
+ * MDM-sourced enum values (commodity codes / species / ports of
+ * entry / country of origin / animals-certified-for options) are
+ * stubbed in test fixtures rather than modelled as obligations —
+ * their real option lists come from MDM in production.
  *
  * Standard address block: modelled as a single-cardinality obligation
  * whose stored value is a composite `{ name, addressLine1,
@@ -122,6 +136,35 @@ const accompanyingDocumentBlockReason = {
   code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
   explanation:
     'accompanying document fields become mandatory once any one is filled'
+}
+
+// -----------------------------------------------------------------------------
+// System-populated fields — declared for V4 completeness but NOT
+// presented in the flow layer. Value legality is enforced upstream
+// (system minting for the reference number; gov.identity for the
+// responsible person), so both are on `KNOWN_UNWIRED` in
+// obligations/coverage.test.js. Added during step 5c spec pass.
+// -----------------------------------------------------------------------------
+
+// V4: `GBN-AG-YY-XXXXXX` where XXXXXX is a 6-char Crockford base32
+// body (`0-9A-HJKMNP-TV-Z`, no I/L/O/U). System-assigned at
+// notification-creation time; never user-entered.
+export const poApprovedReferenceNumber = {
+  id: '9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d',
+  name: 'poApprovedReferenceNumber',
+  status: 'mandatory',
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
+}
+
+// V4: Consumed from gov.identity on authentication. Composite:
+// { person, telephone, email, orgName, orgAddress, orgTelephone }.
+// gov.identity guarantees the shape upstream so the spike does not
+// enforce a domain-level predicate.
+export const responsiblePersonForLoad = {
+  id: 'ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e',
+  name: 'responsiblePersonForLoad',
+  status: 'mandatory',
+  applyTo: () => ({ inScope: true, status: 'mandatory' })
 }
 
 // -----------------------------------------------------------------------------
@@ -694,6 +737,8 @@ export const accompanyingDocumentDateOfIssue = {
 // -----------------------------------------------------------------------------
 
 export const obligations = [
+  poApprovedReferenceNumber,
+  responsiblePersonForLoad,
   countryOfOrigin,
   regionCodeRequirement,
   regionCode,

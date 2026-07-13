@@ -56,7 +56,7 @@ describe('status', () => {
 
   it('statusOfPage is NA when nothing presented is in scope', () => {
     const state = evaluateState({
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     expect(statusOfPage(findPage('purpose-details'), state)).toBe(
       STATUSES.NOT_APPLICABLE
@@ -68,7 +68,7 @@ describe('status', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     expect(statusOfContainer(findSection('origin-and-reason'), state)).toBe(
       STATUSES.FULFILLED
@@ -97,7 +97,7 @@ describe('navigation', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     // Reason section is F once country + region + reason filled (purpose NA).
     const target = nextAfter(findPage('reason-for-import'), state)

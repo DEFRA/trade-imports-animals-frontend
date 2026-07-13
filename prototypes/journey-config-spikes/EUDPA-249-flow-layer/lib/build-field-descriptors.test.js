@@ -52,7 +52,7 @@ describe('buildFieldDescriptors', () => {
   it('filters out obligations that are out of scope', () => {
     // Purpose is out of scope until reasonForImport is internal-market
     const filledState = evaluateState({
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     const page = findPage('purpose-details')
     const desc = buildFieldDescriptors(page, filledState)

@@ -28,7 +28,16 @@ const KNOWN_UNWIRED = new Set([
   // Group containers — no direct value at this level; children carry
   // the semantics. commodityLine + unitRecord are structural.
   'commodityLine',
-  'unitRecord'
+  'unitRecord',
+
+  // System-populated fields declared for V4 completeness but NOT
+  // presented in the flow layer (added step 5c). Value legality is
+  // enforced upstream (the system minting the reference number;
+  // gov.identity for the responsible person), so neither carries a
+  // domain entry. See obligations/obligations.js header + inline
+  // comments on each declaration.
+  'poApprovedReferenceNumber',
+  'responsiblePersonForLoad'
 
   // Standard address blocks wired during step 4 iteration 7:
   // - Phase A: commercialTransporter (first worked example).
@@ -157,5 +166,25 @@ describe('uniqueness — every obligation has a distinct id and name', () => {
       .filter(([, count]) => count > 1)
       .map(([name, count]) => `${name} (×${count})`)
     expect(duplicates).toEqual([])
+  })
+})
+
+describe('step 5c — system-populated V4 fields declared but not presented', () => {
+  it('poApprovedReferenceNumber + responsiblePersonForLoad are on the manifest', () => {
+    // Regression against the parent EUDPA-277 spike's decision to
+    // skip these entirely. Step 5c added them for V4 completeness;
+    // if either goes missing, this fires.
+    const names = obligations.map((o) => o.name)
+    expect(names).toContain('poApprovedReferenceNumber')
+    expect(names).toContain('responsiblePersonForLoad')
+  })
+
+  it('both obligations are declared always-in-scope + mandatory', () => {
+    // They're system-populated (mint / gov.identity), so scope is
+    // unconditional; the notification can't exist without them.
+    const po = obligations.find((o) => o.name === 'poApprovedReferenceNumber')
+    const rp = obligations.find((o) => o.name === 'responsiblePersonForLoad')
+    expect(po.applyTo()).toEqual({ inScope: true, status: 'mandatory' })
+    expect(rp.applyTo()).toEqual({ inScope: true, status: 'mandatory' })
   })
 })

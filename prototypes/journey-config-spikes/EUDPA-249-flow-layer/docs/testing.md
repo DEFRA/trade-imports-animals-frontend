@@ -143,7 +143,7 @@ in-scope branch of the gate from `internal-market` to
    ...
    applyTo: branchedGate(
 -    (fulfilments) => fulfilments[reasonForImport.id] === 'internal-market',
-+    (fulfilments) => fulfilments[reasonForImport.id] === 'transit-through-eu',
++    (fulfilments) => fulfilments[reasonForImport.id] === 'transit',
      ...
    )
  }

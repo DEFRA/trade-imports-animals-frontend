@@ -235,24 +235,50 @@ function parseDdMmYyyy(value) {
 // task-list patterns. Full V4 lists come from MDM in production.
 // ---------------------------------------------------------------------------
 
+// V4 spec (Confluence page 6497338582): 5 values. Step 5c aligned this
+// with the spec (was 4 values with mismatched codes — transit-through-eu
+// vs V4's `transit`, temporary-admission vs V4's `temporary-admission-
+// horses`, re-entry-after-refusal vs V4's `re-entry`; V4 also carries
+// `transhipment-or-onward-travel` which the iteration-shipped stub
+// lacked). Codes are kebab-cased for consistency across the manifest.
 const REASON_FOR_IMPORT_OPTIONS = [
   'internal-market',
-  'transit-through-eu',
-  'temporary-admission',
-  're-entry-after-refusal'
+  'transhipment-or-onward-travel',
+  'transit',
+  're-entry',
+  'temporary-admission-horses'
 ]
 
 export const reasonForImportDomain = staticEnum(REASON_FOR_IMPORT_OPTIONS, {
   labels: {
     'internal-market': 'domain.reasonForImport.internal-market',
-    'transit-through-eu': 'domain.reasonForImport.transit-through-eu',
-    'temporary-admission': 'domain.reasonForImport.temporary-admission',
-    're-entry-after-refusal': 'domain.reasonForImport.re-entry-after-refusal'
+    'transhipment-or-onward-travel':
+      'domain.reasonForImport.transhipment-or-onward-travel',
+    transit: 'domain.reasonForImport.transit',
+    're-entry': 'domain.reasonForImport.re-entry',
+    'temporary-admission-horses':
+      'domain.reasonForImport.temporary-admission-horses'
   }
 })
 
+// V4 spec: purpose has 11 values, all available under the
+// `internal-market` reason. Step 5c widened from the initial 4-value
+// stub (`breeding / slaughter / fattening / other` — `other` doesn't
+// exist in V4).
 const PURPOSE_BY_REASON = {
-  'internal-market': ['breeding', 'slaughter', 'fattening', 'other']
+  'internal-market': [
+    'transfer-of-ownership-sale-or-gift',
+    'transfer-of-ownership-rescue',
+    'breeding',
+    'research',
+    'racing-competition-show-or-training',
+    'approved-premises-or-body',
+    'companion-animal-not-for-resale-or-rehoming',
+    'production',
+    'slaughter',
+    'fattening',
+    'restocking'
+  ]
 }
 
 export const purposeInInternalMarketDomain = computedEnum(
@@ -260,10 +286,21 @@ export const purposeInInternalMarketDomain = computedEnum(
   [reasonForImport],
   {
     labels: {
+      'transfer-of-ownership-sale-or-gift':
+        'domain.purpose.transfer-of-ownership-sale-or-gift',
+      'transfer-of-ownership-rescue':
+        'domain.purpose.transfer-of-ownership-rescue',
       breeding: 'domain.purpose.breeding',
+      research: 'domain.purpose.research',
+      'racing-competition-show-or-training':
+        'domain.purpose.racing-competition-show-or-training',
+      'approved-premises-or-body': 'domain.purpose.approved-premises-or-body',
+      'companion-animal-not-for-resale-or-rehoming':
+        'domain.purpose.companion-animal-not-for-resale-or-rehoming',
+      production: 'domain.purpose.production',
       slaughter: 'domain.purpose.slaughter',
       fattening: 'domain.purpose.fattening',
-      other: 'domain.purpose.other'
+      restocking: 'domain.purpose.restocking'
     }
   }
 )

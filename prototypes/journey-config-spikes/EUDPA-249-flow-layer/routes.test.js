@@ -277,7 +277,7 @@ describe('page-controller — option filtering', () => {
     await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/pages/reason-for-import',
-      payload: { reasonForImport: 'transit-through-eu' }
+      payload: { reasonForImport: 'transit' }
     })
     // /start now redirects to the next unfulfilled — which is NOT purpose,
     // since purpose is NA on transit.

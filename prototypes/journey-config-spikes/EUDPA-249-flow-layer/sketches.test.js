@@ -41,7 +41,7 @@ describe('pageSchema', () => {
   it('shrinks dynamic options when reason changes', () => {
     const page = findPage('origin-and-reason', 'purpose-details')
     const schema = pageSchema(page, {
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     expect(schema.shape.purposeInInternalMarket.valid).toEqual([])
   })
@@ -54,10 +54,17 @@ describe('optionListsForPage', () => {
       [reasonForImport.id]: 'internal-market'
     })
     expect(lists.purposeInInternalMarket).toEqual([
+      'transfer-of-ownership-sale-or-gift',
+      'transfer-of-ownership-rescue',
       'breeding',
+      'research',
+      'racing-competition-show-or-training',
+      'approved-premises-or-body',
+      'companion-animal-not-for-resale-or-rehoming',
+      'production',
       'slaughter',
       'fattening',
-      'other'
+      'restocking'
     ])
   })
 })
@@ -130,6 +137,20 @@ describe('coverageReport', () => {
     // the invariant we care about is that they're the ONLY thing
     // left. If a new leaf obligation lands without a domain entry,
     // this length assertion fires.
-    expect(report.missing).toEqual(['commodityLine', 'unitRecord'])
+    // The 4 exempt entries after step 5c:
+    // - 2 structural group containers (commodityLine, unitRecord)
+    // - 2 system-populated fields (poApprovedReferenceNumber,
+    //   responsiblePersonForLoad) declared for V4 completeness but
+    //   enforced upstream (system minting; gov.identity).
+    // If a new leaf obligation lands without a domain entry, this
+    // length assertion fires.
+    expect(new Set(report.missing)).toEqual(
+      new Set([
+        'poApprovedReferenceNumber',
+        'responsiblePersonForLoad',
+        'commodityLine',
+        'unitRecord'
+      ])
+    )
   })
 })

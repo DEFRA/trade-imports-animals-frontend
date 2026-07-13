@@ -759,7 +759,7 @@ describe('commodity-lines — /start integration', () => {
     await inject(jar, {
       method: 'POST',
       url: `${BASE}/pages/reason-for-import`,
-      payload: { reasonForImport: 'transit-through-eu' }
+      payload: { reasonForImport: 'transit' }
     })
     await inject(jar, {
       method: 'POST',

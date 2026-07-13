@@ -359,7 +359,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     await fill(jar, 'region-code-requirement', { regionCodeRequirement: 'no' })
     // region-code omitted — completion-optional; /start skips.
     await fill(jar, 'reason-for-import', {
-      reasonForImport: 'transit-through-eu'
+      reasonForImport: 'transit'
     })
     // NB. no purpose-details step — purposeInInternalMarket is
     // out-of-scope (NA) on the transit path, so /start skips it. This
@@ -498,7 +498,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     })
     expect(cya.statusCode).toBe(200)
     expect(cya.payload).toContain('France') // countryOfOrigin FR
-    expect(cya.payload).toContain('Transit through the EU') // reasonForImport
+    expect(cya.payload).toContain('Transit') // reasonForImport (V4 code: 'transit')
     // Purpose is out-of-scope on transit — its row should NOT render.
     expect(cya.payload).not.toContain('Breeding')
     expect(cya.payload).not.toContain('Fattening')

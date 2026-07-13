@@ -86,7 +86,7 @@ const findSubsection = (subsectionId) => {
 
 describe('page visibility', () => {
   it('purpose-details is NA when reasonForImport is not internal-market', () => {
-    const state = evaluate({ [reasonForImport.id]: 'transit-through-eu' })
+    const state = evaluate({ [reasonForImport.id]: 'transit' })
     // purpose obligation is out of scope → page presenting only it is NA.
     expect(
       pageStatus(findPage('origin-and-reason', 'purpose-details'), state)
@@ -137,12 +137,24 @@ describe('option filtering', () => {
         new Map(),
         domain
       )
-    ).toEqual(['breeding', 'slaughter', 'fattening', 'other'])
+    ).toEqual([
+      'transfer-of-ownership-sale-or-gift',
+      'transfer-of-ownership-rescue',
+      'breeding',
+      'research',
+      'racing-competition-show-or-training',
+      'approved-premises-or-body',
+      'companion-animal-not-for-resale-or-rehoming',
+      'production',
+      'slaughter',
+      'fattening',
+      'restocking'
+    ])
 
     expect(
       optionsFor(
         purposeInInternalMarket,
-        { [reasonForImport.id]: 'transit-through-eu' },
+        { [reasonForImport.id]: 'transit' },
         new Map(),
         domain
       )
@@ -253,7 +265,7 @@ describe('task list rollup', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     // origin subsection F; purpose-details NA; reason subsection F.
     expect(containerStatus(findSection('origin-and-reason'), state)).toBe(
@@ -287,7 +299,7 @@ describe('task list rollup', () => {
     // No commodity fulfilments → line-group has no records → all
     // per-line pages collapse to NA; the intro is inherently NA →
     // section NA.
-    const state = evaluate({ [reasonForImport.id]: 'transit-through-eu' })
+    const state = evaluate({ [reasonForImport.id]: 'transit' })
     expect(containerStatus(findSection('commodity-lines'), state)).toBe(
       STATUSES.NOT_APPLICABLE
     )
@@ -305,7 +317,7 @@ describe('journey state', () => {
   })
 
   it('is IP after partial fulfilment', () => {
-    const state = evaluate({ [reasonForImport.id]: 'transit-through-eu' })
+    const state = evaluate({ [reasonForImport.id]: 'transit' })
     expect(journeyState(flow, state)).toBe(STATUSES.IN_PROGRESS)
   })
 })
@@ -339,7 +351,7 @@ describe('navigation', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit-through-eu'
+      [reasonForImport.id]: 'transit'
     })
     // country F; region-requirement F; region-code F; reason F; purpose NA. Section F → null.
     expect(
@@ -372,7 +384,7 @@ describe('navigation', () => {
 describe('end-to-end walk with real V4 predicates', () => {
   it('rejects a 2026-12-12 date only when the format is wrong; caps transited countries at 12', () => {
     const baseFulfilments = {
-      [reasonForImport.id]: 'transit-through-eu',
+      [reasonForImport.id]: 'transit',
       [transporterType.id]: 'commercial',
       [internalReferenceNumber.id]: 'REF-123',
       [portOfEntry.id]: 'DVR'
@@ -419,7 +431,7 @@ describe('end-to-end walk with real V4 predicates', () => {
 
   it('one commodity line with a valid commodity code — line record exists post-purge', () => {
     const fulfilments = {
-      [reasonForImport.id]: 'transit-through-eu',
+      [reasonForImport.id]: 'transit',
       [transporterType.id]: 'commercial',
       [arrivalDateAtPort.id]: '12/12/2026',
       [portOfEntry.id]: 'DVR',
