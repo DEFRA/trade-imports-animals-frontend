@@ -94,12 +94,6 @@ function inScopeForLine(state, obligation, lineId) {
   return records.some((r) => r.fulfilmentId === lineId)
 }
 
-function lineNumber(lineId) {
-  // 'line1' → 1. Falls back to the raw id if the format changes.
-  const match = /^line(\d+)$/.exec(lineId)
-  return match ? Number(match[1]) : lineId
-}
-
 /** True iff this line's commodityCode opens any WIRED unit-scoped
  *  obligation — i.e. clicking Manage animals will lead to a page the
  *  user can actually fill. Uses the allowListed helper's exposed
@@ -129,7 +123,16 @@ function lineHasWiredUnitObligation(state, lineId) {
   return false
 }
 
-function summariseLine(state, lineId) {
+function summariseLine(state, lineId, displayIndex) {
+  // Display label uses the 1-based ORDINAL position of this line in
+  // the current /lines list, not the internal line id. Reason: line
+  // ids are session-monotonic (no recycling — see lib/state.js
+  // NEXT_LINE_ID_KEY) so after a delete or after adding + deleting +
+  // adding again, the surviving line can have an internal id like
+  // line2. Rendering "Commodity line 2" for what the user perceives
+  // as the 1st line is confusing. The URLs stay keyed by the
+  // internal id because they must be stable across renumbering.
+  // Same fix applied to units on commit 55e5124.
   const rows = []
   for (const { pageName, obligation } of LINE_PAGES) {
     if (!inScopeForLine(state, obligation, lineId)) continue
@@ -145,7 +148,7 @@ function summariseLine(state, lineId) {
             text: t('commodityLines.changeLinkText'),
             visuallyHiddenText: t('commodityLines.changeLinkHidden', {
               label: forObligation(obligation).pageTitle,
-              n: lineNumber(lineId)
+              n: displayIndex
             })
           }
         ]
@@ -155,12 +158,12 @@ function summariseLine(state, lineId) {
   const showManageAnimals = lineHasWiredUnitObligation(state, lineId)
   return {
     lineId,
-    title: t('commodityLines.lineHeading', { n: lineNumber(lineId) }),
+    title: t('commodityLines.lineHeading', { n: displayIndex }),
     rows,
     deleteHref: `${BASE}/lines/${lineId}/delete`,
     deleteButtonText: t('commodityLines.deleteButton'),
     deleteVisuallyHiddenText: t('commodityLines.deleteHidden', {
-      n: lineNumber(lineId)
+      n: displayIndex
     }),
     manageAnimalsHref: showManageAnimals
       ? `${BASE}/lines/${lineId}/units`
@@ -177,7 +180,9 @@ export const linesIndexController = {
       const state = readState(request)
       const impl = state.obligations[commodityLine.id]
       const lineRecords = impl?.records ?? []
-      const lines = lineRecords.map((r) => summariseLine(state, r.fulfilmentId))
+      const lines = lineRecords.map((r, i) =>
+        summariseLine(state, r.fulfilmentId, i + 1)
+      )
       return h.view('features/commodity-lines/list', {
         chrome: chrome(),
         layout: 'layout.njk',

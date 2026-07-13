@@ -214,9 +214,15 @@ describe('commodity-lines — delete', () => {
     const list = await getLines(jar)
     // line1 gone → Cattle (0102) no longer in the summary.
     expect(list.payload).not.toContain('Cattle (0102)')
-    // line2 unchanged.
+    // line2's DATA is unchanged.
     expect(list.payload).toContain('Pig (0103)')
-    expect(list.payload).toContain('Commodity line 2')
+    // …but its display LABEL renumbers to "Commodity line 1" because
+    // the display uses the 1-based ordinal in the current list, not
+    // the internal line id (which is still `line2`). Same fix pattern
+    // as commit 55e5124 for units. URLs stay on the internal id.
+    expect(list.payload).toContain('Commodity line 1')
+    expect(list.payload).not.toContain('Commodity line 2')
+    expect(list.payload).toContain(`${BASE}/lines/line2/commodity-details`)
   })
 
   it('deletes ALL line-scoped leaves — a fully-filled line disappears cleanly after Delete', async () => {
@@ -461,6 +467,96 @@ describe('commodity-lines — /lines summary rendering', () => {
     const list = await getLines(jar)
     expect(list.payload).toContain('Delete commodity line 1')
     expect(list.payload).not.toContain('Delete line1')
+  })
+
+  it('line labels use the ordinal position, not the internal line id (renumbers after Delete)', async () => {
+    // Regression: display used to interpolate the internal line id
+    // (line1 → "Commodity line 1", line2 → "Commodity line 2"). Line
+    // ids are session-monotonic (no recycling — see lib/state.js
+    // NEXT_LINE_ID_KEY), so after deleting the first line the
+    // surviving line kept id line2 and rendered as "Commodity line 2"
+    // even when it was the only line. Fixed to use the 1-based
+    // ordinal position in the current /lines list; URLs still key on
+    // the internal id so per-line routes stay stable. Same fix pattern
+    // as commit 55e5124 applied to units.
+    const jar = makeCookieJar()
+    const l1 = await addLine(jar)
+    await fillLinePage(jar, l1, 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    const l2 = await addLine(jar)
+    await fillLinePage(jar, l2, 'commodity-details', {
+      'commodityCode-line2': '0103'
+    })
+    const l3 = await addLine(jar)
+    await fillLinePage(jar, l3, 'commodity-details', {
+      'commodityCode-line3': '010410'
+    })
+
+    // Sanity: three lines, all shown as ordinals 1..3.
+    let list = await getLines(jar)
+    expect(list.payload).toContain('Commodity line 1')
+    expect(list.payload).toContain('Commodity line 2')
+    expect(list.payload).toContain('Commodity line 3')
+
+    // Delete the FIRST line (internal id line1).
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/delete`,
+      payload: {}
+    })
+    list = await getLines(jar)
+    // Two lines remain (internal ids line2 + line3) but they display
+    // as Commodity line 1 + Commodity line 2 — display tracks the
+    // ordinal, not the internal id.
+    expect(list.payload).toContain('Commodity line 1')
+    expect(list.payload).toContain('Commodity line 2')
+    expect(list.payload).not.toContain('Commodity line 3')
+    // URLs still use the internal ids — routes stay stable.
+    expect(list.payload).toContain(`${BASE}/lines/line2/commodity-details`)
+    expect(list.payload).toContain(`${BASE}/lines/line3/commodity-details`)
+    // Change-link visuallyHiddenText also renumbers.
+    expect(list.payload).toContain('Commodity code for commodity line 1')
+    expect(list.payload).toContain('Commodity code for commodity line 2')
+    // Delete-button aria-label uses ordinals too.
+    expect(list.payload).toContain('Delete commodity line 1')
+    expect(list.payload).toContain('Delete commodity line 2')
+    expect(list.payload).not.toContain('Delete commodity line 3')
+  })
+
+  it('units page inherits the parent line ordinal (renumbers with the line list)', async () => {
+    // The units index page interpolates `{lineN}` in its heading /
+    // breadcrumb / summary blocks. Before the fix this used the
+    // internal id parsed from the URL segment, so navigating to
+    // /lines/line2/units after a delete would render "Animals on
+    // commodity line 2" even when line2 was the only remaining
+    // commodity line. Fixed to derive the parent line's ordinal
+    // from state at request time via lineDisplayIndex.
+    const jar = makeCookieJar()
+    const l1 = await addLine(jar)
+    await fillLinePage(jar, l1, 'commodity-details', {
+      'commodityCode-line1': '0102'
+    })
+    const l2 = await addLine(jar)
+    await fillLinePage(jar, l2, 'commodity-details', {
+      'commodityCode-line2': '01061900'
+    })
+    // Delete line1 so l2 becomes the sole survivor.
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/delete`,
+      payload: {}
+    })
+    // Manage animals on line2 (which is now the 1st line for the
+    // user).
+    const units = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/lines/line2/units`
+    })
+    expect(units.statusCode).toBe(200)
+    // Heading uses the ordinal position (1), not the internal id (2).
+    expect(units.payload).toContain('Animals on commodity line 1')
+    expect(units.payload).not.toContain('Animals on commodity line 2')
   })
 
   it('per-line summary includes a Commodity type row after the user picks a type', async () => {

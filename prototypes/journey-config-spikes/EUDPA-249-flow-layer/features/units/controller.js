@@ -89,12 +89,20 @@ function inScopeForUnit(state, obligation, lineId, unitId) {
   return records.some((r) => r.fulfilmentId === compositeKey)
 }
 
-function lineNumber(lineId) {
-  const match = /^line(\d+)$/.exec(lineId)
-  return match ? Number(match[1]) : lineId
+/** The 1-based ordinal position of `lineId` in the current
+ *  commodityLine records list — same ordinal the /lines page shows.
+ *  Uses ordinal not internal id for display so a surviving line after
+ *  a delete renumbers cleanly (same fix pattern as the summariseLine
+ *  and summariseUnit display labels). Returns lineId as a fallback if
+ *  the record is missing (shouldn't happen — callers verify
+ *  lineExists first — but keeps rendering safe). */
+function lineDisplayIndex(state, lineId) {
+  const records = state.obligations?.[commodityLine.id]?.records ?? []
+  const idx = records.findIndex((r) => r.fulfilmentId === lineId)
+  return idx >= 0 ? idx + 1 : lineId
 }
 
-function summariseUnit(state, lineId, unitId, displayIndex) {
+function summariseUnit(state, lineId, unitId, displayIndex, lineIndex) {
   // Display label uses the 1-based ORDINAL position of this unit in
   // the current /lines/{lineId}/units list, not the internal unit id.
   // Reason: unit ids are session-monotonic (no recycling — see
@@ -120,7 +128,7 @@ function summariseUnit(state, lineId, unitId, displayIndex) {
             text: t('units.changeLinkText'),
             visuallyHiddenText: t('units.changeLinkHidden', {
               label: forObligation(obligation).pageTitle,
-              lineN: lineNumber(lineId),
+              lineN: lineIndex,
               unitN: displayIndex
             })
           }
@@ -131,14 +139,14 @@ function summariseUnit(state, lineId, unitId, displayIndex) {
   return {
     unitId,
     title: t('units.unitHeading', {
-      lineN: lineNumber(lineId),
+      lineN: lineIndex,
       unitN: displayIndex
     }),
     rows,
     deleteHref: `${BASE}/lines/${lineId}/units/${unitId}/delete`,
     deleteButtonText: t('units.deleteButton'),
     deleteVisuallyHiddenText: t('units.deleteHidden', {
-      lineN: lineNumber(lineId),
+      lineN: lineIndex,
       unitN: displayIndex
     })
   }
@@ -205,19 +213,20 @@ export const linesUnitsIndexController = {
       if (!lineExists(state, lineId)) {
         return h.redirect(`${BASE}/lines`)
       }
+      const lineIndex = lineDisplayIndex(state, lineId)
       const impl = state.obligations[unitRecord.id]
       const unitRecords = (impl?.records ?? []).filter((r) =>
         r.fulfilmentId.startsWith(`${lineId}/`)
       )
       const units = unitRecords.map((r, i) => {
         const unitId = r.fulfilmentId.slice(lineId.length + 1)
-        return summariseUnit(state, lineId, unitId, i + 1)
+        return summariseUnit(state, lineId, unitId, i + 1, lineIndex)
       })
       return h.view('features/units/list', {
         chrome: chrome(),
         layout: 'layout.njk',
-        pageTitle: t('units.pageTitle', { lineN: lineNumber(lineId) }),
-        heading: t('units.heading', { lineN: lineNumber(lineId) }),
+        pageTitle: t('units.pageTitle', { lineN: lineIndex }),
+        heading: t('units.heading', { lineN: lineIndex }),
         lead: t('units.lead'),
         emptyText: t('units.empty'),
         addButtonText: t('units.addButton'),
@@ -233,7 +242,7 @@ export const linesUnitsIndexController = {
             href: `${BASE}/lines`
           },
           {
-            text: t('units.breadcrumbSelf', { lineN: lineNumber(lineId) })
+            text: t('units.breadcrumbSelf', { lineN: lineIndex })
           }
         ]
       })
