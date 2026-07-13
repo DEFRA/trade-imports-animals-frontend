@@ -62,7 +62,7 @@ const consignment = {
     contact: address('Contact Person', '6 High Street')
   },
   cph: '12/345/6789',
-  port: 'ABERDEEN',
+  port: 'GB ABD',
   arrival: { day: 12, month: 12, year: 2026 },
   transporter: {
     type: 'Commercial',

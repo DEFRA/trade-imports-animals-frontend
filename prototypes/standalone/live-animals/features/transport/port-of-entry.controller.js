@@ -20,15 +20,18 @@ const view = `${TEMPLATES}/features/transport/port-of-entry`
 const portItems = (selected) => [
   { value: '', text: 'Select port of entry' },
   { text: '──────────', disabled: true },
-  ...ports.list().map((value) => ({
-    value,
-    text: value,
-    selected: value === selected
+  ...ports.list().map((port) => ({
+    value: port.code,
+    text: `${port.name} (${port.code})`,
+    selected: port.code === selected
   }))
 ]
 
 const fields = compose(
-  oneOf('portOfEntry', ports.list()),
+  oneOf(
+    'portOfEntry',
+    ports.list().map((port) => port.code)
+  ),
   dateParts('arrivalDateAtPort', 'Enter a real arrival date')
 )
 

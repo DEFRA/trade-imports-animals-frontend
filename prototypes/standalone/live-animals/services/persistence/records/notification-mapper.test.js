@@ -35,7 +35,7 @@ const mappedAnswers = () => ({
     address: { addressLine1: '7 Route One' }
   },
   countyParishHoldingCph: '12/345/6789',
-  portOfEntry: 'ABERDEEN',
+  portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   commodityLines: [
     {
@@ -164,7 +164,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       address('Contact Person', '6 High Street')
     )
     expect(notification.cphNumber).toBe('12/345/6789')
-    expect(notification.transport.portOfEntry).toBe('ABERDEEN')
+    expect(notification.transport.portOfEntry).toBe('GB ABD')
     expect(notification.transport.arrivalDate).toBe('2026-12-12')
     expect(notification.transport.transporter).toEqual({
       name: 'Transporter Co',
@@ -290,7 +290,7 @@ const allAnswers = () => ({
     address: { addressLine1: '7 Route One' }
   },
   countyParishHoldingCph: '12/345/6789',
-  portOfEntry: 'ABERDEEN',
+  portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   meansOfTransport: 'Road Vehicle',
   transportIdentification: 'FR-892-LK',

@@ -9,4 +9,9 @@ export const prime = async () => {
   ports = await fetchPortsOfEntry()
 }
 
-export const list = () => ports.map((port) => port.name)
+export const list = () => ports
+
+export const label = (code) => {
+  const port = ports.find((p) => p.code === code)
+  return port ? `${port.name} (${port.code})` : undefined
+}

@@ -94,7 +94,7 @@ describe('indexed obligations are first-class', () => {
           country: 'United Kingdom'
         }
       },
-      portOfEntry: 'Aberdeen Airport',
+      portOfEntry: 'GB ABD',
       arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
       meansOfTransport: 'Airplane',
       transportIdentification: 'FR-892-LK',

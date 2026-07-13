@@ -94,18 +94,21 @@ describe('ports service — default stub mode', () => {
   it('list() serves stub data without priming', async () => {
     delete process.env.LIVE_ANIMALS_MODE
     const ports = await import('./ports/index.js')
-    expect(ports.list()).toContain('Aberdeen Airport')
+    expect(ports.list()).toContainEqual({
+      code: 'GB ABD',
+      name: 'Aberdeen Harbour'
+    })
   })
 })
 
 describe('ports service — real mode', () => {
-  it('prime() replaces the cache so list() serves fetched names', async () => {
+  it('prime() replaces the cache so list() serves fetched ports', async () => {
     process.env.LIVE_ANIMALS_MODE = 'real'
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const ports = await import('./ports/index.js')
 
     await ports.prime()
 
-    expect(ports.list()).toEqual(['Zed Port'])
+    expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
   })
 })

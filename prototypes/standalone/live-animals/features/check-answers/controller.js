@@ -14,6 +14,7 @@ import { unweanedApplies } from '../additional-details/controller.js'
 import * as certification from '../../services/certification-purposes/index.js'
 import { cphApplies } from '../cph-number/controller.js'
 import * as transportReference from '../../services/transport-reference/index.js'
+import * as ports from '../../services/ports/index.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
@@ -166,7 +167,11 @@ const buildRows = (answers) => {
           )
         ]
       : []),
-    row('Port of entry', answerOf('portOfEntry'), 'portOfEntry'),
+    row(
+      'Port of entry',
+      ports.label(answerOf('portOfEntry')) ?? answerOf('portOfEntry'),
+      'portOfEntry'
+    ),
     row(
       'Arrival date at port of entry',
       dateText(answerOf('arrivalDateAtPort')),

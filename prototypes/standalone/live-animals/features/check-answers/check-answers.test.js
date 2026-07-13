@@ -60,7 +60,7 @@ const fullSeed = {
   importer: { name: 'Import Co UK' },
   placeOfDestination: { name: 'Tech Imports Ltd' },
   countyParishHoldingCph: '12/345/6789',
-  portOfEntry: 'Aberdeen Airport',
+  portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
   meansOfTransport: 'Road Vehicle',
   transportIdentification: 'FR-892-LK',
