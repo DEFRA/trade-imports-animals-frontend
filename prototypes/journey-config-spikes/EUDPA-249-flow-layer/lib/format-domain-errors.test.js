@@ -55,6 +55,27 @@ describe('hrefFor', () => {
       hrefFor({ code: 'x', obligation: 'numberOfAnimals', path: 'line1' })
     ).toBe('#numberOfAnimals-line1')
   })
+
+  it('extends the anchor with a sub-field suffix only for address-block codes (#13)', () => {
+    // Address-family code + subField -> extended anchor.
+    expect(
+      hrefFor({
+        code: 'domain.address.subFieldMaxLength',
+        obligation: 'commercialTransporter',
+        subField: 'email'
+      })
+    ).toBe('#commercialTransporter__email')
+    // Non-address code that happens to carry subField (bug scenario)
+    // MUST NOT extend the anchor — otherwise a rogue caller could
+    // produce a wrong fragment link.
+    expect(
+      hrefFor({
+        code: 'domain.string.maxLength',
+        obligation: 'internalReferenceNumber',
+        subField: 'not-a-real-thing'
+      })
+    ).toBe('#internalReferenceNumber')
+  })
 })
 
 describe('formatDomainErrors', () => {

@@ -24,16 +24,20 @@
   {% elif item.type == 'textarea' %}
     {{ govukTextarea(item.args) }}
   {% elif item.type == 'address' %}
-    {% call govukFieldset({ legend: item.args.legend or { text: '' } }) %}
-      {% if item.args.hint %}<div class="govuk-hint">{{ item.args.hint.text }}</div>{% endif %}
-      {% for sub in item.args.subFields %}
-        {% if sub.widget == 'select' %}
-          {{ govukSelect(sub) }}
-        {% else %}
-          {{ govukInput(sub) }}
+    <div class="govuk-form-group{% if item.args.hasErrors %} govuk-form-group--error{% endif %}">
+      {% call govukFieldset({ legend: item.args.legend or { text: '' }, describedBy: item.args.describedBy }) %}
+        {% if item.args.hint %}
+          <div id="{{ item.args.hint.id }}" class="govuk-hint">{{ item.args.hint.text }}</div>
         {% endif %}
-      {% endfor %}
-    {% endcall %}
+        {% for sub in item.args.subFields %}
+          {% if sub.widget == 'select' %}
+            {{ govukSelect(sub) }}
+          {% else %}
+            {{ govukInput(sub) }}
+          {% endif %}
+        {% endfor %}
+      {% endcall %}
+    </div>
   {% else %}
     {{ govukInput(item.args) }}
   {% endif %}

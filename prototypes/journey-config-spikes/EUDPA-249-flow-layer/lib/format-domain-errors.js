@@ -107,6 +107,17 @@ export function textFor(error) {
   return t('errors.domain.unknownCode', { code: error.code })
 }
 
+// 2nd-code-review #13: gate the `__${subField}` anchor extension on
+// KNOWN address-block error codes. Prevents a rogue caller that sets
+// error.subField on a non-composite error from producing a broken
+// anchor like `#countryOfOrigin__something`.
+const ADDRESS_ERROR_CODES = new Set([
+  'domain.address.subFieldRequired',
+  'domain.address.subFieldMaxLength',
+  'domain.address.subFieldEmailFormat',
+  'domain.address.subFieldEnumInvalid'
+])
+
 /**
  * hrefFor — computes the fragment link. If we're rendering a
  * per-record page, the field id includes the path so the fragment
@@ -120,7 +131,8 @@ export function hrefFor(error) {
   const base = error.path
     ? `${error.obligation}-${error.path}`
     : error.obligation
-  const anchor = error.subField ? `${base}__${error.subField}` : base
+  const useSubField = error.subField && ADDRESS_ERROR_CODES.has(error.code)
+  const anchor = useSubField ? `${base}__${error.subField}` : base
   return `#${anchor}`
 }
 
@@ -142,7 +154,10 @@ export function formatDomainErrors(errors) {
       : error.obligation
     // Address sub-field errors get a per-sub-input key so the widget
     // renders the inline error on the exact input the user missed.
-    const key = error.subField ? `${base}__${error.subField}` : base
+    // Same #13 gate as hrefFor above: only extend the key when the
+    // error code is an address-family code.
+    const useSubField = error.subField && ADDRESS_ERROR_CODES.has(error.code)
+    const key = useSubField ? `${base}__${error.subField}` : base
     fieldErrors[key] = { text }
   }
   return { errorList, fieldErrors }

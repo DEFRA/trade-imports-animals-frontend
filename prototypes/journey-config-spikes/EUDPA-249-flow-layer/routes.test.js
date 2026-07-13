@@ -354,6 +354,52 @@ describe('page-controller — address-block composite widget (commercialTranspor
     expect(res.payload).toContain('Postcode')
   })
 
+  it('GET renders the address fieldset with accessible hint (#3), M-sized legend (#11), and no error state on first render (#10)', async () => {
+    // Deferred bucket from 2nd code review.
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/pages/transporter-details'
+    })
+    expect(res.statusCode).toBe(200)
+    // #11: legend gets the M-size class.
+    expect(res.payload).toMatch(
+      /class="[^"]*govuk-fieldset__legend[^"]*govuk-fieldset__legend--m/
+    )
+    // #3: hint gets an id + fieldset gets aria-describedby pointing at it.
+    expect(res.payload).toContain('id="commercialTransporter-hint"')
+    expect(res.payload).toMatch(
+      /aria-describedby="[^"]*commercialTransporter-hint/
+    )
+    // #10: no error state on first render.
+    expect(res.payload).not.toContain('govuk-form-group--error')
+  })
+
+  it('POST with a sub-field error wraps the fieldset in govuk-form-group--error (#10)', async () => {
+    // Compound behaviour: any sub-field error should light up the
+    // whole composite widget as a group in error state, so the
+    // widget matches the GOV.UK Design System error pattern.
+    const jar = makeCookieJar()
+    await setUpCommercial(jar)
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/transporter-details',
+      payload: {
+        commercialTransporter__name: 'ACME',
+        commercialTransporter__addressLine1: 'Farm Lane',
+        commercialTransporter__town: 'Exeter',
+        commercialTransporter__postcode: 'EX1 1AA',
+        commercialTransporter__country: 'GB',
+        commercialTransporter__telephone: '+44 1234 567890',
+        // Bad email → fires addressSubFieldEmailFormat → sub-field error.
+        commercialTransporter__email: 'not-an-email'
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('govuk-form-group--error')
+  })
+
   it('POST with all sub-fields blank redirects on (no page-save block on addresses)', async () => {
     // User requirement: address pages must allow blank save; the
     // user comes back later via a Change link or task-list click.

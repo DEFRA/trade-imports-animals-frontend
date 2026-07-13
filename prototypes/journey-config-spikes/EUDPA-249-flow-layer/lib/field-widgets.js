@@ -186,17 +186,35 @@ export const rules = [
       // Per-sub-field rules (from entry.subFieldRules, added in step 5e)
       // pick the underlying input type + wire up option lists for
       // enum sub-fields (country in the V4 standard block).
+      //
+      // Accessibility / GDS polish (2nd code review, findings #3 / #10 /
+      // #11):
+      //  - Legend carries `govuk-fieldset__legend--m` for consistency
+      //    with singleton pages (#11).
+      //  - Hint carries an id + fieldset gets `describedBy` so screen
+      //    readers announce the hint alongside the legend (#3).
+      //  - When ANY sub-field has an error, the whole widget wraps in
+      //    a `.govuk-form-group--error` (#10) — the template consumes
+      //    the `hasErrors` flag.
       if (entry?.type !== 'address') return null
       const subFields = entry.subFields ?? []
       const subFieldRules = entry.subFieldRules ?? {}
       const requiredSet = new Set(entry.required ?? [])
       const stored = value && typeof value === 'object' ? value : {}
+      const hintId = hint ? `${id}-hint` : undefined
+      const hasErrors = subFields.some(
+        (sub) => fieldErrors?.[`${id}__${sub}`]?.text
+      )
       return {
         type: 'address',
         args: {
           id,
-          legend: legend ? { text: legend } : undefined,
-          hint: hint ? { text: hint } : undefined,
+          hasErrors,
+          describedBy: hintId,
+          legend: legend
+            ? { text: legend, classes: 'govuk-fieldset__legend--m' }
+            : undefined,
+          hint: hint ? { id: hintId, text: hint } : undefined,
           subFields: subFields.map((sub) => {
             const subId = `${id}__${sub}`
             const subError = fieldErrors?.[subId]?.text

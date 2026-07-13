@@ -80,16 +80,28 @@ function formatSingle(value, obligation) {
     const parts = (domainEntry.subFields ?? [])
       .map((sub) => {
         const raw = value[sub]
-        if (typeof raw !== 'string' || raw.trim() === '') return null
+        // 2nd-code-review #12: preserve numeric / boolean sub-field
+        // values (rare but possible for future composites) by coercing
+        // to string rather than filtering.
+        if (raw === undefined || raw === null) return null
+        const asString = typeof raw === 'string' ? raw : String(raw)
+        if (asString.trim() === '') return null
         const rule = rules[sub]
         if (rule?.type === 'enum' && rule.labels) {
-          return tOrNull(rule.labels[raw]) ?? raw
+          return tOrNull(rule.labels[asString]) ?? asString
         }
-        return raw
+        return asString
       })
       .filter((v) => v !== null)
     return parts.join(', ')
   }
+  // 2nd-code-review #9: any other object we don't know how to format
+  // would coerce to `[object Object]` via String(). Return the raw
+  // stored value's JSON serialization so a stakeholder sees the data
+  // rather than the useless coercion. In practice this only fires if
+  // a future composite obligation lands without a CYA-side formatter;
+  // preferable to silently rendering "[object Object]" on CYA.
+  if (typeof value === 'object') return JSON.stringify(value)
   return String(label(value))
 }
 

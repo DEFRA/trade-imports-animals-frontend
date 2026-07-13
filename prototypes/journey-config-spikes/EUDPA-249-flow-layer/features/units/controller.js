@@ -75,12 +75,18 @@ function labelFor(obligation, value) {
     const parts = (domainEntry.subFields ?? [])
       .map((sub) => {
         const raw = value[sub]
-        if (typeof raw !== 'string' || raw.trim() === '') return null
+        // 2nd-code-review #12: preserve numeric / boolean values by
+        // coercing to string rather than filtering. Mirrors the same
+        // fix in features/check-your-answers/controller.js
+        // formatSingle.
+        if (raw === undefined || raw === null) return null
+        const asString = typeof raw === 'string' ? raw : String(raw)
+        if (asString.trim() === '') return null
         const rule = rules[sub]
         if (rule?.type === 'enum' && rule.labels) {
-          return tOrNull(rule.labels[raw]) ?? raw
+          return tOrNull(rule.labels[asString]) ?? asString
         }
-        return raw
+        return asString
       })
       .filter((v) => v !== null)
     return parts.length ? parts.join(', ') : null
