@@ -4,22 +4,26 @@ import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 import * as addressBook from '../../services/address-book/index.js'
+import { CREATE_ADDRESS_SLUG } from './create-address.controller.js'
 
 const view = `${TEMPLATES}/features/addresses/consignees-select`
 
-const fields = compose(
-  oneOf(
-    'consignee',
-    addressBook.parties('consignee').map((option) => option.id),
-    'Select a consignee from the list'
+const fields = () =>
+  compose(
+    oneOf(
+      'consignee',
+      addressBook.parties('consignee').map((option) => option.id),
+      'Select a consignee from the list'
+    )
   )
-)
 
 const addressSummary = (address) =>
   [
     address.addressLine1,
     address.addressLine2,
     address.addressLine3,
+    address.townOrCity,
+    address.postalOrZipCode,
     address.country
   ]
     .filter((part) => part)
@@ -32,6 +36,7 @@ const render = (h, values, errors = {}) =>
     }),
     errors,
     errorSummary: kit.errorSummary(errors),
+    createAddressHref: pagePath(`${CREATE_ADDRESS_SLUG}?for=consignee`),
     consigneeOptions: addressBook.parties('consignee').map((option) => ({
       value: option.id,
       text: option.name,
@@ -47,7 +52,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const { errors } = validate(fields, payload)
+  const { errors } = validate(fields(), payload)
   if (errors) return render(h, {}, errors)
 
   const chosen = addressBook.party('consignee', payload.consignee)

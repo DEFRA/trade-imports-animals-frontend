@@ -751,6 +751,51 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Completed')
   })
 
+  test('addresses — adding a new address from the consignor spoke copies it into the consignor and the spoke then offers it', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+
+    await page.getByRole('link', { name: 'Addresses' }).click()
+    const consignorRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Consignor'
+    })
+    await consignorRow.getByRole('link', { name: 'Add' }).click()
+
+    // The spoke offers a way out of the canned book: the create-address form.
+    await page.getByRole('button', { name: 'Add a new address' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add a new address' })
+    ).toBeVisible()
+
+    // A blank save is rejected with the mandatory Standard Address Block set.
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+
+    await page.getByLabel('Name or organisation name').fill('Created Farm Ltd')
+    await page.getByLabel('Address line 1').fill('99 New Lane')
+    await page.getByLabel('Town or city').fill('Carlisle')
+    await page.getByLabel('Postal or zip code').fill('CA1 1AA')
+    await page.getByLabel('Country').selectOption('United Kingdom')
+    await page.getByLabel('Telephone number').fill('01228 555 0101')
+    await page.getByLabel('Email address').fill('farm@example.co.uk')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    // Saved by copy into the launching party, back on the landing page.
+    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(consignorRow).toContainText('Created Farm Ltd')
+
+    // The created address joined the address book: the spoke offers it,
+    // pre-selected because it is the committed consignor.
+    await consignorRow.getByRole('link', { name: 'Change' }).click()
+    await expect(
+      page.getByRole('radio', { name: 'Created Farm Ltd' })
+    ).toBeChecked()
+  })
+
   test('transport — a partial arrival date blocks the save; the port, date, travel details, transporter type and commercial transporter complete the task', async ({
     page
   }) => {

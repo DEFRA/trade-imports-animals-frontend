@@ -22,6 +22,9 @@
       items: consignorOptions
     }) }}
 
-    {{ govukButton({ text: "Save and continue" }) }}
+    <div class="govuk-button-group">
+      {{ govukButton({ text: "Save and continue" }) }}
+      {{ govukButton({ text: "Add a new address", classes: "govuk-button--secondary", href: createAddressHref }) }}
+    </div>
   </form>
 {% endblock %}
