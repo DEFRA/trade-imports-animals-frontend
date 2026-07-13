@@ -96,14 +96,12 @@ const drivePrototype = async (page) => {
   await page.getByLabel('Country of origin').selectOption('FR')
   await page
     .getByRole('group', {
-      name: 'Does the consignment require a region of origin code?'
+      name: 'Does the consignment have a region of origin code?'
     })
     .getByRole('radio', { name: 'No' })
     .check()
   await page
-    .getByLabel(
-      'Your internal reference number for this consignment (optional)'
-    )
+    .getByLabel('Your internal reference for this consignment (optional)')
     .fill(shared.internalReference)
   await save()
 

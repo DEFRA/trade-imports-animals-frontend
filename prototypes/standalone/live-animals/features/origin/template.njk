@@ -35,7 +35,7 @@
 
     {{ govukRadios({
       name: "regionOfOriginCodeRequirement",
-      fieldset: { legend: { text: "Does the consignment require a region of origin code?", classes: "govuk-fieldset__legend--s" } },
+      fieldset: { legend: { text: "Does the consignment have a region of origin code?", classes: "govuk-fieldset__legend--s" } },
       hint: { text: "If a region of origin code is required it will be shown on your health certificate." },
       items: [
         { value: "yes", text: "Yes", checked: values.regionOfOriginCodeRequirement == "yes", conditional: { html: regionCodeHtml } },
@@ -46,8 +46,8 @@
     {{ govukInput({
       id: "internalReferenceNumber",
       name: "internalReferenceNumber",
-      label: { text: "Your internal reference number for this consignment (optional)" },
-      hint: { text: "Enter any internal reference number you want to use to identify this consignment, or leave blank." },
+      label: { text: "Your internal reference for this consignment (optional)" },
+      hint: { text: "Enter any internal reference you want to use to identify this consignment, or leave blank." },
       classes: "govuk-!-width-three-quarters",
       value: values.internalReferenceNumber,
       errorMessage: errors.internalReferenceNumber and { text: errors.internalReferenceNumber }

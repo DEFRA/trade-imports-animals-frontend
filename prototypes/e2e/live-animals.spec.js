@@ -93,9 +93,7 @@ const completeAnswerSections = async (page) => {
     .getByLabel('Region of origin code', { exact: true })
     .fill(values.regionOfOriginCode)
   await page
-    .getByLabel(
-      'Your internal reference number for this consignment (optional)'
-    )
+    .getByLabel('Your internal reference for this consignment (optional)')
     .fill(values.internalReferenceNumber)
   await save()
 
@@ -303,9 +301,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Region of origin code', { exact: true })
       .fill(values.regionOfOriginCode)
     await page
-      .getByLabel(
-        'Your internal reference number for this consignment (optional)'
-      )
+      .getByLabel('Your internal reference for this consignment (optional)')
       .fill(values.internalReferenceNumber)
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
@@ -1573,9 +1569,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Region of origin code', { exact: true })
       .fill(values.regionOfOriginCode)
     await page
-      .getByLabel(
-        'Your internal reference number for this consignment (optional)'
-      )
+      .getByLabel('Your internal reference for this consignment (optional)')
       .fill(values.internalReferenceNumber)
     await save()
 
