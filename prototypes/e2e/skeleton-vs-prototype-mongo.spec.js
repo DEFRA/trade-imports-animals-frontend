@@ -94,8 +94,11 @@ const drivePrototype = async (page) => {
   // Origin — France, no region code required, internal reference. The
   // country-of-origin select is enhanced by accessible-autocomplete (inc-058):
   // type the name, pick the suggestion, and the hidden select carries 'FR'.
+  // input#countryOfOrigin exists only after the enhancement mounts, so the
+  // fill auto-waits for hydration (a combobox role query would race it — the
+  // raw select's implicit role is also combobox).
   await task('Origin of the import')
-  await page.getByRole('combobox', { name: 'Country of origin' }).fill('France')
+  await page.locator('input#countryOfOrigin').fill('France')
   await page.getByRole('option', { name: 'France', exact: true }).click()
   await page
     .getByRole('group', {

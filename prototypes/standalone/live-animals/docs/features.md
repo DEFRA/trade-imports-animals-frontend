@@ -281,6 +281,15 @@ disabled divider row carry `value: ''`) are what keeps the decorative
 rows out of the suggestion list, and the underlying select — renamed
 `<id>-select` by the enhancement — remains the control that submits.
 
+E2E interactions with an enhanced select must target the mounted
+`input#<id>` — it exists only after hydration, so actions auto-wait
+for the mount. A `getByRole('combobox')` query races hydration at test
+speed: a plain select's implicit ARIA role is also `combobox`, so the
+query can resolve to the raw select while the bundle is still in
+flight, and `fill()` on a select fails without retrying (this broke
+20 specs on the first inc-058 E2E run). Pin the a11y contract on the
+input separately with `toHaveRole` / `toHaveAccessibleName`.
+
 `shared/kit.js` holds the genuinely uniform mechanical bits:
 `errorSummary`, `fieldError`, `base`, `pageRoutes`, `readDate`,
 `dateField`, `nextTarget`, `collectsFrom`, `open`, `CYA_SLUG`.

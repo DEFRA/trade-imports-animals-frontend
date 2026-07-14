@@ -39,10 +39,17 @@ const startNotification = async (page) => {
 // and picking a suggestion syncs the underlying select (renamed
 // #countryOfOrigin-select), which is the control that submits. The autocomplete
 // searches by country NAME, so the walk types the label for the fixture's code.
+//
+// The interaction targets input#countryOfOrigin, which exists only once the
+// enhancement has mounted (the server renders select#countryOfOrigin). A role
+// query would race hydration at test speed: a plain select's implicit role is
+// also combobox, so it can resolve to the raw select while the module bundle
+// is still in flight, and fill() on a select fails without retrying. The
+// input-scoped locator makes fill auto-wait for the mount instead.
 const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
 
 const chooseCountryOfOrigin = async (page, name) => {
-  const combo = page.getByRole('combobox', { name: 'Country of origin' })
+  const combo = page.locator('input#countryOfOrigin')
   await combo.fill(name)
   await page.getByRole('option', { name, exact: true }).click()
 }
@@ -368,9 +375,13 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('link', { name: 'Origin of the import' }).click()
 
     // The enhancement swaps the visible affordance to a combobox input while
-    // the select stays in the DOM (renamed) as the control that submits.
-    const combo = page.getByRole('combobox', { name: 'Country of origin' })
+    // the select stays in the DOM (renamed) as the control that submits. The
+    // input-scoped locator waits for the mount; the role and accessible-name
+    // pins then assert the a11y contract the raw select used to provide.
+    const combo = page.locator('input#countryOfOrigin')
     await expect(combo).toBeVisible()
+    await expect(combo).toHaveRole('combobox')
+    await expect(combo).toHaveAccessibleName('Country of origin')
     const select = page.locator('select#countryOfOrigin-select')
     await expect(select).toBeAttached()
     await expect(select).toBeHidden()
@@ -476,7 +487,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(originRow).toContainText('Not yet started')
     await page.getByRole('link', { name: 'Origin of the import' }).click()
-    await expect(page.getByLabel('Country of origin')).toHaveValue('')
+    await expect(page.locator('input#countryOfOrigin')).toHaveValue('')
     await expect(page.locator('#countryOfOrigin-select')).toHaveValue('')
 
     // Save-and-return leg: the named secondary submit commits the page and
@@ -491,7 +502,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // The committed value is there on re-entry: the autocomplete input shows
     // the country name, the underlying select holds the stored code.
     await page.getByRole('link', { name: 'Origin of the import' }).click()
-    await expect(page.getByLabel('Country of origin')).toHaveValue(
+    await expect(page.locator('input#countryOfOrigin')).toHaveValue(
       FIXTURE_COUNTRY
     )
     await expect(page.locator('#countryOfOrigin-select')).toHaveValue(
