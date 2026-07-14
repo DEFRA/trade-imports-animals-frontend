@@ -280,7 +280,7 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       url: `${BASE}/pages/accompanying-documents`,
       payload: {
         accompanyingDocumentType: 'health-certificate',
-        accompanyingDocumentAttachmentType: 'physical-original',
+        accompanyingDocumentAttachmentType: 'pdf',
         accompanyingDocumentReference: 'HC-2026-00042',
         accompanyingDocumentDateOfIssue: '01/06/2026'
       }

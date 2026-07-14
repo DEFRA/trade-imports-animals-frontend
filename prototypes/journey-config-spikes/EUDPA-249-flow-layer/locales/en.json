@@ -422,10 +422,14 @@
       "other": "Other"
     },
     "accompanyingDocumentAttachmentType": {
-      "physical-original": "Physical original",
-      "physical-copy": "Physical copy",
-      "digital-pdf": "Digital PDF",
-      "digital-signed": "Digital, signed"
+      "pdf": "PDF",
+      "doc": "DOC",
+      "docx": "DOCX",
+      "jpg": "JPG",
+      "jpeg": "JPEG",
+      "png": "PNG",
+      "xls": "XLS",
+      "xlsx": "XLSX"
     }
   },
   "chrome": {

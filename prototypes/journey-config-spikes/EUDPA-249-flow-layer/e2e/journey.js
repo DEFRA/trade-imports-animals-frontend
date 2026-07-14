@@ -248,7 +248,7 @@ export async function fillAccompanyingDocuments(
   journey,
   {
     documentType = 'health-certificate',
-    attachmentType = 'physical-original',
+    attachmentType = 'pdf',
     reference = 'HC-2026-00042',
     dateOfIssue = '01/06/2026'
   } = {}

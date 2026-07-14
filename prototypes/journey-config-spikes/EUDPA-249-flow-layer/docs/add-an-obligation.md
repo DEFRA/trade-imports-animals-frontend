@@ -491,9 +491,9 @@ Steps executed:
     illustrative values (health-certificate / commercial-invoice /
     transport-document / other) and labels under
     `domain.accompanyingDocumentType.*`.
-  - `accompanyingDocumentAttachmentTypeDomain` — `staticEnum` with 4
-    values (physical-original / physical-copy / digital-pdf /
-    digital-signed).
+  - `accompanyingDocumentAttachmentTypeDomain` — `staticEnum` with 8
+    file-extension values (pdf / doc / docx / jpg / jpeg / png /
+    xls / xlsx) per the V4 spec.
   - `accompanyingDocumentReferenceDomain` — `predicate('string',
 stringMaxLength(40, ...))`. Blank passes so an all-blank
     submission on the page (the branchedGate optional branch) doesn't

@@ -663,25 +663,31 @@ export const accompanyingDocumentTypeDomain = staticEnum(
   }
 )
 
-// V4: attachment format — MDM enum. Illustrative values.
+// V4: attachment format — the file format the accompanying document
+// is supplied in. Fixed list of 8 file extensions per spec.
 const ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS = [
-  'physical-original',
-  'physical-copy',
-  'digital-pdf',
-  'digital-signed'
+  'pdf',
+  'doc',
+  'docx',
+  'jpg',
+  'jpeg',
+  'png',
+  'xls',
+  'xlsx'
 ]
 
 export const accompanyingDocumentAttachmentTypeDomain = staticEnum(
   ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS,
   {
     labels: {
-      'physical-original':
-        'domain.accompanyingDocumentAttachmentType.physical-original',
-      'physical-copy':
-        'domain.accompanyingDocumentAttachmentType.physical-copy',
-      'digital-pdf': 'domain.accompanyingDocumentAttachmentType.digital-pdf',
-      'digital-signed':
-        'domain.accompanyingDocumentAttachmentType.digital-signed'
+      pdf: 'domain.accompanyingDocumentAttachmentType.pdf',
+      doc: 'domain.accompanyingDocumentAttachmentType.doc',
+      docx: 'domain.accompanyingDocumentAttachmentType.docx',
+      jpg: 'domain.accompanyingDocumentAttachmentType.jpg',
+      jpeg: 'domain.accompanyingDocumentAttachmentType.jpeg',
+      png: 'domain.accompanyingDocumentAttachmentType.png',
+      xls: 'domain.accompanyingDocumentAttachmentType.xls',
+      xlsx: 'domain.accompanyingDocumentAttachmentType.xlsx'
     }
   }
 )
