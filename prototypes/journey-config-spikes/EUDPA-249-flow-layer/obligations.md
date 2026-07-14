@@ -323,15 +323,16 @@ function createObligationEvaluator(options?: { obligations?: Obligation[] }): {
 }
 ```
 
-Constructed once per Service, typically at application boot. The
-Obligations model is injected at construction (defaulting to the
-Service's shipped manifest); each `evaluate(fulfilments)` call is
-pure. Fulfilments per call include user inputs AND, in a real
-deployment, the results of system-handled obligations.
+Each `evaluate(fulfilments)` call is a pure function. Fulfilments per call include
+user inputs AND, in a real deployment, the results of system-handled obligations.
 
 In this spike the evaluator is constructed once at `contract.js`
 load time and re-used for every request; `evaluateState(fulfilments)`
 is the browser-facing entry point (`contract.js:50-52`).
+
+In a real application, we need to allow for configuration-driven differences in
+obligation model (e.g. we might have obligations enabled or disabled in QA but not
+prod).
 
 Construction-time injection preserves the pure-function property —
 same-in / same-out for `(fulfilments)` — while letting tests vary
@@ -344,7 +345,8 @@ becomes needed (config, `now`, `randomSeed`, logger, …).
 
 1. **Drop unknown obligation ids** (tolerate-and-amend). Fulfilments
    whose key isn't in the current manifest are silently dropped —
-   the model may have moved on since the state was written.
+   the model may have moved on since the state was written, notifications
+   might be persisted but incomplete for some time.
 2. **Pre-purge enumeration** of group instance-paths from raw
    storage. Feeds `applyTo`'s second arg so obligations can look up
    their parent group's instance-paths without in-obligation
@@ -756,22 +758,37 @@ orchestrator around it.
 
 ### Trade-off accepted
 
-The evaluators are **not portable across languages** in the way the
-obligations data is. A non-JS consumer needs its own
-ObligationEvaluator and its own runtime primitives. What stays
-portable is the **contract** — the obligations, domain and flow
-data files describe what data must exist, how it's constrained, and
-how it's presented; each runtime decides when and why, and
-orchestrates its own async.
+Neither the obligations data nor the evaluators are JSON-portable
+as-shipped. Both are JavaScript.
+
+- **Obligations** carry closures (`applyTo`), cross-obligation
+  references (`within`, `requires.anyOf`, `presents`), and helper-
+  returned functions. Nothing about the current shape is
+  serialisable — a non-JS runtime can't consume `obligations.js`
+  directly.
+- **Evaluators** and runtime primitives are pure algorithms — they
+  CAN be re-implemented in any language; the semantics port
+  cleanly, only the substrate changes. Same story for a
+  re-implementation of the helpers (`allowListed`, `branchedGate`,
+  ...) and the domain factories.
+
+The real trade-off is: this is a **code-shaped spec**, not a
+**data-shaped spec**. A data-shaped spec (a JSON schema, for
+example) would be trivially cross-language — every runtime consumes
+the same file. The price of the code shape is that any non-JS
+consumer has to re-implement the model, not just consume it. What
+you gain is the expressive power of closures for gates + predicates,
+and cross-reference integrity via JS's own module system.
 
 **Partial recovery via helper metadata.** For obligations that use
 the helpers from `helpers.js`, the returned `applyTo` function
 carries a `.metadata` property that describes the gate declaratively
 as data. Same story for the Domain layer factories (`staticEnum`,
 `computedEnum`, `predicate`, `addressBlock`) — each carries a
-metadata sidecar so a downstream generator can walk the module and
-emit a data-only artefact. See §Layer 1.25 — Domain / Metadata
-sidecar and §Stretch goals — tooling.
+metadata sidecar. A downstream generator can walk the module and
+emit a data-only artefact for the subset of obligations that use
+the helper convention consistently. See §Layer 1.25 — Domain /
+Metadata sidecar and §Stretch goals — tooling.
 
 ## Layer 1.25 — Domain
 
