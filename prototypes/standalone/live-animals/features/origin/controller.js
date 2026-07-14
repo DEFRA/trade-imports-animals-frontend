@@ -5,7 +5,7 @@ import {
   maxText,
   oneOf,
   pattern,
-  requiredText,
+  requiredOneOf,
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
@@ -18,32 +18,34 @@ const view = `${TEMPLATES}/features/origin/template`
 
 const countryItems = () => [
   { value: '', text: 'Select a country' },
-  { text: '──────────', disabled: true },
+  { value: '', text: '──────────', disabled: true },
   ...countries.originCountries()
 ]
 
-const fields = compose(
-  requiredText(
-    'countryOfOrigin',
-    'Select the country where the animal originates from'
-  ),
-  oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
-  maxText(
-    'regionOfOriginCode',
-    5,
-    'Region of origin code must be 5 characters or less'
-  ),
-  maxText(
-    'internalReferenceNumber',
-    58,
-    'Internal reference must be 58 characters or less'
-  ),
-  pattern(
-    'internalReferenceNumber',
-    /^[a-zA-Z0-9]*$/,
-    'Internal reference must only contain letters and numbers'
+const fields = () =>
+  compose(
+    requiredOneOf(
+      'countryOfOrigin',
+      countries.originCountries().map(({ value }) => value),
+      'Select the country where the animal originates from'
+    ),
+    oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
+    maxText(
+      'regionOfOriginCode',
+      5,
+      'Region of origin code must be 5 characters or less'
+    ),
+    maxText(
+      'internalReferenceNumber',
+      58,
+      'Internal reference must be 58 characters or less'
+    ),
+    pattern(
+      'internalReferenceNumber',
+      /^[a-zA-Z0-9]*$/,
+      'Internal reference must only contain letters and numbers'
+    )
   )
-)
 
 const journeyIfStarted = (journey) =>
   Object.keys(journey.answers).length > 0 ? journey : undefined
@@ -79,7 +81,7 @@ const post = async (request, h) => {
     regionOfOriginCode: (payload.regionOfOriginCode ?? '').trim(),
     internalReferenceNumber: (payload.internalReferenceNumber ?? '').trim()
   }
-  const { errors } = validate(fields, payload)
+  const { errors } = validate(fields(), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
     return render(h, journey, values, errors)

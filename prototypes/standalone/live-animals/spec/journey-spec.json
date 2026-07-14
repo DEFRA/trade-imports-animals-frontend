@@ -562,7 +562,7 @@
         "widget": "select",
         "valuesSource": "Named MDM list of EU, EEA and EFTA countries (skeleton uses reference-data countries client, group GBNAG_SPS_EX, with blank placeholder and disabled divider row)"
       },
-      "notes": "A6 (f-002/f-092): keep widget select over the same MDM list; progressive enhancement - accessible-autocomplete layered over the select (M3-20, the canary for the pattern; degrades to the plain select with JS off). Layer over services/countries; the validation oneOf list must not stay frozen at module import against real-mode prime().",
+      "notes": "A6 (f-002/f-092): keep widget select over the same MDM list; progressive enhancement - accessible-autocomplete layered over the select (M3-20 implemented inc-058, the canary for the pattern; degrades to the plain select with JS off; substring match by country name; the design's custom search-icon button is not reproduced - govuk toolbox only). Layer over services/countries; validation is a requiredOneOf over the service list evaluated per POST, so the membership list follows real-mode prime() instead of freezing at module import.",
       "provenance": [
         {
           "source": "confluence-v4",

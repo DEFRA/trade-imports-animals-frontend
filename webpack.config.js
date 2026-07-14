@@ -31,6 +31,9 @@ export default {
     },
     notificationView: {
       import: './javascripts/notification-view.js'
+    },
+    selectAutocomplete: {
+      import: './javascripts/select-autocomplete.js'
     }
   },
   experiments: {

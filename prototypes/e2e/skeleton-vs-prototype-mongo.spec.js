@@ -91,9 +91,12 @@ const drivePrototype = async (page) => {
     page.getByRole('heading', { name: 'Import notification service' })
   ).toBeVisible()
 
-  // Origin — France, no region code required, internal reference.
+  // Origin — France, no region code required, internal reference. The
+  // country-of-origin select is enhanced by accessible-autocomplete (inc-058):
+  // type the name, pick the suggestion, and the hidden select carries 'FR'.
   await task('Origin of the import')
-  await page.getByLabel('Country of origin').selectOption('FR')
+  await page.getByRole('combobox', { name: 'Country of origin' }).fill('France')
+  await page.getByRole('option', { name: 'France', exact: true }).click()
   await page
     .getByRole('group', {
       name: 'Does the consignment have a region of origin code?'

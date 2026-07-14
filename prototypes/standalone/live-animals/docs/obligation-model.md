@@ -46,7 +46,7 @@ the facts the engine actually evaluates.
 decide whether a section is fulfilled. It does not stop a user saving a
 blank form. Save-blocking rules are a controller concern, written as
 validators — the journey's only hard mandate is `countryOfOrigin`,
-expressed as a `requiredText` rule in `features/origin/controller.js`,
+expressed as a `requiredOneOf` rule in `features/origin/controller.js`,
 not as an obligation flag.
 
 See [validation.md](validation.md) for the validation seam.

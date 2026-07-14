@@ -13,24 +13,33 @@ the shared library and runs it against its own payload:
 
 ```js
 // features/origin/controller.js
-const fields = compose(
-  requiredText(
-    'countryOfOrigin',
-    'Select the country where the animal originates from'
-  ),
-  oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
-  maxText(
-    'regionOfOriginCode',
-    5,
-    'Region of origin code must be 5 characters or less'
-  ),
-  maxText(
-    'internalReferenceNumber',
-    58,
-    'Internal reference must be 58 characters or less'
+const fields = () =>
+  compose(
+    requiredOneOf(
+      'countryOfOrigin',
+      countries.originCountries().map(({ value }) => value),
+      'Select the country where the animal originates from'
+    ),
+    oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
+    maxText(
+      'regionOfOriginCode',
+      5,
+      'Region of origin code must be 5 characters or less'
+    ),
+    maxText(
+      'internalReferenceNumber',
+      58,
+      'Internal reference must be 58 characters or less'
+    )
   )
-)
 ```
+
+When a membership list comes from a service (`countries`, the address
+book), the schema is a **function** evaluated per POST —
+`validate(fields(), payload)` — never a module-level constant. A frozen
+schema would capture the stub list at import time and go stale when
+real-mode boot `prime()` replaces the service cache (the party-select
+spokes set the precedent; origin follows it).
 
 Nothing in `lib/validate/` knows about obligations, and nothing in an
 `obligations.js` names a validator. The coupling is loose: a validator
@@ -58,10 +67,12 @@ The factories are: `requiredText`, `optionalText`, `maxText`,
 The journey splits "must not save malformed" from "must be answered to
 finish". They live in different places.
 
-**Save-blocking (hard).** `requiredText` is the one save-blocking
-primitive. Exactly one field uses it: `countryOfOrigin` on the origin
-page (spec ruling c-023: `enforcedAt=continue`). Every other validator
-is optional: it carries `.allow('')`, so a blank value saves, and only
+**Save-blocking (hard).** `requiredText` and `requiredOneOf` are the
+save-blocking primitives. Exactly one field uses one: `countryOfOrigin`
+on the origin page (spec ruling c-023: `enforcedAt=continue`) is a
+`requiredOneOf` over the countries service list — blank and
+out-of-list values both block the save. Every other validator is
+optional: it carries `.allow('')`, so a blank value saves, and only
 a malformed non-blank value fails. A user can walk the whole journey
 saving blanks, apart from the country of origin.
 

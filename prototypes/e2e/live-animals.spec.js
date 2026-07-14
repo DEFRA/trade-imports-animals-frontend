@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
+import { COUNTRY_LABELS } from '../standalone/live-animals/services/countries/stub.js'
+
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
  * as pages land, driven by the values in
@@ -32,15 +34,26 @@ const startNotification = async (page) => {
   ).toBeVisible()
 }
 
+// inc-058: accessible-autocomplete enhances the country-of-origin select as a
+// progressive enhancement. With JS on, the label points at the combobox input
+// and picking a suggestion syncs the underlying select (renamed
+// #countryOfOrigin-select), which is the control that submits. The autocomplete
+// searches by country NAME, so the walk types the label for the fixture's code.
+const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
+
+const chooseCountryOfOrigin = async (page, name) => {
+  const combo = page.getByRole('combobox', { name: 'Country of origin' })
+  await combo.fill(name)
+  await page.getByRole('option', { name, exact: true }).click()
+}
+
 // countryOfOrigin is enforcedAt=continue, so answering it unlocks the
 // Commodities section (RULE 1 flow sequencing). Answer the origin section's
 // minimum from the hub and return to it. Region requirement 'No' keeps the save
 // clean without needing a region code.
 const answerCountryOfOrigin = async (page) => {
   await page.getByRole('link', { name: 'Origin of the import' }).click()
-  await page
-    .getByLabel('Country of origin')
-    .selectOption(values.countryOfOrigin)
+  await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
   await page.getByRole('radio', { name: 'No' }).check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(
@@ -86,9 +99,7 @@ const completeAnswerSections = async (page) => {
 
   // Origin.
   await task('Origin of the import')
-  await page
-    .getByLabel('Country of origin')
-    .selectOption(values.countryOfOrigin)
+  await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
   await page.getByRole('radio', { name: 'Yes' }).check()
   await page
     .getByLabel('Region of origin code', { exact: true })
@@ -330,9 +341,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // Happy path from the shared fixture; 'Yes' reveals the region code.
-    await page
-      .getByLabel('Country of origin')
-      .selectOption(values.countryOfOrigin)
+    await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('radio', { name: 'Yes' }).check()
     await page
       .getByLabel('Region of origin code', { exact: true })
@@ -350,6 +359,49 @@ test.describe('live-animals (page-owned spine)', () => {
       hasText: 'Origin of the import'
     })
     await expect(originRow).toContainText('Completed')
+  })
+
+  test('country of origin — accessible-autocomplete enhancement: combobox renders, typing filters, selection submits and persists', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+
+    // The enhancement swaps the visible affordance to a combobox input while
+    // the select stays in the DOM (renamed) as the control that submits.
+    const combo = page.getByRole('combobox', { name: 'Country of origin' })
+    await expect(combo).toBeVisible()
+    const select = page.locator('select#countryOfOrigin-select')
+    await expect(select).toBeAttached()
+    await expect(select).toBeHidden()
+
+    // Typing filters the country list mid-word; non-matches drop out.
+    await combo.fill('ran')
+    await expect(page.getByRole('option', { name: 'France' })).toBeVisible()
+    await expect(page.getByRole('option', { name: 'Belgium' })).toHaveCount(0)
+
+    // The select's placeholder and divider rows never surface as suggestions.
+    await combo.fill('')
+    await combo.press('ArrowDown')
+    await expect(page.getByRole('option', { name: 'Austria' })).toBeVisible()
+    await expect(
+      page.getByRole('option', { name: 'Select a country' })
+    ).toHaveCount(0)
+    await expect(page.getByRole('option', { name: '──────────' })).toHaveCount(
+      0
+    )
+
+    // Selecting a suggestion syncs the select; the save round-trips it.
+    await chooseCountryOfOrigin(page, 'France')
+    await expect(select).toHaveValue('FR')
+    await page.getByRole('radio', { name: 'No' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(combo).toHaveValue('France')
+    await expect(select).toHaveValue('FR')
   })
 
   test('reference strip — Draft tag and GBN-AG reference on the hub and task pages, absent on pre-origin surfaces', async ({
@@ -389,9 +441,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(strip).toHaveCount(0)
 
     // ...and carries the strip once its first save has committed answers.
-    await page
-      .getByLabel('Country of origin')
-      .selectOption(values.countryOfOrigin)
+    await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('radio', { name: 'No' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await page.getByRole('link', { name: 'Origin of the import' }).click()
@@ -419,9 +469,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Cancel leg: choose a country, cancel — nothing is written.
     await page.getByRole('link', { name: 'Origin of the import' }).click()
-    await page
-      .getByLabel('Country of origin')
-      .selectOption({ label: 'Belgium' })
+    await chooseCountryOfOrigin(page, 'Belgium')
     await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
@@ -429,21 +477,24 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(originRow).toContainText('Not yet started')
     await page.getByRole('link', { name: 'Origin of the import' }).click()
     await expect(page.getByLabel('Country of origin')).toHaveValue('')
+    await expect(page.locator('#countryOfOrigin-select')).toHaveValue('')
 
     // Save-and-return leg: the named secondary submit commits the page and
     // redirects to the hub instead of the next flow target.
-    await page
-      .getByLabel('Country of origin')
-      .selectOption(values.countryOfOrigin)
+    await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('button', { name: 'Save and return to hub' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(originRow).toContainText('In progress')
 
-    // The committed value is there on re-entry.
+    // The committed value is there on re-entry: the autocomplete input shows
+    // the country name, the underlying select holds the stored code.
     await page.getByRole('link', { name: 'Origin of the import' }).click()
     await expect(page.getByLabel('Country of origin')).toHaveValue(
+      FIXTURE_COUNTRY
+    )
+    await expect(page.locator('#countryOfOrigin-select')).toHaveValue(
       values.countryOfOrigin
     )
   })
@@ -1993,9 +2044,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Origin.
     await task('Origin of the import')
-    await page
-      .getByLabel('Country of origin')
-      .selectOption(values.countryOfOrigin)
+    await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('radio', { name: 'Yes' }).check()
     await page
       .getByLabel('Region of origin code', { exact: true })
@@ -2282,5 +2331,32 @@ test.describe('live-animals (page-owned spine)', () => {
     // And the row reads Submitted once more.
     await page.goto(`${BASE}/home`)
     await expect(row.getByText('Submitted')).toBeVisible()
+  })
+})
+
+// inc-058 degradation leg: with JavaScript off the autocomplete never mounts
+// and the plain server-rendered select still submits (graceful degradation).
+test.describe('live-animals — country of origin without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('the plain select still submits and persists', async ({ page }) => {
+    await startNotification(page)
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+
+    // No enhancement: the select keeps its id and no autocomplete input mounts.
+    await expect(page.locator('.autocomplete__input')).toHaveCount(0)
+    const select = page.getByLabel('Country of origin')
+    await select.selectOption(values.countryOfOrigin)
+    await page.getByRole('radio', { name: 'No' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+
+    // The committed value is on the select on re-entry.
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(page.getByLabel('Country of origin')).toHaveValue(
+      values.countryOfOrigin
+    )
   })
 })

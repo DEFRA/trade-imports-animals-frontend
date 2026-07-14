@@ -101,7 +101,8 @@ sees a schema. All validators except `origin`'s `countryOfOrigin` are
 optional: blank saves, malformed non-blank input fails.
 
 The result is small — around 60 lines for `import-reason`, around 115
-for `origin` with its five validators and vendored country list. Each
+for `origin` with its five validators and service-backed country list
+(read per POST — see [validation.md](validation.md)). Each
 controller is readable on its own; that is the point of the page-owned
 spine.
 
@@ -254,7 +255,31 @@ depth-2 collection returns.
   does not know — there is no backend browse. The old `/resume`
   recover-by-identity route was retired in its favour.
 
-## 7. shared/kit.js: a library, never a framework
+### Progressive enhancement (client JS)
+
+A page that wants client-side behaviour layers it OVER a fully working
+server-rendered control — never instead of one. The pattern (canary:
+the origin country select, inc-058):
+
+- the template renders the plain govuk control as normal, opting in via
+  a data attribute (`data-select-autocomplete` on the `govukSelect`);
+- the behaviour lives in a per-page webpack entry in the host repo
+  (`src/client/javascripts/select-autocomplete.js`, entry
+  `selectAutocomplete` in `webpack.config.js`) — the origin entry mounts
+  `accessible-autocomplete`'s `enhanceSelectElement` over every opted-in
+  select, and its stylesheet is pulled into `application.scss`;
+- the template ships the bundle by overriding the layout's `bodyEnd`
+  block with `{{ super() }}` plus a
+  `getAssetPath('selectAutocomplete.js')` script tag — the same
+  manifest-hashed include the host app uses. The webpack entry is
+  load-bearing: without it the script include 404s silently and the
+  enhancement never mounts.
+
+With JS off the select submits exactly as before; the enhancement only
+changes the input affordance. Option values (the placeholder and the
+disabled divider row carry `value: ''`) are what keeps the decorative
+rows out of the suggestion list, and the underlying select — renamed
+`<id>-select` by the enhancement — remains the control that submits.
 
 `shared/kit.js` holds the genuinely uniform mechanical bits:
 `errorSummary`, `fieldError`, `base`, `pageRoutes`, `readDate`,
