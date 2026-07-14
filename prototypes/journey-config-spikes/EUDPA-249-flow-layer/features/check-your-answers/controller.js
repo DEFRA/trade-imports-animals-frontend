@@ -112,20 +112,46 @@ function isMandatoryOnRecord(obligation, impl, record) {
   )
 }
 
-function hrefForChange(oblId, lineId) {
+function hrefForChange(oblId, lineId, unitId) {
   const changePage = changeLinkFor(oblId)
   if (!changePage) return null
   if (changePage.presentsForEach) {
     if (!lineId) return null
+    // Unit-scoped presentsForEach (forEachOf: unitRecord) routes
+    // through the depth-2 per-unit page URL rather than the depth-1
+    // per-line one. The line-scoped case is unchanged.
+    if (unitId) {
+      return `${BASE}/lines/${lineId}/units/${unitId}/${changePage.page}`
+    }
     return `${BASE}/lines/${lineId}/${changePage.page}`
   }
   return `${BASE}/pages/${changePage.page}`
 }
 
-function pushPrompt(prompts, presentation, href, lineId) {
-  const label = lineId
-    ? `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
-    : presentation.pageTitle
+/** Human-readable key label for a CYA row/prompt. Three shapes:
+ *   singleton (lineId null)             → "PageTitle"
+ *   line-scoped (lineId set)            → "PageTitle (commodity line N)"
+ *   unit-scoped (lineId + unitId set)   → "PageTitle (animal M on commodity line N)"
+ *  Ordinals for the unit case come from `ordinalOfLineId` /
+ *  `ordinalOfUnitId` so a deleted-line renumbering matches the
+ *  units-index page. Line-scoped ordinal keeps `lineNumber` for
+ *  consistency with the pre-existing behaviour. */
+function keyLabelFor(state, presentation, lineId, unitId) {
+  if (unitId) {
+    return `${presentation.pageTitle} (animal ${ordinalOfUnitId(
+      state,
+      lineId,
+      unitId
+    )} on commodity line ${ordinalOfLineId(state, lineId)})`
+  }
+  if (lineId) {
+    return `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
+  }
+  return presentation.pageTitle
+}
+
+function pushPrompt(prompts, state, presentation, href, lineId, unitId) {
+  const label = keyLabelFor(state, presentation, lineId, unitId)
   prompts.push({
     text: t('cya.promptEnterValue', { label }),
     href,
@@ -151,10 +177,8 @@ function pushAddressUnitPrompt(prompts, state, compositeKey) {
   })
 }
 
-function pushRow(rows, presentation, valueText, href, lineId) {
-  const keyText = lineId
-    ? `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
-    : presentation.pageTitle
+function pushRow(rows, state, presentation, valueText, href, lineId, unitId) {
+  const keyText = keyLabelFor(state, presentation, lineId, unitId)
   rows.push({
     key: { text: keyText },
     value: { text: valueText },
@@ -195,14 +219,21 @@ export const cyaController = {
         // the loop passes through without emitting rows or prompts.
         if (Array.isArray(impl.records)) {
           for (const record of impl.records) {
-            const lineId = record.fulfilmentId
-            if (!lineId) continue
-            const leaf = stored?.[lineId]
-            const href = hrefForChange(oblId, lineId)
+            const fulfilmentId = record.fulfilmentId
+            if (!fulfilmentId) continue
+            // Unit-scoped records carry a composite key `line/unit`;
+            // line-scoped records carry just `line`. Split so the
+            // per-unit variants get correct URLs + display labels.
+            const isUnitScoped = obligation.within?.id === unitRecord.id
+            const [lineId, unitId] = isUnitScoped
+              ? fulfilmentId.split('/')
+              : [fulfilmentId, null]
+            const leaf = stored?.[fulfilmentId]
+            const href = hrefForChange(oblId, lineId, unitId)
             const mandatory = isMandatoryOnRecord(obligation, impl, record)
             if (isBlankValue(leaf)) {
               if (mandatory && href) {
-                pushPrompt(prompts, presentation, href, lineId)
+                pushPrompt(prompts, state, presentation, href, lineId, unitId)
               }
               continue
             }
@@ -219,26 +250,30 @@ export const cyaController = {
               typeof domainEntry.isComplete === 'function' &&
               !domainEntry.isComplete(leaf)
             ) {
-              pushAddressUnitPrompt(prompts, state, lineId)
+              pushAddressUnitPrompt(prompts, state, fulfilmentId)
               continue
             }
             pushRow(
               rows,
+              state,
               presentation,
               formatSingle(leaf, obligation),
               href,
-              lineId
+              lineId,
+              unitId
             )
           }
           continue
         }
 
         // Singleton case — one row per obligation.
-        const href = hrefForChange(oblId, null)
+        const href = hrefForChange(oblId, null, null)
         const mandatory =
           (obligation.status ?? impl.status ?? 'mandatory') === 'mandatory'
         if (isBlankValue(stored)) {
-          if (mandatory && href) pushPrompt(prompts, presentation, href, null)
+          if (mandatory && href) {
+            pushPrompt(prompts, state, presentation, href, null, null)
+          }
           continue
         }
         // Address structural-completeness prompt (singleton). Any
@@ -263,9 +298,11 @@ export const cyaController = {
         }
         pushRow(
           rows,
+          state,
           presentation,
           formatSingle(stored, obligation),
           href,
+          null,
           null
         )
       }

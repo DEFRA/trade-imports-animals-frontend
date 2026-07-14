@@ -510,3 +510,56 @@ describe('units — V4 "at least one Animal Identifier per unit" invariant', () 
     )
   })
 })
+
+describe('units — CYA renders unit-scoped rows with correct URL + label', () => {
+  // Regression against a user report: CYA rows for unit-scoped
+  // obligations (permanentAddress etc.) were built with the composite
+  // fulfilmentId 'lineX/unitY' treated as a plain lineId. That gave
+  // a broken URL `/lines/lineX/unitY/<page>` and a broken display key
+  // "(commodity line lineX/unitY)". Fix: the CYA loop now splits the
+  // composite key and routes through the depth-2 per-unit URL, with
+  // a dedicated "animal M on commodity line N" label.
+  it('permanentAddress row on CYA links to the depth-2 unit URL and shows ordinals', async () => {
+    const jar = makeCookieJar()
+    const lineId = await addLineWithCode(jar, '01061900') // pets
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/${lineId}/units/add`,
+      payload: {}
+    })
+    const compositeKey = `${lineId}/unit1`
+    const fieldPrefix = `permanentAddress-${compositeKey}`
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/${lineId}/units/unit1/permanent-address`,
+      payload: {
+        [`${fieldPrefix}__name`]: 'Muffin the Ferret',
+        [`${fieldPrefix}__addressLine1`]: '12 Cage Lane',
+        [`${fieldPrefix}__town`]: 'Reading',
+        [`${fieldPrefix}__postcode`]: 'RG1 1AA',
+        [`${fieldPrefix}__country`]: 'GB',
+        [`${fieldPrefix}__telephone`]: '+44 118 555 0000',
+        [`${fieldPrefix}__email`]: 'owner@example.com'
+      }
+    })
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    // Correct depth-2 URL:
+    expect(cya.payload).toContain(
+      `${BASE}/lines/${lineId}/units/unit1/permanent-address`
+    )
+    // Old broken URL must NOT appear:
+    expect(cya.payload).not.toContain(
+      `${BASE}/lines/${lineId}/unit1/permanent-address`
+    )
+    // Correct display label uses ordinals, not the composite id:
+    expect(cya.payload).toContain(
+      'Permanent address (animal 1 on commodity line 1)'
+    )
+    expect(cya.payload).not.toContain(`(commodity line ${lineId}/unit1)`)
+    // Row value renders the composite-widget summary:
+    expect(cya.payload).toContain('Muffin the Ferret')
+  })
+})
