@@ -300,6 +300,90 @@ values come from MDM`) — the earlier plausible-looking stubs
   #12; a domain-test regression guard fires if the copy ever softens
   back into plausible values.
 
+### Deprioritised audit findings
+
+Lower-severity items from the 2026-07-14 spec-vs-code audit that
+have been consciously deprioritised (rather than forgotten).
+Grouped by disposition so a re-audit sees prior context and
+doesn't re-litigate. Every entry cites the audit finding number so
+the full detail is traceable in
+`workareas/eudpa-249-spec-audit/findings.md` (gitignored — the
+audit output lives out of the tree by design).
+
+**No action needed — spike already correct**
+
+- **#18 reasonForImport label copy** — spec `Transhipment or
+onward travel` matches en.json; no drift.
+- **#22 address block country list** — audit noted the general
+  COUNTRY_OPTIONS list is used for address blocks. That IS
+  correct scope for address blocks (any country can appear on an
+  address). The related audit finding for countryOfOrigin (#5,
+  EU/EEA/EFTA restriction) landed in `aa5a979`.
+- **#30 regionCode cap** — spec says max 5, code enforces max 5
+  via `stringMaxLength(5, regionCode)`. Match confirmed.
+
+**Deferred to real implementation — needs data / flag we do not model**
+
+- **#19 permanentAddress "same as destination" affordance** —
+  spec: "Can set the permanent address to be the same as the
+  place of destination." No copy-across UX in the spike; needs a
+  per-unit copy-address button on the permanent-address page.
+  Add during the real UX build.
+- **#20 commercialTransporter NI restriction** — spec: "If a
+  trader creates a new commercial transporter, it is restricted
+  to NI." Requires a "user-created vs MDM-picked" flag on the
+  obligation, which the spike does not model.
+- **#21 transporterAuthorisationNumber NI-only visibility** —
+  spec: "Only displayed when a user manually creates a
+  commercial transporter from NI." Same underlying "user-created +
+  NI" flag as #20. Currently shown unconditionally.
+- **#24 address email format check** — currently a `.includes('@')`
+  heuristic; spec says `string (email, max 254)`. Swap to a real
+  email validator at implementation time.
+- **#25 address telephone format check** — currently max-length
+  only; spec doesn't specify a format. Confirm E.164/MSISDN
+  expectation with PO at implementation time.
+- **#26 portOfEntry MDM stub** — 8 stub port codes; real list
+  from the MDM live-animal-ports feed. Same async-fetch pattern
+  as `animalsCertifiedFor`.
+- **#27 species enum + max-selections** — stubbed species list
+  without scientific names; no max-selections cap. Both need
+  MDM data + a per-obligation cap value from PO.
+
+**Deferred to content design / user research**
+
+- **#28 Section IA grouping** — the spike groups V4 fields into
+  6 sections / 17 subsections. The spec is a flat list — the
+  grouping is a spike-chosen information architecture. Content
+  design / UR review before implementation.
+- **#29 Hand-authored legends + hints** — the spec provides field
+  names but not question wording. Legends and hints in
+  `locales/en.json` are hand-authored. Content design review
+  before implementation.
+
+**Waiting on PO confirmation**
+
+- **#17 purposeInInternalMarket "Sale/gift" vs "Sale or gift"** —
+  spec value is `Sale/gift`; en.json renders `Sale or gift`
+  (semantically identical). Cosmetic — confirm with PO which
+  wording to ship.
+- **#23 address required-at-save vs CYA** — the spike's five
+  M-to-submit addresses (placeOfOrigin, consignor, consignee,
+  importer, placeOfDestination, permanentAddress) allow blank
+  save + surface a CYA prompt if incomplete (Interpretation A).
+  Confirm with PO that CYA-prompt-only is acceptable, or wire
+  required-at-save equivalently to the M-to-proceed three
+  (audit MAJORs #7-9 landed in `14c1354`).
+
+**Actionable but deprioritised — small copy improvement**
+
+- **#16 regionCode hint** — spec: "Displayed and stored with ISO
+  country prefix derived from Country of Origin." en.json hint at
+  line 147 says "Up to 5 characters. For example, FR-75." — no
+  mention of the auto-derived prefix. Suggested update: "We add
+  the country prefix from your country of origin. Enter up to 5
+  characters." Ship in the next presentation-polish commit.
+
 ### Immediate next candidates
 
 Steps 4 and 5 are complete. P0 is now resolved. Playwright cross-
