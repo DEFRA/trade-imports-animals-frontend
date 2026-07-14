@@ -134,8 +134,9 @@ const unlockSections = async (page) => {
 
 // Documents are added by uploading a real file (inc-064): the attachment type
 // is derived server-side from the filename's extension, and the stub scan
-// lifecycle answers Checking on the first status read before settling by
-// filename convention (a name containing "virus" settles REJECTED).
+// lifecycle answers Checking on every render until the refresh link's
+// ?attempt=N GET settles the upload by filename convention (a name containing
+// "virus" settles REJECTED).
 const setUploadFile = (page, filename, bytes) =>
   page.getByLabel('Upload a file').setInputFiles({
     name: filename,

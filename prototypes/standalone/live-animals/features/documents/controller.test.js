@@ -131,7 +131,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(row[4].html).toContain('accompanying-documents/0/remove')
   })
 
-  it('Should show Checking on the first read of a fresh upload, then settle to Safe with a refresh affordance in between', async () => {
+  it('Should show Checking on every render of a fresh upload until a refresh-link GET settles it to Safe', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
     const seed = {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -139,12 +139,20 @@ describe('documents — real upload leg on the single-page loop', () => {
     const first = await driveHandler(get, { seed })
     expect(first.view.context.rows[0][3].html).toContain('Checking')
     expect(first.view.context.anyPending).toBe(true)
-    expect(first.view.context.canContinue).toBe(false)
     expect(first.view.context.refreshHref).toContain('attempt=1')
 
-    const second = await driveHandler(get, { seed })
-    expect(second.view.context.rows[0][3].html).toContain('Safe')
-    expect(second.view.context.canContinue).toBe(true)
+    const stillPending = await driveHandler(get, { seed })
+    expect(stillPending.view.context.rows[0][3].html).toContain('Checking')
+
+    const refreshed = await driveHandler(get, { seed, query: { attempt: '1' } })
+    expect(refreshed.view.context.rows[0][3].html).toContain('Safe')
+    expect(refreshed.view.context.anyPending).toBe(false)
+
+    const settled = await driveHandler(post, {
+      seed,
+      payload: { action: 'continue' }
+    })
+    expect(settled.response.redirect).toBeDefined()
   })
 
   it('Should block Continue while a scan is PENDING, naming the reason', async () => {
@@ -165,7 +173,11 @@ describe('documents — real upload leg on the single-page loop', () => {
     const uploadId = await documentUploads.upload({
       filename: 'virus-notes.pdf'
     })
-    await documentUploads.scanStatus({ uploadId, filename: 'virus-notes.pdf' })
+    await documentUploads.scanStatus({
+      uploadId,
+      filename: 'virus-notes.pdf',
+      refresh: true
+    })
     const seed = {
       documents: [storedDocument({ uploadId, filename: 'virus-notes.pdf' })]
     }

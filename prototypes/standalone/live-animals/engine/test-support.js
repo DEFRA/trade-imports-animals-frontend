@@ -41,13 +41,13 @@ export const recordingH = () => {
 
 export const driveHandler = async (
   handler,
-  { payload = {}, seed = {}, params = {} } = {}
+  { payload = {}, seed = {}, params = {}, query = {} } = {}
 ) => {
   const journey = await store.create()
   await store.saveAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(
-    journeyRequest(journey.journeyId, { payload, params }),
+    journeyRequest(journey.journeyId, { payload, params, query }),
     h
   )
   const after = (await store.get(journey.journeyId)).answers

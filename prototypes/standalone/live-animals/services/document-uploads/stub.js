@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 const REJECTED_FILENAME = /virus/i
 const NEVER_SCANS_FILENAME = /never-scans/i
 
-const statusReads = new Map()
+const awaitingRefresh = new Set()
 
 const settledStatus = (filename = '') => {
   if (NEVER_SCANS_FILENAME.test(filename)) return 'PENDING'
@@ -13,19 +13,18 @@ const settledStatus = (filename = '') => {
 export const documentUploads = {
   async upload() {
     const uploadId = randomUUID()
-    statusReads.set(uploadId, 0)
+    awaitingRefresh.add(uploadId)
     return uploadId
   },
 
-  async scanStatus({ uploadId, filename }) {
-    if (statusReads.get(uploadId) === 0) {
-      statusReads.set(uploadId, 1)
-      return 'PENDING'
-    }
+  async scanStatus({ uploadId, filename, refresh }) {
+    if (!awaitingRefresh.has(uploadId)) return settledStatus(filename)
+    if (!refresh) return 'PENDING'
+    awaitingRefresh.delete(uploadId)
     return settledStatus(filename)
   },
 
   async remove(uploadId) {
-    statusReads.delete(uploadId)
+    awaitingRefresh.delete(uploadId)
   }
 }

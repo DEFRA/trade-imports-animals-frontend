@@ -87,16 +87,6 @@
       <p class="govuk-body">{{ emptyText }}</p>
     {% endif %}
 
-    {% if canContinue %}
-      {{ saveActions(hubHref, { text: "Continue", name: "action", value: "continue" }) }}
-    {% else %}
-      {{ saveActions(hubHref, {
-        text: "Continue",
-        name: "action",
-        value: "continue",
-        attributes: { "aria-disabled": "true", "aria-describedby": "cannot-continue-reason" }
-      }) }}
-      <span class="govuk-visually-hidden" id="cannot-continue-reason">{{ cannotContinueMessage }}</span>
-    {% endif %}
+    {{ saveActions(hubHref, { text: "Continue", name: "action", value: "continue" }) }}
   </form>
 {% endblock %}

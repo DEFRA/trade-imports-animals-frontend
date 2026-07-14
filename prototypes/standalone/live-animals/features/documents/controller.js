@@ -84,27 +84,32 @@ export const fileErrors = (file) => {
   return {}
 }
 
-const scanStatusOf = async (entry) => {
+const scanStatusOf = async (entry, refresh) => {
   if (!entry.uploadId) return 'COMPLETE'
   try {
-    return await documentUploads.scanStatus(entry)
+    return await documentUploads.scanStatus({
+      uploadId: entry.uploadId,
+      filename: entry.filename,
+      refresh
+    })
   } catch {
     return 'PENDING'
   }
 }
 
-const withScanStatus = (documents) =>
+const withScanStatus = (documents, refresh) =>
   Promise.all(
     documents.map(async (item) => ({
       ...item,
-      scanStatus: await scanStatusOf(item.entry)
+      scanStatus: await scanStatusOf(item.entry, refresh)
     }))
   )
 
 const loadPage = async (request, h) => {
   const { journey, answers, scope } = await state.get(request, h)
   const documents = await withScanStatus(
-    state.collectionView(answers, ['documents'])
+    state.collectionView(answers, ['documents']),
+    getAttempt(request) > 0
   )
   return { journey, answers, scope, documents }
 }
@@ -173,11 +178,11 @@ const render = (
   { journey, documents },
   values,
   errors = {},
-  summaryErrors = []
+  summaryErrors = [],
+  extra = {}
 ) => {
   const attempt = getAttempt(request)
   const anyPending = documents.some((item) => item.scanStatus === 'PENDING')
-  const anyRejected = documents.some((item) => item.scanStatus === 'REJECTED')
   const errorList = [
     ...rejectedErrors(documents),
     ...summaryErrors,
@@ -185,6 +190,7 @@ const render = (
   ]
   return h.view(view, {
     ...kit.base('Upload documents', { backLink: hubPath(), journey }),
+    ...extra,
     heading: 'Upload documents',
     rows: documentRows(request, documents),
     hasDocuments: documents.length > 0,
@@ -196,9 +202,7 @@ const render = (
       : null,
     anyPending,
     timedOut: anyPending && attempt >= MAX_POLLING_ATTEMPTS,
-    canContinue: !anyPending && !anyRejected,
     refreshHref: refreshHref(request, attempt + 1),
-    cannotContinueMessage: CANNOT_CONTINUE_MESSAGE,
     typeItems: selectItems(
       'Select a document type',
       documentTypes.documentTypes(),
@@ -314,9 +318,17 @@ const isOversizeBoom = (request) =>
 const handleOversizePayload = async (request, h) => {
   if (!isOversizeBoom(request)) return h.continue
   const pageState = await loadPage(request, h)
-  return render(request, h, pageState, EMPTY_FORM, {
-    file: OVERSIZE_FILE_MESSAGE
-  })
+  const crumb =
+    request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)
+  return render(
+    request,
+    h,
+    pageState,
+    EMPTY_FORM,
+    { file: OVERSIZE_FILE_MESSAGE },
+    [],
+    { crumb }
+  )
 }
 
 export const routes = [
