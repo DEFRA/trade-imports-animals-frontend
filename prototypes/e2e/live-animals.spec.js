@@ -487,7 +487,12 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(originRow).toContainText('Not yet started')
     await page.getByRole('link', { name: 'Origin of the import' }).click()
-    await expect(page.locator('input#countryOfOrigin')).toHaveValue('')
+    // Unselected state: the enhancement seeds the visible input from the
+    // selected option's text — the placeholder — while the hidden select
+    // (the data truth) stays empty: nothing was committed.
+    await expect(page.locator('input#countryOfOrigin')).toHaveValue(
+      'Select a country'
+    )
     await expect(page.locator('#countryOfOrigin-select')).toHaveValue('')
 
     // Save-and-return leg: the named secondary submit commits the page and
