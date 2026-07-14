@@ -77,7 +77,7 @@ const post = async (request, h) => {
   if ((request.payload ?? {}).action === 'add') {
     return h.redirect(pagePath(`commodities/${index}/identifiers/add`))
   }
-  return h.redirect(pagePath('commodities'))
+  return h.redirect(kit.hubExitTarget(request) ?? pagePath('commodities'))
 }
 
 export const routes = [

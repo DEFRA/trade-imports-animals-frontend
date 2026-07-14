@@ -65,7 +65,9 @@ const post = async (request, h) => {
 
   const { scope } = await state.commit(request, h, values)
   return h.redirect(
-    hubEntryReturn(request) ?? kit.nextTarget(request, page, scope)
+    kit.hubExitTarget(request) ??
+      hubEntryReturn(request) ??
+      kit.nextTarget(request, page, scope)
   )
 }
 

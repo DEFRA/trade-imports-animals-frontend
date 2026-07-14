@@ -1,6 +1,7 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
@@ -42,6 +43,6 @@
       }) }}
     {% endif %}
 
-    {{ govukButton({ text: "Save and continue" }) }}
+    {{ saveActions(hubHref) }}
   </form>
 {% endblock %}

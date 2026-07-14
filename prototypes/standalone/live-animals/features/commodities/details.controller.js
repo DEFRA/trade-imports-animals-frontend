@@ -74,7 +74,7 @@ const post = async (request, h) => {
       ? { numberOfPackages: values.numberOfPackages }
       : {})
   })
-  return h.redirect(pagePath('commodities'))
+  return h.redirect(kit.hubExitTarget(request) ?? pagePath('commodities'))
 }
 
 export const routes = [

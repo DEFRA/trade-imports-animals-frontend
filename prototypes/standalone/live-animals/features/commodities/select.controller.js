@@ -83,7 +83,9 @@ const postAdd = async (request, h) => {
     numberOfPackages: '',
     numberOfAnimalsQuantity: ''
   })
-  return h.redirect(pagePath(`commodities/${index}/details`))
+  return h.redirect(
+    kit.hubExitTarget(request) ?? pagePath(`commodities/${index}/details`)
+  )
 }
 
 export const routes = [

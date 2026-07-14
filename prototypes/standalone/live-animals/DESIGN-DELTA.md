@@ -309,6 +309,57 @@ Draft/Submitted mapping, absence on dashboard/filter/fresh origin, presence on
 origin once started) and `services/persistence/records/records-port.test.js`
 (GBN-AG-YY-XXXXXX shape from stub `create`).
 
+## 9. Dual-save + cancel hub exits in the shared kit (inc-049)
+
+`shared/kit.js` + `shared/save-actions.njk`: every flow/task page gains the
+design's three exits (M3-09, f-016/f-046/f-063/f-099; Sam's D4/D5 rulings) —
+the existing primary submit, a secondary named submit **"Save and return to
+hub"** (`name="exit" value="hub"`, the GDS multiple-submit convention) and a
+**"Cancel and return to hub"** link (plain GET to the hub, no write, discards
+the form input). The kit resolves the exit, not the pages:
+`kit.hubExitTarget(request)` returns the hub path when the named submit fired
+(else `null`), `kit.nextTarget` consults it FIRST, and `kit.base` now exposes
+`hubHref` for the cancel link. The `saveActions(hubHref, primary)` macro
+renders the triple as one `govuk-button-group`; a page with its own primary
+semantics passes it through (documents/list/identifier-list keep `Continue`
+`name=action`, the identifier entry keeps `Add animal`).
+
+- **Identical validation (D5).** The secondary submit runs the page's POST
+  handler unchanged — the error branch renders before any redirect is
+  resolved, so a failing "Save and return to hub" shows exactly the errors a
+  failing "Save and continue" would, and commits nothing. On success the
+  commit goes through the same `state.commit` → `engine/write.js` path (and
+  the collection loops' `appendEntry`/`updateEntry`/`appendEntryAt`); only
+  the success redirect changes. No new persistence surface.
+- **Uniform per D4, exits ADDED to multi-button pages.** All flow pages carry
+  the triple — including the addresses landing page the design was
+  inconsistent about — and the documents loop, commodities select/details/
+  list and the animal-identifier list/entry loop gain the two hub exits
+  WITHOUT disturbing their own actions (`action=add` still loops). The
+  sub-page controllers with bespoke success targets (commodities select →
+  details, details → list, identifier entry/list → list/commodities,
+  cph-number's `?return=addresses`) consult `kit.hubExitTarget` first.
+- **Precedence: an explicit hub choice always wins.** `?change=1` still sends
+  a save-and-CONTINUE back to check-your-answers, but a user explicitly
+  choosing "Save and return to hub" goes to the hub — same rule against the
+  cph-number addresses-hub entry context. Cancel is a link, so it needs no
+  precedence: it never posts.
+- **Exclusions.** Aux spokes keep their existing pattern (five address
+  pickers, create-address); check-answers is read-only; declaration keeps its
+  single submit (it IS the submit action, not a task save); confirmation,
+  hub, dashboard and the import-type filter have no task form. The filter's
+  POST does flow through `kit.nextTarget`, but its template renders no exit
+  button, so its behaviour is unchanged.
+- **Backwards compatible.** No `exit` key in the payload = pre-inc-049
+  behaviour byte-for-byte in every handler; `hubHref` is additive view-model
+  data. No engine, flow or lib change.
+
+Proven in `shared/save-actions.test.js`: exit submit commits + redirects to
+the hub (scalar page, collection sub-page, multi-button loop), identical
+validation errors on both submits with nothing committed, save-and-continue
+untouched, change-context precedence both ways, cph return-context
+precedence, and the `hubHref`/`hubExitTarget` kit contracts.
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

@@ -1,4 +1,4 @@
-import { breadcrumbs, LAYOUT, pagePath } from '../config.js'
+import { breadcrumbs, hubPath, LAYOUT, pagePath } from '../config.js'
 import { SUBMITTED } from '../engine/persistence/records.js'
 import { nextInSection } from '../flow/navigation.js'
 
@@ -39,14 +39,19 @@ export const errorSummary = (fieldErrors) => {
 export const fieldError = (fieldErrors, field) =>
   fieldErrors?.[field] ? { text: fieldErrors[field] } : undefined
 
+export const hubExitTarget = (request) =>
+  (request.payload ?? {}).exit === 'hub' ? hubPath() : null
+
 export const nextTarget = (request, page, scope) =>
-  request.query.change ? pagePath(CYA_SLUG) : nextInSection(page.id, scope)
+  hubExitTarget(request) ??
+  (request.query.change ? pagePath(CYA_SLUG) : nextInSection(page.id, scope))
 
 export const base = (title, { backLink, journey } = {}) => ({
   layout: LAYOUT,
   pageTitle: title,
   breadcrumbs: breadcrumbs(title),
   backLink,
+  hubHref: hubPath(),
   journeyStrip: journeyStrip(journey)
 })
 

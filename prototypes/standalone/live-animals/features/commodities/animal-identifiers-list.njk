@@ -1,6 +1,7 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
   <span class="govuk-caption-l">{{ commodity }}</span>
@@ -24,8 +25,6 @@
       value: "add"
     }) }}
 
-    <div class="govuk-button-group">
-      {{ govukButton({ text: "Continue", name: "action", value: "continue" }) }}
-    </div>
+    {{ saveActions(hubHref, { text: "Continue", name: "action", value: "continue" }) }}
   </form>
 {% endblock %}

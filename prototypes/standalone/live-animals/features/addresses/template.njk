@@ -1,6 +1,6 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 
 {% block journeyContent %}
@@ -13,6 +13,6 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-    {{ govukButton({ text: "Continue" }) }}
+    {{ saveActions(hubHref, { text: "Continue" }) }}
   </form>
 {% endblock %}

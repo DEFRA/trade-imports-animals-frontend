@@ -376,6 +376,45 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(strip).toContainText(reference)
   })
 
+  test('task-page exits — Cancel and return to hub discards typed input; Save and return to hub commits and lands on the hub', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const originRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Origin of the import'
+    })
+
+    // Cancel leg: choose a country, cancel — nothing is written.
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByLabel('Country of origin')
+      .selectOption({ label: 'Belgium' })
+    await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await expect(originRow).toContainText('Not yet started')
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(page.getByLabel('Country of origin')).toHaveValue('')
+
+    // Save-and-return leg: the named secondary submit commits the page and
+    // redirects to the hub instead of the next flow target.
+    await page
+      .getByLabel('Country of origin')
+      .selectOption(values.countryOfOrigin)
+    await page.getByRole('button', { name: 'Save and return to hub' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await expect(originRow).toContainText('In progress')
+
+    // The committed value is there on re-entry.
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(page.getByLabel('Country of origin')).toHaveValue(
+      values.countryOfOrigin
+    )
+  })
+
   test('commodities — a line is added across the select and details sub-pages, then the hub row completes', async ({
     page
   }) => {

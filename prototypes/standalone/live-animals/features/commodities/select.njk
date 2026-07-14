@@ -2,7 +2,7 @@
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
@@ -37,6 +37,6 @@
       items: speciesOptions
     }) }}
 
-    {{ govukButton({ text: "Save and continue" }) }}
+    {{ saveActions(hubHref) }}
   </form>
 {% endblock %}

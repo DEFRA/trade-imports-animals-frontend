@@ -148,6 +148,14 @@ shared layout, include the shared error summary, and use govuk macros. View
 names resolve from the prototypes Nunjucks root, so the controller references
 it as `standalone/live-animals/features/vehicle-security/template`.
 
+End the form with the shared `saveActions` macro
+([`shared/save-actions.njk`](../shared/save-actions.njk)), passing the
+`hubHref` that `kit.base` puts in the view model — every flow/task page
+carries the design's three exits (primary save, "Save and return to hub",
+"Cancel and return to hub"). The exit submit is resolved inside
+`kit.nextTarget`, so a controller that redirects via it needs nothing extra;
+a bespoke success redirect must consult `kit.hubExitTarget(request)` first.
+
 ### 5. Register the obligations in the registry
 
 In [`registry.js`](../registry.js), add the sideways import and spread the

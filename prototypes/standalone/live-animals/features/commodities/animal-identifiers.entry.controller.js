@@ -293,7 +293,9 @@ const postAdd = async (request, h) => {
     ['commodityLines', index, 'animalIdentifiers'],
     unit
   )
-  return h.redirect(pagePath(`commodities/${index}/identifiers`))
+  return h.redirect(
+    kit.hubExitTarget(request) ?? pagePath(`commodities/${index}/identifiers`)
+  )
 }
 
 const getRemove = async (request, h) => {
