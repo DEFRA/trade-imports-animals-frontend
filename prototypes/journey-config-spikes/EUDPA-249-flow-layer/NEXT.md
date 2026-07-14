@@ -238,6 +238,36 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
   staticEnum with a doc comment; the eventual pattern is the same
   async-fetch question the other MDM enums share.
 
+### Deferred pending upstream integration
+
+Real work that only makes sense once the corresponding integration
+is real. The spike ships the current shape and flags the gap here
+so it's picked up on hand-off rather than lost. Both cite audit
+findings raised MAJOR then deferred with cause.
+
+- **Contact Address gov.identity variant.** V4 spec has TWO
+  Contact Address rows — one where the value is consumed from
+  `gov.identity` ("If more than one address exists, the user must
+  select one before continuing") and one where the user enters an
+  address directly. The spike models only the user-entered variant
+  (`contactAddress` obligation, `addressBlock` factory). Adding the
+  gov.identity variant requires either (a) a new
+  `contactAddressSource` predecessor obligation that branches into
+  a select-from-multiple-pre-filled-addresses widget, or (b)
+  treating pre-fill as an upstream fulfilment like
+  `responsiblePersonForLoad` (which is on `KNOWN_UNWIRED`). Pick
+  when gov.identity integration is real. Audit finding #10 (MAJOR).
+- **Commodity code search widget.** V4 spec: "Search supports
+  common name, species (scientific name) and commodity code." The
+  spike renders `commodityCode` as an 8-option `staticEnum`
+  (govukSelect). Under the real MDM commodity list this becomes an
+  autocomplete-search picker with three parallel search indexes
+  (common / scientific / code). Real work: MDM feed + a new widget
+  dispatch shape in `lib/field-widgets.js` (currently
+  radios / select / checkboxes / date / input — needs a
+  `search-select` variant). Pick when the MDM commodity list feed
+  is real. Audit finding #13 (MAJOR).
+
 ### Spec clarifications needed before implementation
 
 Recorded as blockers on future implementation rather than as code
