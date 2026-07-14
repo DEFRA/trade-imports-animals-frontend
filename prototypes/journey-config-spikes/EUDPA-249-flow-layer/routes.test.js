@@ -607,28 +607,41 @@ describe('page-controller — address-block composite widget (commercialTranspor
   })
 
   it('partial address keeps the containing subsection In progress on the task list', async () => {
-    // Regression against the user-reported bug: a partial address
-    // (name only) was previously treated as fulfilled — hasFulfilment
-    // returned true because isBlankValue was false. That marked the
-    // Place of origin subsection as Completed on the task list, and
-    // /start skipped past the address page so the user couldn't
-    // navigate back. Fix: hasFulfilment now consults
-    // `domain.get(id).isComplete(value)` for address obligations,
-    // so a partial address is unfulfilled → subsection In progress
-    // → clickable → /start returns to it.
+    // Two regressions:
+    // 1. Previously a partial address (name only) was treated as
+    //    fulfilled because `isBlankValue` was false. That marked the
+    //    subsection as Completed and /start skipped past the address
+    //    page. Fixed by `hasFulfilment` consulting
+    //    `domainEntry.isComplete(value)` for addresses — a partial
+    //    address is unfulfilled.
+    // 2. User-reported: after (1), a partial address then made the
+    //    subsection read "Not started" because the classifier's
+    //    NS-vs-IP check also went via `hasFulfilment` (partial ⇒
+    //    unfulfilled ⇒ counted as "nothing filled" ⇒ NS). The user
+    //    HAD typed something, so it should read In progress.
+    //    Fixed by introducing `hasAnyInput` in engine/index.js that
+    //    the classifier uses for the NS-vs-IP branch, while
+    //    `hasFulfilment` still drives the F check.
     const jar = makeCookieJar()
     // Fill only one field on the address.
     await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/pages/place-of-origin',
-      payload: { placeOfOrigin__name: 'Farm 42' }
+      payload: { placeOfOrigin__addressLine1: '1 Farm Lane' }
     })
-    // Task list: the subsection must NOT be Completed.
+    // Task list: the subsection must be In progress — not Not started
+    // (user did type something) and not Completed (address incomplete).
     const tasks = await inject(jar, {
       method: 'GET',
       url: '/prototype/eudpa-249/task-list'
     })
     expect(tasks.payload).toContain('Place of origin and consignor')
+    expect(tasks.payload).toMatch(
+      /Place of origin and consignor[\s\S]{0,400}In progress/
+    )
+    expect(tasks.payload).not.toMatch(
+      /Place of origin and consignor[\s\S]{0,400}Not started/
+    )
     expect(tasks.payload).not.toMatch(
       /Place of origin and consignor[\s\S]{0,400}Completed/
     )

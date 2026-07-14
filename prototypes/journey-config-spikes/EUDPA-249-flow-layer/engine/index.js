@@ -347,15 +347,31 @@ function hasFulfilment(entry, state) {
  * Rules (mutually exclusive, exhaustive):
  *   - NA        no in-scope obligations at all.
  *   - Optional  no in-scope MANDATORY obligation, at least one in-scope
- *               OPTIONAL obligation, nothing filled. Signals "there's
- *               opt-in room here, you haven't engaged yet." (No visited
- *               plumbing — engagement is measured by ≥ 1 fulfilment,
- *               same as everywhere else.)
- *   - NS        at least one mandatory concern, nothing filled.
+ *               OPTIONAL obligation, no user input anywhere. Signals
+ *               "there's opt-in room here, you haven't engaged yet."
+ *               (No visited plumbing — engagement is measured by
+ *               ≥ 1 non-blank value, same as everywhere else.)
+ *   - NS        at least one mandatory concern, no user input anywhere.
  *   - IP        at least one mandatory concern still unsatisfied, at
- *               least one obligation filled.
- *   - F         either only optional in scope with ≥ 1 filled, OR all
- *               mandatory concerns satisfied.
+ *               least one obligation has non-blank input.
+ *   - F         either only optional in scope with ≥ 1 fulfilled, OR
+ *               all mandatory concerns satisfied.
+ *
+ * "Fulfilled" vs "has input" — the two signals differ for addresses:
+ *
+ *   - `hasFulfilment(entry, state)` calls `isValueFulfilled` which
+ *     consults `domainEntry.isComplete(value)` for address
+ *     obligations. A partial address (one required sub-field filled)
+ *     is NOT fulfilled — the whole address must be structurally
+ *     complete to count as F.
+ *   - `hasAnyInput(entry, state)` calls `!isBlankValue(value)`
+ *     directly. A partial address IS input — the user typed
+ *     something, so the subsection reads IP not NS.
+ *
+ * For scalars the two are identical (both boil down to
+ * `!isBlankValue(value)`). The distinction only matters for the
+ * NS↔IP transition on containers that include an incompletely-filled
+ * address obligation.
  *
  * Group-invariant errors (e.g. "≥ 1 identifier per unit") count as
  * additional unsatisfied mandatory concerns — an unfilled invariant
@@ -367,24 +383,47 @@ function classifyEntries(inScope, state, groupErrorCount) {
     return STATUSES.NOT_APPLICABLE
   }
 
-  const filled = inScope.filter((e) => hasFulfilment(e, state))
+  const touched = inScope.filter((e) => hasAnyInput(e, state))
   const mandatoryInScope = inScope.filter(
     (e) => effectiveStatus(e.obligation, e.path, state) === 'mandatory'
   )
-  const mandatoryUnfilled = mandatoryInScope.filter(
+  const mandatoryUnfulfilled = mandatoryInScope.filter(
     (e) => !hasFulfilment(e, state)
   )
   const totalMandatoryConcerns = mandatoryInScope.length + groupErrorCount
-  const totalMandatoryUnsatisfied = mandatoryUnfilled.length + groupErrorCount
+  const totalMandatoryUnsatisfied =
+    mandatoryUnfulfilled.length + groupErrorCount
 
   if (totalMandatoryConcerns > 0) {
     if (totalMandatoryUnsatisfied === 0) return STATUSES.FULFILLED
-    if (filled.length === 0) return STATUSES.NOT_STARTED
+    if (touched.length === 0) return STATUSES.NOT_STARTED
     return STATUSES.IN_PROGRESS
   }
   // Only optional obligations are in scope — Case A.
-  if (filled.length === 0) return STATUSES.OPTIONAL
+  if (touched.length === 0) return STATUSES.OPTIONAL
   return STATUSES.FULFILLED
+}
+
+/** True iff the user has typed ANY non-blank value into the entry.
+ *  For scalars this is `!isBlankValue(stored)`. For address
+ *  obligations it's also `!isBlankValue(stored)` — a composite with
+ *  any non-empty leaf counts as "input" even though the address
+ *  isn't structurally complete yet. This is what distinguishes NS
+ *  (no user input anywhere) from IP (user has made some progress
+ *  but the mandatory concern isn't fulfilled). Contrast with
+ *  `hasFulfilment` which requires the address to be `isComplete`. */
+function hasAnyInput(entry, state) {
+  const stored = state.fulfilments?.[entry.obligation.id]
+  if (entry.path === null) return !isBlankValue(stored)
+  if (
+    stored === undefined ||
+    stored === null ||
+    typeof stored !== 'object' ||
+    Array.isArray(stored)
+  ) {
+    return false
+  }
+  return !isBlankValue(stored[entry.path])
 }
 
 /**
