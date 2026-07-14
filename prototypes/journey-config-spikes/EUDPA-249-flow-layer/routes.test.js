@@ -789,6 +789,47 @@ describe('page-controller — accompanying-documents branchedGate (all-or-nothin
     expect(cya.payload).toContain('Enter a value for Date of issue')
   })
 
+  it('re-visit after Type is stored: blank-three POST is blocked with per-field required errors (audit re-review NEW-3)', async () => {
+    // V4 spec: "once a document type is selected, the attachment,
+    // reference and date of issue are mandatory to proceed."
+    //
+    // The three non-Type fields carry `mandatoryToProceed: true` on
+    // their flow entries. The contract.js gate consults effective
+    // status (audit re-review NEW-1 fix) — the three flip from
+    // effective-optional to effective-mandatory when documentType is
+    // stored. So blank-three POST:
+    //   - First submit with type-only         → 302 (state at
+    //     validate time still has type blank; three are effective-
+    //     optional; gate short-circuits). Covered by the sibling
+    //     "flips the block to mandatory" test above.
+    //   - Any re-visit + blank-three POST     → 400 with per-field
+    //     required errors. Covered here.
+    //
+    // The one-step delay on the first save is acceptable for the
+    // spike — CYA + task-list still surface the incompleteness on
+    // the very first render after that first save, and any
+    // subsequent visit enforces at page save.
+    const jar = makeCookieJar()
+    // Prime: pick a type. State now has documentType stored → the
+    // three become effective-mandatory.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/accompanying-documents',
+      payload: { accompanyingDocumentType: 'health-certificate' }
+    })
+    // Re-visit + submit again with type only. Now the three are
+    // effective-mandatory and the gate fires.
+    const revisit = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/accompanying-documents',
+      payload: { accompanyingDocumentType: 'health-certificate' }
+    })
+    expect(revisit.statusCode).toBe(400)
+    expect(revisit.payload).toContain('Choose the attachment format')
+    expect(revisit.payload).toContain('Enter the document reference')
+    expect(revisit.payload).toContain('Enter the date of issue')
+  })
+
   it('POST with only a non-Type field filled (Reference only) does NOT flip the block to mandatory', async () => {
     // V4 audit #15: the gate is triggered by Document type specifically.
     // A user who types a reference but doesn't pick a type is signalling

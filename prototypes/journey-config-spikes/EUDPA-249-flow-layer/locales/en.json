@@ -553,6 +553,15 @@
     "contactAddress": {
       "required": "Complete the contact address"
     },
+    "accompanyingDocumentAttachmentType": {
+      "required": "Choose the attachment format"
+    },
+    "accompanyingDocumentReference": {
+      "required": "Enter the document reference"
+    },
+    "accompanyingDocumentDateOfIssue": {
+      "required": "Enter the date of issue"
+    },
     "domain": {
       "enumNotInOptions": {
         "plain": "Select a value from the list",
