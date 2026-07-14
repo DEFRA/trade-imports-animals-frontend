@@ -93,6 +93,16 @@ describe('journey reference strip', () => {
     expect(context.journeyStrip).toBeNull()
   })
 
+  // Real mode rebuilds `answers` from the stored notification, so a fresh
+  // backend DRAFT loads carrying its server-minted referenceNumber. That is
+  // the backend's field, not a saved answer — origin stays strip-less.
+  it('Should render no strip on origin for a real-mode fresh draft carrying only the backend reference', async () => {
+    const { context } = await renderWith(getHandlerOf(originRoutes), {
+      referenceNumber: 'GBN-AG-26-29Q5Q7'
+    })
+    expect(context.journeyStrip).toBeNull()
+  })
+
   it('Should render the strip on origin once the journey has saved answers', async () => {
     const { journey, context } = await renderWith(getHandlerOf(originRoutes), {
       countryOfOrigin: 'FR'

@@ -10,7 +10,7 @@ import {
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
-import { importType } from '../import-type-filter/obligations.js'
+import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
@@ -49,9 +49,7 @@ const fields = () =>
   )
 
 const journeyIfStarted = (journey) =>
-  Object.keys(journey.answers).some((key) => key !== importType.id)
-    ? journey
-    : undefined
+  hasCommittedNotificationAnswers(journey.answers) ? journey : undefined
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {

@@ -10,6 +10,10 @@ import {
 } from '../engine/persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
+import {
+  notificationToAnswers,
+  targetNotificationToAnswers
+} from '../services/persistence/records/notification-mapper.js'
 import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { postHandlerOf } from '../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
@@ -436,6 +440,87 @@ describe('the opening run', () => {
         captureH()
       )
       expect(target).toBe(null)
+    })
+  })
+
+  // In real mode `answers` is rebuilt from the stored notification on every
+  // load, so a freshly-created backend DRAFT arrives already carrying its
+  // server-minted referenceNumber — an answer set the user never entered. The
+  // stub store hands back a literally empty one, so no stub-mode test above
+  // can see this. These pin the two surfaces on the shared start check.
+  describe('real mode — a backend-echoed answer set is still an unstarted journey', () => {
+    const post = postHandlerOf(importTypeFilter)
+
+    const freshBackendDraft = {
+      id: '66f2c1a4e1b2c3d4e5f60718',
+      referenceNumber: 'GBN-AG-26-29Q5Q7',
+      status: 'DRAFT',
+      created: '2026-07-14T09:00:00.000Z',
+      updated: '2026-07-14T09:00:00.000Z'
+    }
+
+    // real.js marshals through whichever mapper LIVE_ANIMALS_MAPPER selects at
+    // call time, so drive both. The answer sets come from the mappers
+    // themselves — a mapper that starts echoing another backend field fails
+    // these rather than silently reopening the bug.
+    const freshRealDraft = [
+      ['mapper A', notificationToAnswers(freshBackendDraft)],
+      ['mapper B', targetNotificationToAnswers(freshBackendDraft)]
+    ]
+
+    const startedRealDraft = {
+      ...notificationToAnswers(freshBackendDraft),
+      countryOfOrigin: 'FR'
+    }
+
+    it('Should marshal a fresh backend draft to the reference alone', () => {
+      for (const [, answers] of freshRealDraft) {
+        expect(answers).toEqual({ referenceNumber: 'GBN-AG-26-29Q5Q7' })
+      }
+    })
+
+    it.each(freshRealDraft)(
+      'Should open the run on a fresh real-mode draft (%s)',
+      async (_mapper, seed) => {
+        const { journeyId, h } = await drive(post, {
+          payload: { importType: 'live-animals' },
+          seed
+        })
+        expect(h.captured.redirect).toBe(pagePath('origin'))
+        expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual(
+          active(journeyId)
+        )
+      }
+    )
+
+    it.each(freshRealDraft)(
+      'Should send a fresh real-mode draft deep-linking to origin back to the filter (%s)',
+      async (_mapper, seed) => {
+        const journey = await store.create()
+        await store.saveAnswers(journey.journeyId, seed)
+        const target = await entryGuardTarget(
+          buildRequest(journey.journeyId, { path: pagePath('origin') }),
+          captureH()
+        )
+        expect(target).toBe(pagePath('import-type'))
+      }
+    )
+
+    it('Should still treat a real-mode journey with a user answer as started — the echoed reference rides alongside it', async () => {
+      const journey = await store.create()
+      await store.saveAnswers(journey.journeyId, startedRealDraft)
+      const target = await entryGuardTarget(
+        buildRequest(journey.journeyId, { path: pagePath('origin') }),
+        captureH()
+      )
+      expect(target).toBe(null)
+
+      const { h } = await drive(post, {
+        payload: { importType: 'live-animals' },
+        seed: startedRealDraft
+      })
+      expect(h.captured.redirect).toBe(hubPath())
+      expect(OPENING_RUN_COOKIE in h.captured.cookies).toBe(false)
     })
   })
 })
