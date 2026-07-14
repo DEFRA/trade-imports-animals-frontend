@@ -253,9 +253,12 @@ export async function fillAccompanyingDocuments(
     dateOfIssue = '01/06/2026'
   } = {}
 ) {
+  // Both enums exceed RADIO_MAX (5) after audit BLOCKERs #2 and #3
+  // (type has 14 spec values, attachment has 8), so they render as
+  // selects, not radios.
   await goToPage(page, journey, 'accompanying-documents')
-  await pickRadio(page, 'accompanyingDocumentType', documentType)
-  await pickRadio(page, 'accompanyingDocumentAttachmentType', attachmentType)
+  await selectValue(page, 'accompanyingDocumentType', documentType)
+  await selectValue(page, 'accompanyingDocumentAttachmentType', attachmentType)
   await fillInput(page, 'accompanyingDocumentReference', reference)
   await fillInput(page, 'accompanyingDocumentDateOfIssue', dateOfIssue)
   await submit(page)
