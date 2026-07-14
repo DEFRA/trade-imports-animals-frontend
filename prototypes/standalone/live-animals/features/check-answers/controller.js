@@ -177,7 +177,11 @@ const buildRows = (answers) => {
       dateText(answerOf('arrivalDateAtPort')),
       'arrivalDateAtPort'
     ),
-    row('Means of transport', answerOf('meansOfTransport'), 'meansOfTransport'),
+    row(
+      'Means of transport to the port of entry',
+      answerOf('meansOfTransport'),
+      'meansOfTransport'
+    ),
     row(
       'Transport identification',
       answerOf('transportIdentification'),
