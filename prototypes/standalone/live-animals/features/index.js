@@ -18,7 +18,6 @@ import * as importersSelect from './addresses/importers-select.controller.js'
 import * as createAddress from './addresses/create-address.controller.js'
 import * as cphNumber from './cph-number/controller.js'
 import * as portOfEntry from './transport/port-of-entry.controller.js'
-import * as transportDetails from './transport/transport-details.controller.js'
 import * as transitCountries from './transport/transit-countries.controller.js'
 import * as transporters from './transport/transporters.controller.js'
 import * as transportersSelect from './transport/transporters-select.controller.js'
@@ -42,7 +41,6 @@ export const dispatchPages = [
   addresses.meta,
   cphNumber.meta,
   portOfEntry.meta,
-  transportDetails.meta,
   transitCountries.meta,
   transporters.meta,
   transportersSelect.meta,
@@ -72,7 +70,6 @@ export const allRoutes = [
   ...createAddress.routes,
   ...cphNumber.routes,
   ...portOfEntry.routes,
-  ...transportDetails.routes,
   ...transitCountries.routes,
   ...transporters.routes,
   ...transportersSelect.routes,

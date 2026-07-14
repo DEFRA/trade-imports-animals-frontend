@@ -16,7 +16,6 @@ import {
   portOfEntryPage,
   privateTransporterDetailsPage,
   transitCountriesPage,
-  transportDetailsPage,
   transportersPage,
   transportersSelectPage
 } from '../features/transport/page.js'
@@ -36,7 +35,7 @@ export const taskRows = [
     pages: [animalIdentificationPage],
     parts: [{ collection: 'commodityLines', only: ['animalIdentifiers'] }]
   },
-  { id: 'arrivalDetails', pages: [portOfEntryPage, transportDetailsPage] },
+  { id: 'arrivalDetails', pages: [portOfEntryPage] },
   { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
   {
     id: 'transporter',

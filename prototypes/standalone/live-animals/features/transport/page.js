@@ -3,11 +3,6 @@ export const portOfEntryPage = {
   slug: 'port-of-entry'
 }
 
-export const transportDetailsPage = {
-  id: 'transport-details',
-  slug: 'transport-details'
-}
-
 export const transitCountriesPage = {
   id: 'transit-countries',
   slug: 'transit-countries'

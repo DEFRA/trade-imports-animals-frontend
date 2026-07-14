@@ -10,6 +10,7 @@ import {
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
+import { portOfEntryPage } from '../features/transport/page.js'
 import { makeScope } from '../engine/index.js'
 import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { buildDispatch } from './dispatch.js'
@@ -95,8 +96,8 @@ describe('#nextRunTarget — the opening run sequence', () => {
     ).toBe(hubPath())
   })
 
-  it('Should return null for a page outside the run', () => {
+  it('Should return null for a page outside the run — transport is hub-only, never a run step', () => {
     expect(next('documents', lineSeed)).toBe(null)
-    expect(next('portOfEntry', lineSeed)).toBe(null)
+    expect(next(portOfEntryPage.id, lineSeed)).toBe(null)
   })
 })

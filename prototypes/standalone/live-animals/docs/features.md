@@ -59,7 +59,7 @@ story.
 
 There are 13 `page.js` files. A feature with several flow pages exports
 every identity from one leaf (`features/transport/page.js` exports
-`portOfEntryPage`, `transportDetailsPage` and the rest). A feature
+`portOfEntryPage`, `transitCountriesPage` and the rest). A feature
 with sub-pages exports only its flow page:
 `features/documents/page.js` exports the documents hub alone, because
 the add-a-document sub-page is reached from that hub and never listed in

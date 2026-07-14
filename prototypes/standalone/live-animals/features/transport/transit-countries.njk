@@ -22,14 +22,16 @@
           label: { text: "Enter all countries", classes: "govuk-label--s" },
           hint: { text: "You can add up to 12 countries" },
           errorMessage: errors.transitedCountries and { text: errors.transitedCountries },
-          items: items
+          items: items,
+          attributes: { "data-select-autocomplete": "" }
         }) }}
       {% else %}
         {{ govukSelect({
           id: "transitedCountries-" + loop.index,
           name: "transitedCountries",
           label: { text: "Country " + loop.index, classes: "govuk-visually-hidden" },
-          items: items
+          items: items,
+          attributes: { "data-select-autocomplete": "" }
         }) }}
       {% endif %}
     {% endfor %}
@@ -45,4 +47,9 @@
 
     {{ saveActions(hubHref) }}
   </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
 {% endblock %}

@@ -398,20 +398,14 @@
           "slug": "port-of-entry",
           "title": "Arrival details",
           "gate": null,
-          "collects": ["portOfEntry", "arrivalDateAtPort"],
-          "notes": "Skeleton template page group: Transport. Title 'Arrival details' adopted from the design (f-047, A10) - closes the c-011 copy-to-reconcile note. MERGE TARGET (c-038 resolved): this page and transportDetails collapse into one 'Arrival details' page collecting portOfEntry, arrivalDateAtPort, meansOfTransport, transportIdentification and transportDocumentReference - both page ids are retained until the physical merge increment (Tranche D arrival-details merge)."
-        },
-        {
-          "id": "transportDetails",
-          "slug": "transport-details",
-          "title": "How the animals will travel",
-          "gate": null,
           "collects": [
+            "arrivalDateAtPort",
+            "portOfEntry",
             "meansOfTransport",
             "transportIdentification",
             "transportDocumentReference"
           ],
-          "notes": "Invented page (no skeleton counterpart, c-012) for the V4 transport fields; guidance hints adopted from the design so provisionalCopy is cleared (f-048, A10). transitedCountries moved to the dedicated transit-countries page (A1, c-038). MERGE TARGET (c-038 resolved): this page and portOfEntry collapse into one 'Arrival details' page collecting portOfEntry, arrivalDateAtPort, meansOfTransport, transportIdentification and transportDocumentReference - both page ids are retained until the physical merge increment (Tranche D arrival-details merge); widgets stay GDS (radios for meansOfTransport, date parts for arrival date; the design's select and JS date-picker are quietly ignored per the govuk-toolbox rule)."
+          "notes": "Skeleton template page group: Transport. Title 'Arrival details' adopted from the design (f-047, A10) - closes the c-011 copy-to-reconcile note. MERGED (c-038 resolved, arrival-details merge increment): the former transportDetails page collapsed into this one - it now collects all five arrival/transport fields in the design's order (date, port, means, identification, document reference; 04-arrival-details/01). The transportDetails guidance hints (f-048, A10) carried over verbatim. Slug stays 'port-of-entry' (no redirects to maintain; the page id is a stable internal handle, the title is the user-facing name). Widgets stay GDS (radios for meansOfTransport, date parts for arrival date; the design's select and JS date-picker are quietly ignored per the govuk-toolbox rule); the port select keeps its accessible-autocomplete enhancement."
         },
         {
           "id": "transitCountries",
@@ -419,7 +413,7 @@
           "title": "Which countries will the consignment travel through?",
           "gate": null,
           "collects": ["transitedCountries"],
-          "notes": "Dedicated conditional page (design 04-02..04; A1 + c-038 resolved): shown only when meansOfTransport is Railway or Road Vehicle - page-level conditionality derives from the transitedCountries obligation's activatedBy, recorded in notes per the importPurpose convention. Design copy: label 'Enter all countries', hint 'You can add up to 12 countries'. Capture target: add-another select rows progressively enhanced with the M3-20 accessible-autocomplete pattern, not a JS-only widget (c-038); checkboxes stand until that increment lands."
+          "notes": "Dedicated conditional page (design 04-02..04; A1 + c-038 resolved): shown only when meansOfTransport is Railway or Road Vehicle - page-level conditionality derives from the transitedCountries obligation's activatedBy, recorded in notes per the importPurpose convention. Design copy: label 'Enter all countries', hint 'You can add up to 12 countries'. Capture: add-another select rows progressively enhanced with the accessible-autocomplete pattern (landed with the arrival-details merge increment; same selectAutocomplete bundle as origin/port, not a JS-only widget per c-038)."
         },
         {
           "id": "transporters",

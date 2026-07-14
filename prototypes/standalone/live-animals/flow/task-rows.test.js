@@ -50,7 +50,7 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
-  it('Should aggregate a multi-page row over every page it spans (arrival details = port of entry + transport details)', () => {
+  it('Should walk the arrival-details row over the merged page (all five arrival and transport collects)', () => {
     expect(statusIn('arrivalDetails', unlocked)).toBe(NOT_STARTED)
     expect(
       statusIn('arrivalDetails', { ...unlocked, portOfEntry: 'GB ABD' })
@@ -221,7 +221,7 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
     }
   })
 
-  it('Should enter a multi-page row at its first gate-passing page', () => {
+  it('Should enter a row at its first gate-passing page', () => {
     const scope = makeScope(unlocked)
     expect(rowEntry(taskRowById('arrivalDetails'), scope)).toMatch(
       /\/port-of-entry$/

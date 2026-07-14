@@ -3,17 +3,31 @@ import * as state from '../../engine/index.js'
 import {
   compose,
   dateParts,
+  maxText,
   oneOf,
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as ports from '../../services/ports/index.js'
+import * as transportReference from '../../services/transport-reference/index.js'
 import { portOfEntryPage as page } from './page.js'
-import { arrivalDateAtPort, portOfEntry } from './obligations.js'
+import {
+  arrivalDateAtPort,
+  meansOfTransport,
+  portOfEntry,
+  transportDocumentReference,
+  transportIdentification
+} from './obligations.js'
 
 export const meta = {
   ...page,
-  collects: [portOfEntry.id, arrivalDateAtPort.id]
+  collects: [
+    arrivalDateAtPort.id,
+    portOfEntry.id,
+    meansOfTransport.id,
+    transportIdentification.id,
+    transportDocumentReference.id
+  ]
 }
 const view = `${TEMPLATES}/features/transport/port-of-entry`
 
@@ -29,11 +43,22 @@ const portItems = (selected) => [
 
 const fields = () =>
   compose(
+    dateParts('arrivalDateAtPort', 'Enter a real arrival date'),
     oneOf(
       'portOfEntry',
       ports.list().map((port) => port.code)
     ),
-    dateParts('arrivalDateAtPort', 'Enter a real arrival date')
+    oneOf('meansOfTransport', transportReference.meansOfTransport()),
+    maxText(
+      'transportIdentification',
+      58,
+      'Transport identification must be 58 characters or less'
+    ),
+    maxText(
+      'transportDocumentReference',
+      58,
+      'Transport document reference must be 58 characters or less'
+    )
   )
 
 const render = (h, journey, values, errors = {}) =>
@@ -55,16 +80,24 @@ const render = (h, journey, values, errors = {}) =>
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   return render(h, journey, {
+    arrivalDateAtPort: answers.arrivalDateAtPort ?? {},
     portOfEntry: answers.portOfEntry ?? '',
-    arrivalDateAtPort: answers.arrivalDateAtPort ?? {}
+    meansOfTransport: answers.meansOfTransport ?? '',
+    transportIdentification: answers.transportIdentification ?? '',
+    transportDocumentReference: answers.transportDocumentReference ?? ''
   })
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = {
+    arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort'),
     portOfEntry: payload.portOfEntry ?? '',
-    arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort')
+    meansOfTransport: payload.meansOfTransport ?? '',
+    transportIdentification: (payload.transportIdentification ?? '').trim(),
+    transportDocumentReference: (
+      payload.transportDocumentReference ?? ''
+    ).trim()
   }
   const { errors } = validate(fields(), payload)
   if (errors) {

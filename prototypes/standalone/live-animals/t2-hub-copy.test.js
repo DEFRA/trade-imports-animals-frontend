@@ -178,7 +178,7 @@ describe('#handler hub copy', () => {
     expect(documentsRow.status).toEqual({ text: 'Optional' })
   })
 
-  it('Should enter a multi-page row at its first page', async () => {
+  it('Should enter each movement row at its first page', async () => {
     const context = await renderHub(unlockedSeed)
     expect(rowByTitle(context, 'Arrival details').href).toBe(
       '/prototype-standalone/live-animals/port-of-entry'

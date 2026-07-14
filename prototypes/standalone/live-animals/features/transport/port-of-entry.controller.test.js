@@ -42,6 +42,49 @@ describe('POST port-of-entry — port membership', () => {
   })
 })
 
+describe('POST port-of-entry — means of transport on the merged page', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should re-render an out-of-list means with an error and commit nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: { meansOfTransport: 'Hovercraft' }
+    })
+    expect(result.view.context.errors.meansOfTransport).toBe(
+      'Select a valid option'
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should wipe the transited countries when the means changes off the overland set (scope-exit wipe survives the merge)', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        meansOfTransport: 'Road Vehicle',
+        transitedCountries: ['FR', 'BE']
+      },
+      payload: { meansOfTransport: 'Airplane' }
+    })
+    expect(result.after.meansOfTransport).toBe('Airplane')
+    expect(result.after.transitedCountries).toBeUndefined()
+  })
+
+  it('Should keep the transited countries while the means stays overland', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        meansOfTransport: 'Road Vehicle',
+        transitedCountries: ['FR', 'BE']
+      },
+      payload: { meansOfTransport: 'Railway' }
+    })
+    expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
+  })
+})
+
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
     configureRecords(recordsStub)

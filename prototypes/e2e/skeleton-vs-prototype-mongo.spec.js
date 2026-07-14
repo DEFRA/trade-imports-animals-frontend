@@ -205,21 +205,21 @@ const drivePrototype = async (page) => {
   await page.getByLabel('County Parish Holding (CPH)').fill(shared.cph)
   await save()
 
-  // Transport — port, arrival date, travel details, transit countries,
-  // transporter.
+  // Transport — the merged arrival-details page (inc-065) takes the date,
+  // port, means and both transport references in one save, then the transit
+  // countries and the transporter.
   // The port-of-entry select is enhanced by accessible-autocomplete (inc-059,
   // same pattern as origin): type the name, pick the 'Name (CODE)' suggestion,
   // and the hidden select carries 'GB ABD'. input#portOfEntry exists only
   // after the enhancement mounts, so the fill auto-waits for hydration.
   await task('Arrival details')
+  await page.getByLabel('Day').fill(shared.arrival.day)
+  await page.getByLabel('Month').fill(shared.arrival.month)
+  await page.getByLabel('Year').fill(shared.arrival.year)
   await page.locator('input#portOfEntry').fill('Aberdeen Harbour')
   await page
     .getByRole('option', { name: 'Aberdeen Harbour (GB ABD)', exact: true })
     .click()
-  await page.getByLabel('Day').fill(shared.arrival.day)
-  await page.getByLabel('Month').fill(shared.arrival.month)
-  await page.getByLabel('Year').fill(shared.arrival.year)
-  await save()
   await page
     .getByRole('radio', { name: values.meansOfTransport, exact: true })
     .check()
@@ -234,7 +234,10 @@ const drivePrototype = async (page) => {
   // does not round-trip meansOfTransport/transitedCountries between requests,
   // so the add-another round-trip cannot retain a selection in real mode —
   // and the skeleton-shape compare never includes transited countries anyway.
-  await page.getByLabel('Enter all countries').selectOption({ label: 'France' })
+  // The transit select carries the same autocomplete enhancement (inc-065):
+  // pick via the post-mount input#transitedCountries.
+  await page.locator('input#transitedCountries').fill('France')
+  await page.getByRole('option', { name: 'France', exact: true }).click()
   await save()
   await page
     .getByRole('radio', { name: values.transporterType, exact: true })

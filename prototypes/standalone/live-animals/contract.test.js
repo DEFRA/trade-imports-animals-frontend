@@ -35,7 +35,6 @@ import * as consigneesSelect from './features/addresses/consignees-select.contro
 import * as importersSelect from './features/addresses/importers-select.controller.js'
 import * as cphNumber from './features/cph-number/controller.js'
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
-import * as transportDetails from './features/transport/transport-details.controller.js'
 import * as transitCountries from './features/transport/transit-countries.controller.js'
 import * as transporters from './features/transport/transporters.controller.js'
 import * as transportersSelect from './features/transport/transporters-select.controller.js'
@@ -106,17 +105,10 @@ const cases = [
     collects: portOfEntry.meta.collects,
     handler: postHandlerOf(portOfEntry),
     payload: {
-      portOfEntry: 'GB ABD',
       'arrivalDateAtPort-day': '12',
       'arrivalDateAtPort-month': '12',
-      'arrivalDateAtPort-year': '2026'
-    }
-  },
-  {
-    id: 'transport-details',
-    collects: transportDetails.meta.collects,
-    handler: postHandlerOf(transportDetails),
-    payload: {
+      'arrivalDateAtPort-year': '2026',
+      portOfEntry: 'GB ABD',
       meansOfTransport: 'Road Vehicle',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721'

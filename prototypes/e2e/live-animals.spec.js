@@ -84,6 +84,18 @@ const choosePortOfEntry = async (page, query = FIXTURE_PORT.name) => {
     .click()
 }
 
+// inc-065 layers the same enhancement onto the transit-countries add-another
+// select rows. Each row's select is enhanced in place: the post-mount input
+// takes the row's id (input#transitedCountries, input#transitedCountries-2,
+// ...) and the renamed hidden select (#transitedCountries-select, ...) stays
+// the control that submits the country CODE. The same input-scoped locator
+// rule applies: target input#<id> so interactions wait for the mount.
+const chooseTransitCountry = async (page, comboId, name) => {
+  const combo = page.locator(`input#${comboId}`)
+  await combo.fill(name)
+  await page.getByRole('option', { name, exact: true }).click()
+}
+
 // countryOfOrigin is enforcedAt=continue, so answering it unlocks the
 // Commodities section (RULE 1 flow sequencing). Answer the origin section's
 // minimum from the hub and return to it. Region requirement 'No' keeps the save
@@ -254,14 +266,14 @@ const completeAnswerSections = async (page) => {
     .fill(values.countyParishHoldingCph)
   await save()
 
-  // Transport: port, travel details, transit countries, transporter type,
-  // commercial select.
+  // Transport: the merged arrival-details page takes the date, port, means
+  // and both transport references in one save (inc-065), then transit
+  // countries, transporter type, commercial select.
   await task('Arrival details')
-  await choosePortOfEntry(page)
   await page.getByLabel('Day').fill(arrival.day)
   await page.getByLabel('Month').fill(arrival.month)
   await page.getByLabel('Year').fill(arrival.year)
-  await save()
+  await choosePortOfEntry(page)
   await page
     .getByRole('radio', { name: values.meansOfTransport, exact: true })
     .check()
@@ -272,9 +284,9 @@ const completeAnswerSections = async (page) => {
     .getByLabel('Transport document reference')
     .fill(values.transportDocumentReference)
   await save()
-  await page.getByLabel('Enter all countries').selectOption({ label: 'France' })
+  await chooseTransitCountry(page, 'transitedCountries', 'France')
   await page.getByRole('button', { name: 'Add another country' }).click()
-  await page.getByLabel('Country 2').selectOption({ label: 'Belgium' })
+  await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
   await save()
   await page
     .getByRole('radio', { name: values.transporterType, exact: true })
@@ -1522,7 +1534,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeChecked()
   })
 
-  test('transport — a partial arrival date blocks the save; the port, date, travel details, transporter type and commercial transporter complete the task', async ({
+  test('transport — a partial arrival date blocks the save; the merged arrival-details page takes all five fields in one save, then transit, transporter type and commercial transporter complete the movement rows', async ({
     page
   }) => {
     await startNotification(page)
@@ -1564,18 +1576,13 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('link', { name: 'Enter a real arrival date' })
     ).toBeVisible()
 
-    // Happy path from the shared fixture.
-    await choosePortOfEntry(page)
+    // Happy path from the shared fixture: the merged page (inc-065) carries
+    // the date, port, means radios and both transport references, in the
+    // design's order, and one save commits all five.
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)
     await page.getByLabel('Year').fill(arrival.year)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-
-    // Two-page section: saving walks on to the travel details page.
-    await expect(
-      page.getByRole('heading', { name: 'How the animals will travel' })
-    ).toBeVisible()
-
+    await choosePortOfEntry(page)
     await page
       .getByRole('radio', { name: values.meansOfTransport, exact: true })
       .check()
@@ -1588,17 +1595,16 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     // Road Vehicle routes the section through the transit-countries page;
-    // the fixture's FR and BE codes render as their country names.
+    // its add-another select rows carry the autocomplete enhancement
+    // (inc-065), and the fixture's FR and BE codes render as country names.
     await expect(
       page.getByRole('heading', {
         name: 'Which countries will the consignment travel through?'
       })
     ).toBeVisible()
-    await page
-      .getByLabel('Enter all countries')
-      .selectOption({ label: 'France' })
+    await chooseTransitCountry(page, 'transitedCountries', 'France')
     await page.getByRole('button', { name: 'Add another country' }).click()
-    await page.getByLabel('Country 2').selectOption({ label: 'Belgium' })
+    await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     // Saving walks on to the transporter-type page.
@@ -1691,20 +1697,24 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(select).toHaveValue(values.portOfEntry)
 
     // The save round-trips the code: re-entry shows the option text on the
-    // input and the stored code on the select.
+    // input and the stored code on the select. The means stays blank
+    // (submit-enforced), so the save skips the conditional transit page and
+    // walks on to the transporter-type page.
     await page.getByLabel('Day').fill(values.arrivalDateAtPort.day)
     await page.getByLabel('Month').fill(values.arrivalDateAtPort.month)
     await page.getByLabel('Year').fill(values.arrivalDateAtPort.year)
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'How the animals will travel' })
+      page.getByRole('heading', {
+        name: 'What type of transporter will move the animals?'
+      })
     ).toBeVisible()
     await page.goto(`${BASE}/port-of-entry`)
     await expect(combo).toHaveValue(FIXTURE_PORT_OPTION)
     await expect(select).toHaveValue(values.portOfEntry)
   })
 
-  test('transporters — reached by saving through the earlier transport pages; the chosen type persists', async ({
+  test('transporters — reached by saving through the merged arrival-details page; the chosen type persists', async ({
     page
   }) => {
     await startNotification(page)
@@ -1712,16 +1722,12 @@ test.describe('live-animals (page-owned spine)', () => {
     // The transport section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
 
-    // Every field on the two earlier pages is submit-enforced, so blank
-    // saves walk straight through to the transporter-type page.
+    // Every field on the merged arrival-details page is submit-enforced, so
+    // one blank save walks straight through to the transporter-type page.
     const openTransporters = async () => {
       await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Save and continue' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'How the animals will travel' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -1777,16 +1783,12 @@ test.describe('live-animals (page-owned spine)', () => {
     // The transport section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
 
-    // Every field on the two earlier pages is submit-enforced, so blank
-    // saves walk straight through to the transporter-type page.
+    // Every field on the merged arrival-details page is submit-enforced, so
+    // one blank save walks straight through to the transporter-type page.
     const openTransporters = async () => {
       await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Save and continue' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'How the animals will travel' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -1850,16 +1852,12 @@ test.describe('live-animals (page-owned spine)', () => {
     // The transport section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
 
-    // Every field on the two earlier pages is submit-enforced, so blank
-    // saves walk straight through to the transporter-type page.
+    // Every field on the merged arrival-details page is submit-enforced, so
+    // one blank save walks straight through to the transporter-type page.
     const openTransporters = async () => {
       await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Save and continue' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'How the animals will travel' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -1953,16 +1951,13 @@ test.describe('live-animals (page-owned spine)', () => {
     // The transport section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
 
-    // transport-details is the section's second page: a blank save on the
-    // port page (all its fields are submit-enforced) walks straight on to it.
-    const openTransportDetails = async () => {
+    // The means radios live on the merged arrival-details page (inc-065);
+    // every other field there is submit-enforced, so checking a means and
+    // saving routes the section from that one page.
+    const openArrivalDetails = async () => {
       await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Save and continue' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'How the animals will travel' })
       ).toBeVisible()
     }
     // A blank save on the transporter-type page (submit-enforced) returns
@@ -1982,7 +1977,15 @@ test.describe('live-animals (page-owned spine)', () => {
     const transporterHeading = page.getByRole('heading', {
       name: 'What type of transporter will move the animals?'
     })
-    const firstCountry = page.getByLabel('Enter all countries')
+    // The transit selects carry the autocomplete enhancement (inc-065): the
+    // post-mount input shows the country NAME, the renamed hidden select is
+    // the submitting control that holds the stored CODE.
+    const firstCountryCombo = page.locator('input#transitedCountries')
+    const firstCountrySelect = page.locator('select#transitedCountries-select')
+    const secondCountryCombo = page.locator('input#transitedCountries-2')
+    const secondCountrySelect = page.locator(
+      'select#transitedCountries-2-select'
+    )
     const transitRow = page.locator('.govuk-task-list__item', {
       hasText: 'Transit countries'
     })
@@ -1990,7 +1993,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // A means outside the overland set skips the transit-countries page —
     // saving walks straight on to the transporter-type page — and the hub
     // shows no Transit countries row (the conditional row, inc-061).
-    await openTransportDetails()
+    await openArrivalDetails()
     await page.getByRole('radio', { name: 'Airplane' }).check()
     await save()
     await expect(transitHeading).toBeHidden()
@@ -2000,7 +2003,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Both overland means route through the transit-countries page. A blank
     // save there is allowed (enforcedAt=submit) and walks on; the hub row
     // appears, still owed.
-    await openTransportDetails()
+    await openArrivalDetails()
     await page.getByRole('radio', { name: 'Railway' }).check()
     await save()
     await expect(transitHeading).toBeVisible()
@@ -2009,44 +2012,49 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(transitRow).toContainText('Not yet started')
 
     // Save two transited countries under Road Vehicle...
-    await openTransportDetails()
+    await openArrivalDetails()
     await page.getByRole('radio', { name: 'Road Vehicle' }).check()
     await save()
     await expect(transitHeading).toBeVisible()
-    await firstCountry.selectOption({ label: 'France' })
+    await chooseTransitCountry(page, 'transitedCountries', 'France')
     await page.getByRole('button', { name: 'Add another country' }).click()
-    await page.getByLabel('Country 2').selectOption({ label: 'Belgium' })
+    await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
     await save()
     await saveThroughTransporters()
     await expect(transitRow).toContainText('Completed')
 
-    // ...and they are still selected on return.
-    await openTransportDetails()
+    // ...and they are still selected on return: the inputs show the names,
+    // the hidden selects hold the stored codes.
+    await openArrivalDetails()
     await expect(
       page.getByRole('radio', { name: 'Road Vehicle' })
     ).toBeChecked()
     await save()
-    await expect(firstCountry).toHaveValue('FR')
-    await expect(page.getByLabel('Country 2')).toHaveValue('BE')
+    await expect(firstCountryCombo).toHaveValue('France')
+    await expect(firstCountrySelect).toHaveValue('FR')
+    await expect(secondCountryCombo).toHaveValue('Belgium')
+    await expect(secondCountrySelect).toHaveValue('BE')
     await save()
     await saveThroughTransporters()
 
     // A means outside the overland set takes the countries out of scope —
     // saving wipes them, skips the page and drops the hub row again.
-    await openTransportDetails()
+    await openArrivalDetails()
     await page.getByRole('radio', { name: 'Vessel' }).check()
     await save()
     await saveThroughTransporters()
     await expect(transitRow).toHaveCount(0)
 
-    // Back to Road Vehicle: leaving scope wiped the saved countries — no
-    // country is pre-selected.
-    await openTransportDetails()
+    // Back to Road Vehicle: leaving scope wiped the saved countries — the
+    // first row shows the unselected placeholder over an empty select and
+    // no second row renders.
+    await openArrivalDetails()
     await page.getByRole('radio', { name: 'Road Vehicle' }).check()
     await save()
     await expect(transitHeading).toBeVisible()
-    await expect(firstCountry).toHaveValue('')
-    await expect(page.getByLabel('Country 2')).toBeHidden()
+    await expect(firstCountryCombo).toHaveValue('Select a country')
+    await expect(firstCountrySelect).toHaveValue('')
+    await expect(secondCountryCombo).toHaveCount(0)
   })
 
   test('contact address — a blank save leaves the task open (enforcedAt=submit); selecting a contact copies it and completes the task', async ({
@@ -2589,14 +2597,14 @@ test.describe('live-animals (page-owned spine)', () => {
       .fill(values.countyParishHoldingCph)
     await save()
 
-    // Transport: port, travel details, transit countries, transporter type,
+    // Transport: the merged arrival-details page takes all five fields in
+    // one save (inc-065), then transit countries, transporter type,
     // commercial select.
     await task('Arrival details')
-    await choosePortOfEntry(page)
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)
     await page.getByLabel('Year').fill(arrival.year)
-    await save()
+    await choosePortOfEntry(page)
     await page
       .getByRole('radio', { name: values.meansOfTransport, exact: true })
       .check()
@@ -2608,11 +2616,9 @@ test.describe('live-animals (page-owned spine)', () => {
       .fill(values.transportDocumentReference)
     await save()
     // Road Vehicle routes the section through the transit-countries page.
-    await page
-      .getByLabel('Enter all countries')
-      .selectOption({ label: 'France' })
+    await chooseTransitCountry(page, 'transitedCountries', 'France')
     await page.getByRole('button', { name: 'Add another country' }).click()
-    await page.getByLabel('Country 2').selectOption({ label: 'Belgium' })
+    await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
     await save()
     await page
       .getByRole('radio', { name: values.transporterType, exact: true })

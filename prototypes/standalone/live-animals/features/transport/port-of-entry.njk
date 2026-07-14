@@ -1,6 +1,8 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
@@ -10,6 +12,8 @@
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukDateInput(arrivalDate) }}
 
     {{ govukSelect({
       id: "portOfEntry",
@@ -22,7 +26,37 @@
       attributes: { "data-select-autocomplete": "" }
     }) }}
 
-    {{ govukDateInput(arrivalDate) }}
+    {{ govukRadios({
+      name: "meansOfTransport",
+      fieldset: { legend: { text: "Means of transport to the port of entry", classes: "govuk-fieldset__legend--s" } },
+      errorMessage: errors.meansOfTransport and { text: errors.meansOfTransport },
+      items: [
+        { value: "Airplane", text: "Airplane", checked: values.meansOfTransport == "Airplane" },
+        { value: "Railway", text: "Railway", checked: values.meansOfTransport == "Railway" },
+        { value: "Road Vehicle", text: "Road Vehicle", checked: values.meansOfTransport == "Road Vehicle" },
+        { value: "Vessel", text: "Vessel", checked: values.meansOfTransport == "Vessel" }
+      ]
+    }) }}
+
+    {{ govukInput({
+      id: "transportIdentification",
+      name: "transportIdentification",
+      label: { text: "Transport identification", classes: "govuk-label--s" },
+      hint: { text: "To identify the means of transport, enter (one of the following): flight number; train number; road vehicle registration number; vessel name (for ferries, also the road vehicle registration number)" },
+      classes: "govuk-!-width-one-half",
+      value: values.transportIdentification,
+      errorMessage: errors.transportIdentification and { text: errors.transportIdentification }
+    }) }}
+
+    {{ govukInput({
+      id: "transportDocumentReference",
+      name: "transportDocumentReference",
+      label: { text: "Transport document reference", classes: "govuk-label--s" },
+      hint: { text: "Enter the reference number on the air waybill, bill of lading, sea waybill, road consignment note (CMR) or other transport document." },
+      classes: "govuk-!-width-one-half",
+      value: values.transportDocumentReference,
+      errorMessage: errors.transportDocumentReference and { text: errors.transportDocumentReference }
+    }) }}
 
     {{ saveActions(hubHref) }}
   </form>

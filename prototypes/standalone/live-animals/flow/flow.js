@@ -16,7 +16,6 @@ import {
   portOfEntryPage,
   privateTransporterDetailsPage,
   transitCountriesPage,
-  transportDetailsPage,
   transportersPage,
   transportersSelectPage
 } from '../features/transport/page.js'
@@ -58,7 +57,6 @@ export const sections = [
     id: 'transport',
     pages: [
       portOfEntryPage,
-      transportDetailsPage,
       transitCountriesPage,
       transportersPage,
       transportersSelectPage,
