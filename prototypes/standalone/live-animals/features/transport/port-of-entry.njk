@@ -18,11 +18,17 @@
       hint: { text: "Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code." },
       value: values.portOfEntry,
       errorMessage: errors.portOfEntry and { text: errors.portOfEntry },
-      items: portItems
+      items: portItems,
+      attributes: { "data-select-autocomplete": "" }
     }) }}
 
     {{ govukDateInput(arrivalDate) }}
 
     {{ saveActions(hubHref) }}
   </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
 {% endblock %}

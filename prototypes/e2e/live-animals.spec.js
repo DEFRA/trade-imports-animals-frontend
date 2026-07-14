@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
 import { COUNTRY_LABELS } from '../standalone/live-animals/services/countries/stub.js'
+import { PORTS } from '../standalone/live-animals/services/ports/stub.js'
 
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
@@ -52,6 +53,23 @@ const chooseCountryOfOrigin = async (page, name) => {
   const combo = page.locator('input#countryOfOrigin')
   await combo.fill(name)
   await page.getByRole('option', { name, exact: true }).click()
+}
+
+// inc-059 rolls the inc-058 enhancement out to the port-of-entry select. Its
+// option text is 'Name (CODE)', so the default substring source matches by
+// port name or code with no custom source; picking a suggestion syncs the
+// hidden #portOfEntry-select, which carries the CODE (the stored value). The
+// same input-scoped locator rule applies: input#portOfEntry exists only once
+// the enhancement has mounted.
+const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
+const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
+
+const choosePortOfEntry = async (page, query = FIXTURE_PORT.name) => {
+  const combo = page.locator('input#portOfEntry')
+  await combo.fill(query)
+  await page
+    .getByRole('option', { name: FIXTURE_PORT_OPTION, exact: true })
+    .click()
 }
 
 // countryOfOrigin is enforcedAt=continue, so answering it unlocks the
@@ -192,9 +210,7 @@ const completeAnswerSections = async (page) => {
   // Transport: port, travel details, transit countries, transporter type,
   // commercial select.
   await task('Transport')
-  await page
-    .getByLabel('Port of entry', { exact: true })
-    .selectOption(values.portOfEntry)
+  await choosePortOfEntry(page)
   await page.getByLabel('Day').fill(arrival.day)
   await page.getByLabel('Month').fill(arrival.month)
   await page.getByLabel('Year').fill(arrival.year)
@@ -1158,9 +1174,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // Happy path from the shared fixture.
-    await page
-      .getByLabel('Port of entry', { exact: true })
-      .selectOption(values.portOfEntry)
+    await choosePortOfEntry(page)
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)
     await page.getByLabel('Year').fill(arrival.year)
@@ -1224,6 +1238,77 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
     await expect(transportRow).toContainText('Completed')
+  })
+
+  test('port of entry — accessible-autocomplete enhancement: name and code search both suggest, selection persists the code', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // The transport section sits after commodities (RULE 1) — unlock it first.
+    await unlockSections(page)
+    await page.getByRole('link', { name: 'Transport' }).click()
+
+    // The enhancement swaps the visible affordance to a combobox input while
+    // the select stays in the DOM (renamed) as the control that submits.
+    const combo = page.locator('input#portOfEntry')
+    await expect(combo).toBeVisible()
+    await expect(combo).toHaveRole('combobox')
+    await expect(combo).toHaveAccessibleName('Port of entry')
+    const select = page.locator('select#portOfEntry-select')
+    await expect(select).toBeAttached()
+    await expect(select).toBeHidden()
+
+    // Unselected state: the visible input carries the placeholder text while
+    // the hidden select — the data truth — stays empty.
+    await expect(combo).toHaveValue('Select port of entry')
+    await expect(select).toHaveValue('')
+
+    // Name search: option text is 'Name (CODE)', so typing part of a port
+    // name filters the list case-insensitively; non-matches drop out.
+    await combo.fill('aberdeen')
+    await expect(
+      page.getByRole('option', { name: 'Aberdeen Harbour (GB ABD)' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('option', { name: 'Aberdeen Airport (GB DYC)' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('option', { name: 'Port of Dover (GB DVR)' })
+    ).toHaveCount(0)
+
+    // The select's placeholder and divider rows never surface as suggestions.
+    await combo.fill('')
+    await combo.press('ArrowDown')
+    await expect(
+      page.getByRole('option', { name: 'Aberdeen Airport (GB DYC)' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('option', { name: 'Select port of entry' })
+    ).toHaveCount(0)
+    await expect(page.getByRole('option', { name: '──────────' })).toHaveCount(
+      0
+    )
+
+    // Code search: typing the CODE surfaces the same suggestion — the code
+    // lives in the option text — and picking it syncs the hidden select to
+    // the code the journey stores.
+    await choosePortOfEntry(page, values.portOfEntry)
+    await expect(combo).toHaveValue(FIXTURE_PORT_OPTION)
+    await expect(select).toHaveValue(values.portOfEntry)
+
+    // The save round-trips the code: re-entry shows the option text on the
+    // input and the stored code on the select.
+    await page.getByLabel('Day').fill(values.arrivalDateAtPort.day)
+    await page.getByLabel('Month').fill(values.arrivalDateAtPort.month)
+    await page.getByLabel('Year').fill(values.arrivalDateAtPort.year)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'How the animals will travel' })
+    ).toBeVisible()
+    await page.goto(`${BASE}/port-of-entry`)
+    await expect(combo).toHaveValue(FIXTURE_PORT_OPTION)
+    await expect(select).toHaveValue(values.portOfEntry)
   })
 
   test('transporters — reached by saving through the earlier transport pages; the chosen type persists', async ({
@@ -2158,9 +2243,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Transport: port, travel details, transit countries, transporter type,
     // commercial select.
     await task('Transport')
-    await page
-      .getByLabel('Port of entry', { exact: true })
-      .selectOption(values.portOfEntry)
+    await choosePortOfEntry(page)
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)
     await page.getByLabel('Year').fill(arrival.year)

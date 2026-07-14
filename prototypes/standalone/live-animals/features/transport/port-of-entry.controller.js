@@ -19,7 +19,7 @@ const view = `${TEMPLATES}/features/transport/port-of-entry`
 
 const portItems = (selected) => [
   { value: '', text: 'Select port of entry' },
-  { text: '──────────', disabled: true },
+  { value: '', text: '──────────', disabled: true },
   ...ports.list().map((port) => ({
     value: port.code,
     text: `${port.name} (${port.code})`,
@@ -27,13 +27,14 @@ const portItems = (selected) => [
   }))
 ]
 
-const fields = compose(
-  oneOf(
-    'portOfEntry',
-    ports.list().map((port) => port.code)
-  ),
-  dateParts('arrivalDateAtPort', 'Enter a real arrival date')
-)
+const fields = () =>
+  compose(
+    oneOf(
+      'portOfEntry',
+      ports.list().map((port) => port.code)
+    ),
+    dateParts('arrivalDateAtPort', 'Enter a real arrival date')
+  )
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
@@ -65,7 +66,7 @@ const post = async (request, h) => {
     portOfEntry: payload.portOfEntry ?? '',
     arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort')
   }
-  const { errors } = validate(fields, payload)
+  const { errors } = validate(fields(), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
     return render(h, journey, values, errors)

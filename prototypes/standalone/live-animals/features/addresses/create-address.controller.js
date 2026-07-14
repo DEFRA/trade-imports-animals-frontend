@@ -40,33 +40,42 @@ const FIELD_ORDER = [
   'emailAddress'
 ]
 
-const fields = compose(
-  maxText(
-    'nameOrOrganisationName',
-    255,
-    'Name or organisation name must be 255 characters or less'
-  ),
-  maxText('addressLine1', 255, 'Address line 1 must be 255 characters or less'),
-  maxText('addressLine2', 255, 'Address line 2 must be 255 characters or less'),
-  maxText('townOrCity', 100, 'Town or city must be 100 characters or less'),
-  maxText('county', 100, 'County must be 100 characters or less'),
-  maxText(
-    'postalOrZipCode',
-    12,
-    'Postal or zip code must be 12 characters or less'
-  ),
-  oneOf(
-    'country',
-    countries.addressCountries(),
-    'Select a country from the list'
-  ),
-  maxText(
-    'telephoneNumber',
-    20,
-    'Telephone number must be 20 characters or less'
-  ),
-  maxText('emailAddress', 254, 'Email address must be 254 characters or less')
-)
+const fields = () =>
+  compose(
+    maxText(
+      'nameOrOrganisationName',
+      255,
+      'Name or organisation name must be 255 characters or less'
+    ),
+    maxText(
+      'addressLine1',
+      255,
+      'Address line 1 must be 255 characters or less'
+    ),
+    maxText(
+      'addressLine2',
+      255,
+      'Address line 2 must be 255 characters or less'
+    ),
+    maxText('townOrCity', 100, 'Town or city must be 100 characters or less'),
+    maxText('county', 100, 'County must be 100 characters or less'),
+    maxText(
+      'postalOrZipCode',
+      12,
+      'Postal or zip code must be 12 characters or less'
+    ),
+    oneOf(
+      'country',
+      countries.addressCountries(),
+      'Select a country from the list'
+    ),
+    maxText(
+      'telephoneNumber',
+      20,
+      'Telephone number must be 20 characters or less'
+    ),
+    maxText('emailAddress', 254, 'Email address must be 254 characters or less')
+  )
 
 const missingMandatoryErrors = (values) =>
   Object.fromEntries(
@@ -115,7 +124,7 @@ const post = async (request, h) => {
   const values = Object.fromEntries(
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
-  const { errors } = validate(fields, payload)
+  const { errors } = validate(fields(), payload)
   const merged = { ...missingMandatoryErrors(values), ...(errors ?? {}) }
   const allErrors = Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [

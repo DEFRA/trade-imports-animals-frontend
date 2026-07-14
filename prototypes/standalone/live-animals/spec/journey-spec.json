@@ -1131,7 +1131,7 @@
         "valuesSource": "Named MDM live animal ports of entry list (skeleton hardcodes ABERDEEN / EAST MIDLANDS AIRPORT / EDINBURGH)",
         "hint": "Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code."
       },
-      "notes": "A6 (f-044): keep widget select over the MDM ports list; progressive enhancement - accessible-autocomplete over the select, search by name or code (M3-21, rolls out the M3-20 pattern once verified). Hint adopted from the design (design 04-01). Port persists the CODE (real-mode encoding baseline).",
+      "notes": "A6 (f-044): keep widget select over the MDM ports list; progressive enhancement - accessible-autocomplete over the select, search by name or code (M3-21 implemented inc-059, rolling out the M3-20 pattern; the option text is 'Name (CODE)', so the default substring source matches name or code with no custom source; degrades to the plain select with JS off). Hint adopted from the design (design 04-01). Port persists the CODE (real-mode encoding baseline); validation is a oneOf over the ports service list evaluated per POST, so the membership list follows real-mode prime() instead of freezing at module import.",
       "conflicts": ["c-018", "c-038"],
       "provenance": [
         {

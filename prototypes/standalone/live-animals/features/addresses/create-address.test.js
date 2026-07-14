@@ -1,4 +1,12 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
@@ -14,6 +22,7 @@ import {
 } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as addressBook from '../../services/address-book/index.js'
+import * as countries from '../../services/countries/index.js'
 
 import * as createAddress from './create-address.controller.js'
 import * as consignorsSelect from './consignors-select.controller.js'
@@ -132,5 +141,48 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     })
     expect(result.after).toEqual({})
     expect(addressBook.parties('consignor')).toHaveLength(before)
+  })
+})
+
+describe('POST addresses/create — country membership follows the primed list', () => {
+  const originalMode = process.env.LIVE_ANIMALS_MODE
+
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
+  beforeEach(() => store.clear())
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+    if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
+    else process.env.LIVE_ANIMALS_MODE = originalMode
+  })
+
+  it('Should validate against the list as primed at POST time, not as imported', async () => {
+    process.env.LIVE_ANIMALS_MODE = 'real'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => [{ code: 'ZZ', name: 'Zedland' }]
+      }))
+    )
+    await countries.prime()
+
+    const accepted = await driveHandler(postCreate, {
+      payload: validPayload({ country: 'Zedland' })
+    })
+    expect(accepted.view).toBeUndefined()
+    expect(accepted.after.consignor.address.country).toBe('Zedland')
+
+    const rejected = await driveHandler(postCreate, {
+      payload: validPayload({ country: 'France' })
+    })
+    expect(rejected.view.context.errors.country).toBe(
+      'Select a country from the list'
+    )
   })
 })

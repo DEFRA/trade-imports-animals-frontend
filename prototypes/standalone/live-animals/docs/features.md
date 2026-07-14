@@ -281,6 +281,16 @@ disabled divider row carry `value: ''`) are what keeps the decorative
 rows out of the suggestion list, and the underlying select — renamed
 `<id>-select` by the enhancement — remains the control that submits.
 
+Rolling the pattern out to another select (first rollout: port of
+entry, inc-059) reuses the same entry and bundle — the new template
+opts in with the data attribute and ships the same `bodyEnd` include;
+never a second webpack entry. What the suggestion list can match is the
+option TEXT: the port options render `Name (CODE)`, which is exactly
+what gives the default substring source its search-by-name-or-code
+behaviour for free. A select whose option text lacked the searchable
+token would need a custom `source` in the shared entry — kept generic
+(a data attribute any select can carry), never page-specific JS.
+
 E2E interactions with an enhanced select must target the mounted
 `input#<id>` — it exists only after hydration, so actions auto-wait
 for the mount. A `getByRole('combobox')` query races hydration at test

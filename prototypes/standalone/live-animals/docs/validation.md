@@ -34,12 +34,13 @@ const fields = () =>
   )
 ```
 
-When a membership list comes from a service (`countries`, the address
-book), the schema is a **function** evaluated per POST —
+When a membership list comes from a service (`countries`, `ports`, the
+address book), the schema is a **function** evaluated per POST —
 `validate(fields(), payload)` — never a module-level constant. A frozen
 schema would capture the stub list at import time and go stale when
 real-mode boot `prime()` replaces the service cache (the party-select
-spokes set the precedent; origin follows it).
+spokes set the precedent; origin, port-of-entry and the create-address
+country field follow it).
 
 Nothing in `lib/validate/` knows about obligations, and nothing in an
 `obligations.js` names a validator. The coupling is loose: a validator

@@ -178,10 +178,15 @@ const drivePrototype = async (page) => {
 
   // Transport — port, arrival date, travel details, transit countries,
   // transporter.
+  // The port-of-entry select is enhanced by accessible-autocomplete (inc-059,
+  // same pattern as origin): type the name, pick the 'Name (CODE)' suggestion,
+  // and the hidden select carries 'GB ABD'. input#portOfEntry exists only
+  // after the enhancement mounts, so the fill auto-waits for hydration.
   await task('Transport')
+  await page.locator('input#portOfEntry').fill('Aberdeen Harbour')
   await page
-    .getByLabel('Port of entry', { exact: true })
-    .selectOption(values.portOfEntry)
+    .getByRole('option', { name: 'Aberdeen Harbour (GB ABD)', exact: true })
+    .click()
   await page.getByLabel('Day').fill(shared.arrival.day)
   await page.getByLabel('Month').fill(shared.arrival.month)
   await page.getByLabel('Year').fill(shared.arrival.year)
