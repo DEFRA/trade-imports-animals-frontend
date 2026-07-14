@@ -4,8 +4,7 @@ import * as hub from './hub/controller.js'
 import * as origin from './origin/controller.js'
 import * as commoditiesSearch from './commodities/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details.controller.js'
-import * as animalIdentifiersList from './commodities/animal-identifiers.list.controller.js'
-import * as animalIdentifiersEntry from './commodities/animal-identifiers.entry.controller.js'
+import * as animalIdentification from './commodities/animal-identification.controller.js'
 import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
 import * as additionalDetails from './additional-details/controller.js'
@@ -35,6 +34,7 @@ export const dispatchPages = [
   origin.meta,
   commoditiesSearch.meta,
   consignmentDetails.meta,
+  animalIdentification.meta,
   importReason.meta,
   importPurpose.meta,
   additionalDetails.meta,
@@ -58,8 +58,7 @@ export const allRoutes = [
   ...origin.routes,
   ...commoditiesSearch.routes,
   ...consignmentDetails.routes,
-  ...animalIdentifiersList.routes,
-  ...animalIdentifiersEntry.routes,
+  ...animalIdentification.routes,
   ...importReason.routes,
   ...importPurpose.routes,
   ...additionalDetails.routes,

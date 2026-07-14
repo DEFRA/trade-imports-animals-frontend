@@ -1,0 +1,71 @@
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{# One card per species line (design 01-16/17, D16): the entered-identifiers
+   table with per-row Remove, then the counter-driven entry form for the NEXT
+   record — replaced by the maximum-reached state at N = M. #}
+{% macro identificationCard(card) %}
+  <section id="{{ card.anchor }}" class="govuk-!-margin-bottom-6">
+    <h2 class="govuk-heading-m">{{ card.title }}</h2>
+
+    {% if card.hasUnits %}
+      {{ govukSummaryList({ rows: card.rows }) }}
+    {% endif %}
+
+    {% if card.atMax %}
+      <p class="govuk-body">{{ card.maxReachedText }}</p>
+    {% else %}
+      <h3 class="govuk-heading-s">{{ card.counter }}</h3>
+
+      {% for field in card.fields %}
+        {{ govukInput({
+          id: field.id,
+          name: field.id,
+          label: { text: field.label, classes: "govuk-label--s" },
+          hint: field.hint and { text: field.hint },
+          classes: "govuk-input--width-20",
+          value: field.value,
+          errorMessage: field.error and { text: field.error }
+        }) }}
+      {% endfor %}
+
+      {% if card.showAddress %}
+        <h3 class="govuk-heading-s">Permanent address</h3>
+        <p class="govuk-body">A permanent address is required for this animal.</p>
+
+        {% for field in card.addressFields %}
+          {% if field.kind == "select" %}
+            {{ govukSelect({
+              id: field.id,
+              name: field.id,
+              label: { text: field.label },
+              items: field.items,
+              errorMessage: field.error and { text: field.error }
+            }) }}
+          {% else %}
+            {{ govukInput({
+              id: field.id,
+              name: field.id,
+              label: { text: field.label },
+              type: field.type,
+              classes: field.classes,
+              autocomplete: field.autocomplete,
+              value: field.value,
+              errorMessage: field.error and { text: field.error }
+            }) }}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {{ govukButton({
+        text: "Save and add another",
+        classes: "govuk-button--secondary",
+        name: "action",
+        value: "add:" ~ card.index
+      }) }}
+    {% endif %}
+  </section>
+  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
+{% endmacro %}

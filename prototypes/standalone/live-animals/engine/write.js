@@ -1,5 +1,6 @@
 import { currentJourney, saveJourneyAnswers } from './journey.js'
 import { reconcile } from './evaluate/reconcile.js'
+import { collectionCapAt } from './evaluate/cardinality.js'
 import { makeScope } from './read.js'
 import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
@@ -19,6 +20,8 @@ export const commit = async (request, h, patch) => {
 export const appendEntryAt = async (request, h, collectionPath, entry) => {
   const journey = await currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []
+  const cap = collectionCapAt(journey.answers, collectionPath)
+  if (cap !== null && list.length >= cap) return null
   const answers = setAt(journey.answers, collectionPath, [...list, entry])
   await saveJourneyAnswers(request, journey.journeyId, answers)
   return list.length

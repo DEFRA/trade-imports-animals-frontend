@@ -391,6 +391,131 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toBe('UK-1')
   })
 
+  it('Should reject an append at the cardinality cap — records never exceed the sibling animal count (inc-063)', async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [
+            { animalIdentifierPassport: 'UK-1' },
+            { animalIdentifierPassport: 'UK-2' }
+          ]
+        }
+      ]
+    })
+    const rejected = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(0),
+      { animalIdentifierPassport: 'UK-3' }
+    )
+    expect(rejected).toBe(null)
+    expect(
+      (await answersNow()).commodityLines[0].animalIdentifiers
+    ).toHaveLength(2)
+  })
+
+  it('Should append below the cap, minting the next index as before', async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
+        }
+      ]
+    })
+    const index = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(0),
+      { animalIdentifierPassport: 'UK-2' }
+    )
+    expect(index).toBe(1)
+    expect(
+      (await answersNow()).commodityLines[0].animalIdentifiers
+    ).toHaveLength(2)
+  })
+
+  it('Should apply NO cap while the sibling count is unanswered — the ruled blank-count semantics (the floor still bites at submit)', async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          numberOfAnimalsQuantity: '',
+          animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
+        }
+      ]
+    })
+    const index = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(0),
+      { animalIdentifierPassport: 'UK-2' }
+    )
+    expect(index).toBe(1)
+  })
+
+  it('Should apply NO cap for a non-integer count value — garbage never blocks the append', async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          numberOfAnimalsQuantity: 'many',
+          animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
+        }
+      ]
+    })
+    const index = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      identifiersPath(0),
+      { animalIdentifierPassport: 'UK-2' }
+    )
+    expect(index).toBe(1)
+  })
+
+  it("Should resolve the cap per frame — one line at its cap never blocks a sibling line's append", async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierPassport: 'UK-1' }]
+        },
+        {
+          commoditySelection: 'Cat',
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierPassport: 'UK-2' }]
+        }
+      ]
+    })
+    expect(
+      await appendEntryAt(buildRequest(), stubH(), identifiersPath(0), {
+        animalIdentifierPassport: 'UK-X'
+      })
+    ).toBe(null)
+    expect(
+      await appendEntryAt(buildRequest(), stubH(), identifiersPath(1), {
+        animalIdentifierPassport: 'UK-3'
+      })
+    ).toBe(1)
+  })
+
+  it('Should leave a collection WITHOUT the cardinality link uncapped — commodityLines appends are byte-for-byte pre-inc-063', async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [line('Cow', { numberOfAnimalsQuantity: '1' })]
+    })
+    const index = await appendEntryAt(
+      buildRequest(),
+      stubH(),
+      ['commodityLines'],
+      line('Cat')
+    )
+    expect(index).toBe(1)
+  })
+
   it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', async () => {
     await store.saveAnswers(journeyId, {
       commodityLines: [

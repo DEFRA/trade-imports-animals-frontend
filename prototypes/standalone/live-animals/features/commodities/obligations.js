@@ -106,7 +106,8 @@ export const animalIdentifiers = {
     permanentAddress
   ],
   requiredAtLeastOne: true,
-  requiredOneOf: ANIMAL_IDENTIFIER_GROUP
+  requiredOneOf: ANIMAL_IDENTIFIER_GROUP,
+  maxEntriesFrom: numberOfAnimalsQuantity
 }
 
 export const commodityLines = {

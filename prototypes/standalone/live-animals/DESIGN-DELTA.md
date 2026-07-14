@@ -682,6 +682,76 @@ page shapes), `contract.test.js` (batch create commits exactly
 `skeleton-equivalence.test.js` and `notification-mapper.test.js` (grouping,
 summing, lossy-A pins, lossless B).
 
+## 15. Collection cardinality link (`maxEntriesFrom`) + the single identification surface (inc-063)
+
+The obligation vocabulary grows one OPT-IN structural fact: a collection may
+declare `maxEntriesFrom` — a reference to a SIBLING count obligation,
+resolved in the frame that holds the collection — and its entry count is then
+**capped at that field's value**. One live carrier: `animalIdentifiers`
+declares `maxEntriesFrom: numberOfAnimalsQuantity`, so a line's identifier
+records are capped at that line's declared animal count (c-031, "Enter
+details for {species} N of M").
+
+- **Resolution rule** (`engine/evaluate/cardinality.js#collectionCapAt`):
+  the cap for the collection instance at `collectionPath` is the value at
+  `[...collectionPath.slice(0, -1), maxEntriesFrom.id]` — the sibling in the
+  same frame, so each `commodityLines[i]` caps its own records and never a
+  sibling line's. An unanswered count is deliberately **no cap** (ruled at
+  the inc-063 gate): the entry form stays open while the count is blank, and
+  the per-species at-least-one floor still bites at submit. A non-integer
+  stored value is also no cap — garbage never blocks a save.
+- **Enforcement point**: `engine/write.js#appendEntryAt` rejects an append
+  at the cap (returns `null` instead of the new index; the store is
+  untouched). Interpretation of a declarative fact, not imperative logic in
+  the model — no obligation carries code. The cap is a MAX only: completeness
+  and status semantics are untouched (1 record for 100 animals still passes,
+  per the spec's banner-rule note; the happy path pins it).
+- **Backwards compatible.** No collection without the marker changes
+  behaviour: `appendEntryAt` short-circuits only when a cap resolves;
+  `documents` and `commodityLines` appends are byte-for-byte (existing
+  append pins in `store-ops.test.js` plus an explicit uncapped-collection
+  pin). All pre-inc-063 tests pass unmodified apart from the page-shape
+  re-points below.
+- **The single identification surface (D16, design 01-16/17 + 03-01/02).**
+  The per-line identifier list+entry pages are RETIRED. One page replaces
+  them — `animalIdentification` (`commodities/identification`), a card per
+  species line: the entered-records table (per-row Remove) above the
+  counter-driven entry form for the NEXT record ("Enter details for
+  {species} N of M"; counter drops the "of M" while the count is
+  unanswered). Two save affordances per the c-031 ruling: **Save and add
+  another** (per card — appends every card-form holding data, stays, next
+  counter) and **Save and finish** (appends held data, then exits along the
+  established precedence: hub exit > change context > run sequence >
+  `nextInSection`; an all-blank finish is the zero-record run pass). At
+  N = M the card's entry form is replaced by a maximum-reached state whose
+  records stay removable; a stale at-cap post surfaces the engine rejection
+  as a GDS error, never a silent drop. Typed/fallback gating per record is
+  unchanged (inc-040's `notInUnionOf` + `includes`; the cats/dogs
+  `permanentAddress` reveal carries over, indexed per card).
+- **The count-drop rule (ruled, c-031).** Lowering a species' animal count
+  below its existing record count BLOCKS the consignment-details save with a
+  GDS error summary naming the species ("You have M identifier records for
+  {species} but entered N animals...") whose summary link goes straight to
+  that species' card on the identification surface — NEVER a silent trim.
+- **Integration sweep.** `RUN_STEPS` swaps its bespoke first-line
+  identification step for the page target (the last bespoke step target —
+  every run step is now `flowPageTarget`); the `animalIdentification` hub
+  row enters the new page (same facet parts); the page joins `flow.js` as
+  its own section (save exits to the hub, matching the retired loop's
+  behaviour); CYA species-card identifier Change links point at the surface
+  with a per-card fragment. Mapper impact NONE — the stored shape (records
+  under each line's `animalIdentifiers`) is unchanged;
+  `skeleton-equivalence.test.js` stays green untouched.
+
+Proven in `store-ops.test.js` (cap rejection at the cap, append below it,
+no-cap while unanswered, non-integer no-cap, per-frame resolution, uncapped
+collection unaffected), `animal-identification.controller.test.js` (cards,
+counter, max state, add/finish/remove semantics, cap-race error, partial
+permanent address), `consignment-details.controller.test.js` (count-drop
+block naming the species, equal-count save, blank-count pass-through),
+`contract.test.js`, `change-context.test.js`, `save-actions.test.js` and
+`opening-run.test.js` (the re-pointed exits).
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

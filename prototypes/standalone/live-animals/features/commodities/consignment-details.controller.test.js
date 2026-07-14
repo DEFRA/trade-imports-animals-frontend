@@ -88,6 +88,78 @@ describe('consignment details — per-species quantities over every line', () =>
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming (inc-063, c-031)', async () => {
+    const seed = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfPackages: '',
+          numberOfAnimalsQuantity: '3',
+          animalIdentifiers: [
+            { animalIdentifierEarTag: 'UK1' },
+            { animalIdentifierEarTag: 'UK2' },
+            { animalIdentifierEarTag: 'UK3' }
+          ]
+        }
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { 'numberOfAnimalsQuantity-0': '2', 'numberOfPackages-0': '' }
+    })
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      'You have 3 identifier records for Bos taurus but entered 2 animals. Remove identifier records or keep the higher count.'
+    )
+    const { errorSummary } = result.view.context
+    expect(errorSummary.errorList).toHaveLength(1)
+    expect(errorSummary.errorList[0].href).toContain(
+      'commodities/identification'
+    )
+    expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save a count equal to or above the identifier-record count', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: 'Cow',
+            speciesSelection: '1148346',
+            numberOfPackages: '',
+            numberOfAnimalsQuantity: '',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+          }
+        ]
+      },
+      payload: { 'numberOfAnimalsQuantity-0': '1', 'numberOfPackages-0': '' }
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe('1')
+    expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
+  })
+
+  it('Should leave a blank count out of the drop check — unanswered means uncapped, not zero', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: 'Cow',
+            speciesSelection: '1148346',
+            numberOfPackages: '',
+            numberOfAnimalsQuantity: '3',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+          }
+        ]
+      },
+      payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' }
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe('')
+    expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
+  })
+
   it('Should group the view by commodity with one quantity block per species line', async () => {
     const journey = await store.create()
     await store.saveAnswers(journey.journeyId, seedLines())

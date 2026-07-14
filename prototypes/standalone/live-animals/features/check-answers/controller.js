@@ -8,8 +8,11 @@ import { notificationViewPage as page } from './page.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { packagesApply } from '../commodities/consignment-details.controller.js'
-import { consignmentDetailsPage } from '../commodities/page.js'
-import { IDENTIFIER_LABELS } from '../commodities/animal-identifiers.list.controller.js'
+import {
+  animalIdentificationPage,
+  consignmentDetailsPage
+} from '../commodities/page.js'
+import { IDENTIFIER_LABELS } from '../commodities/animal-identification.controller.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import { unweanedApplies } from '../additional-details/controller.js'
 import * as certification from '../../services/certification-purposes/index.js'
@@ -227,9 +230,11 @@ const speciesCards = (answers) =>
           ...(units.length
             ? [
                 {
-                  href: withChange(
-                    pagePath(`commodities/${index}/identifiers`)
-                  ),
+                  // The single identification surface (inc-063, D16); the
+                  // fragment lands on this species' card.
+                  href: `${withChange(
+                    pagePath(animalIdentificationPage.slug)
+                  )}#identification-card-${index}`,
                   text: 'Change',
                   visuallyHiddenText: `animal identifiers for commodity ${index + 1}`
                 }

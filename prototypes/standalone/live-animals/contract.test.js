@@ -22,7 +22,7 @@ import * as importTypeFilter from './features/import-type-filter/controller.js'
 import * as origin from './features/origin/controller.js'
 import * as commoditiesSearch from './features/commodities/search.controller.js'
 import * as consignmentDetails from './features/commodities/consignment-details.controller.js'
-import * as animalIdentifiersEntry from './features/commodities/animal-identifiers.entry.controller.js'
+import * as animalIdentification from './features/commodities/animal-identification.controller.js'
 import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
 import * as additionalDetails from './features/additional-details/controller.js'
@@ -253,24 +253,25 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  it('Should append an animal identifier unit at depth-2, writing only the commodity-gated fields', async () => {
-    const postAdd = postHandlerEndingWith(
-      animalIdentifiersEntry,
-      'identifiers/add'
+  it('Should append an animal identifier unit at depth-2 via the identification surface, writing only the commodity-gated fields', async () => {
+    expect(animalIdentification.meta.collects).toEqual([])
+    const post = postHandlerEndingWith(
+      animalIdentification,
+      'commodities/identification'
     )
-    const result = await drive(postAdd, {
+    const result = await drive(post, {
       seed: { commodityLines: [{ commoditySelection: 'Cat' }] },
-      params: { index: '0' },
       payload: {
-        animalIdentifierPassport: 'UK123456789',
-        animalIdentifierEarTag: 'UK999',
-        nameOrOrganisationName: 'Pet Owner',
-        addressLine1: '1 Farm Lane',
-        townOrCity: 'Skipton',
-        postalOrZipCode: 'BD23 1UD',
-        country: 'United Kingdom',
-        telephoneNumber: '+44 1756 555 0192',
-        emailAddress: 'owner@example.co.uk'
+        action: 'add:0',
+        'animalIdentifierPassport-0': 'UK123456789',
+        'animalIdentifierEarTag-0': 'UK999',
+        'nameOrOrganisationName-0': 'Pet Owner',
+        'addressLine1-0': '1 Farm Lane',
+        'townOrCity-0': 'Skipton',
+        'postalOrZipCode-0': 'BD23 1UD',
+        'country-0': 'United Kingdom',
+        'telephoneNumber-0': '+44 1756 555 0192',
+        'emailAddress-0': 'owner@example.co.uk'
       }
     })
     const unit = result.after.commodityLines[0].animalIdentifiers[0]

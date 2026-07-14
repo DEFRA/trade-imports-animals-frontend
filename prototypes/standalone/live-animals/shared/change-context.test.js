@@ -15,8 +15,7 @@ import { exitTarget, withChangeContext } from './kit.js'
 
 import * as commoditiesSearch from '../features/commodities/search.controller.js'
 import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
-import * as identifiersList from '../features/commodities/animal-identifiers.list.controller.js'
-import * as identifierEntry from '../features/commodities/animal-identifiers.entry.controller.js'
+import * as animalIdentification from '../features/commodities/animal-identification.controller.js'
 import * as documents from '../features/documents/controller.js'
 
 const drive = async (
@@ -122,15 +121,20 @@ describe('change context — collection round-trip', () => {
       expect(after.commodityLines ?? []).toHaveLength(0)
     })
 
-    it('Should carry the context through an identifier add-another PRG cycle with the unit committed', async () => {
-      const { response, after } = await drive(postHandlerOf(identifierEntry), {
-        payload: { animalIdentifierPassport: 'UK123456789' },
-        query: change,
-        params: { index: '0' },
-        seed: lineSeed
-      })
+    it('Should carry the context through an identifier Save-and-add-another PRG cycle with the unit committed', async () => {
+      const { response, after } = await drive(
+        postHandlerOf(animalIdentification),
+        {
+          payload: {
+            action: 'add:0',
+            'animalIdentifierPassport-0': 'UK123456789'
+          },
+          query: change,
+          seed: lineSeed
+        }
+      )
       expect(response).toEqual({
-        redirect: `${pagePath('commodities/0/identifiers')}?change=1`
+        redirect: `${pagePath('commodities/identification')}?change=1`
       })
       expect(
         after.commodityLines[0].animalIdentifiers[0].animalIdentifierPassport
@@ -178,10 +182,10 @@ describe('change context — collection round-trip', () => {
       expect(response).toEqual({ redirect: cya })
     })
 
-    it('Should send the identifier list Continue back to check your answers under change context', async () => {
-      const { response } = await drive(postHandlerOf(identifiersList), {
+    it('Should send the identification Save-and-finish back to check your answers under change context', async () => {
+      const { response } = await drive(postHandlerOf(animalIdentification), {
+        payload: { action: 'finish' },
         query: change,
-        params: { index: '0' },
         seed: lineSeed
       })
       expect(response).toEqual({ redirect: cya })
@@ -201,12 +205,12 @@ describe('change context — collection round-trip', () => {
       expect(response).toEqual({ redirect: hubPath() })
     })
 
-    it('Should keep the identifier list Continue on the consignment details page without change context', async () => {
-      const { response } = await drive(postHandlerOf(identifiersList), {
-        params: { index: '0' },
+    it('Should keep the identification Save-and-finish on the section flow (the hub) without change context', async () => {
+      const { response } = await drive(postHandlerOf(animalIdentification), {
+        payload: { action: 'finish' },
         seed: lineSeed
       })
-      expect(response).toEqual({ redirect: pagePath('consignment-details') })
+      expect(response).toEqual({ redirect: hubPath() })
     })
 
     it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
@@ -217,10 +221,9 @@ describe('change context — collection round-trip', () => {
       })
       expect(details.response).toEqual({ redirect: hubPath() })
 
-      const identifiers = await drive(postHandlerOf(identifiersList), {
-        payload: { exit: 'hub' },
+      const identifiers = await drive(postHandlerOf(animalIdentification), {
+        payload: { exit: 'hub', action: 'finish' },
         query: change,
-        params: { index: '0' },
         seed: lineSeed
       })
       expect(identifiers.response).toEqual({ redirect: hubPath() })

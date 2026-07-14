@@ -157,7 +157,7 @@ const completeAnswerSections = async (page) => {
 
   // Commodities: the batch search creates the fixture's cattle line, the
   // consolidated details page takes its per-species counts (inc-062), then
-  // the identification surface takes one identifier unit (inc-035).
+  // the single identification surface takes one identifier unit (inc-063).
   await task('What are you importing?')
   await searchAndSelect(page, line.commoditySelection, ['Bos taurus'])
   await save()
@@ -173,17 +173,10 @@ const completeAnswerSections = async (page) => {
   const [unit] = line.animalIdentifiers
   await task('Animal identification details')
   await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
+    page.getByRole('heading', { name: 'Animal identification details' })
   ).toBeVisible()
-  await page.getByRole('link', { name: /Animal identifiers/ }).click()
-  await page.getByRole('button', { name: 'Add an animal' }).click()
   await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
-  await page.getByRole('button', { name: 'Add animal' }).click()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
-  ).toBeVisible()
-  await save()
+  await page.getByRole('button', { name: 'Save and finish' }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
   // About the consignment: internal market walks reason -> purpose -> details.
@@ -413,13 +406,13 @@ test.describe('live-animals (page-owned spine)', () => {
     await save()
     await expect(heading('Purpose in the internal market')).toBeVisible()
 
-    // Purpose → identification for the first line.
+    // Purpose → the single identification surface (inc-063).
     await page.getByRole('radio', { name: 'Breeding' }).check()
     await save()
-    await expect(heading('Animal identifiers for this commodity')).toBeVisible()
+    await expect(heading('Animal identification details')).toBeVisible()
 
     // A zero-record identification pass does NOT block the run.
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Save and finish' }).click()
     await expect(heading('Additional animal details')).toBeVisible()
 
     // Additional details ends the run on the hub — the resting state.
@@ -870,11 +863,18 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Consignment details' })
     ).toBeVisible()
 
-    // Open the animal identifiers loop hub from the Cats species block.
-    await page.getByRole('link', { name: /Animal identifiers/ }).click()
-    await page.getByRole('button', { name: 'Add an animal' }).click()
+    // Enter the identification surface from its hub row. The counter carries
+    // no 'of M' while the count is unanswered — blank count = no cap (inc-063).
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page
+      .getByRole('link', { name: 'Animal identification details' })
+      .click()
     await expect(
-      page.getByRole('heading', { name: 'Add an animal' })
+      page.getByRole('heading', { name: 'Animal identification details' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Enter details for Felis catus' })
     ).toBeVisible()
 
     // Cats gates passport + tattoo + permanent address on; ear tag + horse
@@ -894,7 +894,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // private transporter form.
     await page.getByLabel('Passport number').fill('UK123456789')
     await page.getByLabel('Name or organisation name').fill('Pet Owner')
-    await page.getByRole('button', { name: 'Add animal' }).click()
+    await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(
       page.getByRole('heading', { name: 'There is a problem' })
     ).toBeVisible()
@@ -903,19 +903,18 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // Completing the mandatory address fields commits the unit with its
-    // { name, address } permanent address.
+    // { name, address } permanent address; Save and add another stays on the
+    // surface with the record in the card's table.
     await page.getByLabel('Address line 1').fill('1 Farm Lane')
     await page.getByLabel('Town or city').fill('Skipton')
     await page.getByLabel('Postal or zip code').fill('BD23 1UD')
     await page.getByLabel('Country').selectOption('United Kingdom')
     await page.getByLabel('Telephone number').fill('+44 1756 555 0192')
     await page.getByLabel('Email address').fill('owner@example.co.uk')
-    await page.getByRole('button', { name: 'Add animal' }).click()
+    await page.getByRole('button', { name: 'Save and add another' }).click()
 
     await expect(
-      page.getByRole('heading', {
-        name: 'Animal identifiers for this commodity'
-      })
+      page.getByRole('heading', { name: 'Animal identification details' })
     ).toBeVisible()
     const unitRow = page.locator('.govuk-summary-list__row', {
       hasText: 'Animal 1'
@@ -939,10 +938,13 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Consignment details' })
     ).toBeVisible()
 
-    await page.getByRole('link', { name: /Animal identifiers/ }).click()
-    await page.getByRole('button', { name: 'Add an animal' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page
+      .getByRole('link', { name: 'Animal identification details' })
+      .click()
     await expect(
-      page.getByRole('heading', { name: 'Add an animal' })
+      page.getByRole('heading', { name: 'Animal identification details' })
     ).toBeVisible()
 
     await expect(page.getByLabel('Identification details')).toBeVisible()
@@ -954,15 +956,112 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // A fallback alone satisfies the at-least-one identifier group.
     await page.getByLabel('Identification details').fill('Tank mark TM-77')
-    await page.getByRole('button', { name: 'Add animal' }).click()
+    await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(
-      page.getByRole('heading', {
-        name: 'Animal identifiers for this commodity'
-      })
+      page.getByRole('heading', { name: 'Animal identification details' })
     ).toBeVisible()
     await expect(
       page.locator('.govuk-summary-list__row', { hasText: 'Animal 1' })
     ).toContainText('Identification details: Tank mark TM-77')
+  })
+
+  test('animal identification — the N-of-M counter caps records at the declared count, remove frees a slot, and a count drop is blocked with an error naming the species', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await answerCountryOfOrigin(page)
+
+    // A cattle line with a declared count of 2 (M = 2).
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
+    await searchAndSelect(page, 'Cow', ['Bos taurus'])
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
+    await page.getByLabel('Number of animals').fill('2')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    // Counter progression: 1 of 2, then Save and add another moves to 2 of 2
+    // with the first record in the card's table.
+    await page
+      .getByRole('link', { name: 'Animal identification details' })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Enter details for Bos taurus 1 of 2' })
+    ).toBeVisible()
+    await page.getByLabel('Ear tag number').fill('UK000000000001')
+    await page.getByRole('button', { name: 'Save and add another' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Enter details for Bos taurus 2 of 2' })
+    ).toBeVisible()
+    await expect(
+      page.locator('.govuk-summary-list__row', { hasText: 'Animal 1' })
+    ).toContainText('Ear tag: UK000000000001')
+
+    // At N = M the maximum-reached state replaces the entry form; the saved
+    // records stay removable.
+    await page.getByLabel('Ear tag number').fill('UK000000000002')
+    await page.getByRole('button', { name: 'Save and add another' }).click()
+    await expect(
+      page.getByText('You have entered details for all 2 Bos taurus animals', {
+        exact: false
+      })
+    ).toBeVisible()
+    await expect(page.getByLabel('Ear tag number')).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: 'Save and add another' })
+    ).toHaveCount(0)
+
+    // Count-drop guard: lowering the count below the record count blocks the
+    // details-page save with an error NAMING the species whose summary link
+    // goes straight to this species' identifier card — the records are never
+    // silently trimmed.
+    await page.getByRole('button', { name: 'Save and finish' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
+    await page.getByLabel('Number of animals').fill('1')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    const dropError = page.getByRole('link', {
+      name: 'You have 2 identifier records for Bos taurus but entered 1 animal. Remove identifier records or keep the higher count.'
+    })
+    await expect(dropError).toBeVisible()
+    await dropError.click()
+    await expect(
+      page.getByRole('heading', { name: 'Animal identification details' })
+    ).toBeVisible()
+    await expect(
+      page.locator('.govuk-summary-list__row', { hasText: 'Animal 2' })
+    ).toBeVisible()
+
+    // Remove frees a slot: the entry form reopens at 2 of 2.
+    await page
+      .locator('.govuk-summary-list__row', { hasText: 'Animal 2' })
+      .getByRole('link', { name: 'Remove' })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Enter details for Bos taurus 2 of 2' })
+    ).toBeVisible()
+
+    // With one record left the drop no longer applies — a count of 1 saves.
+    await page.getByRole('button', { name: 'Save and finish' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
+    await page.getByLabel('Number of animals').fill('1')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   test('import reason — blank saves without error (enforcedAt=submit), then the happy path completes the task', async ({
@@ -2227,28 +2326,24 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Check your answers' })
     ).toBeVisible()
 
-    // Species-card leg: Change enters the identifier loop with the change
-    // context; the mid-loop add-another PRG cycle stays in the loop; the
-    // list's Continue exits back to the review with the new unit rendered.
+    // Species-card leg: Change enters the identification surface with the
+    // change context; the Save-and-add-another PRG cycle stays on the
+    // surface; Save and finish exits back to the review with the new unit
+    // rendered.
     await page
       .getByRole('link', { name: 'Change animal identifiers for commodity 1' })
       .click()
     await expect(
-      page.getByRole('heading', {
-        name: 'Animal identifiers for this commodity'
-      })
+      page.getByRole('heading', { name: 'Animal identification details' })
     ).toBeVisible()
     expect(page.url()).toContain('change=1')
-    await page.getByRole('button', { name: 'Add another animal' }).click()
     await page.getByLabel('Ear tag number').fill('UK000000000002')
-    await page.getByRole('button', { name: 'Add animal' }).click()
+    await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(
-      page.getByRole('heading', {
-        name: 'Animal identifiers for this commodity'
-      })
+      page.getByRole('heading', { name: 'Animal identification details' })
     ).toBeVisible()
     expect(page.url()).toContain('change=1')
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Save and finish' }).click()
     await expect(
       page.getByRole('heading', { name: 'Check your answers' })
     ).toBeVisible()
@@ -2330,19 +2425,15 @@ test.describe('live-animals (page-owned spine)', () => {
     await save()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     // Every line owes at least one animal identifier unit (inc-035): add one
-    // via the identification row's surface. Cattle is off the
+    // on the single identification surface (inc-063). Cattle is off the
     // permanent-address gate, so an ear tag alone completes the unit.
     const [unit] = line.animalIdentifiers
     await task('Animal identification details')
-    await page.getByRole('link', { name: /Animal identifiers/ }).click()
-    await page.getByRole('button', { name: 'Add an animal' }).click()
-    await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
-    await page.getByRole('button', { name: 'Add animal' }).click()
-    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Consignment details' })
+      page.getByRole('heading', { name: 'Animal identification details' })
     ).toBeVisible()
-    await save()
+    await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
+    await page.getByRole('button', { name: 'Save and finish' }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // About the consignment: internal market walks on to the purpose page,

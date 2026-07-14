@@ -31,10 +31,6 @@
         errorMessage: line.packagesError and { text: line.packagesError }
       }) }}
     {% endif %}
-
-    <p class="govuk-body">
-      <a class="govuk-link" href="{{ line.identifiersHref }}">Animal identifiers<span class="govuk-visually-hidden"> for {{ line.speciesText }}</span></a>
-    </p>
   {% endfor %}
   <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
 {% endmacro %}

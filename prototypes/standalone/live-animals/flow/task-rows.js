@@ -2,6 +2,7 @@ import { statusOf } from '../engine/status.js'
 import { collectsOf } from './dispatch.js'
 import { originPage } from '../features/origin/page.js'
 import {
+  animalIdentificationPage,
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
@@ -32,9 +33,7 @@ export const taskRows = [
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   {
     id: 'animalIdentification',
-    // The identifier surfaces hang off the consolidated details page until
-    // inc-063 builds the dedicated per-species card page.
-    pages: [consignmentDetailsPage],
+    pages: [animalIdentificationPage],
     parts: [{ collection: 'commodityLines', only: ['animalIdentifiers'] }]
   },
   { id: 'arrivalDetails', pages: [portOfEntryPage, transportDetailsPage] },

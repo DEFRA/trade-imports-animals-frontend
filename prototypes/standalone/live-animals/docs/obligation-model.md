@@ -25,6 +25,7 @@ An obligation is a plain object with at most these fields:
 | `renderOnly`         | structure    | Presented on a page but never committed to the store.                                                                                                                                                            |
 | `activatedBy`        | relationship | A predicate over another obligation's answer. When it holds, this obligation is in scope.                                                                                                                        |
 | `wipeOnExit`         | relationship | When this obligation leaves scope, destroy its stored answer.                                                                                                                                                    |
+| `maxEntriesFrom`     | relationship | A collection's entry count is capped at the value of this SIBLING count obligation (see [the cardinality link](#the-collection-cardinality-link-maxentriesfrom)). Only meaningful with `collection: true`.       |
 
 That is the whole vocabulary. Because `id` doubles as the store key and
 the DOM field name, a definition, its stored answer and its form input
@@ -176,6 +177,45 @@ Sub-obligation ids are frame-relative: `commoditySelection`, not
 entry object (`answers.commodityLines[0].commoditySelection`) and the
 DOM field name — the same three-roles-one-string rule as at the root,
 just relative to the entry.
+
+## The collection cardinality link (`maxEntriesFrom`)
+
+A collection may cap its entry count by a sibling count field (inc-063,
+DESIGN-DELTA #15). From `features/commodities/obligations.js`:
+
+```js
+export const animalIdentifiers = {
+  id: 'animalIdentifiers',
+  collection: true,
+  item: [
+    /* ... */
+  ],
+  requiredAtLeastOne: true,
+  requiredOneOf: ANIMAL_IDENTIFIER_GROUP,
+  maxEntriesFrom: numberOfAnimalsQuantity
+}
+```
+
+`maxEntriesFrom` references a real sibling obligation — one that lives in
+the same frame as the collection (here both are members of
+`commodityLines.item`, so each line's records are capped by that line's own
+count). The engine interprets the fact in exactly one place:
+`appendEntryAt` consults `collectionCapAt`
+(`engine/evaluate/cardinality.js`) and rejects an append at the cap,
+returning `null` instead of the new index.
+
+Three deliberate boundaries:
+
+- **An unanswered count is no cap.** The entry surface stays open while the
+  count is blank; the `requiredAtLeastOne` floor still bites at submit, so
+  a blank count never lets a journey finish early.
+- **The cap is a max, not a completion mandate.** Status and completeness
+  are untouched — one record against a count of 100 still fulfils the
+  collection (V4's banner rule).
+- **Save-blocking above the cap is controller-owned**, like all
+  save-blocking: lowering a count below the existing record count is
+  rejected by the consignment-details controller with an error naming the
+  species — the engine never silently trims stored records.
 
 ## Item-relative predicates
 

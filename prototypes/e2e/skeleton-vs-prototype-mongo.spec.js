@@ -156,18 +156,11 @@ const drivePrototype = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await task('Animal identification details')
   await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
+    page.getByRole('heading', { name: 'Animal identification details' })
   ).toBeVisible()
-  await page.getByRole('link', { name: /Animal identifiers/ }).click()
-  await page.getByRole('button', { name: /Add an(other)? animal/ }).click()
   await page.getByLabel('Ear tag number').fill(shared.earTag)
   await page.getByLabel('Passport number').fill(shared.passport)
-  await page.getByRole('button', { name: 'Add animal' }).click()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
-  ).toBeVisible()
-  await save()
+  await page.getByRole('button', { name: 'Save and finish' }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
   // About the consignment — internal market, purpose, additional details.

@@ -11,3 +11,4 @@ export {
   submitJourney
 } from './write.js'
 export { collectionView } from './evaluate/collection-view.js'
+export { collectionCapAt } from './evaluate/cardinality.js'

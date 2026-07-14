@@ -21,7 +21,7 @@ import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 import * as importTypeFilter from '../features/import-type-filter/controller.js'
 import * as origin from '../features/origin/controller.js'
 import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
-import * as identifiersList from '../features/commodities/animal-identifiers.list.controller.js'
+import * as animalIdentification from '../features/commodities/animal-identification.controller.js'
 import * as importPurpose from '../features/import-purpose/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
 import * as hub from '../features/hub/controller.js'
@@ -195,13 +195,13 @@ describe('the opening run', () => {
       expect(outside.h.captured.redirect).toBe(hubPath())
     })
 
-    it('Should pass a zero-record identification Continue through to additional details mid-run', async () => {
+    it('Should pass a zero-record identification Save-and-finish through to additional details mid-run', async () => {
       const journey = await store.create()
       await store.saveAnswers(journey.journeyId, lineSeed)
       const h = captureH()
-      await postHandlerOf(identifiersList)(
+      await postHandlerOf(animalIdentification)(
         buildRequest(journey.journeyId, {
-          params: { index: '0' },
+          payload: { action: 'finish' },
           record: active(journey.journeyId)
         }),
         h
@@ -223,7 +223,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(pagePath('commodities/0/identifiers'))
+      expect(h.captured.redirect).toBe(pagePath('commodities/identification'))
     })
 
     it('Should land additional details on the hub — the run is exhausted', async () => {

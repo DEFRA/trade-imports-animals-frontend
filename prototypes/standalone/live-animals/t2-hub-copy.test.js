@@ -142,10 +142,8 @@ describe('#handler hub copy', () => {
     expect(identificationRow.status).toEqual({
       tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
     })
-    // The identifier surfaces hang off the consolidated details page until
-    // inc-063 builds the dedicated per-species card page.
     expect(identificationRow.href).toBe(
-      '/prototype-standalone/live-animals/consignment-details'
+      '/prototype-standalone/live-animals/commodities/identification'
     )
   })
 

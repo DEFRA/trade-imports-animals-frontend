@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { hubPath, pagePath } from '../config.js'
 import { dispatchPages } from '../features/index.js'
 import {
+  animalIdentificationPage,
   commoditiesPage,
   consignmentDetailsPage
 } from '../features/commodities/page.js'
@@ -13,7 +14,7 @@ import { makeScope } from '../engine/index.js'
 import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { buildDispatch } from './dispatch.js'
 import { readyForCheckYourAnswers } from './section-status.js'
-import { ANIMAL_IDENTIFIERS_STEP, nextRunTarget } from './run.js'
+import { nextRunTarget } from './run.js'
 
 const next = (stepId, answers) => nextRunTarget(stepId, makeScope(answers))
 
@@ -63,20 +64,20 @@ describe('#nextRunTarget — the opening run sequence', () => {
     ).toBe(pagePath('import-purpose'))
     expect(
       next(importReasonPage.id, { ...lineSeed, reasonForImport: 'transit' })
-    ).toBe(pagePath('commodities/0/identifiers'))
+    ).toBe(pagePath(animalIdentificationPage.slug))
   })
 
-  it("Should send import purpose to the first line's identification", () => {
+  it('Should send import purpose to the identification surface', () => {
     expect(
       next(importPurposePage.id, {
         ...lineSeed,
         reasonForImport: 'internalMarket'
       })
-    ).toBe(pagePath('commodities/0/identifiers'))
+    ).toBe(pagePath(animalIdentificationPage.slug))
   })
 
   it('Should pass identification through to additional details with zero identifier records', () => {
-    expect(next(ANIMAL_IDENTIFIERS_STEP, lineSeed)).toBe(
+    expect(next(animalIdentificationPage.id, lineSeed)).toBe(
       pagePath('additional-details')
     )
   })

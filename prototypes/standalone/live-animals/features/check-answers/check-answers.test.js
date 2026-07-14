@@ -270,7 +270,7 @@ describe('#buildSections (check-answers GET)', () => {
       const [commodityAction, identifiersAction] = card.actions.items
       expect(commodityAction.href).toMatch(/\/consignment-details\?change=1$/)
       expect(identifiersAction.href).toMatch(
-        /\/commodities\/0\/identifiers\?change=1$/
+        /\/commodities\/identification\?change=1#identification-card-0$/
       )
     })
 

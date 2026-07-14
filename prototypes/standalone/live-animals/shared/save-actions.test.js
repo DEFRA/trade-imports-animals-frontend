@@ -15,7 +15,7 @@ import { base, hubExitTarget } from './kit.js'
 
 import * as importPurpose from '../features/import-purpose/controller.js'
 import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
-import * as identifierEntry from '../features/commodities/animal-identifiers.entry.controller.js'
+import * as animalIdentification from '../features/commodities/animal-identification.controller.js'
 import * as documents from '../features/documents/controller.js'
 import * as cphNumber from '../features/cph-number/controller.js'
 
@@ -140,10 +140,9 @@ describe('save actions — hub exit semantics', () => {
 
   it('Should commit a depth-2 identifier unit and redirect to the hub on the exit submit', async () => {
     const { response, after } = await drivePost(
-      postHandlerOf(identifierEntry),
+      postHandlerOf(animalIdentification),
       {
-        payload: { animalIdentifierPassport: 'UK123456789', exit: 'hub' },
-        params: { index: '0' },
+        payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
         seed: { commodityLines: [{ commoditySelection: 'Cat' }] }
       }
     )

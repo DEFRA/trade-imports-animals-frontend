@@ -4,7 +4,11 @@ import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 import * as commodities from '../../services/commodities/index.js'
-import { commoditiesPage, consignmentDetailsPage as page } from './page.js'
+import {
+  animalIdentificationPage,
+  commoditiesPage,
+  consignmentDetailsPage as page
+} from './page.js'
 import { lineKey } from './search.controller.js'
 
 export const meta = { ...page, collects: [] }
@@ -63,11 +67,7 @@ const buildGroups = (request, lines, values, errors) => {
       animalsValue: values[animalsField(index)] ?? '',
       packagesValue: values[packagesField(index)] ?? '',
       animalsError: errors[animalsField(index)],
-      packagesError: errors[packagesField(index)],
-      identifiersHref: kit.withChangeContext(
-        request,
-        pagePath(`commodities/${index}/identifiers`)
-      )
+      packagesError: errors[packagesField(index)]
     })
   }
   return [...groups.values()]
@@ -91,7 +91,15 @@ const payloadValues = (payload, lines) => {
   return values
 }
 
-const render = (request, h, journey, lines, values, errors = {}) =>
+const render = (
+  request,
+  h,
+  journey,
+  lines,
+  values,
+  errors = {},
+  errorSummary = null
+) =>
   h.view(view, {
     ...kit.base('Consignment details', {
       backLink: kit.withChangeContext(request, pagePath(commoditiesPage.slug)),
@@ -104,10 +112,37 @@ const render = (request, h, journey, lines, values, errors = {}) =>
     addText: lines.length > 0 ? 'Add another commodity' : 'Add a commodity',
     groups: buildGroups(request, lines, values, errors),
     errors,
-    errorSummary: kit.errorSummary(errors)
+    errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
 const linesOf = (answers) => state.collectionView(answers, ['commodityLines'])
+
+const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
+
+// The count-drop rule (inc-063, c-031 ruling): lowering a species' animal
+// count below its existing identifier-record count BLOCKS the save — never
+// silently trim. The error names the species and the summary links straight
+// to that species' card on the identification surface.
+const countDropIssues = (request, lines, values) =>
+  lines.flatMap(({ index, entry }) => {
+    const records = (entry.animalIdentifiers ?? []).length
+    const value = values[animalsField(index)]
+    if (records === 0 || value === '') return []
+    const entered = Number(value)
+    if (!Number.isInteger(entered) || entered >= records) return []
+    const species =
+      commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
+    return [
+      {
+        field: animalsField(index),
+        text: `You have ${plural(records, 'identifier record')} for ${species} but entered ${plural(entered, 'animal')}. Remove identifier records or keep the higher count.`,
+        href: `${kit.withChangeContext(
+          request,
+          pagePath(animalIdentificationPage.slug)
+        )}#identification-card-${index}`
+      }
+    ]
+  })
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
@@ -122,6 +157,22 @@ const post = async (request, h) => {
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
   if (errors) return render(request, h, journey, lines, values, errors)
+
+  const issues = countDropIssues(request, lines, values)
+  if (issues.length > 0) {
+    return render(
+      request,
+      h,
+      journey,
+      lines,
+      values,
+      Object.fromEntries(issues.map((issue) => [issue.field, issue.text])),
+      {
+        titleText: 'There is a problem',
+        errorList: issues.map(({ text, href }) => ({ text, href }))
+      }
+    )
+  }
 
   for (const { index, entry } of lines) {
     await state.updateEntryAt(request, h, ['commodityLines'], index, {
