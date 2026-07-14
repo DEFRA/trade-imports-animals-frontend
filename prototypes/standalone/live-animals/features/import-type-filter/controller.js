@@ -1,6 +1,9 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
+import { hasCommittedAnswers } from '../../flow/entry-guard.js'
+import { nextRunTarget } from '../../flow/run.js'
+import { beginOpeningRun, inOpeningRun } from '../../flow/run-state.js'
 import * as kit from '../../shared/kit.js'
 import { importTypeFilterPage as page } from './page.js'
 import { obligations } from './obligations.js'
@@ -44,17 +47,25 @@ const get = async (request, h) => {
   return render(h, { importType: answers.importType ?? '' })
 }
 
+const opensTheRun = async (request, answersBeforeCommit) =>
+  (await inOpeningRun(request)) || !hasCommittedAnswers(answersBeforeCommit)
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = { importType: payload.importType ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) return render(h, values, errors)
 
+  const { answers: before } = await state.get(request, h)
   const { scope } = await state.commit(request, h, values)
   if (values.importType !== LIVE_ANIMALS) {
     return h.redirect(pagePath(NOT_AVAILABLE_SLUG))
   }
-  return h.redirect(kit.nextTarget(request, page, scope))
+  if (await opensTheRun(request, before)) {
+    await beginOpeningRun(request, h)
+    return h.redirect(kit.exitTarget(request, nextRunTarget(page.id, scope)))
+  }
+  return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
 const getNotAvailable = (_request, h) =>

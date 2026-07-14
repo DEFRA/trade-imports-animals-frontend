@@ -67,7 +67,7 @@ const post = async (request, h) => {
   return h.redirect(
     kit.hubExitTarget(request) ??
       hubEntryReturn(request) ??
-      kit.nextTarget(request, page, scope)
+      (await kit.nextTarget(request, page, scope))
   )
 }
 

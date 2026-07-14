@@ -25,6 +25,11 @@ who is the user, and which journey is active in this session.
   appends (deduplicated). The dashboard lists and acts on ONLY these
   references, in both modes — there is no unscoped backend browse (the
   earlier resume-by-user global read was removed as a cross-user leak).
+- A third cookie (`liveAnimalsOpeningRun`, base64json) carries the
+  **opening-run record** `{ journeyId, phase }` — presentation state for
+  the pre-hub linear run, never notification data. `openingRun` reads it;
+  `setOpeningRun` replaces it. The flow layer owns its meaning (see
+  [flow-and-gates.md](flow-and-gates.md), "The opening run").
 
 **RECORDS** (`engine/persistence/records.js`) is the durable store: one
 application document per `journeyId`, held in an in-memory `Map`.

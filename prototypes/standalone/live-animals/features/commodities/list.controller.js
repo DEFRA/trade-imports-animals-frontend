@@ -69,7 +69,7 @@ const post = async (request, h) => {
     )
   }
   const { scope } = await state.get(request, h)
-  return h.redirect(kit.nextTarget(request, page, scope))
+  return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
 const getRemove = async (request, h) => {

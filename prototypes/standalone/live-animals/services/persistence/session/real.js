@@ -2,6 +2,7 @@ import { STUB_USER } from '../../../engine/persistence/session.js'
 
 const ACTIVE_JOURNEY = 'liveAnimalsActiveJourney'
 const KNOWN_JOURNEYS = 'liveAnimalsKnownJourneys'
+const OPENING_RUN = 'liveAnimalsOpeningRun'
 
 const knownFrom = (request) => {
   const known = request?.yar?.get(KNOWN_JOURNEYS)
@@ -33,5 +34,13 @@ export const session = {
 
   async clearActive(h) {
     h.request.yar.clear(ACTIVE_JOURNEY)
+  },
+
+  async openingRun(request) {
+    return request?.yar?.get(OPENING_RUN) ?? undefined
+  },
+
+  async setOpeningRun(h, record) {
+    h.request.yar.set(OPENING_RUN, record)
   }
 }

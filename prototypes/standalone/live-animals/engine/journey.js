@@ -2,7 +2,8 @@ import { BASE } from '../config.js'
 import {
   session,
   JOURNEY_COOKIE,
-  KNOWN_JOURNEYS_COOKIE
+  KNOWN_JOURNEYS_COOKIE,
+  OPENING_RUN_COOKIE
 } from './persistence/session.js'
 import { records, SUBMITTED } from './persistence/records.js'
 
@@ -22,6 +23,10 @@ const cookieOptions = Object.freeze({
 export const registerJourneyCookie = (server) => {
   server.state(JOURNEY_COOKIE, cookieOptions)
   server.state(KNOWN_JOURNEYS_COOKIE, {
+    ...cookieOptions,
+    encoding: 'base64json'
+  })
+  server.state(OPENING_RUN_COOKIE, {
     ...cookieOptions,
     encoding: 'base64json'
   })

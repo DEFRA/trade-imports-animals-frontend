@@ -10,6 +10,7 @@ import {
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
+import { importType } from '../import-type-filter/obligations.js'
 import { originPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
@@ -48,7 +49,9 @@ const fields = () =>
   )
 
 const journeyIfStarted = (journey) =>
-  Object.keys(journey.answers).length > 0 ? journey : undefined
+  Object.keys(journey.answers).some((key) => key !== importType.id)
+    ? journey
+    : undefined
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
@@ -88,7 +91,7 @@ const post = async (request, h) => {
   }
 
   const { scope } = await state.commit(request, h, values)
-  return h.redirect(kit.nextTarget(request, page, scope))
+  return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

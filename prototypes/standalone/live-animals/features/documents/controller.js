@@ -147,7 +147,7 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.action === 'add') return postAdd(request, h, payload)
   const { scope } = await state.get(request, h)
-  return h.redirect(kit.nextTarget(request, page, scope))
+  return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
 const getRemove = async (request, h) => {

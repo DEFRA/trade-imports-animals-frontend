@@ -1,6 +1,8 @@
 import { breadcrumbs, hubPath, LAYOUT, pagePath } from '../config.js'
 import { SUBMITTED } from '../engine/persistence/records.js'
 import { nextInSection } from '../flow/navigation.js'
+import { nextRunTarget } from '../flow/run.js'
+import { inOpeningRun } from '../flow/run-state.js'
 
 export const open = { auth: false }
 
@@ -51,8 +53,14 @@ export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
   (changeContext(request) ? pagePath(CYA_SLUG) : fallback)
 
-export const nextTarget = (request, page, scope) =>
-  exitTarget(request, nextInSection(page.id, scope))
+export const runTarget = async (request, stepId, scope) =>
+  (await inOpeningRun(request)) ? nextRunTarget(stepId, scope) : null
+
+export const nextTarget = async (request, page, scope) =>
+  exitTarget(
+    request,
+    (await runTarget(request, page.id, scope)) ?? nextInSection(page.id, scope)
+  )
 
 export const base = (title, { backLink, journey } = {}) => ({
   layout: LAYOUT,

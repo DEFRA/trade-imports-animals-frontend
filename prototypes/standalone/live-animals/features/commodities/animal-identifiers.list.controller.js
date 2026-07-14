@@ -1,5 +1,6 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import { ANIMAL_IDENTIFIERS_STEP } from '../../flow/run.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 
@@ -72,7 +73,7 @@ const get = async (request, h) => {
 }
 
 const post = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { answers, scope } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) {
     return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
@@ -85,7 +86,13 @@ const post = async (request, h) => {
       )
     )
   }
-  return h.redirect(kit.exitTarget(request, pagePath('commodities')))
+  return h.redirect(
+    kit.exitTarget(
+      request,
+      (await kit.runTarget(request, ANIMAL_IDENTIFIERS_STEP, scope)) ??
+        pagePath('commodities')
+    )
+  )
 }
 
 export const routes = [

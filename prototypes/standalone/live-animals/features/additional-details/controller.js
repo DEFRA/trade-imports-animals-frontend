@@ -82,7 +82,7 @@ const post = async (request, h) => {
       ? { containsUnweanedAnimals: values.containsUnweanedAnimals }
       : {})
   })
-  return h.redirect(kit.nextTarget(request, page, committed))
+  return h.redirect(await kit.nextTarget(request, page, committed))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

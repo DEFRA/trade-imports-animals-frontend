@@ -169,7 +169,7 @@
       "id": "linear-opening-run-then-hub",
       "source": "figma",
       "status": "adopted",
-      "detail": "Journey entry architecture (c-040 resolved: adopt the pre-hub linear run). The journey opens linear: entry filter (importTypeFilter) -> origin (draft created + reference minted at the origin POST, as the spec already does) -> About-the-consignment run -> hub as the resting state thereafter. Matches the ixd-canvas 'linear followed by task list' behaviour (see linear-then-task-list), now settled by design evidence (f-094). Flow-layer/MODEL_EXTENDER change: a linear-vs-hub-mediated presentation mode in the flow layer, not new obligation vocabulary."
+      "detail": "Journey entry architecture (c-040 resolved: adopt the pre-hub linear run). The journey opens linear: entry filter (importTypeFilter) -> origin (draft created + reference minted at the origin POST, as the spec already does) -> About-the-consignment run -> hub as the resting state thereafter. Matches the ixd-canvas 'linear followed by task list' behaviour (see linear-then-task-list), now settled by design evidence (f-094). Flow-layer/MODEL_EXTENDER change: a linear-vs-hub-mediated presentation mode in the flow layer, not new obligation vocabulary. Implemented at inc-060 (D8/D9/D10): the run is a flow-layer page-id sequence (flow/run.js RUN_STEPS - filter -> origin -> commodity select -> details -> reason -> conditional purpose -> identification with a non-blocking zero-record pass -> additional details -> hub), position is stateless (derived from the posting page's place in the sequence) and completion is a session-side presentation record (flow/run-state.js, never notification data - importType does not survive real-mode round-trips). Save-and-continue follows the run while it is active; the inc-049/inc-050 precedence chain still holds (hub exit > change context > run sequence > nextInSection) and reaching the hub by ANY route ends run mode. Dashboard Start enters the filter; a deep-link guard (flow/entry-guard.js) sends a fresh journey to the filter, and one committed answer (or a recorded filter pass) restores normal deep links. D9: run pages stay ordinary hub rows; no hub change here (regroup = inc-061)."
     },
     {
       "id": "design-export-interpretive-rule",
@@ -214,7 +214,7 @@
           "title": "What are you importing?",
           "gate": null,
           "collects": ["importType"],
-          "notes": "Service entry filter (design 01-01; c-032 resolved: adopt). Live animals proceeds into the journey; POAO / HRFNAO / plants route to a 'not available in this prototype' holding page (chrome, not a journey page). Opens the pre-hub linear run per c-040: filter -> origin (draft created + reference minted at the origin POST) -> About-the-consignment run -> hub as resting state."
+          "notes": "Service entry filter (design 01-01; c-032 resolved: adopt). Live animals proceeds into the journey; POAO / HRFNAO / plants route to a 'not available in this prototype' holding page (chrome, not a journey page). Opens the pre-hub linear run per c-040: filter -> origin (draft created + reference minted at the origin POST) -> About-the-consignment run -> hub as resting state. Run entry implemented at inc-060 (see behaviour linear-opening-run-then-hub)."
         }
       ]
     },
@@ -1947,10 +1947,7 @@
       "id": "importType",
       "appliesAt": "notification",
       "kind": "scalar",
-      "mandate": {
-        "required": true,
-        "enforcedAt": "continue"
-      },
+      "mandate": {},
       "mandateRaw": "Not in V4 - design-sourced entry filter (c-032); required to enter the service",
       "label": "What are you importing?",
       "input": {
@@ -1962,7 +1959,7 @@
           "Plants, plant products or other objects"
         ]
       },
-      "notes": "Service entry filter (c-032 resolved: adopt). Canonical field name importType chosen at M3-00 - the export used importType and importing inconsistently, and HTML names are artifacts per the interpretive rule. Canonical value set: live-animals | poao | hrfnao | plants (from the export's input value attributes; display labels above). Only live-animals proceeds into this journey; the other three route to a holding page. Not persisted to the V4 notification payload - it is a service-routing answer, not notification data.",
+      "notes": "Service entry filter (c-032 resolved: adopt). Canonical field name importType chosen at M3-00 - the export used importType and importing inconsistently, and HTML names are artifacts per the interpretive rule. Canonical value set: live-animals | poao | hrfnao | plants (from the export's input value attributes; display labels above). Only live-animals proceeds into this journey; the other three route to a holding page. Not persisted to the V4 notification payload - it is a service-routing answer, not notification data. Mandate reconciled to {} at inc-060 (D10, closing the inc-002 debt): ENFORCED BY ENTRY ROUTING, not by the obligation model - dashboard Start enters the filter, the deep-link guard sends a fresh journey (zero committed answers, never through the filter) to it, and the controller-level requiredOneOf rejects a blank POST. A model mandate would be a lie in real mode: importType is a service-routing answer Mapper A never persists, so it cannot survive a round-trip.",
       "conflicts": ["c-032"],
       "provenance": [
         {

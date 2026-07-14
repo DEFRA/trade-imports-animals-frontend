@@ -87,6 +87,22 @@ const drivePrototype = async (page) => {
 
   await page.goto(`${PROTO}/home`)
   await page.getByRole('button', { name: 'Start a new notification' }).click()
+  // inc-060: Start enters the service filter and live animals opens the
+  // linear run at origin. This walk drives tasks from the hub, so end the
+  // run by going there — the session-side filter-pass record (not
+  // importType, which Mapper A never persists) keeps the deep-link guard
+  // open in real mode.
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await page
+    .getByRole('radio', { name: 'Live animals or germinal products' })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Origin of the import' })
+  ).toBeVisible()
+  await page.goto(`${PROTO}/hub`)
   await expect(
     page.getByRole('heading', { name: 'Import notification service' })
   ).toBeVisible()

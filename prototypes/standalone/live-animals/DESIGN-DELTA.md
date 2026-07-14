@@ -463,6 +463,81 @@ scoped GETs at the HTTP boundary), the session adapters' known-list tests,
 and `features/dashboard/controller.test.js` (list rows, row actions, the
 session-known guard, start-keeps-old-listed).
 
+## 12. The opening run — linear-vs-hub presentation mode in the flow layer (inc-060)
+
+`flow/run.js` + `flow/run-state.js` + `flow/entry-guard.js` +
+`shared/kit.js` + one new SESSION port pair: the design-literal pre-hub
+linear run (M3-D "linear-run", f-001/f-095/f-094; Sam's D8/D9/D10 rulings, behaviour
+`linear-opening-run-then-hub`). A first pass walks filter → origin →
+commodity select → details → import reason → conditional purpose →
+identification (a zero-record pass does NOT block) → additional details →
+hub, and the hub is the resting state thereafter. Presentation only — no
+obligation vocabulary change, no engine write-path change, no mapper change.
+
+- **The run is config, not redirects.** `flow/run.js` exports `RUN_STEPS`,
+  an ordered page-id sequence where each step resolves its own target from
+  scope (`pageGatePasses` for flow pages, so the conditional purpose page
+  skips itself; an answers-derived index for the collection sub-pages) and
+  a `null` target skips the step. `nextRunTarget(stepId, scope)` walks
+  forward from the posting page's position to the first resolvable step,
+  else the hub — inc-062 can swap the commodity steps without touching the
+  mechanism. The commodity-details step is a position marker
+  (`target: () => null`): the select sub-page's own indexed redirect enters
+  it, so it is never resolved as a target. The identification step targets
+  the FIRST line (`commodities/0/identifiers`) — the design's single
+  identification pass at current page shapes; inc-063 restructures the
+  surface.
+- **Run position is stateless; completion is session-side presentation
+  state.** Position derives from the posting page's place in the sequence —
+  nothing stored. Completion cannot derive from answers (a zero-record
+  identification pass leaves no footprint, and importType does NOT survive
+  a real-mode round-trip — Mapper A never persists service-routing
+  answers), so the SESSION port grows `openingRun`/`setOpeningRun` holding
+  `{ journeyId, phase: active|complete }` — a third base64json cookie in
+  stub mode, a yar entry in real mode. The filter POST opens the run only
+  for a journey at its genuine start (zero committed answers pre-commit, or
+  a run already underway); the hub GET flips `active` → `complete` —
+  reaching the hub by ANY route (run exhaustion, Save-and-return, cancel,
+  resume) ends run mode, and the record then persists as the "entered
+  through the filter" memory the entry guard needs in real mode.
+- **Precedence unchanged (inc-049/inc-050 chain, extended):** hub exit >
+  change context > RUN sequence > `nextInSection`. `kit.nextTarget` (now
+  async) consults the new `kit.runTarget` before `nextInSection`; the two
+  run-participating sub-pages (commodity details, identifier-list Continue)
+  consult it as their pre-fallback target with their hub-exit/change
+  behaviour untouched. Outside the run every redirect is byte-for-byte
+  pre-inc-060 — no session record means `runTarget` is `null` everywhere.
+- **Entry rewiring + deep-link guard (D10, closes the inc-002 debt).**
+  Dashboard "Start a new notification" now enters the FILTER (the journey
+  is still created at Start; the reference strip still first appears after
+  origin's own save — origin's "journey started" check now ignores
+  importType so the stub-mode filter commit does not surface it early).
+  The spec mandate for importType becomes `{}` with the note "enforced by
+  entry routing"; runtime validation unchanged (controller-level
+  `requiredOneOf`). A plugin-level `onPreHandler` guard
+  (`flow/entry-guard.js`) redirects a FRESH journey — zero committed
+  answers AND never through the filter — from any post-filter journey page
+  to the filter (exempt: the dashboard and its row actions, start, the
+  filter and its holding page). After the first commit, or with a recorded
+  filter pass (which is what survives real mode), deep links behave
+  normally — the E2E helpers rely on this.
+- **D9: no hub work.** Run pages remain ordinary hub rows via their
+  sections; stat cards stay non-links; the hub IA regroup is inc-061.
+- **Backwards compatible.** Every pre-inc-060 journey state (no session
+  record) behaves identically; all 379 pre-existing unit tests pass
+  unmodified.
+
+Proven in `flow/run.test.js` (the sequence: page-to-page targets, the
+conditional-purpose skip, the zero-record identification pass-through, run
+exhaustion → hub, unreachable-steps collapse, non-run pages → null),
+`flow/opening-run.test.js` (the filter opens the run only from a genuine
+start; save-and-continue follows the run mid-run and falls back outside it;
+hub exit and change context beat the run; hub arrival flips the record and
+later saves revert to section flow; the run is scoped to its journey;
+Start → filter; the deep-link guard's exemptions, fresh-journey redirect
+and both let-through paths), and the session adapters' opening-run
+round-trip tests.
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

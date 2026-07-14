@@ -1,5 +1,6 @@
 import { buildDispatch } from './flow/dispatch.js'
 import { readyForCheckYourAnswers } from './flow/section-status.js'
+import { entryGuardTarget } from './flow/entry-guard.js'
 import { allRoutes, dispatchPages } from './features/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
@@ -22,6 +23,10 @@ export const liveAnimals = {
       configureRecords(records)
       configureSession(session)
       registerJourneyCookie(server)
+      server.ext('onPreHandler', async (request, h) => {
+        const target = await entryGuardTarget(request, h)
+        return target ? h.redirect(target).takeover() : h.continue
+      })
       if (isRealMode()) {
         await countries.prime()
         await ports.prime()

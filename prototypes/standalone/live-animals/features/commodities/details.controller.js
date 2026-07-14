@@ -1,5 +1,6 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import { COMMODITY_DETAILS_STEP } from '../../flow/run.js'
 import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
@@ -78,9 +79,15 @@ const post = async (request, h) => {
       ? { numberOfPackages: values.numberOfPackages }
       : {})
   })
+  const hubExit = kit.hubExitTarget(request)
+  if (hubExit) return h.redirect(hubExit)
+  if (kit.changeContext(request)) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
+  const { scope } = await state.get(request, h)
   return h.redirect(
-    kit.hubExitTarget(request) ??
-      kit.withChangeContext(request, pagePath('commodities'))
+    (await kit.runTarget(request, COMMODITY_DETAILS_STEP, scope)) ??
+      pagePath('commodities')
   )
 }
 

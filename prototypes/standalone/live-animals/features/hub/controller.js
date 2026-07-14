@@ -10,6 +10,7 @@ import {
   OPTIONAL
 } from '../../engine/status.js'
 import { sectionStatus } from '../../flow/section-status.js'
+import { completeOpeningRun } from '../../flow/run-state.js'
 import { journeyStrip, open } from '../../shared/kit.js'
 
 const view = `${TEMPLATES}/features/hub/template`
@@ -122,6 +123,7 @@ const buildCommodityTotals = (answers) => {
 }
 
 const handler = async (request, h) => {
+  await completeOpeningRun(request, h)
   const { journey, answers, scope } = await state.get(request, h)
   const inScope = scope.inScope
 

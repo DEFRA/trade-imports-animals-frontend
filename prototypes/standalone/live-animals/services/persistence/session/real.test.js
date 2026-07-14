@@ -54,6 +54,21 @@ const buildServer = async () => {
       handler: async (request) => ({
         ids: await session.knownJourneyIds(request)
       })
+    },
+    {
+      method: 'POST',
+      path: '/run',
+      handler: async (request, h) => {
+        await session.setOpeningRun(h, request.payload)
+        return { ok: true }
+      }
+    },
+    {
+      method: 'GET',
+      path: '/run',
+      handler: async (request) => ({
+        record: (await session.openingRun(request)) ?? null
+      })
     }
   ])
   return server
@@ -166,6 +181,30 @@ describe('real session adapter known journeys over yar', () => {
     const server = await buildServer()
     const known = await server.inject({ method: 'GET', url: '/known' })
     expect(known.result.ids).toEqual([])
+  })
+})
+
+describe('real session adapter opening run over yar', () => {
+  it('Should round-trip the opening-run record server-side', async () => {
+    const server = await buildServer()
+    const record = { journeyId: 'J-1', phase: 'active' }
+    const set = await server.inject({
+      method: 'POST',
+      url: '/run',
+      payload: record
+    })
+    const get = await server.inject({
+      method: 'GET',
+      url: '/run',
+      headers: { cookie: cookieOf(set) }
+    })
+    expect(get.result.record).toEqual(record)
+  })
+
+  it('Should report no opening run for a fresh session', async () => {
+    const server = await buildServer()
+    const get = await server.inject({ method: 'GET', url: '/run' })
+    expect(get.result.record).toBe(null)
   })
 })
 

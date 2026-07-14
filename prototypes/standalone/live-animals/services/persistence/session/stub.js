@@ -2,7 +2,8 @@ import {
   STUB_USER,
   STUB_USER_HEADER,
   JOURNEY_COOKIE,
-  KNOWN_JOURNEYS_COOKIE
+  KNOWN_JOURNEYS_COOKIE,
+  OPENING_RUN_COOKIE
 } from '../../../engine/persistence/session.js'
 
 const knownFrom = (request) => {
@@ -35,5 +36,13 @@ export const session = {
 
   async clearActive(h) {
     h.unstate(JOURNEY_COOKIE)
+  },
+
+  async openingRun(request) {
+    return request?.state?.[OPENING_RUN_COOKIE]
+  },
+
+  async setOpeningRun(h, record) {
+    h.state(OPENING_RUN_COOKIE, record)
   }
 }

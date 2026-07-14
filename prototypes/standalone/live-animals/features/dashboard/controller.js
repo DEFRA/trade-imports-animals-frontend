@@ -7,6 +7,7 @@ import {
   startJourney
 } from '../../engine/journey.js'
 import { CYA_SLUG, journeyStrip, open } from '../../shared/kit.js'
+import { importTypeFilterPage } from '../import-type-filter/page.js'
 import { dashboardPage as page } from './page.js'
 
 const view = `${TEMPLATES}/features/dashboard/template`
@@ -118,7 +119,7 @@ export const routes = [
     options: open,
     handler: async (request, h) => {
       await startJourney(request, h)
-      return h.redirect(hubPath())
+      return h.redirect(pagePath(importTypeFilterPage.slug))
     }
   }
 ]

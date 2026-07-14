@@ -28,8 +28,22 @@ const { values } = JSON.parse(
 const startNotification = async (page) => {
   await page.goto(`${BASE}/home`)
   await page.getByRole('button', { name: 'Start a new notification' }).click()
-  // Starting a journey lands on the task list. inc-028 removed the last
-  // car-domain feature (the quote), so the hub is now purely live-animals.
+  // inc-060: Start enters the service filter, and a live-animals answer
+  // opens the linear run at origin. These specs drive tasks from the hub,
+  // so end the run by navigating there — reaching the hub by any route
+  // ends run mode, and a journey that has passed the filter deep-links
+  // normally. The dedicated linear-run spec covers the run itself.
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+  await page
+    .getByRole('radio', { name: 'Live animals or germinal products' })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Origin of the import' })
+  ).toBeVisible()
+  await page.goto(`${BASE}/hub`)
   await expect(
     page.getByRole('heading', { name: 'Import notification service' })
   ).toBeVisible()
@@ -274,8 +288,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
 
     // Starting again creates a NEW notification — the old draft stays listed.
-    await page.goto(`${BASE}/home`)
-    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await startNotification(page)
     await expect(page.locator('.app-journey-strip')).not.toContainText(
       reference
     )
@@ -286,19 +299,18 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
   })
 
-  test('import type — a blank answer blocks Continue, a non-live-animals answer routes to the holding page, live animals proceeds', async ({
+  test('import type — a blank answer blocks Continue, a non-live-animals answer routes to the holding page, live animals opens the run', async ({
     page
   }) => {
-    await startNotification(page)
-
-    // The entry filter is the service front door (c-032). Until the linear
-    // opening run lands (inc-060) nothing links to it, so navigate directly.
-    await page.goto(`${BASE}/import-type`)
+    // The entry filter is the service front door (c-032): Start a new
+    // notification lands straight on it (inc-060).
+    await page.goto(`${BASE}/home`)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(
       page.getByRole('heading', { name: 'What are you importing?' })
     ).toBeVisible()
 
-    // importType is enforcedAt=continue — a blank Continue must fail.
+    // importType is required to enter the service — a blank Continue fails.
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'There is a problem' })
@@ -326,20 +338,90 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'What are you importing?' })
     ).toBeVisible()
 
-    // Live animals proceeds into the journey (the hub until inc-060 rewires
-    // the opening run), and the answer persists on return.
+    // Live animals opens the linear run at origin (inc-060), and the
+    // answer persists on return to the filter.
     await page
       .getByRole('radio', { name: 'Live animals or germinal products' })
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
+      page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
 
     await page.goto(`${BASE}/import-type`)
     await expect(
       page.getByRole('radio', { name: 'Live animals or germinal products' })
     ).toBeChecked()
+  })
+
+  test('linear opening run — start walks filter, origin, commodity, reason, purpose, identification and additional details in order, then rests on the hub', async ({
+    page
+  }) => {
+    const heading = (name) => page.getByRole('heading', { name })
+    const save = () =>
+      page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await page.goto(`${BASE}/home`)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await expect(heading('What are you importing?')).toBeVisible()
+
+    // Deep-link guard (D10): a fresh journey — nothing committed, filter
+    // not yet passed — is sent back to the filter from any journey page.
+    await page.goto(`${BASE}/origin`)
+    await expect(heading('What are you importing?')).toBeVisible()
+    await page.goto(`${BASE}/hub`)
+    await expect(heading('What are you importing?')).toBeVisible()
+
+    // Filter → origin.
+    await page
+      .getByRole('radio', { name: 'Live animals or germinal products' })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(heading('Origin of the import')).toBeVisible()
+
+    // Origin → commodity select (not the list — the run enters the loop).
+    await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
+    await page.getByRole('radio', { name: 'No' }).check()
+    await save()
+    await expect(heading('Select species of commodity')).toBeVisible()
+
+    // Select → details (the loop's own progression carries the run).
+    await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
+    await save()
+    await expect(heading('Description of goods')).toBeVisible()
+
+    // Details → import reason (run sequence, not back to the list).
+    await page.getByLabel('Number of animals').fill('2')
+    await save()
+    await expect(
+      heading('What is the main reason for importing the animals?')
+    ).toBeVisible()
+
+    // Reason → conditional purpose (internal market pulls it into scope).
+    await page.getByRole('radio', { name: 'Internal market' }).check()
+    await save()
+    await expect(heading('Purpose in the internal market')).toBeVisible()
+
+    // Purpose → identification for the first line.
+    await page.getByRole('radio', { name: 'Breeding' }).check()
+    await save()
+    await expect(heading('Animal identifiers for this commodity')).toBeVisible()
+
+    // A zero-record identification pass does NOT block the run.
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(heading('Additional animal details')).toBeVisible()
+
+    // Additional details ends the run on the hub — the resting state.
+    await page.getByRole('radio', { name: 'Slaughter' }).check()
+    await save()
+    await expect(heading('Import notification service')).toBeVisible()
+
+    // Deep links behave normally on a started journey, and a later save
+    // follows the ordinary section flow back to the hub (run mode is over).
+    await page.goto(`${BASE}/origin`)
+    await expect(heading('Origin of the import')).toBeVisible()
+    await save()
+    await expect(heading('Import notification service')).toBeVisible()
   })
 
   test('origin — blank country blocks Save and Continue, then the happy path completes the task', async ({
@@ -459,7 +541,9 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(strip).toHaveCount(0)
 
-    // Origin shows nothing while the journey has no saved answers...
+    // Origin shows nothing while the journey has no notification answers —
+    // the service-routing importType saved by the filter does not count
+    // (inc-060): the reference is minted at the origin POST...
     await page.goto(`${BASE}/hub`)
     await page.getByRole('link', { name: 'Origin of the import' }).click()
     await expect(
