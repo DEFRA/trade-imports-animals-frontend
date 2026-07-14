@@ -1,55 +1,119 @@
-import { BASE, hubPath, TEMPLATES } from '../../config.js'
+import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
-import { sectionEntry } from '../../flow/navigation.js'
+import { rowEntry, rowGatePasses, sectionEntry } from '../../flow/navigation.js'
 import { sectionGatePasses } from '../../flow/gates.js'
 import * as state from '../../engine/index.js'
 import {
   FULFILLED,
   IN_PROGRESS,
+  NA,
   NOT_STARTED,
   OPTIONAL
 } from '../../engine/status.js'
 import { sectionStatus } from '../../flow/section-status.js'
+import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { completeOpeningRun } from '../../flow/run-state.js'
+import { dashboardPage } from '../dashboard/page.js'
 import { journeyStrip, open } from '../../shared/kit.js'
 
 const view = `${TEMPLATES}/features/hub/template`
 
-const GROUP_ROWS = [
+const GROUPS = [
   {
-    id: 'origin',
-    title: 'Origin of the import',
-    hint: 'Country of origin, region of origin code, your internal reference'
+    id: 'about-the-consignment',
+    caption: '1. About the consignment',
+    rows: [
+      {
+        id: 'origin',
+        title: 'Where is this consignment coming from?',
+        hint: 'Country of origin, region of origin code, your internal reference'
+      },
+      {
+        id: 'commodities',
+        title: 'What are you importing?',
+        hint: 'The commodities, species and numbers of animals you are importing'
+      },
+      {
+        id: 'importReason',
+        title: 'Main reason for importing',
+        hint: 'Why you are importing the animals and their purpose in the internal market'
+      }
+    ]
   },
   {
-    id: 'commodities',
-    title: 'Commodities',
-    hint: 'The commodities, species and numbers of animals you are importing'
+    id: 'commodity-details',
+    caption: '2. Commodity details',
+    rows: [
+      {
+        id: 'additionalDetails',
+        title: 'Additional commodity details',
+        hint: 'What the animals are certified for and whether any are unweaned'
+      },
+      {
+        id: 'animalIdentification',
+        title: 'Animal identification details',
+        hint: 'Identification details for the animals in each commodity'
+      }
+    ]
   },
   {
-    id: 'consignment',
-    title: 'About the consignment',
-    hint: 'Why you are importing the animals and their purpose in the internal market'
-  },
-  {
-    id: 'documents',
-    title: 'Accompanying documents',
-    hint: 'Certificates, permits and other documents for the consignment'
+    id: 'movement',
+    caption: '3. Movement',
+    rows: [
+      {
+        id: 'arrivalDetails',
+        title: 'Arrival details',
+        hint: 'The port of entry, when the consignment will arrive and how the animals will travel'
+      },
+      {
+        id: 'transitCountries',
+        title: 'Transit countries',
+        hint: 'The countries the consignment will travel through'
+      },
+      {
+        id: 'transporter',
+        title: 'Transporter',
+        hint: 'Who transports the animals to their destination'
+      }
+    ]
   },
   {
     id: 'addresses',
-    title: 'Addresses',
-    hint: 'The consignor, consignee, importer and the places of origin and destination'
+    caption: '4. Addresses',
+    rows: [
+      {
+        id: 'addresses',
+        title: 'Roles and addresses',
+        hint: 'The consignor, consignee, importer and the places of origin and destination'
+      },
+      {
+        id: 'contact',
+        title: 'Contact address',
+        hint: 'Who we should contact about this notification'
+      }
+    ]
   },
   {
-    id: 'transport',
-    title: 'Transport',
-    hint: 'The port of entry, when the consignment will arrive, how the animals will travel and who transports them'
+    id: 'documents',
+    caption: '5. Documents',
+    rows: [
+      {
+        id: 'documents',
+        title: 'Uploaded documents',
+        hint: 'Certificates, permits and other documents for the consignment'
+      }
+    ]
   },
   {
-    id: 'contact',
-    title: 'Contact address',
-    hint: 'Who we should contact about this notification'
+    id: 'check-and-submit',
+    caption: '6. Check and submit',
+    rows: [
+      {
+        id: 'review',
+        title: 'Check and submit',
+        hint: 'Check your answers before you submit the notification'
+      }
+    ]
   }
 ]
 
@@ -70,40 +134,41 @@ const CANNOT_START_STATUS = {
   classes: 'govuk-task-list__status--cannot-start-yet'
 }
 
-const sectionById = (id) => sections.find((section) => section.id === id)
+const reviewSection = () => sections.find((section) => section.id === 'review')
 
-const buildRow = ({ id, title, hint }, answers, scope, inScope) => {
-  const section = sectionById(id)
+const buildReviewItem = ({ title, hint }, answers, scope) => {
+  const section = reviewSection()
   const base = { title: { text: title }, hint: { text: hint } }
   if (!sectionGatePasses(section, scope)) {
     return { ...base, status: CANNOT_START_STATUS }
   }
   return {
     ...base,
-    href: sectionEntry(id, scope),
-    status: statusTag(sectionStatus(section, answers, inScope))
+    href: sectionEntry('review', scope),
+    status: statusTag(sectionStatus(section, answers, scope.inScope))
   }
 }
 
-const buildGroupItems = (answers, scope, inScope) =>
-  GROUP_ROWS.map((row) => buildRow(row, answers, scope, inScope))
+const buildRowItem = ({ id, title, hint }, answers, scope) => {
+  if (id === 'review') return buildReviewItem({ title, hint }, answers, scope)
+  const row = taskRowById(id)
+  const status = rowStatus(row, answers, scope.inScope)
+  if (row.conditional && status === NA) return null
+  const base = { title: { text: title }, hint: { text: hint } }
+  if (!rowGatePasses(row, scope)) {
+    return { ...base, status: CANNOT_START_STATUS }
+  }
+  return { ...base, href: rowEntry(row, scope), status: statusTag(status) }
+}
 
-const buildReviewItem = (answers, scope, inScope) =>
-  buildRow(
-    {
-      id: 'review',
-      title: 'Check and submit',
-      hint: 'Check your answers before you submit the notification'
-    },
-    answers,
-    scope,
-    inScope
-  )
-
-const countCompletedGroups = (answers, inScope) =>
-  GROUP_ROWS.filter(
-    (row) => sectionStatus(sectionById(row.id), answers, inScope) === FULFILLED
-  ).length
+const buildGroups = (answers, scope) =>
+  GROUPS.map((group) => ({
+    id: group.id,
+    caption: group.caption,
+    items: group.rows
+      .map((row) => buildRowItem(row, answers, scope))
+      .filter(Boolean)
+  }))
 
 const toCount = (value) => {
   const count = Number((value ?? '').toString().trim())
@@ -125,23 +190,16 @@ const buildCommodityTotals = (answers) => {
 const handler = async (request, h) => {
   await completeOpeningRun(request, h)
   const { journey, answers, scope } = await state.get(request, h)
-  const inScope = scope.inScope
 
   return h.view(view, {
-    pageTitle: 'Import notification service',
-    heading: 'Import notification service',
+    pageTitle: 'Overview',
+    heading: 'Overview',
     journeyStrip: journeyStrip(journey),
-    progressLine: `You have completed ${countCompletedGroups(answers, inScope)} of ${GROUP_ROWS.length} tasks.`,
     commodityTotals: buildCommodityTotals(answers),
-    items: [
-      ...buildGroupItems(answers, scope, inScope),
-      buildReviewItem(answers, scope, inScope)
-    ],
-    breadcrumbs: [
-      { text: 'Prototypes', href: '/prototype-standalone' },
-      { text: 'Obligations v2 (standalone)', href: BASE },
-      { text: 'Your application' }
-    ]
+    groups: buildGroups(answers, scope),
+    dashboardHref: pagePath(dashboardPage.slug),
+    backLink: pagePath(dashboardPage.slug),
+    breadcrumbs: false
   })
 }
 

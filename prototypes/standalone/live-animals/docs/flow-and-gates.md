@@ -6,7 +6,7 @@ How the spike decides what comes next, what is reachable, and which page owns ea
 
 `flow/flow.js` exports `sections`: an ordered array of sections, each holding an ordered list of pages. It owns two things — sequence and gating — and nothing else. No copy, no headings, no validation, no template choice. Those all live per page in `features/` (see [features.md](features.md)).
 
-Sections survive from v1 because the journey shape needs them: the user runs through a section's pages in order, then returns to the hub, and the hub renders one task per section.
+Sections survive from v1 because the journey shape needs them: the user runs through a section's pages in order, then returns to the hub. Since inc-061 the hub no longer renders one task per section — it renders PAGE-LEVEL task rows (`flow/task-rows.js`, below) in the design's six numbered groups — but sections remain the navigation spine: `nextInSection`, the opening-run sequence and the gate derivations all still walk them.
 
 Each page entry is the feature's `page.js` identity leaf (`{ id, slug }`), imported by reference. Page identity is a shared JS object, not a string that happens to match.
 
@@ -14,7 +14,7 @@ Each page entry is the feature's `page.js` identity leaf (`{ id, slug }`), impor
 
 - `allFlowPages` — every page across all sections, flattened, each tagged with its `sectionId`
 - `sectionOfPage(pageId)` — the first section containing the page
-- `answerSections` — the answer-gathering sections the `readyForCheckYourAnswers` roll-up iterates: every section **except** `review`. Review is excluded because it owns the `declaration` obligation, confirmed inside the review section itself — folding it into the readiness roll-up that _gates_ review would deadlock. `readyForCheckYourAnswers` rolls up "is every answer section Fulfilled, Not applicable or Optional" — the submit precondition, and the fact the review section's authored gate reads.
+- `answerSections` — every section **except** `review`. Review is excluded because it owns the `declaration` obligation, confirmed inside the review section itself — folding it into the readiness roll-up that _gates_ review would deadlock. Since inc-061 the `readyForCheckYourAnswers` roll-up iterates the task rows rather than these sections (same obligations, different grouping — see [Roll-ups live flow-side](#roll-ups-live-flow-side)); the review exclusion carries over as the rows never include the review section's pages.
 
 ## Gates are derived by default
 
@@ -43,7 +43,7 @@ Three deliberate edges:
 
 "Check and submit" (the `review` section) must not open until the whole notification is submit-ready. It cannot derive this from collects: its own `declaration` obligation is always in scope, so a derived gate would open it from the start. So it carries the flow's one authored gate, `(scope) => scope.readyForCheckYourAnswers`.
 
-The subtlety is a circularity: `declaration` is confirmed _inside_ the review section, so if the readiness roll-up counted the review section, gating review on it would deadlock — you could never confirm the declaration to make review reachable. That is why `readyForCheckYourAnswers` iterates `answerSections` (every section except `review`). Submit safety is unaffected: the declaration page's own validator enforces `declaration === 'confirmed'` before `submitJourney` runs, so excluding review from the readiness roll-up does not let an unconfirmed journey submit.
+The subtlety is a circularity: `declaration` is confirmed _inside_ the review section, so if the readiness roll-up counted the review section, gating review on it would deadlock — you could never confirm the declaration to make review reachable. That is why `readyForCheckYourAnswers` iterates the answer task rows, which never include the review section's pages (pre-inc-061 it iterated `answerSections` — same exclusion). Submit safety is unaffected: the declaration page's own validator enforces `declaration === 'confirmed'` before `submitJourney` runs, so excluding review from the readiness roll-up does not let an unconfirmed journey submit.
 
 ## Fail loud before boot
 
@@ -88,10 +88,11 @@ One wrinkle if the shared page must sit structurally inside two sections: `secti
 
 ## Navigation
 
-`flow/navigation.js` is two pure functions over the flow and the gates:
+`flow/navigation.js` is pure functions over the flow and the gates:
 
-- `sectionEntry(sectionId, scope)` — the first gate-passing page of a section. The hub uses it for each task's href.
+- `sectionEntry(sectionId, scope)` — the first gate-passing page of a section. The hub's review row uses it for its href.
 - `nextInSection(pageId, scope)` — the next gate-passing page after this one in the same section, else the hub.
+- `rowEntry(row, scope)` / `rowGatePasses(row, scope)` — the task-row twins (inc-061): a row enters at its first gate-passing page and is gated exactly as its FIRST page is, so RULE 1 prerequisites drive row locking with no new derivation.
 
 Together they produce the journey's shape: a linear run through a section, skipping pages whose gates fail (no commercial transporter chosen means no transporter-select page), then back to the hub. `shared/kit.js`'s `nextTarget` wraps `nextInSection` in `kit.exitTarget`, which resolves any exiting POST the same way: an explicit `exit=hub` submit wins, else a `?change=1` request returns to check-your-answers, else the fallback (`nextInSection` for a task page, the loop's own target for a collection list). Collection loops thread the `?change=1` context through their internal links and PRG redirects with `kit.withChangeContext` — only the loop's exit (the list page's Continue) repoints to check-your-answers; mid-loop add/remove/save actions never do.
 
@@ -109,11 +110,12 @@ Precedence extends the established chain by one link: **hub exit > change contex
 
 ## Roll-ups live flow-side
 
-`flow/section-status.js` is the flow-aware roll-up, and it sits in `flow/` on purpose. It needs two things the engine must not know: the dispatch index (`collectsOf`) and the flow's section list.
+`flow/section-status.js` and `flow/task-rows.js` are the flow-aware roll-ups, and they sit in `flow/` on purpose. They need two things the engine must not know: the dispatch index (`collectsOf`) and the flow's page groupings.
 
-- `sectionObligationIds(section)` — the union of every obligation the section's pages collect
-- `sectionStatus(section, answers, inScope)` — the engine's pure `statusOf` applied to that union
-- `readyForCheckYourAnswers(answers, inScope)` — the submit-readiness gate: true once every answer section is Fulfilled, Not applicable or Optional (it iterates `answerSections`, which excludes `review`). Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
+- `taskRows` (`flow/task-rows.js`) — the hub's PAGE-LEVEL task rows (inc-061, Sam's D11 ruling): each row names its flow pages, and its status parts default to the union of those pages' collects. Two rows instead carry **collection facets** — `{ collection: 'commodityLines', except/only: ['animalIdentifiers'] }` — splitting one stored collection between the "What are you importing?" and "Animal identification details" rows (see [engine.md](engine.md) for facet semantics). The conditional transit-countries row is marked `conditional` and the hub hides it while its status is Not applicable.
+- `rowStatus(row, answers, inScope)` — the engine's pure `statusOf` applied to the row's parts
+- `sectionObligationIds(section)` / `sectionStatus(section, answers, inScope)` — the section-shaped equivalents, still consumed by the review row, `analysis/simulate.js` and `dump.js`
+- `readyForCheckYourAnswers(answers, inScope)` (`flow/section-status.js`) — the submit-readiness gate: true once every task row is Fulfilled, Not applicable or Optional. Re-expressed over rows at inc-061 with submit-readiness UNCHANGED in substance — the rows partition the old answer-section obligation union minus `importType` (optional, service-routing, could never block), and `flow/task-rows.test.js` proves the two roll-ups agree across submittable and gapped journey states. Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
 
 The dependency direction is one-way: flow calls the engine's `statusOf` downward, never the reverse. The engine still needs submit-readiness inside `makeScope`, so boot hands `readyForCheckYourAnswers` down into `engine/read.js` via `configureReadyForCheckYourAnswers` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.
 

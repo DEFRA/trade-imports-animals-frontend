@@ -44,9 +44,7 @@ const startNotification = async (page) => {
     page.getByRole('heading', { name: 'Origin of the import' })
   ).toBeVisible()
   await page.goto(`${BASE}/hub`)
-  await expect(
-    page.getByRole('heading', { name: 'Import notification service' })
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
 // inc-058: accessible-autocomplete enhances the country-of-origin select as a
@@ -91,13 +89,13 @@ const choosePortOfEntry = async (page, query = FIXTURE_PORT.name) => {
 // minimum from the hub and return to it. Region requirement 'No' keeps the save
 // clean without needing a region code.
 const answerCountryOfOrigin = async (page) => {
-  await page.getByRole('link', { name: 'Origin of the import' }).click()
+  await page
+    .getByRole('link', { name: 'Where is this consignment coming from?' })
+    .click()
   await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
   await page.getByRole('radio', { name: 'No' }).check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Import notification service' })
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
 // commoditySelection is item-level and enforcedAt=continue, so it unlocks every
@@ -108,7 +106,7 @@ const answerCountryOfOrigin = async (page) => {
 // Returns to the hub.
 const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
-  await page.getByRole('link', { name: 'Commodities' }).click()
+  await page.getByRole('link', { name: 'What are you importing?' }).click()
   await page.getByRole('button', { name: 'Add a commodity' }).click()
   await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
   await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -120,9 +118,7 @@ const unlockSections = async (page) => {
     page.getByRole('heading', { name: 'Commodities you have added' })
   ).toBeVisible()
   await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Import notification service' })
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
 // Walk every answer-gathering section in the real gated order (documents stays
@@ -137,7 +133,7 @@ const completeAnswerSections = async (page) => {
   const task = (name) => page.getByRole('link', { name }).click()
 
   // Origin.
-  await task('Origin of the import')
+  await task('Where is this consignment coming from?')
   await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
   await page.getByRole('radio', { name: 'Yes' }).check()
   await page
@@ -150,7 +146,7 @@ const completeAnswerSections = async (page) => {
 
   // Commodities: one line via the select and details sub-pages, plus one
   // animal identifier unit (inc-035).
-  await task('Commodities')
+  await task('What are you importing?')
   await page.getByRole('button', { name: 'Add a commodity' }).click()
   await page
     .getByLabel('Commodity', { exact: true })
@@ -175,7 +171,7 @@ const completeAnswerSections = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 
   // About the consignment: internal market walks reason -> purpose -> details.
-  await task('About the consignment')
+  await task('Main reason for importing')
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await save()
   await page.getByRole('radio', { name: 'Breeding' }).check()
@@ -194,7 +190,7 @@ const completeAnswerSections = async (page) => {
 
   // Addresses: the five party spokes copy-commit, then the cattle line's CPH
   // tail page.
-  await task('Addresses')
+  await task('Roles and addresses')
   const parties = [
     ['Consignor or exporter', values.consignor.name],
     ['Place of destination', values.placeOfDestination.name],
@@ -223,7 +219,7 @@ const completeAnswerSections = async (page) => {
 
   // Transport: port, travel details, transit countries, transporter type,
   // commercial select.
-  await task('Transport')
+  await task('Arrival details')
   await choosePortOfEntry(page)
   await page.getByLabel('Day').fill(arrival.day)
   await page.getByLabel('Month').fill(arrival.month)
@@ -282,9 +278,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await row
       .getByRole('link', { name: `Resume notification ${reference}` })
       .click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
 
     // Starting again creates a NEW notification — the old draft stays listed.
@@ -414,14 +408,73 @@ test.describe('live-animals (page-owned spine)', () => {
     // Additional details ends the run on the hub — the resting state.
     await page.getByRole('radio', { name: 'Slaughter' }).check()
     await save()
-    await expect(heading('Import notification service')).toBeVisible()
+    await expect(heading('Overview')).toBeVisible()
 
     // Deep links behave normally on a started journey, and a later save
     // follows the ordinary section flow back to the hub (run mode is over).
     await page.goto(`${BASE}/origin`)
     await expect(heading('Origin of the import')).toBeVisible()
     await save()
-    await expect(heading('Import notification service')).toBeVisible()
+    await expect(heading('Overview')).toBeVisible()
+  })
+
+  test('hub — the Overview page renders six numbered groups of page-level rows with the design chrome', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // h1 and the six numbered group headings (inc-061, c-035).
+    await expect(
+      page.getByRole('heading', { name: 'Overview', level: 1 })
+    ).toBeVisible()
+    for (const caption of [
+      '1. About the consignment',
+      '2. Commodity details',
+      '3. Movement',
+      '4. Addresses',
+      '5. Documents',
+      '6. Check and submit'
+    ]) {
+      await expect(
+        page.getByRole('heading', { name: caption, level: 2 })
+      ).toBeVisible()
+    }
+
+    // Blank journey: origin is the only live link; every other row is
+    // gated with the GDS Cannot-start-yet status, the conditional transit
+    // row is absent, and there is no progress line (D12).
+    const row = (name) =>
+      page.locator('.govuk-task-list__item', { hasText: name })
+    await expect(
+      row('Where is this consignment coming from?').getByRole('link')
+    ).toBeVisible()
+    await expect(row('Where is this consignment coming from?')).toContainText(
+      'Not yet started'
+    )
+    await expect(row('What are you importing?')).toContainText(
+      'Cannot start yet'
+    )
+    await expect(row('Animal identification details')).toContainText(
+      'Cannot start yet'
+    )
+    await expect(row('Uploaded documents')).toContainText('Cannot start yet')
+    await expect(row('Check and submit')).toContainText('Cannot start yet')
+    await expect(row('Transit countries')).toHaveCount(0)
+    await expect(
+      page.getByText(/You have completed \d+ of \d+ tasks/)
+    ).toHaveCount(0)
+
+    // Chrome (D13): a back link and a Return-to-dashboard secondary button
+    // replace the breadcrumbs; there is no Review-and-submit primary button.
+    await expect(page.locator('.govuk-breadcrumbs')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Back' })).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Review and submit' })
+    ).toHaveCount(0)
+    await page.getByRole('button', { name: 'Return to dashboard' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
   })
 
   test('origin — blank country blocks Save and Continue, then the happy path completes the task', async ({
@@ -429,7 +482,9 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
 
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await expect(
       page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
@@ -457,11 +512,9 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     // One-page section: saving returns to the hub with the task completed.
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     const originRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Origin of the import'
+      hasText: 'Where is this consignment coming from?'
     })
     await expect(originRow).toContainText('Completed')
   })
@@ -470,7 +523,9 @@ test.describe('live-animals (page-owned spine)', () => {
     page
   }) => {
     await startNotification(page)
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
 
     // The enhancement swaps the visible affordance to a combobox input while
     // the select stays in the DOM (renamed) as the control that submits. The
@@ -505,10 +560,10 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(select).toHaveValue('FR')
     await page.getByRole('radio', { name: 'No' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await expect(combo).toHaveValue('France')
     await expect(select).toHaveValue('FR')
   })
@@ -545,7 +600,9 @@ test.describe('live-animals (page-owned spine)', () => {
     // the service-routing importType saved by the filter does not count
     // (inc-060): the reference is minted at the origin POST...
     await page.goto(`${BASE}/hub`)
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await expect(
       page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
@@ -555,13 +612,15 @@ test.describe('live-animals (page-owned spine)', () => {
     await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('radio', { name: 'No' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await expect(strip).toBeVisible()
     await expect(strip).toContainText(reference)
 
     // Every post-origin task page inherits the strip from the shared layout.
     await page.goto(`${BASE}/hub`)
-    await page.getByRole('link', { name: 'Commodities' }).click()
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
     await expect(
       page.getByRole('heading', { name: 'Commodities you have added' })
     ).toBeVisible()
@@ -575,18 +634,20 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     await startNotification(page)
     const originRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Origin of the import'
+      hasText: 'Where is this consignment coming from?'
     })
 
     // Cancel leg: choose a country, cancel — nothing is written.
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await chooseCountryOfOrigin(page, 'Belgium')
     await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(originRow).toContainText('Not yet started')
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     // Unselected state: the enhancement seeds the visible input from the
     // selected option's text — the placeholder — while the hidden select
     // (the data truth) stays empty: nothing was committed.
@@ -599,14 +660,14 @@ test.describe('live-animals (page-owned spine)', () => {
     // redirects to the hub instead of the next flow target.
     await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('button', { name: 'Save and return to hub' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(originRow).toContainText('In progress')
 
     // The committed value is there on re-entry: the autocomplete input shows
     // the country name, the underlying select holds the stored code.
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await expect(page.locator('input#countryOfOrigin')).toHaveValue(
       FIXTURE_COUNTRY
     )
@@ -629,7 +690,7 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Your commodities' })
     ).toBeHidden()
 
-    await page.getByRole('link', { name: 'Commodities' }).click()
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
     await expect(
       page.getByRole('heading', { name: 'Commodities you have added' })
     ).toBeVisible()
@@ -721,11 +782,9 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Continue returns to the hub with the task completed.
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     const commoditiesRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Commodities'
+      hasText: 'What are you importing?'
     })
     await expect(commoditiesRow).toContainText('Completed')
 
@@ -762,7 +821,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Add a Cats commodity line (only the commodity is needed to mint it; the
     // taxonomy and counts are submit-enforced, so blank saves walk through).
-    await page.getByRole('link', { name: 'Commodities' }).click()
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
     await page.getByRole('button', { name: 'Add a commodity' }).click()
     await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -836,7 +895,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Fish is in no typed-identifier list, so the notInUnionOf gate (inc-040)
     // turns the free-text fallbacks ON and every typed input OFF.
-    await page.getByRole('link', { name: 'Commodities' }).click()
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
     await page.getByRole('button', { name: 'Add a commodity' }).click()
     await page.getByLabel('Commodity', { exact: true }).selectOption('Fish')
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -883,7 +942,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // answering countryOfOrigin and adding one commodity line first.
     await unlockSections(page)
 
-    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('link', { name: 'Main reason for importing' }).click()
     await expect(
       page.getByRole('heading', {
         name: 'What is the main reason for importing the animals?'
@@ -898,22 +957,26 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // A blank save there is not an error either (both fields are
-    // enforcedAt=submit); the section returns to the hub with the task still
-    // open — animalsCertifiedFor is required and unanswered.
+    // enforcedAt=submit); the section returns to the hub with both its rows
+    // still open — reasonForImport and animalsCertifiedFor are required and
+    // unanswered.
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    const consignmentRow = page.locator('.govuk-task-list__item', {
-      hasText: 'About the consignment'
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    const reasonRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Main reason for importing'
     })
-    await expect(consignmentRow).not.toContainText('Completed')
+    const additionalDetailsRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Additional commodity details'
+    })
+    await expect(reasonRow).not.toContainText('Completed')
+    await expect(additionalDetailsRow).not.toContainText('Completed')
 
     // Happy path from the shared fixture. Choosing the internal market
     // activates purposeInInternalMarket, so the section walks reason ->
-    // purpose -> additional details; answering the certified-for question
-    // completes the task.
-    await page.getByRole('link', { name: 'About the consignment' }).click()
+    // purpose -> additional details; the reason and purpose complete the
+    // reason row, the certified-for answer completes the additional-details
+    // row.
+    await page.getByRole('link', { name: 'Main reason for importing' }).click()
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
@@ -929,10 +992,9 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('radio', { name: 'Slaughter' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    await expect(consignmentRow).toContainText('Completed')
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(reasonRow).toContainText('Completed')
+    await expect(additionalDetailsRow).toContainText('Completed')
   })
 
   test('accompanying documents — the optional collection starts Optional; the single-page loop adds two documents, removes one and completes the task', async ({
@@ -977,11 +1039,11 @@ test.describe('live-animals (page-owned spine)', () => {
     // entry exists), so once unlocked and untouched it reads Optional — NOT
     // Completed, and it does not count towards the completed-tasks total.
     const documentsRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Accompanying documents'
+      hasText: 'Uploaded documents'
     })
     await expect(documentsRow).toContainText('Optional')
 
-    await page.getByRole('link', { name: 'Accompanying documents' }).click()
+    await page.getByRole('link', { name: 'Uploaded documents' }).click()
     await expect(
       page.getByRole('heading', { name: 'Upload documents' })
     ).toBeVisible()
@@ -1036,9 +1098,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Continue returns to the hub; a complete document makes the optional task
     // Completed (Optional -> Completed once a full entry exists).
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(documentsRow).toContainText('Completed')
   })
 
@@ -1053,11 +1113,11 @@ test.describe('live-animals (page-owned spine)', () => {
     // All five parties are required obligations owned by the addresses
     // landing page, so once unlocked and untouched the task reads Not yet started.
     const addressesRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Addresses'
+      hasText: 'Roles and addresses'
     })
     await expect(addressesRow).toContainText('Not yet started')
 
-    await page.getByRole('link', { name: 'Addresses' }).click()
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
     await expect(
       page.getByRole('heading', { name: 'Consignment addresses' })
     ).toBeVisible()
@@ -1172,9 +1232,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Continue returns to the hub with all five owed parties answered.
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(addressesRow).toContainText('Completed')
   })
 
@@ -1184,7 +1242,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await startNotification(page)
     await unlockSections(page)
 
-    await page.getByRole('link', { name: 'Addresses' }).click()
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
     const consignorRow = page.locator('.govuk-summary-list__row', {
       has: page.getByText('Consignor or exporter', { exact: true })
     })
@@ -1235,13 +1293,23 @@ test.describe('live-animals (page-owned spine)', () => {
     await unlockSections(page)
 
     // All the section's fields are required (enforcedAt=submit), so once
-    // unlocked and untouched the task reads Not yet started.
-    const transportRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Transport'
+    // unlocked and untouched the movement rows read Not yet started — and
+    // the conditional transit row is absent until an overland means is
+    // chosen (inc-061).
+    const arrivalRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Arrival details'
     })
-    await expect(transportRow).toContainText('Not yet started')
+    const transitRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Transit countries'
+    })
+    const transporterRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Transporter'
+    })
+    await expect(arrivalRow).toContainText('Not yet started')
+    await expect(transporterRow).toContainText('Not yet started')
+    await expect(transitRow).toHaveCount(0)
 
-    await page.getByRole('link', { name: 'Transport' }).click()
+    await page.getByRole('link', { name: 'Arrival details' }).click()
     await expect(
       page.getByRole('heading', { name: 'Arrival details' })
     ).toBeVisible()
@@ -1317,11 +1385,13 @@ test.describe('live-animals (page-owned spine)', () => {
       .check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    // Last page of the section: saving returns to the hub, task completed.
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    await expect(transportRow).toContainText('Completed')
+    // Last page of the section: saving returns to the hub. All three
+    // movement rows are complete, and the Road Vehicle means keeps the
+    // conditional transit row on the list.
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(arrivalRow).toContainText('Completed')
+    await expect(transitRow).toContainText('Completed')
+    await expect(transporterRow).toContainText('Completed')
   })
 
   test('port of entry — accessible-autocomplete enhancement: name and code search both suggest, selection persists the code', async ({
@@ -1331,7 +1401,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The transport section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
-    await page.getByRole('link', { name: 'Transport' }).click()
+    await page.getByRole('link', { name: 'Arrival details' }).click()
 
     // The enhancement swaps the visible affordance to a combobox input while
     // the select stays in the DOM (renamed) as the control that submits.
@@ -1406,7 +1476,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Every field on the two earlier pages is submit-enforced, so blank
     // saves walk straight through to the transporter-type page.
     const openTransporters = async () => {
-      await page.getByRole('link', { name: 'Transport' }).click()
+      await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
@@ -1435,15 +1505,13 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(privateType).not.toBeChecked()
 
     // transporterType is submit-enforced too — even a blank save passes and
-    // returns to the hub with the task still open.
+    // returns to the hub with the Transporter row still open.
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    const transportRow = page.locator('.govuk-task-list__item', {
-      hasText: 'Transport'
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    const transporterRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Transporter'
     })
-    await expect(transportRow).toContainText('Not yet started')
+    await expect(transporterRow).toContainText('Not yet started')
 
     // Choosing a type saves and persists on return. The private branch owes
     // the details page next — a blank save there walks on to the hub.
@@ -1454,10 +1522,8 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Private transporter details' })
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    await expect(transportRow).toContainText('In progress')
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(transporterRow).toContainText('In progress')
 
     await openTransporters()
     await expect(privateType).toBeChecked()
@@ -1475,7 +1541,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Every field on the two earlier pages is submit-enforced, so blank
     // saves walk straight through to the transporter-type page.
     const openTransporters = async () => {
-      await page.getByRole('link', { name: 'Transport' }).click()
+      await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
@@ -1504,9 +1570,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByRole('radio', { name: values.commercialTransporter.name })
       .check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // The copy persists: walking back in re-derives the checked option from
     // the copied name.
@@ -1528,9 +1592,7 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Private transporter details' })
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // Back to commercial: leaving scope wiped the saved transporter — no
     // radio is pre-selected on the select page.
@@ -1552,7 +1614,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Every field on the two earlier pages is submit-enforced, so blank
     // saves walk straight through to the transporter-type page.
     const openTransporters = async () => {
-      await page.getByRole('link', { name: 'Transport' }).click()
+      await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
@@ -1605,9 +1667,7 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Email address')
       .fill(transporter.address.emailAddress)
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // The record persists: walking back in flattens the saved object into
     // the form fields.
@@ -1634,9 +1694,7 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // Back to private: leaving scope wiped the saved details — the form
     // renders empty.
@@ -1659,7 +1717,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // transport-details is the section's second page: a blank save on the
     // port page (all its fields are submit-enforced) walks straight on to it.
     const openTransportDetails = async () => {
-      await page.getByRole('link', { name: 'Transport' }).click()
+      await page.getByRole('link', { name: 'Arrival details' }).click()
       await expect(
         page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
@@ -1674,7 +1732,7 @@ test.describe('live-animals (page-owned spine)', () => {
       await expect(transporterHeading).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Import notification service' })
+        page.getByRole('heading', { name: 'Overview' })
       ).toBeVisible()
     }
     const save = () =>
@@ -1686,23 +1744,30 @@ test.describe('live-animals (page-owned spine)', () => {
       name: 'What type of transporter will move the animals?'
     })
     const firstCountry = page.getByLabel('Enter all countries')
+    const transitRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Transit countries'
+    })
 
     // A means outside the overland set skips the transit-countries page —
-    // saving walks straight on to the transporter-type page.
+    // saving walks straight on to the transporter-type page — and the hub
+    // shows no Transit countries row (the conditional row, inc-061).
     await openTransportDetails()
     await page.getByRole('radio', { name: 'Airplane' }).check()
     await save()
     await expect(transitHeading).toBeHidden()
     await saveThroughTransporters()
+    await expect(transitRow).toHaveCount(0)
 
     // Both overland means route through the transit-countries page. A blank
-    // save there is allowed (enforcedAt=submit) and walks on.
+    // save there is allowed (enforcedAt=submit) and walks on; the hub row
+    // appears, still owed.
     await openTransportDetails()
     await page.getByRole('radio', { name: 'Railway' }).check()
     await save()
     await expect(transitHeading).toBeVisible()
     await save()
     await saveThroughTransporters()
+    await expect(transitRow).toContainText('Not yet started')
 
     // Save two transited countries under Road Vehicle...
     await openTransportDetails()
@@ -1714,6 +1779,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByLabel('Country 2').selectOption({ label: 'Belgium' })
     await save()
     await saveThroughTransporters()
+    await expect(transitRow).toContainText('Completed')
 
     // ...and they are still selected on return.
     await openTransportDetails()
@@ -1727,11 +1793,12 @@ test.describe('live-animals (page-owned spine)', () => {
     await saveThroughTransporters()
 
     // A means outside the overland set takes the countries out of scope —
-    // saving wipes them and skips the page.
+    // saving wipes them, skips the page and drops the hub row again.
     await openTransportDetails()
     await page.getByRole('radio', { name: 'Vessel' }).check()
     await save()
     await saveThroughTransporters()
+    await expect(transitRow).toHaveCount(0)
 
     // Back to Road Vehicle: leaving scope wiped the saved countries — no
     // country is pre-selected.
@@ -1766,9 +1833,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // contactAddress is enforcedAt=submit — a blank save is not an error;
     // the one-page section returns to the hub with the task still open.
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(contactRow).toContainText('Not yet started')
 
     // Happy path from the shared fixture: selecting a contact COPIES its
@@ -1776,9 +1841,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('link', { name: 'Contact address' }).click()
     await page.getByRole('radio', { name: values.contactAddress.name }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(contactRow).toContainText('Completed')
 
     // The copy persists: walking back in re-derives the checked option from
@@ -1797,13 +1860,13 @@ test.describe('live-animals (page-owned spine)', () => {
     // The consignment section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
 
-    const consignmentRow = page.locator('.govuk-task-list__item', {
-      hasText: 'About the consignment'
+    const reasonRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Main reason for importing'
     })
 
-    // Internal market: the purpose page opens; answering it and the
-    // certified-for question on the tail page completes the task.
-    await page.getByRole('link', { name: 'About the consignment' }).click()
+    // Internal market: the purpose page opens; answering the reason and its
+    // purpose completes the row (the tail page feeds its own row).
+    await page.getByRole('link', { name: 'Main reason for importing' }).click()
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
@@ -1816,26 +1879,24 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page.getByRole('radio', { name: 'Slaughter' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(consignmentRow).toContainText('Completed')
+    await expect(reasonRow).toContainText('Completed')
 
     // Another reason: the purpose is no longer owed — saving skips the purpose
     // page and walks on to the tail page; the certified-for answer persists, so
     // a save there returns to the hub with the task still complete.
-    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('link', { name: 'Main reason for importing' }).click()
     await page.getByRole('radio', { name: 'Transit' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Additional animal details' })
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    await expect(consignmentRow).toContainText('Completed')
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(reasonRow).toContainText('Completed')
 
     // Back to the internal market: leaving scope wiped the saved purpose —
     // no radio is pre-selected and the task is owed (open) again.
-    await page.getByRole('link', { name: 'About the consignment' }).click()
+    await page.getByRole('link', { name: 'Main reason for importing' }).click()
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
@@ -1850,10 +1911,8 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Additional animal details' })
     ).toBeVisible()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
-    await expect(consignmentRow).not.toContainText('Completed')
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(reasonRow).not.toContainText('Completed')
   })
 
   test('additional details — the unweaned-animals question shows only when a triggering commodity line exists', async ({
@@ -1877,7 +1936,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // submit-enforced, so blank saves walk through).
     const addCommodity = async (commodity) => {
       await page.goto(`${BASE}/hub`)
-      await page.getByRole('link', { name: 'Commodities' }).click()
+      await page.getByRole('link', { name: 'What are you importing?' }).click()
       // "Add a commodity" for the first line, "Add another commodity" after.
       await page
         .getByRole('button', { name: /Add a(nother)? commodity/ })
@@ -1895,7 +1954,7 @@ test.describe('live-animals (page-owned spine)', () => {
       ).toBeVisible()
       await page.getByRole('button', { name: 'Continue' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Import notification service' })
+        page.getByRole('heading', { name: 'Overview' })
       ).toBeVisible()
     }
 
@@ -1903,7 +1962,9 @@ test.describe('live-animals (page-owned spine)', () => {
     // skipping the internal-market purpose page.
     const openAdditionalDetails = async () => {
       await page.goto(`${BASE}/hub`)
-      await page.getByRole('link', { name: 'About the consignment' }).click()
+      await page
+        .getByRole('link', { name: 'Main reason for importing' })
+        .click()
       await expect(
         page.getByRole('heading', {
           name: 'What is the main reason for importing the animals?'
@@ -1943,7 +2004,7 @@ test.describe('live-animals (page-owned spine)', () => {
       name: 'County Parish Holding (CPH)'
     })
     const hubHeading = page.getByRole('heading', {
-      name: 'Import notification service'
+      name: 'Overview'
     })
     const addressesHeading = page.getByRole('heading', {
       name: 'Consignment addresses'
@@ -1959,7 +2020,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // submit-enforced, so blank saves walk through).
     const addCommodity = async (commodity) => {
       await page.goto(`${BASE}/hub`)
-      await page.getByRole('link', { name: 'Commodities' }).click()
+      await page.getByRole('link', { name: 'What are you importing?' }).click()
       // "Add a commodity" for the first line, "Add another commodity" after.
       await page
         .getByRole('button', { name: /Add a(nother)? commodity/ })
@@ -1981,7 +2042,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     const openAddresses = async () => {
       await page.goto(`${BASE}/hub`)
-      await page.getByRole('link', { name: 'Addresses' }).click()
+      await page.getByRole('link', { name: 'Roles and addresses' }).click()
       await expect(addressesHeading).toBeVisible()
     }
 
@@ -2137,12 +2198,10 @@ test.describe('live-animals (page-owned spine)', () => {
         .fill(entry.accompanyingDocumentDateOfIssue.year)
       await page.getByRole('button', { name: 'Save and add another' }).click()
     }
-    await page.getByRole('link', { name: 'Accompanying documents' }).click()
+    await page.getByRole('link', { name: 'Uploaded documents' }).click()
     await addDocument(doc)
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // Open the review.
     await page
@@ -2228,7 +2287,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const task = (name) => page.getByRole('link', { name }).click()
 
     // Origin.
-    await task('Origin of the import')
+    await task('Where is this consignment coming from?')
     await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('radio', { name: 'Yes' }).check()
     await page
@@ -2240,7 +2299,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await save()
 
     // Commodities: one line via the select and details sub-pages.
-    await task('Commodities')
+    await task('What are you importing?')
     await page.getByRole('button', { name: 'Add a commodity' }).click()
     await page
       .getByLabel('Commodity', { exact: true })
@@ -2271,7 +2330,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // About the consignment: internal market walks on to the purpose page,
     // then the additional-details tail.
-    await task('About the consignment')
+    await task('Main reason for importing')
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await save()
     await page.getByRole('radio', { name: 'Breeding' }).check()
@@ -2295,7 +2354,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Accompanying documents are optional — the task is already Completed.
 
     // Addresses: all five party spokes copy-commit from the landing page.
-    await task('Addresses')
+    await task('Roles and addresses')
     const parties = [
       ['Consignor or exporter', values.consignor.name],
       ['Place of destination', values.placeOfDestination.name],
@@ -2326,7 +2385,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Transport: port, travel details, transit countries, transporter type,
     // commercial select.
-    await task('Transport')
+    await task('Arrival details')
     await choosePortOfEntry(page)
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)
@@ -2477,21 +2536,19 @@ test.describe('live-animals (page-owned spine)', () => {
     await row
       .getByRole('button', { name: `Amend notification ${reference}` })
       .click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(page.locator('.app-journey-strip')).toContainText('Draft')
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
 
     // The journey really is writable again: change an answer and save.
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await page
       .getByLabel('Your internal reference for this consignment (optional)')
       .fill('AmendedRef99')
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // Resubmission goes through declaration and the same submit gate.
     await page.getByRole('link', { name: 'Check and submit' }).click()
@@ -2524,7 +2581,9 @@ test.describe('live-animals — country of origin without JavaScript', () => {
 
   test('the plain select still submits and persists', async ({ page }) => {
     await startNotification(page)
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
 
     // No enhancement: the select keeps its id and no autocomplete input mounts.
     await expect(page.locator('.autocomplete__input')).toHaveCount(0)
@@ -2532,12 +2591,12 @@ test.describe('live-animals — country of origin without JavaScript', () => {
     await select.selectOption(values.countryOfOrigin)
     await page.getByRole('radio', { name: 'No' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Import notification service' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // The committed value is on the select on re-entry.
-    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
     await expect(page.getByLabel('Country of origin')).toHaveValue(
       values.countryOfOrigin
     )

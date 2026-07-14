@@ -542,6 +542,79 @@ Start → filter; the deep-link guard's exemptions, fresh-journey redirect
 and both let-through paths), and the session adapters' opening-run
 round-trip tests.
 
+## 13. Collection facet status parts + the task-row hub regroup (inc-061)
+
+`engine/status.js` + `engine/evaluate/complete.js`: `statusOf` generalises
+from a list of top-level obligation ids to a list of **status parts**, where
+a part is either an id (behaviour unchanged) or a **collection facet** — a
+declared subset of one top-level collection's members:
+`{ collection: 'commodityLines', only: ['animalIdentifiers'] }` /
+`{ collection: 'commodityLines', except: ['animalIdentifiers'] }`. A facet
+is in scope when its collection is; it is required when the collection or
+any included member carries a mandate; it is started when any entry has an
+included member answered; and it is satisfied by the existing
+`collectionComplete` walk restricted to the included members (a new optional
+`includesMember` filter on `entryComplete`/`collectionComplete`). The filter
+narrows only which members are CHECKED — reference frames keep the full
+sibling list, so enclosing-frame activations (a Cat identifier owing its
+permanent address) resolve identically through a facet, and a `requiredOneOf`
+group is enforced only by the facet that includes one of its members. This is
+what lets the design's hub split one stored collection between two task rows
+(c-035, Sam's D11 ruling) without moving any data.
+
+- **Carrier: `flow/task-rows.js`.** The hub's unit of status becomes the
+  PAGE-LEVEL task row: eleven answer rows, each naming its flow pages (rows
+  spanning several pages — Arrival details, Transporter, Roles and
+  addresses — aggregate every page's collects) with the two commodityLines
+  facets carrying the "What are you importing?" / "Animal identification
+  details" split. `rowStatus` is the engine's `statusOf` over the row's
+  parts; `rowGatePasses`/`rowEntry` (`flow/navigation.js`) derive a row's
+  gate from its FIRST page exactly as sections derive theirs, so
+  enforcedAt-derived prerequisites (RULE 1) are untouched. The conditional
+  transit-countries row renders only while `transitedCountries` is in scope
+  (status ≠ Not applicable) — the addresses-hub CPH row precedent at hub
+  level. The identification row enters at the commodities list until the
+  inc-063 single identification surface gives it a page of its own.
+- **Submit-readiness re-expressed, unchanged in substance.**
+  `readyForCheckYourAnswers` (`flow/section-status.js`) now rolls up
+  Fulfilled / Not applicable / Optional over the task rows instead of
+  `answerSections`. The obligations are the same — the rows partition the
+  answer sections' obligation union minus `importType`, which as an optional
+  service-routing scalar can never be In progress or Not started and so
+  never blocked submission. `flow/task-rows.test.js` proves equivalence
+  directly: the row roll-up and the retired section roll-up agree over a
+  battery of submittable and gapped journey states, and the happy-path
+  fixture stays submittable.
+- **Hub presentation (D11/D12/D13).** `features/hub/controller.js` owns the
+  presentation mapping: six numbered groups ("1. About the consignment" …
+  "6. Check and submit") each rendered as a stock `govukTaskList` under an
+  h2, page h1 "Overview", GDS tag vocabulary retained (not the design's
+  Complete/To do). The "You have completed X of N tasks" progress line is
+  DROPPED (D12) — the Draft strip, tags and stat cards carry state. Chrome
+  (D13): back link to the dashboard plus a "Return to dashboard" secondary
+  button REPLACE the breadcrumbs on the hub (GDS: back link and breadcrumbs
+  do not combine; the layout suppresses breadcrumbs only when a view passes
+  `breadcrumbs: false`); the design's always-on "Review and submit" primary
+  button stays rejected — review remains the gated Check-and-submit row
+  (c-029), its status still computed over the review section.
+- **Flow sections untouched.** `flow/flow.js` remains the navigation spine —
+  `nextInSection`, the run sequence and section gates are byte-for-byte;
+  the regroup is hub presentation plus the readiness roll-up only. No
+  mapper changes.
+- **Backwards compatible.** String parts take the exact pre-inc-061 path
+  through `statusOf`; `entryComplete`/`collectionComplete` without a filter
+  are unchanged; `sectionStatus`/`sectionEntry`/`sectionGatePasses` keep
+  their semantics for the remaining consumers (review row, simulate, dump).
+
+Proven in `engine/status.test.js` (facet NA/Not-started, the facet split,
+facets-fulfilled ⟺ whole-collection-fulfilled agreement, string-part
+backwards compat), `flow/task-rows.test.js` (per-row status walks including
+multi-page aggregation, the conditional transit row present/absent, the
+enclosing-frame activation through a facet, per-row gating on a blank and an
+unlocked journey, row entry hrefs, the submit-readiness equivalence battery
+and the unchanged review gate) and `t2-hub-copy.test.js` (rendered groups,
+row copy, chrome, dropped progress line, conditional row, review lock).
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

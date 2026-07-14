@@ -2,13 +2,25 @@ import { registry } from '../../registry.js'
 import { isAnswered } from '../../lib/answered.js'
 import { applyPredicate, evalPredicate } from './predicate.js'
 
-export const entryComplete = (obligation, entry, ctx = null) => {
+export const entryComplete = (
+  obligation,
+  entry,
+  ctx = null,
+  includesMember = null
+) => {
   const siblings = obligation.item ?? []
+  const members = includesMember ? siblings.filter(includesMember) : siblings
+  const groupOwned =
+    !includesMember ||
+    (obligation.requiredOneOf ?? []).some((id) =>
+      members.some((member) => member.id === id)
+    )
   const groupSatisfied =
     !obligation.requiredOneOf ||
+    !groupOwned ||
     obligation.requiredOneOf.some((id) => isAnswered(entry?.[id]))
   if (!groupSatisfied) return false
-  return siblings.every((subObligation) => {
+  return members.every((subObligation) => {
     const referencedObligation = subObligation.activatedBy?.obligation
     if (referencedObligation) {
       if (siblings.includes(referencedObligation)) {
@@ -43,7 +55,12 @@ export const entryComplete = (obligation, entry, ctx = null) => {
   })
 }
 
-export const collectionComplete = (obligation, value, ctx = null) => {
+export const collectionComplete = (
+  obligation,
+  value,
+  ctx = null,
+  includesMember = null
+) => {
   const entries = value ?? []
   if (obligation.requiredAtLeastOne && entries.length === 0) return false
   return entries.every((entry, index) =>
@@ -59,7 +76,8 @@ export const collectionComplete = (obligation, value, ctx = null) => {
           },
           ...ctx.enclosingFrames
         ]
-      }
+      },
+      includesMember
     )
   )
 }

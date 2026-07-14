@@ -1,10 +1,10 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/task-list/macro.njk" import govukTaskList %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
-  <p class="govuk-body">{{ progressLine }}</p>
 
   {% if commodityTotals %}
     <h2 class="govuk-heading-l">Your commodities</h2>
@@ -34,5 +34,18 @@
     </div>
   {% endif %}
 
-  {{ govukTaskList({ items: items, classes: "app-task-list" }) }}
+  {% for group in groups %}
+    <h2 class="govuk-heading-m">{{ group.caption }}</h2>
+    {{ govukTaskList({
+      idPrefix: group.id,
+      items: group.items,
+      classes: "app-task-list govuk-!-margin-bottom-8"
+    }) }}
+  {% endfor %}
+
+  {{ govukButton({
+    text: "Return to dashboard",
+    href: dashboardHref,
+    classes: "govuk-button--secondary"
+  }) }}
 {% endblock %}

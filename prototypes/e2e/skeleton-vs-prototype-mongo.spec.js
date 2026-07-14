@@ -103,9 +103,7 @@ const drivePrototype = async (page) => {
     page.getByRole('heading', { name: 'Origin of the import' })
   ).toBeVisible()
   await page.goto(`${PROTO}/hub`)
-  await expect(
-    page.getByRole('heading', { name: 'Import notification service' })
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
   // Origin — France, no region code required, internal reference. The
   // country-of-origin select is enhanced by accessible-autocomplete (inc-058):
@@ -113,7 +111,7 @@ const drivePrototype = async (page) => {
   // input#countryOfOrigin exists only after the enhancement mounts, so the
   // fill auto-waits for hydration (a combobox role query would race it — the
   // raw select's implicit role is also combobox).
-  await task('Origin of the import')
+  await task('Where is this consignment coming from?')
   await page.locator('input#countryOfOrigin').fill('France')
   await page.getByRole('option', { name: 'France', exact: true }).click()
   await page
@@ -128,7 +126,7 @@ const drivePrototype = async (page) => {
   await save()
 
   // Commodities — one cattle line, one animal identifier unit.
-  await task('Commodities')
+  await task('What are you importing?')
   await page.getByRole('button', { name: 'Add a commodity' }).click()
   await page.getByLabel('Commodity', { exact: true }).selectOption('Cow')
   await page.getByRole('radio', { name: 'Domestic' }).check()
@@ -151,7 +149,7 @@ const drivePrototype = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 
   // About the consignment — internal market, purpose, additional details.
-  await task('About the consignment')
+  await task('Main reason for importing')
   await page.getByRole('radio', { name: 'Internal market' }).check()
   await save()
   await page.getByRole('radio', { name: 'Breeding' }).check()
@@ -169,7 +167,7 @@ const drivePrototype = async (page) => {
   await save()
 
   // Addresses — five parties copy-commit, then the cattle CPH tail page.
-  await task('Addresses')
+  await task('Roles and addresses')
   const parties = [
     ['Consignor', values.consignor.name],
     ['Place of destination', values.placeOfDestination.name],
@@ -198,7 +196,7 @@ const drivePrototype = async (page) => {
   // same pattern as origin): type the name, pick the 'Name (CODE)' suggestion,
   // and the hidden select carries 'GB ABD'. input#portOfEntry exists only
   // after the enhancement mounts, so the fill auto-waits for hydration.
-  await task('Transport')
+  await task('Arrival details')
   await page.locator('input#portOfEntry').fill('Aberdeen Harbour')
   await page
     .getByRole('option', { name: 'Aberdeen Harbour (GB ABD)', exact: true })

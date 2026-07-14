@@ -174,17 +174,26 @@ recur.
 
 ### The task-list hub
 
-`features/hub/controller.js` owns all task-link copy:
+`features/hub/controller.js` owns all group and task-link copy (inc-061,
+the design's "Overview" IA):
 
-- `GROUP_ROWS` — title and hint for the always-present group
-  tasks
+- `GROUPS` — the six numbered group captions ("1. About the
+  consignment" … "6. Check and submit") and each row's title and hint,
+  keyed by task-row id
 
-The hub composes each row from parts it does not own: status tags from
-the pure `sectionStatus` roll-up and hrefs from `sectionEntry` (gates
-are derived from the model by default — see the flow docs via the
-[index](README.md)). The "Check and submit" task is gated on submit
-readiness (`readyForCheckYourAnswers`, RULE 2): until every answer section
-is ready its hub row is locked — "Cannot start yet", no link — and the
+The hub composes each row from parts it does not own: the row structure
+from `flow/task-rows.js` (page-level rows; two facet rows split the
+commodityLines collection), status tags from the pure `rowStatus`
+roll-up and hrefs from `rowEntry` (gates are derived from the model by
+default — see the flow docs via the [index](README.md)). The conditional
+transit-countries row renders only while `transitedCountries` is in
+scope. Chrome is the design's: h1 "Overview", a back link to the
+dashboard and a "Return to dashboard" secondary button instead of
+breadcrumbs (`breadcrumbs: false` suppresses the layout default); there
+is no progress line (D12) and no always-on review button (D13). The
+"Check and submit" task is gated on submit readiness
+(`readyForCheckYourAnswers`, RULE 2): until every answer row is ready
+its hub row is locked — "Cannot start yet", no link — and the
 declaration POST re-checks readiness server-side before it will finalise.
 
 ### Loop hubs

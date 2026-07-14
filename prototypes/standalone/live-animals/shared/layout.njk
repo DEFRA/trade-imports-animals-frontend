@@ -27,13 +27,15 @@
     tag: { text: "Prototype" },
     html: 'Obligations v2 spike standalone — a non-functional prototype, not a real service.'
   }) }}
-  {{ govukBreadcrumbs({
-    items: breadcrumbs if breadcrumbs else [
-      { text: "Prototypes", href: "/prototype-standalone" },
-      { text: "Obligations v2 (standalone)", href: spikeHome },
-      { text: pageTitle }
-    ]
-  }) }}
+  {% if breadcrumbs !== false %}
+    {{ govukBreadcrumbs({
+      items: breadcrumbs if breadcrumbs else [
+        { text: "Prototypes", href: "/prototype-standalone" },
+        { text: "Obligations v2 (standalone)", href: spikeHome },
+        { text: pageTitle }
+      ]
+    }) }}
+  {% endif %}
   {% if backLink %}
     {{ govukBackLink({ text: "Back", href: backLink }) }}
   {% endif %}

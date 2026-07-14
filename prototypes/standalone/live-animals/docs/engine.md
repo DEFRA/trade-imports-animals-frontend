@@ -127,9 +127,24 @@ Two edges worth knowing:
   accepts `optional` alongside `fulfilled`/`not-applicable` — you can submit
   with none.
 
-`status.js` is engine-pure. The flow-aware section roll-up (`sectionStatus`,
-`readyForCheckYourAnswers`) lives in `flow/section-status.js` and reads
-`statusOf` downward — never the reverse.
+Since inc-061 `statusOf` takes a list of **status parts**: a part is a
+top-level obligation id (the behaviour above, unchanged) or a **collection
+facet** — a declared subset of one top-level collection's members,
+`{ collection: 'commodityLines', only: [...] }` /
+`{ collection: 'commodityLines', except: [...] }`. A facet is in scope when
+its collection is, required when the collection or an included member carries
+a mandate, started when any entry has an included member answered, and
+satisfied by `collectionComplete` restricted to the included members (its
+`includesMember` filter). The filter narrows which members are CHECKED, never
+the reference frames — an included member's `activatedBy` still resolves
+against the full sibling/enclosing frames, and a `requiredOneOf` group is
+enforced only by a facet that includes one of its members. This is what lets
+two hub task rows split one stored collection (the commodity-line data vs the
+nested `animalIdentifiers`) without moving any data. See DESIGN-DELTA #13.
+
+`status.js` is engine-pure. The flow-aware roll-ups (`rowStatus` in
+`flow/task-rows.js`; `sectionStatus` and `readyForCheckYourAnswers` in
+`flow/section-status.js`) read `statusOf` downward — never the reverse.
 
 ## Completeness semantics
 

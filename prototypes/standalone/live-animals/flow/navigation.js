@@ -10,6 +10,13 @@ export const sectionEntry = (sectionId, scope) => {
   return page ? pagePath(page.slug) : hubPath()
 }
 
+export const rowEntry = (row, scope) => {
+  const page = row.pages.find((candidate) => pageGatePasses(candidate, scope))
+  return page ? pagePath(page.slug) : hubPath()
+}
+
+export const rowGatePasses = (row, scope) => pageGatePasses(row.pages[0], scope)
+
 export const nextInSection = (pageId, scope) => {
   const section = sectionOfPage(pageId)
   if (!section) return hubPath()
