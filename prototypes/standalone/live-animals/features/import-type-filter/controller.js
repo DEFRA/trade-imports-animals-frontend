@@ -1,7 +1,7 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
-import { hasCommittedAnswers } from '../../flow/entry-guard.js'
+import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { nextRunTarget } from '../../flow/run.js'
 import { beginOpeningRun, inOpeningRun } from '../../flow/run-state.js'
 import * as kit from '../../shared/kit.js'
@@ -48,7 +48,8 @@ const get = async (request, h) => {
 }
 
 const opensTheRun = async (request, answersBeforeCommit) =>
-  (await inOpeningRun(request)) || !hasCommittedAnswers(answersBeforeCommit)
+  (await inOpeningRun(request)) ||
+  !hasCommittedNotificationAnswers(answersBeforeCommit)
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}

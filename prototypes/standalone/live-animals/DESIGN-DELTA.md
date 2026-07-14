@@ -495,8 +495,10 @@ obligation vocabulary change, no engine write-path change, no mapper change.
   answers), so the SESSION port grows `openingRun`/`setOpeningRun` holding
   `{ journeyId, phase: active|complete }` — a third base64json cookie in
   stub mode, a yar entry in real mode. The filter POST opens the run only
-  for a journey at its genuine start (zero committed answers pre-commit, or
-  a run already underway); the hub GET flips `active` → `complete` —
+  for a journey at its genuine start (no committed NOTIFICATION answers
+  pre-commit — an earlier filter answer alone, e.g. a corrected poao pick,
+  still counts as unstarted — or a run already underway); the hub GET
+  flips `active` → `complete` —
   reaching the hub by ANY route (run exhaustion, Save-and-return, cancel,
   resume) ends run mode, and the record then persists as the "entered
   through the filter" memory the entry guard needs in real mode.
@@ -515,12 +517,14 @@ obligation vocabulary change, no engine write-path change, no mapper change.
   The spec mandate for importType becomes `{}` with the note "enforced by
   entry routing"; runtime validation unchanged (controller-level
   `requiredOneOf`). A plugin-level `onPreHandler` guard
-  (`flow/entry-guard.js`) redirects a FRESH journey — zero committed
-  answers AND never through the filter — from any post-filter journey page
-  to the filter (exempt: the dashboard and its row actions, start, the
-  filter and its holding page). After the first commit, or with a recorded
-  filter pass (which is what survives real mode), deep links behave
-  normally — the E2E helpers rely on this.
+  (`flow/entry-guard.js`) redirects a FRESH journey — no committed
+  notification answers (the filter's own answer never counts, keeping stub
+  and real mode identical) AND never through the filter — from any
+  post-filter journey page to the filter (exempt: the dashboard and its
+  row actions, start, the filter and its holding page). After the first
+  notification commit, or with a recorded filter pass (which is what
+  survives real mode), deep links behave normally — the E2E helpers rely
+  on this.
 - **D9: no hub work.** Run pages remain ordinary hub rows via their
   sections; stat cards stay non-links; the hub IA regroup is inc-061.
 - **Backwards compatible.** Every pre-inc-060 journey state (no session

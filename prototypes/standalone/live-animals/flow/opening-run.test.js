@@ -112,6 +112,15 @@ describe('the opening run', () => {
       expect(OPENING_RUN_COOKIE in h.captured.cookies).toBe(false)
     })
 
+    it('Should still open the run when the only committed answer is an earlier filter answer (a corrected non-live-animals pick)', async () => {
+      const { journeyId, h } = await drive(post, {
+        payload: { importType: 'live-animals' },
+        seed: { importType: 'poao' }
+      })
+      expect(h.captured.redirect).toBe(pagePath('origin'))
+      expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual(active(journeyId))
+    })
+
     it('Should keep a run underway when the filter is re-submitted mid-run', async () => {
       const journey = await store.create()
       await store.saveAnswers(journey.journeyId, {
@@ -384,6 +393,16 @@ describe('the opening run', () => {
         captureH()
       )
       expect(target).toBe(null)
+    })
+
+    it('Should treat an importType-only journey that never entered through the filter as fresh', async () => {
+      const journey = await store.create()
+      await store.saveAnswers(journey.journeyId, { importType: 'poao' })
+      const target = await entryGuardTarget(
+        buildRequest(journey.journeyId, { path: pagePath('origin') }),
+        captureH()
+      )
+      expect(target).toBe(pagePath('import-type'))
     })
 
     it('Should let a journey that entered through the filter straight through — any phase', async () => {
