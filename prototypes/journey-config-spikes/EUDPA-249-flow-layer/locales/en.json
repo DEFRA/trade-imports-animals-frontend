@@ -260,7 +260,7 @@
     "accompanyingDocumentReference": {
       "pageTitle": "Document reference",
       "legend": "Reference on the document",
-      "hint": "The reference or ID printed on the document (max 40 characters)."
+      "hint": "The reference or ID printed on the document (max 58 characters)."
     },
     "accompanyingDocumentDateOfIssue": {
       "pageTitle": "Date of issue",

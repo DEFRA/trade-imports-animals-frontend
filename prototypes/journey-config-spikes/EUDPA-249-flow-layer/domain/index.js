@@ -517,14 +517,17 @@ export const meansOfTransportDomain = staticEnum(MEANS_OF_TRANSPORT_OPTIONS, {
   }
 })
 
-// Country list — enough EU + neighbours to demonstrate the > 12 cap on
-// transitedCountries and to serve as the country-of-origin picker.
-// Step 5e note: this list serves BOTH the `countryOfOrigin` obligation
-// (values restricted to EU/EEA/EFTA per V4) AND every address block's
-// `country` sub-field. UK addresses are common on both sides of the
-// journey (destination + contact addresses within GB); GB is included
-// here so both obligations can share the option list without the
-// address-block picker missing an obvious choice.
+// Country list — used for address `country` sub-fields (any country
+// might legitimately appear on an address block: destination + contact
+// addresses are commonly within GB). GB is included here for that
+// reason. Also feeds `transitedCountries` (enough entries to
+// demonstrate the > 12 cap).
+//
+// Audit #5: `countryOfOrigin` is a DIFFERENT enum — the V4 spec says
+// "Restricted to countries in the named MDM list for EU, EEA and EFTA
+// countries" (Confluence page 6497338582). GB is neither, so the
+// countryOfOrigin picker uses `EEA_EFTA_COUNTRY_OPTIONS` below (the
+// same set minus GB). Address blocks keep the general list.
 const COUNTRY_OPTIONS = [
   'AT',
   'BE',
@@ -553,6 +556,14 @@ const COUNTRY_OPTIONS = [
   'SI',
   'SK'
 ]
+
+// V4 audit #5: countryOfOrigin restricts to EU / EEA / EFTA. GB is
+// neither EU (post-Brexit), nor EEA (never joined), nor EFTA (never
+// joined) so it's removed here. The full MDM list from V4 is the
+// production source; this stub covers the same countries as
+// COUNTRY_OPTIONS minus GB — enough to demonstrate the widget and
+// let the walks pick France (FR) as the country of origin.
+const EEA_EFTA_COUNTRY_OPTIONS = COUNTRY_OPTIONS.filter((c) => c !== 'GB')
 
 const COUNTRY_LABELS = {
   AT: 'domain.country.AT',
@@ -583,7 +594,7 @@ const COUNTRY_LABELS = {
   SK: 'domain.country.SK'
 }
 
-export const countryOfOriginDomain = staticEnum(COUNTRY_OPTIONS, {
+export const countryOfOriginDomain = staticEnum(EEA_EFTA_COUNTRY_OPTIONS, {
   labels: COUNTRY_LABELS
 })
 
@@ -1008,13 +1019,14 @@ export const descriptionDomain = predicate(
   [reasons.stringMaxLength]
 )
 
-// V4: accompanying document reference — free-text, max 40. Blank
-// passes so an all-optional submission on the accompanying-documents
-// page doesn't error before the branchedGate flips the block to
-// mandatory (see obligations.js accompanyingDocumentBlockApplyTo).
+// V4: accompanying document reference — free-text, max 58 per spec
+// (Confluence page 6497338582). Blank passes so an all-optional
+// submission on the accompanying-documents page doesn't error before
+// the branchedGate flips the block to mandatory (see obligations.js
+// accompanyingDocumentBlockApplyTo).
 export const accompanyingDocumentReferenceDomain = predicate(
   'string',
-  stringMaxLength(40, accompanyingDocumentReference),
+  stringMaxLength(58, accompanyingDocumentReference),
   [reasons.stringMaxLength]
 )
 

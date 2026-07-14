@@ -6,7 +6,6 @@ import {
   regionCode,
   reasonForImport,
   purposeInInternalMarket,
-  containsUnweanedAnimals,
   placeOfOrigin,
   consignor,
   consignee,
@@ -179,11 +178,14 @@ describe('V4 smoke — evaluator wires up against fresh manifest', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — always-mandatory notification-level singles', () => {
+  // Note: containsUnweanedAnimals is NOT in this list any more —
+  // audit #11 gated it on the active commodity codes (equines /
+  // cattle / pigs / sheep / goats), so it's out-of-scope until a
+  // matching commodity line is added. Covered separately below.
   it.each([
     ['countryOfOrigin', countryOfOrigin],
     ['regionCodeRequirement', regionCodeRequirement],
     ['reasonForImport', reasonForImport],
-    ['containsUnweanedAnimals', containsUnweanedAnimals],
     ['transporterType', transporterType],
     ['meansOfTransport', meansOfTransport],
     ['transportIdentification', transportIdentification],
@@ -1061,9 +1063,9 @@ const documentBlockFields = [
 ]
 
 const documentBlockMandatoryReason = {
-  code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
+  code: 'obligation.accompanyingDocument.mandatory.becauseTypeSelected',
   explanation:
-    'accompanying document fields become mandatory once any one is filled'
+    'accompanying document fields become mandatory once a document type is selected'
 }
 
 describe('V4 — accompanying document block: no field filled → all optional', () => {
@@ -1079,16 +1081,28 @@ describe('V4 — accompanying document block: no field filled → all optional',
   )
 })
 
-describe('V4 — accompanying document block: any field filled → all four mandatory', () => {
-  const triggers = [
-    ['Type', accompanyingDocumentType, 'Veterinary health certificate'],
+describe('V4 — accompanying document block: only Type selection triggers the mandatory branch (audit #15)', () => {
+  it('when Type is filled, all four document fields are mandatory in-scope', () => {
+    const result = evaluator.evaluate({
+      [accompanyingDocumentType.id]: 'Veterinary health certificate'
+    })
+    for (const [, obligation] of documentBlockFields) {
+      expect(result.obligations[obligation.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        reasons: [documentBlockMandatoryReason]
+      })
+    }
+  })
+
+  const nonTriggerSiblings = [
     ['AttachmentType', accompanyingDocumentAttachmentType, 'PDF'],
     ['Reference', accompanyingDocumentReference, 'GBHC1234567890'],
     ['DateOfIssue', accompanyingDocumentDateOfIssue, '2025-12-12']
   ]
 
-  it.each(triggers)(
-    'when only %s is filled, all four document fields are mandatory in-scope',
+  it.each(nonTriggerSiblings)(
+    'when only %s is filled (Type still blank), the block stays optional per V4 audit #15',
     (_name, filledObligation, filledValue) => {
       const result = evaluator.evaluate({
         [filledObligation.id]: filledValue
@@ -1096,8 +1110,7 @@ describe('V4 — accompanying document block: any field filled → all four mand
       for (const [, obligation] of documentBlockFields) {
         expect(result.obligations[obligation.id]).toEqual({
           inScope: true,
-          status: 'mandatory',
-          reasons: [documentBlockMandatoryReason]
+          status: 'optional'
         })
       }
     }
@@ -1129,15 +1142,18 @@ describe('V4 — accompanying document block: retain-value semantic', () => {
     // Contrast with purge-on-flip patterns (purposeInInternalMarket
     // etc.). Here whenFalse is `{ inScope: true, status: 'optional' }`
     // — never out of scope — so purgeStorage keeps the value.
+    //
+    // Post audit #15 the gate is triggered by Type only, so filling
+    // Reference alone leaves the block optional but the stored
+    // value is retained.
     const result = evaluator.evaluate({
       [accompanyingDocumentReference.id]: 'GBHC1234567890'
     })
-    // Reference filled → gate on → all four mandatory (see previous test)
     expect(result.fulfilments[accompanyingDocumentReference.id]).toBe(
       'GBHC1234567890'
     )
     expect(result.obligations[accompanyingDocumentReference.id].status).toBe(
-      'mandatory'
+      'optional'
     )
   })
 })

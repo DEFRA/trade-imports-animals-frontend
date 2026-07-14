@@ -194,12 +194,13 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     // transited-countries omitted — see soft/optional note above.
 
     // -- Section 3: arrival ---------------------------------------------
+    // Audit #11: containsUnweanedAnimals is now commodity-gated
+    // (equines / cattle / pigs / sheep / goats); it's out of scope
+    // until a matching line is added. Filled after the commodity-
+    // lines section below rather than here.
     await fill(jar, 'arrival-details', {
       arrivalDateAtPort: '12/12/2026',
       portOfEntry: 'DVR'
-    })
-    await fill(jar, 'contains-unweaned-animals', {
-      containsUnweanedAnimals: 'no'
     })
     await fill(jar, 'animals-certified-for', {
       animalsCertifiedFor: 'slaughter'
@@ -325,9 +326,16 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       { expectedNext: `${BASE}/lines` }
     )
 
-    // CPH — notification-level but gated on the commodity codes in
-    // scope. Not filled earlier because it wasn't in scope until the
-    // cattle line was added. /start now redirects here.
+    // Commodity-gated notification-level fields:
+    //   containsUnweanedAnimals (audit #11) — cattle triggers scope
+    //   cph                                  — cattle triggers scope
+    // Filled here, after the cattle line has been added. /start walks
+    // in flow order and finds contains-unweaned-animals first (it
+    // lives in the arrival section, before commodity-lines), then
+    // cph (in the commodity-lines section).
+    await fill(jar, 'contains-unweaned-animals', {
+      containsUnweanedAnimals: 'no'
+    })
     await fill(jar, 'cph', { cph: '12/345/6789' })
 
     // -- Terminal: task list shows every subsection Completed -----------
@@ -422,12 +430,13 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     // transited-countries omitted — completion-optional; /start skips.
 
     // -- Section 3: arrival ---------------------------------------------
+    // Audit #11: containsUnweanedAnimals is now commodity-gated
+    // (equines / cattle / pigs / sheep / goats); it's out of scope
+    // until a matching line is added. Filled after the commodity-
+    // lines section below rather than here.
     await fill(jar, 'arrival-details', {
       arrivalDateAtPort: '12/12/2026',
       portOfEntry: 'DVR'
-    })
-    await fill(jar, 'contains-unweaned-animals', {
-      containsUnweanedAnimals: 'no'
     })
     await fill(jar, 'animals-certified-for', {
       animalsCertifiedFor: 'slaughter'
@@ -529,8 +538,11 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       { expectedNext: `${BASE}/lines` }
     )
 
-    // CPH — cattle-line commodity brings it into scope, mandatory-
-    // to-submit. Same rationale as the internal-market walk above.
+    // Commodity-gated notification-level fields — same rationale as
+    // the internal-market walk above.
+    await fill(jar, 'contains-unweaned-animals', {
+      containsUnweanedAnimals: 'no'
+    })
     await fill(jar, 'cph', { cph: '12/345/6789' })
 
     // -- Terminal: task list shows every subsection Completed -----------

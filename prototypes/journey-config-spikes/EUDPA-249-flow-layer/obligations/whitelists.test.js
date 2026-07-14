@@ -175,7 +175,16 @@ for (const { name, codes, gated } of UNIT_SCOPED_WHITELISTS) {
 // ---------------------------------------------------------------------------
 
 const EXPECTED = {
-  PACKAGE_COUNT_COMMODITIES: ['01064100', '01063100', '01061900', '0102'],
+  PACKAGE_COUNT_COMMODITIES: [
+    '0101', // Horse (also Donkey per V4)
+    '0102', // Cattle
+    '0103', // Pig (Domestic)
+    '010410', // Sheep (Domestic)
+    '010420', // Goats
+    '01061900', // Cats / Dogs / Ferrets / Rodents
+    '01063100', // Birds of prey
+    '01064100' // Bees
+  ],
   CPH_REQUIRED_COMMODITIES: [
     // Mammals
     '0102',

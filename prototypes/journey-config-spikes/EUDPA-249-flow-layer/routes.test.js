@@ -713,10 +713,9 @@ describe('page-controller — accompanying-documents branchedGate (all-or-nothin
     expect(cya.payload).not.toContain('Enter a value for Date of issue')
   })
 
-  it('POST with one field filled DOES flip the block to mandatory', async () => {
-    // Positive: the branchedGate should still fire when the user
-    // provides any real value. Once documentType is filled, the
-    // other three fields become mandatory (V4 all-or-nothing block).
+  it('POST with only Document type filled flips the block to mandatory', async () => {
+    // V4 (audit #15): the branchedGate fires when a document type
+    // is selected — the other three then become mandatory-to-proceed.
     const jar = makeCookieJar()
     const post = await inject(jar, {
       method: 'POST',
@@ -735,6 +734,33 @@ describe('page-controller — accompanying-documents branchedGate (all-or-nothin
     expect(cya.payload).toContain('Enter a value for Attachment format')
     expect(cya.payload).toContain('Enter a value for Document reference')
     expect(cya.payload).toContain('Enter a value for Date of issue')
+  })
+
+  it('POST with only a non-Type field filled (Reference only) does NOT flip the block to mandatory', async () => {
+    // V4 audit #15: the gate is triggered by Document type specifically.
+    // A user who types a reference but doesn't pick a type is signalling
+    // "I have not yet committed to attaching a document" — the block
+    // stays optional and no CYA prompts fire. Pre-audit the branchedGate
+    // tripped on any of the four fields; this test guards against
+    // regression to that behaviour.
+    const jar = makeCookieJar()
+    const post = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/accompanying-documents',
+      payload: { accompanyingDocumentReference: 'HC-2026-00042' }
+    })
+    expect(post.statusCode).toBe(302)
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/check-your-answers'
+    })
+    // The reference row renders (retain-value semantic — extended-form
+    // branchedGate keeps inScope true even when the gate is off)...
+    expect(cya.payload).toContain('HC-2026-00042')
+    // ...but nothing prompts because the block stayed optional.
+    expect(cya.payload).not.toContain('Enter a value for Document type')
+    expect(cya.payload).not.toContain('Enter a value for Attachment format')
+    expect(cya.payload).not.toContain('Enter a value for Date of issue')
   })
 })
 

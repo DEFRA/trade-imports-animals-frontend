@@ -60,9 +60,11 @@ for (const journey of JOURNEYS) {
       await fillMeansOfTransport(page, journey)
       await fillTransportIdentification(page, journey)
 
-      // Section 3 — arrival
+      // Section 3 — arrival. Audit #11 gates
+      // containsUnweanedAnimals on the active commodity codes
+      // (equines / cattle / pigs / sheep / goats), so it goes
+      // out-of-scope here; filled below after the cattle line lands.
       await fillArrivalDetails(page, journey)
-      await fillContainsUnweanedAnimals(page, journey)
       await fillAnimalsCertifiedFor(page, journey)
 
       // Section 4 — trader details (5 address blocks)
@@ -97,7 +99,9 @@ for (const journey of JOURNEYS) {
       await fillSpecies(page, journey)
       await fillNumberOfAnimals(page, journey)
 
-      // CPH — cattle-line brings it into scope, mandatory-to-submit.
+      // Commodity-gated notification-level fields — cattle brings
+      // both containsUnweanedAnimals (audit #11) and CPH into scope.
+      await fillContainsUnweanedAnimals(page, journey)
       await fillCph(page, journey)
 
       // Terminal — task list should show 14 Completed + 1 Optional
@@ -144,8 +148,9 @@ for (const journey of JOURNEYS) {
       await fillMeansOfTransport(page, journey)
       await fillTransportIdentification(page, journey)
 
+      // containsUnweanedAnimals is commodity-gated (audit #11) —
+      // filled after the cattle line lands, below.
       await fillArrivalDetails(page, journey)
-      await fillContainsUnweanedAnimals(page, journey)
       await fillAnimalsCertifiedFor(page, journey)
 
       await fillTraderAddress(page, journey, 'placeOfOrigin', {
@@ -174,7 +179,9 @@ for (const journey of JOURNEYS) {
       await fillSpecies(page, journey)
       await fillNumberOfAnimals(page, journey)
 
-      // CPH — cattle-line brings it into scope, mandatory-to-submit.
+      // Commodity-gated notification-level fields — cattle brings
+      // both containsUnweanedAnimals (audit #11) and CPH into scope.
+      await fillContainsUnweanedAnimals(page, journey)
       await fillCph(page, journey)
 
       // Terminal — 13 Completed + 2 Optional. Matches the vitest

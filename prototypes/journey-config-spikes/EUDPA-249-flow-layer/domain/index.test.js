@@ -218,6 +218,14 @@ describe('staticEnum — countryOfOrigin', () => {
     expect(options).toContain('FR')
     expect(t(countryOfOriginDomain.labels.FR)).toBe('France')
   })
+
+  it('excludes GB per V4 spec (audit #5 — EU / EEA / EFTA only)', () => {
+    // V4 spec Confluence page 6497338582: "Restricted to countries in
+    // the named MDM list for EU, EEA and EFTA countries." GB is
+    // neither. Address blocks may still pick GB (they use the wider
+    // COUNTRY_OPTIONS list); countryOfOrigin does not.
+    expect(countryOfOriginDomain.options({})).not.toContain('GB')
+  })
 })
 
 describe('staticEnum — commodityCode', () => {

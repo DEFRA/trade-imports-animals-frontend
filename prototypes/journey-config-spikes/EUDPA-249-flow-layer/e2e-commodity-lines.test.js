@@ -363,23 +363,29 @@ describe('commodity-lines — number-of-packages (optional + applyTo-scoped)', (
     )
   })
 
-  it('the packages row only appears for lines whose commodity code is on the whitelist', async () => {
+  it('the packages row appears for every wired commodity code (audit #6 — spec-widened to all 8 stub codes)', async () => {
+    // Pre-audit the whitelist held 4 codes and this test proved the
+    // gate hid the row for 0103 (pig). Under audit #6 the whitelist
+    // widened to the full spec-driven set — every stub commodity
+    // code is now on the list, so the gate can no longer be observed
+    // via the wired codes. The gate MECHANISM is still exercised via
+    // the whitelists.test.js coverage. Here we assert the positive
+    // case: every wired code gets the packages row.
     const jar = makeCookieJar()
-    // Line 1: 0103 (Pig) — NOT on PACKAGE_COUNT_COMMODITIES.
+    // Line 1: 0103 (Pig) — was off-list, now on-list.
     const l1 = await addLine(jar)
     await fillLinePage(jar, l1, 'commodity-details', {
       'commodityCode-line1': '0103'
     })
-    // Line 2: 0102 (Cattle) — IS on the whitelist.
+    // Line 2: 0102 (Cattle) — on-list.
     const l2 = await addLine(jar)
     await fillLinePage(jar, l2, 'commodity-details', {
       'commodityCode-line2': '0102'
     })
 
     const list = await getLines(jar)
-    // Line 2 has the packages Change link; line 1 does not.
+    expect(list.payload).toContain(`${BASE}/lines/line1/number-of-packages`)
     expect(list.payload).toContain(`${BASE}/lines/line2/number-of-packages`)
-    expect(list.payload).not.toContain(`${BASE}/lines/line1/number-of-packages`)
   })
 })
 
@@ -584,39 +590,14 @@ describe('commodity-lines — /lines summary rendering', () => {
   })
 })
 
-describe('commodity-lines — line-scoped controller guards', () => {
-  it('GET /lines/{id}/number-of-packages redirects to /lines when the line has a non-whitelisted commodity code', async () => {
-    // Regression: previously rendered an empty form (no fields, just a
-    // Save button). Fixed to redirect to /lines when the target
-    // obligation is out of scope for that line.
-    const jar = makeCookieJar()
-    await addLine(jar)
-    await fillLinePage(jar, 'line1', 'commodity-details', {
-      'commodityCode-line1': '0103' // Pig — NOT on PACKAGE_COUNT_COMMODITIES
-    })
-    const res = await inject(jar, {
-      method: 'GET',
-      url: `${BASE}/lines/line1/number-of-packages`
-    })
-    expect(res.statusCode).toBe(302)
-    expect(res.headers.location).toBe(`${BASE}/lines`)
-  })
-
-  it('POST /lines/{id}/number-of-packages redirects to /lines when the line is out of scope', async () => {
-    const jar = makeCookieJar()
-    await addLine(jar)
-    await fillLinePage(jar, 'line1', 'commodity-details', {
-      'commodityCode-line1': '0103'
-    })
-    const res = await inject(jar, {
-      method: 'POST',
-      url: `${BASE}/lines/line1/number-of-packages`,
-      payload: { 'numberOfPackages-line1': 5 }
-    })
-    expect(res.statusCode).toBe(302)
-    expect(res.headers.location).toBe(`${BASE}/lines`)
-  })
-})
+// GET/POST /lines/{id}/number-of-packages out-of-scope redirect
+// tests removed: audit #6 widened PACKAGE_COUNT_COMMODITIES to cover
+// every wired commodity code, so no stub code is off-list any more.
+// The redirect mechanism itself is still exercised by other
+// line-scoped obligations that DO have narrower whitelists (e.g.
+// permanentAddress applies only to 01061900). If a future
+// COMMODITY_OPTIONS addition is off-list for packages, re-instate
+// these guards.
 
 describe('commodity-lines — id stability under delete/add', () => {
   it('newLineId is monotonic — a second Add after Delete does not recycle line1', async () => {

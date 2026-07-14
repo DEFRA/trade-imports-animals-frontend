@@ -133,9 +133,9 @@ const permanentAddressReason = {
 }
 
 const accompanyingDocumentBlockReason = {
-  code: 'obligation.accompanyingDocument.mandatory.becauseAnyFieldPresent',
+  code: 'obligation.accompanyingDocument.mandatory.becauseTypeSelected',
   explanation:
-    'accompanying document fields become mandatory once any one is filled'
+    'accompanying document fields become mandatory once a document type is selected'
 }
 
 // -----------------------------------------------------------------------------
@@ -225,14 +225,9 @@ export const purposeInInternalMarket = {
 }
 
 // -----------------------------------------------------------------------------
-// Contains unweaned animals
-// -----------------------------------------------------------------------------
-
-export const containsUnweanedAnimals = {
-  id: '01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a',
-  name: 'containsUnweanedAnimals',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
-}
+// Contains unweaned animals — declared LATER (after commodityCode)
+// because its applyTo captures commodityCode. See below the CPH
+// declaration.
 
 // -----------------------------------------------------------------------------
 // Standard address blocks — always in scope. Composite value stored
@@ -448,14 +443,24 @@ export const numberOfAnimals = {
   status: 'mandatory'
 }
 
-// Commodity codes for which V4 requires a package count. Subset of the
-// 54 codes listed on the Confluence page — enough to exercise every
-// pattern in tests.
+// Commodity codes for which V4 requires a package count. The spec
+// (Confluence page 6497338582) lists 54 codes total; every code in
+// the spike's stub COMMODITY_OPTIONS is in that list, so package
+// count is applicable on every wired line. The list is enumerated
+// (rather than defaulting to "always on") to preserve the gate
+// mechanism — when a future commodity code lands in
+// COMMODITY_OPTIONS that ISN'T in the spec's 54 (e.g. 0203 Pig meat
+// under safeguard), the gate will correctly hide the field for it.
+// Audit finding #6.
 export const PACKAGE_COUNT_COMMODITIES = [
-  '01064100', // Bees
-  '01063100', // Birds of Prey — Owls / Falcons / Other
+  '0101', // Horse (also Donkey per V4)
+  '0102', // Cattle
+  '0103', // Pig (Domestic)
+  '010410', // Sheep (Domestic)
+  '010420', // Goats
   '01061900', // Cats / Dogs / Ferrets / Rodents
-  '0102' // Cattle
+  '01063100', // Birds of prey
+  '01064100' // Bees
 ]
 
 // Depth-1 commodity-code-gated field record. `applyTo` returns records
@@ -509,6 +514,42 @@ export const cph = {
     commodityCode,
     CPH_REQUIRED_COMMODITIES,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
+    { inScope: false }
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Contains unweaned animals — notification-level yes/no, gated on the
+// active commodity codes per V4 audit #11. Only mandatory when the
+// consignment includes at least one commodity requiring unweaned
+// tracking (equines / cattle / pigs / sheep / goats). Pre-audit this
+// was unconditional mandatory. Declared here (rather than up top with
+// the other notification-level scalar obligations) because the
+// applyTo closure captures `commodityCode` — declaring it before
+// commodityCode would trip the temporal dead zone.
+// -----------------------------------------------------------------------------
+
+const UNWEANED_APPLICABLE_COMMODITIES = [
+  '0101', // Equines (horses, asses, mules, hinnies)
+  '0102', // Cattle
+  '0103', // Pigs
+  '010410', // Sheep
+  '010420' // Goats
+]
+
+const unweanedApplicableReason = {
+  code: 'obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity',
+  explanation:
+    'consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)'
+}
+
+export const containsUnweanedAnimals = {
+  id: '01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a',
+  name: 'containsUnweanedAnimals',
+  applyTo: anyAllowListed(
+    commodityCode,
+    UNWEANED_APPLICABLE_COMMODITIES,
+    { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
   )
 }
@@ -689,9 +730,9 @@ export const permanentAddress = {
 // declaration.
 // -----------------------------------------------------------------------------
 
-// Any of the four fields has a non-blank stored value. Empty strings,
-// nulls and undefined all count as "not present" — otherwise a user
-// who visited the page and saved it blank (POST body has '' for each
+// True iff a value is non-blank. Empty strings, nulls, undefined and
+// empty arrays all count as "not present" — otherwise a user who
+// visited the page and saved it blank (POST body has '' for each
 // input; writeAnswer stores '') would flip the whole block to
 // mandatory and get spurious CYA prompts. See lib/is-blank-value.js
 // for the equivalent shared helper used elsewhere in the spike.
@@ -701,16 +742,17 @@ const isFilled = (value) => {
   if (Array.isArray(value)) return value.length > 0
   return true
 }
-const anyDocumentFieldPresent = (fulfilments) =>
-  [
-    accompanyingDocumentType,
-    accompanyingDocumentAttachmentType,
-    accompanyingDocumentReference,
-    accompanyingDocumentDateOfIssue
-  ].some((obligation) => isFilled(fulfilments[obligation.id]))
+
+// V4 (Confluence page 6497338582): "however, once a document type is
+// selected, the attachment, reference and date of issue are mandatory
+// to proceed." The trigger is documentType specifically — not any of
+// the four fields. A user who fills only a reference (without picking
+// a type) does NOT lock in the whole block. See audit finding #15.
+const documentTypePresent = (fulfilments) =>
+  isFilled(fulfilments[accompanyingDocumentType.id])
 
 const accompanyingDocumentBlockApplyTo = branchedGate(
-  anyDocumentFieldPresent,
+  documentTypePresent,
   {
     inScope: true,
     status: 'mandatory',

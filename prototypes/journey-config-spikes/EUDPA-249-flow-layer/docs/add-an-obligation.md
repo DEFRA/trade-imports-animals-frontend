@@ -483,7 +483,7 @@ Steps executed:
     file-extension values (pdf / doc / docx / jpg / jpeg / png /
     xls / xlsx) per the V4 spec.
   - `accompanyingDocumentReferenceDomain` — `predicate('string',
-stringMaxLength(40, ...))`. Blank passes so an all-blank
+stringMaxLength(58, ...))`. Blank passes so an all-blank
     submission on the page (the branchedGate optional branch) doesn't
     error.
   - `accompanyingDocumentDateOfIssueDomain` — `predicate('date',
