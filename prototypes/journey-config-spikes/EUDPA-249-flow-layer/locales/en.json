@@ -255,7 +255,7 @@
     "accompanyingDocumentAttachmentType": {
       "pageTitle": "Attachment format",
       "legend": "How is the document supplied?",
-      "hint": "Physical original / physical copy / digital PDF / digital signed."
+      "hint": "PDF, DOC, DOCX, JPG, JPEG, PNG, XLS or XLSX."
     },
     "accompanyingDocumentReference": {
       "pageTitle": "Document reference",
