@@ -93,7 +93,7 @@ One wrinkle if the shared page must sit structurally inside two sections: `secti
 - `sectionEntry(sectionId, scope)` — the first gate-passing page of a section. The hub uses it for each task's href.
 - `nextInSection(pageId, scope)` — the next gate-passing page after this one in the same section, else the hub.
 
-Together they produce the journey's shape: a linear run through a section, skipping pages whose gates fail (no commercial transporter chosen means no transporter-select page), then back to the hub. `shared/kit.js`'s `nextTarget` wraps `nextInSection` with one exception — a `?change=1` request returns to check-your-answers instead.
+Together they produce the journey's shape: a linear run through a section, skipping pages whose gates fail (no commercial transporter chosen means no transporter-select page), then back to the hub. `shared/kit.js`'s `nextTarget` wraps `nextInSection` in `kit.exitTarget`, which resolves any exiting POST the same way: an explicit `exit=hub` submit wins, else a `?change=1` request returns to check-your-answers, else the fallback (`nextInSection` for a task page, the loop's own target for a collection list). Collection loops thread the `?change=1` context through their internal links and PRG redirects with `kit.withChangeContext` — only the loop's exit (the list page's Continue) repoints to check-your-answers; mid-loop add/remove/save actions never do.
 
 Nothing here derives scope or mutates data. Navigation only reads the scope facts the state layer already computed.
 

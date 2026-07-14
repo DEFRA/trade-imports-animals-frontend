@@ -182,6 +182,7 @@ const blankAddress = () =>
   Object.fromEntries(ADDRESS_FIELD_ORDER.map((field) => [field, '']))
 
 const render = (
+  request,
   h,
   journey,
   index,
@@ -193,7 +194,10 @@ const render = (
   const showAddress = permanentAddressApplies(commodity)
   return h.view(view, {
     ...kit.base('Add an animal', {
-      backLink: pagePath(`commodities/${index}/identifiers`),
+      backLink: kit.withChangeContext(
+        request,
+        pagePath(`commodities/${index}/identifiers`)
+      ),
       journey
     }),
     heading: 'Add an animal',
@@ -236,20 +240,24 @@ const addressValuesFromPayload = (payload) =>
 const getAdd = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
   const commodity = answers.commodityLines[index].commoditySelection
   const values = Object.fromEntries(
     [...scopedTypeFields(commodity), ...scopedFallbackFields(commodity)].map(
       (field) => [field.id, '']
     )
   )
-  return render(h, journey, index, commodity, values, blankAddress())
+  return render(request, h, journey, index, commodity, values, blankAddress())
 }
 
 const postAdd = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
   const commodity = answers.commodityLines[index].commoditySelection
   const payload = request.payload ?? {}
 
@@ -267,7 +275,16 @@ const postAdd = async (request, h) => {
     ...(addrFormatErrors ?? {})
   }
   if (Object.keys(merged).length > 0) {
-    return render(h, journey, index, commodity, values, addressValues, merged)
+    return render(
+      request,
+      h,
+      journey,
+      index,
+      commodity,
+      values,
+      addressValues,
+      merged
+    )
   }
 
   const unit = { ...values }
@@ -294,21 +311,29 @@ const postAdd = async (request, h) => {
     unit
   )
   return h.redirect(
-    kit.hubExitTarget(request) ?? pagePath(`commodities/${index}/identifiers`)
+    kit.hubExitTarget(request) ??
+      kit.withChangeContext(
+        request,
+        pagePath(`commodities/${index}/identifiers`)
+      )
   )
 }
 
 const getRemove = async (request, h) => {
   const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
   await state.removeEntryAt(
     request,
     h,
     ['commodityLines', index, 'animalIdentifiers'],
     Number(request.params.unit)
   )
-  return h.redirect(pagePath(`commodities/${index}/identifiers`))
+  return h.redirect(
+    kit.withChangeContext(request, pagePath(`commodities/${index}/identifiers`))
+  )
 }
 
 export const routes = [

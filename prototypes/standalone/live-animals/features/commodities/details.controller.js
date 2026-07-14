@@ -29,10 +29,10 @@ const lineIndexOf = (request, answers) => {
     : null
 }
 
-const render = (h, journey, line, values, errors = {}) =>
+const render = (request, h, journey, line, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Description of goods', {
-      backLink: pagePath('commodities'),
+      backLink: kit.withChangeContext(request, pagePath('commodities')),
       journey
     }),
     heading: 'Description of goods',
@@ -46,9 +46,11 @@ const render = (h, journey, line, values, errors = {}) =>
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
   const line = answers.commodityLines[index]
-  return render(h, journey, line, {
+  return render(request, h, journey, line, {
     numberOfAnimalsQuantity: line.numberOfAnimalsQuantity ?? '',
     numberOfPackages: line.numberOfPackages ?? ''
   })
@@ -57,7 +59,9 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
   const line = answers.commodityLines[index]
   const payload = request.payload ?? {}
   const values = {
@@ -65,7 +69,7 @@ const post = async (request, h) => {
     numberOfPackages: (payload.numberOfPackages ?? '').trim()
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, journey, line, values, errors)
+  if (errors) return render(request, h, journey, line, values, errors)
 
   await state.updateEntry(request, h, 'commodityLines', index, {
     ...line,
@@ -74,7 +78,10 @@ const post = async (request, h) => {
       ? { numberOfPackages: values.numberOfPackages }
       : {})
   })
-  return h.redirect(kit.hubExitTarget(request) ?? pagePath('commodities'))
+  return h.redirect(
+    kit.hubExitTarget(request) ??
+      kit.withChangeContext(request, pagePath('commodities'))
+  )
 }
 
 export const routes = [

@@ -25,17 +25,26 @@ const get = async (request, h) => {
       actions: {
         items: [
           {
-            href: pagePath(`commodities/${index}/details`),
+            href: kit.withChangeContext(
+              request,
+              pagePath(`commodities/${index}/details`)
+            ),
             text: 'Change',
             visuallyHiddenText: `commodity ${index + 1}`
           },
           {
-            href: pagePath(`commodities/${index}/identifiers`),
+            href: kit.withChangeContext(
+              request,
+              pagePath(`commodities/${index}/identifiers`)
+            ),
             text: 'Animal identifiers',
             visuallyHiddenText: `for commodity ${index + 1}`
           },
           {
-            href: pagePath(`commodities/${index}/remove`),
+            href: kit.withChangeContext(
+              request,
+              pagePath(`commodities/${index}/remove`)
+            ),
             text: 'Remove',
             visuallyHiddenText: `commodity ${index + 1}`
           }
@@ -55,7 +64,9 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.action === 'add') {
-    return h.redirect(pagePath('commodities/select'))
+    return h.redirect(
+      kit.withChangeContext(request, pagePath('commodities/select'))
+    )
   }
   const { scope } = await state.get(request, h)
   return h.redirect(kit.nextTarget(request, page, scope))
@@ -68,7 +79,7 @@ const getRemove = async (request, h) => {
     'commodityLines',
     Number(request.params.index)
   )
-  return h.redirect(pagePath('commodities'))
+  return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
 }
 
 export const routes = [

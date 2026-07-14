@@ -178,6 +178,17 @@ sub-page (which appends — the same identity-minting write) and a DETAILS
 sub-page edits the same entry in place. The nested `animalIdentifiers`
 loop follows the same split one level down.
 
+### Thread the change context through the loop
+
+A collection reached from a check-your-answers Change link carries
+`?change=1`. Wrap every internal link and PRG redirect (row actions, back
+links, add/remove/save round-trips, invalid-index guards) in
+`kit.withChangeContext(request, href)` so the context survives the loop,
+and resolve the loop's exiting Continue with
+`kit.exitTarget(request, fallback)` — hub exit beats change context beats
+the fallback. Only the exit repoints to check-your-answers; mid-loop
+actions must never bounce there early.
+
 ## 5. Keep the guards
 
 Two guards protect collection writes. Do not remove them, and copy the first

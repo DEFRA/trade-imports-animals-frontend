@@ -72,22 +72,29 @@ const cellText = (value) => (value ?? '').trim() || NOT_PROVIDED
 const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`
 
-const removeCell = (index) =>
-  `<a class="govuk-link" href="${pagePath(`accompanying-documents/${index}/remove`)}">` +
-  `Remove<span class="govuk-visually-hidden"> document ${index + 1}</span></a>`
+const removeCell = (request, index) => {
+  const href = kit.withChangeContext(
+    request,
+    pagePath(`accompanying-documents/${index}/remove`)
+  )
+  return (
+    `<a class="govuk-link" href="${href}">` +
+    `Remove<span class="govuk-visually-hidden"> document ${index + 1}</span></a>`
+  )
+}
 
-const documentRows = (answers) =>
+const documentRows = (request, answers) =>
   state
     .collectionView(answers, ['documents'])
     .map(({ index, entry }) => [
       { text: cellText(entry.accompanyingDocumentReference) },
       { text: cellText(entry.accompanyingDocumentType) },
       { text: dateText(entry.accompanyingDocumentDateOfIssue) },
-      { html: removeCell(index) }
+      { html: removeCell(request, index) }
     ])
 
-const render = (h, journey, values, errors = {}) => {
-  const rows = documentRows(journey.answers)
+const render = (request, h, journey, values, errors = {}) => {
+  const rows = documentRows(request, journey.answers)
   return h.view(view, {
     ...kit.base('Upload documents', { backLink: hubPath(), journey }),
     heading: 'Upload documents',
@@ -118,22 +125,22 @@ const render = (h, journey, values, errors = {}) => {
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  return render(h, journey, EMPTY_FORM)
+  return render(request, h, journey, EMPTY_FORM)
 }
 
 const postAdd = async (request, h, payload) => {
   const { journey, answers } = await state.get(request, h)
   const entry = documentFromPayload(payload)
   if (state.collectionView(answers, ['documents']).length >= MAX_DOCUMENTS) {
-    return render(h, journey, entry, {
+    return render(request, h, journey, entry, {
       accompanyingDocumentType: `You can add a maximum of ${MAX_DOCUMENTS} documents`
     })
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, journey, entry, errors)
+  if (errors) return render(request, h, journey, entry, errors)
 
   await state.appendEntry(request, h, 'documents', entry)
-  return h.redirect(pagePath(page.slug))
+  return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
 }
 
 const post = async (request, h) => {
@@ -145,7 +152,7 @@ const post = async (request, h) => {
 
 const getRemove = async (request, h) => {
   await state.removeEntry(request, h, 'documents', Number(request.params.index))
-  return h.redirect(pagePath(page.slug))
+  return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
 }
 
 export const routes = [

@@ -360,6 +360,53 @@ validation errors on both submits with nothing committed, save-and-continue
 untouched, change-context precedence both ways, cph return-context
 precedence, and the `hubHref`/`hubExitTarget` kit contracts.
 
+## 10. Exit-based change-context return through the collection loops (inc-050)
+
+`shared/kit.js`: the scalar `?change=1` check-your-answers round-trip
+(behaviour `change-from-cya-collection-round-trip`, f-108; Sam's D6 ruling)
+extends to the collection routes via two new kit primitives —
+`kit.changeContext(request)` / `kit.withChangeContext(request, href)` carry
+the flag across the loops' internal links and PRG redirects, and
+`kit.exitTarget(request, fallback)` resolves a loop's exit
+(`hubExitTarget` ?? change-context → check-your-answers ?? the loop's own
+fallback). `kit.nextTarget` is now `exitTarget` over `nextInSection` —
+behaviour byte-for-byte identical for every scalar page.
+
+- **The exit-based return rule (D6).** The CYA collection Change actions
+  (species card → `/commodities` and `/commodities/N/identifiers`, uploaded
+  documents card → `/accompanying-documents`) now carry `?change=1`, matching
+  the scalar `changeHref` convention. The context THREADS through the
+  collection's internal navigation untouched — commodities select/details
+  progression, the identifier list/entry loop, the documents single-page
+  loop: every add / remove / save round-trip and internal link (row actions,
+  back links, invalid-index guards) re-appends the flag, and the forms POST
+  to their own URL so the query survives validation error re-renders. ONLY
+  the collection's exit — the list/loop page's Continue (the identifier
+  list's Continue today; "Save and finish" when inc-063 lands) — repoints to
+  check-your-answers when the context is present. Mid-loop actions never
+  bounce to CYA early.
+- **Precedence (established at inc-049, unchanged).** Explicit `exit=hub`
+  beats change context; change context beats `nextInSection` / the loop
+  fallback. The addresses hub/spokes keep their own return conventions
+  (`?return=addresses`, `?for=`) — out of scope.
+- **One mechanism, promoted.** transit-countries' inline add-another
+  preserve (`request.query.change ? …?change=1 : …`) predated this and now
+  uses `kit.withChangeContext` — same behaviour, one source of truth.
+- **Backwards compatible.** No `change` in the query = pre-inc-050 redirects
+  and links byte-for-byte in every handler; scalar pages are untouched
+  (`nextTarget` delegates to the same precedence chain). Navigation only —
+  no engine write-path, obligation or mapper change.
+
+Proven in `shared/change-context.test.js`: the `withChangeContext` /
+`exitTarget` kit contracts, context surviving the add-another PRG cycles
+(commodities list → select → details, identifier entry, documents add and
+remove) with the writes committed, exit-with-context landing on
+check-your-answers for all three loops, exit-without-context keeping the
+flow target (`nextInSection` / the identifier loop's commodities fallback),
+and the hub exit beating the change context on a collection exit.
+`features/check-answers/check-answers.test.js` pins the card actions'
+`?change=1` hrefs.
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

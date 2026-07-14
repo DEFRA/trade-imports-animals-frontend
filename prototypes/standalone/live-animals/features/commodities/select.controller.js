@@ -35,10 +35,10 @@ const commodityItems = (selected) => [
   }))
 ]
 
-const render = (h, journey, values, errors = {}) =>
+const render = (request, h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Select species of commodity', {
-      backLink: pagePath('commodities'),
+      backLink: kit.withChangeContext(request, pagePath('commodities')),
       journey
     }),
     heading: 'Select species of commodity',
@@ -58,7 +58,7 @@ const render = (h, journey, values, errors = {}) =>
 
 const getAdd = async (request, h) => {
   const { journey } = await state.get(request, h)
-  return render(h, journey, {
+  return render(request, h, journey, {
     commoditySelection: '',
     typeSelection: '',
     speciesSelection: []
@@ -75,7 +75,7 @@ const postAdd = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, entry, errors)
+    return render(request, h, journey, entry, errors)
   }
 
   const index = await state.appendEntry(request, h, 'commodityLines', {
@@ -84,7 +84,8 @@ const postAdd = async (request, h) => {
     numberOfAnimalsQuantity: ''
   })
   return h.redirect(
-    kit.hubExitTarget(request) ?? pagePath(`commodities/${index}/details`)
+    kit.hubExitTarget(request) ??
+      kit.withChangeContext(request, pagePath(`commodities/${index}/details`))
   )
 }
 

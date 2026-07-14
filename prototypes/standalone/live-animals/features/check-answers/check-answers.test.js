@@ -257,19 +257,23 @@ describe('#buildSections (check-answers GET)', () => {
       )
     })
 
-    it('Should point the species-card Change actions at the commodities pages', async () => {
+    it('Should point the species-card Change actions at the commodities pages with a change flag', async () => {
       const card = cardByTitle(await sectionsFor(fullSeed), 'Cow (0102)')
       const [commodityAction, identifiersAction] = card.actions.items
-      expect(commodityAction.href).toMatch(/\/commodities$/)
-      expect(identifiersAction.href).toMatch(/\/commodities\/0\/identifiers$/)
+      expect(commodityAction.href).toMatch(/\/commodities\?change=1$/)
+      expect(identifiersAction.href).toMatch(
+        /\/commodities\/0\/identifiers\?change=1$/
+      )
     })
 
-    it('Should point the uploaded-documents card Change action at the documents page', async () => {
+    it('Should point the uploaded-documents card Change action at the documents page with a change flag', async () => {
       const card = cardByTitle(
         await sectionsFor(fullSeed),
         'Uploaded documents'
       )
-      expect(card.actions.items[0].href).toMatch(/\/accompanying-documents$/)
+      expect(card.actions.items[0].href).toMatch(
+        /\/accompanying-documents\?change=1$/
+      )
     })
   })
 

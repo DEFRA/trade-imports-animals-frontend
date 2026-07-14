@@ -35,7 +35,9 @@ const lineIndexOf = (request, answers) => {
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+  }
   const commodity = answers.commodityLines[index].commoditySelection
   const rows = state
     .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
@@ -45,8 +47,9 @@ const get = async (request, h) => {
       actions: {
         items: [
           {
-            href: pagePath(
-              `commodities/${index}/identifiers/${unitIndex}/remove`
+            href: kit.withChangeContext(
+              request,
+              pagePath(`commodities/${index}/identifiers/${unitIndex}/remove`)
             ),
             text: 'Remove',
             visuallyHiddenText: `animal ${unitIndex + 1}`
@@ -56,7 +59,7 @@ const get = async (request, h) => {
     }))
   return h.view(view, {
     ...kit.base('Animal identifiers', {
-      backLink: pagePath('commodities'),
+      backLink: kit.withChangeContext(request, pagePath('commodities')),
       journey
     }),
     heading: 'Animal identifiers for this commodity',
@@ -64,20 +67,25 @@ const get = async (request, h) => {
     rows,
     hasUnits: rows.length > 0,
     addButtonText: rows.length ? 'Add another animal' : 'Add an animal',
-    emptyText: 'You have not added any animals yet.',
-    addHref: pagePath(`commodities/${index}/identifiers/add`),
-    continueHref: pagePath('commodities')
+    emptyText: 'You have not added any animals yet.'
   })
 }
 
 const post = async (request, h) => {
   const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
-  if (index === null) return h.redirect(pagePath('commodities'))
-  if ((request.payload ?? {}).action === 'add') {
-    return h.redirect(pagePath(`commodities/${index}/identifiers/add`))
+  if (index === null) {
+    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
   }
-  return h.redirect(kit.hubExitTarget(request) ?? pagePath('commodities'))
+  if ((request.payload ?? {}).action === 'add') {
+    return h.redirect(
+      kit.withChangeContext(
+        request,
+        pagePath(`commodities/${index}/identifiers/add`)
+      )
+    )
+  }
+  return h.redirect(kit.exitTarget(request, pagePath('commodities')))
 }
 
 export const routes = [

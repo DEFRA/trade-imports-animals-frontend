@@ -1834,6 +1834,115 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toContainText(values.contactAddress.name)
   })
 
+  test('change from check your answers — collection edits thread the change context through the loop and only the exit returns to the review', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await completeAnswerSections(page)
+
+    // The documents card only renders on the review once a document exists —
+    // add the fixture document from the hub first (no change context yet).
+    const [doc] = values.documents
+    const addDocument = async (entry) => {
+      await page
+        .getByLabel('Document type')
+        .selectOption(entry.accompanyingDocumentType)
+      await page
+        .getByLabel('Attachment type')
+        .selectOption(entry.accompanyingDocumentAttachmentType)
+      await page
+        .getByLabel('Document reference')
+        .fill(entry.accompanyingDocumentReference)
+      await page
+        .getByLabel('Day')
+        .fill(entry.accompanyingDocumentDateOfIssue.day)
+      await page
+        .getByLabel('Month')
+        .fill(entry.accompanyingDocumentDateOfIssue.month)
+      await page
+        .getByLabel('Year')
+        .fill(entry.accompanyingDocumentDateOfIssue.year)
+      await page.getByRole('button', { name: 'Save and add another' }).click()
+    }
+    await page.getByRole('link', { name: 'Accompanying documents' }).click()
+    await addDocument(doc)
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+
+    // Open the review.
+    await page
+      .locator('.govuk-task-list__item', { hasText: 'Check and submit' })
+      .getByRole('link', { name: 'Check and submit' })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+
+    // Species-card leg: Change enters the identifier loop with the change
+    // context; the mid-loop add-another PRG cycle stays in the loop; the
+    // list's Continue exits back to the review with the new unit rendered.
+    await page
+      .getByRole('link', { name: 'Change animal identifiers for commodity 1' })
+      .click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Animal identifiers for this commodity'
+      })
+    ).toBeVisible()
+    expect(page.url()).toContain('change=1')
+    await page.getByRole('button', { name: 'Add another animal' }).click()
+    await page.getByLabel('Ear tag number').fill('UK000000000002')
+    await page.getByRole('button', { name: 'Add animal' }).click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Animal identifiers for this commodity'
+      })
+    ).toBeVisible()
+    expect(page.url()).toContain('change=1')
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+    const speciesCard = page.locator('.govuk-summary-card', {
+      has: page.getByRole('heading', { name: 'Cow (0102)' })
+    })
+    await expect(speciesCard.locator('.govuk-table')).toContainText(
+      'UK000000000002'
+    )
+
+    // Documents leg: the card's Change enters the single-page loop with the
+    // change context; adding another document loops; Continue exits back to
+    // the review with the new document rendered.
+    const secondDoc = {
+      accompanyingDocumentType: 'Commercial invoice',
+      accompanyingDocumentAttachmentType: 'PDF',
+      accompanyingDocumentReference: 'INV-2026-0042',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' }
+    }
+    await page.getByRole('link', { name: 'Change documents' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Upload documents' })
+    ).toBeVisible()
+    expect(page.url()).toContain('change=1')
+    await addDocument(secondDoc)
+    await expect(
+      page.locator('.govuk-table__row', {
+        hasText: secondDoc.accompanyingDocumentReference
+      })
+    ).toBeVisible()
+    expect(page.url()).toContain('change=1')
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+    await expect(
+      page.getByText(secondDoc.accompanyingDocumentReference)
+    ).toBeVisible()
+  })
+
   test('declaration — the full happy path submits from the declaration page and lands on the confirmation page', async ({
     page
   }) => {

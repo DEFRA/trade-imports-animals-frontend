@@ -21,8 +21,10 @@ const NOT_PROVIDED = 'Not provided'
 
 const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 
+const withChange = (href) => `${href}?change=1`
+
 const changeHref = (obligationId) =>
-  `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
+  withChange(pagePath(slugOfPage(pageOfObligation(obligationId))))
 
 const valueText = (value) => (isBlank(value) ? NOT_PROVIDED : value)
 
@@ -211,14 +213,16 @@ const speciesCards = (answers) =>
       actions: {
         items: [
           {
-            href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
+            href: changeHref('commodityLines'),
             text: 'Change',
             visuallyHiddenText: `commodity ${index + 1}`
           },
           ...(units.length
             ? [
                 {
-                  href: pagePath(`commodities/${index}/identifiers`),
+                  href: withChange(
+                    pagePath(`commodities/${index}/identifiers`)
+                  ),
                   text: 'Change',
                   visuallyHiddenText: `animal identifiers for commodity ${index + 1}`
                 }
@@ -402,7 +406,7 @@ const documentsCard = (answers) => {
     actions: {
       items: [
         {
-          href: pagePath(slugOfPage(pageOfObligation('documents'))),
+          href: changeHref('documents'),
           text: 'Change',
           visuallyHiddenText: 'documents'
         }

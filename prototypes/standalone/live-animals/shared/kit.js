@@ -42,9 +42,17 @@ export const fieldError = (fieldErrors, field) =>
 export const hubExitTarget = (request) =>
   (request.payload ?? {}).exit === 'hub' ? hubPath() : null
 
-export const nextTarget = (request, page, scope) =>
+export const changeContext = (request) => Boolean(request.query.change)
+
+export const withChangeContext = (request, href) =>
+  changeContext(request) ? `${href}?change=1` : href
+
+export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
-  (request.query.change ? pagePath(CYA_SLUG) : nextInSection(page.id, scope))
+  (changeContext(request) ? pagePath(CYA_SLUG) : fallback)
+
+export const nextTarget = (request, page, scope) =>
+  exitTarget(request, nextInSection(page.id, scope))
 
 export const base = (title, { backLink, journey } = {}) => ({
   layout: LAYOUT,

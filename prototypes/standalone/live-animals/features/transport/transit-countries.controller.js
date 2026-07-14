@@ -74,8 +74,7 @@ const post = async (request, h) => {
     transitedCountries: selected
   })
   if (payload.addCountry !== undefined) {
-    const self = pagePath(page.slug)
-    return h.redirect(request.query.change ? `${self}?change=1` : self)
+    return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
   }
   return h.redirect(kit.nextTarget(request, page, scope))
 }
