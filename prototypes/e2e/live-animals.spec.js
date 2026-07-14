@@ -172,7 +172,7 @@ const completeAnswerSections = async (page) => {
   // commercial select.
   await task('Transport')
   await page
-    .getByLabel('What is the port of entry into Great Britain?')
+    .getByLabel('Port of entry', { exact: true })
     .selectOption(values.portOfEntry)
   await page.getByLabel('Day').fill(arrival.day)
   await page.getByLabel('Month').fill(arrival.month)
@@ -815,7 +815,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     await page.getByRole('link', { name: 'Transport' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Port of entry' })
+      page.getByRole('heading', { name: 'Arrival details' })
     ).toBeVisible()
 
     // A partial arrival date is malformed, not merely blank — it blocks the
@@ -831,7 +831,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Happy path from the shared fixture.
     await page
-      .getByLabel('What is the port of entry into Great Britain?')
+      .getByLabel('Port of entry', { exact: true })
       .selectOption(values.portOfEntry)
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)
@@ -911,7 +911,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const openTransporters = async () => {
       await page.getByRole('link', { name: 'Transport' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Port of entry' })
+        page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -980,7 +980,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const openTransporters = async () => {
       await page.getByRole('link', { name: 'Transport' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Port of entry' })
+        page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -1057,7 +1057,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const openTransporters = async () => {
       await page.getByRole('link', { name: 'Transport' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Port of entry' })
+        page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -1164,7 +1164,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const openTransportDetails = async () => {
       await page.getByRole('link', { name: 'Transport' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Port of entry' })
+        page.getByRole('heading', { name: 'Arrival details' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
@@ -1662,7 +1662,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // commercial select.
     await task('Transport')
     await page
-      .getByLabel('What is the port of entry into Great Britain?')
+      .getByLabel('Port of entry', { exact: true })
       .selectOption(values.portOfEntry)
     await page.getByLabel('Day').fill(arrival.day)
     await page.getByLabel('Month').fill(arrival.month)

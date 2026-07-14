@@ -174,7 +174,7 @@ const drivePrototype = async (page) => {
   // transporter.
   await task('Transport')
   await page
-    .getByLabel('What is the port of entry into Great Britain?')
+    .getByLabel('Port of entry', { exact: true })
     .selectOption(values.portOfEntry)
   await page.getByLabel('Day').fill(shared.arrival.day)
   await page.getByLabel('Month').fill(shared.arrival.month)

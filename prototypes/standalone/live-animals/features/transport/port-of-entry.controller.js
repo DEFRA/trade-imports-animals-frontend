@@ -37,15 +37,15 @@ const fields = compose(
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Port of entry', { backLink: hubPath() }),
-    heading: 'Port of entry',
+    ...kit.base('Arrival details', { backLink: hubPath() }),
+    heading: 'Arrival details',
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
     portItems: portItems(values.portOfEntry),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
-      label: 'When will the consignment arrive at the port of entry?',
-      hint: 'For example, 12 12 2026',
+      label: 'Arrival date at port of entry',
+      hint: 'The expected date of arrival at the port of entry. For example, 27/3/2026',
       value: values.arrivalDateAtPort ?? {},
       error: errors['arrivalDateAtPort-day']
     })

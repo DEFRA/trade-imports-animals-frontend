@@ -14,7 +14,8 @@
     {{ govukSelect({
       id: "portOfEntry",
       name: "portOfEntry",
-      label: { text: "What is the port of entry into Great Britain?", classes: "govuk-label--s" },
+      label: { text: "Port of entry", classes: "govuk-label--s" },
+      hint: { text: "Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code." },
       value: values.portOfEntry,
       errorMessage: errors.portOfEntry and { text: errors.portOfEntry },
       items: portItems
