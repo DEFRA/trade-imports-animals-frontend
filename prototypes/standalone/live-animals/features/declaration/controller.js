@@ -11,7 +11,7 @@ export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/declaration/template`
 
 export const DECLARATION_LABEL =
-  'I declare that the information I have provided in this notification I am submitting is true and correct.'
+  'I confirm that I have reviewed and comply with this declaration and that the information submitted in this notification is true and correct.'
 
 const fields = compose(
   requiredOneOf(

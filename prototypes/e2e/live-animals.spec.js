@@ -2104,10 +2104,16 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByRole('heading', { name: 'Declaration' })
     ).toBeVisible()
+    // The declaration statements carry the design copy (07-03, f-072).
+    await expect(
+      page.getByRole('heading', {
+        name: 'I am the contact for the authorities and located in the UK.'
+      })
+    ).toBeVisible()
 
     // The declaration is the submit-enforcement point: an unticked checkbox
     // blocks the submit with an error.
-    await page.getByRole('button', { name: 'Submit notification' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'There is a problem' })
     ).toBeVisible()
@@ -2121,9 +2127,9 @@ test.describe('live-animals (page-owned spine)', () => {
     // confirmation page (c-022 superseded at M3-16): a GDS confirmation panel
     // carrying the notification's reference number.
     await page
-      .getByRole('checkbox', { name: /I declare that the information/ })
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
       .check()
-    await page.getByRole('button', { name: 'Submit notification' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Import notification submitted' })
     ).toBeVisible()

@@ -490,7 +490,7 @@
           "title": "Declaration",
           "gate": null,
           "collects": ["declaration"],
-          "notes": "POST validates the confirmation checkbox then calls the submit endpoint (DRAFT to SUBMITTED). Redirect target updated at M3 (A2; c-022 superseded): redirects to the confirmation page instead of back to /declaration (M3-16; declaration copy + CTA rename follow at M3-17)."
+          "notes": "POST validates the confirmation checkbox then calls the submit endpoint (DRAFT to SUBMITTED). Redirect target updated at M3 (A2; c-022 superseded): redirects to the confirmation page instead of back to /declaration (M3-16). Declaration copy + CTA rename implemented at M3-17 (f-072): design 07-03 statements, checkbox label and Continue CTA adopted."
         },
         {
           "id": "confirmation",
@@ -1285,12 +1285,12 @@
         "enforcedAt": "submit"
       },
       "mandateRaw": "Required to submit (skeleton Joi: must equal confirmed)",
-      "label": "I declare that the information I have provided in this notification I am submitting is true and correct.",
+      "label": "I confirm that I have reviewed and comply with this declaration and that the information submitted in this notification is true and correct.",
       "input": {
         "widget": "checkboxes",
         "values": ["confirmed"]
       },
-      "notes": "Skeleton-only field: not persisted; a valid POST calls POST /notifications/{referenceNumber}/submit (DRAFT to SUBMITTED). Shows Date of declaration as today (en-GB). M3 (A2; c-022 superseded in part): redirects to the confirmation page after submit (M3-16); declaration copy + CTA rename at M3-17. Resubmission after a dashboard amend passes this same gate (c-029, behaviour amend-and-resubmit-post-submit).",
+      "notes": "Skeleton-only field: not persisted; a valid POST calls POST /notifications/{referenceNumber}/submit (DRAFT to SUBMITTED). Shows Date of declaration as today (en-GB). M3 (A2; c-022 superseded in part): redirects to the confirmation page after submit (M3-16); declaration copy + CTA rename implemented at M3-17 (f-072: design 07-03 statements, checkbox label and Continue CTA adopted; label above is the design wording). Resubmission after a dashboard amend passes this same gate (c-029, behaviour amend-and-resubmit-post-submit).",
       "conflicts": ["c-022", "c-029"],
       "provenance": [
         {

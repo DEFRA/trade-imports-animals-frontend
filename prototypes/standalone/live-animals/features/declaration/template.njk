@@ -7,9 +7,18 @@
 
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
-  <p class="govuk-body"><strong>I confirm I am responsible for this notification.</strong></p>
+  <h2 class="govuk-heading-m">I am the contact for the authorities and located in the UK.</h2>
 
-  <p class="govuk-body">I am responsible from the submission of this notification to when it enters Great Britain.</p>
+  <h2 class="govuk-heading-m">I confirm I am responsible for this consignment until it has cleared border control checks or reached the place of destination.</h2>
+
+  <h2 class="govuk-heading-m">I confirm that I am accountable for:</h2>
+
+  <ul class="govuk-list govuk-list--bullet">
+    <li>payments for border control checks</li>
+    <li>re-dispatch of the consignment</li>
+    <li>quarantine or isolation of the animals</li>
+    <li>the costs of destruction and disposal</li>
+  </ul>
 
   <p class="govuk-body">I am authorised as being accountable for these things if raising notifications on behalf of a third party.</p>
 
@@ -32,6 +41,6 @@
 
     <p class="govuk-body">Date of declaration: {{ submissionDate }}</p>
 
-    {{ govukButton({ text: "Submit notification" }) }}
+    {{ govukButton({ text: "Continue" }) }}
   </form>
 {% endblock %}
