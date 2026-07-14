@@ -20,8 +20,8 @@ import { dispatchPages } from './features/index.js'
 
 import * as importTypeFilter from './features/import-type-filter/controller.js'
 import * as origin from './features/origin/controller.js'
-import * as commoditiesList from './features/commodities/list.controller.js'
-import * as commoditiesSelect from './features/commodities/select.controller.js'
+import * as commoditiesSearch from './features/commodities/search.controller.js'
+import * as consignmentDetails from './features/commodities/consignment-details.controller.js'
 import * as animalIdentifiersEntry from './features/commodities/animal-identifiers.entry.controller.js'
 import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
@@ -192,22 +192,47 @@ describe('controller <-> model commit contract', () => {
     }
   )
 
-  it('Should commit commodity lines via the select (append) handler it declares', async () => {
-    expect(commoditiesList.meta.collects).toEqual(['commodityLines'])
-    const postAdd = postHandlerEndingWith(
-      commoditiesSelect,
-      'commodities/select'
-    )
-    const result = await drive(postAdd, {
-      payload: {
-        commoditySelection: 'Cow',
-        typeSelection: 'Domestic',
-        speciesSelection: ['1148346']
-      }
+  it('Should commit commodity lines via the search (batch create) handler it declares', async () => {
+    expect(commoditiesSearch.meta.collects).toEqual(['commodityLines'])
+    const result = await drive(postHandlerOf(commoditiesSearch), {
+      payload: { species: ['Cow|1148346', 'Cat|923501'] }
     })
     expect(new Set(committedIds(result))).toEqual(
-      new Set(committableCollects(commoditiesList.meta.collects))
+      new Set(committableCollects(commoditiesSearch.meta.collects))
     )
+    expect(result.after.commodityLines).toEqual([
+      {
+        commoditySelection: 'Cow',
+        speciesSelection: '1148346',
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      },
+      {
+        commoditySelection: 'Cat',
+        speciesSelection: '923501',
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      }
+    ])
+  })
+
+  it('Should commit nothing new via the consignment details handler — it edits the lines the search created', async () => {
+    expect(consignmentDetails.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(consignmentDetails), {
+      seed: {
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+        ]
+      },
+      payload: { 'numberOfAnimalsQuantity-0': '25', 'numberOfPackages-0': '5' }
+    })
+    expect(committedIds(result)).toEqual([])
+    expect(result.after.commodityLines[0]).toEqual({
+      commoditySelection: 'Cow',
+      speciesSelection: '1148346',
+      numberOfAnimalsQuantity: '25',
+      numberOfPackages: '5'
+    })
   })
 
   it('Should commit documents via its own add action on the single-page loop', async () => {
@@ -255,8 +280,7 @@ describe('controller <-> model commit contract', () => {
 
     result.after.commodityLines[0] = {
       ...result.after.commodityLines[0],
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '923501',
       numberOfAnimalsQuantity: '2'
     }
     expect(satisfied('commodityLines', result.after)).toBe(true)

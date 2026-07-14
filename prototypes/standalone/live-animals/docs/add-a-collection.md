@@ -168,15 +168,20 @@ state.appendEntry(request, h, 'documents', entry)
 reconciles, so anything left dangling out of scope is pruned too
 ([`engine/write.js`](../engine/write.js)).
 
-### The sub-page split (list hub + entry sub-pages)
+### The batch split (search page + consolidated details page)
 
-The commodities loop keeps the split layout: the list page
-([`features/commodities/list.controller.js`](../features/commodities/list.controller.js))
-declares the `collects`, renders the Commodity-N rows and offers
-Add / Remove / Continue; its `action === 'add'` POST redirects to a SELECT
-sub-page (which appends — the same identity-minting write) and a DETAILS
-sub-page edits the same entry in place. The nested `animalIdentifiers`
-loop follows the same split one level down.
+The commodities collection uses a two-page batch layout (inc-062): the
+SEARCH page
+([`features/commodities/search.controller.js`](../features/commodities/search.controller.js))
+declares the `collects` and batch-reconciles one line per selected
+species on save (`state.reconcileEntriesAt` — the identity-minting
+write, which also preserves a still-selected line's data and removes
+deselected lines with wipe semantics); the CONSOLIDATED DETAILS page
+([`features/commodities/consignment-details.controller.js`](../features/commodities/consignment-details.controller.js))
+renders the selected-commodities table (per-row Remove, Add another) and
+edits every line's quantities in place on one page. The nested
+`animalIdentifiers` loop keeps the older list-hub + entry sub-page split
+one level down.
 
 ### Thread the change context through the loop
 

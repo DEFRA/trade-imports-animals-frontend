@@ -241,7 +241,9 @@ const getAdd = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) {
-    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+    return h.redirect(
+      kit.withChangeContext(request, pagePath('consignment-details'))
+    )
   }
   const commodity = answers.commodityLines[index].commoditySelection
   const values = Object.fromEntries(
@@ -256,7 +258,9 @@ const postAdd = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) {
-    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+    return h.redirect(
+      kit.withChangeContext(request, pagePath('consignment-details'))
+    )
   }
   const commodity = answers.commodityLines[index].commoditySelection
   const payload = request.payload ?? {}
@@ -323,7 +327,9 @@ const getRemove = async (request, h) => {
   const { answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) {
-    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+    return h.redirect(
+      kit.withChangeContext(request, pagePath('consignment-details'))
+    )
   }
   await state.removeEntryAt(
     request,

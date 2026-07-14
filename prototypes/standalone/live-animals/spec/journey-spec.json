@@ -246,26 +246,18 @@
         {
           "id": "commodities",
           "slug": "commodities",
-          "title": "Select a commodity",
+          "title": "What are you importing?",
           "gate": null,
           "collects": ["commodityLines"],
-          "notes": "Entry page for the commodityLines collection - member fields (commoditySelection, typeSelection, speciesSelection, numberOfPackages, numberOfAnimalsQuantity, animalIdentifiers) are covered via the collection's item[]. RESTRUCTURE TARGET (c-030 resolved): one search page with cross-code multi-select species tokens creating several commodity lines in one pass (batch-create - MODEL_EXTENDER, after M3-0A), replacing the one-line-at-a-time loop; typeSelection drops out of the flow per c-037 (search-first multi-select subsumes it)."
-        },
-        {
-          "id": "commoditiesSelect",
-          "slug": "commodities/select",
-          "title": "Select species of commodity",
-          "gate": null,
-          "collects": [],
-          "notes": "Collects typeSelection and speciesSelection for the current commodity line (covered via commodityLines.item). Shows a read-only commodity-details table; preserves per-species values on reselect (c-017)."
+          "notes": "RESTRUCTURED at inc-062 (c-030 resolved; design 01-10..13): the batch search page - server-round-trip search over common name / commodity code / scientific name, results as stock checkboxes grouped by commodity code, selected-count summary with per-item remove. Saving batch-creates one commodityLines line per selected species (line grain = commodity + ONE species); a still-selected species keeps its line data (c-017 spirit), a deselected species' line is removed with wipe semantics. Member fields (commoditySelection, speciesSelection, numberOfPackages, numberOfAnimalsQuantity, animalIdentifiers) are covered via the collection's item[]. typeSelection is out of the flow per c-037 (search-first multi-select subsumes it; obligation stays in the spec pending PO sign-off). The one-line-at-a-time select/details loop pages are retired."
         },
         {
           "id": "commodityDetails",
-          "slug": "commodities/details",
-          "title": "Description of goods",
+          "slug": "consignment-details",
+          "title": "Consignment details",
           "gate": null,
           "collects": [],
-          "notes": "Collects numberOfAnimalsQuantity and numberOfPackages for the current commodity line (covered via commodityLines.item). Skeleton renders one row per selected species and recomputes derived subtotals (c-003). RESTRUCTURE TARGET (c-030 resolved): one consolidated details page with PER-SPECIES quantity blocks (design 01-14 'Consignment details'); mappers consolidate counts up to V4's commodity-level number (Mapper A skeleton-exact, Mapper B lossless)."
+          "notes": "RESTRUCTURED at inc-062 (c-030 resolved; design 01-14/15 'Consignment details'): ONE consolidated page - selected-commodities table (per-row Remove, 'Add another commodity' back to the search page) plus inline PER-SPECIES quantity blocks for every line (numberOfAnimalsQuantity, and numberOfPackages where the commodity applies). Built from sub-component partials (table macro + per-species quantity macro). Mappers consolidate the per-species counts up to V4's commodity-level number (Mapper A skeleton-exact, Mapper B lossless)."
         },
         {
           "id": "animalIdentification",
@@ -1317,7 +1309,7 @@
         "numberOfAnimalsQuantity",
         "animalIdentifiers"
       ],
-      "notes": "V4 data-level model: a commodity code plus its taxonomy chain (Type, Class, Species) plus a quantity; things true at the specific commodity line level. Skeleton supports exactly one line (commodityComplement single-element array) - see c-003. M3 (c-030 resolved): batch selection adopted - one search page, multi-select species across commodity codes, several commodity lines created in one pass (MODEL_EXTENDER batch-create, after M3-0A); the 1..N hierarchy itself stands. Derived stat cards on the hub sum numberOfAnimalsQuantity / numberOfPackages over the lines - display only, no new obligation (A8/f-024, M3-14).",
+      "notes": "V4 data-level model: a commodity code plus its taxonomy chain (Type, Class, Species) plus a quantity; things true at the specific commodity line level. Skeleton supports exactly one line (commodityComplement single-element array) - see c-003. IMPLEMENTED at inc-062 (c-030 resolved): batch selection - one search page, multi-select species across commodity codes, several commodity lines created in one pass; the stored grain is LINE-PER-SPECIES (a line = commodity + one species; speciesSelection single-valued, quantities plain per-line values). The model's item[] drops typeSelection (page gone per c-037; the obligation entry stays pending PO sign-off). Mapper A groups lines by commodity and sums quantities up to the V4/skeleton commodity-level number; Mapper B keeps the per-species lines losslessly. Derived stat cards on the hub sum numberOfAnimalsQuantity / numberOfPackages over the lines - display only, no new obligation (A8/f-024, M3-14).",
       "conflicts": ["c-003", "c-030"],
       "provenance": [
         {
@@ -1432,7 +1424,7 @@
         "valuesSource": "MDM; where applicable for given commodity the user can filter species by type",
         "example": "Game"
       },
-      "notes": "Applicability is data-driven from MDM ('where applicable for given commodity') - not expressible as an activatedBy equals/includes rule, so no activatedBy is wired. Unresolved inline comment on the Example cell (Game). Skeleton offers only Domestic from mock-species.json and posts the type text, not its numeric value (see c-018). PENDING-PO-DROP (c-037 resolved): the design's search-first multi-select subsumes this filter's purpose; the page is dropped from the journey but the obligation STAYS in the spec until PO signs off dropping a V4 mandatory-to-proceed field.",
+      "notes": "Applicability is data-driven from MDM ('where applicable for given commodity') - not expressible as an activatedBy equals/includes rule, so no activatedBy is wired. Unresolved inline comment on the Example cell (Game). Skeleton offers only Domestic from mock-species.json and posts the type text, not its numeric value (see c-018). PENDING-PO-DROP (c-037 resolved): the design's search-first multi-select subsumes this filter's purpose; the page is dropped from the journey but the obligation STAYS in the spec until PO signs off dropping a V4 mandatory-to-proceed field. Removed from the runtime model and mappers at inc-062 (no page collects it; Mapper A no longer emits typeOfCommodity).",
       "conflicts": ["c-018", "c-037"],
       "provenance": [
         {
@@ -1457,12 +1449,12 @@
       "label": "Species selection",
       "input": {
         "widget": "checkboxes",
-        "valuesSource": "MDM species for the selected commodity/type",
+        "valuesSource": "MDM species for the selected commodity, via the batch search results grouped by commodity code",
         "hint": "Select all that apply.",
         "example": "Bison bison; Bos spp.; Bos taurus; Bubalus bubalis"
       },
-      "notes": "User may select one or more species up to the agreed maximum (maximum not stated in V4). Skeleton stores each selection as {value, text} from mock-species.json and carries per-species values over on reselect (see c-017).",
-      "conflicts": ["c-017"],
+      "notes": "User may select one or more species up to the agreed maximum (maximum not stated in V4). GRAIN CHANGE at inc-062 (c-030 resolved): the stored value is SINGLE-VALUED per commodity line - batch selection on the search page creates one line per selected species, so a line is (commodity + one species) and per-species values live as plain per-line values. Raise the per-species grain with PO/Monica as V4 feedback (V4 words this as a multi-select within one commodity line). Skeleton stores each selection as {value, text} from mock-species.json and carries per-species values over on reselect (see c-017) - the line-per-species reconcile preserves a still-selected species' line the same way.",
+      "conflicts": ["c-017", "c-030"],
       "provenance": [
         {
           "source": "confluence-v4",

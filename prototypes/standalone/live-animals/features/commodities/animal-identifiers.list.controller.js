@@ -37,7 +37,9 @@ const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) {
-    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+    return h.redirect(
+      kit.withChangeContext(request, pagePath('consignment-details'))
+    )
   }
   const commodity = answers.commodityLines[index].commoditySelection
   const rows = state
@@ -60,7 +62,7 @@ const get = async (request, h) => {
     }))
   return h.view(view, {
     ...kit.base('Animal identifiers', {
-      backLink: kit.withChangeContext(request, pagePath('commodities')),
+      backLink: kit.withChangeContext(request, pagePath('consignment-details')),
       journey
     }),
     heading: 'Animal identifiers for this commodity',
@@ -76,7 +78,9 @@ const post = async (request, h) => {
   const { answers, scope } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) {
-    return h.redirect(kit.withChangeContext(request, pagePath('commodities')))
+    return h.redirect(
+      kit.withChangeContext(request, pagePath('consignment-details'))
+    )
   }
   if ((request.payload ?? {}).action === 'add') {
     return h.redirect(
@@ -90,7 +94,7 @@ const post = async (request, h) => {
     kit.exitTarget(
       request,
       (await kit.runTarget(request, ANIMAL_IDENTIFIERS_STEP, scope)) ??
-        pagePath('commodities')
+        pagePath('consignment-details')
     )
   )
 }

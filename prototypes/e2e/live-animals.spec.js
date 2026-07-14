@@ -98,26 +98,37 @@ const answerCountryOfOrigin = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+// inc-062: commodities are added on the batch search page — a server
+// round-trip search, then species checkboxes grouped by commodity code.
+// Species scientific names are unique across the stub commodities, so a bare
+// checkbox-name locator resolves inside the right group. Fills only; the
+// caller drives the save.
+const SEARCH_LABEL =
+  'Search for a common name, commodity code or scientific name'
+
+const searchAndSelect = async (page, query, speciesNames) => {
+  await page.getByLabel(SEARCH_LABEL).fill(query)
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+  for (const name of speciesNames) {
+    await page.getByRole('checkbox', { name }).check()
+  }
+}
+
 // commoditySelection is item-level and enforcedAt=continue, so it unlocks every
 // post-commodities section (RULE 1) once ANY line fills it. Answer the country,
-// then add one commodity line. A NON-triggering commodity (Cats) is used so the
-// line does not pull the notification-level anyItem obligations (unweaned
-// animals, CPH) into scope and disturb a section the caller is about to assert.
-// Returns to the hub.
+// then batch-create one commodity line. A NON-triggering commodity (Cats) is
+// used so the line does not pull the notification-level anyItem obligations
+// (unweaned animals, CPH) into scope and disturb a section the caller is about
+// to assert. Returns to the hub.
 const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await page.getByRole('button', { name: 'Add a commodity' }).click()
-  await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
+  await searchAndSelect(page, 'Cat', ['Felis catus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(
-    page.getByRole('heading', { name: 'Description of goods' })
+    page.getByRole('heading', { name: 'Consignment details' })
   ).toBeVisible()
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Commodities you have added' })
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
@@ -144,31 +155,36 @@ const completeAnswerSections = async (page) => {
     .fill(values.internalReferenceNumber)
   await save()
 
-  // Commodities: one line via the select and details sub-pages, plus one
-  // animal identifier unit (inc-035).
+  // Commodities: the batch search creates the fixture's cattle line, the
+  // consolidated details page takes its per-species counts (inc-062), then
+  // the identification surface takes one identifier unit (inc-035).
   await task('What are you importing?')
-  await page.getByRole('button', { name: 'Add a commodity' }).click()
-  await page
-    .getByLabel('Commodity', { exact: true })
-    .selectOption(line.commoditySelection)
-  await page.getByRole('radio', { name: 'Domestic' }).check()
-  await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
+  await searchAndSelect(page, line.commoditySelection, ['Bos taurus'])
   await save()
+  await expect(
+    page.getByRole('heading', { name: 'Consignment details' })
+  ).toBeVisible()
   await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
   await page
     .getByLabel('Number of packages (optional)')
     .fill(line.numberOfPackages)
   await save()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   const [unit] = line.animalIdentifiers
-  await page
-    .locator('.govuk-summary-list__row', { hasText: 'Commodity 1' })
-    .getByRole('link', { name: /Animal identifiers/ })
-    .click()
+  await task('Animal identification details')
+  await expect(
+    page.getByRole('heading', { name: 'Consignment details' })
+  ).toBeVisible()
+  await page.getByRole('link', { name: /Animal identifiers/ }).click()
   await page.getByRole('button', { name: 'Add an animal' }).click()
   await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
   await page.getByRole('button', { name: 'Add animal' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Consignment details' })
+  ).toBeVisible()
+  await save()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
   // About the consignment: internal market walks reason -> purpose -> details.
   await task('Main reason for importing')
@@ -373,18 +389,19 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(heading('Origin of the import')).toBeVisible()
 
-    // Origin → commodity select (not the list — the run enters the loop).
+    // Origin → the commodity search page (the run's inc-062 commodity leg).
     await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
     await page.getByRole('radio', { name: 'No' }).check()
     await save()
-    await expect(heading('Select species of commodity')).toBeVisible()
+    await expect(heading('What are you importing?')).toBeVisible()
+    await expect(page.getByLabel(SEARCH_LABEL)).toBeVisible()
 
-    // Select → details (the loop's own progression carries the run).
-    await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
+    // Search → batch select one species → the consolidated details page.
+    await searchAndSelect(page, 'Cat', ['Felis catus'])
     await save()
-    await expect(heading('Description of goods')).toBeVisible()
+    await expect(heading('Consignment details')).toBeVisible()
 
-    // Details → import reason (run sequence, not back to the list).
+    // Details → import reason (run sequence, not the hub).
     await page.getByLabel('Number of animals').fill('2')
     await save()
     await expect(
@@ -621,9 +638,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Every post-origin task page inherits the strip from the shared layout.
     await page.goto(`${BASE}/hub`)
     await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Commodities you have added' })
-    ).toBeVisible()
+    await expect(page.getByLabel(SEARCH_LABEL)).toBeVisible()
     await expect(strip).toBeVisible()
     await expect(strip.locator('.govuk-tag')).toHaveText('Draft')
     await expect(strip).toContainText(reference)
@@ -676,7 +691,7 @@ test.describe('live-animals (page-owned spine)', () => {
     )
   })
 
-  test('commodities — a line is added across the select and details sub-pages, then the hub row completes', async ({
+  test('commodities — the batch search multi-selects species across codes, the details page takes per-species counts, then the hub row completes', async ({
     page
   }) => {
     await startNotification(page)
@@ -691,16 +706,10 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeHidden()
 
     await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Commodities you have added' })
-    ).toBeVisible()
+    await expect(page.getByLabel(SEARCH_LABEL)).toBeVisible()
 
-    await page.getByRole('button', { name: 'Add a commodity' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Select species of commodity' })
-    ).toBeVisible()
-
-    // commoditySelection is enforcedAt=continue — saving without it must fail.
+    // commoditySelection is enforcedAt=continue — saving with nothing
+    // selected must fail.
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'There is a problem' })
@@ -709,87 +718,75 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('link', { name: 'Select a commodity' })
     ).toBeVisible()
 
-    // First entry sub-page: the taxonomy, from the shared fixture.
-    await page
-      .getByLabel('Commodity', { exact: true })
-      .selectOption(line.commoditySelection)
-    await page.getByRole('radio', { name: 'Domestic' }).check()
+    // Search matches by commodity code and renders the commodity's species
+    // as checkboxes grouped under its code heading.
+    await page.getByLabel(SEARCH_LABEL).fill('0102')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
+    await expect(page.getByRole('group', { name: 'Cow (0102)' })).toBeVisible()
     await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
+    await page.getByRole('checkbox', { name: 'Bison bison' }).check()
+
+    // A second search (by scientific name) carries the ticked species into
+    // the selection summary while the results move to the Cat group —
+    // multi-select across commodity codes.
+    await searchAndSelect(page, 'Felis catus', ['Felis catus'])
+    await expect(
+      page.getByRole('heading', { name: '2 selected' })
+    ).toBeVisible()
+
+    // The remove affordance recomputes the selection on its round-trip: the
+    // checked Cat species joins it, the removed Cow species leaves it.
+    await page
+      .getByRole('button', { name: 'Remove Cow (0102) — Bison bison' })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: '2 selected' })
+    ).toBeVisible()
+    await expect(page.getByText('Cat (01061900) — Felis catus')).toBeVisible()
+    await expect(page.getByText('Cow (0102) — Bison bison')).toHaveCount(0)
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    // Second entry sub-page: the counts for the line just minted.
+    // The consolidated details page (design 01-14/15): one table row per
+    // commodity, one quantity block per species line.
     await expect(
-      page.getByRole('heading', { name: 'Description of goods' })
+      page.getByRole('heading', { name: 'Consignment details' })
     ).toBeVisible()
+    const table = page.locator('.govuk-table')
+    await expect(table).toContainText('0102')
+    await expect(table).toContainText('Cow')
+    await expect(table).toContainText('01061900')
+    await expect(table).toContainText('Cat')
+    await expect(
+      page.getByRole('heading', { name: 'Cow (0102)' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Bos taurus' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Cat (01061900)' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Felis catus' })
+    ).toBeVisible()
+
+    // Per-species counts: each line takes its own quantities (the input ids
+    // are indexed by line, in canonical commodity-then-species order).
     await page
-      .getByLabel('Number of animals')
+      .locator('#numberOfAnimalsQuantity-0')
       .fill(line.numberOfAnimalsQuantity)
-    await page
-      .getByLabel('Number of packages (optional)')
-      .fill(line.numberOfPackages)
+    await page.locator('#numberOfPackages-0').fill(line.numberOfPackages)
+    await page.locator('#numberOfAnimalsQuantity-1').fill('2')
+    await page.locator('#numberOfPackages-1').fill('1')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    // Back on the loop hub with the new line summarised.
-    await expect(
-      page.getByRole('heading', { name: 'Commodities you have added' })
-    ).toBeVisible()
-    const row = page.locator('.govuk-summary-list__row', {
-      hasText: 'Commodity 1'
-    })
-    await expect(row).toContainText('Cow — 25 animals')
-
-    // Every commodity line owes at least one animal identifier unit (inc-035).
-    // Open the nested loop hub from the line row and add a unit.
-    const [unit] = line.animalIdentifiers
-    await row.getByRole('link', { name: /Animal identifiers/ }).click()
-    await expect(
-      page.getByRole('heading', {
-        name: 'Animal identifiers for this commodity'
-      })
-    ).toBeVisible()
-    await page.getByRole('button', { name: 'Add an animal' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Add an animal' })
-    ).toBeVisible()
-
-    // The type fields that match the enclosing commodity (Cattle) are shown —
-    // ear tag, passport and tattoo (V4 '0102 - Bovine' is stored as 'Cow',
-    // inc-057); the others are hidden, and Cattle is off the
-    // permanent-address gate.
-    await expect(page.getByLabel('Ear tag number')).toBeVisible()
-    await expect(page.getByLabel('Passport number')).toBeVisible()
-    await expect(page.getByLabel('Tattoo')).toBeVisible()
-    await expect(page.getByLabel('Horse name')).toBeHidden()
-    await expect(page.getByLabel('Name or organisation name')).toBeHidden()
-
-    await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
-    await page.getByRole('button', { name: 'Add animal' }).click()
-
-    // Back on the nested hub with the unit summarised, then Continue returns to
-    // the commodities loop hub.
-    await expect(
-      page.getByRole('heading', {
-        name: 'Animal identifiers for this commodity'
-      })
-    ).toBeVisible()
-    await expect(
-      page.locator('.govuk-summary-list__row', { hasText: 'Animal 1' })
-    ).toContainText(unit.animalIdentifierEarTag)
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Commodities you have added' })
-    ).toBeVisible()
-
-    // Continue returns to the hub with the task completed.
-    await page.getByRole('button', { name: 'Continue' }).click()
+    // The hub row completes on line data alone (the identification row is
+    // its own facet), and the stat cards sum over the per-species lines
+    // (25 + 2 animals, 5 + 1 packages).
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     const commoditiesRow = page.locator('.govuk-task-list__item', {
       hasText: 'What are you importing?'
     })
     await expect(commoditiesRow).toContainText('Completed')
-
-    // The hub now shows the derived stat cards summed over the line just
-    // added (25 animals, 5 packages).
     await expect(
       page.getByRole('heading', { name: 'Your commodities' })
     ).toBeVisible()
@@ -802,13 +799,58 @@ test.describe('live-animals (page-owned spine)', () => {
     )
     await expect(
       statCard('Animals').locator('.govuk-summary-list__value')
-    ).toHaveText(line.numberOfAnimalsQuantity)
+    ).toHaveText('27')
     await expect(statCard('Packages/boxes')).toContainText(
       'Total number of packages in this consignment'
     )
     await expect(
       statCard('Packages/boxes').locator('.govuk-summary-list__value')
-    ).toHaveText(line.numberOfPackages)
+    ).toHaveText('6')
+
+    // Remove-line leg: the hub row re-enters at the search page with the
+    // stored selection summarised; the details table's Remove drops every
+    // line of that commodity while the kept line's counts survive (c-017).
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
+    await expect(
+      page.getByRole('heading', { name: '2 selected' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
+    await page.getByRole('link', { name: 'Remove Cat' }).click()
+    await expect(table).not.toContainText('Cat')
+    await expect(
+      page.getByRole('heading', { name: 'Felis catus' })
+    ).toHaveCount(0)
+    await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue(
+      line.numberOfAnimalsQuantity
+    )
+
+    // Add-another leg: back to the search (the kept line stays selected),
+    // pick a species from a third commodity, and the new line appears on the
+    // details page with empty counts — a deselected-then-readded species
+    // never resurrects wiped data.
+    await page.getByRole('link', { name: 'Add another commodity' }).click()
+    await expect(
+      page.getByRole('heading', { name: '1 selected' })
+    ).toBeVisible()
+    await searchAndSelect(page, 'Dog', ['Canis lupus familiaris'])
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
+    await expect(table).toContainText('Dog')
+    await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue(
+      line.numberOfAnimalsQuantity
+    )
+    await expect(page.locator('#numberOfAnimalsQuantity-1')).toHaveValue('')
+    await page.locator('#numberOfAnimalsQuantity-1').fill('3')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      statCard('Animals').locator('.govuk-summary-list__value')
+    ).toHaveText('28')
   })
 
   test('animal identifiers — a unit form shows only the identifier types the commodity requires, plus the permanent address for cats and dogs', async ({
@@ -819,22 +861,17 @@ test.describe('live-animals (page-owned spine)', () => {
     // Commodities is gated on countryOfOrigin (RULE 1) — answer it first.
     await answerCountryOfOrigin(page)
 
-    // Add a Cats commodity line (only the commodity is needed to mint it; the
-    // taxonomy and counts are submit-enforced, so blank saves walk through).
+    // Batch-create a Cats commodity line (the counts are submit-enforced, so
+    // the details page can be left blank).
     await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await page.getByRole('button', { name: 'Add a commodity' }).click()
-    await page.getByLabel('Commodity', { exact: true }).selectOption('Cat')
+    await searchAndSelect(page, 'Cat', ['Felis catus'])
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Description of goods' })
+      page.getByRole('heading', { name: 'Consignment details' })
     ).toBeVisible()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    // Open the animal identifiers loop hub for the Cats line.
-    const catsRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Commodity 1'
-    })
-    await catsRow.getByRole('link', { name: /Animal identifiers/ }).click()
+    // Open the animal identifiers loop hub from the Cats species block.
+    await page.getByRole('link', { name: /Animal identifiers/ }).click()
     await page.getByRole('button', { name: 'Add an animal' }).click()
     await expect(
       page.getByRole('heading', { name: 'Add an animal' })
@@ -896,18 +933,13 @@ test.describe('live-animals (page-owned spine)', () => {
     // Fish is in no typed-identifier list, so the notInUnionOf gate (inc-040)
     // turns the free-text fallbacks ON and every typed input OFF.
     await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await page.getByRole('button', { name: 'Add a commodity' }).click()
-    await page.getByLabel('Commodity', { exact: true }).selectOption('Fish')
+    await searchAndSelect(page, 'Fish', ['Salmo salar'])
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Description of goods' })
+      page.getByRole('heading', { name: 'Consignment details' })
     ).toBeVisible()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    const fishRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Commodity 1'
-    })
-    await fishRow.getByRole('link', { name: /Animal identifiers/ }).click()
+    await page.getByRole('link', { name: /Animal identifiers/ }).click()
     await page.getByRole('button', { name: 'Add an animal' }).click()
     await expect(
       page.getByRole('heading', { name: 'Add an animal' })
@@ -1931,28 +1963,19 @@ test.describe('live-animals (page-owned spine)', () => {
       name: 'Does the consignment contain any unweaned animals?'
     })
 
-    // A commodity line for the given code, taking the fewest steps: only the
-    // commodity is required to mint the line (the taxonomy and counts are
-    // submit-enforced, so blank saves walk through).
-    const addCommodity = async (commodity) => {
+    // A commodity line for the given species, taking the fewest steps: the
+    // batch search keeps earlier selections ticked (hidden carried inputs),
+    // so each call ADDS a line; the counts are submit-enforced, so the
+    // details page saves blank straight back to the hub.
+    const addCommodity = async (query, species) => {
       await page.goto(`${BASE}/hub`)
       await page.getByRole('link', { name: 'What are you importing?' }).click()
-      // "Add a commodity" for the first line, "Add another commodity" after.
-      await page
-        .getByRole('button', { name: /Add a(nother)? commodity/ })
-        .click()
-      await page
-        .getByLabel('Commodity', { exact: true })
-        .selectOption(commodity)
+      await searchAndSelect(page, query, [species])
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Description of goods' })
+        page.getByRole('heading', { name: 'Consignment details' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'Commodities you have added' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Continue' }).click()
       await expect(
         page.getByRole('heading', { name: 'Overview' })
       ).toBeVisible()
@@ -1978,14 +2001,14 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // A non-triggering commodity (cats): the certified-for question shows, but
     // the notification-level unweaned-animals question is out of scope.
-    await addCommodity('Cat')
+    await addCommodity('Cat', 'Felis catus')
     await openAdditionalDetails()
     await expect(certifiedFor).toBeVisible()
     await expect(unweaned).toBeHidden()
 
     // Adding a triggering commodity (cattle) brings the unweaned-animals
     // question into scope across the commodity lines (frame:"anyItem").
-    await addCommodity('Cow')
+    await addCommodity('Cow', 'Bos taurus')
     await openAdditionalDetails()
     await expect(certifiedFor).toBeVisible()
     await expect(unweaned).toBeVisible()
@@ -2015,28 +2038,19 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     })
 
-    // A commodity line for the given code, taking the fewest steps: only the
-    // commodity is required to mint the line (the taxonomy and counts are
-    // submit-enforced, so blank saves walk through).
-    const addCommodity = async (commodity) => {
+    // A commodity line for the given species, taking the fewest steps: the
+    // batch search keeps earlier selections ticked (hidden carried inputs),
+    // so each call ADDS a line; the counts are submit-enforced, so the
+    // details page saves blank straight back to the hub.
+    const addCommodity = async (query, species) => {
       await page.goto(`${BASE}/hub`)
       await page.getByRole('link', { name: 'What are you importing?' }).click()
-      // "Add a commodity" for the first line, "Add another commodity" after.
-      await page
-        .getByRole('button', { name: /Add a(nother)? commodity/ })
-        .click()
-      await page
-        .getByLabel('Commodity', { exact: true })
-        .selectOption(commodity)
+      await searchAndSelect(page, query, [species])
       await page.getByRole('button', { name: 'Save and continue' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Description of goods' })
+        page.getByRole('heading', { name: 'Consignment details' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Save and continue' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'Commodities you have added' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Continue' }).click()
       await expect(hubHeading).toBeVisible()
     }
 
@@ -2049,7 +2063,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // A non-triggering commodity (cats): CPH is out of scope, so the addresses
     // hub shows no CPH row and Continue returns straight to the hub — no CPH
     // page (the derived gate).
-    await addCommodity('Cat')
+    await addCommodity('Cat', 'Felis catus')
     await openAddresses()
     await expect(cphRow).toBeHidden()
     await page.getByRole('button', { name: 'Continue' }).click()
@@ -2059,7 +2073,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Adding a triggering commodity (cattle) brings CPH into scope across the
     // commodity lines (frame:"anyItem") — the row appears on the addresses hub
     // in its empty state.
-    await addCommodity('Cow')
+    await addCommodity('Cow', 'Bos taurus')
     await openAddresses()
     await expect(cphRow).toBeVisible()
     await expect(cphRow).toContainText('Not added yet')
@@ -2147,10 +2161,11 @@ test.describe('live-animals (page-owned spine)', () => {
       values.internalReferenceNumber
     )
 
-    // The commodity line renders as a per-species card whose read-only table
-    // lists the identifier unit added during the walk.
+    // The commodity line renders as a per-species card (title = commodity +
+    // species, inc-062) whose read-only table lists the identifier unit
+    // added during the walk.
     const speciesCard = page.locator('.govuk-summary-card', {
-      has: page.getByRole('heading', { name: 'Cow (0102)' })
+      has: page.getByRole('heading', { name: 'Cow (0102) — Bos taurus' })
     })
     await expect(speciesCard.locator('.govuk-table')).toContainText(
       values.commodityLines[0].animalIdentifiers[0].animalIdentifierEarTag
@@ -2238,7 +2253,7 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Check your answers' })
     ).toBeVisible()
     const speciesCard = page.locator('.govuk-summary-card', {
-      has: page.getByRole('heading', { name: 'Cow (0102)' })
+      has: page.getByRole('heading', { name: 'Cow (0102) — Bos taurus' })
     })
     await expect(speciesCard.locator('.govuk-table')).toContainText(
       'UK000000000002'
@@ -2298,15 +2313,14 @@ test.describe('live-animals (page-owned spine)', () => {
       .fill(values.internalReferenceNumber)
     await save()
 
-    // Commodities: one line via the select and details sub-pages.
+    // Commodities: the batch search creates the fixture's cattle line, then
+    // the consolidated details page takes its per-species counts (inc-062).
     await task('What are you importing?')
-    await page.getByRole('button', { name: 'Add a commodity' }).click()
-    await page
-      .getByLabel('Commodity', { exact: true })
-      .selectOption(line.commoditySelection)
-    await page.getByRole('radio', { name: 'Domestic' }).check()
-    await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
+    await searchAndSelect(page, line.commoditySelection, ['Bos taurus'])
     await save()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
     await page
       .getByLabel('Number of animals')
       .fill(line.numberOfAnimalsQuantity)
@@ -2314,19 +2328,22 @@ test.describe('live-animals (page-owned spine)', () => {
       .getByLabel('Number of packages (optional)')
       .fill(line.numberOfPackages)
     await save()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     // Every line owes at least one animal identifier unit (inc-035): add one
-    // from the nested loop hub. Cattle is off the permanent-address gate, so an
-    // ear tag alone completes the unit.
+    // via the identification row's surface. Cattle is off the
+    // permanent-address gate, so an ear tag alone completes the unit.
     const [unit] = line.animalIdentifiers
-    await page
-      .locator('.govuk-summary-list__row', { hasText: 'Commodity 1' })
-      .getByRole('link', { name: /Animal identifiers/ })
-      .click()
+    await task('Animal identification details')
+    await page.getByRole('link', { name: /Animal identifiers/ }).click()
     await page.getByRole('button', { name: 'Add an animal' }).click()
     await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
     await page.getByRole('button', { name: 'Add animal' }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment details' })
+    ).toBeVisible()
+    await save()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     // About the consignment: internal market walks on to the purpose page,
     // then the additional-details tail.

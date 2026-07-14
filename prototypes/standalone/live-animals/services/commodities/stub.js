@@ -9,17 +9,23 @@ export const COMMODITY_CODES = {
   Fish: '0301'
 }
 
-export const TYPE_OPTIONS = [
-  { value: 'Domestic', text: 'Domestic' },
-  { value: 'Game', text: 'Game' }
-]
+// Species per commodity. Cow's four are the skeleton's mock-species.json for
+// 0102; the others carry one representative species each so the batch search
+// can select across commodity codes.
+export const COMMODITY_SPECIES = {
+  Cow: [
+    { value: '716661', text: 'Bison bison' },
+    { value: '1388624', text: 'Bos spp.' },
+    { value: '1148346', text: 'Bos taurus' },
+    { value: '749313', text: 'Bubalus bubalis' }
+  ],
+  Horse: [{ value: '822332', text: 'Equus caballus' }],
+  Cat: [{ value: '923501', text: 'Felis catus' }],
+  Dog: [{ value: '923502', text: 'Canis lupus familiaris' }],
+  Fish: [{ value: '801204', text: 'Salmo salar' }]
+}
 
-export const SPECIES_OPTIONS = [
-  { value: '716661', text: 'Bison bison' },
-  { value: '1388624', text: 'Bos spp.' },
-  { value: '1148346', text: 'Bos taurus' },
-  { value: '749313', text: 'Bubalus bubalis' }
-]
+export const SPECIES_OPTIONS = Object.values(COMMODITY_SPECIES).flat()
 
 export const PACKAGE_COUNT_COMMODITIES = [
   '01064100 - Bees',

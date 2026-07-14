@@ -122,6 +122,37 @@ submit is a no-op that leaves the journey in progress.
 Pinned by `engine/write-through-per-commit.test.js` and
 `engine/submit-is-finalise.test.js`.
 
+## Mapper A round-trip losses (the lossy-A caveat)
+
+The store is line-per-species (inc-062): a commodity line is one commodity
+plus ONE species with its own counts and nested identifier records. Mapper A
+(`services/persistence/records/notification-mapper.js`) consolidates that
+grain UP to the skeleton-exact notification — lines grouped by commodity,
+one complement per group, per-species counts kept on the species entries and
+SUMMED into the complement totals. `skeleton-equivalence.test.js` pins the
+forward direction: same user intent, identical backend document.
+
+The REVERSE direction (real-mode marshal, backend → answers) rebuilds one
+line per species entry, but the skeleton notification shape cannot carry
+everything, so a Mapper A round-trip **loses**:
+
+- **Commodity identity of every group after the first.** The notification
+  has a single top-level `commodity.name` and no per-complement code, so
+  lines rebuilt from the second commodity onwards come back with no
+  `commoditySelection`. This is the unrecoverable per-species/per-commodity
+  split of the consolidated shape.
+- **Identifier records beyond one per species, and every identifier field
+  except earTag/passport.** A species entry carries one earTag/passport
+  pair; tattoo, horse name, the free-text fallbacks and the per-animal
+  permanent address have no home.
+- **`typeSelection`** — out of the journey per c-037, no longer emitted.
+
+Mapper B (`LIVE_ANIMALS_MAPPER=b`) exists precisely to demonstrate the
+lossless alternative: per-group `commodityCode` + `name` and full
+per-species `animalIdentifiers` arrays, with the reverse falling back to
+Mapper A recovery when a backend strips the extras. Pinned in
+`notification-mapper.test.js`.
+
 ## Self-heal on re-entry
 
 The record stores answers and lifecycle metadata only — no derived

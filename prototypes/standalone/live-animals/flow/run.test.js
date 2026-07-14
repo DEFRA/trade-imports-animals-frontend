@@ -2,6 +2,10 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../config.js'
 import { dispatchPages } from '../features/index.js'
+import {
+  commoditiesPage,
+  consignmentDetailsPage
+} from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
@@ -9,17 +13,13 @@ import { makeScope } from '../engine/index.js'
 import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { buildDispatch } from './dispatch.js'
 import { readyForCheckYourAnswers } from './section-status.js'
-import {
-  ANIMAL_IDENTIFIERS_STEP,
-  COMMODITY_DETAILS_STEP,
-  nextRunTarget
-} from './run.js'
+import { ANIMAL_IDENTIFIERS_STEP, nextRunTarget } from './run.js'
 
 const next = (stepId, answers) => nextRunTarget(stepId, makeScope(answers))
 
 const lineSeed = {
   countryOfOrigin: 'FR',
-  commodityLines: [{ commoditySelection: 'Cat' }]
+  commodityLines: [{ commoditySelection: 'Cat', speciesSelection: '923501' }]
 }
 
 describe('#nextRunTarget — the opening run sequence', () => {
@@ -32,14 +32,24 @@ describe('#nextRunTarget — the opening run sequence', () => {
     expect(next('importTypeFilter', {})).toBe(pagePath('origin'))
   })
 
-  it('Should send origin to the commodity select sub-page once the country is answered', () => {
+  it('Should send origin to the commodity search page once the country is answered', () => {
     expect(next('origin', { countryOfOrigin: 'FR' })).toBe(
-      pagePath('commodities/select')
+      pagePath('commodities')
     )
   })
 
-  it('Should send the commodity-details waypoint to import reason', () => {
-    expect(next(COMMODITY_DETAILS_STEP, lineSeed)).toBe(
+  it('Should send the search page to the consignment details page once a line exists', () => {
+    expect(next(commoditiesPage.id, lineSeed)).toBe(
+      pagePath('consignment-details')
+    )
+  })
+
+  it('Should skip the consignment details page while no line exists — with no line the whole tail is gated and the run collapses to the hub', () => {
+    expect(next(commoditiesPage.id, { countryOfOrigin: 'FR' })).toBe(hubPath())
+  })
+
+  it('Should send the consignment details page to import reason', () => {
+    expect(next(consignmentDetailsPage.id, lineSeed)).toBe(
       pagePath('import-reason')
     )
   })

@@ -145,8 +145,7 @@ describe('#rowStatus — one status per hub task row', () => {
         commodityLines: [
           {
             commoditySelection: 'Cow',
-            typeSelection: 'Domestic',
-            speciesSelection: ['1148346'],
+            speciesSelection: '1148346',
             numberOfPackages: '5',
             numberOfAnimalsQuantity: '25'
           }
@@ -270,9 +269,9 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
         { ...happyPath.commodityLines[0], animalIdentifiers: [] }
       ]
     },
-    'the happy path without the line taxonomy': {
+    'the happy path without the species': {
       ...happyPath,
-      commodityLines: [{ ...happyPath.commodityLines[0], typeSelection: '' }]
+      commodityLines: [{ ...happyPath.commodityLines[0], speciesSelection: '' }]
     },
     'the happy path owing transit countries': {
       ...happyPath,

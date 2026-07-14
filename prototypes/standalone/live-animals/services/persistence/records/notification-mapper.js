@@ -8,9 +8,10 @@
 // storable obligations and carries nothing the skeleton does not persist.
 //
 // Mapper B (answersToTargetNotification / targetNotificationToAnswers) is Mapper
-// A plus the extra fields — a lossless round-trip demonstrator over all 46
-// obligations. It reuses Mapper A's builders and layers the extras on top; it is
-// not wired to the real POST beyond the storable set.
+// A plus the extra fields — a lossless round-trip demonstrator over every
+// captured obligation, including the per-species commodity lines. It reuses
+// Mapper A's builders and layers the extras on top; it is not wired to the real
+// POST beyond the storable set.
 
 import {
   speciesLabel,
@@ -44,32 +45,58 @@ const datePartsFromIso = (iso) => {
 // Shared builders (used by both mappers)
 // ---------------------------------------------------------------------------
 
+// The store is line-per-species (inc-062): a commodity line is one commodity
+// code plus ONE species with its own counts and nested identifier records.
+// The skeleton commodity blob is one complement per COMMODITY with a species
+// array, per-species counts and complement-level totals — so both mappers
+// group lines by commodity and consolidate counts UP to the complement total.
+const groupLinesByCommodity = (lines) => {
+  const groups = new Map()
+  for (const line of lines) {
+    const key = line.commoditySelection
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(line)
+  }
+  return [...groups.values()]
+}
+
+// Skeleton parity: getTotal (lodash) maps Number, drops NaN and sums — a blank
+// count contributes 0. Omitted entirely when no line carries the field.
+const totalOf = (lines, field) => {
+  const values = lines.map((line) => line[field]).filter((v) => v !== undefined)
+  if (values.length === 0) return undefined
+  return values
+    .map(Number)
+    .filter((n) => !Number.isNaN(n))
+    .reduce((sum, n) => sum + n, 0)
+}
+
 // Species value → display name via the prototype's commodity reference data,
 // falling back to the raw value for unknown codes — matching the skeleton's
-// `speciesByValue.get(value) ?? value` resolution.
-const speciesFromLine = (line) => {
-  if (line.speciesSelection === undefined) return undefined
-  return line.speciesSelection.map((species, index) => {
-    const unit = line.animalIdentifiers?.[index] ?? {}
-    return compact({
-      value: species,
-      text: speciesLabel(species) ?? species,
-      noOfAnimals: line.numberOfAnimalsQuantity,
-      noOfPackages: line.numberOfPackages,
-      earTag: unit.animalIdentifierEarTag,
-      passport: unit.animalIdentifierPassport
-    })
+// `speciesByValue.get(value) ?? value` resolution. One entry per line; the
+// skeleton pairs one earTag/passport per species row, so the entry carries the
+// line's first identifier unit.
+const speciesEntryFromLine = (line) => {
+  const unit = line.animalIdentifiers?.[0] ?? {}
+  return compact({
+    value: line.speciesSelection,
+    text: speciesLabel(line.speciesSelection) ?? line.speciesSelection,
+    noOfAnimals: line.numberOfAnimalsQuantity,
+    noOfPackages: line.numberOfPackages,
+    earTag: unit.animalIdentifierEarTag,
+    passport: unit.animalIdentifierPassport
   })
 }
 
-const identifiersFromSpecies = (species = []) => {
-  const units = species.map((entry) =>
-    compact({
-      animalIdentifierEarTag: entry.earTag,
-      animalIdentifierPassport: entry.passport
-    })
-  )
-  return units.some((unit) => Object.keys(unit).length > 0) ? units : undefined
+const speciesLines = (group) =>
+  group.filter((line) => line.speciesSelection !== undefined)
+
+const identifiersFromSpeciesEntry = (entry) => {
+  const unit = compact({
+    animalIdentifierEarTag: entry.earTag,
+    animalIdentifierPassport: entry.passport
+  })
+  return Object.keys(unit).length > 0 ? [unit] : undefined
 }
 
 // The whole backend Transporter {name,address,approvalNumber,type}, built from
@@ -112,24 +139,25 @@ const transporterToAnswers = (transporter) => {
 // Mapper A — skeleton-exact backend notification
 // ---------------------------------------------------------------------------
 
-// Skeleton parity: the commodity-complement totals are numbers in the
-// notification (the skeleton computes them via a lodash sum), while the
-// per-species noOfAnimals/noOfPackages stay the raw string answers.
-const toNum = (v) => (v == null ? undefined : Number(v))
-
-const baseComplementFromLine = (line) =>
-  compact({
-    typeOfCommodity: line.typeSelection,
-    totalNoOfAnimals: toNum(line.numberOfAnimalsQuantity),
-    totalNoOfPackages: toNum(line.numberOfPackages),
-    species: speciesFromLine(line)
+// One complement per commodity group. The complement totals are numbers (the
+// skeleton computes them via a lodash sum over the per-species counts), while
+// the per-species noOfAnimals/noOfPackages stay the raw string answers.
+const baseComplementFromGroup = (group) => {
+  const species = speciesLines(group).map(speciesEntryFromLine)
+  return compact({
+    totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity'),
+    totalNoOfPackages: totalOf(group, 'numberOfPackages'),
+    species: species.length > 0 ? species : undefined
   })
+}
 
 const commodityFromLinesA = (lines) => {
   if (!Array.isArray(lines) || lines.length === 0) return undefined
   return {
     name: lines[0].commoditySelection,
-    commodityComplement: lines.map(baseComplementFromLine)
+    commodityComplement: groupLinesByCommodity(lines).map(
+      baseComplementFromGroup
+    )
   }
 }
 
@@ -196,27 +224,28 @@ export const answersToNotification = (answers = {}) => {
   return notification
 }
 
+// One line per species entry, recovering the per-species counts from the
+// species entries themselves. The commodity name attributes only to the FIRST
+// complement — the skeleton notification carries a single top-level name, so
+// later groups' commodity identity does not survive a Mapper A round-trip
+// (the known lossy-A caveat; see docs/persistence.md).
+const lineFromSpeciesEntry = (commodityName) => (entry) =>
+  compact({
+    commoditySelection: commodityName,
+    speciesSelection: entry.value,
+    numberOfPackages: entry.noOfPackages,
+    numberOfAnimalsQuantity: entry.noOfAnimals,
+    animalIdentifiers: identifiersFromSpeciesEntry(entry)
+  })
+
 const linesFromCommodityA = (commodity) => {
   if (!commodity || !Array.isArray(commodity.commodityComplement)) {
     return undefined
   }
-  return commodity.commodityComplement.map((complement, index) =>
-    compact({
-      commoditySelection: index === 0 ? commodity.name : undefined,
-      typeSelection: complement.typeOfCommodity,
-      speciesSelection: complement.species
-        ? complement.species.map((entry) => entry.value)
-        : undefined,
-      numberOfPackages:
-        complement.totalNoOfPackages == null
-          ? undefined
-          : String(complement.totalNoOfPackages),
-      numberOfAnimalsQuantity:
-        complement.totalNoOfAnimals == null
-          ? undefined
-          : String(complement.totalNoOfAnimals),
-      animalIdentifiers: identifiersFromSpecies(complement.species)
-    })
+  return commodity.commodityComplement.flatMap((complement, index) =>
+    (complement.species ?? [{}]).map(
+      lineFromSpeciesEntry(index === 0 ? commodity.name : undefined)
+    )
   )
 }
 
@@ -313,45 +342,64 @@ const unitFromTarget = (unit) =>
     permanentAddress: unit.permanentAddress
   })
 
-// Mapper A's commodity, with each complement enriched by the extra
-// commodityCode and full per-animal identifiers.
+// Mapper A's grouped commodity, with each complement enriched by the extra
+// commodityCode + per-group name (so every group keeps its commodity
+// identity, not just the first) and each species entry carrying the line's
+// FULL identifier records — the lossless per-species shape.
+const targetComplementFromGroup = (group) => {
+  const base = baseComplementFromGroup(group)
+  const name = group[0].commoditySelection
+  const withSpecies = speciesLines(group)
+  return compact({
+    commodityCode:
+      name === undefined ? undefined : (commodityCodeFor(name) ?? name),
+    name,
+    ...base,
+    species: base.species?.map((entry, index) =>
+      compact({
+        ...entry,
+        animalIdentifiers: withSpecies[index].animalIdentifiers?.map(targetUnit)
+      })
+    )
+  })
+}
+
 const targetCommodityFromLines = (lines) => {
   const base = commodityFromLinesA(lines)
   if (!base) return undefined
   return {
     ...base,
-    commodityComplement: base.commodityComplement.map((complement, index) => {
-      const line = lines[index]
-      return compact({
-        commodityCode:
-          commodityCodeFor(line.commoditySelection) ?? line.commoditySelection,
-        ...complement,
-        animalIdentifiers:
-          line.animalIdentifiers === undefined
-            ? undefined
-            : line.animalIdentifiers.map(targetUnit)
-      })
-    })
+    commodityComplement: groupLinesByCommodity(lines).map(
+      targetComplementFromGroup
+    )
   }
 }
 
+// Reconstructs the per-species lines. Falls back to Mapper A's recovery when
+// the extras were stripped (e.g. by a backend that only keeps the storable
+// field set): first group takes the top-level name, per-species earTag/
+// passport become the line's single identifier unit.
 const targetLinesFromCommodity = (commodity) => {
-  const base = linesFromCommodityA(commodity)
-  if (!base) return undefined
-  return base.map((line, index) => {
-    const complement = commodity.commodityComplement[index]
-    return compact({
-      ...line,
-      commoditySelection:
-        complement.commodityCode === undefined
-          ? line.commoditySelection
-          : (commodityNameFor(complement.commodityCode) ??
-            complement.commodityCode),
-      animalIdentifiers:
-        complement.animalIdentifiers === undefined
-          ? line.animalIdentifiers
-          : complement.animalIdentifiers.map(unitFromTarget)
-    })
+  if (!commodity || !Array.isArray(commodity.commodityComplement)) {
+    return undefined
+  }
+  return commodity.commodityComplement.flatMap((complement, index) => {
+    const fallbackName = index === 0 ? commodity.name : undefined
+    const codeName =
+      complement.commodityCode === undefined
+        ? fallbackName
+        : (commodityNameFor(complement.commodityCode) ??
+          complement.commodityCode)
+    const name = complement.name ?? codeName
+    return (complement.species ?? [{}]).map((entry) =>
+      compact({
+        ...lineFromSpeciesEntry(name)(entry),
+        animalIdentifiers:
+          entry.animalIdentifiers === undefined
+            ? identifiersFromSpeciesEntry(entry)
+            : entry.animalIdentifiers.map(unitFromTarget)
+      })
+    )
   })
 }
 

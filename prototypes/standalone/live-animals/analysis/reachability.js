@@ -103,8 +103,7 @@ const submitReadySeed = {
   commodityLines: [
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '1148346',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]

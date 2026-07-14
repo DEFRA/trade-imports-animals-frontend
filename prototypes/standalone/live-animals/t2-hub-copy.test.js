@@ -126,8 +126,7 @@ describe('#handler hub copy', () => {
       commodityLines: [
         {
           commoditySelection: 'Cow',
-          typeSelection: 'Domestic',
-          speciesSelection: ['1148346'],
+          speciesSelection: '1148346',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         }
@@ -143,8 +142,10 @@ describe('#handler hub copy', () => {
     expect(identificationRow.status).toEqual({
       tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
     })
+    // The identifier surfaces hang off the consolidated details page until
+    // inc-063 builds the dedicated per-species card page.
     expect(identificationRow.href).toBe(
-      '/prototype-standalone/live-animals/commodities'
+      '/prototype-standalone/live-animals/consignment-details'
     )
   })
 

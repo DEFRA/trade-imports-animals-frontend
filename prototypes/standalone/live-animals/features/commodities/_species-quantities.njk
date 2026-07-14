@@ -1,0 +1,40 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+
+{# One block per commodity group: heading, then per-species quantity inputs
+   for every line of that commodity (design 01-14/15, "same animal different
+   genus" renders one sub-block per species). #}
+{% macro speciesQuantityGroup(group) %}
+  <h2 class="govuk-heading-m">{{ group.name }} ({{ group.code }})</h2>
+  {% for line in group.lines %}
+    <h3 class="govuk-heading-s">{{ line.speciesText }}</h3>
+
+    {{ govukInput({
+      id: line.animalsField,
+      name: line.animalsField,
+      label: { text: "Number of animals" },
+      hint: { text: "For example, 1, 25 or 5000." },
+      classes: "govuk-input--width-5",
+      inputmode: "numeric",
+      value: line.animalsValue,
+      errorMessage: line.animalsError and { text: line.animalsError }
+    }) }}
+
+    {% if group.showPackages %}
+      {{ govukInput({
+        id: line.packagesField,
+        name: line.packagesField,
+        label: { text: "Number of packages (optional)" },
+        hint: { text: "Such as crates, bags or boxes" },
+        classes: "govuk-input--width-5",
+        inputmode: "numeric",
+        value: line.packagesValue,
+        errorMessage: line.packagesError and { text: line.packagesError }
+      }) }}
+    {% endif %}
+
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ line.identifiersHref }}">Animal identifiers<span class="govuk-visually-hidden"> for {{ line.speciesText }}</span></a>
+    </p>
+  {% endfor %}
+  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
+{% endmacro %}

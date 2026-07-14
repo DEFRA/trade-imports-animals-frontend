@@ -1,0 +1,79 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/details/macro.njk" import govukDetails %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  {{ govukInsetText({
+    text: "Each health certificate requires a separate notification."
+  }) }}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "search",
+      name: "search",
+      label: { text: "Search for a common name, commodity code or scientific name", classes: "govuk-label--s" },
+      hint: { text: "For example, Cow, 0102, or Bos taurus" },
+      value: query,
+      errorMessage: errors.search and { text: errors.search }
+    }) }}
+
+    {{ govukButton({
+      text: "Search",
+      classes: "govuk-button--secondary",
+      name: "action",
+      value: "search"
+    }) }}
+
+    {% if results.length %}
+      {% for group in results %}
+        {{ govukCheckboxes({
+          name: "species",
+          classes: "govuk-checkboxes--small",
+          fieldset: { legend: { text: group.legend, classes: "govuk-fieldset__legend--s" } },
+          items: group.items
+        }) }}
+        {% for item in group.items %}
+          <input type="hidden" name="shown" value="{{ item.value }}" />
+        {% endfor %}
+      {% endfor %}
+    {% elif searched %}
+      <p class="govuk-body">No commodities match your search.</p>
+    {% endif %}
+
+    {% if selectedSummary.length %}
+      <h2 class="govuk-heading-s">{{ selectedSummary.length }} selected</h2>
+      <ul class="govuk-list">
+        {% for item in selectedSummary %}
+          <li>
+            <input type="hidden" name="selected" value="{{ item.key }}" />
+            {{ item.text }}
+            {{ govukButton({
+              text: "Remove",
+              classes: "govuk-button--secondary govuk-!-margin-bottom-1 govuk-!-margin-left-2",
+              name: "action",
+              value: "remove:" + item.key,
+              attributes: { "aria-label": "Remove " + item.text }
+            }) }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {{ govukDetails({
+      summaryText: "Help with commodity codes",
+      text: "Commodity codes are used to classify goods for import and export."
+    }) }}
+
+    {{ saveActions(hubHref) }}
+  </form>
+{% endblock %}

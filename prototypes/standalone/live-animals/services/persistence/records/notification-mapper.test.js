@@ -11,10 +11,10 @@ const address = (name, line1) => ({
   address: { addressLine1: line1, postcode: 'AB1 2CD' }
 })
 
-// Answers carrying only the 26 obligations Mapper A maps to the current
-// backend notification. Single commodity line, one species, one animal
-// identifier unit with earTag + passport only — the identifiers that DO have
-// a home on the backend species entry.
+// Answers carrying only the obligations Mapper A maps to the current backend
+// notification. One commodity line = one species (inc-062), with one animal
+// identifier unit carrying earTag + passport — the identifiers that DO have a
+// home on the backend species entry.
 const mappedAnswers = () => ({
   referenceNumber: 'GBN-AG-26-ABC123',
   countryOfOrigin: 'FR',
@@ -40,8 +40,7 @@ const mappedAnswers = () => ({
   commodityLines: [
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '1148346',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -80,8 +79,7 @@ const answersWithGaps = () => ({
   commodityLines: [
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '1148346',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -99,21 +97,47 @@ const answersWithGaps = () => ({
   ]
 })
 
+// Two species on the same commodity plus a second commodity — the grouping
+// case: one complement per commodity, per-species counts kept on the species
+// entries, totals summed per complement.
+const groupedLines = () => [
+  {
+    commoditySelection: 'Cow',
+    speciesSelection: '1148346',
+    numberOfPackages: '5',
+    numberOfAnimalsQuantity: '25',
+    animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+  },
+  {
+    commoditySelection: 'Cow',
+    speciesSelection: '716661',
+    numberOfPackages: '2',
+    numberOfAnimalsQuantity: '10',
+    animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
+  },
+  {
+    commoditySelection: 'Cat',
+    speciesSelection: '923501',
+    numberOfPackages: '1',
+    numberOfAnimalsQuantity: '2',
+    animalIdentifiers: [{ animalIdentifierPassport: 'UK-CAT-1' }]
+  }
+]
+
 describe('Mapper A — current backend notification (as-is)', () => {
-  it('Should round-trip every mapped obligation losslessly', () => {
+  it('Should round-trip every mapped obligation losslessly for a single commodity', () => {
     const answers = mappedAnswers()
     expect(notificationToAnswers(answersToNotification(answers))).toEqual(
       answers
     )
   })
 
-  it('Should reshape a commodity line into the fixed backend commodity shape', () => {
+  it('Should reshape per-species lines into the fixed backend commodity shape', () => {
     const { commodity } = answersToNotification(mappedAnswers())
     expect(commodity).toEqual({
       name: 'Cow',
       commodityComplement: [
         {
-          typeOfCommodity: 'Domestic',
           totalNoOfAnimals: 25,
           totalNoOfPackages: 5,
           species: [
@@ -129,6 +153,46 @@ describe('Mapper A — current backend notification (as-is)', () => {
         }
       ]
     })
+  })
+
+  it('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
+    const { commodity } = answersToNotification({
+      commodityLines: groupedLines()
+    })
+    expect(commodity.name).toBe('Cow')
+    expect(commodity.commodityComplement).toHaveLength(2)
+
+    const [cow, cat] = commodity.commodityComplement
+    expect(cow.totalNoOfAnimals).toBe(35)
+    expect(cow.totalNoOfPackages).toBe(7)
+    expect(cow.species.map((entry) => entry.value)).toEqual([
+      '1148346',
+      '716661'
+    ])
+    expect(cow.species.map((entry) => entry.noOfAnimals)).toEqual(['25', '10'])
+    expect(cat.totalNoOfAnimals).toBe(2)
+    expect(cat.species).toEqual([
+      {
+        value: '923501',
+        text: 'Felis catus',
+        noOfAnimals: '2',
+        noOfPackages: '1',
+        passport: 'UK-CAT-1'
+      }
+    ])
+  })
+
+  it('Should lose the commodity identity of every group after the first on a round-trip (the lossy-A caveat)', () => {
+    const recovered = notificationToAnswers(
+      answersToNotification({ commodityLines: groupedLines() })
+    )
+    expect(
+      recovered.commodityLines.map((line) => line.commoditySelection)
+    ).toEqual(['Cow', 'Cow', undefined])
+    // The per-species split itself survives: counts come back per species.
+    expect(
+      recovered.commodityLines.map((line) => line.numberOfAnimalsQuantity)
+    ).toEqual(['25', '10', '2'])
   })
 
   it('Should place every storable answer in its skeleton field home', () => {
@@ -204,8 +268,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(
       'commodityCode' in notification.commodity.commodityComplement[0]
     ).toBe(false)
+    expect('name' in notification.commodity.commodityComplement[0]).toBe(false)
     expect(
-      'animalIdentifiers' in notification.commodity.commodityComplement[0]
+      'animalIdentifiers' in
+        notification.commodity.commodityComplement[0].species[0]
     ).toBe(false)
   })
 
@@ -257,12 +323,13 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 })
 
-// A fixture exercising all 46 obligations: multi-line commodities, multiple
-// animal-identifier units per line using every identifier type, region code,
-// purpose, all transport fields and a typed documents collection. Only the
-// commercial transporter is present — transporterType gates commercial and
-// private mutually exclusively (activatedBy + wipeOnExit), so exactly one is
-// ever in scope, and the target notification carries a single Transporter.
+// A fixture exercising every captured obligation: multi-commodity per-species
+// lines, multiple animal-identifier units per line using every identifier
+// type, region code, purpose, all transport fields and a typed documents
+// collection. Only the commercial transporter is present — transporterType
+// gates commercial and private mutually exclusively (activatedBy +
+// wipeOnExit), so exactly one is ever in scope, and the target notification
+// carries a single Transporter.
 const allAnswers = () => ({
   referenceNumber: 'GBN-AG-26-ABC123',
   responsiblePersonForLoad: {
@@ -300,8 +367,7 @@ const allAnswers = () => ({
   commodityLines: [
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '1148346',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -316,9 +382,15 @@ const allAnswers = () => ({
       ]
     },
     {
+      commoditySelection: 'Cow',
+      speciesSelection: '716661',
+      numberOfPackages: '2',
+      numberOfAnimalsQuantity: '10',
+      animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
+    },
+    {
       commoditySelection: 'Cat',
-      typeSelection: 'Domestic',
-      speciesSelection: ['felis-catus'],
+      speciesSelection: '923501',
       numberOfAnimalsQuantity: '2',
       animalIdentifiers: [
         {
@@ -346,8 +418,8 @@ const allAnswers = () => ({
   ]
 })
 
-describe('Mapper B — proposed target notification (superset, lossless on all 46)', () => {
-  it('Should round-trip all 46 obligations losslessly', () => {
+describe('Mapper B — proposed target notification (superset, lossless)', () => {
+  it('Should round-trip every captured obligation losslessly, including multi-commodity per-species lines', () => {
     const answers = allAnswers()
     expect(
       targetNotificationToAnswers(answersToTargetNotification(answers))
@@ -382,23 +454,30 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
     })
   })
 
-  it('Should preserve multi-line commodities and full per-animal identifiers', () => {
+  it('Should keep every group commodity identity and the full per-species identifier records', () => {
     const notification = answersToTargetNotification(allAnswers())
     const complements = notification.commodity.commodityComplement
 
     expect(complements).toHaveLength(2)
     expect(complements[0].commodityCode).toBe('0102')
+    expect(complements[0].name).toBe('Cow')
     expect(complements[1].commodityCode).toBe('01061900')
-    expect(complements[0].animalIdentifiers).toEqual([
+    expect(complements[1].name).toBe('Cat')
+    expect(complements[0].species[0].animalIdentifiers).toEqual([
       { earTag: 'UK123456789012', passport: 'UK123456789' },
       { tattoo: 'AB1234', description: 'Brown cow' }
     ])
-    expect(complements[1].animalIdentifiers[0]).toEqual({
-      passport: 'UK-CAT-1',
-      identificationDetails: 'Microchip 900123',
-      horseName: 'Not applicable',
-      permanentAddress: address('Owner', '1 Farm Lane')
-    })
+    expect(complements[0].species[1].animalIdentifiers).toEqual([
+      { earTag: 'UK000000000001' }
+    ])
+    expect(complements[1].species[0].animalIdentifiers).toEqual([
+      {
+        passport: 'UK-CAT-1',
+        identificationDetails: 'Microchip 900123',
+        horseName: 'Not applicable',
+        permanentAddress: address('Owner', '1 Farm Lane')
+      }
+    ])
   })
 
   it('Should carry the storable species fields Mapper A does (counts + earTag/passport)', () => {
@@ -409,7 +488,8 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
-      passport: 'UK123456789'
+      passport: 'UK123456789',
+      animalIdentifiers: [{ earTag: 'UK123456789012', passport: 'UK123456789' }]
     })
   })
 
@@ -447,9 +527,9 @@ describe('Mapper B — proposed target notification (superset, lossless on all 4
 // the typed POJO fields (Origin, AdditionalDetails, Commodity/CommodityComplement
 // /Species, Transport/Transporter, the five party addresses, consignment,
 // cphNumber). Everything else (origin.regionCode, purpose, the split transport
-// fields, per-complement commodityCode + animalIdentifiers, documents,
-// declaration, responsiblePersonForLoad) has no backend home and is dropped,
-// exactly as Jackson would drop unknown JSON on deserialisation.
+// fields, per-complement commodityCode + name, per-species animalIdentifiers,
+// documents, declaration, responsiblePersonForLoad) has no backend home and is
+// dropped, exactly as Jackson would drop unknown JSON on deserialisation.
 const storableSubset = (notification) => {
   const out = {}
   const keep = (key) => {
@@ -501,11 +581,7 @@ const storableSubset = (notification) => {
       name: notification.commodity.name,
       commodityComplement: notification.commodity.commodityComplement.map(
         (complement) => ({
-          ...pick(complement, [
-            'typeOfCommodity',
-            'totalNoOfAnimals',
-            'totalNoOfPackages'
-          ]),
+          ...pick(complement, ['totalNoOfAnimals', 'totalNoOfPackages']),
           species: complement.species?.map((entry) =>
             pick(entry, [
               'value',

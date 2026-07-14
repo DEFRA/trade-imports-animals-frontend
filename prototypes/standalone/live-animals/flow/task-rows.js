@@ -1,7 +1,10 @@
 import { statusOf } from '../engine/status.js'
 import { collectsOf } from './dispatch.js'
 import { originPage } from '../features/origin/page.js'
-import { commoditiesPage } from '../features/commodities/page.js'
+import {
+  commoditiesPage,
+  consignmentDetailsPage
+} from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
@@ -22,14 +25,16 @@ export const taskRows = [
   { id: 'origin', pages: [originPage] },
   {
     id: 'commodities',
-    pages: [commoditiesPage],
+    pages: [commoditiesPage, consignmentDetailsPage],
     parts: [{ collection: 'commodityLines', except: ['animalIdentifiers'] }]
   },
   { id: 'importReason', pages: [importReasonPage, importPurposePage] },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   {
     id: 'animalIdentification',
-    pages: [commoditiesPage],
+    // The identifier surfaces hang off the consolidated details page until
+    // inc-063 builds the dedicated per-species card page.
+    pages: [consignmentDetailsPage],
     parts: [{ collection: 'commodityLines', only: ['animalIdentifiers'] }]
   },
   { id: 'arrivalDetails', pages: [portOfEntryPage, transportDetailsPage] },

@@ -56,6 +56,24 @@ export const removeEntryAt = async (request, h, collectionPath, index) => {
   await saveJourneyAnswers(request, journey.journeyId, answers)
 }
 
+export const reconcileEntriesAt = async (
+  request,
+  h,
+  collectionPath,
+  keyOf,
+  entries
+) => {
+  const journey = await currentJourney(request, h)
+  const list = valueAt(journey.answers, collectionPath) ?? []
+  const existingByKey = new Map(list.map((entry) => [keyOf(entry), entry]))
+  const next = entries.map((entry) => existingByKey.get(keyOf(entry)) ?? entry)
+  const answers = setAt(journey.answers, collectionPath, next)
+  const { wiped } = reconcile(answers)
+  destroyWiped(answers, wiped)
+  await saveJourneyAnswers(request, journey.journeyId, answers)
+  return { answers, scope: makeScope(answers) }
+}
+
 export const appendEntry = async (request, h, obligationId, entry) =>
   appendEntryAt(request, h, [obligationId], entry)
 

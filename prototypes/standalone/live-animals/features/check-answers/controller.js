@@ -7,7 +7,8 @@ import { journeyStrip, pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
-import { packagesApply } from '../commodities/details.controller.js'
+import { packagesApply } from '../commodities/consignment-details.controller.js'
+import { consignmentDetailsPage } from '../commodities/page.js'
 import { IDENTIFIER_LABELS } from '../commodities/animal-identifiers.list.controller.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import { unweanedApplies } from '../additional-details/controller.js'
@@ -156,18 +157,22 @@ const additionalAnimalDetailsCard = (answers) => ({
   ]
 })
 
+// One card per commodity line = one per species (inc-062); the title carries
+// both the commodity and the species so same-commodity cards stay distinct.
 const speciesCardTitle = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()
   if (!name) return NOT_PROVIDED
   const code = commodities.commodityCodeFor(name)
-  return code ? `${name} (${code})` : name
+  const commodity = code ? `${name} (${code})` : name
+  const species = speciesText(entry)
+  return species ? `${commodity} — ${species}` : commodity
 }
 
 const speciesText = (entry) =>
-  []
-    .concat(entry.speciesSelection ?? [])
-    .map((code) => commodities.speciesLabel(code) ?? code)
-    .join(', ')
+  entry.speciesSelection === undefined
+    ? ''
+    : (commodities.speciesLabel(entry.speciesSelection) ??
+      entry.speciesSelection)
 
 const readOnlyRow = (key, value) => ({
   key: { text: key },
@@ -213,7 +218,9 @@ const speciesCards = (answers) =>
       actions: {
         items: [
           {
-            href: changeHref('commodityLines'),
+            // The consolidated details page is the editing surface for a
+            // line's quantities and its table manages the selection itself.
+            href: withChange(pagePath(consignmentDetailsPage.slug)),
             text: 'Change',
             visuallyHiddenText: `commodity ${index + 1}`
           },

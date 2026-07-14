@@ -49,8 +49,7 @@ const fullSeed = {
   commodityLines: [
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '1148346',
       numberOfAnimalsQuantity: '25',
       numberOfPackages: '5',
       animalIdentifiers: [
@@ -176,7 +175,10 @@ describe('#buildSections (check-answers GET)', () => {
     })
 
     it('Should render one species card per commodity line with the design rows', async () => {
-      const card = cardByTitle(await sectionsFor(fullSeed), 'Cow (0102)')
+      const card = cardByTitle(
+        await sectionsFor(fullSeed),
+        'Cow (0102) — Bos taurus'
+      )
       expect(valueOf(card.rows, 'Commodity code')).toBe('0102')
       expect(valueOf(card.rows, 'Common name')).toBe('Cow')
       expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
@@ -185,7 +187,10 @@ describe('#buildSections (check-answers GET)', () => {
     })
 
     it('Should render a read-only identifier table inside the species card', async () => {
-      const card = cardByTitle(await sectionsFor(fullSeed), 'Cow (0102)')
+      const card = cardByTitle(
+        await sectionsFor(fullSeed),
+        'Cow (0102) — Bos taurus'
+      )
       expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
         'Animal',
         'Passport',
@@ -258,9 +263,12 @@ describe('#buildSections (check-answers GET)', () => {
     })
 
     it('Should point the species-card Change actions at the commodities pages with a change flag', async () => {
-      const card = cardByTitle(await sectionsFor(fullSeed), 'Cow (0102)')
+      const card = cardByTitle(
+        await sectionsFor(fullSeed),
+        'Cow (0102) — Bos taurus'
+      )
       const [commodityAction, identifiersAction] = card.actions.items
-      expect(commodityAction.href).toMatch(/\/commodities\?change=1$/)
+      expect(commodityAction.href).toMatch(/\/consignment-details\?change=1$/)
       expect(identifiersAction.href).toMatch(
         /\/commodities\/0\/identifiers\?change=1$/
       )

@@ -70,53 +70,75 @@ const consignment = {
     approvalNumber: 'UK/NEWCA/T1/00090953',
     address: { addressLine1: '7 Route One' }
   },
-  // Single commodity line, single species so per-species counts and the
-  // line totals are the same quantity — the two systems then only differ (if at
-  // all) in how they store/type that quantity, not in aggregation logic.
+  // One commodity with per-species rows (inc-062 line-per-species grain: the
+  // prototype stores one commodity line per species; the skeleton stores one
+  // complement with a species array). value + resolved display text are
+  // captured identically by both systems — 'Bos taurus' is what the
+  // prototype's reference data resolves for '1148346' (and therefore what
+  // Mapper A re-derives via speciesLabel).
   commodity: {
     name: 'Cow',
-    typeOfCommodity: 'Domestic',
-    // value + resolved display text captured identically by both systems.
-    // 'Bos taurus' is what the prototype's SPECIES_OPTIONS resolves for
-    // '1148346' (and therefore what Mapper A re-derives via speciesLabel).
-    species: { value: '1148346', text: 'Bos taurus' },
-    noOfAnimals: '25',
-    noOfPackages: '5',
-    earTag: 'UK123456789012',
-    passport: 'UK123456789'
-  }
-}
-
-// (a) The skeleton commodity session object, built exactly as the skeleton
-// controllers store it: species carries value/text/per-species counts/earTag/
-// passport (counts are the raw payload strings), and the complement totals are
-// produced by the skeleton's own getTotal helper (lodash sum -> Number).
-const skeletonCommodity = () => {
-  const c = consignment.commodity
-  return {
-    name: c.name,
-    commodityComplement: [
+    species: [
       {
-        typeOfCommodity: c.typeOfCommodity,
-        species: [
-          {
-            value: c.species.value,
-            text: c.species.text,
-            noOfAnimals: c.noOfAnimals,
-            noOfPackages: c.noOfPackages,
-            earTag: c.earTag,
-            passport: c.passport
-          }
-        ],
-        totalNoOfAnimals: getTotal([c.noOfAnimals]),
-        totalNoOfPackages: getTotal([c.noOfPackages])
+        value: '1148346',
+        text: 'Bos taurus',
+        noOfAnimals: '25',
+        noOfPackages: '5',
+        earTag: 'UK123456789012',
+        passport: 'UK123456789'
       }
     ]
   }
 }
 
+// The same consignment with a SECOND species on the same commodity — the
+// grouping-and-summing case: the skeleton sums the per-species counts into
+// the complement totals via getTotal, and Mapper A must consolidate its two
+// per-species lines to the identical numbers.
+const twoSpeciesCommodity = {
+  name: 'Cow',
+  species: [
+    {
+      value: '1148346',
+      text: 'Bos taurus',
+      noOfAnimals: '25',
+      noOfPackages: '5',
+      earTag: 'UK123456789012',
+      passport: 'UK123456789'
+    },
+    {
+      value: '716661',
+      text: 'Bison bison',
+      noOfAnimals: '10',
+      noOfPackages: '2',
+      earTag: 'UK000000000001',
+      passport: 'UK000000001'
+    }
+  ]
+}
+
+// (a) The skeleton commodity session object, built exactly as the skeleton
+// controllers store it: species carries value/text/per-species counts/earTag/
+// passport (counts are the raw payload strings), and the complement totals are
+// produced by the skeleton's own getTotal helper (lodash sum -> Number) over
+// the per-species counts.
+const skeletonCommodity = (commodity) => ({
+  name: commodity.name,
+  commodityComplement: [
+    {
+      species: commodity.species.map((entry) => ({ ...entry })),
+      totalNoOfAnimals: getTotal(
+        commodity.species.map((entry) => entry.noOfAnimals)
+      ),
+      totalNoOfPackages: getTotal(
+        commodity.species.map((entry) => entry.noOfPackages)
+      )
+    }
+  ]
+})
+
 // (a) The skeleton's per-key session store.
-const skeletonSession = () => ({
+const skeletonSession = (commodity) => ({
   [sessionKeys.referenceNumber]: consignment.referenceNumber,
   [sessionKeys.countryCode]: consignment.origin.countryCode,
   [sessionKeys.requiresRegionCode]: consignment.origin.requiresRegionCode,
@@ -134,13 +156,14 @@ const skeletonSession = () => ({
   [sessionKeys.portOfEntry]: consignment.port,
   [sessionKeys.arrivalDate]: consignment.arrival,
   [sessionKeys.transporter]: consignment.transporter,
-  [sessionKeys.commodity]: skeletonCommodity()
+  [sessionKeys.commodity]: skeletonCommodity(commodity)
 })
 
-// (b) The equivalent prototype answers for the same consignment.
-const prototypeAnswers = () => {
+// (b) The equivalent prototype answers for the same consignment: one commodity
+// line per species (inc-062), each carrying its own counts and one identifier
+// unit for the earTag/passport pair.
+const prototypeAnswers = (commodity) => {
   const { type, ...transporterParty } = consignment.transporter
-  const c = consignment.commodity
   return {
     referenceNumber: consignment.referenceNumber,
     countryOfOrigin: consignment.origin.countryCode,
@@ -160,28 +183,25 @@ const prototypeAnswers = () => {
     arrivalDateAtPort: consignment.arrival,
     transporterType: type,
     commercialTransporter: transporterParty,
-    commodityLines: [
-      {
-        commoditySelection: c.name,
-        typeSelection: c.typeOfCommodity,
-        speciesSelection: [c.species.value],
-        numberOfPackages: c.noOfPackages,
-        numberOfAnimalsQuantity: c.noOfAnimals,
-        animalIdentifiers: [
-          {
-            animalIdentifierEarTag: c.earTag,
-            animalIdentifierPassport: c.passport
-          }
-        ]
-      }
-    ]
+    commodityLines: commodity.species.map((entry) => ({
+      commoditySelection: commodity.name,
+      speciesSelection: entry.value,
+      numberOfPackages: entry.noOfPackages,
+      numberOfAnimalsQuantity: entry.noOfAnimals,
+      animalIdentifiers: [
+        {
+          animalIdentifierEarTag: entry.earTag,
+          animalIdentifierPassport: entry.passport
+        }
+      ]
+    }))
   }
 }
 
 // Drive the REAL buildNotificationPayload (private to notification-client) via
 // the public save(), capturing the exact JSON body the skeleton would POST.
-const skeletonNotification = async () => {
-  const session = skeletonSession()
+const skeletonNotification = async (commodity) => {
+  const session = skeletonSession(commodity)
   const request = { yar: { get: (key) => session[key] ?? null } }
 
   let captured
@@ -199,8 +219,19 @@ const skeletonNotification = async () => {
 
 describe('Mapper A equivalence with the production skeleton frontend', () => {
   it('Should produce the same backend notification the skeleton POSTs', async () => {
-    const skeletonPayload = await skeletonNotification()
-    const mapperAPayload = answersToNotification(prototypeAnswers())
+    const skeletonPayload = await skeletonNotification(consignment.commodity)
+    const mapperAPayload = answersToNotification(
+      prototypeAnswers(consignment.commodity)
+    )
+
+    expect(mapperAPayload).toEqual(skeletonPayload)
+  })
+
+  it('Should consolidate two per-species lines to the identical summed complement the skeleton POSTs', async () => {
+    const skeletonPayload = await skeletonNotification(twoSpeciesCommodity)
+    const mapperAPayload = answersToNotification(
+      prototypeAnswers(twoSpeciesCommodity)
+    )
 
     expect(mapperAPayload).toEqual(skeletonPayload)
   })

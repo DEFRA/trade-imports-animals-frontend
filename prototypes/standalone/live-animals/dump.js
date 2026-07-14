@@ -17,23 +17,20 @@ const answers = {
   commodityLines: [
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '1148346',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25'
     },
 
     {
       commoditySelection: 'Cow',
-      typeSelection: 'Domestic',
-      speciesSelection: ['1148346'],
+      speciesSelection: '716661',
       numberOfAnimalsQuantity: '9'
     },
 
     {
       commoditySelection: 'Fish',
-      typeSelection: 'Domestic',
-      speciesSelection: ['salmo-salar'],
+      speciesSelection: '801204',
       numberOfPackages: '7',
       numberOfAnimalsQuantity: '40'
     }

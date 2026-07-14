@@ -1,0 +1,30 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "standalone/live-animals/features/commodities/_selected-commodities-table.njk" import selectedCommoditiesTable %}
+{% from "standalone/live-animals/features/commodities/_species-quantities.njk" import speciesQuantityGroup %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  {% if hasLines %}
+    {{ selectedCommoditiesTable(groups) }}
+  {% else %}
+    <p class="govuk-body">{{ emptyText }}</p>
+  {% endif %}
+
+  <p class="govuk-body">
+    <a class="govuk-link" href="{{ addHref }}">{{ addText }}</a>
+  </p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% for group in groups %}
+      {{ speciesQuantityGroup(group) }}
+    {% endfor %}
+
+    {{ saveActions(hubHref) }}
+  </form>
+{% endblock %}

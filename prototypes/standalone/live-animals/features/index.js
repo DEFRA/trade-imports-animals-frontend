@@ -2,9 +2,8 @@ import * as dashboard from './dashboard/controller.js'
 import * as importTypeFilter from './import-type-filter/controller.js'
 import * as hub from './hub/controller.js'
 import * as origin from './origin/controller.js'
-import * as commoditiesList from './commodities/list.controller.js'
-import * as commoditiesSelect from './commodities/select.controller.js'
-import * as commoditiesDetails from './commodities/details.controller.js'
+import * as commoditiesSearch from './commodities/search.controller.js'
+import * as consignmentDetails from './commodities/consignment-details.controller.js'
 import * as animalIdentifiersList from './commodities/animal-identifiers.list.controller.js'
 import * as animalIdentifiersEntry from './commodities/animal-identifiers.entry.controller.js'
 import * as importReason from './import-reason/controller.js'
@@ -34,7 +33,8 @@ import * as confirmation from './confirmation/controller.js'
 export const dispatchPages = [
   importTypeFilter.meta,
   origin.meta,
-  commoditiesList.meta,
+  commoditiesSearch.meta,
+  consignmentDetails.meta,
   importReason.meta,
   importPurpose.meta,
   additionalDetails.meta,
@@ -56,9 +56,8 @@ export const allRoutes = [
   ...importTypeFilter.routes,
   ...hub.routes,
   ...origin.routes,
-  ...commoditiesList.routes,
-  ...commoditiesSelect.routes,
-  ...commoditiesDetails.routes,
+  ...commoditiesSearch.routes,
+  ...consignmentDetails.routes,
   ...animalIdentifiersList.routes,
   ...animalIdentifiersEntry.routes,
   ...importReason.routes,

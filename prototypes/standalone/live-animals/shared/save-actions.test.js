@@ -14,7 +14,7 @@ import { dispatchPages } from '../features/index.js'
 import { base, hubExitTarget } from './kit.js'
 
 import * as importPurpose from '../features/import-purpose/controller.js'
-import * as commodityDetails from '../features/commodities/details.controller.js'
+import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
 import * as identifierEntry from '../features/commodities/animal-identifiers.entry.controller.js'
 import * as documents from '../features/documents/controller.js'
 import * as cphNumber from '../features/cph-number/controller.js'
@@ -116,23 +116,21 @@ describe('save actions — hub exit semantics', () => {
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
-  it('Should commit a collection sub-page and redirect to the hub on the exit submit', async () => {
+  it('Should commit the consolidated details page and redirect to the hub on the exit submit', async () => {
     const seed = {
       commodityLines: [
         {
           commoditySelection: 'Cat',
-          typeSelection: '',
-          speciesSelection: [],
+          speciesSelection: '923501',
           numberOfAnimalsQuantity: '',
           numberOfPackages: ''
         }
       ]
     }
     const { response, after } = await drivePost(
-      postHandlerOf(commodityDetails),
+      postHandlerOf(consignmentDetails),
       {
-        payload: { numberOfAnimalsQuantity: '2', exit: 'hub' },
-        params: { index: '0' },
+        payload: { 'numberOfAnimalsQuantity-0': '2', exit: 'hub' },
         seed
       }
     )

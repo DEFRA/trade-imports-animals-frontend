@@ -37,6 +37,17 @@ const VOLATILE = [
 const strip = (doc) => {
   const copy = { ...doc }
   for (const key of VOLATILE) delete copy[key]
+  // c-037 (inc-062): the prototype journey no longer asks the commodity type
+  // question — typeSelection is out of the flow pending PO sign-off — so the
+  // skeleton-side typeOfCommodity has no prototype counterpart to compare.
+  if (copy.commodity?.commodityComplement) {
+    copy.commodity = {
+      ...copy.commodity,
+      commodityComplement: copy.commodity.commodityComplement.map(
+        ({ typeOfCommodity, ...complement }) => complement
+      )
+    }
+  }
   return copy
 }
 
@@ -125,28 +136,39 @@ const drivePrototype = async (page) => {
     .fill(shared.internalReference)
   await save()
 
-  // Commodities — one cattle line, one animal identifier unit.
+  // Commodities — one cattle line via the batch search (inc-062), counts on
+  // the consolidated details page, then one animal identifier unit.
   await task('What are you importing?')
-  await page.getByRole('button', { name: 'Add a commodity' }).click()
-  await page.getByLabel('Commodity', { exact: true }).selectOption('Cow')
-  await page.getByRole('radio', { name: 'Domestic' }).check()
+  await page
+    .getByLabel('Search for a common name, commodity code or scientific name')
+    .fill('Cow')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
   await save()
+  await expect(
+    page.getByRole('heading', { name: 'Consignment details' })
+  ).toBeVisible()
   await page.getByLabel('Number of animals').fill(shared.numberOfAnimals)
   await page
     .getByLabel('Number of packages (optional)')
     .fill(shared.numberOfPackages)
   await save()
-  await page
-    .locator('.govuk-summary-list__row', { hasText: 'Commodity 1' })
-    .getByRole('link', { name: /Animal identifiers/ })
-    .click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await task('Animal identification details')
+  await expect(
+    page.getByRole('heading', { name: 'Consignment details' })
+  ).toBeVisible()
+  await page.getByRole('link', { name: /Animal identifiers/ }).click()
   await page.getByRole('button', { name: /Add an(other)? animal/ }).click()
   await page.getByLabel('Ear tag number').fill(shared.earTag)
   await page.getByLabel('Passport number').fill(shared.passport)
   await page.getByRole('button', { name: 'Add animal' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Consignment details' })
+  ).toBeVisible()
+  await save()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
   // About the consignment — internal market, purpose, additional details.
   await task('Main reason for importing')

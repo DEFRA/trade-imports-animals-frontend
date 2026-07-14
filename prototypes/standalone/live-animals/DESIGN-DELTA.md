@@ -615,6 +615,73 @@ unlocked journey, row entry hrefs, the submit-readiness equivalence battery
 and the unchanged review gate) and `t2-hub-copy.test.js` (rendered groups,
 row copy, chrome, dropped progress line, conditional row, review lock).
 
+## 14. Collection batch reconcile + the line-per-species store grain (inc-062)
+
+`engine/write.js` grows one opt-in write op,
+`reconcileEntriesAt(request, h, collectionPath, keyOf, entries)` — a
+**desired-state reconcile** for a collection: the caller hands the full
+desired list of seed entries plus a key function; an existing entry whose
+key is still desired is kept
+byte-for-byte (all its per-line values AND nested collections), a newly
+desired key appends its seed, and an entry whose key was dropped is removed —
+followed by the standard `reconcile` + `destroyWiped` pass, so anything the
+removal takes out of scope (e.g. the last unweaned-triggering commodity
+gating `containsUnweanedAnimals`) is destroyed exactly as `removeEntryAt`
+would. No existing op changes; nothing calls the new op unless a controller
+opts in.
+
+- **Store grain (c-030, D14).** A commodity line becomes **commodity plus
+  ONE species**: `speciesSelection` is single-valued per line, and
+  `numberOfAnimalsQuantity`/`numberOfPackages` are plain per-line — i.e.
+  per-species — values. Batch selection on the search page reconciles the
+  `commodityLines` collection to one line per selected (commodity, species)
+  pair: a still-selected species keeps its data (the c-017 carry-over,
+  now by line identity), a deselected species' line is wiped away.
+  `typeSelection` leaves the model's `item[]` and both mappers (its page is
+  gone per c-037; the spec keeps the obligation pending PO sign-off).
+- **Pages (D15, design 01-10..15).** The one-line-at-a-time select/details
+  loop is RETIRED. Two pages replace it: the batch SEARCH page (`commodities`
+  — server-round-trip search, results as stock `govukCheckboxes` grouped by
+  commodity code, hidden `selected`/`shown` inputs carrying the selection
+  across search round-trips, selected-count summary with per-item Remove;
+  the design's custom multi-select tokens map to stock checkboxes per the
+  established rule) and the consolidated CONSIGNMENT DETAILS page
+  (`consignment-details` — selected-commodities table with per-row Remove +
+  "Add another commodity", inline per-species quantity inputs for EVERY
+  line, built from sub-component partials: `_selected-commodities-table.njk`
+  plus `_species-quantities.njk`). The details page authors no gate — its
+  derived gate (RULE 1 prerequisites) holds it back until a line exists.
+  The nested identifier pages stay as-is over N lines (linked per species
+  from the details page) until inc-063 builds the card surface.
+- **Mapper co-evolution (the permanent pin).** Mapper A now GROUPS lines by
+  commodity, keeps per-species counts on the skeleton's species entries and
+  SUMS them to the complement-level totals with getTotal semantics (Number,
+  drop NaN, blank ⇒ 0) — `skeleton-equivalence.test.js` proves the same
+  user intent still yields the identical backend notification the skeleton
+  POSTs, now including a two-species summing case. Mapper A's reverse
+  rebuilds one line per species entry; what a round-trip LOSES is the
+  commodity identity of every group after the first (the skeleton
+  notification has a single top-level name and no per-complement code) plus
+  the identifier fields beyond earTag/passport — the known lossy-A caveat,
+  documented in docs/persistence.md. Mapper B stays lossless: per-group
+  `commodityCode` + `name` and full per-species `animalIdentifiers` arrays,
+  with the reverse falling back to Mapper A recovery when a backend strips
+  the extras.
+- **Backwards compatible.** All other write ops, pages and obligations are
+  untouched; the run swaps its two commodity steps for the two new pages via
+  the inc-060 config (`RUN_STEPS`), the hub rows keep their facet parts over
+  `commodityLines`, and submit-readiness semantics are unchanged (the same
+  obligations roll up, minus the retired `typeSelection`).
+
+Proven in `store-ops.test.js` (batch reconcile: create order, reselect
+preserves per-line data and nested identifiers, deselect removes the line,
+the scope-and-wipe pass over a dependent notification-level answer),
+`search.controller.test.js` / `consignment-details.controller.test.js` (the
+page shapes), `contract.test.js` (batch create commits exactly
+`commodityLines`; the details page commits nothing new),
+`skeleton-equivalence.test.js` and `notification-mapper.test.js` (grouping,
+summing, lossy-A pins, lossless B).
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

@@ -14,7 +14,8 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 
 - **controller(s)** — Hapi route handlers that own GET/POST, validation,
   copy and view-models (`controller.js`, or several like
-  `commodities/list.controller.js` + `commodities/select.controller.js`)
+  `commodities/search.controller.js` +
+  `commodities/consignment-details.controller.js`)
 - **`page.js`** — the page identity leaf: `{ id, slug }`, authored once,
   imported by both the controller and `flow/flow.js`. It imports nothing
   (see [section 2](#2-why-pagejs-is-import-free))
@@ -201,7 +202,11 @@ declaration POST re-checks readiness server-side before it will finalise.
 Repeating collections get bespoke manage-lists — there is no uniform
 widget for "a list of things", so each loop hub owns its rows and copy:
 
-- `features/commodities/list.controller.js` — top-level commodity lines
+- `features/commodities/consignment-details.controller.js` — top-level
+  commodity lines (inc-062): the selected-commodities table with per-row
+  Remove, "Add another commodity" back to the search page, and the inline
+  per-species quantity blocks, composed from sub-component partials
+  (`_selected-commodities-table.njk`, `_species-quantities.njk`)
 - `features/documents/controller.js` — top-level documents, a
   single-page loop: the entry form and the read-back table share one page
 
@@ -223,11 +228,14 @@ controller still chose its template and called `h.view` itself). That
 module was removed with named-driver; the pattern stays available for
 any future form that needs the same seam.
 
-On an add sub-page, a valid POST appends and thereby **mints** the
-entry's identity (collection, index) — `features/commodities/select.controller.js`
-does this before handing to the details sub-page. Until that POST the
-draft lives only in the payload — never a half-created entry in the
-store. A nested add (writing under a `{driver}`-style parent index) must
+On an add surface, a valid POST creates and thereby **mints** the
+entries' identities (collection, index) —
+`features/commodities/search.controller.js` batch-reconciles one line per
+selected species (`state.reconcileEntriesAt`) before handing to the
+consolidated details page. Until that POST the draft selection lives only
+in the payload (hidden `selected`/`shown` inputs across search
+round-trips) — never a half-created entry in the store. A nested add
+(writing under a `{driver}`-style parent index) must
 validate the parent index first, or the generic append primitive would
 fabricate a phantom parent; that guard (`driver-claim.controller.js`'s
 `validDriver`) went with named-driver and has no live carrier until a

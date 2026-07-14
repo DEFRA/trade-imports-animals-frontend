@@ -1,7 +1,10 @@
 import { dashboardPage } from '../features/dashboard/page.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { originPage } from '../features/origin/page.js'
-import { commoditiesPage } from '../features/commodities/page.js'
+import {
+  commoditiesPage,
+  consignmentDetailsPage
+} from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
@@ -32,7 +35,7 @@ export const sections = [
   },
   {
     id: 'commodities',
-    pages: [commoditiesPage]
+    pages: [commoditiesPage, consignmentDetailsPage]
   },
   {
     id: 'consignment',

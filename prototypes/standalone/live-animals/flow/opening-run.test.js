@@ -20,7 +20,7 @@ import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 
 import * as importTypeFilter from '../features/import-type-filter/controller.js'
 import * as origin from '../features/origin/controller.js'
-import * as commoditiesDetails from '../features/commodities/details.controller.js'
+import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
 import * as identifiersList from '../features/commodities/animal-identifiers.list.controller.js'
 import * as importPurpose from '../features/import-purpose/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
@@ -75,8 +75,7 @@ const lineSeed = {
   commodityLines: [
     {
       commoditySelection: 'Cat',
-      typeSelection: '',
-      speciesSelection: [],
+      speciesSelection: '923501',
       numberOfAnimalsQuantity: '',
       numberOfPackages: ''
     }
@@ -154,7 +153,7 @@ describe('the opening run', () => {
       regionOfOriginCodeRequirement: 'no'
     }
 
-    it('Should send origin to the commodity select mid-run', async () => {
+    it('Should send origin to the commodity search mid-run', async () => {
       const { journeyId, h } = await drive(originPost, {
         payload: originPayload,
         record: undefined
@@ -170,30 +169,30 @@ describe('the opening run', () => {
         }),
         h2
       )
-      expect(h2.captured.redirect).toBe(pagePath('commodities/select'))
+      expect(h2.captured.redirect).toBe(pagePath('commodities'))
       expect(journeyId).not.toBe(again.journeyId)
     })
 
-    it('Should send the commodity details sub-page to import reason mid-run, and back to the list outside the run', async () => {
+    it('Should send the consignment details page to import reason mid-run, and to the hub outside the run', async () => {
       const inRun = await store.create()
       await store.saveAnswers(inRun.journeyId, lineSeed)
       const h = captureH()
-      await postHandlerOf(commoditiesDetails)(
+      await postHandlerOf(consignmentDetails)(
         buildRequest(inRun.journeyId, {
-          payload: { numberOfAnimalsQuantity: '2' },
-          params: { index: '0' },
+          payload: { 'numberOfAnimalsQuantity-0': '2' },
           record: active(inRun.journeyId)
         }),
         h
       )
       expect(h.captured.redirect).toBe(pagePath('import-reason'))
 
-      const outside = await drive(postHandlerOf(commoditiesDetails), {
-        payload: { numberOfAnimalsQuantity: '2' },
-        params: { index: '0' },
+      // Outside the run the page is the commodities section's last page, so
+      // the section flow rests on the hub.
+      const outside = await drive(postHandlerOf(consignmentDetails), {
+        payload: { 'numberOfAnimalsQuantity-0': '2' },
         seed: lineSeed
       })
-      expect(outside.h.captured.redirect).toBe(pagePath('commodities'))
+      expect(outside.h.captured.redirect).toBe(hubPath())
     })
 
     it('Should pass a zero-record identification Continue through to additional details mid-run', async () => {
@@ -372,7 +371,7 @@ describe('the opening run', () => {
     it('Should guard every post-filter journey page', () => {
       expect(guardedJourneyPath(hubPath())).toBe(true)
       expect(guardedJourneyPath(pagePath('origin'))).toBe(true)
-      expect(guardedJourneyPath(pagePath('commodities/0/details'))).toBe(true)
+      expect(guardedJourneyPath(pagePath('consignment-details'))).toBe(true)
       expect(guardedJourneyPath(pagePath('notification-view'))).toBe(true)
     })
 

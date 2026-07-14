@@ -1,7 +1,7 @@
 import {
   COMMODITY_OPTIONS,
   COMMODITY_CODES,
-  TYPE_OPTIONS,
+  COMMODITY_SPECIES,
   SPECIES_OPTIONS,
   PACKAGE_COUNT_COMMODITIES,
   PASSPORT_COMMODITIES,
@@ -20,15 +20,35 @@ export const commodityCodeFor = (name) => COMMODITY_CODES[name]
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
 
-export const types = () => TYPE_OPTIONS
-
-export const typeLabel = (code) =>
-  TYPE_OPTIONS.find((option) => option.value === code)?.text
-
 export const species = () => SPECIES_OPTIONS
 
 export const speciesLabel = (code) =>
   SPECIES_OPTIONS.find((option) => option.value === code)?.text
+
+export const speciesFor = (name) => COMMODITY_SPECIES[name] ?? []
+
+export const isCommoditySpecies = (name, value) =>
+  speciesFor(name).some((option) => option.value === value)
+
+/** Search the commodity reference data by common name, commodity code or
+ * species (scientific name). Returns whole commodity groups — matching a
+ * species surfaces its commodity with all of that commodity's species. */
+export const search = (query) => {
+  const q = (query ?? '').trim().toLowerCase()
+  if (q === '') return []
+  return COMMODITY_OPTIONS.filter((name) => {
+    const code = COMMODITY_CODES[name] ?? ''
+    return (
+      name.toLowerCase().includes(q) ||
+      code.toLowerCase().includes(q) ||
+      speciesFor(name).some((option) => option.text.toLowerCase().includes(q))
+    )
+  }).map((name) => ({
+    name,
+    code: COMMODITY_CODES[name],
+    species: speciesFor(name)
+  }))
+}
 
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES
 

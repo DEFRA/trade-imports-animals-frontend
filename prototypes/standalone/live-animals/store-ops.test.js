@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   appendEntryAt,
   commit,
+  reconcileEntriesAt,
   removeEntryAt,
   updateEntryAt
 } from './engine/index.js'
@@ -22,8 +23,7 @@ const answersNow = async () => (await store.get(journeyId)).answers
 
 const line = (commoditySelection, extra = {}) => ({
   commoditySelection,
-  typeSelection: 'Domestic',
-  speciesSelection: ['1148346'],
+  speciesSelection: '1148346',
   numberOfAnimalsQuantity: '25',
   ...extra
 })
@@ -167,6 +167,112 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     expect(
       (await records.load({ journeyId })).answers.commodityLines[0]
     ).toEqual(line('Cow', { numberOfPackages: '9' }))
+  })
+})
+
+describe('batch reconcile (reconcileEntriesAt — the inc-062 species-grain create)', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
+  beforeEach(async () => {
+    await store.clear()
+    journeyId = (await store.create()).journeyId
+  })
+
+  const keyOf = (entry) =>
+    `${entry.commoditySelection}|${entry.speciesSelection}`
+  const seed = (commoditySelection, speciesSelection) => ({
+    commoditySelection,
+    speciesSelection,
+    numberOfPackages: '',
+    numberOfAnimalsQuantity: ''
+  })
+  const reconcileLines = (entries) =>
+    reconcileEntriesAt(
+      buildRequest(),
+      stubH(),
+      ['commodityLines'],
+      keyOf,
+      entries
+    )
+
+  it('Should create one line per desired entry, in the desired order', async () => {
+    await reconcileLines([
+      seed('Cow', '1148346'),
+      seed('Cow', '716661'),
+      seed('Cat', '923501')
+    ])
+    expect((await answersNow()).commodityLines.map(keyOf)).toEqual([
+      'Cow|1148346',
+      'Cow|716661',
+      'Cat|923501'
+    ])
+  })
+
+  it("Should keep ALL of an existing line's data when its species stays selected — per-line quantities and nested identifiers survive the reconcile", async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+        }
+      ]
+    })
+    await reconcileLines([seed('Cow', '1148346'), seed('Cow', '716661')])
+    const lines = (await answersNow()).commodityLines
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toEqual({
+      commoditySelection: 'Cow',
+      speciesSelection: '1148346',
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '25',
+      animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+    })
+    expect(lines[1]).toEqual(seed('Cow', '716661'))
+  })
+
+  it("Should remove a deselected species' line entirely — deselect wipes the line and its nested records", async () => {
+    await store.saveAnswers(journeyId, {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfAnimalsQuantity: '25',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+        },
+        {
+          commoditySelection: 'Cat',
+          speciesSelection: '923501',
+          numberOfAnimalsQuantity: '2'
+        }
+      ]
+    })
+    await reconcileLines([seed('Cat', '923501')])
+    const lines = (await answersNow()).commodityLines
+    expect(lines).toHaveLength(1)
+    expect(lines[0].commoditySelection).toBe('Cat')
+    expect(lines[0].numberOfAnimalsQuantity).toBe('2')
+  })
+
+  it('Should run the scope-and-wipe pass: dropping the last triggering commodity destroys the dependent notification-level answer', async () => {
+    // containsUnweanedAnimals is gated on an unweaned-triggering commodity
+    // (Cow) existing in ANY line (frame:anyItem) and carries wipeOnExit.
+    await store.saveAnswers(journeyId, {
+      containsUnweanedAnimals: 'no',
+      commodityLines: [
+        { commoditySelection: 'Cow', speciesSelection: '1148346' },
+        { commoditySelection: 'Cat', speciesSelection: '923501' }
+      ]
+    })
+    await reconcileLines([seed('Cat', '923501')])
+    const answers = await answersNow()
+    expect('containsUnweanedAnimals' in answers).toBe(false)
   })
 })
 

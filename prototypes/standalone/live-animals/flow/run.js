@@ -1,32 +1,32 @@
 import { hubPath, pagePath } from '../config.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { originPage } from '../features/origin/page.js'
-import { commoditiesPage } from '../features/commodities/page.js'
+import {
+  commoditiesPage,
+  consignmentDetailsPage
+} from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { pageGatePasses } from './gates.js'
 
-export const COMMODITY_SELECT_STEP = 'commoditySelect'
-export const COMMODITY_DETAILS_STEP = 'commodityDetails'
 export const ANIMAL_IDENTIFIERS_STEP = 'animalIdentifiers'
 
 const flowPageTarget = (page) => (scope) =>
   pageGatePasses(page, scope) ? pagePath(page.slug) : null
 
 /** The opening run's ordered steps — a null target skips the step (see
- * docs/flow-and-gates.md, "The opening run"). */
+ * docs/flow-and-gates.md, "The opening run"). The commodity leg is the
+ * inc-062 two-page shape: batch search then the consolidated details page
+ * (whose derived gate holds until a line exists). */
 export const RUN_STEPS = [
   { id: importTypeFilterPage.id, target: flowPageTarget(importTypeFilterPage) },
   { id: originPage.id, target: flowPageTarget(originPage) },
+  { id: commoditiesPage.id, target: flowPageTarget(commoditiesPage) },
   {
-    id: COMMODITY_SELECT_STEP,
-    target: (scope) =>
-      pageGatePasses(commoditiesPage, scope)
-        ? pagePath('commodities/select')
-        : null
+    id: consignmentDetailsPage.id,
+    target: flowPageTarget(consignmentDetailsPage)
   },
-  { id: COMMODITY_DETAILS_STEP, target: () => null },
   { id: importReasonPage.id, target: flowPageTarget(importReasonPage) },
   { id: importPurposePage.id, target: flowPageTarget(importPurposePage) },
   {

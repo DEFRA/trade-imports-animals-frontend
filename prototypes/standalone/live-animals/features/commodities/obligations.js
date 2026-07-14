@@ -6,8 +6,6 @@ export const commoditySelection = {
   enforcedAt: 'continue'
 }
 
-export const typeSelection = { id: 'typeSelection', required: true }
-
 export const speciesSelection = { id: 'speciesSelection', required: true }
 
 export const numberOfPackages = {
@@ -116,7 +114,6 @@ export const commodityLines = {
   collection: true,
   item: [
     commoditySelection,
-    typeSelection,
     speciesSelection,
     numberOfPackages,
     numberOfAnimalsQuantity,

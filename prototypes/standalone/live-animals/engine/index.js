@@ -7,6 +7,7 @@ export {
   updateEntryAt,
   removeEntry,
   removeEntryAt,
+  reconcileEntriesAt,
   submitJourney
 } from './write.js'
 export { collectionView } from './evaluate/collection-view.js'
