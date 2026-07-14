@@ -134,7 +134,9 @@ const completeAnswerSections = async (page) => {
   ).toBeVisible()
   await page.getByRole('radio', { name: 'Slaughter' }).check()
   await page
-    .getByRole('group', { name: 'Contains unweaned animals' })
+    .getByRole('group', {
+      name: 'Does the consignment contain any unweaned animals?'
+    })
     .getByRole('radio', { name: 'No' })
     .check()
   await save()
@@ -1367,10 +1369,10 @@ test.describe('live-animals (page-owned spine)', () => {
     await answerCountryOfOrigin(page)
 
     const certifiedFor = page.getByRole('group', {
-      name: 'Animals certified for'
+      name: 'What are the animals certified for?'
     })
     const unweaned = page.getByRole('group', {
-      name: 'Contains unweaned animals'
+      name: 'Does the consignment contain any unweaned animals?'
     })
 
     // A commodity line for the given code, taking the fewest steps: only the
@@ -1619,7 +1621,9 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await page.getByRole('radio', { name: 'Slaughter' }).check()
     await page
-      .getByRole('group', { name: 'Contains unweaned animals' })
+      .getByRole('group', {
+        name: 'Does the consignment contain any unweaned animals?'
+      })
       .getByRole('radio', { name: 'No' })
       .check()
     await save()

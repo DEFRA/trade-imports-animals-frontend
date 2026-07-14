@@ -139,7 +139,9 @@ const drivePrototype = async (page) => {
   ).toBeVisible()
   await page.getByRole('radio', { name: 'Slaughter' }).check()
   await page
-    .getByRole('group', { name: 'Contains unweaned animals' })
+    .getByRole('group', {
+      name: 'Does the consignment contain any unweaned animals?'
+    })
     .getByRole('radio', { name: 'No' })
     .check()
   await save()
