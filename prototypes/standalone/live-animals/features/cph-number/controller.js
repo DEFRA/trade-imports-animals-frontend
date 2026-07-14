@@ -1,4 +1,4 @@
-import { hubPath, TEMPLATES } from '../../config.js'
+import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
@@ -24,9 +24,14 @@ const fields = compose(
   )
 )
 
-const render = (h, values, errors = {}) =>
+const hubEntryReturn = (request) =>
+  request.query.return === 'addresses' ? pagePath('addresses') : null
+
+const render = (request, h, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('County Parish Holding (CPH)', { backLink: hubPath() }),
+    ...kit.base('County Parish Holding (CPH)', {
+      backLink: hubEntryReturn(request) ?? hubPath()
+    }),
     values,
     errors,
     errorSummary: kit.errorSummary(errors)
@@ -34,7 +39,7 @@ const render = (h, values, errors = {}) =>
 
 const get = async (request, h) => {
   const { answers } = await state.get(request, h)
-  return render(h, {
+  return render(request, h, {
     countyParishHoldingCph: answers.countyParishHoldingCph ?? ''
   })
 }
@@ -46,10 +51,14 @@ const post = async (request, h) => {
     countyParishHoldingCph: rawCphNumber.replace(/\//g, '')
   }
   const { errors } = validate(fields, values)
-  if (errors) return render(h, { countyParishHoldingCph: rawCphNumber }, errors)
+  if (errors) {
+    return render(request, h, { countyParishHoldingCph: rawCphNumber }, errors)
+  }
 
   const { scope } = await state.commit(request, h, values)
-  return h.redirect(kit.nextTarget(request, page, scope))
+  return h.redirect(
+    hubEntryReturn(request) ?? kit.nextTarget(request, page, scope)
+  )
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

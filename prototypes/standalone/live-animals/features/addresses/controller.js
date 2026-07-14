@@ -1,6 +1,7 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
+import { cphApplies } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
@@ -40,33 +41,42 @@ const PARTY_ROWS = [
   }
 ]
 
-const partyRow = (party, answers) => {
-  const entry = answers[party.id]
-  return {
-    key: {
-      html: `<span>${party.label}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${party.hint}</span>`
-    },
-    value: { text: entry?.name ?? 'Not added yet' },
-    actions: party.href
-      ? {
-          items: [
-            {
-              href: pagePath(party.href),
-              text: entry ? 'Change' : 'Add',
-              visuallyHiddenText: party.label.toLowerCase()
-            }
-          ]
-        }
-      : undefined
-  }
+const CPH_ROW = {
+  id: 'countyParishHoldingCph',
+  label: 'County Parish Holding number (CPH)',
+  hint: 'The County Parish Holding (CPH) number identifies the holding where the animals will be kept.',
+  href: 'cph-number?return=addresses'
 }
+
+const hubRow = ({ label, hint, href }, valueText) => ({
+  key: {
+    html: `<span>${label}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${hint}</span>`
+  },
+  value: { text: valueText || 'Not added yet' },
+  actions: {
+    items: [
+      {
+        href: pagePath(href),
+        text: valueText ? 'Change' : 'Add',
+        visuallyHiddenText: label.toLowerCase()
+      }
+    ]
+  }
+})
+
+const rows = (answers) => [
+  ...PARTY_ROWS.map((party) => hubRow(party, answers[party.id]?.name)),
+  ...(cphApplies(answers)
+    ? [hubRow(CPH_ROW, answers.countyParishHoldingCph)]
+    : [])
+]
 
 const get = async (request, h) => {
   const { answers } = await state.get(request, h)
   return h.view(view, {
     ...kit.base('Consignment addresses', { backLink: hubPath() }),
     heading: 'Consignment addresses',
-    rows: PARTY_ROWS.map((party) => partyRow(party, answers))
+    rows: rows(answers)
   })
 }
 

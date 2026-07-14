@@ -1485,7 +1485,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(unweaned).toBeVisible()
   })
 
-  test('CPH number — the CPH page shows only when a CPH-triggering commodity line exists', async ({
+  test('CPH number — the CPH page and addresses-hub row show only when a CPH-triggering commodity line exists', async ({
     page
   }) => {
     await startNotification(page)
@@ -1499,6 +1499,14 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     const hubHeading = page.getByRole('heading', {
       name: 'Import notification service'
+    })
+    const addressesHeading = page.getByRole('heading', {
+      name: 'Consignment addresses'
+    })
+    const cphRow = page.locator('.govuk-summary-list__row', {
+      has: page.getByText('County Parish Holding number (CPH)', {
+        exact: true
+      })
     })
 
     // A commodity line for the given code, taking the fewest steps: only the
@@ -1526,28 +1534,52 @@ test.describe('live-animals (page-owned spine)', () => {
       await expect(hubHeading).toBeVisible()
     }
 
-    // The addresses landing Continue walks to the CPH tail page when CPH is in
-    // scope, else straight back to the hub (the derived gate).
-    const continueThroughAddresses = async () => {
+    const openAddresses = async () => {
       await page.goto(`${BASE}/hub`)
       await page.getByRole('link', { name: 'Addresses' }).click()
-      await expect(
-        page.getByRole('heading', { name: 'Consignment addresses' })
-      ).toBeVisible()
-      await page.getByRole('button', { name: 'Continue' }).click()
+      await expect(addressesHeading).toBeVisible()
     }
 
-    // A non-triggering commodity (cats): CPH is out of scope, so Continue from
-    // the addresses landing returns straight to the hub — no CPH page.
+    // A non-triggering commodity (cats): CPH is out of scope, so the addresses
+    // hub shows no CPH row and Continue returns straight to the hub — no CPH
+    // page (the derived gate).
     await addCommodity('Cat')
-    await continueThroughAddresses()
+    await openAddresses()
+    await expect(cphRow).toBeHidden()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(hubHeading).toBeVisible()
     await expect(cphHeading).toBeHidden()
 
     // Adding a triggering commodity (cattle) brings CPH into scope across the
-    // commodity lines (frame:"anyItem") — the addresses section walks to it.
+    // commodity lines (frame:"anyItem") — the row appears on the addresses hub
+    // in its empty state.
     await addCommodity('Cow')
-    await continueThroughAddresses()
+    await openAddresses()
+    await expect(cphRow).toBeVisible()
+    await expect(cphRow).toContainText('Not added yet')
+
+    // Hub-row add flow: the Add link opens the CPH page and saving returns to
+    // the addresses hub (not the sequential exit), the row showing the stored
+    // slash-stripped value.
+    await cphRow.getByRole('link', { name: 'Add' }).click()
+    await expect(cphHeading).toBeVisible()
+    await page.getByLabel('County Parish Holding (CPH)').fill('12/345/6789')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(addressesHeading).toBeVisible()
+    await expect(cphRow).toContainText('123456789')
+
+    // Filled state: the row's action reads Change, the page shows the stored
+    // value, and the back link returns to the addresses hub.
+    await cphRow.getByRole('link', { name: 'Change' }).click()
+    await expect(page.getByLabel('County Parish Holding (CPH)')).toHaveValue(
+      '123456789'
+    )
+    await page.getByRole('link', { name: 'Back' }).click()
+    await expect(addressesHeading).toBeVisible()
+
+    // The sequential fallback stays: Continue from the addresses landing still
+    // walks to the CPH tail page.
+    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(cphHeading).toBeVisible()
   })
 
