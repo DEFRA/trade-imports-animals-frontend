@@ -19,7 +19,8 @@ import {
   fillCommodityCode,
   fillCommodityType,
   fillSpecies,
-  fillNumberOfAnimals
+  fillNumberOfAnimals,
+  fillCph
 } from './journey.js'
 
 /**
@@ -96,15 +97,18 @@ for (const journey of JOURNEYS) {
       await fillSpecies(page, journey)
       await fillNumberOfAnimals(page, journey)
 
-      // Terminal — task list should show 13 Completed + 1 Optional
+      // CPH — cattle-line brings it into scope, mandatory-to-submit.
+      await fillCph(page, journey)
+
+      // Terminal — task list should show 14 Completed + 1 Optional
       // (trader-reference, unfilled).
       await page.goto(`${journey.base}/task-list`)
       const completedCount = await page.getByText('Completed').count()
       const optionalCount = await page.getByText('Optional').count()
       expect(
         completedCount,
-        `expected 13 Completed tags on the task list, got ${completedCount}`
-      ).toBe(13)
+        `expected 14 Completed tags on the task list, got ${completedCount}`
+      ).toBe(14)
       expect(
         optionalCount,
         `expected 1 Optional tag on the task list, got ${optionalCount}`
@@ -170,15 +174,18 @@ for (const journey of JOURNEYS) {
       await fillSpecies(page, journey)
       await fillNumberOfAnimals(page, journey)
 
-      // Terminal — 12 Completed + 2 Optional. Matches the vitest
+      // CPH — cattle-line brings it into scope, mandatory-to-submit.
+      await fillCph(page, journey)
+
+      // Terminal — 13 Completed + 2 Optional. Matches the vitest
       // e2e-walk.test.js "transit-through-EU" case.
       await page.goto(`${journey.base}/task-list`)
       const completedCount = await page.getByText('Completed').count()
       const optionalCount = await page.getByText('Optional').count()
       expect(
         completedCount,
-        `expected 12 Completed tags on the task list, got ${completedCount}`
-      ).toBe(12)
+        `expected 13 Completed tags on the task list, got ${completedCount}`
+      ).toBe(13)
       expect(
         optionalCount,
         `expected 2 Optional tags on the task list, got ${optionalCount}`

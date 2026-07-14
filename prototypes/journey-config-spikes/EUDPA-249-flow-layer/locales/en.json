@@ -54,6 +54,9 @@
       "trader-reference": {
         "title": "Your reference"
       },
+      "cph": {
+        "title": "County Parish Holding (CPH)"
+      },
       "accompanying-documents": {
         "title": "Accompanying documents"
       },

@@ -69,6 +69,7 @@ import {
   containsUnweanedAnimals,
   regionCodeRequirement,
   regionCode,
+  cph,
   unitRecord,
   permanentAddress,
   passport,
@@ -340,6 +341,24 @@ export const flow = {
             {
               page: 'internal-reference',
               presents: [{ obligation: internalReferenceNumber }]
+            }
+          ]
+        },
+        {
+          // County Parish Holding (CPH). Notification-level identifier
+          // — one entry per notification — but only in scope when the
+          // consignment includes a commodity requiring CPH tracking
+          // (cattle, pigs, sheep, goats, poultry). The obligation's
+          // applyTo (obligations.js) uses `anyAllowListed` over the
+          // active commodity codes, so the subsection collapses to NA
+          // when no relevant line has been added.
+          kind: 'subsection',
+          id: 'cph',
+          titleKey: 'flow.subsection.cph.title',
+          children: [
+            {
+              page: 'cph',
+              presents: [{ obligation: cph }]
             }
           ]
         },

@@ -314,3 +314,15 @@ export async function fillNumberOfAnimals(
   await fillInput(page, `numberOfAnimals-${lineId}`, count)
   await submit(page)
 }
+
+// -- Notification-level, commodity-gated -----------------------------
+
+// CPH — County Parish Holding. Notification-level; gated on the active
+// commodity codes (cattle, pigs, sheep, goats, poultry). Only in scope
+// once one of those has been added as a commodity line, so the walk
+// fills it AFTER the line is minted.
+export async function fillCph(page, journey, { cph = '12/345/6789' } = {}) {
+  await goToPage(page, journey, 'cph')
+  await fillInput(page, 'cph', cph)
+  await submit(page)
+}
