@@ -31,8 +31,8 @@ const get = async (request, h) => {
       }
     }))
   return h.view(view, {
-    ...kit.base('Accompanying documents', { backLink: hubPath() }),
-    heading: 'Documents you have added',
+    ...kit.base('Upload documents', { backLink: hubPath() }),
+    heading: 'Upload documents',
     rows,
     hasDocuments: rows.length > 0,
     addButtonText: rows.length ? 'Add another document' : 'Add a document',

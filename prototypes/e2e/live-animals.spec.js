@@ -579,7 +579,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     await page.getByRole('link', { name: 'Accompanying documents' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Documents you have added' })
+      page.getByRole('heading', { name: 'Upload documents' })
     ).toBeVisible()
     await expect(
       page.getByText('You have not added any documents yet.')
@@ -618,7 +618,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Back on the loop hub with the new document summarised.
     await expect(
-      page.getByRole('heading', { name: 'Documents you have added' })
+      page.getByRole('heading', { name: 'Upload documents' })
     ).toBeVisible()
     const row = page.locator('.govuk-summary-list__row', {
       hasText: 'Document 1'
