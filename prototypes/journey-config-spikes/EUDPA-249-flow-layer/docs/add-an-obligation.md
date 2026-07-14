@@ -487,10 +487,12 @@ Steps executed:
   `within`), share `accompanyingDocumentBlockApplyTo` via
   `branchedGate`.
 - **Step 2 — Domain entries.** Four entries:
-  - `accompanyingDocumentTypeDomain` — `staticEnum` with 4
-    illustrative values (health-certificate / commercial-invoice /
-    transport-document / other) and labels under
-    `domain.accompanyingDocumentType.*`.
+  - `accompanyingDocumentTypeDomain` — `staticEnum` with 14
+    spec values (ITAHC, Veterinary health certificate, Air waybill,
+    Import permit, Letter of authority, Commercial invoice, Sea
+    waybill, Rail waybill, Bill of lading, Catch certificate,
+    Laboratory sampling results, Health certificate, Journey log,
+    Other) and labels under `domain.accompanyingDocumentType.*`.
   - `accompanyingDocumentAttachmentTypeDomain` — `staticEnum` with 8
     file-extension values (pdf / doc / docx / jpg / jpeg / png /
     xls / xlsx) per the V4 spec.

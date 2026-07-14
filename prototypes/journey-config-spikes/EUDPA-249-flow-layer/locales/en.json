@@ -416,9 +416,19 @@
       "other": "Other"
     },
     "accompanyingDocumentType": {
-      "health-certificate": "Health certificate",
+      "itahc": "ITAHC",
+      "veterinary-health-certificate": "Veterinary health certificate",
+      "air-waybill": "Air waybill",
+      "import-permit": "Import permit",
+      "letter-of-authority": "Letter of authority (Directive 2008/61/EC)",
       "commercial-invoice": "Commercial invoice",
-      "transport-document": "Transport document",
+      "sea-waybill": "Sea waybill",
+      "rail-waybill": "Rail waybill",
+      "bill-of-lading": "Bill of lading",
+      "catch-certificate": "Catch certificate",
+      "laboratory-sampling-results": "Laboratory sampling results for aflatoxin (Reg 2019/1793)",
+      "health-certificate": "Health certificate",
+      "journey-log": "Journey log",
       "other": "Other"
     },
     "accompanyingDocumentAttachmentType": {

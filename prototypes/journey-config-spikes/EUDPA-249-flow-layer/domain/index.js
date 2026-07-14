@@ -639,12 +639,22 @@ export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS, {
   }
 })
 
-// V4: accompanying document type — MDM enum. Illustrative values for
-// the spike; real MDM ontology comes from production.
+// V4: accompanying document type — fixed enum of the 14 document
+// kinds listed in the spec (Confluence page 6497338582).
 const ACCOMPANYING_DOCUMENT_TYPE_OPTIONS = [
-  'health-certificate',
+  'itahc',
+  'veterinary-health-certificate',
+  'air-waybill',
+  'import-permit',
+  'letter-of-authority',
   'commercial-invoice',
-  'transport-document',
+  'sea-waybill',
+  'rail-waybill',
+  'bill-of-lading',
+  'catch-certificate',
+  'laboratory-sampling-results',
+  'health-certificate',
+  'journey-log',
   'other'
 ]
 
@@ -652,12 +662,24 @@ export const accompanyingDocumentTypeDomain = staticEnum(
   ACCOMPANYING_DOCUMENT_TYPE_OPTIONS,
   {
     labels: {
-      'health-certificate':
-        'domain.accompanyingDocumentType.health-certificate',
+      itahc: 'domain.accompanyingDocumentType.itahc',
+      'veterinary-health-certificate':
+        'domain.accompanyingDocumentType.veterinary-health-certificate',
+      'air-waybill': 'domain.accompanyingDocumentType.air-waybill',
+      'import-permit': 'domain.accompanyingDocumentType.import-permit',
+      'letter-of-authority':
+        'domain.accompanyingDocumentType.letter-of-authority',
       'commercial-invoice':
         'domain.accompanyingDocumentType.commercial-invoice',
-      'transport-document':
-        'domain.accompanyingDocumentType.transport-document',
+      'sea-waybill': 'domain.accompanyingDocumentType.sea-waybill',
+      'rail-waybill': 'domain.accompanyingDocumentType.rail-waybill',
+      'bill-of-lading': 'domain.accompanyingDocumentType.bill-of-lading',
+      'catch-certificate': 'domain.accompanyingDocumentType.catch-certificate',
+      'laboratory-sampling-results':
+        'domain.accompanyingDocumentType.laboratory-sampling-results',
+      'health-certificate':
+        'domain.accompanyingDocumentType.health-certificate',
+      'journey-log': 'domain.accompanyingDocumentType.journey-log',
       other: 'domain.accompanyingDocumentType.other'
     }
   }
