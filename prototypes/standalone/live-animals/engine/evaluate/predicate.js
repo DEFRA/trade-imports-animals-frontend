@@ -1,6 +1,14 @@
 import { isAnswered } from '../../lib/answered.js'
 import { valueAt } from '../../lib/path.js'
 
+export const includesUnion = (obligations) => [
+  ...new Set(
+    obligations.flatMap((obligation) =>
+      [].concat(obligation.activatedBy.includes)
+    )
+  )
+]
+
 export function applyPredicate(activatedBy, value) {
   if ('equals' in activatedBy) return value === activatedBy.equals
   if ('includes' in activatedBy) {
@@ -8,6 +16,11 @@ export function applyPredicate(activatedBy, value) {
     return []
       .concat(value ?? [])
       .some((candidate) => targets.includes(candidate))
+  }
+  if ('notInUnionOf' in activatedBy) {
+    if (!isAnswered(value)) return false
+    const union = includesUnion(activatedBy.notInUnionOf)
+    return ![].concat(value).some((candidate) => union.includes(candidate))
   }
   if ('present' in activatedBy) return isAnswered(value) === activatedBy.present
   throw new Error(

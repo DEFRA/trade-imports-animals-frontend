@@ -54,12 +54,29 @@ export const horseName = {
   wipeOnExit: true
 }
 
+export const TYPED_ANIMAL_IDENTIFIERS = [
+  animalIdentifierPassport,
+  animalIdentifierTattoo,
+  animalIdentifierEarTag,
+  horseName
+]
+
+const enclosingCommodityNotInUnionOf = (obligations) => ({
+  obligation: commoditySelection,
+  frame: 'enclosing',
+  notInUnionOf: obligations
+})
+
 export const animalIdentifierIdentificationDetails = {
-  id: 'animalIdentifierIdentificationDetails'
+  id: 'animalIdentifierIdentificationDetails',
+  activatedBy: enclosingCommodityNotInUnionOf(TYPED_ANIMAL_IDENTIFIERS),
+  wipeOnExit: true
 }
 
 export const animalIdentifierDescription = {
-  id: 'animalIdentifierDescription'
+  id: 'animalIdentifierDescription',
+  activatedBy: enclosingCommodityNotInUnionOf(TYPED_ANIMAL_IDENTIFIERS),
+  wipeOnExit: true
 }
 
 export const permanentAddress = {

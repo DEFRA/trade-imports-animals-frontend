@@ -1,5 +1,6 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import { includesUnion } from '../../engine/evaluate/predicate.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
@@ -8,6 +9,8 @@ import {
   animalIdentifierPassport,
   animalIdentifierTattoo,
   animalIdentifierEarTag,
+  animalIdentifierIdentificationDetails,
+  animalIdentifierDescription,
   horseName,
   permanentAddress
 } from './obligations.js'
@@ -39,13 +42,18 @@ const TYPE_FIELDS = [
   { obligation: horseName, id: 'horseName', label: 'Horse name' }
 ]
 
+const fallbackApplies = (obligation, commodity) =>
+  !includesUnion(obligation.activatedBy.notInUnionOf).includes(commodity)
+
 const FALLBACK_FIELDS = [
   {
+    obligation: animalIdentifierIdentificationDetails,
     id: 'animalIdentifierIdentificationDetails',
     label: 'Identification details',
     hint: 'Any other way this animal is identified, if it has no passport, tattoo or ear tag'
   },
   {
+    obligation: animalIdentifierDescription,
     id: 'animalIdentifierDescription',
     label: 'Animal description'
   }
@@ -141,6 +149,11 @@ const lineIndexOf = (request, answers) => {
 const scopedTypeFields = (commodity) =>
   TYPE_FIELDS.filter((field) => typeApplies(field.obligation, commodity))
 
+const scopedFallbackFields = (commodity) =>
+  FALLBACK_FIELDS.filter((field) =>
+    fallbackApplies(field.obligation, commodity)
+  )
+
 const permanentAddressApplies = (commodity) =>
   permanentAddress.activatedBy.includes.includes(commodity)
 
@@ -182,7 +195,7 @@ const render = (h, index, commodity, values, addressValues, errors = {}) => {
         value: values[field.id] ?? '',
         error: errors[field.id]
       })),
-      ...FALLBACK_FIELDS.map((field) => ({
+      ...scopedFallbackFields(commodity).map((field) => ({
         ...field,
         value: values[field.id] ?? '',
         error: errors[field.id]
@@ -201,10 +214,9 @@ const render = (h, index, commodity, values, addressValues, errors = {}) => {
 
 const identifierValuesFromPayload = (payload, commodity) =>
   Object.fromEntries(
-    [...scopedTypeFields(commodity), ...FALLBACK_FIELDS].map((field) => [
-      field.id,
-      (payload[field.id] ?? '').trim()
-    ])
+    [...scopedTypeFields(commodity), ...scopedFallbackFields(commodity)].map(
+      (field) => [field.id, (payload[field.id] ?? '').trim()]
+    )
   )
 
 const addressValuesFromPayload = (payload) =>
@@ -218,10 +230,9 @@ const getAdd = async (request, h) => {
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
   const values = Object.fromEntries(
-    [...scopedTypeFields(commodity), ...FALLBACK_FIELDS].map((field) => [
-      field.id,
-      ''
-    ])
+    [...scopedTypeFields(commodity), ...scopedFallbackFields(commodity)].map(
+      (field) => [field.id, '']
+    )
   )
   return render(h, index, commodity, values, blankAddress())
 }

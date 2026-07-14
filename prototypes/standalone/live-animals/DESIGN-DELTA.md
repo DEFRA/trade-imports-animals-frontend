@@ -233,6 +233,47 @@ Proven across `flow/gates.test.js` (RULE 1 + RULE 2, no deadlock),
 `t2-hub-copy.test.js` (new vocabulary, "0 of 7", Cannot-start-yet rows have no
 link), and `analysis/reachability.test.js` (recomputed pin stays green).
 
+## 7. `activatedBy.notInUnionOf` — negated cross-frame gating by complement-by-reference (inc-040)
+
+`engine/evaluate/predicate.js`: a fourth activation operator, sitting beside
+`equals` / `includes` / `present`. `notInUnionOf` names a list of OBLIGATION
+references; the predicate holds when the gating obligation's answer is
+ANSWERED and appears in NONE of the named obligations' `includes` lists. The
+engine derives the union at runtime (`includesUnion`, exported for reuse) —
+the complement is expressed BY REFERENCE to the positive gates, so there is
+no duplicated commodity list to drift when a typed-identifier list changes
+(Sam's D1(a) ruling, M3-0A, closes c-028's over-show).
+
+- **Carrier.** `animalIdentifierIdentificationDetails` +
+  `animalIdentifierDescription` (`features/commodities/obligations.js`)
+  switch from always-in-scope to
+  `{ obligation: commoditySelection, frame: "enclosing", notInUnionOf: [animalIdentifierPassport, animalIdentifierTattoo, animalIdentifierEarTag, horseName] }`
+  with `wipeOnExit: true`. The free-text fallbacks now render and count only
+  for commodities in NO typed-identifier list (V4's bees/poultry intent —
+  today's stub that means Fish only); a stale fallback on a typed line is
+  destroyed at reconcile, so it can never satisfy the `requiredOneOf` group.
+- **Unanswered gate = not active.** Activation stays strictly positive: a
+  blank `commoditySelection` activates nothing, preserving the reachability
+  prover's "no witness needs a blank axis" property.
+- **Backwards compatible.** The operator keys are mutually exclusive; every
+  existing `equals` / `includes` / `present` gate takes the same branch as
+  before, and all pre-inc-040 tests are untouched. The form composes with the
+  existing `frame` vocabulary (delta #3) unchanged — resolution is the same
+  frame walk, only the value test differs.
+- **Reachability.** `analysis/reachability.js#gateValue` synthesises a
+  witness value guaranteed outside the derived union, so both fallback
+  fields get honest witnesses and the recomputed pin stays green.
+- **UI.** The identifier entry form scopes the fallback inputs off the
+  obligation's own gate (`includesUnion` over `notInUnionOf`), the same
+  pattern as the typed-identifier fields' `includes` filter — no parallel
+  list in the controller.
+
+Proven in `engine/evaluate/cross-frame.test.js` ("negated cross-frame gating"):
+union derived from every referenced list (deduplicated), per-instance on/off
+with no sibling leak, unanswered-gate inactivity, exact-path wipe leaving the
+typed sibling untouched, wiped-stale-value-cannot-satisfy-`requiredOneOf`, and
+depth-2 enclosing resolution.
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

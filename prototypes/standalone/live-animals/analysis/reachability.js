@@ -1,4 +1,5 @@
 import { pageOfObligation } from '../flow/dispatch.js'
+import { includesUnion } from '../engine/evaluate/predicate.js'
 import { reconcile } from '../engine/evaluate/reconcile.js'
 import { registry, walkObligations } from '../registry.js'
 import { pathKey } from '../lib/path.js'
@@ -35,6 +36,12 @@ export const orphanedRootIds = new Set(
 const gateValue = (activatedBy) => {
   if ('equals' in activatedBy) return activatedBy.equals
   if ('includes' in activatedBy) return [].concat(activatedBy.includes)[0]
+  if ('notInUnionOf' in activatedBy) {
+    const union = includesUnion(activatedBy.notInUnionOf)
+    let candidate = 'outside-the-union'
+    while (union.includes(candidate)) candidate = `${candidate}-x`
+    return candidate
+  }
   if ('present' in activatedBy) return activatedBy.present ? 'x' : ''
   return undefined
 }

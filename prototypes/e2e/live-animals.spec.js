@@ -483,11 +483,15 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // Cats gates passport + tattoo + permanent address on; ear tag + horse
-    // name are hidden (they belong to other commodities).
+    // name are hidden (they belong to other commodities), and the free-text
+    // fallbacks are hidden too — a typed commodity is in the notInUnionOf
+    // union (inc-040).
     await expect(page.getByLabel('Passport number')).toBeVisible()
     await expect(page.getByLabel('Tattoo')).toBeVisible()
     await expect(page.getByLabel('Ear tag number')).toBeHidden()
     await expect(page.getByLabel('Horse name')).toBeHidden()
+    await expect(page.getByLabel('Identification details')).toBeHidden()
+    await expect(page.getByLabel('Animal description')).toBeHidden()
     await expect(page.getByLabel('Name or organisation name')).toBeVisible()
 
     // A partial permanent address blocks the add (the fieldGroup mandates apply
@@ -523,6 +527,52 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(unitRow).toContainText('Passport: UK123456789')
     await expect(unitRow).toContainText('Permanent address: Pet Owner')
+  })
+
+  test('animal identifiers — a commodity with no typed identifier shows only the free-text fallbacks, and one satisfies the group', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await answerCountryOfOrigin(page)
+
+    // Fish is in no typed-identifier list, so the notInUnionOf gate (inc-040)
+    // turns the free-text fallbacks ON and every typed input OFF.
+    await page.getByRole('link', { name: 'Commodities' }).click()
+    await page.getByRole('button', { name: 'Add a commodity' }).click()
+    await page.getByLabel('Commodity', { exact: true }).selectOption('Fish')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Description of goods' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    const fishRow = page.locator('.govuk-summary-list__row', {
+      hasText: 'Commodity 1'
+    })
+    await fishRow.getByRole('link', { name: /Animal identifiers/ }).click()
+    await page.getByRole('button', { name: 'Add an animal' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add an animal' })
+    ).toBeVisible()
+
+    await expect(page.getByLabel('Identification details')).toBeVisible()
+    await expect(page.getByLabel('Animal description')).toBeVisible()
+    await expect(page.getByLabel('Passport number')).toBeHidden()
+    await expect(page.getByLabel('Tattoo')).toBeHidden()
+    await expect(page.getByLabel('Ear tag number')).toBeHidden()
+    await expect(page.getByLabel('Horse name')).toBeHidden()
+
+    // A fallback alone satisfies the at-least-one identifier group.
+    await page.getByLabel('Identification details').fill('Tank mark TM-77')
+    await page.getByRole('button', { name: 'Add animal' }).click()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Animal identifiers for this commodity'
+      })
+    ).toBeVisible()
+    await expect(
+      page.locator('.govuk-summary-list__row', { hasText: 'Animal 1' })
+    ).toContainText('Identification details: Tank mark TM-77')
   })
 
   test('import reason — blank saves without error (enforcedAt=submit), then the happy path completes the task', async ({

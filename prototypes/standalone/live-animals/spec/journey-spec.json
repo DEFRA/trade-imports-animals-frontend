@@ -1740,9 +1740,19 @@
         "maxLength": 58,
         "example": "Hive mark HM-2026-004"
       },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "notInUnionOf": [
+          "animalIdentifierPassport",
+          "animalIdentifierTattoo",
+          "animalIdentifierEarTag",
+          "horseName"
+        ]
+      },
       "wipeOnExit": true,
-      "modelGap": "cross-frame-conditionality",
-      "notes": "Shown when the enclosing commodity line does NOT have a specific identifier type - a negated cross-frame condition with no explicit commodity list, so no activatedBy can be wired (modelGap). Captures free-text identification details. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "notes": "Shown when the enclosing commodity line does NOT have a specific identifier type - a negated cross-frame condition with no explicit commodity list. Wired at inc-040 (M3-0A, c-028) via notInUnionOf: active when the enclosing commoditySelection is in NONE of the named obligations' includes lists; the engine derives the union at runtime, so there is no duplicated commodity list to drift. Captures free-text identification details. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "conflicts": ["c-028"],
       "provenance": [
         {
           "source": "confluence-v4",
@@ -1762,9 +1772,19 @@
         "maxLength": 58,
         "example": "Worker bees in sealed transport hive"
       },
+      "activatedBy": {
+        "obligation": "commoditySelection",
+        "frame": "enclosing",
+        "notInUnionOf": [
+          "animalIdentifierPassport",
+          "animalIdentifierTattoo",
+          "animalIdentifierEarTag",
+          "horseName"
+        ]
+      },
       "wipeOnExit": true,
-      "modelGap": "cross-frame-conditionality",
-      "notes": "Shown when the enclosing commodity line does NOT have a specific identifier type - negated cross-frame condition with no explicit list, so no activatedBy can be wired (modelGap). Captures a free-text animal description. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "notes": "Shown when the enclosing commodity line does NOT have a specific identifier type - negated cross-frame condition with no explicit list. Wired at inc-040 (M3-0A, c-028) via notInUnionOf: active when the enclosing commoditySelection is in NONE of the named obligations' includes lists; the engine derives the union at runtime, so there is no duplicated commodity list to drift. Captures a free-text animal description. Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "conflicts": ["c-028"],
       "provenance": [
         {
           "source": "confluence-v4",

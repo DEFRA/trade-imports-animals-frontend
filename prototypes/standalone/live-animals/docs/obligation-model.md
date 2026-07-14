@@ -99,13 +99,14 @@ Real references buy three things over the UUIDs the v1 model used:
 ## The activation vocabulary
 
 `activatedBy` is a data literal over an obligation reference — never a
-closure. There are exactly three operators, interpreted in one place
+closure. There are exactly four operators, interpreted in one place
 (`engine/evaluate/predicate.js`):
 
 ```js
 { obligation: regionOfOriginCodeRequirement, equals: 'yes' }        // scalar equality
 { obligation: meansOfTransport, includes: ['Railway', 'Road Vehicle'] } // answer is one of these
 { obligation: someAnswer, present: true }                          // answered (non-blank)
+{ obligation: commoditySelection, notInUnionOf: [passport, earTag] } // answered, and in NONE of the named obligations' includes lists
 ```
 
 `present` fires on any non-blank answer. It remains fully supported by
@@ -122,6 +123,17 @@ commodity list in `features/commodities/obligations.js`:
 ```js
 { obligation: commoditySelection, includes: PACKAGE_COUNT_COMMODITIES }
 ```
+
+`notInUnionOf` is the negated complement of `includes`, expressed BY
+REFERENCE (inc-040, DESIGN-DELTA #7): it names sibling obligations, and the
+predicate holds when the gating answer is answered and appears in NONE of the
+named obligations' `includes` lists. The engine derives the union at runtime
+(`includesUnion`), so the complement can never drift from the positive gates
+it negates. An unanswered gate activates nothing — activation stays strictly
+positive. The live carriers are the two free-text fallback identifier fields
+(`animalIdentifierIdentificationDetails` / `animalIdentifierDescription`),
+gated on the enclosing `commoditySelection` being in no typed-identifier
+list.
 
 The vocabulary is deliberately small. It covers "this answer unlocks
 that obligation" and nothing more. Anything that needs real branching —
