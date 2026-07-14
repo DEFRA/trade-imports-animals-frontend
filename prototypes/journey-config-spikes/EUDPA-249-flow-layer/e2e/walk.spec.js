@@ -101,8 +101,8 @@ for (const journey of JOURNEYS) {
 
       // Commodity-gated notification-level fields — cattle brings
       // both containsUnweanedAnimals (audit #11) and CPH into scope.
-      await fillContainsUnweanedAnimals(page, journey)
       await fillCph(page, journey)
+      await fillContainsUnweanedAnimals(page, journey)
 
       // Terminal — task list should show 14 Completed + 1 Optional
       // (trader-reference, unfilled).
@@ -181,8 +181,8 @@ for (const journey of JOURNEYS) {
 
       // Commodity-gated notification-level fields — cattle brings
       // both containsUnweanedAnimals (audit #11) and CPH into scope.
-      await fillContainsUnweanedAnimals(page, journey)
       await fillCph(page, journey)
+      await fillContainsUnweanedAnimals(page, journey)
 
       // Terminal — 13 Completed + 2 Optional. Matches the vitest
       // e2e-walk.test.js "transit-through-EU" case.

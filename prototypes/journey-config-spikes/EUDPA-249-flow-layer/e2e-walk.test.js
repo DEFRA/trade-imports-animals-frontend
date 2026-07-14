@@ -326,17 +326,14 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       { expectedNext: `${BASE}/lines` }
     )
 
-    // Commodity-gated notification-level fields:
-    //   containsUnweanedAnimals (audit #11) — cattle triggers scope
-    //   cph                                  — cattle triggers scope
-    // Filled here, after the cattle line has been added. /start walks
-    // in flow order and finds contains-unweaned-animals first (it
-    // lives in the arrival section, before commodity-lines), then
-    // cph (in the commodity-lines section).
+    // Commodity-gated notification-level fields — cattle triggers
+    // scope on both. Both now live at the end of the Commodity
+    // lines section (audit-driven UX moves — see flow.js comments).
+    // /start walks in declared order → cph first, then unweaned.
+    await fill(jar, 'cph', { cph: '12/345/6789' })
     await fill(jar, 'contains-unweaned-animals', {
       containsUnweanedAnimals: 'no'
     })
-    await fill(jar, 'cph', { cph: '12/345/6789' })
 
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {
@@ -540,10 +537,10 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
 
     // Commodity-gated notification-level fields — same rationale as
     // the internal-market walk above.
+    await fill(jar, 'cph', { cph: '12/345/6789' })
     await fill(jar, 'contains-unweaned-animals', {
       containsUnweanedAnimals: 'no'
     })
-    await fill(jar, 'cph', { cph: '12/345/6789' })
 
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {

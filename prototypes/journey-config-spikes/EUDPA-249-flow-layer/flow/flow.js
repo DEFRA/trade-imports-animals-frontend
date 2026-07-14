@@ -260,17 +260,6 @@ export const flow = {
         },
         {
           kind: 'subsection',
-          id: 'unweaned',
-          titleKey: 'flow.subsection.unweaned.title',
-          children: [
-            {
-              page: 'contains-unweaned-animals',
-              presents: [{ obligation: containsUnweanedAnimals }]
-            }
-          ]
-        },
-        {
-          kind: 'subsection',
           id: 'certified-for',
           titleKey: 'flow.subsection.certified-for.title',
           children: [
@@ -566,6 +555,27 @@ export const flow = {
             {
               page: 'cph',
               presents: [{ obligation: cph }]
+            }
+          ]
+        },
+        {
+          // About the animals — currently just contains-unweaned-
+          // animals. Notification-level yes/no, gated on the active
+          // commodity codes (equines / cattle / pigs / sheep / goats
+          // per audit #11). Same "only in scope after a matching
+          // commodity line is added" pattern as CPH above; slotted
+          // here at the end of the Commodity lines section for the
+          // same UX reason — the user doesn't need to jump back up
+          // to Arrival to answer it. The subsection title stays
+          // "About the animals" to leave room for adjacent animal-
+          // welfare questions in future.
+          kind: 'subsection',
+          id: 'unweaned',
+          titleKey: 'flow.subsection.unweaned.title',
+          children: [
+            {
+              page: 'contains-unweaned-animals',
+              presents: [{ obligation: containsUnweanedAnimals }]
             }
           ]
         }
