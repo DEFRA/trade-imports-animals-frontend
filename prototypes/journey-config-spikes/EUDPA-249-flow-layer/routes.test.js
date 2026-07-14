@@ -266,6 +266,59 @@ describe('page-controller — mandatoryToProceed default', () => {
     expect(res.payload).toContain('There is a problem')
     expect(res.payload).toContain('Choose the means of transport')
   })
+
+  it('regionCode: mandatoryToProceed does NOT fire when the obligation is effectively-optional (audit re-review NEW-1)', async () => {
+    // V4 spec: regionCode is "Mandatory to proceed" but "Required
+    // when region code requirement = Yes". The flow entry carries
+    // `mandatoryToProceed: true` unconditionally; the `no` branch
+    // is enforced by the obligation's applyTo returning
+    // `{ inScope: true, status: 'optional' }` (branchedGate).
+    //
+    // Pre-fix: contract.js `isSufficientForProceed` didn't consult
+    // effective status, so a direct visit to /pages/region-code
+    // after answering `no` (e.g. via CYA Change link) + blank Save
+    // fired the required error — contradicting the spec.
+    //
+    // Fix: `isSufficientForProceed` now short-circuits to true when
+    // `effectiveStatus === 'optional'`, letting the blank submission
+    // through and preserving the "Yes-branch page-save block, No-
+    // branch allow" semantic.
+    const jar = makeCookieJar()
+    // Answer the requirement question with 'no' — flips regionCode
+    // to inScope: true, status: 'optional'.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/region-code-requirement',
+      payload: { regionCodeRequirement: 'no' }
+    })
+    // Direct visit to the region-code page + blank Save → 302
+    // (not 400), because the mandatoryToProceed gate is now
+    // scoped to effective-mandatory.
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/region-code',
+      payload: {}
+    })
+    expect(res.statusCode).toBe(302)
+  })
+
+  it('regionCode: mandatoryToProceed DOES fire when the obligation is effectively-mandatory (Yes branch)', async () => {
+    // Positive coverage for the fix above — on the Yes branch the
+    // gate still blocks blank saves.
+    const jar = makeCookieJar()
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/region-code-requirement',
+      payload: { regionCodeRequirement: 'yes' }
+    })
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/region-code',
+      payload: {}
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Enter the region of origin code')
+  })
 })
 
 describe('page-controller — option filtering', () => {

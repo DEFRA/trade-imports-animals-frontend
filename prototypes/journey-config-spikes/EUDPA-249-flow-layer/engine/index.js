@@ -283,7 +283,12 @@ const STATUSES = {
 // Field / derived-leaf records live in `impl.records[]`, each carrying
 // { fulfilmentId, status: 'mandatory' | 'optional' }. Singleton
 // implications carry `status` at the top level.
-function effectiveStatus(obligation, path, state) {
+//
+// Exported so contract.js can consult effective status when gating
+// page-save mandates on branchedGate obligations — see audit re-
+// review finding NEW-1 (regionCode `mandatoryToProceed` on the
+// `no` branch).
+export function effectiveStatus(obligation, path, state) {
   const impl = state.obligations?.[obligation.id]
   if (!impl) return undefined
   if (path === null) return impl.status ?? 'mandatory'

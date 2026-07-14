@@ -23,6 +23,7 @@ import {
 import { domain } from './domain/index.js'
 import {
   containerStatus,
+  effectiveStatus,
   firstApplicablePage,
   firstUnfulfilledPage,
   firstUnfulfilledPageForLine,
@@ -264,7 +265,12 @@ export function validatePagePayload(page, payload, state, options = {}) {
     // (completion-mandate driving CYA prompts + submit).
     if (
       descriptor.mandatoryToProceed &&
-      !isSufficientForProceed(descriptor.obligation, value)
+      !isSufficientForProceed(
+        descriptor.obligation,
+        descriptor.path,
+        value,
+        state
+      )
     ) {
       const key = descriptor.errors?.required
       errors.push({
@@ -289,13 +295,25 @@ export function validatePagePayload(page, payload, state, options = {}) {
 }
 
 /** True iff a submitted value is complete enough to satisfy a flow-
- *  level `mandatoryToProceed: true` gate on the given obligation.
- *  Scalars use isBlankValue; composite address obligations delegate
- *  to `domainEntry.isComplete(value)` so blank AND partial values
- *  both fail the gate. Mirrors the `isValueFulfilled` helper in
- *  engine/index.js — different concern (page-save-gate vs task-list
- *  rollup) but identical shape for addresses. */
-function isSufficientForProceed(obligation, value) {
+ *  level `mandatoryToProceed: true` gate on the given obligation
+ *  IN THE CURRENT STATE. Three-step check:
+ *
+ *  1. If the obligation resolves to effectively-optional in the
+ *     current state, the gate never fires (the flag on the flow
+ *     entry is understood as "block when this obligation would
+ *     also be a completion mandate"). Audit re-review NEW-1:
+ *     without this check, a `branchedGate`-optional obligation like
+ *     `regionCode` on the `regionCodeRequirement=no` branch was
+ *     rejecting blank saves via direct visits, contradicting the
+ *     V4 spec "Required when region code requirement = Yes".
+ *  2. For scalars, non-blank is sufficient.
+ *  3. For composite address obligations, we consult
+ *     `domainEntry.isComplete(value)` so blank AND partial values
+ *     both fail — matches the "whole page must be complete"
+ *     semantic on M-to-proceed addresses.
+ */
+function isSufficientForProceed(obligation, path, value, state) {
+  if (effectiveStatus(obligation, path, state) === 'optional') return true
   const entry = domain.get(obligation.id)
   if (entry?.type === 'address' && typeof entry.isComplete === 'function') {
     return entry.isComplete(value)
