@@ -10,8 +10,7 @@ import * as animalIdentifiersEntry from './commodities/animal-identifiers.entry.
 import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
 import * as additionalDetails from './additional-details/controller.js'
-import * as documentsList from './documents/list.controller.js'
-import * as documentsEntry from './documents/entry.controller.js'
+import * as documents from './documents/controller.js'
 import * as addresses from './addresses/controller.js'
 import * as consignorsSelect from './addresses/consignors-select.controller.js'
 import * as destinationsSelect from './addresses/destinations-select.controller.js'
@@ -40,7 +39,7 @@ export const dispatchPages = [
   importReason.meta,
   importPurpose.meta,
   additionalDetails.meta,
-  documentsList.meta,
+  documents.meta,
   addresses.meta,
   cphNumber.meta,
   portOfEntry.meta,
@@ -66,8 +65,7 @@ export const allRoutes = [
   ...importReason.routes,
   ...importPurpose.routes,
   ...additionalDetails.routes,
-  ...documentsList.routes,
-  ...documentsEntry.routes,
+  ...documents.routes,
   ...addresses.routes,
   ...consignorsSelect.routes,
   ...destinationsSelect.routes,

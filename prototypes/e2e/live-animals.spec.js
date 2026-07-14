@@ -559,12 +559,40 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(consignmentRow).toContainText('Completed')
   })
 
-  test('accompanying documents — the optional collection starts Optional; adding a document completes it and lists it on the loop hub', async ({
+  test('accompanying documents — the optional collection starts Optional; the single-page loop adds two documents, removes one and completes the task', async ({
     page
   }) => {
     await startNotification(page)
     const [doc] = values.documents
     const issued = doc.accompanyingDocumentDateOfIssue
+    const secondDoc = {
+      accompanyingDocumentType: 'Commercial invoice',
+      accompanyingDocumentAttachmentType: 'PDF',
+      accompanyingDocumentReference: 'INV-2026-0042',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' }
+    }
+
+    const addDocument = async (entry) => {
+      await page
+        .getByLabel('Document type')
+        .selectOption(entry.accompanyingDocumentType)
+      await page
+        .getByLabel('Attachment type')
+        .selectOption(entry.accompanyingDocumentAttachmentType)
+      await page
+        .getByLabel('Document reference')
+        .fill(entry.accompanyingDocumentReference)
+      await page
+        .getByLabel('Day')
+        .fill(entry.accompanyingDocumentDateOfIssue.day)
+      await page
+        .getByLabel('Month')
+        .fill(entry.accompanyingDocumentDateOfIssue.month)
+      await page
+        .getByLabel('Year')
+        .fill(entry.accompanyingDocumentDateOfIssue.year)
+      await page.getByRole('button', { name: 'Save and add another' }).click()
+    }
 
     // The documents section sits after commodities (RULE 1) — unlock it first.
     await unlockSections(page)
@@ -585,15 +613,10 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByText('You have not added any documents yet.')
     ).toBeVisible()
 
-    await page.getByRole('button', { name: 'Add a document' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Add a document' })
-    ).toBeVisible()
-
     // A partial date of issue is malformed, not merely blank — it blocks
     // the add (dateParts validation).
     await page.getByLabel('Day').fill(issued.day)
-    await page.getByRole('button', { name: 'Add document' }).click()
+    await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(
       page.getByRole('heading', { name: 'There is a problem' })
     ).toBeVisible()
@@ -602,28 +625,37 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // Happy path from the shared fixture — metadata only, no file upload.
-    await page
-      .getByLabel('Document type')
-      .selectOption(doc.accompanyingDocumentType)
-    await page
-      .getByLabel('Attachment type')
-      .selectOption(doc.accompanyingDocumentAttachmentType)
-    await page
-      .getByLabel('Document reference')
-      .fill(doc.accompanyingDocumentReference)
-    await page.getByLabel('Day').fill(issued.day)
-    await page.getByLabel('Month').fill(issued.month)
-    await page.getByLabel('Year').fill(issued.year)
-    await page.getByRole('button', { name: 'Add document' }).click()
-
-    // Back on the loop hub with the new document summarised.
+    // Adding stays on the same page: the read-back table gains a row with
+    // reference / type / date and the entry form resets for the next one.
+    await addDocument(doc)
     await expect(
       page.getByRole('heading', { name: 'Upload documents' })
     ).toBeVisible()
-    const row = page.locator('.govuk-summary-list__row', {
-      hasText: 'Document 1'
+    const firstRow = page.locator('.govuk-table__row', {
+      hasText: doc.accompanyingDocumentReference
     })
-    await expect(row).toContainText('ITAHC — GBHC1234567890')
+    await expect(firstRow).toContainText(doc.accompanyingDocumentType)
+    await expect(firstRow).toContainText(
+      `${issued.day}/${issued.month}/${issued.year}`
+    )
+    await expect(page.getByLabel('Document reference')).toHaveValue('')
+
+    await addDocument(secondDoc)
+    const secondRow = page.locator('.govuk-table__row', {
+      hasText: secondDoc.accompanyingDocumentReference
+    })
+    await expect(secondRow).toContainText(secondDoc.accompanyingDocumentType)
+
+    // Removing the second document leaves the first row intact.
+    await secondRow
+      .getByRole('link', { name: 'Remove document 2', exact: true })
+      .click()
+    await expect(
+      page.locator('.govuk-table__row', {
+        hasText: secondDoc.accompanyingDocumentReference
+      })
+    ).toHaveCount(0)
+    await expect(firstRow).toBeVisible()
 
     // Continue returns to the hub; a complete document makes the optional task
     // Completed (Optional -> Completed once a full entry exists).

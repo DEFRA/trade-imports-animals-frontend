@@ -14,7 +14,7 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 
 - **controller(s)** — Hapi route handlers that own GET/POST, validation,
   copy and view-models (`controller.js`, or several like
-  `documents/list.controller.js` + `documents/entry.controller.js`)
+  `commodities/list.controller.js` + `commodities/select.controller.js`)
 - **`page.js`** — the page identity leaf: `{ id, slug }`, authored once,
   imported by both the controller and `flow/flow.js`. It imports nothing
   (see [section 2](#2-why-pagejs-is-import-free))
@@ -192,7 +192,8 @@ Repeating collections get bespoke manage-lists — there is no uniform
 widget for "a list of things", so each loop hub owns its rows and copy:
 
 - `features/commodities/list.controller.js` — top-level commodity lines
-- `features/documents/list.controller.js` — top-level documents
+- `features/documents/controller.js` — top-level documents, a
+  single-page loop: the entry form and the read-back table share one page
 
 Both compose over the same facts library:
 `state.collectionView(answers, path)` returns

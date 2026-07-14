@@ -7,9 +7,11 @@ that only applies to some entries.
 Two reference implementations exist:
 
 - [`features/documents/`](../features/documents/) — a top-level collection
-  (depth 1) with the list/entry page split
+  (depth 1) as a single-page add-another loop: entry form and read-back
+  table on one page
 - [`features/commodities/`](../features/commodities/) — a top-level collection
-  with a cardinality mandate and an item-scoped conditional field
+  with a cardinality mandate, an item-scoped conditional field and the
+  list/entry sub-page split
 
 The depth-2 case (a collection inside a collection) was the car
 `features/named-driver/` feature, removed in inc-025. The engine still
@@ -124,17 +126,19 @@ You write no engine code. Once the model declares the collection:
   declares only `collects: ['documents']`
   ([`flow/dispatch.js`](../flow/dispatch.js)).
 
-## 4. Build the two pages
+## 4. Build the loop pages
 
-A collection needs two bespoke controllers. Both are deliberately
-hand-written — a repeating collection has no uniform-widget projection, so
-each loop owns its own rows and copy (see [decisions.md](decisions.md)).
+A collection needs a bespoke loop controller, deliberately hand-written —
+a repeating collection has no uniform-widget projection, so each loop owns
+its own rows and copy (see [decisions.md](decisions.md)). Two layouts are
+live:
 
-### The list page (the loop hub)
+### The single-page loop (entry form + read-back on one page)
 
-[`features/documents/list.controller.js`](../features/documents/list.controller.js)
-is the page the flow knows about. It declares the `collects`, renders the
-Document-N rows, and offers Add / Remove / Continue.
+[`features/documents/controller.js`](../features/documents/controller.js)
+is the page the flow knows about. It declares the `collects` and renders
+the entry form and the read-back table of added entries on the same page,
+with a per-row Remove action.
 
 `state.collectionView(answers, ['documents'])` returns facts only:
 `[{ index, path, entry, complete }]`. No hrefs, no labels, no row
@@ -143,23 +147,18 @@ view-models. The controller hand-builds its rows over those facts:
 ```js
 const rows = state
   .collectionView(answers, ['documents'])
-  .map(({ index, entry }) => ({
-    key: { text: `Document ${index + 1}` },
-    value: { text: documentValue(entry) },
-    actions: { items: [{ href: pagePath(`accompanying-documents/${index}/remove`), ... }] }
-  }))
+  .map(({ index, entry }) => [
+    { text: cellText(entry.accompanyingDocumentReference) },
+    { text: cellText(entry.accompanyingDocumentType) },
+    { text: dateText(entry.accompanyingDocumentDateOfIssue) },
+    { html: removeCell(index) }
+  ])
 ```
 
-The POST branches: `action === 'add'` redirects to the entry sub-page;
-otherwise Continue advances with no write.
-
-### The entry page (add and remove)
-
-[`features/documents/entry.controller.js`](../features/documents/entry.controller.js)
-answers "the add form has no instance id yet": the valid POST appends, and
-the append mints the entry's identity `(documents, arrayIndex)`. Until that
-POST the draft lives only in the payload — never a half-created entry in the
-store.
+The POST branches: `action === 'add'` validates the entry fields and
+appends; otherwise Continue advances with no write. The append mints the
+entry's identity `(documents, arrayIndex)` — until that POST the draft
+lives only in the payload, never a half-created entry in the store.
 
 ```js
 state.appendEntry(request, h, 'documents', entry)
@@ -169,9 +168,15 @@ state.appendEntry(request, h, 'documents', entry)
 reconciles, so anything left dangling out of scope is pruned too
 ([`engine/write.js`](../engine/write.js)).
 
-A variant: the commodities loop splits its entry across a SELECT sub-page
-(which appends) and a DETAILS sub-page (which edits the same entry in
-place) — the identity-minting write is still a single append.
+### The sub-page split (list hub + entry sub-pages)
+
+The commodities loop keeps the split layout: the list page
+([`features/commodities/list.controller.js`](../features/commodities/list.controller.js))
+declares the `collects`, renders the Commodity-N rows and offers
+Add / Remove / Continue; its `action === 'add'` POST redirects to a SELECT
+sub-page (which appends — the same identity-minting write) and a DETAILS
+sub-page edits the same entry in place. The nested `animalIdentifiers`
+loop follows the same split one level down.
 
 ## 5. Keep the guards
 
@@ -193,13 +198,14 @@ into any new nested controller.
 ## 6. Extend the contract test
 
 [`contract.test.js`](../contract.test.js) pins that each page commits exactly
-what it declares. Collections split that across two pages: the list page
-declares `collects: ['documents']`, but the committing write is the entry
-page's append handler. Add a case shaped like the existing documents one:
+what it declares. A single-page loop commits via its own `action === 'add'`
+POST (the documents case); a sub-page split commits via the entry sub-page's
+append handler while the list page declares the `collects` (the commodities
+case). Add a case shaped like the matching one:
 
-1. Assert the list page's declaration: `documentsList.meta.collects` equals
+1. Assert the loop page's declaration: `documents.meta.collects` equals
    `['documents']`.
-2. Drive the entry page's add handler with a valid payload.
+2. Drive the committing add handler with a valid payload.
 3. If the collection is gated, seed the activating answer so the collection
    stays in scope — otherwise reconcile wipes the fresh write. Always-live
    collections need no seed.

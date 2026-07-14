@@ -26,8 +26,7 @@ import * as animalIdentifiersEntry from './features/commodities/animal-identifie
 import * as importReason from './features/import-reason/controller.js'
 import * as importPurpose from './features/import-purpose/controller.js'
 import * as additionalDetails from './features/additional-details/controller.js'
-import * as documentsList from './features/documents/list.controller.js'
-import * as documentsEntry from './features/documents/entry.controller.js'
+import * as documents from './features/documents/controller.js'
 import * as addresses from './features/addresses/controller.js'
 import * as consignorsSelect from './features/addresses/consignors-select.controller.js'
 import * as destinationsSelect from './features/addresses/destinations-select.controller.js'
@@ -211,14 +210,11 @@ describe('controller <-> model commit contract', () => {
     )
   })
 
-  it('Should commit documents via the entry (append) handler it declares', async () => {
-    expect(documentsList.meta.collects).toEqual(['documents'])
-    const postAdd = postHandlerEndingWith(
-      documentsEntry,
-      'accompanying-documents/add'
-    )
-    const result = await drive(postAdd, {
+  it('Should commit documents via its own add action on the single-page loop', async () => {
+    expect(documents.meta.collects).toEqual(['documents'])
+    const result = await drive(postHandlerOf(documents), {
       payload: {
+        action: 'add',
         accompanyingDocumentType: 'ITAHC',
         accompanyingDocumentAttachmentType: 'PDF',
         accompanyingDocumentReference: 'GBHC1234567890',
@@ -228,7 +224,7 @@ describe('controller <-> model commit contract', () => {
       }
     })
     expect(new Set(committedIds(result))).toEqual(
-      new Set(committableCollects(documentsList.meta.collects))
+      new Set(committableCollects(documents.meta.collects))
     )
   })
 
