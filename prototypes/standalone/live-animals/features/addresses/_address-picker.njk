@@ -1,0 +1,119 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+
+{# Search + paginated results table with a radio per row (design 05-03..06).
+   The whole picker is one form: the search button and Save and continue are
+   both submits, told apart by their `action` value. Paging is a link, so the
+   selection travels in the link's query string and in a hidden field — no
+   client JS anywhere. #}
+{% macro addressPickerResults(picker) %}
+  {% set rows = [] %}
+  {% for row in picker.rows %}
+    {% set selectCell %}
+      {{ govukRadios({
+        idPrefix: row.idPrefix,
+        name: "party",
+        classes: "govuk-radios--small",
+        items: [{
+          value: row.id,
+          text: "Select " + row.name,
+          checked: row.checked,
+          label: { classes: "govuk-visually-hidden" }
+        }]
+      }) }}
+    {% endset %}
+    {% set detailsCell %}
+      <details class="govuk-details">
+        <summary class="govuk-details__summary">
+          <span class="govuk-details__summary-text">View details<span class="govuk-visually-hidden"> for {{ row.name }}</span></span>
+        </summary>
+        <div class="govuk-details__text">
+          <ul class="govuk-list">
+            {% for line in row.detailLines %}
+              <li>{{ line }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </details>
+    {% endset %}
+    {% set ignored = rows.push([
+      { html: selectCell },
+      { text: row.name },
+      { text: row.addressText },
+      { text: row.country },
+      { html: detailsCell }
+    ]) %}
+  {% endfor %}
+
+  {{ govukTable({
+    caption: picker.resultsCaption,
+    captionClasses: "govuk-table__caption--s",
+    head: [
+      { html: '<span class="govuk-visually-hidden">Select</span>' },
+      { text: "Name" },
+      { text: "Address" },
+      { text: "Country" },
+      { html: '<span class="govuk-visually-hidden">Actions</span>' }
+    ],
+    rows: rows
+  }) }}
+
+  {% if picker.pagination %}
+    {{ govukPagination(picker.pagination) }}
+  {% endif %}
+{% endmacro %}
+
+{% macro addressPicker(picker, crumb) %}
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="page" value="{{ picker.page }}" />
+    {% if picker.selected %}
+      <input type="hidden" name="selected" value="{{ picker.selected.id }}" />
+    {% endif %}
+
+    {{ govukInput({
+      id: "q",
+      name: "q",
+      classes: "govuk-!-width-two-thirds",
+      label: { text: "Search", classes: "govuk-label--s" },
+      hint: { text: "Name, address or country" },
+      value: picker.query
+    }) }}
+
+    {{ govukButton({
+      text: "Search",
+      classes: "govuk-button--secondary",
+      name: "action",
+      value: "search"
+    }) }}
+
+    {% if picker.selected %}
+      {{ govukInsetText({ text: "Selected address: " + picker.selected.name }) }}
+    {% endif %}
+
+    {% if picker.error %}
+      <p id="party-error" class="govuk-error-message">
+        <span class="govuk-visually-hidden">Error:</span> {{ picker.error }}
+      </p>
+    {% endif %}
+
+    {% if picker.rows.length %}
+      {{ addressPickerResults(picker) }}
+    {% else %}
+      <p class="govuk-body">No addresses match your search.</p>
+    {% endif %}
+
+    <div class="govuk-button-group">
+      {{ govukButton({ text: "Save and continue", name: "action", value: "save" }) }}
+      {{ govukButton({
+        text: "Add a new address",
+        classes: "govuk-button--secondary",
+        href: picker.createAddressHref
+      }) }}
+    </div>
+  </form>
+{% endmacro %}

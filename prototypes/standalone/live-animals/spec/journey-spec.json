@@ -327,7 +327,7 @@
           "title": "Consignment addresses",
           "gate": null,
           "collects": [],
-          "notes": "Hub page: renders sections for place of origin, consignor/exporter, consignee, importer, place of destination and CPH with Add/Change links to the select spokes; collects nothing itself. Skeleton hub POST swallows save failures (c-006) and three of its spokes are dead (c-005). M3 copy (f-054, A10): hub retitled 'Consignment addresses'; per-section hints adopted from the design (extract.figma.json page 05-01). A11 (f-055): fraud warning via govukWarningText - 'Providing a false address is an act...' per the design. A8 (f-052/f-105): the CPH row appears on this hub ONLY when the countyParishHoldingCph gate passes (M3-13, keeping the sequential fallback). c-036 (resolved): the select spokes become address-book pickers (search + pagination + radio-per-row + View details, server-side selection so pagination is no-JS safe) with an 'Add a new address' button to the createAddress page."
+          "notes": "Hub page: renders sections for place of origin, consignor/exporter, consignee, importer, place of destination and CPH with Add/Change links to the select spokes; collects nothing itself. Skeleton hub POST swallows save failures (c-006) and three of its spokes are dead (c-005). M3 copy (f-054, A10): hub retitled 'Consignment addresses'; per-section hints adopted from the design (extract.figma.json page 05-01). A11 (f-055): fraud warning via govukWarningText - 'Providing a false address is an act...' per the design. A8 (f-052/f-105): the CPH row appears on this hub ONLY when the countyParishHoldingCph gate passes (M3-13, keeping the sequential fallback). c-036 (resolved, built at inc-066): the five select spokes ARE address-book pickers, one shared component parameterised by party - a Search input and Search submit filtering the book server-side, results as a govukTable paginated 5-per-page (40 records, 8 pages) with a radio per row whose value is the record's STABLE id, a per-row expandable 'View details' (govuk-details, no JS), and an 'Add a new address' secondary button into the createAddress page. Selection is no-JS safe across paging: the row ticked on the current page wins, otherwise a hidden 'selected' field carries the choice made on an earlier page or search, and every pagination link carries q + page + selected, so a Save from any page commits the chosen record resolved against the WHOLE book (not the page on screen). Following a pagination LINK still discards a tick not yet submitted - stock govukPagination renders anchors, and a submit-driven pagination would need custom CSS (banned) or client JS (banned)."
         },
         {
           "id": "consignorsSelect",
@@ -335,7 +335,7 @@
           "title": "Consignor or exporter",
           "gate": null,
           "collects": ["consignor"],
-          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-consignors.json. Title = party name per the design (f-054, A10; design 05-04, caption 'Consignment addresses'). Becomes an address-book picker per c-036."
+          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-consignors.json. Title = party name per the design (f-054, A10; design 05-04, caption 'Consignment addresses'). Address-book picker per c-036, built at inc-066: renders the SHARED picker (features/addresses/party-picker.controller.js + _address-picker.njk) over its own role of the address book - the only per-spoke facts are the obligation, the role, the title, the description and the error message (features/addresses/parties.js)."
         },
         {
           "id": "destinationsSelect",
@@ -343,7 +343,7 @@
           "title": "Place of destination",
           "gate": null,
           "collects": ["placeOfDestination"],
-          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-destinations.json. Title = party name per the design (f-054, A10). The design export omits this spoke page (f-051/f-080) - treated as an export omission, assume the shared picker pattern of spokes 03-06; confirm with designer. Becomes an address-book picker per c-036."
+          "notes": "Spoke of the addresses hub; skeleton selection is a GET link back to the hub with an index into mock-destinations.json. Title = party name per the design (f-054, A10). The design export omits this spoke page (f-051/f-080) - treated as an export omission, assume the shared picker pattern of spokes 03-06; confirm with designer. Address-book picker per c-036, built at inc-066: renders the SHARED picker (features/addresses/party-picker.controller.js + _address-picker.njk) over its own role of the address book - the only per-spoke facts are the obligation, the role, the title, the description and the error message (features/addresses/parties.js)."
         },
         {
           "id": "placeOfOriginSelect",
@@ -351,7 +351,7 @@
           "title": "Place of origin",
           "gate": null,
           "collects": ["placeOfOrigin"],
-          "notes": "Invented page: the skeleton hub links to /place-of-origin/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-03 'Place of origin', caption 'Consignment addresses') - provisionalCopy cleared. Becomes an address-book picker per c-036."
+          "notes": "Invented page: the skeleton hub links to /place-of-origin/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-03 'Place of origin', caption 'Consignment addresses') - provisionalCopy cleared. Address-book picker per c-036, built at inc-066: renders the SHARED picker (features/addresses/party-picker.controller.js + _address-picker.njk) over its own role of the address book - the only per-spoke facts are the obligation, the role, the title, the description and the error message (features/addresses/parties.js)."
         },
         {
           "id": "consigneesSelect",
@@ -359,7 +359,7 @@
           "title": "Consignee",
           "gate": null,
           "collects": ["consignee"],
-          "notes": "Invented page: the skeleton hub links to /consignees/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-05 'Consignee') - provisionalCopy cleared. Becomes an address-book picker per c-036."
+          "notes": "Invented page: the skeleton hub links to /consignees/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-05 'Consignee') - provisionalCopy cleared. Address-book picker per c-036, built at inc-066: renders the SHARED picker (features/addresses/party-picker.controller.js + _address-picker.njk) over its own role of the address book - the only per-spoke facts are the obligation, the role, the title, the description and the error message (features/addresses/parties.js)."
         },
         {
           "id": "importersSelect",
@@ -367,7 +367,7 @@
           "title": "Importer",
           "gate": null,
           "collects": ["importer"],
-          "notes": "Invented page: the skeleton hub links to /importers/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-06 'Importer') - provisionalCopy cleared. Becomes an address-book picker per c-036."
+          "notes": "Invented page: the skeleton hub links to /importers/select but the route is unregistered (dead spoke, c-005). Copy now designed (f-054, A10; design 05-06 'Importer') - provisionalCopy cleared. Address-book picker per c-036, built at inc-066: renders the SHARED picker (features/addresses/party-picker.controller.js + _address-picker.njk) over its own role of the address book - the only per-spoke facts are the obligation, the role, the title, the description and the error message (features/addresses/parties.js)."
         },
         {
           "id": "cphNumber",

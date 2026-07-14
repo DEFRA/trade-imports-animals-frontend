@@ -28,11 +28,7 @@ import * as importPurpose from './features/import-purpose/controller.js'
 import * as additionalDetails from './features/additional-details/controller.js'
 import * as documents from './features/documents/controller.js'
 import * as addresses from './features/addresses/controller.js'
-import * as consignorsSelect from './features/addresses/consignors-select.controller.js'
-import * as destinationsSelect from './features/addresses/destinations-select.controller.js'
-import * as placeOfOriginSelect from './features/addresses/place-of-origin-select.controller.js'
-import * as consigneesSelect from './features/addresses/consignees-select.controller.js'
-import * as importersSelect from './features/addresses/importers-select.controller.js'
+import * as partyPicker from './features/addresses/party-picker.controller.js'
 import * as cphNumber from './features/cph-number/controller.js'
 import * as portOfEntry from './features/transport/port-of-entry.controller.js'
 import * as transitCountries from './features/transport/transit-countries.controller.js'
@@ -292,44 +288,37 @@ describe('controller <-> model commit contract', () => {
       'importer'
     ])
 
+    // One shared picker serves all five spokes (inc-066): the chosen address
+    // travels as the book's stable id, whichever page of results it sat on.
     const spokes = [
       {
-        module: consignorsSelect,
         slug: 'consignors/select',
-        payload: { consignor: 'laiterie-du-nord' },
-        commits: ['consignor']
+        id: 'laiterie-du-nord',
+        commits: 'consignor'
       },
       {
-        module: destinationsSelect,
         slug: 'destinations/select',
-        payload: { placeOfDestination: 'tech-imports' },
-        commits: ['placeOfDestination']
+        id: 'tech-imports',
+        commits: 'placeOfDestination'
       },
       {
-        module: placeOfOriginSelect,
         slug: 'place-of-origin/select',
-        payload: { placeOfOrigin: 'origin-farm' },
-        commits: ['placeOfOrigin']
+        id: 'origin-farm',
+        commits: 'placeOfOrigin'
       },
       {
-        module: consigneesSelect,
         slug: 'consignees/select',
-        payload: { consignee: 'british-livestock' },
-        commits: ['consignee']
+        id: 'british-livestock',
+        commits: 'consignee'
       },
-      {
-        module: importersSelect,
-        slug: 'importers/select',
-        payload: { importer: 'import-co-uk' },
-        commits: ['importer']
-      }
+      { slug: 'importers/select', id: 'import-co-uk', commits: 'importer' }
     ]
     const committed = []
-    for (const { module, slug, payload, commits } of spokes) {
-      const result = await drive(postHandlerEndingWith(module, slug), {
-        payload
+    for (const { slug, id, commits } of spokes) {
+      const result = await drive(postHandlerEndingWith(partyPicker, slug), {
+        payload: { action: 'save', party: id }
       })
-      expect(committedIds(result)).toEqual(commits)
+      expect(committedIds(result)).toEqual([commits])
       committed.push(...committedIds(result))
     }
     expect(new Set(committed)).toEqual(

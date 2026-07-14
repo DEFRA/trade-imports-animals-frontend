@@ -5,18 +5,11 @@ import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
 import * as addressBook from '../../services/address-book/index.js'
+import { partyOf } from './parties.js'
 
 const view = `${TEMPLATES}/features/addresses/create-address`
 
 export const CREATE_ADDRESS_SLUG = 'addresses/create'
-
-const PARTIES = {
-  placeOfOrigin: { role: 'placeOfOrigin', spoke: 'place-of-origin/select' },
-  consignor: { role: 'consignor', spoke: 'consignors/select' },
-  consignee: { role: 'consignee', spoke: 'consignees/select' },
-  importer: { role: 'importer', spoke: 'importers/select' },
-  placeOfDestination: { role: 'destination', spoke: 'destinations/select' }
-}
 
 const MANDATORY_MESSAGES = {
   nameOrOrganisationName: 'Enter a name or organisation name',
@@ -95,14 +88,14 @@ const countryItems = (selected) => [
 const emptyValues = () =>
   Object.fromEntries(FIELD_ORDER.map((field) => [field, '']))
 
-const render = (h, journey, partyId, values, errors = {}) =>
+const render = (h, journey, party, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Add a new address', {
-      backLink: pagePath(PARTIES[partyId].spoke),
+      backLink: pagePath(party.slug),
       journey
     }),
     heading: 'Add a new address',
-    partyId,
+    partyId: party.id,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -110,16 +103,16 @@ const render = (h, journey, partyId, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const partyId = request.query.for
-  if (!PARTIES[partyId]) return h.redirect(pagePath('addresses'))
+  const party = partyOf(request.query.for)
+  if (!party) return h.redirect(pagePath('addresses'))
   const { journey } = await state.get(request, h)
-  return render(h, journey, partyId, emptyValues())
+  return render(h, journey, party, emptyValues())
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const partyId = payload.for
-  if (!PARTIES[partyId]) return h.redirect(pagePath('addresses'))
+  const party = partyOf(payload.for)
+  if (!party) return h.redirect(pagePath('addresses'))
 
   const values = Object.fromEntries(
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
@@ -134,10 +127,10 @@ const post = async (request, h) => {
   )
   if (Object.keys(allErrors).length > 0) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, partyId, values, allErrors)
+    return render(h, journey, party, values, allErrors)
   }
 
-  const record = addressBook.addParty(PARTIES[partyId].role, {
+  const record = addressBook.addParty(party.role, {
     name: values.nameOrOrganisationName,
     address: {
       addressLine1: values.addressLine1,
@@ -151,7 +144,7 @@ const post = async (request, h) => {
     }
   })
   await state.commit(request, h, {
-    [partyId]: { name: record.name, address: { ...record.address } }
+    [party.id]: { name: record.name, address: { ...record.address } }
   })
   return h.redirect(pagePath('addresses'))
 }

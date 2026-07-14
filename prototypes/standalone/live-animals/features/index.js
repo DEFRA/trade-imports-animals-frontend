@@ -10,11 +10,7 @@ import * as importPurpose from './import-purpose/controller.js'
 import * as additionalDetails from './additional-details/controller.js'
 import * as documents from './documents/controller.js'
 import * as addresses from './addresses/controller.js'
-import * as consignorsSelect from './addresses/consignors-select.controller.js'
-import * as destinationsSelect from './addresses/destinations-select.controller.js'
-import * as placeOfOriginSelect from './addresses/place-of-origin-select.controller.js'
-import * as consigneesSelect from './addresses/consignees-select.controller.js'
-import * as importersSelect from './addresses/importers-select.controller.js'
+import * as partyPicker from './addresses/party-picker.controller.js'
 import * as createAddress from './addresses/create-address.controller.js'
 import * as cphNumber from './cph-number/controller.js'
 import * as portOfEntry from './transport/port-of-entry.controller.js'
@@ -62,11 +58,7 @@ export const allRoutes = [
   ...additionalDetails.routes,
   ...documents.routes,
   ...addresses.routes,
-  ...consignorsSelect.routes,
-  ...destinationsSelect.routes,
-  ...placeOfOriginSelect.routes,
-  ...consigneesSelect.routes,
-  ...importersSelect.routes,
+  ...partyPicker.routes,
   ...createAddress.routes,
   ...cphNumber.routes,
   ...portOfEntry.routes,

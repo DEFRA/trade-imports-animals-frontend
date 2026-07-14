@@ -25,11 +25,11 @@ import * as addressBook from '../../services/address-book/index.js'
 import * as countries from '../../services/countries/index.js'
 
 import * as createAddress from './create-address.controller.js'
-import * as consignorsSelect from './consignors-select.controller.js'
+import * as partyPicker from './party-picker.controller.js'
 
 const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 const postConsignorSpoke = postHandlerEndingWith(
-  consignorsSelect,
+  partyPicker,
   'consignors/select'
 )
 
@@ -95,7 +95,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
       .find((option) => option.name === 'Second Created Ltd')
 
     const result = await driveHandler(postConsignorSpoke, {
-      payload: { consignor: created.id }
+      payload: { action: 'save', party: created.id }
     })
     expect(result.view).toBeUndefined()
     expect(result.after.consignor.name).toBe('Second Created Ltd')

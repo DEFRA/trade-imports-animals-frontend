@@ -1487,6 +1487,93 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Completed')
   })
 
+  // inc-066: the five spokes are ONE address-book picker — a server-round-trip
+  // search over the role's 40-record book, results paginated 5 to a page with a
+  // radio per row and an expandable View details, and an Add a new address way
+  // out. The radio's value is the record's stable id, so a row picked on page 3
+  // saves the same record it would from page 1: selection is resolved against
+  // the whole book, carried across search round-trips in a hidden field and
+  // across pages in the pagination links' query — no client JS anywhere.
+  test('addresses — the picker searches and pages the address book, and the row selected on a later page is the one that saves', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
+    const consignorRow = page.locator('.govuk-summary-list__row', {
+      has: page.getByText('Consignor or exporter', { exact: true })
+    })
+    await consignorRow.getByRole('link', { name: 'Add' }).click()
+
+    // The book opens on page 1 of 8 — five of the forty records. (The
+    // create-address spec may have minted an extra record into the same
+    // server's book, so the total is matched loosely; the pages it splits into
+    // are not, because a created record is appended to the END of the book.)
+    const showingFive = /Showing 5 of 4\d addresses/
+    await expect(page.getByText(showingFive)).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: values.consignor.name })
+    ).toBeVisible()
+
+    // View details expands the row in place (no navigation, so nothing the user
+    // has typed or ticked is lost) and shows the rest of the record.
+    const danishRow = page.locator('tr', { hasText: 'Danish Meat Export ApS' })
+    const danishDetails = danishRow.locator('details')
+    await expect(danishDetails.locator('.govuk-details__text')).toBeHidden()
+    await danishDetails.locator('summary').click()
+    await expect(danishDetails.locator('.govuk-details__text')).toBeVisible()
+    await expect(danishDetails).toContainText('Copenhagen')
+
+    // Search is a server round-trip over the whole book — name, address or
+    // country — and narrows it to a single page of results.
+    await page.getByLabel('Search').fill('Denmark')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
+    await expect(page.getByText('Showing 2 of 2 addresses')).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: 'Jutland Swine ApS' })
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Page 2' })).toHaveCount(0)
+
+    // Clearing the search restores the whole book and its pagination.
+    await page.getByLabel('Search').fill('')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
+    await expect(page.getByText(showingFive)).toBeVisible()
+
+    // Page three holds records that page one never rendered.
+    await page.getByRole('link', { name: 'Page 3' }).click()
+    await expect(
+      page.getByRole('radio', { name: 'Irish Beef Traders Ltd' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: values.consignor.name })
+    ).toHaveCount(0)
+
+    // Selecting there and saving copies THAT record onto the consignor.
+    await page.getByRole('radio', { name: 'Iberian Swine SA' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
+    await expect(consignorRow).toContainText('Iberian Swine SA')
+
+    // Re-entering opens on page one, where the chosen record is not rendered —
+    // the picker still knows it (carried, not re-ticked), and a save from this
+    // page keeps it. That is the no-JS selection-across-pagination guarantee.
+    await consignorRow.getByRole('link', { name: 'Change' }).click()
+    await expect(
+      page.getByText('Selected address: Iberian Swine SA')
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: 'Iberian Swine SA' })
+    ).toHaveCount(0)
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
+    await expect(consignorRow).toContainText('Iberian Swine SA')
+  })
+
   test('addresses — adding a new address from the consignor spoke copies it into the consignor and the spoke then offers it', async ({
     page
   }) => {
@@ -1526,9 +1613,16 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(consignorRow).toContainText('Created Farm Ltd')
 
-    // The created address joined the address book: the spoke offers it,
-    // pre-selected because it is the committed consignor.
+    // The created address joined the address book. It is minted at the end of a
+    // 41-record book, so it is not on the picker's first page — but it IS the
+    // committed consignor, so the picker carries it as the selection, and
+    // searching the book surfaces its row already checked.
     await consignorRow.getByRole('link', { name: 'Change' }).click()
+    await expect(
+      page.getByText('Selected address: Created Farm Ltd')
+    ).toBeVisible()
+    await page.getByLabel('Search').fill('Created Farm')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
     await expect(
       page.getByRole('radio', { name: 'Created Farm Ltd' })
     ).toBeChecked()
