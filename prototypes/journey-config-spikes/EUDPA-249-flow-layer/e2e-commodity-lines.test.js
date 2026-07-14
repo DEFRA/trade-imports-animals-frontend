@@ -239,7 +239,7 @@ describe('commodity-lines — delete', () => {
       'commodityCode-line1': '0102'
     })
     await fillLinePage(jar, 'line1', 'commodity-type', {
-      'commodityType-line1': 'meat-producing'
+      'commodityType-line1': 'game'
     })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
@@ -307,7 +307,7 @@ describe('commodity-lines — Change flow', () => {
       'commodityCode-line1': '0102'
     })
     await fillLinePage(jar, 'line1', 'commodity-type', {
-      'commodityType-line1': 'meat-producing'
+      'commodityType-line1': 'game'
     })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
@@ -344,7 +344,7 @@ describe('commodity-lines — number-of-packages (optional + applyTo-scoped)', (
       'commodityCode-line1': '0102'
     })
     await fillLinePage(jar, 'line1', 'commodity-type', {
-      'commodityType-line1': 'meat-producing'
+      'commodityType-line1': 'game'
     })
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
@@ -577,14 +577,16 @@ describe('commodity-lines — /lines summary rendering', () => {
       'commodityCode-line1': '0102'
     })
     await fillLinePage(jar, 'line1', 'commodity-type', {
-      'commodityType-line1': 'meat-producing'
+      'commodityType-line1': 'game'
     })
 
     const list = await getLines(jar)
     // Row title (the presentation.commodityType.pageTitle key) appears.
     expect(list.payload).toContain('Commodity type')
     // Value resolves via the domain labels map through t().
-    expect(list.payload).toContain('Meat-producing')
+    // 'game' is the one real V4 spec example; the other two options
+    // are obvious placeholders per audit #12.
+    expect(list.payload).toContain('Game')
     // Change link for the row goes to the per-line commodity-type page.
     expect(list.payload).toContain(`${BASE}/lines/line1/commodity-type`)
   })

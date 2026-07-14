@@ -427,37 +427,39 @@ describe('addressBlock — commercialTransporter (V4 standard address block + au
   })
 })
 
-describe('staticEnum — commodityType (step 4 iteration 6)', () => {
-  it('exposes a small closed enum of commodity-type codes', () => {
+describe('staticEnum — commodityType (audit #12 — deliberately obvious placeholders)', () => {
+  it('exposes the spec-example value + two clearly-labelled placeholders', () => {
+    // Audit #12 (down-graded MAJOR → INFO, spec clarifications
+    // pending): the V4 spec's only concrete Type value is "Game";
+    // the full MDM ontology isn't documented. Rather than ship
+    // plausible-but-invented values that could slip past a
+    // reviewer, we ship "Game" + PLACEHOLDER labels that scream
+    // "not real" on any demo screenshot.
     const options = commodityTypeDomain.options({})
-    expect(options).toEqual([
-      'meat-producing',
-      'dairy-producing',
-      'breeding-stock',
-      'other'
-    ])
+    expect(options).toEqual(['game', 'placeholder-1', 'placeholder-2'])
   })
 
   it('every code resolves to a human label via t()', () => {
     for (const code of commodityTypeDomain.options({})) {
       const resolved = t(commodityTypeDomain.labels[code])
-      // Resolved to English string — not the raw dotted-path.
       expect(resolved).not.toContain('domain.commodityType')
       expect(typeof resolved).toBe('string')
     }
   })
 
-  it('resolves labels for each specific code', () => {
-    expect(t(commodityTypeDomain.labels['meat-producing'])).toBe(
-      'Meat-producing'
-    )
-    expect(t(commodityTypeDomain.labels['dairy-producing'])).toBe(
-      'Dairy-producing'
-    )
-    expect(t(commodityTypeDomain.labels['breeding-stock'])).toBe(
-      'Breeding stock'
-    )
-    expect(t(commodityTypeDomain.labels.other)).toBe('Other')
+  it('placeholder labels visibly say PLACEHOLDER + MDM', () => {
+    // Regression guard: if a future edit softens the placeholder
+    // copy back into plausible-looking values, this test fires.
+    // The whole point is that a reviewer glancing at the demo
+    // knows these values aren't real.
+    const p1 = t(commodityTypeDomain.labels['placeholder-1'])
+    const p2 = t(commodityTypeDomain.labels['placeholder-2'])
+    expect(p1).toContain('PLACEHOLDER')
+    expect(p1).toContain('MDM')
+    expect(p2).toContain('PLACEHOLDER')
+    expect(p2).toContain('MDM')
+    // Spec example remains a clean label:
+    expect(t(commodityTypeDomain.labels.game)).toBe('Game')
   })
 })
 

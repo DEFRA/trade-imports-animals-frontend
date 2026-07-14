@@ -260,11 +260,15 @@ COMMODITIES, ...)` and a defined applicable-commodity list.
      Audit finding #12 (down-graded MAJOR → INFO pending clarification).
 - **`commodityType` MDM value list.** V4 spec gives one example
   (`Game`) but no full enumeration; the ontology comes from an MDM
-  source that isn't documented on the V4 page. Current stub values
-  (`meat-producing`, `dairy-producing`, `breeding-stock`, `other`)
-  do NOT appear in the spec — they were invented to exercise the
-  enum widget end-to-end. Real values need to come from MDM before
-  a walk becomes semantically meaningful. Audit finding #12.
+  source that isn't documented on the V4 page. Current values are
+  `game` (the one spec example) plus two OBVIOUS PLACEHOLDERS
+  (`PLACEHOLDER 1 — real values come from MDM`, `PLACEHOLDER 2 — real
+values come from MDM`) — the earlier plausible-looking stubs
+  (meat-producing / dairy-producing / breeding-stock / other) were
+  removed after they slipped past the audit unquestioned. The
+  placeholders scream "not real" on demo screenshots. Audit finding
+  #12; a domain-test regression guard fires if the copy ever softens
+  back into plausible values.
 
 ### Immediate next candidates
 

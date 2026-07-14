@@ -378,12 +378,13 @@ Steps executed:
   line-scoped (`within: commodityLine`), always in scope, mandatory,
   no `applyTo`.
 - **Step 2 — Domain entry.**
-  `staticEnum(COMMODITY_TYPE_OPTIONS, { labels })` with 4 illustrative
-  MDM values (`meat-producing`, `dairy-producing`, `breeding-stock`,
-  `other`) and labels stored as message keys pointing at the new
-  `domain.commodityType.*` bucket in `locales/en.json`. Registered in
-  the domain manifest between `commodityCodeDomain` and the predicate
-  block.
+  `staticEnum(COMMODITY_TYPE_OPTIONS, { labels })` with the spec's
+  one concrete example (`game`) plus two OBVIOUS PLACEHOLDER
+  values (`placeholder-1`, `placeholder-2`) — see audit finding
+  #12 and NEXT.md §Spec clarifications needed. Labels stored as
+  message keys pointing at `domain.commodityType.*` in
+  `locales/en.json`. Registered in the domain manifest between
+  `commodityCodeDomain` and the predicate block.
 - **Step 3 — Presentation.** Added `presentation.commodityType.*`
   (pageTitle / legend / hint) to `locales/en.json` and imported +
   registered `OBLIGATION_KEYS[commodityType.id]` in `lib/presentation.js`.
@@ -409,7 +410,7 @@ Steps executed:
   19 entries.
 - **Step 6 — Fixtures.** No update. The two happy-path walks in
   `e2e-walk.test.js` gained one new `fillLinePage` step
-  (`commodity-type` with `commodityType-line1: 'meat-producing'`); two
+  (`commodity-type` with `commodityType-line1: 'game'`); two
   tests in `e2e-commodity-lines.test.js` that walked all four
   mandatory pages also gained the same step. The Change-flow test
   that only touched `commodity-details` and the multi-select test

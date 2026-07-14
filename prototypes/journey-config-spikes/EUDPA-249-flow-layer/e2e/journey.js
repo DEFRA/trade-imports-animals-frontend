@@ -289,7 +289,7 @@ export async function fillCommodityCode(
 export async function fillCommodityType(
   page,
   journey,
-  { lineId = 'line1', commodityType = 'meat-producing' } = {}
+  { lineId = 'line1', commodityType = 'game' } = {}
 ) {
   await goToLinePage(page, journey, lineId, 'commodity-type')
   await pickRadio(page, `commodityType-${lineId}`, commodityType)

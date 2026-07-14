@@ -626,22 +626,22 @@ export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS, {
   }
 })
 
-// V4: commodity type — MDM enum, small closed list.
-// Illustrative values for the spike; real MDM ontology comes from
-// production. Small enough (4) to render as radios rather than a select.
-const COMMODITY_TYPE_OPTIONS = [
-  'meat-producing',
-  'dairy-producing',
-  'breeding-stock',
-  'other'
-]
+// V4: commodity type — MDM enum, small closed list. The real value
+// set comes from an MDM ontology that isn't documented on the V4
+// Confluence page (audit #12 — spec clarifications needed). The
+// spec's only concrete example is "Game", so we ship that one real
+// value plus two OBVIOUS PLACEHOLDERS that scream "not real" during
+// any demo. Previously the stubs (meat-producing / dairy-producing /
+// breeding-stock / other) looked plausible enough to slip past a
+// reviewer — the audit found we'd stopped questioning them. Making
+// the placeholders visible protects against that regression.
+const COMMODITY_TYPE_OPTIONS = ['game', 'placeholder-1', 'placeholder-2']
 
 export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS, {
   labels: {
-    'meat-producing': 'domain.commodityType.meat-producing',
-    'dairy-producing': 'domain.commodityType.dairy-producing',
-    'breeding-stock': 'domain.commodityType.breeding-stock',
-    other: 'domain.commodityType.other'
+    game: 'domain.commodityType.game',
+    'placeholder-1': 'domain.commodityType.placeholder-1',
+    'placeholder-2': 'domain.commodityType.placeholder-2'
   }
 })
 

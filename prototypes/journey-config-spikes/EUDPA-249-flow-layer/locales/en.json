@@ -192,7 +192,7 @@
     "commodityType": {
       "pageTitle": "Commodity type",
       "legend": "What type is this commodity?",
-      "hint": "Choose the category that best describes this line."
+      "hint": "Placeholder options — the real MDM value list is not yet defined (audit #12). Only \"Game\" is a real spec example."
     },
     "species": {
       "pageTitle": "Species",
@@ -392,10 +392,9 @@
       "01064100": "Bees (01064100)"
     },
     "commodityType": {
-      "meat-producing": "Meat-producing",
-      "dairy-producing": "Dairy-producing",
-      "breeding-stock": "Breeding stock",
-      "other": "Other"
+      "game": "Game",
+      "placeholder-1": "PLACEHOLDER 1 — real values come from MDM",
+      "placeholder-2": "PLACEHOLDER 2 — real values come from MDM"
     },
     "animalsCertifiedFor": {
       "further-keeping": "Further keeping",
