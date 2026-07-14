@@ -1657,7 +1657,7 @@
       },
       "wipeOnExit": true,
       "modelGap": "cross-frame-conditionality",
-      "notes": "Shown when the enclosing commodity line requires Tattoo identifier (frame:enclosing). V4 bracketed count says (2) but lists 5 entries (see c-002). Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
+      "notes": "Shown when the enclosing commodity line requires Tattoo identifier (frame:enclosing). V4 bracketed count says (2) but lists 5 entries (see c-002; lists are truth). Runtime alignment fixed at inc-057 (M3-19, f-032/f-015): the stub TATTOO_COMMODITIES is this list intersected with the stored commodity vocabulary — V4 '0102 - Bovine' maps to the stored value 'Cow' (COMMODITY_CODES.Cow = 0102), so the runtime list is Cat/Dog/Cow; '01061900 - Ferrets' and '0103 - Pigs' are not in COMMODITY_OPTIONS yet and join when commodities come from real MDM (c-018). Field condition pending review by Monica; unresolved inline comment on Mandatory cell.",
       "conflicts": ["c-002"],
       "provenance": [
         {

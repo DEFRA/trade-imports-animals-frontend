@@ -80,7 +80,7 @@ export const PACKAGE_COUNT_COMMODITIES = [
 
 export const PASSPORT_COMMODITIES = ['Horse', 'Cow', 'Cat', 'Dog']
 
-export const TATTOO_COMMODITIES = ['Cat', 'Dog']
+export const TATTOO_COMMODITIES = ['Cat', 'Dog', 'Cow']
 
 export const EAR_TAG_COMMODITIES = ['Cow']
 

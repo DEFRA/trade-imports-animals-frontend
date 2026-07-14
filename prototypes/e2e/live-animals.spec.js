@@ -524,10 +524,13 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Add an animal' })
     ).toBeVisible()
 
-    // The type fields that match the enclosing commodity (Cattle) are shown;
-    // the others are hidden, and Cattle is off the permanent-address gate.
+    // The type fields that match the enclosing commodity (Cattle) are shown —
+    // ear tag, passport and tattoo (V4 '0102 - Bovine' is stored as 'Cow',
+    // inc-057); the others are hidden, and Cattle is off the
+    // permanent-address gate.
     await expect(page.getByLabel('Ear tag number')).toBeVisible()
     await expect(page.getByLabel('Passport number')).toBeVisible()
+    await expect(page.getByLabel('Tattoo')).toBeVisible()
     await expect(page.getByLabel('Horse name')).toBeHidden()
     await expect(page.getByLabel('Name or organisation name')).toBeHidden()
 
