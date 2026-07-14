@@ -1099,7 +1099,9 @@ indexed leaf but the classifier still routes them correctly. Pattern
 3 (seeded) isn't exercised — the follow-on for lookup / MDM options
 would be the natural place for it.
 
-### Seeded = orchestrator-handled obligation (settled)
+### Seeded = orchestrator-handled obligation
+
+The working assumption is:
 
 Pattern 3 (seeded) doesn't need new machinery: fetching initial
 fulfilmentIds / data from an external system is structurally
@@ -1108,6 +1110,13 @@ fires the `seedHandler` at journey start; the callback writes the
 seed values into state. From the evaluator's perspective the seeded
 obligation just becomes "fulfilments exist; some are satisfied" the
 way any other indexed obligation would.
+
+This might fail if for example we needed to implement a TTL on seeded
+records, or always needed a fresh lookup. Unlikely, and no such
+requirement at present. In this case we'd need a mechanism to support
+this (e.g. the singleton obligation model would need to be regenerated
+in-flight, or we might need to regenerate the obligation model per
+request and pass it to the evaluator as an argument).
 
 ### Lifecycle for derived (pattern 2) — settled
 
