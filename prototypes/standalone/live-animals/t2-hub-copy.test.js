@@ -76,6 +76,21 @@ describe('#handler hub copy', () => {
     })
   })
 
+  it('Should omit the commodity totals on a journey with no commodity lines', async () => {
+    expect((await renderHub()).commodityTotals).toBeNull()
+  })
+
+  it('Should sum animals and packages over the commodity lines, treating blanks as 0', async () => {
+    const { commodityTotals } = await renderHub({
+      commodityLines: [
+        { numberOfAnimalsQuantity: '25', numberOfPackages: '5' },
+        { numberOfAnimalsQuantity: '3', numberOfPackages: '' },
+        { numberOfAnimalsQuantity: '', numberOfPackages: '2' }
+      ]
+    })
+    expect(commodityTotals).toEqual({ animals: 28, packages: 7 })
+  })
+
   it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', async () => {
     const reviewRow = rowByTitle((await renderHub()).items, 'Check and submit')
     expect(reviewRow.hint.text).toBe(

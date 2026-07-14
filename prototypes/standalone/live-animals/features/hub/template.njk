@@ -1,9 +1,38 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
   <p class="govuk-body">{{ progressLine }}</p>
+
+  {% if commodityTotals %}
+    <h2 class="govuk-heading-l">Your commodities</h2>
+    <div class="govuk-grid-row govuk-!-margin-bottom-4">
+      <div class="govuk-grid-column-one-half">
+        {{ govukSummaryList({
+          card: { title: { text: "Animals", headingLevel: 3 } },
+          rows: [
+            {
+              key: { text: "Total number of animals in this consignment" },
+              value: { text: commodityTotals.animals }
+            }
+          ]
+        }) }}
+      </div>
+      <div class="govuk-grid-column-one-half">
+        {{ govukSummaryList({
+          card: { title: { text: "Packages/boxes", headingLevel: 3 } },
+          rows: [
+            {
+              key: { text: "Total number of packages in this consignment" },
+              value: { text: commodityTotals.packages }
+            }
+          ]
+        }) }}
+      </div>
+    </div>
+  {% endif %}
 
   {{ govukTaskList({ items: items, classes: "app-task-list" }) }}
 {% endblock %}

@@ -104,6 +104,23 @@ const countCompletedGroups = (answers, inScope) =>
     (row) => sectionStatus(sectionById(row.id), answers, inScope) === FULFILLED
   ).length
 
+const toCount = (value) => {
+  const count = Number((value ?? '').toString().trim())
+  return Number.isFinite(count) ? count : 0
+}
+
+const sumOverLines = (lines, field) =>
+  lines.reduce((total, { entry }) => total + toCount(entry[field]), 0)
+
+const buildCommodityTotals = (answers) => {
+  const lines = state.collectionView(answers, ['commodityLines'])
+  if (lines.length === 0) return null
+  return {
+    animals: sumOverLines(lines, 'numberOfAnimalsQuantity'),
+    packages: sumOverLines(lines, 'numberOfPackages')
+  }
+}
+
 const handler = async (request, h) => {
   const { answers, scope } = await state.get(request, h)
   const inScope = scope.inScope
@@ -112,6 +129,7 @@ const handler = async (request, h) => {
     pageTitle: 'Import notification service',
     heading: 'Import notification service',
     progressLine: `You have completed ${countCompletedGroups(answers, inScope)} of ${GROUP_ROWS.length} tasks.`,
+    commodityTotals: buildCommodityTotals(answers),
     items: [
       ...buildGroupItems(answers, scope, inScope),
       buildReviewItem(answers, scope, inScope)

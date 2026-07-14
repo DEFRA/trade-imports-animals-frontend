@@ -328,6 +328,11 @@ test.describe('live-animals (page-owned spine)', () => {
     // Commodities is gated on countryOfOrigin (RULE 1) — answer it first.
     await answerCountryOfOrigin(page)
 
+    // No commodity lines yet, so the hub shows no derived stat cards.
+    await expect(
+      page.getByRole('heading', { name: 'Your commodities' })
+    ).toBeHidden()
+
     await page.getByRole('link', { name: 'Commodities' }).click()
     await expect(
       page.getByRole('heading', { name: 'Commodities you have added' })
@@ -424,6 +429,28 @@ test.describe('live-animals (page-owned spine)', () => {
       hasText: 'Commodities'
     })
     await expect(commoditiesRow).toContainText('Completed')
+
+    // The hub now shows the derived stat cards summed over the line just
+    // added (25 animals, 5 packages).
+    await expect(
+      page.getByRole('heading', { name: 'Your commodities' })
+    ).toBeVisible()
+    const statCard = (title) =>
+      page.locator('.govuk-summary-card', {
+        has: page.getByRole('heading', { name: title, exact: true })
+      })
+    await expect(statCard('Animals')).toContainText(
+      'Total number of animals in this consignment'
+    )
+    await expect(
+      statCard('Animals').locator('.govuk-summary-list__value')
+    ).toHaveText(line.numberOfAnimalsQuantity)
+    await expect(statCard('Packages/boxes')).toContainText(
+      'Total number of packages in this consignment'
+    )
+    await expect(
+      statCard('Packages/boxes').locator('.govuk-summary-list__value')
+    ).toHaveText(line.numberOfPackages)
   })
 
   test('animal identifiers — a unit form shows only the identifier types the commodity requires, plus the permanent address for cats and dogs', async ({
