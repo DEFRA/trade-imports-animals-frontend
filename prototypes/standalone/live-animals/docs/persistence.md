@@ -153,6 +153,19 @@ per-species `animalIdentifiers` arrays, with the reverse falling back to
 Mapper A recovery when a backend strips the extras. Pinned in
 `notification-mapper.test.js`.
 
+### Parity is proved in the browser too
+
+`skeleton-equivalence.test.js` pins the forward direction against the
+mapper in isolation. `prototypes/e2e/skeleton-vs-prototype-mongo.spec.js`
+pins the same claim through the real HTTP adapter, the real backend and
+Mongo: it drives both journeys in a browser and compares the two
+persisted notifications field-by-field.
+
+That spec is the `parity` project of the ordinary E2E suite
+(`npm run test:prototype`), running against a REAL-mode server the config
+starts on `PORT + 1`. It needs the workspace stack up. See
+[testing.md](testing.md#e2e-suite).
+
 ## Self-heal on re-entry
 
 The record stores answers and lifecycle metadata only — no derived

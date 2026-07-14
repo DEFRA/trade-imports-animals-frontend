@@ -20,19 +20,32 @@ Vitest runs every `*.test.js` under the spike in well under a second. The suite 
 npm run test:prototype
 ```
 
-Playwright, Chromium only (one project in `playwright.config.js` at the repo root). The suite covers every prototype journey, not just this spike. It starts its own server on port 3000 and refuses to reuse an existing one — if a dev server is already holding the port, the run hangs at startup. Kill the stale server first:
+Playwright, Chromium only, one config (`playwright.config.js` at the repo root) with **two projects** — and this one command runs both:
+
+- `prototype` — every prototype journey's demo walk (not just this spike), against a stub-mode server on port 3000.
+- `parity` — `skeleton-vs-prototype-mongo.spec.js` only, against a **real**-mode server on port 3001.
+
+The parity project drives the production skeleton journey and this prototype against the same real backend and compares the two persisted notifications field-by-field — the browser-level proof of [the mapper](persistence.md#mapper-a-round-trip-losses-the-lossy-a-caveat). It is in the normal suite on purpose: when it had a config and a command of its own it was easy to forget, and a persistence bug hid behind two green suites.
+
+**The workspace stack must be up.** The real-mode server persists through the backend (`:8085`), Mongo and Redis. Start it with `scripts/stack/run-stack.sh` from the workspace. The suite probes the backend before Playwright starts and exits in a second with that instruction if the stack is down, rather than timing out.
+
+The npm script builds the frontend assets once, then starts both servers. The stub server refuses to reuse an existing one — if a dev server is already holding port 3000, the run fails at startup. Kill the stale server first:
 
 ```
 lsof -ti:3000 | xargs kill
 ```
 
-To run only this spike's E2E tests, filter by title:
+The real-mode server on 3001 **is** reused if one is already answering, so a `npm run prototype:real` you keep running on `PORT=3001` is picked up.
+
+To run one project, or filter by title:
 
 ```
-npm run test:prototype -- -g "obligations v2"
+npm run test:prototype:journeys                 # demo project only
+npm run test:prototype:parity                   # parity project only
+npm run test:prototype -- -g "obligations v2"   # filter by title
 ```
 
-This matches both the shared-spec entry for this journey (labelled `standalone obligations v2 (page-owned spine)`) and the spike-only specs (titled `obligations v2 — ...`).
+The title filter matches both the shared-spec entry for this journey (labelled `standalone obligations v2 (page-owned spine)`) and the spike-only specs (titled `obligations v2 — ...`).
 
 ### Headless model inspector
 
@@ -55,6 +68,12 @@ The fixture is deliberately messy. Do not tidy it. Two of its oddities are the w
 net: a happy-path walk that grows one leg per increment, fed from
 `spec/fixtures/happy-path.json`, plus per-section specs pinning gates,
 loops and validation in the rendered DOM.
+
+### The persistence-parity compare
+
+`prototypes/e2e/skeleton-vs-prototype-mongo.spec.js` is the top of the net. It drives BOTH journeys this frontend serves — the production skeleton (`src/server`) and this prototype — against the same real backend, then strips the volatile fields and asserts the two persisted notifications are equal. `skeleton-equivalence.test.js` pins the same claim at unit level against the mapper; this pins it through the real HTTP adapter, the real backend and Mongo.
+
+It runs in the `parity` project of the normal E2E suite. Nothing to remember, nothing to opt into — every increment is parity-checked.
 
 ### Shared journey specs (the car ancestors)
 

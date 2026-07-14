@@ -26,7 +26,7 @@ Run the spike's unit suite:
 npm run test:live-animals
 ```
 
-Run the Playwright E2E suite (covers all prototypes, including this spike):
+Run the Playwright E2E suite — the demo journeys for every prototype AND the persistence-parity compare against Mongo. Needs the workspace stack up (`scripts/stack/run-stack.sh`); see [testing.md](testing.md#e2e-suite):
 
 ```
 npm run test:prototype
