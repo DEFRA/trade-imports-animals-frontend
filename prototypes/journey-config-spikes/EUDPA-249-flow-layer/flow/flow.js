@@ -345,24 +345,6 @@ export const flow = {
           ]
         },
         {
-          // County Parish Holding (CPH). Notification-level identifier
-          // — one entry per notification — but only in scope when the
-          // consignment includes a commodity requiring CPH tracking
-          // (cattle, pigs, sheep, goats, poultry). The obligation's
-          // applyTo (obligations.js) uses `anyAllowListed` over the
-          // active commodity codes, so the subsection collapses to NA
-          // when no relevant line has been added.
-          kind: 'subsection',
-          id: 'cph',
-          titleKey: 'flow.subsection.cph.title',
-          children: [
-            {
-              page: 'cph',
-              presents: [{ obligation: cph }]
-            }
-          ]
-        },
-        {
           // Accompanying-document all-or-nothing block. The four fields
           // share a `branchedGate` applyTo (see obligations.js): all
           // optional when nothing is filled, all mandatory the moment
@@ -538,6 +520,32 @@ export const flow = {
                 obligation: description,
                 forEachOf: unitRecord
               }
+            }
+          ]
+        },
+        {
+          // County Parish Holding (CPH). Notification-level (one entry
+          // per notification, not per line), but only in scope when the
+          // consignment includes a commodity requiring CPH tracking —
+          // cattle, pig, sheep, goat, or any poultry code. The
+          // obligation's applyTo (obligations.js:508) uses
+          // `anyAllowListed` over the active commodity codes, so the
+          // subsection is NA until such a line has been added.
+          //
+          // Slotted at the end of the commodity-lines section (not
+          // References) so the task list flows naturally: users add
+          // their lines, fill each line's details / per-unit records,
+          // and if a CPH-triggering commodity is present the CPH step
+          // appears here at the end of the section they were already
+          // working through — rather than making them jump back up to
+          // References.
+          kind: 'subsection',
+          id: 'cph',
+          titleKey: 'flow.subsection.cph.title',
+          children: [
+            {
+              page: 'cph',
+              presents: [{ obligation: cph }]
             }
           ]
         }
