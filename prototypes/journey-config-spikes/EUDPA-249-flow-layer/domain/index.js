@@ -101,11 +101,6 @@ export const reasons = {
     code: 'domain.array.maxSelections',
     explanation: 'too many items selected'
   },
-  numberOfAnimalsSpeciesCap: {
-    code: 'domain.numberOfAnimals.speciesCap',
-    explanation:
-      'value exceeds the per-species animal-count cap for the least-permissive selected species on this line'
-  },
   addressSubFieldRequired: {
     code: 'domain.address.subFieldRequired',
     explanation: 'a required sub-field of the address is missing or blank'
@@ -777,41 +772,18 @@ export const numberOfPackagesDomain = predicate(
   [reasons.integerMin, reasons.integerMaxDigits]
 )
 
-// V4: numeric - one commodity line's animal count. Per-species caps
-// come from MDM in production; the values here are illustrative for
-// the spike (they let us exercise the cross-field predicate mechanism
-// end-to-end). When a line's species is a multi-select, the effective
-// cap is the MIN across the selected species — the least-permissive
-// species enforces its limit on the whole line.
-export const SPECIES_ANIMAL_CAP = {
-  horse: 100,
-  cattle: 300,
-  buffalo: 300,
-  bison: 300,
-  pig: 500,
-  'wild-boar': 500,
-  sheep: 800,
-  lamb: 800,
-  goat: 500,
-  dog: 50,
-  cat: 50,
-  ferret: 50,
-  rabbit: 100,
-  owl: 20,
-  falcon: 20,
-  eagle: 20,
-  'other-bird-of-prey': 20,
-  bee: 1000
-}
-
-function speciesCap(selectedSpecies) {
-  const caps = (selectedSpecies ?? [])
-    .map((s) => SPECIES_ANIMAL_CAP[s])
-    .filter((c) => typeof c === 'number')
-  if (caps.length === 0) return null
-  return Math.min(...caps)
-}
-
+// V4: numeric - one commodity line's animal count. The spec (Confluence
+// page 6497338582) says "whole number, max 9,223,372,036,854,775,807"
+// — Long.MAX_VALUE, i.e. no per-species cap. A prior version of this
+// spike carried a fabricated `SPECIES_ANIMAL_CAP` map with illustrative
+// per-species limits to exercise the cross-field predicate mechanism;
+// that map has been removed because it caused the spike to reject
+// spec-valid values (e.g. `5000` on a horse line under the old
+// horse=100 cap). The cross-field predicate machinery is still
+// exercised by other domain entries (e.g. `regionCode` reading
+// `regionCodeRequirement`, `species` computed enum reading
+// `commodityCode`), so removing this specific instance costs no
+// coverage. See NEXT.md audit finding #4.
 export const numberOfAnimalsDomain = predicate(
   'integer',
   (value, ctx) => {
@@ -826,26 +798,9 @@ export const numberOfAnimalsDomain = predicate(
         }
       ]
     }
-    // Per-species cap. `ctx.siblingValue(species)` resolves to the
-    // species selection for THIS commodity line (path-scoped) — a
-    // different line's species doesn't cross-contaminate. See engine
-    // tests §resolves siblings scoped by path.
-    const selectedSpecies = ctx.siblingValue(species) ?? []
-    const cap = speciesCap(selectedSpecies)
-    if (cap !== null && value > cap) {
-      return [
-        {
-          code: reasons.numberOfAnimalsSpeciesCap.code,
-          obligation: numberOfAnimals.name,
-          path: ctx.path,
-          max: cap,
-          actual: value
-        }
-      ]
-    }
     return []
   },
-  [reasons.integerMin, reasons.numberOfAnimalsSpeciesCap]
+  [reasons.integerMin]
 )
 
 // V4 standard address block — 9 sub-fields per Confluence page

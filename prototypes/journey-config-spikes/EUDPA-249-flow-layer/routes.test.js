@@ -712,19 +712,18 @@ describe('line-page-controller — species-details (line-scoped rendering)', () 
     expect(res.headers.location).toBe('/prototype/eudpa-249/lines')
   })
 
-  it('POST with an out-of-cap animal count re-renders 400 preserving the typed number (line-page controller)', async () => {
+  it('POST with an invalid animal count re-renders 400 preserving the typed number (line-page controller)', async () => {
     // Regression: same as the /pages/ finding but via the line-page
     // controller path — proves the fix applies to /lines/{id}/{page}
-    // too. numberOfAnimals has a per-species cap; an over-cap
-    // integer fires a domain predicate error → 400 → the input
-    // should re-render with the typed value.
+    // too. numberOfAnimals enforces integerMin (>=1); a negative
+    // fires a domain predicate error → 400 → the input should re-
+    // render with the typed value.
     const jar = makeCookieJar()
     await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/lines/add',
       payload: {}
     })
-    // Set cattle so numberOfAnimals is in-scope and species-capped.
     await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/lines/line1/commodity-details',
@@ -735,15 +734,15 @@ describe('line-page-controller — species-details (line-scoped rendering)', () 
       url: '/prototype/eudpa-249/lines/line1/species-details',
       payload: { 'species-line1': ['cattle'] }
     })
-    // Way over the per-species cap → domain predicate fires.
+    // Negative integer → integerMin fires.
     const res = await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/lines/line1/number-of-animals',
-      payload: { 'numberOfAnimals-line1': '9999999999' }
+      payload: { 'numberOfAnimals-line1': '-5' }
     })
     expect(res.statusCode).toBe(400)
     // The govukInput's value attribute carries the typed number.
-    expect(res.payload).toContain('value="9999999999"')
+    expect(res.payload).toContain('value="-5"')
   })
 
   it('GET after adding a cattle line renders one checkbox group with cattle-list options', async () => {

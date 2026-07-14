@@ -313,19 +313,20 @@ Steps executed:
   `flow/flow.js` (came for free with iteration 4's
   `presentsForEach` infrastructure).
 - **Step 2 — Domain entry.** `predicate('integer', checker,
-[integerMin, numberOfAnimalsSpeciesCap])`. The `checker` closure:
+[integerMin])`. The `checker` closure:
   1. treat blank as pass (submit-mandate is a separate concern);
-  2. reject non-integer / < 1 with `integerMin`;
-  3. read the line's species via `ctx.siblingValue(species)`, look
-     up each selected code in a new `SPECIES_ANIMAL_CAP` map, take
-     the `Math.min` — the least-permissive species enforces its cap
-     on the whole line;
-  4. reject `value > cap` with a new `numberOfAnimalsSpeciesCap`
-     reason carrying `{max, actual}`.
+  2. reject non-integer / < 1 with `integerMin`.
 
-  Illustrative caps for the spike (bovines 300, ovines 800, small
-  animals 20-100, bees 1000). Real V4 caps come from MDM — the
-  values here just make the mechanism observable end-to-end.
+  V4 spec permits values up to Long.MAX_VALUE with no per-species
+  cap. An earlier iteration of this domain entry carried a
+  fabricated `SPECIES_ANIMAL_CAP` cross-field map to exercise the
+  `ctx.siblingValue` mechanism end-to-end; the audit
+  (spec-vs-code, BLOCKER #4) surfaced that the map rejected
+  spec-valid values (e.g. `5000` on a horse line under the old
+  horse=100 cap). The cross-field predicate machinery is still
+  exercised elsewhere (`regionCode` reading `regionCodeRequirement`,
+  `species` reading `commodityCode`), so removing the fabricated
+  cap costs no coverage.
 
 - **Step 3 — Presentation.** _No-op_ — presentation copy already in
   `locales/en.json` under `presentation.numberOfAnimals.*` (from the
@@ -333,34 +334,19 @@ Steps executed:
 - **Step 4 — Flow.** _No-op_ — already presented.
 - **Step 5 — Removed `numberOfAnimals` from KNOWN_UNWIRED.** Down
   to 20 entries.
-- **Step 5.5 — Error copy (NEW pattern surface).** Two edits driven
-  by the new failure code:
-  - `locales/en.json` under `errors.domain.numberOfAnimalsSpeciesCap`
-    gets a `{max}`/`{actual}` template string.
-  - `lib/format-domain-errors.js` COPY dispatchers gain an entry for
-    `domain.numberOfAnimals.speciesCap` that resolves the key with
-    those params; `FORMAT_ERROR_KEYS` gets one more entry so the
-    `i18n-coverage.test.js` gate covers it.
-
-  This whole step is the pattern for _every_ future predicate that
-  emits a new failure code. Worth doing verbatim in step 5 (V4
-  buildout) — the wire-up is mechanical.
-
 - **Step 6 — Fixtures.** No update. `transit-with-lines.json`
-  already carries `numberOfAnimals: { line1: 25 }` with cattle — 25
-  is well under the cattle cap of 300, so the fixture stays valid.
-- **Step 7 — Tests.** All 415 existing tests still green.
-  Added 10 domain-unit tests to `domain/index.test.js` covering
-  blank-pass, `integerMin` rejection, no-species pass, single-
-  species cap, multi-species MIN-cap, small-animal cross-line non-
-  contamination, and a coverage assertion that `SPECIES_ANIMAL_CAP`
-  has an entry for every species in the current
-  `SPECIES_BY_COMMODITY_CODE` fan-out (guards against a future
-  species being added without its cap). Baseline now 425 tests.
-- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: from
-  a commodity line with species selected, enter 500 → red error
-  summary + inline error "Enter no more than {cap} animals for the
-  selected species (you entered 500)". Enter 25 → save-and-continue.
+  already carries `numberOfAnimals: { line1: 25 }` with cattle —
+  25 is a valid whole number so the fixture stays valid under any
+  cap regime.
+- **Step 7 — Tests.** All existing tests still green after
+  removing the per-species-cap tests. Domain suite retains four
+  `numberOfAnimals` tests (blank-pass, `integerMin` on 0/negatives,
+  `integerMin` on non-integers, any-positive-integer regression
+  covering the audit fix).
+- **Step 8 — Manual walk.** _Left to the reviewer._ Expected: any
+  positive integer on a numberOfAnimals field saves; `0` or a
+  non-integer produces a red error summary + inline `integerMin`
+  error.
 - **Step 9 — Committed atomically.**
 
 **Refinement to the doc:** the new pattern surface at step 5.5

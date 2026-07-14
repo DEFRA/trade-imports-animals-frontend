@@ -45,11 +45,6 @@ const COPY = {
       max: error.max,
       actual: error.actual
     }),
-  'domain.numberOfAnimals.speciesCap': (error) =>
-    t('errors.domain.numberOfAnimalsSpeciesCap', {
-      max: error.max,
-      actual: error.actual
-    }),
   // Per-sub-field V4 rules on the standard address block (step 5e).
   // Note: `addressSubFieldRequired` was retired when the addressBlock
   // predicate switched to interpretation A (validate only user-
@@ -87,7 +82,6 @@ export const FORMAT_ERROR_KEYS = [
   'errors.domain.integerMaxDigits',
   'errors.domain.dateFormat',
   'errors.domain.arrayMaxSelections',
-  'errors.domain.numberOfAnimalsSpeciesCap',
   'errors.domain.addressSubFieldMaxLength',
   'errors.domain.addressSubFieldEmailFormat',
   'errors.domain.addressSubFieldEnumInvalid',

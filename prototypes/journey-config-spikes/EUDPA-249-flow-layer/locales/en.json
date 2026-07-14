@@ -565,7 +565,6 @@
       "integerMaxDigits": "Enter a whole number with no more than {maxDigits} digits",
       "dateFormat": "Enter a valid date in DD/MM/YYYY format",
       "arrayMaxSelections": "Select no more than {max} items (you selected {actual})",
-      "numberOfAnimalsSpeciesCap": "Enter no more than {max} animals for the selected species (you entered {actual})",
       "addressSubFieldRequired": "Enter {subField}",
       "addressSubFieldMaxLength": "{subField} must be {max} characters or fewer (you entered {actual})",
       "addressSubFieldEmailFormat": "{subField} must be a valid email address",
