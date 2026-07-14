@@ -1,11 +1,12 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
-  <p class="govuk-body">The people and places involved in this consignment.</p>
+  {{ govukWarningText({ text: "Providing a false address is an act of fraud." }) }}
 
   {{ govukSummaryList({ rows: rows }) }}
 

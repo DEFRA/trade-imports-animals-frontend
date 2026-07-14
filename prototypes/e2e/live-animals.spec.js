@@ -145,7 +145,7 @@ const completeAnswerSections = async (page) => {
   // tail page.
   await task('Addresses')
   const parties = [
-    ['Consignor', values.consignor.name],
+    ['Consignor or exporter', values.consignor.name],
     ['Place of destination', values.placeOfDestination.name],
     ['Place of origin', values.placeOfOrigin.name],
     ['Consignee', values.consignee.name],
@@ -153,7 +153,9 @@ const completeAnswerSections = async (page) => {
   ]
   for (const [label, name] of parties) {
     await page
-      .locator('.govuk-summary-list__row', { hasText: label })
+      .locator('.govuk-summary-list__row', {
+        has: page.getByText(label, { exact: true })
+      })
       .getByRole('link', { name: 'Add' })
       .click()
     await page.getByRole('radio', { name }).check()
@@ -648,17 +650,22 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(addressesRow).toContainText('Not yet started')
 
     await page.getByRole('link', { name: 'Addresses' }).click()
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
+    await expect(
+      page.getByText('Providing a false address is an act of fraud.')
+    ).toBeVisible()
 
     // The consignor spoke exists: its row offers Add.
     const consignorRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Consignor'
+      has: page.getByText('Consignor or exporter', { exact: true })
     })
     await expect(consignorRow).toContainText('Not added yet')
     await consignorRow.getByRole('link', { name: 'Add' }).click()
     await expect(
       page.getByRole('heading', {
-        name: 'Search for an existing consignor or exporter'
+        name: 'Consignor or exporter'
       })
     ).toBeVisible()
 
@@ -666,7 +673,9 @@ test.describe('live-animals (page-owned spine)', () => {
     // returns to the landing page, which now shows the copied name.
     await page.getByRole('radio', { name: values.consignor.name }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
     await expect(consignorRow).toContainText(values.consignor.name)
     await expect(
       consignorRow.getByRole('link', { name: 'Change' })
@@ -674,19 +683,21 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The destination spoke works the same way — its own copy-commit.
     const destinationRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Place of destination'
+      has: page.getByText('Place of destination', { exact: true })
     })
     await expect(destinationRow).toContainText('Not added yet')
     await destinationRow.getByRole('link', { name: 'Add' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Search for a place of destination' })
+      page.getByRole('heading', { name: 'Place of destination' })
     ).toBeVisible()
 
     await page
       .getByRole('radio', { name: values.placeOfDestination.name })
       .check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
     await expect(destinationRow).toContainText(values.placeOfDestination.name)
     await expect(
       destinationRow.getByRole('link', { name: 'Change' })
@@ -694,33 +705,35 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The place of origin spoke works the same way — its own copy-commit.
     const originRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Place of origin'
+      has: page.getByText('Place of origin', { exact: true })
     })
     await expect(originRow).toContainText('Not added yet')
     await originRow.getByRole('link', { name: 'Add' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Search for a place of origin' })
+      page.getByRole('heading', { name: 'Place of origin' })
     ).toBeVisible()
 
     await page.getByRole('radio', { name: values.placeOfOrigin.name }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
     await expect(originRow).toContainText(values.placeOfOrigin.name)
     await expect(originRow.getByRole('link', { name: 'Change' })).toBeVisible()
 
     // The consignee spoke works the same way — its own copy-commit.
     const consigneeRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Consignee'
+      has: page.getByText('Consignee', { exact: true })
     })
     await expect(consigneeRow).toContainText('Not added yet')
     await consigneeRow.getByRole('link', { name: 'Add' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Search for a consignee' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Consignee' })).toBeVisible()
 
     await page.getByRole('radio', { name: values.consignee.name }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
     await expect(consigneeRow).toContainText(values.consignee.name)
     await expect(
       consigneeRow.getByRole('link', { name: 'Change' })
@@ -728,20 +741,25 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The importer spoke works the same way — its own copy-commit.
     const importerRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Importer'
+      has: page.getByText('Importer', { exact: true })
     })
     await expect(importerRow).toContainText('Not added yet')
     await importerRow.getByRole('link', { name: 'Add' }).click()
-    await expect(
-      page.getByRole('heading', { name: 'Search for an importer' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Importer' })).toBeVisible()
 
     await page.getByRole('radio', { name: values.importer.name }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
     await expect(importerRow).toContainText(values.importer.name)
     await expect(
       importerRow.getByRole('link', { name: 'Change' })
+    ).toBeVisible()
+
+    // The fraud warning stays on the filled landing page too.
+    await expect(
+      page.getByText('Providing a false address is an act of fraud.')
     ).toBeVisible()
 
     // Continue returns to the hub with all five owed parties answered.
@@ -760,7 +778,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     await page.getByRole('link', { name: 'Addresses' }).click()
     const consignorRow = page.locator('.govuk-summary-list__row', {
-      hasText: 'Consignor'
+      has: page.getByText('Consignor or exporter', { exact: true })
     })
     await consignorRow.getByRole('link', { name: 'Add' }).click()
 
@@ -786,7 +804,9 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     // Saved by copy into the launching party, back on the landing page.
-    await expect(page.getByRole('heading', { name: 'Addresses' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Consignment addresses' })
+    ).toBeVisible()
     await expect(consignorRow).toContainText('Created Farm Ltd')
 
     // The created address joined the address book: the spoke offers it,
@@ -1480,7 +1500,7 @@ test.describe('live-animals (page-owned spine)', () => {
       await page.goto(`${BASE}/hub`)
       await page.getByRole('link', { name: 'Addresses' }).click()
       await expect(
-        page.getByRole('heading', { name: 'Addresses' })
+        page.getByRole('heading', { name: 'Consignment addresses' })
       ).toBeVisible()
       await page.getByRole('button', { name: 'Continue' }).click()
     }
@@ -1633,7 +1653,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Addresses: all five party spokes copy-commit from the landing page.
     await task('Addresses')
     const parties = [
-      ['Consignor', values.consignor.name],
+      ['Consignor or exporter', values.consignor.name],
       ['Place of destination', values.placeOfDestination.name],
       ['Place of origin', values.placeOfOrigin.name],
       ['Consignee', values.consignee.name],
@@ -1641,7 +1661,9 @@ test.describe('live-animals (page-owned spine)', () => {
     ]
     for (const [label, name] of parties) {
       await page
-        .locator('.govuk-summary-list__row', { hasText: label })
+        .locator('.govuk-summary-list__row', {
+          has: page.getByText(label, { exact: true })
+        })
         .getByRole('link', { name: 'Add' })
         .click()
       await page.getByRole('radio', { name }).check()

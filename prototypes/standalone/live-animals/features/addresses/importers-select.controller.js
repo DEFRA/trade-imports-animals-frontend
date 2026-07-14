@@ -31,7 +31,7 @@ const addressSummary = (address) =>
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Search for an importer', {
+    ...kit.base('Importer', {
       backLink: pagePath('addresses')
     }),
     errors,

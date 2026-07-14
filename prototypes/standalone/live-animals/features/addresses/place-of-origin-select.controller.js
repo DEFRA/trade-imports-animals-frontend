@@ -31,7 +31,7 @@ const addressSummary = (address) =>
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Search for a place of origin', {
+    ...kit.base('Place of origin', {
       backLink: pagePath('addresses')
     }),
     errors,
