@@ -682,6 +682,62 @@ describe('page-controller — address-block composite widget (commercialTranspor
   })
 })
 
+describe('page-controller — accompanying-documents branchedGate (all-or-nothing)', () => {
+  it('POST with every field blank does NOT flip the block to mandatory (no CYA prompts)', async () => {
+    // Regression: user report. If the user visits the accompanying-
+    // documents page and hits "Save and continue" with everything
+    // blank, the POST body carries '' for each of the four inputs.
+    // writeAnswer stores those empty strings. The gate predicate
+    // (anyDocumentFieldPresent in obligations.js) originally used
+    // `!== undefined`, so empty strings counted as "present" and
+    // flipped all four fields to mandatory — CYA then prompted
+    // "Enter a value for Document type" etc. even though the user
+    // had left them blank. Fix: gate treats blank strings / null /
+    // undefined equivalently.
+    const jar = makeCookieJar()
+    // Save the page with everything blank.
+    const post = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/accompanying-documents',
+      payload: {}
+    })
+    expect(post.statusCode).toBe(302)
+    // CYA must NOT show accompanying-doc prompts.
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/check-your-answers'
+    })
+    expect(cya.payload).not.toContain('Enter a value for Document type')
+    expect(cya.payload).not.toContain('Enter a value for Attachment format')
+    expect(cya.payload).not.toContain('Enter a value for Document reference')
+    expect(cya.payload).not.toContain('Enter a value for Date of issue')
+  })
+
+  it('POST with one field filled DOES flip the block to mandatory', async () => {
+    // Positive: the branchedGate should still fire when the user
+    // provides any real value. Once documentType is filled, the
+    // other three fields become mandatory (V4 all-or-nothing block).
+    const jar = makeCookieJar()
+    const post = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/accompanying-documents',
+      payload: { accompanyingDocumentType: 'health-certificate' }
+    })
+    expect(post.statusCode).toBe(302)
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/check-your-answers'
+    })
+    // Health certificate row renders...
+    expect(cya.payload).toContain('Health certificate')
+    // ...and the other three prompt because they are now mandatory-
+    // in-scope and blank.
+    expect(cya.payload).toContain('Enter a value for Attachment format')
+    expect(cya.payload).toContain('Enter a value for Document reference')
+    expect(cya.payload).toContain('Enter a value for Date of issue')
+  })
+})
+
 describe('page-controller — real V4 predicates', () => {
   it('arrival-details rejects a badly-formatted date', async () => {
     const jar = makeCookieJar()

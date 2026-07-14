@@ -689,13 +689,25 @@ export const permanentAddress = {
 // declaration.
 // -----------------------------------------------------------------------------
 
+// Any of the four fields has a non-blank stored value. Empty strings,
+// nulls and undefined all count as "not present" — otherwise a user
+// who visited the page and saved it blank (POST body has '' for each
+// input; writeAnswer stores '') would flip the whole block to
+// mandatory and get spurious CYA prompts. See lib/is-blank-value.js
+// for the equivalent shared helper used elsewhere in the spike.
+const isFilled = (value) => {
+  if (value === undefined || value === null) return false
+  if (typeof value === 'string') return value !== ''
+  if (Array.isArray(value)) return value.length > 0
+  return true
+}
 const anyDocumentFieldPresent = (fulfilments) =>
   [
     accompanyingDocumentType,
     accompanyingDocumentAttachmentType,
     accompanyingDocumentReference,
     accompanyingDocumentDateOfIssue
-  ].some((obligation) => fulfilments[obligation.id] !== undefined)
+  ].some((obligation) => isFilled(fulfilments[obligation.id]))
 
 const accompanyingDocumentBlockApplyTo = branchedGate(
   anyDocumentFieldPresent,
