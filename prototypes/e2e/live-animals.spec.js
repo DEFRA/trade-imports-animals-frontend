@@ -132,6 +132,33 @@ const unlockSections = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+// Documents are added by uploading a real file (inc-064): the attachment type
+// is derived server-side from the filename's extension, and the stub scan
+// lifecycle answers Checking on the first status read before settling by
+// filename convention (a name containing "virus" settles REJECTED).
+const setUploadFile = (page, filename, bytes) =>
+  page.getByLabel('Upload a file').setInputFiles({
+    name: filename,
+    mimeType: 'application/pdf',
+    buffer: bytes ?? Buffer.from('%PDF-1.4 prototype upload')
+  })
+
+const addDocument = async (page, entry) => {
+  await page
+    .getByLabel('Document type')
+    .selectOption(entry.accompanyingDocumentType)
+  await page
+    .getByLabel('Document reference')
+    .fill(entry.accompanyingDocumentReference)
+  await page.getByLabel('Day').fill(entry.accompanyingDocumentDateOfIssue.day)
+  await page
+    .getByLabel('Month')
+    .fill(entry.accompanyingDocumentDateOfIssue.month)
+  await page.getByLabel('Year').fill(entry.accompanyingDocumentDateOfIssue.year)
+  await setUploadFile(page, entry.filename)
+  await page.getByRole('button', { name: 'Save and add another' }).click()
+}
+
 // Walk every answer-gathering section in the real gated order (documents stays
 // optional), leaving the journey on the hub with the review section unlocked
 // (RULE 2 submit-readiness). Uses the fixture's cattle line, which triggers the
@@ -1128,7 +1155,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(additionalDetailsRow).toContainText('Completed')
   })
 
-  test('accompanying documents — the optional collection starts Optional; the single-page loop adds two documents, removes one and completes the task', async ({
+  test('accompanying documents — the optional collection starts Optional; the single-page loop uploads two documents, removes one and completes the task', async ({
     page
   }) => {
     await startNotification(page)
@@ -1136,31 +1163,9 @@ test.describe('live-animals (page-owned spine)', () => {
     const issued = doc.accompanyingDocumentDateOfIssue
     const secondDoc = {
       accompanyingDocumentType: 'Commercial invoice',
-      accompanyingDocumentAttachmentType: 'PDF',
       accompanyingDocumentReference: 'INV-2026-0042',
-      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' }
-    }
-
-    const addDocument = async (entry) => {
-      await page
-        .getByLabel('Document type')
-        .selectOption(entry.accompanyingDocumentType)
-      await page
-        .getByLabel('Attachment type')
-        .selectOption(entry.accompanyingDocumentAttachmentType)
-      await page
-        .getByLabel('Document reference')
-        .fill(entry.accompanyingDocumentReference)
-      await page
-        .getByLabel('Day')
-        .fill(entry.accompanyingDocumentDateOfIssue.day)
-      await page
-        .getByLabel('Month')
-        .fill(entry.accompanyingDocumentDateOfIssue.month)
-      await page
-        .getByLabel('Year')
-        .fill(entry.accompanyingDocumentDateOfIssue.year)
-      await page.getByRole('button', { name: 'Save and add another' }).click()
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename: 'commercial-invoice.pdf'
     }
 
     // The documents section sits after commodities (RULE 1) — unlock it first.
@@ -1182,8 +1187,8 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByText('You have not added any documents yet.')
     ).toBeVisible()
 
-    // A partial date of issue is malformed, not merely blank — it blocks
-    // the add (dateParts validation).
+    // A partial date of issue is malformed, not merely blank — it blocks the
+    // add (dateParts validation), and an add without a file names that too.
     await page.getByLabel('Day').fill(issued.day)
     await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(
@@ -1192,11 +1197,15 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByRole('link', { name: 'Enter a real date of issue' })
     ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Select a file to upload' })
+    ).toBeVisible()
 
-    // Happy path from the shared fixture — metadata only, no file upload.
+    // Happy path from the shared fixture — the upload posts a real file.
     // Adding stays on the same page: the read-back table gains a row with
-    // reference / type / date and the entry form resets for the next one.
-    await addDocument(doc)
+    // reference / type / date plus a Checking scan-status tag, and the
+    // entry form resets for the next one.
+    await addDocument(page, doc)
     await expect(
       page.getByRole('heading', { name: 'Upload documents' })
     ).toBeVisible()
@@ -1207,15 +1216,33 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(firstRow).toContainText(
       `${issued.day}/${issued.month}/${issued.year}`
     )
+    await expect(firstRow).toContainText('Checking')
     await expect(page.getByLabel('Document reference')).toHaveValue('')
 
-    await addDocument(secondDoc)
+    // Continue is blocked while a scan is PENDING.
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Upload documents' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: 'You cannot continue until all documents have been scanned or removed'
+      })
+    ).toBeVisible()
+
+    // The stock refresh affordance settles the scan — page reload, no JS.
+    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
+    await expect(firstRow).toContainText('Safe')
+
+    await addDocument(page, secondDoc)
     const secondRow = page.locator('.govuk-table__row', {
       hasText: secondDoc.accompanyingDocumentReference
     })
     await expect(secondRow).toContainText(secondDoc.accompanyingDocumentType)
+    await expect(secondRow).toContainText('Checking')
 
-    // Removing the second document leaves the first row intact.
+    // Removing the second document leaves the first row intact — and with
+    // only the settled Safe document left, Continue is free again.
     await secondRow
       .getByRole('link', { name: 'Remove document 2', exact: true })
       .click()
@@ -1231,6 +1258,86 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(documentsRow).toContainText('Completed')
+  })
+
+  test('documents upload — file-type and oversize picks are refused, and a rejected scan blocks Continue until removed', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await unlockSections(page)
+    await page.getByRole('link', { name: 'Uploaded documents' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Upload documents' })
+    ).toBeVisible()
+
+    const virusDoc = {
+      accompanyingDocumentType: 'Commercial invoice',
+      accompanyingDocumentReference: 'INV-VIRUS-0001',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename: 'virus-invoice.pdf'
+    }
+
+    // A file type outside the allow-list is refused.
+    await page.getByLabel('Upload a file').setInputFiles({
+      name: 'notes.zip',
+      mimeType: 'application/zip',
+      buffer: Buffer.from('zip-bytes')
+    })
+    await page.getByRole('button', { name: 'Save and add another' }).click()
+    await expect(
+      page.getByRole('link', {
+        name: 'The selected file must be a PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX'
+      })
+    ).toBeVisible()
+
+    // A file over the 50MB limit is refused: this one blows the route-level
+    // payload cap, exercising the 413 safety net that re-renders the page
+    // with the friendly oversize error instead of a bare 413.
+    await setUploadFile(page, 'oversize.pdf', Buffer.alloc(50_100_000, 1))
+    await page.getByRole('button', { name: 'Save and add another' }).click()
+    await expect(
+      page.getByRole('link', {
+        name: 'The selected file must be smaller than 50MB'
+      })
+    ).toBeVisible()
+
+    // Neither refused pick added a document.
+    await expect(
+      page.getByText('You have not added any documents yet.')
+    ).toBeVisible()
+
+    // The virus-convention filename walks PENDING -> REJECTED.
+    await addDocument(page, virusDoc)
+    const virusRow = page.locator('.govuk-table__row', {
+      hasText: virusDoc.accompanyingDocumentReference
+    })
+    await expect(virusRow).toContainText('Checking')
+    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
+    await expect(virusRow).toContainText('Virus found')
+
+    // A rejected document blocks Continue with the per-file error...
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Upload documents' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: 'virus-invoice.pdf contains a virus. Remove it and try again with a different file.'
+      })
+    ).toBeVisible()
+
+    // ...until it is removed, after which Continue reaches the hub.
+    await virusRow
+      .getByRole('link', { name: 'Remove document 1', exact: true })
+      .click()
+    await expect(
+      page.locator('.govuk-table__row', {
+        hasText: virusDoc.accompanyingDocumentReference
+      })
+    ).toHaveCount(0)
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   test('addresses — selecting a consignor, a place of destination, a place of origin, a consignee and an importer copies each party onto the landing page and completes the task', async ({
@@ -2290,34 +2397,16 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The documents card only renders on the review once a document exists —
     // add the fixture document from the hub first (no change context yet).
+    // Continue needs the scan settled, so refresh the canned lifecycle first.
     const [doc] = values.documents
-    const addDocument = async (entry) => {
-      await page
-        .getByLabel('Document type')
-        .selectOption(entry.accompanyingDocumentType)
-      await page
-        .getByLabel('Attachment type')
-        .selectOption(entry.accompanyingDocumentAttachmentType)
-      await page
-        .getByLabel('Document reference')
-        .fill(entry.accompanyingDocumentReference)
-      await page
-        .getByLabel('Day')
-        .fill(entry.accompanyingDocumentDateOfIssue.day)
-      await page
-        .getByLabel('Month')
-        .fill(entry.accompanyingDocumentDateOfIssue.month)
-      await page
-        .getByLabel('Year')
-        .fill(entry.accompanyingDocumentDateOfIssue.year)
-      await page.getByRole('button', { name: 'Save and add another' }).click()
-    }
     await page.getByRole('link', { name: 'Uploaded documents' }).click()
-    await addDocument(doc)
+    await addDocument(page, doc)
+    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    // Open the review.
+    // Open the review. The uploaded document's attachment type was derived
+    // from the file's extension (c-034 source flip) — the card shows it.
     await page
       .locator('.govuk-task-list__item', { hasText: 'Check and submit' })
       .getByRole('link', { name: 'Check and submit' })
@@ -2325,6 +2414,11 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByRole('heading', { name: 'Check your answers' })
     ).toBeVisible()
+    const documentsCard = page.locator('.govuk-summary-card', {
+      hasText: 'Uploaded documents'
+    })
+    await expect(documentsCard).toContainText('Attachment type')
+    await expect(documentsCard).toContainText('PDF')
 
     // Species-card leg: Change enters the identification surface with the
     // change context; the Save-and-add-another PRG cycle stays on the
@@ -2355,25 +2449,28 @@ test.describe('live-animals (page-owned spine)', () => {
     )
 
     // Documents leg: the card's Change enters the single-page loop with the
-    // change context; adding another document loops; Continue exits back to
-    // the review with the new document rendered.
+    // change context; adding another document loops; the refresh affordance
+    // keeps the context; Continue exits back to the review with the new
+    // document rendered.
     const secondDoc = {
       accompanyingDocumentType: 'Commercial invoice',
-      accompanyingDocumentAttachmentType: 'PDF',
       accompanyingDocumentReference: 'INV-2026-0042',
-      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' }
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename: 'commercial-invoice.pdf'
     }
     await page.getByRole('link', { name: 'Change documents' }).click()
     await expect(
       page.getByRole('heading', { name: 'Upload documents' })
     ).toBeVisible()
     expect(page.url()).toContain('change=1')
-    await addDocument(secondDoc)
+    await addDocument(page, secondDoc)
     await expect(
       page.locator('.govuk-table__row', {
         hasText: secondDoc.accompanyingDocumentReference
       })
     ).toBeVisible()
+    expect(page.url()).toContain('change=1')
+    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
     expect(page.url()).toContain('change=1')
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(

@@ -146,8 +146,12 @@ describe('change context — collection round-trip', () => {
         payload: {
           action: 'add',
           accompanyingDocumentType: '',
-          accompanyingDocumentAttachmentType: '',
-          accompanyingDocumentReference: 'GBHC1234567890'
+          accompanyingDocumentReference: 'GBHC1234567890',
+          file: {
+            filename: 'itahc-certificate.pdf',
+            headers: { 'content-type': 'application/pdf' },
+            payload: Buffer.from('pdf-bytes')
+          }
         },
         query: change
       })

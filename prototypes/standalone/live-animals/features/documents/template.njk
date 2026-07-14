@@ -2,6 +2,7 @@
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
@@ -11,7 +12,7 @@
 
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
-  <form method="post" novalidate>
+  <form method="post" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
     {{ govukSelect({
@@ -21,16 +22,6 @@
       value: values.accompanyingDocumentType,
       errorMessage: errors.accompanyingDocumentType and { text: errors.accompanyingDocumentType },
       items: typeItems
-    }) }}
-
-    {{ govukSelect({
-      id: "accompanyingDocumentAttachmentType",
-      name: "accompanyingDocumentAttachmentType",
-      label: { text: "Attachment type", classes: "govuk-label--s" },
-      hint: { text: "The file type of the document, for example PDF." },
-      value: values.accompanyingDocumentAttachmentType,
-      errorMessage: errors.accompanyingDocumentAttachmentType and { text: errors.accompanyingDocumentAttachmentType },
-      items: attachmentTypeItems
     }) }}
 
     {{ govukInput({
@@ -45,6 +36,23 @@
 
     {{ govukDateInput(dateOfIssue) }}
 
+    {%- set fileHintHtml -%}
+      <p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p>
+      <ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0">
+        <li>smaller than {{ maxFileSizeLabel }}</li>
+        <li>a {{ allowedFileTypesHint }}</li>
+      </ul>
+    {%- endset -%}
+
+    {{ govukFileUpload({
+      id: "file",
+      name: "file",
+      label: { text: "Upload a file", classes: "govuk-label--s" },
+      hint: { html: fileHintHtml },
+      attributes: { accept: acceptAttribute },
+      errorMessage: errors.file and { text: errors.file }
+    }) }}
+
     {{ govukButton({
       text: "Save and add another",
       classes: "govuk-button--secondary",
@@ -53,21 +61,42 @@
     }) }}
 
     {% if hasDocuments %}
-      {{ govukTable({
-        caption: "Documents you have added",
-        captionClasses: "govuk-visually-hidden",
-        head: [
-          { text: "Document reference" },
-          { text: "Document type" },
-          { text: "Date of issue" },
-          { html: '<span class="govuk-visually-hidden">Actions</span>' }
-        ],
-        rows: rows
-      }) }}
+      <div id="documents-added">
+        {{ govukTable({
+          caption: "Documents you have added",
+          captionClasses: "govuk-visually-hidden",
+          head: [
+            { text: "Document reference" },
+            { text: "Document type" },
+            { text: "Date of issue" },
+            { text: "Status" },
+            { html: '<span class="govuk-visually-hidden">Actions</span>' }
+          ],
+          rows: rows
+        }) }}
+      </div>
+      {% if anyPending %}
+        <p class="govuk-body">
+          <a href="{{ refreshHref }}" class="govuk-link">Refresh virus scan status</a>
+        </p>
+      {% endif %}
+      {% if timedOut %}
+        <p class="govuk-hint">Still checking some documents. Refresh again in a moment.</p>
+      {% endif %}
     {% else %}
       <p class="govuk-body">{{ emptyText }}</p>
     {% endif %}
 
-    {{ saveActions(hubHref, { text: "Continue", name: "action", value: "continue" }) }}
+    {% if canContinue %}
+      {{ saveActions(hubHref, { text: "Continue", name: "action", value: "continue" }) }}
+    {% else %}
+      {{ saveActions(hubHref, {
+        text: "Continue",
+        name: "action",
+        value: "continue",
+        attributes: { "aria-disabled": "true", "aria-describedby": "cannot-continue-reason" }
+      }) }}
+      <span class="govuk-visually-hidden" id="cannot-continue-reason">{{ cannotContinueMessage }}</span>
+    {% endif %}
   </form>
 {% endblock %}

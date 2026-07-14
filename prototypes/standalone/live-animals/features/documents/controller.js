@@ -11,6 +11,18 @@ import {
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 import * as documentTypes from '../../services/document-types/index.js'
+import { documentUploads } from '../../services/document-uploads/index.js'
+import {
+  ACCEPT_ATTRIBUTE,
+  ALLOWED_FILE_TYPES_HINT,
+  ALLOWED_MIME_TYPES,
+  FILE_TYPE_MESSAGE,
+  MAX_FILE_SIZE_BYTES,
+  MAX_FILE_SIZE_LABEL,
+  MAX_PAYLOAD_BYTES,
+  OVERSIZE_FILE_MESSAGE,
+  attachmentTypeFor
+} from './upload-config.js'
 import { documentsPage as page } from './page.js'
 import { obligations } from './obligations.js'
 
@@ -18,18 +30,15 @@ export const meta = { ...page, collects: kit.collectsFrom(obligations) }
 const view = `${TEMPLATES}/features/documents/template`
 
 export const MAX_DOCUMENTS = 10
+export const MAX_POLLING_ATTEMPTS = 10
 
 const NOT_PROVIDED = 'Not provided'
-
-export const documentValue = (entry) => {
-  const type = (entry.accompanyingDocumentType ?? '').trim() || NOT_PROVIDED
-  const reference = (entry.accompanyingDocumentReference ?? '').trim()
-  return reference ? `${type} — ${reference}` : type
-}
+const CANNOT_CONTINUE_MESSAGE =
+  'You cannot continue until all documents have been scanned or removed'
+const UPLOAD_FAILURE_MESSAGE = 'The file could not be uploaded. Try again.'
 
 const fields = compose(
   oneOf('accompanyingDocumentType', documentTypes.documentTypes()),
-  oneOf('accompanyingDocumentAttachmentType', documentTypes.attachmentTypes()),
   maxText(
     'accompanyingDocumentReference',
     58,
@@ -49,8 +58,6 @@ const selectItems = (placeholder, options, selected) => [
 
 export const documentFromPayload = (payload) => ({
   accompanyingDocumentType: payload.accompanyingDocumentType ?? '',
-  accompanyingDocumentAttachmentType:
-    payload.accompanyingDocumentAttachmentType ?? '',
   accompanyingDocumentReference: (
     payload.accompanyingDocumentReference ?? ''
   ).trim(),
@@ -62,9 +69,58 @@ export const documentFromPayload = (payload) => ({
 
 const EMPTY_FORM = {
   accompanyingDocumentType: '',
-  accompanyingDocumentAttachmentType: '',
   accompanyingDocumentReference: '',
   accompanyingDocumentDateOfIssue: {}
+}
+
+export const fileErrors = (file) => {
+  if (!file?.payload?.length) return { file: 'Select a file to upload' }
+  if (file.payload.length > MAX_FILE_SIZE_BYTES) {
+    return { file: OVERSIZE_FILE_MESSAGE }
+  }
+  if (!attachmentTypeFor(file.filename ?? '')) {
+    return { file: FILE_TYPE_MESSAGE }
+  }
+  return {}
+}
+
+const scanStatusOf = async (entry) => {
+  if (!entry.uploadId) return 'COMPLETE'
+  try {
+    return await documentUploads.scanStatus(entry)
+  } catch {
+    return 'PENDING'
+  }
+}
+
+const withScanStatus = (documents) =>
+  Promise.all(
+    documents.map(async (item) => ({
+      ...item,
+      scanStatus: await scanStatusOf(item.entry)
+    }))
+  )
+
+const loadPage = async (request, h) => {
+  const { journey, answers, scope } = await state.get(request, h)
+  const documents = await withScanStatus(
+    state.collectionView(answers, ['documents'])
+  )
+  return { journey, answers, scope, documents }
+}
+
+const SCAN_STATUS_TAGS = {
+  COMPLETE: { text: 'Safe', classes: 'govuk-tag--green' },
+  REJECTED: { text: 'Virus found', classes: 'govuk-tag--red' },
+  PENDING: { text: 'Checking', classes: 'govuk-tag--blue' }
+}
+
+const statusTagHtml = (scanStatus) => {
+  const tag = SCAN_STATUS_TAGS[scanStatus] ?? {
+    text: 'Unknown',
+    classes: 'govuk-tag--grey'
+  }
+  return `<strong class="govuk-tag ${tag.classes}">${tag.text}</strong>`
 }
 
 const cellText = (value) => (value ?? '').trim() || NOT_PROVIDED
@@ -83,37 +139,74 @@ const removeCell = (request, index) => {
   )
 }
 
-const documentRows = (request, answers) =>
-  state
-    .collectionView(answers, ['documents'])
-    .map(({ index, entry }) => [
-      { text: cellText(entry.accompanyingDocumentReference) },
-      { text: cellText(entry.accompanyingDocumentType) },
-      { text: dateText(entry.accompanyingDocumentDateOfIssue) },
-      { html: removeCell(request, index) }
-    ])
+const documentRows = (request, documents) =>
+  documents.map(({ index, entry, scanStatus }) => [
+    { text: cellText(entry.accompanyingDocumentReference) },
+    { text: cellText(entry.accompanyingDocumentType) },
+    { text: dateText(entry.accompanyingDocumentDateOfIssue) },
+    { html: statusTagHtml(scanStatus) },
+    { html: removeCell(request, index) }
+  ])
 
-const render = (request, h, journey, values, errors = {}) => {
-  const rows = documentRows(request, journey.answers)
+const rejectedErrors = (documents) =>
+  documents
+    .filter((item) => item.scanStatus === 'REJECTED')
+    .map((item) => ({
+      text: `${item.entry.filename ?? 'The file'} contains a virus. Remove it and try again with a different file.`,
+      href: '#documents-added'
+    }))
+
+const getAttempt = (request) => {
+  const parsed = Number.parseInt(request.query?.attempt ?? '0', 10)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+const refreshHref = (request, attempt) => {
+  const base = kit.withChangeContext(request, pagePath(page.slug))
+  const separator = base.includes('?') ? '&' : '?'
+  return `${base}${separator}attempt=${attempt}`
+}
+
+const render = (
+  request,
+  h,
+  { journey, documents },
+  values,
+  errors = {},
+  summaryErrors = []
+) => {
+  const attempt = getAttempt(request)
+  const anyPending = documents.some((item) => item.scanStatus === 'PENDING')
+  const anyRejected = documents.some((item) => item.scanStatus === 'REJECTED')
+  const errorList = [
+    ...rejectedErrors(documents),
+    ...summaryErrors,
+    ...(kit.errorSummary(errors)?.errorList ?? [])
+  ]
   return h.view(view, {
     ...kit.base('Upload documents', { backLink: hubPath(), journey }),
     heading: 'Upload documents',
-    rows,
-    hasDocuments: rows.length > 0,
+    rows: documentRows(request, documents),
+    hasDocuments: documents.length > 0,
     emptyText: 'You have not added any documents yet.',
     values,
     errors,
-    errorSummary: kit.errorSummary(errors),
+    errorSummary: errorList.length
+      ? { titleText: 'There is a problem', errorList }
+      : null,
+    anyPending,
+    timedOut: anyPending && attempt >= MAX_POLLING_ATTEMPTS,
+    canContinue: !anyPending && !anyRejected,
+    refreshHref: refreshHref(request, attempt + 1),
+    cannotContinueMessage: CANNOT_CONTINUE_MESSAGE,
     typeItems: selectItems(
       'Select a document type',
       documentTypes.documentTypes(),
       values.accompanyingDocumentType
     ),
-    attachmentTypeItems: selectItems(
-      'Select a file type',
-      documentTypes.attachmentTypes(),
-      values.accompanyingDocumentAttachmentType
-    ),
+    acceptAttribute: ACCEPT_ATTRIBUTE,
+    allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
+    maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
       label: 'Date of issue',
       hint: 'For example, 12 12 2025',
@@ -123,40 +216,127 @@ const render = (request, h, journey, values, errors = {}) => {
   })
 }
 
+const isoDate = ({ day, month, year } = {}) =>
+  `${String(year ?? '').padStart(4, '0')}-${String(month ?? '').padStart(2, '0')}-${String(day ?? '').padStart(2, '0')}`
+
 const get = async (request, h) => {
-  const { journey } = await state.get(request, h)
-  return render(request, h, journey, EMPTY_FORM)
+  const pageState = await loadPage(request, h)
+  return render(request, h, pageState, EMPTY_FORM)
 }
 
+const uploadDetails = (journey, entry, file, filename) => ({
+  journeyId: journey.journeyId,
+  filename,
+  contentType: file.headers?.['content-type'],
+  bytes: file.payload,
+  documentType: entry.accompanyingDocumentType,
+  documentReference: entry.accompanyingDocumentReference,
+  dateOfIssue: isoDate(entry.accompanyingDocumentDateOfIssue),
+  maxFileSize: MAX_FILE_SIZE_BYTES,
+  mimeTypes: ALLOWED_MIME_TYPES
+})
+
 const postAdd = async (request, h, payload) => {
-  const { journey, answers } = await state.get(request, h)
+  const pageState = await loadPage(request, h)
   const entry = documentFromPayload(payload)
-  if (state.collectionView(answers, ['documents']).length >= MAX_DOCUMENTS) {
-    return render(request, h, journey, entry, {
+  if (pageState.documents.length >= MAX_DOCUMENTS) {
+    return render(request, h, pageState, entry, {
       accompanyingDocumentType: `You can add a maximum of ${MAX_DOCUMENTS} documents`
     })
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(request, h, journey, entry, errors)
+  const allErrors = { ...errors, ...fileErrors(payload.file) }
+  if (Object.keys(allErrors).length > 0) {
+    return render(request, h, pageState, entry, allErrors)
+  }
 
-  await state.appendEntry(request, h, 'documents', entry)
+  const filename = payload.file.filename ?? 'upload'
+  let uploadId
+  try {
+    uploadId = await documentUploads.upload(
+      uploadDetails(pageState.journey, entry, payload.file, filename)
+    )
+  } catch {
+    return render(request, h, pageState, entry, {
+      file: UPLOAD_FAILURE_MESSAGE
+    })
+  }
+
+  await state.appendEntry(request, h, 'documents', {
+    ...entry,
+    accompanyingDocumentAttachmentType: attachmentTypeFor(filename),
+    uploadId,
+    filename
+  })
   return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.action === 'add') return postAdd(request, h, payload)
-  const { scope } = await state.get(request, h)
-  return h.redirect(await kit.nextTarget(request, page, scope))
+  const pageState = await loadPage(request, h)
+  if (!kit.hubExitTarget(request)) {
+    const anyRejected = pageState.documents.some(
+      (item) => item.scanStatus === 'REJECTED'
+    )
+    const anySettling = pageState.documents.some(
+      (item) => item.scanStatus !== 'COMPLETE'
+    )
+    if (anySettling) {
+      const summaryErrors = anyRejected
+        ? []
+        : [{ text: CANNOT_CONTINUE_MESSAGE, href: '#documents-added' }]
+      return render(request, h, pageState, EMPTY_FORM, {}, summaryErrors)
+    }
+  }
+  return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }
 
 const getRemove = async (request, h) => {
-  await state.removeEntry(request, h, 'documents', Number(request.params.index))
-  return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
+  const index = Number(request.params.index)
+  const backToPage = kit.withChangeContext(request, pagePath(page.slug))
+  const { answers } = await state.get(request, h)
+  const entry = state.collectionView(answers, ['documents'])[index]?.entry
+  if (entry?.uploadId) {
+    try {
+      await documentUploads.remove(entry.uploadId)
+    } catch {
+      return h.redirect(backToPage)
+    }
+  }
+  await state.removeEntry(request, h, 'documents', index)
+  return h.redirect(backToPage)
+}
+
+const isOversizeBoom = (request) =>
+  request.response?.isBoom && request.response.output?.statusCode === 413
+
+const handleOversizePayload = async (request, h) => {
+  if (!isOversizeBoom(request)) return h.continue
+  const pageState = await loadPage(request, h)
+  return render(request, h, pageState, EMPTY_FORM, {
+    file: OVERSIZE_FILE_MESSAGE
+  })
 }
 
 export const routes = [
-  ...kit.pageRoutes(page, { get, post }),
+  { method: 'GET', path: pagePath(page.slug), options: open, handler: get },
+  {
+    method: 'POST',
+    path: pagePath(page.slug),
+    options: {
+      ...open,
+      payload: {
+        maxBytes: MAX_PAYLOAD_BYTES,
+        parse: true,
+        multipart: { output: 'annotated' }
+      },
+      ext: {
+        onPreResponse: { method: handleOversizePayload }
+      }
+    },
+    handler: post
+  },
   {
     method: 'GET',
     path: pagePath('accompanying-documents/{index}/remove'),

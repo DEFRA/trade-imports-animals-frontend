@@ -208,7 +208,11 @@ widget for "a list of things", so each loop hub owns its rows and copy:
   per-species quantity blocks, composed from sub-component partials
   (`_selected-commodities-table.njk`, `_species-quantities.njk`)
 - `features/documents/controller.js` — top-level documents, a
-  single-page loop: the entry form and the read-back table share one page
+  single-page loop: the entry form and the read-back table share one page.
+  Since the real upload leg (c-034) each add posts a multipart file through
+  the `document-uploads` service, the read-back table carries a scan-status
+  tag column, and Continue is blocked while any scan is `PENDING` or
+  `REJECTED` (the hub exit stays open — entries are committed at upload)
 
 Both compose over the same facts library:
 `state.collectionView(answers, path)` returns

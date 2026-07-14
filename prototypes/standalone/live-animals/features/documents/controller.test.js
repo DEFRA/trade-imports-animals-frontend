@@ -1,3 +1,4 @@
+import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
@@ -9,25 +10,51 @@ import { records as recordsStub } from '../../services/persistence/records/stub.
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import { driveHandler, postHandlerOf } from '../../engine/test-support.js'
+import { documentUploads } from '../../services/document-uploads/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import {
+  FILE_TYPE_MESSAGE,
+  MAX_FILE_SIZE_BYTES,
+  MAX_PAYLOAD_BYTES,
+  OVERSIZE_FILE_MESSAGE
+} from './upload-config.js'
 
 const post = postHandlerOf(documents)
 const get = documents.routes.find(
   (route) => route.method === 'GET' && !route.path.includes('remove')
 ).handler
+const remove = documents.routes.find((route) =>
+  route.path.includes('remove')
+).handler
+
+const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
+  filename,
+  headers: { 'content-type': 'application/pdf' },
+  payload: Buffer.alloc(size, 1)
+})
 
 const validDocument = {
   accompanyingDocumentType: 'ITAHC',
-  accompanyingDocumentAttachmentType: 'PDF',
   accompanyingDocumentReference: 'GBHC1234567890',
   'accompanyingDocumentDateOfIssue-day': '12',
   'accompanyingDocumentDateOfIssue-month': '12',
   'accompanyingDocumentDateOfIssue-year': '2025'
 }
 
-describe('POST documents — single-page add-another loop', () => {
+const storedDocument = (overrides = {}) => ({
+  accompanyingDocumentType: 'ITAHC',
+  accompanyingDocumentAttachmentType: 'PDF',
+  accompanyingDocumentReference: 'GBHC1234567890',
+  accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' },
+  ...overrides
+})
+
+const summaryTexts = (result) =>
+  (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
+
+describe('documents — real upload leg on the single-page loop', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -40,6 +67,7 @@ describe('POST documents — single-page add-another loop', () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'add',
+        file: pdfFile(),
         'accompanyingDocumentDateOfIssue-day': '31',
         'accompanyingDocumentDateOfIssue-month': '2',
         'accompanyingDocumentDateOfIssue-year': '2000'
@@ -51,47 +79,137 @@ describe('POST documents — single-page add-another loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should list added documents as read-back rows with a per-row remove link', async () => {
-    const result = await driveHandler(get, {
-      seed: {
-        documents: [
-          {
-            accompanyingDocumentType: 'ITAHC',
-            accompanyingDocumentAttachmentType: 'PDF',
-            accompanyingDocumentReference: 'GBHC1234567890',
-            accompanyingDocumentDateOfIssue: {
-              day: '12',
-              month: '12',
-              year: '2025'
-            }
-          }
-        ]
+  it('Should append the uploaded document with the derived attachment type, uploadId and filename, then redirect', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
+    })
+    expect(result.response.redirect).toBeDefined()
+    const [entry] = result.after.documents
+    expect(entry.accompanyingDocumentAttachmentType).toBe('PDF')
+    expect(entry.filename).toBe('itahc.pdf')
+    expect(entry.uploadId).toBeDefined()
+    expect(entry.accompanyingDocumentType).toBe('ITAHC')
+  })
+
+  it('Should refuse an add without a file and append nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'add', ...validDocument }
+    })
+    expect(result.view.context.errors.file).toBe('Select a file to upload')
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a file type outside the allow-list', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'add', ...validDocument, file: pdfFile('notes.zip') }
+    })
+    expect(result.view.context.errors.file).toBe(FILE_TYPE_MESSAGE)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a file over the 50MB limit', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: 'add',
+        ...validDocument,
+        file: pdfFile('big.pdf', MAX_FILE_SIZE_BYTES + 1)
       }
+    })
+    expect(result.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should list added documents with a scan-status tag and a per-row remove link', async () => {
+    const result = await driveHandler(get, {
+      seed: { documents: [storedDocument()] }
     })
     const [row] = result.view.context.rows
     expect(row[0].text).toBe('GBHC1234567890')
     expect(row[1].text).toBe('ITAHC')
     expect(row[2].text).toBe('12/12/2025')
-    expect(row[3].html).toContain('accompanying-documents/0/remove')
+    expect(row[3].html).toContain('Safe')
+    expect(row[4].html).toContain('accompanying-documents/0/remove')
+  })
+
+  it('Should show Checking on the first read of a fresh upload, then settle to Safe with a refresh affordance in between', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const seed = {
+      documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+    }
+    const first = await driveHandler(get, { seed })
+    expect(first.view.context.rows[0][3].html).toContain('Checking')
+    expect(first.view.context.anyPending).toBe(true)
+    expect(first.view.context.canContinue).toBe(false)
+    expect(first.view.context.refreshHref).toContain('attempt=1')
+
+    const second = await driveHandler(get, { seed })
+    expect(second.view.context.rows[0][3].html).toContain('Safe')
+    expect(second.view.context.canContinue).toBe(true)
+  })
+
+  it('Should block Continue while a scan is PENDING, naming the reason', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const result = await driveHandler(post, {
+      seed: {
+        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+      },
+      payload: { action: 'continue' }
+    })
+    expect(result.response.redirect).toBeUndefined()
+    expect(summaryTexts(result)).toContain(
+      'You cannot continue until all documents have been scanned or removed'
+    )
+  })
+
+  it('Should block Continue while a REJECTED document remains, naming the file', async () => {
+    const uploadId = await documentUploads.upload({
+      filename: 'virus-notes.pdf'
+    })
+    await documentUploads.scanStatus({ uploadId, filename: 'virus-notes.pdf' })
+    const seed = {
+      documents: [storedDocument({ uploadId, filename: 'virus-notes.pdf' })]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'continue' }
+    })
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.rows[0][3].html).toContain('Virus found')
+    expect(summaryTexts(result)).toContain(
+      'virus-notes.pdf contains a virus. Remove it and try again with a different file.'
+    )
+  })
+
+  it('Should let the hub exit leave the page while a scan is PENDING', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const result = await driveHandler(post, {
+      seed: {
+        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+      },
+      payload: { action: 'continue', exit: 'hub' }
+    })
+    expect(result.response.redirect).toBeDefined()
+  })
+
+  it('Should remove the document and its upload session via the per-row remove link', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const result = await driveHandler(remove, {
+      seed: {
+        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+      },
+      params: { index: '0' }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.documents).toEqual([])
   })
 
   it('Should refuse an eleventh document with the maximum message and append nothing', async () => {
-    const tenDocuments = Array.from(
-      { length: documents.MAX_DOCUMENTS },
-      () => ({
-        accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentAttachmentType: 'PDF',
-        accompanyingDocumentReference: 'GBHC1234567890',
-        accompanyingDocumentDateOfIssue: {
-          day: '12',
-          month: '12',
-          year: '2025'
-        }
-      })
+    const tenDocuments = Array.from({ length: documents.MAX_DOCUMENTS }, () =>
+      storedDocument()
     )
     const result = await driveHandler(post, {
       seed: { documents: tenDocuments },
-      payload: { action: 'add', ...validDocument }
+      payload: { action: 'add', ...validDocument, file: pdfFile() }
     })
     expect(result.view.context.errors.accompanyingDocumentType).toBe(
       `You can add a maximum of ${documents.MAX_DOCUMENTS} documents`
@@ -105,5 +223,13 @@ describe('POST documents — single-page add-another loop', () => {
     })
     expect(result.response.redirect).toBeDefined()
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should register the multipart POST route with the 50MB payload cap', () => {
+    const server = Hapi.server()
+    server.route(documents.routes)
+    const route = server.table().find((entry) => entry.method === 'post')
+    expect(route.settings.payload.maxBytes).toBe(MAX_PAYLOAD_BYTES)
+    expect(route.settings.payload.multipart).toEqual({ output: 'annotated' })
   })
 })

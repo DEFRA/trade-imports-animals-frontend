@@ -241,11 +241,15 @@ describe('controller <-> model commit contract', () => {
       payload: {
         action: 'add',
         accompanyingDocumentType: 'ITAHC',
-        accompanyingDocumentAttachmentType: 'PDF',
         accompanyingDocumentReference: 'GBHC1234567890',
         'accompanyingDocumentDateOfIssue-day': '12',
         'accompanyingDocumentDateOfIssue-month': '12',
-        'accompanyingDocumentDateOfIssue-year': '2025'
+        'accompanyingDocumentDateOfIssue-year': '2025',
+        file: {
+          filename: 'itahc-certificate.pdf',
+          headers: { 'content-type': 'application/pdf' },
+          payload: Buffer.from('pdf-bytes')
+        }
       }
     })
     expect(new Set(committedIds(result))).toEqual(
