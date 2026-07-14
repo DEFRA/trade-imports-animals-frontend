@@ -1540,6 +1540,13 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByRole('button', { name: 'Search', exact: true }).click()
     await expect(page.getByText(showingFive)).toBeVisible()
 
+    // GDS pagination renders a WINDOW, not every page: from page 1 that is
+    // 1, 2, an ellipsis and the last page — so page 3 is reached by stepping
+    // through the neighbours the component actually offers.
+    await expect(page.getByRole('link', { name: 'Page 8' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Page 3' })).toHaveCount(0)
+    await page.getByRole('link', { name: 'Page 2' }).click()
+
     // Page three holds records that page one never rendered.
     await page.getByRole('link', { name: 'Page 3' }).click()
     await expect(
