@@ -139,10 +139,11 @@ live-animals/
 
   engine/                 the pure state core
     index.js              the facade barrel controllers import (import * as state)
-    read.js               get, resume, makeScope (+ configureReadyForCheckYourAnswers)
+    read.js               get, makeScope (+ configureReadyForCheckYourAnswers)
     write.js              commit, appendEntry(At), updateEntry(At), removeEntry(At), submitJourney
     status.js             the five-status roll-up (engine-pure)
-    journey.js            journey-isolation seam: cookie, load-or-create, resume
+    journey.js            journey-isolation seam: cookies, load-or-create,
+                          the dashboard verbs (list/select/amend known journeys)
     store.js              compat shim over the records port (pre-reshape consumers)
     test-support.js       shared fakes for engine and controller specs
     evaluate/             reconcile (scope + wipe), predicate, complete, collection-view

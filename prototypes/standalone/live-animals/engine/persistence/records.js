@@ -8,9 +8,11 @@ const unconfigured = () => {
 let impl = {
   create: unconfigured,
   load: unconfigured,
+  list: unconfigured,
   has: unconfigured,
   saveAnswers: unconfigured,
   finalise: unconfigured,
+  amend: unconfigured,
   clear: unconfigured
 }
 
@@ -25,6 +27,9 @@ export const records = {
   load(...args) {
     return impl.load(...args)
   },
+  list(...args) {
+    return impl.list(...args)
+  },
   has(...args) {
     return impl.has(...args)
   },
@@ -33,6 +38,9 @@ export const records = {
   },
   finalise(...args) {
     return impl.finalise(...args)
+  },
+  amend(...args) {
+    return impl.amend(...args)
   },
   clear(...args) {
     return impl.clear(...args)

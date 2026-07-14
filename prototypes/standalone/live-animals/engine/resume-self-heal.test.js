@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { resume } from './index.js'
+import { get } from './index.js'
 import { records, configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureSession, STUB_USER } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { recordingH } from './test-support.js'
+import { journeyRequest, recordingH } from './test-support.js'
 
-describe('resume self-heal (nothing derived is stored)', () => {
+describe('re-entry self-heal (nothing derived is stored)', () => {
   beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -15,7 +15,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  it('Should re-derive scope on resume, excluding a now-out-of-scope obligation', async () => {
+  it('Should re-derive scope on re-entry, excluding a now-out-of-scope obligation', async () => {
     const { journeyId } = await records.create({ userId: STUB_USER })
     await records.saveAnswers(journeyId, {
       countryOfOrigin: 'FR',
@@ -23,7 +23,7 @@ describe('resume self-heal (nothing derived is stored)', () => {
       regionOfOriginCode: 'FR-75'
     })
 
-    const result = await resume({ state: {}, headers: {} }, recordingH())
+    const result = await get(journeyRequest(journeyId), recordingH())
 
     expect(result.scope.has('regionOfOriginCode')).toBe(false)
     expect(result.scope.has('countryOfOrigin')).toBe(true)
@@ -33,10 +33,11 @@ describe('resume self-heal (nothing derived is stored)', () => {
     const { journeyId } = await records.create({ userId: STUB_USER })
     await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
 
-    const result = await resume({ state: {}, headers: {} }, recordingH())
+    const result = await get(journeyRequest(journeyId), recordingH())
 
     expect(Object.keys(result.journey).sort()).toEqual([
       'answers',
+      'createdAt',
       'journeyId',
       'status',
       'submittedAt',

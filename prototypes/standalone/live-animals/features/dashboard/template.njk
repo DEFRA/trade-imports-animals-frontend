@@ -1,5 +1,6 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
@@ -9,4 +10,50 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     {{ govukButton({ text: buttonText, isStartButton: true }) }}
   </form>
+
+  <h2 class="govuk-heading-m">Your notifications</h2>
+  {% if notificationRows.length %}
+    <table class="govuk-table">
+      <caption class="govuk-table__caption govuk-visually-hidden">Your notifications</caption>
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Reference</th>
+          <th scope="col" class="govuk-table__header">Status</th>
+          <th scope="col" class="govuk-table__header">Date created</th>
+          <th scope="col" class="govuk-table__header">Date submitted</th>
+          <th scope="col" class="govuk-table__header">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        {% for row in notificationRows %}
+          <tr class="govuk-table__row">
+            <th scope="row" class="govuk-table__header">{{ row.reference }}</th>
+            <td class="govuk-table__cell">
+              {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
+            </td>
+            <td class="govuk-table__cell">{{ row.created }}</td>
+            <td class="govuk-table__cell">{{ row.submitted }}</td>
+            <td class="govuk-table__cell">
+              {% for action in row.actions %}
+                {% if action.postAction %}
+                  <form method="post" action="{{ action.postAction }}" class="app-form-inline">
+                    <input type="hidden" name="crumb" value="{{ crumb }}" />
+                    <button type="submit" class="govuk-link app-link-button govuk-!-margin-right-2">
+                      {{ action.text }}<span class="govuk-visually-hidden"> notification {{ row.reference }}</span>
+                    </button>
+                  </form>
+                {% else %}
+                  <a class="govuk-link govuk-!-margin-right-2" href="{{ action.href }}">
+                    {{ action.text }}<span class="govuk-visually-hidden"> notification {{ row.reference }}</span>
+                  </a>
+                {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="govuk-body">You have not started any notifications in this session.</p>
+  {% endif %}
 {% endblock %}

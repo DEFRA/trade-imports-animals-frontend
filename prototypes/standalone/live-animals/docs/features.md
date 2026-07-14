@@ -28,8 +28,8 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 `features/import-reason/` is the smallest complete example: one
 controller, one page leaf, one obligation, one template.
 
-Not every feature collects answers. The shell (`start`, `hub`) and the
-endings (`check-answers`, `confirmation`, `resume`) render or act but
+Not every feature collects answers. The shell (`dashboard`, `hub`) and
+the endings (`check-answers`, `confirmation`) render or act but
 declare no `collects` (see [section 6](#6-pages-own-presentation)). The
 journey ends on the `confirmation` page (c-022 superseded at M3-16): the
 declaration POST redirects there after a successful submit.
@@ -244,10 +244,15 @@ depth-2 collection returns.
   guidance (c-029 — no outstanding-items checklist). It renders only for
   a submitted notification; any other access redirects to the hub, and a
   declaration GET on a submitted notification redirects here.
-- **Resume** (`features/resume/controller.js`) recovers the current
-  user's journey by identity and returns to the hub. The stub has a
-  single global user and **no auth** — copy the shape, never the auth
-  gap.
+- **Dashboard** (`features/dashboard/controller.js`) is the service
+  front door AND the only re-entry path: it lists the session-known
+  notifications (reference, Draft/Submitted tag, dates) with row
+  actions — Resume on a draft; View and Amend on a submitted one.
+  Amend is the c-029 sanctioned unfreeze: `amendJourney` →
+  `records.amend`, then the hub for edit-and-resubmit through the same
+  declaration gate. Every row action refuses a reference the session
+  does not know — there is no backend browse. The old `/resume`
+  recover-by-identity route was retired in its favour.
 
 ## 7. shared/kit.js: a library, never a framework
 
@@ -276,22 +281,24 @@ page in the section, or back to the hub.
 Controllers import one barrel: `import * as state from
 '../../engine/index.js'`. Its full surface is:
 
-| Verb                                  | Use                                                  |
-| ------------------------------------- | ---------------------------------------------------- |
-| `state.get(request, h)`               | Read `{ journey, answers, scope }`                   |
-| `state.commit(request, h, patch)`     | Save scalar answers; applies scope wipes             |
-| `state.appendEntry` / `appendEntryAt` | Add a collection entry (mints its identity)          |
-| `state.updateEntry` / `updateEntryAt` | Replace a collection entry                           |
-| `state.removeEntry` / `removeEntryAt` | Remove an entry; applies scope wipes                 |
-| `state.collectionView(answers, path)` | Structural facts for a loop, any depth               |
-| `state.submitJourney(request, h)`     | Finalise — the one-way status flip                   |
-| `state.resume(request, h)`            | Recover the user's journey by identity (resume page) |
-| `state.makeScope(answers)`            | Rebuild scope from raw answers                       |
+| Verb                                  | Use                                         |
+| ------------------------------------- | ------------------------------------------- |
+| `state.get(request, h)`               | Read `{ journey, answers, scope }`          |
+| `state.commit(request, h, patch)`     | Save scalar answers; applies scope wipes    |
+| `state.appendEntry` / `appendEntryAt` | Add a collection entry (mints its identity) |
+| `state.updateEntry` / `updateEntryAt` | Replace a collection entry                  |
+| `state.removeEntry` / `removeEntryAt` | Remove an entry; applies scope wipes        |
+| `state.collectionView(answers, path)` | Structural facts for a loop, any depth      |
+| `state.submitJourney(request, h)`     | Finalise — freeze until an amend            |
+| `state.makeScope(answers)`            | Rebuild scope from raw answers              |
 
-Two verbs live outside the barrel on purpose:
+Some verbs live outside the barrel on purpose:
 
-- `startJourney` (`engine/journey.js`) — mints a fresh journey; only
-  the start page uses it
+- `startJourney` (`engine/journey.js`) — mints a fresh journey and adds
+  it to the session's known list; only the dashboard uses it
+- `listKnownJourneys` / `selectJourney` / `amendJourney`
+  (`engine/journey.js`) — the dashboard's list and row actions (see
+  section 6); no task page touches them
 - `configureReadyForCheckYourAnswers` (`engine/read.js`) — boot-only injection
   of the flow's readiness roll-up; controllers never touch it
 

@@ -10,6 +10,7 @@ import { test, expect } from '@playwright/test'
  * submit -> confirmation).
  */
 const BASE = '/prototype-standalone/live-animals'
+const GBN_REFERENCE = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 
 const { values } = JSON.parse(
   readFileSync(
@@ -210,13 +211,45 @@ const completeAnswerSections = async (page) => {
 }
 
 test.describe('live-animals (page-owned spine)', () => {
-  test('dashboard — entry page starts a new notification', async ({ page }) => {
+  test('dashboard — a fresh session lists nothing; a started notification lists as a Draft whose Resume re-enters it, and a second start keeps it listed', async ({
+    page
+  }) => {
     await page.goto(`${BASE}/home`)
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
+    await expect(
+      page.getByText('You have not started any notifications in this session.')
+    ).toBeVisible()
 
     await startNotification(page)
+    const stripText = await page.locator('.app-journey-strip').textContent()
+    const [reference] = stripText.match(GBN_REFERENCE)
+
+    // The draft is listed with its Draft tag, created date and a Resume action.
+    await page.goto(`${BASE}/home`)
+    const row = page.getByRole('row', { name: new RegExp(reference) })
+    await expect(row.getByText('Draft')).toBeVisible()
+    await expect(row.getByText('Not submitted')).toBeVisible()
+    await row
+      .getByRole('link', { name: `Resume notification ${reference}` })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip')).toContainText(reference)
+
+    // Starting again creates a NEW notification — the old draft stays listed.
+    await page.goto(`${BASE}/home`)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await expect(page.locator('.app-journey-strip')).not.toContainText(
+      reference
+    )
+    await page.goto(`${BASE}/home`)
+    await expect(page.getByRole('row', { name: GBN_REFERENCE })).toHaveCount(2)
+    await expect(
+      page.getByRole('row', { name: new RegExp(reference) })
+    ).toBeVisible()
   })
 
   test('import type — a blank answer blocks Continue, a non-live-animals answer routes to the holding page, live animals proceeds', async ({
@@ -2161,5 +2194,90 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Import notification submitted' })
     ).toBeVisible()
     expect(page.url()).toContain('/confirmation')
+  })
+
+  test('dashboard amend — a submitted row offers View and Amend; Amend re-enters an editable journey and the resubmission passes the same gate', async ({
+    page
+  }) => {
+    // Completing every task and submitting twice is the longest walk here.
+    test.slow()
+    await startNotification(page)
+    await completeAnswerSections(page)
+
+    // Submit through check your answers and the declaration.
+    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Declaration' })
+    ).toBeVisible()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification submitted' })
+    ).toBeVisible()
+    const panelText = await page.locator('.govuk-panel').textContent()
+    const [reference] = panelText.match(GBN_REFERENCE)
+
+    // The dashboard row has flipped to Submitted with View + Amend actions.
+    await page.goto(`${BASE}/home`)
+    const row = page.getByRole('row', { name: new RegExp(reference) })
+    await expect(row.getByText('Submitted')).toBeVisible()
+
+    // View opens the read view of the submitted notification.
+    await row
+      .getByRole('link', { name: `View notification ${reference}` })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip')).toContainText('Submitted')
+    await expect(page.locator('.app-journey-strip')).toContainText(reference)
+
+    // Amend transitions the notification back to editable and re-enters the
+    // journey at the hub — the strip shows Draft again (the pinned amending
+    // status; the backend AMEND tag is not surfaced as its own strip status).
+    await page.goto(`${BASE}/home`)
+    await row
+      .getByRole('button', { name: `Amend notification ${reference}` })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip')).toContainText('Draft')
+    await expect(page.locator('.app-journey-strip')).toContainText(reference)
+
+    // The journey really is writable again: change an answer and save.
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await page
+      .getByLabel('Your internal reference for this consignment (optional)')
+      .fill('AmendedRef99')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+
+    // Resubmission goes through declaration and the same submit gate.
+    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+    await expect(page.getByText('AmendedRef99')).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Declaration' })
+    ).toBeVisible()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Import notification submitted' })
+    ).toBeVisible()
+
+    // And the row reads Submitted once more.
+    await page.goto(`${BASE}/home`)
+    await expect(row.getByText('Submitted')).toBeVisible()
   })
 })

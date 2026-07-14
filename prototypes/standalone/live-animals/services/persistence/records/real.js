@@ -47,6 +47,7 @@ const marshal = (notification, userId = null) => {
     journeyId: notification.referenceNumber,
     userId,
     status,
+    createdAt: notification.created ?? null,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
     answers: toAnswers(stripNulls(notification))
   }
@@ -75,6 +76,7 @@ export const records = {
       journeyId: notification.referenceNumber,
       userId: userId ?? null,
       status: IN_PROGRESS,
+      createdAt: notification.created ?? null,
       submittedAt: null,
       answers: {}
     }
@@ -88,6 +90,13 @@ export const records = {
         : marshal(notification, userId ?? null)
     }
     return undefined
+  },
+
+  async list({ journeyIds = [] } = {}) {
+    const notifications = await Promise.all(journeyIds.map(getNotification))
+    return notifications
+      .filter((notification) => notification !== undefined)
+      .map((notification) => marshal(notification))
   },
 
   async has(journeyId) {
@@ -128,6 +137,15 @@ export const records = {
       headers: headers()
     })
     if (!response.ok) throw failed('submit notification', response)
+    return marshal(await response.json())
+  },
+
+  async amend(journeyId) {
+    const response = await fetch(`${notificationsUrl}/${journeyId}/amend`, {
+      method: 'POST',
+      headers: headers()
+    })
+    if (!response.ok) throw failed('amend notification', response)
     return marshal(await response.json())
   },
 

@@ -13,7 +13,7 @@ adding a page, adding a field).
 ```
 engine/
   index.js          the barrel — the only import a page controller uses
-  read.js           read side: get / makeScope / resume (+ the boot seam)
+  read.js           read side: get / makeScope (+ the boot seam)
   write.js          write side: commit, collection ops, submitJourney
   journey.js        journey-isolation seam: request -> Journey document
   status.js         the five-status roll-up
@@ -60,7 +60,7 @@ it as `import * as state` and see exactly this surface:
 
 | Direction      | Names                                                                                                                        |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Read up        | `get`, `makeScope`, `resume`                                                                                                 |
+| Read up        | `get`, `makeScope`                                                                                                           |
 | Write down     | `commit`, `appendEntry` / `appendEntryAt`, `updateEntry` / `updateEntryAt`, `removeEntry` / `removeEntryAt`, `submitJourney` |
 | Loop primitive | `collectionView`                                                                                                             |
 

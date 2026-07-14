@@ -1,4 +1,4 @@
-export { get, makeScope, resume } from './read.js'
+export { get, makeScope } from './read.js'
 export {
   commit,
   appendEntry,

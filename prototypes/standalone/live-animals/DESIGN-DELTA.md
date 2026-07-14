@@ -407,6 +407,62 @@ and the hub exit beating the change context on a collection exit.
 `features/check-answers/check-answers.test.js` pins the card actions'
 `?change=1` hrefs.
 
+## 11. Records amend + session-scoped listing; the `/resume` route retired (inc-056)
+
+`engine/persistence/records.js` + `engine/persistence/session.js` +
+`engine/journey.js`: the dashboard notifications list (M3-18, f-076/f-110;
+the c-029 amend-and-resubmit ruling) grows both port surfaces and the
+journey seam. This is deliberate port-surface growth the persistence
+workstream inherits at merge-back.
+
+- **RECORDS port: `amend(journeyId)` — the sanctioned unfreeze.** The stub
+  flips a SUBMITTED record back to `in-progress` (clearing `submittedAt`)
+  so `assertWritable` passes again — a status transition through the
+  adapter's own model, never a freeze bypass; amending a record that is not
+  submitted throws. The REAL adapter POSTs the backend's existing
+  `/notifications/{ref}/amend`; the backend `AMEND` status already
+  marshals to `in-progress`/writable via `mapStatus`. A later `finalise`
+  re-freezes — the amend-and-resubmit cycle round-trips.
+- **RECORDS port: `list({ journeyIds })` — session-scoped by design.** Both
+  adapters load exactly the handed references (skipping unknown ids) and
+  never browse the wider store/backend — the workstream removed
+  resume-by-user precisely because an unscoped backend list leaked other
+  users' notifications. Record shape gains `createdAt` (stub stamps it;
+  real marshals the backend `created`) for the dashboard's date column.
+- **SESSION port: the known-journeys list.** `knownJourneyIds(request)` /
+  `addKnownJourney(request, h, journeyId)` keep the per-session references
+  the dashboard may list and act on — a second base64json cookie
+  (`liveAnimalsKnownJourneys`) in stub mode, a yar entry in real mode,
+  appended (deduplicated) on create and amend. `clearActive` leaves it
+  alone.
+- **Journey seam: multi-notification session model.** `startJourney` adds
+  the new journey to the known list — starting with an in-flight draft now
+  creates a NEW journey and the old one stays listed (previously the
+  session pointer simply moved on and the draft was orphaned).
+  `listKnownJourneys` / `selectJourney` / `amendJourney` are the dashboard
+  verbs; select/amend refuse references the session does not know — the
+  session-known check is the authorisation seam. `amendJourney` is
+  idempotent: an already-editable journey just re-enters.
+- **The `resume` feature is retired, not repointed.** `GET /resume`
+  (recover-by-identity) was already incoherent in real mode — no
+  resume-by-user means it silently minted a fresh draft — and nothing
+  linked to it. The dashboard rows are now the only re-entry path in both
+  modes. `resumeByUser` and `state.resume` are gone;
+  `resume-self-heal.test.js` keeps its assertions (nothing derived is
+  stored; scope re-derives on load) re-pointed at `state.get`.
+- **Backwards compatible.** Existing port methods, the freeze check, the
+  write path (`state.commit` → `engine/write.js`) and every task-page
+  behaviour are untouched; the strip's status mapping is unchanged — an
+  amending journey renders the blue Draft tag (the backend `AMEND` tag is
+  not surfaced as its own status).
+
+Proven in `services/persistence/records/records-port.test.js` (amend
+unfreeze/re-finalise/rejections, createdAt, session-scoped list),
+`services/persistence/records/real.amend-list.test.js` (the amend POST and
+scoped GETs at the HTTP boundary), the session adapters' known-list tests,
+and `features/dashboard/controller.test.js` (list rows, row actions, the
+session-known guard, start-keeps-old-listed).
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

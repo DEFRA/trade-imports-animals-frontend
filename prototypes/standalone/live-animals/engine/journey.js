@@ -1,8 +1,12 @@
 import { BASE } from '../config.js'
-import { session, JOURNEY_COOKIE } from './persistence/session.js'
-import { records } from './persistence/records.js'
+import {
+  session,
+  JOURNEY_COOKIE,
+  KNOWN_JOURNEYS_COOKIE
+} from './persistence/session.js'
+import { records, SUBMITTED } from './persistence/records.js'
 
-export { JOURNEY_COOKIE } from './persistence/session.js'
+export { JOURNEY_COOKIE, KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
 
 const cookieOptions = Object.freeze({
   path: BASE,
@@ -15,8 +19,13 @@ const cookieOptions = Object.freeze({
   strictHeader: true
 })
 
-export const registerJourneyCookie = (server) =>
+export const registerJourneyCookie = (server) => {
   server.state(JOURNEY_COOKIE, cookieOptions)
+  server.state(KNOWN_JOURNEYS_COOKIE, {
+    ...cookieOptions,
+    encoding: 'base64json'
+  })
+}
 
 const JOURNEY_MEMO = Symbol('liveAnimalsCurrentJourney')
 
@@ -28,13 +37,18 @@ const memoWrite = (request, journey) => {
   }
 }
 
+const makeActive = async (request, h, journey) => {
+  await session.setActiveJourney(h, journey.journeyId)
+  await session.addKnownJourney(request, h, journey.journeyId)
+  memoWrite(request, journey)
+  return journey
+}
+
 export const startJourney = async (request, h) => {
   const journey = await records.create({
     userId: await session.userId(request)
   })
-  await session.setActiveJourney(h, journey.journeyId)
-  memoWrite(request, journey)
-  return journey
+  return makeActive(request, h, journey)
 }
 
 export const currentJourney = async (request, h) => {
@@ -62,9 +76,24 @@ export const saveJourneyAnswers = async (request, journeyId, answers) => {
   return saved
 }
 
-export const resumeByUser = async (request, h) => {
-  const journey = await records.load({ userId: await session.userId(request) })
-  if (!journey) return startJourney(request, h)
-  await session.setActiveJourney(h, journey.journeyId)
-  return journey
+export const listKnownJourneys = async (request) =>
+  records.list({ journeyIds: await session.knownJourneyIds(request) })
+
+export const isKnownJourney = async (request, journeyId) =>
+  (await session.knownJourneyIds(request)).includes(journeyId)
+
+export const selectJourney = async (request, h, journeyId) => {
+  if (!(await isKnownJourney(request, journeyId))) return undefined
+  const journey = await records.load({ journeyId })
+  if (!journey) return undefined
+  return makeActive(request, h, journey)
+}
+
+export const amendJourney = async (request, h, journeyId) => {
+  if (!(await isKnownJourney(request, journeyId))) return undefined
+  const journey = await records.load({ journeyId })
+  if (!journey) return undefined
+  const editable =
+    journey.status === SUBMITTED ? await records.amend(journeyId) : journey
+  return makeActive(request, h, editable)
 }

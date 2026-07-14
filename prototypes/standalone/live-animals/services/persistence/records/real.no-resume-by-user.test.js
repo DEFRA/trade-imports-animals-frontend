@@ -7,8 +7,8 @@ import { records } from './real.js'
 // and hand back list[0] — whoever's notification was updated last, across all
 // users. The real production FE has no resume-by-user path (it resumes only by
 // referenceNumber), so the faithful mirror is: real-mode load({ userId }) does
-// no list read at all and returns undefined; resumeByUser then starts a fresh
-// draft. This pins that at the HTTP boundary, not via a module spy.
+// no list read at all and returns undefined — re-entry goes through the
+// dashboard's session-known list. Pinned at the HTTP boundary, not a module spy.
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()

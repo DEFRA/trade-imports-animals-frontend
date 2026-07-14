@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { records } from './stub.js'
-import { IN_PROGRESS } from '../../../engine/persistence/records.js'
+import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 
 describe('records durable port', () => {
   beforeEach(() => records.clear())
@@ -54,5 +54,71 @@ describe('records durable port', () => {
     await expect(
       records.saveAnswers(journeyId, { late: true })
     ).rejects.toThrow(/is submitted — writes blocked/)
+  })
+
+  it('Should stamp createdAt on create and keep it through the lifecycle', async () => {
+    const created = await records.create({ userId: 'user-A' })
+    expect(created.createdAt).toEqual(expect.any(String))
+    const submitted = await records.finalise(created.journeyId)
+    expect(submitted.createdAt).toBe(created.createdAt)
+  })
+
+  it('Should unfreeze on amend — status back to in-progress, submittedAt cleared, writes permitted', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await records.finalise(journeyId)
+
+    const amended = await records.amend(journeyId)
+
+    expect(amended.status).toBe(IN_PROGRESS)
+    expect(amended.submittedAt).toBeNull()
+    await records.saveAnswers(journeyId, { countryOfOrigin: 'DE' })
+    expect((await records.load({ journeyId })).answers).toEqual({
+      countryOfOrigin: 'DE'
+    })
+  })
+
+  it('Should re-finalise after an amend — the amend-and-resubmit cycle round-trips', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await records.finalise(journeyId)
+    await records.amend(journeyId)
+
+    const resubmitted = await records.finalise(journeyId)
+
+    expect(resubmitted.status).toBe(SUBMITTED)
+    expect(resubmitted.submittedAt).toEqual(expect.any(String))
+  })
+
+  it('Should reject amend on a journey that is not submitted', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await expect(records.amend(journeyId)).rejects.toThrow(
+      /is not submitted — cannot amend/
+    )
+  })
+
+  it('Should reject amend on an unknown journey', async () => {
+    await expect(records.amend('GBN-AG-26-000000')).rejects.toThrow(
+      /Unknown journey/
+    )
+  })
+
+  it('Should list exactly the requested journeys in order, skipping unknown ids', async () => {
+    const first = await records.create({ userId: 'user-A' })
+    const second = await records.create({ userId: 'user-A' })
+    await records.create({ userId: 'user-A' })
+
+    const listed = await records.list({
+      journeyIds: [second.journeyId, 'GBN-AG-26-000000', first.journeyId]
+    })
+
+    expect(listed.map((journey) => journey.journeyId)).toEqual([
+      second.journeyId,
+      first.journeyId
+    ])
+  })
+
+  it('Should list nothing for an empty id set', async () => {
+    await records.create({ userId: 'user-A' })
+    expect(await records.list({ journeyIds: [] })).toEqual([])
+    expect(await records.list()).toEqual([])
   })
 })

@@ -1,8 +1,14 @@
 import {
   STUB_USER,
   STUB_USER_HEADER,
-  JOURNEY_COOKIE
+  JOURNEY_COOKIE,
+  KNOWN_JOURNEYS_COOKIE
 } from '../../../engine/persistence/session.js'
+
+const knownFrom = (request) => {
+  const known = request?.state?.[KNOWN_JOURNEYS_COOKIE]
+  return Array.isArray(known) ? known : []
+}
 
 export const session = {
   async userId(request) {
@@ -15,6 +21,16 @@ export const session = {
 
   async setActiveJourney(h, journeyId) {
     h.state(JOURNEY_COOKIE, journeyId)
+  },
+
+  async knownJourneyIds(request) {
+    return knownFrom(request)
+  },
+
+  async addKnownJourney(request, h, journeyId) {
+    const known = knownFrom(request)
+    if (known.includes(journeyId)) return
+    h.state(KNOWN_JOURNEYS_COOKIE, [...known, journeyId])
   },
 
   async clearActive(h) {

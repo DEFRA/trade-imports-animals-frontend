@@ -29,7 +29,6 @@ import * as contactSelect from './contact/controller.js'
 import * as cya from './check-answers/controller.js'
 import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
-import * as resume from './resume/controller.js'
 
 /** The pages whose page-side `collects` build the obligation->page index. */
 export const dispatchPages = [
@@ -83,6 +82,5 @@ export const allRoutes = [
   ...contactSelect.routes,
   ...cya.routes,
   ...declaration.routes,
-  ...confirmation.routes,
-  ...resume.routes
+  ...confirmation.routes
 ]

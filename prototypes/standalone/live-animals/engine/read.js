@@ -1,4 +1,4 @@
-import { currentJourney, resumeByUser } from './journey.js'
+import { currentJourney } from './journey.js'
 import { reconcile } from './evaluate/reconcile.js'
 import { walk } from '../registry.js'
 import { isAnswered } from '../lib/answered.js'
@@ -42,6 +42,3 @@ const readViewOf = (journey) => ({
 
 export const get = async (request, h) =>
   readViewOf(await currentJourney(request, h))
-
-export const resume = async (request, h) =>
-  readViewOf(await resumeByUser(request, h))

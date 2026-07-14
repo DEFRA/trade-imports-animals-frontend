@@ -39,6 +39,21 @@ const buildServer = async () => {
         await session.clearActive(h)
         return { id: (await session.activeJourneyId(request)) ?? null }
       }
+    },
+    {
+      method: 'POST',
+      path: '/known',
+      handler: async (request, h) => {
+        await session.addKnownJourney(request, h, request.payload.id)
+        return { ok: true }
+      }
+    },
+    {
+      method: 'GET',
+      path: '/known',
+      handler: async (request) => ({
+        ids: await session.knownJourneyIds(request)
+      })
     }
   ])
   return server
@@ -114,6 +129,43 @@ describe('real session adapter over yar/Catbox-memory', () => {
       headers: { cookie }
     })
     expect(cleared.result.id).toBe(null)
+  })
+})
+
+describe('real session adapter known journeys over yar', () => {
+  it('Should accumulate known journeys server-side without duplicates', async () => {
+    const server = await buildServer()
+    const firstAdd = await server.inject({
+      method: 'POST',
+      url: '/known',
+      payload: { id: 'J-1' }
+    })
+    const secondAdd = await server.inject({
+      method: 'POST',
+      url: '/known',
+      payload: { id: 'J-2' },
+      headers: { cookie: cookieOf(firstAdd) }
+    })
+    const duplicateAdd = await server.inject({
+      method: 'POST',
+      url: '/known',
+      payload: { id: 'J-1' },
+      headers: { cookie: cookieOf(secondAdd) }
+    })
+
+    const known = await server.inject({
+      method: 'GET',
+      url: '/known',
+      headers: { cookie: cookieOf(duplicateAdd) ?? cookieOf(secondAdd) }
+    })
+
+    expect(known.result.ids).toEqual(['J-1', 'J-2'])
+  })
+
+  it('Should report no known journeys for a fresh session', async () => {
+    const server = await buildServer()
+    const known = await server.inject({ method: 'GET', url: '/known' })
+    expect(known.result.ids).toEqual([])
   })
 })
 

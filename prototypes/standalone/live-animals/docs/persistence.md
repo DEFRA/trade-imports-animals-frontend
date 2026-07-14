@@ -19,6 +19,12 @@ who is the user, and which journey is active in this session.
   a session store — the cookie IS the pointer.
 - `setActiveJourney` / `clearActive` pin and drop the pointer;
   `activeJourneyId` reads it.
+- A second cookie (`liveAnimalsKnownJourneys`, base64json) carries the
+  session's **known-journeys list** — every reference this session has
+  created or amended. `knownJourneyIds` reads it; `addKnownJourney`
+  appends (deduplicated). The dashboard lists and acts on ONLY these
+  references, in both modes — there is no unscoped backend browse (the
+  earlier resume-by-user global read was removed as a cross-user leak).
 
 **RECORDS** (`engine/persistence/records.js`) is the durable store: one
 application document per `journeyId`, held in an in-memory `Map`.
@@ -37,6 +43,17 @@ application document per `journeyId`, held in an in-memory `Map`.
   the user's active journey through the `byUser` index. In REAL mode
   there is no resume-by-user: `load({ userId })` returns `undefined` and
   issues no list read (see [Resume by user is stub-only](#resume-by-user-is-stub-only)).
+- `list({ journeyIds })` loads exactly the handed references (skipping
+  ones the store no longer knows) — the dashboard's session-scoped read.
+  It never lists the wider store.
+- `amend(journeyId)` is the **sanctioned unfreeze** (c-029
+  amend-and-resubmit): a submitted record transitions back to
+  `in-progress` (`submittedAt` cleared) so writes pass `loadWritable`
+  again; a resubmission goes back through `finalise`. Amending a record
+  that is not submitted throws — the transition is never a freeze
+  bypass. The REAL adapter POSTs the backend's
+  `/notifications/{ref}/amend`; the backend's `AMEND` status marshals to
+  `in-progress`.
 - `clear()` exists for test hygiene only.
 
 ## Record shape and lifecycle
@@ -45,14 +62,16 @@ A record is:
 
 ```js
 {
-  ;(journeyId, userId, status, submittedAt, answers)
+  ;(journeyId, userId, status, createdAt, submittedAt, answers)
 }
 ```
 
 - `answers` is the only repeatedly-writable field.
-- `status` moves one way: `in-progress` → `submitted`. `finalise` flips
-  the status and stamps `submittedAt` once. After that, every mutating
-  call throws — the freeze.
+- `status` cycles `in-progress` → `submitted` → (`amend`) →
+  `in-progress` → … `finalise` flips the status and stamps
+  `submittedAt`; while submitted, every mutating call throws — the
+  freeze. `amend` is the one sanctioned way back to writable, and a
+  later `finalise` re-freezes.
 - A second index, `byUser`, maps a `userId` to that user's active
   `journeyId`. It is last-writer-wins: creating a new journey for the
   same user repoints the index.
@@ -65,14 +84,19 @@ request is tied to a journey document.
 - `currentJourney` loads the journey named by the session cookie, or
   mints a fresh one if the cookie is missing or stale (load-or-create
   per request).
-- `startJourney` always mints a fresh journey, stamps the user, and pins
-  it as active. Every Start-now begins a new journey.
-- `resumeByUser` recovers the journey by identity alone:
-  `records.load({ userId })`, no cookie needed. It then re-pins the
-  cookie so the session carries on normally. This is stub/demo-only: in
-  REAL mode `load({ userId })` returns `undefined`, so `resumeByUser`
-  falls back to `startJourney` and `/resume` simply starts a fresh
-  draft.
+- `startJourney` always mints a fresh journey, stamps the user, pins it
+  as active AND appends it to the session's known-journeys list. Every
+  Start-now begins a new journey; earlier journeys stay listed on the
+  dashboard.
+- `listKnownJourneys` reads the session's known references and loads
+  them through `records.list` — the dashboard's data source.
+- `selectJourney` repoints the active journey at a session-known
+  reference (dashboard Resume/View). An unknown reference is refused —
+  the session-known check is the authorisation seam.
+- `amendJourney` is select-plus-unfreeze: for a session-known submitted
+  journey it calls `records.amend` then makes the journey active again
+  (dashboard Amend). Already-editable journeys just re-enter — a
+  repeated POST is not an error.
 
 The cookie is path-scoped to `BASE` (see `config.js`), so this spike can
 never read another spike's cookie, and parallel browser contexts each
@@ -93,13 +117,14 @@ submit is a no-op that leaves the journey in progress.
 Pinned by `engine/write-through-per-commit.test.js` and
 `engine/submit-is-finalise.test.js`.
 
-## Self-heal on resume
+## Self-heal on re-entry
 
 The record stores answers and lifecycle metadata only — no derived
-fields. Every load (`get` or `resume` in `engine/read.js`) rebuilds
-scope fresh from the answers via `reconcile`. A days-later resume
-therefore self-heals: a stored obligation that has since left scope is
-simply not in scope on load, with nothing stale to reconcile away.
+fields. Every load (`get` in `engine/read.js`) rebuilds scope fresh
+from the answers via `reconcile`. A days-later re-entry (dashboard
+Resume) therefore self-heals: a stored obligation that has since left
+scope is simply not in scope on load, with nothing stale to reconcile
+away.
 
 This is the headline strength of storing nothing derived, and it is now
 a test: `engine/resume-self-heal.test.js` saves answers containing an
@@ -125,6 +150,7 @@ hypothesis about the production shape, not a verified integration:
 | `records.load`                 | `GET /applications/{id}` or `GET /applications?userId=`                         |
 | `records.saveAnswers`          | `PATCH /applications/{id}/answers`                                              |
 | `records.finalise`             | `POST /applications/{id}/submit`                                                |
+| `records.amend`                | `POST /notifications/{ref}/amend` (already live in the REAL adapter)            |
 | Cookie carries `journeyId`     | Opaque session id; Redis `GET`/`SET`/`DEL session:{sid}` maps it to the journey |
 | `session.userId` stub constant | Validated Defra ID OIDC `sub`                                                   |
 
@@ -132,15 +158,15 @@ hypothesis about the production shape, not a verified integration:
 
 Two things the stubs do not answer:
 
-- **The resume route has no auth.** `GET {BASE}/resume`
-  (`features/resume/controller.js`) serves the single global stub user's
-  record to anyone. The shape (load-by-user, then reconcile) is the
-  thing to copy; the missing identity integration is the one thing not
-  to.
-- **Multi-draft-per-user is undecided.** The `byUser` index holds one
-  active journey per user, last-writer-wins. Whether a user can hold
-  several drafts is an open product question, not a decision this spike
-  has made.
+- **Session-known is not identity.** The dashboard's authorisation seam
+  is the session's known-journeys list, not a per-user owner check on
+  the record. A reference leaks into another session only if the cookie
+  does; the backend still has no owner field. Real identity integration
+  stays the one thing not to copy from the stubs.
+- **Multi-draft-per-user is session-scoped, not account-scoped.** The
+  known-journeys list gives one SESSION several drafts, but a user on a
+  new device starts with an empty dashboard — cross-device recovery
+  needs the backend owner field below.
 
 ## Resume by user is stub-only
 
@@ -148,9 +174,10 @@ Resume-by-identity (`load({ userId })` → the `byUser` index) is a stub
 demo affordance. The real production FE has no resume-by-user path — it
 resumes only by `referenceNumber` (a session-held one for an in-flight
 draft, or one the user picks from a list). The REAL adapter mirrors
-this: `load({ userId })` returns `undefined` and does no list read, so
-`resumeByUser` falls back to `startJourney` and `/resume` starts a fresh
-draft.
+this: `load({ userId })` returns `undefined` and does no list read. The
+old `/resume` route (recover-by-identity) was retired with the
+dashboard notifications list — the dashboard's session-known rows are
+now the only re-entry path, in both modes.
 
 This is also a safety fix. An earlier REAL adapter answered
 `load({ userId })` with a global-newest read

@@ -36,6 +36,7 @@ export const records = {
       journeyId: mintReferenceNumber(),
       userId: userId ?? null,
       status: IN_PROGRESS,
+      createdAt: new Date().toISOString(),
       submittedAt: null,
       answers: {}
     }
@@ -52,6 +53,13 @@ export const records = {
     return journey ? structuredClone(journey) : undefined
   },
 
+  async list({ journeyIds = [] } = {}) {
+    return journeyIds
+      .map((journeyId) => journeys.get(journeyId))
+      .filter(Boolean)
+      .map((journey) => structuredClone(journey))
+  },
+
   async has(journeyId) {
     return journeys.has(journeyId)
   },
@@ -66,6 +74,17 @@ export const records = {
     const journey = loadWritable(journeyId)
     journey.status = SUBMITTED
     journey.submittedAt = new Date().toISOString()
+    return structuredClone(journey)
+  },
+
+  async amend(journeyId) {
+    const journey = journeys.get(journeyId)
+    if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+    if (journey.status !== SUBMITTED) {
+      throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
+    }
+    journey.status = IN_PROGRESS
+    journey.submittedAt = null
     return structuredClone(journey)
   },
 

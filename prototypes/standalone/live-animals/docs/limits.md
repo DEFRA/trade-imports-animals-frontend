@@ -77,9 +77,9 @@ What the costs buy: bespoke layout on every page, copy beside the markup that re
 
 ## The stubs are honest, but they are stubs
 
-- **Resume has no auth.** `GET /resume` serves the single global stub user's record to anyone who requests it ([features/resume/controller.js](../features/resume/controller.js)). The deliverable is the shape — load by user, then reconcile — not the missing identity integration. Do not copy the auth gap to production.
+- **Re-entry is session-scoped, not identity-scoped.** The dashboard lists and acts on only the references the session already knows ([features/dashboard/controller.js](../features/dashboard/controller.js)); there is no per-user owner check on the record and no backend browse. The deliverable is the shape — session-known list, then reconcile on load — not an identity integration. Do not treat the session cookie as auth in production.
 - **The prod seams are design notes, not verified integrations.** The session stub collapses the production session-id plus Redis indirection into one cookie. The records stub names its intended backend endpoints (`POST /applications`, `PATCH .../answers` and so on). Neither mapping has been checked against the real service.
-- **Multi-draft per user is undecided.** The records stub keeps one active journey per user, last writer wins. Whether a user can hold several drafts is an open product question, not a decision this spike made.
+- **Multi-draft is per session, not per account.** The session's known-journeys list holds several drafts, but a user on a new device starts with an empty dashboard. Cross-device recovery needs a backend owner field — an open product question, not a decision this spike made.
 
 See [persistence.md](persistence.md) for the full port contracts.
 
