@@ -1635,6 +1635,18 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     expect(page.url()).toContain('/notification-view')
 
+    // The review page renders the design's numbered summary-card sections
+    // (inc-054). Documents stay optional and unadded, so section 4 is absent.
+    await expect(
+      page.getByRole('heading', { name: '1. About the consignment' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: '2. Movement' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: '3. Addresses' })
+    ).toBeVisible()
+
     // The answered live-animals rows show the fixture values. The key match
     // is whole-cell (modulo template whitespace) so 'Region of origin code'
     // cannot also match the 'Region of origin code required' row.
@@ -1655,9 +1667,25 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(summaryValue('Internal reference number')).toHaveText(
       values.internalReferenceNumber
     )
-    await expect(summaryValue('Contact address')).toHaveText(
-      values.contactAddress.name
+
+    // The commodity line renders as a per-species card whose read-only table
+    // lists the identifier unit added during the walk.
+    const speciesCard = page.locator('.govuk-summary-card', {
+      has: page.getByRole('heading', { name: 'Cow (0102)' })
+    })
+    await expect(speciesCard.locator('.govuk-table')).toContainText(
+      values.commodityLines[0].animalIdentifiers[0].animalIdentifierEarTag
     )
+
+    // The contact address expands to name plus address lines inside its card.
+    const contactCard = page.locator('.govuk-summary-card', {
+      has: page.getByRole('heading', {
+        name: 'Contact address for this consignment'
+      })
+    })
+    await expect(
+      contactCard.locator('.govuk-summary-list__value')
+    ).toContainText(values.contactAddress.name)
   })
 
   test('declaration — the full happy path submits from the declaration page and lands on the confirmation page', async ({

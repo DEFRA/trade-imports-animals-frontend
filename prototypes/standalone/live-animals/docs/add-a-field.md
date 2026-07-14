@@ -99,11 +99,13 @@ already imports `govukInput`:
 
 ## 4. Add the Check your answers row
 
-Check your answers is bespoke composition. Add one `row(...)` inside
-`buildRows` in `features/check-answers/controller.js`:
+Check your answers is bespoke composition, sectioned into summary cards
+(`buildSections` in `features/check-answers/controller.js`). Add one
+`row(...)` to the card that owns the field's section — e.g. the import
+details card for an origin field:
 
 ```js
-row('Exporter reference', answerOf('exporterReference'), 'exporterReference'),
+row('Exporter reference', answers.exporterReference, 'exporterReference'),
 ```
 
 The third argument is the obligation id. The row's Change link resolves the

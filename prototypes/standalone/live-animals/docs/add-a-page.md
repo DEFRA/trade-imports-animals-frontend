@@ -177,12 +177,13 @@ Always import the leaf — never inline a `{ id, slug }` literal here. No
 ### 8. Add the check-your-answers rows
 
 In [`features/check-answers/controller.js`](../features/check-answers/controller.js),
-add a `row(...)` line per obligation to `buildRows`, with a label lookup where
-the stored value is a code (copy the `COVER_LABEL` pattern):
+add a `row(...)` line per obligation to the owning summary card inside
+`buildSections` (or a new card if the page starts a new group), with a label
+lookup where the stored value is a code (copy the `YES_NO_LABEL` pattern):
 
 ```js
-row('Overnight parking', PARKING_LABEL[answerOf('parkingLocation')] ?? '', 'parkingLocation'),
-row('Tracking device', answerOf('hasTracker') === 'yes' ? 'Yes' : 'No', 'hasTracker'),
+row('Overnight parking', PARKING_LABEL[answers.parkingLocation] ?? '', 'parkingLocation'),
+row('Tracking device', YES_NO_LABEL[answers.hasTracker] ?? '', 'hasTracker'),
 ```
 
 The third argument is the obligation id — the Change link derives its target

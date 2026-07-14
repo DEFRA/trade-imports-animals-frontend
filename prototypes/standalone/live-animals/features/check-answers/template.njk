@@ -1,11 +1,70 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% macro cardActions(actions) %}
+  {% if actions and actions.items.length %}
+    <ul class="govuk-summary-card__actions">
+      {% for item in actions.items %}
+        <li class="govuk-summary-card__action">
+          <a class="govuk-link" href="{{ item.href }}">{{ item.text }}<span class="govuk-visually-hidden"> {{ item.visuallyHiddenText }}</span></a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
-  {{ govukSummaryList({ rows: rows }) }}
+  {% for section in sections %}
+    {% if not loop.first %}
+      <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+    {% endif %}
+    <h2 class="govuk-heading-m">{{ section.heading }}</h2>
+    {% for group in section.groups %}
+      {% if group.heading %}
+        <h3 class="govuk-heading-s">{{ group.heading }}</h3>
+      {% endif %}
+      {% set cardHeadingLevel = 4 if group.heading else 3 %}
+      {% set innerHeadingLevel = cardHeadingLevel + 1 %}
+      {% for card in group.cards %}
+        {% if card.identifierTable or card.documents %}
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper">
+              <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
+              {{ cardActions(card.actions) }}
+            </div>
+            <div class="govuk-summary-card__content">
+              {% if card.rows.length %}
+                {{ govukSummaryList({ rows: card.rows }) }}
+              {% endif %}
+              {% if card.identifierTable %}
+                <h{{ innerHeadingLevel }} class="govuk-heading-s">Animal details</h{{ innerHeadingLevel }}>
+                {{ govukTable({
+                  head: card.identifierTable.head,
+                  rows: card.identifierTable.rows
+                }) }}
+              {% endif %}
+              {% for document in card.documents %}
+                <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ document.heading }}</h{{ innerHeadingLevel }}>
+                {{ govukSummaryList({ rows: document.rows }) }}
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          {{ govukSummaryList({
+            card: {
+              title: { text: card.title, headingLevel: cardHeadingLevel },
+              actions: card.actions
+            },
+            rows: card.rows
+          }) }}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  {% endfor %}
 
   <h2 class="govuk-heading-m">Now submit your notification</h2>
   <p class="govuk-body">Continue to the declaration to submit your notification.</p>

@@ -6,9 +6,9 @@ import { isBlank } from '../../lib/answered.js'
 import { pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
 import * as countries from '../../services/countries/index.js'
-import { commodityLineValue } from '../commodities/list.controller.js'
-import { animalIdentifierSummary } from '../commodities/animal-identifiers.list.controller.js'
-import { documentValue } from '../documents/controller.js'
+import * as commodities from '../../services/commodities/index.js'
+import { packagesApply } from '../commodities/details.controller.js'
+import { IDENTIFIER_LABELS } from '../commodities/animal-identifiers.list.controller.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import { unweanedApplies } from '../additional-details/controller.js'
 import * as certification from '../../services/certification-purposes/index.js'
@@ -24,218 +24,443 @@ const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 const changeHref = (obligationId) =>
   `${pagePath(slugOfPage(pageOfObligation(obligationId)))}?change=1`
 
-const commodityRows = (answers) =>
-  state
-    .collectionView(answers, ['commodityLines'])
-    .flatMap(({ index, entry }) => [
-      {
-        key: { text: `Commodity ${index + 1}` },
-        value: { text: commodityLineValue(entry) },
-        actions: {
-          items: [
-            {
-              href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
-              text: 'Change',
-              visuallyHiddenText: `commodity ${index + 1}`
-            }
-          ]
-        }
-      },
-      ...state
-        .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
-        .map(({ index: unitIndex, entry: unit }) => ({
-          key: { text: `Commodity ${index + 1} — animal ${unitIndex + 1}` },
-          value: { text: animalIdentifierSummary(unit) },
-          actions: {
-            items: [
-              {
-                href: pagePath(`commodities/${index}/identifiers`),
-                text: 'Change',
-                visuallyHiddenText: `commodity ${index + 1} animal ${unitIndex + 1}`
-              }
-            ]
-          }
-        }))
-    ])
-
-const documentRows = (answers) =>
-  state.collectionView(answers, ['documents']).map(({ index, entry }) => ({
-    key: { text: `Document ${index + 1}` },
-    value: { text: documentValue(entry) },
-    actions: {
-      items: [
-        {
-          href: pagePath(slugOfPage(pageOfObligation('documents'))),
-          text: 'Change',
-          visuallyHiddenText: `document ${index + 1}`
-        }
-      ]
-    }
-  }))
+const valueText = (value) => (isBlank(value) ? NOT_PROVIDED : value)
 
 const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`
 
-const buildRows = (answers) => {
-  const answerOf = (id) => answers[id]
-  const row = (key, value, obligationId) => ({
+const escapeHtml = (value) =>
+  value
+    .toString()
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+
+const row = (key, value, obligationId, visuallyHiddenText = null) => ({
+  key: { text: key },
+  value: { text: valueText(value) },
+  actions: {
+    items: [
+      {
+        href: changeHref(obligationId),
+        text: 'Change',
+        visuallyHiddenText: visuallyHiddenText ?? key.toLowerCase()
+      }
+    ]
+  }
+})
+
+const addressLines = (address = {}) =>
+  [
+    address.addressLine1,
+    address.addressLine2,
+    address.addressLine3,
+    address.townOrCity,
+    address.county,
+    address.postalOrZipCode
+  ].filter((part) => !isBlank(part))
+
+const partyLines = (party) => {
+  if (isBlank(party?.name)) return null
+  return [
+    `<strong>${escapeHtml(party.name)}</strong>`,
+    ...[...addressLines(party.address), party.address?.country]
+      .filter((part) => !isBlank(part))
+      .map(escapeHtml)
+  ]
+}
+
+const partyRow = (key, party, obligationId, visuallyHiddenText = null) => {
+  const lines = partyLines(party)
+  return {
     key: { text: key },
-    value: { text: isBlank(value) ? NOT_PROVIDED : value },
+    value: lines ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
     actions: {
       items: [
         {
           href: changeHref(obligationId),
           text: 'Change',
-          visuallyHiddenText: key.toLowerCase()
+          visuallyHiddenText: visuallyHiddenText ?? key.toLowerCase()
         }
       ]
     }
-  })
+  }
+}
 
-  const rows = [
+const importDetailsCard = (answers) => ({
+  title: 'Import details',
+  rows: [
     row(
       'Country of origin',
-      countries.originLabel(answerOf('countryOfOrigin')) ?? '',
+      countries.originLabel(answers.countryOfOrigin) ?? '',
       'countryOfOrigin'
     ),
     row(
       'Region of origin code required',
-      YES_NO_LABEL[answerOf('regionOfOriginCodeRequirement')] ?? '',
+      YES_NO_LABEL[answers.regionOfOriginCodeRequirement] ?? '',
       'regionOfOriginCodeRequirement'
     ),
-    ...(answerOf('regionOfOriginCodeRequirement') === 'yes'
+    ...(answers.regionOfOriginCodeRequirement === 'yes'
       ? [
           row(
             'Region of origin code',
-            answerOf('regionOfOriginCode'),
+            answers.regionOfOriginCode,
             'regionOfOriginCode'
           )
         ]
       : []),
     row(
       'Internal reference number',
-      answerOf('internalReferenceNumber'),
+      answers.internalReferenceNumber,
       'internalReferenceNumber'
-    ),
-    ...commodityRows(answers),
+    )
+  ]
+})
+
+const additionalAnimalDetailsCard = (answers) => ({
+  title: 'Additional animal details',
+  rows: [
     row(
-      'Reason for import',
-      importReasonPurpose.reasonLabel(answerOf('reasonForImport')) ?? '',
-      'reasonForImport'
-    ),
-    ...(answerOf('reasonForImport') === 'internalMarket'
-      ? [
-          row(
-            'Purpose in the internal market',
-            importReasonPurpose.purposeLabel(
-              answerOf('purposeInInternalMarket')
-            ) ?? '',
-            'purposeInInternalMarket'
-          )
-        ]
-      : []),
-    row(
-      'Animals certified for',
-      certification.certificationLabel(answerOf('animalsCertifiedFor')) ?? '',
+      'Certified for',
+      certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
       'animalsCertifiedFor'
     ),
     ...(unweanedApplies(answers)
       ? [
           row(
-            'Contains unweaned animals',
-            YES_NO_LABEL[answerOf('containsUnweanedAnimals')] ?? '',
+            'Includes unweaned animals',
+            YES_NO_LABEL[answers.containsUnweanedAnimals] ?? '',
             'containsUnweanedAnimals'
           )
         ]
       : []),
-    ...documentRows(answers),
-    row('Place of origin', answerOf('placeOfOrigin')?.name, 'placeOfOrigin'),
-    row('Consignor', answerOf('consignor')?.name, 'consignor'),
-    row('Consignee', answerOf('consignee')?.name, 'consignee'),
-    row('Importer', answerOf('importer')?.name, 'importer'),
     row(
-      'Place of destination',
-      answerOf('placeOfDestination')?.name,
-      'placeOfDestination'
+      'Reason for import',
+      importReasonPurpose.reasonLabel(answers.reasonForImport) ?? '',
+      'reasonForImport'
     ),
-    ...(cphApplies(answers)
+    ...(answers.reasonForImport === 'internalMarket'
       ? [
           row(
-            'County Parish Holding (CPH)',
-            answerOf('countyParishHoldingCph'),
-            'countyParishHoldingCph'
+            'Purpose in the market',
+            importReasonPurpose.purposeLabel(answers.purposeInInternalMarket) ??
+              '',
+            'purposeInInternalMarket'
           )
         ]
-      : []),
+      : [])
+  ]
+})
+
+const speciesCardTitle = (entry) => {
+  const name = (entry.commoditySelection ?? '').trim()
+  if (!name) return NOT_PROVIDED
+  const code = commodities.commodityCodeFor(name)
+  return code ? `${name} (${code})` : name
+}
+
+const speciesText = (entry) =>
+  []
+    .concat(entry.speciesSelection ?? [])
+    .map((code) => commodities.speciesLabel(code) ?? code)
+    .join(', ')
+
+const readOnlyRow = (key, value) => ({
+  key: { text: key },
+  value: { text: valueText(value) }
+})
+
+const identifierColumns = (units) => [
+  ...Object.entries(IDENTIFIER_LABELS).filter(([id]) =>
+    units.some((unit) => !isBlank(unit[id]))
+  ),
+  ...(units.some((unit) => !isBlank(unit.permanentAddress?.name))
+    ? [['permanentAddress', 'Permanent address']]
+    : [])
+]
+
+const identifierCell = (unit, id) =>
+  id === 'permanentAddress'
+    ? valueText(unit.permanentAddress?.name)
+    : valueText(unit[id])
+
+const identifierTable = (units) => {
+  if (units.length === 0) return null
+  const columns = identifierColumns(units)
+  return {
+    head: [
+      { text: 'Animal' },
+      ...columns.map(([, label]) => ({ text: label }))
+    ],
+    rows: units.map((unit, unitIndex) => [
+      { text: `Animal ${unitIndex + 1}` },
+      ...columns.map(([id]) => ({ text: identifierCell(unit, id) }))
+    ])
+  }
+}
+
+const speciesCards = (answers) =>
+  state.collectionView(answers, ['commodityLines']).map(({ index, entry }) => {
+    const units = state
+      .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
+      .map(({ entry: unit }) => unit)
+    return {
+      title: speciesCardTitle(entry),
+      actions: {
+        items: [
+          {
+            href: pagePath(slugOfPage(pageOfObligation('commodityLines'))),
+            text: 'Change',
+            visuallyHiddenText: `commodity ${index + 1}`
+          },
+          ...(units.length
+            ? [
+                {
+                  href: pagePath(`commodities/${index}/identifiers`),
+                  text: 'Change',
+                  visuallyHiddenText: `animal identifiers for commodity ${index + 1}`
+                }
+              ]
+            : [])
+        ]
+      },
+      rows: [
+        readOnlyRow(
+          'Commodity code',
+          commodities.commodityCodeFor(entry.commoditySelection)
+        ),
+        readOnlyRow('Common name', entry.commoditySelection),
+        readOnlyRow('Species', speciesText(entry)),
+        readOnlyRow('Number of animals', entry.numberOfAnimalsQuantity),
+        ...(packagesApply(entry.commoditySelection)
+          ? [readOnlyRow('Number of packages', entry.numberOfPackages)]
+          : [])
+      ],
+      identifierTable: identifierTable(units)
+    }
+  })
+
+const arrivalDetailsCard = (answers) => ({
+  title: 'Arrival details',
+  rows: [
     row(
       'Port of entry',
-      ports.label(answerOf('portOfEntry')) ?? answerOf('portOfEntry'),
+      ports.label(answers.portOfEntry) ?? answers.portOfEntry,
       'portOfEntry'
     ),
     row(
       'Arrival date at port of entry',
-      dateText(answerOf('arrivalDateAtPort')),
+      dateText(answers.arrivalDateAtPort),
       'arrivalDateAtPort'
     ),
-    row(
-      'Means of transport to the port of entry',
-      answerOf('meansOfTransport'),
-      'meansOfTransport'
-    ),
-    row(
-      'Transport identification',
-      answerOf('transportIdentification'),
-      'transportIdentification'
-    ),
-    row(
-      'Transport document reference',
-      answerOf('transportDocumentReference'),
-      'transportDocumentReference'
-    ),
-    ...(transportReference
-      .overlandMeans()
-      .includes(answerOf('meansOfTransport'))
+    row('Means of transport', answers.meansOfTransport, 'meansOfTransport'),
+    ...(transportReference.overlandMeans().includes(answers.meansOfTransport)
       ? [
           row(
-            'Transited countries',
+            'Countries that the consignment will travel through',
             []
-              .concat(answerOf('transitedCountries') ?? [])
+              .concat(answers.transitedCountries ?? [])
               .map((code) => countries.originLabel(code) ?? code)
               .join(', '),
             'transitedCountries'
           )
         ]
       : []),
-    row('Transporter type', answerOf('transporterType'), 'transporterType'),
-    ...(answerOf('transporterType') === 'Commercial'
-      ? [
-          row(
-            'Commercial transporter',
-            answerOf('commercialTransporter')?.name,
-            'commercialTransporter'
-          )
-        ]
-      : []),
-    ...(answerOf('transporterType') === 'Private'
-      ? [
-          row(
-            'Private transporter',
-            answerOf('privateTransporter')?.name,
-            'privateTransporter'
-          )
-        ]
-      : []),
-    row('Contact address', answerOf('contactAddress')?.name, 'contactAddress')
+    row(
+      'Transport identification',
+      answers.transportIdentification,
+      'transportIdentification'
+    ),
+    row(
+      'Transport document reference',
+      answers.transportDocumentReference,
+      'transportDocumentReference'
+    )
   ]
+})
 
-  return rows
+const activeTransporter = (answers) => {
+  if (answers.transporterType === 'Commercial') {
+    return { party: answers.commercialTransporter, id: 'commercialTransporter' }
+  }
+  if (answers.transporterType === 'Private') {
+    return { party: answers.privateTransporter, id: 'privateTransporter' }
+  }
+  return null
+}
+
+const transporterAddressRow = (party, id) => {
+  const lines = addressLines(party?.address).map(escapeHtml)
+  return {
+    key: { text: 'Address' },
+    value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
+    actions: {
+      items: [
+        {
+          href: changeHref(id),
+          text: 'Change',
+          visuallyHiddenText: 'transporter address'
+        }
+      ]
+    }
+  }
+}
+
+const transportDetailsCard = (answers) => {
+  const active = activeTransporter(answers)
+  return {
+    title: 'Transport details',
+    rows: [
+      ...(active
+        ? [
+            row('Name', active.party?.name, active.id, 'transporter name'),
+            transporterAddressRow(active.party, active.id),
+            row(
+              'Country',
+              active.party?.address?.country,
+              active.id,
+              'transporter country'
+            ),
+            ...(isBlank(active.party?.approvalNumber)
+              ? []
+              : [
+                  row(
+                    'Approval number',
+                    active.party.approvalNumber,
+                    active.id,
+                    'transporter approval number'
+                  )
+                ])
+          ]
+        : []),
+      row(
+        'Type',
+        answers.transporterType,
+        'transporterType',
+        'transporter type'
+      )
+    ]
+  }
+}
+
+const rolesAndAddressesCard = (answers) => ({
+  title: 'Roles and addresses',
+  rows: [
+    partyRow('Place of origin', answers.placeOfOrigin, 'placeOfOrigin'),
+    partyRow('Consignor', answers.consignor, 'consignor'),
+    partyRow('Consignee', answers.consignee, 'consignee'),
+    partyRow('Importer', answers.importer, 'importer'),
+    partyRow(
+      'Place of destination',
+      answers.placeOfDestination,
+      'placeOfDestination'
+    ),
+    ...(cphApplies(answers)
+      ? [
+          row(
+            'County Parish Holding number (CPH)',
+            answers.countyParishHoldingCph,
+            'countyParishHoldingCph'
+          )
+        ]
+      : [])
+  ]
+})
+
+const contactAddressCard = (answers) => ({
+  title: 'Contact address for this consignment',
+  rows: [
+    partyRow(
+      'Address',
+      answers.contactAddress,
+      'contactAddress',
+      'contact address'
+    )
+  ]
+})
+
+const documentsCard = (answers) => {
+  const documents = state
+    .collectionView(answers, ['documents'])
+    .map(({ index, entry }) => ({
+      heading: `Document ${index + 1}`,
+      rows: [
+        readOnlyRow('Document reference', entry.accompanyingDocumentReference),
+        readOnlyRow('Document type', entry.accompanyingDocumentType),
+        {
+          key: { text: 'Date of issue' },
+          value: { text: dateText(entry.accompanyingDocumentDateOfIssue) }
+        },
+        readOnlyRow('Attachment type', entry.accompanyingDocumentAttachmentType)
+      ]
+    }))
+  if (documents.length === 0) return null
+  return {
+    title: 'Uploaded documents',
+    actions: {
+      items: [
+        {
+          href: pagePath(slugOfPage(pageOfObligation('documents'))),
+          text: 'Change',
+          visuallyHiddenText: 'documents'
+        }
+      ]
+    },
+    documents
+  }
+}
+
+export const buildSections = (answers) => {
+  const species = speciesCards(answers)
+  const documents = documentsCard(answers)
+  return [
+    {
+      heading: '1. About the consignment',
+      groups: [
+        { heading: 'Consignment details', cards: [importDetailsCard(answers)] },
+        {
+          heading: 'Commodity details',
+          cards: [additionalAnimalDetailsCard(answers)]
+        },
+        ...(species.length ? [{ heading: 'Species', cards: species }] : [])
+      ]
+    },
+    {
+      heading: '2. Movement',
+      groups: [
+        {
+          heading: null,
+          cards: [arrivalDetailsCard(answers), transportDetailsCard(answers)]
+        }
+      ]
+    },
+    {
+      heading: '3. Addresses',
+      groups: [
+        {
+          heading: null,
+          cards: [rolesAndAddressesCard(answers), contactAddressCard(answers)]
+        }
+      ]
+    },
+    ...(documents
+      ? [
+          {
+            heading: '4. Documents',
+            groups: [{ heading: null, cards: [documents] }]
+          }
+        ]
+      : [])
+  ]
 }
 
 const renderCya = (h, answers) =>
   h.view(view, {
     pageTitle: 'Check your answers',
     heading: 'Check your answers',
-    rows: buildRows(answers),
+    sections: buildSections(answers),
     backLink: hubPath(),
     breadcrumbs: breadcrumbs('Check your answers')
   })

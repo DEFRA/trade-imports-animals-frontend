@@ -5,7 +5,7 @@ import { open } from '../../shared/kit.js'
 
 const view = `${TEMPLATES}/features/commodities/animal-identifiers-list`
 
-const IDENTIFIER_LABELS = {
+export const IDENTIFIER_LABELS = {
   animalIdentifierPassport: 'Passport',
   animalIdentifierTattoo: 'Tattoo',
   animalIdentifierEarTag: 'Ear tag',
