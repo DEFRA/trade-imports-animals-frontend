@@ -228,20 +228,95 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
 
 Steps 4 and 5 are complete. P0 is now resolved. Playwright cross-
 variant harness landed as a self-contained suite in this branch (see
-`e2e/` folder + `playwright.config.js`). Next work is small polish
+`e2e/` folder + `playwright.config.js`). Next work is four checks
+whose combined output should tell us whether the spike is a faithful
+representation of V4 and whether the code stands up to scrutiny.
+Recommended order: **2 → fix any issues → 1 → 3 → 4**.
 
-- parked follow-ons — pick one:
+- **Check 2 — Spec-vs-code audit** (see §Checks 1-4 below). Fetch
+  the V4 Confluence page (id 6497338582), spawn a `general-purpose`
+  research subagent, produce a findings table (per-field:
+  spec → code → issue → severity). Triage, cluster fixes by
+  category, land them one cluster per commit. **Do this first —
+  fixes here shift the surface a code review would land on.**
+- **Check 1 — Code review by another agent.** After the audit
+  fixes land, run `/ultrareview <this-branch>` for the multi-agent
+  cloud review. Local `code-review` subagent is a lighter first
+  pass if you want a warmup.
+- **Check 3 — Compare against an alternative implementation.**
+  The parent-layouts branch (`spike/EUDPA-249-prototype-layouts`)
+  hosts 11 variants; pick one (or all) to line up against ours.
+  Structural comparison — not a merge target.
+- **Check 4 — Output schema sanity check.** Given the target
+  output schema (TBD; user will supply), confirm that the current
+  model can produce a compliant payload from the spike's fixtures.
 
-* **P0.5 — Welsh locale threading.** Infrastructure done; needs the
-  request → `t()` locale param plumbing plus `cy.json`. See below.
-* **Add a second variant to the Playwright JOURNEYS array.** The
-  shape is data-driven off `e2e/journey.js`; extending to (say) a
-  Joi-adopted rerun or a comparison against the pre-P0 status
-  alphabet is one array entry plus (if page copy diverges) small
-  guards inside the fill helpers.
+Parked, still available if the above surface nothing urgent:
 
-**Parked** (unchanged): P1 Joi adoption; P2 data dictionary MD
-artefact. See below.
+- **P0.5 — Welsh locale threading.** Infrastructure done; needs
+  the request → `t()` locale param plumbing plus `cy.json`.
+- **Add a second variant to the Playwright JOURNEYS array.**
+  Data-driven off `e2e/journey.js`; extending is a single entry
+  plus small guards inside the fill helpers.
+
+**Long-parked** (unchanged): P1 Joi adoption; P2 data dictionary
+MD artefact. See below.
+
+### Checks 1-4 — how to execute each
+
+**Check 2 — Spec vs code audit.**
+
+- Sources:
+  - Spec: fetch via
+    `tools/confluence/page.sh 6497338582 json | jq -r '.body.view.value' | node tools/confluence/html_to_md.js > workareas/eudpa-249-spec-audit/v4-spec.md`
+  - Code: `obligations/obligations.js`, `domain/index.js`,
+    `flow/flow.js`, `locales/en.json`
+- Fan-out: one `general-purpose` subagent, one pass. Structured
+  output to `workareas/eudpa-249-spec-audit/findings.md`.
+- Output shape: findings table (Field · Category · Severity · Spec
+  says · Code says · Fix), plus a matched-fields checklist, plus a
+  KNOWN_UNWIRED sanity block, plus a "coverage gaps in the audit
+  itself" block.
+- Categories: missing, extra, wrong-cap, wrong-enum, wrong-mandate,
+  wrong-condition, presentation-drift, address-block.
+- Severity: BLOCKER (data-integrity fail) / MAJOR (semantic drift) /
+  MINOR (wording) / INFO (deliberate stub).
+- Fix cycle: cluster by category, one cluster per commit.
+
+**Check 1 — Code review by another agent.**
+
+- Preferred: `/ultrareview <branch>` — user-triggered, multi-agent,
+  billed, thorough. Land after Check 2 fixes so review budget isn't
+  spent on soon-to-change code.
+- Alternative: local `code-review` subagent for a lighter warmup.
+- Do NOT run this while any Check 2 fix is in-flight.
+
+**Check 3 — Comparison with alternative implementation.**
+
+- Target branch: `spike/EUDPA-249-prototype-layouts`. Hosts:
+  - 4 model-spike variants (a-d): declarative selectors, statechart,
+    rules engine, schema-first
+  - `obligations-standalone-spike` and `obligations-v2-spike`
+  - Standalone flattenings of a-d
+- Fetch specific files via
+  `gh api repos/DEFRA/trade-imports-animals-frontend/contents/<path>?ref=spike/EUDPA-249-prototype-layouts --jq '.content' | base64 -d`
+- Comparison dimensions: how each represents scope (applyTo vs
+  statechart guards vs schema when-clauses), how each drives page
+  rendering (contract seam vs shape descriptor vs FSM), what tests
+  it ships, cost-of-change for adding a V4 field.
+- Deliverable: `workareas/eudpa-249-alternative-comparison/notes.md`
+  — structural comparison, not a merge target. Cherry-pickable
+  fragments called out separately.
+
+**Check 4 — Output schema sanity check.**
+
+- Blocked on user supplying the target output schema.
+- When supplied: fixture-in, schema-out validation loop. For each
+  named fixture under `fixtures/`, produce the payload the schema
+  expects, run it through a validator, report drift.
+- Likely also: extend `dump.js` with a `--schema` flag that emits
+  the schema-shaped payload alongside the current internal-state
+  dump.
 
 Read [`RECOMMENDATION.md`](./RECOMMENDATION.md) end-to-end before
 doing anything — it explains the three-layer architecture, the
