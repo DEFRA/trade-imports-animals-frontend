@@ -37,10 +37,11 @@ const transitedCountriesErrors = (selected) => {
   return {}
 }
 
-const render = (h, selected, errors = {}) =>
+const render = (h, journey, selected, errors = {}) =>
   h.view(view, {
     ...kit.base('Which countries will the consignment travel through?', {
-      backLink: hubPath()
+      backLink: hubPath(),
+      journey
     }),
     heading: 'Which countries will the consignment travel through?',
     errors,
@@ -56,15 +57,18 @@ const selectedFrom = (payload) => [
 ]
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, [].concat(answers.transitedCountries ?? []))
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, [].concat(answers.transitedCountries ?? []))
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const selected = selectedFrom(payload)
   const errors = transitedCountriesErrors(selected)
-  if (Object.keys(errors).length > 0) return render(h, selected, errors)
+  if (Object.keys(errors).length > 0) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, selected, errors)
+  }
 
   const { scope } = await state.commit(request, h, {
     transitedCountries: selected

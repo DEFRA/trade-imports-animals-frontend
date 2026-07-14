@@ -45,9 +45,15 @@ const fields = compose(
   )
 )
 
-const render = (h, values, errors = {}) =>
+const journeyIfStarted = (journey) =>
+  Object.keys(journey.answers).length > 0 ? journey : undefined
+
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Origin of the import', { backLink: hubPath() }),
+    ...kit.base('Origin of the import', {
+      backLink: hubPath(),
+      journey: journeyIfStarted(journey)
+    }),
     heading: 'Origin of the import',
     values,
     errors,
@@ -56,8 +62,8 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, {
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, {
     countryOfOrigin: answers.countryOfOrigin ?? '',
     regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
     regionOfOriginCode: answers.regionOfOriginCode ?? '',
@@ -74,7 +80,10 @@ const post = async (request, h) => {
     internalReferenceNumber: (payload.internalReferenceNumber ?? '').trim()
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  if (errors) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, values, errors)
+  }
 
   const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))

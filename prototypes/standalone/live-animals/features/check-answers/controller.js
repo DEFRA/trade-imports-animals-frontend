@@ -3,7 +3,7 @@ import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import { nextInSection } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
 import { isBlank } from '../../lib/answered.js'
-import { pageRoutes } from '../../shared/kit.js'
+import { journeyStrip, pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
@@ -456,18 +456,19 @@ export const buildSections = (answers) => {
   ]
 }
 
-const renderCya = (h, answers) =>
+const renderCya = (h, journey) =>
   h.view(view, {
     pageTitle: 'Check your answers',
     heading: 'Check your answers',
-    sections: buildSections(answers),
+    journeyStrip: journeyStrip(journey),
+    sections: buildSections(journey.answers),
     backLink: hubPath(),
     breadcrumbs: breadcrumbs('Check your answers')
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return renderCya(h, answers)
+  const { journey } = await state.get(request, h)
+  return renderCya(h, journey)
 }
 
 const post = async (request, h) => {

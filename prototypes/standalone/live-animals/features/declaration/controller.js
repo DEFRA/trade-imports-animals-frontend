@@ -28,9 +28,12 @@ const dateText = (value) =>
     year: 'numeric'
   })
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Declaration', { backLink: pagePath(kit.CYA_SLUG) }),
+    ...kit.base('Declaration', {
+      backLink: pagePath(kit.CYA_SLUG),
+      journey
+    }),
     heading: 'Declaration',
     declarationLabel: DECLARATION_LABEL,
     submissionDate: dateText(Date.now()),
@@ -44,7 +47,7 @@ const get = async (request, h) => {
   if (journey.status === SUBMITTED) {
     return h.redirect(pagePath(confirmationPage.slug))
   }
-  return render(h, { declaration: answers.declaration ?? '' })
+  return render(h, journey, { declaration: answers.declaration ?? '' })
 }
 
 const post = async (request, h) => {
@@ -56,7 +59,7 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  if (errors) return render(h, journey, values, errors)
 
   await state.commit(request, h, values)
   const result = await state.submitJourney(request, h)

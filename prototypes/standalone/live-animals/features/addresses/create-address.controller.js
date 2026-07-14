@@ -86,10 +86,11 @@ const countryItems = (selected) => [
 const emptyValues = () =>
   Object.fromEntries(FIELD_ORDER.map((field) => [field, '']))
 
-const render = (h, partyId, values, errors = {}) =>
+const render = (h, journey, partyId, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Add a new address', {
-      backLink: pagePath(PARTIES[partyId].spoke)
+      backLink: pagePath(PARTIES[partyId].spoke),
+      journey
     }),
     heading: 'Add a new address',
     partyId,
@@ -99,10 +100,11 @@ const render = (h, partyId, values, errors = {}) =>
     countryItems: countryItems(values.country)
   })
 
-const get = (request, h) => {
+const get = async (request, h) => {
   const partyId = request.query.for
   if (!PARTIES[partyId]) return h.redirect(pagePath('addresses'))
-  return render(h, partyId, emptyValues())
+  const { journey } = await state.get(request, h)
+  return render(h, journey, partyId, emptyValues())
 }
 
 const post = async (request, h) => {
@@ -122,7 +124,8 @@ const post = async (request, h) => {
     ])
   )
   if (Object.keys(allErrors).length > 0) {
-    return render(h, partyId, values, allErrors)
+    const { journey } = await state.get(request, h)
+    return render(h, journey, partyId, values, allErrors)
   }
 
   const record = addressBook.addParty(PARTIES[partyId].role, {

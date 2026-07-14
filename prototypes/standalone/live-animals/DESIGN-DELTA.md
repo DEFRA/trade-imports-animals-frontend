@@ -274,6 +274,41 @@ with no sibling leak, unanswered-gate inactivity, exact-path wipe leaving the
 typed sibling untouched, wiped-stale-value-cannot-satisfy-`requiredOneOf`, and
 depth-2 enclosing resolution.
 
+## 8. Journey reference strip in the shared kit/layout + GBN-AG stub ids (inc-048)
+
+`shared/kit.js` + `shared/layout.njk`: the kit gains a `journeyStrip(journey)`
+primitive mapping the journey record to a status-tag view model (`in-progress`
+→ blue "Draft", `submitted` → green "Submitted", no journey → `null`), and
+`kit.base` gains an opt-in `journey` option that feeds it. The shared layout
+renders the strip (govukTag + bold reference) above the page heading whenever
+`journeyStrip` is set — one partial, inherited by every template that extends
+the layout (M3-08, f-100/f-025/f-019/f-093; Sam's D2/D3 rulings).
+
+- **Opt-in per page, data from the one-load-per-request journey record.** The
+  hub and every post-origin task page pass `journey` from `state.get`/the
+  commit read view; POST error re-renders read the same memoised record (no
+  second store load). Pre-origin surfaces pass nothing: the dashboard and the
+  import-type filter never render the strip, and origin passes the journey
+  only once it has committed answers (`journeyIfStarted`) — the spec fiction
+  is that the reference is assigned on the journey's first save. The
+  confirmation page also omits the strip: its govukPanel already carries the
+  reference, and a second rendering above the panel would double it.
+- **Stub reference format (D2).** `services/persistence/records/stub.js`
+  `create` mints `GBN-AG-YY-XXXXXX` (two-digit year + six Crockford-base32
+  characters via `randomInt`) instead of a raw UUID, matching the backend's
+  canonical V4 format so stub and real modes render the same strip shape.
+  Real mode is untouched — its journeyId IS the backend reference. Mapper
+  parity is unaffected: stub answers never pass through the notification
+  mappers, and the parity fixtures pin their own hardcoded references.
+- **Backwards compatible.** `journey` absent = pre-inc-048 view model
+  byte-for-byte (`journeyStrip: null`, nothing rendered). No engine, flow or
+  lib change; no test pinned the UUID shape.
+
+Proven in `shared/journey-strip.test.js` (strip on hub and a task page,
+Draft/Submitted mapping, absence on dashboard/filter/fresh origin, presence on
+origin once started) and `services/persistence/records/records-port.test.js`
+(GBN-AG-YY-XXXXXX shape from stub `create`).
+
 ## 2. Session cookie renamed (inc-001, f27b76c)
 
 `engine/persistence/session.js`: `obligationsV2JourneyId` →

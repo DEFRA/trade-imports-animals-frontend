@@ -4,6 +4,7 @@
 {% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
 
 {% set spikeHome = "/prototype-standalone/live-animals" %}
 
@@ -41,6 +42,12 @@
 {% block content %}
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
+      {% if journeyStrip %}
+        <div class="app-journey-strip govuk-!-margin-bottom-4">
+          {{ govukTag({ text: journeyStrip.status.text, classes: journeyStrip.status.classes }) }}
+          <span class="govuk-body govuk-!-font-weight-bold">{{ journeyStrip.reference }}</span>
+        </div>
+      {% endif %}
       {% block journeyContent %}{% endblock %}
     </div>
   </div>

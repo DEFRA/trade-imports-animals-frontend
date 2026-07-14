@@ -28,9 +28,9 @@ const fields = compose(
   )
 )
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Reason for import', { backLink: hubPath() }),
+    ...kit.base('Reason for import', { backLink: hubPath(), journey }),
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -42,15 +42,18 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, { reasonForImport: answers.reasonForImport ?? '' })
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, { reasonForImport: answers.reasonForImport ?? '' })
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = { reasonForImport: payload.reasonForImport ?? '' }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  if (errors) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, values, errors)
+  }
 
   const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))

@@ -86,10 +86,10 @@ const documentRows = (answers) =>
       { html: removeCell(index) }
     ])
 
-const render = (h, answers, values, errors = {}) => {
-  const rows = documentRows(answers)
+const render = (h, journey, values, errors = {}) => {
+  const rows = documentRows(journey.answers)
   return h.view(view, {
-    ...kit.base('Upload documents', { backLink: hubPath() }),
+    ...kit.base('Upload documents', { backLink: hubPath(), journey }),
     heading: 'Upload documents',
     rows,
     hasDocuments: rows.length > 0,
@@ -117,20 +117,20 @@ const render = (h, answers, values, errors = {}) => {
 }
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, answers, EMPTY_FORM)
+  const { journey } = await state.get(request, h)
+  return render(h, journey, EMPTY_FORM)
 }
 
 const postAdd = async (request, h, payload) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const entry = documentFromPayload(payload)
   if (state.collectionView(answers, ['documents']).length >= MAX_DOCUMENTS) {
-    return render(h, answers, entry, {
+    return render(h, journey, entry, {
       accompanyingDocumentType: `You can add a maximum of ${MAX_DOCUMENTS} documents`
     })
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, answers, entry, errors)
+  if (errors) return render(h, journey, entry, errors)
 
   await state.appendEntry(request, h, 'documents', entry)
   return h.redirect(pagePath(page.slug))

@@ -181,11 +181,20 @@ const addressCountryItems = (selected) => [
 const blankAddress = () =>
   Object.fromEntries(ADDRESS_FIELD_ORDER.map((field) => [field, '']))
 
-const render = (h, index, commodity, values, addressValues, errors = {}) => {
+const render = (
+  h,
+  journey,
+  index,
+  commodity,
+  values,
+  addressValues,
+  errors = {}
+) => {
   const showAddress = permanentAddressApplies(commodity)
   return h.view(view, {
     ...kit.base('Add an animal', {
-      backLink: pagePath(`commodities/${index}/identifiers`)
+      backLink: pagePath(`commodities/${index}/identifiers`),
+      journey
     }),
     heading: 'Add an animal',
     commodity,
@@ -225,7 +234,7 @@ const addressValuesFromPayload = (payload) =>
   )
 
 const getAdd = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
@@ -234,11 +243,11 @@ const getAdd = async (request, h) => {
       (field) => [field.id, '']
     )
   )
-  return render(h, index, commodity, values, blankAddress())
+  return render(h, journey, index, commodity, values, blankAddress())
 }
 
 const postAdd = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
@@ -258,7 +267,7 @@ const postAdd = async (request, h) => {
     ...(addrFormatErrors ?? {})
   }
   if (Object.keys(merged).length > 0) {
-    return render(h, index, commodity, values, addressValues, merged)
+    return render(h, journey, index, commodity, values, addressValues, merged)
   }
 
   const unit = { ...values }

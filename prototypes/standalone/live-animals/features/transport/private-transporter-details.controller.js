@@ -79,10 +79,11 @@ const countryItems = (selected) => [
   }))
 ]
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Private transporter details', {
-      backLink: pagePath('transporters')
+      backLink: pagePath('transporters'),
+      journey
     }),
     heading: 'Private transporter details',
     values,
@@ -92,9 +93,9 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const saved = answers.privateTransporter
-  return render(h, {
+  return render(h, journey, {
     nameOrOrganisationName: saved?.name ?? '',
     addressLine1: saved?.address?.addressLine1 ?? '',
     addressLine2: saved?.address?.addressLine2 ?? '',
@@ -120,7 +121,10 @@ const post = async (request, h) => {
       merged[field]
     ])
   )
-  if (Object.keys(allErrors).length > 0) return render(h, values, allErrors)
+  if (Object.keys(allErrors).length > 0) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, values, allErrors)
+  }
 
   const { scope } = await (recordProvided(values)
     ? state.commit(request, h, {

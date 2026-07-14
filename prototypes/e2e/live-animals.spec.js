@@ -319,6 +319,63 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(originRow).toContainText('Completed')
   })
 
+  test('reference strip — Draft tag and GBN-AG reference on the hub and task pages, absent on pre-origin surfaces', async ({
+    page
+  }) => {
+    const strip = page.locator('.app-journey-strip')
+    const reference = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
+
+    // The dashboard precedes any journey — no strip.
+    await page.goto(`${BASE}/home`)
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await expect(strip).toHaveCount(0)
+
+    await startNotification(page)
+
+    // The hub carries the strip: blue Draft tag + GBN-AG-shaped reference
+    // (inc-048: the stub mints the canonical format).
+    await expect(strip).toBeVisible()
+    await expect(strip.locator('.govuk-tag')).toHaveText('Draft')
+    await expect(strip).toContainText(reference)
+
+    // The import-type filter is a pre-origin surface — never a strip.
+    await page.goto(`${BASE}/import-type`)
+    await expect(
+      page.getByRole('heading', { name: 'What are you importing?' })
+    ).toBeVisible()
+    await expect(strip).toHaveCount(0)
+
+    // Origin shows nothing while the journey has no saved answers...
+    await page.goto(`${BASE}/hub`)
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await expect(strip).toHaveCount(0)
+
+    // ...and carries the strip once its first save has committed answers.
+    await page
+      .getByLabel('Country of origin')
+      .selectOption(values.countryOfOrigin)
+    await page.getByRole('radio', { name: 'No' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('link', { name: 'Origin of the import' }).click()
+    await expect(strip).toBeVisible()
+    await expect(strip).toContainText(reference)
+
+    // Every post-origin task page inherits the strip from the shared layout.
+    await page.goto(`${BASE}/hub`)
+    await page.getByRole('link', { name: 'Commodities' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Commodities you have added' })
+    ).toBeVisible()
+    await expect(strip).toBeVisible()
+    await expect(strip.locator('.govuk-tag')).toHaveText('Draft')
+    await expect(strip).toContainText(reference)
+  })
+
   test('commodities — a line is added across the select and details sub-pages, then the hub row completes', async ({
     page
   }) => {
@@ -1924,6 +1981,12 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     expect(page.url()).toContain('/confirmation')
     await expect(page.getByText('Your reference number')).toBeVisible()
+    await expect(page.locator('.govuk-panel')).toContainText(
+      /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
+    )
+    // The panel is the confirmation page's reference display — the strip
+    // does not double-render above it.
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
     const today = new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',

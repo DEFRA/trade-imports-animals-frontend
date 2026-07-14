@@ -29,10 +29,11 @@ const addressSummary = (address) =>
     .filter((part) => part)
     .join(', ')
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base('Place of destination', {
-      backLink: pagePath('addresses')
+      backLink: pagePath('addresses'),
+      journey
     }),
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -48,14 +49,17 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, { selectedName: answers.placeOfDestination?.name })
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, { selectedName: answers.placeOfDestination?.name })
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const { errors } = validate(fields(), payload)
-  if (errors) return render(h, {}, errors)
+  if (errors) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, {}, errors)
+  }
 
   const chosen = addressBook.party('destination', payload.placeOfDestination)
   if (chosen) {

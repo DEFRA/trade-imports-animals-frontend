@@ -34,9 +34,12 @@ const fields = compose(
   )
 )
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('How the animals will travel', { backLink: hubPath() }),
+    ...kit.base('How the animals will travel', {
+      backLink: hubPath(),
+      journey
+    }),
     heading: 'How the animals will travel',
     values,
     errors,
@@ -44,8 +47,8 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, {
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, {
     meansOfTransport: answers.meansOfTransport ?? '',
     transportIdentification: answers.transportIdentification ?? '',
     transportDocumentReference: answers.transportDocumentReference ?? ''
@@ -62,7 +65,10 @@ const post = async (request, h) => {
     ).trim()
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  if (errors) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, values, errors)
+  }
 
   const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))

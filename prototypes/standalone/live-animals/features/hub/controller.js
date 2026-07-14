@@ -10,7 +10,7 @@ import {
   OPTIONAL
 } from '../../engine/status.js'
 import { sectionStatus } from '../../flow/section-status.js'
-import { open } from '../../shared/kit.js'
+import { journeyStrip, open } from '../../shared/kit.js'
 
 const view = `${TEMPLATES}/features/hub/template`
 
@@ -122,12 +122,13 @@ const buildCommodityTotals = (answers) => {
 }
 
 const handler = async (request, h) => {
-  const { answers, scope } = await state.get(request, h)
+  const { journey, answers, scope } = await state.get(request, h)
   const inScope = scope.inScope
 
   return h.view(view, {
     pageTitle: 'Import notification service',
     heading: 'Import notification service',
+    journeyStrip: journeyStrip(journey),
     progressLine: `You have completed ${countCompletedGroups(answers, inScope)} of ${GROUP_ROWS.length} tasks.`,
     commodityTotals: buildCommodityTotals(answers),
     items: [

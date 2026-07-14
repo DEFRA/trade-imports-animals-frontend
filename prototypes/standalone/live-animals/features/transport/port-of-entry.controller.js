@@ -35,9 +35,9 @@ const fields = compose(
   dateParts('arrivalDateAtPort', 'Enter a real arrival date')
 )
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Arrival details', { backLink: hubPath() }),
+    ...kit.base('Arrival details', { backLink: hubPath(), journey }),
     heading: 'Arrival details',
     values,
     errors,
@@ -52,8 +52,8 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, {
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, {
     portOfEntry: answers.portOfEntry ?? '',
     arrivalDateAtPort: answers.arrivalDateAtPort ?? {}
   })
@@ -66,7 +66,10 @@ const post = async (request, h) => {
     arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort')
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  if (errors) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, values, errors)
+  }
 
   const { scope } = await state.commit(request, h, values)
   return h.redirect(kit.nextTarget(request, page, scope))

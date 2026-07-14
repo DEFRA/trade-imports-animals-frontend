@@ -29,9 +29,12 @@ const lineIndexOf = (request, answers) => {
     : null
 }
 
-const render = (h, line, values, errors = {}) =>
+const render = (h, journey, line, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Description of goods', { backLink: pagePath('commodities') }),
+    ...kit.base('Description of goods', {
+      backLink: pagePath('commodities'),
+      journey
+    }),
     heading: 'Description of goods',
     commodity: line.commoditySelection,
     showPackages: packagesApply(line.commoditySelection),
@@ -41,18 +44,18 @@ const render = (h, line, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const line = answers.commodityLines[index]
-  return render(h, line, {
+  return render(h, journey, line, {
     numberOfAnimalsQuantity: line.numberOfAnimalsQuantity ?? '',
     numberOfPackages: line.numberOfPackages ?? ''
   })
 }
 
 const post = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const line = answers.commodityLines[index]
@@ -62,7 +65,7 @@ const post = async (request, h) => {
     numberOfPackages: (payload.numberOfPackages ?? '').trim()
   }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, line, values, errors)
+  if (errors) return render(h, journey, line, values, errors)
 
   await state.updateEntry(request, h, 'commodityLines', index, {
     ...line,

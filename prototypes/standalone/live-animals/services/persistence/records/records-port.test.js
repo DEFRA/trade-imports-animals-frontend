@@ -13,6 +13,20 @@ describe('records durable port', () => {
     )
   })
 
+  it('Should mint a GBN-AG-YY-XXXXXX reference as the journeyId', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    const year = String(new Date().getFullYear() % 100).padStart(2, '0')
+    expect(journeyId).toMatch(
+      new RegExp(`^GBN-AG-${year}-[0-9A-HJKMNP-TV-Z]{6}$`)
+    )
+  })
+
+  it('Should mint a distinct reference per journey', async () => {
+    const first = await records.create({ userId: 'user-A' })
+    const second = await records.create({ userId: 'user-B' })
+    expect(second.journeyId).not.toBe(first.journeyId)
+  })
+
   it('Should resolve load polymorphically by journeyId or by userId', async () => {
     const { journeyId } = await records.create({ userId: 'user-A' })
     expect((await records.load({ journeyId })).journeyId).toBe(journeyId)

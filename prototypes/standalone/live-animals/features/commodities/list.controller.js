@@ -16,7 +16,7 @@ export const commodityLineValue = (entry) => {
 }
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const rows = state
     .collectionView(answers, ['commodityLines'])
     .map(({ index, entry }) => ({
@@ -43,7 +43,7 @@ const get = async (request, h) => {
       }
     }))
   return h.view(view, {
-    ...kit.base('Commodities', { backLink: hubPath() }),
+    ...kit.base('Commodities', { backLink: hubPath(), journey }),
     heading: 'Commodities you have added',
     rows,
     hasLines: rows.length > 0,

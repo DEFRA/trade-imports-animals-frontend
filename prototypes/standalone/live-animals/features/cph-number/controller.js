@@ -27,10 +27,11 @@ const fields = compose(
 const hubEntryReturn = (request) =>
   request.query.return === 'addresses' ? pagePath('addresses') : null
 
-const render = (request, h, values, errors = {}) =>
+const render = (request, h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base('County Parish Holding (CPH)', {
-      backLink: hubEntryReturn(request) ?? hubPath()
+      backLink: hubEntryReturn(request) ?? hubPath(),
+      journey
     }),
     values,
     errors,
@@ -38,8 +39,8 @@ const render = (request, h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(request, h, {
+  const { journey, answers } = await state.get(request, h)
+  return render(request, h, journey, {
     countyParishHoldingCph: answers.countyParishHoldingCph ?? ''
   })
 }
@@ -52,7 +53,14 @@ const post = async (request, h) => {
   }
   const { errors } = validate(fields, values)
   if (errors) {
-    return render(request, h, { countyParishHoldingCph: rawCphNumber }, errors)
+    const { journey } = await state.get(request, h)
+    return render(
+      request,
+      h,
+      journey,
+      { countyParishHoldingCph: rawCphNumber },
+      errors
+    )
   }
 
   const { scope } = await state.commit(request, h, values)

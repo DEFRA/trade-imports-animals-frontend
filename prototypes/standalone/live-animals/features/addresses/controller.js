@@ -72,9 +72,9 @@ const rows = (answers) => [
 ]
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   return h.view(view, {
-    ...kit.base('Consignment addresses', { backLink: hubPath() }),
+    ...kit.base('Consignment addresses', { backLink: hubPath(), journey }),
     heading: 'Consignment addresses',
     rows: rows(answers)
   })

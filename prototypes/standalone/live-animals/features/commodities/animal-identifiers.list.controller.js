@@ -33,7 +33,7 @@ const lineIndexOf = (request, answers) => {
 }
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const index = lineIndexOf(request, answers)
   if (index === null) return h.redirect(pagePath('commodities'))
   const commodity = answers.commodityLines[index].commoditySelection
@@ -56,7 +56,8 @@ const get = async (request, h) => {
     }))
   return h.view(view, {
     ...kit.base('Animal identifiers', {
-      backLink: pagePath('commodities')
+      backLink: pagePath('commodities'),
+      journey
     }),
     heading: 'Animal identifiers for this commodity',
     commodity,

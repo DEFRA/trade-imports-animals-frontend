@@ -1,7 +1,24 @@
 import { breadcrumbs, LAYOUT, pagePath } from '../config.js'
+import { SUBMITTED } from '../engine/persistence/records.js'
 import { nextInSection } from '../flow/navigation.js'
 
 export const open = { auth: false }
+
+const STRIP_STATUS = {
+  draft: { text: 'Draft', classes: 'govuk-tag--blue' },
+  submitted: { text: 'Submitted', classes: 'govuk-tag--green' }
+}
+
+export const journeyStrip = (journey) =>
+  journey
+    ? {
+        reference: journey.journeyId,
+        status:
+          journey.status === SUBMITTED
+            ? STRIP_STATUS.submitted
+            : STRIP_STATUS.draft
+      }
+    : null
 
 export const CYA_SLUG = 'notification-view'
 
@@ -25,11 +42,12 @@ export const fieldError = (fieldErrors, field) =>
 export const nextTarget = (request, page, scope) =>
   request.query.change ? pagePath(CYA_SLUG) : nextInSection(page.id, scope)
 
-export const base = (title, { backLink } = {}) => ({
+export const base = (title, { backLink, journey } = {}) => ({
   layout: LAYOUT,
   pageTitle: title,
   breadcrumbs: breadcrumbs(title),
-  backLink
+  backLink,
+  journeyStrip: journeyStrip(journey)
 })
 
 export const pageRoutes = (page, { get, post }) => [

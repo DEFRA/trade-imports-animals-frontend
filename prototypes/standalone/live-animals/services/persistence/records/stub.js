@@ -1,5 +1,16 @@
-import { randomUUID } from 'node:crypto'
+import { randomInt } from 'node:crypto'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+
+const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+
+const mintReferenceNumber = () => {
+  const year = String(new Date().getFullYear() % 100).padStart(2, '0')
+  const body = Array.from(
+    { length: 6 },
+    () => CROCKFORD_BASE32[randomInt(CROCKFORD_BASE32.length)]
+  ).join('')
+  return `GBN-AG-${year}-${body}`
+}
 
 const journeys = new Map()
 const byUser = new Map()
@@ -22,7 +33,7 @@ const loadWritable = (journeyId) => {
 export const records = {
   async create({ userId } = {}) {
     const journey = {
-      journeyId: randomUUID(),
+      journeyId: mintReferenceNumber(),
       userId: userId ?? null,
       status: IN_PROGRESS,
       submittedAt: null,

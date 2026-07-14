@@ -100,21 +100,25 @@ const fields = compose(
   oneOf('parkingLocation', ['garage', 'driveway', 'street'])
 )
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
+    ...kit.base('Page title', { backLink: hubPath(), journey })
     /* ... */
   })
 
 const get = (request, h) => {
-  const { answers } = state.get(request, h)
-  return render(h, {
+  const { journey, answers } = state.get(request, h)
+  return render(h, journey, {
     /* prefill from answers */
   })
 }
 
 const post = (request, h) => {
   const { value: clean, errors } = validate(fields, request.payload ?? {})
-  if (errors) return render(h, rawValues, errors)
+  if (errors) {
+    const { journey } = state.get(request, h)
+    return render(h, journey, rawValues, errors)
+  }
   const { scope } = state.commit(request, h, {
     /* clean values */
   })
@@ -123,6 +127,11 @@ const post = (request, h) => {
 
 export const routes = kit.pageRoutes(page, { get, post })
 ```
+
+Pass the `journey` from `state.get` into `kit.base` so the shared layout
+renders the reference/status strip (every task page after origin carries it;
+the read is memoised per request, so the error-path `state.get` costs no
+second load).
 
 `meta.collects` is the page's ownership declaration — it feeds the boot-built
 dispatch index, the status roll-up and the derived gate. `kit.collectsFrom`

@@ -28,9 +28,12 @@ const unweanedField = oneOf(
   Object.keys(UNWEANED_LABEL)
 )
 
-const render = (h, values, showUnweaned, errors = {}) =>
+const render = (h, journey, values, showUnweaned, errors = {}) =>
   h.view(view, {
-    ...kit.base('Additional animal details', { backLink: hubPath() }),
+    ...kit.base('Additional animal details', {
+      backLink: hubPath(),
+      journey
+    }),
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -47,9 +50,10 @@ const render = (h, values, showUnweaned, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers, scope } = await state.get(request, h)
+  const { journey, answers, scope } = await state.get(request, h)
   return render(
     h,
+    journey,
     {
       animalsCertifiedFor: answers.animalsCertifiedFor ?? '',
       containsUnweanedAnimals: answers.containsUnweanedAnimals ?? ''
@@ -59,7 +63,7 @@ const get = async (request, h) => {
 }
 
 const post = async (request, h) => {
-  const { scope } = await state.get(request, h)
+  const { journey, scope } = await state.get(request, h)
   const showUnweaned = scope.has('containsUnweanedAnimals')
   const payload = request.payload ?? {}
   const values = {
@@ -70,7 +74,7 @@ const post = async (request, h) => {
     ? compose(certifiedField, unweanedField)
     : compose(certifiedField)
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, showUnweaned, errors)
+  if (errors) return render(h, journey, values, showUnweaned, errors)
 
   const { scope: committed } = await state.commit(request, h, {
     animalsCertifiedFor: values.animalsCertifiedFor,
