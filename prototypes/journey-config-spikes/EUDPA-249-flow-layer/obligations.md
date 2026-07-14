@@ -303,16 +303,17 @@ concept that would wrap them in a real deployment:
   navigation primitives; Domain-scoped for `optionsFor` and
   `validate`. All consume the ObligationEvaluator's output plus the
   Flow / Domain modules as input.
-- **Orchestrator** — side-effecting. Would trigger system-handled
-  obligations, collect callbacks, write results into fulfilments,
-  and re-run the evaluators in a fixed-point loop. In this spike
-  the browser layer takes the orchestrator's role for the
-  user-facing obligations; system-handled obligations aren't
-  exercised.
+- **Orchestrator** — side-effecting (not implemented in this spike
+  — see below). Would trigger system-handled obligations, collect
+  callbacks, write results into fulfilments, and re-run the
+  evaluator + primitives in a fixed-point loop. In this spike the
+  browser layer takes the orchestrator's role for the user-facing
+  obligations; system-handled obligations aren't exercised.
 
-Both evaluators are pure sync — all async is concentrated in the
-orchestrator, upstream of the evaluators. Both are independently
-unit-testable with plain fixture in / plain output out.
+Both the ObligationEvaluator and the runtime primitives are pure
+sync — all async is concentrated in the orchestrator, upstream of
+them. Both are independently unit-testable with plain fixture in /
+plain output out.
 
 ### The ObligationEvaluator (Service layer)
 
