@@ -184,15 +184,18 @@ const drivePrototype = async (page) => {
   // Addresses — five parties copy-commit, then the cattle CPH tail page.
   await task('Roles and addresses')
   const parties = [
-    ['Consignor', values.consignor.name],
+    ['Consignor or exporter', values.consignor.name],
     ['Place of destination', values.placeOfDestination.name],
     ['Place of origin', values.placeOfOrigin.name],
     ['Consignee', values.consignee.name],
     ['Importer', values.importer.name]
   ]
   for (const [label, name] of parties) {
+    // Match the row on its exact key label: the importer row's hint carries the
+    // word "consignee", so a hasText substring filter matches two rows.
     await page
-      .locator('.govuk-summary-list__row', { hasText: label })
+      .locator('.govuk-summary-list__row')
+      .filter({ has: page.getByText(label, { exact: true }) })
       .getByRole('link', { name: 'Add' })
       .click()
     await page.getByRole('radio', { name }).check()
