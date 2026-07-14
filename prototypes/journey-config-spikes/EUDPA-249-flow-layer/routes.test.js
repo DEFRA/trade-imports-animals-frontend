@@ -380,6 +380,10 @@ describe('page-controller — address-block composite widget (commercialTranspor
     // Compound behaviour: any sub-field error should light up the
     // whole composite widget as a group in error state, so the
     // widget matches the GOV.UK Design System error pattern.
+    // NB: every required sub-field is filled here so the parent
+    // mandatoryToProceed gate passes and we exercise the DOMAIN
+    // predicate (bad email → addressSubFieldEmailFormat), not the
+    // completeness gate.
     const jar = makeCookieJar()
     await setUpCommercial(jar)
     const res = await inject(jar, {
@@ -387,6 +391,8 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/pages/transporter-details',
       payload: {
         commercialTransporter__name: 'ACME',
+        commercialTransporter__transporterAuthorisationNumber:
+          'UK/AUTH/2026/001',
         commercialTransporter__addressLine1: 'Farm Lane',
         commercialTransporter__town: 'Exeter',
         commercialTransporter__postcode: 'EX1 1AA',
@@ -400,13 +406,12 @@ describe('page-controller — address-block composite widget (commercialTranspor
     expect(res.payload).toContain('govuk-form-group--error')
   })
 
-  it('POST with all sub-fields blank redirects on (no page-save block on addresses)', async () => {
-    // User requirement: address pages must allow blank save; the
-    // user comes back later via a Change link or task-list click.
-    // Completeness is enforced by `hasFulfilment` consulting
-    // `domainEntry.isComplete` (engine/index.js) — a blank or
-    // partial address keeps the containing subsection In progress
-    // and surfaces a CYA prompt.
+  it('POST with all sub-fields blank returns 400 with the required message (Mandatory to proceed)', async () => {
+    // V4: commercialTransporter is "Mandatory to proceed" (Confluence
+    // page 6497338582 row 110). Flow entry carries
+    // `mandatoryToProceed: true` + `errors.commercialTransporter.required`;
+    // contract.js gate consults `domainEntry.isComplete(value)` and
+    // rejects the blank submission.
     const jar = makeCookieJar()
     await setUpCommercial(jar)
     const res = await inject(jar, {
@@ -414,24 +419,19 @@ describe('page-controller — address-block composite widget (commercialTranspor
       url: '/prototype/eudpa-249/pages/transporter-details',
       payload: {}
     })
-    expect(res.statusCode).toBe(302)
-    // Old per-sub-field messages must not appear.
-    expect(res.payload).not.toContain('Enter Business or organisation name')
-    expect(res.payload).not.toContain('Enter Address line 1')
-    expect(res.payload).not.toContain('Enter Postcode')
-    // Old parent-level error must not appear either.
-    expect(res.payload).not.toContain(
-      'Provide the commercial transporter address'
-    )
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Complete the commercial transporter address')
   })
 
-  it('POST with only some sub-fields blank redirects on (interpretation A) — completeness deferred to CYA', async () => {
-    // V4 spec Standard Address Block: "The validation below applies
-    // once the address record is provided." Under interpretation A
-    // the predicate validates only user-supplied sub-fields (max
-    // length, email format, enum membership). Blank sub-fields never
-    // fire required errors at page save — completeness is caught by
-    // the CYA `promptCompleteAddress` prompt, not at this POST.
+  it('POST with only some sub-fields blank returns 400 with the required message (Mandatory to proceed treats partial as incomplete)', async () => {
+    // V4: same "Mandatory to proceed" as the blank case above. The
+    // domain predicate is still interpretation-A (only user-supplied
+    // values are validated — a bad email in a partial submission
+    // WOULD fire the email predicate) but the flow-level completeness
+    // gate fires FIRST and short-circuits: contract.js checks
+    // isComplete BEFORE running the domain predicate, so a partial
+    // address surfaces one clean "Complete the …" error rather than
+    // a mix of predicate errors and the required error.
     const jar = makeCookieJar()
     await setUpCommercial(jar)
     const res = await inject(jar, {
@@ -446,13 +446,35 @@ describe('page-controller — address-block composite widget (commercialTranspor
         commercialTransporter__postcode: ''
       }
     })
-    expect(res.statusCode).toBe(302)
-    // CYA prompt surfaces the completeness gap.
-    const cya = await inject(jar, {
-      method: 'GET',
-      url: '/prototype/eudpa-249/check-your-answers'
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Complete the commercial transporter address')
+  })
+
+  it('M-to-proceed sibling: contactAddress blank POST returns 400 with the required message', async () => {
+    // Parallel coverage for contactAddress (Confluence page 6497338582
+    // row 143, user variant). Shares the same contract.js
+    // completeness gate as the two transporter obligations.
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/contact-address',
+      payload: {}
     })
-    expect(cya.payload).toContain('Complete the Commercial transporter address')
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Complete the contact address')
+  })
+
+  it('M-to-proceed sibling: contactAddress partial POST returns 400 with the required message', async () => {
+    // Same completeness gate — partial submission (name only)
+    // fails via `domainEntry.isComplete(value)` returning false.
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/pages/contact-address',
+      payload: { contactAddress__name: 'Contact Person' }
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Complete the contact address')
   })
 
   it('POST with a bad sub-field re-renders 400 preserving every typed sub-field (composite input preserved)', async () => {
@@ -553,8 +575,10 @@ describe('page-controller — address-block composite widget (commercialTranspor
   it('M-to-submit address (placeOfOrigin): blank POST redirects on; partial fill surfaces a CYA completeness prompt', async () => {
     // V4 spec: placeOfOrigin is "Mandatory to submit" — the page
     // saves blank (no page-level block), and completeness comes
-    // from CYA. This differs from commercialTransporter which is
-    // "Mandatory to proceed" (parent-level block on fully-blank).
+    // from CYA. This differs from commercialTransporter /
+    // privateTransporter / contactAddress, which are "Mandatory to
+    // proceed" (contract.js gate rejects both blank AND partial
+    // submissions with the required message).
     const jar = makeCookieJar()
     // Blank POST → 302 (M-to-submit, no page block).
     const blank = await inject(jar, {

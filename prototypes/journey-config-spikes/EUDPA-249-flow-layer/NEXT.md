@@ -81,6 +81,15 @@ represented across obligations, domain, and flow" — is met.**
   engine now consults `domain.get(id).isComplete(value)` for
   address obligations so the task list shows "In progress" for
   partial-but-not-complete addresses rather than "Completed".
+  **Partially reverted in a later commit** after the spec-vs-code
+  audit clarified "Mandatory to proceed" (V4 spec column) DOES mean
+  page-save-blocked. The three M-to-proceed addresses
+  (`commercialTransporter`, `privateTransporter`, `contactAddress`)
+  now block blank AND partial page saves via a new
+  `isSufficientForProceed` helper in contract.js that consults
+  `isComplete` for addresses. The other 5 addresses stay M-to-submit
+  under Interpretation A (save-blank-allowed + CYA prompt on
+  incompleteness).
 - **POST-error input preservation** (`4818fee`) — user bug report:
   entering an invalid address then hitting Save wiped every field.
   Traced to the POST-error re-render pathway reading stored
@@ -136,15 +145,20 @@ represented across obligations, domain, and flow" — is met.**
   need no domain entry" — is met. Step 5's V4-spec-verification
   exit criterion is also met.
 - **Mandate model:** `mandatoryToProceed: true` on a flow presents
-  entry blocks page save until the field is non-blank (the
-  page-save contract). `obligation.status: 'mandatory'` drives the
-  submit-mandate rollup — CYA emits a prompt if a mandatory
-  obligation is in scope but unfulfilled (spike-wide) and the hub's
-  section rollup consults it. The two are independent: a
-  submit-mandate field can be blank at page save; a proceed-mandate
-  field must be non-blank at page save but can still be structurally
-  incomplete (relevant to `addressBlock`, where `isComplete(value)`
-  is the CYA-side check).
+  entry blocks page save (the page-save contract). For scalar
+  obligations the gate is `!isBlankValue(value)`; for address
+  (composite) obligations the gate is
+  `domainEntry.isComplete(value)`, so blank AND partial addresses
+  both fail — matches the V4 "Mandatory to proceed" semantic that
+  the whole page must be complete. `obligation.status: 'mandatory'`
+  drives the submit-mandate rollup — CYA emits a prompt if a
+  mandatory obligation is in scope but unfulfilled (spike-wide) and
+  the hub's section rollup consults it. The two flags are
+  independent: an M-to-submit field can be blank at page save; an
+  M-to-proceed field must be complete at page save. Three obligations
+  are M-to-proceed for addresses (commercialTransporter,
+  privateTransporter, contactAddress); the other 5 addresses are
+  M-to-submit.
 
 ### Step 4 iterations completed
 

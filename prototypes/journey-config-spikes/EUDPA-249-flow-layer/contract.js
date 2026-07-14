@@ -248,13 +248,24 @@ export function validatePagePayload(page, payload, state, options = {}) {
       path: descriptor.path,
       value
     }
-    // Flow-level submit-mandate: reject blank submissions with the
-    // flow-supplied required message before running the domain check.
-    // Skip the domain check on blank required — the required error is
+    // Flow-level proceed-mandate: reject blank OR structurally-
+    // incomplete submissions with the flow-supplied required message
+    // before running the domain check. For scalar obligations, that's
+    // a `isBlankValue` check. For address obligations (composite
+    // widget), we consult `domainEntry.isComplete(value)` so a
+    // partial address (some required sub-fields blank) also fails
+    // the gate — matches the V4 "Mandatory to proceed" semantic that
+    // the whole page must be complete before the user can advance.
+    //
+    // Skip the domain check on required-fail — the required error is
     // the one the user needs to see; running an enum/predicate check
-    // on undefined would only add noise. See flow.js for property
-    // semantics; distinct from obligation.status (completion-mandate).
-    if (descriptor.mandatoryToProceed && isBlankValue(value)) {
+    // on undefined / a partial value would only add noise. See flow.js
+    // for property semantics; distinct from obligation.status
+    // (completion-mandate driving CYA prompts + submit).
+    if (
+      descriptor.mandatoryToProceed &&
+      !isSufficientForProceed(descriptor.obligation, value)
+    ) {
       const key = descriptor.errors?.required
       errors.push({
         code: 'flow.required',
@@ -275,6 +286,21 @@ export function validatePagePayload(page, payload, state, options = {}) {
   }
   const { errorList, fieldErrors } = formatDomainErrors(errors)
   return { ok: errors.length === 0, errors, errorList, fieldErrors, values }
+}
+
+/** True iff a submitted value is complete enough to satisfy a flow-
+ *  level `mandatoryToProceed: true` gate on the given obligation.
+ *  Scalars use isBlankValue; composite address obligations delegate
+ *  to `domainEntry.isComplete(value)` so blank AND partial values
+ *  both fail the gate. Mirrors the `isValueFulfilled` helper in
+ *  engine/index.js — different concern (page-save-gate vs task-list
+ *  rollup) but identical shape for addresses. */
+function isSufficientForProceed(obligation, value) {
+  const entry = domain.get(obligation.id)
+  if (entry?.type === 'address' && typeof entry.isComplete === 'function') {
+    return entry.isComplete(value)
+  }
+  return !isBlankValue(value)
 }
 
 function coerceValue(descriptor, raw) {

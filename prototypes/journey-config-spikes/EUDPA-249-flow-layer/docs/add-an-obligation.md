@@ -1020,6 +1020,12 @@ being explicit which one you want when adding an obligation:
   field blank on POST validates through and redirects on. When true,
   a blank POST returns a 400 with the flow-supplied required
   message; the domain check runs on non-blank input as normal.
+  For **address (composite) obligations**, the gate consults
+  `domainEntry.isComplete(value)` rather than just checking blank —
+  so a partial address (some required sub-fields blank) also fails
+  the gate, matching the V4 "Mandatory to proceed" semantic that
+  "the whole page must be complete." See `contract.js`
+  `isSufficientForProceed` and the audit finding cluster #7-9.
 
 The two are independent. A field can be:
 

@@ -176,19 +176,32 @@ export const flow = {
               // scope depending on transporterType. Question visibility
               // via obligation scope, no flow-side branching required.
               //
-              // No `mandatoryToProceed` flag: the user can save the
-              // page blank and come back later. Completeness of an
-              // address is a task-list / CYA concern — the address is
-              // considered fulfilled only when every required
-              // sub-field is filled (see `hasFulfilment` in
-              // engine/index.js which consults `domainEntry.isComplete`
-              // for address obligations). Partial fills therefore keep
-              // the subsection In progress and the CYA prompt "Complete
-              // the … address" surfaces until it's fully filled.
+              // V4: both are "Mandatory to proceed" (Confluence page
+              // 6497338582 rows 110 + 119) → user cannot save-and-
+              // continue with a blank or partial address. The
+              // mandatoryToProceed gate in contract.js consults
+              // `domainEntry.isComplete(value)` for address
+              // obligations, so blank AND partial submissions both
+              // fire the required error at page save.
+              //
+              // The other 5 address obligations (placeOfOrigin,
+              // consignor, consignee, importer, placeOfDestination)
+              // stay "Mandatory to submit" — they save blank and rely
+              // on the CYA `promptCompleteAddress` prompt for
+              // completeness. See routes.test.js for the two
+              // behavioural regressions.
               page: 'transporter-details',
               presents: [
-                { obligation: commercialTransporter },
-                { obligation: privateTransporter }
+                {
+                  obligation: commercialTransporter,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.commercialTransporter.required' }
+                },
+                {
+                  obligation: privateTransporter,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.privateTransporter.required' }
+                }
               ]
             }
           ]
@@ -323,13 +336,20 @@ export const flow = {
           titleKey: 'flow.subsection.contact.title',
           children: [
             {
-              // No `mandatoryToProceed` flag — see the transporter-
-              // details entry above for the rationale. Blank save
-              // allowed; task-list stays In progress until the address
-              // is structurally complete (all required sub-fields
-              // filled).
+              // V4: Mandatory to proceed (Confluence page 6497338582
+              // row 143 — user-entered variant). Blank AND partial
+              // submissions fail page save via the contract.js
+              // mandatoryToProceed gate consulting
+              // `domainEntry.isComplete`. See the transporter-details
+              // entry above for the wider rationale.
               page: 'contact-address',
-              presents: [{ obligation: contactAddress }]
+              presents: [
+                {
+                  obligation: contactAddress,
+                  mandatoryToProceed: true,
+                  errors: { required: 'errors.contactAddress.required' }
+                }
+              ]
             }
           ]
         },

@@ -546,13 +546,13 @@
       "required": "Enter the number of animals"
     },
     "commercialTransporter": {
-      "required": "Provide the commercial transporter address"
+      "required": "Complete the commercial transporter address"
     },
     "privateTransporter": {
-      "required": "Provide the private transporter address"
+      "required": "Complete the private transporter address"
     },
     "contactAddress": {
-      "required": "Provide the contact address"
+      "required": "Complete the contact address"
     },
     "domain": {
       "enumNotInOptions": {
