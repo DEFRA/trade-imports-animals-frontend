@@ -238,6 +238,34 @@ mandatory entry is fulfilled`. An in-scope-optional page is F
   staticEnum with a doc comment; the eventual pattern is the same
   async-fetch question the other MDM enums share.
 
+### Spec clarifications needed before implementation
+
+Recorded as blockers on future implementation rather than as code
+work — the spike can't fix them without input from the PO / spec
+authors. Raise these with EUDPA-249 stakeholders before the real
+build starts.
+
+- **`commodityType` scope semantic.** V4 spec row 44 says "Where
+  applicable for given commodity, user is able to filter species by
+  type." Ambiguous between two readings:
+  1. Type is COMMODITY-GATED — for some commodities Type is
+     mandatory-to-proceed, for others it's out-of-scope entirely.
+     Would need `anyAllowListed(commodityCode, TYPE_APPLICABLE_
+COMMODITIES, ...)` and a defined applicable-commodity list.
+  2. Type is ALWAYS in-scope; the phrase describes a UX
+     affordance — Type acts as a filter over the species
+     multi-select downstream.
+     Spike currently models reading 2 (unconditional mandatory field).
+     Comment at `obligations/obligations.js:420` flags the ambiguity.
+     Audit finding #12 (down-graded MAJOR → INFO pending clarification).
+- **`commodityType` MDM value list.** V4 spec gives one example
+  (`Game`) but no full enumeration; the ontology comes from an MDM
+  source that isn't documented on the V4 page. Current stub values
+  (`meat-producing`, `dairy-producing`, `breeding-stock`, `other`)
+  do NOT appear in the spec — they were invented to exercise the
+  enum widget end-to-end. Real values need to come from MDM before
+  a walk becomes semantically meaningful. Audit finding #12.
+
 ### Immediate next candidates
 
 Steps 4 and 5 are complete. P0 is now resolved. Playwright cross-
