@@ -8,17 +8,32 @@ dictionary MD) are parked for after the V4 buildout.
 
 ---
 
-## Where we are — session handoff (last updated 2026-07-13)
+## Where we are — session handoff (last updated 2026-07-15)
 
-**Branch:** `spike/EUDPA-249-flow-layer`. Latest commit that has been
-pushed: `591007d` (docs refresh); one uncommitted change on top
-extending the status alphabet to 5 values (P0 resolution).
+**Spike status: COMPLETE.** The V4 slice is fully wired, two
+spec-vs-code audits + one ultrareview pass have run and closed
+their findings, the canonical reference (`obligations.md`) has
+absorbed `RECOMMENDATION.md`, and the branch is at a natural
+hand-off point. Any next work is a new session's call.
 
-**Tests:** 566 spike tests across 23 files, all green.
+**Branch:** `spike/EUDPA-249-flow-layer`. Latest pushed commit:
+`50a771d` (ultrareview bug_001 — CYA line-scoped labels use
+ordinal not raw id). No uncommitted changes. 121 commits ahead
+of `main`.
+
+**Tests:** 572 spike tests across 23 files, all green. Playwright
+2/2 pass.
 Run: `npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/`
 
 **Browsable demo:** `npm run dev` (auth defaults off in dev), then
 <http://localhost:3000/prototype/eudpa-249/start>.
+
+**Where to start reading:** [`obligations.md`](./obligations.md)
+is the single source of truth (~3350 lines — architecture,
+obligations model, domain layer, flow, runtime primitives,
+contract seam, browsable prototype, files table, running the
+spike). This file (NEXT.md) covers current-state + deferred /
+clarification-blocked / deprioritised items.
 
 **Reviewer rule:** the user reviews locally before pushing. Commit
 freely; do NOT push without an explicit go-ahead.
