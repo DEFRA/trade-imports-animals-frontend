@@ -31,6 +31,49 @@
  *     + this accessor; nothing is enforced yet.
  *
  * All helpers are unit-testable in isolation — see helpers.test.js.
+ *
+ * Helper taxonomy — which to use when (Phase 4.6 Q2 clarification):
+ *
+ *   Two shapes of gate exist in this manifest, and they take different
+ *   helpers. The distinction is NOT about "same frame vs cross frame"
+ *   in the identity-level sense — it's about the SHAPE of the stored
+ *   value the gate reads.
+ *
+ *   1. **Top-level scalar gate** — the gate obligation has no `within`,
+ *      OR is otherwise stored as a plain scalar in `fulfilments[gate.id]`.
+ *      Example: `reasonForImport` (top-level, scalar). The `applyTo`
+ *      returns a SINGLE `{inScope, status, reasons?}` decision.
+ *      Use: `equalsGate` / `includesGate` / `presentGate`.
+ *
+ *   2. **Group-scoped gate** — the gate obligation is `within` a group,
+ *      so `fulfilments[gate.id]` is a records-map (`{lineId1: value,
+ *      lineId2: value, ...}`). The `applyTo` returns PER-RECORD
+ *      decisions (via `filterAndProject`). Use:
+ *      - `allowListed` / `notInUnionOf` with `null` projection when the
+ *        gated obligation is at the SAME identity level as the gate
+ *        (both `within` the same group). Example: `numberOfPackages`
+ *        (`within: commodityLine`) reads `commodityCode` (also
+ *        `within: commodityLine`) — same level, so null projection.
+ *      - `allowListed` / `notInUnionOf` with `projectionGroup` set when
+ *        the gated obligation is DEEPER than the gate. Example:
+ *        `passport` (`within: unitRecord`, deeper than commodityLine)
+ *        reads `commodityCode` (`within: commodityLine`) via projection
+ *        `unitRecord` — the engine walks unit-records for each matching
+ *        commodity-line.
+ *
+ *   Rule of thumb: if the gate obligation has a `within`, use the
+ *   `allowListed`/`notInUnionOf` family. Otherwise use the scalar
+ *   family (`equalsGate` / `includesGate` / `presentGate` /
+ *   `alwaysInScope`). `matches` is a same-frame scalar equality gate
+ *   with same-frame semantics (kept for backwards compat).
+ *   `anyAllowListed` is a scalar aggregation over a group's records
+ *   (returns a single decision, not per-record) — for the "cph reads
+ *   ANY commodityCode across commodity lines" case; see its docstring.
+ *
+ *   `branchedGate` is the escape hatch for genuinely non-derivable
+ *   predicates. After Phase 4.5 it is absent from the manifest but
+ *   retained here for future use — it must be paired with `predicateMeta`
+ *   for the reachability prover to synthesise a witness.
  */
 
 /**

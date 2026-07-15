@@ -508,7 +508,10 @@ export const PACKAGE_COUNT_COMMODITIES = [
 
 // Depth-1 commodity-code-gated field record. `applyTo` returns records
 // = matching line-ids; no projection group needed (the gate lives at
-// the same identity level as the gated obligation).
+// the same identity level as the gated obligation). Uses `allowListed`
+// with `null` projection (NOT `includesGate`) — see helpers.js
+// taxonomy: the gate `commodityCode` is `within: commodityLine`, so
+// `fulfilments[commodityCode.id]` is a records-map, not a scalar.
 export const numberOfPackages = {
   id: '252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507',
   name: 'numberOfPackages',
