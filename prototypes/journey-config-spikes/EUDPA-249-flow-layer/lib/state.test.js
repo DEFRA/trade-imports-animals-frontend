@@ -16,10 +16,16 @@ import {
   deleteUnitRecord,
   deleteCommodityLine,
   readFulfilments,
+  readState,
+  writeFulfilments,
   SESSION_KEY,
   NEXT_LINE_ID_KEY,
   NEXT_UNIT_ID_BY_LINE_KEY
 } from './state.js'
+import {
+  reasonForImport,
+  purposeInInternalMarket
+} from '../obligations/obligations.js'
 
 // Minimal in-memory yar impl matching the read/write/clear surface
 // state.js uses. Sufficient for these tests without pulling in @hapi.
@@ -136,6 +142,80 @@ describe('deleteUnitRecord', () => {
     expect(readFulfilments(request)[permanentAddress.id]).toEqual({
       'line2/unit1': { name: 'B' }
     })
+  })
+})
+
+describe('readState — persists purge write-back to yar storage', () => {
+  // BRIEF §Migration #1 + REPORT §7 (Side B bugs): an out-of-scope
+  // answer must be actively cleared from persistent storage per
+  // obligations.md §Scope exit ("actively cleared") and the
+  // `appliesWhen` semantic (obligations.md:659-661). Today
+  // `readState` computes the purged view via `evaluateState` but
+  // discards it — only the render sees the purge, the yar store
+  // still holds the stale value, so the answer resurrects on the
+  // next gate flip-back.
+  //
+  // Pair used: `purposeInInternalMarket` (purge-on-flip) gated by
+  // `reasonForImport === 'internal-market'`. Flip the gate off and
+  // the persisted purpose must be gone from storage.
+  //
+  // NOTE: this commit only fixes the write-back half. The `applyTo`
+  // reorder (evaluator pre-purge staleness) is Phase 1 commit 2 —
+  // see PLAN.md §5.
+  it('write-back: flipping a gate closed drops the dependent from raw storage', () => {
+    const request = makeRequest()
+    // Seed: gate open, dependent answered.
+    writeFulfilments(request, {
+      [reasonForImport.id]: 'internal-market',
+      [purposeInInternalMarket.id]: 'sale'
+    })
+
+    // Baseline: dependent visible in state.
+    const baseline = readState(request)
+    expect(baseline.fulfilments[purposeInInternalMarket.id]).toBe('sale')
+
+    // Flip gate closed → dependent goes out of scope.
+    writeFulfilments(request, {
+      [reasonForImport.id]: 'transit',
+      [purposeInInternalMarket.id]: 'sale'
+    })
+
+    // Read state — purge takes effect on the returned view AND the
+    // persisted store.
+    const afterClose = readState(request)
+    expect(afterClose.fulfilments[purposeInInternalMarket.id]).toBeUndefined()
+    // The load-bearing assertion: the raw yar store no longer holds
+    // the stale answer. Prior to the write-back fix this line failed
+    // — the render was purged but storage was not.
+    expect(readFulfilments(request)[purposeInInternalMarket.id]).toBeUndefined()
+  })
+
+  it('no-resurrection: flipping the gate back open does NOT rehydrate the purged answer', () => {
+    const request = makeRequest()
+    writeFulfilments(request, {
+      [reasonForImport.id]: 'internal-market',
+      [purposeInInternalMarket.id]: 'sale'
+    })
+    readState(request) // baseline read (no purge — gate open)
+
+    // Close the gate. `readState` must actively clear the purpose.
+    writeFulfilments(request, {
+      [reasonForImport.id]: 'transit',
+      [purposeInInternalMarket.id]: 'sale'
+    })
+    readState(request) // triggers purge write-back
+
+    // Re-open the gate — dependent was never re-answered.
+    const current = { ...readFulfilments(request) }
+    current[reasonForImport.id] = 'internal-market'
+    writeFulfilments(request, current)
+
+    const reopened = readState(request)
+    // If the purge was persisted, the dependent is now blank — the
+    // user must re-answer. If it was NOT persisted, the pre-purge
+    // value 'sale' resurrects here (this is the bug).
+    expect(reopened.fulfilments[purposeInInternalMarket.id]).toBeUndefined()
+    expect(readFulfilments(request)[purposeInInternalMarket.id]).toBeUndefined()
   })
 })
 

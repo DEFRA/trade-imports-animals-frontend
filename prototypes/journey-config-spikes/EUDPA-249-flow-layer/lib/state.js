@@ -38,9 +38,24 @@ export function writeFulfilments(request, fulfilments) {
  *
  * where `obligations` is the impl map from ObligationEvaluator. Wraps
  * `evaluateState` so a controller only makes one call.
+ *
+ * Persists the purge write-back: after `evaluateState` returns the
+ * amended (post-purge) fulfilments, we write them back to the yar
+ * store when they differ from what was read. This actively clears
+ * out-of-scope answers per obligations.md §Scope exit ("actively
+ * cleared", §659-661) so a gate flip-back cannot resurrect a purged
+ * value. Without this, out-of-scope data lingers in storage and
+ * silently reappears on the next scope-open flip.
+ *
+ * NOTE: this is one half of a two-part fix (see PLAN.md §5). The
+ * evaluator's `applyTo` currently runs on the *pre-purge* fulfilments
+ * so a logically-deleted answer can still drive other gates in the
+ * same request — that's addressed by the `applyTo` reorder commit.
  */
 export function readState(request) {
-  return evaluateState(readFulfilments(request))
+  const state = evaluateState(readFulfilments(request))
+  writeFulfilments(request, state.fulfilments)
+  return state
 }
 
 /**
