@@ -85,7 +85,9 @@ function filterCountriesBySearch(countries, searchQuery) {
 }
 
 async function buildViewModel(request, traceId, searchQuery = '') {
-  const allCountries = await countriesClient.getIsoCountries(traceId)
+  const allCountries = await countriesClient.getCountries(traceId, [
+    'GBNAG_SPS_EX'
+  ])
   const selectedCodes = getSelectedCodes(request)
   const selectedCodeSet = new Set(selectedCodes)
   const selectedCountries = resolveCountryNames(selectedCodes, allCountries)

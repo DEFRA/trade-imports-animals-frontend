@@ -44,15 +44,5 @@ export const countriesClient = {
     }
 
     return fetchCountries(url, traceId)
-  },
-
-  /**
-   * Retrieves ISO countries from the reference data API (MDM system=ISO).
-   */
-  async getIsoCountries(traceId) {
-    const url = new URL(`${tradeImportsReferenceDataUrl}/countries`)
-    url.searchParams.set('system', 'ISO')
-
-    return fetchCountries(url, traceId)
   }
 }

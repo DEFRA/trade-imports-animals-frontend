@@ -148,29 +148,4 @@ describe('#countriesClient', () => {
       })
     })
   })
-
-  describe('getIsoCountries', () => {
-    test('Should send GET request to /countries?system=ISO', async () => {
-      const responseBody = [{ code: 'FR', name: 'France' }]
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(responseBody)
-      })
-
-      const result = await countriesClient.getIsoCountries(traceId)
-
-      expect(fetch).toHaveBeenCalledWith(
-        'http://mock-reference-data/countries?system=ISO',
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-trace-id': traceId
-          }
-        }
-      )
-      expect(result).toEqual(responseBody)
-    })
-  })
 })

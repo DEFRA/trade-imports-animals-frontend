@@ -15,7 +15,7 @@ vi.mock('../common/helpers/logging/logger.js', () => ({
 
 vi.mock('../common/clients/countries-client.js', () => ({
   countriesClient: {
-    getIsoCountries: vi.fn().mockResolvedValue([
+    getCountries: vi.fn().mockResolvedValue([
       { code: 'FR', name: 'France' },
       { code: 'DE', name: 'Germany' },
       { code: 'NL', name: 'Netherlands' }
