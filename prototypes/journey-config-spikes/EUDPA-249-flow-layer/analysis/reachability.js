@@ -236,7 +236,14 @@ export const STRUCTURED_HELPER_TYPES = new Set([
   'anyAllowListed',
   'matches',
   'branchedGate',
-  'notInUnionOf'
+  'notInUnionOf',
+  // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. Each helper's
+  // `.metadata` fully describes the gate — the closure body is auto-
+  // generated from it, so witness synthesis reads the metadata directly.
+  'equalsGate',
+  'presentGate',
+  'includesGate',
+  'alwaysInScope'
 ])
 
 /**
@@ -341,6 +348,59 @@ export function synthesiseWitness(obligation) {
       // identificationDetails + description both project onto
       // unitRecord.
       return synthesiseNotInUnionOfWitness(meta)
+
+    case 'equalsGate':
+      // Meta-first equivalent of branchedGate + predicateMeta.equals.
+      // metadata.value IS the target value that opens the whenTrue
+      // branch. If both branches are in-scope (regionCode's status-swap
+      // shape), the gate is TRIVIAL — every input opens it, no witness
+      // needed. Otherwise the value witnesses the whenTrue branch.
+      if (meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true) {
+        return { kind: WITNESS_KIND.TRIVIAL }
+      }
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: meta.value
+      }
+
+    case 'presentGate':
+      // Meta-first equivalent of branchedGate + predicateMeta.isFilled.
+      // Any non-blank scalar opens the gate. Total-branches case is
+      // trivial (both in-scope); otherwise use the same sentinel
+      // convention as branchedGate's `isFilled` synth.
+      if (meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true) {
+        return { kind: WITNESS_KIND.TRIVIAL }
+      }
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: '__witness__'
+      }
+
+    case 'includesGate':
+      // Meta-first equivalent of branchedGate + predicateMeta.includes.
+      // metadata.values IS the admitted list; first entry is a witness.
+      // Total-branches case is trivial.
+      if (meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true) {
+        return { kind: WITNESS_KIND.TRIVIAL }
+      }
+      if (!Array.isArray(meta.values) || meta.values.length === 0) {
+        return {
+          kind: WITNESS_KIND.OPAQUE,
+          reason: 'includesGate metadata has empty values array'
+        }
+      }
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: meta.values[0]
+      }
+
+    case 'alwaysInScope':
+      // Unconditional — the gate is always open by construction, no
+      // read at all. Trivial classification is the honest one.
+      return { kind: WITNESS_KIND.TRIVIAL }
 
     default:
       return {

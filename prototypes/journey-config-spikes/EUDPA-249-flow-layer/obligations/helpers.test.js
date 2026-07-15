@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import {
   allowListed,
+  alwaysInScope,
   anyAllowListed,
   branchedGate,
+  equalsGate,
+  includesGate,
   matches,
   notInUnionOf,
   obligationMetadata,
-  present
+  present,
+  presentGate
 } from './helpers.js'
 
 // Synthetic obligations — plain data. No evaluator, no manifest, no
@@ -359,5 +363,204 @@ describe('obligationMetadata', () => {
     const obligation = { id: 'g-id', name: 'g' }
     const meta = obligationMetadata(obligation)
     expect(meta.dependsOn).toBeUndefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Meta-first gate helpers — EUDPA-288 Phase 4.5.1.
+//
+// The `regionCode` / `purposeInInternalMarket` / `commercialTransporter`
+// pattern under Phase 3.2 declares its dependency THREE times: closure
+// body reads `fulfilments[X.id]`, `predicateMeta` restates that as
+// `{operator:'equals', obligationId:X.id, value:V}`, and `dependsOn`
+// restates it a third time as `[X.id]`. These helpers collapse the
+// duplication: the metadata IS the definition, the closure body is
+// auto-generated. Phase 4.5.2 will migrate the 10 sites; this commit
+// only introduces the helpers (purely additive).
+//
+// Frame semantics: all four helpers use the SAME-FRAME scalar-read
+// pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
+// `filterAndProject`, no projection group, no `fulfilmentIdsByObligationId`
+// touch. The migration sites (regionCode etc.) are all notification-
+// level scalar gates; if a future depth-N call site emerges,
+// `allowListed`'s projection pattern is the escape hatch.
+// ---------------------------------------------------------------------------
+
+describe('equalsGate', () => {
+  const whenTrue = { inScope: true, status: 'mandatory' }
+  const whenFalse = { inScope: true, status: 'optional' }
+
+  it('returns whenTrue when the stored value equals the target', () => {
+    const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
+    expect(gate({ [boolObl.id]: 'yes' })).toEqual(whenTrue)
+  })
+
+  it('returns whenFalse when the stored value differs', () => {
+    const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
+    expect(gate({ [boolObl.id]: 'no' })).toEqual(whenFalse)
+  })
+
+  it('returns whenFalse when nothing is stored', () => {
+    const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
+    expect(gate({})).toEqual(whenFalse)
+  })
+
+  it('handles status flip (mandatory → optional) — regionCode shape', () => {
+    // regionCode uses `whenTrue: {inScope:true, status:'mandatory'}` +
+    // `whenFalse: {inScope:true, status:'optional'}`. Both branches
+    // in-scope; only status flips. The helper must pass through
+    // whichever decision object the caller supplied verbatim.
+    const reason = { code: 'r.applicable', explanation: 'r' }
+    const gate = equalsGate(
+      boolObl,
+      'yes',
+      { inScope: true, status: 'mandatory', reasons: [reason] },
+      { inScope: true, status: 'optional' }
+    )
+    expect(gate({ [boolObl.id]: 'yes' })).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [reason]
+    })
+    expect(gate({ [boolObl.id]: 'no' })).toEqual({
+      inScope: true,
+      status: 'optional'
+    })
+  })
+
+  it('exposes metadata with obligationId + value + branches', () => {
+    const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
+    expect(gate.metadata).toEqual({
+      type: 'equalsGate',
+      obligation: boolObl.id,
+      value: 'yes',
+      whenTrue,
+      whenFalse
+    })
+  })
+})
+
+describe('presentGate', () => {
+  const whenTrue = { inScope: true, status: 'mandatory' }
+  const whenFalse = { inScope: true, status: 'optional' }
+
+  it('returns whenTrue when the gate has any scalar value', () => {
+    const gate = presentGate(boolObl, whenTrue, whenFalse)
+    expect(gate({ [boolObl.id]: 'anything' })).toEqual(whenTrue)
+  })
+
+  it('returns whenTrue for truthy-but-falsy values (0, false, "")', () => {
+    // Matches `present`'s semantics: any non-null/non-undefined scalar
+    // counts as "answered". Empty-string is a stored answer (the user
+    // saved the page blank), which regionCode's status-swap needs to
+    // treat as present.
+    const gate = presentGate(boolObl, whenTrue, whenFalse)
+    expect(gate({ [boolObl.id]: 0 })).toEqual(whenTrue)
+    expect(gate({ [boolObl.id]: false })).toEqual(whenTrue)
+    expect(gate({ [boolObl.id]: '' })).toEqual(whenTrue)
+  })
+
+  it('returns whenFalse when the gate is undefined / null', () => {
+    const gate = presentGate(boolObl, whenTrue, whenFalse)
+    expect(gate({})).toEqual(whenFalse)
+    expect(gate({ [boolObl.id]: undefined })).toEqual(whenFalse)
+    expect(gate({ [boolObl.id]: null })).toEqual(whenFalse)
+  })
+
+  it('returns whenTrue for indexed obligations with at least one key', () => {
+    const gate = presentGate(groupObl, whenTrue, whenFalse)
+    expect(gate({ [groupObl.id]: { k1: 'v' } })).toEqual(whenTrue)
+  })
+
+  it('returns whenFalse for indexed obligations with no keys', () => {
+    const gate = presentGate(groupObl, whenTrue, whenFalse)
+    expect(gate({ [groupObl.id]: {} })).toEqual(whenFalse)
+  })
+
+  it('exposes metadata with obligationId + branches (no value)', () => {
+    const gate = presentGate(boolObl, whenTrue, whenFalse)
+    expect(gate.metadata).toEqual({
+      type: 'presentGate',
+      obligation: boolObl.id,
+      whenTrue,
+      whenFalse
+    })
+  })
+})
+
+describe('includesGate', () => {
+  const whenTrue = { inScope: true, status: 'optional' }
+  const whenFalse = { inScope: false }
+  const LAND_MODES = ['railway', 'road-vehicle']
+
+  it('returns whenTrue when the stored value is in the list', () => {
+    const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
+    expect(gate({ [boolObl.id]: 'railway' })).toEqual(whenTrue)
+    expect(gate({ [boolObl.id]: 'road-vehicle' })).toEqual(whenTrue)
+  })
+
+  it('returns whenFalse when the stored value is not in the list', () => {
+    const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
+    expect(gate({ [boolObl.id]: 'sea' })).toEqual(whenFalse)
+  })
+
+  it('returns whenFalse when nothing is stored', () => {
+    const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
+    expect(gate({})).toEqual(whenFalse)
+  })
+
+  it('exposes metadata with obligationId + values + branches', () => {
+    const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
+    expect(gate.metadata).toEqual({
+      type: 'includesGate',
+      obligation: boolObl.id,
+      values: LAND_MODES,
+      whenTrue,
+      whenFalse
+    })
+  })
+})
+
+describe('alwaysInScope', () => {
+  it('returns a fixed decision with the given status', () => {
+    const gate = alwaysInScope('mandatory')
+    expect(gate({})).toEqual({ inScope: true, status: 'mandatory' })
+    // The stored view doesn't matter — same decision.
+    expect(gate({ any: 'thing' })).toEqual({
+      inScope: true,
+      status: 'mandatory'
+    })
+  })
+
+  it('attaches reasons when provided', () => {
+    const reason = { code: 'x', explanation: 'y' }
+    const gate = alwaysInScope('mandatory', [reason])
+    expect(gate({})).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [reason]
+    })
+  })
+
+  it('supports optional status too', () => {
+    const gate = alwaysInScope('optional')
+    expect(gate({})).toEqual({ inScope: true, status: 'optional' })
+  })
+
+  it('exposes metadata with status (+ optional reasons)', () => {
+    const gate = alwaysInScope('mandatory')
+    expect(gate.metadata).toEqual({
+      type: 'alwaysInScope',
+      status: 'mandatory',
+      reasons: null
+    })
+    const gateWithReasons = alwaysInScope('mandatory', [
+      { code: 'x', explanation: 'y' }
+    ])
+    expect(gateWithReasons.metadata).toEqual({
+      type: 'alwaysInScope',
+      status: 'mandatory',
+      reasons: [{ code: 'x', explanation: 'y' }]
+    })
   })
 })

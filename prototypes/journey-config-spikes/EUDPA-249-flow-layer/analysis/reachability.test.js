@@ -34,10 +34,14 @@ import { obligations } from '../obligations/obligations.js'
 import {
   obligationMetadata,
   allowListed,
+  alwaysInScope,
   anyAllowListed,
   branchedGate,
+  equalsGate,
+  includesGate,
   matches,
-  notInUnionOf
+  notInUnionOf,
+  presentGate
 } from '../obligations/helpers.js'
 
 // ---------------------------------------------------------------------------
@@ -395,6 +399,105 @@ describe('synthesiseWitness — per-helper metadata inversion', () => {
       applyTo: () => ({ inScope: true, status: 'mandatory' })
     })
     expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+
+  // -------------------------------------------------------------------------
+  // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. Each is a
+  // structured helper whose `.metadata` fully describes the gate, so
+  // witness synth reads directly and the fidelity round-trip must open
+  // the real closure. Migration onto them is Phase 4.5.2's job — this
+  // block only pins the witness-synth contract.
+  // -------------------------------------------------------------------------
+
+  it('equalsGate (purge-on-flip) → synthesises witness that opens the real closure', () => {
+    const gate = equalsGate(
+      boolObl,
+      'yes',
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: boolObl.id,
+      value: 'yes'
+    })
+    const decision = obl.applyTo({ [w.obligationId]: w.value })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('equalsGate (total — regionCode shape) → classified as trivial', () => {
+    // regionCode's shape: both branches in-scope, status flips only.
+    // Any input opens the gate, no witness needed.
+    const gate = equalsGate(
+      boolObl,
+      'yes',
+      { inScope: true, status: 'mandatory' },
+      { inScope: true, status: 'optional' }
+    )
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+
+  it('presentGate (purge-on-flip) → synthesises witness that opens the real closure', () => {
+    const gate = presentGate(
+      boolObl,
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.obligationId).toBe(boolObl.id)
+    const decision = obl.applyTo({ [w.obligationId]: w.value })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('presentGate (total) → classified as trivial', () => {
+    const gate = presentGate(
+      boolObl,
+      { inScope: true, status: 'mandatory' },
+      { inScope: true, status: 'optional' }
+    )
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+
+  it('includesGate (purge-on-flip) → synthesises witness that opens the real closure', () => {
+    const gate = includesGate(
+      codeObl,
+      ['a', 'b'],
+      { inScope: true, status: 'optional' },
+      { inScope: false }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.obligationId).toBe(codeObl.id)
+    expect(['a', 'b']).toContain(w.value)
+    const decision = obl.applyTo({ [w.obligationId]: w.value })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('includesGate (total) → classified as trivial', () => {
+    const gate = includesGate(
+      codeObl,
+      ['a', 'b'],
+      { inScope: true, status: 'mandatory' },
+      { inScope: true, status: 'optional' }
+    )
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+
+  it('alwaysInScope → trivial (no read; gate always open)', () => {
+    const gate = alwaysInScope('mandatory')
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+    // Fidelity — the closure still returns the expected decision.
+    expect(obl.applyTo({})).toEqual({ inScope: true, status: 'mandatory' })
   })
 })
 

@@ -229,6 +229,158 @@ export function present(obligation) {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Meta-first gate helpers — EUDPA-288 Phase 4.5.1.
+//
+// The `branchedGate`-plus-`predicateMeta` pattern used by regionCode /
+// purposeInInternalMarket / commercialTransporter / privateTransporter /
+// transitedCountries co-declares the same dependency THREE times: the
+// predicate closure body reads `fulfilments[X.id]`, `predicateMeta`
+// restates it as `{operator, obligationId, value}`, and `dependsOn`
+// restates it a third time as `[X.id]`. Rename the gate obligation and
+// three touchpoints have to stay aligned — miss one and the closure
+// body silently drifts from what static analysis THINKS the gate reads.
+//
+// The four helpers below (`equalsGate`, `presentGate`, `includesGate`,
+// `alwaysInScope`) extend the pattern that `allowListed` / `notInUnionOf`
+// already use — the helper's `.metadata` IS the definition, and the
+// closure body is auto-generated from it. Phase 4.5.2 migrates the 10
+// call sites; this file only introduces the helpers (purely additive —
+// `branchedGate` stays as an escape hatch for genuinely opaque
+// predicates, of which the manifest today has none).
+//
+// Frame semantics — all four helpers use the SAME-FRAME scalar-read
+// pattern used by `matches` / `anyAllowListed` / `branchedGate`: the
+// closure reads `fulfilments[gateObligation.id]` and returns a scalar
+// decision object. No `filterAndProject`, no projection group, no
+// touching of `fulfilmentIdsByObligationId`. The migration sites are
+// all notification-level scalar gates; the depth-N projection variants
+// stay `allowListed` / `notInUnionOf`.
+// -----------------------------------------------------------------------------
+
+/**
+ * equalsGate — "gate stored value === target ? whenTrue : whenFalse".
+ *
+ * The workhorse for status-swap and purge-on-flip patterns:
+ *   - `regionCode` — mandatory when `regionCodeRequirement === 'yes'`,
+ *     otherwise optional (both branches in-scope; status flips).
+ *   - `purposeInInternalMarket` — mandatory when `reasonForImport ===
+ *     'internal-market'`, otherwise out of scope (purge on flip).
+ *   - `commercialTransporter` / `privateTransporter` — in scope when
+ *     `transporterType` matches, otherwise out of scope.
+ *
+ * The status-flip case (both branches in-scope) is a natural consequence
+ * of the caller-supplied decisions — no separate status-only variant is
+ * needed. Whatever the caller passes as `whenTrue` / `whenFalse` is
+ * returned verbatim.
+ *
+ * @param {object} gateObligation — the obligation whose stored value is read.
+ * @param {*} value — the target value for equality.
+ * @param {object} whenTrue — decision returned on match.
+ * @param {object} whenFalse — decision returned on mismatch.
+ */
+export function equalsGate(gateObligation, value, whenTrue, whenFalse) {
+  const fn = (fulfilments) =>
+    fulfilments[gateObligation.id] === value ? whenTrue : whenFalse
+  fn.metadata = {
+    type: 'equalsGate',
+    obligation: gateObligation.id,
+    value,
+    whenTrue,
+    whenFalse
+  }
+  return fn
+}
+
+/**
+ * presentGate — "gate has ANY answer ? whenTrue : whenFalse". The
+ * closure body defers to the same "answered" test used by `present`:
+ * scalar values other than `null`/`undefined` count as present; indexed
+ * obligations count as present iff at least one key exists.
+ *
+ * Migration site: `accompanyingDocumentType`'s self-referential
+ * status-swap block (though the four accompanying-document siblings
+ * currently share a `branchedGate` reading `documentTypePresent`).
+ * Under Phase 4.5.2 the four siblings can either share a single
+ * `presentGate(accompanyingDocumentType, {mandatory}, {optional})` or
+ * each site declares its own.
+ *
+ * @param {object} gateObligation — the obligation whose "answered" state gates.
+ * @param {object} whenTrue — decision returned when gate is answered.
+ * @param {object} whenFalse — decision returned when gate is unanswered.
+ */
+export function presentGate(gateObligation, whenTrue, whenFalse) {
+  const isPresent = present(gateObligation)
+  const fn = (fulfilments) => (isPresent(fulfilments) ? whenTrue : whenFalse)
+  fn.metadata = {
+    type: 'presentGate',
+    obligation: gateObligation.id,
+    whenTrue,
+    whenFalse
+  }
+  return fn
+}
+
+/**
+ * includesGate — "gate stored value is in [values] ? whenTrue : whenFalse".
+ *
+ * The one-liner for `transitedCountries`'s
+ * `LAND_TRANSPORT_MODES.includes(fulfilments[meansOfTransport.id])`
+ * predicate. Structurally analogous to `equalsGate` but with a set of
+ * admitted values rather than a single scalar target.
+ *
+ * NOT to be confused with `allowListed` — `allowListed` filters over a
+ * KEYED-RECORD storage shape and projects to instance-paths (depth-N
+ * gates); `includesGate` reads the gate value as a scalar and returns
+ * a scalar decision.
+ *
+ * @param {object} gateObligation — the obligation whose stored value is read.
+ * @param {Array} values — the admitted list.
+ * @param {object} whenTrue — decision returned on inclusion.
+ * @param {object} whenFalse — decision returned on exclusion.
+ */
+export function includesGate(gateObligation, values, whenTrue, whenFalse) {
+  const fn = (fulfilments) =>
+    values.includes(fulfilments[gateObligation.id]) ? whenTrue : whenFalse
+  fn.metadata = {
+    type: 'includesGate',
+    obligation: gateObligation.id,
+    values,
+    whenTrue,
+    whenFalse
+  }
+  return fn
+}
+
+/**
+ * alwaysInScope — no gate; the decision is unconditional. Absorbs the
+ * 19 `applyTo: () => ({ inScope: true, status: 'mandatory' })` closures
+ * (Phase 4.5.3 will drop them entirely once we confirm the data-only
+ * shape works, but the intermediate stop is a helper that PROVES the
+ * always-in-scope shape via metadata so witness synth can classify it
+ * as trivial).
+ *
+ * Equivalent to today's `() => ({ inScope: true, status })` but with
+ * metadata to prove it. The witness synthesiser reads
+ * `.metadata.type === 'alwaysInScope'` and classifies as
+ * `WITNESS_KIND.TRIVIAL` — no closure execution, no witness value.
+ *
+ * @param {string} status — 'mandatory' or 'optional'.
+ * @param {Array} [reasons] — optional reasons to attach.
+ */
+export function alwaysInScope(status, reasons) {
+  const decision = reasons
+    ? { inScope: true, status, reasons }
+    : { inScope: true, status }
+  const fn = () => decision
+  fn.metadata = {
+    type: 'alwaysInScope',
+    status,
+    reasons: reasons ?? null
+  }
+  return fn
+}
+
 /**
  * obligationMetadata — surface the introspection sidecar for an
  * obligation. Merges the gate-shape metadata attached by the applyTo

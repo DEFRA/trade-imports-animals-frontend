@@ -101,6 +101,40 @@ const SAMPLE_OBLIGATIONS = {
       ['a', 'b'],
       ['c', 'd']
     ])
+  },
+  // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. The purge-on-flip
+  // shape (whenFalse.inScope === false) exercises the WITNESS path in
+  // synthesiseWitness; the total-branches shape (both in-scope) would
+  // exercise TRIVIAL — either is acceptable per invariant #5.
+  equalsGate: {
+    id: 'sample-equalsGate',
+    applyTo: helpers.equalsGate(
+      gateObl,
+      'yes',
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+  },
+  presentGate: {
+    id: 'sample-presentGate',
+    applyTo: helpers.presentGate(
+      gateObl,
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+  },
+  includesGate: {
+    id: 'sample-includesGate',
+    applyTo: helpers.includesGate(
+      gateObl,
+      ['a', 'b'],
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+  },
+  alwaysInScope: {
+    id: 'sample-alwaysInScope',
+    applyTo: helpers.alwaysInScope('mandatory')
   }
 }
 
