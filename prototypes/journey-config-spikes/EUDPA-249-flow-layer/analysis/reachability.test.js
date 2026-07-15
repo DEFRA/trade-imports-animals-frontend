@@ -620,6 +620,121 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Phase 4.5.2 migration fidelity — EXHAUSTIVE round-trip across all 9
+// sites migrated from `branchedGate`+`predicateMeta` onto the meta-first
+// helpers (`equalsGate`, `presentGate`, `includesGate`). This is the
+// load-bearing "migration didn't change semantics" pin: for each site
+// we synthesise a witness, inject it into a fulfilments map, feed it to
+// the migrated `applyTo` closure, and assert the decision opens
+// (inScope: true) with the expected status flip preserved.
+//
+// The test is intentionally exhaustive — one case per migrated site —
+// so a subtle regression on any one site (e.g. dropping a reason list,
+// swapping mandatory/optional on regionCode) fails loudly with the site
+// name in the assertion label. Sites that classify as TRIVIAL (total-
+// branches — regionCode + four accompanyingDocument siblings) can still
+// exercise the closure directly with a known-in-scope value to pin the
+// decision shape.
+// ---------------------------------------------------------------------------
+
+describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
+  const findOblByName = (name) => obligations.find((o) => o.name === name)
+
+  // Non-total: whenTrue in scope, whenFalse out. Witness synth returns
+  // a real WITNESS; fidelity injects and confirms decision.inScope.
+  it.each([
+    ['purposeInInternalMarket', 'mandatory'],
+    ['commercialTransporter', 'mandatory'],
+    ['privateTransporter', 'mandatory'],
+    ['transitedCountries', 'optional']
+  ])(
+    '%s: witness opens the migrated closure with status=%s',
+    (name, status) => {
+      const obl = findOblByName(name)
+      const w = synthesiseWitness(obl)
+      expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+      const decision = obl.applyTo({ [w.obligationId]: w.value }, new Map())
+      expect(decision.inScope).toBe(true)
+      expect(decision.status).toBe(status)
+      // Reasons should be attached on the mandatory-branch — they are the
+      // load-bearing verbatim decision-object bit the migration must
+      // preserve.
+      expect(Array.isArray(decision.reasons)).toBe(true)
+      expect(decision.reasons.length).toBeGreaterThan(0)
+    }
+  )
+
+  // Total: both branches in scope. Witness synth returns TRIVIAL; the
+  // fidelity check exercises the closure directly with both a matching
+  // and non-matching value to prove the status flip is preserved.
+  it('regionCode: matching value → mandatory + reason, non-matching → optional', () => {
+    const rc = findOblByName('regionCode')
+    const w = synthesiseWitness(rc)
+    expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
+    // regionCodeRequirement === 'yes' → mandatory with reason.
+    const regionCodeRequirement = findOblByName('regionCodeRequirement')
+    const mand = rc.applyTo({ [regionCodeRequirement.id]: 'yes' }, new Map())
+    expect(mand).toMatchObject({
+      inScope: true,
+      status: 'mandatory'
+    })
+    expect(mand.reasons).toBeDefined()
+    expect(mand.reasons.length).toBeGreaterThan(0)
+    // regionCodeRequirement === 'no' → optional, no reason.
+    const opt = rc.applyTo({ [regionCodeRequirement.id]: 'no' }, new Map())
+    expect(opt).toMatchObject({ inScope: true, status: 'optional' })
+  })
+
+  it.each([
+    'accompanyingDocumentType',
+    'accompanyingDocumentAttachmentType',
+    'accompanyingDocumentReference',
+    'accompanyingDocumentDateOfIssue'
+  ])(
+    '%s: documentType present → mandatory + reason, absent → optional',
+    (name) => {
+      const obl = findOblByName(name)
+      const w = synthesiseWitness(obl)
+      expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
+      const acc = findOblByName('accompanyingDocumentType')
+      // Present → mandatory + reason.
+      const mand = obl.applyTo({ [acc.id]: 'certificate' }, new Map())
+      expect(mand).toMatchObject({
+        inScope: true,
+        status: 'mandatory'
+      })
+      expect(mand.reasons).toBeDefined()
+      expect(mand.reasons.length).toBeGreaterThan(0)
+      // Absent → optional (no reason).
+      const opt = obl.applyTo({}, new Map())
+      expect(opt).toMatchObject({ inScope: true, status: 'optional' })
+    }
+  )
+
+  // Meta-first invariant: every migrated site's applyTo.metadata.type
+  // is one of the four new helpers — never `branchedGate` any more.
+  it('every migrated site now uses a meta-first helper metadata.type', () => {
+    const META_FIRST = new Set(['equalsGate', 'presentGate', 'includesGate'])
+    const migratedNames = [
+      'purposeInInternalMarket',
+      'commercialTransporter',
+      'privateTransporter',
+      'transitedCountries',
+      'regionCode',
+      'accompanyingDocumentType',
+      'accompanyingDocumentAttachmentType',
+      'accompanyingDocumentReference',
+      'accompanyingDocumentDateOfIssue'
+    ]
+    const stragglers = migratedNames
+      .map(findOblByName)
+      .filter((o) => !META_FIRST.has(o.applyTo?.metadata?.type))
+      .map((o) => `${o.name} → ${o.applyTo?.metadata?.type}`)
+    expect(stragglers).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Backwards compat — a graph-level-only test from commit 1 still
 // passes verbatim. numberOfPackages was already reachable graph-side;
 // it must remain so after commit 2.

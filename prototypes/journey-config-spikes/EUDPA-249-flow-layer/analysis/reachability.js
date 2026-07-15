@@ -71,6 +71,8 @@
  * `errors[]` only.
  */
 
+import { obligationMetadata } from '../obligations/helpers.js'
+
 /**
  * proveReachability — run the graph-level prover over a list of
  * `{ id, dependsOn }` records. Deliverable, in the shape A's prover
@@ -541,7 +543,11 @@ function synthesiseNotInUnionOfWitness(meta) {
 export function proveWithWitnesses(obligations) {
   const records = obligations.map((o) => {
     if (typeof o.applyTo === 'function') {
-      return { id: o.id, dependsOn: o.dependsOn }
+      // Phase 4.5.2: prefer the derived-or-declared dependsOn from
+      // `obligationMetadata` — meta-first helpers name their gate
+      // obligation on `.metadata`, so the dependency graph is
+      // recoverable without an explicit `dependsOn` declaration.
+      return { id: o.id, dependsOn: obligationMetadata(o).dependsOn }
     }
     return { id: o.id, dependsOn: [] }
   })

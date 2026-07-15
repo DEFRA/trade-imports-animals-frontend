@@ -9,21 +9,35 @@
  * Scope mechanism: every obligation with a conditional scope uses
  * `applyTo(fulfilments, fulfilmentIdsByObligationId)`. Common gate
  * shapes are provided as pure helper functions in `helpers.js` —
- * `allowListed`, `notInUnionOf`, `branchedGate`,
- * `anyAllowListed` — that build applyTo functions with metadata
- * attached for optional introspection. One mechanism, one testing
- * story: any obligation's applyTo can be exercised as a plain function
- * call with plain inputs (no evaluator, no resolver, no obligationsById).
+ * `allowListed`, `notInUnionOf`, `anyAllowListed`, `matches`,
+ * `equalsGate`, `presentGate`, `includesGate`, `alwaysInScope` (and
+ * `branchedGate` as an escape hatch for genuinely opaque predicates,
+ * unused on the manifest today) — that build applyTo functions with
+ * metadata attached for optional introspection. One mechanism, one
+ * testing story: any obligation's applyTo can be exercised as a plain
+ * function call with plain inputs (no evaluator, no resolver, no
+ * obligationsById).
  *
- * Dependency declaration (added Phase 2 commit 1, EUDPA-288):
- * gated obligations may carry a `dependsOn: string[]` schema key listing
- * the ids of obligations whose stored values the `applyTo` closure
- * reads. Closures are opaque to a reachability prover; `dependsOn`
- * makes the graph explicit data alongside the closure. See BRIEF
- * §Migration #2 + REPORT §5.1. Phase 2 commit 2 will sweep every
- * gate + add the coverage assertion. This commit lands only the
- * schema + accessor (`helpers.js` `obligationMetadata`); no
- * obligations here are annotated yet.
+ * Helper choice convention (EUDPA-288 Phase 4.5.2):
+ *   - `equals`-shape non-total gates → `equalsGate(gate, value, whenTrue, whenFalse)`
+ *   - `equals`-shape status-flip (both branches in-scope) → same helper,
+ *     both branches with `inScope: true` and different `status`
+ *   - `includes`-shape gates → `includesGate(gate, values, whenTrue, whenFalse)`
+ *   - `isFilled`-shape gates → `presentGate(gate, whenTrue, whenFalse)`
+ * Prefer these over `branchedGate` — the meta-first helpers co-declare
+ * the closure body, the metadata sidecar and the dependency graph as a
+ * single value, so renaming a gate obligation touches one call site.
+ *
+ * Dependency declaration (added Phase 2 commit 1, refined Phase 4.5.2,
+ * EUDPA-288): gated obligations may carry an explicit `dependsOn:
+ * string[]` schema key OR let it be DERIVED from the applyTo helper's
+ * metadata. Meta-first helpers all name their gate obligation on
+ * `.metadata.obligation`, so `obligationMetadata()` recovers the
+ * dependency graph without duplication. Closures are opaque to a
+ * reachability prover; the derived-or-declared `dependsOn` makes the
+ * graph explicit data alongside the closure. See BRIEF §Migration #2 +
+ * REPORT §5.1. Phase 2 commit 2 landed the coverage assertion;
+ * Phase 4.5.2 relaxes it to accept the derived path.
  *
  * System-populated fields are declared but NOT presented in the flow
  * layer:
@@ -53,8 +67,10 @@
 import {
   allowListed,
   anyAllowListed,
-  branchedGate,
-  notInUnionOf
+  equalsGate,
+  includesGate,
+  notInUnionOf,
+  presentGate
 } from './helpers.js'
 
 // -----------------------------------------------------------------------------
@@ -200,17 +216,17 @@ export const regionCodeRequirement = {
 // Retain-value pattern: always in scope; mandatory when
 // regionCodeRequirement === 'yes', optional otherwise. Stored values
 // are kept across gate flips (V4 spec: the field itself is not purged
-// on `no`).
+// on `no`). Meta-first: `equalsGate.metadata.obligation` names the
+// gate; `dependsOn` derives from that (see `obligationMetadata`).
 export const regionCode = {
   id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
   name: 'regionCode',
-  applyTo: branchedGate(
-    (fulfilments) => fulfilments[regionCodeRequirement.id] === 'yes',
+  applyTo: equalsGate(
+    regionCodeRequirement,
+    'yes',
     { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
-    { inScope: true, status: 'optional' },
-    { operator: 'equals', obligationId: regionCodeRequirement.id, value: 'yes' }
-  ),
-  dependsOn: [regionCodeRequirement.id]
+    { inScope: true, status: 'optional' }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -230,21 +246,16 @@ export const reasonForImport = {
 export const purposeInInternalMarket = {
   id: 'e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f',
   name: 'purposeInInternalMarket',
-  applyTo: branchedGate(
-    (fulfilments) => fulfilments[reasonForImport.id] === 'internal-market',
+  applyTo: equalsGate(
+    reasonForImport,
+    'internal-market',
     {
       inScope: true,
       status: 'mandatory',
       reasons: [purposeInInternalMarketReason]
     },
-    { inScope: false },
-    {
-      operator: 'equals',
-      obligationId: reasonForImport.id,
-      value: 'internal-market'
-    }
-  ),
-  dependsOn: [reasonForImport.id]
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -308,37 +319,31 @@ export const transporterType = {
 export const commercialTransporter = {
   id: 'de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071',
   name: 'commercialTransporter',
-  applyTo: branchedGate(
-    (fulfilments) => fulfilments[transporterType.id] === 'commercial',
+  applyTo: equalsGate(
+    transporterType,
+    'commercial',
     {
       inScope: true,
       status: 'mandatory',
       reasons: [commercialTransporterReason]
     },
-    { inScope: false },
-    {
-      operator: 'equals',
-      obligationId: transporterType.id,
-      value: 'commercial'
-    }
-  ),
-  dependsOn: [transporterType.id]
+    { inScope: false }
+  )
 }
 
 export const privateTransporter = {
   id: 'ef26d7e8-f9a0-4b15-8c61-ed4e5f607182',
   name: 'privateTransporter',
-  applyTo: branchedGate(
-    (fulfilments) => fulfilments[transporterType.id] === 'private',
+  applyTo: equalsGate(
+    transporterType,
+    'private',
     {
       inScope: true,
       status: 'mandatory',
       reasons: [privateTransporterReason]
     },
-    { inScope: false },
-    { operator: 'equals', obligationId: transporterType.id, value: 'private' }
-  ),
-  dependsOn: [transporterType.id]
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -374,22 +379,16 @@ const LAND_TRANSPORT_MODES = ['railway', 'road-vehicle']
 export const transitedCountries = {
   id: '78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b',
   name: 'transitedCountries',
-  applyTo: branchedGate(
-    (fulfilments) =>
-      LAND_TRANSPORT_MODES.includes(fulfilments[meansOfTransport.id]),
+  applyTo: includesGate(
+    meansOfTransport,
+    LAND_TRANSPORT_MODES,
     {
       inScope: true,
       status: 'optional',
       reasons: [transitedCountriesReason]
     },
-    { inScope: false },
-    {
-      operator: 'includes',
-      obligationId: meansOfTransport.id,
-      values: LAND_TRANSPORT_MODES
-    }
-  ),
-  dependsOn: [meansOfTransport.id]
+    { inScope: false }
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -808,38 +807,38 @@ export const permanentAddress = {
 //
 // Four fields sharing a single applyTo: optional when nothing is
 // filled, mandatory once ANY field is filled (retain-value + status-
-// swap via `branchedGate`).
+// swap via `presentGate`).
 //
-// The predicate references all four obligations, including itself.
-// Under gatedBy this required attach-after-declaration mutation; under
-// applyTo the closure defers name resolution to call time, so the
-// obligations are declared normally and each has its applyTo set at
-// declaration.
+// The gate reads `accompanyingDocumentType`'s stored value — including
+// on `accompanyingDocumentType` itself, which self-references. The
+// meta-first `presentGate` helper reads `gateObligation.id` eagerly at
+// construction, so the self-loop uses a lightweight `{ id }` proxy
+// pinned to the same UUID (see `accompanyingDocumentTypeIdRef` below).
 // -----------------------------------------------------------------------------
-
-// True iff a value is non-blank. Empty strings, nulls, undefined and
-// empty arrays all count as "not present" — otherwise a user who
-// visited the page and saved it blank (POST body has '' for each
-// input; writeAnswer stores '') would flip the whole block to
-// mandatory and get spurious CYA prompts. See lib/is-blank-value.js
-// for the equivalent shared helper used elsewhere in the spike.
-const isFilled = (value) => {
-  if (value === undefined || value === null) return false
-  if (typeof value === 'string') return value !== ''
-  if (Array.isArray(value)) return value.length > 0
-  return true
-}
 
 // V4 (Confluence page 6497338582): "however, once a document type is
 // selected, the attachment, reference and date of issue are mandatory
 // to proceed." The trigger is documentType specifically — not any of
 // the four fields. A user who fills only a reference (without picking
 // a type) does NOT lock in the whole block. See audit finding #15.
-const documentTypePresent = (fulfilments) =>
-  isFilled(fulfilments[accompanyingDocumentType.id])
+//
+// Meta-first: `presentGate(accompanyingDocumentType, ...)` encodes the
+// "answered" semantic — the closure defers to `present` internally
+// (empty string / null / undefined / empty array all count as "not
+// present"), matching the previous `isFilled` predicate verbatim.
+//
+// Self-loop preservation: `accompanyingDocumentType.applyTo` reads its
+// OWN stored value. Because `presentGate` inspects `gateObligation.id`
+// eagerly (to build metadata), we can't pass `accompanyingDocumentType`
+// itself before it's declared (TDZ). Pass a lightweight `{ id }` proxy
+// pinned to the same UUID — `dependsOn` derivation and witness synth
+// both key off `.metadata.obligation`, which still names the real id.
+const accompanyingDocumentTypeIdRef = {
+  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8'
+}
 
-const accompanyingDocumentBlockApplyTo = branchedGate(
-  documentTypePresent,
+const accompanyingDocumentBlockApplyTo = presentGate(
+  accompanyingDocumentTypeIdRef,
   {
     inScope: true,
     status: 'mandatory',
@@ -849,40 +848,36 @@ const accompanyingDocumentBlockApplyTo = branchedGate(
 )
 
 export const accompanyingDocumentType = {
-  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
+  id: accompanyingDocumentTypeIdRef.id,
   name: 'accompanyingDocumentType',
-  applyTo: accompanyingDocumentBlockApplyTo,
+  applyTo: accompanyingDocumentBlockApplyTo
   // All four accompanying-document fields share the same closure —
-  // `documentTypePresent(fulfilments)` reads only
+  // `presentGate(accompanyingDocumentType, ...)` reads only
   // `fulfilments[accompanyingDocumentType.id]`. This obligation therefore
   // self-references (the gate reads its own stored value to decide its
-  // own scope: `optional` when unset, `mandatory` once set). Uses the
-  // raw id literal rather than `accompanyingDocumentType.id` because the
-  // const is still being defined here — TDZ otherwise. The three sibling
-  // obligations below can (and do) reference `accompanyingDocumentType.id`
-  // normally.
-  dependsOn: ['4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8']
+  // own scope: `optional` when unset, `mandatory` once set). `dependsOn`
+  // is derived from `applyTo.metadata.obligation` (see
+  // `obligationMetadata`) — for this obligation that yields
+  // `[accompanyingDocumentType.id]`, the self-loop the reachability
+  // prover already treats as a seed (no external prereq).
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
   name: 'accompanyingDocumentAttachmentType',
-  applyTo: accompanyingDocumentBlockApplyTo,
-  dependsOn: [accompanyingDocumentType.id]
+  applyTo: accompanyingDocumentBlockApplyTo
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
   name: 'accompanyingDocumentReference',
-  applyTo: accompanyingDocumentBlockApplyTo,
-  dependsOn: [accompanyingDocumentType.id]
+  applyTo: accompanyingDocumentBlockApplyTo
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
   name: 'accompanyingDocumentDateOfIssue',
-  applyTo: accompanyingDocumentBlockApplyTo,
-  dependsOn: [accompanyingDocumentType.id]
+  applyTo: accompanyingDocumentBlockApplyTo
 }
 
 // -----------------------------------------------------------------------------

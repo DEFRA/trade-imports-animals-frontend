@@ -194,10 +194,10 @@ describe('step 5c — system-populated V4 fields declared but not presented', ()
 // -----------------------------------------------------------------------------
 // EUDPA-288 Phase 2 commit 2 — dependsOn coverage.
 //
-// Every obligation that carries an `applyTo` closure must also declare a
-// `dependsOn: string[]` schema key listing the ids of the obligations
-// whose stored values the closure reads. `dependsOn: []` is the honest
-// annotation for unconditional / always-in-scope closures (no reads).
+// Every obligation that carries an `applyTo` closure must resolve to a
+// `dependsOn: string[]` listing the ids of the obligations whose stored
+// values the closure reads. `dependsOn: []` is the honest annotation
+// for unconditional / always-in-scope closures (no reads).
 //
 // Rationale — BRIEF §Migration #2 (★ highest value-per-line item in the
 // whole comparison) + REPORT §5.1: closures are opaque to A's
@@ -208,17 +208,32 @@ describe('step 5c — system-populated V4 fields declared but not presented', ()
 // the imperative-JS gate surface. Phase 3 ports A's prover on top of
 // this data.
 //
-// Enforcement point: this test. Any future obligation added with an
-// `applyTo` but no `dependsOn` — or with `dependsOn: undefined` —
-// fails the build here. Structural obligations (`commodityLine`,
-// `unitRecord`) carry no `applyTo` and are excluded from the check.
+// Phase 4.5.2 refinement (EUDPA-288): meta-first helpers name their
+// gate obligation on `.metadata.obligation`, so `dependsOn` becomes
+// DERIVABLE for those sites. The assertion accepts either:
+//   (a) an explicit `dependsOn: string[]` on the obligation, OR
+//   (b) a helper metadata whose type is one that `obligationMetadata`
+//       can derive from (`equalsGate`, `presentGate`, `includesGate`,
+//       `allowListed`, `anyAllowListed`, `notInUnionOf`, `matches`,
+//       `alwaysInScope`, and the annotated shape of `branchedGate`).
+// `obligationMetadata` returns a resolved `dependsOn` in both cases;
+// the assertion checks that resolution succeeds (i.e. the resolved
+// value is a `string[]`). A `branchedGate` used as an escape hatch
+// without either an explicit `dependsOn` or a `predicateMeta` still
+// fires this test — that's the intended defence.
+//
+// Structural obligations (`commodityLine`, `unitRecord`) carry no
+// `applyTo` and are excluded from the check.
 // -----------------------------------------------------------------------------
 
-describe('coverage — every gated obligation carries dependsOn', () => {
-  it('every obligation with an applyTo declares a dependsOn array', () => {
+describe('coverage — every gated obligation carries (or derives) dependsOn', () => {
+  it('every obligation with an applyTo resolves to a dependsOn array', () => {
     const missing = obligations
       .filter((o) => typeof o.applyTo === 'function')
       .filter((o) => {
+        // `obligationMetadata` prefers explicit `dependsOn` but falls
+        // back to deriving from the helper metadata (Phase 4.5.2).
+        // Either path must terminate in an array.
         const meta = obligationMetadata(o)
         return !Array.isArray(meta.dependsOn)
       })
