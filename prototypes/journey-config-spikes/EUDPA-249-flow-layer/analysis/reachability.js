@@ -218,6 +218,45 @@ export const WITNESS_KIND = Object.freeze({
 })
 
 /**
+ * STRUCTURED_HELPER_TYPES — the `.metadata.type` labels for helpers
+ * whose gates `synthesiseWitness` can invert into a concrete
+ * `{ obligationId, value }` witness. Each label here MUST have a
+ * matching `case` in `synthesiseWitness`'s dispatch (the coverage test
+ * in `analysis/coverage.test.js` pins this both ways). Adding a new
+ * structured helper is a three-touch change: helper in `helpers.js`,
+ * case in `synthesiseWitness`, and an entry here.
+ *
+ * BRIEF §Migration #3 + REPORT §5.1: "every new operator carries a
+ * second tax — a witness synthesiser + a seeding rule". This set is
+ * the build-time enforcement of the first half of that tax.
+ */
+export const STRUCTURED_HELPER_TYPES = new Set([
+  'allowListed',
+  'anyAllowListed',
+  'matches',
+  'branchedGate'
+])
+
+/**
+ * OPAQUE_HELPER_TYPES — the `.metadata.type` labels for helpers
+ * classified as opaque BY DECLARED DESIGN. Presence here is an
+ * explicit deferral, not "we forgot to write the synth". Every entry
+ * must be justified with a comment naming the reason.
+ *
+ * - `allowListedByPredicate` — the predicate is a plain JS function
+ *   over the stored value; there's no recoverable data-level target.
+ *   The manifest's `identificationDetails` + `description` use this to
+ *   express INVERSE gates ("commodity code is NOT in any of the four
+ *   specific-identifier whitelists"). Phase 4 §Migration #4 will land
+ *   a `notInUnionOf` derived-union helper that closes this — after
+ *   which these two gates migrate off `allowListedByPredicate` and
+ *   this entry can be removed. Until then: graph-level reachability
+ *   only, coverage assertion excludes them by naming this helper type
+ *   here.
+ */
+export const OPAQUE_HELPER_TYPES = new Set(['allowListedByPredicate'])
+
+/**
  * synthesiseWitness — inspect an obligation's `applyTo.metadata` and
  * return a witness classification.
  *

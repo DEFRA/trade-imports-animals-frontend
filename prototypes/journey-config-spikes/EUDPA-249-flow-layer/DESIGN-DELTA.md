@@ -15,6 +15,60 @@ Each entry names:
 
 ---
 
+## 2026-07-15 — `analysis/coverage.test.js`: build-time coverage gate for the helper synth registry
+
+- **Change** — added `analysis/coverage.test.js` (Phase 3 commit 3 of the
+  EUDPA-288 blend plan) and exported two named sets from
+  `analysis/reachability.js`: `STRUCTURED_HELPER_TYPES` (helpers whose
+  gates the prover inverts into witnesses — `allowListed`,
+  `anyAllowListed`, `matches`, `branchedGate`) and
+  `OPAQUE_HELPER_TYPES` (`allowListedByPredicate` — the sole opaque-by-
+  design entry, with a rationale comment on the const pointing at
+  Phase 4's `notInUnionOf` migration route). The coverage test pins six
+  invariants: sets are exported and disjoint; every case label in
+  `synthesiseWitness`'s dispatch matches the STRUCTURED set (parsed
+  from the source file — catches drift both ways); every gate-producing
+  helper export in `obligations/helpers.js` classifies as STRUCTURED or
+  OPAQUE; and each STRUCTURED / OPAQUE helper sample round-trips
+  through `synthesiseWitness` to the declared `WITNESS_KIND`.
+- **Backwards compat** — fully. No obligation, evaluator, helper, flow,
+  route or existing prover test changed. Adds new test file + new
+  exports only.
+- **Divergence from A** — A doesn't need this coverage gate because A's
+  operator set is closed vocabulary in `predicate.js` (four cases
+  pattern-matched by TypeScript exhaustive-check). B's helpers are
+  additive open-vocabulary — adding a sixth helper is a bare function
+  export — so the "did you also write the synth?" question requires an
+  explicit build-time enforcement. This is the second half of the tax
+  named in REPORT §5.1 ("witness synthesiser + a seeding rule per
+  operator"): the first half landed in commit 2 (`synthesiseWitness`),
+  this commit turns it into a build-time invariant.
+- **Coverage gate mechanism** — the "every case label matches the
+  STRUCTURED set" invariant reads `analysis/reachability.js` as source
+  text and pulls every `case '<label>':` occurrence via regex,
+  filtering out the operator-level labels (`equals`, `includes`,
+  `isFilled`) that live inside the split-out
+  `synthesiseBranchedGateWitness`. Considered alternatives: a live
+  `import * as` probe (can't see labels that dispatch to nested
+  synthesisers uniformly), decorator-based registration (would require
+  moving away from a plain `switch`). Static parse chosen because the
+  file is small (~490 LOC) and adjacent to the test, and the diff
+  message when the invariant fires is immediately actionable.
+- **Failure-mode verified** — temporarily renamed
+  `helpers.js` `allowListed`'s `metadata.type` to `'allowListedTypo'`
+  in local scratch; the coverage test fired invariant #4 with:
+  "helper 'allowListed' — metadata.type 'allowListedTypo' is not in
+  STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES; add it (with a
+  comment) to one of the sets in analysis/reachability.js". Reverted;
+  not committed.
+- **Rationale** — BRIEF §Migration #3 (build-time guard on the
+  reachability prover's assumptions), REPORT §5.1 (the "second tax"
+  warning: skip the synth and the pin silently stops proving anything).
+  Blend plan §7 Phase 3 commit 3.
+- **Commit** — (see git log; SHA appended immediately after landing).
+
+---
+
 ## 2026-07-15 — `analysis/reachability.js`: witness synthesisers for structured gate helpers
 
 - **Change** — extended `analysis/reachability.js` with two new entry
