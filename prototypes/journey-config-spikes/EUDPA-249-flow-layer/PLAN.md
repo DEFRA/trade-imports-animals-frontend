@@ -207,8 +207,44 @@ Source: BRIEF §Migration #4, REPORT §5.1.
 
 **HALT 4** — this is the **"defensible base you can stop at"** per BRIEF §The bill.
 Bugs fixed, analysability recovered, storage contract clean. Decision point —
-Paul + Sam to decide: **bank here** (~2–3wk delivered) or continue to Step 5's
-higher-risk evaluator work.
+Paul + Sam to decide: **bank here** (~2–3wk delivered) or continue.
+
+---
+
+## 8.5. Phase 4.5 — Meta-first helpers refactor (added 2026-07-15, ~1–2 days, 4 commits + 1 HALT)
+
+Added mid-flight after Phase 3.3 revealed genuine surface duplication: `regionCode` and 4 similar gates end up declaring the same dependency three times (closure body + `predicateMeta` + `dependsOn`). Not on BRIEF's original migration order, but a natural cleanup on the base Phase 4 leaves behind.
+
+**Design premise.** Extend the pattern `allowListed`/`anyAllowListed`/`notInUnionOf` already use — where the helper's metadata IS the definition, not a mirror of a closure. Introduce meta-first helpers for the remaining structured predicates, migrate the 10 sites that today carry duplication, and delete 19 trivial `applyTo: () => (...)` closures that Phase 1.3's `within.id` guard has already made data-expressible.
+
+**After Phase 4.5:** every gated obligation reads as pure metadata (or a `branchedGate` escape hatch for genuinely opaque predicates, of which the manifest today has none). `dependsOn` becomes derivable from any helper's metadata; we retain the schema key + coverage assertion for defence-in-depth.
+
+★ **docs(EUDPA-288): revise PLAN.md — add Phase 4.5 meta-first refactor**
+
+- This commit. Documents the scope and sequencing agreed with Paul after seeing the duplication surface on `regionCode` / `purposeInInternalMarket` / etc.
+
+★ **feat(EUDPA-288): introduce meta-first gate helpers**
+
+- New helpers in `obligations/helpers.js`: `equalsGate(gate, value, whenTrue, whenFalse, reasons?)`, `presentGate(gate, whenTrue, whenFalse, reasons?)`, `includesGate(gate, values, whenTrue, whenFalse, reasons?)`, `alwaysInScope(status, reasons?)`.
+- Each helper's `.metadata` fully describes the gate — no closure body needed for reachability, witness synthesis, or `dependsOn` derivation.
+- Add witness synth cases in `analysis/reachability.js`; add to `STRUCTURED_HELPER_TYPES`; extend `coverage.test.js` samples.
+- **Red:** unit tests per helper — round-trip metadata; runtime evaluation for each `applyTo` shape; fidelity check (synthesised witness makes real evaluation return the expected decision).
+
+★ **feat(EUDPA-288): migrate 10 duplicated / total-branch sites onto meta-first helpers**
+
+- 5 duplicated `branchedGate`-with-`predicateMeta` sites → `equalsGate` / `presentGate` (whichever matches the predicate operator): `purposeInInternalMarket`, `commercialTransporter`, `privateTransporter`, `transitedCountries`, `containsUnweanedAnimals`.
+- 5 total-branch sites → `alwaysInScope` or `equalsGateStatus` (needed for `regionCode`'s mandatory-vs-optional flip): 4 `accompanyingDocument*` siblings + `regionCode`.
+- Drop each site's redundant `dependsOn: [...]` — derive from metadata. Coverage assertion updated to accept derived-or-declared.
+- **Red:** fidelity check across all 10 migrated sites; regression pin on `regionCode`'s status flip.
+
+★ **feat(EUDPA-288): drop trivial `applyTo` from 19 always-in-scope obligations**
+
+- The 19 obligations with `applyTo: () => ({inScope:true, status:'mandatory'})` (post-Phase-2 sweep, all with `dependsOn: []`) become data-only `{id, name, status:'mandatory'}` — Phase 1.3's `within.id` guard made this shape work.
+- Drop the closures + the now-redundant `dependsOn: []`.
+- Coverage assertion updated: gates without `applyTo` are not in scope for the check.
+- **Red:** assert the 19 obligations evaluate identically without `applyTo`.
+
+**HALT 4.5** — zero duplication banked. Prover's classification: 24 witness-synthesisable, 0 opaque, 0 trivial closures left in the manifest. Hand back to Paul before Phase 5 (the highest-risk phase — per-record conditional mandate).
 
 ---
 
