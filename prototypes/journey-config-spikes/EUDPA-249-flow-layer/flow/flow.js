@@ -81,8 +81,10 @@ import {
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
-  accompanyingDocumentDateOfIssue
+  accompanyingDocumentDateOfIssue,
+  obligations as v4Obligations
 } from '../obligations/obligations.js'
+import { assertObligationTotality } from './boot-totality.js'
 
 export const flow = {
   id: 'live-animals-v4-slice',
@@ -665,3 +667,20 @@ export function subsectionOfPage(pageName) {
   }
   return null
 }
+
+// ---------------------------------------------------------------------------
+// Boot-time obligation → page totality assert (EUDPA-288 Phase 4 commit 2,
+// BRIEF §Migration #4 + REPORT §5.2). Ported from A's
+// `prototypes/standalone/live-animals/flow/dispatch.js:55-63` over B's
+// `presents` / `presentsForEach` tree.
+//
+// Fires ONCE at flow-module-load time — the very first `import` of
+// this file halts if any obligation is authored in the manifest but
+// not referenced by any page. Closes B's silent-invisibility seam:
+// today an orphan obligation just sits there, uncollected, with no
+// symptom until a smoke walk. The exclusion policy (structural group
+// containers + system-populated fields) is documented on
+// `boot-totality.js`.
+// ---------------------------------------------------------------------------
+
+assertObligationTotality(v4Obligations, flow)
