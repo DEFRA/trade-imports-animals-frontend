@@ -163,7 +163,8 @@ export const poApprovedReferenceNumber = {
   id: '9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d',
   name: 'poApprovedReferenceNumber',
   status: 'mandatory',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // V4: Consumed from gov.identity on authentication. Composite:
@@ -174,7 +175,8 @@ export const responsiblePersonForLoad = {
   id: 'ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e',
   name: 'responsiblePersonForLoad',
   status: 'mandatory',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // -----------------------------------------------------------------------------
@@ -184,13 +186,15 @@ export const responsiblePersonForLoad = {
 export const countryOfOrigin = {
   id: 'a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
   name: 'countryOfOrigin',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const regionCodeRequirement = {
   id: 'b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e',
   name: 'regionCodeRequirement',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // Retain-value pattern: always in scope; mandatory when
@@ -204,7 +208,8 @@ export const regionCode = {
     (fulfilments) => fulfilments[regionCodeRequirement.id] === 'yes',
     { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
     { inScope: true, status: 'optional' }
-  )
+  ),
+  dependsOn: [regionCodeRequirement.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -214,7 +219,8 @@ export const regionCode = {
 export const reasonForImport = {
   id: 'd34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f',
   name: 'reasonForImport',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // Purge-on-flip: when reasonForImport is not 'internal-market',
@@ -231,7 +237,8 @@ export const purposeInInternalMarket = {
       reasons: [purposeInInternalMarketReason]
     },
     { inScope: false }
-  )
+  ),
+  dependsOn: [reasonForImport.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -247,31 +254,36 @@ export const purposeInInternalMarket = {
 export const placeOfOrigin = {
   id: '89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c',
   name: 'placeOfOrigin',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const consignor = {
   id: '9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d',
   name: 'consignor',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const consignee = {
   id: 'abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e',
   name: 'consignee',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const importer = {
   id: 'bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f',
   name: 'importer',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const placeOfDestination = {
   id: 'cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60',
   name: 'placeOfDestination',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // -----------------------------------------------------------------------------
@@ -281,7 +293,8 @@ export const placeOfDestination = {
 export const transporterType = {
   id: '34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d',
   name: 'transporterType',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // Purge-on-flip: switching transporterType from 'commercial' to
@@ -297,7 +310,8 @@ export const commercialTransporter = {
       reasons: [commercialTransporterReason]
     },
     { inScope: false }
-  )
+  ),
+  dependsOn: [transporterType.id]
 }
 
 export const privateTransporter = {
@@ -311,7 +325,8 @@ export const privateTransporter = {
       reasons: [privateTransporterReason]
     },
     { inScope: false }
-  )
+  ),
+  dependsOn: [transporterType.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -321,19 +336,22 @@ export const privateTransporter = {
 export const meansOfTransport = {
   id: '45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e',
   name: 'meansOfTransport',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const transportIdentification = {
   id: '56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f',
   name: 'transportIdentification',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const transportDocumentReference = {
   id: '67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a',
   name: 'transportDocumentReference',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // Conditional in-scope-optional multi-select — stored as an array of
@@ -353,7 +371,8 @@ export const transitedCountries = {
       reasons: [transitedCountriesReason]
     },
     { inScope: false }
-  )
+  ),
+  dependsOn: [meansOfTransport.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -363,13 +382,15 @@ export const transitedCountries = {
 export const arrivalDateAtPort = {
   id: '12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b',
   name: 'arrivalDateAtPort',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 export const portOfEntry = {
   id: '23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c',
   name: 'portOfEntry',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // -----------------------------------------------------------------------------
@@ -380,7 +401,8 @@ export const portOfEntry = {
 export const contactAddress = {
   id: 'f037e8f9-a0b1-4c26-8d72-fe5f60718293',
   name: 'contactAddress',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // -----------------------------------------------------------------------------
@@ -390,7 +412,8 @@ export const contactAddress = {
 export const internalReferenceNumber = {
   id: '10e5f607-1829-4a3b-84c5-06d7e8f9a0b1',
   name: 'internalReferenceNumber',
-  applyTo: () => ({ inScope: true, status: 'optional' })
+  applyTo: () => ({ inScope: true, status: 'optional' }),
+  dependsOn: []
 }
 
 // -----------------------------------------------------------------------------
@@ -401,7 +424,8 @@ export const internalReferenceNumber = {
 export const animalsCertifiedFor = {
   id: '274c5d6e-7f80-4da4-8123-7de4f5061729',
   name: 'animalsCertifiedFor',
-  applyTo: () => ({ inScope: true, status: 'mandatory' })
+  applyTo: () => ({ inScope: true, status: 'mandatory' }),
+  dependsOn: []
 }
 
 // -----------------------------------------------------------------------------
@@ -497,7 +521,8 @@ export const numberOfPackages = {
   status: 'optional',
   applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
     numberOfPackagesReason
-  ])
+  ]),
+  dependsOn: [commodityCode.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -539,7 +564,8 @@ export const cph = {
     CPH_REQUIRED_COMMODITIES,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
-  )
+  ),
+  dependsOn: [commodityCode.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -575,7 +601,8 @@ export const containsUnweanedAnimals = {
     UNWEANED_APPLICABLE_COMMODITIES,
     { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
-  )
+  ),
+  dependsOn: [commodityCode.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -659,7 +686,12 @@ export const passport = {
   status: 'optional',
   applyTo: allowListed(commodityCode, PASSPORT_COMMODITIES, unitRecord, [
     passportReason
-  ])
+  ]),
+  // Note: `unitRecord` is a structural projection group (the closure's
+  // 3rd arg), not a value read. Per Phase 2 commit 1's hand-off, list
+  // only the gate obligation (`commodityCode.id`) — projection groups
+  // are structural and are not part of the reachability dependency graph.
+  dependsOn: [commodityCode.id]
 }
 
 export const tattoo = {
@@ -669,7 +701,8 @@ export const tattoo = {
   status: 'optional',
   applyTo: allowListed(commodityCode, TATTOO_COMMODITIES, unitRecord, [
     tattooReason
-  ])
+  ]),
+  dependsOn: [commodityCode.id]
 }
 
 export const earTag = {
@@ -679,7 +712,8 @@ export const earTag = {
   status: 'optional',
   applyTo: allowListed(commodityCode, EAR_TAG_COMMODITIES, unitRecord, [
     earTagReason
-  ])
+  ]),
+  dependsOn: [commodityCode.id]
 }
 
 export const horseName = {
@@ -689,7 +723,8 @@ export const horseName = {
   status: 'optional',
   applyTo: allowListed(commodityCode, HORSE_NAME_COMMODITIES, unitRecord, [
     horseNameReason
-  ])
+  ]),
+  dependsOn: [commodityCode.id]
 }
 
 // Inverse gate — the free-text identifiers apply on units whose parent
@@ -711,7 +746,8 @@ export const identificationDetails = {
     noSpecificIdentifier,
     unitRecord,
     [identificationDetailsReason]
-  )
+  ),
+  dependsOn: [commodityCode.id]
 }
 
 export const description = {
@@ -724,7 +760,8 @@ export const description = {
     noSpecificIdentifier,
     unitRecord,
     [descriptionReason]
-  )
+  ),
+  dependsOn: [commodityCode.id]
 }
 
 export const permanentAddress = {
@@ -737,7 +774,8 @@ export const permanentAddress = {
     PERMANENT_ADDRESS_COMMODITIES,
     unitRecord,
     [permanentAddressReason]
-  )
+  ),
+  dependsOn: [commodityCode.id]
 }
 
 // -----------------------------------------------------------------------------
@@ -788,25 +826,38 @@ const accompanyingDocumentBlockApplyTo = branchedGate(
 export const accompanyingDocumentType = {
   id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
   name: 'accompanyingDocumentType',
-  applyTo: accompanyingDocumentBlockApplyTo
+  applyTo: accompanyingDocumentBlockApplyTo,
+  // All four accompanying-document fields share the same closure —
+  // `documentTypePresent(fulfilments)` reads only
+  // `fulfilments[accompanyingDocumentType.id]`. This obligation therefore
+  // self-references (the gate reads its own stored value to decide its
+  // own scope: `optional` when unset, `mandatory` once set). Uses the
+  // raw id literal rather than `accompanyingDocumentType.id` because the
+  // const is still being defined here — TDZ otherwise. The three sibling
+  // obligations below can (and do) reference `accompanyingDocumentType.id`
+  // normally.
+  dependsOn: ['4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8']
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
   name: 'accompanyingDocumentAttachmentType',
-  applyTo: accompanyingDocumentBlockApplyTo
+  applyTo: accompanyingDocumentBlockApplyTo,
+  dependsOn: [accompanyingDocumentType.id]
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
   name: 'accompanyingDocumentReference',
-  applyTo: accompanyingDocumentBlockApplyTo
+  applyTo: accompanyingDocumentBlockApplyTo,
+  dependsOn: [accompanyingDocumentType.id]
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
   name: 'accompanyingDocumentDateOfIssue',
-  applyTo: accompanyingDocumentBlockApplyTo
+  applyTo: accompanyingDocumentBlockApplyTo,
+  dependsOn: [accompanyingDocumentType.id]
 }
 
 // -----------------------------------------------------------------------------

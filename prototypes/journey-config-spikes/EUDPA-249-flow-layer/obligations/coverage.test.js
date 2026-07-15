@@ -17,6 +17,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { obligations } from './obligations.js'
+import { obligationMetadata } from './helpers.js'
 import { domain } from '../domain/index.js'
 
 /**
@@ -186,5 +187,41 @@ describe('step 5c — system-populated V4 fields declared but not presented', ()
     const rp = obligations.find((o) => o.name === 'responsiblePersonForLoad')
     expect(po.applyTo()).toEqual({ inScope: true, status: 'mandatory' })
     expect(rp.applyTo()).toEqual({ inScope: true, status: 'mandatory' })
+  })
+})
+
+// -----------------------------------------------------------------------------
+// EUDPA-288 Phase 2 commit 2 — dependsOn coverage.
+//
+// Every obligation that carries an `applyTo` closure must also declare a
+// `dependsOn: string[]` schema key listing the ids of the obligations
+// whose stored values the closure reads. `dependsOn: []` is the honest
+// annotation for unconditional / always-in-scope closures (no reads).
+//
+// Rationale — BRIEF §Migration #2 (★ highest value-per-line item in the
+// whole comparison) + REPORT §5.1: closures are opaque to A's
+// reachability prover; without a declared dependency graph the prover
+// goes vacuously green because `gateValue` cannot invert an opaque
+// closure body. Making `dependsOn` a declared field alongside the
+// closure recovers the statically-recoverable graph without giving up
+// the imperative-JS gate surface. Phase 3 ports A's prover on top of
+// this data.
+//
+// Enforcement point: this test. Any future obligation added with an
+// `applyTo` but no `dependsOn` — or with `dependsOn: undefined` —
+// fails the build here. Structural obligations (`commodityLine`,
+// `unitRecord`) carry no `applyTo` and are excluded from the check.
+// -----------------------------------------------------------------------------
+
+describe('coverage — every gated obligation carries dependsOn', () => {
+  it('every obligation with an applyTo declares a dependsOn array', () => {
+    const missing = obligations
+      .filter((o) => typeof o.applyTo === 'function')
+      .filter((o) => {
+        const meta = obligationMetadata(o)
+        return !Array.isArray(meta.dependsOn)
+      })
+      .map((o) => o.name)
+    expect(missing).toEqual([])
   })
 })
