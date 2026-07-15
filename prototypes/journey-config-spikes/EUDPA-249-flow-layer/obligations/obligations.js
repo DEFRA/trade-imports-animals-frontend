@@ -614,10 +614,12 @@ export const unitRecord = {
   //
   // V4 spec (Confluence page 6497338582): "Field Block - Mandatory
   // to Submit - At least one Animal Identifier". Every unit-record
-  // must carry ≥ 1 of the six identifier obligations. The concrete
-  // list is left as a lazy getter so this file doesn't force a
-  // circular import against the identifier obligations declared
-  // below. Consumers call `requires.anyOf()` to get the array.
+  // must carry ≥ 1 of the six identifier obligations. Listed as
+  // literal ids in `requires.anyOfIds` rather than obligation
+  // references — id-based deferred resolution (Phase 4.6.3 Q3)
+  // avoids the declaration-order coupling the old `get anyOf()`
+  // getter worked around and makes the "requires-any-of" edge
+  // legible as data to the reachability prover.
   //
   // Engine primitive `groupInvariantErrors` walks in-scope
   // instances and emits one error per instance that violates the
@@ -625,16 +627,14 @@ export const unitRecord = {
   // "not fulfilled" so the per-unit-records subsection stays IP
   // until the user fixes it. See engine/index.js.
   requires: {
-    get anyOf() {
-      return [
-        passport,
-        tattoo,
-        earTag,
-        horseName,
-        identificationDetails,
-        description
-      ]
-    },
+    anyOfIds: [
+      '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
+      '3a768b91-a2b3-4fd7-8456-a01728395b62', // tattoo
+      '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73', // earTag
+      '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84', // horseName
+      '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95', // identificationDetails
+      '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6' // description
+    ],
     errorCode: 'obligation.unitRecord.identifiersRequired'
   }
 }

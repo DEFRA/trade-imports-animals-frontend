@@ -540,17 +540,17 @@ export function groupInvariantErrors(group, state) {
       actual: records.length
     })
   }
-  if (!group.requires.anyOf) return errors
+  if (!group.requires.anyOfIds) return errors
   for (const record of records) {
     const instanceId = record.fulfilmentId
-    const inScopeLeaves = group.requires.anyOf.filter((leaf) => {
-      const impl = state.obligations?.[leaf.id]
+    const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
+      const impl = state.obligations?.[leafId]
       if (!impl?.inScope) return false
       return (impl.records ?? []).some((r) => r.fulfilmentId === instanceId)
     })
-    if (inScopeLeaves.length === 0) continue
-    const anyFilled = inScopeLeaves.some((leaf) => {
-      const stored = state.fulfilments?.[leaf.id]?.[instanceId]
+    if (inScopeLeafIds.length === 0) continue
+    const anyFilled = inScopeLeafIds.some((leafId) => {
+      const stored = state.fulfilments?.[leafId]?.[instanceId]
       return !isBlankValue(stored)
     })
     if (!anyFilled) {

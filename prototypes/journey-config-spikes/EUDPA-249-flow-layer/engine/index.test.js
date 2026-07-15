@@ -915,7 +915,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
   const groupWithRequires = {
     ...unitRecord,
     requires: {
-      anyOf: [passport, earTag],
+      anyOfIds: [passport.id, earTag.id],
       errorCode: 'obligation.unitRecord.identifiersRequired'
     }
   }
@@ -1140,7 +1140,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
       ...commodityLineGroup,
       requires: {
         minEntries: 2,
-        anyOf: [leafObl],
+        anyOfIds: [leafObl.id],
         errorCode: 'obligation.commodityLine.atLeastOne'
       }
     }
@@ -1242,7 +1242,7 @@ describe('containerStatus with group invariants', () => {
   const groupWithRequires = {
     ...unitRecord,
     requires: {
-      anyOf: [passport],
+      anyOfIds: [passport.id],
       errorCode: 'obligation.unitRecord.identifiersRequired'
     }
   }
@@ -1306,7 +1306,7 @@ describe('groupInvariantErrorsForContainer scoping', () => {
   const groupWithRequires = {
     ...unitRecord,
     requires: {
-      anyOf: [passport],
+      anyOfIds: [passport.id],
       errorCode: 'obligation.unitRecord.identifiersRequired'
     }
   }

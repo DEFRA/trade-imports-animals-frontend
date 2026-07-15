@@ -182,7 +182,7 @@ export function changeLinkFor(obligationId) {
  * before rendering.
  */
 export function groupInvariantErrorsForState(state) {
-  const groupsWithRequires = v4Obligations.filter((o) => o?.requires?.anyOf)
+  const groupsWithRequires = v4Obligations.filter((o) => o?.requires?.anyOfIds)
   const out = []
   for (const group of groupsWithRequires) {
     out.push(...groupInvariantErrors(group, state))
