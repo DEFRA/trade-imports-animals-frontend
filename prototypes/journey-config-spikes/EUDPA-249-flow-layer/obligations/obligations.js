@@ -404,9 +404,23 @@ export const animalsCertifiedFor = {
 
 export const commodityLine = {
   id: '20e5f607-1829-4c3d-8abc-06d7e8f9a0b2',
-  name: 'commodityLine'
+  name: 'commodityLine',
   // No applyTo — structural group, always in scope. Instance ids
   // inferred from field-record composite-key prefixes.
+  //
+  // Collection floor: V4 requires at least one commodity line on
+  // every consignment. Without this floor a zero-line session
+  // collapses to NA in `commodity-lines-details` and
+  // `journeyState → fulfilled` — see engine/index.js
+  // `groupInvariantErrors` and REPORT §7 "No minimum-instance
+  // floor". Hub also has an imperative `linesManageStatus` override
+  // that pins the manage-subsection tag; the floor here is the
+  // engine-level fix that propagates through `journeyState` and
+  // container rollups uniformly.
+  requires: {
+    minEntries: 1,
+    errorCode: 'obligation.commodityLine.atLeastOne'
+  }
 }
 
 export const commodityCode = {

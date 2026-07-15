@@ -19,12 +19,20 @@ describe('dump.report(empty)', () => {
     // starts unfulfilled and its sibling animalsCertifiedFor is
     // mandatory.
     expect(out.statusPerSubsection['certified-for']).toBe('not-started')
-    // Commodity-lines subsections are NA (no lines exist yet).
+    // The `commodity-lines-manage` subsection contains only a read-
+    // only intro (no presented obligations, no group), so its rollup
+    // stays NA even after the minEntries floor lands. (Hub UI
+    // patches this label to "Not started" via linesManageStatus for
+    // clickability — that's a hub-local concern, not engine-level.)
     expect(out.statusPerSubsection['commodity-lines-manage']).toBe(
       'not-applicable'
     )
+    // `commodity-lines-details` presents commodityLine-scoped pages.
+    // With `commodityLine.requires.minEntries: 1` (REPORT §7 fix),
+    // zero records triggers a MIN_ENTRIES group error →
+    // classifyEntries returns NS instead of collapsing to NA.
     expect(out.statusPerSubsection['commodity-lines-details']).toBe(
-      'not-applicable'
+      'not-started'
     )
     // Nothing missing yet on unfilled pages we haven't visited.
     expect(out.missingRequired.length).toBeGreaterThan(0)

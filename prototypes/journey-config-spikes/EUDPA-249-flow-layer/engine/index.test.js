@@ -1060,6 +1060,177 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
   })
 })
 
+describe('groupInvariantErrors — `requires.minEntries` collection floor', () => {
+  // Fixes REPORT §7 "No minimum-instance floor" — a group carrying a
+  // `minEntries` floor must emit one collection-scoped error when
+  // records.length is below the floor, so containerStatus / journeyState
+  // stop treating an empty collection as vacuously satisfied. Per the
+  // MATRIX row "Minimum-instance floor" this is the ~8-LOC branch into
+  // `groupInvariantErrors` from Winner A.
+  //
+  // The floor is orthogonal to `requires.anyOf` (the per-instance rule):
+  // a group may carry either, both, or neither. Errors from the two
+  // rules coexist in the same list; consumers count them uniformly.
+  const commodityLineGroup = { id: 'commodity-line', name: 'commodityLine' }
+
+  const groupWithFloor = {
+    ...commodityLineGroup,
+    requires: {
+      minEntries: 1,
+      errorCode: 'obligation.commodityLine.atLeastOne'
+    }
+  }
+
+  it('emits one collection-scoped MIN_ENTRIES error when records.length is below the floor', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: commodityLineGroup,
+          impl: { inScope: true, records: [] }
+        }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithFloor, st)).toEqual([
+      {
+        code: 'MIN_ENTRIES',
+        groupId: commodityLineGroup.id,
+        groupName: 'commodityLine',
+        errorCode: 'obligation.commodityLine.atLeastOne',
+        minEntries: 1,
+        actual: 0
+      }
+    ])
+  })
+
+  it('emits no floor error when records.length meets the floor', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: commodityLineGroup,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1' }] }
+        }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithFloor, st)).toEqual([])
+  })
+
+  it('emits no floor error when the group is out of scope', () => {
+    // A group whose `applyTo` returns inScope:false is not applicable
+    // at all, so the floor doesn't apply either. Symmetric with the
+    // `anyOf` early-return.
+    const st = state({
+      obligations: impls([
+        {
+          obligation: commodityLineGroup,
+          impl: { inScope: false }
+        }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithFloor, st)).toEqual([])
+  })
+
+  it('composes with `requires.anyOf` — both a floor error and per-instance errors surface', () => {
+    // A group carrying both a floor and an anyOf: with fewer records
+    // than the floor AND unfilled leaves on each present record, the
+    // two rules must co-emit. Here minEntries=2 but only 1 record
+    // exists — expect one MIN_ENTRIES error plus one anyOf error on
+    // the unfilled record.
+    const leafObl = { id: 'leaf', name: 'leaf' }
+    const composite = {
+      ...commodityLineGroup,
+      requires: {
+        minEntries: 2,
+        anyOf: [leafObl],
+        errorCode: 'obligation.commodityLine.atLeastOne'
+      }
+    }
+    const st = state({
+      obligations: impls([
+        {
+          obligation: commodityLineGroup,
+          impl: { inScope: true, records: [{ fulfilmentId: 'line1' }] }
+        },
+        {
+          obligation: leafObl,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'line1', status: 'optional' }]
+          }
+        }
+      ])
+    })
+    const errors = groupInvariantErrors(composite, st)
+    expect(errors).toHaveLength(2)
+    expect(errors.some((e) => e.code === 'MIN_ENTRIES')).toBe(true)
+    expect(errors.some((e) => e.instanceId === 'line1')).toBe(true)
+  })
+})
+
+describe('containerStatus + journeyState with `requires.minEntries`', () => {
+  // Integration: a container that presentsForEach off a floored group
+  // must roll up to NS when zero records exist — today (pre-floor) it
+  // collapses to NA (0 in-scope entries + 0 group errors), and
+  // `journeyState` therefore returns fulfilled for a session with no
+  // commodity lines at all. That's the REPORT §7 live defect.
+  const commodityLineGroup = { id: 'commodity-line', name: 'commodityLine' }
+  const codeLeaf = {
+    id: 'commodity-code',
+    name: 'commodityCode',
+    within: commodityLineGroup
+  }
+
+  const flooredGroup = {
+    ...commodityLineGroup,
+    requires: {
+      minEntries: 1,
+      errorCode: 'obligation.commodityLine.atLeastOne'
+    }
+  }
+
+  const container = {
+    children: [
+      {
+        page: 'commodity-code',
+        presentsForEach: { obligation: codeLeaf, forEachOf: flooredGroup }
+      }
+    ]
+  }
+
+  it('containerStatus is NOT_STARTED (not NOT_APPLICABLE) when records=0 and floor unmet', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: flooredGroup,
+          impl: { inScope: true, records: [] }
+        },
+        { obligation: codeLeaf, impl: { inScope: true, records: [] } }
+      ])
+    })
+    // Pre-floor: NA (0 entries, 0 group errors, classifyEntries collapses).
+    // Post-floor: 1 group error → mandatory concern unfulfilled →
+    // touched=0 → NS. This is the shape REPORT §7 flagged.
+    expect(containerStatus(container, st)).toBe(STATUSES.NOT_STARTED)
+  })
+
+  it('journeyState is NOT `fulfilled` for a session with zero records under a floored group', () => {
+    // Prior to the floor, `journeyState` would return FULFILLED here
+    // because `expandPresents` yields 0 entries for 0 records and
+    // `groupInvariantErrors` returned [] (nothing to iterate). CYA
+    // then printed "ready to submit" for an empty consignment.
+    const flow = { sections: [container] }
+    const st = state({
+      obligations: impls([
+        {
+          obligation: flooredGroup,
+          impl: { inScope: true, records: [] }
+        },
+        { obligation: codeLeaf, impl: { inScope: true, records: [] } }
+      ])
+    })
+    expect(journeyState(flow, st)).not.toBe(STATUSES.FULFILLED)
+  })
+})
+
 describe('containerStatus with group invariants', () => {
   // Same synthetic setup as groupInvariantErrors — a container whose
   // pages present unitRecord-scoped obligations should stay IP when

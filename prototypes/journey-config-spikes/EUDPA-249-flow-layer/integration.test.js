@@ -296,13 +296,17 @@ describe('task list rollup', () => {
     )
   })
 
-  it('commodity-lines is NA when no commodity lines exist', () => {
-    // No commodity fulfilments → line-group has no records → all
-    // per-line pages collapse to NA; the intro is inherently NA →
-    // section NA.
+  it('commodity-lines is NS when no commodity lines exist (minEntries floor)', () => {
+    // No commodity fulfilments → line-group has zero records. Prior
+    // to the `commodityLine.requires.minEntries: 1` floor (see
+    // REPORT §7 "No minimum-instance floor"), the section collapsed
+    // to NA and `journeyState → fulfilled` for an empty consignment.
+    // With the floor, `groupInvariantErrorsForContainer` emits one
+    // MIN_ENTRIES error → `classifyEntries` treats it as an
+    // unsatisfied mandatory concern → touched=0 → NS.
     const state = evaluate({ [reasonForImport.id]: 'transit' })
     expect(containerStatus(findSection('commodity-lines'), state)).toBe(
-      STATUSES.NOT_APPLICABLE
+      STATUSES.NOT_STARTED
     )
   })
 })

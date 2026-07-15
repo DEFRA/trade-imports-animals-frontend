@@ -495,26 +495,53 @@ function collectInScopePresentedEntries(container, state) {
 
 /**
  * groupInvariantErrors(group, state)
- *   → [{ code, groupId, groupName, instanceId }]
+ *   → [{ code, groupId, groupName, ... }]
  *
- * For a group obligation carrying `requires.anyOf`, returns one error
- * per in-scope instance where NONE of the required leaves has a
- * fulfilment (and where the instance has at least one required leaf
- * in scope — otherwise the invariant is vacuously satisfied). Same
- * `isBlankValue` semantics as `hasFulfilment` so composite-address
- * all-blank values are treated as unfilled.
+ * Emits one entry per unsatisfied invariant on the group. Two rules
+ * are supported; a group may carry either, both, or neither.
  *
- * This is the primitive the V4 "at least one Animal Identifier per
- * unit-record" rule rides on. `unitRecord.requires = { anyOf: [
- * passport, tattoo, earTag, horseName, identificationDetails,
- * description ] }` in obligations.js.
+ *   - `requires.minEntries` — collection floor. Emits ONE
+ *     `{ code: 'MIN_ENTRIES', minEntries, actual }` when
+ *     `records.length` is below the floor. Closes REPORT §7 "No
+ *     minimum-instance floor": without this, a group with zero
+ *     records collapses to NA and `journeyState → fulfilled` for an
+ *     empty consignment. Wired into `commodityLine` (minEntries: 1)
+ *     in obligations.js.
+ *
+ *   - `requires.anyOf` — per-instance rule. Emits one error per
+ *     in-scope instance where NONE of the required leaves has a
+ *     fulfilment (and where the instance has at least one required
+ *     leaf in scope — otherwise the invariant is vacuously
+ *     satisfied). Same `isBlankValue` semantics as `hasFulfilment`
+ *     so composite-address all-blank values are treated as unfilled.
+ *     This is the primitive the V4 "at least one Animal Identifier
+ *     per unit-record" rule rides on. `unitRecord.requires = {
+ *     anyOf: [ passport, tattoo, earTag, horseName,
+ *     identificationDetails, description ] }` in obligations.js.
+ *
+ * Both rule shapes contribute uniformly to `classifyEntries`'
+ * `groupErrorCount` — an unmet floor blocks F just like an unfilled
+ * per-instance invariant does.
  */
 export function groupInvariantErrors(group, state) {
-  if (!group?.requires?.anyOf) return []
+  if (!group?.requires) return []
   const groupImpl = state.obligations?.[group.id]
   if (!groupImpl?.inScope) return []
   const errors = []
-  for (const record of groupImpl.records ?? []) {
+  const records = groupImpl.records ?? []
+  const { minEntries, errorCode } = group.requires
+  if (typeof minEntries === 'number' && records.length < minEntries) {
+    errors.push({
+      code: 'MIN_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode,
+      minEntries,
+      actual: records.length
+    })
+  }
+  if (!group.requires.anyOf) return errors
+  for (const record of records) {
     const instanceId = record.fulfilmentId
     const inScopeLeaves = group.requires.anyOf.filter((leaf) => {
       const impl = state.obligations?.[leaf.id]
