@@ -516,8 +516,7 @@ export const numberOfPackages = {
   status: 'optional',
   applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
     numberOfPackagesReason
-  ]),
-  dependsOn: [commodityCode.id]
+  ])
 }
 
 // -----------------------------------------------------------------------------
@@ -559,8 +558,7 @@ export const cph = {
     CPH_REQUIRED_COMMODITIES,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
-  ),
-  dependsOn: [commodityCode.id]
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -596,8 +594,7 @@ export const containsUnweanedAnimals = {
     UNWEANED_APPLICABLE_COMMODITIES,
     { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
-  ),
-  dependsOn: [commodityCode.id]
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -681,12 +678,11 @@ export const passport = {
   status: 'optional',
   applyTo: allowListed(commodityCode, PASSPORT_COMMODITIES, unitRecord, [
     passportReason
-  ]),
+  ])
   // Note: `unitRecord` is a structural projection group (the closure's
   // 3rd arg), not a value read. Per Phase 2 commit 1's hand-off, list
   // only the gate obligation (`commodityCode.id`) — projection groups
   // are structural and are not part of the reachability dependency graph.
-  dependsOn: [commodityCode.id]
 }
 
 export const tattoo = {
@@ -696,8 +692,7 @@ export const tattoo = {
   status: 'optional',
   applyTo: allowListed(commodityCode, TATTOO_COMMODITIES, unitRecord, [
     tattooReason
-  ]),
-  dependsOn: [commodityCode.id]
+  ])
 }
 
 export const earTag = {
@@ -707,8 +702,7 @@ export const earTag = {
   status: 'optional',
   applyTo: allowListed(commodityCode, EAR_TAG_COMMODITIES, unitRecord, [
     earTagReason
-  ]),
-  dependsOn: [commodityCode.id]
+  ])
 }
 
 export const horseName = {
@@ -718,8 +712,7 @@ export const horseName = {
   status: 'optional',
   applyTo: allowListed(commodityCode, HORSE_NAME_COMMODITIES, unitRecord, [
     horseNameReason
-  ]),
-  dependsOn: [commodityCode.id]
+  ])
 }
 
 // Inverse gate — the free-text identifiers apply on units whose parent
@@ -749,8 +742,7 @@ export const identificationDetails = {
     SPECIFIC_IDENTIFIER_WHITELISTS,
     unitRecord,
     [identificationDetailsReason]
-  ),
-  dependsOn: [commodityCode.id]
+  )
 }
 
 export const description = {
@@ -763,8 +755,7 @@ export const description = {
     SPECIFIC_IDENTIFIER_WHITELISTS,
     unitRecord,
     [descriptionReason]
-  ),
-  dependsOn: [commodityCode.id]
+  )
 }
 
 export const permanentAddress = {
@@ -777,8 +768,7 @@ export const permanentAddress = {
     PERMANENT_ADDRESS_COMMODITIES,
     unitRecord,
     [permanentAddressReason]
-  ),
-  dependsOn: [commodityCode.id]
+  )
 }
 
 // -----------------------------------------------------------------------------
