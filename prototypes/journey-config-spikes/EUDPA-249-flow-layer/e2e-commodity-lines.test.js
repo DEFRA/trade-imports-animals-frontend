@@ -673,6 +673,46 @@ describe('commodity-lines — CYA change link + prompt', () => {
     expect(cya.payload).toMatch(/Commodity code[\s\S]{0,400}commodity line 2/)
   })
 
+  it('CYA line-scoped row labels track the display ordinal after a delete (ultrareview bug_001)', async () => {
+    // Regression: line ids are session-monotonic (readNextLineId in
+    // lib/state.js never recycles on delete), so after add-add-delete
+    // the surviving line has fulfilmentId 'line2' but is at ordinal
+    // position 1 in state.obligations[commodityLine].records. Every
+    // display surface (units-index, /lines summary, CYA unit-scoped
+    // rows) resolves the ordinal via `ordinalOfLineId(state, id)`.
+    // The line-scoped scalar branch of `keyLabelFor` in the CYA
+    // controller previously used `lineNumber(id)` (regex-parse) and
+    // rendered 'commodity line 2' for what /lines showed as
+    // 'Commodity line 1'. Fixed by consulting `ordinalOfLineId`
+    // (dropping the dead `lineNumber` helper).
+    const jar = makeCookieJar()
+    // Add line1 + line2, delete line1, fill line2's commodity code.
+    await addLine(jar) // → line1
+    await addLine(jar) // → line2
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/delete`,
+      payload: {}
+    })
+    await fillLinePage(jar, 'line2', 'commodity-details', {
+      'commodityCode-line2': '0102'
+    })
+    const cya = await inject(jar, {
+      method: 'GET',
+      url: `${BASE}/check-your-answers`
+    })
+    expect(cya.statusCode).toBe(200)
+    // The row must read "commodity line 1" (matching /lines' display
+    // ordinal), NOT "commodity line 2" (the raw session-monotonic id).
+    expect(cya.payload).toMatch(/Commodity code[\s\S]{0,400}commodity line 1/)
+    expect(cya.payload).not.toMatch(
+      /Commodity code[\s\S]{0,400}commodity line 2/
+    )
+    // The Change link still points at the internal id (URLs are
+    // stable across renumbering).
+    expect(cya.payload).toContain(`${BASE}/lines/line2/commodity-details`)
+  })
+
   it('does NOT emit a spurious row for a line-scoped mandatory that has only the addCommodityLine seed placeholder', async () => {
     // Regression: previously, `POST /lines/add` seeded
     // commodityCode.line1 = ''. CYA's emptiness check treated the

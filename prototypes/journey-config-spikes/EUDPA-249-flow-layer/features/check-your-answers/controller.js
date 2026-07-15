@@ -31,12 +31,6 @@ import { isBlankValue } from '../../lib/is-blank-value.js'
 
 const BASE = '/prototype/eudpa-249'
 
-function lineNumber(lineId) {
-  // 'line1' → 1. Falls back to the raw id if the format changes.
-  const match = /^line(\d+)$/.exec(lineId)
-  return match ? Number(match[1]) : lineId
-}
-
 /** 1-based ordinal position of `lineId` in the current commodityLine
  *  records list — same convention used across the units index and the
  *  /lines summary blocks. */
@@ -132,10 +126,12 @@ function hrefForChange(oblId, lineId, unitId) {
  *   singleton (lineId null)             → "PageTitle"
  *   line-scoped (lineId set)            → "PageTitle (commodity line N)"
  *   unit-scoped (lineId + unitId set)   → "PageTitle (animal M on commodity line N)"
- *  Ordinals for the unit case come from `ordinalOfLineId` /
- *  `ordinalOfUnitId` so a deleted-line renumbering matches the
- *  units-index page. Line-scoped ordinal keeps `lineNumber` for
- *  consistency with the pre-existing behaviour. */
+ *  All ordinals resolve via `ordinalOfLineId` / `ordinalOfUnitId`
+ *  so a deleted-line renumbering matches every other display
+ *  surface (units-index page, /lines summary, CYA unit-scoped
+ *  rows, group-invariant prompts). Line ids are session-monotonic
+ *  and never recycle — parsing digits from the raw id would drift
+ *  from the visible ordinal after any delete. */
 function keyLabelFor(state, presentation, lineId, unitId) {
   if (unitId) {
     return `${presentation.pageTitle} (animal ${ordinalOfUnitId(
@@ -145,7 +141,7 @@ function keyLabelFor(state, presentation, lineId, unitId) {
     )} on commodity line ${ordinalOfLineId(state, lineId)})`
   }
   if (lineId) {
-    return `${presentation.pageTitle} (commodity line ${lineNumber(lineId)})`
+    return `${presentation.pageTitle} (commodity line ${ordinalOfLineId(state, lineId)})`
   }
   return presentation.pageTitle
 }
