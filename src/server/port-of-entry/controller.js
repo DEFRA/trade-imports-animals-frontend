@@ -11,6 +11,10 @@ import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
 import { saveNotification } from '../common/helpers/notification-helpers.js'
 import { portsOfEntryClient } from '../common/clients/ports-of-entry-client.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import {
+  nextRouteAfterArrivalDetails,
+  requiresTransitedCountries
+} from '../common/helpers/transport-routing.js'
 
 const logger = createLogger()
 
@@ -61,6 +65,9 @@ function persistTransportFields(_request, fields) {
     sessionKeys.transportDocumentReference,
     fields.transportDocumentReference
   )
+  if (!requiresTransitedCountries(fields.meansOfTransport)) {
+    setSessionValue(_request, sessionKeys.transitedCountries, null)
+  }
 }
 
 export const portOfEntryController = {
@@ -144,7 +151,9 @@ export const portOfEntryController = {
           .code(statusCodes.internalServerError)
       }
 
-      return h.redirect('/transporters', { referenceNumber })
+      return h.redirect(nextRouteAfterArrivalDetails(fields.meansOfTransport), {
+        referenceNumber
+      })
     }
   }
 }

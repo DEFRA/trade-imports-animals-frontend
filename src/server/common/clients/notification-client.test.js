@@ -283,6 +283,49 @@ describe('#notificationClient', () => {
         expect(body.transport).toEqual({ meansOfTransport: 'AIRPLANE' })
       })
 
+      test('Should include transited countries when means requires transit', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            meansOfTransport: 'RAILWAY',
+            transitedCountries: ['FR', 'DE']
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport).toEqual({
+          meansOfTransport: 'RAILWAY',
+          transitedCountries: ['FR', 'DE']
+        })
+      })
+
+      test('Should omit transited countries when means does not require transit', async () => {
+        mockGetSessionValue.mockImplementation((req, key) => {
+          const sessionData = {
+            meansOfTransport: 'VESSEL',
+            transitedCountries: ['FR']
+          }
+          return sessionData[key] ?? null
+        })
+
+        fetch.mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({})
+        })
+
+        await notificationClient.save(mockRequest, traceId)
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body)
+        expect(body.transport).toEqual({ meansOfTransport: 'VESSEL' })
+      })
+
       test('Should send consignmentContactAddress as flat consignment field', async () => {
         const consignmentContactAddress = {
           name: 'Animal and Plant Health Agency',

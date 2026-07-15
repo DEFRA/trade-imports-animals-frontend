@@ -1,0 +1,187 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block pageContent %}
+
+  {{ govukBackLink({
+    text: "Back",
+    href: "/port-of-entry"
+  }) }}
+
+  {{ appReferenceNumberCaption({ referenceNumber: referenceNumber }) }}
+  {{ appHeading({ heading: pageTitle }) }}
+
+  <div class="govuk-body" data-testid="app-page-body">
+
+    {% if errorList %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: errorList
+      }) }}
+    {% endif %}
+
+    <form method="get" action="/transited-countries" role="search" class="govuk-!-margin-bottom-2">
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="country-search">
+          Search for a country
+        </label>
+        <input
+          class="govuk-input govuk-!-width-full"
+          id="country-search"
+          name="q"
+          type="search"
+          value="{{ searchQuery }}"
+          autocomplete="off"
+          placeholder="Start typing a country"
+        >
+      </div>
+      {{ govukButton({
+        text: "Search",
+        classes: "govuk-button--secondary",
+        type: "submit"
+      }) }}
+    </form>
+
+    <h2 class="govuk-visually-hidden" id="selected-countries-heading">Selected countries</h2>
+    <ul
+      class="app-selected-countries"
+      id="selected-countries-list"
+      aria-labelledby="selected-countries-heading"
+      {% if not selectedCountries.length %}hidden{% endif %}
+    >
+      {% for country in selectedCountries %}
+        <li class="app-selected-countries__item" data-selected-code="{{ country.code }}">
+          <form method="post" action="/transited-countries/remove" class="app-selected-countries__form">
+            <input type="hidden" name="crumb" value="{{ crumb }}"/>
+            <input type="hidden" name="removeCountry" value="{{ country.code }}"/>
+            {% if searchQuery %}
+              <input type="hidden" name="q" value="{{ searchQuery }}"/>
+            {% endif %}
+            <span class="app-selected-countries__name">{{ country.name }}</span>
+            <button type="submit" class="app-selected-countries__remove">
+              <span aria-hidden="true">&times;</span>
+              <span class="govuk-visually-hidden">Remove {{ country.name }}</span>
+            </button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <form method="post" novalidate id="transited-countries-form" class="govuk-!-margin-top-6">
+      <input type="hidden" name="crumb" value="{{ crumb }}"/>
+      {% if searchQuery %}
+        <input type="hidden" name="q" value="{{ searchQuery }}"/>
+      {% endif %}
+
+      {% if checkboxItems.length %}
+        {{ govukCheckboxes({
+          name: "transitedCountries",
+          idPrefix: "transited-country",
+          fieldset: {
+            legend: {
+              text: "Add transited countries",
+              classes: "govuk-fieldset__legend--m"
+            }
+          },
+          hint: {
+            text: "Select all countries the consignment will travel through, then add them to your list."
+          },
+          errorMessage: fieldErrors["transitedCountries"] if fieldErrors,
+          items: checkboxItems
+        }) }}
+
+        <div class="govuk-button-group">
+          {{ govukButton({
+            text: "Add selected countries",
+            classes: "govuk-button--secondary",
+            name: "action",
+            value: "add"
+          }) }}
+        </div>
+      {% elif searchQuery %}
+        <p class="govuk-body">No countries match your search.</p>
+      {% else %}
+        <p class="govuk-body">You have added all available countries.</p>
+      {% endif %}
+
+      <div class="govuk-button-group">
+        {{ govukButton({
+          text: "Save and continue",
+          name: "action",
+          value: "continue"
+        }) }}
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (function () {
+      const searchInput = document.getElementById('country-search')
+      const selectedList = document.getElementById('selected-countries-list')
+      const form = document.getElementById('transited-countries-form')
+
+      if (!selectedList || !form) {
+        return
+      }
+
+      function filterCountries(query) {
+        const normalisedQuery = query.trim().toLowerCase()
+        document.querySelectorAll('[data-country-option]').forEach((item) => {
+          const name = item.getAttribute('data-country-name') ?? ''
+          const row = item.closest('.govuk-checkboxes__item')
+          if (row) {
+            row.style.display = !normalisedQuery || name.includes(normalisedQuery) ? '' : 'none'
+          }
+        })
+      }
+
+      function syncPendingChips() {
+        selectedList.querySelectorAll('[data-pending-code]').forEach((item) => item.remove())
+
+        form.querySelectorAll('input[name="transitedCountries"]:checked').forEach((checkbox) => {
+          const code = checkbox.value
+          if (selectedList.querySelector('[data-selected-code="' + code + '"]')) {
+            return
+          }
+
+          const label = form.querySelector('label[for="' + checkbox.id + '"]')
+          const name = label ? label.textContent.trim() : code
+          const item = document.createElement('li')
+          item.className = 'app-selected-countries__item'
+          item.setAttribute('data-pending-code', code)
+          item.innerHTML =
+            '<div class="app-selected-countries__form">' +
+            '<span class="app-selected-countries__name"></span>' +
+            '<button type="button" class="app-selected-countries__remove">' +
+            '<span aria-hidden="true">&times;</span>' +
+            '<span class="govuk-visually-hidden"></span>' +
+            '</button>' +
+            '</div>'
+          item.querySelector('.app-selected-countries__name').textContent = name
+          item.querySelector('.govuk-visually-hidden').textContent = 'Remove ' + name
+          item.querySelector('button').addEventListener('click', () => {
+            checkbox.checked = false
+            syncPendingChips()
+          })
+          selectedList.appendChild(item)
+        })
+
+        const hasItems = selectedList.children.length > 0
+        selectedList.hidden = !hasItems
+      }
+
+      searchInput?.addEventListener('input', (event) => {
+        filterCountries(event.target.value)
+      })
+
+      form.addEventListener('change', (event) => {
+        if (event.target.matches('input[name="transitedCountries"]')) {
+          syncPendingChips()
+        }
+      })
+    })()
+  </script>
+
+{% endblock %}

@@ -13,6 +13,7 @@ export const sessionKeys = Object.freeze({
   meansOfTransport: 'meansOfTransport',
   transportIdentification: 'transportIdentification',
   transportDocumentReference: 'transportDocumentReference',
+  transitedCountries: 'transitedCountries',
   commodity: 'commodity',
   contactAddress: 'contactAddress',
   consignmentContactAddress: 'consignmentContactAddress',
