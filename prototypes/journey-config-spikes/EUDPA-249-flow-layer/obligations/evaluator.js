@@ -22,24 +22,31 @@ import { obligations as defaultObligations } from './obligations.js'
  * Algorithm per call:
  *
  *   1. Drop unknown obligation ids (tolerate-and-amend).
- *   2. Pre-purge enumeration of group instance-paths from raw storage.
- *      This feeds the applyTo second arg so cross-level gates can be
- *      expressed without in-obligation enumeration.
- *   3. Evaluate each obligation's `applyTo` (if present).
- *   4. Compute effective inScope per obligation — own applyTo inScope
- *      AND every ancestor group's inScope.
- *   5. Purge storage:
- *        - Out-of-scope obligation → drop entire entry.
- *        - Derived indexed leaf → keep only records whose leaf
- *          fulfilmentId is in the `applyTo`-returned set.
- *        - Otherwise → keep (ancestors already in scope).
- *   6. Post-purge enumeration for group implications.
- *   7. Build per-obligation implications (each with a `records` array).
+ *   2. Converge on the post-purge view via fixpoint iteration
+ *      (BRIEF §Migration #1, REPORT §7 "Sharper than resurrection"):
+ *      repeat {enumerate group paths → evaluate `applyTo` →
+ *      compute effective inScope → purge storage} until the
+ *      fulfilments map stops changing. Every `applyTo` is thus
+ *      exercised against the same post-purge view all other gates
+ *      see — a value this call is purging cannot silently drive
+ *      another gate. Bounded by `MAX_PURGE_ITERATIONS` for safety;
+ *      convergence typically hits in 1-2 iterations for real
+ *      manifests because `purgeStorage` is monotonic (never adds).
+ *   3. Post-purge enumeration for group implications.
+ *   4. Build per-obligation implications (each with a `records` array).
  */
 
 const PATH_DELIMITER = '/'
 const joinPath = (segments) => segments.join(PATH_DELIMITER)
 const splitPath = (key) => key.split(PATH_DELIMITER)
+
+// Fixpoint safety cap for the applyTo/purge convergence loop. Real
+// manifests are expected to converge in 1-2 iterations because
+// `purgeStorage` is monotonic on storage (never adds), but a
+// pathological gate design (e.g. an `applyTo` that flips inScope
+// based on absence) could oscillate. Throwing after this cap is a
+// louder signal than silently truncating.
+const MAX_PURGE_ITERATIONS = 16
 
 export function createObligationEvaluator({
   obligations = defaultObligations
@@ -64,42 +71,28 @@ export function createObligationEvaluator({
         obligationsById
       )
 
-      // 2. Pre-purge enumeration — group instance-paths from raw storage.
-      // Feeds applyTo's second arg so gates crossing identity levels
-      // (e.g. per-line codes gating per-unit records) can look up
-      // parent-group instance-paths without in-obligation enumeration.
-      const preEnumeratedGroupPaths = enumerateGroupPathsFromStorage(
-        obligations,
-        obligationsByCategory,
-        obligationAncestorGroups,
-        obligationDescendants,
-        recognisedFulfilments
-      )
-
-      // 3. Run each obligation's applyTo (if it has one).
-      const obligationApplicabilityDecisions = runApplicabilityDecisions(
-        obligations,
-        recognisedFulfilments,
-        preEnumeratedGroupPaths
-      )
-
-      // 4. Effective inScope — own applyTo AND every ancestor group.
-      const isInScope = makeInScopeCheck(
-        obligationApplicabilityDecisions,
-        obligationAncestorGroups
-      )
-      for (const o of obligations) isInScope(o)
-
-      // 5. Purge storage.
-      const amendedFulfilments = purgeStorage(recognisedFulfilments, {
-        obligationsById,
-        obligationsByCategory,
+      // 2. Fixpoint: converge applyTo + purge on a stable post-purge
+      // view. Each iteration enumerates group paths from the current
+      // view, runs applyTo against that view, computes effective
+      // inScope, and purges storage. When the view stops changing,
+      // every applyTo has been exercised against the same post-purge
+      // fulfilments — a value purged in this call cannot leak into
+      // another gate's decision. See REPORT §7 "Sharper than
+      // resurrection" for the two-hop failure mode this closes.
+      const {
+        amendedFulfilments,
         obligationApplicabilityDecisions,
         isInScope
+      } = convergePurge(recognisedFulfilments, {
+        obligations,
+        obligationsById,
+        obligationsByCategory,
+        obligationAncestorGroups,
+        obligationDescendants
       })
 
-      // 6. Post-purge enumeration — group instance-paths for implication
-      // building (accounts for records dropped in step 5).
+      // 3. Post-purge enumeration — group instance-paths for implication
+      // building (accounts for records dropped by the converged purge).
       const fulfilmentIdsByObligationId = enumerateGroupFulfilmentIds(
         obligations,
         {
@@ -111,7 +104,7 @@ export function createObligationEvaluator({
         }
       )
 
-      // 7. Build implications.
+      // 4. Build implications.
       const implicationsByObligation = buildImplications(obligations, {
         isInScope,
         obligationsByCategory,
@@ -126,6 +119,71 @@ export function createObligationEvaluator({
       }
     }
   }
+}
+
+// Fixpoint loop: repeat {enumerate → applyTo → isInScope → purge}
+// until the view stops shrinking. Each iteration replaces the view
+// with the just-purged fulfilments, so the next applyTo sees exactly
+// what every other gate is going to see.
+//
+// Bounded by `MAX_PURGE_ITERATIONS`; throws if we exceed the cap so
+// a pathological gate design fails loudly rather than silently
+// truncating at some arbitrary iteration.
+//
+// Returns the final `{ amendedFulfilments, obligationApplicabilityDecisions,
+// isInScope }` — the caller feeds these to enumeration + implication
+// building.
+export function convergePurge(recognisedFulfilments, context) {
+  const {
+    obligations,
+    obligationsById,
+    obligationsByCategory,
+    obligationAncestorGroups,
+    obligationDescendants
+  } = context
+
+  let view = recognisedFulfilments
+  let obligationApplicabilityDecisions
+  let isInScope
+
+  for (let iteration = 0; iteration < MAX_PURGE_ITERATIONS; iteration++) {
+    const groupPaths = enumerateGroupPathsFromStorage(
+      obligations,
+      obligationsByCategory,
+      obligationAncestorGroups,
+      obligationDescendants,
+      view
+    )
+    obligationApplicabilityDecisions = runApplicabilityDecisions(
+      obligations,
+      view,
+      groupPaths
+    )
+    isInScope = makeInScopeCheck(
+      obligationApplicabilityDecisions,
+      obligationAncestorGroups
+    )
+    for (const o of obligations) isInScope(o)
+
+    const next = purgeStorage(view, {
+      obligationsById,
+      obligationsByCategory,
+      obligationApplicabilityDecisions,
+      isInScope
+    })
+
+    if (viewsEqual(view, next)) {
+      return {
+        amendedFulfilments: next,
+        obligationApplicabilityDecisions,
+        isInScope
+      }
+    }
+    view = next
+  }
+  throw new Error(
+    `ObligationEvaluator: applyTo/purge did not converge within ${MAX_PURGE_ITERATIONS} iterations — check for oscillating gate design`
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -516,4 +574,37 @@ export function buildImplication(obligation, context) {
 
 function isKeyedRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+// Structural equality between two fulfilment views (obligation-id → value).
+// Used by the purge fixpoint to detect convergence. Values are compared by
+// reference at the top level (purge only ever drops keys or filters
+// derived-leaf record maps into a fresh object, so a stable iteration
+// re-uses the previous object refs for untouched entries; a filter
+// produces a new object even when its contents are identical, which we
+// resolve by deep-comparing the keyed-record case).
+function viewsEqual(a, b) {
+  if (a === b) return true
+  const keysA = Object.keys(a)
+  const keysB = Object.keys(b)
+  if (keysA.length !== keysB.length) return false
+  for (const k of keysA) {
+    if (!Object.hasOwn(b, k)) return false
+    const va = a[k]
+    const vb = b[k]
+    if (va === vb) continue
+    // purge may recreate keyed-record entries — compare their keys.
+    if (isKeyedRecord(va) && isKeyedRecord(vb)) {
+      const rka = Object.keys(va)
+      const rkb = Object.keys(vb)
+      if (rka.length !== rkb.length) return false
+      for (const rk of rka) {
+        if (!Object.hasOwn(vb, rk)) return false
+        if (va[rk] !== vb[rk]) return false
+      }
+      continue
+    }
+    return false
+  }
+  return true
 }

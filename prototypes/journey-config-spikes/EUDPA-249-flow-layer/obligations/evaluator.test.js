@@ -1157,3 +1157,89 @@ describe('V4 — accompanying document block: retain-value semantic', () => {
     )
   })
 })
+
+// ---------------------------------------------------------------------------
+// applyTo runs on the post-purge view (two-hop cascade)
+// ---------------------------------------------------------------------------
+//
+// BRIEF §Migration #1 + REPORT §7 "Sharper than resurrection": within a
+// single evaluate() call, an obligation's applyTo must read from the
+// post-purge fulfilments, not the pre-purge `recognisedFulfilments`.
+// Otherwise a value that this same evaluate call purges via one gate can
+// still drive OTHER gates in the same call — the D2 in "G1 gates D; D
+// gates D2".
+//
+// The scenario is unnatural in the shipped manifest (no live G-D-D2
+// chain of purge-on-flip singles) so we exercise it via a synthetic
+// three-obligation manifest driven through the full pipeline.
+describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascade)', () => {
+  const g1 = {
+    id: 'g1',
+    name: 'g1',
+    applyTo: () => ({ inScope: true, status: 'mandatory' })
+  }
+  const d = {
+    id: 'd',
+    name: 'd',
+    applyTo: (fulfilments) =>
+      fulfilments[g1.id] === 'open'
+        ? { inScope: true, status: 'mandatory' }
+        : { inScope: false }
+  }
+  const d2 = {
+    id: 'd2',
+    name: 'd2',
+    applyTo: (fulfilments) =>
+      fulfilments[d.id] === 'yes'
+        ? { inScope: true, status: 'mandatory' }
+        : { inScope: false }
+  }
+  const unrelated = {
+    id: 'unrelated',
+    name: 'unrelated',
+    applyTo: () => ({ inScope: true, status: 'optional' })
+  }
+  const cascadeManifest = [g1, d, d2, unrelated]
+
+  it('two-hop cascade: closing G1 purges D AND takes D2 out of scope in the same call', () => {
+    const cascadeEvaluator = createObligationEvaluator({
+      obligations: cascadeManifest
+    })
+    // Seed: gate open, dependent answered, downstream gated on the
+    // dependent also answered.
+    const result = cascadeEvaluator.evaluate({
+      [g1.id]: 'closed',
+      [d.id]: 'yes',
+      [d2.id]: 'anything'
+    })
+    // D goes out of scope because G1 is closed — its value is purged.
+    expect(result.fulfilments[d.id]).toBeUndefined()
+    // Load-bearing: D2's applyTo reads D. With pre-purge evaluation,
+    // D2's applyTo sees the stale `d: 'yes'` and D2 stays in scope —
+    // its value survives the purge. With post-purge evaluation, D2's
+    // applyTo sees `d: undefined` and D2 is out of scope, purging its
+    // value too.
+    expect(result.obligations[d2.id]).toEqual({ inScope: false })
+    expect(result.fulfilments[d2.id]).toBeUndefined()
+  })
+
+  it('baseline: obligations whose applyTo does not depend on any purged value are unaffected', () => {
+    const cascadeEvaluator = createObligationEvaluator({
+      obligations: cascadeManifest
+    })
+    // Same seed as the cascade test — `unrelated` should stay in scope
+    // regardless of the purge fan-out. Guards against the reorder
+    // accidentally dropping obligations whose applyTo is a constant.
+    const result = cascadeEvaluator.evaluate({
+      [g1.id]: 'closed',
+      [d.id]: 'yes',
+      [d2.id]: 'anything',
+      [unrelated.id]: 'kept'
+    })
+    expect(result.obligations[unrelated.id]).toEqual({
+      inScope: true,
+      status: 'optional'
+    })
+    expect(result.fulfilments[unrelated.id]).toBe('kept')
+  })
+})
