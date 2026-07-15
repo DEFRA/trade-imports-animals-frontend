@@ -178,9 +178,7 @@ const accompanyingDocumentBlockReason = {
 export const poApprovedReferenceNumber = {
   id: '9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d',
   name: 'poApprovedReferenceNumber',
-  status: 'mandatory',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // V4: Consumed from gov.identity on authentication. Composite:
@@ -190,9 +188,7 @@ export const poApprovedReferenceNumber = {
 export const responsiblePersonForLoad = {
   id: 'ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e',
   name: 'responsiblePersonForLoad',
-  status: 'mandatory',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------
@@ -202,15 +198,13 @@ export const responsiblePersonForLoad = {
 export const countryOfOrigin = {
   id: 'a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
   name: 'countryOfOrigin',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const regionCodeRequirement = {
   id: 'b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e',
   name: 'regionCodeRequirement',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // Retain-value pattern: always in scope; mandatory when
@@ -236,8 +230,7 @@ export const regionCode = {
 export const reasonForImport = {
   id: 'd34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f',
   name: 'reasonForImport',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // Purge-on-flip: when reasonForImport is not 'internal-market',
@@ -271,36 +264,31 @@ export const purposeInInternalMarket = {
 export const placeOfOrigin = {
   id: '89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c',
   name: 'placeOfOrigin',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const consignor = {
   id: '9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d',
   name: 'consignor',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const consignee = {
   id: 'abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e',
   name: 'consignee',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const importer = {
   id: 'bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f',
   name: 'importer',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const placeOfDestination = {
   id: 'cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60',
   name: 'placeOfDestination',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------
@@ -310,8 +298,7 @@ export const placeOfDestination = {
 export const transporterType = {
   id: '34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d',
   name: 'transporterType',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // Purge-on-flip: switching transporterType from 'commercial' to
@@ -353,22 +340,19 @@ export const privateTransporter = {
 export const meansOfTransport = {
   id: '45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e',
   name: 'meansOfTransport',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const transportIdentification = {
   id: '56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f',
   name: 'transportIdentification',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const transportDocumentReference = {
   id: '67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a',
   name: 'transportDocumentReference',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // Conditional in-scope-optional multi-select — stored as an array of
@@ -398,15 +382,13 @@ export const transitedCountries = {
 export const arrivalDateAtPort = {
   id: '12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b',
   name: 'arrivalDateAtPort',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 export const portOfEntry = {
   id: '23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c',
   name: 'portOfEntry',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------
@@ -417,8 +399,7 @@ export const portOfEntry = {
 export const contactAddress = {
   id: 'f037e8f9-a0b1-4c26-8d72-fe5f60718293',
   name: 'contactAddress',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------
@@ -428,8 +409,7 @@ export const contactAddress = {
 export const internalReferenceNumber = {
   id: '10e5f607-1829-4a3b-84c5-06d7e8f9a0b1',
   name: 'internalReferenceNumber',
-  applyTo: () => ({ inScope: true, status: 'optional' }),
-  dependsOn: []
+  status: 'optional'
 }
 
 // -----------------------------------------------------------------------------
@@ -440,8 +420,7 @@ export const internalReferenceNumber = {
 export const animalsCertifiedFor = {
   id: '274c5d6e-7f80-4da4-8123-7de4f5061729',
   name: 'animalsCertifiedFor',
-  applyTo: () => ({ inScope: true, status: 'mandatory' }),
-  dependsOn: []
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------

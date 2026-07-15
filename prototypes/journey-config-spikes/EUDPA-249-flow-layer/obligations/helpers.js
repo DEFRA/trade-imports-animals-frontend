@@ -353,17 +353,26 @@ export function includesGate(gateObligation, values, whenTrue, whenFalse) {
 }
 
 /**
- * alwaysInScope — no gate; the decision is unconditional. Absorbs the
- * 19 `applyTo: () => ({ inScope: true, status: 'mandatory' })` closures
- * (Phase 4.5.3 will drop them entirely once we confirm the data-only
- * shape works, but the intermediate stop is a helper that PROVES the
- * always-in-scope shape via metadata so witness synth can classify it
- * as trivial).
+ * alwaysInScope — no gate; the decision is unconditional. Retained
+ * post Phase 4.5.3 for the ONE case the data-only obligation shape
+ * cannot express: an always-in-scope obligation that must attach a
+ * `reasons` list to the decision object. The evaluator's `field`
+ * classifier returns `{ inScope: true, status: obligation.status }`
+ * — no reasons channel. Any always-in-scope obligation that needs to
+ * annotate WHY (e.g. a status flip explained by upstream policy)
+ * should use `applyTo: alwaysInScope('mandatory', [reason])` rather
+ * than reintroducing a bare closure — the helper's metadata is
+ * introspectable and its witness classifies as TRIVIAL.
  *
- * Equivalent to today's `() => ({ inScope: true, status })` but with
- * metadata to prove it. The witness synthesiser reads
- * `.metadata.type === 'alwaysInScope'` and classifies as
- * `WITNESS_KIND.TRIVIAL` — no closure execution, no witness value.
+ * The 19 sites Phase 4.5.3 dropped had NO reasons, so the data-only
+ * shape absorbed them all; `alwaysInScope` sits idle on the manifest
+ * today but is not deprecated — it is the reserved lane for the
+ * "always in scope + reasons" combination the field branch cannot
+ * express.
+ *
+ * The witness synthesiser reads `.metadata.type === 'alwaysInScope'`
+ * and classifies as `WITNESS_KIND.TRIVIAL` — no closure execution,
+ * no witness value.
  *
  * @param {string} status — 'mandatory' or 'optional'.
  * @param {Array} [reasons] — optional reasons to attach.

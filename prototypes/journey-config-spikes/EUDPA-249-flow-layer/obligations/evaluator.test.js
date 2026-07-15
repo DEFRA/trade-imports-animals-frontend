@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
 import {
+  poApprovedReferenceNumber,
+  responsiblePersonForLoad,
   countryOfOrigin,
   regionCodeRequirement,
   regionCode,
@@ -1241,5 +1243,119 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
       status: 'optional'
     })
     expect(result.fulfilments[unrelated.id]).toBe('kept')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// EUDPA-288 Phase 4.5.3 — trivial `applyTo` drop fidelity.
+//
+// 19 always-in-scope obligations previously carried a redundant
+// `applyTo: () => ({ inScope: true, status: '<literal>' })` closure and
+// `dependsOn: []`. This commit deletes both, leaving the data-only shape
+// `{ id, name, status: '<literal>' }` that Phase 1.3's `within.id` deref
+// guard made routable through the evaluator's `field` classifier
+// (evaluator.js buildImplication → the "top-level scalar with intrinsic
+// status" branch returns `{ inScope: true, status: obligation.status }`).
+//
+// The fidelity contract this block pins: for every one of the 19
+// obligations, `evaluator.evaluate({})` returns EXACTLY the same
+// decision object shape (`{ inScope: true, status: '<literal>' }`) it
+// returned before the applyTo was removed. Any regression here means
+// the classifier didn't route the obligation to the `field` category or
+// the field branch produced a different shape.
+//
+// Captured pre-migration output (see PLAN.md §8.5 Phase 4.5.3): 18
+// mandatory + 1 optional (`internalReferenceNumber`).
+// ---------------------------------------------------------------------------
+
+describe('Phase 4.5.3 — trivial applyTo drop fidelity (19 always-in-scope obligations)', () => {
+  const trivialAlwaysMandatoryObligations = [
+    ['poApprovedReferenceNumber', poApprovedReferenceNumber],
+    ['responsiblePersonForLoad', responsiblePersonForLoad],
+    ['countryOfOrigin', countryOfOrigin],
+    ['regionCodeRequirement', regionCodeRequirement],
+    ['reasonForImport', reasonForImport],
+    ['placeOfOrigin', placeOfOrigin],
+    ['consignor', consignor],
+    ['consignee', consignee],
+    ['importer', importer],
+    ['placeOfDestination', placeOfDestination],
+    ['transporterType', transporterType],
+    ['meansOfTransport', meansOfTransport],
+    ['transportIdentification', transportIdentification],
+    ['transportDocumentReference', transportDocumentReference],
+    ['arrivalDateAtPort', arrivalDateAtPort],
+    ['portOfEntry', portOfEntry],
+    ['contactAddress', contactAddress],
+    ['animalsCertifiedFor', animalsCertifiedFor]
+  ]
+
+  it.each(trivialAlwaysMandatoryObligations)(
+    '%s evaluates as { inScope: true, status: "mandatory" } on empty input (post-drop)',
+    (_name, obligation) => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[obligation.id]).toEqual(mandatory)
+    }
+  )
+
+  it('internalReferenceNumber evaluates as { inScope: true, status: "optional" } on empty input (post-drop)', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[internalReferenceNumber.id]).toEqual(optional)
+  })
+
+  it('none of the 19 obligations carry an applyTo closure any more (data-only shape)', () => {
+    // Load-bearing invariant of the commit — the whole point of Phase
+    // 4.5.3 is that these obligations are pure metadata. If someone
+    // re-adds an `applyTo: () => (...)` to any of them, this fires.
+    const stragglers = [
+      poApprovedReferenceNumber,
+      responsiblePersonForLoad,
+      countryOfOrigin,
+      regionCodeRequirement,
+      reasonForImport,
+      placeOfOrigin,
+      consignor,
+      consignee,
+      importer,
+      placeOfDestination,
+      transporterType,
+      meansOfTransport,
+      transportIdentification,
+      transportDocumentReference,
+      arrivalDateAtPort,
+      portOfEntry,
+      contactAddress,
+      internalReferenceNumber,
+      animalsCertifiedFor
+    ].filter((o) => typeof o.applyTo === 'function')
+    expect(stragglers).toEqual([])
+  })
+
+  it('none of the 19 obligations carry a dependsOn key any more (derivable from no-applyTo)', () => {
+    // Same shape guard as above — `dependsOn: []` was redundant with
+    // "no gate = no dependencies". A future author reintroducing it
+    // without an applyTo would drift the schema.
+    const stragglers = [
+      poApprovedReferenceNumber,
+      responsiblePersonForLoad,
+      countryOfOrigin,
+      regionCodeRequirement,
+      reasonForImport,
+      placeOfOrigin,
+      consignor,
+      consignee,
+      importer,
+      placeOfDestination,
+      transporterType,
+      meansOfTransport,
+      transportIdentification,
+      transportDocumentReference,
+      arrivalDateAtPort,
+      portOfEntry,
+      contactAddress,
+      internalReferenceNumber,
+      animalsCertifiedFor
+    ].filter((o) => o.dependsOn !== undefined)
+    expect(stragglers).toEqual([])
   })
 })

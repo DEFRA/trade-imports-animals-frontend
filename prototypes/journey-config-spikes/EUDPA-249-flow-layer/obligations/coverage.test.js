@@ -184,10 +184,21 @@ describe('step 5c — system-populated V4 fields declared but not presented', ()
   it('both obligations are declared always-in-scope + mandatory', () => {
     // They're system-populated (mint / gov.identity), so scope is
     // unconditional; the notification can't exist without them.
+    //
+    // Post Phase 4.5.3 (EUDPA-288): the data-only shape { id, name,
+    // status } is the declaration — no `applyTo` closure needed. The
+    // evaluator's `field` classifier routes these through the "top-
+    // level scalar with intrinsic status" branch and returns
+    // `{ inScope: true, status: obligation.status }`. We pin both the
+    // author-side declaration (`status: 'mandatory'`, no `applyTo`)
+    // and the observable decision (via the evaluator, not by calling
+    // a now-absent closure directly).
     const po = obligations.find((o) => o.name === 'poApprovedReferenceNumber')
     const rp = obligations.find((o) => o.name === 'responsiblePersonForLoad')
-    expect(po.applyTo()).toEqual({ inScope: true, status: 'mandatory' })
-    expect(rp.applyTo()).toEqual({ inScope: true, status: 'mandatory' })
+    expect(po).toMatchObject({ status: 'mandatory' })
+    expect(rp).toMatchObject({ status: 'mandatory' })
+    expect(po.applyTo).toBeUndefined()
+    expect(rp.applyTo).toBeUndefined()
   })
 })
 
