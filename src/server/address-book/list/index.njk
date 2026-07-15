@@ -2,12 +2,20 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/pagination/macro.njk" import govukPagination %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 
 {% block pageContent %}
 
   {{ appHeading({ heading: heading }) }}
 
   <div class="govuk-body" data-testid="app-page-body">
+
+    {% if banner %}
+      {{ govukNotificationBanner({
+        type: "success",
+        text: banner
+      }) }}
+    {% endif %}
 
     <p class="govuk-body">Manage your operators for use across import notifications.</p>
 

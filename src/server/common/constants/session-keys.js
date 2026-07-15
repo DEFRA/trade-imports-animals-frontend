@@ -25,5 +25,6 @@ export const sessionKeys = Object.freeze({
   importer: 'importer',
   destination: 'destination',
   cphNumber: 'cphNumber',
-  documents: 'documents'
+  documents: 'documents',
+  addressBookBanner: 'addressBookBanner'
 })

@@ -1,0 +1,43 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+
+{% block pageContent %}
+
+  {{ appHeading({ heading: heading }) }}
+
+  <div class="govuk-body" data-testid="app-page-body">
+
+    {% if errorList %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: errorList
+      }) }}
+    {% endif %}
+
+    <form method="post" action="/address-book/add" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}"/>
+
+      {{ govukRadios({
+        name: "operatorType",
+        idPrefix: "operatorType",
+        fieldset: {
+          legend: {
+            text: "What type of operator do you want to add?",
+            classes: "govuk-fieldset__legend--m"
+          }
+        },
+        errorMessage: fieldErrors.operatorType if fieldErrors,
+        items: typeItems
+      }) }}
+
+      <div class="govuk-button-group">
+        {{ govukButton({ text: "Continue" }) }}
+        <a class="govuk-link" href="/address-book">Cancel</a>
+      </div>
+    </form>
+
+  </div>
+
+{% endblock %}

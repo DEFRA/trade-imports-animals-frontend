@@ -4,6 +4,8 @@ import {
   fromApiOperator
 } from '../../common/clients/operators-client.js'
 import { buildPaginationLinks } from '../../common/helpers/notification-helper.js'
+import { getSessionValue } from '../../common/helpers/session-helpers.js'
+import { sessionKeys } from '../../common/constants/session-keys.js'
 import {
   OPERATOR_TYPES,
   operatorTypeLabel
@@ -101,6 +103,7 @@ export const addressBookListController = {
   async handler(request, h) {
     const traceId = getTraceId() ?? ''
     const identity = getIdentity(request)
+    const banner = getSessionValue(request, sessionKeys.addressBookBanner, true)
     const q = request.query.q ?? ''
     const operatorType = request.query.operator_type ?? ''
     const page = parsePage(request.query.page)
@@ -128,6 +131,7 @@ export const addressBookListController = {
     return h.view(VIEW, {
       pageTitle: PAGE_TITLE,
       heading: PAGE_TITLE,
+      banner,
       operators: items.map(mapOperatorRow),
       resultsLabel: buildResultsLabel(
         currentPage,

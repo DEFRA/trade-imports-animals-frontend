@@ -266,6 +266,43 @@ describe('addressBookListController', () => {
     })
   })
 
+  test('renders the success banner from the session flash exactly once (one-shot)', async () => {
+    operatorsClient.listOperators.mockResolvedValue({
+      items: [],
+      page: 1,
+      page_size: 25,
+      total_items: 0,
+      total_pages: 1
+    })
+
+    const store = {
+      addressBookBanner: 'Tampere Horse Transport operator added'
+    }
+    const yar = {
+      get: vi.fn((key, clear) => {
+        const value = store[key] ?? null
+        if (clear) {
+          delete store[key]
+        }
+        return value
+      }),
+      set: vi.fn()
+    }
+    const request = { ...mockRequest(), yar }
+
+    const first = await addressBookListController.handler(
+      request,
+      mockResponseToolkit()
+    )
+    expect(first.data.banner).toBe('Tampere Horse Transport operator added')
+
+    const second = await addressBookListController.handler(
+      request,
+      mockResponseToolkit()
+    )
+    expect(second.data.banner).toBeNull()
+  })
+
   test('propagates a client failure to the error page instead of rendering an empty table', async () => {
     const outage = new Error('Failed to list operators')
     outage.status = 503
