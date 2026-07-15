@@ -315,6 +315,46 @@ sync — all async is concentrated in the orchestrator, upstream of
 them. Both are independently unit-testable with plain fixture in /
 plain output out.
 
+**How the artefacts hang together.** The modules form a fan-in
+around the runtime primitives, with the contract seam as the sole
+downstream reader:
+
+```
+             obligations/obligations.js (forked from EUDPA-277)
+              ▲   ▲   ▲            ▲
+              │   │   │            │
+domain/index.js   │   │  flow/flow.js
+      ▲       │   │   │    ▲       │
+      │       │   │   │    │       │
+      └───────┴───┴───┴────┴───────┘
+              engine/index.js
+              ▲            ▲              ▲
+              │            │              │
+     data-dictionary-sketch          contract.js
+                                          ▲
+                                          │
+                                    features/*/controller.js
+                                    lib/*.js
+                                    shared/*.njk
+```
+
+- `domain/index.js` and `flow/flow.js` both import symbols from the
+  obligations manifest — same source of truth for identity.
+- `engine/index.js` reads all three plus the ObligationEvaluator's
+  output; every primitive is a pure function of its inputs.
+- `contract.js` is the seam — everything downstream (controllers,
+  lib helpers, templates) only talks to `contract.js`; nothing in
+  `features/*` or `lib/*` reaches into `engine/index.js` or
+  `domain/index.js` directly. See §The contract seam.
+- `controller-sketch.js` (a historical artefact — a Joi composition
+  sketch) demonstrates that the same primitives can drive a Joi
+  schema shape. The real browser layer went with an internal
+  validation path via `contract.validatePagePayload`, but the
+  sketch documents that Joi is a straightforward alternative.
+- `data-dictionary-sketch.js` walks obligations + domain metadata
+  to emit a stakeholder-friendly view; declares no rules of its
+  own.
+
 ### The ObligationEvaluator (Service layer)
 
 ```ts
@@ -1898,6 +1938,47 @@ spike. Anything the browser layer wants to know about the model
 should be exposed here — if a controller needs a new question
 answered, extend `contract.js`; do not reach past the seam.
 
+**Why an adapter rather than a 1:1 port of the 14-function
+contract.** The parent branch's four alternative model-spikes plus
+its standalone obligations-spike all implement the same
+14-function surface (`steps`, `stepTitle`, `applicableSteps`,
+`status`, `next`, `prev`, `viewItems`, `validate`, `applyAnswer`,
+`missingRequired`, `collect`, `firstStep`, `allComplete`,
+`assembleQuote`) so a single shared controller +
+`JOURNEYS`-driven Playwright spec runs against every variant. This
+spike departs deliberately in three places:
+
+- The runtime primitive vocabulary (from EUDPA-277's
+  JourneyEvaluator design — see §Runtime primitives) reads more
+  naturally as `pageStatus` / `containerStatus` / `journeyState`
+  than as a flat `contract.status(state, stepId, shape)` — Sections
+  and SubSections carry status directly rather than being derived
+  from a `shape` descriptor at call time.
+- Not every parent-branch function has a V4 analogue
+  (`assembleQuote` is car-insurance-specific).
+- The parent's `shape` descriptor mediates between three journey
+  layouts (linear / hub / grouped) at runtime; the V4 slice needs
+  only one shape (subsection-grouped hub), so shape-dispatch is
+  unnecessary.
+
+The adapter names deliberately overlap the parent branch where
+they map cleanly — reviewers coming from that branch see the same
+idiom.
+
+**Widget dispatch is a sibling convention, not part of the seam.**
+Templates never look at obligations or domain entries — they
+render `FieldViewItem`s only. The
+[`lib/field-widgets.js`](./lib/field-widgets.js) dispatch table is
+the sole place a GOV.UK widget is chosen, and
+`shared/partials/fields.njk` does a shape-based dispatch on
+`item.type` when rendering. Adding a new widget shape means one
+new rule in the dispatch table and one new branch in the partial —
+nothing else. Together with the contract-seam grep the two
+conventions establish: change a `presents` entry in `flow/flow.js`
+and controller + template output changes without editing either;
+add a predicate to `domain/index.js` and error-summary + inline
+error output changes without editing any error-formatting code.
+
 ### Contract surface
 
 Twenty exported functions across six areas
@@ -1967,6 +2048,167 @@ is invoked in the running application (once at module load); the
 same seam is used in tests via
 `server.inject` — the tests exercise controllers through the seam
 and never construct their own evaluator.
+
+## The browsable prototype
+
+The spike ships a clickable journey mounted at
+`/prototype/eudpa-249/*` in the existing frontend process. Every
+controller reads scope from the obligations model, options +
+validation from `domain/index.js`, and page composition from
+`flow/flow.js` through the engine primitives and the contract
+seam — nothing is restated in the browser layer.
+
+### Route surface
+
+The URL shape mirrors the container hierarchy plus the two
+bespoke Add-another controllers:
+
+- `/prototype/eudpa-249/start` — redirects to the first
+  unfulfilled page via `startPage(state)`.
+- `/prototype/eudpa-249/task-list` — the hub. Renders 6 Sections /
+  15 SubSections with status tags derived on-the-fly from
+  `containerStatus`.
+- `/prototype/eudpa-249/pages/<pageName>` — flow-driven form
+  pages (single-obligation and multi-obligation, including the
+  address-block composite widget and the 4-field
+  accompanying-documents page).
+- `/prototype/eudpa-249/lines` — commodity-lines index
+  (add / list / delete + per-line Manage animals link).
+- `/prototype/eudpa-249/lines/{lineId}/{pageName}` — per-line
+  detail pages (commodity code, type, species, animal count,
+  packages).
+- `/prototype/eudpa-249/lines/{lineId}/units` — per-line units
+  index (add / list / delete for depth-2 records).
+- `/prototype/eudpa-249/lines/{lineId}/units/{unitId}/{pageName}`
+  — per-unit detail pages (permanent address for pets; passport /
+  tattoo / ear-tag / horse-name / identification-details /
+  description gated by commodity code).
+- `/prototype/eudpa-249/check-your-answers` — CYA with Change
+  links.
+- `POST /prototype/eudpa-249/reset` — wipes session for the demo.
+
+Every AC bullet is visible in the walk: page visibility (reason =
+Transit through EU collapses the purpose-details page to NA and
+`firstUnfulfilledPage` skips it); question visibility
+(transporter-type flips between commercial and private fields on
+the same page); option filtering (purpose-details options only
+exist when reason is Internal Market); task-list rollup (each
+subsection's status derives from `containerStatus`); real V4
+predicates (arrival-details rejects `2026-12-12` — "must be
+DD/MM/YYYY"; transited-countries caps at 12).
+
+### Environment gate and CDP production behaviour
+
+Gated by the convict entry `prototype.eudpa249.enabled` (env
+`PROTOTYPE_EUDPA249_ENABLED`, defaults to `!isProduction`). Three
+places consult the flag, all in `src/`:
+
+- `src/config/nunjucks/nunjucks.js` — adds the spike templates
+  directory to both the Nunjucks search path and the Vision
+  `path` array.
+- `src/server/router.js` — conditional `await import(...)` of the
+  plugin.
+
+When the flag is off the plugin module is never loaded, the
+templates are never on any search path, and no `/prototype/*`
+route exists on the server. A CDP production build (with default
+env) ships nothing prototype-related; a `docker exec ... env`
+check confirms `PROTOTYPE_EUDPA249_ENABLED` is unset (and
+therefore false by default in production).
+
+Auth is opted out per route (`options: { auth: false }` via the
+`PUBLIC` const in [`routes.js`](./routes.js)) so the demo works
+whether or not the host frontend has auth turned on.
+
+### Bespoke controllers for the two Add-another shapes
+
+Commodity lines and per-unit records are the two places the spike
+ships bespoke controllers. Both feature folders host a small
+controller + list template; the underlying model is unchanged
+(`presentsForEach` in `flow.js` with `forEachOf` set to
+`commodityLine` or `unitRecord`), and the plugin's route walker
+branches on the `forEachOf` obligation to emit URLs at the right
+depth.
+
+**Depth-1 — `features/commodity-lines/`.**
+
+- `GET /lines` — one summary block per line with per-row Change
+  links (to that line's specific per-line page) and a per-line
+  Delete form. Emits a "Manage animals on this line" link
+  conditionally on whether the line's commodity code opens any
+  wired unit-scoped obligation.
+- `POST /lines/add` — mints `line1`, `line2`, ... via
+  `addCommodityLine` in `lib/state.js`, seeds a placeholder
+  record on `commodityCode`, and redirects straight into the new
+  line's first per-line page.
+- `POST /lines/{id}/delete` — clears the line's leaf records
+  AND cascades into every unit fulfilment keyed by
+  `${lineId}/...`.
+
+Per-line pages register at `/lines/{lineId}/{pageName}` via
+`lib/line-page-controller.js`. Navigation uses
+`firstUnfulfilledPageForLine` from the engine and
+`nextAfterForLine` from the contract seam.
+
+**Depth-2 — `features/units/`.**
+
+- `GET /lines/{lineId}/units` — one summary block per unit that
+  belongs to the line, with per-row Change links and a per-unit
+  Delete form. Display labels use the ordinal position in the
+  current list rather than the internal id, so surviving units
+  after a delete renumber cleanly (URLs still key on the internal
+  id).
+- `POST /lines/{lineId}/units/add` — mints `unit1`, `unit2`, ...
+  via `addUnitRecord`, seeds on the first WIRED unit-scoped
+  obligation the line's commodity code opens (mandatory first,
+  then optional), redirects into the new unit's first per-unit
+  page.
+- `POST /lines/{lineId}/units/{unitId}/delete` — drops every
+  unit-scoped leaf keyed by the composite `${lineId}/${unitId}`.
+
+Per-unit pages register at
+`/lines/{lineId}/units/{unitId}/{pageName}` via
+`lib/unit-page-controller.js`. Navigation uses
+`firstUnfulfilledPageForUnit` and `nextAfterForUnit`. Fulfilment
+storage uses the same flat composite-key convention as the
+obligations evaluator (`{lineId}/{unitId}` under the shared `/`
+delimiter).
+
+**Session-monotonic ids on both levels.** Line ids and per-line
+unit ids never recycle: separate yar keys track the next id
+(`NEXT_LINE_ID_KEY`, `NEXT_UNIT_ID_BY_LINE_KEY`) and `Delete`
+does not decrement them. Rationale: silent rehydration of any
+per-record state whose obligation was missed by the delete sweep
+would otherwise be possible. Display labels track ordinal
+position so the internal detail does not leak to users.
+
+**Why bespoke rather than a `pagesForEach` flow primitive.** With
+only two Add-another levels to prove, a bespoke controller pair
+per level cost less than a generalised flow primitive that would
+have to handle add / delete / list UX declaratively. If a third
+level of Add-another appears, promote the pattern — this is the
+open item captured in §What's still open (Flow-primitive
+Add-another).
+
+### Headless proof — `dump.js`
+
+[`dump.js`](./dump.js) is the parallel of the parent branch's
+`dump.js`: given a fixture, print a JSON view of the logical
+state. Every question a stakeholder can ask in the browser
+(what's applicable, what's in progress, what's next, what's
+missing, where does a Change link go) has a corresponding key in
+the dump output.
+
+```bash
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js empty
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js internal-market-partial
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js transit-with-lines
+```
+
+Snapshots in [`dump.test.js`](./dump.test.js) pin the output so a
+change to flow / domain / runtime that alters what the
+stakeholder sees in the browser also alters the dump — and the
+snapshot fails until the change is reconciled.
 
 ## Persistence
 
@@ -2978,6 +3220,104 @@ reality.
 - **Cross-Flow equivalence tests** — infrastructure is latent
   (single-Flow spike); adding a skeleton Flow would activate it.
 
+## Files
+
+Path index for the spike, grouped by layer. Each entry links to
+the file and captures its one-line purpose. New authors coming to
+the spike can use this table as a lookup index; the section-body
+prose above describes the intent.
+
+### Layer 1 — Obligations (forked from EUDPA-277)
+
+| File                                                                           | Purpose                                              |
+| :----------------------------------------------------------------------------- | :--------------------------------------------------- |
+| [`obligations/obligations.js`](./obligations/obligations.js)                   | V4 obligations manifest (identity + `applyTo` scope) |
+| [`obligations/evaluator.js`](./obligations/evaluator.js)                       | `createObligationEvaluator({ obligations })`         |
+| [`obligations/helpers.js`](./obligations/helpers.js)                           | `allowListed` / `branchedGate` / etc.                |
+| [`obligations/evaluator.test.js`](./obligations/evaluator.test.js)             | Evaluator integration tests                          |
+| [`obligations/evaluator.units.test.js`](./obligations/evaluator.units.test.js) | Evaluator per-function isolation tests               |
+| [`obligations/helpers.test.js`](./obligations/helpers.test.js)                 | Helper tests                                         |
+| [`obligations/coverage.test.js`](./obligations/coverage.test.js)               | KNOWN_UNWIRED coverage + allow-list sanity           |
+
+### Layer 1.25 (Domain), Layer 2 (Flow), Engine (runtime primitives)
+
+| File                                                       | Purpose                                            |
+| :--------------------------------------------------------- | :------------------------------------------------- |
+| [`domain/index.js`](./domain/index.js)                     | Layer 1.25 constraint declarations + factories     |
+| [`flow/flow.js`](./flow/flow.js)                           | Layer 2 sections + subsections + pages + presents  |
+| [`engine/index.js`](./engine/index.js)                     | Runtime primitives (nav + status + domain)         |
+| [`controller-sketch.js`](./controller-sketch.js)           | Joi-shaped page schema composition sketch          |
+| [`data-dictionary-sketch.js`](./data-dictionary-sketch.js) | Stakeholder dictionary + coverage report           |
+| [`domain/index.test.js`](./domain/index.test.js)           | Domain unit tests (real V4 predicates)             |
+| [`engine/index.test.js`](./engine/index.test.js)           | Runtime primitive tests over synthetic obligations |
+| [`integration.test.js`](./integration.test.js)             | End-to-end V4 slice through all three model layers |
+| [`sketches.test.js`](./sketches.test.js)                   | Sketches tests                                     |
+
+### Browser layer (contract seam + Hapi plugin + features + shared)
+
+| File                                                                                       | Purpose                                                                                                          |
+| :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| [`routes.js`](./routes.js)                                                                 | Hapi plugin; walks `flow/flow.js` and registers routes                                                           |
+| [`contract.js`](./contract.js)                                                             | Contract seam — every browser call to the model goes through here                                                |
+| [`lib/page-controller.js`](./lib/page-controller.js)                                       | Generic GET/POST handler factory for a static page                                                               |
+| [`lib/line-page-controller.js`](./lib/line-page-controller.js)                             | Per-line GET/POST handler factory                                                                                |
+| [`lib/unit-page-controller.js`](./lib/unit-page-controller.js)                             | Per-unit GET/POST handler factory                                                                                |
+| [`features/hub/controller.js`](./features/hub/controller.js)                               | Task-list handler                                                                                                |
+| [`features/check-your-answers/controller.js`](./features/check-your-answers/controller.js) | Check-your-answers handler                                                                                       |
+| [`features/commodity-lines/controller.js`](./features/commodity-lines/controller.js)       | Bespoke commodity-lines index / add / delete (depth-1 Add-another)                                               |
+| [`features/units/controller.js`](./features/units/controller.js)                           | Bespoke unit-records index / add / delete (depth-2 Add-another)                                                  |
+| [`features/start/controller.js`](./features/start/controller.js)                           | Landing redirect                                                                                                 |
+| [`features/reset/controller.js`](./features/reset/controller.js)                           | Session reset                                                                                                    |
+| [`lib/build-field-descriptors.js`](./lib/build-field-descriptors.js)                       | Pure fn — page + state → field descriptors                                                                       |
+| [`lib/field-widgets.js`](./lib/field-widgets.js)                                           | Data-shaped widget dispatch table                                                                                |
+| [`lib/format-domain-errors.js`](./lib/format-domain-errors.js)                             | Domain-error → GOV.UK `{ errorList, fieldErrors }` mapper                                                        |
+| [`lib/presentation.js`](./lib/presentation.js)                                             | Per-obligation `{ pageTitle, legend, hint }` copy                                                                |
+| [`lib/state.js`](./lib/state.js)                                                           | `@hapi/yar` session wrappers + line / unit management helpers                                                    |
+| [`lib/i18n.js`](./lib/i18n.js)                                                             | Message-key resolver (`t(key)`) over `locales/en.json`                                                           |
+| [`lib/is-blank-value.js`](./lib/is-blank-value.js)                                         | Shared blank-value predicate for scalars and composites                                                          |
+| [`dump.js`](./dump.js)                                                                     | Headless CLI proof + programmatic `report(fixture)`                                                              |
+| [`fixtures/*.json`](./fixtures/)                                                           | Named fulfilment fixtures used by `dump.js` + tests                                                              |
+| [`shared/layout.njk`](./shared/layout.njk)                                                 | Base layout — extends `govuk/template.njk`                                                                       |
+| [`shared/page.njk`](./shared/page.njk)                                                     | Generic form page (used by every flow-driven page)                                                               |
+| [`shared/partials/{fields,error-summary}.njk`](./shared/partials/)                         | Field-widget dispatch + GOV.UK error summary                                                                     |
+| [`features/hub/template.njk`](./features/hub/template.njk)                                 | Task-list template                                                                                               |
+| [`features/check-your-answers/template.njk`](./features/check-your-answers/template.njk)   | CYA template                                                                                                     |
+| [`features/commodity-lines/list.njk`](./features/commodity-lines/list.njk)                 | Commodity-lines index template                                                                                   |
+| [`locales/en.json`](./locales/en.json)                                                     | Message-key catalogue (covered by `i18n-coverage.test.js`)                                                       |
+| Test files under `lib/`, `features/*/`, and root                                           | Widget dispatch, format-domain-errors, build-field-descriptors, contract, routes `server.inject`, dump snapshots |
+
+## Running the spike
+
+```bash
+cd repos/trade-imports-animals-frontend
+
+# Full test suite for the spike
+npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/
+
+# Just the browser layer (lib + features + routes + contract + dump)
+npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/lib/ \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/features/ \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/routes.test.js \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/contract.test.js \
+              prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.test.js
+
+# Watch mode
+npx vitest prototypes/journey-config-spikes/EUDPA-249-flow-layer/
+
+# Boot the app for a manual walk
+npm run dev
+# then http://localhost:3000/prototype/eudpa-249/start
+
+# Headless proof — no browser required
+node prototypes/journey-config-spikes/EUDPA-249-flow-layer/dump.js internal-market-partial
+```
+
+`npm run dev` defaults auth off (see
+[`src/config/config.js`](../../../src/config/config.js) —
+`auth.enabled` default is `!isDevelopment`), so the Defra ID stub
+is not required. Force auth on if you want to test it:
+`AUTH_ENABLED=true npm run dev`.
+
 ## Cross-reference
 
 - The parent EUDPA-277 obligations doc — the underlying model,
@@ -3006,5 +3346,11 @@ reality.
   `prototypes/`; the four other model-spikes (A/B/C/D) are the
   earlier paradigm explorations the parent doc's §Implications
   for the existing four spikes section discusses.
+- The parent-layouts branch — `spike/EUDPA-249-prototype-layouts`
+  — hosts the four alternative model-spikes plus one standalone
+  obligations-spike behind the 14-function `contract` interface
+  and shared Playwright `JOURNEYS`-array harness that this spike's
+  contract seam borrows names from.
 - The triaged interaction-design canvas:
   [`prototypes/model-spikes/interaction-design-todo.md`](../../model-spikes/interaction-design-todo.md).
+- JIRA ticket: <https://eaflood.atlassian.net/browse/EUDPA-249>.
