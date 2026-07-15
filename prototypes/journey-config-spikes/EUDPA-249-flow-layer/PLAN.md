@@ -244,7 +244,52 @@ Added mid-flight after Phase 3.3 revealed genuine surface duplication: `regionCo
 - Coverage assertion updated: gates without `applyTo` are not in scope for the check.
 - **Red:** assert the 19 obligations evaluate identically without `applyTo`.
 
-**HALT 4.5** — zero duplication banked. Prover's classification: 24 witness-synthesisable, 0 opaque, 0 trivial closures left in the manifest. Hand back to Paul before Phase 5 (the highest-risk phase — per-record conditional mandate).
+**HALT 4.5** — zero duplication banked. Prover's classification: 14 witness-synthesisable, 30 trivial, 0 opaque. `branchedGate` absent from the manifest (retained as escape hatch in `helpers.js`). Hand back to Paul.
+
+---
+
+## 8.6. Phase 4.6 — Cleanup pass (added 2026-07-15 after Paul's 4 residual-smell questions, ~half a day, 5 commits + 1 HALT)
+
+Paul reviewed Phase 4.5 and flagged four things worth cleaning up before Phase 5's design gate:
+
+1. **10 remaining explicit `dependsOn`** on non-migrated meta-first sites — redundant now that `obligationMetadata()` derives them from `.metadata.obligation`.
+2. **`numberOfPackages` uses `allowListed` with null projection** — functionally equivalent to `includesGate` for the same-frame scalar case. Two overlapping helpers for the same shape.
+3. **`unitRecord.requires` uses `get anyOf()`** — a JS getter working around declaration order. Not data-shaped.
+4. **Helper closure bodies duplicate a "stored → candidates" normalization** across `anyAllowListed`, `allowListed`, `notInUnionOf`, and (variants of) `equalsGate`/`includesGate` — same pattern, four implementations.
+
+All four are behaviour-preserving. Landed as a coherent cleanup before the higher-risk Phase 5.
+
+★ **docs(EUDPA-288): revise PLAN.md — add Phase 4.6 cleanup pass**
+
+- This commit. Records the 4 items + landing sequence.
+
+★ **refactor(EUDPA-288): drop 10 redundant explicit dependsOn annotations (Q1)**
+
+- Sites: 6 `allowListed`, 2 `anyAllowListed`, 2 `notInUnionOf` — all meta-first, all derive `dependsOn` from `metadata.obligation`.
+- Coverage assertion in `obligations/coverage.test.js` was already updated in Phase 4.5.2 to accept derived-or-declared. No further test change needed.
+
+★ **refactor(EUDPA-288): migrate null-projection allowListed sites to includesGate (Q2)**
+
+- Confirmed: `numberOfPackages` (only null-projection `allowListed` site today).
+- Rule going forward: `allowListed` / `notInUnionOf` for PROJECTED gates only (`projectionGroup` non-null). Same-frame scalar gates use `includesGate` / `equalsGate`.
+- Document the rule in the file-level docstring of `obligations/helpers.js`.
+
+★ **refactor(EUDPA-288): unitRecord.requires — anyOfIds (id-based deferred resolution) (Q3)**
+
+- Replace `get anyOf()` getter with `anyOfIds: [<uuid>, ...]` (literal ids).
+- Wire the engine (whichever `groupInvariantErrors` consumer reads `.requires.anyOf`) to resolve ids → obligations at boot.
+- Reachability prover extended to reason over `anyOfIds` as a data-shaped structural relationship — a "requires-any-of" edge in the graph.
+- Declaration-order coupling removed; the manifest is free to declare unitRecord in any position.
+
+★ **refactor(EUDPA-288): extract shared helper internals (isRecordMap, readGate) (Q4)**
+
+- New private module (`obligations/helper-internals.js` or a private section of `helpers.js`):
+  - `isRecordMap(v)` — "stored value is a records-keyed object, not a scalar / array"
+  - `readGate(fulfilments, gateId) → { present, candidates }` — one canonical normalization used across all helpers
+- Refactor `anyAllowListed`, `allowListed`, `notInUnionOf`, `equalsGate`, `includesGate` bodies to use `readGate`. Each closure body shrinks from 6-10 lines to 2-3 lines.
+- Behaviour-preserving; existing tests + a small new unit test on `readGate`/`isRecordMap` lock the normalization semantics.
+
+**HALT 4.6** — cleanup landed. Hand back to Paul before Phase 5's design gate (highest-risk phase).
 
 ---
 
