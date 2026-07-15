@@ -478,7 +478,7 @@ MD artefact. See below.
   the schema-shaped payload alongside the current internal-state
   dump.
 
-Read [`RECOMMENDATION.md`](./RECOMMENDATION.md) end-to-end before
+Read [`obligations.md`](./obligations.md) end-to-end before
 doing anything — it explains the three-layer architecture, the
 contract seam, the browser layer, tests + convention that prove the
 mapping, the env gate, and the v2 backlog. This NEXT.md assumes you
@@ -493,7 +493,7 @@ prototypes/journey-config-spikes/EUDPA-249-flow-layer/
 ├── dump.js                          Headless proof (CLI + report())
 ├── controller-sketch.js             JOI composition sketch (historical)
 ├── data-dictionary-sketch.js        Dictionary builder — feeds to-do 5
-├── RECOMMENDATION.md                Design write-up
+├── obligations.md                   Canonical reference (merged in RECOMMENDATION.md 2026-07-15)
 ├── PLAN.md                          Original spike plan (historical)
 ├── NEXT.md                          This file
 ├── integration.test.js              Cross-cutting integration test
@@ -548,8 +548,8 @@ Forked `obligations.js`, `evaluator.js`, `helpers.js`, and their tests
 (`evaluator.test.js`, `evaluator.units.test.js`, `helpers.test.js`)
 from `prototypes/model-spikes/obligations-v4-model/` into
 [`./obligations/`](./obligations/). The parent folder is unchanged; the
-fork is now our source of truth. Documented in RECOMMENDATION.md
-§Obligations fork.
+fork is now our source of truth. Documented in `obligations.md`
+§Context.
 
 **Verification passed:** 345 tests green
 (spike + forked-obligations); 632 existing frontend tests unaffected.
@@ -1065,8 +1065,8 @@ top-to-bottom. For each field:
   implementing — this is a real design decision.
 - **Structural groups** — the parent branch has `presentsForEach`
   handling for user-driven-indexed groups; our v1 skips them. Line
-  iteration is already deferred to v2 (see the "Commodity-lines UX"
-  section in RECOMMENDATION.md). If the full V4 spec requires unit
+  iteration is already deferred to v2 (see §Commodity-lines UX
+  in `obligations.md`). If the full V4 spec requires unit
   records (per-animal identifiers), we'll need to promote `presentsForEach`
   routing generation from bespoke `line-controllers.js` to a
   generalised `pagesForEach` primitive at the flow layer. That's the
@@ -1252,7 +1252,7 @@ Joi refactor:
   with bespoke Joi.
 - One worked example: pick a real V4 feature that needs a
   controller-side rule and demonstrate the `preValidate` extension.
-- Update `RECOMMENDATION.md` + write `docs/validation.md`.
+- Update `obligations.md` + write `docs/validation.md`.
 
 **Verification target:** 345+ tests still green (some coercion tweaks
 expected). Browsable walk unchanged.
@@ -1336,7 +1336,8 @@ slice we ship today.
   - `prototypes/model-spikes/shared/{controller,nav,domain,joi}.js`
   - `prototypes/standalone/obligations-standalone-spike/`
   - `prototypes/e2e/task-list-with-linear-tasks.spec.js`
-- **This spike's RECOMMENDATION.md** — the design record. Update it
+- **This spike's `obligations.md`** — the canonical single source
+  of truth (merged RECOMMENDATION.md in on 2026-07-15). Update it
   whenever any of (1)-(6) changes the story.
 
 ## Where the current commits sit

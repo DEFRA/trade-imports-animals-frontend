@@ -12,18 +12,24 @@ directly importable).
 **Folder:** `prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
 
 This document captures the plan agreed in the previous session so a
-fresh session can pick up without re-derivation. Delete once execution
-starts and RECOMMENDATION.md exists.
+fresh session can pick up without re-derivation. Kept for
+historical reference; execution is complete.
 
-> **Post-implementation note (2026-07-08).** RECOMMENDATION.md is the
-> current source of truth. One in-scope item from this plan — the
-> async lookup pattern (`lookup-result` obligations, `lookupEnum`
-> domain factory, `certifiedForOptionsLookup`) — was **removed
-> during implementation** to reduce concept count. `animalsCertifiedFor`
-> now uses a static stub. The pattern will be reintroduced (if
-> useful) alongside a real certificate integration. See NEXT.md and
-> the `refactor(EUDPA-249): stub animalsCertifiedFor as staticEnum`
-> commit for the reasoning.
+> **Post-implementation notes.**
+>
+> - `RECOMMENDATION.md` (referenced throughout this plan) was
+>   merged into `obligations.md` on 2026-07-15 and then deleted.
+>   Wherever this plan says "RECOMMENDATION.md" (or "flag in
+>   RECOMMENDATION.md as follow-on"), read `obligations.md`
+>   instead — that is the current single source of truth.
+> - One in-scope item from this plan — the async lookup pattern
+>   (`lookup-result` obligations, `lookupEnum` domain factory,
+>   `certifiedForOptionsLookup`) — was **removed during
+>   implementation** to reduce concept count. `animalsCertifiedFor`
+>   now uses a static stub. The pattern will be reintroduced (if
+>   useful) alongside a real certificate integration. See NEXT.md
+>   and the `refactor(EUDPA-249): stub animalsCertifiedFor as
+staticEnum` commit for the reasoning.
 
 ---
 

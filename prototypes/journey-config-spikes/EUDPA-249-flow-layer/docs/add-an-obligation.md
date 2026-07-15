@@ -234,7 +234,8 @@ mother for milk.'`
 **Target:** wire `species` — the first line-scoped obligation, with
 options that depend on the line's `commodityCode`. Also the first
 `presentsForEach` page brought online (previously deferred to v2
-backlog per the RECOMMENDATION.md file-map).
+backlog per the historical file-map — see `../obligations.md`
+§Files for the current tree layout).
 
 **Twist:** the domain-entry step (2) is one line of new code. The
 enabling infrastructure — turning on `presentsForEach` route
