@@ -1,317 +1,364 @@
-# EUDPA-249 — Flow-layer spike PLAN
+# EUDPA-288 — Blend plan (draft for review)
 
-Follow-on to EUDPA-277 (obligations model validated against Live
-Animals V4 fields — see
-[`../../model-spikes/obligations-v4-model/`](../../model-spikes/obligations-v4-model/)).
-Started 2026-07-08.
-
-**Branch:** `spike/EUDPA-249-flow-layer` (cut from the tip of the
-consolidated EUDPA-277 spike, so the validated obligations manifest is
-directly importable).
-
-**Folder:** `prototypes/journey-config-spikes/EUDPA-249-flow-layer/`.
-
-This document captures the plan agreed in the previous session so a
-fresh session can pick up without re-derivation. Kept for
-historical reference; execution is complete.
-
-> **Post-implementation notes.**
->
-> - `RECOMMENDATION.md` (referenced throughout this plan) was
->   merged into `obligations.md` on 2026-07-15 and then deleted.
->   Wherever this plan says "RECOMMENDATION.md" (or "flag in
->   RECOMMENDATION.md as follow-on"), read `obligations.md`
->   instead — that is the current single source of truth.
-> - One in-scope item from this plan — the async lookup pattern
->   (`lookup-result` obligations, `lookupEnum` domain factory,
->   `certifiedForOptionsLookup`) — was **removed during
->   implementation** to reduce concept count. `animalsCertifiedFor`
->   now uses a static stub. The pattern will be reintroduced (if
->   useful) alongside a real certificate integration. See NEXT.md
->   and the `refactor(EUDPA-249): stub animalsCertifiedFor as
-staticEnum` commit for the reasoning.
+Consolidate the two obligation-model spikes into a single defensible base, following
+the migration order agreed in `prototypes/report/BRIEF.md#migration-order-each-step-banks-value-on-its-own`.
 
 ---
 
-## Ticket
+## 1. Ground truth
 
-**EUDPA-249** — _Spike: evaluate journey configuration driven by
-commodity code and country of origin._
+- **Base = B** (REPORT's B = `prototypes/journey-config-spikes/EUDPA-249-flow-layer/`)
+  on branch `spike/EUDPA-249-flow-layer` — the branch you're already on.
+- **Source of ports = A** (REPORT's A = `prototypes/standalone/live-animals/`)
+  on branch `spike/EUDPA-249-prototype-layouts`. **Read-only reference.**
+- **New branch:** `spike/EUDPA-288-blend-obligations-models` off current HEAD (78f5e79).
+  We do **not** merge A into B. We port by file-copy of the specific artefacts named
+  in the BRIEF, per commit.
+- The frozen ancestor `prototypes/model-spikes/obligations-v4-model/` (~7,087 LOC,
+  byte-identical duplicate evaluator) is **binned early** except `GAPS.md`
+  (BRIEF line 39, REPORT §7 last item).
 
-Acceptance criteria:
+## 2. Working rules
 
-- Recommended approach for expressing journey config in one place,
-  keyed by commodity code + country of origin.
-- Shows how the config is changed in one place to drive:
-  - showing/hiding a page
-  - showing/hiding a question
-  - showing/hiding an option (e.g. dropdown value)
-- Explains how correctness of the config is ensured (schema, tests,
-  business-facing illustration).
-- Trade-offs captured; recommendation played back to team.
-- **Stretch:** task list changes, validation changes.
+- One ★ heading = one commit. Each commit follows **red → green → refactor**.
+- **HALT** gates require review by Paul (and Sam where noted) before proceeding.
+- Commit-message prefix: `feat(EUDPA-288):`, `fix(EUDPA-288):`, `chore(EUDPA-288):`,
+  `test(EUDPA-288):`.
+- Every commit must pass the root `npm run test` (vitest) before commit.
+- Every commit that adds/changes an obligation extends `spec/fixtures/happy-path.json`
+  (or the equivalent B fixture) so downstream E2E walks stay coherent.
+- **Never** bypass a failing test to force green — fix code or STOP and report.
+- Per-commit delivery pattern (mirrors journey-builder's `INCREMENT_IMPLEMENTOR`):
+  1. Parent (me) creates a task for the commit.
+  2. Spawn ONE `general-purpose` Task subagent, briefed with the increment id,
+     the specific files to touch, and the persona (INCREMENT_IMPLEMENTOR for
+     additive work; MODEL_EXTENDER for `engine/` changes).
+  3. Subagent implements + commits.
+  4. Parent re-verifies (never trusts worker's green — same rule journey-builder
+     enforces).
+  5. Mismatch → rollback + create failure task. 3 consecutive failures → HALT.
 
-Tech notes reference Ben's
-[`trade-imports-journey-config-ui`](https://github.com/DEFRA/trade-imports-journey-config-ui)
-and a Slack slide deck — both already consumed in prior analysis; the
-obligations model from EUDPA-277 is the canonical direction for this
-spike.
+## 3. Explicit no-goes (bounds from BRIEF §Bin)
 
----
-
-## Direction — three-layer architecture
-
-The previous session's key design conversation was about where
-finite-enumerable options and predicate-based validation should live.
-Agreed:
-
-### Layer 1 — Obligations (existing, from EUDPA-277)
-
-Owns **identity + cardinality + scope** (`applyTo`). Nothing about
-legal values. Reusable across journeys with different validation
-overlap. Location: manifest imported from
-[`../../model-spikes/obligations-v4-model/obligations.js`](../../model-spikes/obligations-v4-model/obligations.js).
-
-**Unchanged by this spike.**
-
-### Layer 1.25 — Domain / validation (NEW)
-
-Per-obligation constraint _declarations_ keyed by obligation id.
-Everything about "what is a legal value?" lives here. Everything about
-_when_ / _which_ reads state — potentially state that includes
-external-lookup results, resolved by the orchestrator via the existing
-`lookup-result` obligation pattern.
-
-Indicative shape:
-
-```js
-// domain.js
-export const domain = new Map([
-  [
-    purposeInInternalMarket.id,
-    {
-      type: 'enum',
-      options: (fulfilments, ids) =>
-        fulfilments[commodityCode.id] === 'x' ? ['a', 'b'] : ['a', 'b', 'c']
-    }
-  ],
-  [
-    animalsCertifiedFor.id,
-    {
-      type: 'enum',
-      // lookup-driven — reads from an orchestrator-fetched result
-      options: (fulfilments) => fulfilments[certifiedForOptionsLookup.id] ?? []
-    }
-  ],
-  [
-    numberOfAnimals.id,
-    {
-      type: 'integer',
-      predicate: (value, fulfilments) => {
-        const species = fulfilments[species.id] ?? []
-        if (species.includes('elephant')) return value === 1
-        return value >= 1
-      },
-      reasons: [{ code: 'domain.numberOfAnimals.max.becauseElephant' /* … */ }]
-    }
-  ]
-])
-```
-
-Key properties:
-
-- **Data-shaped where possible**, function escape hatch where computed.
-- **Same idiom as obligations' `applyTo`** — pure functions of state.
-- **Metadata pattern** — where entries are built via helpers, `.metadata`
-  is attached for introspection (parallel to `helpers.js` in
-  obligations).
-- **Keyed by obligation id** (persistence-key hygiene).
-- **Single home for enum options, predicates, and cross-field rules**
-  — no cross-file chasing.
-
-Loose-wording caveat: "single home" refers to constraint _declarations
-/ resolution logic_, not the resolved values themselves. Some
-declarations resolve statically; some read state (which may include
-external-lookup results delivered via `lookup-result` obligations).
-Same shape as `applyTo` reading state.
-
-### Layer 2 — Flow (NEW prototype)
-
-Pages + `presents` entries. References obligations for scope +
-records, and domain for rendering shape + option lists.
-
-Indicative shape:
-
-```js
-// flow.js
-export const flow = {
-  sections: [
-    {
-      id: 'commodity-line',
-      title: 'Commodity line',
-      children: [
-        {
-          page: 'commodity-selection',
-          presents: [{ obligation: commodityCode, mandate: 'hard' }]
-        },
-        {
-          page: 'commodity-details',
-          presents: [
-            { obligation: commodityType, mandate: 'hard' },
-            { obligation: species, mandate: 'hard' }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-Runtime primitives — a mix of existing JourneyEvaluator primitives
-(from obligations.md §The JourneyEvaluator) plus new ones for
-this spike:
-
-Existing (inherited from EUDPA-277 model):
-
-- `firstApplicablePage(root)`, `firstUnfulfilledPage(root, state)`,
-  `firstPagePresentingObligation(flow, obligationId)`,
-  `containerStatus(container, state)`, `journeyState(flow, state,
-submitted)`.
-
-New in this spike:
-
-- `optionsFor(obligation, fulfilments, ids, domain) → string[]` —
-  resolve the current legal options.
-- `validate(presentedEntry, fulfilments, ids, domain) → error[]` —
-  run predicates and set-membership checks; returns error records
-  keyed by obligation id.
-
-Existing primitives already cover page/question visibility (via
-`containerStatus` → NA/NS/IP/F) and task-list rollup. No new
-mechanism needed for those AC bullets.
-
-### Controller layer — sketch only
-
-Show how JOI schemas compose from the domain module. Not a working
-controller in the spike — just the composition pattern.
+- Do not edit anything under `prototypes/standalone/live-animals/` or
+  `prototypes/standalone/obligations-v2-spike/` — A-side sources are read-only.
+- Do not port A's `.njk` templates, page-owned controllers, hand-maintained
+  3-spine task list, or Joi-in-controller validation.
+- Do not introduce a JSON/JSONLogic gate DSL (BRIEF §Bin: "B built it, shipped
+  it, killed it").
+- No changes to `engine/` files except under a MODEL_EXTENDER gate with a
+  `DESIGN-DELTA.md` entry in the same commit.
 
 ---
 
-## Deliverables
+## 4. Phase 0 — set-up (2 commits, ~30 min)
 
-- **`domain.js` prototype** — 3-5 enum obligations from V4 covering
-  static / computed / lookup-derived option sets; plus 1 predicate
-  example (`numberOfAnimals` capped when species includes elephant);
-  plus 1 `lookup-result` obligation for the async options case (may
-  need to be added to the imported obligations manifest or defined
-  locally).
-- **`flow.js` prototype** — 3-5 pages covering a V4 journey slice
-  that exercises page visibility, question visibility, option
-  filtering, and task-list rollup.
-- **`runtime.js`** — new primitives (`optionsFor`, `validate`), plus
-  re-exported / wrapped versions of the existing JourneyEvaluator
-  primitives that consume both obligations state and domain.
-- **`controller-sketch.js`** — one example showing how a JOI schema
-  derives from the domain module.
-- **`data-dictionary-sketch.js`** — walks obligations + domain, emits
-  a JSON view.
-- **Tests** at three levels:
-  - domain entries in isolation (pure functions),
-  - runtime primitives with synthetic fixtures,
-  - integration through a small V4 slice.
-- **`RECOMMENDATION.md`** — trade-offs, recommendation, playback
-  script.
+★ **chore(EUDPA-288): branch off flow-layer + land PLAN.md**
+
+- New branch `spike/EUDPA-288-blend-obligations-models` from
+  `spike/EUDPA-249-flow-layer` HEAD.
+- Copy this PLAN.md into
+  `prototypes/journey-config-spikes/EUDPA-249-flow-layer/EUDPA-288-PLAN.md`
+  (or agreed alternate location — see Q4 below).
+
+★ **chore(EUDPA-288): bin frozen ancestor obligations-v4-model except GAPS.md**
+
+- `git rm -r prototypes/model-spikes/obligations-v4-model/` — then re-add
+  `GAPS.md` only.
+- Reasoning committed via the trailer + link to BRIEF line 39 / REPORT §7.
 
 ---
 
-## Scope — in and out
+## 5. Phase 1 — Step 1: fix B's live bugs (S, ~2 days, 4 commits + 1 HALT)
 
-**In scope**
+Source: BRIEF §Migration #1, REPORT §7 (Side B bugs), MATRIX rows for
+"Scope-exit wipe applied to storage", "Minimum-instance floor",
+"Statically-invertible gates".
 
-- Enum options: static / computed / lookup-derived.
-- Predicate constraints, single-obligation (e.g. `numberOfAnimals`
-  capped by species).
-- Cross-field constraint via reading state (predicate reads sibling
-  obligations' values).
-- Page / question / option gating derived from V4 commodity codes.
-- Task-list rollup (existing model concept, exercised end-to-end).
-- Basic validation error rendering pattern.
-- Async lookup for options (existing `lookup-result` obligation
-  pattern).
+★ **fix(EUDPA-288): persist purge write-back to storage** (`lib/state.js:42-44`)
 
-**Out of scope — flagged in RECOMMENDATION.md as follow-on**
+- **Red:** integration test — set gate G, answer dependent D, flip G off (D
+  purged from view), flip G back on. Assert D is absent from persisted yar
+  state AND from render. Today this test fails: D resurfaces pre-filled.
+- **Green:** write `amendedFulfilments` on read-purge. Note per REPORT §7:
+  this alone is insufficient — see next commit.
 
-- Full working controller — only the composition pattern.
-- Dynamic predicates via a `validation-result` obligation parallel
-  to `lookup-result` (mentioned in the previous session as a natural
-  scale-out).
-- The "sometimes allow invalid submit" business-policy question —
-  orthogonal to shape; sits at the controller layer.
-- Complete V4 journey — thin prototype; RECOMMENDATION.md describes
-  how the pattern scales to full coverage.
-- Rendering / HTML templates — the Flow layer's runtime returns
-  data; a real renderer is a separate concern.
+★ **fix(EUDPA-288): reorder `applyTo` to run post-purge**
+(`obligations/evaluator.js:60-84,:288`)
 
----
+- **Red:** cross-level gate scenario. Obligation `D` gated by `G`; obligation
+  `G'` reads `D`. Change `G` → `D` untouched in raw yar → assert `G'`
+  evaluates on the **purged view**, not the pre-purge fulfilments (currently
+  reads stale).
+- **Green:** move `applyTo` enumeration to a post-purge pass. Non-trivial —
+  pre-purge enumeration currently feeds B's cross-level gates; audit each
+  caller.
+- **Refactor:** name the phase boundary explicitly in code + a one-line comment
+  citing the invariant.
 
-## Suggested next-session flow
+★ **fix(EUDPA-288): guard `evaluator.js:469-472` unconditional `within.id` deref**
 
-1. Read this PLAN.md (~5 min).
-2. Confirm the three-layer direction still holds (session may have
-   fresh doubts, same as the EUDPA-277 pause).
-3. Scaffold files under
-   `prototypes/journey-config-spikes/EUDPA-249-flow-layer/` — draft
-   empty modules matching the deliverables list.
-4. Iterate:
-   - `domain.js` with 2-3 example obligations first (one static enum,
-     one computed enum, one predicate).
-   - `runtime.js` primitives (`optionsFor`, `validate`) + tests.
-   - `flow.js` with 3-5 pages.
-   - Integration test walking a fulfilments scenario end-to-end.
-   - Extend `domain.js` to include the lookup-derived option case
-     (adds a `lookup-result` obligation).
-   - Controller and data-dictionary sketches.
-   - `RECOMMENDATION.md`.
-5. Playback to team.
+- **Red:** add a data-only top-level obligation `{id, name, status:'optional'}`;
+  evaluate; today throws TypeError.
+- **Green:** guard the deref, default to top-level frame. Do **not** convert
+  the 19 existing closures here — that's Step 2's coverage-gate sweep.
+
+★ **feat(EUDPA-288): add `requiredAtLeastOne` (`minEntries`) collection floor**
+(~8 LOC into `groupInvariantErrors`)
+
+- **Red:** zero commodity-lines case — today `journeyState → fulfilled` and
+  CYA prints ready-to-submit. Add fixture; assert NOT fulfilled.
+- **Green:** add `minEntries` branch in `groupInvariantErrors`. Wire into at
+  least one obligation (`commodities` or equivalent).
+- Fixes REPORT §7 "No minimum-instance floor" live defect.
+
+**HALT 1** — smoke walk the app, publish "bugs banked". Decision point:
+proceed to Step 2 or hand back for review.
 
 ---
 
-## Open design questions to resolve as they surface
+## 6. Phase 2 — Step 2: mandatory `dependsOn` metadata + coverage assertion
 
-- **Cross-field validation error surfacing.** Domain entries can
-  carry `reasons`. Whether errors render inline on the field, as a
-  page-level summary, or as a submit-block is a Flow / renderer
-  choice. Prototype the shape; leave the rendering to the renderer
-  layer.
-- **Domain-side helpers.** Do we build a small helpers module for
-  domain entries (`enumOptions`, `predicate`, `crossField`) parallel
-  to `helpers.js` in obligations? Depends on volume of similar
-  shapes. Start with plain data + closures; extract helpers if
-  patterns recur ≥ 3 times.
-- **How much of domain is data-shaped vs function-shaped.** Affects
-  the data-dictionary exporter's coverage. Aim for as much data as
-  possible; use function escape-hatch only where computation is
-  genuinely dynamic.
-- **The "allow invalid submit" enforcement policy.** Business-side
-  question flagged in EUDPA-277 discussion. Orthogonal to model
-  shape. Flag in RECOMMENDATION.md as awaiting business direction.
-- **Predicate authoring ergonomics for cross-field rules.** Reading
-  sibling obligation values inside a predicate function is
-  straightforward; whether we want a small higher-order helper
-  (`whenSpecies(elephant, () => value === 1)`) is TBD.
+**★ Highest value-per-line item in the whole comparison** (BRIEF §Migration #2,
+REPORT §5.1). Source: MATRIX row "Statically-invertible gates".
+
+★ **feat(EUDPA-288): extend obligation schema with `dependsOn` metadata**
+
+- No enforcement yet.
+- **Red:** an obligation authored with `dependsOn: [otherObligationId, ...]`
+  surfaces those ids in the metadata sidecar.
+- **Green:** extend obligation shape + `helpers.js` metadata accessor.
+  Confirms the format the coverage gate will enforce.
+
+★ **feat(EUDPA-288): coverage assertion — every gate carries complete `dependsOn`**
+
+- **Red:** extend `coverage.test.js` — enumerate all obligations with
+  `applyTo` or any gate; assert every one declares a complete `dependsOn` list.
+  Today ~19 closures + branchedGate metadata predicate-holes fail.
+- **Green:** sweep all ~38 gated obligations — annotate each with `dependsOn`.
+  This is a wide diff (touches every `features/*/obligations.js`), but
+  mechanical. Use a helper script if the sweep exceeds ~20 files.
+- This is the ~30 LOC of assertion + the widescale annotation the BRIEF
+  quantifies. Fails the build if a future gate lacks `dependsOn`.
+
+**HALT 2** — publish coverage stats: `X obligations, Y gated, 100% dependsOn`.
+Base for Step 3's prover.
 
 ---
 
-## References
+## 7. Phase 3 — Step 3: port A's reachability prover (M, ~1wk, 4 commits + 1 HALT)
 
-- Ticket: <https://eaflood.atlassian.net/browse/EUDPA-249>
-- Parent obligations spike doc:
-  [`../../model-spikes/obligations-v4-model/obligations.md`](../../model-spikes/obligations-v4-model/obligations.md)
-- Obligations manifest to import from:
-  [`../../model-spikes/obligations-v4-model/obligations.js`](../../model-spikes/obligations-v4-model/obligations.js)
-- Helpers used in obligations:
-  [`../../model-spikes/obligations-v4-model/helpers.js`](../../model-spikes/obligations-v4-model/helpers.js)
-- Gap log from EUDPA-277:
-  [`../../model-spikes/obligations-v4-model/GAPS.md`](../../model-spikes/obligations-v4-model/GAPS.md)
-- EUDPA-277 recommendation:
-  [`../../model-spikes/obligations-v4-model/RECOMMENDATION.md`](../../model-spikes/obligations-v4-model/RECOMMENDATION.md)
+Source: BRIEF §Migration #3, REPORT §5.1 "What breaks", MODEL_EXTENDER persona
+(this is engine work).
+
+★ **feat(EUDPA-288): copy reachability scaffold from A, adapted to B's dependsOn**
+
+- Copy `prototypes/standalone/live-animals/analysis/reachability.js` (215 LOC)
+  to `prototypes/journey-config-spikes/EUDPA-249-flow-layer/analysis/reachability.js`.
+- Adapt `gateValue` and `invertGate` to read B's `dependsOn` + `applyTo`
+  metadata (not A's `activatedBy`).
+- **Red:** run over B's obligations; expect all-green (Step 2's coverage gate
+  guarantees data). Any reachability failure is a real defect and stops the loop.
+- Requires MODEL_EXTENDER persona (engine touch) + `DESIGN-DELTA.md` entry.
+
+★ **feat(EUDPA-288): witness synthesiser per operator** (equals / includes / notInUnionOf / present)
+
+- Addresses REPORT §5.1 warning: "Every new operator A adds carries a second
+  tax: a witness synthesiser in `gateValue` and a seeding rule in
+  `scaffoldFor`. Skip it and the pin silently stops proving anything."
+- **Red:** per-operator witness-synth unit test.
+
+★ **test(EUDPA-288): coverage assert — every operator has a witness synth**
+
+- **Red:** future-proof — a new operator without a witness synth silently
+  turns the prover vacuously green.
+- **Green:** enumerate operators, assert `witnessSynth` map covers each.
+
+**HALT 3** — reachability prover live + green.
+
+---
+
+## 8. Phase 4 — Step 4: records port + boot totality assert + `notInUnionOf` (M, ~1wk, 3 commits + 1 HALT)
+
+Source: BRIEF §Migration #4, REPORT §5.1.
+
+★ **feat(EUDPA-288): port A's records port**
+
+- Copy A's persistence-records abstraction (from `services/persistence/records/`
+  on A branch). Seed a no-op / in-memory backing store — the real Mongo backing
+  is Step 6.
+- **Red:** write-then-read of a record, delete-by-omission (no per-key delete),
+  round-trip an empty collection instance.
+
+★ **feat(EUDPA-288): boot-time obligation → page totality assert** (~20-40 LOC)
+
+- Port from A's `flow/dispatch.js:55-63` over B's `presents` tree.
+- **Red:** add an obligation not referenced by any page; boot should fail
+  with a named diagnostic.
+- **Green:** enumerate all obligations; enumerate all page collects; diff;
+  throw on init if diff is non-empty. Closes B's silent-invisibility seam.
+
+★ **feat(EUDPA-288): `notInUnionOf` derived-union helper** (~5 LOC)
+
+- **Red:** replace `obligations.js:674-678`'s hand-restated four-whitelist
+  complement with `notInUnionOf`; assert equivalent behaviour.
+- **Green:** implement derived-union over `.metadata.values`. Sweep any
+  other hand-restated complements.
+
+**HALT 4** — this is the **"defensible base you can stop at"** per BRIEF §The bill.
+Bugs fixed, analysability recovered, storage contract clean. Decision point —
+Paul + Sam to decide: **bank here** (~2–3wk delivered) or continue to Step 5's
+higher-risk evaluator work.
+
+---
+
+## 9. Phase 5 — Step 5: per-record conditional mandate (M–L, ~1–2wk, 5 commits + 2 HALTs) — HIGHEST RISK
+
+The one genuine B evaluator change. REPORT §The bill: "get it wrong and you
+corrupt status, CYA and submit together." Uses MODEL_EXTENDER persona +
+adversarial self-check.
+
+**HALT 5a — design gate before any code.** Present to Sam:
+
+- Vocabulary (`enclosing` / `anyItem` frames), resolution rule, backwards-compat
+  story, `buildImplication` return-contract widening.
+- Cite MATRIX row "Per-collection-entry conditional mandate".
+
+★ **feat(EUDPA-288): widen `buildImplication` return contract**
+
+- **Red:** per-line rule test — "field required on horse lines, not cattle
+  lines" — today inexpressible in B.
+- **Green:** three branches per REPORT §3.4; new mandate return shape.
+
+★ **feat(EUDPA-288): update ~5–6 status/CYA readers**
+
+- Named in the design-gate output. **Red per reader** — each gets a test
+  proving it consumes the new contract without breaking existing per-obligation
+  reads.
+
+★ **feat(EUDPA-288): helper library for per-record mandate consumers**
+
+- Extract the common shape from the reader diffs.
+
+★ **test(EUDPA-288): adversarial self-checks** (from MODEL_EXTENDER §Adversarial)
+
+- (a) an existing obligation is unaffected — pin with a test.
+- (b) depth-2 cross-frame gate behaves.
+- (c) a wiped cross-frame field leaves no orphan data at any path.
+
+**HALT 5b — walk-through with Sam.** New capability demo in situ.
+
+---
+
+## 10. Phase 6 — Step 6: persistence + submit + parity layer (L, ~3–4wk, ~8 commits + 1 HALT)
+
+Source: BRIEF §Migration #6, REPORT §3.11.
+
+★ **feat(EUDPA-288): declare UUID→path table once on the obligation**
+
+- **Red:** every obligation resolves to exactly one path.
+
+★ **feat(EUDPA-288): port A's notification mapper (V4-labeled)**
+
+- Copy from `features/persistence/records/notification-mapper.js` on A.
+- **Red:** mapper input → expected V4-labeled output; oracle fixtures.
+
+★ **feat(EUDPA-288): port `skeleton-equivalence.test.js` parity harness**
+
+- REPORT §5.2 calls this an "executable oracle that would work against B's
+  mapper the day one exists."
+- **Red:** run against B's new mapper; byte-equivalence pin.
+
+★ **feat(EUDPA-288): port second parity harness** (both are needed per BRIEF §Keep from A).
+
+★ **feat(EUDPA-288): submit route + `submitted` flag**
+
+- **Red:** POST /submit → 200, state transitions to `submitted`, subsequent
+  edits blocked.
+
+★ **feat(EUDPA-288): journey identity + draft record**
+
+- Add `journeyId` (B currently `grep journeyId → 0` per BRIEF).
+- **Red:** create draft, close session, resume by reference, state intact.
+
+★ **feat(EUDPA-288): amend-and-resubmit flow**
+
+- **Red:** submit, amend a section, resubmit — status re-gates the amended
+  section.
+
+★ **feat(EUDPA-288): multi-draft dashboard** (optional — may split)
+
+**HALT 6 — full parity walkthrough.**
+
+---
+
+## 11. Phase 7 — Step 7: escape-hatch pages + a11y coverage (M, ~1wk, 4 commits + 1 HALT)
+
+Source: BRIEF §Migration #7.
+
+★ **docs(EUDPA-288): codify escape-hatch page pattern (`PAGE_PATTERNS.md`)**
+
+- The pattern (code-not-model) for pages that legitimately can't be derived
+  (upload, address picker, tables).
+
+★ **feat(EUDPA-288): port cdp-uploader upload as escape-hatch page**
+
+- From A's `features/documents/`.
+- **Red:** upload happy path — file → scan status → obligation fulfilled.
+
+★ **feat(EUDPA-288): port paginated address picker as escape-hatch page**
+
+- From A's `features/addresses/`.
+- **Red:** pagination + happy path.
+
+★ **feat(EUDPA-288): axe-core over rendered pages**
+
+- **Red:** axe run against representative pages; no violations.
+
+★ **feat(EUDPA-288): Playwright project `javaScriptEnabled: false`**
+
+- Existing walks re-run with JS off; assert no regressions.
+
+**HALT 7 — final walkthrough, open PR to `main`.**
+
+---
+
+## 12. Test discipline reminders
+
+- Vitest + Playwright run: root `npm run test` + `npm run test:prototype:parity` (A
+  branch has this; needs porting if we adopt A's parity harness in Step 6).
+- Every commit touching a controller updates its `contract.test.js` case.
+- The three-way anti-rot gates (`coverage.test.js` / `whitelists.test.js`) stay
+  green throughout — they are load-bearing per BRIEF §Keep from B.
+- SonarCloud: `sonar analyze --staged` before commit; fix BLOCKER/CRITICAL
+  before commit (workspace CLAUDE.md rule).
+
+---
+
+## 13. Decisions (locked in with Paul, 2026-07-15)
+
+1. **Scope.** Run through **all 7 steps** to full parity. Paul monitors the
+   commit stream and interrupts if anything looks off — no formal stop at Step 4.
+2. **Branch name.** `spike/EUDPA-288-blend-obligations-models` off current
+   HEAD (78f5e79 on `spike/EUDPA-249-flow-layer`).
+3. **Frozen-ancestor bin.** DELETE `prototypes/model-spikes/obligations-v4-model/`
+   except `GAPS.md` — **on the new branch only**. The old spike branches remain
+   read-only for the duration of this ticket.
+4. **PLAN.md location.** Replaces the existing
+   `prototypes/journey-config-spikes/EUDPA-249-flow-layer/PLAN.md` on the new
+   branch (same path as the current `obligations.md` for visibility).
+5. **Reviewer.** Sam is the co-reviewer on Sam-tagged HALT gates (5a / 5b / 6).
+6. **Cadence.** HALT-gate reviews only. Between HALTs the loop keeps
+   committing as long as parent verification stays green. Paul follows the
+   commit log and interrupts at any point. Every commit is fully verified
+   by the parent (never trust worker green) regardless.
+
+---
+
+## 14. Not-yet-decided items I've deferred
+
+- The exact reader list for Step 5 (design gate output).
+- Whether Step 6's persistence layer targets Mongo directly or an in-memory
+  stub first (BRIEF is silent; A uses Mongo).
+- Whether Step 7 grows a hard page in B "to settle the widget-derivation
+  unknown" (BRIEF §Unknowns #1) — this is a Sam call.
