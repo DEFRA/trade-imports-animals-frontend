@@ -15,11 +15,13 @@
 >
 > **Pairs with:**
 >
-> - [`RECOMMENDATION.md`](./RECOMMENDATION.md) — spike-level
->   architecture decision record (the three-layer split, key design
->   decisions, playback script, follow-ons).
 > - [`NEXT.md`](./NEXT.md) — living handoff describing the current
 >   session state, known limitations, and deferred items.
+>
+> **Note.** An earlier `RECOMMENDATION.md` at the same folder was
+> merged into this file on 2026-07-15 and then deleted, so this
+> document is now the single source of truth for the spike's
+> architecture + design decisions.
 >
 > **Scope of this file.** Describes the SHAPE of the model — how
 > obligations are declared, how the evaluator turns them into
@@ -281,7 +283,7 @@ that broke it were the same three the parent doc records:
   `allowListed(gate, values, projectionGroup, reasons)` helper.
 - **External state.** Reference-data lookups. Not exercised in the
   current V4 slice — deferred to the async-options follow-on
-  captured in RECOMMENDATION.md.
+  captured in §What's still open below.
 
 ## The evaluation engine
 
@@ -840,10 +842,14 @@ obligation id. Nothing about identity, cardinality, or scope: those
 live in the obligations manifest (Layer 1). Nothing about pages,
 sections, or navigation: those live in the Flow (Layer 2).
 
-Introduced in this spike as the answer to RECOMMENDATION.md's
-recommendation D1 — "Domain is keyed by obligation id, not
-commodity code". Every AC bullet about show / hide options and
-value validation lands here.
+Introduced in this spike on the principle: "Domain is keyed by
+obligation id, not commodity code". The obligations layer already
+models the fan-out from commodity code via `applyTo`; a second
+commodity-code-keyed lookup layer for domain would duplicate that
+logic and create a consistency-drift risk. Instead each obligation
+has one domain entry; the entry reads whichever sibling obligations
+it needs to compute the current option set. Every AC bullet about
+show / hide options and value validation lands here.
 
 Entries are pure functions of state. Same idiom as an obligation's
 `applyTo`: read from `fulfilments`. The domain map itself lives at
@@ -3101,7 +3107,7 @@ blocks.
 
 Not implemented in the spike. Captured as an extension point.
 
-### Async / dynamic options for enums (deferred — RECOMMENDATION.md)
+### Async / dynamic options for enums (deferred)
 
 `animalsCertifiedFor` currently uses a `staticEnum` stub with the
 V4 canonical 16-value list. In production these come from the
@@ -3124,9 +3130,9 @@ Both commodity lines and per-unit records use bespoke controllers
 (`features/commodity-lines/`, `features/units/`). Turning either
 into a declarative `sectionForEach` / `pagesForEach` primitive at
 the flow layer would eliminate a controller pair per level. See
-RECOMMENDATION.md §Out of scope for the trade-off (bespoke
-controllers cost less than a generalised primitive at 2 depth
-levels; promote if a 3rd Add-another shape appears).
+§Commodity-lines UX earlier in this doc for the trade-off
+(bespoke controllers cost less than a generalised primitive at 2
+depth levels; promote if a 3rd Add-another shape appears).
 
 ## Evolution vs the parent doc
 
@@ -3325,8 +3331,11 @@ is not required. Force auth on if you want to test it:
   spike "JourneyEvaluator" framing, and the earlier
   status-taxonomy discussion:
   [`prototypes/model-spikes/obligations-v4-model/obligations.md`](../../model-spikes/obligations-v4-model/obligations.md).
-- The spike's architecture decision record and playback script:
-  [`RECOMMENDATION.md`](./RECOMMENDATION.md).
+- The spike's architecture decision record was previously in a
+  separate `RECOMMENDATION.md` at this folder; it was merged into
+  this doc on 2026-07-15 and then deleted, so this doc is now the
+  single source of truth for spike-level design as well as the
+  obligations model.
 - The current session handoff and known limitations:
   [`NEXT.md`](./NEXT.md).
 - The live V4 manifest: [`obligations/obligations.js`](./obligations/obligations.js).
