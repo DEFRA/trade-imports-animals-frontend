@@ -1,3 +1,5 @@
+import { isRecordMap, readGate } from './helper-internals.js'
+
 /**
  * applyTo helper library — pure functions that build applyTo functions.
  *
@@ -175,13 +177,7 @@ export function notInUnionOf(
  */
 export function anyAllowListed(gateObligation, values, whenTrue, whenFalse) {
   const fn = (fulfilments) => {
-    const stored = fulfilments[gateObligation.id]
-    const candidates =
-      stored && typeof stored === 'object' && !Array.isArray(stored)
-        ? Object.values(stored)
-        : stored !== undefined
-          ? [stored]
-          : []
+    const { candidates } = readGate(fulfilments, gateObligation.id)
     return candidates.some((v) => values.includes(v)) ? whenTrue : whenFalse
   }
   fn.metadata = {
@@ -265,9 +261,7 @@ export function present(obligation) {
     const stored = fulfilments[obligation.id]
     if (stored === undefined) return false
     if (stored === null) return false
-    if (typeof stored === 'object' && !Array.isArray(stored)) {
-      return Object.keys(stored).length > 0
-    }
+    if (isRecordMap(stored)) return Object.keys(stored).length > 0
     return true
   }
 }
@@ -526,7 +520,9 @@ function deriveDependsOn(gateMeta) {
 
 // -----------------------------------------------------------------------------
 // Internal — shared filter-and-project logic between allowListed and
-// notInUnionOf.
+// notInUnionOf. The `stored → candidates` normalization used by the
+// scalar-aggregation helpers (`anyAllowListed`) and the shape test
+// used by `filterAndProject` / `present` live in `helper-internals.js`.
 // -----------------------------------------------------------------------------
 
 /**
@@ -556,14 +552,13 @@ function filterAndProject(
   fulfilmentIdsByObligationId
 ) {
   const stored = storedForGate ?? {}
-  const passingKeys =
-    typeof stored === 'object' && !Array.isArray(stored)
-      ? Object.entries(stored)
-          .filter(([, v]) => predicate(v))
-          .map(([k]) => k)
-      : predicate(stored)
-        ? ['']
-        : []
+  const passingKeys = isRecordMap(stored)
+    ? Object.entries(stored)
+        .filter(([, value]) => predicate(value))
+        .map(([key]) => key)
+    : predicate(stored)
+      ? ['']
+      : []
 
   if (passingKeys.length === 0) return { inScope: false }
 

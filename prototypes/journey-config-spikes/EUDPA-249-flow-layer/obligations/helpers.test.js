@@ -12,6 +12,7 @@ import {
   present,
   presentGate
 } from './helpers.js'
+import { isRecordMap, readGate } from './helper-internals.js'
 
 // Synthetic obligations — plain data. No evaluator, no manifest, no
 // obligationsById construction. This is the entire test surface.
@@ -561,6 +562,134 @@ describe('alwaysInScope', () => {
       type: 'alwaysInScope',
       status: 'mandatory',
       reasons: [{ code: 'x', explanation: 'y' }]
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Shared internals — isRecordMap / readGate. Phase 4.6.4 (Q4).
+//
+// Extracted from the "stored → candidates" normalization that used to be
+// inlined verbatim in `anyAllowListed` and (in an entries-shaped variant)
+// `filterAndProject`. Pinned here so migrating helpers to use the shared
+// surface is a behaviour-preserving refactor. See helpers.js file-level
+// docstring for the taxonomy that motivates the shape.
+// ---------------------------------------------------------------------------
+
+describe('isRecordMap', () => {
+  it('returns true for a plain records-keyed object', () => {
+    expect(isRecordMap({ line1: 'a', line2: 'b' })).toBe(true)
+  })
+
+  it('returns true for an empty object (still a records-map shape)', () => {
+    // Empty-map is treated as a records-map at the shape level — callers
+    // that care about "has any records" use `present` semantics on top.
+    expect(isRecordMap({})).toBe(true)
+  })
+
+  it('returns false for scalar strings', () => {
+    expect(isRecordMap('a')).toBe(false)
+    expect(isRecordMap('')).toBe(false)
+  })
+
+  it('returns false for other scalar primitives', () => {
+    expect(isRecordMap(0)).toBe(false)
+    expect(isRecordMap(false)).toBe(false)
+    expect(isRecordMap(true)).toBe(false)
+  })
+
+  it('returns false for undefined', () => {
+    expect(isRecordMap(undefined)).toBe(false)
+  })
+
+  it('returns false for null', () => {
+    // null is `typeof 'object'` in JS — the check must exclude it.
+    expect(isRecordMap(null)).toBe(false)
+  })
+
+  it('returns false for arrays', () => {
+    // Arrays are `typeof 'object'` but semantically not records-maps.
+    // The original inline check used `!Array.isArray(stored)` — pin it.
+    expect(isRecordMap([])).toBe(false)
+    expect(isRecordMap(['a', 'b'])).toBe(false)
+  })
+})
+
+describe('readGate', () => {
+  const gateId = 'gate-id'
+
+  it('returns { present: false, candidates: [] } when nothing is stored', () => {
+    expect(readGate({}, gateId)).toEqual({ present: false, candidates: [] })
+  })
+
+  it('returns { present: false, candidates: [] } for undefined stored value', () => {
+    // Explicitly-stored-as-undefined is treated the same as missing.
+    expect(readGate({ [gateId]: undefined }, gateId)).toEqual({
+      present: false,
+      candidates: []
+    })
+  })
+
+  it('wraps a scalar string in a single-element candidates array', () => {
+    expect(readGate({ [gateId]: 'yes' }, gateId)).toEqual({
+      present: true,
+      candidates: ['yes']
+    })
+  })
+
+  it('wraps other scalar primitives (0, false, empty string) as present', () => {
+    // Matches the original inline `stored !== undefined ? [stored] : []`
+    // — falsy-but-defined values ARE present as candidates.
+    expect(readGate({ [gateId]: 0 }, gateId)).toEqual({
+      present: true,
+      candidates: [0]
+    })
+    expect(readGate({ [gateId]: false }, gateId)).toEqual({
+      present: true,
+      candidates: [false]
+    })
+    expect(readGate({ [gateId]: '' }, gateId)).toEqual({
+      present: true,
+      candidates: ['']
+    })
+  })
+
+  it('treats null as a scalar (present with a single null candidate)', () => {
+    // The original inline check was `stored && typeof stored === 'object'
+    // && !Array.isArray(stored)` — null fails the truthiness gate and
+    // falls to the scalar branch as `!== undefined`. Pin that.
+    expect(readGate({ [gateId]: null }, gateId)).toEqual({
+      present: true,
+      candidates: [null]
+    })
+  })
+
+  it('projects a records-map to its values as candidates', () => {
+    expect(readGate({ [gateId]: { line1: 'a', line2: 'b' } }, gateId)).toEqual({
+      present: true,
+      candidates: ['a', 'b']
+    })
+  })
+
+  it('returns present:true with empty candidates for an empty records-map', () => {
+    // Empty object is a records-map shape but has no values; `some()`
+    // over an empty candidates array still returns false — matches the
+    // original inline behaviour for `{}` (Object.values({}) is []).
+    expect(readGate({ [gateId]: {} }, gateId)).toEqual({
+      present: true,
+      candidates: []
+    })
+  })
+
+  it('treats arrays as scalars (single-element candidates wrapping the array)', () => {
+    // The original inline check falls arrays through to the scalar branch
+    // because of `!Array.isArray(stored)`. Preserve that verbatim — a
+    // helper caller receiving an array-shaped stored value gets ONE
+    // candidate (the array itself), not the array spread.
+    const stored = ['a', 'b']
+    expect(readGate({ [gateId]: stored }, gateId)).toEqual({
+      present: true,
+      candidates: [stored]
     })
   })
 })
