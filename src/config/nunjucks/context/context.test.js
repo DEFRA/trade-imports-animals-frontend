@@ -51,8 +51,13 @@ describe('context and cache', () => {
           navigation: [
             {
               current: true,
-              text: 'Home',
+              text: 'Dashboard',
               href: '/'
+            },
+            {
+              current: false,
+              text: 'Address book',
+              href: '/address-book'
             },
             {
               current: false,
@@ -142,8 +147,13 @@ describe('context and cache', () => {
           navigation: [
             {
               current: true,
-              text: 'Home',
+              text: 'Dashboard',
               href: '/'
+            },
+            {
+              current: false,
+              text: 'Address book',
+              href: '/address-book'
             },
             {
               current: false,

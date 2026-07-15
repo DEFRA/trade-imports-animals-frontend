@@ -13,6 +13,7 @@ import { accompanyingDocuments } from './accompanying-documents/index.js'
 import { additionalDetails } from './additional-details/index.js'
 import { animalsIdentificationDetails } from './commodities/identification/index.js'
 import { addresses } from './addresses/index.js'
+import { addressBook } from './address-book/index.js'
 import { cphNumber } from './cph-number/index.js'
 import { portOfEntry } from './port-of-entry/index.js'
 import { transitedCountries } from './transited-countries/index.js'
@@ -49,6 +50,7 @@ export const router = {
         additionalDetails,
         accompanyingDocuments,
         addresses,
+        addressBook,
         cphNumber,
         portOfEntry,
         transitedCountries,

@@ -1,0 +1,96 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
+
+{% block pageContent %}
+
+  {{ appHeading({ heading: heading }) }}
+
+  <div class="govuk-body" data-testid="app-page-body">
+
+    <p class="govuk-body">Manage your operators for use across import notifications.</p>
+
+    {{ govukButton({
+      text: "Add a new operator",
+      href: "/address-book/add"
+    }) }}
+
+    <form method="get" action="/address-book" role="search" class="govuk-!-margin-bottom-4">
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--s" for="address-book-search">
+          Search by name, address or country
+        </label>
+        <input
+          class="govuk-input govuk-!-width-two-thirds"
+          id="address-book-search"
+          name="q"
+          type="search"
+          value="{{ q }}"
+          autocomplete="off"
+        >
+      </div>
+
+      {{ govukSelect({
+        id: "operator-type-filter",
+        name: "operator_type",
+        label: {
+          text: "Filter by operator type",
+          classes: "govuk-label--s"
+        },
+        items: operatorTypeOptions
+      }) }}
+
+      {{ govukButton({
+        text: "Search",
+        classes: "govuk-button--secondary",
+        type: "submit"
+      }) }}
+    </form>
+
+    <p class="govuk-body govuk-!-font-weight-bold">{{ resultsLabel }}</p>
+
+    {% if operators.length %}
+      <table class="govuk-table">
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Name</th>
+            <th scope="col" class="govuk-table__header">Type</th>
+            <th scope="col" class="govuk-table__header">Address</th>
+            <th scope="col" class="govuk-table__header">Country</th>
+            <th scope="col" class="govuk-table__header">
+              <span class="govuk-visually-hidden">Action</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          {% for operator in operators %}
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">{{ operator.name }}</td>
+              <td class="govuk-table__cell">{{ operator.type }}</td>
+              <td class="govuk-table__cell">{{ operator.address }}</td>
+              <td class="govuk-table__cell">{{ operator.country }}</td>
+              <td class="govuk-table__cell">
+                <a class="govuk-link" href="{{ operator.viewHref }}">
+                  View<span class="govuk-visually-hidden"> {{ operator.name }}</span>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="govuk-body">No operators found.</p>
+    {% endif %}
+
+    {% if pagination %}
+      {{ govukPagination({
+        previous: pagination.previous,
+        next: pagination.next,
+        items: pagination.items
+      }) }}
+    {% endif %}
+
+  </div>
+
+{% endblock %}

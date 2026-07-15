@@ -131,13 +131,18 @@ export function mapPaginatedResponse(responseBody, countryMap = {}) {
 }
 
 /**
- * Builds the view model for previous/next pagination links.
- * Returns null when there is only a single page.
+ * Builds the view model for pagination links. Returns null when there is only a
+ * single page. When `buildQueryString(page)` is supplied the links are built
+ * from it (so a caller such as the address book can preserve its own
+ * `?q=&operator_type=&page=` filters) and a numbered `items` list — one entry
+ * per page, 1..totalPages, no ellipsis — is added. The existing home caller
+ * omits it and keeps the previous/next-only behaviour.
  */
 export function buildPaginationLinks(
   pagination,
   baseUrl = '/',
-  sort = DEFAULT_NOTIFICATION_SORT
+  sort = DEFAULT_NOTIFICATION_SORT,
+  buildQueryString
 ) {
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
@@ -146,12 +151,17 @@ export function buildPaginationLinks(
     return null
   }
 
+  const hrefFor = (targetPage) =>
+    buildQueryString
+      ? `${baseUrl}${buildQueryString(targetPage)}`
+      : `${baseUrl}${buildHomeListQueryString({ page: targetPage, sort })}`
+
   const model = {}
 
   if (page > 1) {
     const previousPage = page - 1
     model.previous = {
-      href: `${baseUrl}${buildHomeListQueryString({ page: previousPage, sort })}`,
+      href: hrefFor(previousPage),
       label: 'Previous page',
       pageText: `${previousPage} of ${totalPages}`
     }
@@ -160,10 +170,21 @@ export function buildPaginationLinks(
   if (page < totalPages) {
     const nextPage = page + 1
     model.next = {
-      href: `${baseUrl}${buildHomeListQueryString({ page: nextPage, sort })}`,
+      href: hrefFor(nextPage),
       label: 'Next page',
       pageText: `${nextPage} of ${totalPages}`
     }
+  }
+
+  if (buildQueryString) {
+    model.items = Array.from({ length: totalPages }, (_, index) => {
+      const number = index + 1
+      return {
+        number,
+        href: hrefFor(number),
+        current: number === page
+      }
+    })
   }
 
   return model

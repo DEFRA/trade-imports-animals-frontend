@@ -304,6 +304,101 @@ describe('#notificationListView', () => {
       expect(result.previous.href).toBe('/?sort=createdAt%2Cdesc')
       expect(result.next.href).toBe('/?page=3&sort=createdAt%2Cdesc')
     })
+
+    test('Should not build numbered items for the existing home caller', () => {
+      const result = buildPaginationLinks({ page: 2, totalPages: 3 }, '/')
+
+      expect(result.items).toBeUndefined()
+    })
+
+    describe('numbered items (address book, buildQueryString supplied)', () => {
+      const buildQueryString = (page) => {
+        const params = new URLSearchParams()
+        params.set('q', 'cow')
+        params.set('operator_type', 'CONSIGNOR')
+        if (page > 1) {
+          params.set('page', String(page))
+        }
+        return `?${params.toString()}`
+      }
+
+      test('Should build one numbered item per page, 1..totalPages, no ellipsis', () => {
+        const result = buildPaginationLinks(
+          { page: 2, totalPages: 3 },
+          '/address-book',
+          undefined,
+          buildQueryString
+        )
+
+        expect(result.items.map((item) => item.number)).toEqual([1, 2, 3])
+      })
+
+      test('Should mark the current page and no other', () => {
+        const result = buildPaginationLinks(
+          { page: 2, totalPages: 3 },
+          '/address-book',
+          undefined,
+          buildQueryString
+        )
+
+        expect(result.items.map((item) => item.current)).toEqual([
+          false,
+          true,
+          false
+        ])
+      })
+
+      test('Should omit page from the href for page 1 and preserve filters on every item', () => {
+        const result = buildPaginationLinks(
+          { page: 2, totalPages: 3 },
+          '/address-book',
+          undefined,
+          buildQueryString
+        )
+
+        expect(result.items[0].href).toBe(
+          '/address-book?q=cow&operator_type=CONSIGNOR'
+        )
+        expect(result.items[1].href).toBe(
+          '/address-book?q=cow&operator_type=CONSIGNOR&page=2'
+        )
+        expect(result.items[2].href).toBe(
+          '/address-book?q=cow&operator_type=CONSIGNOR&page=3'
+        )
+
+        for (const item of result.items) {
+          expect(item.href).toContain('q=cow')
+          expect(item.href).toContain('operator_type=CONSIGNOR')
+        }
+      })
+
+      test('Should route previous/next through the supplied builder too', () => {
+        const result = buildPaginationLinks(
+          { page: 2, totalPages: 3 },
+          '/address-book',
+          undefined,
+          buildQueryString
+        )
+
+        expect(result.previous.href).toBe(
+          '/address-book?q=cow&operator_type=CONSIGNOR'
+        )
+        expect(result.next.href).toBe(
+          '/address-book?q=cow&operator_type=CONSIGNOR&page=3'
+        )
+      })
+
+      test('Should return null when there is a single page even with a builder', () => {
+        const result = buildPaginationLinks(
+          { page: 1, totalPages: 1 },
+          '/address-book',
+          undefined,
+          buildQueryString
+        )
+
+        expect(result).toBeNull()
+      })
+    })
   })
 
   describe('parseNotificationSort', () => {
