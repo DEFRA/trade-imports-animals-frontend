@@ -703,6 +703,25 @@ describe('buildImplication', () => {
     expect(result.reasons).toBeUndefined()
   })
 
+  // A top-level field-category obligation (no `within`) is a scalar
+  // with an intrinsic status — e.g. `{ id, name, status: 'optional' }`.
+  // The pre-fix engine dereferenced `obligation.within.id`
+  // unconditionally in the field branch and threw TypeError on this
+  // natural data-only shape (BRIEF §Migration #1; REPORT §3.1, §5.1).
+  // Guarding the deref is a precondition for the Phase 2
+  // closure-to-data sweep.
+  it('field record with no `within` (top-level scalar) → { inScope, status } like an always-in-scope applyTo', () => {
+    const o = { id: 'o', status: 'optional' }
+    const result = buildImplication(o, {
+      isInScope: inScopeAlways,
+      obligationsByCategory: new Map([['o', 'field']]),
+      obligationApplicabilityDecisions: new Map(),
+      fulfilmentIdsByObligationId: new Map(),
+      amendedFulfilments: {}
+    })
+    expect(result).toEqual({ inScope: true, status: 'optional' })
+  })
+
   it('derived-leaf → applyTo records × own status', () => {
     const o = { id: 'o', status: 'mandatory' }
     const result = buildImplication(o, {

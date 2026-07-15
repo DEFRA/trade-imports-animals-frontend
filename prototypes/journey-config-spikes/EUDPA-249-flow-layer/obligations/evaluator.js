@@ -525,6 +525,19 @@ export function buildImplication(obligation, context) {
   }
 
   if (category === 'field') {
+    // Two shapes land here:
+    //   1. Group-scoped field record (`within` set) — enumerate the
+    //      parent group's instance-paths and stamp each one with
+    //      `obligation.status`.
+    //   2. Top-level scalar with intrinsic status (no `within`) — the
+    //      natural data-only shape for an always-in-scope obligation.
+    //      There is no parent group to enumerate, so return the status
+    //      directly, mirroring what `applyTo: () => ({ inScope: true,
+    //      status })` would return (BRIEF §Migration #1; REPORT §3.1,
+    //      §5.1 — this deref used to throw TypeError unconditionally).
+    if (!obligation.within) {
+      return { inScope: true, status: obligation.status }
+    }
     const parentGroupFulfilmentIds = [
       ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
     ]
