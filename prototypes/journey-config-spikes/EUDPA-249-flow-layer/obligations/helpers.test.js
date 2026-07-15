@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   allowListed,
-  allowListedByPredicate,
   anyAllowListed,
   branchedGate,
   matches,
+  notInUnionOf,
   obligationMetadata,
   present
 } from './helpers.js'
@@ -87,49 +87,105 @@ describe('allowListed', () => {
 })
 
 // ---------------------------------------------------------------------------
-// allowListedByPredicate
+// notInUnionOf — dual of allowListed. In scope on entries whose gate
+// value is NOT in the union of a list of allowlists. Derived-union is
+// computed at helper-invocation time and pinned on `.metadata.values` so
+// static analysis (the reachability prover's witness synthesiser +
+// browser-side controllers that inspect metadata) never has to execute
+// the closure to know "would this code be admitted?".
+//
+// Rationale — REPORT §5.2: "notInUnionOf as a derived-union helper over
+// B's .metadata.values — STRICTLY better than B's hand-restated four-
+// whitelist complement, which silently double-gates if you add a fifth
+// typed identifier and forget a conjunct." Phase 4 §Migration #4 lands
+// the helper and migrates the two opaque `allowListedByPredicate` sites
+// (identificationDetails, description) off it.
 // ---------------------------------------------------------------------------
 
-describe('allowListedByPredicate', () => {
-  it('filters stored entries by predicate', () => {
-    const isVowel = (v) => 'aeiou'.includes(v)
-    const gate = allowListedByPredicate(codeObl, isVowel)
+describe('notInUnionOf', () => {
+  const A = ['a', 'b']
+  const B = ['c', 'd']
+
+  it('returns inScope: false when every stored key IS in the union', () => {
+    const gate = notInUnionOf(codeObl, [A, B])
+    const decision = gate({ [codeObl.id]: { k1: 'a', k2: 'c' } }, new Map())
+    expect(decision).toEqual({ inScope: false })
+  })
+
+  it('returns records at gate level for keys whose value is NOT in the union', () => {
+    const gate = notInUnionOf(codeObl, [A, B])
     const decision = gate(
-      { [codeObl.id]: { k1: 'a', k2: 'b', k3: 'e' } },
+      { [codeObl.id]: { k1: 'a', k2: 'z', k3: 'c', k4: 'q' } },
       new Map()
     )
-    expect(decision).toEqual({ inScope: true, records: ['k1', 'k3'] })
+    expect(decision).toEqual({ inScope: true, records: ['k2', 'k4'] })
   })
 
-  it('projects to group instance-paths', () => {
-    const isVowel = (v) => 'aeiou'.includes(v)
-    const gate = allowListedByPredicate(codeObl, isVowel, groupObl)
-    const fulfilments = { [codeObl.id]: { line1: 'a', line2: 'b' } }
-    const ids = new Map([[groupObl.id, ['line1/unit1', 'line2/unit1']]])
+  it('projects to group instance-paths when a projection group is supplied', () => {
+    const gate = notInUnionOf(codeObl, [A, B], groupObl)
+    const fulfilments = { [codeObl.id]: { line1: 'z', line2: 'a' } }
+    const ids = new Map([
+      [groupObl.id, ['line1/unit1', 'line1/unit2', 'line2/unit1']]
+    ])
     const decision = gate(fulfilments, ids)
-    expect(decision).toEqual({ inScope: true, records: ['line1/unit1'] })
+    expect(decision).toEqual({
+      inScope: true,
+      records: ['line1/unit1', 'line1/unit2']
+    })
   })
 
-  it('exposes metadata (predicate is captured for browser-side use; projection is captured)', () => {
-    // The predicate is now surfaced on the metadata sidecar so
-    // browser-side helpers can ask "would this value be admitted?"
-    // without executing the whole applyTo closure. See
-    // features/units/controller.js pickSeedObligationForLine +
-    // features/commodity-lines/controller.js lineHasWiredUnitObligation
-    // where iter 10 relies on this to resolve inverse-gate obligations
-    // (identificationDetails / description).
-    const isVowel = (v) => 'aeiou'.includes(v)
-    const gate = allowListedByPredicate(codeObl, isVowel, groupObl)
+  it('exposes metadata.values as the union of the input allowlists (derived at helper-invocation time)', () => {
+    // The load-bearing REPORT §5.2 point: the union is DATA on the
+    // metadata sidecar, not a re-computation on each call. Adds a
+    // fifth typed identifier to the list of allowlists → the union
+    // widens; the closure body doesn't need updating.
+    const gate = notInUnionOf(codeObl, [A, B], groupObl, null)
     expect(gate.metadata).toEqual({
-      type: 'allowListedByPredicate',
+      type: 'notInUnionOf',
       obligation: codeObl.id,
-      predicate: isVowel,
+      values: ['a', 'b', 'c', 'd'],
       projection: groupObl.id,
       reasons: null
     })
-    // Predicate is the exact function reference.
-    expect(gate.metadata.predicate('a')).toBe(true)
-    expect(gate.metadata.predicate('b')).toBe(false)
+  })
+
+  it('metadata.values de-duplicates across overlapping input allowlists', () => {
+    // Real manifest: PASSPORT + TATTOO share '01061900', '0102' — the
+    // derived union must be a set-like list, not a bag.
+    const gate = notInUnionOf(codeObl, [
+      ['0101', '0102'],
+      ['0102', '0103']
+    ])
+    expect(gate.metadata.values).toEqual(['0101', '0102', '0103'])
+  })
+
+  it('merges reasons into the decision when in scope', () => {
+    const reason = { code: 'x.applicable', explanation: 'because x' }
+    const gate = notInUnionOf(codeObl, [A, B], null, [reason])
+    const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
+    expect(decision).toEqual({
+      inScope: true,
+      records: ['k1'],
+      reasons: [reason]
+    })
+  })
+
+  it('does not attach reasons to out-of-scope decisions', () => {
+    const reason = { code: 'x', explanation: 'y' }
+    const gate = notInUnionOf(codeObl, [A, B], null, [reason])
+    const decision = gate({ [codeObl.id]: { k1: 'a' } }, new Map())
+    expect(decision).toEqual({ inScope: false })
+  })
+
+  it('accepts a flat list of values too (single-allowlist complement)', () => {
+    // The typical shape is `notInUnionOf(gate, [listA, listB, ...])` —
+    // but the helper is ergonomic-tolerant: a flat list of strings is
+    // treated as a single allowlist. Keeps single-list complements
+    // (e.g. "code NOT in [x, y]") a one-liner.
+    const gate = notInUnionOf(codeObl, ['a', 'b'])
+    expect(gate.metadata.values).toEqual(['a', 'b'])
+    const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
+    expect(decision).toEqual({ inScope: true, records: ['k1'] })
   })
 })
 

@@ -37,7 +37,7 @@ import {
   anyAllowListed,
   branchedGate,
   matches,
-  allowListedByPredicate
+  notInUnionOf
 } from '../obligations/helpers.js'
 
 // ---------------------------------------------------------------------------
@@ -350,13 +350,38 @@ describe('synthesiseWitness — per-helper metadata inversion', () => {
     expect(w.reason).toContain('predicateMeta')
   })
 
-  it('allowListedByPredicate → opaque (documented design decision)', () => {
-    const gate = allowListedByPredicate(codeObl, (v) => v !== 'skip')
+  it('notInUnionOf → returns a value NOT in the derived union as witness', () => {
+    // Phase 4 §Migration #4: `notInUnionOf` closes the last opaque gap.
+    // Witness = a stable sentinel that's NOT in the derived union. The
+    // fidelity check re-runs the closure against the witness and must
+    // return `inScope: true` — that's the load-bearing invariant that
+    // catches metadata drift.
+    const gate = notInUnionOf(codeObl, [
+      ['a', 'b'],
+      ['c', 'd']
+    ])
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.obligationId).toBe(codeObl.id)
+    // The synthesised value must NOT be in the derived union.
+    expect(['a', 'b', 'c', 'd']).not.toContain(w.value)
+    // Fidelity — the witness actually opens the closure.
+    const decision = obl.applyTo(
+      { [w.obligationId]: { k1: w.value } },
+      new Map()
+    )
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('notInUnionOf with projection group → witness carries projection id', () => {
+    const groupObl = { id: 'group-obl' }
+    const gate = notInUnionOf(codeObl, [['a']], groupObl)
     const w = synthesiseWitness({ id: 'gated', applyTo: gate })
-    expect(w).toEqual({
-      kind: WITNESS_KIND.OPAQUE,
-      reason: expect.stringContaining('allowListedByPredicate')
-    })
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.obligationId).toBe(codeObl.id)
+    expect(w.projection).toBe(groupObl.id)
+    expect(['a']).not.toContain(w.value)
   })
 
   it('obligation without applyTo → trivial (structural group)', () => {
@@ -458,20 +483,26 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
     expect(classifiedCount).toBe(obligations.length)
   })
 
-  it('classification counts match the hand-off estimate (≥12 synthesisable, 2 opaque)', () => {
+  it('classification counts after Phase 4 notInUnionOf migration (≥14 synthesisable, 0 opaque)', () => {
     const result = proveWithWitnesses(obligations)
+    // Phase 4 §Migration #4: identificationDetails + description
+    // migrated off `allowListedByPredicate` onto `notInUnionOf`. Both
+    // now witness-synthesisable — the manifest carries ZERO opaque
+    // gates.
+    //
     // Structured helpers per hand-off: allowListed × 6 + anyAllowListed
-    // × 2 + branchedGate-with-predicateMeta × 5 = 13 synthesisable.
-    // Plus the four total accompanying-document siblings + the four
-    // total-inScope branched regionCode-style hits count as TRIVIAL,
-    // not synthesisable.
-    expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(12)
-    // Opaque: identificationDetails + description (allowListedByPredicate).
-    expect(result.witnesses.opaque).toHaveLength(2)
-    const opaqueNames = result.witnesses.opaque
-      .map((id) => obligations.find((o) => o.id === id).name)
-      .sort()
-    expect(opaqueNames).toEqual(['description', 'identificationDetails'])
+    // × 2 + branchedGate-with-predicateMeta × 5 + notInUnionOf × 2 = 15
+    // synthesisable. Trivial: regionCode + four accompanyingDocument
+    // siblings.
+    expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(14)
+    // The two former-opaque gates are now synthesisable.
+    const synthesisableNames = result.witnesses.synthesisable.map(
+      (id) => obligations.find((o) => o.id === id).name
+    )
+    expect(synthesisableNames).toContain('identificationDetails')
+    expect(synthesisableNames).toContain('description')
+    // No opaque gates left on the manifest.
+    expect(result.witnesses.opaque).toEqual([])
   })
 
   it('every fidelity check passes (no witness fails to open its own closure)', () => {

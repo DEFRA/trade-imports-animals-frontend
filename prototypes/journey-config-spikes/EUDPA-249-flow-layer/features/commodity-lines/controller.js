@@ -112,11 +112,12 @@ function lineHasWiredUnitObligation(state, lineId) {
     if (meta.type === 'allowListed' && meta.values?.includes(lineCode)) {
       return true
     }
-    if (meta.type === 'allowListedByPredicate' && meta.predicate?.(lineCode)) {
-      // Inverse-gate case (identificationDetails / description) —
-      // helpers.js exposes the predicate on the metadata so we can
-      // ask "would this code be admitted?" without executing the
-      // whole applyTo closure.
+    if (meta.type === 'notInUnionOf' && !meta.values?.includes(lineCode)) {
+      // Inverse-gate case (identificationDetails / description) — the
+      // helper attaches the derived union to `.metadata.values` so we
+      // can inspect admissibility ("would this code be admitted?") as
+      // DATA, without executing the closure. See REPORT §5.2 +
+      // Phase 4 §Migration #4.
       return true
     }
   }

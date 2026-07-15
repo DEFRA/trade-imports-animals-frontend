@@ -183,19 +183,20 @@ export function proveReachability(records) {
 // the witness to confirm value-level reachability, not just graph
 // reachability.
 //
-// Classification of the manifest's 19 gated obligations:
+// Classification of the manifest's gated obligations:
 //   - structured (witness-synthesisable) — helpers with recoverable
-//     metadata: `allowListed`, `anyAllowListed`, `matches`, plus
-//     `branchedGate` when the caller supplies `predicateMeta`.
+//     metadata: `allowListed`, `anyAllowListed`, `matches`,
+//     `notInUnionOf`, plus `branchedGate` when the caller supplies
+//     `predicateMeta`.
 //   - trivial (total-over-branches) — `branchedGate` where both
 //     `whenTrue.inScope` and `whenFalse.inScope` are `true`. The gate
 //     is always open regardless of the closure's read; no witness
-//     needed. Currently the four accompanying-document siblings.
-//   - opaque — `allowListedByPredicate`. The predicate is a plain JS
-//     function; no data-level target-value is recoverable. Currently
-//     `identificationDetails` + `description` (2 gates). Stays in the
-//     conservative-graph-only bucket. Commit 3's coverage assertion
-//     lists this helper as an EXCLUSION rather than requiring a synth.
+//     needed. Currently the four accompanying-document siblings +
+//     regionCode.
+//   - opaque — reserved for future opaque-by-design helpers. Empty on
+//     the manifest as of Phase 4 §Migration #4: `notInUnionOf` closed
+//     the last two (identificationDetails, description) — see
+//     `OPAQUE_HELPER_TYPES` below.
 // ---------------------------------------------------------------------------
 
 /**
@@ -234,7 +235,8 @@ export const STRUCTURED_HELPER_TYPES = new Set([
   'allowListed',
   'anyAllowListed',
   'matches',
-  'branchedGate'
+  'branchedGate',
+  'notInUnionOf'
 ])
 
 /**
@@ -243,18 +245,17 @@ export const STRUCTURED_HELPER_TYPES = new Set([
  * explicit deferral, not "we forgot to write the synth". Every entry
  * must be justified with a comment naming the reason.
  *
- * - `allowListedByPredicate` — the predicate is a plain JS function
- *   over the stored value; there's no recoverable data-level target.
- *   The manifest's `identificationDetails` + `description` use this to
- *   express INVERSE gates ("commodity code is NOT in any of the four
- *   specific-identifier whitelists"). Phase 4 §Migration #4 will land
- *   a `notInUnionOf` derived-union helper that closes this — after
- *   which these two gates migrate off `allowListedByPredicate` and
- *   this entry can be removed. Until then: graph-level reachability
- *   only, coverage assertion excludes them by naming this helper type
- *   here.
+ * Currently EMPTY — Phase 4 §Migration #4 landed `notInUnionOf` as a
+ * derived-union helper and migrated the two former `allowListedByPre-
+ * dicate` sites (`identificationDetails`, `description`) onto it,
+ * closing the last opaque gap on the manifest. The set is retained
+ * (with a placeholder-invariant of `size >= 0`) as the enforcement
+ * point for future opaque-by-design helpers: if a new helper CAN'T be
+ * data-level inverted (e.g. an ML-scored predicate), listing it here
+ * with a comment is the honest thing to do. Any addition MUST cite the
+ * reason.
  */
-export const OPAQUE_HELPER_TYPES = new Set(['allowListedByPredicate'])
+export const OPAQUE_HELPER_TYPES = new Set([])
 
 /**
  * synthesiseWitness — inspect an obligation's `applyTo.metadata` and
@@ -331,18 +332,15 @@ export function synthesiseWitness(obligation) {
     case 'branchedGate':
       return synthesiseBranchedGateWitness(meta)
 
-    case 'allowListedByPredicate':
-      // Truly opaque — the predicate is a plain JS function. The
-      // manifest's identificationDetails + description use this to
-      // express an INVERSE gate ("commodity code is NOT in any of the
-      // specific-identifier whitelists"). To become invertible the
-      // helper would need to attach either an explicit `notInUnionOf`
-      // reference-set on the metadata (A's approach) or an equivalent
-      // structured shape. See DESIGN-DELTA.md.
-      return {
-        kind: WITNESS_KIND.OPAQUE,
-        reason: 'allowListedByPredicate — predicate is a plain JS function'
-      }
+    case 'notInUnionOf':
+      // metadata.values IS the derived union of the input allowlists.
+      // Witness = any value NOT in that union. A stable sentinel that
+      // is virtually guaranteed not to collide with real commodity
+      // codes; defensively confirmed against the derived union.
+      // Include the projection group id (if any) for depth-N gates —
+      // identificationDetails + description both project onto
+      // unitRecord.
+      return synthesiseNotInUnionOfWitness(meta)
 
     default:
       return {
@@ -407,6 +405,51 @@ function synthesiseBranchedGateWitness(meta) {
         kind: WITNESS_KIND.OPAQUE,
         reason: `branchedGate predicateMeta has unrecognised operator '${pm.operator}'`
       }
+  }
+}
+
+/**
+ * synthesiseNotInUnionOfWitness — pick a value guaranteed NOT to be in
+ * the derived union. Approach: a stable sentinel; if it ever collides
+ * with a real value the derived union covered, that means the union
+ * theoretically covers every possible input — a gate that can never
+ * open, which is an authoring defect the prover surfaces as OPAQUE
+ * (not vacuously green). In practice the manifest's inverse-gate
+ * commodity-code unions cover only a handful of codes; any string not
+ * matching those codes opens the gate.
+ */
+function synthesiseNotInUnionOfWitness(meta) {
+  const SENTINEL = '__witness_not_in_union__'
+  if (!Array.isArray(meta.values)) {
+    return {
+      kind: WITNESS_KIND.OPAQUE,
+      reason: 'notInUnionOf metadata has no derived values array'
+    }
+  }
+  if (meta.values.includes(SENTINEL)) {
+    // The derived union already covers the sentinel — try a second
+    // fallback before giving up. Vanishingly unlikely on real
+    // commodity-code manifests.
+    const fallback = `${SENTINEL}_2`
+    if (meta.values.includes(fallback)) {
+      /* c8 ignore next 4 */
+      return {
+        kind: WITNESS_KIND.OPAQUE,
+        reason: 'notInUnionOf derived union covers both witness sentinels'
+      }
+    }
+    return {
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: meta.obligation,
+      value: fallback,
+      projection: meta.projection ?? null
+    }
+  }
+  return {
+    kind: WITNESS_KIND.WITNESS,
+    obligationId: meta.obligation,
+    value: SENTINEL,
+    projection: meta.projection ?? null
   }
 }
 
@@ -488,9 +531,13 @@ export function proveWithWitnesses(obligations) {
           // (`line1`) matches the map key we place the value under.
           fulfilments = { [w.obligationId]: { line1: w.value } }
           fulfilmentIds.set(w.projection, ['line1/unit1'])
-        } else if (o.applyTo.metadata?.type === 'allowListed') {
-          // Depth-1 allowListed without a projection group — still
-          // reads as a map.
+        } else if (
+          o.applyTo.metadata?.type === 'allowListed' ||
+          o.applyTo.metadata?.type === 'notInUnionOf'
+        ) {
+          // Depth-1 allowListed / notInUnionOf without a projection
+          // group — still reads as a map (filterAndProject enumerates
+          // entries).
           fulfilments = { [w.obligationId]: { line1: w.value } }
         } else {
           fulfilments = { [w.obligationId]: w.value }

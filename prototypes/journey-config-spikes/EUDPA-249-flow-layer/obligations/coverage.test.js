@@ -67,7 +67,8 @@ const KNOWN_UNWIRED = new Set([
   // - passport, tattoo, earTag, horseName wired during step 4
   //   iteration 10 (allowListed per-unit identifiers).
   // - identificationDetails, description wired during step 4
-  //   iteration 10 (first allowListedByPredicate wired obligations).
+  //   iteration 10 (originally allowListedByPredicate; migrated to
+  //   notInUnionOf in EUDPA-288 Phase 4 §Migration #4).
 
   // Accompanying-document all-or-nothing block wired during step 4
   // iteration 8 — four fields sharing a `branchedGate` applyTo, all

@@ -69,35 +69,55 @@ export function allowListed(gateObligation, values, projectionGroup, reasons) {
 }
 
 /**
- * allowListedByPredicate — like `allowListed` but the allowlist is
- * expressed as a predicate function. Useful for inverse gates (`not in
- * any of these lists`) and other conditions not expressible as a plain
- * value array.
+ * notInUnionOf — dual of `allowListed`. Obligation is in scope on
+ * entries whose `gateObligation` stored value is NOT in the union of
+ * the given allowlists. The derived union is computed at helper-
+ * invocation time (not on each call) and pinned on `.metadata.values`
+ * so static analysis (witness synthesiser, browser-side controllers)
+ * can inspect "would this value be admitted?" without executing the
+ * closure.
+ *
+ * Two input shapes accepted:
+ *   - `[[a, b], [c, d]]` — a list of allowlists (typical case:
+ *     `notInUnionOf(commodityCode, [PASSPORT_COMMODITIES,
+ *     TATTOO_COMMODITIES, EAR_TAG_COMMODITIES, HORSE_NAME_COMMODITIES],
+ *     unitRecord, reasons)`). The union is set-like — duplicates across
+ *     allowlists collapse.
+ *   - `[a, b, c]` — a flat list of values (single-allowlist complement).
+ *     Ergonomic shorthand; the derived union is just the input.
+ *
+ * Rationale — REPORT §5.2, BRIEF §Migration #4. `notInUnionOf` as a
+ * derived-union helper over `.metadata.values` is STRICTLY better than
+ * a hand-restated four-whitelist complement expressed as an opaque JS
+ * predicate: adding a fifth typed identifier to one of the source
+ * allowlists widens the derived union automatically; a hand-restated
+ * complement would silently double-gate if the author forgot to add a
+ * fifth `!X.includes(code)` conjunct.
+ *
+ * See also `allowListed` (identical projection/frame semantics — the
+ * two are duals).
  */
-export function allowListedByPredicate(
+export function notInUnionOf(
   gateObligation,
-  predicate,
+  unionOfAllowlists,
   projectionGroup,
   reasons
 ) {
+  const derivedUnion = deriveUnion(unionOfAllowlists)
+  const admit = (v) => !derivedUnion.includes(v)
   const fn = (fulfilments, fulfilmentIdsByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
-      predicate,
+      admit,
       projectionGroup,
       fulfilmentIdsByObligationId
     )
     return decision.inScope && reasons ? { ...decision, reasons } : decision
   }
   fn.metadata = {
-    type: 'allowListedByPredicate',
+    type: 'notInUnionOf',
     obligation: gateObligation.id,
-    // Expose the predicate so callers can ask "would this value be
-    // admitted?" without executing the whole applyTo closure (which
-    // requires evaluator state). Used by browser-side helpers like
-    // features/units/pickSeedObligationForLine to decide whether a
-    // fresh line's commodity code opens this obligation.
-    predicate,
+    values: derivedUnion,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null
   }
@@ -237,8 +257,28 @@ export function obligationMetadata(obligation) {
 
 // -----------------------------------------------------------------------------
 // Internal — shared filter-and-project logic between allowListed and
-// allowListedByPredicate.
+// notInUnionOf.
 // -----------------------------------------------------------------------------
+
+/**
+ * deriveUnion — collapse a list of allowlists (or a flat list of
+ * values) into a set-like array. Preserves first-seen order across
+ * inputs so `.metadata.values` is deterministic + comparable.
+ */
+function deriveUnion(unionOfAllowlists) {
+  const flat =
+    unionOfAllowlists.length > 0 && Array.isArray(unionOfAllowlists[0])
+      ? unionOfAllowlists.flat()
+      : unionOfAllowlists
+  const seen = new Set()
+  const out = []
+  for (const v of flat) {
+    if (seen.has(v)) continue
+    seen.add(v)
+    out.push(v)
+  }
+  return out
+}
 
 function filterAndProject(
   storedForGate,

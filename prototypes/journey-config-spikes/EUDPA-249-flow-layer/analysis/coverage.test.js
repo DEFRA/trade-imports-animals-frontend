@@ -20,7 +20,8 @@
  * The invariants pinned here:
  *
  *   1. `STRUCTURED_HELPER_TYPES` and `OPAQUE_HELPER_TYPES` are exported
- *      from `analysis/reachability.js`.
+ *      from `analysis/reachability.js`. STRUCTURED is non-empty;
+ *      OPAQUE may be empty (post-Phase-4 §Migration #4 clean-slate).
  *   2. The two sets are DISJOINT (a helper type can't be both).
  *   3. `STRUCTURED_HELPER_TYPES` exactly matches the `case` labels
  *      dispatched inside `synthesiseWitness` — the registry can't
@@ -94,9 +95,12 @@ const SAMPLE_OBLIGATIONS = {
       { operator: 'equals', obligationId: gateObl.id, value: 'yes' }
     )
   },
-  allowListedByPredicate: {
-    id: 'sample-allowListedByPredicate',
-    applyTo: helpers.allowListedByPredicate(gateObl, (v) => v !== 'skip')
+  notInUnionOf: {
+    id: 'sample-notInUnionOf',
+    applyTo: helpers.notInUnionOf(gateObl, [
+      ['a', 'b'],
+      ['c', 'd']
+    ])
   }
 }
 
@@ -110,9 +114,14 @@ describe('coverage — helper classification sets are exported and disjoint', ()
     expect(STRUCTURED_HELPER_TYPES.size).toBeGreaterThan(0)
   })
 
-  it('exports OPAQUE_HELPER_TYPES as a non-empty Set', () => {
+  it('exports OPAQUE_HELPER_TYPES as a Set (may be empty — see reachability.js)', () => {
+    // Phase 4 §Migration #4 landed `notInUnionOf` and migrated the two
+    // former opaque sites (identificationDetails, description) onto it.
+    // The set is retained as the enforcement point for future opaque-
+    // by-design helpers, but is currently EMPTY on the manifest — a
+    // clean-slate state. Any addition here MUST cite a rationale in
+    // the comment block on `OPAQUE_HELPER_TYPES` in reachability.js.
     expect(OPAQUE_HELPER_TYPES).toBeInstanceOf(Set)
-    expect(OPAQUE_HELPER_TYPES.size).toBeGreaterThan(0)
   })
 
   it('STRUCTURED and OPAQUE helper-type sets are disjoint', () => {

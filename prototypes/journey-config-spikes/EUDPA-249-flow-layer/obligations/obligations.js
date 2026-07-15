@@ -9,7 +9,7 @@
  * Scope mechanism: every obligation with a conditional scope uses
  * `applyTo(fulfilments, fulfilmentIdsByObligationId)`. Common gate
  * shapes are provided as pure helper functions in `helpers.js` —
- * `allowListed`, `allowListedByPredicate`, `branchedGate`,
+ * `allowListed`, `notInUnionOf`, `branchedGate`,
  * `anyAllowListed` — that build applyTo functions with metadata
  * attached for optional introspection. One mechanism, one testing
  * story: any obligation's applyTo can be exercised as a plain function
@@ -52,9 +52,9 @@
 
 import {
   allowListed,
-  allowListedByPredicate,
   anyAllowListed,
-  branchedGate
+  branchedGate,
+  notInUnionOf
 } from './helpers.js'
 
 // -----------------------------------------------------------------------------
@@ -745,22 +745,30 @@ export const horseName = {
 }
 
 // Inverse gate — the free-text identifiers apply on units whose parent
-// line's commodity has NO specific identifier. Expressed as a plain JS
-// predicate.
-const noSpecificIdentifier = (code) =>
-  !PASSPORT_COMMODITIES.includes(code) &&
-  !TATTOO_COMMODITIES.includes(code) &&
-  !EAR_TAG_COMMODITIES.includes(code) &&
-  !HORSE_NAME_COMMODITIES.includes(code)
+// line's commodity has NO specific identifier. Phase 4 §Migration #4
+// (REPORT §5.2): expressed as `notInUnionOf` over the four specific-
+// identifier whitelists. The derived union lives on `.metadata.values`
+// so the reachability prover can synthesise a witness value (any code
+// not in the union) and the browser-side controllers can inspect
+// admissibility without executing the closure. Adding a fifth typed
+// identifier means adding its list to the array here — the derived
+// union widens automatically. Hand-restated four-conjunct complements
+// would silently double-gate on such an addition.
+const SPECIFIC_IDENTIFIER_WHITELISTS = [
+  PASSPORT_COMMODITIES,
+  TATTOO_COMMODITIES,
+  EAR_TAG_COMMODITIES,
+  HORSE_NAME_COMMODITIES
+]
 
 export const identificationDetails = {
   id: '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95',
   name: 'identificationDetails',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListedByPredicate(
+  applyTo: notInUnionOf(
     commodityCode,
-    noSpecificIdentifier,
+    SPECIFIC_IDENTIFIER_WHITELISTS,
     unitRecord,
     [identificationDetailsReason]
   ),
@@ -772,9 +780,9 @@ export const description = {
   name: 'description',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListedByPredicate(
+  applyTo: notInUnionOf(
     commodityCode,
-    noSpecificIdentifier,
+    SPECIFIC_IDENTIFIER_WHITELISTS,
     unitRecord,
     [descriptionReason]
   ),

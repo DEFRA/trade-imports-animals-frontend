@@ -206,14 +206,13 @@ function pickSeedObligationForLine(state, lineId) {
       if (meta.type === 'allowListed' && meta.values?.includes(lineCode)) {
         return obligation
       }
-      if (
-        meta.type === 'allowListedByPredicate' &&
-        meta.predicate?.(lineCode)
-      ) {
+      if (meta.type === 'notInUnionOf' && !meta.values?.includes(lineCode)) {
         // Inverse-gate case (identificationDetails / description) —
-        // helpers.js exposes the predicate on the metadata so we can
-        // ask "would this code be admitted?" without executing the
-        // whole applyTo closure.
+        // the helper attaches the derived union to `.metadata.values`
+        // so admissibility is a data check ("is this code NOT in the
+        // union?"), no closure execution needed. Phase 4 §Migration
+        // #4 replaced the previous predicate-based probe with this
+        // structural inspection.
         return obligation
       }
     }
