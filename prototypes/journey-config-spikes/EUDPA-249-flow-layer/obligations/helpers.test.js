@@ -5,6 +5,7 @@ import {
   anyAllowListed,
   branchedGate,
   matches,
+  obligationMetadata,
   present
 } from './helpers.js'
 
@@ -240,5 +241,67 @@ describe('present', () => {
 
   it('returns false for indexed obligations with no keys', () => {
     expect(present(groupObl)({ [groupObl.id]: {} })).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// obligationMetadata — surfaces the obligation-level metadata sidecar
+// (gate shape from applyTo.metadata + the new `dependsOn` schema key).
+//
+// Rationale: BRIEF §Migration #2 (★ highest value-per-line) + REPORT §5.1.
+// Closures are opaque, so gates must declare their dependency graph as
+// data alongside the closure. `dependsOn` is the schema key; the
+// accessor surfaces it so a future coverage assertion (Phase 2 commit 2)
+// can enforce "every gated obligation carries a complete dependsOn".
+// ---------------------------------------------------------------------------
+
+describe('obligationMetadata', () => {
+  it('surfaces dependsOn from an obligation authored with the new schema key', () => {
+    const obligation = {
+      id: 'x-id',
+      name: 'x',
+      applyTo: (f) =>
+        f['A'] === 'yes' ? { inScope: true } : { inScope: false },
+      dependsOn: ['A', 'B']
+    }
+    const meta = obligationMetadata(obligation)
+    expect(meta.dependsOn).toEqual(['A', 'B'])
+  })
+
+  it('returns dependsOn: undefined when the obligation omits the key', () => {
+    // Commit 2 will grep this shape: "if dependsOn is undefined and the
+    // obligation carries a gated applyTo, fail the coverage assertion."
+    const obligation = {
+      id: 'y-id',
+      name: 'y',
+      applyTo: () => ({ inScope: true, status: 'mandatory' })
+    }
+    const meta = obligationMetadata(obligation)
+    expect(meta.dependsOn).toBeUndefined()
+  })
+
+  it('merges the applyTo helper sidecar (gate shape) with dependsOn', () => {
+    // The helper-attached `.metadata` (allowListed/branchedGate/etc.)
+    // still surfaces — dependsOn is additive, not a replacement.
+    const gateObl = { id: 'gate-id' }
+    const obligation = {
+      id: 'z-id',
+      name: 'z',
+      applyTo: allowListed(gateObl, ['a']),
+      dependsOn: [gateObl.id]
+    }
+    const meta = obligationMetadata(obligation)
+    expect(meta.type).toBe('allowListed')
+    expect(meta.obligation).toBe(gateObl.id)
+    expect(meta.dependsOn).toEqual([gateObl.id])
+  })
+
+  it('handles obligations with no applyTo (structural / always-in-scope)', () => {
+    // Group containers and unconditional obligations have no applyTo.
+    // The accessor must not throw — it returns just the schema-level
+    // fields (dependsOn is undefined here).
+    const obligation = { id: 'g-id', name: 'g' }
+    const meta = obligationMetadata(obligation)
+    expect(meta.dependsOn).toBeUndefined()
   })
 })

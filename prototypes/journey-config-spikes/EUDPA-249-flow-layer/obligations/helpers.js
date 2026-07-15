@@ -18,6 +18,18 @@
  *     introspection / cross-language export without giving up the
  *     imperative-JS surface.
  *
+ * Obligation schema — additive keys authored on the obligation object
+ * itself (not on the applyTo sidecar):
+ *   - `dependsOn?: string[]` — ids of obligations whose stored values
+ *     the `applyTo` closure reads. Makes the dependency graph explicit
+ *     data alongside the opaque closure so a static reachability prover
+ *     can invert gates without executing them. See BRIEF §Migration #2
+ *     (★ highest value-per-line) and REPORT §5.1 — "closures must be an
+ *     exception with a build-time guard". Phase 2 commit 2 lands the
+ *     coverage assertion that fails the build for any gated obligation
+ *     without a complete `dependsOn`. Phase 2 commit 1 lands the schema
+ *     + this accessor; nothing is enforced yet.
+ *
  * All helpers are unit-testable in isolation — see helpers.test.js.
  */
 
@@ -172,6 +184,32 @@ export function present(obligation) {
     }
     return true
   }
+}
+
+/**
+ * obligationMetadata — surface the introspection sidecar for an
+ * obligation. Merges the gate-shape metadata attached by the applyTo
+ * helper (`allowListed`, `branchedGate`, etc.) with the obligation-
+ * level `dependsOn` schema key.
+ *
+ * Rationale — BRIEF §Migration #2 (★ highest value-per-line) +
+ * REPORT §5.1: closures are opaque to a reachability prover unless
+ * they declare their dependency graph as data. `dependsOn` is that
+ * declaration; this accessor is the single call site the Phase 2
+ * commit 2 coverage assertion will use — "every gated obligation
+ * carries a complete dependsOn". The accessor is deliberately
+ * tolerant (missing `applyTo` or missing `dependsOn` return an empty
+ * shape rather than throwing) so future callers get one predictable
+ * envelope regardless of author-side omissions.
+ *
+ * @param {object} obligation — the obligation object from the manifest.
+ * @returns {object} — combined metadata: gate-shape fields (if any) +
+ *   `dependsOn` (may be `undefined` when the obligation omits it — commit
+ *   2 uses that to detect uncovered gates).
+ */
+export function obligationMetadata(obligation) {
+  const gateMeta = obligation?.applyTo?.metadata ?? {}
+  return { ...gateMeta, dependsOn: obligation?.dependsOn }
 }
 
 // -----------------------------------------------------------------------------

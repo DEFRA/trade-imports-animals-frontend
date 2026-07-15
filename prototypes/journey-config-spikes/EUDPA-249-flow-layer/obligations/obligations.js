@@ -15,6 +15,16 @@
  * story: any obligation's applyTo can be exercised as a plain function
  * call with plain inputs (no evaluator, no resolver, no obligationsById).
  *
+ * Dependency declaration (added Phase 2 commit 1, EUDPA-288):
+ * gated obligations may carry a `dependsOn: string[]` schema key listing
+ * the ids of obligations whose stored values the `applyTo` closure
+ * reads. Closures are opaque to a reachability prover; `dependsOn`
+ * makes the graph explicit data alongside the closure. See BRIEF
+ * §Migration #2 + REPORT §5.1. Phase 2 commit 2 will sweep every
+ * gate + add the coverage assertion. This commit lands only the
+ * schema + accessor (`helpers.js` `obligationMetadata`); no
+ * obligations here are annotated yet.
+ *
  * System-populated fields are declared but NOT presented in the flow
  * layer:
  *   - `poApprovedReferenceNumber` — system-minted at notification
