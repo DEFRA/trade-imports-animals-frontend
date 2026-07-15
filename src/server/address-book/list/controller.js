@@ -85,7 +85,7 @@ function buildResultsLabel(page, pageSize, itemCount, totalItems) {
 
 function buildOperatorTypeOptions(operatorType) {
   return [
-    { value: '', text: 'Select one', selected: !operatorType },
+    { value: '', text: 'All', selected: !operatorType },
     ...OPERATOR_TYPES.map(({ value, label }) => ({
       value,
       text: label,

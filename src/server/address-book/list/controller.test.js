@@ -165,6 +165,107 @@ describe('addressBookListController', () => {
     expect(response.data.pagination).toBeNull()
   })
 
+  test('forwards ?q to listOperators as a trimmed search term on page 1', async () => {
+    operatorsClient.listOperators.mockResolvedValue({
+      items: [],
+      page: 1,
+      page_size: 25,
+      total_items: 0,
+      total_pages: 1
+    })
+
+    const h = mockResponseToolkit()
+    await addressBookListController.handler(mockRequest({ q: 'acme' }), h)
+
+    expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+      'test-trace-id',
+      { crn: 'CRN123', organisationId: 'ORG1' },
+      { q: 'acme', operatorType: undefined, page: 1 }
+    )
+  })
+
+  test('forwards q, operator_type and page together to listOperators', async () => {
+    operatorsClient.listOperators.mockResolvedValue({
+      items: [],
+      page: 3,
+      page_size: 25,
+      total_items: 60,
+      total_pages: 3
+    })
+
+    const h = mockResponseToolkit()
+    await addressBookListController.handler(
+      mockRequest({ q: 'horse', operator_type: 'CONSIGNOR', page: '3' }),
+      h
+    )
+
+    expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+      'test-trace-id',
+      { crn: 'CRN123', organisationId: 'ORG1' },
+      { q: 'horse', operatorType: 'CONSIGNOR', page: 3 }
+    )
+  })
+
+  test('defaults page to 1 when the query omits it, so a fresh search never lands mid-pagination', async () => {
+    operatorsClient.listOperators.mockResolvedValue({
+      items: [],
+      page: 1,
+      page_size: 25,
+      total_items: 0,
+      total_pages: 1
+    })
+
+    const h = mockResponseToolkit()
+    await addressBookListController.handler(mockRequest({ q: 'newsearch' }), h)
+
+    expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+      'test-trace-id',
+      { crn: 'CRN123', organisationId: 'ORG1' },
+      expect.objectContaining({ page: 1 })
+    )
+  })
+
+  test('the operator-type filter offers an "All" default that is selected when no type is filtered', async () => {
+    operatorsClient.listOperators.mockResolvedValue({
+      items: [],
+      page: 1,
+      page_size: 25,
+      total_items: 0,
+      total_pages: 1
+    })
+
+    const h = mockResponseToolkit()
+    const response = await addressBookListController.handler(mockRequest(), h)
+
+    expect(response.data.operatorTypeOptions[0]).toEqual({
+      value: '',
+      text: 'All',
+      selected: true
+    })
+  })
+
+  test('the "All" default is not selected once a type filter is applied', async () => {
+    operatorsClient.listOperators.mockResolvedValue({
+      items: [],
+      page: 1,
+      page_size: 25,
+      total_items: 0,
+      total_pages: 1
+    })
+
+    const h = mockResponseToolkit()
+    const response = await addressBookListController.handler(
+      mockRequest({ operator_type: 'TRANSPORTER' }),
+      h
+    )
+
+    expect(response.data.operatorTypeOptions[0]).toEqual({
+      value: '',
+      text: 'All',
+      selected: false
+    })
+  })
+
   test('propagates a client failure to the error page instead of rendering an empty table', async () => {
     const outage = new Error('Failed to list operators')
     outage.status = 503
