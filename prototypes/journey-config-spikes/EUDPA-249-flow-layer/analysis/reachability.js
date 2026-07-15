@@ -1,8 +1,8 @@
 /**
- * reachability.js — graph-level dependency-reachability prover.
+ * reachability.js — graph-level + value-level dependency-reachability prover.
  *
  * Ported from A's `analysis/reachability.js` (the standalone spike),
- * adapted to B's dependency model. This is Phase 3 commit 1 of the
+ * adapted to B's dependency model. This is Phase 3 commits 1 + 2 of the
  * EUDPA-288 blend plan (BRIEF §Migration #3, REPORT §5.1 — "closures
  * must be an exception with a build-time guard").
  *
@@ -20,22 +20,29 @@
  * B's gates are JS closures. Even after Phase 2's `dependsOn` sweep the
  * closure body is opaque; the metadata declares WHICH obligations a
  * closure reads (`dependsOn`), not WHAT VALUES would satisfy the
- * predicate. So witness synthesis at the VALUE level is deferred to
- * commit 2 (for the structured helpers `branchedGate` / `allowListed` /
- * `anyAllowListed` / `matches` — which do carry recoverable metadata)
- * and commit 3 (coverage gate — every helper carries a synth). See
- * `../DESIGN-DELTA.md`.
+ * predicate. Commit 2 (this file) adds a `synthesiseWitness()` accessor
+ * that inspects the structured helper sidecar (`allowListed`,
+ * `anyAllowListed`, `matches`, and `branchedGate` when annotated with a
+ * `predicateMeta` operator description) and returns a concrete
+ * `{ obligationId, value }` that would open the gate. A tightened
+ * prover (`proveWithWitnesses`) runs the actual `applyTo` closure
+ * against the synthesised witness, confirming the gate really does
+ * fire — no more vacuously-green graph-only pass. Commit 3 will add a
+ * coverage assertion pinning that every "structured" helper carries a
+ * witness synthesiser here.
  *
- * At the GRAPH level, however, `dependsOn` alone recovers the recovery-
- * relevant structure. Under the conservative rule:
+ * At the GRAPH level, `dependsOn` alone recovers the recovery-relevant
+ * structure. Under the conservative rule:
  *
  *   "an obligation is reachable IFF every id in its `dependsOn` list is
  *    reachable, seeded from the always-in-scope set (obligations with
  *    `dependsOn: []`)."
  *
  * This is precisely what A's prover collapses to for gates whose
- * predicates it can't invert. Our prover starts here; commit 2 tightens
- * it by adding value-level witness synthesis on top of the same graph.
+ * predicates it can't invert. `proveReachability` implements exactly
+ * this. `proveWithWitnesses` sits on top: same graph, but each gate
+ * whose helper carries a recoverable predicate must ALSO be provable
+ * value-side (witness synthesis + closure re-run).
  *
  * ---------------------------------------------------------------------------
  * Self-loop treatment
@@ -161,5 +168,322 @@ export function proveReachability(records) {
     reachable: [...reachable],
     unreachable,
     errors
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Witness synthesis — Phase 3 commit 2 (BRIEF §Migration #3, REPORT §5.1
+// "witness synthesiser + seeding rule per operator" tax warning).
+//
+// Each structured helper attaches a `.metadata` sidecar describing its
+// gate shape. `synthesiseWitness` inspects that sidecar and returns a
+// concrete `{ obligationId, value }` pair that — when written into a
+// fulfilments map keyed by `obligationId` — makes the closure return
+// `inScope: true`. The tightened prover (`proveWithWitnesses`) uses
+// the witness to confirm value-level reachability, not just graph
+// reachability.
+//
+// Classification of the manifest's 19 gated obligations:
+//   - structured (witness-synthesisable) — helpers with recoverable
+//     metadata: `allowListed`, `anyAllowListed`, `matches`, plus
+//     `branchedGate` when the caller supplies `predicateMeta`.
+//   - trivial (total-over-branches) — `branchedGate` where both
+//     `whenTrue.inScope` and `whenFalse.inScope` are `true`. The gate
+//     is always open regardless of the closure's read; no witness
+//     needed. Currently the four accompanying-document siblings.
+//   - opaque — `allowListedByPredicate`. The predicate is a plain JS
+//     function; no data-level target-value is recoverable. Currently
+//     `identificationDetails` + `description` (2 gates). Stays in the
+//     conservative-graph-only bucket. Commit 3's coverage assertion
+//     lists this helper as an EXCLUSION rather than requiring a synth.
+// ---------------------------------------------------------------------------
+
+/**
+ * Witness kind — the classification `synthesiseWitness` returns so the
+ * prover can branch on it uniformly. Exported for commit 3's coverage
+ * gate: every gated obligation must classify as one of these three.
+ *
+ * - `'witness'`  — value-level check available: `{ kind: 'witness',
+ *                  obligationId, value }`.
+ * - `'trivial'`  — gate is always open (both branches in-scope, or the
+ *                  obligation carries no `applyTo`): `{ kind: 'trivial' }`.
+ * - `'opaque'`   — helper metadata does not carry a data-level target;
+ *                  falls back to graph-level check only:
+ *                  `{ kind: 'opaque', reason }`.
+ */
+export const WITNESS_KIND = Object.freeze({
+  WITNESS: 'witness',
+  TRIVIAL: 'trivial',
+  OPAQUE: 'opaque'
+})
+
+/**
+ * synthesiseWitness — inspect an obligation's `applyTo.metadata` and
+ * return a witness classification.
+ *
+ * @param {object} obligation — manifest entry with `.applyTo` (or not).
+ * @returns {{ kind: 'witness', obligationId: string, value: any }
+ *          | { kind: 'trivial' }
+ *          | { kind: 'opaque', reason: string }}
+ */
+export function synthesiseWitness(obligation) {
+  const applyTo = obligation?.applyTo
+  if (typeof applyTo !== 'function') {
+    // No applyTo — structural group (commodityLine, unitRecord). The
+    // graph-level pass treats these as trivial seeds; witness-side
+    // matches that classification.
+    return { kind: WITNESS_KIND.TRIVIAL }
+  }
+
+  const meta = applyTo.metadata
+  if (!meta) {
+    // Bare closure (e.g. `() => ({ inScope: true, status: 'mandatory' })`).
+    // Always-in-scope by construction; no witness needed.
+    return { kind: WITNESS_KIND.TRIVIAL }
+  }
+
+  switch (meta.type) {
+    case 'allowListed':
+      // metadata.values IS the allowlist — first entry is a witness.
+      // Include the projection group id (if any) so the fidelity check
+      // can seed a synthetic path in `fulfilmentIdsByObligationId` for
+      // depth-N > 1 gates (passport, tattoo, earTag, horseName,
+      // permanentAddress — all project onto unitRecord). Without a
+      // projection path the closure's `filterAndProject` returns
+      // records: [] and `inScope: false`, which would be a false
+      // negative — the gate WOULD open in the real evaluator, which
+      // always seeds unitRecord paths from user-created units.
+      if (!Array.isArray(meta.values) || meta.values.length === 0) {
+        return {
+          kind: WITNESS_KIND.OPAQUE,
+          reason: 'allowListed metadata has empty values array'
+        }
+      }
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: meta.values[0],
+        projection: meta.projection ?? null
+      }
+
+    case 'anyAllowListed':
+      // Same shape as allowListed — but anyAllowListed has no
+      // projection group (notification-level aggregate).
+      if (!Array.isArray(meta.values) || meta.values.length === 0) {
+        return {
+          kind: WITNESS_KIND.OPAQUE,
+          reason: 'anyAllowListed metadata has empty values array'
+        }
+      }
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: meta.values[0]
+      }
+
+    case 'matches':
+      // metadata.value IS the scalar target.
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: meta.value
+      }
+
+    case 'branchedGate':
+      return synthesiseBranchedGateWitness(meta)
+
+    case 'allowListedByPredicate':
+      // Truly opaque — the predicate is a plain JS function. The
+      // manifest's identificationDetails + description use this to
+      // express an INVERSE gate ("commodity code is NOT in any of the
+      // specific-identifier whitelists"). To become invertible the
+      // helper would need to attach either an explicit `notInUnionOf`
+      // reference-set on the metadata (A's approach) or an equivalent
+      // structured shape. See DESIGN-DELTA.md.
+      return {
+        kind: WITNESS_KIND.OPAQUE,
+        reason: 'allowListedByPredicate — predicate is a plain JS function'
+      }
+
+    default:
+      return {
+        kind: WITNESS_KIND.OPAQUE,
+        reason: `unrecognised helper metadata type '${meta.type}'`
+      }
+  }
+}
+
+/**
+ * synthesiseBranchedGateWitness — split out because `branchedGate` has
+ * three sub-cases (total, structured predicateMeta, opaque). Two
+ * classifiers to keep separate: TOTAL is when BOTH branches are in-
+ * scope (any input opens the gate → no witness needed); WITNESS is
+ * when the caller annotated a `predicateMeta` describing the operator.
+ */
+function synthesiseBranchedGateWitness(meta) {
+  const trueTotal = meta.whenTrue?.inScope === true
+  const falseTotal = meta.whenFalse?.inScope === true
+  if (trueTotal && falseTotal) {
+    return { kind: WITNESS_KIND.TRIVIAL }
+  }
+
+  const pm = meta.predicateMeta
+  if (!pm) {
+    return {
+      kind: WITNESS_KIND.OPAQUE,
+      reason: 'branchedGate without predicateMeta (annotate the call site)'
+    }
+  }
+
+  switch (pm.operator) {
+    case 'equals':
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: pm.obligationId,
+        value: pm.value
+      }
+    case 'includes':
+      if (!Array.isArray(pm.values) || pm.values.length === 0) {
+        return {
+          kind: WITNESS_KIND.OPAQUE,
+          reason: 'branchedGate predicateMeta.includes has empty values'
+        }
+      }
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: pm.obligationId,
+        value: pm.values[0]
+      }
+    case 'isFilled':
+      // Any non-blank value opens the gate. Pick a stable sentinel — a
+      // non-empty string that will pass the shared `isFilled` predicate
+      // used across the manifest (see obligations.js `isFilled`).
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: pm.obligationId,
+        value: '__witness__'
+      }
+    default:
+      return {
+        kind: WITNESS_KIND.OPAQUE,
+        reason: `branchedGate predicateMeta has unrecognised operator '${pm.operator}'`
+      }
+  }
+}
+
+/**
+ * proveWithWitnesses — tightened prover. Runs the graph-level check
+ * first (must succeed), then confirms every gate whose helper carries
+ * recoverable metadata can actually be opened by feeding the
+ * synthesised witness into the real `applyTo` closure and asserting
+ * `inScope: true`. Trivially-open gates (total branchedGate,
+ * structural groups) pass without a closure run. Opaque gates fall
+ * back to graph-only (recorded on the result so callers can see how
+ * much of the manifest gets the tightened check).
+ *
+ * @param {Array<object>} obligations — the manifest entries themselves
+ *   (not the `{id, dependsOn}` records fed to `proveReachability`).
+ *   Each must carry an `id` at minimum; gated entries carry
+ *   `applyTo.metadata` + `dependsOn`.
+ * @returns {{
+ *   reachable: string[],
+ *   unreachable: string[],
+ *   errors: Array<{obligationId: string, reason: string}>,
+ *   witnesses: {
+ *     synthesisable: string[],  // gates value-level proved
+ *     trivial: string[],        // gates trivially open (no witness needed)
+ *     opaque: string[]          // gates left at graph-level only
+ *   }
+ * }}
+ */
+export function proveWithWitnesses(obligations) {
+  const records = obligations.map((o) => {
+    if (typeof o.applyTo === 'function') {
+      return { id: o.id, dependsOn: o.dependsOn }
+    }
+    return { id: o.id, dependsOn: [] }
+  })
+
+  const graph = proveReachability(records)
+
+  const synthesisable = []
+  const trivial = []
+  const opaque = []
+  const errors = [...graph.errors]
+
+  for (const o of obligations) {
+    const w = synthesiseWitness(o)
+    switch (w.kind) {
+      case WITNESS_KIND.TRIVIAL:
+        trivial.push(o.id)
+        break
+      case WITNESS_KIND.OPAQUE:
+        opaque.push(o.id)
+        break
+      case WITNESS_KIND.WITNESS: {
+        // Fidelity check — the witness must actually open the closure.
+        // Any mismatch is a build-time defect (metadata drift vs. the
+        // real predicate).
+        //
+        // Depth-N > 1 gates use `allowListed` with a projection group
+        // (e.g. passport / tattoo project onto unitRecord). The
+        // closure's filterAndProject requires ≥ 1 path in
+        // `fulfilmentIdsByObligationId` for the projection group,
+        // otherwise `records: []` → `inScope: false` regardless of
+        // the value. In the real evaluator paths come from user-
+        // created group instances; for the fidelity check we seed a
+        // synthetic instance-path whose prefix matches the gate key
+        // used below. Depth-1 gates and non-projected helpers
+        // (anyAllowListed, matches, branchedGate) pass an empty Map.
+        //
+        // Gate storage shape:
+        //   - `allowListed` reads `fulfilments[gateId]` as a MAP
+        //     `{ instancePath: value }`. Use `line1` as the mnemonic
+        //     path key.
+        //   - non-projected helpers accept either a scalar or a map
+        //     interchangeably; a scalar is simplest.
+        const fulfilmentIds = new Map()
+        let fulfilments
+        if (w.projection) {
+          // Depth-N gate — seed one synthetic unit path whose prefix
+          // (`line1`) matches the map key we place the value under.
+          fulfilments = { [w.obligationId]: { line1: w.value } }
+          fulfilmentIds.set(w.projection, ['line1/unit1'])
+        } else if (o.applyTo.metadata?.type === 'allowListed') {
+          // Depth-1 allowListed without a projection group — still
+          // reads as a map.
+          fulfilments = { [w.obligationId]: { line1: w.value } }
+        } else {
+          fulfilments = { [w.obligationId]: w.value }
+        }
+        const decision = o.applyTo(fulfilments, fulfilmentIds)
+        if (!decision || decision.inScope !== true) {
+          errors.push({
+            obligationId: o.id,
+            reason: `synthesised witness { ${w.obligationId}: ${JSON.stringify(w.value)} } did not open the gate (got ${JSON.stringify(decision)})`
+          })
+        } else {
+          synthesisable.push(o.id)
+        }
+        break
+      }
+      /* c8 ignore next 2 */
+      default:
+        errors.push({
+          obligationId: o.id,
+          reason: `synthesiseWitness returned unknown kind '${w.kind}'`
+        })
+    }
+  }
+
+  return {
+    reachable: graph.reachable,
+    unreachable: graph.unreachable,
+    errors,
+    witnesses: {
+      synthesisable,
+      trivial,
+      opaque
+    }
   }
 }

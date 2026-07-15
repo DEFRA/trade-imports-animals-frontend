@@ -140,14 +140,37 @@ export function anyAllowListed(gateObligation, values, whenTrue, whenFalse) {
  *
  * The predicate has the same signature as an applyTo function:
  * `(fulfilments, fulfilmentIdsByObligationId) → boolean`.
+ *
+ * `predicateMeta` (optional) — structured description of the predicate
+ * shape so the Phase 3 reachability prover can synthesise a witness
+ * value that opens the gate without executing the closure. Shape:
+ *
+ *   { operator: 'equals'    , obligationId: string, value: string  }  // fulfilments[id] === value
+ *   { operator: 'includes'  , obligationId: string, values: string[] } // values.includes(fulfilments[id])
+ *   { operator: 'isFilled'  , obligationId: string                  }  // any non-blank value on id
+ *
+ * When both `whenTrue.inScope` and `whenFalse.inScope` are `true` the
+ * gate is TOTAL and no witness is needed (the prover treats these as
+ * trivially open). The four accompanying-document siblings are the
+ * only manifest occurrence of that shape today; they omit
+ * `predicateMeta` because it isn't consulted. All non-total sites
+ * MUST supply `predicateMeta` — Phase 3 commit 3 will land a coverage
+ * assertion that fails the build for a non-total `branchedGate`
+ * without one.
+ *
+ * BRIEF §Migration #3 + REPORT §5.1 tax warning: every new predicate
+ * operator carries a second tax — a witness synthesiser + a seeding
+ * rule. Adding a new `operator` here means updating
+ * `analysis/reachability.js` `synthesiseWitness`.
  */
-export function branchedGate(predicate, whenTrue, whenFalse) {
+export function branchedGate(predicate, whenTrue, whenFalse, predicateMeta) {
   const fn = (fulfilments, fulfilmentIdsByObligationId) =>
     predicate(fulfilments, fulfilmentIdsByObligationId) ? whenTrue : whenFalse
   fn.metadata = {
     type: 'branchedGate',
     whenTrue,
-    whenFalse
+    whenFalse,
+    predicateMeta: predicateMeta ?? null
   }
   return fn
 }

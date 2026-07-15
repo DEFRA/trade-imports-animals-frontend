@@ -207,7 +207,8 @@ export const regionCode = {
   applyTo: branchedGate(
     (fulfilments) => fulfilments[regionCodeRequirement.id] === 'yes',
     { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
-    { inScope: true, status: 'optional' }
+    { inScope: true, status: 'optional' },
+    { operator: 'equals', obligationId: regionCodeRequirement.id, value: 'yes' }
   ),
   dependsOn: [regionCodeRequirement.id]
 }
@@ -236,7 +237,12 @@ export const purposeInInternalMarket = {
       status: 'mandatory',
       reasons: [purposeInInternalMarketReason]
     },
-    { inScope: false }
+    { inScope: false },
+    {
+      operator: 'equals',
+      obligationId: reasonForImport.id,
+      value: 'internal-market'
+    }
   ),
   dependsOn: [reasonForImport.id]
 }
@@ -309,7 +315,12 @@ export const commercialTransporter = {
       status: 'mandatory',
       reasons: [commercialTransporterReason]
     },
-    { inScope: false }
+    { inScope: false },
+    {
+      operator: 'equals',
+      obligationId: transporterType.id,
+      value: 'commercial'
+    }
   ),
   dependsOn: [transporterType.id]
 }
@@ -324,7 +335,8 @@ export const privateTransporter = {
       status: 'mandatory',
       reasons: [privateTransporterReason]
     },
-    { inScope: false }
+    { inScope: false },
+    { operator: 'equals', obligationId: transporterType.id, value: 'private' }
   ),
   dependsOn: [transporterType.id]
 }
@@ -370,7 +382,12 @@ export const transitedCountries = {
       status: 'optional',
       reasons: [transitedCountriesReason]
     },
-    { inScope: false }
+    { inScope: false },
+    {
+      operator: 'includes',
+      obligationId: meansOfTransport.id,
+      values: LAND_TRANSPORT_MODES
+    }
   ),
   dependsOn: [meansOfTransport.id]
 }

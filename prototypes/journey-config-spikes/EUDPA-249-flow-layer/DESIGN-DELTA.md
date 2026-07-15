@@ -15,6 +15,71 @@ Each entry names:
 
 ---
 
+## 2026-07-15 — `analysis/reachability.js`: witness synthesisers for structured gate helpers
+
+- **Change** — extended `analysis/reachability.js` with two new entry
+  points, `synthesiseWitness(obligation)` and
+  `proveWithWitnesses(obligations)`. The tightened prover runs the Phase
+  3 commit 1 graph-level check first, then — for every gate whose helper
+  attaches recoverable metadata — synthesises a concrete
+  `{ obligationId, value }` witness, injects it into a fulfilments map,
+  and confirms the real `applyTo` closure returns `inScope: true`. Also
+  extended `obligations/helpers.js` `branchedGate` to accept an optional
+  4th `predicateMeta` argument so callers can declare the operator shape
+  (`equals` / `includes` / `isFilled`) alongside the closure body, and
+  annotated the 5 non-total `branchedGate` call sites in
+  `obligations/obligations.js` accordingly.
+- **Backwards compat** — fully. Every graph-level pass from commit 1
+  still passes (see `reachability.test.js` "backwards compat with commit
+  1" pin on `numberOfPackages`, and the whole-manifest zero-unreachable
+  regression). No obligation, evaluator, flow or route behaviour changed;
+  every existing gate test (helpers.test.js, evaluator.units.test.js,
+  whitelists.test.js) is untouched.
+- **Divergence from A** — A's prover inverts predicates as data because
+  A's gates ARE data (four operators pattern-matched in `predicate.js`).
+  B's gates stay as JS closures; the synthesiser here reads the
+  helper-attached `.metadata` sidecar instead. Coverage is partial by
+  design — B's inversion covers the four structured helpers
+  (`allowListed`, `anyAllowListed`, `matches`, `branchedGate` with
+  `predicateMeta`) — 12 of 19 gated obligations today. The remaining 7
+  split into 5 trivial-over-branches (both branches in-scope; no witness
+  needed) and 2 opaque (`allowListedByPredicate` — plain-JS predicate,
+  no data-level target). One further departure from A: the synthesised
+  witness is re-run through the real closure as a fidelity check that
+  catches metadata drift; A doesn't need this because predicate
+  execution IS metadata evaluation.
+- **Witness classification invariant** — every gated obligation
+  classifies as one of `witness` / `trivial` / `opaque`. Named in
+  `WITNESS_KIND` (exported for commit 3's coverage assertion to
+  enumerate). Manifest today: 12 witness, 5 trivial (regionCode plus the
+  four accompanyingDocument siblings), 2 opaque
+  (`identificationDetails` and `description`).
+- **`allowListedByPredicate` stays opaque — documented decision** —
+  `identificationDetails` + `description` express INVERSE gates over
+  four commodity-code whitelists. The structural fix (A-style) is to
+  add a `notInUnionOf: [obligation, ...]` metadata field naming the
+  whitelists to complement; witness would then be any code NOT in the
+  union. Phase 4 §Migration #4's `notInUnionOf` derived-union helper
+  closes this — planned, scoped out of this commit. A cheaper Bloom-
+  shape (attach a small `sample` array on the metadata that the caller
+  confirms passes the predicate) was rejected as it bloats the helper
+  surface. Until Phase 4 lands, the 2 opaque gates keep graph-only
+  reachability and are excluded from Phase 3 commit 3's coverage
+  assertion.
+- **Tax tracked** — REPORT §5.1: "every new operator carries a second
+  tax: a witness synthesiser + a seeding rule". This commit lands the
+  synthesiser side for `equals` / `includes` / `isFilled` (on
+  `branchedGate`) plus the four already-structured helper types. Adding
+  a new operator now REQUIRES extending `synthesiseWitness` (commit 3's
+  coverage gate will enforce this).
+- **Rationale** — BRIEF §Migration #3 (witness-level prover on top of
+  the dependency graph), REPORT §5.1 (closures are the exception with a
+  build-time guard; when metadata is available prefer data). Blend plan
+  §7 Phase 3 commit 2 ("witness synthesiser per operator").
+- **Commit** — (see git log; SHA appended immediately after landing).
+
+---
+
 ## 2026-07-15 — `analysis/reachability.js`: graph-level dependency-reachability prover
 
 - **Change** — introduced `analysis/reachability.js` (Phase 3 commit 1 of

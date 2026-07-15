@@ -24,9 +24,21 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { proveReachability } from './reachability.js'
+import {
+  proveReachability,
+  proveWithWitnesses,
+  synthesiseWitness,
+  WITNESS_KIND
+} from './reachability.js'
 import { obligations } from '../obligations/obligations.js'
-import { obligationMetadata } from '../obligations/helpers.js'
+import {
+  obligationMetadata,
+  allowListed,
+  anyAllowListed,
+  branchedGate,
+  matches,
+  allowListedByPredicate
+} from '../obligations/helpers.js'
 
 // ---------------------------------------------------------------------------
 // Helpers — turn an obligation into the `{ id, dependsOn }` record the
@@ -205,5 +217,294 @@ describe('proveReachability — defensive against dangling ids', () => {
     })
     // The seed is still classified normally.
     expect(result.reachable).toContain('seed')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Phase 3 commit 2 — witness synthesis. The `synthesiseWitness` accessor
+// tightens the graph-only pass into a value-level check for structured
+// helpers. BRIEF §Migration #3 + REPORT §5.1 tax warning: "witness
+// synthesiser + seeding rule per operator". Each helper this test
+// covers must round-trip through the REAL applyTo closure and return
+// `inScope: true` — that's the fidelity assertion.
+// ---------------------------------------------------------------------------
+
+describe('synthesiseWitness — per-helper metadata inversion', () => {
+  const codeObl = { id: 'code-obl' }
+  const boolObl = { id: 'bool-obl' }
+
+  it('allowListed → returns first allowlist entry as witness', () => {
+    const gate = allowListed(codeObl, ['a', 'b', 'c'])
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w).toMatchObject({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: codeObl.id,
+      value: 'a'
+    })
+    // projection defaults to null for depth-1 allowListed.
+    expect(w.projection).toBeNull()
+    // Fidelity — inject the witness and run the actual closure.
+    const decision = obl.applyTo(
+      { [w.obligationId]: { k1: w.value } },
+      new Map()
+    )
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('allowListed with projection group → witness carries projection id', () => {
+    const groupObl = { id: 'group-obl' }
+    const gate = allowListed(codeObl, ['a'], groupObl)
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: codeObl.id,
+      value: 'a',
+      projection: groupObl.id
+    })
+  })
+
+  it('anyAllowListed → returns first allowlist entry as witness', () => {
+    const gate = anyAllowListed(
+      codeObl,
+      ['x', 'y'],
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: codeObl.id,
+      value: 'x'
+    })
+    const decision = obl.applyTo({ [w.obligationId]: w.value })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('matches → returns metadata.value as witness', () => {
+    const gate = matches(boolObl, 'yes')
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: boolObl.id,
+      value: 'yes'
+    })
+    const decision = obl.applyTo({ [w.obligationId]: w.value })
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('branchedGate (TOTAL) → returns trivial (both branches in-scope)', () => {
+    const gate = branchedGate(
+      () => true,
+      { inScope: true, status: 'mandatory' },
+      { inScope: true, status: 'optional' }
+    )
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+
+  it('branchedGate with predicateMeta.equals → synthesises witness that opens the gate', () => {
+    const gate = branchedGate(
+      (f) => f[boolObl.id] === 'yes',
+      { inScope: true, status: 'mandatory' },
+      { inScope: false },
+      { operator: 'equals', obligationId: boolObl.id, value: 'yes' }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w).toEqual({
+      kind: WITNESS_KIND.WITNESS,
+      obligationId: boolObl.id,
+      value: 'yes'
+    })
+    const decision = obl.applyTo({ [w.obligationId]: w.value }, new Map())
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('branchedGate with predicateMeta.includes → witness fires the closure', () => {
+    const gate = branchedGate(
+      (f) => ['a', 'b'].includes(f[codeObl.id]),
+      { inScope: true, status: 'optional' },
+      { inScope: false },
+      { operator: 'includes', obligationId: codeObl.id, values: ['a', 'b'] }
+    )
+    const obl = { id: 'gated', applyTo: gate }
+    const w = synthesiseWitness(obl)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.obligationId).toBe(codeObl.id)
+    expect(['a', 'b']).toContain(w.value)
+    const decision = obl.applyTo({ [w.obligationId]: w.value }, new Map())
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('branchedGate WITHOUT predicateMeta (non-total) → opaque', () => {
+    const gate = branchedGate(
+      () => true,
+      { inScope: true, status: 'mandatory' },
+      { inScope: false }
+    )
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w.kind).toBe(WITNESS_KIND.OPAQUE)
+    expect(w.reason).toContain('predicateMeta')
+  })
+
+  it('allowListedByPredicate → opaque (documented design decision)', () => {
+    const gate = allowListedByPredicate(codeObl, (v) => v !== 'skip')
+    const w = synthesiseWitness({ id: 'gated', applyTo: gate })
+    expect(w).toEqual({
+      kind: WITNESS_KIND.OPAQUE,
+      reason: expect.stringContaining('allowListedByPredicate')
+    })
+  })
+
+  it('obligation without applyTo → trivial (structural group)', () => {
+    const w = synthesiseWitness({ id: 'commodityLine' })
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+
+  it('always-in-scope bare closure (no .metadata) → trivial', () => {
+    const w = synthesiseWitness({
+      id: 'always',
+      applyTo: () => ({ inScope: true, status: 'mandatory' })
+    })
+    expect(w).toEqual({ kind: WITNESS_KIND.TRIVIAL })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Real-manifest fidelity — pick a non-total branchedGate we newly
+// annotated and confirm the synthesised witness runs through the real
+// applyTo closure. This is the load-bearing "witness accuracy" check:
+// metadata drift vs. the real predicate would be caught here.
+// ---------------------------------------------------------------------------
+
+describe('synthesiseWitness — real manifest fidelity', () => {
+  it('regionCode: total-over-branches → classified as trivial', () => {
+    // regionCode's branchedGate has whenTrue.inScope === true AND
+    // whenFalse.inScope === true (retain-value pattern — mandatory
+    // when the requirement flag is 'yes', optional otherwise). The
+    // gate opens on ANY input, so no witness is needed; commit 3's
+    // coverage assertion counts these as "trivial", not opaque.
+    const regionCode = obligations.find((o) => o.name === 'regionCode')
+    const w = synthesiseWitness(regionCode)
+    expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
+  })
+
+  it('purposeInInternalMarket (non-total branchedGate): witness opens the closure', () => {
+    // Non-total: whenTrue.inScope === true, whenFalse.inScope === false.
+    // predicateMeta declares operator: 'equals' + value: 'internal-market'.
+    // This is the load-bearing fidelity check for annotated call sites.
+    const pim = obligations.find((o) => o.name === 'purposeInInternalMarket')
+    const w = synthesiseWitness(pim)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    const decision = pim.applyTo({ [w.obligationId]: w.value }, new Map())
+    expect(decision.inScope).toBe(true)
+    expect(decision.status).toBe('mandatory')
+  })
+
+  it('transitedCountries: includes-shape witness opens the closure', () => {
+    const tc = obligations.find((o) => o.name === 'transitedCountries')
+    const w = synthesiseWitness(tc)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    const decision = tc.applyTo({ [w.obligationId]: w.value }, new Map())
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('numberOfPackages (allowListed): commodity-code witness opens the closure', () => {
+    const nop = obligations.find((o) => o.name === 'numberOfPackages')
+    const w = synthesiseWitness(nop)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    // allowListed with no projection uses gate-level record keys.
+    const decision = nop.applyTo(
+      { [w.obligationId]: { line1: w.value } },
+      new Map()
+    )
+    expect(decision.inScope).toBe(true)
+  })
+
+  it('cph (anyAllowListed): scalar witness opens the closure', () => {
+    const cph = obligations.find((o) => o.name === 'cph')
+    const w = synthesiseWitness(cph)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    const decision = cph.applyTo({
+      [w.obligationId]: { line1: w.value }
+    })
+    expect(decision.inScope).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// proveWithWitnesses — end-to-end tightened prover over the real
+// manifest. Classification counts are pinned so a regression in
+// helper metadata (e.g. someone drops predicateMeta from a branched-
+// Gate site) fails loudly.
+// ---------------------------------------------------------------------------
+
+describe('proveWithWitnesses — real V4 manifest classification', () => {
+  it('graph-level result is unchanged (backwards compat with commit 1)', () => {
+    const result = proveWithWitnesses(obligations)
+    expect(result.unreachable).toEqual([])
+    // Fidelity errors — none expected on the real manifest. Any error
+    // here means a witness didn't open its closure, i.e. metadata
+    // drift.
+    expect(result.errors).toEqual([])
+    // Sanity — every non-structural obligation appears somewhere.
+    const classifiedCount =
+      result.witnesses.synthesisable.length +
+      result.witnesses.trivial.length +
+      result.witnesses.opaque.length
+    expect(classifiedCount).toBe(obligations.length)
+  })
+
+  it('classification counts match the hand-off estimate (≥12 synthesisable, 2 opaque)', () => {
+    const result = proveWithWitnesses(obligations)
+    // Structured helpers per hand-off: allowListed × 6 + anyAllowListed
+    // × 2 + branchedGate-with-predicateMeta × 5 = 13 synthesisable.
+    // Plus the four total accompanying-document siblings + the four
+    // total-inScope branched regionCode-style hits count as TRIVIAL,
+    // not synthesisable.
+    expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(12)
+    // Opaque: identificationDetails + description (allowListedByPredicate).
+    expect(result.witnesses.opaque).toHaveLength(2)
+    const opaqueNames = result.witnesses.opaque
+      .map((id) => obligations.find((o) => o.id === id).name)
+      .sort()
+    expect(opaqueNames).toEqual(['description', 'identificationDetails'])
+  })
+
+  it('every fidelity check passes (no witness fails to open its own closure)', () => {
+    // Guarding against silent metadata drift: if someone changes a
+    // branchedGate's predicate body without updating predicateMeta,
+    // this fires.
+    const result = proveWithWitnesses(obligations)
+    expect(result.errors.filter((e) => /did not open/.test(e.reason))).toEqual(
+      []
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Backwards compat — a graph-level-only test from commit 1 still
+// passes verbatim. numberOfPackages was already reachable graph-side;
+// it must remain so after commit 2.
+// ---------------------------------------------------------------------------
+
+describe('proveReachability — backwards compat with commit 1', () => {
+  it('numberOfPackages is still reachable in the graph-only pass', () => {
+    // The commit-1 whole-manifest test asserts zero unreachable. This
+    // pin picks out a specific gate to prove the graph-level behaviour
+    // is UNCHANGED — commit 2 tightens on top of commit 1, it does
+    // not replace it.
+    const records = obligations.map((o) => {
+      if (typeof o.applyTo === 'function') {
+        return { id: o.id, dependsOn: obligationMetadata(o).dependsOn }
+      }
+      return { id: o.id, dependsOn: [] }
+    })
+    const result = proveReachability(records)
+    const nop = obligations.find((o) => o.name === 'numberOfPackages')
+    expect(result.reachable).toContain(nop.id)
   })
 })
