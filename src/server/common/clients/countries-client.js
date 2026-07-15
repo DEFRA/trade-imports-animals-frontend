@@ -7,28 +7,6 @@ const tradeImportsReferenceDataUrl = config.get(
 const tracingHeader = config.get('tracing.header')
 const logger = createLogger()
 
-async function fetchCountries(url, traceId) {
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      [tracingHeader]: traceId
-    }
-  })
-
-  if (!response.ok) {
-    const error = new Error('Failed to get countries')
-    error.status = response.status
-    error.statusText = response.statusText
-
-    logger.error(`Failed to get countries: ${error.message}`)
-
-    throw error
-  }
-
-  return response.json()
-}
-
 export const countriesClient = {
   /**
    * Retrieves a list of countries from the reference data API,
@@ -43,6 +21,24 @@ export const countriesClient = {
       }
     }
 
-    return fetchCountries(url, traceId)
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        [tracingHeader]: traceId
+      }
+    })
+
+    if (!response.ok) {
+      const error = new Error('Failed to get countries')
+      error.status = response.status
+      error.statusText = response.statusText
+
+      logger.error(`Failed to get countries: ${error.message}`)
+
+      throw error
+    }
+
+    return response.json()
   }
 }
