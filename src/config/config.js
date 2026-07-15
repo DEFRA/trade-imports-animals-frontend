@@ -340,6 +340,14 @@ export const config = convict({
       default: 'http://localhost:8086',
       env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
     }
+  },
+  tradeImportsOperatorsApi: {
+    baseUrl: {
+      doc: 'Trade Imports Operators API base URL',
+      format: String,
+      default: 'http://localhost:8089',
+      env: 'TRADE_IMPORTS_OPERATORS_URL'
+    }
   }
 })
 
