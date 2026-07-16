@@ -1,10 +1,22 @@
-import { beforeEach, describe, expect, vi } from 'vitest'
+import {
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import { operatorsClient } from '../common/clients/operators-client.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { saveNotification } from '../common/helpers/notification-helpers.js'
+
+vi.mock('../common/clients/operators-client.js')
 
 vi.mock('../common/helpers/notification-helpers.js')
 
@@ -21,8 +33,30 @@ vi.mock('../../config/config.js', async (importOriginal) => {
 function sessionAuth(sessionId) {
   return {
     strategy: 'session',
-    credentials: { user: {}, sessionId }
+    credentials: { user: {}, sessionId, crn: 'CRN123', organisationId: 'ORG1' }
   }
+}
+
+const apiTransporter = {
+  id: 'op-t1',
+  operator_type: 'TRANSPORTER',
+  name: 'García Livestock Transport SL',
+  address_line_1: 'Calle Mayor 1',
+  town: 'Madrid',
+  postcode: '28001',
+  country: 'Spain',
+  approval_number: 'ES-T2-45001294',
+  transporter_category: 'COMMERCIAL'
+}
+
+function mockList(items) {
+  operatorsClient.listOperators.mockResolvedValue({
+    items,
+    page: 1,
+    page_size: 25,
+    total_items: items.length,
+    total_pages: 1
+  })
 }
 
 describe('#transportersController', () => {
@@ -38,8 +72,15 @@ describe('#transportersController', () => {
     vi.restoreAllMocks()
   })
 
+  afterEach(() => {
+    operatorsClient.listOperators.mockReset()
+    saveNotification.mockReset()
+  })
+
   describe('GET /transporters', () => {
-    test('renders transporters HTML page when no transporter is selected', async () => {
+    test('offers the add-a-transporter link when none is selected', async () => {
+      mockList([apiTransporter])
+
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/transporters',
@@ -47,71 +88,55 @@ describe('#transportersController', () => {
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Transporter'))
-      expect(result).toEqual(expect.stringContaining('Add a transporter'))
+      expect(result).toContain('Add a transporter')
       expect(result).not.toContain('García Livestock Transport SL')
     })
 
-    test('stores transporter from selectedTransporter query and renders table', async () => {
+    test('stores the selected TRANSPORTER operator by id and renders it with a humanised type', async () => {
+      mockList([apiTransporter])
+
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporters?selectedTransporter=0',
-        auth: sessionAuth('transporter-get-selected-0')
+        url: '/transporters?selectedTransporter=op-t1',
+        auth: sessionAuth('transporter-get-selected')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(
-        expect.stringContaining('García Livestock Transport SL')
+      expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.anything(),
+        { operatorType: 'TRANSPORTER' }
       )
-      expect(result).toEqual(expect.stringContaining('ES-T2-45001294'))
+      expect(result).toContain('García Livestock Transport SL')
+      expect(result).toContain('ES-T2-45001294')
+      expect(result).toContain('Commercial')
       expect(result).not.toContain('Add a transporter')
     })
 
-    test('accepts third mock transporter index from query', async () => {
+    test('ignores an id that is not in the operator list', async () => {
+      mockList([apiTransporter])
+
       const { result, statusCode } = await server.inject({
         method: 'GET',
-        url: '/transporters?selectedTransporter=2',
-        auth: sessionAuth('transporter-get-selected-2')
+        url: '/transporters?selectedTransporter=op-unknown',
+        auth: sessionAuth('transporter-get-unknown')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('John Gosden LTD'))
-      expect(result).toEqual(expect.stringContaining('UK/BURY/T2/00104127'))
-    })
-
-    test('ignores invalid selectedTransporter query values', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'GET',
-        url: '/transporters?selectedTransporter=not-a-number',
-        auth: sessionAuth('transporter-get-invalid-query')
-      })
-
-      expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Add a transporter'))
-    })
-
-    test('ignores out-of-range selectedTransporter index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'GET',
-        url: '/transporters?selectedTransporter=99',
-        auth: sessionAuth('transporter-get-oob-index')
-      })
-
-      expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Add a transporter'))
+      expect(result).toContain('Add a transporter')
     })
   })
 
   describe('POST /transporters', () => {
     beforeEach(() => {
-      saveNotification.mockClear()
+      saveNotification.mockResolvedValue({})
     })
 
-    test('calls notification save then redirects to /consignment/contact/select', async () => {
+    test('saves the notification then redirects to /consignment/contact/select', async () => {
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/transporters',
-        auth: sessionAuth('transporter-post-submit'),
+        auth: sessionAuth('transporter-post'),
         payload: {}
       })
 
@@ -120,35 +145,20 @@ describe('#transportersController', () => {
       expect(headers.location).toBe('/consignment/contact/select')
     })
 
-    test('redirects to /consignment/contact/select when reference number is not in session', async () => {
-      const { statusCode, headers } = await server.inject({
-        method: 'POST',
-        url: '/transporters',
-        auth: sessionAuth('transporter-post-empty-session'),
-        payload: {}
-      })
-
-      expect(saveNotification).toHaveBeenCalledTimes(1)
-      expect(statusCode).toBe(statusCodes.redirectFound)
-      expect(headers.location).toBe('/consignment/contact/select')
-    })
-
-    test('renders transporters page with error when notification save fails', async () => {
+    test('renders the page with an error when the notification save fails', async () => {
       saveNotification.mockRejectedValueOnce(new Error('Backend error'))
 
       const { statusCode, result, headers } = await server.inject({
         method: 'POST',
         url: '/transporters',
-        auth: sessionAuth('transporter-post-submit-fail'),
+        auth: sessionAuth('transporter-post-fail'),
         payload: {}
       })
 
       expect(saveNotification).toHaveBeenCalledTimes(1)
       expect(statusCode).toBe(statusCodes.internalServerError)
       expect(headers.location).toBeUndefined()
-      expect(result).toEqual(
-        expect.stringContaining(SUBMISSION_FAILURE_MESSAGE)
-      )
+      expect(result).toContain(SUBMISSION_FAILURE_MESSAGE)
     })
   })
 })

@@ -1,11 +1,22 @@
-import { vi } from 'vitest'
+import { load } from 'cheerio'
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { createServer } from '../../../server.js'
 import { statusCodes } from '../../../common/constants/status-codes.js'
+import { operatorsClient } from '../../../common/clients/operators-client.js'
 import { mockOidcConfig } from '../../../common/test-helpers/mock-oidc-config.js'
 import * as sessionHelpers from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
-import consignees from './mock-consignees.json'
+
+vi.mock('../../../common/clients/operators-client.js')
 
 vi.mock('../../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -29,6 +40,47 @@ vi.mock(
   }
 )
 
+function sessionAuth(sessionId) {
+  return {
+    strategy: 'session',
+    credentials: { user: {}, sessionId, crn: 'CRN123', organisationId: 'ORG1' }
+  }
+}
+
+const apiConsignee = {
+  id: 'op-e1',
+  operator_type: 'CONSIGNEE',
+  name: 'Tech Imports Ltd',
+  address_line_1: '643 Main Street',
+  address_line_2: 'Suite 2',
+  town: 'Dover',
+  county: 'Kent',
+  postcode: 'CT16 1AA',
+  country: 'United Kingdom',
+  telephone: '01304 111222',
+  email: 'goods@techimports.example'
+}
+
+const otherApiConsignee = {
+  id: 'op-e2',
+  operator_type: 'CONSIGNEE',
+  name: 'Coastal Buyers Co',
+  address_line_1: '9 Quay Street',
+  town: 'Folkestone',
+  postcode: 'CT20 1AA',
+  country: 'United Kingdom'
+}
+
+function mockList(items) {
+  operatorsClient.listOperators.mockResolvedValue({
+    items,
+    page: 1,
+    page_size: 25,
+    total_items: items.length,
+    total_pages: 1
+  })
+}
+
 describe('#consigneesSelectController', () => {
   let server
 
@@ -42,32 +94,43 @@ describe('#consigneesSelectController', () => {
     vi.restoreAllMocks()
   })
 
+  afterEach(() => {
+    sessionHelpers.getSessionValue.mockReset()
+    sessionHelpers.setSessionValue.mockClear()
+    operatorsClient.listOperators.mockReset()
+  })
+
   describe('GET /consignees/select', () => {
-    afterEach(() => {
-      sessionHelpers.getSessionValue.mockReset()
-    })
+    test('lists only CONSIGNEE operators with the operator id as the radio value', async () => {
+      mockList([apiConsignee, otherApiConsignee])
 
-    test('renders page with consignee addresses from json file', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        }
+        auth: sessionAuth('consignee-get')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Search for a consignee'))
-      expect(result).toEqual(expect.stringContaining('British Livestock Ltd'))
-      expect(result).toEqual(expect.stringContaining('Northern Farms Co'))
-      expect(result).toEqual(expect.stringContaining('United Kingdom'))
+      expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.anything(),
+        { operatorType: 'CONSIGNEE' }
+      )
+
+      const $ = load(result)
+      const values = $('input[name="consignee"]')
+        .map((_, el) => $(el).attr('value'))
+        .get()
+      expect(values).toEqual(['op-e1', 'op-e2'])
+      expect(result).toContain('Tech Imports Ltd')
+      expect(result).toContain('Coastal Buyers Co')
     })
 
-    test('pre-selects the radio matching the consignee stored in session', async () => {
+    test('pre-selects the radio whose id matches the operatorId stored in session', async () => {
+      mockList([apiConsignee, otherApiConsignee])
       sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
         if (key === sessionKeys.consignee) {
-          return consignees[1]
+          return { operatorId: 'op-e2', name: 'Coastal Buyers Co' }
         }
         return null
       })
@@ -75,127 +138,69 @@ describe('#consigneesSelectController', () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE' }
-        }
+        auth: sessionAuth('consignee-preselect')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringMatching(/value="1"[^>]*\bchecked\b/))
-    })
-
-    test('pre-selects the first radio when the stored consignee is at index 0', async () => {
-      sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
-        if (key === sessionKeys.consignee) {
-          return consignees[0]
-        }
-        return null
-      })
-
-      const { result, statusCode } = await server.inject({
-        method: 'GET',
-        url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE_ZERO' }
-        }
-      })
-
-      expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringMatching(/value="0"[^>]*\bchecked\b/))
+      const $ = load(result)
+      expect($('input[name="consignee"][value="op-e2"]').attr('checked')).toBe(
+        'checked'
+      )
     })
   })
 
   describe('POST /consignees/select', () => {
-    afterEach(() => {
-      sessionHelpers.setSessionValue.mockClear()
-      sessionHelpers.getSessionValue.mockReset()
-    })
-
-    test('saves to session and redirects to /addresses', async () => {
+    test('stores the complete embedded copy and redirects to /addresses', async () => {
+      mockList([apiConsignee, otherApiConsignee])
       sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
-        if (key === sessionKeys.referenceNumber) return 'IMP.GB.2026.TEST'
+        if (key === sessionKeys.referenceNumber) return 'CON.GB.2026.TEST'
         return null
       })
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { consignee: '0' }
+        auth: sessionAuth('consignee-post'),
+        payload: { consignee: 'op-e1' }
       })
 
       expect(sessionHelpers.setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
         sessionKeys.consignee,
-        consignees[0]
+        {
+          operatorId: 'op-e1',
+          name: 'Tech Imports Ltd',
+          addressLine1: '643 Main Street',
+          addressLine2: 'Suite 2',
+          city: 'Dover',
+          county: 'Kent',
+          postcode: 'CT16 1AA',
+          country: 'United Kingdom',
+          telephone: '01304 111222',
+          email: 'goods@techimports.example'
+        }
       )
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/addresses')
     })
 
-    test('re-renders with error when no selection made', async () => {
+    test('rejects an id that is not in the fetched list without writing the session', async () => {
+      mockList([apiConsignee, otherApiConsignee])
+
       const { result, statusCode } = await server.inject({
         method: 'POST',
         url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: {}
+        auth: sessionAuth('consignee-post-invalid'),
+        payload: { consignee: 'op-not-mine' }
       })
 
       expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select a consignee'))
-    })
-
-    test('re-renders with error for non-numeric selection', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { consignee: 'invalid' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select a consignee'))
-    })
-
-    test('re-renders with error for out-of-range index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { consignee: '999' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select a consignee'))
-    })
-
-    test('re-renders with error for negative index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/consignees/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { consignee: '-1' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select a consignee'))
+      expect(result).toContain('Select a consignee')
+      expect(sessionHelpers.setSessionValue).not.toHaveBeenCalledWith(
+        expect.anything(),
+        sessionKeys.consignee,
+        expect.anything()
+      )
     })
   })
 })

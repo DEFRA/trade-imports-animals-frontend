@@ -53,6 +53,25 @@ const operatorTypeLabels = Object.fromEntries(
 )
 
 /**
+ * Display labels for the two transporter categories (c-019 add/edit form
+ * values), shared by the transporter select and landing pages.
+ */
+export const TRANSPORTER_CATEGORY_LABELS = {
+  PRIVATE: 'Private',
+  COMMERCIAL: 'Commercial'
+}
+
+/**
+ * Resolve a transporter category's display label, falling back to the raw
+ * value for an unknown category rather than rendering nothing.
+ * @param {string} value - the UPPER_SNAKE transporter category
+ * @returns {string} the display label
+ */
+export function transporterCategoryLabel(value) {
+  return TRANSPORTER_CATEGORY_LABELS[value] ?? value
+}
+
+/**
  * Resolve an operator type's display label, falling back to the raw value for
  * an unknown type rather than rendering nothing.
  * @param {string} value - the UPPER_SNAKE operator type

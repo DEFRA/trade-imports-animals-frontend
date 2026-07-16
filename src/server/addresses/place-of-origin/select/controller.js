@@ -1,6 +1,9 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { getTraceId } from '@defra/hapi-tracing'
+import {
+  operatorsClient,
+  fromApiOperator,
+  toNotificationOperator
+} from '../../../common/clients/operators-client.js'
 import { createLogger } from '../../../common/helpers/logging/logger.js'
 import {
   getSessionValue,
@@ -11,75 +14,76 @@ import { statusCodes } from '../../../common/constants/status-codes.js'
 
 const logger = createLogger()
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
-const placeOfOriginsFilePath = path.join(dirname, 'mock-place-of-origins.json')
-const placeOfOrigins = JSON.parse(readFileSync(placeOfOriginsFilePath, 'utf-8'))
-
 const VIEW = 'addresses/place-of-origin/select/index'
 const PAGE_TITLE = 'Search for a place of origin'
+const OPERATOR_TYPE = 'PLACE_OF_ORIGIN'
+const SELECT_ERROR = 'Select a place of origin'
+
+function getIdentity(request) {
+  const profile = request.auth?.credentials ?? {}
+  return { crn: profile.crn, organisationId: profile.organisationId }
+}
+
+async function fetchOperators(request) {
+  const traceId = getTraceId() ?? ''
+  const response = await operatorsClient.listOperators(
+    traceId,
+    getIdentity(request),
+    { operatorType: OPERATOR_TYPE }
+  )
+  return response.items ?? []
+}
 
 export const placeOfOriginSelectController = {
   get: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
       logger.info(`Place of origin selection page: ${referenceNumber}`)
 
-      const selectedPlaceOfOrigin = getSessionValue(
-        _request,
-        sessionKeys.placeOfOrigin
-      )
-      const matchedIndex = selectedPlaceOfOrigin
-        ? placeOfOrigins.findIndex((p) => p.name === selectedPlaceOfOrigin.name)
-        : -1
-      const selectedPlaceOfOriginId =
-        matchedIndex >= 0 ? matchedIndex : undefined
+      const operators = (await fetchOperators(request)).map(fromApiOperator)
+      const selected = getSessionValue(request, sessionKeys.placeOfOrigin)
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         referenceNumber,
-        placeOfOrigins,
-        selectedPlaceOfOriginId
+        operators,
+        selectedOperatorId: selected?.operatorId
       })
     }
   },
   post: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
-      const selectedId = Number.parseInt(_request.payload?.placeOfOrigin, 10)
+      const apiOperators = await fetchOperators(request)
+      const selected = apiOperators.find(
+        (operator) => operator.id === request.payload?.placeOfOrigin
+      )
 
-      if (
-        !Number.isInteger(selectedId) ||
-        selectedId < 0 ||
-        !placeOfOrigins[selectedId]
-      ) {
+      if (!selected) {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
-            placeOfOrigins,
-            errorList: [
-              { text: 'Select a place of origin', href: '#placeOfOrigin' }
-            ],
-            fieldErrors: {
-              placeOfOrigin: { text: 'Select a place of origin' }
-            }
+            operators: apiOperators.map(fromApiOperator),
+            errorList: [{ text: SELECT_ERROR, href: '#placeOfOrigin' }],
+            fieldErrors: { placeOfOrigin: { text: SELECT_ERROR } }
           })
           .code(statusCodes.badRequest)
       }
 
       setSessionValue(
-        _request,
+        request,
         sessionKeys.placeOfOrigin,
-        placeOfOrigins[selectedId]
+        toNotificationOperator(selected)
       )
       logger.info(
-        `Place of origin saved for ${referenceNumber}: ${placeOfOrigins[selectedId].name}`
+        `Place of origin saved for ${referenceNumber}: ${selected.name}`
       )
       return h.redirect('/addresses')
     }

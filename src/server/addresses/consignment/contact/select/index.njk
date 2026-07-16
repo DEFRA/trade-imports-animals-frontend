@@ -27,18 +27,19 @@
           <input type="hidden" name="crumb" value="{{ crumb }}" />
 
           {% set radioItems = [] %}
-          {% for contact in contacts %}
+          {% for operator in operators %}
             {% set addressHtml %}
-            {% if contact.name %}<strong>{{ contact.name }}</strong><br>{% endif %}
-              {{ contact.address.addressLine1 }}<br>
-              {% if contact.address.addressLine2 %}{{ contact.address.addressLine2 }}<br>{% endif %}
-              {% if contact.address.addressLine3 %}{{ contact.address.addressLine3 }}<br>{% endif %}
-              {% if contact.address.postcode %}{{ contact.address.postcode }}<br>{% endif %}
-              {{ contact.address.country }}
+            {% if operator.name %}<strong>{{ operator.name }}</strong><br>{% endif %}
+              {{ operator.addressLine1 }}<br>
+              {% if operator.addressLine2 %}{{ operator.addressLine2 }}<br>{% endif %}
+              {% if operator.city %}{{ operator.city }}<br>{% endif %}
+              {% if operator.county %}{{ operator.county }}<br>{% endif %}
+              {% if operator.postcode %}{{ operator.postcode }}<br>{% endif %}
+              {{ operator.country }}
             {% endset %}
             {% set _ = radioItems.push({
-              value: loop.index0,
-              checked: loop.index0 == selectedContactId,
+              value: operator.id,
+              checked: operator.id == selectedOperatorId,
               html: addressHtml
             }) %}
           {% endfor %}

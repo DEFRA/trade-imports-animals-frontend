@@ -25,18 +25,19 @@
       <input type="hidden" name="crumb" value="{{ crumb }}" />
 
       {% set radioItems = [] %}
-      {% for placeOfOrigin in placeOfOrigins %}
+      {% for operator in operators %}
         {% set addressHtml %}
-          {% if placeOfOrigin.name %}<strong>{{ placeOfOrigin.name }}</strong><br>{% endif %}
-          {{ placeOfOrigin.address.addressLine1 }}<br>
-          {% if placeOfOrigin.address.addressLine2 %}{{ placeOfOrigin.address.addressLine2 }}<br>{% endif %}
-          {% if placeOfOrigin.address.addressLine3 %}{{ placeOfOrigin.address.addressLine3 }}<br>{% endif %}
-          {% if placeOfOrigin.address.postcode %}{{ placeOfOrigin.address.postcode }}<br>{% endif %}
-          {{ placeOfOrigin.address.country }}
+          {% if operator.name %}<strong>{{ operator.name }}</strong><br>{% endif %}
+          {{ operator.addressLine1 }}<br>
+          {% if operator.addressLine2 %}{{ operator.addressLine2 }}<br>{% endif %}
+          {% if operator.city %}{{ operator.city }}<br>{% endif %}
+          {% if operator.county %}{{ operator.county }}<br>{% endif %}
+          {% if operator.postcode %}{{ operator.postcode }}<br>{% endif %}
+          {{ operator.country }}
         {% endset %}
         {% set _ = radioItems.push({
-          value: loop.index0,
-          checked: loop.index0 == selectedPlaceOfOriginId,
+          value: operator.id,
+          checked: operator.id == selectedOperatorId,
           html: addressHtml
         }) %}
       {% endfor %}

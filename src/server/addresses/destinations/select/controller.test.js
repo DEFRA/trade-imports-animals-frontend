@@ -1,11 +1,22 @@
-import { vi } from 'vitest'
+import { load } from 'cheerio'
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { createServer } from '../../../server.js'
 import { statusCodes } from '../../../common/constants/status-codes.js'
+import { operatorsClient } from '../../../common/clients/operators-client.js'
 import { mockOidcConfig } from '../../../common/test-helpers/mock-oidc-config.js'
 import * as sessionHelpers from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
-import destinations from './mock-destinations.json'
+
+vi.mock('../../../common/clients/operators-client.js')
 
 vi.mock('../../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -29,6 +40,47 @@ vi.mock(
   }
 )
 
+function sessionAuth(sessionId) {
+  return {
+    strategy: 'session',
+    credentials: { user: {}, sessionId, crn: 'CRN123', organisationId: 'ORG1' }
+  }
+}
+
+const apiDestination = {
+  id: 'op-d1',
+  operator_type: 'PLACE_OF_DESTINATION',
+  name: 'Green Pastures Farm',
+  address_line_1: 'Long Lane',
+  address_line_2: 'Barn 3',
+  town: 'Melton Mowbray',
+  county: 'Leicestershire',
+  postcode: 'LE13 1AA',
+  country: 'United Kingdom',
+  telephone: '01664 555666',
+  email: 'farm@greenpastures.example'
+}
+
+const otherApiDestination = {
+  id: 'op-d2',
+  operator_type: 'PLACE_OF_DESTINATION',
+  name: 'Hillside Holdings',
+  address_line_1: 'Top Road',
+  town: 'Skipton',
+  postcode: 'BD23 1AA',
+  country: 'United Kingdom'
+}
+
+function mockList(items) {
+  operatorsClient.listOperators.mockResolvedValue({
+    items,
+    page: 1,
+    page_size: 25,
+    total_items: items.length,
+    total_pages: 1
+  })
+}
+
 describe('#destinationsSelectController', () => {
   let server
 
@@ -42,35 +94,43 @@ describe('#destinationsSelectController', () => {
     vi.restoreAllMocks()
   })
 
+  afterEach(() => {
+    sessionHelpers.getSessionValue.mockReset()
+    sessionHelpers.setSessionValue.mockClear()
+    operatorsClient.listOperators.mockReset()
+  })
+
   describe('GET /destinations/select', () => {
-    afterEach(() => {
-      sessionHelpers.getSessionValue.mockReset()
-    })
+    test('lists only PLACE_OF_DESTINATION operators with the operator id as the radio value', async () => {
+      mockList([apiDestination, otherApiDestination])
 
-    test('renders page with destination addresses from json file', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        }
+        auth: sessionAuth('destination-get')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(
-        expect.stringContaining('Search for a place of destination')
+      expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.anything(),
+        { operatorType: 'PLACE_OF_DESTINATION' }
       )
-      expect(result).toEqual(expect.stringContaining('Tech Imports Ltd'))
-      expect(result).toEqual(expect.stringContaining('United Commerce'))
-      expect(result).toEqual(expect.stringContaining('Global Trading Co'))
-      expect(result).toEqual(expect.stringContaining('United Kingdom'))
+
+      const $ = load(result)
+      const values = $('input[name="destination"]')
+        .map((_, el) => $(el).attr('value'))
+        .get()
+      expect(values).toEqual(['op-d1', 'op-d2'])
+      expect(result).toContain('Green Pastures Farm')
+      expect(result).toContain('Hillside Holdings')
     })
 
-    test('pre-selects the radio matching the destination stored in session', async () => {
+    test('pre-selects the radio whose id matches the operatorId stored in session', async () => {
+      mockList([apiDestination, otherApiDestination])
       sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
         if (key === sessionKeys.destination) {
-          return destinations[1]
+          return { operatorId: 'op-d2', name: 'Hillside Holdings' }
         }
         return null
       })
@@ -78,137 +138,68 @@ describe('#destinationsSelectController', () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE' }
-        }
+        auth: sessionAuth('destination-preselect')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringMatching(/value="1"[^>]*\bchecked\b/))
-    })
-
-    test('pre-selects the first radio when the stored destination is at index 0', async () => {
-      sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
-        if (key === sessionKeys.destination) {
-          return destinations[0]
-        }
-        return null
-      })
-
-      const { result, statusCode } = await server.inject({
-        method: 'GET',
-        url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: {
-            user: {},
-            sessionId: 'TEST_SESSION_ID_HYDRATE_ZERO'
-          }
-        }
-      })
-
-      expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringMatching(/value="0"[^>]*\bchecked\b/))
+      const $ = load(result)
+      expect(
+        $('input[name="destination"][value="op-d2"]').attr('checked')
+      ).toBe('checked')
     })
   })
 
   describe('POST /destinations/select', () => {
-    afterEach(() => {
-      sessionHelpers.setSessionValue.mockClear()
-      sessionHelpers.getSessionValue.mockReset()
-    })
-
-    test('saves to session and redirects to /addresses', async () => {
+    test('stores the complete embedded copy and redirects to /addresses', async () => {
+      mockList([apiDestination, otherApiDestination])
       sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
-        if (key === sessionKeys.referenceNumber) return 'DST.GB.2026.TEST'
+        if (key === sessionKeys.referenceNumber) return 'CON.GB.2026.TEST'
         return null
       })
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { destination: '0' }
+        auth: sessionAuth('destination-post'),
+        payload: { destination: 'op-d1' }
       })
 
       expect(sessionHelpers.setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
         sessionKeys.destination,
-        destinations[0]
+        {
+          operatorId: 'op-d1',
+          name: 'Green Pastures Farm',
+          addressLine1: 'Long Lane',
+          addressLine2: 'Barn 3',
+          city: 'Melton Mowbray',
+          county: 'Leicestershire',
+          postcode: 'LE13 1AA',
+          country: 'United Kingdom',
+          telephone: '01664 555666',
+          email: 'farm@greenpastures.example'
+        }
       )
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/addresses')
     })
 
-    test('re-renders with error when no selection made', async () => {
+    test('rejects an id that is not in the fetched list without writing the session', async () => {
+      mockList([apiDestination, otherApiDestination])
+
       const { result, statusCode } = await server.inject({
         method: 'POST',
         url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: {}
+        auth: sessionAuth('destination-post-invalid'),
+        payload: { destination: 'op-not-mine' }
       })
 
       expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(
-        expect.stringContaining('Select a place of destination')
-      )
-    })
-
-    test('re-renders with error for non-numeric selection', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { destination: 'invalid' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(
-        expect.stringContaining('Select a place of destination')
-      )
-    })
-
-    test('re-renders with error for out-of-range index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { destination: '999' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(
-        expect.stringContaining('Select a place of destination')
-      )
-    })
-
-    test('re-renders with error for negative index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/destinations/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { destination: '-1' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(
-        expect.stringContaining('Select a place of destination')
+      expect(result).toContain('Select a place of destination')
+      expect(sessionHelpers.setSessionValue).not.toHaveBeenCalledWith(
+        expect.anything(),
+        sessionKeys.destination,
+        expect.anything()
       )
     })
   })

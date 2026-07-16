@@ -1,11 +1,22 @@
-import { vi } from 'vitest'
+import { load } from 'cheerio'
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { createServer } from '../../../server.js'
 import { statusCodes } from '../../../common/constants/status-codes.js'
+import { operatorsClient } from '../../../common/clients/operators-client.js'
 import { mockOidcConfig } from '../../../common/test-helpers/mock-oidc-config.js'
 import * as sessionHelpers from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
-import importers from './mock-importers.json'
+
+vi.mock('../../../common/clients/operators-client.js')
 
 vi.mock('../../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -29,6 +40,47 @@ vi.mock(
   }
 )
 
+function sessionAuth(sessionId) {
+  return {
+    strategy: 'session',
+    credentials: { user: {}, sessionId, crn: 'CRN123', organisationId: 'ORG1' }
+  }
+}
+
+const apiImporter = {
+  id: 'op-i1',
+  operator_type: 'IMPORTER',
+  name: 'Continental Importers Ltd',
+  address_line_1: '1 Trade Park',
+  address_line_2: 'Unit 7',
+  town: 'Harwich',
+  county: 'Essex',
+  postcode: 'CO12 1AA',
+  country: 'United Kingdom',
+  telephone: '01255 333444',
+  email: 'imports@continental.example'
+}
+
+const otherApiImporter = {
+  id: 'op-i2',
+  operator_type: 'IMPORTER',
+  name: 'North Sea Trading',
+  address_line_1: '4 Dock Approach',
+  town: 'Immingham',
+  postcode: 'DN40 1AA',
+  country: 'United Kingdom'
+}
+
+function mockList(items) {
+  operatorsClient.listOperators.mockResolvedValue({
+    items,
+    page: 1,
+    page_size: 25,
+    total_items: items.length,
+    total_pages: 1
+  })
+}
+
 describe('#importersSelectController', () => {
   let server
 
@@ -42,32 +94,43 @@ describe('#importersSelectController', () => {
     vi.restoreAllMocks()
   })
 
+  afterEach(() => {
+    sessionHelpers.getSessionValue.mockReset()
+    sessionHelpers.setSessionValue.mockClear()
+    operatorsClient.listOperators.mockReset()
+  })
+
   describe('GET /importers/select', () => {
-    afterEach(() => {
-      sessionHelpers.getSessionValue.mockReset()
-    })
+    test('lists only IMPORTER operators with the operator id as the radio value', async () => {
+      mockList([apiImporter, otherApiImporter])
 
-    test('renders page with importer addresses from json file', async () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        }
+        auth: sessionAuth('importer-get')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Search for an importer'))
-      expect(result).toEqual(expect.stringContaining('Import Co UK'))
-      expect(result).toEqual(expect.stringContaining('GB Animal Imports'))
-      expect(result).toEqual(expect.stringContaining('United Kingdom'))
+      expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.anything(),
+        { operatorType: 'IMPORTER' }
+      )
+
+      const $ = load(result)
+      const values = $('input[name="importer"]')
+        .map((_, el) => $(el).attr('value'))
+        .get()
+      expect(values).toEqual(['op-i1', 'op-i2'])
+      expect(result).toContain('Continental Importers Ltd')
+      expect(result).toContain('North Sea Trading')
     })
 
-    test('pre-selects the radio matching the importer stored in session', async () => {
+    test('pre-selects the radio whose id matches the operatorId stored in session', async () => {
+      mockList([apiImporter, otherApiImporter])
       sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
         if (key === sessionKeys.importer) {
-          return importers[1]
+          return { operatorId: 'op-i2', name: 'North Sea Trading' }
         }
         return null
       })
@@ -75,127 +138,69 @@ describe('#importersSelectController', () => {
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE' }
-        }
+        auth: sessionAuth('importer-preselect')
       })
 
       expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringMatching(/value="1"[^>]*\bchecked\b/))
-    })
-
-    test('pre-selects the first radio when the stored importer is at index 0', async () => {
-      sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
-        if (key === sessionKeys.importer) {
-          return importers[0]
-        }
-        return null
-      })
-
-      const { result, statusCode } = await server.inject({
-        method: 'GET',
-        url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID_HYDRATE_ZERO' }
-        }
-      })
-
-      expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringMatching(/value="0"[^>]*\bchecked\b/))
+      const $ = load(result)
+      expect($('input[name="importer"][value="op-i2"]').attr('checked')).toBe(
+        'checked'
+      )
     })
   })
 
   describe('POST /importers/select', () => {
-    afterEach(() => {
-      sessionHelpers.setSessionValue.mockClear()
-      sessionHelpers.getSessionValue.mockReset()
-    })
-
-    test('saves to session and redirects to /addresses', async () => {
+    test('stores the complete embedded copy and redirects to /addresses', async () => {
+      mockList([apiImporter, otherApiImporter])
       sessionHelpers.getSessionValue.mockImplementation((_request, key) => {
-        if (key === sessionKeys.referenceNumber) return 'IMP.GB.2026.TEST'
+        if (key === sessionKeys.referenceNumber) return 'CON.GB.2026.TEST'
         return null
       })
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
         url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { importer: '0' }
+        auth: sessionAuth('importer-post'),
+        payload: { importer: 'op-i1' }
       })
 
       expect(sessionHelpers.setSessionValue).toHaveBeenCalledWith(
         expect.anything(),
         sessionKeys.importer,
-        importers[0]
+        {
+          operatorId: 'op-i1',
+          name: 'Continental Importers Ltd',
+          addressLine1: '1 Trade Park',
+          addressLine2: 'Unit 7',
+          city: 'Harwich',
+          county: 'Essex',
+          postcode: 'CO12 1AA',
+          country: 'United Kingdom',
+          telephone: '01255 333444',
+          email: 'imports@continental.example'
+        }
       )
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/addresses')
     })
 
-    test('re-renders with error when no selection made', async () => {
+    test('rejects an id that is not in the fetched list without writing the session', async () => {
+      mockList([apiImporter, otherApiImporter])
+
       const { result, statusCode } = await server.inject({
         method: 'POST',
         url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: {}
+        auth: sessionAuth('importer-post-invalid'),
+        payload: { importer: 'op-not-mine' }
       })
 
       expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select an importer'))
-    })
-
-    test('re-renders with error for non-numeric selection', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { importer: 'invalid' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select an importer'))
-    })
-
-    test('re-renders with error for out-of-range index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { importer: '999' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select an importer'))
-    })
-
-    test('re-renders with error for negative index', async () => {
-      const { result, statusCode } = await server.inject({
-        method: 'POST',
-        url: '/importers/select',
-        auth: {
-          strategy: 'session',
-          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
-        },
-        payload: { importer: '-1' }
-      })
-
-      expect(statusCode).toBe(statusCodes.badRequest)
-      expect(result).toEqual(expect.stringContaining('Select an importer'))
+      expect(result).toContain('Select an importer')
+      expect(sessionHelpers.setSessionValue).not.toHaveBeenCalledWith(
+        expect.anything(),
+        sessionKeys.importer,
+        expect.anything()
+      )
     })
   })
 })

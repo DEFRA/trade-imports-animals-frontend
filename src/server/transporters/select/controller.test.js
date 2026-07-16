@@ -1,11 +1,20 @@
 import { load } from 'cheerio'
-import { describe, expect, vi } from 'vitest'
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi
+} from 'vitest'
 
 import { createServer } from '../../server.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
+import { operatorsClient } from '../../common/clients/operators-client.js'
 import { mockOidcConfig } from '../../common/test-helpers/mock-oidc-config.js'
 
-vi.mock('../../common/clients/notification-client.js')
+vi.mock('../../common/clients/operators-client.js')
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
@@ -20,11 +29,45 @@ vi.mock('../../../config/config.js', async (importOriginal) => {
 function sessionAuth(sessionId) {
   return {
     strategy: 'session',
-    credentials: { user: {}, sessionId }
+    credentials: { user: {}, sessionId, crn: 'CRN123', organisationId: 'ORG1' }
   }
 }
 
-describe('#transporterSelectController', () => {
+const apiTransporter = {
+  id: 'op-t1',
+  operator_type: 'TRANSPORTER',
+  name: 'García Livestock Transport SL',
+  address_line_1: 'Calle Mayor 1',
+  town: 'Madrid',
+  postcode: '28001',
+  country: 'Spain',
+  approval_number: 'ES-T2-45001294',
+  transporter_category: 'COMMERCIAL'
+}
+
+const otherApiTransporter = {
+  id: 'op-t2',
+  operator_type: 'TRANSPORTER',
+  name: 'John Gosden LTD',
+  address_line_1: 'Clarehaven Stables',
+  town: 'Newmarket',
+  postcode: 'CB8 0RH',
+  country: 'United Kingdom',
+  approval_number: 'UK/BURY/T2/00104127',
+  transporter_category: 'PRIVATE'
+}
+
+function mockList(items) {
+  operatorsClient.listOperators.mockResolvedValue({
+    items,
+    page: 1,
+    page_size: 25,
+    total_items: items.length,
+    total_pages: 1
+  })
+}
+
+describe('#transportersSelectController', () => {
   let server
 
   beforeAll(async () => {
@@ -39,7 +82,13 @@ describe('#transporterSelectController', () => {
     vi.restoreAllMocks()
   })
 
-  test('GET /transporters/select renders search page with mock transporters', async () => {
+  afterEach(() => {
+    operatorsClient.listOperators.mockReset()
+  })
+
+  test('lists TRANSPORTER operators with Approval number and Type columns populated', async () => {
+    mockList([apiTransporter, otherApiTransporter])
+
     const { result, statusCode } = await server.inject({
       method: 'GET',
       url: '/transporters/select',
@@ -47,21 +96,21 @@ describe('#transporterSelectController', () => {
     })
 
     expect(statusCode).toBe(statusCodes.ok)
-    expect(result).toEqual(
-      expect.stringContaining('Search for an existing transporter')
+    expect(operatorsClient.listOperators).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.anything(),
+      { operatorType: 'TRANSPORTER' }
     )
-    expect(result).toEqual(
-      expect.stringContaining('García Livestock Transport SL')
-    )
-    expect(result).toEqual(expect.stringContaining('J &amp; G Campbell LTD'))
-    expect(result).toEqual(expect.stringContaining('John Gosden LTD'))
-    expect(result).toEqual(expect.stringContaining('Switzerland'))
-    expect(result).toEqual(expect.stringContaining('Belgium'))
-    expect(result).toEqual(expect.stringContaining('Back'))
-    expect(result).toContain('href="/transporters"')
+    expect(result).toContain('García Livestock Transport SL')
+    expect(result).toContain('ES-T2-45001294')
+    expect(result).toContain('Commercial')
+    expect(result).toContain('UK/BURY/T2/00104127')
+    expect(result).toContain('Private')
   })
 
-  test('GET /transporters/select exposes Select links with correct indices', async () => {
+  test('the Select links carry the operator id, not a list index', async () => {
+    mockList([apiTransporter, otherApiTransporter])
+
     const { result, statusCode } = await server.inject({
       method: 'GET',
       url: '/transporters/select',
@@ -69,19 +118,18 @@ describe('#transporterSelectController', () => {
     })
 
     expect(statusCode).toBe(statusCodes.ok)
-
     const $ = load(result)
-    const selectLinks = $('a[id^="selectedTransporter-"]')
+    const hrefs = $('a[id^="selectedTransporter-"]')
+      .map((_, el) => $(el).attr('href'))
+      .get()
+    expect(hrefs).toEqual([
+      '/transporters?selectedTransporter=op-t1',
+      '/transporters?selectedTransporter=op-t2'
+    ])
+  })
 
-    expect(selectLinks.length).toBe(3)
-    expect(selectLinks.eq(0).attr('href')).toBe(
-      '/transporters?selectedTransporter=0'
-    )
-    expect(selectLinks.eq(1).attr('href')).toBe(
-      '/transporters?selectedTransporter=1'
-    )
-    expect(selectLinks.eq(2).attr('href')).toBe(
-      '/transporters?selectedTransporter=2'
-    )
+  test('the deleted mock transporter loader and fixture can no longer be imported', async () => {
+    await expect(import('../load-mock-transporters.js')).rejects.toThrow()
+    await expect(import('./mock-transporters.json')).rejects.toThrow()
   })
 })

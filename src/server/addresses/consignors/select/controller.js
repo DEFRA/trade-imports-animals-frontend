@@ -1,6 +1,9 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { getTraceId } from '@defra/hapi-tracing'
+import {
+  operatorsClient,
+  fromApiOperator,
+  toNotificationOperator
+} from '../../../common/clients/operators-client.js'
 import { createLogger } from '../../../common/helpers/logging/logger.js'
 import {
   getSessionValue,
@@ -11,68 +14,75 @@ import { statusCodes } from '../../../common/constants/status-codes.js'
 
 const logger = createLogger()
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
-const consignorsFilePath = path.join(dirname, 'mock-consignors.json')
-const consignors = JSON.parse(readFileSync(consignorsFilePath, 'utf-8'))
-
 const VIEW = 'addresses/consignors/select/index'
 const PAGE_TITLE = 'Search for an existing consignor or exporter'
+const OPERATOR_TYPE = 'CONSIGNOR'
+const SELECT_ERROR = 'Select a consignor or exporter'
+
+function getIdentity(request) {
+  const profile = request.auth?.credentials ?? {}
+  return { crn: profile.crn, organisationId: profile.organisationId }
+}
+
+async function fetchOperators(request) {
+  const traceId = getTraceId() ?? ''
+  const response = await operatorsClient.listOperators(
+    traceId,
+    getIdentity(request),
+    { operatorType: OPERATOR_TYPE }
+  )
+  return response.items ?? []
+}
 
 export const consignorsSelectController = {
   get: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
       logger.info(`Consignor address: ${referenceNumber} selection page`)
 
-      const selectedConsignor = getSessionValue(_request, sessionKeys.consignor)
-      const matchedIndex = selectedConsignor
-        ? consignors.findIndex((c) => c.name === selectedConsignor.name)
-        : -1
-      const selectedConsignorId = matchedIndex >= 0 ? matchedIndex : undefined
+      const operators = (await fetchOperators(request)).map(fromApiOperator)
+      const selected = getSessionValue(request, sessionKeys.consignor)
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         referenceNumber,
-        consignors,
-        selectedConsignorId
+        operators,
+        selectedOperatorId: selected?.operatorId
       })
     }
   },
   post: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
-      const selectedId = Number.parseInt(_request.payload?.consignor, 10)
+      const apiOperators = await fetchOperators(request)
+      const selected = apiOperators.find(
+        (operator) => operator.id === request.payload?.consignor
+      )
 
-      if (
-        !Number.isInteger(selectedId) ||
-        selectedId < 0 ||
-        !consignors[selectedId]
-      ) {
+      if (!selected) {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
-            consignors,
-            errorList: [
-              { text: 'Select a consignor or exporter', href: '#consignor' }
-            ],
-            fieldErrors: {
-              consignor: { text: 'Select a consignor or exporter' }
-            }
+            operators: apiOperators.map(fromApiOperator),
+            errorList: [{ text: SELECT_ERROR, href: '#consignor' }],
+            fieldErrors: { consignor: { text: SELECT_ERROR } }
           })
           .code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, sessionKeys.consignor, consignors[selectedId])
-      logger.info(
-        `Consignor saved for ${referenceNumber}: ${consignors[selectedId].name}`
+      setSessionValue(
+        request,
+        sessionKeys.consignor,
+        toNotificationOperator(selected)
       )
+      logger.info(`Consignor saved for ${referenceNumber}: ${selected.name}`)
       return h.redirect('/addresses')
     }
   }

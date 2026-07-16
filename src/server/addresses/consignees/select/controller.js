@@ -1,6 +1,9 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { getTraceId } from '@defra/hapi-tracing'
+import {
+  operatorsClient,
+  fromApiOperator,
+  toNotificationOperator
+} from '../../../common/clients/operators-client.js'
 import { createLogger } from '../../../common/helpers/logging/logger.js'
 import {
   getSessionValue,
@@ -11,66 +14,75 @@ import { statusCodes } from '../../../common/constants/status-codes.js'
 
 const logger = createLogger()
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
-const consigneesFilePath = path.join(dirname, 'mock-consignees.json')
-const consignees = JSON.parse(readFileSync(consigneesFilePath, 'utf-8'))
-
 const VIEW = 'addresses/consignees/select/index'
 const PAGE_TITLE = 'Search for a consignee'
+const OPERATOR_TYPE = 'CONSIGNEE'
+const SELECT_ERROR = 'Select a consignee'
+
+function getIdentity(request) {
+  const profile = request.auth?.credentials ?? {}
+  return { crn: profile.crn, organisationId: profile.organisationId }
+}
+
+async function fetchOperators(request) {
+  const traceId = getTraceId() ?? ''
+  const response = await operatorsClient.listOperators(
+    traceId,
+    getIdentity(request),
+    { operatorType: OPERATOR_TYPE }
+  )
+  return response.items ?? []
+}
 
 export const consigneesSelectController = {
   get: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
       logger.info(`Consignee selection page: ${referenceNumber}`)
 
-      const selectedConsignee = getSessionValue(_request, sessionKeys.consignee)
-      const matchedIndex = selectedConsignee
-        ? consignees.findIndex((c) => c.name === selectedConsignee.name)
-        : -1
-      const selectedConsigneeId = matchedIndex >= 0 ? matchedIndex : undefined
+      const operators = (await fetchOperators(request)).map(fromApiOperator)
+      const selected = getSessionValue(request, sessionKeys.consignee)
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         referenceNumber,
-        consignees,
-        selectedConsigneeId
+        operators,
+        selectedOperatorId: selected?.operatorId
       })
     }
   },
   post: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
-      const selectedId = Number.parseInt(_request.payload?.consignee, 10)
+      const apiOperators = await fetchOperators(request)
+      const selected = apiOperators.find(
+        (operator) => operator.id === request.payload?.consignee
+      )
 
-      if (
-        !Number.isInteger(selectedId) ||
-        selectedId < 0 ||
-        !consignees[selectedId]
-      ) {
+      if (!selected) {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
-            consignees,
-            errorList: [{ text: 'Select a consignee', href: '#consignee' }],
-            fieldErrors: {
-              consignee: { text: 'Select a consignee' }
-            }
+            operators: apiOperators.map(fromApiOperator),
+            errorList: [{ text: SELECT_ERROR, href: '#consignee' }],
+            fieldErrors: { consignee: { text: SELECT_ERROR } }
           })
           .code(statusCodes.badRequest)
       }
 
-      setSessionValue(_request, sessionKeys.consignee, consignees[selectedId])
-      logger.info(
-        `Consignee saved for ${referenceNumber}: ${consignees[selectedId].name}`
+      setSessionValue(
+        request,
+        sessionKeys.consignee,
+        toNotificationOperator(selected)
       )
+      logger.info(`Consignee saved for ${referenceNumber}: ${selected.name}`)
       return h.redirect('/addresses')
     }
   }

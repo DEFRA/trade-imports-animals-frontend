@@ -1,6 +1,9 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { getTraceId } from '@defra/hapi-tracing'
+import {
+  operatorsClient,
+  fromApiOperator,
+  toNotificationOperator
+} from '../../../common/clients/operators-client.js'
 import { createLogger } from '../../../common/helpers/logging/logger.js'
 import {
   getSessionValue,
@@ -11,80 +14,75 @@ import { statusCodes } from '../../../common/constants/status-codes.js'
 
 const logger = createLogger()
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
-const destinationsFilePath = path.join(dirname, 'mock-destinations.json')
-const destinations = JSON.parse(readFileSync(destinationsFilePath, 'utf-8'))
-
 const VIEW = 'addresses/destinations/select/index'
 const PAGE_TITLE = 'Search for a place of destination'
+const OPERATOR_TYPE = 'PLACE_OF_DESTINATION'
+const SELECT_ERROR = 'Select a place of destination'
+
+function getIdentity(request) {
+  const profile = request.auth?.credentials ?? {}
+  return { crn: profile.crn, organisationId: profile.organisationId }
+}
+
+async function fetchOperators(request) {
+  const traceId = getTraceId() ?? ''
+  const response = await operatorsClient.listOperators(
+    traceId,
+    getIdentity(request),
+    { operatorType: OPERATOR_TYPE }
+  )
+  return response.items ?? []
+}
 
 export const destinationsSelectController = {
   get: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
-      logger.info(
-        `Places of destination: ${getSessionValue(_request, sessionKeys.commodity)} selection page`
-      )
+      logger.info(`Place of destination selection page: ${referenceNumber}`)
 
-      const selectedDestination = getSessionValue(
-        _request,
-        sessionKeys.destination
-      )
-      const matchedIndex = selectedDestination
-        ? destinations.findIndex((d) => d.name === selectedDestination.name)
-        : -1
-      const selectedDestinationId = matchedIndex >= 0 ? matchedIndex : undefined
+      const operators = (await fetchOperators(request)).map(fromApiOperator)
+      const selected = getSessionValue(request, sessionKeys.destination)
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         referenceNumber,
-        destinations,
-        selectedDestinationId
+        operators,
+        selectedOperatorId: selected?.operatorId
       })
     }
   },
   post: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
-      const selectedId = Number.parseInt(_request.payload?.destination, 10)
+      const apiOperators = await fetchOperators(request)
+      const selected = apiOperators.find(
+        (operator) => operator.id === request.payload?.destination
+      )
 
-      if (
-        !Number.isInteger(selectedId) ||
-        selectedId < 0 ||
-        !destinations[selectedId]
-      ) {
+      if (!selected) {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
-            destinations,
-            errorList: [
-              {
-                text: 'Select a place of destination',
-                href: '#destination'
-              }
-            ],
-            fieldErrors: {
-              destination: { text: 'Select a place of destination' }
-            }
+            operators: apiOperators.map(fromApiOperator),
+            errorList: [{ text: SELECT_ERROR, href: '#destination' }],
+            fieldErrors: { destination: { text: SELECT_ERROR } }
           })
           .code(statusCodes.badRequest)
       }
 
       setSessionValue(
-        _request,
+        request,
         sessionKeys.destination,
-        destinations[selectedId]
+        toNotificationOperator(selected)
       )
-      logger.info(
-        `Destination saved for ${referenceNumber}: ${destinations[selectedId].name}`
-      )
+      logger.info(`Destination saved for ${referenceNumber}: ${selected.name}`)
       return h.redirect('/addresses')
     }
   }

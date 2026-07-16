@@ -8,7 +8,12 @@ const tradeImportsAnimalsBackendUrl = config.get(
   'tradeImportsAnimalsBackendApi.baseUrl'
 )
 const tracingHeader = config.get('tracing.header')
+const crnHeader = 'Trade-Imports-Crn'
 const logger = createLogger()
+
+function getCrn(request) {
+  return request.auth?.credentials?.crn
+}
 
 function getIsoArrivalDate(arrivalDate) {
   const { day, month, year } = arrivalDate ?? {}
@@ -336,7 +341,8 @@ export const notificationClient = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          [tracingHeader]: traceId
+          [tracingHeader]: traceId,
+          [crnHeader]: getCrn(_request)
         }
       }
     )
@@ -412,7 +418,8 @@ export const notificationClient = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          [tracingHeader]: traceId
+          [tracingHeader]: traceId,
+          [crnHeader]: getCrn(_request)
         }
       }
     )

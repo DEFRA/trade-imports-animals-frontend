@@ -37,7 +37,10 @@ vi.mock('../../../config/config.js', () => ({
 
 describe('#notificationClient', () => {
   const traceId = 'trace-123'
-  const mockRequest = { session: {} }
+  const mockRequest = {
+    session: {},
+    auth: { credentials: { crn: 'CRN-XYZ' } }
+  }
   let originalFetch
 
   beforeEach(() => {
@@ -478,7 +481,8 @@ describe('#notificationClient', () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-trace-id': traceId
+              'x-trace-id': traceId,
+              'Trade-Imports-Crn': 'CRN-XYZ'
             }
           }
         )
@@ -668,7 +672,8 @@ describe('#notificationClient', () => {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              'x-trace-id': traceId
+              'x-trace-id': traceId,
+              'Trade-Imports-Crn': 'CRN-XYZ'
             }
           }
         )

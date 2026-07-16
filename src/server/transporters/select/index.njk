@@ -37,13 +37,13 @@
                   <tr class="govuk-table__row">
                     <th scope="row" class="govuk-table__header">{{ transporter.name }}</th>
                     <td class="govuk-table__cell">
-                      {{ transporter.address.addressLine1 }}{% if transporter.address.addressLine2 %}, {{ transporter.address.addressLine2 }}{% endif %}{% if transporter.address.addressLine3 %}, {{ transporter.address.addressLine3 }}{% endif %}
+                      {{ transporter.addressLine1 }}{% if transporter.addressLine2 %}, {{ transporter.addressLine2 }}{% endif %}{% if transporter.city %}, {{ transporter.city }}{% endif %}{% if transporter.county %}, {{ transporter.county }}{% endif %}{% if transporter.postcode %}, {{ transporter.postcode }}{% endif %}
                     </td>
-                    <td class="govuk-table__cell">{{ transporter.address.country }}</td>
+                    <td class="govuk-table__cell">{{ transporter.country }}</td>
                     <td class="govuk-table__cell">{{ transporter.approvalNumber }}</td>
                     <td class="govuk-table__cell">{{ transporter.type }}</td>
                     <td class="govuk-table__cell">
-                      <a href="/transporters?selectedTransporter={{ loop.index0 }}" class="govuk-link" id="selectedTransporter-{{ loop.index0 }}">Select</a>
+                      <a href="/transporters?selectedTransporter={{ transporter.id }}" class="govuk-link" id="selectedTransporter-{{ transporter.id }}">Select</a>
                     </td>
                   </tr>
                 {% endfor %}

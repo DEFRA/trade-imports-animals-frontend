@@ -1,6 +1,9 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { getTraceId } from '@defra/hapi-tracing'
+import {
+  operatorsClient,
+  fromApiOperator,
+  toNotificationOperator
+} from '../../../../common/clients/operators-client.js'
 import { createLogger } from '../../../../common/helpers/logging/logger.js'
 import {
   getSessionValue,
@@ -13,85 +16,88 @@ import { saveNotification } from '../../../../common/helpers/notification-helper
 
 const logger = createLogger()
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
-const contactsFilePath = path.join(dirname, 'mock-contacts.json')
-const contacts = JSON.parse(readFileSync(contactsFilePath, 'utf-8'))
-
 const VIEW = 'addresses/consignment/contact/select/index'
 const PAGE_TITLE = 'Contact address for consignment'
+const OPERATOR_TYPE = 'BRANCH_ADDRESS'
+const SELECT_ERROR = 'Select a contact address'
+
+function getIdentity(request) {
+  const profile = request.auth?.credentials ?? {}
+  return { crn: profile.crn, organisationId: profile.organisationId }
+}
+
+async function fetchOperators(request) {
+  const traceId = getTraceId() ?? ''
+  const response = await operatorsClient.listOperators(
+    traceId,
+    getIdentity(request),
+    { operatorType: OPERATOR_TYPE }
+  )
+  return response.items ?? []
+}
 
 export const consignmentContactSelectController = {
   get: {
-    handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
       logger.info(`Consignment contact selection page: ${referenceNumber}`)
 
-      const selectedContact = getSessionValue(
-        _request,
+      const operators = (await fetchOperators(request)).map(fromApiOperator)
+      const selected = getSessionValue(
+        request,
         sessionKeys.consignmentContactAddress
       )
-      const matchedIndex = selectedContact
-        ? contacts.findIndex((c) => c.name === selectedContact.name)
-        : -1
-      const selectedContactId = matchedIndex >= 0 ? matchedIndex : undefined
 
       return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         referenceNumber,
-        contacts,
-        selectedContactId
+        operators,
+        selectedOperatorId: selected?.operatorId
       })
     }
   },
   post: {
-    async handler(_request, h) {
+    async handler(request, h) {
       const referenceNumber = getSessionValue(
-        _request,
+        request,
         sessionKeys.referenceNumber
       )
-      const selectedContactId = Number.parseInt(
-        _request.payload?.contactAddress,
-        10
+      const apiOperators = await fetchOperators(request)
+      const selected = apiOperators.find(
+        (operator) => operator.id === request.payload?.contactAddress
       )
 
-      if (
-        !Number.isInteger(selectedContactId) ||
-        !contacts[selectedContactId]
-      ) {
+      if (!selected) {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
-            contacts,
-            errorList: [
-              { text: 'Select a contact address', href: '#contactAddress' }
-            ],
-            fieldErrors: {
-              contactAddress: { text: 'Select a contact address' }
-            }
+            operators: apiOperators.map(fromApiOperator),
+            errorList: [{ text: SELECT_ERROR, href: '#contactAddress' }],
+            fieldErrors: { contactAddress: { text: SELECT_ERROR } }
           })
           .code(statusCodes.badRequest)
       }
 
       setSessionValue(
-        _request,
+        request,
         sessionKeys.consignmentContactAddress,
-        contacts[selectedContactId]
+        toNotificationOperator(selected)
       )
       logger.info(
         `About to save ${referenceNumber} consignment contact post request`
       )
       try {
-        await saveNotification(_request, logger)
+        await saveNotification(request, logger)
       } catch {
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
-            contacts,
+            operators: apiOperators.map(fromApiOperator),
             errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
           })
           .code(statusCodes.internalServerError)
