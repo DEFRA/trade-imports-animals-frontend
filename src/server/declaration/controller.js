@@ -4,13 +4,36 @@ import { sessionKeys } from '../common/constants/session-keys.js'
 import { declarationSchema } from './declaration-schema.js'
 import { formatValidationErrors } from '../common/helpers/validation-helpers.js'
 import { statusCodes } from '../common/constants/status-codes.js'
-import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import {
+  SUBMISSION_FAILURE_MESSAGE,
+  OPERATOR_SUBMISSION_ERROR,
+  OPERATOR_VERIFICATION_UNAVAILABLE
+} from '../common/constants/messages.js'
 import { submitNotification } from '../common/helpers/notification-helpers.js'
 
 const logger = createLogger()
 
 const PAGE_TITLE = 'Declaration'
 const VIEW = 'declaration/index'
+
+function mapSubmitError(err) {
+  if (err?.status === statusCodes.badRequest) {
+    return {
+      errorList: [{ text: OPERATOR_SUBMISSION_ERROR }],
+      code: statusCodes.badRequest
+    }
+  }
+  if (err?.status === statusCodes.badGateway) {
+    return {
+      errorList: [{ text: OPERATOR_VERIFICATION_UNAVAILABLE }],
+      code: statusCodes.badGateway
+    }
+  }
+  return {
+    errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }],
+    code: statusCodes.internalServerError
+  }
+}
 
 function getSubmissionDate() {
   return new Date().toLocaleDateString('en-GB', {
@@ -61,15 +84,16 @@ export const declarationController = {
 
       try {
         await submitNotification(_request, logger, referenceNumber)
-      } catch {
+      } catch (err) {
+        const { errorList, code } = mapSubmitError(err)
         return h
           .view(VIEW, {
             pageTitle: PAGE_TITLE,
             referenceNumber,
             submissionDate: getSubmissionDate(),
-            errorList: [{ text: SUBMISSION_FAILURE_MESSAGE }]
+            errorList
           })
-          .code(statusCodes.internalServerError)
+          .code(code)
       }
 
       return h.redirect('/declaration')

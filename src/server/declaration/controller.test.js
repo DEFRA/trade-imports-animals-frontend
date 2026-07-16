@@ -1,6 +1,10 @@
 import { describe, expect, test, vi } from 'vitest'
 import { declarationController } from './controller.js'
-import { SUBMISSION_FAILURE_MESSAGE } from '../common/constants/messages.js'
+import {
+  SUBMISSION_FAILURE_MESSAGE,
+  OPERATOR_SUBMISSION_ERROR,
+  OPERATOR_VERIFICATION_UNAVAILABLE
+} from '../common/constants/messages.js'
 import { submitNotification } from '../common/helpers/notification-helpers.js'
 
 vi.mock('../common/helpers/notification-helpers.js')
@@ -119,6 +123,48 @@ describe('declarationController', () => {
         })
       )
       expect(mockCode).toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
+    })
+
+    test('maps a backend 400 (deleted / unresolved / missing identity) to a user-facing operator error, not a raw 500', async () => {
+      const backendError = new Error('Bad request')
+      backendError.status = 400
+      submitNotification.mockRejectedValueOnce(backendError)
+
+      const request = buildRequest({ declaration: 'confirmed' })
+      const { mockCode, h } = buildErrorH()
+
+      await declarationController.post.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'declaration/index',
+        expect.objectContaining({
+          errorList: [{ text: OPERATOR_SUBMISSION_ERROR }]
+        })
+      )
+      expect(mockCode).toHaveBeenCalledWith(400)
+      expect(mockCode).not.toHaveBeenCalledWith(500)
+      expect(h.redirect).not.toHaveBeenCalled()
+    })
+
+    test('maps a backend 502 (operators service unverifiable) to a retryable user-facing error, not a raw 500', async () => {
+      const backendError = new Error('Bad gateway')
+      backendError.status = 502
+      submitNotification.mockRejectedValueOnce(backendError)
+
+      const request = buildRequest({ declaration: 'confirmed' })
+      const { mockCode, h } = buildErrorH()
+
+      await declarationController.post.handler(request, h)
+
+      expect(h.view).toHaveBeenCalledWith(
+        'declaration/index',
+        expect.objectContaining({
+          errorList: [{ text: OPERATOR_VERIFICATION_UNAVAILABLE }]
+        })
+      )
+      expect(mockCode).toHaveBeenCalledWith(502)
+      expect(mockCode).not.toHaveBeenCalledWith(500)
       expect(h.redirect).not.toHaveBeenCalled()
     })
   })

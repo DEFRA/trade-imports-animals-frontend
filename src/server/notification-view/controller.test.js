@@ -629,4 +629,197 @@ describe('#notificationViewController', () => {
       )
     })
   })
+
+  describe('deleted / unresolved operator detection', () => {
+    beforeEach(() => {
+      notificationClient.get.mockClear()
+    })
+
+    const ALL_PARTY_ANCHORS = [
+      'party-placeOfOrigin',
+      'party-consignor',
+      'party-consignee',
+      'party-importer',
+      'party-placeOfDestination',
+      'party-consignment',
+      'party-transporter'
+    ]
+
+    test('Should render an error summary and inline messages for deleted operators, mapping destination to the place of destination anchor', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        deletedOperatorFields: ['consignor', 'destination']
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-deleted')
+      })
+
+      expect(result).toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(expect.stringContaining('has been deleted'))
+      expect(result).toEqual(expect.stringContaining('select a replacement'))
+      expect(result).toEqual(expect.stringContaining('href="#party-consignor"'))
+      expect(result).toEqual(
+        expect.stringContaining('href="#party-placeOfDestination"')
+      )
+      expect(result).toEqual(expect.stringContaining('id="party-consignor"'))
+      expect(result).toEqual(
+        expect.stringContaining('id="party-placeOfDestination"')
+      )
+    })
+
+    test('Should suppress the continue-to-declaration button when an operator is deleted', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        deletedOperatorFields: ['consignor']
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-suppress-continue')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('Confirm and submit'))
+      expect(result).not.toEqual(expect.stringContaining('href="/declaration"'))
+    })
+
+    test('Should resolve a deleted transporter to the transport block anchor', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        deletedOperatorFields: ['transporter']
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-deleted-transporter')
+      })
+
+      expect(result).toEqual(
+        expect.stringContaining('href="#party-transporter"')
+      )
+      expect(result).toEqual(expect.stringContaining('id="party-transporter"'))
+    })
+
+    test('Should render distinct copy for unresolved operators and not the deleted copy', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        unresolvedOperatorFields: ['importer']
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-unresolved')
+      })
+
+      expect(result).toEqual(expect.stringContaining('could not be verified'))
+      expect(result).toEqual(expect.stringContaining('select it again'))
+      expect(result).toEqual(expect.stringContaining('id="party-importer"'))
+      expect(result).not.toEqual(expect.stringContaining('has been deleted'))
+      expect(result).not.toEqual(
+        expect.stringContaining('select a replacement')
+      )
+    })
+
+    test('Should render identically for DRAFT and AMEND (c-013)', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        deletedOperatorFields: ['consignor']
+      })
+      const draft = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-c013-draft')
+      })
+
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'AMEND',
+        deletedOperatorFields: ['consignor']
+      })
+      const amend = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-c013-amend')
+      })
+
+      for (const { result } of [draft, amend]) {
+        expect(result).toEqual(expect.stringContaining('There is a problem'))
+        expect(result).toEqual(expect.stringContaining('id="party-consignor"'))
+        expect(result).not.toEqual(
+          expect.stringContaining('Confirm and submit')
+        )
+      }
+    })
+
+    test('Should render every one of the seven party keys to a rendered anchor', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        deletedOperatorFields: [
+          'placeOfOrigin',
+          'consignor',
+          'consignee',
+          'importer',
+          'destination',
+          'consignment',
+          'transporter'
+        ]
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-all-seven')
+      })
+
+      for (const anchor of ALL_PARTY_ANCHORS) {
+        expect(result).toEqual(expect.stringContaining(`id="${anchor}"`))
+        expect(result).toEqual(expect.stringContaining(`href="#${anchor}"`))
+      }
+    })
+
+    test('Should render the normal review page with the continue button when both arrays are absent', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT'
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-arrays-absent')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(expect.stringContaining('Confirm and submit'))
+    })
+
+    test('Should render the normal review page with the continue button when both arrays are empty', async () => {
+      notificationClient.get.mockResolvedValueOnce({
+        ...mockNotification,
+        status: 'DRAFT',
+        deletedOperatorFields: [],
+        unresolvedOperatorFields: []
+      })
+
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/notification-view/IMP.GB.2026.1001401',
+        auth: sessionAuth('notification-view-arrays-empty')
+      })
+
+      expect(result).not.toEqual(expect.stringContaining('There is a problem'))
+      expect(result).toEqual(expect.stringContaining('Confirm and submit'))
+    })
+  })
 })

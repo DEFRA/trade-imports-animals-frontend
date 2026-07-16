@@ -3,6 +3,8 @@
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/error-message/macro.njk" import govukErrorMessage %}
 
 {% block pageContent %}
 
@@ -62,6 +64,15 @@
   {% if errorMessage %}
     {{ govukInsetText({ text: errorMessage }) }}
   {% else %}
+
+  {% set hasOperatorErrors = operatorErrors and operatorErrors.length %}
+
+  {% if hasOperatorErrors %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: operatorErrorSummary
+    }) }}
+  {% endif %}
 
   {% if status === 'DRAFT' or status === 'SUBMITTED' or status === 'AMEND' %}
     <input type="hidden" id="crumb-value" value="{{ crumb }}">
@@ -241,6 +252,11 @@
           {% endif %}
         </div>
         <div class="govuk-summary-card__content">
+          {% for error in operatorErrors %}
+            {% if error.card === 'addresses' %}
+              {{ govukErrorMessage({ id: error.anchor, text: error.message }) }}
+            {% endif %}
+          {% endfor %}
           {{ govukSummaryList({
             rows: [
               { key: { text: "Place of origin" },                value: { html: addresses.placeOfOrigin | nl2br } },
@@ -288,6 +304,11 @@
           {% endif %}
         </div>
         <div class="govuk-summary-card__content">
+          {% for error in operatorErrors %}
+            {% if error.card === 'transport' %}
+              {{ govukErrorMessage({ id: error.anchor, text: error.message }) }}
+            {% endif %}
+          {% endfor %}
           {{ govukSummaryList({
             rows: [
               { key: { text: "Transporter name" },              value: { text: transport.transporterName } },
@@ -343,14 +364,14 @@
 
     </div>
 
-  {% if status === 'DRAFT' %}
+  {% if status === 'DRAFT' and not hasOperatorErrors %}
     {{ govukButton({
       text: "Confirm and submit",
       href: "/declaration"
     }) }}
   {% endif %}
 
-  {% if status === 'AMEND' %}
+  {% if status === 'AMEND' and not hasOperatorErrors %}
     {{ govukButton({
       text: "Confirm and submit",
       href: "/declaration",

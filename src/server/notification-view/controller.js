@@ -3,6 +3,7 @@ import { notificationClient } from '../common/clients/notification-client.js'
 import { countriesClient } from '../common/clients/countries-client.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { mapNotificationToView } from '../common/helpers/notification-view-helper.js'
+import { buildOperatorErrors } from './operator-party-view-keys.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 
 const logger = createLogger()
@@ -26,11 +27,17 @@ export const notificationViewController = {
         countries.map((c) => [c.code, c.name])
       )
       const viewModel = mapNotificationToView(notification, countryMap)
+      const operatorErrors = buildOperatorErrors(notification)
 
       return h.view('notification-view/index', {
         pageTitle: `${referenceNumber} - ${PAGE_TITLE}`,
         copyError: request.query.error === 'copy',
         amendCancelled: request.query.cancelled === '1',
+        operatorErrors,
+        operatorErrorSummary: operatorErrors.map((error) => ({
+          text: error.message,
+          href: `#${error.anchor}`
+        })),
         ...viewModel
       })
     } catch (err) {
