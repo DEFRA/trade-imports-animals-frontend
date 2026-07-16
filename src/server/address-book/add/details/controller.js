@@ -1,12 +1,12 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { operatorsClient } from '../../../common/clients/operators-client.js'
-import { countriesClient } from '../../../common/clients/countries-client.js'
 import { setSessionValue } from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'
 import { formatValidationErrors } from '../../../common/helpers/validation-helpers.js'
 import { statusCodes } from '../../../common/constants/status-codes.js'
 import { OPERATOR_TYPES } from '../../constants/operator-types.js'
 import { buildOperatorSchema } from '../../operator-schema.js'
+import { getOperatorFormCountries } from '../../operator-countries.js'
 
 const PAGE_TITLE = 'Add address details'
 const VIEW = 'address-book/add/details/index'
@@ -18,16 +18,6 @@ const validTypes = new Set(OPERATOR_TYPES.map(({ value }) => value))
 function getIdentity(request) {
   const profile = request.auth?.credentials ?? {}
   return { crn: profile.crn, organisationId: profile.organisationId }
-}
-
-async function getMdmCountries(traceId) {
-  const countries = await countriesClient.getCountries(traceId)
-
-  if (!Array.isArray(countries) || countries.length === 0) {
-    throw new Error('Cannot render the operator form without a country list')
-  }
-
-  return countries
 }
 
 function buildCountryItems(countries, selectedCountry) {
@@ -67,7 +57,7 @@ export const addOperatorDetailsController = {
       }
 
       const traceId = getTraceId() ?? ''
-      const countries = await getMdmCountries(traceId)
+      const countries = await getOperatorFormCountries(traceId)
 
       return h.view(VIEW, buildViewModel(operatorType, countries, {}))
     }
@@ -82,7 +72,7 @@ export const addOperatorDetailsController = {
 
       const operatorType = payload.operatorType
       const traceId = getTraceId() ?? ''
-      const countries = await getMdmCountries(traceId)
+      const countries = await getOperatorFormCountries(traceId)
       const schema = buildOperatorSchema(countries.map(({ name }) => name))
 
       const { error, value } = schema.validate(payload, { abortEarly: false })

@@ -14,9 +14,10 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn().mockReturnValue('test-trace-id')
 }))
 
+// The reference-data SPS list is EU/EEA members and omits the UK — the form
+// adds the United Kingdom itself (getOperatorFormCountries).
 const countries = [
   { code: 'FI', name: 'Finland' },
-  { code: 'GB', name: 'United Kingdom' },
   { code: 'FR', name: 'France' }
 ]
 
@@ -83,7 +84,7 @@ describe('addOperatorDetailsController', () => {
   })
 
   describe('GET /address-book/add/details', () => {
-    test('renders the country select over the full MDM list with display names as the values (c-004)', async () => {
+    test('renders the country select with display names as the values, United Kingdom added ahead of the MDM list (c-004)', async () => {
       const h = mockToolkit()
       const response = await addOperatorDetailsController.get.handler(
         detailsRequest({ query: { operator_type: 'CONSIGNOR' } }),
@@ -93,7 +94,7 @@ describe('addOperatorDetailsController', () => {
       const countryValues = response.data.countryItems
         .filter((item) => item.value)
         .map((item) => item.value)
-      expect(countryValues).toEqual(['Finland', 'United Kingdom', 'France'])
+      expect(countryValues).toEqual(['United Kingdom', 'Finland', 'France'])
       expect(response.data.countryItems[0]).toEqual({
         value: '',
         text: 'Select a country'
@@ -209,6 +210,25 @@ describe('addOperatorDetailsController', () => {
       )
       expect(yar.store[sessionKeys.addressBookBanner]).toBe(
         'Tampere Horse Transport operator added'
+      )
+      expect(h.redirect).toHaveBeenCalledWith('/address-book')
+      expect(response.location).toBe('/address-book')
+    })
+
+    test('accepts a United Kingdom operator address though reference-data omits the UK', async () => {
+      operatorsClient.createOperator.mockResolvedValue({ id: 'op-uk' })
+      const h = mockToolkit()
+      const response = await addOperatorDetailsController.post.handler(
+        detailsRequest({
+          payload: { ...validPayload, country: 'United Kingdom' }
+        }),
+        h
+      )
+
+      expect(operatorsClient.createOperator).toHaveBeenCalledWith(
+        'test-trace-id',
+        expect.anything(),
+        expect.objectContaining({ country: 'United Kingdom' })
       )
       expect(h.redirect).toHaveBeenCalledWith('/address-book')
       expect(response.location).toBe('/address-book')

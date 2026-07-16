@@ -14,9 +14,10 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: vi.fn().mockReturnValue('test-trace-id')
 }))
 
+// The reference-data SPS list is EU/EEA members and omits the UK — the form
+// adds the United Kingdom itself (getOperatorFormCountries).
 const countries = [
   { code: 'FI', name: 'Finland' },
-  { code: 'GB', name: 'United Kingdom' },
   { code: 'FR', name: 'France' }
 ]
 
@@ -213,6 +214,27 @@ describe('editOperatorController', () => {
       )
       expect(yar.store[sessionKeys.addressBookBanner]).toBe(
         'Tampere Horse Transport operator updated'
+      )
+      expect(response.location).toBe('/address-book')
+    })
+
+    test('accepts a United Kingdom country though reference-data omits the UK (editing a UK-address operator)', async () => {
+      operatorsClient.updateOperator.mockResolvedValue({ id: 'op-1' })
+      const h = mockToolkit()
+
+      const response = await editOperatorController.post.handler(
+        editRequest({
+          operatorId: 'op-1',
+          payload: { ...validPayload, country: 'United Kingdom' }
+        }),
+        h
+      )
+
+      expect(operatorsClient.updateOperator).toHaveBeenCalledWith(
+        'test-trace-id',
+        expect.anything(),
+        'op-1',
+        expect.objectContaining({ country: 'United Kingdom' })
       )
       expect(response.location).toBe('/address-book')
     })

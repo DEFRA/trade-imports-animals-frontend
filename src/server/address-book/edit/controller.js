@@ -3,12 +3,12 @@ import {
   operatorsClient,
   fromApiOperator
 } from '../../common/clients/operators-client.js'
-import { countriesClient } from '../../common/clients/countries-client.js'
 import { setSessionValue } from '../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 import { formatValidationErrors } from '../../common/helpers/validation-helpers.js'
 import { statusCodes } from '../../common/constants/status-codes.js'
 import { buildOperatorSchema } from '../operator-schema.js'
+import { getOperatorFormCountries } from '../operator-countries.js'
 
 const PAGE_TITLE = 'Edit address details'
 const VIEW = 'address-book/edit/index'
@@ -31,16 +31,6 @@ function renderNotFound(h) {
       message: 'Page not found'
     })
     .code(statusCodes.notFound)
-}
-
-async function getMdmCountries(traceId) {
-  const countries = await countriesClient.getCountries(traceId)
-
-  if (!Array.isArray(countries) || countries.length === 0) {
-    throw new Error('Cannot render the operator form without a country list')
-  }
-
-  return countries
 }
 
 function buildCountryItems(countries, selectedCountry) {
@@ -93,7 +83,7 @@ export const editOperatorController = {
       }
 
       const operator = fromApiOperator(apiOperator)
-      const countries = await getMdmCountries(traceId)
+      const countries = await getOperatorFormCountries(traceId)
 
       return h.view(
         VIEW,
@@ -112,7 +102,7 @@ export const editOperatorController = {
 
       const operatorType = payload.operatorType
       const traceId = getTraceId() ?? ''
-      const countries = await getMdmCountries(traceId)
+      const countries = await getOperatorFormCountries(traceId)
       const schema = buildOperatorSchema(countries.map(({ name }) => name))
 
       const { error, value } = schema.validate(payload, { abortEarly: false })
