@@ -65,12 +65,12 @@ export function buildOperatorSchema(mdmCountryNames) {
       'string.max': 'Postcode must be 12 characters or less'
     }),
     country: Joi.string()
+      .empty('')
       .valid(...mdmCountryNames)
       .required()
       .messages({
         'any.required': 'Select a country',
-        'any.only': 'Select a country',
-        'string.empty': 'Select a country'
+        'any.only': 'Select a country'
       }),
     telephone: Joi.string().max(20).required().messages({
       'any.required': 'Enter a telephone number',

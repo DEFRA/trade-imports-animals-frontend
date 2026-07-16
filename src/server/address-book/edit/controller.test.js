@@ -62,7 +62,7 @@ function editRequest({
     payload,
     yar,
     auth: {
-      credentials: { profile: { crn: 'CRN123', organisationId: 'ORG1' } }
+      credentials: { crn: 'CRN123', organisationId: 'ORG1' }
     }
   }
 }

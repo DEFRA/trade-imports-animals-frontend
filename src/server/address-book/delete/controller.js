@@ -12,7 +12,7 @@ const VIEW = 'address-book/delete/index'
 const LIST_PATH = '/address-book'
 
 function getIdentity(request) {
-  const profile = request.auth?.credentials?.profile ?? {}
+  const profile = request.auth?.credentials ?? {}
   return { crn: profile.crn, organisationId: profile.organisationId }
 }
 

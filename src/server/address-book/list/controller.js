@@ -16,7 +16,9 @@ const VIEW = 'address-book/list/index'
 const BASE_PATH = '/address-book'
 
 function getIdentity(request) {
-  const profile = request.auth?.credentials?.profile ?? {}
+  // On cookie-authed requests the defra-id profile is spread onto credentials
+  // itself (see auth/controller.js session cache), not nested under `.profile`.
+  const profile = request.auth?.credentials ?? {}
   return { crn: profile.crn, organisationId: profile.organisationId }
 }
 

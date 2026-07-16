@@ -15,7 +15,7 @@ const TRANSPORTER_CATEGORY_LABELS = {
 }
 
 function getIdentity(request) {
-  const profile = request.auth?.credentials?.profile ?? {}
+  const profile = request.auth?.credentials ?? {}
   return { crn: profile.crn, organisationId: profile.organisationId }
 }
 

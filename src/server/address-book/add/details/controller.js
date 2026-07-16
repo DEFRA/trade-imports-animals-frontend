@@ -16,7 +16,7 @@ const LIST_PATH = '/address-book'
 const validTypes = new Set(OPERATOR_TYPES.map(({ value }) => value))
 
 function getIdentity(request) {
-  const profile = request.auth?.credentials?.profile ?? {}
+  const profile = request.auth?.credentials ?? {}
   return { crn: profile.crn, organisationId: profile.organisationId }
 }
 
