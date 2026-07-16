@@ -293,41 +293,17 @@ All four are behaviour-preserving. Landed as a coherent cleanup before the highe
 
 ---
 
-## 9. Phase 5 — Step 5: per-record conditional mandate (M–L, ~1–2wk, 5 commits + 2 HALTs) — HIGHEST RISK
+## 9. Phase 5 — Step 5: per-record conditional mandate — **DEFERRED (YAGNI, 2026-07-16)**
 
-The one genuine B evaluator change. REPORT §The bill: "get it wrong and you
-corrupt status, CYA and submit together." Uses MODEL_EXTENDER persona +
-adversarial self-check.
+**Status: not built as part of EUDPA-288.** See [`DESIGN-PHASE-5.md`](./DESIGN-PHASE-5.md) for the full design brief + deferral rationale.
 
-**HALT 5a — design gate before any code.** Present to Sam:
+**Summary of the defer decision.** After the Phase 4.6 cleanup pass, Paul reviewed the design brief and applied YAGNI: no current V4 rule in the manifest needs per-record conditional mandate. The two audit findings that changed status semantics (#6 `numberOfPackages`, #11 `containsUnweanedAnimals`) were resolved via `allowListed` / `anyAllowListed` (conditional _in-scope_), not per-record mandate. BRIEF §Bin warns against re-litigating capabilities that don't earn their keep against real use cases — the gate DSL precedent.
 
-- Vocabulary (`enclosing` / `anyItem` frames), resolution rule, backwards-compat
-  story, `buildImplication` return-contract widening.
-- Cite MATRIX row "Per-collection-entry conditional mandate".
+**The current base is the "defensible base you can stop at"** per BRIEF §The bill. Phases 0–4.6 delivered fix-bugs + recover-analysability + clean-storage-contract + zero-duplication. That is the natural stopping point.
 
-★ **feat(EUDPA-288): widen `buildImplication` return contract**
+**When to reopen.** A V4 spec revision surfaces a per-line status flip (e.g. "packages count mandatory on aquaculture lines only"); a downstream requirement needs per-instance status reasoning; Sam identifies an existing rule the current model forces into the wrong shape. Triggers + code sites + proposed 3-commit sequencing all captured in DESIGN-PHASE-5.md.
 
-- **Red:** per-line rule test — "field required on horse lines, not cattle
-  lines" — today inexpressible in B.
-- **Green:** three branches per REPORT §3.4; new mandate return shape.
-
-★ **feat(EUDPA-288): update ~5–6 status/CYA readers**
-
-- Named in the design-gate output. **Red per reader** — each gets a test
-  proving it consumes the new contract without breaking existing per-obligation
-  reads.
-
-★ **feat(EUDPA-288): helper library for per-record mandate consumers**
-
-- Extract the common shape from the reader diffs.
-
-★ **test(EUDPA-288): adversarial self-checks** (from MODEL_EXTENDER §Adversarial)
-
-- (a) an existing obligation is unaffected — pin with a test.
-- (b) depth-2 cross-frame gate behaves.
-- (c) a wiped cross-frame field leaves no orphan data at any path.
-
-**HALT 5b — walk-through with Sam.** New capability demo in situ.
+**Load-bearing survey finding preserved.** The design brief documents that the read side already handles per-record status correctly via `effectiveStatus` / `isMandatoryOnRecord` — the "5-6 readers" in the plan are actually ~2 sites. Future implementers get this shortcut for free.
 
 ---
 
