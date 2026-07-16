@@ -1,0 +1,40 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block pageContent %}
+
+  {{ appHeading({ heading: heading }) }}
+
+  <div class="govuk-body" data-testid="app-page-body">
+
+    <p class="govuk-body">Are you sure you want to delete {{ operatorName }}?</p>
+
+    {{ govukWarningText({
+      text: "You will not be able to select this operator on new import notifications.",
+      iconFallbackText: "Warning"
+    }) }}
+
+    <form method="post" action="{{ formAction }}" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}"/>
+      <input type="hidden" name="name" value="{{ operatorName }}"/>
+
+      <div class="govuk-button-group">
+        {{ govukButton({
+          text: "Delete",
+          classes: "govuk-button--warning",
+          preventDoubleClick: true
+        }) }}
+        {{ govukButton({
+          text: "Cancel",
+          classes: "govuk-button--secondary",
+          name: "action",
+          value: "cancel"
+        }) }}
+      </div>
+
+    </form>
+
+  </div>
+
+{% endblock %}

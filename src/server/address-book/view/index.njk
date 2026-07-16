@@ -1,0 +1,35 @@
+{% extends 'layouts/page.njk' %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block pageContent %}
+
+  {{ appHeading({ heading: heading }) }}
+
+  <div class="govuk-body" data-testid="app-page-body">
+
+    {% set summaryRows = [] %}
+    {% for row in rows %}
+      {% set summaryRows = (summaryRows.push({
+        key: { text: row.key },
+        value: { text: row.value }
+      }), summaryRows) %}
+    {% endfor %}
+
+    {{ govukSummaryList({ rows: summaryRows }) }}
+
+    <div class="govuk-button-group">
+      {{ govukButton({
+        text: "Edit",
+        href: editHref
+      }) }}
+      {{ govukButton({
+        text: "Delete",
+        classes: "govuk-button--warning",
+        href: deleteHref
+      }) }}
+    </div>
+
+  </div>
+
+{% endblock %}

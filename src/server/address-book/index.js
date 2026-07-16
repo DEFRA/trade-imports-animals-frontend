@@ -1,6 +1,9 @@
 import { addressBookListController } from './list/controller.js'
 import { addOperatorTypeController } from './add/type/controller.js'
 import { addOperatorDetailsController } from './add/details/controller.js'
+import { viewOperatorController } from './view/controller.js'
+import { editOperatorController } from './edit/controller.js'
+import { deleteOperatorController } from './delete/controller.js'
 
 export const addressBook = {
   plugin: {
@@ -31,6 +34,31 @@ export const addressBook = {
           method: 'POST',
           path: '/address-book/add/details',
           ...addOperatorDetailsController.post
+        },
+        {
+          method: 'GET',
+          path: '/address-book/{operatorId}',
+          ...viewOperatorController.get
+        },
+        {
+          method: 'GET',
+          path: '/address-book/{operatorId}/edit',
+          ...editOperatorController.get
+        },
+        {
+          method: 'POST',
+          path: '/address-book/{operatorId}/edit',
+          ...editOperatorController.post
+        },
+        {
+          method: 'GET',
+          path: '/address-book/{operatorId}/delete',
+          ...deleteOperatorController.get
+        },
+        {
+          method: 'POST',
+          path: '/address-book/{operatorId}/delete',
+          ...deleteOperatorController.post
         }
       ])
     }
