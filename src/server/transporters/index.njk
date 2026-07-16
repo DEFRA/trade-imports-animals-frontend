@@ -57,8 +57,8 @@
                 <td class="govuk-table__cell">
                   {{ selectedTransporter.name }}
                   <p class="govuk-body">
-                    {{ selectedTransporter.addressLine1 }}{% if selectedTransporter.addressLine2 %}, {{ selectedTransporter.addressLine2 }}{% endif %}{% if selectedTransporter.city %}, {{ selectedTransporter.city }}{% endif %}{% if selectedTransporter.county %}, {{ selectedTransporter.county }}{% endif %}{% if selectedTransporter.postcode %}, {{ selectedTransporter.postcode }}{% endif %}
-                    {{ selectedTransporter.country }}
+                    {{ selectedTransporter.address.addressLine1 }}{% if selectedTransporter.address.addressLine2 %}, {{ selectedTransporter.address.addressLine2 }}{% endif %}{% if selectedTransporter.address.city %}, {{ selectedTransporter.address.city }}{% endif %}{% if selectedTransporter.address.county %}, {{ selectedTransporter.address.county }}{% endif %}{% if selectedTransporter.address.postcode %}, {{ selectedTransporter.address.postcode }}{% endif %}
+                    {{ selectedTransporter.address.country }}
                   </p>
                 </td>
                 <td class="govuk-table__cell">{{ selectedTransporter.approvalNumber }}</td>
