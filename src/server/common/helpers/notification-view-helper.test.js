@@ -355,6 +355,141 @@ describe('#mapNotificationToView', () => {
     })
   })
 
+  describe('c-020 — mandatory party fields on the review page', () => {
+    test('Should render county, postcode, telephone and email in order for a flat address-book party', () => {
+      const consignor = {
+        operatorId: 'op-1',
+        name: 'Tampere Horse Transport',
+        addressLine1: 'Koprinatie 14',
+        city: 'Tampere',
+        county: 'Pirkanmaa',
+        postcode: 'FI-33100',
+        country: 'Finland',
+        telephone: '+358 40 1234567',
+        email: 'ops@tampere.example'
+      }
+      expect(mapNotificationToView({ consignor }).addresses.consignor).toBe(
+        [
+          'Tampere Horse Transport',
+          'Koprinatie 14',
+          'Tampere',
+          'Pirkanmaa',
+          'FI-33100',
+          'Finland',
+          '+358 40 1234567',
+          'ops@tampere.example'
+        ].join('\n')
+      )
+    })
+
+    test('Should render a flat party lacking county/telephone/email with no blank lines or undefined', () => {
+      const consignor = {
+        operatorId: 'op-2',
+        name: 'Simple Trader',
+        addressLine1: '1 Main Street',
+        city: 'Leicester',
+        country: 'United Kingdom'
+      }
+      const rendered = mapNotificationToView({ consignor }).addresses.consignor
+      expect(rendered).toBe(
+        ['Simple Trader', '1 Main Street', 'Leicester', 'United Kingdom'].join(
+          '\n'
+        )
+      )
+      expect(rendered).not.toContain('undefined')
+      expect(rendered).not.toMatch(/\n\n/)
+    })
+
+    test('Should still render a legacy nested-address party exactly as before', () => {
+      const consignor = {
+        name: 'Legacy Co',
+        address: {
+          addressLine1: '5 Old Road',
+          city: 'York',
+          postcode: 'YO1 1AA',
+          country: 'United Kingdom'
+        }
+      }
+      const rendered = mapNotificationToView({ consignor }).addresses.consignor
+      expect(rendered).toBe(
+        ['Legacy Co', '5 Old Road', 'York', 'YO1 1AA', 'United Kingdom'].join(
+          '\n'
+        )
+      )
+      expect(rendered).not.toContain('undefined')
+    })
+
+    test('Should not render a blank line when county is an empty string', () => {
+      const consignor = {
+        name: 'Empty County Co',
+        addressLine1: '2 High Street',
+        city: 'Bath',
+        county: '',
+        postcode: 'BA1 1AA',
+        country: 'United Kingdom'
+      }
+      const rendered = mapNotificationToView({ consignor }).addresses.consignor
+      expect(rendered).toBe(
+        [
+          'Empty County Co',
+          '2 High Street',
+          'Bath',
+          'BA1 1AA',
+          'United Kingdom'
+        ].join('\n')
+      )
+      expect(rendered).not.toMatch(/\n\n/)
+    })
+
+    test('Should render the new fields for the transporter block via mapTransport', () => {
+      const transport = {
+        transporter: {
+          operatorId: 'tr-1',
+          name: 'Nordic Livestock Haulage Oy',
+          addressLine1: 'Novel 3',
+          city: 'Helsinki',
+          county: 'Uusimaa',
+          postcode: 'FI-00100',
+          country: 'Finland',
+          telephone: '+358 9 1234567',
+          email: 'dispatch@nordic.example',
+          approvalNumber: 'FITH-2016-7781',
+          type: 'COMMERCIAL'
+        }
+      }
+      const { transporterAddress } = mapNotificationToView({
+        transport
+      }).transport
+      expect(transporterAddress).toContain('Uusimaa')
+      expect(transporterAddress).toContain('FI-00100')
+      expect(transporterAddress).toContain('+358 9 1234567')
+      expect(transporterAddress).toContain('dispatch@nordic.example')
+    })
+  })
+
+  describe('transporter category label on the review page', () => {
+    test('Should map the raw COMMERCIAL category enum to its display label', () => {
+      const transport = { transporter: { name: 'X', type: 'COMMERCIAL' } }
+      expect(mapNotificationToView({ transport }).transport.type).toBe(
+        'Commercial'
+      )
+    })
+
+    test('Should map the raw PRIVATE category enum to its display label', () => {
+      const transport = { transporter: { name: 'X', type: 'PRIVATE' } }
+      expect(mapNotificationToView({ transport }).transport.type).toBe(
+        'Private'
+      )
+    })
+
+    test('Should pass an unknown transporter category through unchanged', () => {
+      const transport = { transporter: { name: 'X', type: 'Legacy string' } }
+      expect(mapNotificationToView({ transport }).transport.type).toBe(
+        'Legacy string'
+      )
+    })
+  })
+
   describe('mapComplementToSpecies edge cases', () => {
     test('Should return empty species when complement has no species array', () => {
       expect(

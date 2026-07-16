@@ -1,5 +1,6 @@
 import { format, isValid, parseISO } from 'date-fns'
 import { getDocumentTypeLabel } from '../../accompanying-documents/document-upload-config.js'
+import { transporterCategoryLabel } from '../../address-book/constants/operator-types.js'
 
 const NOT_PROVIDED = 'Not provided'
 const DETAIL_DATE_FORMAT = 'd MMMM yyyy'
@@ -32,10 +33,7 @@ function formatAddress(entity) {
   if (!entity) {
     return NOT_PROVIDED
   }
-  const { address } = entity
-  if (!address) {
-    return entity.name ?? NOT_PROVIDED
-  }
+  const address = entity.address ?? entity
 
   const lines = [
     entity.name,
@@ -43,8 +41,11 @@ function formatAddress(entity) {
     address.addressLine2,
     address.addressLine3,
     address.city,
+    address.county,
     address.postcode,
-    address.country
+    address.country,
+    entity.telephone,
+    entity.email
   ].filter(Boolean)
 
   return lines.length ? lines.join('\n') : NOT_PROVIDED
@@ -147,7 +148,9 @@ function mapTransport(transport) {
   return {
     transporterName: transporter?.name ?? NOT_PROVIDED,
     transporterAddress: formatAddress(transporter),
-    type: transporter?.type ?? NOT_PROVIDED,
+    type: transporter?.type
+      ? transporterCategoryLabel(transporter.type)
+      : NOT_PROVIDED,
     approvalNumber: transporter?.approvalNumber ?? NOT_PROVIDED,
     portOfEntry: transport.portOfEntry ?? NOT_PROVIDED,
     arrivalDate: formatDetailDate(transport.arrivalDate)
