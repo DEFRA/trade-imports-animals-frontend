@@ -1,6 +1,7 @@
 # Phase 5 design gate — per-record conditional mandate
 
-**Status:** draft, awaiting Paul + Sam review.
+**Status: DEFERRED (YAGNI, 2026-07-16 decision by Paul).** See §10 for the deferral rationale. This document is retained as the design spec for whenever a real V4 rule surfaces that requires per-record conditional mandate; the code sites, decisions, and adversarial checks below are all still current against the baseline commit.
+
 **Scope:** Phase 5 of the EUDPA-288 blend plan (see [PLAN.md §9](./PLAN.md)).
 **Baseline:** everything landed as of SHA `88a03d6` (end of Phase 4.6).
 **Design premise:** the one genuine B evaluator change. Highest-risk phase in the plan. MODEL_EXTENDER persona applies — rigour over speed, adversarial self-check, DESIGN-DELTA.md entry, backwards-compat guarantee.
@@ -263,3 +264,29 @@ If we accept the design above, Phase 5 collapses from the plan's 5+2 commits to 
 3. Are you comfortable with the closure-based `perRecord: (fulfilmentId, all) => {...}` shape, or would you prefer a pure-data mapping (no closures)?
 4. `enforcedAt` widening — bundle into Phase 5 or defer to Phase 5.5?
 5. Backwards-compat byte-diff: is a fixture-based full-manifest diff enough, or do you want a stronger property-based test?
+
+---
+
+## 10. Deferral rationale (YAGNI, decided 2026-07-16)
+
+Paul reviewed this brief and raised the YAGNI challenge: "we can always document this as a possible extension point. Otherwise we risk YAGNI." Applied properly, that reasoning wins. Phase 5 is deferred out of EUDPA-288.
+
+### The evidence for deferral
+
+1. **No current V4 rule in the manifest needs per-record conditional mandate.** §3 above surveyed every group-scoped obligation. Every one has a uniform `status`. The two audit findings that changed status semantics (#6 for `numberOfPackages`, #11 for `containsUnweanedAnimals`) were resolved by making the field conditionally _in-scope_ via `allowListed`/`anyAllowListed`, not per-record-conditional-mandate. The one weak candidate flagged (`containsUnweanedAnimals` becoming per-line rather than per-notification) would be a bigger model change (moving from notification-level to line-scoped), not a per-record-mandate change on top of the existing shape.
+2. **BRIEF §Bin's precedent applies.** The BRIEF explicitly warns against re-litigating the gate DSL that B built, shipped, and killed on evidence — because it didn't earn its keep against real use cases. Adding per-record mandate speculatively runs the same pattern: build a capability nothing uses, watch it accrete cruft, watch it get ripped out later.
+3. **The current base is the "defensible base you can stop at"** (BRIEF §The bill). Phases 0–4.6 delivered the fix-bugs + recover-analysability + clean-storage-contract package that BRIEF marked as a natural stopping point. Adding Phase 5 speculatively muddies that stopping point.
+4. **The design work isn't wasted.** This document captures every code site, every design decision, every adversarial check. Whoever picks up Phase 5 when a real V4 rule surfaces isn't starting from a blank page — they get a full spec plus a proposed 3-commit sequencing, plus the "load-bearing surprise" (~2 sites, not 5-6) that shortens the estimate materially.
+
+### When to reopen this
+
+- A new V4 spec revision (or audit finding) surfaces a rule like "packages count is mandatory on aquaculture lines but optional elsewhere" — a per-line status flip, not a scope flip.
+- Sam identifies a rule already in V4 that the current model quietly forces into the wrong shape (e.g. an obligation currently marked as always-optional to accommodate a subset that should really be optional, at the cost of not enforcing the mandatory subset).
+- A downstream requirement (analytics, reporting) needs to know why a specific instance's status is what it is — the `reasons`-per-record work in §5.4 becomes directly load-bearing.
+
+Any of those triggers, come back here, verify the code sites haven't drifted (§3 uses SHA `88a03d6` — re-survey if the baseline has moved), pick answers to §5, follow §7's commit sequencing.
+
+### What is NOT deferred
+
+- The design brief itself. Committed at SHA `9e1365e`. Reviewable as an extension-point document.
+- The load-bearing finding that `record.status` is already read correctly by every consumer via `effectiveStatus` / `isMandatoryOnRecord`. Future Phase 5 implementers should trust this survey (or re-verify with `git blame` on the same files).
