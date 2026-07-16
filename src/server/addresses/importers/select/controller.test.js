@@ -170,12 +170,14 @@ describe('#importersSelectController', () => {
         {
           operatorId: 'op-i1',
           name: 'Continental Importers Ltd',
-          addressLine1: '1 Trade Park',
-          addressLine2: 'Unit 7',
-          city: 'Harwich',
-          county: 'Essex',
-          postcode: 'CO12 1AA',
-          country: 'United Kingdom',
+          address: {
+            addressLine1: '1 Trade Park',
+            addressLine2: 'Unit 7',
+            city: 'Harwich',
+            county: 'Essex',
+            postcode: 'CO12 1AA',
+            country: 'United Kingdom'
+          },
           telephone: '01255 333444',
           email: 'imports@continental.example'
         }

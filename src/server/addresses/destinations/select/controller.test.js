@@ -170,12 +170,14 @@ describe('#destinationsSelectController', () => {
         {
           operatorId: 'op-d1',
           name: 'Green Pastures Farm',
-          addressLine1: 'Long Lane',
-          addressLine2: 'Barn 3',
-          city: 'Melton Mowbray',
-          county: 'Leicestershire',
-          postcode: 'LE13 1AA',
-          country: 'United Kingdom',
+          address: {
+            addressLine1: 'Long Lane',
+            addressLine2: 'Barn 3',
+            city: 'Melton Mowbray',
+            county: 'Leicestershire',
+            postcode: 'LE13 1AA',
+            country: 'United Kingdom'
+          },
           telephone: '01664 555666',
           email: 'farm@greenpastures.example'
         }

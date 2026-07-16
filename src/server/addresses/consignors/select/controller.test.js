@@ -173,12 +173,14 @@ describe('#consignorsSelectController', () => {
         {
           operatorId: 'op-c1',
           name: 'Tampere Horse Transport',
-          addressLine1: '12 Dock Road',
-          addressLine2: 'Unit 4',
-          city: 'Hull',
-          county: 'East Yorkshire',
-          postcode: 'HU1 1AA',
-          country: 'Finland',
+          address: {
+            addressLine1: '12 Dock Road',
+            addressLine2: 'Unit 4',
+            city: 'Hull',
+            county: 'East Yorkshire',
+            postcode: 'HU1 1AA',
+            country: 'Finland'
+          },
           telephone: '01234 567890',
           email: 'ops@tampere.example'
         }

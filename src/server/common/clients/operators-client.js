@@ -81,12 +81,14 @@ export function toNotificationOperator(apiOperator) {
   return {
     operatorId: apiOperator.id,
     name: apiOperator.name,
-    addressLine1: apiOperator.address_line_1,
-    addressLine2: apiOperator.address_line_2,
-    city: apiOperator.town,
-    county: apiOperator.county,
-    postcode: apiOperator.postcode,
-    country: apiOperator.country,
+    address: {
+      addressLine1: apiOperator.address_line_1,
+      addressLine2: apiOperator.address_line_2,
+      city: apiOperator.town,
+      county: apiOperator.county,
+      postcode: apiOperator.postcode,
+      country: apiOperator.country
+    },
     telephone: apiOperator.telephone,
     email: apiOperator.email
   }

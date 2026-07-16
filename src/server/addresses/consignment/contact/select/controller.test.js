@@ -180,12 +180,14 @@ describe('#consignmentContactSelectController', () => {
         {
           operatorId: 'op-b1',
           name: 'Animal and Plant Health Agency',
-          addressLine1: 'Block C',
-          addressLine2: 'Government Buildings',
-          city: 'Weybridge',
-          county: 'Surrey',
-          postcode: 'KT15 3NB',
-          country: 'United Kingdom',
+          address: {
+            addressLine1: 'Block C',
+            addressLine2: 'Government Buildings',
+            city: 'Weybridge',
+            county: 'Surrey',
+            postcode: 'KT15 3NB',
+            country: 'United Kingdom'
+          },
           telephone: '03000 200301',
           email: 'contact@apha.example'
         }

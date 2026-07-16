@@ -321,18 +321,20 @@ describe('operators mapping (c-002 / b-011 boundary)', () => {
     expect(operator.country).toBe('United Kingdom')
   })
 
-  test('toNotificationOperator produces the camelCase party shape with operatorId and city', () => {
+  test('toNotificationOperator produces the party shape with operatorId and a nested address', () => {
     const party = toNotificationOperator(apiOperator)
 
     expect(party).toEqual({
       operatorId: 'op-1',
       name: 'Acme',
-      addressLine1: '1 High Street',
-      addressLine2: 'Unit 4',
-      city: 'Leeds',
-      county: 'West Yorkshire',
-      postcode: 'LS1 1AA',
-      country: 'United Kingdom',
+      address: {
+        addressLine1: '1 High Street',
+        addressLine2: 'Unit 4',
+        city: 'Leeds',
+        county: 'West Yorkshire',
+        postcode: 'LS1 1AA',
+        country: 'United Kingdom'
+      },
       telephone: '01234567890',
       email: 'acme@example.com'
     })
@@ -347,10 +349,10 @@ describe('operators mapping (c-002 / b-011 boundary)', () => {
     })
 
     expect(transporter.operatorId).toBe('op-1')
-    expect(transporter.city).toBe('Leeds')
+    expect(transporter.address.city).toBe('Leeds')
     expect(transporter.approvalNumber).toBe('AP-1')
     expect(transporter.type).toBe('COMMERCIAL')
-    expect(transporter.country).toBe('United Kingdom')
+    expect(transporter.address.country).toBe('United Kingdom')
   })
 
   test('country is passed through untranslated in every direction (c-004 pin)', () => {
@@ -358,8 +360,8 @@ describe('operators mapping (c-002 / b-011 boundary)', () => {
 
     expect(toApiOperator({ ...formOperator, country }).country).toBe(country)
     expect(fromApiOperator({ ...apiOperator, country }).country).toBe(country)
-    expect(toNotificationOperator({ ...apiOperator, country }).country).toBe(
-      country
-    )
+    expect(
+      toNotificationOperator({ ...apiOperator, country }).address.country
+    ).toBe(country)
   })
 })

@@ -170,12 +170,14 @@ describe('#consigneesSelectController', () => {
         {
           operatorId: 'op-e1',
           name: 'Tech Imports Ltd',
-          addressLine1: '643 Main Street',
-          addressLine2: 'Suite 2',
-          city: 'Dover',
-          county: 'Kent',
-          postcode: 'CT16 1AA',
-          country: 'United Kingdom',
+          address: {
+            addressLine1: '643 Main Street',
+            addressLine2: 'Suite 2',
+            city: 'Dover',
+            county: 'Kent',
+            postcode: 'CT16 1AA',
+            country: 'United Kingdom'
+          },
           telephone: '01304 111222',
           email: 'goods@techimports.example'
         }

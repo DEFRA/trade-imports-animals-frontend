@@ -170,12 +170,14 @@ describe('#placeOfOriginSelectController', () => {
         {
           operatorId: 'op-o1',
           name: 'Alpine Rearing Station',
-          addressLine1: 'Bergweg 4',
-          addressLine2: 'Haus 2',
-          city: 'Innsbruck',
-          county: 'Tirol',
-          postcode: '6020',
-          country: 'Austria',
+          address: {
+            addressLine1: 'Bergweg 4',
+            addressLine2: 'Haus 2',
+            city: 'Innsbruck',
+            county: 'Tirol',
+            postcode: '6020',
+            country: 'Austria'
+          },
           telephone: '+43 512 000000',
           email: 'origin@alpine.example'
         }
