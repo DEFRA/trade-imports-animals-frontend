@@ -735,108 +735,59 @@ describe('page-controller — address-block composite widget (commercialTranspor
   })
 })
 
-describe('page-controller — accompanying-documents branchedGate (all-or-nothing)', () => {
-  it('POST with every field blank does NOT flip the block to mandatory (no CYA prompts)', async () => {
-    // Regression: user report. If the user visits the accompanying-
-    // documents page and hits "Save and continue" with everything
-    // blank, the POST body carries '' for each of the four inputs.
-    // writeAnswer stores those empty strings. The gate predicate
-    // (anyDocumentFieldPresent in obligations.js) originally used
-    // `!== undefined`, so empty strings counted as "present" and
-    // flipped all four fields to mandatory — CYA then prompted
-    // "Enter a value for Document type" etc. even though the user
-    // had left them blank. Fix: gate treats blank strings / null /
-    // undefined equivalently.
+describe('page-controller — accompanying-documents all-or-nothing block', () => {
+  // WS2 rework (2026-07): the block is now an
+  // `accompanyingDocument` container carrying
+  // `requires.allOrNothingOfIds` on its four scalar members. Fields
+  // are individually always-optional; the invariant fires at the
+  // container / journey level via `groupInvariantErrors` when the
+  // block is partially filled. Page-save intentionally accepts any
+  // partial submission — the block is validated at the subtree level,
+  // not per-field, so mid-typing saves don't 400.
+  it('POST with every field blank saves cleanly and shows no CYA per-field prompts', async () => {
     const jar = makeCookieJar()
-    // Save the page with everything blank.
     const post = await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/pages/accompanying-documents',
       payload: {}
     })
     expect(post.statusCode).toBe(302)
-    // CYA must NOT show accompanying-doc prompts.
     const cya = await inject(jar, {
       method: 'GET',
       url: '/prototype/eudpa-249/check-your-answers'
     })
+    // No per-field prompts on the all-blank path — the invariant is
+    // satisfied vacuously.
     expect(cya.payload).not.toContain('Enter a value for Document type')
     expect(cya.payload).not.toContain('Enter a value for Attachment format')
     expect(cya.payload).not.toContain('Enter a value for Document reference')
     expect(cya.payload).not.toContain('Enter a value for Date of issue')
   })
 
-  it('POST with only Document type filled flips the block to mandatory', async () => {
-    // V4 (audit #15): the branchedGate fires when a document type
-    // is selected — the other three then become mandatory-to-proceed.
+  it('POST with only Document type filled saves (partial is a rollup concern, not a page-save block)', async () => {
     const jar = makeCookieJar()
     const post = await inject(jar, {
       method: 'POST',
       url: '/prototype/eudpa-249/pages/accompanying-documents',
       payload: { accompanyingDocumentType: 'health-certificate' }
     })
+    // Page-save no longer 400s on partial — the four fields are
+    // individually optional; the "all-or-nothing" invariant is
+    // enforced at container-status / journeyState rollup.
     expect(post.statusCode).toBe(302)
     const cya = await inject(jar, {
       method: 'GET',
       url: '/prototype/eudpa-249/check-your-answers'
     })
-    // Health certificate row renders...
+    // The type row still renders — value round-tripped.
     expect(cya.payload).toContain('Health certificate')
-    // ...and the other three prompt because they are now mandatory-
-    // in-scope and blank.
-    expect(cya.payload).toContain('Enter a value for Attachment format')
-    expect(cya.payload).toContain('Enter a value for Document reference')
-    expect(cya.payload).toContain('Enter a value for Date of issue')
   })
 
-  it('re-visit after Type is stored: blank-three POST is blocked with per-field required errors (audit re-review NEW-3)', async () => {
-    // V4 spec: "once a document type is selected, the attachment,
-    // reference and date of issue are mandatory to proceed."
-    //
-    // The three non-Type fields carry `mandatoryToProceed: true` on
-    // their flow entries. The contract.js gate consults effective
-    // status (audit re-review NEW-1 fix) — the three flip from
-    // effective-optional to effective-mandatory when documentType is
-    // stored. So blank-three POST:
-    //   - First submit with type-only         → 302 (state at
-    //     validate time still has type blank; three are effective-
-    //     optional; gate short-circuits). Covered by the sibling
-    //     "flips the block to mandatory" test above.
-    //   - Any re-visit + blank-three POST     → 400 with per-field
-    //     required errors. Covered here.
-    //
-    // The one-step delay on the first save is acceptable for the
-    // spike — CYA + task-list still surface the incompleteness on
-    // the very first render after that first save, and any
-    // subsequent visit enforces at page save.
-    const jar = makeCookieJar()
-    // Prime: pick a type. State now has documentType stored → the
-    // three become effective-mandatory.
-    await inject(jar, {
-      method: 'POST',
-      url: '/prototype/eudpa-249/pages/accompanying-documents',
-      payload: { accompanyingDocumentType: 'health-certificate' }
-    })
-    // Re-visit + submit again with type only. Now the three are
-    // effective-mandatory and the gate fires.
-    const revisit = await inject(jar, {
-      method: 'POST',
-      url: '/prototype/eudpa-249/pages/accompanying-documents',
-      payload: { accompanyingDocumentType: 'health-certificate' }
-    })
-    expect(revisit.statusCode).toBe(400)
-    expect(revisit.payload).toContain('Choose the attachment format')
-    expect(revisit.payload).toContain('Enter the document reference')
-    expect(revisit.payload).toContain('Enter the date of issue')
-  })
-
-  it('POST with only a non-Type field filled (Reference only) does NOT flip the block to mandatory', async () => {
-    // V4 audit #15: the gate is triggered by Document type specifically.
-    // A user who types a reference but doesn't pick a type is signalling
-    // "I have not yet committed to attaching a document" — the block
-    // stays optional and no CYA prompts fire. Pre-audit the branchedGate
-    // tripped on any of the four fields; this test guards against
-    // regression to that behaviour.
+  it('POST with only a non-Type field filled (Reference only) saves and round-trips', async () => {
+    // Under the new symmetric all-or-nothing reading the block is
+    // partially filled here — the group invariant fires at rollup
+    // level. Page-save still accepts the submission (spec: "Optional"
+    // at the block level).
     const jar = makeCookieJar()
     const post = await inject(jar, {
       method: 'POST',
@@ -848,10 +799,10 @@ describe('page-controller — accompanying-documents branchedGate (all-or-nothin
       method: 'GET',
       url: '/prototype/eudpa-249/check-your-answers'
     })
-    // The reference row renders (retain-value semantic — extended-form
-    // branchedGate keeps inScope true even when the gate is off)...
+    // The reference row renders.
     expect(cya.payload).toContain('HC-2026-00042')
-    // ...but nothing prompts because the block stayed optional.
+    // No per-field prompts fire — required-ness is a group invariant,
+    // not a per-field concern.
     expect(cya.payload).not.toContain('Enter a value for Document type')
     expect(cya.payload).not.toContain('Enter a value for Attachment format')
     expect(cya.payload).not.toContain('Enter a value for Date of issue')

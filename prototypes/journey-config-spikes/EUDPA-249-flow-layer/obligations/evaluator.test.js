@@ -1208,12 +1208,18 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Step 5 — Accompanying Documents (notification-level all-or-nothing block)
+// V4 — Accompanying Documents (notification-level all-or-nothing block)
 //
-// Four fields sharing a symmetric cross-sibling gate: optional when
-// nothing is filled; mandatory once any one is filled. Uses the
-// extended `gatedBy` form to keep every field in scope regardless of
-// gate state (retain-value pattern).
+// Confluence page 6497338582 labels the block as a "Field Block —
+// Optional — All-or-nothing". Modelled here as four scalar notification-
+// level obligations (all `status: 'optional'`) plus a structural
+// container `accompanyingDocument` carrying
+// `requires.allOrNothingOfIds`. The container's implication is a plain
+// in-scope singleton; the invariant fires at the state level via
+// `engine/index.js#groupInvariantErrors`. The four fields are ALWAYS
+// individually optional-in-scope — there is no scope swap, no self-
+// loop, no retain-vs-purge nuance. Stored values round-trip as
+// scalars.
 // ---------------------------------------------------------------------------
 
 const documentBlockFields = [
@@ -1223,13 +1229,7 @@ const documentBlockFields = [
   ['DateOfIssue', accompanyingDocumentDateOfIssue]
 ]
 
-const documentBlockMandatoryReason = {
-  code: 'obligation.accompanyingDocument.mandatory.becauseTypeSelected',
-  explanation:
-    'accompanying document fields become mandatory once a document type is selected'
-}
-
-describe('V4 — accompanying document block: no field filled → all optional', () => {
+describe('V4 — accompanying document block: fields are always optional in-scope', () => {
   it.each(documentBlockFields)(
     '%s is optional in-scope on empty input',
     (_name, obligation) => {
@@ -1240,46 +1240,21 @@ describe('V4 — accompanying document block: no field filled → all optional',
       })
     }
   )
-})
 
-describe('V4 — accompanying document block: only Type selection triggers the mandatory branch (audit #15)', () => {
-  it('when Type is filled, all four document fields are mandatory in-scope', () => {
-    const result = evaluator.evaluate({
-      [accompanyingDocumentType.id]: 'Veterinary health certificate'
-    })
-    for (const [, obligation] of documentBlockFields) {
-      expect(result.obligations[obligation.id]).toEqual({
-        inScope: true,
-        status: 'mandatory',
-        reasons: [documentBlockMandatoryReason]
-      })
-    }
-  })
-
-  const nonTriggerSiblings = [
-    ['AttachmentType', accompanyingDocumentAttachmentType, 'PDF'],
-    ['Reference', accompanyingDocumentReference, 'GBHC1234567890'],
-    ['DateOfIssue', accompanyingDocumentDateOfIssue, '2025-12-12']
-  ]
-
-  it.each(nonTriggerSiblings)(
-    'when only %s is filled (Type still blank), the block stays optional per V4 audit #15',
-    (_name, filledObligation, filledValue) => {
-      const result = evaluator.evaluate({
-        [filledObligation.id]: filledValue
-      })
-      for (const [, obligation] of documentBlockFields) {
-        expect(result.obligations[obligation.id]).toEqual({
+  it.each(documentBlockFields)(
+    '%s stays optional in-scope when only that field is filled (no scope swap)',
+    (_name, obligation) => {
+      const result = evaluator.evaluate({ [obligation.id]: 'some-value' })
+      for (const [, sibling] of documentBlockFields) {
+        expect(result.obligations[sibling.id]).toEqual({
           inScope: true,
           status: 'optional'
         })
       }
     }
   )
-})
 
-describe('V4 — accompanying document block: all four filled', () => {
-  it('all four fields are mandatory and values round-trip', () => {
+  it('stays optional in-scope even with all four fields filled (the invariant fires elsewhere)', () => {
     const stored = {
       [accompanyingDocumentType.id]: 'Veterinary health certificate',
       [accompanyingDocumentAttachmentType.id]: 'PDF',
@@ -1290,23 +1265,19 @@ describe('V4 — accompanying document block: all four filled', () => {
     for (const [, obligation] of documentBlockFields) {
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        status: 'mandatory',
-        reasons: [documentBlockMandatoryReason]
+        status: 'optional'
       })
+      // Scalars round-trip verbatim.
       expect(result.fulfilments[obligation.id]).toBe(stored[obligation.id])
     }
   })
 })
 
 describe('V4 — accompanying document block: retain-value semantic', () => {
-  it('does not purge a stored value when the gate is off (extended form whenFalse keeps inScope: true)', () => {
-    // Contrast with purge-on-flip patterns (purposeInInternalMarket
-    // etc.). Here whenFalse is `{ inScope: true, status: 'optional' }`
-    // — never out of scope — so purgeStorage keeps the value.
-    //
-    // Post audit #15 the gate is triggered by Type only, so filling
-    // Reference alone leaves the block optional but the stored
-    // value is retained.
+  it('never purges a stored value regardless of sibling state', () => {
+    // Fields are unconditional scalars — no applyTo, no purge branch.
+    // Filling Reference alone leaves the value untouched even though
+    // the group invariant will fire (partial block) at state level.
     const result = evaluator.evaluate({
       [accompanyingDocumentReference.id]: 'GBHC1234567890'
     })

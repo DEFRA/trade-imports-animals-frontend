@@ -137,8 +137,11 @@ describe('coverageReport', () => {
     // the invariant we care about is that they're the ONLY thing
     // left. If a new leaf obligation lands without a domain entry,
     // this length assertion fires.
-    // The 4 exempt entries after step 5c:
+    // The 5 exempt entries:
     // - 2 structural group containers (commodityLine, unitRecord)
+    // - 1 invariant-carrier container (accompanyingDocument — carries
+    //   requires.allOrNothingOfIds; its four scalar members carry the
+    //   values)
     // - 2 system-populated fields (poApprovedReferenceNumber,
     //   responsiblePersonForLoad) declared for V4 completeness but
     //   enforced upstream (system minting; gov.identity).
@@ -149,7 +152,8 @@ describe('coverageReport', () => {
         'poApprovedReferenceNumber',
         'responsiblePersonForLoad',
         'commodityLine',
-        'unitRecord'
+        'unitRecord',
+        'accompanyingDocument'
       ])
     )
   })

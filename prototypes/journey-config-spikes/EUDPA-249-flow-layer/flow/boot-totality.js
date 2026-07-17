@@ -116,9 +116,24 @@ export function assertObligationTotality(obligations, flow) {
       .map((o) => o.id)
   )
 
+  // Invariant-carrier containers — obligations whose only role is to
+  // carry a group-level `requires.*` invariant (no `applyTo`, no
+  // `status`, no `within`). They're referenced from the flow via a
+  // member obligation's back-ref `containers`, not through
+  // `presents` / `presentsForEach`. Same reason for exclusion as
+  // structural groups: they carry no value directly.
+  const invariantCarrierIds = new Set(
+    obligations
+      .filter(
+        (o) => o?.requires && !o.applyTo && o.status === undefined && !o.within
+      )
+      .map((o) => o.id)
+  )
+
   const uncovered = obligations
     .filter((o) => !presented.has(o.id))
     .filter((o) => !structuralGroupIds.has(o.id))
+    .filter((o) => !invariantCarrierIds.has(o.id))
     .filter((o) => !SYSTEM_POPULATED.has(o.name))
     .map((o) => o.name)
 

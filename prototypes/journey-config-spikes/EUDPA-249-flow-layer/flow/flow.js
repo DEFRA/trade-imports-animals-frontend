@@ -402,23 +402,14 @@ export const flow = {
           ]
         },
         {
-          // Accompanying-document block. The four fields share a
-          // `branchedGate` applyTo (see obligations.js): all optional
-          // when documentType is blank; the OTHER THREE flip to
-          // mandatory the moment documentType is filled (V4 audit
-          // #15). documentType itself is always optional at the
-          // obligation level — the user isn't forced to add an
-          // attached document at all.
-          //
-          // Page-save mandate (V4 audit re-review NEW-3): once
-          // documentType is filled, the three dependent fields carry
-          // `mandatoryToProceed: true` so the page save blocks until
-          // they're all supplied. The contract.js gate short-circuits
-          // to true when the obligation is effectively-optional
-          // (audit re-review NEW-1 fix), so blank submissions
-          // continue to save cleanly when documentType is blank. The
-          // required copy fires per-field on the ones the user left
-          // empty rather than a single parent-level message.
+          // Accompanying-document block. All four fields are individually
+          // optional — the "either fill all four or leave all four blank"
+          // rule is expressed as the `accompanyingDocument` container's
+          // `requires.allOrNothingOfIds` invariant (obligations.js) and
+          // surfaces through `groupInvariantErrors` at container /
+          // journey / CYA rollup. Page-save intentionally accepts any
+          // partial submission — the block is validated at the subtree
+          // level, not per-field, so a mid-typing save doesn't 400.
           kind: 'subsection',
           id: 'accompanying-documents',
           titleKey: 'flow.subsection.accompanying-documents.title',
@@ -427,28 +418,9 @@ export const flow = {
               page: 'accompanying-documents',
               presents: [
                 { obligation: accompanyingDocumentType },
-                {
-                  obligation: accompanyingDocumentAttachmentType,
-                  mandatoryToProceed: true,
-                  errors: {
-                    required:
-                      'errors.accompanyingDocumentAttachmentType.required'
-                  }
-                },
-                {
-                  obligation: accompanyingDocumentReference,
-                  mandatoryToProceed: true,
-                  errors: {
-                    required: 'errors.accompanyingDocumentReference.required'
-                  }
-                },
-                {
-                  obligation: accompanyingDocumentDateOfIssue,
-                  mandatoryToProceed: true,
-                  errors: {
-                    required: 'errors.accompanyingDocumentDateOfIssue.required'
-                  }
-                }
+                { obligation: accompanyingDocumentAttachmentType },
+                { obligation: accompanyingDocumentReference },
+                { obligation: accompanyingDocumentDateOfIssue }
               ]
             }
           ]

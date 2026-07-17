@@ -69,8 +69,7 @@ import {
   anyAllowListed,
   equalsGate,
   includesGate,
-  notInUnionOf,
-  presentGate
+  notInUnionOf
 } from './helpers.js'
 
 // -----------------------------------------------------------------------------
@@ -176,10 +175,10 @@ const permanentAddressReason = {
     'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
 }
 
-const accompanyingDocumentBlockReason = {
-  code: 'obligation.accompanyingDocument.mandatory.becauseTypeSelected',
+const accompanyingDocumentAllOrNothingReason = {
+  code: 'obligation.accompanyingDocument.allOrNothing.becausePartiallyFilled',
   explanation:
-    'accompanying document fields become mandatory once a document type is selected'
+    'accompanying document field block must be filled completely or left blank (V4 all-or-nothing)'
 }
 
 // -----------------------------------------------------------------------------
@@ -856,81 +855,65 @@ export const permanentAddress = {
 }
 
 // -----------------------------------------------------------------------------
-// Accompanying Documents — notification-level all-or-nothing block.
+// Accompanying Documents — notification-level all-or-nothing field block.
 //
-// Four fields sharing a single applyTo: optional when nothing is
-// filled, mandatory once ANY field is filled (retain-value + status-
-// swap via `presentGate`).
+// V4 spec (Confluence page 6497338582): the four fields are labelled as a
+// "Field Block — Optional — All-or-nothing". Modelled here via a
+// structural container obligation `accompanyingDocument` carrying a
+// group-level `requires.allOrNothingOfIds` invariant. The four member
+// fields stay at notification level (scalar `fulfilments[id] = value`
+// storage — no records-shape change); the invariant fires at the state
+// level when partial. Replaces the earlier `presentGate` self-loop that
+// only tripped on Type (audit finding #15) with the symmetric field-
+// block reading the spec calls for.
 //
-// The gate reads `accompanyingDocumentType`'s stored value — including
-// on `accompanyingDocumentType` itself, which self-references. The
-// meta-first `presentGate` helper reads `gateObligation.id` eagerly at
-// construction, so the self-loop uses a lightweight `{ id }` proxy
-// pinned to the same UUID (see `accompanyingDocumentTypeIdRef` below).
+// Semantics enforced by `engine/index.js#groupInvariantErrors`:
+//   - 0 filled  → no error (block inactive)
+//   - all 4 filled → no error (block complete)
+//   - 1..3 filled → one error {code, groupId, missingIds}
+//
+// Container back-refs (`member.containers`) are wired at the bottom of
+// this file so `collectGroupsPresentedIn` in the engine can reach the
+// container from any page that presents a member obligation.
 // -----------------------------------------------------------------------------
 
-// V4 (Confluence page 6497338582): "however, once a document type is
-// selected, the attachment, reference and date of issue are mandatory
-// to proceed." The trigger is documentType specifically — not any of
-// the four fields. A user who fills only a reference (without picking
-// a type) does NOT lock in the whole block. See audit finding #15.
-//
-// Meta-first: `presentGate(accompanyingDocumentType, ...)` encodes the
-// "answered" semantic — the closure defers to `present` internally
-// (empty string / null / undefined / empty array all count as "not
-// present"), matching the previous `isFilled` predicate verbatim.
-//
-// Self-loop preservation: `accompanyingDocumentType.applyTo` reads its
-// OWN stored value. Because `presentGate` inspects `gateObligation.id`
-// eagerly (to build metadata), we can't pass `accompanyingDocumentType`
-// itself before it's declared (TDZ). Pass a lightweight `{ id }` proxy
-// pinned to the same UUID — `dependsOn` derivation and witness synth
-// both key off `.metadata.obligation`, which still names the real id.
-const accompanyingDocumentTypeIdRef = {
-  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8'
-}
-
-const accompanyingDocumentBlockApplyTo = presentGate(
-  accompanyingDocumentTypeIdRef,
-  {
-    inScope: true,
-    status: 'mandatory',
-    reasons: [accompanyingDocumentBlockReason]
-  },
-  { inScope: true, status: 'optional' }
-)
-
 export const accompanyingDocumentType = {
-  id: accompanyingDocumentTypeIdRef.id,
+  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
   name: 'accompanyingDocumentType',
-  applyTo: accompanyingDocumentBlockApplyTo
-  // All four accompanying-document fields share the same closure —
-  // `presentGate(accompanyingDocumentType, ...)` reads only
-  // `fulfilments[accompanyingDocumentType.id]`. This obligation therefore
-  // self-references (the gate reads its own stored value to decide its
-  // own scope: `optional` when unset, `mandatory` once set). `dependsOn`
-  // is derived from `applyTo.metadata.obligation` (see
-  // `obligationMetadata`) — for this obligation that yields
-  // `[accompanyingDocumentType.id]`, the self-loop the reachability
-  // prover already treats as a seed (no external prereq).
+  status: 'optional'
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
   name: 'accompanyingDocumentAttachmentType',
-  applyTo: accompanyingDocumentBlockApplyTo
+  status: 'optional'
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
   name: 'accompanyingDocumentReference',
-  applyTo: accompanyingDocumentBlockApplyTo
+  status: 'optional'
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
   name: 'accompanyingDocumentDateOfIssue',
-  applyTo: accompanyingDocumentBlockApplyTo
+  status: 'optional'
+}
+
+export const accompanyingDocument = {
+  id: '52210b3b-4c53-4b81-8ef0-fa0b1223e40c',
+  name: 'accompanyingDocument',
+  requires: {
+    allOrNothingOfIds: [
+      accompanyingDocumentType.id,
+      accompanyingDocumentAttachmentType.id,
+      accompanyingDocumentReference.id,
+      accompanyingDocumentDateOfIssue.id
+    ],
+    errorCode: 'obligation.accompanyingDocument.allOrNothing',
+    reasons: [accompanyingDocumentAllOrNothingReason]
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -982,6 +965,7 @@ export const obligations = [
   identificationDetails,
   description,
   permanentAddress,
+  accompanyingDocument,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -992,3 +976,22 @@ export const obligations = [
 export const groups = obligations.filter((o) =>
   obligations.some((other) => other.within === o)
 )
+
+// -----------------------------------------------------------------------------
+// Container back-refs — populate `member.containers` for every scalar
+// obligation that participates in a `requires.allOrNothingOfIds`
+// invariant carrier. Consumed by `engine/index.js#collectGroupsPresentedIn`
+// so a flow page presenting any member surfaces its parent invariant
+// container the same way `presentsForEach.forEachOf` surfaces records
+// groups. Idempotent — repeated imports rebuild the same list.
+// -----------------------------------------------------------------------------
+for (const container of obligations) {
+  if (!container?.requires?.allOrNothingOfIds) continue
+  for (const memberId of container.requires.allOrNothingOfIds) {
+    const member = obligations.find((o) => o.id === memberId)
+    if (!member) continue
+    const existing = member.containers ?? []
+    if (existing.some((c) => c.id === container.id)) continue
+    member.containers = existing.concat(container)
+  }
+}

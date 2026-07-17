@@ -49,7 +49,15 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 const prototypeDir = path.resolve(dirname, '..')
 const modelPath = path.join(prototypeDir, 'MODEL.md')
 const ID_SHORT_LENGTH = 8
-const STRUCTURAL_GROUP_NAMES = new Set(['commodityLine', 'unitRecord'])
+// Structural containers — obligations rendered with the `[[name]]`
+// Mermaid shape and marked "structural" in the data dictionary.
+// Includes both records-shape groups (commodityLine, unitRecord) and
+// notification-level invariant-carrier containers (accompanyingDocument).
+const STRUCTURAL_GROUP_NAMES = new Set([
+  'commodityLine',
+  'unitRecord',
+  'accompanyingDocument'
+])
 const EM_DASH = '—'
 
 // -----------------------------------------------------------------------------
@@ -106,7 +114,6 @@ const dependencyNames = (obligation) => {
 const notesFor = (obligation) => {
   if (isSystemPopulated(obligation)) return 'system-populated'
   if (isStructuralGroup(obligation)) return 'structural'
-  if (obligation.name === 'accompanyingDocumentType') return 'self-loop'
   return ''
 }
 
@@ -117,7 +124,7 @@ const notesFor = (obligation) => {
 // -----------------------------------------------------------------------------
 
 const structuralRank = (obligation) => {
-  const groupOrder = ['commodityLine', 'unitRecord']
+  const groupOrder = ['commodityLine', 'unitRecord', 'accompanyingDocument']
   const idx = groupOrder.indexOf(obligation.name)
   return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
 }
@@ -230,6 +237,13 @@ const requiresAnyOfEdges = () =>
     return anyOfIds.map((id) => `  ${obligation.name} -.-> ${lookupName(id)}`)
   })
 
+const requiresAllOrNothingEdges = () =>
+  sortedObligations().flatMap((obligation) => {
+    const memberIds = obligation.requires?.allOrNothingOfIds
+    if (!Array.isArray(memberIds) || memberIds.length === 0) return []
+    return memberIds.map((id) => `  ${obligation.name} -.-> ${lookupName(id)}`)
+  })
+
 /**
  * A node only needs an explicit shape declaration once. Emit shape lines
  * for every obligation that appears in an edge (either endpoint), so
@@ -240,10 +254,12 @@ const dependencyNodeShapes = () => {
   for (const obligation of sortedObligations()) {
     const deps = obligationMetadata(obligation).dependsOn ?? []
     const anyOf = obligation.requires?.anyOfIds ?? []
-    if (deps.length > 0 || anyOf.length > 0) {
+    const allOrNothing = obligation.requires?.allOrNothingOfIds ?? []
+    if (deps.length > 0 || anyOf.length > 0 || allOrNothing.length > 0) {
       withEdges.add(obligation.name)
       for (const depId of deps) withEdges.add(lookupName(depId))
       for (const id of anyOf) withEdges.add(lookupName(id))
+      for (const id of allOrNothing) withEdges.add(lookupName(id))
     }
   }
   return sortedObligations()
@@ -258,15 +274,17 @@ const dependencyGraphSection = () => {
     '',
     'Solid edges (`-->`) are gate reads (an obligation whose `applyTo`',
     "closure reads the source obligation's stored value). Dotted edges",
-    '(`-.->`) are `requires.anyOfIds` — "requires-any-of" invariants',
-    'checked by the engine on group instances, distinct from gate reads.',
-    'Group containers use `[[name]]` shape.',
+    '(`-.->`) are group-level invariants — `requires.anyOfIds`',
+    '("at least one of these leaves must be filled per instance") or',
+    '`requires.allOrNothingOfIds` ("either all listed scalar members are',
+    'filled or none are"). Group containers use `[[name]]` shape.',
     '',
     '```mermaid',
     'graph LR',
     ...dependencyNodeShapes(),
     ...dependencyEdges(),
     ...requiresAnyOfEdges(),
+    ...requiresAllOrNothingEdges(),
     '```'
   ]
   return lines.join('\n')

@@ -162,17 +162,16 @@ describe('proveReachability — real V4 manifest', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Self-loop — accompanyingDocumentType's gate reads its own stored
-// value. Phase 2's sweep pinned this via a raw-literal dependsOn.
-// The prover must not go into infinite recursion.
+// Self-loop — the prover treats `dependsOn === [own-id]` as a seed so
+// a legitimate self-referencing gate can't stall the walk. The V4
+// manifest no longer has a self-loop (the accompanyingDocumentType
+// self-loop was removed alongside the WS2 all-or-nothing rework), but
+// the graph-level rule is still load-bearing and remains covered here
+// via a synthetic record.
 // ---------------------------------------------------------------------------
 
 describe('proveReachability — self-loop handling', () => {
   it('does not recurse forever on a self-referencing dependsOn', () => {
-    // The manifest has one legitimate self-loop: accompanyingDocument-
-    // Type's gate closure literally reads fulfilments[its-own-id]
-    // (branchedGate on isFilled(fulfilments[accompanyingDocumentType.id])).
-    //
     // Rule: pure self-loops (dependsOn === [own-id]) are treated as
     // seeds. Graph-wise a self-loop has no EXTERNAL prerequisite —
     // nothing beyond the obligation itself constrains whether the gate
@@ -188,17 +187,6 @@ describe('proveReachability — self-loop handling', () => {
     expect(result.errors).toEqual([])
     expect(result.reachable).toContain('acc-doc-type')
     expect(result.unreachable).not.toContain('acc-doc-type')
-  })
-
-  it('does not crash on accompanyingDocumentType in the full manifest', () => {
-    // Regression pin — the real manifest contains this self-loop plus
-    // three siblings that reference it. The whole-manifest run above
-    // asserted zero unreachable; here we specifically confirm the
-    // prover completes when the self-loop is part of the input.
-    const result = proveReachability(manifestRecords())
-    expect(result).toBeDefined()
-    expect(result.errors).toEqual([])
-    expect(result.unreachable).toEqual([])
   })
 })
 
@@ -595,8 +583,11 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
     //
     // Structured helpers per hand-off: allowListed × 6 + anyAllowListed
     // × 2 + branchedGate-with-predicateMeta × 5 + notInUnionOf × 2 = 15
-    // synthesisable. Trivial: regionCode + four accompanyingDocument
-    // siblings.
+    // synthesisable. Trivial: regionCode + the four accompanyingDocument
+    // siblings (no applyTo after WS2 all-or-nothing rework — invariant
+    // moved onto the container obligation) + the accompanyingDocument
+    // container itself + the two structural groups (commodityLine,
+    // unitRecord) + the two system-populated fields.
     expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(14)
     // The two former-opaque gates are now synthesisable.
     const synthesisableNames = result.witnesses.synthesisable.map(
@@ -685,34 +676,14 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     expect(opt).toMatchObject({ inScope: true, status: 'optional' })
   })
 
-  it.each([
-    'accompanyingDocumentType',
-    'accompanyingDocumentAttachmentType',
-    'accompanyingDocumentReference',
-    'accompanyingDocumentDateOfIssue'
-  ])(
-    '%s: documentType present → mandatory + reason, absent → optional',
-    (name) => {
-      const obl = findOblByName(name)
-      const w = synthesiseWitness(obl)
-      expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
-      const acc = findOblByName('accompanyingDocumentType')
-      // Present → mandatory + reason.
-      const mand = obl.applyTo({ [acc.id]: 'certificate' }, new Map())
-      expect(mand).toMatchObject({
-        inScope: true,
-        status: 'mandatory'
-      })
-      expect(mand.reasons).toBeDefined()
-      expect(mand.reasons.length).toBeGreaterThan(0)
-      // Absent → optional (no reason).
-      const opt = obl.applyTo({}, new Map())
-      expect(opt).toMatchObject({ inScope: true, status: 'optional' })
-    }
-  )
-
   // Meta-first invariant: every migrated site's applyTo.metadata.type
   // is one of the four new helpers — never `branchedGate` any more.
+  // The 4 accompanying-document siblings were part of the original 9-
+  // site migration; after the WS2 "all-or-nothing block" rework
+  // (2026-07) they lost their `applyTo` closure entirely — the block
+  // invariant now lives on the `accompanyingDocument` container as
+  // `requires.allOrNothingOfIds`, and each field is a plain scalar
+  // (status: 'optional'). So the migrated-site set narrows to five.
   it('every migrated site now uses a meta-first helper metadata.type', () => {
     const META_FIRST = new Set(['equalsGate', 'presentGate', 'includesGate'])
     const migratedNames = [
@@ -720,11 +691,7 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
       'commercialTransporter',
       'privateTransporter',
       'transitedCountries',
-      'regionCode',
-      'accompanyingDocumentType',
-      'accompanyingDocumentAttachmentType',
-      'accompanyingDocumentReference',
-      'accompanyingDocumentDateOfIssue'
+      'regionCode'
     ]
     const stragglers = migratedNames
       .map(findOblByName)

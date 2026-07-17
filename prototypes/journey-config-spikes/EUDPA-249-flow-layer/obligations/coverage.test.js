@@ -31,6 +31,11 @@ const KNOWN_UNWIRED = new Set([
   'commodityLine',
   'unitRecord',
 
+  // Invariant-carrier container — accompanyingDocument holds the V4
+  // "all-or-nothing" invariant on its four scalar member fields. It
+  // carries no value directly, so no domain entry.
+  'accompanyingDocument',
+
   // System-populated fields declared for V4 completeness but NOT
   // presented in the flow layer (added step 5c). Value legality is
   // enforced upstream (the system minting the reference number;

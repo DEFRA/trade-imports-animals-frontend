@@ -1166,6 +1166,100 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
   })
 })
 
+// The V4 accompanying-document field block. Container obligation
+// carries `requires.allOrNothingOfIds` naming its four scalar member
+// obligations. Errors emerge from state.fulfilments directly (no
+// records loop) so the primitive works for notification-level scalars
+// without a records-shaped storage rewrite.
+describe('groupInvariantErrors (V4 requires.allOrNothingOfIds)', () => {
+  const container = {
+    id: 'aon-container',
+    name: 'accompanyingDocument'
+  }
+  const member = (n) => ({ id: `member-${n}`, name: `member${n}` })
+  const [a, b, c, d] = [1, 2, 3, 4].map(member)
+  const containerWithRule = {
+    ...container,
+    requires: {
+      allOrNothingOfIds: [a.id, b.id, c.id, d.id],
+      errorCode: 'obligation.accompanyingDocument.allOrNothing'
+    }
+  }
+
+  const inScopeContainer = state({
+    obligations: impls([{ obligation: container, impl: { inScope: true } }])
+  })
+  const withFulfilments = (fulfilments) => ({
+    ...inScopeContainer,
+    fulfilments
+  })
+
+  it('empty list when all four members are blank (block inactive)', () => {
+    expect(groupInvariantErrors(containerWithRule, inScopeContainer)).toEqual(
+      []
+    )
+  })
+
+  it('empty list when all four members are filled (block complete)', () => {
+    const st = withFulfilments({
+      [a.id]: 'type-x',
+      [b.id]: 'pdf',
+      [c.id]: 'REF-1',
+      [d.id]: '2026-01-01'
+    })
+    expect(groupInvariantErrors(containerWithRule, st)).toEqual([])
+  })
+
+  it.each([
+    ['single field filled', { [a.id]: 'type-x' }, [b.id, c.id, d.id]],
+    ['two fields filled', { [a.id]: 'type-x', [c.id]: 'REF-1' }, [b.id, d.id]],
+    [
+      'three fields filled',
+      { [a.id]: 'type-x', [b.id]: 'pdf', [c.id]: 'REF-1' },
+      [d.id]
+    ]
+  ])('emits ONE error when partial: %s', (_label, fulfilments, missingIds) => {
+    const errors = groupInvariantErrors(
+      containerWithRule,
+      withFulfilments(fulfilments)
+    )
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toEqual({
+      code: 'obligation.accompanyingDocument.allOrNothing',
+      groupId: container.id,
+      groupName: 'accompanyingDocument',
+      missingIds
+    })
+  })
+
+  it.each([
+    ['empty string', ''],
+    ['null', null],
+    ['undefined', undefined],
+    ['empty array', []]
+  ])('treats %s as blank (matches isBlankValue)', (_label, blank) => {
+    // A single "blank" value on Type + real values on the other three
+    // is partial from the invariant's perspective.
+    const st = withFulfilments({
+      [a.id]: blank,
+      [b.id]: 'pdf',
+      [c.id]: 'REF-1',
+      [d.id]: '2026-01-01'
+    })
+    const errors = groupInvariantErrors(containerWithRule, st)
+    expect(errors).toHaveLength(1)
+    expect(errors[0].missingIds).toEqual([a.id])
+  })
+
+  it('empty list when the container is out of scope', () => {
+    const st = {
+      ...withFulfilments({ [a.id]: 'type-x' }),
+      obligations: impls([{ obligation: container, impl: { inScope: false } }])
+    }
+    expect(groupInvariantErrors(containerWithRule, st)).toEqual([])
+  })
+})
+
 describe('containerStatus + journeyState with `requires.minEntries`', () => {
   // Integration: a container that presentsForEach off a floored group
   // must roll up to NS when zero records exist — today (pre-floor) it
