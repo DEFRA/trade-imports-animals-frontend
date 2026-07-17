@@ -67,6 +67,39 @@ import {
   accompanyingDocumentDateOfIssue
 } from '../obligations/obligations.js'
 
+// EUDPA-288 inc-007c — MDM option source (PLAN §5.4 ruling: "use the most
+// realistic source ... we have the MDM integrations, use them"). The model
+// imports A's reference-data services and delegates every MDM-backed enum's
+// `options` to the SAME accessor A's own controllers call, returning codes
+// only (no display copy — the no-display-keys gate enforces that). This
+// deliberately opens B's closed import set — the intended MDM trade, not a
+// regression; obligation-purity.js already sanctions the services/ route.
+//
+// Field ↔ service delegation map (delegated-live):
+//   reasonForImport                    → import-reason-purpose.reasons()
+//   purposeInInternalMarket            → import-reason-purpose.purposes() (reason-gated)
+//   countryOfOrigin                    → countries.originCountries()
+//   transitedCountries                 → countries.originCountries()
+//   portOfEntry                        → ports.list()
+//   meansOfTransport                   → transport-reference.meansOfTransport()
+//   transporterType                    → transport-reference.transporterTypes()
+//   commodityCode                      → commodities.list()
+//   species                            → commodities.speciesFor(line's commodity)
+//   animalsCertifiedFor                → certification-purposes.certificationPurposes()
+//   accompanyingDocumentType           → document-types.documentTypes()
+//   accompanyingDocumentAttachmentType → document-types.attachmentTypes()
+// Left static (no MDM source): containsUnweanedAnimals, regionCodeRequirement
+//   (yes/no), commodityType (B-only placeholder set — A has no service for it).
+// Address-block country sub-field validation is out of scope (not a top-level
+// enum entry; A renders it from countries.addressCountries()).
+import * as countries from '../../services/countries/index.js'
+import * as ports from '../../services/ports/index.js'
+import * as commodities from '../../services/commodities/index.js'
+import * as documentTypes from '../../services/document-types/index.js'
+import * as certification from '../../services/certification-purposes/index.js'
+import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
+import * as transportReference from '../../services/transport-reference/index.js'
+
 // ---------------------------------------------------------------------------
 // Reason constants — one per distinct failure code. Exported so tests
 // and error-formatting code can name-check them.
@@ -322,50 +355,27 @@ function parseDdMmYyyy(value) {
 // task-list patterns. Full V4 lists come from MDM in production.
 // ---------------------------------------------------------------------------
 
-// V4 spec (Confluence page 6497338582): 5 values. Step 5c aligned this
-// with the spec (was 4 values with mismatched codes — transit-through-eu
-// vs V4's `transit`, temporary-admission vs V4's `temporary-admission-
-// horses`, re-entry-after-refusal vs V4's `re-entry`; V4 also carries
-// `transhipment-or-onward-travel` which the iteration-shipped stub
-// lacked). Codes are kebab-cased for consistency across the manifest.
-const REASON_FOR_IMPORT_OPTIONS = [
-  'internal-market',
-  'transhipment-or-onward-travel',
-  'transit',
-  're-entry',
-  'temporary-admission-horses'
-]
+// MDM: import-reason-purpose service. Codes are A's stored vocabulary
+// (camelCase: 'internalMarket', ...), NOT B's kebab. inc-007c trade.
+export const reasonForImportDomain = computedEnum(() =>
+  importReasonPurpose.reasons().map((option) => option.value)
+)
 
-export const reasonForImportDomain = staticEnum(REASON_FOR_IMPORT_OPTIONS)
-
-// V4 spec: purpose has 11 values, all available under the
-// `internal-market` reason. Step 5c widened from the initial 4-value
-// stub (`breeding / slaughter / fattening / other` — `other` doesn't
-// exist in V4).
-const PURPOSE_BY_REASON = {
-  'internal-market': [
-    'transfer-of-ownership-sale-or-gift',
-    'transfer-of-ownership-rescue',
-    'breeding',
-    'research',
-    'racing-competition-show-or-training',
-    'approved-premises-or-body',
-    'companion-animal-not-for-resale-or-rehoming',
-    'production',
-    'slaughter',
-    'fattening',
-    'restocking'
-  ]
-}
-
+// MDM: import-reason-purpose service, reason-gated (B's model semantics
+// preserved — readsFrom reasonForImport). The gate value is A's
+// 'internalMarket' code now that reasonForImport sources from A's MDM.
 export const purposeInInternalMarketDomain = computedEnum(
-  (fulfilments) => PURPOSE_BY_REASON[fulfilments[reasonForImport.id]] ?? [],
+  (fulfilments) =>
+    fulfilments[reasonForImport.id] === 'internalMarket'
+      ? importReasonPurpose.purposes().map((option) => option.value)
+      : [],
   [reasonForImport]
 )
 
-const TRANSPORTER_TYPE_OPTIONS = ['commercial', 'private']
-
-export const transporterTypeDomain = staticEnum(TRANSPORTER_TYPE_OPTIONS)
+// MDM: transport-reference service.
+export const transporterTypeDomain = computedEnum(() =>
+  transportReference.transporterTypes()
+)
 
 const YES_NO_OPTIONS = ['yes', 'no']
 
@@ -380,67 +390,34 @@ export const regionCodeDomain = predicate(
   [reasons.stringMaxLength]
 )
 
-// V4: enum, MDM-sourced list of Live Animals ports of entry. Fixed
-// subset for the spike — full list comes from MDM in production.
-const PORT_OF_ENTRY_OPTIONS = [
-  'DVR',
-  'HUL',
-  'LGW',
-  'LHR',
-  'STN',
-  'EDI',
-  'BRS',
-  'MAN'
-]
+// MDM: ports service. Option value is A's port code (e.g. 'GB DVR').
+export const portOfEntryDomain = computedEnum(() =>
+  ports.list().map((port) => port.code)
+)
 
-export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS)
-
-// V4: multi-select enum. Options depend on the LINE's commodityCode
-// (each commodity line has its own set of eligible species). First
-// per-line computed-enum in the spike — reads ctx.path to know which
-// line's commodityCode to read.
-const SPECIES_BY_COMMODITY_CODE = {
-  '0101': ['horse'],
-  '0102': ['cattle', 'buffalo', 'bison'],
-  '0103': ['pig', 'wild-boar'],
-  '010410': ['sheep', 'lamb'],
-  '010420': ['goat'],
-  '01061900': ['dog', 'cat', 'ferret', 'rabbit'],
-  '01063100': ['owl', 'falcon', 'eagle', 'other-bird-of-prey'],
-  '01064100': ['bee']
-}
-
+// MDM: commodities service, per-line. `ctx.path` is the current commodity
+// line's fulfilmentId; the line's stored commodityCode is A's commodity
+// NAME (commodityCode now sources from commodities.list()), which is the
+// key commodities.speciesFor expects. Values are A's taxonomy ids.
 export const speciesDomain = computedEnum(
   (fulfilments, _ids, ctx) => {
-    // Line-scoped: `ctx.path` is the current commodity line's fulfilmentId.
-    // Read the line's commodityCode value and return that code's species.
     const codeMap = fulfilments[commodityCode.id] ?? {}
-    const code = ctx?.path ? codeMap[ctx.path] : undefined
-    return SPECIES_BY_COMMODITY_CODE[code] ?? []
+    const name = ctx?.path ? codeMap[ctx.path] : undefined
+    return commodities.speciesFor(name).map((option) => option.value)
   },
   [commodityCode]
 )
 
-const MEANS_OF_TRANSPORT_OPTIONS = [
-  'airplane',
-  'railway',
-  'road-vehicle',
-  'vessel'
-]
+// MDM: transport-reference service.
+export const meansOfTransportDomain = computedEnum(() =>
+  transportReference.meansOfTransport()
+)
 
-export const meansOfTransportDomain = staticEnum(MEANS_OF_TRANSPORT_OPTIONS)
-
-// Country list — used for address `country` sub-fields (any country
-// might legitimately appear on an address block: destination + contact
-// addresses are commonly within GB). GB is included here for that
-// reason. Also feeds `transitedCountries` (enough entries to
-// demonstrate the > 12 cap).
-//
-// Audit #5: `countryOfOrigin` is a DIFFERENT enum — the V4 spec says
-// "Restricted to countries in the named MDM list for EU, EEA and EFTA
-// countries" (Confluence page 6497338582). GB is neither, so the
-// countryOfOrigin picker uses `EEA_EFTA_COUNTRY_OPTIONS` below (the
-// same set minus GB). Address blocks keep the general list.
+// Country list for address `country` sub-field validation (any country
+// might legitimately appear on an address block; GB is included for
+// destination/contact addresses). Address blocks are out of inc-007c's
+// MDM scope — this static list stays. The enum entries (countryOfOrigin,
+// transitedCountries) now source their options from the countries service.
 const COUNTRY_OPTIONS = [
   'AT',
   'BE',
@@ -470,32 +447,17 @@ const COUNTRY_OPTIONS = [
   'SK'
 ]
 
-// V4 audit #5: countryOfOrigin restricts to EU / EEA / EFTA. GB is
-// neither EU (post-Brexit), nor EEA (never joined), nor EFTA (never
-// joined) so it's removed here. The full MDM list from V4 is the
-// production source; this stub covers the same countries as
-// COUNTRY_OPTIONS minus GB — enough to demonstrate the widget and
-// let the walks pick France (FR) as the country of origin.
-const EEA_EFTA_COUNTRY_OPTIONS = COUNTRY_OPTIONS.filter((c) => c !== 'GB')
+// MDM: countries service. `originCountries()` is A's EEA/EFTA list (ISO
+// codes, GB-excluded) — the same accessor features/origin uses.
+export const countryOfOriginDomain = computedEnum(() =>
+  countries.originCountries().map((option) => option.value)
+)
 
-export const countryOfOriginDomain = staticEnum(EEA_EFTA_COUNTRY_OPTIONS)
-
-// V4 commodity codes — subset covering the whitelisted gates in
-// obligations.js (0102 cattle, 0103 pig, 010410 sheep, 010420 goats,
-// 01061900 cats/dogs/ferrets, 0101 horse, 01064100 bees,
-// 01063100 birds of prey).
-const COMMODITY_OPTIONS = [
-  '0101',
-  '0102',
-  '0103',
-  '010410',
-  '010420',
-  '01061900',
-  '01063100',
-  '01064100'
-]
-
-export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS)
+// MDM: commodities service. Option value is A's commodity NAME ('Cow',
+// 'Horse', ...) — A's picker vocabulary, NOT the CN code. B's gates still
+// compare codes; the name↔code normalisation is the bridge/oracle's job
+// (inc-008/010, PLAN §5.6, COMMODITY_CODES, A→B only as it is non-injective).
+export const commodityCodeDomain = computedEnum(() => commodities.list())
 
 // V4: commodity type — MDM enum, small closed list. The real value
 // set comes from an MDM ontology that isn't documented on the V4
@@ -510,44 +472,15 @@ const COMMODITY_TYPE_OPTIONS = ['game', 'placeholder-1', 'placeholder-2']
 
 export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS)
 
-// V4: accompanying document type — fixed enum of the 14 document
-// kinds listed in the spec (Confluence page 6497338582).
-const ACCOMPANYING_DOCUMENT_TYPE_OPTIONS = [
-  'itahc',
-  'veterinary-health-certificate',
-  'air-waybill',
-  'import-permit',
-  'letter-of-authority',
-  'commercial-invoice',
-  'sea-waybill',
-  'rail-waybill',
-  'bill-of-lading',
-  'catch-certificate',
-  'laboratory-sampling-results',
-  'health-certificate',
-  'journey-log',
-  'other'
-]
-
-export const accompanyingDocumentTypeDomain = staticEnum(
-  ACCOMPANYING_DOCUMENT_TYPE_OPTIONS
+// MDM: document-types service. Option values are A's document-type and
+// attachment-format labels (A's select stores the display string as the
+// value — there is no code/label split in A's source).
+export const accompanyingDocumentTypeDomain = computedEnum(() =>
+  documentTypes.documentTypes()
 )
 
-// V4: attachment format — the file format the accompanying document
-// is supplied in. Fixed list of 8 file extensions per spec.
-const ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS = [
-  'pdf',
-  'doc',
-  'docx',
-  'jpg',
-  'jpeg',
-  'png',
-  'xls',
-  'xlsx'
-]
-
-export const accompanyingDocumentAttachmentTypeDomain = staticEnum(
-  ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS
+export const accompanyingDocumentAttachmentTypeDomain = computedEnum(() =>
+  documentTypes.attachmentTypes()
 )
 
 // ---------------------------------------------------------------------------
@@ -909,7 +842,8 @@ export const arrivalDateAtPortDomain = predicate(
 // resolves both.
 export const transitedCountriesDomain = {
   type: 'enum',
-  options: () => COUNTRY_OPTIONS,
+  // MDM: countries service (same accessor transit-countries.controller uses).
+  options: () => countries.originCountries().map((option) => option.value),
   predicate: (value, ctx) => {
     if (!Array.isArray(value)) return []
     if (value.length > 12) {
@@ -926,42 +860,17 @@ export const transitedCountriesDomain = {
     return []
   },
   metadata: {
-    shape: 'staticEnumWithMaxSelections',
-    options: COUNTRY_OPTIONS,
+    shape: 'computedEnumWithMaxSelections',
+    readsFrom: [],
     reasons: [reasons.arrayMaxSelections.code],
     max: 12
   }
 }
 
-// V4 spec (Confluence page 6497338582): the 16 PURPOSES an animal
-// can be certified for. Step 5d replaced the earlier stub which used
-// 4 SPECIES codes (bovine / ovine / porcine / equine) — that was a
-// semantic mismatch: this obligation asks "what has this animal been
-// certified for?", not "what species is it?".
-//
-// In production these values come from the certificate. For the
-// browsable prototype we hardcode the V4 canonical list so CYA and the
-// task list read the right way.
-export const ANIMALS_CERTIFIED_FOR_OPTIONS = [
-  'further-keeping',
-  'slaughter',
-  'confined-establishment',
-  'germinal-products',
-  'registered-equine-animal',
-  'travelling-circus-or-animal-act',
-  'exhibition',
-  'event-or-activity-near-borders',
-  'release-into-the-wild',
-  'dispatch-centre',
-  'relaying-area-or-purification-centre',
-  'ornamental-aquaculture-establishment',
-  'technical-use',
-  'quarantine-or-similar-establishment',
-  'live-aquatic-animals-for-human-consumption',
-  'other'
-]
-export const animalsCertifiedForDomain = staticEnum(
-  ANIMALS_CERTIFIED_FOR_OPTIONS
+// MDM: certification-purposes service. Option values are A's
+// certified-for purpose codes.
+export const animalsCertifiedForDomain = computedEnum(() =>
+  certification.certificationPurposes().map((option) => option.value)
 )
 
 // ---------------------------------------------------------------------------

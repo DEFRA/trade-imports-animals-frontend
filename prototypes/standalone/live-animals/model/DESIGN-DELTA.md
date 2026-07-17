@@ -260,3 +260,82 @@ assert is untouched and still runs.
 **Backwards compatibility / tests.** Purely additive — one new source file +
 one new test file, no existing model file changed. Model suite: 74 → 75 test
 files, 1095 → 1103 tests passed (+8 from the new gate), 11 skipped unchanged.
+
+---
+
+## 6. MDM-backed `options` delegated to A's services · `domain/index.js` · `EUDPA-288` inc-007c
+
+**What changed.** Every domain enum entry with an MDM source no longer
+declares a hardcoded static option list. Its `options` closure now calls the
+SAME reference-data service accessor A's own controllers use, returning
+**codes only** (no display copy). Per Sam's PLAN §5.4 ruling: "use the most
+realistic source at any given point — we have the MDM integrations, use
+them." This is a divergence from B (`34550a3`), whose domain declared static
+`staticEnum` lists.
+
+**This deliberately opens B's closed import set.** `domain/index.js` now
+imports seven `services/<name>/index.js` modules. That is the intended MDM
+trade, not a regression — `obligation-purity.js` already sanctions the
+`services/<name>/index.js` route, and the no-display-keys gate (§5) stays
+green, proving values were delegated without reintroducing copy.
+
+**Field ↔ service delegation map.**
+
+| Domain entry                         | Service accessor (A's own source)                 | Status         | Value vocabulary                            |
+| ------------------------------------ | ------------------------------------------------- | -------------- | ------------------------------------------- |
+| `reasonForImport`                    | `import-reason-purpose.reasons()`                 | delegated-live | camelCase (`internalMarket`, …)             |
+| `purposeInInternalMarket`            | `import-reason-purpose.purposes()` (reason-gated) | delegated-live | kebab; gate value now `internalMarket`      |
+| `countryOfOrigin`                    | `countries.originCountries()`                     | delegated-live | ISO codes, GB-excluded                      |
+| `transitedCountries`                 | `countries.originCountries()`                     | delegated-live | ISO codes; max-12 predicate kept            |
+| `portOfEntry`                        | `ports.list()`                                    | delegated-live | port codes (`GB DVR`, …)                    |
+| `meansOfTransport`                   | `transport-reference.meansOfTransport()`          | delegated-live | Title Case (`Airplane`, …)                  |
+| `transporterType`                    | `transport-reference.transporterTypes()`          | delegated-live | `Commercial` / `Private`                    |
+| `commodityCode`                      | `commodities.list()`                              | delegated-live | commodity NAMES (`Cow`, …), NOT CN codes    |
+| `species`                            | `commodities.speciesFor(line's commodity)`        | delegated-live | taxonomy ids; per-line, reads commodityCode |
+| `animalsCertifiedFor`                | `certification-purposes.certificationPurposes()`  | delegated-live | kebab (A's spelling)                        |
+| `accompanyingDocumentType`           | `document-types.documentTypes()`                  | delegated-live | display strings (A has no code/label split) |
+| `accompanyingDocumentAttachmentType` | `document-types.attachmentTypes()`                | delegated-live | `PDF` / `DOC` / …                           |
+| `containsUnweanedAnimals`            | —                                                 | left static    | yes/no                                      |
+| `regionCodeRequirement`              | —                                                 | left static    | yes/no                                      |
+| `commodityType`                      | —                                                 | left static    | B-only placeholder set; A has no service    |
+
+Address-block `country` sub-field validation is out of scope (a sub-field
+rule, not a top-level enum entry; A renders it from
+`countries.addressCountries()`). Its static `COUNTRY_OPTIONS` list stays.
+
+**All twelve MDM entries are delegated LIVE — nothing seamed for M3.** The
+escape hatch was not needed: A's services expose synchronous stub data at
+import time (`countries`/`ports` are pre-primed from their stub; the other
+five have no `prime()` at all), so in the dark model test context every
+accessor returns real data without boot priming. No module-boundary mocking
+was introduced and no assertion was weakened — the domain tests were updated
+to the new MDM truth (values, and `metadata.shape` `staticEnum` →
+`computedEnum` for the delegated entries).
+
+**Factory.** Delegation uses `computedEnum(fn)` (PLAN §5.4 — "computedEnum's
+signature already fits"). Entries that read no sibling obligation pass
+`readsFrom = []` (they read the service, not a sibling); `purposeInInternalMarket`
+and `species` keep their sibling `readsFrom` (`reasonForImport`,
+`commodityCode`). `transitedCountries` keeps its hand-rolled object shape
+(options + max-12 predicate); only its `options` and `metadata` changed.
+
+**Consequence for M2 — the option source now differs from B's gate
+vocabulary.** The gates in `model/obligations/obligations.js` still compare
+B's codes, but the stored value domain now follows A's MDM vocabulary. The
+sharpest cases the oracle (inc-010) and bridge (inc-008/009) must normalise:
+
+- **`commodityCode`** — options are NAMES (`Cow`), gates compare CN codes
+  (`0102`). Normalise A→B via `COMMODITY_CODES`, which is **non-injective**
+  (`Cat`/`Dog` → `01061900`), so only A→B is safe (PLAN §5.6).
+- **`reasonForImport`** — camelCase (`internalMarket`) vs B's kebab
+  (`internal-market`). `purposeInInternalMarket`'s reason gate was moved to
+  the camelCase value to stay self-consistent.
+- **`meansOfTransport` / `transporterType`** — Title Case vs B's kebab.
+- **`portOfEntry`** — `GB DVR` (GB-prefixed) vs B's bare `DVR`.
+- **`species`** — taxonomy ids vs B's species-name codes.
+- **`accompanyingDocumentType`** — display strings vs B's kebab codes.
+
+**Backwards compatibility / tests.** No new source or test files; only
+`domain/index.js` (source) and `domain/index.test.js` (assertions updated to
+the MDM truth) changed. Model suite unchanged at 75 files / 1104 passed / 11
+skipped.

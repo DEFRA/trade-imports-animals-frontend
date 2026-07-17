@@ -96,42 +96,41 @@ describe('manifest', () => {
   })
 })
 
-describe('staticEnum — reasonForImport', () => {
-  it('returns the fixed options regardless of state', () => {
+describe('computedEnum (MDM) — reasonForImport', () => {
+  it('returns the MDM options regardless of state', () => {
     expect(reasonForImportDomain.type).toBe('enum')
-    expect(reasonForImportDomain.options({})).toContain('internal-market')
+    expect(reasonForImportDomain.options({})).toContain('internalMarket')
     expect(reasonForImportDomain.options({ anything: 'goes' })).toEqual(
       reasonForImportDomain.options({})
     )
   })
 
-  it('names its shape as staticEnum in metadata', () => {
-    expect(reasonForImportDomain.metadata.shape).toBe('staticEnum')
+  it('names its shape as computedEnum in metadata', () => {
+    expect(reasonForImportDomain.metadata.shape).toBe('computedEnum')
   })
 
-  it('carries all 5 V4 codes (step 5c spec conformance)', () => {
-    // Regression: iteration-1 stub had 4 mismatched codes
-    // (transit-through-eu vs V4 `transit`, temporary-admission vs V4
-    // `temporary-admission-horses`, re-entry-after-refusal vs V4
-    // `re-entry`, and V4's `transhipment-or-onward-travel` was
-    // absent). Step 5c renamed / added.
+  it('sources the 5 reason codes from the import-reason-purpose service (inc-007c)', () => {
+    // inc-007c: options come from A's MDM service — A's stored vocabulary
+    // is camelCase, not B's hardcoded kebab list.
     expect(reasonForImportDomain.options({})).toEqual([
-      'internal-market',
-      'transhipment-or-onward-travel',
+      'internalMarket',
+      'transhipmentOrOnwardTravel',
       'transit',
-      're-entry',
-      'temporary-admission-horses'
+      'reEntry',
+      'temporaryAdmissionHorses'
     ])
   })
 })
 
-describe('computedEnum — purposeInInternalMarket', () => {
-  it('returns internal-market sub-values when reason is internal-market', () => {
+describe('computedEnum (MDM) — purposeInInternalMarket', () => {
+  it('returns the MDM sub-values when reason is internalMarket', () => {
+    // inc-007c: values sourced from the import-reason-purpose service;
+    // the reason gate value is A's camelCase 'internalMarket' code.
     const options = purposeInInternalMarketDomain.options({
-      [reasonForImport.id]: 'internal-market'
+      [reasonForImport.id]: 'internalMarket'
     })
     expect(options).toEqual([
-      'transfer-of-ownership-sale-or-gift',
+      'transfer-of-ownership-sale-gift',
       'transfer-of-ownership-rescue',
       'breeding',
       'research',
@@ -160,12 +159,9 @@ describe('computedEnum — purposeInInternalMarket', () => {
     ])
   })
 
-  it('carries all 11 V4 codes (step 5c spec conformance)', () => {
-    // Regression: iteration-1 stub had 4 values (breeding, slaughter,
-    // fattening, other) — `other` doesn't exist in V4 and 8 real V4
-    // values were missing. Step 5c widened to the full 11 values.
+  it('carries all 11 purpose codes from the service', () => {
     const options = purposeInInternalMarketDomain.options({
-      [reasonForImport.id]: 'internal-market'
+      [reasonForImport.id]: 'internalMarket'
     })
     expect(options).toHaveLength(11)
     expect(options).not.toContain('other')
@@ -188,19 +184,18 @@ describe('staticEnum — countryOfOrigin', () => {
   })
 })
 
-describe('staticEnum — commodityCode', () => {
-  it('covers every whitelisted V4 code the obligations manifest gates on', () => {
-    const options = commodityCodeDomain.options({})
-    expect(options).toEqual(
-      expect.arrayContaining([
-        '0101',
-        '0102',
-        '0103',
-        '010410',
-        '010420',
-        '01061900'
-      ])
-    )
+describe('computedEnum (MDM) — commodityCode', () => {
+  it('sources A commodity picker NAMES from the commodities service (inc-007c)', () => {
+    // inc-007c: options are A's commodity NAMES, not CN codes. B's gates
+    // still compare codes; the name↔code normalisation is the bridge /
+    // oracle's job (PLAN §5.6, COMMODITY_CODES, A→B only).
+    expect(commodityCodeDomain.options({})).toEqual([
+      'Cow',
+      'Horse',
+      'Cat',
+      'Dog',
+      'Fish'
+    ])
   })
 })
 
@@ -665,25 +660,23 @@ describe('transitedCountriesDomain (V4: multi-select max 12)', () => {
   })
 })
 
-describe('staticEnum — animalsCertifiedFor (V4: 15 certified-for purposes)', () => {
-  // Step 5d overhauled this: previously stubbed with 4 SPECIES codes
-  // (bovine / ovine / porcine / equine — semantic mismatch, the
-  // obligation asks "certified for WHAT?", not "what species?"). V4
-  // spec is 15 PURPOSES (Slaughter, Confined establishment,
-  // Registered equine animal, ...).
-  it('returns the 15 V4 purpose options regardless of state', () => {
+describe('computedEnum (MDM) — animalsCertifiedFor', () => {
+  it('sources the certified-for purpose codes from the certification-purposes service (inc-007c)', () => {
+    // inc-007c: values now come from A's MDM service. The codes are A's
+    // vocabulary (e.g. 'travelling-circus-animal-act', not B's
+    // 'travelling-circus-or-animal-act').
     expect(animalsCertifiedForDomain.options({})).toEqual([
       'further-keeping',
       'slaughter',
       'confined-establishment',
       'germinal-products',
       'registered-equine-animal',
-      'travelling-circus-or-animal-act',
+      'travelling-circus-animal-act',
       'exhibition',
       'event-or-activity-near-borders',
       'release-into-the-wild',
       'dispatch-centre',
-      'relaying-area-or-purification-centre',
+      'relaying-area-purification-centre',
       'ornamental-aquaculture-establishment',
       'technical-use',
       'quarantine-or-similar-establishment',
@@ -696,8 +689,8 @@ describe('staticEnum — animalsCertifiedFor (V4: 15 certified-for purposes)', (
     }
   })
 
-  it('names its shape as staticEnum in metadata', () => {
-    expect(animalsCertifiedForDomain.metadata.shape).toBe('staticEnum')
+  it('names its shape as computedEnum in metadata', () => {
+    expect(animalsCertifiedForDomain.metadata.shape).toBe('computedEnum')
   })
 })
 
