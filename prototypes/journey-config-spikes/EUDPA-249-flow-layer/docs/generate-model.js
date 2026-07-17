@@ -30,8 +30,8 @@
  *   npm run docs:model
  */
 
-import { execSync } from 'node:child_process'
-import { writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -325,15 +325,27 @@ const flowGraphSection = () => {
 // Header
 // -----------------------------------------------------------------------------
 
+// Files whose content the generated doc is a projection of. Hashing
+// them (rather than stamping git HEAD) means the baseline SHA changes
+// visibly when the manifest / flow / totality-policy changes and stays
+// byte-identical when they do not — independent of git state, so a
+// docs-only commit does not spuriously invalidate the doc.
+const BASELINE_INPUTS = [
+  path.join(prototypeDir, 'obligations', 'obligations.js'),
+  path.join(prototypeDir, 'obligations', 'helpers.js'),
+  path.join(prototypeDir, 'flow', 'flow.js'),
+  path.join(prototypeDir, 'flow', 'boot-totality.js')
+]
+
+const BASELINE_SHA_LENGTH = 12
+
 const baselineSha = () => {
-  try {
-    return execSync('git rev-parse --short HEAD', {
-      cwd: prototypeDir,
-      encoding: 'utf-8'
-    }).trim()
-  } catch {
-    return 'unknown'
+  const hash = createHash('sha256')
+  for (const filePath of BASELINE_INPUTS) {
+    hash.update(readFileSync(filePath))
+    hash.update('\0') // path separator so re-ordering could not collide
   }
+  return hash.digest('hex').slice(0, BASELINE_SHA_LENGTH)
 }
 
 const header = () =>
@@ -343,7 +355,7 @@ const header = () =>
     'Auto-generated from the manifest by `docs/generate-model.js`.',
     'DO NOT EDIT — run `npm run docs:model` to regenerate.',
     '',
-    `Baseline SHA: \`${baselineSha()}\``
+    `Baseline SHA: \`${baselineSha()}\` (sha256 of manifest + helpers + flow)`
   ].join('\n')
 
 // -----------------------------------------------------------------------------

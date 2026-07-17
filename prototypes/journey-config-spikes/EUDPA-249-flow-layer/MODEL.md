@@ -3,7 +3,7 @@
 Auto-generated from the manifest by `docs/generate-model.js`.
 DO NOT EDIT — run `npm run docs:model` to regenerate.
 
-Baseline SHA: `34550a3`
+Baseline SHA: `3b753824ed61` (sha256 of manifest + helpers + flow)
 
 ## 1. Data dictionary
 
