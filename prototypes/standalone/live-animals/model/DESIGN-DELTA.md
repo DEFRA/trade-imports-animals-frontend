@@ -339,3 +339,104 @@ sharpest cases the oracle (inc-010) and bridge (inc-008/009) must normalise:
 `domain/index.js` (source) and `domain/index.test.js` (assertions updated to
 the MDM truth) changed. Model suite unchanged at 75 files / 1104 passed / 11
 skipped.
+
+---
+
+## 7. The fulfilments bridge — A `answers` <-> B `fulfilments` · `model/bridge/fulfilments.js` · `EUDPA-288` inc-008
+
+**What this is.** Two pure, storage-agnostic functions —
+`answersToFulfilments(answers)` and its inverse `fulfilmentsToAnswers(fulfilments)`
+— translating between A's nested answer POJO and B's flat fulfilments map.
+Additive: one new source file + one new test file, nothing else touched.
+Nothing is wired to A's runtime yet (inc-012+ do that); the bridge is dark like
+the rest of M1.
+
+**The B key is the UUID, not the name.** Verified against `evaluator.js`:
+`dropUnknownFulfilments` / `buildObligationsById` key `fulfilments` by
+`obligation.id` (the UUID). The inc-007 `name == aId` rename is the bridge's
+_lookup_ key (A id -> obligation), but the emitted fulfilments map is keyed by
+`obligation.id`. The bridge derives its whole structure from the vendored
+manifest (name = A id, id = UUID, `within` chain = depth), not from a
+re-parsed `mapping.json`.
+
+**Storage-shape translation (A positional <-> B composite).** An obligation's
+depth is its `within`-ancestor-group count:
+
+| A shape                                                                           | B shape                                        | rule                                        |
+| --------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| `answers.countryOfOrigin` (depth 0)                                               | `fulfilments[uuid]` (scalar)                   | value stored directly                       |
+| `answers.commodityLines[i].numberOfAnimalsQuantity` (depth 1)                     | `fulfilments[uuid] = { 'line<i>': v }`         | one composite segment per group             |
+| `answers.commodityLines[i].animalIdentifiers[j].animalIdentifierEarTag` (depth 2) | `fulfilments[uuid] = { 'line<i>/unit<j>': v }` | `/`-joined, one segment per enclosing group |
+
+The composite fulfilmentId is `line<i>` at the commodity-line level and
+`line<i>/unit<j>` at the unit level — one segment per enclosing group,
+`/`-delimited, matching what `evaluator.js` slices as a group instance-path
+(`prefixLen = ancestorGroups.length + 1`). The prefix (`line`/`unit`, from
+`GROUP_SEGMENT_PREFIXES`) is cosmetic; only the trailing integer carries the
+positional index. **Group obligations (`commodityLines`, `animalIdentifiers`)
+never get a fulfilment entry** — B infers their instances from descendant
+records — so the bridge skips them A->B and rebuilds A's arrays from the leaf
+records B->A. `fulfilmentsToAnswers` is defined over bridge-convention
+fulfilmentIds; opaque orchestrator ULIDs carry no positional index and are out
+of scope for B->A (the inverse is over A-originated data).
+
+**Vocabulary normalisation map (A stores A-vocab; B's gates compare B-vocab).**
+Per-field, applied only to string scalars (addresses / dates / arrays are
+opaque composite values that pass through). Fields not listed pass through:
+
+| A field (aId)        | A vocab                      | B vocab                   | A->B               | B->A                       |
+| -------------------- | ---------------------------- | ------------------------- | ------------------ | -------------------------- |
+| `commoditySelection` | name (`Cow`)                 | CN code (`0102`)          | `commodityCodeFor` | `commodityNameFor` (lossy) |
+| `reasonForImport`    | camelCase (`internalMarket`) | kebab (`internal-market`) | camel->kebab       | kebab->camel               |
+| `transporterType`    | Title (`Commercial`)         | kebab (`commercial`)      | title->kebab       | kebab->title               |
+| `meansOfTransport`   | Title (`Road Vehicle`)       | kebab (`road-vehicle`)    | title->kebab       | kebab->title               |
+| `portOfEntry`        | GB-prefixed (`GB ABD`)       | bare (`ABD`)              | strip `GB `        | add `GB `                  |
+
+The commodity converters are A's own `services/commodities` accessors. A
+converter that cannot place a value (unknown name/code) passes the original
+through rather than emit `undefined`, so an unrecognised value is never
+destroyed.
+
+**The non-injective commodity decision (option (a) — round-trip guaranteed
+A->B->(subset)).** `COMMODITY_CODES` maps both `Cat` and `Dog` to `01061900`,
+so `commodityNameFor('01061900')` recovers only the representative name (`Cat`,
+the first key). `answersToFulfilments` (A->B, the evaluate path) is fully
+correct — a cats-or-dogs consignment always produces the right CN code and the
+right gate decisions. `fulfilmentsToAnswers` (B->A) recovers `Cat` for both.
+This is **honest, deterministic loss, never a silent pass**: the CN code (the
+wire-durable value on the notification) is preserved exactly; only A's UX name
+`Dog` degrades to `Cat` on rehydration. Tested explicitly as a named
+known-limitation case (`Dog round-trips to Cat`), alongside a positive
+round-trip for the injective names (`Cow`/`Horse`/`Fish`/`Cat`).
+
+**Documents topology (D1 — the biggest structural divergence).** A models
+accompanying documents as a repeatable `documents` collection; B models the
+four `accompanyingDocument*` fields as notification-level singletons. Handled
+by a dedicated documents bridge in both directions, outside the generic walk:
+A's `documents[0]` maps to the four B singletons; **`documents[1]` and later
+are dropped (B's one-document cap)** and A's `filename` upload metadata is
+dropped (no B obligation — PLAN §2.4, B stores a file-extension select, no
+bytes). B->A reconstructs a single-element `documents` array.
+
+**A→B mappings with no clean answer (inc-009 / inc-010 blockers).**
+
+- **`species`** — A stores taxonomy ids; DESIGN-DELTA §6 names B's vocab as
+  "species-name codes", but **no injective converter exists** and no gate reads
+  species (it is an always-mandatory field record, opaque to `evaluate()`). The
+  bridge passes it through unchanged. If a future gate compares species, the
+  oracle will need a taxonomy-id <-> species-code map that does not exist today.
+- **`accompanyingDocumentType`** — A stores display strings (`ITAHC`);
+  DESIGN-DELTA §6 names B's vocab as "kebab codes", but the gate is a
+  `presentGate` (reads presence, not value) and no B code list is defined, so
+  the value passes through. Fine for scope; a wire mapper (inc-010+) may need a
+  code table.
+- **Empty collections / value-less line objects** cannot survive A->B: B infers
+  group presence from descendant storage, so `{ commodityLines: [] }` and
+  `{ commodityLines: [{}] }` both translate to `{}`. This is the oracle blind
+  spot the M0 registers already track (PLAN §3 D-notes), surfaced here as a
+  documented test rather than a silent drop.
+
+**Backwards compatibility / tests.** Purely additive. Model suite 75 -> 76 test
+files, 1104 -> 1130 passed (+26 bridge tests), 11 skipped unchanged. The
+`no-display-keys.js` purity gate stays green (the bridge carries no display
+keys and is not an obligation/domain entry). prettier + eslint clean.
