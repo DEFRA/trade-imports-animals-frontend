@@ -53,6 +53,15 @@ Claude's recommendation: **4a only + byte-for-byte parity.** Highest evidentiary
 6. **`prototypes/report/BRIEF.md`** on `origin/chore/EUDPA-249-model-comparison` — the original decision brief driving the whole blend. Migration order lives here.
 7. **`prototypes/report/REPORT.md`** on the same branch — long-form argument behind BRIEF/MATRIX.
 
+## Model exploration tools (added 2026-07-17)
+
+Two tools were added at end of session to make the model easier to surface + query.
+
+- **`MODEL.md`** (this dir) — auto-generated data dictionary + Mermaid dependency graph + per-section page→obligations flow graphs. GitHub renders the Mermaid inline. Regenerate via `npm run docs:model` from repo root. Staleness test in `docs/generate-model.test.js` catches unregenerated commits at CI time. Baseline is stamped as a content-hash (sha256 of the four input files) rather than git SHA — byte-identical on unchanged inputs, obvious diff when any input changes.
+- **`repl-obligations.js`** (this dir) — interactive REPL for querying the model. Start with `npm run repl:eudpa-249`. Commands: `help`, `list [group]`, `state`, `set <name> [<recordId>] <value>`, `clear [<name>]`, `evaluate`, `explain <name>`, `witness <name>`, `reach`, `fixture <name>`. Values parsed as JSON with bare-token fallback (so `set commodityCode line1 0101` and `set reasonForImport '"sale"'` both work). Handlers are pure `(session, args) → {session, output}` — testable without spawning a subprocess.
+
+Typical exploration flow: fire the REPL, `fixture internal-market-partial` to load a canned scenario, `evaluate` to see the journey state, `explain <someObligation>` to trace why it's in its current state, `witness <someGate>` to see what value would open a specific gate.
+
 ## Working pattern that worked in this session
 
 - **HALT-only cadence.** Paul reviewed at end of each phase, not per-commit. Between HALTs the loop runs by delegating to `general-purpose` Task subagents (one per commit), then the parent (me) re-verifies (`never trust the worker's green` — run test suite, check diff scope).
