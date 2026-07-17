@@ -440,3 +440,122 @@ bytes). B->A reconstructs a single-element `documents` array.
 files, 1104 -> 1130 passed (+26 bridge tests), 11 skipped unchanged. The
 `no-display-keys.js` purity gate stays green (the bridge carries no display
 keys and is not an obligation/domain entry). prettier + eslint clean.
+
+## 8. The scope bridge — B implications -> A `scope` object · `model/bridge/scope.js` · `EUDPA-288` inc-009
+
+**What this is.** `makeScopeFromB(answers)` — a drop-in for `engine/read.js`'s
+`makeScope(answers)`, same four members (`inScope: Set<pathKey>`, `has`,
+`answered`, `readyForCheckYourAnswers`), same types. It runs A's answers through
+`answersToFulfilments` (inc-008) -> `createObligationEvaluator().evaluate()` ->
+projects each in-scope implication back into A's `lib/path.js` pathKey grammar.
+Additive: one source file + one differential test file. `fulfilments.js` gained
+three exports (`ancestorChain`, `fulfilmentIdToPath`, `groupObligations`) so the
+projection reuses inc-008's composite<->positional conversion rather than
+re-deriving it. Dark — nothing wired to A's runtime (inc-012+ do that).
+
+**The projection rule (B implication -> A pathKey Set members).** A's
+`reconcile` keys its `inScope` Set by `pathKey(node.path)` for every in-scope
+node in its structural forest walk — it keys obligation NODES, never bare group
+instances (`commodityLines[0]` is not a key). Reproduced from B's per-obligation
+implications:
+
+| B implication                                   | A pathKey(s) added                                                                                                                                                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| top-level scalar/field, `inScope`, no `records` | the bare A id (`o.name`) — `pathKey([o.name])` — e.g. `countryOfOrigin`                                                                                                                       |
+| grouped leaf, `records: [{ fulfilmentId }]`     | `pathKey(fulfilmentIdToPath(ancestorChain(o), fulfilmentId, o.name))` per record                                                                                                              |
+| depth-0 group (`commodityLine`), `inScope`      | the bare group id `commodityLines` (single, even with zero instances)                                                                                                                         |
+| nested group (`unitRecord`), `inScope`          | one node key per PARENT instance — derived from the parent's `records`, not the group's own — so a line with an empty unit collection still contributes `commodityLines[i].animalIdentifiers` |
+
+The nested-group case takes the PARENT group's records deliberately: A yields the
+nested-group NODE once per parent instance regardless of whether that instance's
+nested collection has entries, so keying off the parent (not the group's own
+storage-inferred instances) matches A's structural walk exactly and avoids a
+spurious empty-nested-collection divergence from the projection itself.
+
+`fulfilmentIdToPath` is reused unchanged for both leaves and group nodes: for a
+leaf it consumes all `|chain|` segments of the parent-group fulfilmentId and
+appends the leaf id; for a nested-group node it consumes the parent's `|chain|`
+segments and appends the group id (the group's own trailing index, if any, is
+never read).
+
+**`readyForCheckYourAnswers` — deferred to A's injected fn.** Computed via A's
+`makeScope(answers).readyForCheckYourAnswers`, i.e. A's boot-injected
+`configureReadyForCheckYourAnswers` fn over A's own inScope. Status derivation
+from B's `journeyState`/`containerStatus` is inc-017a's job; deferring keeps the
+shape identical without pulling status forward. Cost: makeScopeFromB runs A's
+reconcile once for that field — irrelevant in the dark phase, and inc-017a
+replaces it with a B-derived computation. `answered(id)` likewise replicates A's
+`anyInstanceAnswered` (walks A's answers via A's registry, matches A's obligation
+id) — it delegates to A's answered semantics, not B's fulfilments, per the plan.
+
+**Vocab does NOT bite the scope path — confirmed.** inScope keys are obligation
+ids and positional indices, never values. The A->B normalisation that
+`answersToFulfilments` applies (commodity name->code, camel->kebab, etc.) drives
+B's gates but the projected keys are A-vocab on both sides (`commodityLines`,
+`commoditySelection`, not `0102`). The differential test asserts set-equality on
+the pathKeys directly and it holds — no normalisation needed on the scope path.
+
+### The divergence register — A `inScope` vs B projected `inScope`
+
+Found by the differential test (`scope.test.js`) over the happy-path fixture plus
+constructed gate states (region yes/no/unanswered, internal-market yes/no,
+commercial/private transport, multi-line/multi-unit, empty collection). **This is
+the preview of the M2 oracle (inc-010) scoped to `inScope`; inc-011 rules these.**
+
+**BEHAVIOURAL divergence (gate semantics — the real find):**
+
+1. **`regionOfOriginCode` — B keeps it always-in-scope; A gates it on
+   `regionOfOriginCodeRequirement === 'yes'`.** B's `regionCode.applyTo` returns
+   `inScope: true` on BOTH branches (mandatory when yes, optional otherwise),
+   citing V4; `c-017` struck that claim down ("the retained regionCode are not
+   requirements"). So B projects `regionOfOriginCode` into scope in **every state
+   where the requirement is not 'yes'** (answered 'no' OR left unanswered) — A
+   does not (and wipes any stored value). PERVASIVE, not a single-state red: it
+   fires on nearly every realistic session. This is the guaranteed oracle red the
+   plan predicted (§2.1 #2). One-line B fix at cutover (make the `no`/unset branch
+   `inScope: false`), per `c-017`.
+
+**No other behavioural/gate divergence surfaced.** Every commodity-gated
+obligation (passport, tattoo, earTag, horseName, identificationDetails,
+description, permanentAddress, numberOfPackages, cph, containsUnweanedAnimals)
+AGREES across all five of A's selectable commodities (Cow, Horse, Cat, Dog,
+Fish). A's five gate whitelists are exactly `V4 ∩ COMMODITY_OPTIONS`, so the
+whitelist gap the corpus flagged (earTag etc.) "propagates to nothing" — A cannot
+select the extra codes (PLAN §2.1 correction 2). purposeInInternalMarket,
+commercial/privateTransporter and transitedCountries scope also agree (the
+mandate difference on transitedCountries — A required, B optional — is not a
+_scope_ divergence and does not surface here).
+
+**STRUCTURAL divergences (shape one side cannot represent — M0 registers, NOT gate
+behaviour). Present in every comparison; filtered in the behavioural assertions
+and asserted separately so they stay documented:**
+
+2. **B-only, always in scope:** `poApprovedReferenceNumber`,
+   `responsiblePersonForLoad` (system-populated, `status: mandatory`, no gate —
+   on B's `KNOWN_UNWIRED` list; A models neither).
+3. **B-only, per line:** `commodityLines[i].commodityType` (B's `commodityType`
+   field; A has no counterpart — `c-037`, resolved "drop pending PO sign-off").
+4. **Documents D1 topology.** A models accompanying documents as a repeatable
+   `documents` collection -> keys `documents`, `documents[i].accompanyingDocument*`
+   (4 per doc). B models the same four fields as notification-level singletons,
+   always in scope (`presentGate` is in-scope on both branches) -> bare
+   `accompanyingDocumentType/AttachmentType/Reference/DateOfIssue`. So A-only:
+   `documents` + `documents[i].*`; B-only: the 4 bare ids. B silently caps at one
+   document.
+5. **A-only:** `importType`, `declaration` — A-side flow obligations the plan
+   does NOT admit to the model (`importType` §5, `declaration` is A's submit gate).
+   Always in A's scope, no B counterpart.
+
+**For inc-010 (the full oracle):** run A->B only (`COMMODITY_CODES` non-injective,
+inc-008 §7). The `inScope` axis is clean except for the one behavioural red
+(`regionOfOriginCode`) above; the oracle should add the status and wipe axes on
+top of this. The structural divergences (2-5) are NOT oracle reds to chase — they
+are the M0 blind spots (the oracle compares two engines over the same inputs and
+cannot see a shape one side can't represent); track them via the registers, and
+have the oracle's comparator filter them exactly as `scope.test.js` does
+(`isStructuralAOnly`/`isStructuralBOnly`) so the real reds stand alone.
+
+**Backwards compatibility / tests.** Purely additive. Model+prototype suite
+76 -> 77 test files, 1130 -> 1147 passed (+17 scope tests), 11 skipped unchanged.
+Full `verify-increment.sh` green (purity gate + prettier + eslint clean). The
+three new `fulfilments.js` exports are additive; inc-008's tests unchanged.

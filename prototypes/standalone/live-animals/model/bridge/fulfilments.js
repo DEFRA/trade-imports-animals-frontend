@@ -60,12 +60,12 @@ const DOCUMENT_FIELD_AIDS = [
 
 const byAId = new Map(obligations.map((o) => [o.name, o]))
 
-const groupObligations = new Set(
+export const groupObligations = new Set(
   obligations.filter((o) => obligations.some((other) => other.within === o))
 )
 
 // Ancestor groups from root down to immediate parent (excluding self).
-const ancestorChain = (obligation) => {
+export const ancestorChain = (obligation) => {
   const chain = []
   let cur = obligation.within
   while (cur) {
@@ -206,7 +206,7 @@ export const answersToFulfilments = (answers = {}) => {
 // orchestrator ULIDs carry no positional index and are out of scope for B->A.
 const indexOfSegment = (segment) => Number(segment.match(/\d+$/)?.[0])
 
-const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
+export const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
   const segments = fulfilmentId.split('/')
   const path = []
   chain.forEach((group, depth) => {
