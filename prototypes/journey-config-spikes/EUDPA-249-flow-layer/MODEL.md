@@ -3,7 +3,7 @@
 Auto-generated from the manifest by `docs/generate-model.js`.
 DO NOT EDIT — run `npm run docs:model` to regenerate.
 
-Baseline SHA: `3b753824ed61` (sha256 of manifest + helpers + flow)
+Baseline SHA: `df40b32f5944` (sha256 of manifest + helpers + flow)
 
 ## 1. Data dictionary
 
@@ -18,6 +18,9 @@ Baseline SHA: `3b753824ed61` (sha256 of manifest + helpers + flow)
 | regionCode                         | `c23d4e5f` | —             | conditional | equalsGate     | regionCodeRequirement    |                  |
 | reasonForImport                    | `d34e5f6a` | —             | mandatory   | —              | —                        |                  |
 | purposeInInternalMarket            | `e45f6a7b` | —             | mandatory   | equalsGate     | reasonForImport          |                  |
+| destinationCountry                 | `f56a7b8c` | —             | mandatory   | includesGate   | reasonForImport          |                  |
+| portOfExit                         | `a67b8c9d` | —             | mandatory   | includesGate   | reasonForImport          |                  |
+| exitDate                           | `b78c9d0e` | —             | mandatory   | equalsGate     | reasonForImport          |                  |
 | containsUnweanedAnimals            | `01a2b3c4` | —             | mandatory   | anyAllowListed | commodityCode            |                  |
 | placeOfOrigin                      | `89c0d1e2` | —             | mandatory   | —              | —                        |                  |
 | consignor                          | `9ad1e2f3` | —             | mandatory   | —              | —                        |                  |
@@ -67,6 +70,9 @@ graph LR
   unitRecord[[unitRecord]]
   regionCodeRequirement --> regionCode
   reasonForImport --> purposeInInternalMarket
+  reasonForImport --> destinationCountry
+  reasonForImport --> portOfExit
+  reasonForImport --> exitDate
   commodityCode --> containsUnweanedAnimals
   transporterType --> commercialTransporter
   transporterType --> privateTransporter
@@ -107,11 +113,17 @@ graph TD
   region-code([region-code])
   reason-for-import([reason-for-import])
   purpose-details([purpose-details])
+  destination-country([destination-country])
+  port-of-exit([port-of-exit])
+  exit-date([exit-date])
   country-of-origin --> countryOfOrigin
   region-code-requirement --> regionCodeRequirement
   region-code --> regionCode
   reason-for-import --> reasonForImport
   purpose-details --> purposeInInternalMarket
+  destination-country --> destinationCountry
+  port-of-exit --> portOfExit
+  exit-date --> exitDate
 ```
 
 ### transporter

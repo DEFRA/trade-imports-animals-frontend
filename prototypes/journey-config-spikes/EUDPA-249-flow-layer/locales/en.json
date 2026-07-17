@@ -86,6 +86,21 @@
       "legend": "What is the purpose of the internal-market movement?",
       "hint": "Only shown when the reason for import is Internal market."
     },
+    "destinationCountry": {
+      "pageTitle": "Destination country",
+      "legend": "Which country are the animals travelling to?",
+      "hint": "Only shown when the reason for import is Transit or Transhipment or onward travel."
+    },
+    "portOfExit": {
+      "pageTitle": "Port of exit",
+      "legend": "Which port will the animals leave the UK through?",
+      "hint": "Only shown when the reason for import is Transit or Temporary admission (horses)."
+    },
+    "exitDate": {
+      "pageTitle": "Exit date",
+      "legend": "When will the animals leave the UK?",
+      "hint": "Only shown when the reason for import is Temporary admission (horses). Enter a date in DD/MM/YYYY format."
+    },
     "transporterType": {
       "pageTitle": "Type of transporter",
       "legend": "What kind of transporter is bringing the animals?"
@@ -528,6 +543,15 @@
     },
     "purposeInInternalMarket": {
       "required": "Choose the purpose in the internal market"
+    },
+    "destinationCountry": {
+      "required": "Choose the destination country"
+    },
+    "portOfExit": {
+      "required": "Choose the port of exit"
+    },
+    "exitDate": {
+      "required": "Enter the exit date"
     },
     "meansOfTransport": {
       "required": "Choose the means of transport"

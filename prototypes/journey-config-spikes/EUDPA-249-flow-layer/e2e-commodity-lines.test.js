@@ -784,6 +784,17 @@ describe('commodity-lines — /start integration', () => {
       url: `${BASE}/pages/reason-for-import`,
       payload: { reasonForImport: 'transit' }
     })
+    // Transit gates destinationCountry + portOfExit in as mandatory.
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/destination-country`,
+      payload: { destinationCountry: 'FR' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/pages/port-of-exit`,
+      payload: { portOfExit: 'DVR' }
+    })
     await inject(jar, {
       method: 'POST',
       url: `${BASE}/pages/transporter-type`,

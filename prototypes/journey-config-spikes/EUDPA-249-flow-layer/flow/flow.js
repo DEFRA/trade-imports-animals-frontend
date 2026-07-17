@@ -42,6 +42,9 @@
 import {
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
   transporterType,
   commercialTransporter,
   privateTransporter,
@@ -151,6 +154,49 @@ export const flow = {
                   mandatoryToProceed: true,
                   errors: {
                     required: 'errors.purposeInInternalMarket.required'
+                  }
+                }
+              ]
+            },
+            {
+              // NA unless reasonForImport ∈ { transit,
+              // transhipment-or-onward-travel }. V4: "Mandatory to
+              // proceed".
+              page: 'destination-country',
+              presents: [
+                {
+                  obligation: destinationCountry,
+                  mandatoryToProceed: true,
+                  errors: {
+                    required: 'errors.destinationCountry.required'
+                  }
+                }
+              ]
+            },
+            {
+              // NA unless reasonForImport ∈ { transit,
+              // temporary-admission-horses }. V4: "Mandatory to proceed".
+              page: 'port-of-exit',
+              presents: [
+                {
+                  obligation: portOfExit,
+                  mandatoryToProceed: true,
+                  errors: {
+                    required: 'errors.portOfExit.required'
+                  }
+                }
+              ]
+            },
+            {
+              // NA unless reasonForImport = temporary-admission-horses.
+              // V4: "Mandatory to proceed".
+              page: 'exit-date',
+              presents: [
+                {
+                  obligation: exitDate,
+                  mandatoryToProceed: true,
+                  errors: {
+                    required: 'errors.exitDate.required'
                   }
                 }
               ]

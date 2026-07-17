@@ -406,6 +406,10 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     // NB. no purpose-details step — purposeInInternalMarket is
     // out-of-scope (NA) on the transit path, so /start skips it. This
     // is the load-bearing divergence from the internal-market walk.
+    // Transit gates destinationCountry + portOfExit in as mandatory;
+    // exit-date stays NA (temporary-admission-horses only).
+    await fill(jar, 'destination-country', { destinationCountry: 'FR' })
+    await fill(jar, 'port-of-exit', { portOfExit: 'DVR' })
 
     // -- Section 2: transporter + transport ------------------------------
     await fill(jar, 'transporter-type', { transporterType: 'commercial' })

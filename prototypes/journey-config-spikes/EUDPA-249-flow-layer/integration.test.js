@@ -16,6 +16,8 @@ import {
   obligations as v4Obligations,
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
   transporterType,
   commercialTransporter,
   privateTransporter,
@@ -98,6 +100,54 @@ describe('page visibility', () => {
     expect(
       pageStatus(findPage('origin-and-reason', 'purpose-details'), state)
     ).toBe(STATUSES.NOT_STARTED)
+  })
+
+  // V4 Reason of Import matrix (Confluence 6497338582):
+  //   internal-market                → purpose-details
+  //   transhipment-or-onward-travel  → destination-country
+  //   transit                        → destination-country + port-of-exit
+  //   re-entry                       → (none)
+  //   temporary-admission-horses     → port-of-exit + exit-date
+  it.each([
+    [
+      'internal-market',
+      ['purpose-details'],
+      ['destination-country', 'port-of-exit', 'exit-date']
+    ],
+    [
+      'transhipment-or-onward-travel',
+      ['destination-country'],
+      ['purpose-details', 'port-of-exit', 'exit-date']
+    ],
+    [
+      'transit',
+      ['destination-country', 'port-of-exit'],
+      ['purpose-details', 'exit-date']
+    ],
+    [
+      're-entry',
+      [],
+      ['purpose-details', 'destination-country', 'port-of-exit', 'exit-date']
+    ],
+    [
+      'temporary-admission-horses',
+      ['port-of-exit', 'exit-date'],
+      ['purpose-details', 'destination-country']
+    ]
+  ])('reason=%s → visible: %j, NA: %j', (reason, visiblePages, naPages) => {
+    const state = evaluate({ [reasonForImport.id]: reason })
+    for (const name of visiblePages) {
+      expect(
+        pageStatus(findPage('origin-and-reason', name), state),
+        `${name} should be visible under reason=${reason}`
+      ).toBe(STATUSES.NOT_STARTED)
+    }
+    for (const name of naPages) {
+      expect(
+        pageStatus(findPage('origin-and-reason', name), state),
+        `${name} should be NA under reason=${reason}`
+      ).toBe(STATUSES.NOT_APPLICABLE)
+    }
   })
 })
 
@@ -266,9 +316,14 @@ describe('task list rollup', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit'
+      [reasonForImport.id]: 'transit',
+      // Transit gates destinationCountry + portOfExit in as mandatory;
+      // exitDate stays NA (temporary-admission-horses only).
+      [destinationCountry.id]: 'FR',
+      [portOfExit.id]: 'DVR'
     })
-    // origin subsection F; purpose-details NA; reason subsection F.
+    // origin subsection F; purpose-details + exit-date NA; reason
+    // subsection F once destination + port-of-exit filled too.
     expect(containerStatus(findSection('origin-and-reason'), state)).toBe(
       STATUSES.FULFILLED
     )
@@ -356,9 +411,13 @@ describe('navigation', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit'
+      [reasonForImport.id]: 'transit',
+      // Transit gates destinationCountry + portOfExit in as mandatory.
+      [destinationCountry.id]: 'FR',
+      [portOfExit.id]: 'DVR'
     })
-    // country F; region-requirement F; region-code F; reason F; purpose NA. Section F → null.
+    // country F; region-requirement F; region-code F; reason F;
+    // destination F; port-of-exit F; purpose + exit-date NA. Section F → null.
     expect(
       firstUnfulfilledPage(findSection('origin-and-reason'), state)
     ).toBeNull()

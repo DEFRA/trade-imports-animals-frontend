@@ -4,6 +4,8 @@ import {
   reasonForImport,
   countryOfOrigin,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
   regionCodeRequirement,
   regionCode
 } from './obligations/obligations.js'
@@ -68,7 +70,11 @@ describe('status', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit'
+      [reasonForImport.id]: 'transit',
+      // Transit gates destinationCountry + portOfExit in as mandatory;
+      // exitDate stays NA (temporary-admission-horses only).
+      [destinationCountry.id]: 'FR',
+      [portOfExit.id]: 'DVR'
     })
     expect(statusOfContainer(findSection('origin-and-reason'), state)).toBe(
       STATUSES.FULFILLED
@@ -97,9 +103,13 @@ describe('navigation', () => {
       [countryOfOrigin.id]: 'FR',
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75',
-      [reasonForImport.id]: 'transit'
+      [reasonForImport.id]: 'transit',
+      // Transit gates destinationCountry + portOfExit in as mandatory.
+      [destinationCountry.id]: 'FR',
+      [portOfExit.id]: 'DVR'
     })
-    // Reason section is F once country + region + reason filled (purpose NA).
+    // Reason section is F once country + region + reason + destination
+    // + port-of-exit filled (purpose + exit-date NA on transit).
     const target = nextAfter(findPage('reason-for-import'), state)
     expect(target.kind).toBe('task-list')
   })

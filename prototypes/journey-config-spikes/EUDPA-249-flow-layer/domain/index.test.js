@@ -3,6 +3,9 @@ import { describe, it, expect } from 'vitest'
 import {
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
   transporterType,
   meansOfTransport,
   countryOfOrigin,
@@ -28,6 +31,9 @@ import {
   domain,
   reasonForImportDomain,
   purposeInInternalMarketDomain,
+  destinationCountryDomain,
+  portOfExitDomain,
+  exitDateDomain,
   transporterTypeDomain,
   meansOfTransportDomain,
   countryOfOriginDomain,
@@ -76,6 +82,9 @@ describe('manifest', () => {
     expect(domain.get(purposeInInternalMarket.id)).toBe(
       purposeInInternalMarketDomain
     )
+    expect(domain.get(destinationCountry.id)).toBe(destinationCountryDomain)
+    expect(domain.get(portOfExit.id)).toBe(portOfExitDomain)
+    expect(domain.get(exitDate.id)).toBe(exitDateDomain)
     expect(domain.get(transporterType.id)).toBe(transporterTypeDomain)
     expect(domain.get(meansOfTransport.id)).toBe(meansOfTransportDomain)
     expect(domain.get(countryOfOrigin.id)).toBe(countryOfOriginDomain)
@@ -208,6 +217,48 @@ describe('computedEnum — purposeInInternalMarket', () => {
         ]
       )
     ).toBe('Companion animal not for resale or rehoming')
+  })
+})
+
+describe('staticEnum — destinationCountry', () => {
+  it('reuses the EEA/EFTA country list (spec: destination country list)', () => {
+    // V4 spec (Confluence page 6497338582, Reason of Import section):
+    // "Country selected from the destination country list." The spike
+    // reuses countryOfOrigin's EEA/EFTA list — same shape, same labels.
+    expect(destinationCountryDomain.type).toBe('enum')
+    expect(destinationCountryDomain.options({})).toEqual(
+      countryOfOriginDomain.options({})
+    )
+    expect(t(destinationCountryDomain.labels.FR)).toBe('France')
+  })
+})
+
+describe('staticEnum — portOfExit', () => {
+  it('shares the port-of-entry option list (spec: Exit and Entry share the same list)', () => {
+    expect(portOfExitDomain.type).toBe('enum')
+    expect(portOfExitDomain.options({})).toEqual(
+      expect.arrayContaining(['DVR', 'HUL', 'LGW', 'LHR', 'STN'])
+    )
+    expect(t(portOfExitDomain.labels.DVR)).toBe('Port of Dover')
+  })
+})
+
+describe('predicate — exitDate (V4: DD/MM/YYYY, same shape as arrivalDateAtPortDomain)', () => {
+  it('accepts a valid DD/MM/YYYY string', () => {
+    expect(exitDateDomain.predicate('27/03/2026', buildCtx())).toEqual([])
+  })
+
+  it('rejects a malformed date with the shared dateFormat code', () => {
+    const errors = exitDateDomain.predicate('not-a-date', buildCtx())
+    expect(errors).toHaveLength(1)
+    expect(errors[0].code).toBe(reasons.dateFormat.code)
+    expect(errors[0].obligation).toBe('exitDate')
+  })
+
+  it('accepts blank / null / undefined (mandatoriness is the obligation layer)', () => {
+    expect(exitDateDomain.predicate('', buildCtx())).toEqual([])
+    expect(exitDateDomain.predicate(null, buildCtx())).toEqual([])
+    expect(exitDateDomain.predicate(undefined, buildCtx())).toEqual([])
   })
 })
 

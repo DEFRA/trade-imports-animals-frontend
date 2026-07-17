@@ -93,6 +93,8 @@ Typical exploration flow: fire the REPL, `fixture internal-market-partial` to lo
 
 ## Known follow-ups / TODOs
 
+- **[DONE 2026-07-17] Reason-gated `destinationCountry` / `portOfExit` / `exitDate`** landed alongside a page-visibility matrix test covering all five reason values (Confluence page 6497338582, "Reason of Import" section). Fixture `transit-with-lines.json` and every transit-path test now include the two mandatory follow-up fulfilments. Plan preserved in `PLAN-reason-gated-fields.md`.
+- **[OPEN] Accompanying-document "all-or-nothing" block (Option A)** — plan preserved in `PLAN-accompanying-doc-block.md`. Not yet implemented; replaces the self-loop `accompanyingDocumentType --> accompanyingDocumentType` with a first-class container obligation carrying a group-level invariant.
 - **Regenerate `MODEL.md` when the manifest, flow, or helpers change.** The auto-generated doc (particularly its page → obligations section) will drift as Sam's consolidation work touches `flow.js` / `obligations.js` / `helpers.js` / `boot-totality.js`. The staleness test in `docs/generate-model.test.js` fires at CI time when any of the four hashed inputs change without a regen — but the text reminder helps you not be surprised. Fix is one command: `npm run docs:model` from repo root, then commit the regenerated `MODEL.md` alongside the code change.
 - **Phase 5 reopen triggers** — documented in `DESIGN-PHASE-5.md §10`. Watch for a V4 spec revision naming a per-line status flip, or a real rule the current model forces into the wrong shape.
 - **Phase 6 scope decisions** — open in `DESIGN-PHASE-6.md §§7 + 8`. Sub-scope split (4a / +4b / +4c / defer) + parity strictness (byte-for-byte / structural-only / unit-tests-only). Claude's recommendation: 4a + byte-for-byte.

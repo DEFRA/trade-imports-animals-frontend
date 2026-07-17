@@ -8,6 +8,9 @@ import {
   regionCode,
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
   placeOfOrigin,
   consignor,
   consignee,
@@ -64,6 +67,24 @@ const purposeInInternalMarketReason = {
   code: 'obligation.purposeInInternalMarket.applicable.becauseInternalMarket',
   explanation:
     'purposeInInternalMarket applies when reasonForImport is internal-market'
+}
+
+const destinationCountryReason = {
+  code: 'obligation.destinationCountry.applicable.becauseTransitOrTranshipment',
+  explanation:
+    'destinationCountry applies when reasonForImport is transit or transhipment-or-onward-travel'
+}
+
+const portOfExitReason = {
+  code: 'obligation.portOfExit.applicable.becauseTransitOrTemporaryAdmissionHorses',
+  explanation:
+    'portOfExit applies when reasonForImport is transit or temporary-admission-horses'
+}
+
+const exitDateReason = {
+  code: 'obligation.exitDate.applicable.becauseTemporaryAdmissionHorses',
+  explanation:
+    'exitDate applies when reasonForImport is temporary-admission-horses'
 }
 
 const commercialTransporterReason = {
@@ -307,6 +328,144 @@ describe('V4 — purposeInInternalMarket conditional gate', () => {
       [purposeInInternalMarket.id]: 'slaughter'
     })
     expect(result.fulfilments[purposeInInternalMarket.id]).toBeUndefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// destinationCountry / portOfExit / exitDate — Reason of Import
+// conditional block (purge-on-flip). V4 spec (Confluence 6497338582):
+//   - destinationCountry ⇐ reason ∈ { transit, transhipment-or-onward-travel }
+//   - portOfExit         ⇐ reason ∈ { transit, temporary-admission-horses }
+//   - exitDate           ⇐ reason  = temporary-admission-horses
+// ---------------------------------------------------------------------------
+
+describe('V4 — destinationCountry conditional gate', () => {
+  it('out of scope when reasonForImport is absent', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[destinationCountry.id]).toEqual(outOfScope)
+  })
+
+  it('out of scope on internal-market / re-entry / temporary-admission-horses', () => {
+    for (const reason of [
+      'internal-market',
+      're-entry',
+      'temporary-admission-horses'
+    ]) {
+      const result = evaluator.evaluate({ [reasonForImport.id]: reason })
+      expect(result.obligations[destinationCountry.id]).toEqual(outOfScope)
+    }
+  })
+
+  it('mandatory in-scope on transit', () => {
+    const result = evaluator.evaluate({ [reasonForImport.id]: 'transit' })
+    expect(result.obligations[destinationCountry.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [destinationCountryReason]
+    })
+  })
+
+  it('mandatory in-scope on transhipment-or-onward-travel', () => {
+    const result = evaluator.evaluate({
+      [reasonForImport.id]: 'transhipment-or-onward-travel'
+    })
+    expect(result.obligations[destinationCountry.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [destinationCountryReason]
+    })
+  })
+
+  it('purges stored value when reasonForImport flips to a non-applicable reason', () => {
+    const result = evaluator.evaluate({
+      [reasonForImport.id]: 'internal-market',
+      [destinationCountry.id]: 'FR'
+    })
+    expect(result.fulfilments[destinationCountry.id]).toBeUndefined()
+  })
+})
+
+describe('V4 — portOfExit conditional gate', () => {
+  it('out of scope when reasonForImport is absent', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[portOfExit.id]).toEqual(outOfScope)
+  })
+
+  it('out of scope on internal-market / re-entry / transhipment-or-onward-travel', () => {
+    for (const reason of [
+      'internal-market',
+      're-entry',
+      'transhipment-or-onward-travel'
+    ]) {
+      const result = evaluator.evaluate({ [reasonForImport.id]: reason })
+      expect(result.obligations[portOfExit.id]).toEqual(outOfScope)
+    }
+  })
+
+  it('mandatory in-scope on transit', () => {
+    const result = evaluator.evaluate({ [reasonForImport.id]: 'transit' })
+    expect(result.obligations[portOfExit.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [portOfExitReason]
+    })
+  })
+
+  it('mandatory in-scope on temporary-admission-horses', () => {
+    const result = evaluator.evaluate({
+      [reasonForImport.id]: 'temporary-admission-horses'
+    })
+    expect(result.obligations[portOfExit.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [portOfExitReason]
+    })
+  })
+
+  it('purges stored value when reasonForImport flips to a non-applicable reason', () => {
+    const result = evaluator.evaluate({
+      [reasonForImport.id]: 'internal-market',
+      [portOfExit.id]: 'DVR'
+    })
+    expect(result.fulfilments[portOfExit.id]).toBeUndefined()
+  })
+})
+
+describe('V4 — exitDate conditional gate', () => {
+  it('out of scope when reasonForImport is absent', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[exitDate.id]).toEqual(outOfScope)
+  })
+
+  it('out of scope on every reason except temporary-admission-horses', () => {
+    for (const reason of [
+      'internal-market',
+      'transhipment-or-onward-travel',
+      'transit',
+      're-entry'
+    ]) {
+      const result = evaluator.evaluate({ [reasonForImport.id]: reason })
+      expect(result.obligations[exitDate.id]).toEqual(outOfScope)
+    }
+  })
+
+  it('mandatory in-scope on temporary-admission-horses', () => {
+    const result = evaluator.evaluate({
+      [reasonForImport.id]: 'temporary-admission-horses'
+    })
+    expect(result.obligations[exitDate.id]).toEqual({
+      inScope: true,
+      status: 'mandatory',
+      reasons: [exitDateReason]
+    })
+  })
+
+  it('purges stored value when reasonForImport flips to a non-applicable reason', () => {
+    const result = evaluator.evaluate({
+      [reasonForImport.id]: 'transit',
+      [exitDate.id]: '27/03/2026'
+    })
+    expect(result.fulfilments[exitDate.id]).toBeUndefined()
   })
 })
 

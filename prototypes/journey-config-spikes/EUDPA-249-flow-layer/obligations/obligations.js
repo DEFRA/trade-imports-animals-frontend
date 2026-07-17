@@ -88,6 +88,24 @@ const purposeInInternalMarketReason = {
     'purposeInInternalMarket applies when reasonForImport is internal-market'
 }
 
+const destinationCountryReason = {
+  code: 'obligation.destinationCountry.applicable.becauseTransitOrTranshipment',
+  explanation:
+    'destinationCountry applies when reasonForImport is transit or transhipment-or-onward-travel'
+}
+
+const portOfExitReason = {
+  code: 'obligation.portOfExit.applicable.becauseTransitOrTemporaryAdmissionHorses',
+  explanation:
+    'portOfExit applies when reasonForImport is transit or temporary-admission-horses'
+}
+
+const exitDateReason = {
+  code: 'obligation.exitDate.applicable.becauseTemporaryAdmissionHorses',
+  explanation:
+    'exitDate applies when reasonForImport is temporary-admission-horses'
+}
+
 const commercialTransporterReason = {
   code: 'obligation.commercialTransporter.applicable.becauseCommercial',
   explanation:
@@ -246,6 +264,69 @@ export const purposeInInternalMarket = {
       inScope: true,
       status: 'mandatory',
       reasons: [purposeInInternalMarketReason]
+    },
+    { inScope: false }
+  )
+}
+
+// V4 (Confluence page 6497338582, "Reason of Import" section):
+// destinationCountry applies when reasonForImport ∈ { transit,
+// transhipment-or-onward-travel }. Purge-on-flip.
+const DESTINATION_COUNTRY_APPLICABLE_REASONS = [
+  'transit',
+  'transhipment-or-onward-travel'
+]
+
+export const destinationCountry = {
+  id: 'f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01',
+  name: 'destinationCountry',
+  applyTo: includesGate(
+    reasonForImport,
+    DESTINATION_COUNTRY_APPLICABLE_REASONS,
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [destinationCountryReason]
+    },
+    { inScope: false }
+  )
+}
+
+// V4: portOfExit applies when reasonForImport ∈ { transit,
+// temporary-admission-horses }. Spec: "Port selected from the port of
+// entry list (Exit and Entry share the same list)." Purge-on-flip.
+const PORT_OF_EXIT_APPLICABLE_REASONS = [
+  'transit',
+  'temporary-admission-horses'
+]
+
+export const portOfExit = {
+  id: 'a67b8c9d-0e1f-4023-8145-6c7d8e9f0112',
+  name: 'portOfExit',
+  applyTo: includesGate(
+    reasonForImport,
+    PORT_OF_EXIT_APPLICABLE_REASONS,
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [portOfExitReason]
+    },
+    { inScope: false }
+  )
+}
+
+// V4: exitDate applies only when reasonForImport is
+// temporary-admission-horses. Purge-on-flip.
+export const exitDate = {
+  id: 'b78c9d0e-1f20-4134-8256-7d8e9f012023',
+  name: 'exitDate',
+  applyTo: equalsGate(
+    reasonForImport,
+    'temporary-admission-horses',
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [exitDateReason]
     },
     { inScope: false }
   )
@@ -865,6 +946,9 @@ export const obligations = [
   regionCode,
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
   containsUnweanedAnimals,
   placeOfOrigin,
   consignor,

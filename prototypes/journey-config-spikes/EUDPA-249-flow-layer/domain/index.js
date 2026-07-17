@@ -27,6 +27,9 @@
 import {
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
   transporterType,
   meansOfTransport,
   transportIdentification,
@@ -453,6 +456,21 @@ export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS, {
   }
 })
 
+// V4: portOfExit shares the port-of-entry list — spec explicitly says
+// "Exit and Entry share the same list". Same options, same labels.
+export const portOfExitDomain = staticEnum(PORT_OF_ENTRY_OPTIONS, {
+  labels: {
+    DVR: 'domain.portOfEntry.DVR',
+    HUL: 'domain.portOfEntry.HUL',
+    LGW: 'domain.portOfEntry.LGW',
+    LHR: 'domain.portOfEntry.LHR',
+    STN: 'domain.portOfEntry.STN',
+    EDI: 'domain.portOfEntry.EDI',
+    BRS: 'domain.portOfEntry.BRS',
+    MAN: 'domain.portOfEntry.MAN'
+  }
+})
+
 // V4: multi-select enum. Options depend on the LINE's commodityCode
 // (each commodity line has its own set of eligible species). First
 // per-line computed-enum in the spike — reads ctx.path to know which
@@ -595,6 +613,13 @@ const COUNTRY_LABELS = {
 }
 
 export const countryOfOriginDomain = staticEnum(EEA_EFTA_COUNTRY_OPTIONS, {
+  labels: COUNTRY_LABELS
+})
+
+// V4: destinationCountry uses the same EEA/EFTA country list as
+// countryOfOrigin (spec: "Country selected from the destination
+// country list"). Same options, same labels — reuse.
+export const destinationCountryDomain = staticEnum(EEA_EFTA_COUNTRY_OPTIONS, {
   labels: COUNTRY_LABELS
 })
 
@@ -1071,6 +1096,27 @@ export const arrivalDateAtPortDomain = predicate(
   [reasons.dateFormat]
 )
 
+// V4: exitDate — same DD/MM/YYYY calendar-valid shape as
+// arrivalDateAtPortDomain. No range constraint modelled in the spike.
+export const exitDateDomain = predicate(
+  'date',
+  (value, ctx) => {
+    if (value === undefined || value === null || value === '') return []
+    const parsed = parseDdMmYyyy(value)
+    if (!parsed) {
+      return [
+        {
+          code: reasons.dateFormat.code,
+          obligation: exitDate.name,
+          path: ctx.path
+        }
+      ]
+    }
+    return []
+  },
+  [reasons.dateFormat]
+)
+
 // V4: multi-select - max 12 countries.
 // The enum options (COUNTRY_OPTIONS) supply legality; the predicate
 // enforces the cap. Note: the domain entry needs both option-list
@@ -1150,6 +1196,9 @@ export const animalsCertifiedForDomain = staticEnum(
 export const domain = new Map([
   [reasonForImport.id, reasonForImportDomain],
   [purposeInInternalMarket.id, purposeInInternalMarketDomain],
+  [destinationCountry.id, destinationCountryDomain],
+  [portOfExit.id, portOfExitDomain],
+  [exitDate.id, exitDateDomain],
   [transporterType.id, transporterTypeDomain],
   [meansOfTransport.id, meansOfTransportDomain],
   [countryOfOrigin.id, countryOfOriginDomain],
