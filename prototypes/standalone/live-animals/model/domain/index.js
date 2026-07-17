@@ -11,7 +11,7 @@
  * `applyTo`: read from `fulfilments`.
  *
  * Entry shapes:
- *   { type: 'enum',    options: (fulfilments, ctx?) → string[], labels? }
+ *   { type: 'enum',    options: (fulfilments, ctx?) → string[] }
  *   { type: 'integer', predicate: (value, ctx) → error[], reasons: [...] }
  *   { type: 'string',  predicate: (value, ctx) → error[], reasons: [...] }
  *   { type: 'date',    predicate: (value, ctx) → error[], reasons: [...] }
@@ -126,34 +126,31 @@ export const reasons = {
 
 // ---------------------------------------------------------------------------
 // Entry-shape factories — parallel to `helpers.js` in obligations.
-// Each attaches `.metadata` for introspection and takes an optional
-// `{ labels }` sidecar so the renderer has human-readable option copy.
+// Each attaches `.metadata` for introspection.
 // ---------------------------------------------------------------------------
 
 // Static enum — options do not depend on state.
-export function staticEnum(options, { labels } = {}) {
-  const entry = {
+export function staticEnum(options) {
+  return {
     type: 'enum',
-    options: () => options
+    options: () => options,
+    metadata: { shape: 'staticEnum', options }
   }
-  entry.labels = labels ?? {}
-  entry.metadata = { shape: 'staticEnum', options, labels: entry.labels }
-  return entry
 }
 
 // Computed enum — options depend on state via a pure function.
 // `readsFrom` (metadata-only) names the sibling obligations the closure
 // reads; the data-dictionary sketch uses it for a static-reachability
 // view without running the closure.
-export function computedEnum(fn, readsFrom = [], { labels } = {}) {
-  const entry = { type: 'enum', options: fn }
-  entry.labels = labels ?? {}
-  entry.metadata = {
-    shape: 'computedEnum',
-    readsFrom: readsFrom.map((o) => o.name),
-    labels: entry.labels
+export function computedEnum(fn, readsFrom = []) {
+  return {
+    type: 'enum',
+    options: fn,
+    metadata: {
+      shape: 'computedEnum',
+      readsFrom: readsFrom.map((o) => o.name)
+    }
   }
-  return entry
 }
 
 // Predicate — the predicate returns an array of error objects (empty on
@@ -339,17 +336,7 @@ const REASON_FOR_IMPORT_OPTIONS = [
   'temporary-admission-horses'
 ]
 
-export const reasonForImportDomain = staticEnum(REASON_FOR_IMPORT_OPTIONS, {
-  labels: {
-    'internal-market': 'domain.reasonForImport.internal-market',
-    'transhipment-or-onward-travel':
-      'domain.reasonForImport.transhipment-or-onward-travel',
-    transit: 'domain.reasonForImport.transit',
-    're-entry': 'domain.reasonForImport.re-entry',
-    'temporary-admission-horses':
-      'domain.reasonForImport.temporary-admission-horses'
-  }
-})
+export const reasonForImportDomain = staticEnum(REASON_FOR_IMPORT_OPTIONS)
 
 // V4 spec: purpose has 11 values, all available under the
 // `internal-market` reason. Step 5c widened from the initial 4-value
@@ -373,52 +360,18 @@ const PURPOSE_BY_REASON = {
 
 export const purposeInInternalMarketDomain = computedEnum(
   (fulfilments) => PURPOSE_BY_REASON[fulfilments[reasonForImport.id]] ?? [],
-  [reasonForImport],
-  {
-    labels: {
-      'transfer-of-ownership-sale-or-gift':
-        'domain.purpose.transfer-of-ownership-sale-or-gift',
-      'transfer-of-ownership-rescue':
-        'domain.purpose.transfer-of-ownership-rescue',
-      breeding: 'domain.purpose.breeding',
-      research: 'domain.purpose.research',
-      'racing-competition-show-or-training':
-        'domain.purpose.racing-competition-show-or-training',
-      'approved-premises-or-body': 'domain.purpose.approved-premises-or-body',
-      'companion-animal-not-for-resale-or-rehoming':
-        'domain.purpose.companion-animal-not-for-resale-or-rehoming',
-      production: 'domain.purpose.production',
-      slaughter: 'domain.purpose.slaughter',
-      fattening: 'domain.purpose.fattening',
-      restocking: 'domain.purpose.restocking'
-    }
-  }
+  [reasonForImport]
 )
 
 const TRANSPORTER_TYPE_OPTIONS = ['commercial', 'private']
 
-export const transporterTypeDomain = staticEnum(TRANSPORTER_TYPE_OPTIONS, {
-  labels: {
-    commercial: 'domain.transporterType.commercial',
-    private: 'domain.transporterType.private'
-  }
-})
+export const transporterTypeDomain = staticEnum(TRANSPORTER_TYPE_OPTIONS)
 
 const YES_NO_OPTIONS = ['yes', 'no']
-// Values are message keys resolved via `lib/i18n.js` at render time
-// (see `lib/field-widgets.js` and the CYA controller). Same shape as
-// COUNTRY_LABELS, SPECIES_LABELS, etc. — every enum label map holds
-// keys, not literals. Coverage test in `i18n-coverage.test.js`
-// walks the domain manifest and asserts each key resolves.
-const YES_NO_LABELS = { yes: 'domain.yesNo.yes', no: 'domain.yesNo.no' }
 
-export const containsUnweanedAnimalsDomain = staticEnum(YES_NO_OPTIONS, {
-  labels: YES_NO_LABELS
-})
+export const containsUnweanedAnimalsDomain = staticEnum(YES_NO_OPTIONS)
 
-export const regionCodeRequirementDomain = staticEnum(YES_NO_OPTIONS, {
-  labels: YES_NO_LABELS
-})
+export const regionCodeRequirementDomain = staticEnum(YES_NO_OPTIONS)
 
 // V4: string - max 5, ISO country prefix + region code.
 export const regionCodeDomain = predicate(
@@ -440,18 +393,7 @@ const PORT_OF_ENTRY_OPTIONS = [
   'MAN'
 ]
 
-export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS, {
-  labels: {
-    DVR: 'domain.portOfEntry.DVR',
-    HUL: 'domain.portOfEntry.HUL',
-    LGW: 'domain.portOfEntry.LGW',
-    LHR: 'domain.portOfEntry.LHR',
-    STN: 'domain.portOfEntry.STN',
-    EDI: 'domain.portOfEntry.EDI',
-    BRS: 'domain.portOfEntry.BRS',
-    MAN: 'domain.portOfEntry.MAN'
-  }
-})
+export const portOfEntryDomain = staticEnum(PORT_OF_ENTRY_OPTIONS)
 
 // V4: multi-select enum. Options depend on the LINE's commodityCode
 // (each commodity line has its own set of eligible species). First
@@ -468,27 +410,6 @@ const SPECIES_BY_COMMODITY_CODE = {
   '01064100': ['bee']
 }
 
-const SPECIES_LABELS = {
-  horse: 'domain.species.horse',
-  cattle: 'domain.species.cattle',
-  buffalo: 'domain.species.buffalo',
-  bison: 'domain.species.bison',
-  pig: 'domain.species.pig',
-  'wild-boar': 'domain.species.wild-boar',
-  sheep: 'domain.species.sheep',
-  lamb: 'domain.species.lamb',
-  goat: 'domain.species.goat',
-  dog: 'domain.species.dog',
-  cat: 'domain.species.cat',
-  ferret: 'domain.species.ferret',
-  rabbit: 'domain.species.rabbit',
-  owl: 'domain.species.owl',
-  falcon: 'domain.species.falcon',
-  eagle: 'domain.species.eagle',
-  'other-bird-of-prey': 'domain.species.other-bird-of-prey',
-  bee: 'domain.species.bee'
-}
-
 export const speciesDomain = computedEnum(
   (fulfilments, _ids, ctx) => {
     // Line-scoped: `ctx.path` is the current commodity line's fulfilmentId.
@@ -497,8 +418,7 @@ export const speciesDomain = computedEnum(
     const code = ctx?.path ? codeMap[ctx.path] : undefined
     return SPECIES_BY_COMMODITY_CODE[code] ?? []
   },
-  [commodityCode],
-  { labels: SPECIES_LABELS }
+  [commodityCode]
 )
 
 const MEANS_OF_TRANSPORT_OPTIONS = [
@@ -508,14 +428,7 @@ const MEANS_OF_TRANSPORT_OPTIONS = [
   'vessel'
 ]
 
-export const meansOfTransportDomain = staticEnum(MEANS_OF_TRANSPORT_OPTIONS, {
-  labels: {
-    airplane: 'domain.meansOfTransport.airplane',
-    railway: 'domain.meansOfTransport.railway',
-    'road-vehicle': 'domain.meansOfTransport.road-vehicle',
-    vessel: 'domain.meansOfTransport.vessel'
-  }
-})
+export const meansOfTransportDomain = staticEnum(MEANS_OF_TRANSPORT_OPTIONS)
 
 // Country list — used for address `country` sub-fields (any country
 // might legitimately appear on an address block: destination + contact
@@ -565,38 +478,7 @@ const COUNTRY_OPTIONS = [
 // let the walks pick France (FR) as the country of origin.
 const EEA_EFTA_COUNTRY_OPTIONS = COUNTRY_OPTIONS.filter((c) => c !== 'GB')
 
-const COUNTRY_LABELS = {
-  AT: 'domain.country.AT',
-  BE: 'domain.country.BE',
-  BG: 'domain.country.BG',
-  CH: 'domain.country.CH',
-  CZ: 'domain.country.CZ',
-  DE: 'domain.country.DE',
-  DK: 'domain.country.DK',
-  EE: 'domain.country.EE',
-  ES: 'domain.country.ES',
-  FI: 'domain.country.FI',
-  FR: 'domain.country.FR',
-  GB: 'domain.country.GB',
-  GR: 'domain.country.GR',
-  HR: 'domain.country.HR',
-  HU: 'domain.country.HU',
-  IE: 'domain.country.IE',
-  IT: 'domain.country.IT',
-  LU: 'domain.country.LU',
-  NL: 'domain.country.NL',
-  NO: 'domain.country.NO',
-  PL: 'domain.country.PL',
-  PT: 'domain.country.PT',
-  RO: 'domain.country.RO',
-  SE: 'domain.country.SE',
-  SI: 'domain.country.SI',
-  SK: 'domain.country.SK'
-}
-
-export const countryOfOriginDomain = staticEnum(EEA_EFTA_COUNTRY_OPTIONS, {
-  labels: COUNTRY_LABELS
-})
+export const countryOfOriginDomain = staticEnum(EEA_EFTA_COUNTRY_OPTIONS)
 
 // V4 commodity codes — subset covering the whitelisted gates in
 // obligations.js (0102 cattle, 0103 pig, 010410 sheep, 010420 goats,
@@ -613,18 +495,7 @@ const COMMODITY_OPTIONS = [
   '01064100'
 ]
 
-export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS, {
-  labels: {
-    '0101': 'domain.commodityCode.0101',
-    '0102': 'domain.commodityCode.0102',
-    '0103': 'domain.commodityCode.0103',
-    '010410': 'domain.commodityCode.010410',
-    '010420': 'domain.commodityCode.010420',
-    '01061900': 'domain.commodityCode.01061900',
-    '01063100': 'domain.commodityCode.01063100',
-    '01064100': 'domain.commodityCode.01064100'
-  }
-})
+export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS)
 
 // V4: commodity type — MDM enum, small closed list. The real value
 // set comes from an MDM ontology that isn't documented on the V4
@@ -637,13 +508,7 @@ export const commodityCodeDomain = staticEnum(COMMODITY_OPTIONS, {
 // the placeholders visible protects against that regression.
 const COMMODITY_TYPE_OPTIONS = ['game', 'placeholder-1', 'placeholder-2']
 
-export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS, {
-  labels: {
-    game: 'domain.commodityType.game',
-    'placeholder-1': 'domain.commodityType.placeholder-1',
-    'placeholder-2': 'domain.commodityType.placeholder-2'
-  }
-})
+export const commodityTypeDomain = staticEnum(COMMODITY_TYPE_OPTIONS)
 
 // V4: accompanying document type — fixed enum of the 14 document
 // kinds listed in the spec (Confluence page 6497338582).
@@ -665,30 +530,7 @@ const ACCOMPANYING_DOCUMENT_TYPE_OPTIONS = [
 ]
 
 export const accompanyingDocumentTypeDomain = staticEnum(
-  ACCOMPANYING_DOCUMENT_TYPE_OPTIONS,
-  {
-    labels: {
-      itahc: 'domain.accompanyingDocumentType.itahc',
-      'veterinary-health-certificate':
-        'domain.accompanyingDocumentType.veterinary-health-certificate',
-      'air-waybill': 'domain.accompanyingDocumentType.air-waybill',
-      'import-permit': 'domain.accompanyingDocumentType.import-permit',
-      'letter-of-authority':
-        'domain.accompanyingDocumentType.letter-of-authority',
-      'commercial-invoice':
-        'domain.accompanyingDocumentType.commercial-invoice',
-      'sea-waybill': 'domain.accompanyingDocumentType.sea-waybill',
-      'rail-waybill': 'domain.accompanyingDocumentType.rail-waybill',
-      'bill-of-lading': 'domain.accompanyingDocumentType.bill-of-lading',
-      'catch-certificate': 'domain.accompanyingDocumentType.catch-certificate',
-      'laboratory-sampling-results':
-        'domain.accompanyingDocumentType.laboratory-sampling-results',
-      'health-certificate':
-        'domain.accompanyingDocumentType.health-certificate',
-      'journey-log': 'domain.accompanyingDocumentType.journey-log',
-      other: 'domain.accompanyingDocumentType.other'
-    }
-  }
+  ACCOMPANYING_DOCUMENT_TYPE_OPTIONS
 )
 
 // V4: attachment format — the file format the accompanying document
@@ -705,19 +547,7 @@ const ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS = [
 ]
 
 export const accompanyingDocumentAttachmentTypeDomain = staticEnum(
-  ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS,
-  {
-    labels: {
-      pdf: 'domain.accompanyingDocumentAttachmentType.pdf',
-      doc: 'domain.accompanyingDocumentAttachmentType.doc',
-      docx: 'domain.accompanyingDocumentAttachmentType.docx',
-      jpg: 'domain.accompanyingDocumentAttachmentType.jpg',
-      jpeg: 'domain.accompanyingDocumentAttachmentType.jpeg',
-      png: 'domain.accompanyingDocumentAttachmentType.png',
-      xls: 'domain.accompanyingDocumentAttachmentType.xls',
-      xlsx: 'domain.accompanyingDocumentAttachmentType.xlsx'
-    }
-  }
+  ACCOMPANYING_DOCUMENT_ATTACHMENT_TYPE_OPTIONS
 )
 
 // ---------------------------------------------------------------------------
@@ -865,7 +695,7 @@ const ADDRESS_SUB_FIELD_RULES = {
   town: { type: 'string', maxLength: 100 },
   county: { type: 'string', maxLength: 100 },
   postcode: { type: 'string', maxLength: 12 },
-  country: { type: 'enum', options: COUNTRY_OPTIONS, labels: COUNTRY_LABELS },
+  country: { type: 'enum', options: COUNTRY_OPTIONS },
   telephone: { type: 'telephone', maxLength: 20 },
   email: { type: 'email', maxLength: 254 }
 }
@@ -1080,7 +910,6 @@ export const arrivalDateAtPortDomain = predicate(
 export const transitedCountriesDomain = {
   type: 'enum',
   options: () => COUNTRY_OPTIONS,
-  labels: COUNTRY_LABELS,
   predicate: (value, ctx) => {
     if (!Array.isArray(value)) return []
     if (value.length > 12) {
@@ -1099,7 +928,6 @@ export const transitedCountriesDomain = {
   metadata: {
     shape: 'staticEnumWithMaxSelections',
     options: COUNTRY_OPTIONS,
-    labels: COUNTRY_LABELS,
     reasons: [reasons.arrayMaxSelections.code],
     max: 12
   }
@@ -1132,15 +960,8 @@ export const ANIMALS_CERTIFIED_FOR_OPTIONS = [
   'live-aquatic-animals-for-human-consumption',
   'other'
 ]
-export const ANIMALS_CERTIFIED_FOR_LABELS = Object.fromEntries(
-  ANIMALS_CERTIFIED_FOR_OPTIONS.map((code) => [
-    code,
-    `domain.animalsCertifiedFor.${code}`
-  ])
-)
 export const animalsCertifiedForDomain = staticEnum(
-  ANIMALS_CERTIFIED_FOR_OPTIONS,
-  { labels: ANIMALS_CERTIFIED_FOR_LABELS }
+  ANIMALS_CERTIFIED_FOR_OPTIONS
 )
 
 // ---------------------------------------------------------------------------

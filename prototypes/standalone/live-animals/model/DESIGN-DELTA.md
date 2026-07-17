@@ -141,3 +141,72 @@ to a live cross-check against the vendored manifest (every bId resolves;
 `vendored.name === aId` for exact + rename). `whitelists.test.js`,
 `evaluator.test.js` and `domain/index.test.js` use bindings / `.id` /
 the obligation's own `.name`, so they needed no change.
+
+---
+
+## 4. `domain.labels` stripped — display copy leaves the model · `domain/index.js` · `EUDPA-288` inc-007a
+
+**What changed.** Every human-readable option-copy sidecar was removed from
+the domain layer, per Sam's ruling (2026-07-17, PLAN §5.4): _"No display
+logic in the model. Titles, labels, titleKey-in-JSON — all of it goes.
+Display lives in the .njk. Use the most realistic source — we have MDM,
+use it."_
+
+- The `staticEnum` / `computedEnum` factories no longer accept or attach a
+  `labels` sidecar, and no longer carry `labels` on their `.metadata`. Their
+  signatures dropped the trailing `{ labels }` options bag.
+- All **15** domain entries that passed `labels` were de-labelled:
+  `reasonForImport`, `purposeInInternalMarket`, `transporterType`,
+  `meansOfTransport`, `countryOfOrigin`, `commodityCode`, `commodityType`,
+  `portOfEntry`, `species`, `containsUnweanedAnimals`,
+  `regionCodeRequirement`, `transitedCountries`, `animalsCertifiedFor`,
+  `accompanyingDocumentType`, `accompanyingDocumentAttachmentType`.
+- `transitedCountriesDomain` (a hand-rolled enum-plus-predicate object) lost
+  its top-level `labels` and its `metadata.labels`.
+- The address-block `country` sub-field rule dropped `labels: COUNTRY_LABELS`
+  — the predicate only reads `options`/`type`/`maxLength`, so the label map
+  was dead display copy there too.
+- **4** now-orphaned `*_LABELS` constants were deleted (verified unreferenced
+  before removal): `YES_NO_LABELS`, `SPECIES_LABELS`, `COUNTRY_LABELS`, and
+  the exported `ANIMALS_CERTIFIED_FOR_LABELS` (no importers anywhere under
+  `model/`).
+
+**What survives — value legality, not copy.** `options` (the code lists),
+predicates, types, `addressBlock`'s `subFieldRules` + `isComplete`, and all
+`reasons` codes stay. Those answer "is this a legal value?", which is model.
+
+**i18n vendoring removed as a test-only orphan.** inc-005 vendored
+`model/lib/i18n.js` + `model/locales/en.json` **solely** to keep the domain
+test's `t(label)` assertions green. After the ~4 label `it()` blocks were
+removed from `domain/index.test.js`, a tree-wide grep confirmed the test was
+the **only** importer of `i18n.js`, and `i18n.js` the only reader of
+`en.json`. Both files (and the now-empty `lib/` and `locales/` dirs) were
+deleted. No production code imported either.
+
+**Copy now lives where the ruling puts it.** Static field copy → A's `.njk`
+templates (as A already does today). Coded-field copy → A's MDM services,
+wired at inc-007c (`computedEnum`'s signature already fits a
+service-delegated `options` source). This increment removes copy only; it
+does not change where option _values_ come from.
+
+**Deliberate divergence from B.** B's `34550a3` domain holds i18n key strings
+as `labels` sidecars on its enum entries. This vendored copy strips them —
+a retrofit divergence enforcing the no-display-logic-in-the-model rule.
+
+**For inc-007b (purity key-assert):** the `domain/` tree is now clean of
+display keys. A tree-wide grep for `labels|titleKey|title:|hint:|legend:`
+returns only comment prose and unrelated AST-operator name constants
+(`OPERATOR_LABELS`, `.metadata.type` helper-type "labels" in `analysis/`) —
+no display copy in code. The key-level assert can be added against a green
+tree.
+
+**For inc-007c (MDM options):** `staticEnum`/`computedEnum` no longer carry
+any copy, so delegating `options` to A's services is now purely a value-source
+change with no label entanglement to unpick.
+
+**Backwards compatibility / tests.** `domain/index.test.js` lost the 4 label
+assertions (the `t()`/`.labels` tests) and its `i18n.js` import; every
+assertion about `options` / predicates / metadata `shape`+`readsFrom` /
+`isComplete` was preserved unchanged. Full model suite green: 74 test files
+passed, 1095 tests passed (baseline 1099 − 4 label its), 11 skipped
+unchanged.

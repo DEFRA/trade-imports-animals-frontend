@@ -54,7 +54,6 @@ import {
   predicate,
   reasons
 } from './index.js'
-import { t } from '../lib/i18n.js'
 
 // A trivial context-builder mirroring the shape runtime.validate builds.
 const buildCtx = ({ fulfilments = {}, path = null } = {}) => ({
@@ -106,13 +105,8 @@ describe('staticEnum — reasonForImport', () => {
     )
   })
 
-  it('attaches shape + labels metadata (labels are message keys)', () => {
+  it('names its shape as staticEnum in metadata', () => {
     expect(reasonForImportDomain.metadata.shape).toBe('staticEnum')
-    // Labels values are message keys — resolve via t() to check both
-    // that the key is set and that en.json carries the copy.
-    expect(t(reasonForImportDomain.labels['internal-market'])).toBe(
-      'Internal market'
-    )
   })
 
   it('carries all 5 V4 codes (step 5c spec conformance)', () => {
@@ -128,14 +122,6 @@ describe('staticEnum — reasonForImport', () => {
       're-entry',
       'temporary-admission-horses'
     ])
-    // Every label resolves to English copy via t().
-    expect(t(reasonForImportDomain.labels.transit)).toBe('Transit')
-    expect(
-      t(reasonForImportDomain.labels['transhipment-or-onward-travel'])
-    ).toBe('Transhipment or onward travel')
-    expect(t(reasonForImportDomain.labels['temporary-admission-horses'])).toBe(
-      'Temporary admission (horses)'
-    )
   })
 })
 
@@ -174,10 +160,6 @@ describe('computedEnum — purposeInInternalMarket', () => {
     ])
   })
 
-  it('exposes labels for the sub-values', () => {
-    expect(t(purposeInInternalMarketDomain.labels.breeding)).toBe('Breeding')
-  })
-
   it('carries all 11 V4 codes (step 5c spec conformance)', () => {
     // Regression: iteration-1 stub had 4 values (breeding, slaughter,
     // fattening, other) — `other` doesn't exist in V4 and 8 real V4
@@ -187,27 +169,6 @@ describe('computedEnum — purposeInInternalMarket', () => {
     })
     expect(options).toHaveLength(11)
     expect(options).not.toContain('other')
-    // Every label resolves.
-    for (const code of options) {
-      const resolved = t(purposeInInternalMarketDomain.labels[code])
-      expect(resolved, `${code} did not resolve`).toBeTruthy()
-      expect(resolved).not.toContain('domain.purpose.')
-    }
-    // Spot-check a few of the newly-added V4 values.
-    expect(
-      t(
-        purposeInInternalMarketDomain.labels[
-          'transfer-of-ownership-sale-or-gift'
-        ]
-      )
-    ).toBe('Transfer of ownership - Sale or gift')
-    expect(
-      t(
-        purposeInInternalMarketDomain.labels[
-          'companion-animal-not-for-resale-or-rehoming'
-        ]
-      )
-    ).toBe('Companion animal not for resale or rehoming')
   })
 })
 
@@ -216,7 +177,6 @@ describe('staticEnum — countryOfOrigin', () => {
     const options = countryOfOriginDomain.options({})
     expect(options.length).toBeGreaterThanOrEqual(13)
     expect(options).toContain('FR')
-    expect(t(countryOfOriginDomain.labels.FR)).toBe('France')
   })
 
   it('excludes GB per V4 spec (audit #5 — EU / EEA / EFTA only)', () => {
@@ -241,7 +201,6 @@ describe('staticEnum — commodityCode', () => {
         '01061900'
       ])
     )
-    expect(t(commodityCodeDomain.labels['0102'])).toContain('Cattle')
   })
 })
 
@@ -428,38 +387,14 @@ describe('addressBlock — commercialTransporter (V4 standard address block + au
 })
 
 describe('staticEnum — commodityType (audit #12 — deliberately obvious placeholders)', () => {
-  it('exposes the spec-example value + two clearly-labelled placeholders', () => {
+  it('exposes the spec-example code plus two obvious placeholder codes', () => {
     // Audit #12 (down-graded MAJOR → INFO, spec clarifications
-    // pending): the V4 spec's only concrete Type value is "Game";
+    // pending): the V4 spec's only concrete Type value is "game";
     // the full MDM ontology isn't documented. Rather than ship
-    // plausible-but-invented values that could slip past a
-    // reviewer, we ship "Game" + PLACEHOLDER labels that scream
-    // "not real" on any demo screenshot.
+    // plausible-but-invented codes that could slip past a reviewer,
+    // we ship "game" plus two codes that name themselves placeholders.
     const options = commodityTypeDomain.options({})
     expect(options).toEqual(['game', 'placeholder-1', 'placeholder-2'])
-  })
-
-  it('every code resolves to a human label via t()', () => {
-    for (const code of commodityTypeDomain.options({})) {
-      const resolved = t(commodityTypeDomain.labels[code])
-      expect(resolved).not.toContain('domain.commodityType')
-      expect(typeof resolved).toBe('string')
-    }
-  })
-
-  it('placeholder labels visibly say PLACEHOLDER + MDM', () => {
-    // Regression guard: if a future edit softens the placeholder
-    // copy back into plausible-looking values, this test fires.
-    // The whole point is that a reviewer glancing at the demo
-    // knows these values aren't real.
-    const p1 = t(commodityTypeDomain.labels['placeholder-1'])
-    const p2 = t(commodityTypeDomain.labels['placeholder-2'])
-    expect(p1).toContain('PLACEHOLDER')
-    expect(p1).toContain('MDM')
-    expect(p2).toContain('PLACEHOLDER')
-    expect(p2).toContain('MDM')
-    // Spec example remains a clean label:
-    expect(t(commodityTypeDomain.labels.game)).toBe('Game')
   })
 })
 
@@ -761,33 +696,16 @@ describe('staticEnum — animalsCertifiedFor (V4: 15 certified-for purposes)', (
     }
   })
 
-  it('every code resolves to a human label via t()', () => {
-    for (const code of animalsCertifiedForDomain.options({})) {
-      const resolved = t(animalsCertifiedForDomain.labels[code])
-      expect(resolved, `${code} did not resolve`).toBeTruthy()
-      expect(resolved).not.toContain('domain.animalsCertifiedFor')
-    }
-    // Spot-check a couple against the V4 spec strings.
-    const labels = animalsCertifiedForDomain.labels
-    expect(t(labels.slaughter)).toBe('Slaughter')
-    expect(t(labels['registered-equine-animal'])).toBe(
-      'Registered equine animal'
-    )
-    expect(t(labels['travelling-circus-or-animal-act'])).toBe(
-      'Travelling circus/animal act'
-    )
-  })
-
   it('names its shape as staticEnum in metadata', () => {
     expect(animalsCertifiedForDomain.metadata.shape).toBe('staticEnum')
   })
 })
 
 describe('factories', () => {
-  it('staticEnum ignores state and takes optional labels', () => {
-    const e = staticEnum(['x', 'y'], { labels: { x: 'Ex', y: 'Why' } })
+  it('staticEnum ignores state and exposes the fixed options', () => {
+    const e = staticEnum(['x', 'y'])
     expect(e.options()).toEqual(['x', 'y'])
-    expect(e.labels).toEqual({ x: 'Ex', y: 'Why' })
+    expect(e.metadata.shape).toBe('staticEnum')
   })
 
   it('computedEnum forwards state to the closure', () => {
