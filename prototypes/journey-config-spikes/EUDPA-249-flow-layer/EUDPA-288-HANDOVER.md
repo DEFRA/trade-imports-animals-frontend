@@ -91,6 +91,14 @@ Typical exploration flow: fire the REPL, `fixture internal-market-partial` to lo
 - **`flow/boot-totality.js`** — Phase 4.2's obligation→page totality assert.
 - **`obligations/helper-internals.js`** — `isRecordMap`, `readGate` (Phase 4.6.4 shared normalization).
 
+## Known follow-ups / TODOs
+
+- **Regenerate `MODEL.md` when the manifest, flow, or helpers change.** The auto-generated doc (particularly its page → obligations section) will drift as Sam's consolidation work touches `flow.js` / `obligations.js` / `helpers.js` / `boot-totality.js`. The staleness test in `docs/generate-model.test.js` fires at CI time when any of the four hashed inputs change without a regen — but the text reminder helps you not be surprised. Fix is one command: `npm run docs:model` from repo root, then commit the regenerated `MODEL.md` alongside the code change.
+- **Phase 5 reopen triggers** — documented in `DESIGN-PHASE-5.md §10`. Watch for a V4 spec revision naming a per-line status flip, or a real rule the current model forces into the wrong shape.
+- **Phase 6 scope decisions** — open in `DESIGN-PHASE-6.md §§7 + 8`. Sub-scope split (4a / +4b / +4c / defer) + parity strictness (byte-for-byte / structural-only / unit-tests-only). Claude's recommendation: 4a + byte-for-byte.
+- **`containsUnweanedAnimals` — per-line vs per-notification** — currently notification-level (one yes/no for the consignment). If V4 later wants per-line ("unweaned mandatory on cattle lines specifically"), that's a model change (moving from notification-level to line-scoped) — bigger than Phase 5's per-record mandate. Flagged in `DESIGN-PHASE-5.md §10` as one of the weak signals to watch.
+- **REPL `help` output vs README** — `repl-obligations.js`'s `help` command is terse. Some non-obvious behaviours (JSON-vs-bare-token value parsing, name-keyed state, WITNESS_KIND meaning) are in the commit body but not in `help`. If REPL usage grows, land a short doc block at the top of `repl-obligations.js` covering those.
+
 ## What NOT to do (learned the hard way)
 
 - Do NOT touch anything under `prototypes/standalone/` — A-side sources are read-only reference throughout this ticket.
