@@ -203,7 +203,7 @@ export const countryOfOrigin = {
 
 export const regionCodeRequirement = {
   id: 'b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e',
-  name: 'regionCodeRequirement',
+  name: 'regionOfOriginCodeRequirement',
   status: 'mandatory'
 }
 
@@ -214,7 +214,7 @@ export const regionCodeRequirement = {
 // gate; `dependsOn` derives from that (see `obligationMetadata`).
 export const regionCode = {
   id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
-  name: 'regionCode',
+  name: 'regionOfOriginCode',
   applyTo: equalsGate(
     regionCodeRequirement,
     'yes',
@@ -433,7 +433,7 @@ export const animalsCertifiedFor = {
 
 export const commodityLine = {
   id: '20e5f607-1829-4c3d-8abc-06d7e8f9a0b2',
-  name: 'commodityLine',
+  name: 'commodityLines',
   // No applyTo — structural group, always in scope. Instance ids
   // inferred from field-record composite-key prefixes.
   //
@@ -454,7 +454,7 @@ export const commodityLine = {
 
 export const commodityCode = {
   id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
-  name: 'commodityCode',
+  name: 'commoditySelection',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -474,14 +474,14 @@ export const commodityType = {
 // The obligation model treats the array opaquely.
 export const species = {
   id: '2318293a-3b4c-4f60-8def-39a0b1c2d3e5',
-  name: 'species',
+  name: 'speciesSelection',
   within: commodityLine,
   status: 'mandatory'
 }
 
 export const numberOfAnimals = {
   id: '24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6',
-  name: 'numberOfAnimals',
+  name: 'numberOfAnimalsQuantity',
   within: commodityLine,
   status: 'mandatory'
 }
@@ -555,7 +555,7 @@ export const CPH_REQUIRED_COMMODITIES = [
 
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
-  name: 'cph',
+  name: 'countyParishHoldingCph',
   applyTo: anyAllowListed(
     commodityCode,
     CPH_REQUIRED_COMMODITIES,
@@ -608,7 +608,7 @@ export const containsUnweanedAnimals = {
 
 export const unitRecord = {
   id: '385d6e7f-8091-4eb5-8234-8ef506172940',
-  name: 'unitRecord',
+  name: 'animalIdentifiers',
   within: commodityLine,
   // No applyTo — structural user-driven group, always in scope.
   //
@@ -676,7 +676,7 @@ export const PERMANENT_ADDRESS_COMMODITIES = ['01061900']
 
 export const passport = {
   id: '39657a80-91a2-4fc6-8345-9f0617284a51',
-  name: 'passport',
+  name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
   applyTo: allowListed(commodityCode, PASSPORT_COMMODITIES, unitRecord, [
@@ -690,7 +690,7 @@ export const passport = {
 
 export const tattoo = {
   id: '3a768b91-a2b3-4fd7-8456-a01728395b62',
-  name: 'tattoo',
+  name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
   applyTo: allowListed(commodityCode, TATTOO_COMMODITIES, unitRecord, [
@@ -700,7 +700,7 @@ export const tattoo = {
 
 export const earTag = {
   id: '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73',
-  name: 'earTag',
+  name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
   applyTo: allowListed(commodityCode, EAR_TAG_COMMODITIES, unitRecord, [
@@ -737,7 +737,7 @@ const SPECIFIC_IDENTIFIER_WHITELISTS = [
 
 export const identificationDetails = {
   id: '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95',
-  name: 'identificationDetails',
+  name: 'animalIdentifierIdentificationDetails',
   within: unitRecord,
   status: 'optional',
   applyTo: notInUnionOf(
@@ -750,7 +750,7 @@ export const identificationDetails = {
 
 export const description = {
   id: '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6',
-  name: 'description',
+  name: 'animalIdentifierDescription',
   within: unitRecord,
   status: 'optional',
   applyTo: notInUnionOf(

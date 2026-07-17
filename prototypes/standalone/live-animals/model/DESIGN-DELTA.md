@@ -80,3 +80,64 @@ tidier and removes a vestigial cross-directory hop.
 
 **Backwards compatibility.** Behaviour-neutral; the vendored
 `is-blank-value.test.js` (kept, moved alongside) stays green.
+
+---
+
+## 3. Obligation `name` retrofitted to A's obligation id · `obligations/obligations.js` · `EUDPA-288` inc-007
+
+**What changed.** Every `kind: "rename"` obligation in
+`retrofit/mapping.json` had its `name:` string value changed from B's
+original name to the mapping's `aId`. 13 renames:
+
+| B name (source `34550a3`) | new `name` = A's obligation id          |
+| ------------------------- | --------------------------------------- |
+| `regionCodeRequirement`   | `regionOfOriginCodeRequirement`         |
+| `regionCode`              | `regionOfOriginCode`                    |
+| `commodityLine`           | `commodityLines`                        |
+| `commodityCode`           | `commoditySelection`                    |
+| `species`                 | `speciesSelection`                      |
+| `numberOfAnimals`         | `numberOfAnimalsQuantity`               |
+| `cph`                     | `countyParishHoldingCph`                |
+| `unitRecord`              | `animalIdentifiers`                     |
+| `passport`                | `animalIdentifierPassport`              |
+| `tattoo`                  | `animalIdentifierTattoo`                |
+| `earTag`                  | `animalIdentifierEarTag`                |
+| `identificationDetails`   | `animalIdentifierIdentificationDetails` |
+| `description`             | `animalIdentifierDescription`           |
+
+The 28 `exact` entries already satisfy `name === aId` and were left
+untouched; `a-only` / `b-only` entries are not renames.
+
+**Why.** The bridge (inc-008/009) resolves B's implication for A's
+obligation by matching `B.name === A.id`. The `name` is the bridge key;
+making it equal the A id is what this increment is for.
+
+**What did NOT change.**
+
+- **The uuid `id:` is the durable key and is untouched** on every
+  obligation. Nothing keyed by id moved — `domain/index.js`'s rule map
+  (`[obligation.id, …]`) and every gate's `.metadata.obligation`
+  (`gateObligation.id`) are uuid-keyed, so gate resolution and domain
+  wiring are unaffected.
+- **The JS export bindings are untouched** (`export const commodityCode`
+  still binds `commodityCode`; only its `.name` value is now
+  `commoditySelection`). Renaming the bindings would touch every
+  importer and test for zero bridge benefit; the minimal correct change
+  is the `name:` value alone.
+
+**Deliberate divergence from B.** This is a retrofit divergence from B's
+`34550a3` naming — B's manifest keeps the original names; this vendored
+copy renames them onto A's ids so the bridge can look B up by A's id.
+
+**Backwards compatibility / tests.** Two vendored tests keyed off the
+old `name` strings and were updated to the new truth:
+`obligations/coverage.test.js` (KNOWN_UNWIRED structural-group names
+`commodityLines` / `animalIdentifiers`) and
+`analysis/reachability.test.js` (name-string manifest look-ups for
+`regionOfOriginCode` / `countyParishHoldingCph` /
+`regionOfOriginCodeRequirement` and the synthesisable-name assertions).
+`retrofit/mapping.test.js`'s B side was strengthened from snapshot-only
+to a live cross-check against the vendored manifest (every bId resolves;
+`vendored.name === aId` for exact + rename). `whitelists.test.js`,
+`evaluator.test.js` and `domain/index.test.js` use bindings / `.id` /
+the obligation's own `.name`, so they needed no change.

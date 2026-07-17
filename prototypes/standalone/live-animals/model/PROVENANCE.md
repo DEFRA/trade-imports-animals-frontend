@@ -28,7 +28,8 @@ resolve unchanged — `engine/index.js` → `../lib/is-blank-value.js` and
 - `domain/index.js`
 - `engine/index.js`
 - `analysis/reachability.js`
-- `lib/is-blank-value.js`
+- `engine/is-blank-value.js` (vendored under `lib/`; relocated to
+  `engine/` at inc-006 — see DESIGN-DELTA §2)
 
 Tests (portable, ran green once import paths resolved):
 
@@ -41,7 +42,7 @@ Tests (portable, ran green once import paths resolved):
 - `engine/index.test.js`
 - `analysis/coverage.test.js`
 - `analysis/reachability.test.js`
-- `lib/is-blank-value.test.js`
+- `engine/is-blank-value.test.js` (relocated with its subject at inc-006)
 
 i18n caveat (test-side only): `domain/index.test.js` imports
 `../lib/i18n.js` for ~20 `t()` label assertions. Rather than drop those

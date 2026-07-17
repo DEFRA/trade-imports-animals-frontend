@@ -515,7 +515,7 @@ describe('synthesiseWitness — real manifest fidelity', () => {
     // when the requirement flag is 'yes', optional otherwise). The
     // gate opens on ANY input, so no witness is needed; commit 3's
     // coverage assertion counts these as "trivial", not opaque.
-    const regionCode = obligations.find((o) => o.name === 'regionCode')
+    const regionCode = obligations.find((o) => o.name === 'regionOfOriginCode')
     const w = synthesiseWitness(regionCode)
     expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
   })
@@ -553,7 +553,7 @@ describe('synthesiseWitness — real manifest fidelity', () => {
   })
 
   it('cph (anyAllowListed): scalar witness opens the closure', () => {
-    const cph = obligations.find((o) => o.name === 'cph')
+    const cph = obligations.find((o) => o.name === 'countyParishHoldingCph')
     const w = synthesiseWitness(cph)
     expect(w.kind).toBe(WITNESS_KIND.WITNESS)
     const decision = cph.applyTo({
@@ -602,8 +602,10 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
     const synthesisableNames = result.witnesses.synthesisable.map(
       (id) => obligations.find((o) => o.id === id).name
     )
-    expect(synthesisableNames).toContain('identificationDetails')
-    expect(synthesisableNames).toContain('description')
+    expect(synthesisableNames).toContain(
+      'animalIdentifierIdentificationDetails'
+    )
+    expect(synthesisableNames).toContain('animalIdentifierDescription')
     // No opaque gates left on the manifest.
     expect(result.witnesses.opaque).toEqual([])
   })
@@ -668,11 +670,11 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
   // fidelity check exercises the closure directly with both a matching
   // and non-matching value to prove the status flip is preserved.
   it('regionCode: matching value → mandatory + reason, non-matching → optional', () => {
-    const rc = findOblByName('regionCode')
+    const rc = findOblByName('regionOfOriginCode')
     const w = synthesiseWitness(rc)
     expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
     // regionCodeRequirement === 'yes' → mandatory with reason.
-    const regionCodeRequirement = findOblByName('regionCodeRequirement')
+    const regionCodeRequirement = findOblByName('regionOfOriginCodeRequirement')
     const mand = rc.applyTo({ [regionCodeRequirement.id]: 'yes' }, new Map())
     expect(mand).toMatchObject({
       inScope: true,
@@ -720,7 +722,7 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
       'commercialTransporter',
       'privateTransporter',
       'transitedCountries',
-      'regionCode',
+      'regionOfOriginCode',
       'accompanyingDocumentType',
       'accompanyingDocumentAttachmentType',
       'accompanyingDocumentReference',

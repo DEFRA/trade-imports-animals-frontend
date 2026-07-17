@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import { walkObligations } from '../registry.js'
+import { obligations as vendoredObligations } from '../model/obligations/obligations.js'
 
 const mapping = JSON.parse(
   readFileSync(new URL('./mapping.json', import.meta.url))
@@ -10,11 +11,12 @@ const mapping = JSON.parse(
 // The A side is checked against the LIVE registry, so it rots loudly: add or
 // rename an obligation without touching mapping.json and these fail.
 //
-// The B side is a SNAPSHOT pinned to provenance.bSha — B's manifest is on
-// another branch and not importable from here, so its ids are checked for
-// shape and totality only, not against the real thing. That becomes a live
-// check at inc-005, when B's model is vendored under live-animals/model/ and
-// this file can import its manifest the same way it imports the registry.
+// The B side is now ALSO checked against the live vendored manifest under
+// live-animals/model/ (vendored at inc-005). mapping.json still snapshots B's
+// original names in `bName` (pinned to provenance.bSha), but the vendored
+// obligation each bId points at is asserted to exist and — for exact/rename
+// entries — to carry `name === aId`. That name === aId is the bridge key
+// inc-007 wires so the bridge can resolve B's implication by A's obligation id.
 const B_OBLIGATION_COUNT = 44
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -22,6 +24,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const { entries } = mapping
 
 const registryIds = [...walkObligations()].map((node) => node.obligation.id)
+
+const vendoredById = new Map(
+  vendoredObligations.map((obligation) => [obligation.id, obligation])
+)
 
 const aIds = entries.map((entry) => entry.aId).filter((aId) => aId !== null)
 const bIds = entries.map((entry) => entry.bId).filter((bId) => bId !== null)
@@ -86,6 +92,25 @@ describe('retrofit obligation mapping — B side snapshot', () => {
       .map((entry) => entry.bName)
       .filter((bName) => bName !== null)
     expect(duplicates(bNames)).toEqual([])
+  })
+})
+
+describe('retrofit obligation mapping — B side against the live vendored manifest', () => {
+  it('Should vendor exactly the mapped number of B obligations', () => {
+    expect(vendoredObligations).toHaveLength(B_OBLIGATION_COUNT)
+  })
+
+  it('Should carry a live vendored obligation for every bId', () => {
+    const missing = bIds.filter((bId) => !vendoredById.has(bId))
+    expect(missing).toEqual([])
+  })
+
+  it('Should wire the vendored name to the aId for every exact or rename entry', () => {
+    const broken = entries
+      .filter((entry) => entry.kind === 'exact' || entry.kind === 'rename')
+      .filter((entry) => vendoredById.get(entry.bId)?.name !== entry.aId)
+      .map((entry) => entry.bName)
+    expect(broken).toEqual([])
   })
 })
 
