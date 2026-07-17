@@ -14,6 +14,7 @@
     "dev:debug": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:debug",
     "docker:dev": "npm run dev",
     "docs:model": "node prototypes/journey-config-spikes/EUDPA-249-flow-layer/docs/generate-model.js",
+    "repl:eudpa-249": "node prototypes/journey-config-spikes/EUDPA-249-flow-layer/repl-obligations.js",
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "frontend:watch": "NODE_ENV=development webpack --watch",
