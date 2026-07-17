@@ -569,12 +569,9 @@ function filterAndProject(
   const projectionPaths =
     fulfilmentIdsByObligationId?.get(projectionGroup.id) ?? []
   const records = projectionPaths.filter((path) =>
-    passingKeys.includes(pathPrefix(path))
+    passingKeys.some(
+      (key) => key === '' || path === key || path.startsWith(`${key}/`)
+    )
   )
   return { inScope: records.length > 0, records }
-}
-
-function pathPrefix(path) {
-  const slash = path.indexOf('/')
-  return slash === -1 ? path : path.slice(0, slash)
 }

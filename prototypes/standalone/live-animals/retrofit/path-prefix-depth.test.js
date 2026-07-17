@@ -30,7 +30,7 @@ import { describe, expect, it } from 'vitest'
 //
 // inc-006: vendor path is `../model/obligations/` per PLAN M1 inc-005. If that
 // landed somewhere else, fix the two specifiers and nothing else.
-describe.skip('pathPrefix — a gate at depth >= 2 that projects (inc-006 fixes this)', () => {
+describe('pathPrefix — a gate at depth >= 2 that projects (inc-006 fixes this)', () => {
   const loadModel = async () => {
     const { createObligationEvaluator } =
       await import('../model/obligations/evaluator.js')

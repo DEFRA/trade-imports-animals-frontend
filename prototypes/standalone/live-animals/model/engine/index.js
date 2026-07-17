@@ -23,7 +23,7 @@
  * returns: `{ fulfilments, obligations: implicationsByObligation }`.
  */
 
-import { isBlankValue } from '../lib/is-blank-value.js'
+import { isBlankValue } from './is-blank-value.js'
 import { domain } from '../domain/index.js'
 
 // ---------------------------------------------------------------------------
