@@ -1,0 +1,584 @@
+{
+  "flow": {
+    "section": {
+      "origin-and-reason": {
+        "title": "Country of origin and reason"
+      },
+      "transporter": {
+        "title": "Transporter and transport"
+      },
+      "arrival": {
+        "title": "Arrival"
+      },
+      "trader-details": {
+        "title": "Trader details"
+      },
+      "references": {
+        "title": "References"
+      },
+      "commodity-lines": {
+        "title": "Commodity lines"
+      }
+    },
+    "subsection": {
+      "origin": {
+        "title": "Country of origin"
+      },
+      "reason": {
+        "title": "Reason for import"
+      },
+      "transporter-type": {
+        "title": "Transporter type"
+      },
+      "transport": {
+        "title": "Transport details"
+      },
+      "arrival-at-port": {
+        "title": "Arrival at port"
+      },
+      "unweaned": {
+        "title": "About the animals"
+      },
+      "certified-for": {
+        "title": "Animals certified for"
+      },
+      "origin-details": {
+        "title": "Place of origin and consignor"
+      },
+      "destination-details": {
+        "title": "Consignee, importer and destination"
+      },
+      "contact": {
+        "title": "Contact address"
+      },
+      "trader-reference": {
+        "title": "Your reference"
+      },
+      "cph": {
+        "title": "County Parish Holding (CPH)"
+      },
+      "accompanying-documents": {
+        "title": "Accompanying documents"
+      },
+      "commodity-lines-manage": {
+        "title": "Add commodity lines"
+      },
+      "commodity-lines-details": {
+        "title": "Commodity line details"
+      },
+      "per-unit-records": {
+        "title": "Per-animal records"
+      }
+    }
+  },
+  "presentation": {
+    "countryOfOrigin": {
+      "pageTitle": "Country of origin",
+      "legend": "Which country are the animals coming from?",
+      "hint": "The country the animals were kept in before this consignment."
+    },
+    "reasonForImport": {
+      "pageTitle": "Reason for import",
+      "legend": "Why are the animals being imported?"
+    },
+    "purposeInInternalMarket": {
+      "pageTitle": "Purpose in the internal market",
+      "legend": "What is the purpose of the internal-market movement?",
+      "hint": "Only shown when the reason for import is Internal market."
+    },
+    "transporterType": {
+      "pageTitle": "Type of transporter",
+      "legend": "What kind of transporter is bringing the animals?"
+    },
+    "commercialTransporter": {
+      "pageTitle": "Commercial transporter",
+      "legend": "Commercial transporter details",
+      "hint": "The approved commercial carrier used for this consignment."
+    },
+    "privateTransporter": {
+      "pageTitle": "Private transporter",
+      "legend": "Private transporter details",
+      "hint": "The private-transporter contact details for this consignment."
+    },
+    "meansOfTransport": {
+      "pageTitle": "Means of transport",
+      "legend": "How are the animals being transported?"
+    },
+    "transportIdentification": {
+      "pageTitle": "Transport identification",
+      "legend": "Transport identification",
+      "hint": "Vehicle registration, vessel name, flight number, or similar."
+    },
+    "transportDocumentReference": {
+      "pageTitle": "Transport document reference",
+      "legend": "Transport document reference",
+      "hint": "A CMR, bill of lading, or equivalent document reference."
+    },
+    "transitedCountries": {
+      "pageTitle": "Transited countries",
+      "legend": "Which countries have the animals travelled through?",
+      "hint": "Select up to 12 countries."
+    },
+    "arrivalDateAtPort": {
+      "pageTitle": "Arrival at port",
+      "legend": "Expected arrival date at the port of entry",
+      "hint": "DD/MM/YYYY."
+    },
+    "portOfEntry": {
+      "pageTitle": "Port of entry",
+      "legend": "Port of entry",
+      "hint": "Choose the UK port or airport where the animals will arrive."
+    },
+    "animalsCertifiedFor": {
+      "pageTitle": "Animals certified for",
+      "legend": "What are the animals certified for?",
+      "hint": "Options are loaded from the certificate."
+    },
+    "containsUnweanedAnimals": {
+      "pageTitle": "Contains unweaned animals",
+      "legend": "Are there any unweaned animals in this consignment?",
+      "hint": "An unweaned animal is still dependent on its mother for milk."
+    },
+    "regionCodeRequirement": {
+      "pageTitle": "Region of origin code",
+      "legend": "Does the country of origin require a region code?",
+      "hint": "Some countries require an ISO region code alongside the country code."
+    },
+    "regionCode": {
+      "pageTitle": "Region code",
+      "legend": "Enter the region of origin code",
+      "hint": "Up to 5 characters. For example, FR-75."
+    },
+    "internalReferenceNumber": {
+      "pageTitle": "Your reference",
+      "legend": "Your reference for this consignment (optional)",
+      "hint": "A trader reference (max 58 characters)."
+    },
+    "placeOfOrigin": {
+      "pageTitle": "Place of origin",
+      "legend": "Where the animals were kept before this consignment",
+      "hint": "The holding, farm or premises the animals came from."
+    },
+    "consignor": {
+      "pageTitle": "Consignor",
+      "legend": "Who is sending this consignment",
+      "hint": "The person or organisation dispatching the animals."
+    },
+    "consignee": {
+      "pageTitle": "Consignee",
+      "legend": "Who will receive this consignment",
+      "hint": "The person or organisation the animals are being sent to."
+    },
+    "importer": {
+      "pageTitle": "Importer",
+      "legend": "Declared importer for this consignment",
+      "hint": "The trader responsible for the import declaration."
+    },
+    "placeOfDestination": {
+      "pageTitle": "Place of destination",
+      "legend": "Where the animals will be kept after arrival",
+      "hint": "The holding, farm or premises the animals will be delivered to."
+    },
+    "contactAddress": {
+      "pageTitle": "Contact address",
+      "legend": "Contact address for this consignment",
+      "hint": "Point of contact if we need to reach you about this consignment."
+    },
+    "commodityCode": {
+      "pageTitle": "Commodity code",
+      "legend": "Commodity code",
+      "hint": "The V4 commodity code for this line."
+    },
+    "commodityType": {
+      "pageTitle": "Commodity type",
+      "legend": "What type is this commodity?",
+      "hint": "Placeholder options — the real MDM value list is not yet defined (audit #12). Only \"Game\" is a real spec example."
+    },
+    "species": {
+      "pageTitle": "Species",
+      "legend": "Which species are on this line?",
+      "hint": "Select all that apply."
+    },
+    "numberOfAnimals": {
+      "pageTitle": "Number of animals",
+      "legend": "How many animals are on this line?"
+    },
+    "numberOfPackages": {
+      "pageTitle": "Number of packages",
+      "legend": "Number of packages (optional)"
+    },
+    "cph": {
+      "pageTitle": "County Parish Holding (CPH)",
+      "legend": "CPH",
+      "hint": "Required for cattle, pigs, sheep and goats. Max 11 characters."
+    },
+    "permanentAddress": {
+      "pageTitle": "Permanent address",
+      "legend": "Permanent address of this animal",
+      "hint": "Required for cats, dogs and ferrets. The animal's home address before this consignment."
+    },
+    "passport": {
+      "pageTitle": "Passport number",
+      "legend": "Passport number for this animal",
+      "hint": "For horses, cattle, and pet cats/dogs/ferrets. Up to 58 characters."
+    },
+    "tattoo": {
+      "pageTitle": "Tattoo",
+      "legend": "Tattoo identifier for this animal",
+      "hint": "For pigs, cattle, and pet cats/dogs/ferrets. Up to 58 characters."
+    },
+    "earTag": {
+      "pageTitle": "Ear tag",
+      "legend": "Ear tag number for this animal",
+      "hint": "For cattle, pigs, sheep and goats. Up to 58 characters."
+    },
+    "horseName": {
+      "pageTitle": "Horse name",
+      "legend": "Name of this horse",
+      "hint": "For horses only. Up to 58 characters."
+    },
+    "identificationDetails": {
+      "pageTitle": "Identification details",
+      "legend": "How is this animal identified?",
+      "hint": "Free-text identifier for animals without a specific identifier. Up to 58 characters."
+    },
+    "description": {
+      "pageTitle": "Description",
+      "legend": "Describe this animal",
+      "hint": "Free-text description. Up to 58 characters."
+    },
+    "accompanyingDocumentType": {
+      "pageTitle": "Document type",
+      "legend": "Type of accompanying document",
+      "hint": "The kind of document that supports this consignment."
+    },
+    "accompanyingDocumentAttachmentType": {
+      "pageTitle": "Attachment format",
+      "legend": "How is the document supplied?",
+      "hint": "PDF, DOC, DOCX, JPG, JPEG, PNG, XLS or XLSX."
+    },
+    "accompanyingDocumentReference": {
+      "pageTitle": "Document reference",
+      "legend": "Reference on the document",
+      "hint": "The reference or ID printed on the document (max 58 characters)."
+    },
+    "accompanyingDocumentDateOfIssue": {
+      "pageTitle": "Date of issue",
+      "legend": "When was the document issued?",
+      "hint": "DD/MM/YYYY."
+    },
+    "address": {
+      "subField": {
+        "name": "Business or organisation name",
+        "transporterAuthorisationNumber": "Transporter authorisation number",
+        "addressLine1": "Address line 1",
+        "addressLine2": "Address line 2",
+        "town": "Town or city",
+        "county": "County",
+        "postcode": "Postcode",
+        "country": "Country",
+        "telephone": "Telephone number",
+        "email": "Email address"
+      }
+    }
+  },
+  "pageCopy": {
+    "commodity-lines-intro": {
+      "pageTitle": "Commodity lines",
+      "lead": "You need to add at least one commodity line. Each line captures a commodity code, the type, species and count."
+    }
+  },
+  "domain": {
+    "country": {
+      "AT": "Austria",
+      "BE": "Belgium",
+      "BG": "Bulgaria",
+      "CH": "Switzerland",
+      "CZ": "Czech Republic",
+      "DE": "Germany",
+      "DK": "Denmark",
+      "EE": "Estonia",
+      "ES": "Spain",
+      "FI": "Finland",
+      "FR": "France",
+      "GB": "United Kingdom",
+      "GR": "Greece",
+      "HR": "Croatia",
+      "HU": "Hungary",
+      "IE": "Ireland",
+      "IT": "Italy",
+      "LU": "Luxembourg",
+      "NL": "Netherlands",
+      "NO": "Norway",
+      "PL": "Poland",
+      "PT": "Portugal",
+      "RO": "Romania",
+      "SE": "Sweden",
+      "SI": "Slovenia",
+      "SK": "Slovakia"
+    },
+    "species": {
+      "horse": "Horse",
+      "cattle": "Cattle",
+      "buffalo": "Buffalo",
+      "bison": "Bison",
+      "pig": "Pig",
+      "wild-boar": "Wild boar",
+      "sheep": "Sheep",
+      "lamb": "Lamb",
+      "goat": "Goat",
+      "dog": "Dog",
+      "cat": "Cat",
+      "ferret": "Ferret",
+      "rabbit": "Rabbit",
+      "owl": "Owl",
+      "falcon": "Falcon",
+      "eagle": "Eagle",
+      "other-bird-of-prey": "Other bird of prey",
+      "bee": "Bee"
+    },
+    "reasonForImport": {
+      "internal-market": "Internal market",
+      "transhipment-or-onward-travel": "Transhipment or onward travel",
+      "transit": "Transit",
+      "re-entry": "Re-entry",
+      "temporary-admission-horses": "Temporary admission (horses)"
+    },
+    "purpose": {
+      "transfer-of-ownership-sale-or-gift": "Transfer of ownership - Sale or gift",
+      "transfer-of-ownership-rescue": "Transfer of ownership - Rescue",
+      "breeding": "Breeding",
+      "research": "Research",
+      "racing-competition-show-or-training": "Racing, competition, show or training",
+      "approved-premises-or-body": "Approved premises or body",
+      "companion-animal-not-for-resale-or-rehoming": "Companion animal not for resale or rehoming",
+      "production": "Production",
+      "slaughter": "Slaughter",
+      "fattening": "Fattening",
+      "restocking": "Restocking"
+    },
+    "transporterType": {
+      "commercial": "Commercial transporter",
+      "private": "Private transporter"
+    },
+    "yesNo": {
+      "yes": "Yes",
+      "no": "No"
+    },
+    "portOfEntry": {
+      "DVR": "Port of Dover",
+      "HUL": "Port of Hull",
+      "LGW": "Gatwick Airport",
+      "LHR": "Heathrow Airport",
+      "STN": "Stansted Airport",
+      "EDI": "Edinburgh Airport",
+      "BRS": "Bristol Airport",
+      "MAN": "Manchester Airport"
+    },
+    "meansOfTransport": {
+      "airplane": "Airplane",
+      "railway": "Railway",
+      "road-vehicle": "Road vehicle",
+      "vessel": "Vessel"
+    },
+    "commodityCode": {
+      "0101": "Horse (0101)",
+      "0102": "Cattle (0102)",
+      "0103": "Pig (0103)",
+      "010410": "Sheep (010410)",
+      "010420": "Goats (010420)",
+      "01061900": "Cats, Dogs or Ferrets (01061900)",
+      "01063100": "Birds of prey (01063100)",
+      "01064100": "Bees (01064100)"
+    },
+    "commodityType": {
+      "game": "Game",
+      "placeholder-1": "PLACEHOLDER 1 — real values come from MDM",
+      "placeholder-2": "PLACEHOLDER 2 — real values come from MDM"
+    },
+    "animalsCertifiedFor": {
+      "further-keeping": "Further keeping",
+      "slaughter": "Slaughter",
+      "confined-establishment": "Confined establishment",
+      "germinal-products": "Germinal products",
+      "registered-equine-animal": "Registered equine animal",
+      "travelling-circus-or-animal-act": "Travelling circus/animal act",
+      "exhibition": "Exhibition",
+      "event-or-activity-near-borders": "Event or activity near borders",
+      "release-into-the-wild": "Release into the wild",
+      "dispatch-centre": "Dispatch centre",
+      "relaying-area-or-purification-centre": "Relaying area/purification centre",
+      "ornamental-aquaculture-establishment": "Ornamental aquaculture establishment",
+      "technical-use": "Technical use",
+      "quarantine-or-similar-establishment": "Quarantine or similar establishment",
+      "live-aquatic-animals-for-human-consumption": "Live aquatic animals for human consumption",
+      "other": "Other"
+    },
+    "accompanyingDocumentType": {
+      "itahc": "ITAHC",
+      "veterinary-health-certificate": "Veterinary health certificate",
+      "air-waybill": "Air waybill",
+      "import-permit": "Import permit",
+      "letter-of-authority": "Letter of authority (Directive 2008/61/EC)",
+      "commercial-invoice": "Commercial invoice",
+      "sea-waybill": "Sea waybill",
+      "rail-waybill": "Rail waybill",
+      "bill-of-lading": "Bill of lading",
+      "catch-certificate": "Catch certificate",
+      "laboratory-sampling-results": "Laboratory sampling results for aflatoxin (Reg 2019/1793)",
+      "health-certificate": "Health certificate",
+      "journey-log": "Journey log",
+      "other": "Other"
+    },
+    "accompanyingDocumentAttachmentType": {
+      "pdf": "PDF",
+      "doc": "DOC",
+      "docx": "DOCX",
+      "jpg": "JPG",
+      "jpeg": "JPEG",
+      "png": "PNG",
+      "xls": "XLS",
+      "xlsx": "XLSX"
+    }
+  },
+  "chrome": {
+    "serviceName": "Live animals — EUDPA-249 flow-layer spike",
+    "taskList": "Task list",
+    "back": "Back",
+    "saveAndContinue": "Save and continue",
+    "errorSummaryTitle": "There is a problem",
+    "selectPlaceholder": "- Select -",
+    "phaseBanner": {
+      "tag": "Prototype",
+      "html": "EUDPA-249 flow-layer spike — non-functional prototype, not a real service."
+    },
+    "pageTitle": {
+      "errorPrefix": "Error: ",
+      "suffix": "Live animals (EUDPA-249 flow-layer spike)"
+    }
+  },
+  "hub": {
+    "pageTitle": "Task list",
+    "heading": "Live animals — EUDPA-249 flow-layer prototype",
+    "lead": "Complete each section. Your progress is saved as you go.",
+    "progress": {
+      "notStarted": "You have not started this journey yet.",
+      "fulfilled": "All required sections are complete.",
+      "inProgress": "You are part-way through this journey."
+    },
+    "status": {
+      "notApplicable": "Not applicable",
+      "notStarted": "Not started",
+      "optional": "Optional",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "submitted": "Submitted"
+    },
+    "checkYourAnswersLink": "Check your answers so far",
+    "resetButton": "Reset the demo"
+  },
+  "cya": {
+    "pageTitle": "Check your answers",
+    "heading": "Check your answers",
+    "bannerHeading": "You still need to complete some sections",
+    "changeLinkText": "Change",
+    "promptEnterValue": "Enter a value for {label}",
+    "promptCompleteAddress": "Complete the {label} address",
+    "promptCompleteAddressForUnit": "Complete the permanent address for animal {unitN} on commodity line {lineN}",
+    "promptGroupInvariant": "Add at least one identifier for animal {unitN} on commodity line {lineN}",
+    "submitReady": "All required obligations are fulfilled. In a real service, this is where the user would submit."
+  },
+  "commodityLines": {
+    "pageTitle": "Commodity lines",
+    "heading": "Commodity lines",
+    "lead": "Add one or more commodity lines. Each line captures a commodity code, species, and count.",
+    "notFilled": "-",
+    "changeLinkText": "Change",
+    "changeLinkHidden": "{label} for commodity line {n}",
+    "breadcrumbSelf": "Commodity lines",
+    "empty": "No commodity lines added yet.",
+    "addButton": "Add a commodity line",
+    "backToTaskList": "Back to task list",
+    "lineHeading": "Commodity line {n}",
+    "deleteButton": "Delete this line",
+    "deleteHidden": "Delete commodity line {n}",
+    "manageAnimalsButton": "Manage animals on this line"
+  },
+  "units": {
+    "pageTitle": "Animals on commodity line {lineN}",
+    "heading": "Animals on commodity line {lineN}",
+    "lead": "Add one entry per animal (or per group). Some commodity codes require per-animal identifiers.",
+    "notFilled": "-",
+    "changeLinkText": "Change",
+    "changeLinkHidden": "{label} for animal {unitN} on commodity line {lineN}",
+    "breadcrumbSelf": "Animals on commodity line {lineN}",
+    "empty": "No animals added yet for this commodity line.",
+    "addButton": "Add an animal",
+    "backToLines": "Back to commodity lines",
+    "unitHeading": "Animal {unitN} on commodity line {lineN}",
+    "deleteButton": "Delete this animal",
+    "deleteHidden": "Delete animal {unitN} on commodity line {lineN}"
+  },
+  "errors": {
+    "countryOfOrigin": {
+      "required": "Enter a country of origin"
+    },
+    "regionCode": {
+      "required": "Enter the region of origin code"
+    },
+    "purposeInInternalMarket": {
+      "required": "Choose the purpose in the internal market"
+    },
+    "meansOfTransport": {
+      "required": "Choose the means of transport"
+    },
+    "commodityCode": {
+      "required": "Choose a commodity code"
+    },
+    "commodityType": {
+      "required": "Choose a commodity type"
+    },
+    "species": {
+      "required": "Choose at least one species"
+    },
+    "numberOfAnimals": {
+      "required": "Enter the number of animals"
+    },
+    "commercialTransporter": {
+      "required": "Complete the commercial transporter address"
+    },
+    "privateTransporter": {
+      "required": "Complete the private transporter address"
+    },
+    "contactAddress": {
+      "required": "Complete the contact address"
+    },
+    "accompanyingDocumentAttachmentType": {
+      "required": "Choose the attachment format"
+    },
+    "accompanyingDocumentReference": {
+      "required": "Enter the document reference"
+    },
+    "accompanyingDocumentDateOfIssue": {
+      "required": "Enter the date of issue"
+    },
+    "domain": {
+      "enumNotInOptions": {
+        "plain": "Select a value from the list",
+        "withInvalid": "Select a value from the list (invalid: {invalid})"
+      },
+      "stringMaxLength": "Enter no more than {max} characters (you entered {actual})",
+      "stringRequired": "Enter a value",
+      "integerMin": "Enter a whole number of at least {min}",
+      "integerMaxDigits": "Enter a whole number with no more than {maxDigits} digits",
+      "dateFormat": "Enter a valid date in DD/MM/YYYY format",
+      "arrayMaxSelections": "Select no more than {max} items (you selected {actual})",
+      "addressSubFieldRequired": "Enter {subField}",
+      "addressSubFieldMaxLength": "{subField} must be {max} characters or fewer (you entered {actual})",
+      "addressSubFieldEmailFormat": "{subField} must be a valid email address",
+      "addressSubFieldEnumInvalid": "Choose a value from the list for {subField}",
+      "unknownCode": "This value could not be validated (error code: {code})"
+    },
+    "defaultRequired": "This field is required"
+  }
+}
