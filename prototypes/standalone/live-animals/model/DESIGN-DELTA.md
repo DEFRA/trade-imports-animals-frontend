@@ -210,3 +210,53 @@ assertion about `options` / predicates / metadata `shape`+`readsFrom` /
 `isComplete` was preserved unchanged. Full model suite green: 74 test files
 passed, 1095 tests passed (baseline 1099 − 4 label its), 11 skipped
 unchanged.
+
+---
+
+## 5. Key-level display-key purity gate · `model/no-display-keys.js` · `EUDPA-288` inc-007b
+
+**What changed.** A new pure checker + vitest gate polices Sam's ruling (PLAN
+§5.4) at the KEY level: no obligation or domain entry may carry a display key.
+Banned keys: **`label`, `title`, `titleKey`, `hint`, `legend`, `widget`**
+(`DISPLAY_KEYS`, extend if a new display-ish key appears in B). inc-007a
+stripped `domain.labels`; this turns "keep it stripped" from a convention into
+a gate.
+
+- `model/no-display-keys.js` — `findDisplayKeyOffenders(obligations, domain)`
+  (returns offending paths, pure) and `assertNoDisplayKeys(obligations,
+domain)` (throws). Argument-driven, imports nothing from the model, so the
+  same code runs as a test now and as boot-time enforcement at M3.
+- `model/no-display-keys.test.js` — asserts the real vendored `obligations`
+  array + `domain` map are clean, plus a **positive control**: labelled
+  fixture objects (a top-level `label`, and display keys nested in
+  `metadata` / `item[]` / `subFieldRules`, on a domain entry, and on an
+  `applyTo.metadata` gate decision) that the checker must catch. If the walk
+  were a no-op the positive control fails — so a green suite proves the check
+  bites, not merely that the model happens to be clean.
+
+**Object-scoped, not a source grep — the load-bearing design choice.**
+REPORT:460-465 refutes `obligation-purity.js`'s import-specifier regex as a
+structural guarantee: it "never inspects a key". A naive source grep for
+`label` is the opposite failure — inc-007a's handoff warned that `analysis/`'s
+`OPERATOR_LABELS` / helper-type `"labels"` constants NAME AST operators and
+would false-positive. This checker walks the LIVE obligation + domain object
+graphs it is handed (recursing plain objects, arrays, Maps, and the
+`.metadata` sidecars hung off `applyTo` closures; `WeakSet`-guarded against
+the cyclic `within` back-references), so the `analysis/` constants are
+structurally unreachable and cannot false-positive, while a `titleKey:` added
+directly to an obligation would be caught where the regex could not.
+
+**Scope.** Polices the vendored `model/` only (the model being adopted). Not
+pointed at A's `features/*/obligations.js` — those are clean today and retire
+at M4 anyway.
+
+**Wire into `obligation-purity.js` at M3.** A comment note in
+`obligation-purity.js` points M3 at `assertNoDisplayKeys`. It is NOT wired to
+boot yet — the model is dark (not booted, not imported by A's `routes.js`), so
+the check lands now as a CI test over the vendored model and lifts into the
+boot-time assert when the model goes live at M3. A's existing import-specifier
+assert is untouched and still runs.
+
+**Backwards compatibility / tests.** Purely additive — one new source file +
+one new test file, no existing model file changed. Model suite: 74 → 75 test
+files, 1095 → 1103 tests passed (+8 from the new gate), 11 skipped unchanged.
