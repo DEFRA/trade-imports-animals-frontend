@@ -41,7 +41,7 @@ import {
 import { pathKey, valueAt } from '../../lib/path.js'
 import { walk } from '../../registry.js'
 import { isAnswered } from '../../lib/answered.js'
-import { makeScopeA } from '../../engine/read.js'
+import { computeReadyForCheckYourAnswers } from '../../engine/readiness-config.js'
 
 const evaluator = createObligationEvaluator()
 
@@ -109,10 +109,14 @@ const projectInScope = (answers) => {
  *
  * Shape-identical to `engine/read.js`'s `makeScope`.
  *
- * `readyForCheckYourAnswers` is deferred to A's boot-injected fn (via
- * A's `makeScopeA`) for the dark phase — status derivation from B's
- * `journeyState`/`containerStatus` is inc-017a's job, and deferring
- * keeps the shape identical without pulling status derivation forward.
+ * `readyForCheckYourAnswers` is now B-derived (inc-017a): the boot-injected
+ * fn (`flow/section-status.js`'s `readyForCheckYourAnswers`, reached through
+ * `engine/readiness-config.js`) rolls up the task rows via `rowStatus`, which
+ * dual-paths to `statusOfFromB` under `MODEL=b` — so passing B's projected
+ * `inScope` yields a fully B-derived readiness with no call into `makeScopeA`.
+ * Consuming the registry module (not `read.js`) severs the `scope.js ->
+ * engine/read.js` edge that inc-012/013 flagged for M4 (only `read.js ->
+ * scope.js` remains — a clean DAG).
  *
  * @param {object} answers - A's nested answer POJO.
  * @returns {{ inScope: Set<string>, has: (id: string) => boolean,
@@ -124,6 +128,6 @@ export const makeScopeFromB = (answers) => {
     inScope,
     has: (id) => inScope.has(id),
     answered: (id) => anyInstanceAnswered(answers, id),
-    readyForCheckYourAnswers: makeScopeA(answers).readyForCheckYourAnswers
+    readyForCheckYourAnswers: computeReadyForCheckYourAnswers(answers, inScope)
   }
 }

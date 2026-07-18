@@ -5,17 +5,12 @@ import { isAnswered } from '../lib/answered.js'
 import { valueAt } from '../lib/path.js'
 import { isModelB } from './model-flag.js'
 import { makeScopeFromB } from '../model/bridge/scope.js'
+import {
+  configureReadyForCheckYourAnswers,
+  computeReadyForCheckYourAnswers
+} from './readiness-config.js'
 
-let readyForCheckYourAnswersFn = () => {
-  throw new Error(
-    'readyForCheckYourAnswers not configured — call ' +
-      'configureReadyForCheckYourAnswers() at boot'
-  )
-}
-
-export const configureReadyForCheckYourAnswers = (compute) => {
-  readyForCheckYourAnswersFn = compute
-}
+export { configureReadyForCheckYourAnswers }
 
 const anyInstanceAnswered = (answers, id) => {
   for (const node of walk(answers)) {
@@ -32,7 +27,7 @@ export const makeScopeA = (answers) => {
     inScope,
     has: (id) => inScope.has(id),
     answered: (id) => anyInstanceAnswered(answers, id),
-    readyForCheckYourAnswers: readyForCheckYourAnswersFn(answers, inScope)
+    readyForCheckYourAnswers: computeReadyForCheckYourAnswers(answers, inScope)
   }
 }
 

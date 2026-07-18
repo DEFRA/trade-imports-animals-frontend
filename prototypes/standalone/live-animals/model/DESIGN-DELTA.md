@@ -1142,3 +1142,76 @@ key. `dispatch.test.js`'s spy re-points from `registry.walkObligations` to
 names == A ids and topologies match, dispatch/prereq/guard results are unchanged.
 A's `registry.js` still exports `walkObligations`/`byId` for the rest of the
 `a`-runtime — only `flow/` stopped importing it.
+
+## 19. The status bridge — B derives the 5-way task/section status · `model/bridge/status.js` · `flow/task-rows.js` · `flow/section-status.js` · `engine/readiness-config.js` · `EUDPA-288` inc-017a
+
+**What this is.** Sam's ruling (PLAN §5.5): take B's status derivation, retire A's
+`engine/status.js` machinery. Under `MODEL=b` the task-list / section / CYA-readiness
+status is B-derived; default `a` stays byte-identical (A's `status.js` remains the
+default path, deleted at M4/inc-022). Scope of the swap: the status COMPUTATION moves
+to B. A's row/section STRUCTURE (task-rows, hub groups, facet membership) stays the
+input — the full 3-spine structural collapse is a separate presentation refactor,
+NOT done here (follow-up).
+
+**The bridge — B-derived 5-way.** `statusOfFromB(parts, answers, inScope)` returns the
+SAME five constants as A's `statusOf`. Its OUTER classification is copied verbatim from
+A (same NA / OPTIONAL / NOT_STARTED / IN_PROGRESS / FULFILLED branches, same
+`partRequired` / `partStarted` reads off A's registry + answers) — so the
+presentation-facing edge cases match A exactly: empty optional collection → OPTIONAL,
+partial optional → IN_PROGRESS, empty required collection → NOT_STARTED. B's own
+entry-granularity classifier (`classifyEntries`) has different edge semantics there
+(empty → NA, partial-optional → FULFILLED), so mirroring A's part-granularity was the
+only way to keep the two engines in agreement.
+
+**The crux — `partSatisfied` sourced from B.** The ONE predicate that moves to B is the
+completeness judgement. `partSatisfiedB` walks the SAME collection tree A's
+`collectionComplete`/`entryComplete` walk, but sources three things from B's evaluator
+state (`answersToFulfilments` → `evaluate`): per-record SCOPE (a leaf is present for a
+record iff B's implication `records[]` carries that record's fulfilmentId — B's
+post-purge membership replaces A's `activatedBy` predicates); per-record MANDATE
+(`effectiveStatus(leaf, recId, state)` mandatory/optional replaces A's static
+`required`); and FULFILMENT (`domainEntry.isComplete` for addresses, else
+`!isBlankValue`). The `requiredOneOf` any-of rule (e.g. ≥1 identifier per unit) mirrors
+B's `groupInvariantErrors` semantics per record.
+
+**Facets from B.** A facet `{collection, only/except}` is enumerated from A's registry
+(so B-only obligations like `commodityType` A never counted are excluded), then each
+selected member's leaves map to B by `name` for the scope/mandate/fulfilment read;
+sub-collection members recurse over all their members. The collection FLOOR
+(`requiredAtLeastOne`, e.g. the ≥1-unit-per-line rule on `animalIdentifiers`) is read
+from A's registry because B models it only partially (`commodityLine` has a
+`minEntries` but `animalIdentifiers` carries only `anyOfIds`, no per-line unit floor);
+the bridge composes A's structural cardinality with B's per-record implications. No
+change to B's manifest or `buildImplication`.
+
+**B-unmodelled obligations.** `importType` and `declaration` are A-registry
+obligations B's manifest does not model (D7/D8, ruled A-side flow). For a plain part
+with no B obligation, `partSatisfiedB` falls back to A's `isAnswered(answers[id])` —
+A owns them, so a phantom B fulfilment would be wrong. This is what keeps the `start`
+section's `importType` roll-up agreeing between the row and section spines under `b`.
+
+**Dual-path point.** At the callers, not inside A's `statusOf` (importing the bridge
+into `status.js` would cycle, and `status.js` is deleted at M4): `rowStatus`
+(`task-rows.js`) and `sectionStatus` (`section-status.js`) select `statusOfFromB` under
+`isModelB()`, A's `statusOf` otherwise. `readyForCheckYourAnswers` already rolls up
+through `rowStatus`, so it becomes B-derived under `b` with no edit.
+
+**Readiness cycle severed.** inc-012's `makeScopeFromB` reached readiness by calling
+`makeScopeA` (a `read.js ↔ scope.js` cycle inc-012/013 flagged for M4). The
+boot-injected readiness registry moves out of `read.js` into `engine/readiness-config.js`
+(a leaf module); `makeScopeFromB` now calls `computeReadyForCheckYourAnswers(answers,
+inScope)` with B's projected `inScope`. `scope.js` no longer imports `read.js` — the
+cycle is gone (only `read.js → scope.js` remains). The injected fn is still
+`section-status.readyForCheckYourAnswers`, which under `b` rolls up through the
+dual-pathed `rowStatus` → `statusOfFromB`, so production readiness is fully B-derived;
+the indirection keeps test stubs (`configureReadyForCheckYourAnswers`) honoured on both
+paths.
+
+**Default `a` byte-identical.** A's `statusOf`/`task-rows`/`section-status` are the
+default branch, untouched; the unit suite holds at 1192 (+19 new `status.test.js`
+proofs = 1211). Oracle stays zero-divergence. Under `MODEL=b` the two remaining
+failures — `check-answers` "redirect to declaration" and the reachability prover — are
+NOT status: both are the D7/D8 `importType`/`declaration` A-only obligations being
+absent from B's `inScope`, so their owning pages report `owning-page-unreachable-in-scope`
+under `b`. That is inc-018's (importType/declaration placement) concern; admitting them
+to B's `inScope` here would break the D7/D8 raw-scope oracle test.
