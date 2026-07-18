@@ -40,6 +40,7 @@ import {
   identificationDetails,
   description,
   permanentAddress,
+  documents,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -1054,16 +1055,18 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Step 5 — Accompanying Documents (notification-level all-or-nothing block)
+// Step 5 — Accompanying Documents (repeatable per-document collection)
 //
-// Four fields sharing a symmetric cross-sibling gate: optional when
-// nothing is filled; mandatory once any one is filled. Uses the
-// extended `gatedBy` form to keep every field in scope regardless of
-// gate state (retain-value pattern).
+// inc-016b resolved D1: the four fields now sit `within: documents`, a
+// depth-0 group. `accompanyingDocumentType` is the per-record trigger
+// (plain mandatory field); the three dependants gate on the SAME-record
+// type via `presentPerRecord` — in scope + mandatory on records whose
+// type is answered, out of scope (and purged) elsewhere. Storage is a
+// records-map keyed by document instance. See DIVERGENCE-REGISTER D1 +
+// V4 (Confluence page 6497338582) "once a document type is selected …".
 // ---------------------------------------------------------------------------
 
-const documentBlockFields = [
-  ['Type', accompanyingDocumentType],
+const documentDependants = [
   ['AttachmentType', accompanyingDocumentAttachmentType],
   ['Reference', accompanyingDocumentReference],
   ['DateOfIssue', accompanyingDocumentDateOfIssue]
@@ -1075,93 +1078,107 @@ const documentBlockMandatoryReason = {
     'accompanying document fields become mandatory once a document type is selected'
 }
 
-describe('V4 — accompanying document block: no field filled → all optional', () => {
-  it.each(documentBlockFields)(
-    '%s is optional in-scope on empty input',
+describe('V4 — accompanying documents: no documents at all', () => {
+  it('the documents group and the Type trigger are in scope with no records', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[documents.id]).toEqual({
+      inScope: true,
+      records: []
+    })
+    expect(result.obligations[accompanyingDocumentType.id]).toEqual({
+      inScope: true,
+      records: []
+    })
+  })
+
+  it.each(documentDependants)(
+    '%s is out of scope when no document exists',
     (_name, obligation) => {
       const result = evaluator.evaluate({})
-      expect(result.obligations[obligation.id]).toEqual({
-        inScope: true,
-        status: 'optional'
-      })
+      expect(result.obligations[obligation.id]).toEqual({ inScope: false })
     }
   )
 })
 
-describe('V4 — accompanying document block: only Type selection triggers the mandatory branch (audit #15)', () => {
-  it('when Type is filled, all four document fields are mandatory in-scope', () => {
-    const result = evaluator.evaluate({
-      [accompanyingDocumentType.id]: 'Veterinary health certificate'
+describe('V4 — accompanying documents: type is the per-record trigger (audit #15)', () => {
+  const withType = {
+    [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' }
+  }
+
+  it('a document record appears once its Type is answered', () => {
+    const result = evaluator.evaluate(withType)
+    expect(result.obligations[documents.id]).toEqual({
+      inScope: true,
+      records: [{ fulfilmentId: 'd0' }]
     })
-    for (const [, obligation] of documentBlockFields) {
+    expect(result.obligations[accompanyingDocumentType.id]).toEqual({
+      inScope: true,
+      records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
+    })
+  })
+
+  it.each(documentDependants)(
+    '%s is mandatory + reason on the record whose Type is answered',
+    (_name, obligation) => {
+      const result = evaluator.evaluate(withType)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        status: 'mandatory',
+        records: [{ fulfilmentId: 'd0', status: 'mandatory' }],
         reasons: [documentBlockMandatoryReason]
       })
     }
-  })
-
-  const nonTriggerSiblings = [
-    ['AttachmentType', accompanyingDocumentAttachmentType, 'PDF'],
-    ['Reference', accompanyingDocumentReference, 'GBHC1234567890'],
-    ['DateOfIssue', accompanyingDocumentDateOfIssue, '2025-12-12']
-  ]
-
-  it.each(nonTriggerSiblings)(
-    'when only %s is filled (Type still blank), the block stays optional per V4 audit #15',
-    (_name, filledObligation, filledValue) => {
-      const result = evaluator.evaluate({
-        [filledObligation.id]: filledValue
-      })
-      for (const [, obligation] of documentBlockFields) {
-        expect(result.obligations[obligation.id]).toEqual({
-          inScope: true,
-          status: 'optional'
-        })
-      }
-    }
   )
 })
 
-describe('V4 — accompanying document block: all four filled', () => {
-  it('all four fields are mandatory and values round-trip', () => {
-    const stored = {
-      [accompanyingDocumentType.id]: 'Veterinary health certificate',
-      [accompanyingDocumentAttachmentType.id]: 'PDF',
-      [accompanyingDocumentReference.id]: 'GBHC1234567890',
-      [accompanyingDocumentDateOfIssue.id]: '2025-12-12'
-    }
+describe('V4 — accompanying documents: all four filled on one record', () => {
+  const stored = {
+    [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' },
+    [accompanyingDocumentAttachmentType.id]: { d0: 'PDF' },
+    [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890' },
+    [accompanyingDocumentDateOfIssue.id]: { d0: '2025-12-12' }
+  }
+
+  it('the Type field is mandatory on the record', () => {
     const result = evaluator.evaluate(stored)
-    for (const [, obligation] of documentBlockFields) {
+    expect(result.obligations[accompanyingDocumentType.id]).toEqual({
+      inScope: true,
+      records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
+    })
+  })
+
+  it.each(documentDependants)(
+    '%s is mandatory and its value round-trips',
+    (_name, obligation) => {
+      const result = evaluator.evaluate(stored)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        status: 'mandatory',
+        records: [{ fulfilmentId: 'd0', status: 'mandatory' }],
         reasons: [documentBlockMandatoryReason]
       })
-      expect(result.fulfilments[obligation.id]).toBe(stored[obligation.id])
+      expect(result.fulfilments[obligation.id]).toEqual(stored[obligation.id])
     }
-  })
+  )
 })
 
-describe('V4 — accompanying document block: retain-value semantic', () => {
-  it('does not purge a stored value when the gate is off (extended form whenFalse keeps inScope: true)', () => {
-    // Contrast with purge-on-flip patterns (purposeInInternalMarket
-    // etc.). Here whenFalse is `{ inScope: true, status: 'optional' }`
-    // — never out of scope — so purgeStorage keeps the value.
-    //
-    // Post audit #15 the gate is triggered by Type only, so filling
-    // Reference alone leaves the block optional but the stored
-    // value is retained.
+describe('V4 — accompanying documents: per-record purge when Type is blank', () => {
+  it('a dependant on a record with no Type is out of scope and purged, independent of a sibling record', () => {
+    // Replaces the old notification-level retain-value semantic: the
+    // gate is now per record. Record d0 has a Type (its Reference is
+    // mandatory + kept); record d1 has only a Reference and no Type, so
+    // that Reference leaves scope and is purged. Per-record projection —
+    // the same purge behaviour `allowListed` gives the identifier gates.
     const result = evaluator.evaluate({
-      [accompanyingDocumentReference.id]: 'GBHC1234567890'
+      [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' },
+      [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890', d1: 'ORPHAN' }
     })
-    expect(result.fulfilments[accompanyingDocumentReference.id]).toBe(
-      'GBHC1234567890'
-    )
-    expect(result.obligations[accompanyingDocumentReference.id].status).toBe(
-      'optional'
-    )
+    expect(result.obligations[accompanyingDocumentReference.id]).toEqual({
+      inScope: true,
+      records: [{ fulfilmentId: 'd0', status: 'mandatory' }],
+      reasons: [documentBlockMandatoryReason]
+    })
+    expect(result.fulfilments[accompanyingDocumentReference.id]).toEqual({
+      d0: 'GBHC1234567890'
+    })
   })
 })
 

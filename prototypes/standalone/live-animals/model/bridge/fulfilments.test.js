@@ -245,11 +245,13 @@ describe('non-injective commodity (Cat/Dog -> 01061900)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Accompanying documents — A's repeatable collection <-> B's four
-// notification-level singletons (D1 topology divergence).
+// Accompanying documents — A's repeatable collection <-> B's `documents`
+// collection. inc-016b resolved D1: B now models the same nested topology,
+// so documents bridges as an ordinary A-collection <-> B-collection
+// mapping (like commodityLines) — the D1 cap-at-one is gone.
 // ---------------------------------------------------------------------------
 
-describe('accompanying documents topology (A collection <-> B singletons)', () => {
+describe('accompanying documents topology (A collection <-> B collection, D1 resolved inc-016b)', () => {
   const answers = {
     documents: [
       {
@@ -267,26 +269,34 @@ describe('accompanying documents topology (A collection <-> B singletons)', () =
     ]
   }
 
-  it('maps the first document to the four notification-level singletons', () => {
+  it('maps each document field to a records-map keyed by document instance', () => {
     const fulfilments = answersToFulfilments(answers)
-    expect(fulfilments[accompanyingDocumentType.id]).toBe('ITAHC')
-    expect(fulfilments[accompanyingDocumentAttachmentType.id]).toBe('PDF')
-    expect(fulfilments[accompanyingDocumentReference.id]).toBe('GBHC1234567890')
+    expect(fulfilments[accompanyingDocumentType.id]).toEqual({
+      line0: 'ITAHC',
+      line1: 'OTHER'
+    })
+    expect(fulfilments[accompanyingDocumentAttachmentType.id]).toEqual({
+      line0: 'PDF'
+    })
+    expect(fulfilments[accompanyingDocumentReference.id]).toEqual({
+      line0: 'GBHC1234567890'
+    })
     expect(fulfilments[accompanyingDocumentDateOfIssue.id]).toEqual({
-      day: '12',
-      month: '12',
-      year: '2025'
+      line0: { day: '12', month: '12', year: '2025' }
     })
   })
 
-  it('caps at one document (D1) and drops A-only upload metadata (filename)', () => {
+  it('round-trips a MULTI-document journey A->B->A (D1 cap removed) and drops A-only filename', () => {
     const recovered = fulfilmentsToAnswers(answersToFulfilments(answers))
-    expect(recovered.documents).toHaveLength(1)
+    expect(recovered.documents).toHaveLength(2)
     expect(recovered.documents[0]).toEqual({
       accompanyingDocumentType: 'ITAHC',
       accompanyingDocumentAttachmentType: 'PDF',
       accompanyingDocumentReference: 'GBHC1234567890',
       accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
+    })
+    expect(recovered.documents[1]).toEqual({
+      accompanyingDocumentType: 'OTHER'
     })
     expect(recovered.documents[0].filename).toBeUndefined()
   })

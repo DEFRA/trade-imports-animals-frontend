@@ -1033,3 +1033,60 @@ now pass at the same total; nothing on A's engine was touched.
 (B's scope now matches A). The remaining five are the status/flow/reachability
 class (`t2-hub-copy`, `analysis/reachability`, `flow/gates`, `flow/task-rows`,
 `check-answers`) — **inc-017a's** status-engine swap, deliberately not chased here.
+
+## 17. B grows a `documents` collection — D1 topology resolved · `model/obligations/obligations.js` · `model/bridge/fulfilments.js` · `EUDPA-288` inc-016b
+
+**What this is.** The last structural divergence. B previously modelled the four
+accompanying-document fields as **notification-level singletons**; A nests them
+in a repeatable `documents` collection. inc-017's flow re-point needs a
+`documents` collection to walk (`documents.accompanyingDocumentType`), so B grows
+one, matching A's topology and the ruled V4 shape (cap-10 collection; c-034;
+journey-spec:1353; DIVERGENCE-REGISTER D1). This is per-record **scope** (B
+expresses it), not per-record mandate (Phase-5) — inc-003 confirmed.
+
+**The model change.**
+
+- New structural group `documents` (`{ id, name: 'documents' }`, no `applyTo`,
+  **no `requires` floor** — documents are optional; the V4 cap of 10 is enforced
+  controller-side, `MAX_DOCUMENTS`). Matches A, which has no collection floor.
+- The four fields gain `within: documents`.
+- `accompanyingDocumentType` becomes the per-record **trigger**: a plain
+  `mandatory` field (no `applyTo`). A models it `required: true` — a document
+  record cannot exist without a type.
+- The three dependants (`AttachmentType`/`Reference`/`DateOfIssue`) gate on the
+  **same-level** type via a new helper `presentPerRecord(accompanyingDocumentType,
+null, [reason])`, `status: 'mandatory'`: in scope + mandatory on each document
+  record whose type is answered, out of scope (and purged) elsewhere. This
+  replaces the old notification-level all-or-nothing `presentGate` block (and its
+  self-referencing `{ id }` proxy, now removed). The self-loop is gone.
+
+**New helper + its tax.** `presentPerRecord` is the projecting dual of
+`presentGate` (predicate = "is answered", `filterAndProject` with `null`
+projection for same-level gates — the `commodityLine`/`unitRecord` pattern). The
+STRUCTURED_HELPER_TYPES tax is paid: a `case 'presentPerRecord'` in
+`analysis/reachability.js` `synthesiseWitness` (witness = any non-blank value),
+its entry in `STRUCTURED_HELPER_TYPES`, a `deriveDependsOn` case in `helpers.js`,
+and a `SAMPLE_OBLIGATIONS` entry in `analysis/coverage.test.js`. Coverage pins it
+both ways.
+
+**Bridge simplified.** inc-008's `DOCUMENT_FIELD_AIDS` special-case (which bridged
+A's collection ↔ B's singletons and **capped at one document**) is **gone**.
+Documents now round-trips as an ordinary A-collection ↔ B-collection mapping, like
+`commodityLines`: each field becomes a records-map keyed by document instance
+(`{ line0: …, line1: … }`), so a **multi-document** journey survives A→B→A.
+
+**Oracle: documents now AGREES.** `model-equivalence.test.js` +
+`scope.test.js` dropped the `isStructuralAOnly`/`isStructuralBOnly` exclusions for
+`documents`/`documents[N]`/`accompanyingDocument*`. Documents converges as a
+normal nested collection — zero behavioural divergence still holds across the
+whole input space (only happy-path populates documents, all fields present, so
+both engines scope the same five keys with the same mandates). `collection-
+complete.js` dropped the four fields from `STRUCTURAL_B_ONLY` (no longer B-only).
+
+**Default `a` byte-identical.** A's `features/documents/obligations.js` untouched.
+83 files / 1192 passed / 11 skipped — +3 vs inc-016a's 1189, from the granular
+per-field document tests (`it.each` over the three dependants) replacing the old
+notification-level block tests. Nothing on A's engine was touched.
+
+**Stayed per-record SCOPE — no `buildImplication`/Phase-5 change.** The gate is a
+helper + manifest change only; the evaluator core is untouched.

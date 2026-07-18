@@ -17,7 +17,7 @@ const mapping = JSON.parse(
 // obligation each bId points at is asserted to exist and — for exact/rename
 // entries — to carry `name === aId`. That name === aId is the bridge key
 // inc-007 wires so the bridge can resolve B's implication by A's obligation id.
-const B_OBLIGATION_COUNT = 44
+const B_OBLIGATION_COUNT = 45
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 

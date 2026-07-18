@@ -18,8 +18,8 @@
  * to mandatory), or an unmet per-instance group invariant
  * (`groupInvariantErrors`, the `requires.anyOf` at-least-one rule).
  *
- * Structural B-only obligations (commodityType c-037, the notification-level
- * accompanyingDocument block, the two system fields) are declared in B but
+ * Structural B-only obligations (commodityType c-037, the two system fields)
+ * are declared in B but
  * not in A's model, so the model-equivalence oracle filters them out of every
  * axis (`isStructuralBOnly`). The completeness axis mirrors that: A's
  * entryComplete never sees them, so B must not let them mark an instance
@@ -53,10 +53,6 @@ const byAName = new Map(obligations.map((o) => [o.name, o]))
 
 const STRUCTURAL_B_ONLY = new Set([
   'commodityType',
-  'accompanyingDocumentType',
-  'accompanyingDocumentAttachmentType',
-  'accompanyingDocumentReference',
-  'accompanyingDocumentDateOfIssue',
   'poApprovedReferenceNumber',
   'responsiblePersonForLoad'
 ])

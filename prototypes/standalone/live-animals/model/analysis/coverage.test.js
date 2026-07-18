@@ -102,6 +102,10 @@ const SAMPLE_OBLIGATIONS = {
       ['c', 'd']
     ])
   },
+  presentPerRecord: {
+    id: 'sample-presentPerRecord',
+    applyTo: helpers.presentPerRecord(gateObl, null)
+  },
   // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. The purge-on-flip
   // shape (whenFalse.inScope === false) exercises the WITNESS path in
   // synthesiseWitness; the total-branches shape (both in-scope) would

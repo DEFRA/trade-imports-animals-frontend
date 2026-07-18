@@ -162,24 +162,19 @@ describe('proveReachability — real V4 manifest', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Self-loop — accompanyingDocumentType's gate reads its own stored
-// value. Phase 2's sweep pinned this via a raw-literal dependsOn.
-// The prover must not go into infinite recursion.
+// Self-loop handling — the prover must treat a pure self-referencing
+// dependsOn as a seed and never recurse forever. (inc-016b removed the
+// manifest's only self-loop — accompanyingDocumentType is now an
+// applyTo-less per-record trigger — so this exercises the rule with a
+// synthetic record and pins the whole-manifest run stays clean.)
 // ---------------------------------------------------------------------------
 
 describe('proveReachability — self-loop handling', () => {
   it('does not recurse forever on a self-referencing dependsOn', () => {
-    // The manifest has one legitimate self-loop: accompanyingDocument-
-    // Type's gate closure literally reads fulfilments[its-own-id]
-    // (branchedGate on isFilled(fulfilments[accompanyingDocumentType.id])).
-    //
     // Rule: pure self-loops (dependsOn === [own-id]) are treated as
     // seeds. Graph-wise a self-loop has no EXTERNAL prerequisite —
     // nothing beyond the obligation itself constrains whether the gate
-    // fires. Whether the closure body is total-over-branches is a
-    // value-level question deferred to commit 2's witness synthesiser
-    // for structured helpers; at the graph level, "reads only my own
-    // value" is equivalent to "reads nothing".
+    // fires.
     //
     // Two things this test pins:
     //   (a) it does NOT crash / stack-overflow (visited-tracking).
@@ -190,11 +185,7 @@ describe('proveReachability — self-loop handling', () => {
     expect(result.unreachable).not.toContain('acc-doc-type')
   })
 
-  it('does not crash on accompanyingDocumentType in the full manifest', () => {
-    // Regression pin — the real manifest contains this self-loop plus
-    // three siblings that reference it. The whole-manifest run above
-    // asserted zero unreachable; here we specifically confirm the
-    // prover completes when the self-loop is part of the input.
+  it('the full manifest has zero unreachable and no errors', () => {
     const result = proveReachability(manifestRecords())
     expect(result).toBeDefined()
     expect(result.errors).toEqual([])
@@ -598,10 +589,11 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
     // now witness-synthesisable — the manifest carries ZERO opaque
     // gates.
     //
-    // Structured helpers per hand-off: allowListed × 6 + anyAllowListed
-    // × 2 + branchedGate-with-predicateMeta × 5 + notInUnionOf × 2 = 15
-    // synthesisable, plus regionCode (now non-total after the c-017 fix at
-    // inc-016a). Trivial: the four accompanyingDocument siblings.
+    // Structured helpers: allowListed, anyAllowListed, notInUnionOf, the
+    // meta-first gates and (inc-016b) the three accompanying-document
+    // dependants on `presentPerRecord` are all synthesisable. Trivial:
+    // structural groups + accompanyingDocumentType (now an applyTo-less
+    // per-record trigger).
     expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(14)
     // The two former-opaque gates are now synthesisable.
     const synthesisableNames = result.witnesses.synthesisable.map(
@@ -694,34 +686,47 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     expect(opt).toEqual({ inScope: false })
   })
 
+  // inc-016b: accompanyingDocumentType is now the plain per-record
+  // trigger (a mandatory `field` within `documents`, no applyTo). The
+  // graph-level classification for an obligation without an applyTo is
+  // TRIVIAL.
+  it('accompanyingDocumentType is the plain per-record trigger (no applyTo, mandatory)', () => {
+    const type = findOblByName('accompanyingDocumentType')
+    expect(type.applyTo).toBeUndefined()
+    expect(type.status).toBe('mandatory')
+    expect(synthesiseWitness(type).kind).toBe(WITNESS_KIND.TRIVIAL)
+  })
+
+  // inc-016b: the three dependants gate PER DOCUMENT RECORD on the
+  // same-level Type via `presentPerRecord`. The raw closure returns a
+  // projecting decision (`records` = the passing document keys) with a
+  // mandatory reason; a record with no Type is out of scope.
   it.each([
-    'accompanyingDocumentType',
     'accompanyingDocumentAttachmentType',
     'accompanyingDocumentReference',
     'accompanyingDocumentDateOfIssue'
   ])(
-    '%s: documentType present → mandatory + reason, absent → optional',
+    '%s: Type answered on a record → in scope on that record + reason, no Type → out of scope',
     (name) => {
       const obl = findOblByName(name)
       const w = synthesiseWitness(obl)
-      expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
+      expect(w.kind).toBe(WITNESS_KIND.WITNESS)
       const acc = findOblByName('accompanyingDocumentType')
-      // Present → mandatory + reason.
-      const mand = obl.applyTo({ [acc.id]: 'certificate' }, new Map())
-      expect(mand).toMatchObject({
-        inScope: true,
-        status: 'mandatory'
-      })
-      expect(mand.reasons).toBeDefined()
+      // Type answered on record d0 → dependant in scope on d0 + reason.
+      const mand = obl.applyTo({ [acc.id]: { d0: 'certificate' } }, new Map())
+      expect(mand.inScope).toBe(true)
+      expect(mand.records).toEqual(['d0'])
       expect(mand.reasons.length).toBeGreaterThan(0)
-      // Absent → optional (no reason).
-      const opt = obl.applyTo({}, new Map())
-      expect(opt).toMatchObject({ inScope: true, status: 'optional' })
+      // No Type anywhere → out of scope.
+      expect(obl.applyTo({}, new Map())).toEqual({ inScope: false })
     }
   )
 
-  // Meta-first invariant: every migrated site's applyTo.metadata.type
-  // is one of the four new helpers — never `branchedGate` any more.
+  // Meta-first invariant: every branchedGate→meta-first migrated site's
+  // applyTo.metadata.type is one of the three helpers. The four
+  // accompanying-document fields left this cohort at inc-016b (D1
+  // resolution) — Type is now applyTo-less and its dependants use
+  // `presentPerRecord`.
   it('every migrated site now uses a meta-first helper metadata.type', () => {
     const META_FIRST = new Set(['equalsGate', 'presentGate', 'includesGate'])
     const migratedNames = [
@@ -729,11 +734,7 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
       'commercialTransporter',
       'privateTransporter',
       'transitedCountries',
-      'regionOfOriginCode',
-      'accompanyingDocumentType',
-      'accompanyingDocumentAttachmentType',
-      'accompanyingDocumentReference',
-      'accompanyingDocumentDateOfIssue'
+      'regionOfOriginCode'
     ]
     const stragglers = migratedNames
       .map(findOblByName)

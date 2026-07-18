@@ -1,4 +1,5 @@
 import { isRecordMap, readGate } from './helper-internals.js'
+import { isAnswered } from '../../lib/answered.js'
 
 /**
  * applyTo helper library — pure functions that build applyTo functions.
@@ -163,6 +164,47 @@ export function notInUnionOf(
     type: 'notInUnionOf',
     obligation: gateObligation.id,
     values: derivedUnion,
+    projection: projectionGroup?.id ?? null,
+    reasons: reasons ?? null
+  }
+  return fn
+}
+
+/**
+ * presentPerRecord — per-record present gate. The dual of `allowListed`
+ * with an "is answered" predicate instead of an allowlist membership
+ * test. On each record where `gateObligation`'s stored value is
+ * answered (non-blank), the gated obligation is in scope on that record;
+ * elsewhere it is out of scope (and purged).
+ *
+ * Same projection/frame semantics as `allowListed`/`notInUnionOf`:
+ *   - same-level gate (gate and gated both `within` the same group) →
+ *     pass `null` for `projectionGroup`; records are the passing gate
+ *     keys directly. This is the accompanying-documents case — the four
+ *     document fields all sit `within: documents`, and the three
+ *     dependent fields gate on the same-level `accompanyingDocumentType`.
+ *   - deeper gated obligation → pass its parent group as
+ *     `projectionGroup` (identical projection rule to `allowListed`).
+ *
+ * V4 (Confluence page 6497338582): "once a document type is selected,
+ * the attachment, reference and date of issue are mandatory to proceed."
+ * The gate reads `accompanyingDocumentType`'s per-record value; the
+ * gated obligation carries `status: 'mandatory'` so a record with a type
+ * makes its dependants mandatory.
+ */
+export function presentPerRecord(gateObligation, projectionGroup, reasons) {
+  const fn = (fulfilments, fulfilmentIdsByObligationId) => {
+    const decision = filterAndProject(
+      fulfilments[gateObligation.id],
+      (value) => isAnswered(value),
+      projectionGroup,
+      fulfilmentIdsByObligationId
+    )
+    return decision.inScope && reasons ? { ...decision, reasons } : decision
+  }
+  fn.metadata = {
+    type: 'presentPerRecord',
+    obligation: gateObligation.id,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null
   }
@@ -500,6 +542,7 @@ function deriveDependsOn(gateMeta) {
     case 'allowListed':
     case 'anyAllowListed':
     case 'notInUnionOf':
+    case 'presentPerRecord':
     case 'matches':
     case 'equalsGate':
     case 'presentGate':

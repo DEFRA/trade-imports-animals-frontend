@@ -37,22 +37,13 @@ import {
 } from '../../services/commodities/index.js'
 import { setAt } from '../../lib/path.js'
 
-// The two nested collection groups, outermost first. The prefix is cosmetic
+// The nested collection groups, outermost first. The prefix is cosmetic
 // and reversible — B treats a fulfilmentId as opaque; only the trailing
-// integer carries the positional index. A third collection level would append
-// its own prefix here (or fall back to `grp<depth>`).
+// integer carries the positional index. A group whose depth exceeds this
+// list falls back to `grp<depth>`. `documents` is a depth-0 collection and
+// so shares the `line` token with `commodityLines`; the tokens never
+// collide because each obligation owns a separate record map.
 const GROUP_SEGMENT_PREFIXES = ['line', 'unit']
-
-// A models accompanying documents as a repeatable `documents` collection; B
-// models the same four fields as notification-level singletons (mapping.json
-// D1 — the single biggest topology divergence). These are handled by the
-// documents bridge, not the generic per-obligation walk, in BOTH directions.
-const DOCUMENT_FIELD_AIDS = [
-  'accompanyingDocumentType',
-  'accompanyingDocumentAttachmentType',
-  'accompanyingDocumentReference',
-  'accompanyingDocumentDateOfIssue'
-]
 
 // ---------------------------------------------------------------------------
 // Manifest-derived lookups — computed once from the vendored obligations.
@@ -153,21 +144,6 @@ const collectGroupedRecords = (answers, chain, aId) => {
   return records
 }
 
-const documentsToFulfilments = (answers, fulfilments) => {
-  const documents = answers?.documents
-  if (!Array.isArray(documents) || documents.length === 0) return
-  // B holds exactly one document; A's second and later documents cannot be
-  // represented and are dropped (D1 cap). `filename` (A's upload metadata)
-  // has no B obligation and is dropped.
-  const first = documents[0]
-  for (const aId of DOCUMENT_FIELD_AIDS) {
-    const value = first?.[aId]
-    if (value !== undefined) {
-      fulfilments[byAId.get(aId).id] = normaliseToB(aId, value)
-    }
-  }
-}
-
 /**
  * Translate A's `answers` into B's `fulfilments`.
  *
@@ -179,7 +155,6 @@ export const answersToFulfilments = (answers = {}) => {
   for (const obligation of obligations) {
     const aId = obligation.name
     if (groupObligations.has(obligation)) continue
-    if (DOCUMENT_FIELD_AIDS.includes(aId)) continue
     const chain = ancestorChain(obligation)
     if (chain.length === 0) {
       const value = answers?.[aId]
@@ -193,7 +168,6 @@ export const answersToFulfilments = (answers = {}) => {
       }
     }
   }
-  documentsToFulfilments(answers, fulfilments)
   return fulfilments
 }
 
@@ -236,16 +210,6 @@ export const instanceFulfilmentId = (collectionPath, index) => {
     .join('/')
 }
 
-const fulfilmentsToDocuments = (fulfilments, answers) => {
-  const document = {}
-  for (const aId of DOCUMENT_FIELD_AIDS) {
-    const value = fulfilments?.[byAId.get(aId).id]
-    if (value !== undefined) document[aId] = normaliseToA(aId, value)
-  }
-  if (Object.keys(document).length === 0) return answers
-  return setAt(answers, ['documents'], [document])
-}
-
 /**
  * Translate B's `fulfilments` back into A's `answers`.
  *
@@ -261,7 +225,6 @@ export const fulfilmentsToAnswers = (fulfilments = {}) => {
   for (const obligation of obligations) {
     const aId = obligation.name
     if (groupObligations.has(obligation)) continue
-    if (DOCUMENT_FIELD_AIDS.includes(aId)) continue
     const stored = fulfilments?.[obligation.id]
     if (stored === undefined) continue
     const chain = ancestorChain(obligation)
@@ -274,5 +237,5 @@ export const fulfilmentsToAnswers = (fulfilments = {}) => {
       }
     }
   }
-  return fulfilmentsToDocuments(fulfilments, answers)
+  return answers
 }

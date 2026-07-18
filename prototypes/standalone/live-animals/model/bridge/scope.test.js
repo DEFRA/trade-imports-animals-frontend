@@ -39,20 +39,13 @@ const diff = (answers) => {
 const isStructuralBOnly = (k) =>
   k === 'poApprovedReferenceNumber' ||
   k === 'responsiblePersonForLoad' ||
-  /^commodityLines\[\d+\]\.commodityType$/.test(k) ||
-  // Documents D1: B models the four accompanying-document fields as
-  // notification-level singletons; they are always in scope (presentGate
-  // is in-scope on both branches).
-  /^accompanyingDocument(Type|AttachmentType|Reference|DateOfIssue)$/.test(k)
+  /^commodityLines\[\d+\]\.commodityType$/.test(k)
 
 // A models importType + declaration (A-side flow, not admitted to the
-// model) and accompanying documents as a repeatable `documents`
-// collection (D1 topology).
-const isStructuralAOnly = (k) =>
-  k === 'importType' ||
-  k === 'declaration' ||
-  k === 'documents' ||
-  /^documents\[\d+\]\./.test(k)
+// model). Documents D1 was resolved at inc-016b — B now carries a
+// `documents` collection matching A's topology, so it no longer
+// registers as a structural divergence.
+const isStructuralAOnly = (k) => k === 'importType' || k === 'declaration'
 
 const behavioural = (answers) => {
   const { aOnly, bOnly } = diff(answers)
@@ -206,11 +199,14 @@ describe('scope bridge — structural divergences (documented, not gate behaviou
     expect(aOnly).toContain('declaration')
   })
 
-  it('documents D1 — A repeatable collection vs B notification-level singletons', () => {
+  it('documents D1 RESOLVED (inc-016b) — the documents collection now converges', () => {
     const { aOnly, bOnly } = diff(happyPath)
-    expect(aOnly).toContain('documents')
-    expect(aOnly).toContain('documents[0].accompanyingDocumentType')
-    expect(bOnly).toContain('accompanyingDocumentType')
+    expect(aOnly).not.toContain('documents')
+    expect(aOnly).not.toContain('documents[0].accompanyingDocumentType')
+    expect(bOnly).not.toContain('accompanyingDocumentType')
+    const b = makeScopeFromB(happyPath).inScope
+    expect(b.has('documents')).toBe(true)
+    expect(b.has('documents[0].accompanyingDocumentType')).toBe(true)
   })
 })
 

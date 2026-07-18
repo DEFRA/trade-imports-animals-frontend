@@ -239,6 +239,10 @@ export const STRUCTURED_HELPER_TYPES = new Set([
   'matches',
   'branchedGate',
   'notInUnionOf',
+  // Per-record present gate (EUDPA-288 inc-016b) — the accompanying-
+  // documents dependants gate on a same-level `accompanyingDocumentType`
+  // being answered per document record. Witness = any non-blank value.
+  'presentPerRecord',
   // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. Each helper's
   // `.metadata` fully describes the gate — the closure body is auto-
   // generated from it, so witness synthesis reads the metadata directly.
@@ -340,6 +344,17 @@ export function synthesiseWitness(obligation) {
 
     case 'branchedGate':
       return synthesiseBranchedGateWitness(meta)
+
+    case 'presentPerRecord':
+      // Per-record present gate — any non-blank value in the gate's
+      // records-map opens the gate for that record (mirrors presentGate's
+      // isFilled synth). Carry the projection group id for depth-N gates.
+      return {
+        kind: WITNESS_KIND.WITNESS,
+        obligationId: meta.obligation,
+        value: '__witness__',
+        projection: meta.projection ?? null
+      }
 
     case 'notInUnionOf':
       // metadata.values IS the derived union of the input allowlists.
@@ -599,7 +614,8 @@ export function proveWithWitnesses(obligations) {
           fulfilmentIds.set(w.projection, ['line1/unit1'])
         } else if (
           o.applyTo.metadata?.type === 'allowListed' ||
-          o.applyTo.metadata?.type === 'notInUnionOf'
+          o.applyTo.metadata?.type === 'notInUnionOf' ||
+          o.applyTo.metadata?.type === 'presentPerRecord'
         ) {
           // Depth-1 allowListed / notInUnionOf without a projection
           // group — still reads as a map (filterAndProject enumerates

@@ -70,7 +70,7 @@ import {
   equalsGate,
   includesGate,
   notInUnionOf,
-  presentGate
+  presentPerRecord
 } from './helpers.js'
 
 // -----------------------------------------------------------------------------
@@ -770,81 +770,69 @@ export const permanentAddress = {
 }
 
 // -----------------------------------------------------------------------------
-// Accompanying Documents — notification-level all-or-nothing block.
+// Accompanying Documents — repeatable per-document collection (V4 cap-10,
+// enforced controller-side via MAX_DOCUMENTS; c-034 / journey-spec:1353 /
+// DIVERGENCE-REGISTER D1). Topology now matches A's `documents` collection
+// (features/documents/obligations.js): a `documents` group with four
+// fields `within` it. inc-016b resolved D1 — B previously modelled these
+// as four notification-level singletons.
 //
-// Four fields sharing a single applyTo: optional when nothing is
-// filled, mandatory once ANY field is filled (retain-value + status-
-// swap via `presentGate`).
-//
-// The gate reads `accompanyingDocumentType`'s stored value — including
-// on `accompanyingDocumentType` itself, which self-references. The
-// meta-first `presentGate` helper reads `gateObligation.id` eagerly at
-// construction, so the self-loop uses a lightweight `{ id }` proxy
-// pinned to the same UUID (see `accompanyingDocumentTypeIdRef` below).
+// Per-record scope (V4, Confluence page 6497338582): "once a document
+// type is selected, the attachment, reference and date of issue are
+// mandatory to proceed." The trigger is documentType, evaluated PER
+// document record: on each record whose `accompanyingDocumentType` is
+// answered, the three dependants are in scope + mandatory; elsewhere out
+// of scope. `presentPerRecord` is the projecting `presentGate` — same
+// same-level `null`-projection semantics `allowListed`/`notInUnionOf`
+// use for the `commodityLine`/`unitRecord` groups.
 // -----------------------------------------------------------------------------
 
-// V4 (Confluence page 6497338582): "however, once a document type is
-// selected, the attachment, reference and date of issue are mandatory
-// to proceed." The trigger is documentType specifically — not any of
-// the four fields. A user who fills only a reference (without picking
-// a type) does NOT lock in the whole block. See audit finding #15.
-//
-// Meta-first: `presentGate(accompanyingDocumentType, ...)` encodes the
-// "answered" semantic — the closure defers to `present` internally
-// (empty string / null / undefined / empty array all count as "not
-// present"), matching the previous `isFilled` predicate verbatim.
-//
-// Self-loop preservation: `accompanyingDocumentType.applyTo` reads its
-// OWN stored value. Because `presentGate` inspects `gateObligation.id`
-// eagerly (to build metadata), we can't pass `accompanyingDocumentType`
-// itself before it's declared (TDZ). Pass a lightweight `{ id }` proxy
-// pinned to the same UUID — `dependsOn` derivation and witness synth
-// both key off `.metadata.obligation`, which still names the real id.
-const accompanyingDocumentTypeIdRef = {
-  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8'
+export const documents = {
+  id: '5921dbd2-9290-481b-b2d6-12d4321e6f7c',
+  name: 'documents'
+  // No applyTo — structural user-driven group, always in scope. No
+  // `requires` floor: documents are optional (match A, which has no
+  // collection floor). The V4 cap of 10 is enforced controller-side.
 }
 
-const accompanyingDocumentBlockApplyTo = presentGate(
-  accompanyingDocumentTypeIdRef,
-  {
-    inScope: true,
-    status: 'mandatory',
-    reasons: [accompanyingDocumentBlockReason]
-  },
-  { inScope: true, status: 'optional' }
-)
-
 export const accompanyingDocumentType = {
-  id: accompanyingDocumentTypeIdRef.id,
+  id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
   name: 'accompanyingDocumentType',
-  applyTo: accompanyingDocumentBlockApplyTo
-  // All four accompanying-document fields share the same closure —
-  // `presentGate(accompanyingDocumentType, ...)` reads only
-  // `fulfilments[accompanyingDocumentType.id]`. This obligation therefore
-  // self-references (the gate reads its own stored value to decide its
-  // own scope: `optional` when unset, `mandatory` once set). `dependsOn`
-  // is derived from `applyTo.metadata.obligation` (see
-  // `obligationMetadata`) — for this obligation that yields
-  // `[accompanyingDocumentType.id]`, the self-loop the reachability
-  // prover already treats as a seed (no external prereq).
+  within: documents,
+  status: 'mandatory'
+  // The per-record trigger. A models it `required: true`; a document
+  // record cannot exist without a type. The three dependants gate on
+  // this obligation's per-record presence via `presentPerRecord`.
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
   name: 'accompanyingDocumentAttachmentType',
-  applyTo: accompanyingDocumentBlockApplyTo
+  within: documents,
+  status: 'mandatory',
+  applyTo: presentPerRecord(accompanyingDocumentType, null, [
+    accompanyingDocumentBlockReason
+  ])
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
   name: 'accompanyingDocumentReference',
-  applyTo: accompanyingDocumentBlockApplyTo
+  within: documents,
+  status: 'mandatory',
+  applyTo: presentPerRecord(accompanyingDocumentType, null, [
+    accompanyingDocumentBlockReason
+  ])
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
   name: 'accompanyingDocumentDateOfIssue',
-  applyTo: accompanyingDocumentBlockApplyTo
+  within: documents,
+  status: 'mandatory',
+  applyTo: presentPerRecord(accompanyingDocumentType, null, [
+    accompanyingDocumentBlockReason
+  ])
 }
 
 // -----------------------------------------------------------------------------
@@ -893,6 +881,7 @@ export const obligations = [
   identificationDetails,
   description,
   permanentAddress,
+  documents,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,

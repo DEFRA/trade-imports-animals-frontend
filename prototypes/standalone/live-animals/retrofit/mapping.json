@@ -295,28 +295,28 @@
       "bId": "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8",
       "bName": "accompanyingDocumentType",
       "kind": "exact",
-      "note": "DIVERGENCE beyond the name — same id, different CARDINALITY. A nests it inside a 'documents' collection (N documents per notification); B declares it notification-level (exactly one). B also gates the block via a self-referencing presentGate (optional until a type is picked, mandatory after); A gets the same intent structurally, by making the collection optional and every field required once an entry exists. Same V4 rule, incompatible topologies. See the 'documents' a-only entry — this is the single biggest structural delta in the manifest."
+      "note": "inc-016b: now `within: documents` (D1 resolved). The per-record trigger — a mandatory field, no applyTo; its dependants gate on this field's per-record presence via `presentPerRecord`. Topology matches A (a document record cannot exist without a type). See the 'documents' entry."
     },
     {
       "aId": "accompanyingDocumentAttachmentType",
       "bId": "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9",
       "bName": "accompanyingDocumentAttachmentType",
       "kind": "exact",
-      "note": "Same cardinality divergence as accompanyingDocumentType. Also PLAN 2.4: A's value is a real cdp-uploader upload; B's is a select of 8 file extensions, no bytes."
+      "note": "inc-016b: `within: documents`, in scope + mandatory per record whose type is answered (presentPerRecord). PLAN 2.4: A's value is a real cdp-uploader upload; B's is a select of 8 file extensions, no bytes."
     },
     {
       "aId": "accompanyingDocumentReference",
       "bId": "51fef319-2a31-4f5f-8cde-d89fa010c2ea",
       "bName": "accompanyingDocumentReference",
       "kind": "exact",
-      "note": "Same cardinality divergence as accompanyingDocumentType."
+      "note": "inc-016b: `within: documents`, in scope + mandatory per record whose type is answered (presentPerRecord)."
     },
     {
       "aId": "accompanyingDocumentDateOfIssue",
       "bId": "5210042a-3b42-4a70-8def-e9a0b121d3fb",
       "bName": "accompanyingDocumentDateOfIssue",
       "kind": "exact",
-      "note": "Same cardinality divergence as accompanyingDocumentType."
+      "note": "inc-016b: `within: documents`, in scope + mandatory per record whose type is answered (presentPerRecord)."
     },
     {
       "aId": "importType",
@@ -327,10 +327,10 @@
     },
     {
       "aId": "documents",
-      "bId": null,
-      "bName": null,
-      "kind": "a-only",
-      "note": "Genuine A-only, and the structural counterpart of the accompanyingDocument* cardinality divergence: A models accompanying documents as a REPEATABLE collection with no floor, B as four notification-level singletons. There is no B obligation to map this to because B has no group there at all. Retrofitting B's model as-is would silently cap the user at one document. inc-002 must rule this before inc-008 designs the bridge."
+      "bId": "5921dbd2-9290-481b-b2d6-12d4321e6f7c",
+      "bName": "documents",
+      "kind": "exact",
+      "note": "D1 RESOLVED (inc-016b): B now models accompanying documents as a `documents` collection with the four fields `within` it, matching A's REPEATABLE-collection topology (no floor; V4 cap-10 enforced controller-side). Both are structural, always-in-scope, user-driven groups. Was the single biggest structural delta; documents now bridges as an ordinary A-collection <-> B-collection mapping."
     },
     {
       "aId": "declaration",

@@ -40,14 +40,9 @@ const evaluate = (answers) => evaluator.evaluate(answersToFulfilments(answers))
 const isStructuralBOnly = (k) =>
   k === 'poApprovedReferenceNumber' ||
   k === 'responsiblePersonForLoad' ||
-  /^commodityLines\[\d+\]\.commodityType$/.test(k) ||
-  /^accompanyingDocument(Type|AttachmentType|Reference|DateOfIssue)$/.test(k)
+  /^commodityLines\[\d+\]\.commodityType$/.test(k)
 
-const isStructuralAOnly = (k) =>
-  k === 'importType' ||
-  k === 'declaration' ||
-  k === 'documents' ||
-  /^documents\[\d+\]\./.test(k)
+const isStructuralAOnly = (k) => k === 'importType' || k === 'declaration'
 
 // ---------------------------------------------------------------------------
 // Axis 1 — inScope (inc-009, widened input space).
@@ -388,10 +383,20 @@ describe('model-equivalence oracle — structural deltas the oracle is BLIND to'
     expect(aOnly).toContain('declaration')
   })
 
-  it('documents D1 — A repeatable collection vs B notification-level singletons', () => {
+  it('documents D1 RESOLVED (inc-016b) — B now models documents as a collection, so it CONVERGES', () => {
+    // Before inc-016b B held four notification-level singletons; the raw
+    // scope diff registered documents as a structural blind spot. Now B
+    // carries a `documents` group with four fields `within` it, matching
+    // A's topology, so documents no longer appears on either side of the
+    // raw diff — it agrees as an ordinary nested collection.
     const { aOnly, bOnly } = rawScope(happyPath)
-    expect(aOnly).toContain('documents')
-    expect(aOnly).toContain('documents[0].accompanyingDocumentType')
-    expect(bOnly).toContain('accompanyingDocumentType')
+    expect(aOnly).not.toContain('documents')
+    expect(aOnly).not.toContain('documents[0].accompanyingDocumentType')
+    expect(bOnly).not.toContain('accompanyingDocumentType')
+    // Positive confirmation: both engines put the document leaves in scope.
+    const aScope = makeScopeA(happyPath).inScope
+    const bScope = makeScopeFromB(happyPath).inScope
+    expect(aScope.has('documents[0].accompanyingDocumentType')).toBe(true)
+    expect(bScope.has('documents[0].accompanyingDocumentType')).toBe(true)
   })
 })

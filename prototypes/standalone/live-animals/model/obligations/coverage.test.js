@@ -27,9 +27,11 @@ import { domain } from '../domain/index.js'
  */
 const KNOWN_UNWIRED = new Set([
   // Group containers — no direct value at this level; children carry
-  // the semantics. commodityLines + animalIdentifiers are structural.
+  // the semantics. commodityLines + animalIdentifiers + documents are
+  // structural.
   'commodityLines',
   'animalIdentifiers',
+  'documents',
 
   // System-populated fields declared for V4 completeness but NOT
   // presented in the flow layer (added step 5c). Value legality is
