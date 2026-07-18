@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, it, expect, beforeAll } from 'vitest'
 import {
-  makeScope,
+  makeScopeA,
   configureReadyForCheckYourAnswers
 } from '../../engine/read.js'
 import { makeScopeFromB } from './scope.js'
@@ -54,7 +54,7 @@ const isStructuralAOnly = (k) =>
 // ---------------------------------------------------------------------------
 
 const scopeDivergence = (answers) => {
-  const a = makeScope(answers).inScope
+  const a = makeScopeA(answers).inScope
   const b = makeScopeFromB(answers).inScope
   return {
     aOnly: [...a]
@@ -373,7 +373,7 @@ describe('model-equivalence oracle — the divergence register (full sweep)', ()
 // ---------------------------------------------------------------------------
 
 const rawScope = (answers) => {
-  const a = makeScope(answers).inScope
+  const a = makeScopeA(answers).inScope
   const b = makeScopeFromB(answers).inScope
   return {
     aOnly: [...a].filter((k) => !b.has(k)),

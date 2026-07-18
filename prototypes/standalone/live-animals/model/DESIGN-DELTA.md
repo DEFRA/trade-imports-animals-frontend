@@ -711,3 +711,81 @@ B retains) — a transient view/data mismatch that disappears once inc-013 moves
 the purge onto B _and_ inc-017 applies the c-017 "fix B". inc-013 must decide
 whether `commit` under `b` runs B's purge instead of A's `destroyWiped`, and
 must re-point its own `makeScope` reads consistently.
+
+## 11. The write purge dual-pathed — B's evaluator becomes the wipe authority under `b` · `engine/write.js` · `model/bridge/purge.js` · `EUDPA-288` inc-013
+
+**What this is.** inc-012 dual-pathed only the scope _read_; the write path
+stayed fully A, so B's purge never ran. This increment dual-paths the write
+**purge decision** so under `MODEL=b` the WIPE is decided by B's evaluator, not
+A's `reconcile`. **Default `a` is byte-identical** — the whole existing suite
+stays green (79 → 80 files, 1166 → 1169 passed, 11 skipped unchanged; the +3 are
+inc-013's own test). Any default regression would mean the dual-path leaked into
+A's path; there is none.
+
+**Step 0 — the oracle made flag-independent.** inc-012 left
+`model/bridge/model-equivalence.test.js` and `model/bridge/scope.test.js` using
+`makeScope` (now the flag dispatcher) as their **A reference**, so they only
+validated under default. Their A-side is re-pointed from `makeScope` →
+`makeScopeA` (the flag-independent A path, already exported from
+`engine/read.js`). Only the scope axis needed it — the oracle's status axis
+(`reconcile(answers).inScope`) and wipe axis (`reconcile(answers).wiped` /
+`evaluator.evaluate`) were already flag-independent. The oracle now compares A
+vs B regardless of `MODEL`, so it validates BOTH flag paths. No assertion
+changed — test-infra only; still green under default.
+
+**The wipe authority, flag-selected.** `engine/write.js` gains one helper:
+
+```
+const purge = (answers) => {
+  const wiped = isModelB() ? wipeSetFromB(answers) : reconcile(answers).wiped
+  destroyWiped(answers, wiped)
+}
+```
+
+Both branches return **A pathKeys** for A's `destroyWiped`, so the session /
+journey / save layer around every mutator is shared for both flags (B has none).
+
+**How `commit` derives the wipe set under `b`.** New module
+`model/bridge/purge.js` exports `wipeSetFromB(answers)`, the write-path
+counterpart of `scope.js`'s `makeScopeFromB` and the exact mechanism the oracle's
+wipe axis uses (inc-010): `answersToFulfilments(answers)` (A→B, vocab-normalised)
+= `fIn` → `evaluator.evaluate(fIn).fulfilments` (the converged post-purge view) =
+`fOut` → for every non-group leaf obligation answered in `fIn` but absent from
+`fOut`, emit its A pathKey via the bridge's composite→positional rule
+(`fulfilmentIdToPath`; top-level leaves emit `pathKey([name])`). The
+**difference between pre- and post-purge fulfilments IS what B destroys.** The
+wipe-set (not `fulfilmentsToAnswers`-rebuild) approach is deliberate: it deletes
+only the paths B drops and leaves A-only data B never models (`importType`,
+`declaration`, `documents[1]+`, upload `filename`) untouched.
+
+**Mutators — changed vs inherited.** Three mutators shared the
+`reconcile` + `destroyWiped` purge step and are now dual-pathed via the `purge`
+helper: **`commit`**, **`removeEntryAt`**, **`reconcileEntriesAt`**.
+**`appendEntryAt`** and **`updateEntryAt`** were left unchanged — they mutate +
+save with **no** purge step (append is cap-guarded only; update is an in-place
+`with`), so there is no wipe decision to route. A's array mechanics
+(`setAt`/`toSpliced`/`with`, the cap check, the index validation) are untouched
+in all five. The returned `scope` view already flows through inc-012's
+`makeScope` dispatcher, so under `b` the post-purge view is B-derived and
+consistent with B's purge.
+
+**The 3 ruled divergences remain unfixed until inc-017 — asserted as known.**
+Under `b`, `wipeSetFromB` reproduces B's ACTUAL purge, region-code retention and
+all: B keeps `regionOfOriginCode` in scope on its optional branch (c-017 struck
+that retain-claim down by name, but the fix lands in B at inc-017), so on a
+region-gate-off commit B destroys nothing and the code SURVIVES the write —
+where A wipes it. `engine/commit-purge-authority.test.js` asserts this as a
+**known divergence** (region retained under `b`, wiped under `a`; the key is
+absent from `wipeSetFromB`), and proves B's purge actually fires under `b` on a
+gate both engines agree on (`purposeInInternalMarket` out-of-scope → destroyed,
+commit's destroyed set === `wipeSetFromB`). Env hygiene: `process.env.MODEL` is
+saved in `beforeEach` and restored in `afterEach` so the flag cannot leak across
+files. c-017 (region ×2) and c-038 (`transitedCountries` mandate) are NOT
+repaired here — that is inc-017 at cutover.
+
+**Result under `MODEL=b`.** Moving the purge onto B reduced the suite failures
+from inc-012's 18 to **8**, all in the status/flow/scope class inc-017/inc-017a
+own (`t2-hub-copy`, `reachability`, `read`, `resume-self-heal`, `gates`,
+`task-rows`, `check-answers` navigation) — B's not-yet-applied ruled divergences
+plus status/`flow/` still being A. None is a write/purge failure; green-under-
+both-flags stays the inc-017a target.

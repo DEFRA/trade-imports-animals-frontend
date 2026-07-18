@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { beforeAll, describe, it, expect } from 'vitest'
 import { makeScopeFromB } from './scope.js'
 import {
-  makeScope,
+  makeScopeA,
   configureReadyForCheckYourAnswers
 } from '../../engine/read.js'
 
@@ -19,7 +19,7 @@ const sorted = (set) => [...set].sort()
 // A's real inScope vs B's projected inScope, as the two directed
 // differences (A-only keys, B-only keys). Empty differences == agreement.
 const diff = (answers) => {
-  const a = makeScope(answers).inScope
+  const a = makeScopeA(answers).inScope
   const b = makeScopeFromB(answers).inScope
   return {
     aOnly: sorted(a).filter((k) => !b.has(k)),
