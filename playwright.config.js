@@ -25,6 +25,12 @@ import { defineConfig, devices } from '@playwright/test'
 const port = Number(process.env.PORT ?? 3000)
 const realPort = port + 1
 
+// Forward the retrofit model flag (MODEL=a|b) to the prototype servers the
+// E2E launches. Unset → default (a), byte-identical to today. MODEL=b boots
+// the servers on B's obligation model so the journeys + Mongo parity exercise
+// the retrofit end-to-end.
+const modelEnv = process.env.MODEL ? { MODEL: process.env.MODEL } : {}
+
 const parity = '**/skeleton-vs-prototype-mongo.spec.js'
 
 export default defineConfig({
@@ -76,18 +82,20 @@ export default defineConfig({
     {
       command: 'npm run prototype:start',
       url: `http://localhost:${port}/prototype`,
-      env: { PORT: String(port) },
+      env: { PORT: String(port), ...modelEnv },
       timeout: 180_000,
       reuseExistingServer: false
     },
     {
       // Sam keeps a real-mode server up alongside the stack, so reuse one on
-      // this port if it is already answering.
+      // this port if it is already answering — UNLESS a MODEL is pinned
+      // (MODEL=b), in which case a fresh server must boot under that model
+      // rather than reuse an ambient default-model one.
       command: 'npm run prototype:real:start',
       url: `http://localhost:${realPort}/prototype-standalone/live-animals/home`,
-      env: { PORT: String(realPort) },
+      env: { PORT: String(realPort), ...modelEnv },
       timeout: 180_000,
-      reuseExistingServer: true
+      reuseExistingServer: !process.env.MODEL
     }
   ]
 })

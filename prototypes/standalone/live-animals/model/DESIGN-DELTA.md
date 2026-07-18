@@ -1345,3 +1345,24 @@ direct model-manifest read), and `hasCommittedNotificationAnswers` is a pure flo
 predicate over `answers`. Both controllers already legitimately depend on the flow layer
 (`flow/run.js`, `flow/run-state.js`), so this is a normal features→flow dependency on the
 same seam the hub uses. No cleaner seam to route through; left as-is.
+
+## §23 — inc-021: M3 GATE PASSED (E2E + Mongo parity, both flags)
+
+The M3 milestone gate. Ran the full prototype E2E suite (104 journey specs +
+the `skeleton-vs-prototype-mongo` parity spec) against the live workspace stack
+(backend 8085, Mongo, Redis) under BOTH models:
+
+- **`MODEL=b`: 105 passed** (incl. parity — B's model persists a notification
+  equivalent to the legacy skeleton). First proof the retrofit works end-to-end.
+- **`MODEL=a`: 105 passed** (reversibility baseline — default path intact).
+
+Code change: `playwright.config.js` forwards `MODEL` to both prototype servers
+(`modelEnv`) so the launched journey + real-mode-parity servers boot on the
+selected model; parity server `reuseExistingServer` is false when `MODEL` is
+pinned so a fresh B-mode server boots rather than reusing an ambient default one.
+Default (unset) unchanged.
+
+Cutover is now behaviourally complete and validated. Remaining: M4 retires A's
+model (status.js/registry.js/A prover, remove flag) + the 2 latent-A-bug fixes
+(CYA hand-copied gates inc-024, permanentAddress over-mandate already B-correct),
+then inc-024a (maxEntriesFrom), M5 deferred.
