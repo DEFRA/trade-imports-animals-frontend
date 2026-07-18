@@ -7,6 +7,8 @@
 
 ---
 
+> **UPDATE — inc-016a (EUDPA-288): all three divergences RESOLVED.** The three ruled "fix B" edits below were applied to B's evaluator manifest (`model/obligations/obligations.js`) at inc-016a: `regionOfOriginCode`'s no/unset branch is now `{ inScope: false }` (fixes #1 scope + #3 wipe, `c-017`; the misleading V4 retain comment was deleted), and `transitedCountries`' land-transport branch is now `status: 'mandatory'` (fixes #2, `c-038`). The oracle's `KNOWN_SCOPE_BONLY` / `KNOWN_STATUS` / `KNOWN_WIPE_AONLY` sets are now empty and the full sweep asserts **ZERO** behavioural divergence A-vs-B. See `model/DESIGN-DELTA.md §15`.
+
 ## Headline: this plan can proceed. Three behavioural divergences, all ruled, all "fix B".
 
 The oracle ran both engines over **39 states** (a 24-state gate grid + happy-path + the submit-ready seed + 13 constructed edge/probe states) across all three axes. It found **exactly three** behavioural divergences. **Every one is already ruled in `spec/conflicts.json`** — none is an open requirements question — and **every one resolves by fixing B** during the M3 cutover. A never over-scopes and B never over-wipes: those directions are clean everywhere.
@@ -27,7 +29,7 @@ Sorted by blast radius: #1 and #3 (region-code, both faces of `c-017`) are the w
 
 ---
 
-## 1. `regionOfOriginCode` — inScope · blast radius: highest · **fix B**
+## 1. `regionOfOriginCode` — inScope · blast radius: highest · **fix B** · ✅ RESOLVED (inc-016a)
 
 **The disagreement.** A gates the region code on `regionOfOriginCodeRequirement === 'yes'` and takes it out of scope (and wipes it — see #3) otherwise. B's `regionCode.applyTo` returns `inScope: true` on **both** branches — `mandatory` when the requirement is 'yes', `optional` otherwise — and a comment cites V4 as the reason the value is retained.
 
@@ -39,7 +41,7 @@ Sorted by blast radius: #1 and #3 (region-code, both faces of `c-017`) are the w
 
 ---
 
-## 2. `transitedCountries` — status (mandate) · blast radius: medium · **fix B**
+## 2. `transitedCountries` — status (mandate) · blast radius: medium · **fix B** · ✅ RESOLVED (inc-016a)
 
 **The disagreement.** Both engines agree `transitedCountries` is **in scope** under land transport — this is not a scope divergence. They disagree on **mandate**: A declares `required: true` (mandatory), B stamps `status: 'optional'` in the land-transport (`whenTrue`) branch.
 
@@ -55,7 +57,7 @@ Sorted by blast radius: #1 and #3 (region-code, both faces of `c-017`) are the w
 
 ---
 
-## 3. `regionOfOriginCode` — wipe (data destruction) · blast radius: highest · **fix B**
+## 3. `regionOfOriginCode` — wipe (data destruction) · blast radius: highest · **fix B** · ✅ RESOLVED (inc-016a)
 
 **The disagreement, on the DATA axis.** Feed a state with a stored `regionOfOriginCode` and the requirement set to 'no' (`regionNotRequired` / `wipe-region`): A's `reconcile` returns it in the `wiped` set — the value is **destroyed**. B never purges it, because (per #1) B never takes it out of scope, so the value **survives**. The oracle confirms A really destroys it (not a no-op) via `wipedByA`.
 

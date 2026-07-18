@@ -24,7 +24,8 @@ const regionRequired = {
   regionOfOriginCodeRequirement: 'yes',
   regionOfOriginCode: 'FR-75'
 }
-// The ruled c-017 divergence: A gates regionOfOriginCode on 'yes', B retains it.
+// c-017 (fix applied at inc-016a): A and B now BOTH gate regionOfOriginCode
+// out when the requirement is not 'yes' — the scope divergence is resolved.
 const regionNotRequired = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'no',
@@ -105,13 +106,22 @@ describe('#makeScope — b path delegates to B’s bridge', () => {
 // sweep (makeScopeA vs makeScopeFromB, modulo the 3 ruled divergences, incl.
 // the structural deltas the raw diff carries) is the oracle's job in
 // model-equivalence.test.js; because makeScope delegates verbatim to each
-// (proved above), those guarantees transfer. Here we pin one ruled divergence
-// through the flag so a behavioural flip is observable, not just delegation.
-describe('#makeScope — the flag flips behaviour on the ruled c-017 divergence', () => {
-  it('Should gate regionOfOriginCode out under A but retain it under B (c-017)', () => {
+// (proved above), those guarantees transfer. Here we pin a structural A-vs-B
+// delta through the flag so a behavioural flip is observable, not just
+// delegation. The c-017 scope divergence this used to pin is resolved at
+// inc-016a — both engines now agree on regionOfOriginCode — so the flip is
+// observed on a B-only notification field instead.
+describe('#makeScope — the flag flips behaviour on a structural A-vs-B delta', () => {
+  it('Should scope regionOfOriginCode identically under A and B (c-017 resolved) but admit a B-only field only under B', () => {
     delete process.env.MODEL
     expect(makeScope(regionNotRequired).has('regionOfOriginCode')).toBe(false)
+    expect(makeScope(regionNotRequired).has('poApprovedReferenceNumber')).toBe(
+      false
+    )
     process.env.MODEL = 'b'
-    expect(makeScope(regionNotRequired).has('regionOfOriginCode')).toBe(true)
+    expect(makeScope(regionNotRequired).has('regionOfOriginCode')).toBe(false)
+    expect(makeScope(regionNotRequired).has('poApprovedReferenceNumber')).toBe(
+      true
+    )
   })
 })

@@ -969,3 +969,67 @@ the ready-flag delegation and finalise flow through the `b` path.
 `b`-visible submit behaviour is inherited from the ruled, not-yet-repaired
 status/scope class (region-code retention c-017 et al.) that inc-017/inc-017a
 own — none is on submit's own path.
+
+## 15. The three ruled behavioural fixes applied to B's manifest — oracle now proves ZERO divergence · `model/obligations/obligations.js` · `EUDPA-288` inc-016a
+
+**What this is.** M2's oracle (inc-010) found **exactly three** behavioural
+divergences A-vs-B, all ruled, all "fix B" (see
+`retrofit/DIVERGENCE-REGISTER.md`). inc-012..016 wired B behind `MODEL=b` with
+those divergences still present, documented as `KNOWN_*` in the oracle. inc-016a
+**applies the three fixes to B's evaluator manifest**, then shrinks the oracle's
+`KNOWN_*` sets to empty and asserts zero behavioural divergence across the whole
+input space. Isolated ahead of the status-engine swap (inc-017a) so "apply the
+rulings" is a separate, verifiable step.
+
+**The three fixes (all one-liners on `obligations.js`).**
+
+- **`regionOfOriginCode` scope + wipe — `c-017`.** The gate's no/unset branch
+  was `{ inScope: true, status: 'optional' }` (B kept the field in scope on
+  every branch, with a comment citing V4 for retention). Changed to
+  `{ inScope: false }`, so `equalsGate(regionCodeRequirement, 'yes', {inScope,
+mandatory, reasons}, { inScope: false })`. B now takes the field out of scope
+  when the requirement is not `'yes'`, and the converged purge destroys the
+  stored value — matching A on both the scope axis (#1) and the wipe axis (#3).
+  The misleading "V4 does not purge regionCode" retain-value comment was
+  **deleted** so it is never cited again. `c-017` (spec gate 2026-07-07): B's
+  retained `regionCode` "are not requirements".
+- **`transitedCountries` mandate — `c-038`.** The gated-in (`whenTrue`,
+  land-transport) branch stamped `status: 'optional'`; changed to
+  `status: 'mandatory'`. `c-038` (Figma conflict walk 2026-07-13): transit
+  resolves **REQUIRED** when meansOfTransport is Railway / Road Vehicle. The
+  out-of-scope branch is untouched (#2).
+
+**The oracle now proves ZERO divergence.** `model-equivalence.test.js`'s
+`KNOWN_SCOPE_BONLY`, `KNOWN_STATUS` and `KNOWN_WIPE_AONLY` are now all
+`new Set()` (empty). The full-sweep test asserts every axis (scope, status,
+wipe) agrees A-vs-B across the entire input space — any residual divergence
+would fail the sweep because there is no longer any known entry to excuse it.
+The three per-axis DIVERGES tests were flipped to assert **convergence** (they
+are the proof the fixes bit). `scope.test.js`'s two region-code DIVERGES tests
+were likewise flipped to agreement.
+
+**B model tests updated to the ruled truth** (never deleted — each carries a
+`c-017`/`c-038` citation):
+
+- `obligations/evaluator.test.js` — region gate: absent/`no` now **out of
+  scope** (was optional-in-scope); stored value now **purged** on flip (was
+  retained); empty-input shape now `{ inScope: false }`. Transit gate:
+  road-vehicle/railway now **mandatory** (was optional).
+- `analysis/reachability.test.js` — regionCode reclassified **non-total →
+  WITNESS** (was TRIVIAL/total-over-branches), with `no` → out of scope; the
+  9-site round-trip table sets transitedCountries **mandatory** (was optional).
+- `bridge/fulfilments.test.js` — land-transport transit status now **mandatory**.
+- `engine/commit-purge-authority.test.js` — under `MODEL=b`, B now **wipes**
+  regionOfOriginCode (was the "retains, unfixed until inc-017" pin).
+- `engine/model-flag.test.js` — the flag-flip pin moved off the (now-resolved)
+  region scope divergence onto a **B-only structural field**
+  (`poApprovedReferenceNumber`), which still observably differs A-vs-B.
+
+**Default `a` byte-identical.** 83 files / 1189 passed / 11 skipped — unchanged
+from inc-016. The B model tests above run under the default (`a`) invocation and
+now pass at the same total; nothing on A's engine was touched.
+
+**MODEL=b failures: 8 → 5.** The three region-code scope failures cleared
+(B's scope now matches A). The remaining five are the status/flow/reachability
+class (`t2-hub-copy`, `analysis/reachability`, `flow/gates`, `flow/task-rows`,
+`check-answers`) — **inc-017a's** status-engine swap, deliberately not chased here.

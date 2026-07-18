@@ -245,23 +245,17 @@ const inputSpace = [
 ]
 
 // ---------------------------------------------------------------------------
-// The divergence register — the KNOWN behavioural divergence set. Every
-// entry is ruled in spec/conflicts.json (NOT open), and every one resolves
-// "fix B" at cutover. A NEW divergence outside this set breaks the sweep and
-// demands attention — divergences are FINDS, asserted so they stay visible,
-// never forced equal.
+// The divergence register — the KNOWN behavioural divergence set. All three
+// M2 divergences (scope + wipe of regionOfOriginCode under c-017; the
+// transitedCountries mandate under c-038) were fixed in B's manifest at
+// inc-016a, so these sets are now EMPTY: the sweep asserts ZERO behavioural
+// divergence A-vs-B across the whole input space. A NEW divergence breaks the
+// sweep and demands attention — divergences are FINDS, never forced equal.
 // ---------------------------------------------------------------------------
 
-// scope: B keeps regionOfOriginCode in scope when requirement !== 'yes'; A
-// gates it on 'yes'. Ruled c-017 (B's retained regionCode "are not
-// requirements") → fix B: gate the no/unset branch inScope:false.
-const KNOWN_SCOPE_BONLY = new Set(['regionOfOriginCode'])
-// status: A marks transitedCountries mandatory, B optional. Ruled c-038
-// (REQUIRED when land transport) → fix B: whenTrue status 'mandatory'.
-const KNOWN_STATUS = new Set(['transitedCountries: A=mandatory B=optional'])
-// wipe: A destroys a stored regionOfOriginCode when it leaves scope; B
-// retains it (same c-017 root, DATA axis) → fix B (falls out of the scope fix).
-const KNOWN_WIPE_AONLY = new Set(['regionOfOriginCode'])
+const KNOWN_SCOPE_BONLY = new Set()
+const KNOWN_STATUS = new Set()
+const KNOWN_WIPE_AONLY = new Set()
 
 describe('model-equivalence oracle — inScope axis (inc-009, widened)', () => {
   it('agrees on the happy path and region-required (no behavioural divergence)', () => {
@@ -269,14 +263,14 @@ describe('model-equivalence oracle — inScope axis (inc-009, widened)', () => {
     expect(scopeDivergence(regionRequired)).toEqual({ aOnly: [], bOnly: [] })
   })
 
-  it('DIVERGES on regionOfOriginCode whenever the requirement is not "yes" (c-017)', () => {
+  it('agrees on regionOfOriginCode whenever the requirement is not "yes" (c-017 fix applied at inc-016a)', () => {
     expect(scopeDivergence(regionNotRequired)).toEqual({
       aOnly: [],
-      bOnly: ['regionOfOriginCode']
+      bOnly: []
     })
     expect(scopeDivergence(regionUnanswered)).toEqual({
       aOnly: [],
-      bOnly: ['regionOfOriginCode']
+      bOnly: []
     })
   })
 
@@ -290,10 +284,8 @@ describe('model-equivalence oracle — inScope axis (inc-009, widened)', () => {
 })
 
 describe('model-equivalence oracle — status (mandate) axis', () => {
-  it('DIVERGES on transitedCountries mandate under land transport (c-038)', () => {
-    expect(statusDivergence(transportLand)).toEqual([
-      'transitedCountries: A=mandatory B=optional'
-    ])
+  it('agrees on transitedCountries mandate under land transport (c-038 fix applied at inc-016a)', () => {
+    expect(statusDivergence(transportLand)).toEqual([])
   })
 
   it('agrees on mandate everywhere transitedCountries is out of scope', () => {
@@ -303,13 +295,14 @@ describe('model-equivalence oracle — status (mandate) axis', () => {
 })
 
 describe('model-equivalence oracle — wipe (data-destruction) axis', () => {
-  it('DIVERGES on regionOfOriginCode — A destroys, B retains (c-017, data axis)', () => {
+  it('agrees on regionOfOriginCode wipe — both destroy it when it leaves scope (c-017 fix applied at inc-016a)', () => {
     expect(wipeDivergence(regionNotRequired)).toEqual({
-      aOnly: ['regionOfOriginCode'],
+      aOnly: [],
       bOnly: []
     })
-    // A really does destroy it — the divergence is "A wipes / B keeps", not a no-op.
+    // Both engines really destroy it — the agreement is "both wipe", not a no-op.
     expect([...wipedByA(regionNotRequired)]).toContain('regionOfOriginCode')
+    expect([...wipedByB(regionNotRequired)]).toContain('regionOfOriginCode')
   })
 
   it('agrees when a NON-region gated value flips out of scope — both destroy it', () => {
@@ -328,7 +321,7 @@ describe('model-equivalence oracle — wipe (data-destruction) axis', () => {
 })
 
 describe('model-equivalence oracle — the divergence register (full sweep)', () => {
-  it('the ONLY behavioural divergences across the whole input space are the known, ruled ones', () => {
+  it('has ZERO behavioural divergence across the whole input space (KNOWN sets empty after inc-016a)', () => {
     for (const { name, answers } of inputSpace) {
       const s = scopeDivergence(answers)
       const st = statusDivergence(answers)

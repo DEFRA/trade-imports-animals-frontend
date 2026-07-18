@@ -207,11 +207,6 @@ export const regionCodeRequirement = {
   status: 'mandatory'
 }
 
-// Retain-value pattern: always in scope; mandatory when
-// regionCodeRequirement === 'yes', optional otherwise. Stored values
-// are kept across gate flips (V4 spec: the field itself is not purged
-// on `no`). Meta-first: `equalsGate.metadata.obligation` names the
-// gate; `dependsOn` derives from that (see `obligationMetadata`).
 export const regionCode = {
   id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
   name: 'regionOfOriginCode',
@@ -219,7 +214,7 @@ export const regionCode = {
     regionCodeRequirement,
     'yes',
     { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
-    { inScope: true, status: 'optional' }
+    { inScope: false }
   )
 }
 
@@ -368,7 +363,7 @@ export const transitedCountries = {
     LAND_TRANSPORT_MODES,
     {
       inScope: true,
-      status: 'optional',
+      status: 'mandatory',
       reasons: [transitedCountriesReason]
     },
     { inScope: false }

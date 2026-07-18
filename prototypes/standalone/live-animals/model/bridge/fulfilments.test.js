@@ -323,7 +323,8 @@ describe('B evaluator smoke — A happy-path produces real implications', () => 
     expect(result.obligations[purposeInInternalMarket.id].status).toBe(
       'mandatory'
     )
-    expect(result.obligations[transitedCountries.id].status).toBe('optional')
+    // c-038 (fix applied at inc-016a): transit is REQUIRED under land transport.
+    expect(result.obligations[transitedCountries.id].status).toBe('mandatory')
   })
 
   it('mutually-exclusive transporter gate resolves (commercial in, private out)', () => {

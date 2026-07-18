@@ -509,15 +509,20 @@ describe('synthesiseWitness — per-helper metadata inversion', () => {
 // ---------------------------------------------------------------------------
 
 describe('synthesiseWitness — real manifest fidelity', () => {
-  it('regionCode: total-over-branches → classified as trivial', () => {
-    // regionCode's branchedGate has whenTrue.inScope === true AND
-    // whenFalse.inScope === true (retain-value pattern — mandatory
-    // when the requirement flag is 'yes', optional otherwise). The
-    // gate opens on ANY input, so no witness is needed; commit 3's
-    // coverage assertion counts these as "trivial", not opaque.
+  it('regionCode (non-total branchedGate): witness opens the closure', () => {
+    // c-017 (fix applied at inc-016a): regionCode's branchedGate now has
+    // whenTrue.inScope === true, whenFalse.inScope === false — the gate no
+    // longer opens on ANY input, so a witness is needed. predicateMeta
+    // declares operator: 'equals' + value: 'yes'.
     const regionCode = obligations.find((o) => o.name === 'regionOfOriginCode')
     const w = synthesiseWitness(regionCode)
-    expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    const decision = regionCode.applyTo(
+      { [w.obligationId]: w.value },
+      new Map()
+    )
+    expect(decision.inScope).toBe(true)
+    expect(decision.status).toBe('mandatory')
   })
 
   it('purposeInInternalMarket (non-total branchedGate): witness opens the closure', () => {
@@ -595,8 +600,8 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
     //
     // Structured helpers per hand-off: allowListed × 6 + anyAllowListed
     // × 2 + branchedGate-with-predicateMeta × 5 + notInUnionOf × 2 = 15
-    // synthesisable. Trivial: regionCode + four accompanyingDocument
-    // siblings.
+    // synthesisable, plus regionCode (now non-total after the c-017 fix at
+    // inc-016a). Trivial: the four accompanyingDocument siblings.
     expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(14)
     // The two former-opaque gates are now synthesisable.
     const synthesisableNames = result.witnesses.synthesisable.map(
@@ -634,9 +639,9 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
 // so a subtle regression on any one site (e.g. dropping a reason list,
 // swapping mandatory/optional on regionCode) fails loudly with the site
 // name in the assertion label. Sites that classify as TRIVIAL (total-
-// branches — regionCode + four accompanyingDocument siblings) can still
-// exercise the closure directly with a known-in-scope value to pin the
-// decision shape.
+// branches — the four accompanyingDocument siblings) can still exercise
+// the closure directly with a known-in-scope value to pin the decision
+// shape.
 // ---------------------------------------------------------------------------
 
 describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
@@ -648,7 +653,8 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     ['purposeInInternalMarket', 'mandatory'],
     ['commercialTransporter', 'mandatory'],
     ['privateTransporter', 'mandatory'],
-    ['transitedCountries', 'optional']
+    // c-038 (fix applied at inc-016a): transit resolves REQUIRED under land transport.
+    ['transitedCountries', 'mandatory']
   ])(
     '%s: witness opens the migrated closure with status=%s',
     (name, status) => {
@@ -666,13 +672,14 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     }
   )
 
-  // Total: both branches in scope. Witness synth returns TRIVIAL; the
-  // fidelity check exercises the closure directly with both a matching
-  // and non-matching value to prove the status flip is preserved.
-  it('regionCode: matching value → mandatory + reason, non-matching → optional', () => {
+  // c-017 (fix applied at inc-016a): non-total gate — whenTrue in scope,
+  // whenFalse out. Witness synth returns a real WITNESS; the fidelity check
+  // exercises the closure with both a matching and non-matching value to
+  // prove the scope flip is preserved.
+  it('regionCode: matching value → mandatory + reason, non-matching → out of scope', () => {
     const rc = findOblByName('regionOfOriginCode')
     const w = synthesiseWitness(rc)
-    expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
+    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
     // regionCodeRequirement === 'yes' → mandatory with reason.
     const regionCodeRequirement = findOblByName('regionOfOriginCodeRequirement')
     const mand = rc.applyTo({ [regionCodeRequirement.id]: 'yes' }, new Map())
@@ -682,9 +689,9 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     })
     expect(mand.reasons).toBeDefined()
     expect(mand.reasons.length).toBeGreaterThan(0)
-    // regionCodeRequirement === 'no' → optional, no reason.
+    // regionCodeRequirement === 'no' → out of scope.
     const opt = rc.applyTo({ [regionCodeRequirement.id]: 'no' }, new Map())
-    expect(opt).toMatchObject({ inScope: true, status: 'optional' })
+    expect(opt).toEqual({ inScope: false })
   })
 
   it.each([

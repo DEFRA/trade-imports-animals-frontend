@@ -13,10 +13,10 @@ import { stubH, journeyRequest } from './test-support.js'
 // selects the authority by flag while sharing A's session/journey/save layer.
 //
 // The region-requirement gate is the c-017 case: answering the requirement
-// 'no' flips regionOfOriginCode out of scope. A wipes the stored code; B
-// RETAINS it (c-017 — B's retain-value branch, ruled wrong but unfixed until
-// inc-017). The purpose gate is a case both engines purge, proving B's purge
-// actually fires under `b` (not merely a no-op that leaves everything).
+// 'no' flips regionOfOriginCode out of scope. Both engines wipe the stored
+// code — B's retain-value branch was ruled wrong (c-017) and fixed in B's
+// manifest at inc-016a, so B now purges it too. The purpose gate is a second
+// case both engines purge, proving B's purge fires under `b` more widely.
 
 const REGION_ANSWERED = {
   countryOfOrigin: 'FR',
@@ -64,7 +64,7 @@ describe('commit — dual-pathed purge authority under MODEL', () => {
     expect((await durable()).regionOfOriginCode).toBeUndefined()
   })
 
-  it('Under MODEL=b B retains regionOfOriginCode — the known c-017 divergence, unfixed until inc-017', async () => {
+  it('Under MODEL=b B wipes regionOfOriginCode too — the c-017 divergence fixed at inc-016a', async () => {
     process.env.MODEL = 'b'
     await seed(REGION_ANSWERED)
     const { answers } = await commit(
@@ -72,13 +72,13 @@ describe('commit — dual-pathed purge authority under MODEL', () => {
       stubH(),
       TURN_REGION_GATE_OFF
     )
-    // Region-code retention is B's real (ruled-wrong) behaviour; assert it as
-    // known, do not repair. It is also absent from B's purge set.
+    // c-017 fixed at inc-016a: B now gates regionOfOriginCode out of scope and
+    // its purge set destroys the stored value, matching A.
     expect(
       wipeSetFromB({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })
-    ).not.toContain('regionOfOriginCode')
-    expect(answers.regionOfOriginCode).toBe('FR-75')
-    expect((await durable()).regionOfOriginCode).toBe('FR-75')
+    ).toContain('regionOfOriginCode')
+    expect(answers.regionOfOriginCode).toBeUndefined()
+    expect((await durable()).regionOfOriginCode).toBeUndefined()
   })
 
   it("Under MODEL=b commit's destroyed set equals B's evaluator purge", async () => {

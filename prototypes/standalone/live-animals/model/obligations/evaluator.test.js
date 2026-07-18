@@ -166,7 +166,9 @@ describe('V4 smoke — evaluator wires up against fresh manifest', () => {
     expect(result.fulfilments).toEqual({})
     expect(result.obligations[countryOfOrigin.id]).toEqual(mandatory)
     expect(result.obligations[regionCodeRequirement.id]).toEqual(mandatory)
-    expect(result.obligations[regionCode.id]).toEqual(optional)
+    // c-017 (fix applied at inc-016a): regionCode is out of scope unless the
+    // requirement is 'yes'; on empty input the requirement is unset.
+    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
   })
 
   it('unrecognised obligation ids are dropped (tolerate-and-amend)', () => {
@@ -218,16 +220,16 @@ describe('V4 — countryOfOrigin round-trip', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — regionCode conditional gate', () => {
-  it('is optional in-scope when regionCodeRequirement is absent', () => {
+  it('is out of scope when regionCodeRequirement is absent', () => {
     const result = evaluator.evaluate({})
-    expect(result.obligations[regionCode.id]).toEqual(optional)
+    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
   })
 
-  it('is optional in-scope when regionCodeRequirement is no', () => {
+  it('is out of scope when regionCodeRequirement is no', () => {
     const result = evaluator.evaluate({
       [regionCodeRequirement.id]: 'no'
     })
-    expect(result.obligations[regionCode.id]).toEqual(optional)
+    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
   })
 
   it('is mandatory in-scope when regionCodeRequirement is yes', () => {
@@ -241,16 +243,17 @@ describe('V4 — regionCode conditional gate', () => {
     })
   })
 
-  // Matches the V4 spec: regionCode is always in scope; flipping the
-  // requirement off downgrades status but does not purge the stored value.
-  it('retains a stored regionCode value when the requirement flips from yes to no', () => {
+  // c-017 (fix applied at inc-016a): the requirement flipping off takes
+  // regionCode out of scope, and the converged purge destroys the stored
+  // value — it is not retained.
+  it('purges a stored regionCode value when the requirement flips from yes to no', () => {
     const stored = {
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75'
     }
     const result = evaluator.evaluate(stored)
-    expect(result.fulfilments[regionCode.id]).toBe('FR-75')
-    expect(result.obligations[regionCode.id]).toEqual(optional)
+    expect(result.fulfilments[regionCode.id]).toBeUndefined()
+    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
   })
 })
 
@@ -379,24 +382,26 @@ describe('V4 — transitedCountries conditional gate', () => {
     expect(result.obligations[transitedCountries.id]).toEqual(outOfScope)
   })
 
-  it('is optional in-scope when meansOfTransport is road-vehicle', () => {
+  // c-038 (fix applied at inc-016a): transit countries resolve REQUIRED
+  // under Railway / Road Vehicle.
+  it('is mandatory in-scope when meansOfTransport is road-vehicle', () => {
     const result = evaluator.evaluate({
       [meansOfTransport.id]: 'road-vehicle'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
-      status: 'optional',
+      status: 'mandatory',
       reasons: [transitedCountriesReason]
     })
   })
 
-  it('is optional in-scope when meansOfTransport is railway', () => {
+  it('is mandatory in-scope when meansOfTransport is railway', () => {
     const result = evaluator.evaluate({
       [meansOfTransport.id]: 'railway'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
-      status: 'optional',
+      status: 'mandatory',
       reasons: [transitedCountriesReason]
     })
   })

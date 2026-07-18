@@ -139,22 +139,21 @@ describe('scope bridge — A vs B inScope differential (preview of inc-010 oracl
     expect(behavioural(regionRequired)).toEqual({ aOnly: [], bOnly: [] })
   })
 
-  // DIVERGENCE (c-017): A gates regionOfOriginCode on requirement==='yes'
-  // and wipes it otherwise; B keeps it always-in-scope (optional branch),
-  // citing V4 — a claim c-017 struck down. Guaranteed red the plan predicts,
-  // and PERVASIVE: it fires in every state where the requirement is not
-  // 'yes' (answered 'no' or left unanswered), not just this one.
-  it('DIVERGES on regionOfOriginCode when the requirement is answered "no"', () => {
+  // c-017 fix applied at inc-016a: B now gates regionOfOriginCode out of
+  // scope whenever the requirement is not 'yes' (answered 'no' or left
+  // unanswered), matching A. The pervasive divergence the M2 oracle found is
+  // resolved — both engines agree across the region axis.
+  it('agrees on regionOfOriginCode when the requirement is answered "no"', () => {
     expect(behavioural(regionNotRequired)).toEqual({
       aOnly: [],
-      bOnly: ['regionOfOriginCode']
+      bOnly: []
     })
   })
 
-  it('DIVERGES on regionOfOriginCode when the requirement is unanswered', () => {
+  it('agrees on regionOfOriginCode when the requirement is unanswered', () => {
     expect(behavioural(regionUnanswered)).toEqual({
       aOnly: [],
-      bOnly: ['regionOfOriginCode']
+      bOnly: []
     })
   })
 
