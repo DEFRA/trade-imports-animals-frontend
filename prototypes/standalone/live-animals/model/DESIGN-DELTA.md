@@ -855,3 +855,67 @@ inc-013 set (`t2-hub-copy`, `reachability`, `read`, `resume-self-heal`, `gates`,
 `task-rows`, `check-answers` navigation), all status/flow/scope class that
 inc-017/inc-017a own. inc-014 adds **zero** new `b` failures; no collectionView
 or completeness test is among them.
+
+## 13. The mutators audited under `b` — verification, no new dual-pathing · `engine/mutators-under-b.test.js` · `EUDPA-288` inc-015
+
+**What this is.** inc-013 dual-pathed the write purge; inc-014 dual-pathed
+`collectionView`'s completeness judgment. inc-015 closes the write-path cutover
+by **auditing every mutator under `MODEL=b`** and proving each correct with
+mutation-under-`b` tests. **A owns storage under both flags** (positional array;
+B holds no instance record — it infers instances from leaf composite prefixes),
+so every mutator's storage mechanic is A-side and flag-identical, and the only
+model judgments on the write path (purge; append cap) were already routed at
+inc-013/inc-014. **No new dual-pathing was written, and none was needed** — the
+expected outcome. **Default `a` is byte-identical** (81 → 82 files, 1175 → 1187
+passed, 11 skipped unchanged; the +12 are inc-015's own tests). MODEL=b failures
+stay at **8** (inc-013 set); inc-015 adds zero new `b` failures.
+
+**Per-mutator verdict.**
+
+- **`commit`** — _already correct under `b`._ Its purge is inc-013's flag-selected
+  helper (`wipeSetFromB` under `b`); its returned scope flows through inc-012's
+  `makeScope` dispatcher. No A-vs-B storage divergence; no un-routed judgment.
+  (Covered by `commit-purge-authority.test.js`; not re-tested here.)
+- **`appendEntryAt` / `appendEntry`** — _already correct under `b`._ No purge step.
+  Storage is `setAt(list, [...list, entry])` — pure A-positional, flag-identical.
+  Its one model-dependent decision, the cap, is A-side `collectionCapAt`
+  (`maxEntriesFrom`, c-031) under **both** flags by inc-014's ruling — B has no
+  numeric/admission-control channel (ported at inc-024a). The cap rejection fires
+  identically under `a` and `b` (tested).
+- **`updateEntryAt` / `updateEntry`** — _already correct under `b`._ In-place
+  `list.with(index, entry)`; no purge, no scope, no cap, no model read at all.
+  Flag-identical (tested under both).
+- **`removeEntryAt` / `removeEntry`** — _already correct under `b`._ Positional
+  `list.toSpliced(index, 1)`, then inc-013's flag-selected `purge`. Under `b` the
+  wipe is B-authoritative (`wipeSetFromB`): removing the last unweaned-triggering
+  line drops the now-orphaned notification-level `containsUnweanedAnimals`, and
+  the destroyed key is present in `wipeSetFromB` of the post-remove answers
+  (tested).
+- **`reconcileEntriesAt`** — _already correct under `b`._ Key-matched positional
+  rebuild (`existingByKey`), then inc-013's `purge`, then `makeScope` (inc-012
+  dispatcher). Multi-select→collection sync preserves kept lines' nested data;
+  the scope-and-wipe pass is B-authoritative under `b` (tested).
+
+**Instance identity is positional under both flags — proven, not asserted.** An
+empty appended nested unit (`{}` into `animalIdentifiers`, uncapped) has **no
+leaf**, so B infers no instance and cannot address it — yet A's positional array
+holds it verbatim under `b`. The test appends `{}` under `MODEL=b` and asserts the
+array is `[{}]`. This is the concrete demonstration that storage identity is A's
+array index, never B-addressability.
+
+**No new divergence.** The mutators' storage does not diverge under `b` (A owns
+it), as expected. The only `b`-visible mutation behaviours are the already-known,
+already-ruled ones inherited from inc-013/inc-014 (region-code retention c-017;
+the collectionView `ctx`/empty-nested finds) — none is on a mutator's storage
+path. No new behavioural divergence surfaced.
+
+**For inc-016 (`submitJourney` over `b`).** `submitJourney` is the one barrel
+function still fully A: it reads `makeScope(answers).readyForCheckYourAnswers`
+(the inc-012 dispatcher — so scope is already B-derived under `b`) and calls
+`records.finalise`. Its `readyForCheckYourAnswers` derivation comes via
+`configureReadyForCheckYourAnswers`, which under `b` still routes through A's
+`flow/section-status.js` — that (with `read`/`gates`/`task-rows`) is part of the
+8-failure status/flow class inc-017/inc-017a own. inc-016 should decide whether
+`submitJourney`'s readiness gate reads B's `journeyState` under `b`, or whether
+that is left entirely to inc-017a's status migration. The save/finalise layer is
+A under both flags (B has no persistence), mirroring every other mutator.
