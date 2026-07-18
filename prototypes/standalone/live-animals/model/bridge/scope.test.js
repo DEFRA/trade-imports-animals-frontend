@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, it, expect } from 'vitest'
-import { makeScopeFromB } from './scope.js'
+import { makeScopeFromB, rawInScopeFromB } from './scope.js'
 import {
   makeScopeA,
   configureReadyForCheckYourAnswers
@@ -16,11 +16,15 @@ beforeAll(() => configureReadyForCheckYourAnswers(() => false))
 
 const sorted = (set) => [...set].sort()
 
-// A's real inScope vs B's projected inScope, as the two directed
-// differences (A-only keys, B-only keys). Empty differences == agreement.
+// A's real inScope vs B's RAW projected inScope (`rawInScopeFromB`, B's
+// manifest only), as the two directed differences (A-only keys, B-only keys).
+// Empty differences == agreement. The full scope makeScopeFromB now returns
+// additionally carries the A-side flow obligations (importType, declaration —
+// inc-018); the raw B side still excludes them, so the structural-divergence
+// assertions below hold.
 const diff = (answers) => {
   const a = makeScopeA(answers).inScope
-  const b = makeScopeFromB(answers).inScope
+  const b = rawInScopeFromB(answers)
   return {
     aOnly: sorted(a).filter((k) => !b.has(k)),
     bOnly: sorted(b).filter((k) => !a.has(k))

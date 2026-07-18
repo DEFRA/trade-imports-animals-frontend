@@ -4,7 +4,7 @@ import {
   makeScopeA,
   configureReadyForCheckYourAnswers
 } from '../../engine/read.js'
-import { makeScopeFromB } from './scope.js'
+import { makeScopeFromB, rawInScopeFromB } from './scope.js'
 import { reconcile } from '../../engine/evaluate/reconcile.js'
 import { obligations } from '../obligations/obligations.js'
 import { createObligationEvaluator } from '../obligations/evaluator.js'
@@ -360,9 +360,13 @@ describe('model-equivalence oracle — the divergence register (full sweep)', ()
 // retrofit/{DELTA-REGISTER,SEMANTICS}.md and DIVERGENCE-REGISTER.md §"blind".
 // ---------------------------------------------------------------------------
 
+// Diffs against B's RAW evaluator scope (`rawInScopeFromB`), not the full
+// scope makeScopeFromB now returns: the A-side flow projection (importType,
+// declaration — inc-018) is additive on the full scope only, so the raw B side
+// still excludes them and these structural-blind-spot assertions hold.
 const rawScope = (answers) => {
   const a = makeScopeA(answers).inScope
-  const b = makeScopeFromB(answers).inScope
+  const b = rawInScopeFromB(answers)
   return {
     aOnly: [...a].filter((k) => !b.has(k)),
     bOnly: [...b].filter((k) => !a.has(k))

@@ -1215,3 +1215,49 @@ NOT status: both are the D7/D8 `importType`/`declaration` A-only obligations bei
 absent from B's `inScope`, so their owning pages report `owning-page-unreachable-in-scope`
 under `b`. That is inc-018's (importType/declaration placement) concern; admitting them
 to B's `inScope` here would break the D7/D8 raw-scope oracle test.
+
+## 20. A-side flow obligations projected into the bridge FULL scope · `model/bridge/scope.js` · `EUDPA-288` inc-018
+
+**What this is.** Sam's ruling (PLAN §5.5): `importType` (service-entry filter,
+`c-024`/`c-032`) and `declaration` (submit-time tick) stay A-side flow and are NOT
+admitted to B's manifest — B has no counterpart on the V4 wire contract. But their
+owning pages (`import-type`, `declaration`) must stay reachable under `MODEL=b`, and
+`inc-017a` closed with two `MODEL=b` failures traced to exactly this: `analysis/
+reachability.test.js` "no owed obligation unreachable" and `features/check-answers/
+check-answers.test.js` "redirect to declaration once prerequisites answered", both
+`owning-page-unreachable-in-scope` because B's evaluator scope omits `importType`/
+`declaration`, so `pageGatePasses` → `inScopeReachable([...])` fails for their pages.
+
+**FULL scope vs RAW scope.** The projection distinguishes two sets the bridge exposes:
+
+- `rawInScopeFromB(answers)` — B's evaluator output projected into A's pathKey grammar,
+  B's manifest only. Still EXCLUDES `importType`/`declaration`. This is the set the
+  oracle diffs against A (`model-equivalence.test.js`'s `rawScope`, `scope.test.js`'s
+  `diff` — both re-pointed here), so the D7/D8 "A-only, not admitted to B" assertions
+  stay green: B's raw scope is byte-unchanged.
+- `makeScopeFromB(answers).inScope` — the FULL scope the controllers/hub/reachability
+  consume. `projectAOnlyFlowScope` layers the A-only flow obligations ON TOP of the raw
+  projection, sourced from A's OWN `reconcile(answers)` (faithful to A, future-proof if
+  A ever gates them). `A_ONLY_FLOW_OBLIGATIONS = ['importType', 'declaration']` derives
+  from `retrofit/mapping.json`'s `a-only` entries (`documents` converged to `exact` at
+  inc-016b, so it is no longer a-only). Both are unconditional top-level obligations, so
+  A's reconcile always scopes them in as bare-id pathKeys.
+
+**enforcedAt: importType NOT added to `ENFORCED_AT_CONTINUE`.** `conflicts.json` c-023
+says `importType` "joins the continue level as the service entry filter", but A realises
+that as the entry FILTER / `flow/entry-guard.js` (the `hasEnteredThroughFilter`
+run-state + deep-link redirect), NOT as a downstream continue-prerequisite. A's
+`importType` obligation carries no `enforcedAt`, and adding it to `ENFORCED_AT_CONTINUE`
+would make every post-filter page require `importType` answered under BOTH models —
+breaking the reachability witnesses (whose `submitReadySeed` carries no `importType`) in
+default `a`. So it stays out; A's behaviour is matched exactly.
+
+**Scope of the change.** Additive only. `readyForCheckYourAnswers` is unaffected — its
+`taskRows` never cover `importType`/`declaration`, so the full vs raw `inScope` yields
+identical readiness. The oracle's behavioural axes filter both keys via
+`isStructuralAOnly`, and now converge (both engines scope them in) rather than diverge.
+
+**Result.** Default `a` byte-identical (84 files / 1211 passed / 11 skipped). Under
+`MODEL=b` the whole live-animals suite is now 1211 passed / 0 failed — the last two
+`MODEL=b` failures cleared. Oracle stays zero behavioural divergence; the raw-scope
+D7/D8 test stays green.

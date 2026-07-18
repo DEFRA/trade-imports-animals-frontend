@@ -42,6 +42,7 @@ import { pathKey, valueAt } from '../../lib/path.js'
 import { walk } from '../../registry.js'
 import { isAnswered } from '../../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from '../../engine/readiness-config.js'
+import { reconcile } from '../../engine/evaluate/reconcile.js'
 
 const evaluator = createObligationEvaluator()
 
@@ -105,6 +106,34 @@ const projectInScope = (answers) => {
 }
 
 /**
+ * B's RAW evaluator scope, projected into A's pathKey grammar — B's manifest
+ * only, before any A-side flow projection. This is the set the oracle diffs
+ * against A (model-equivalence.test.js's `rawScope`): importType/declaration
+ * are ABSENT here because B does not model them, per retrofit/mapping.json's
+ * `a-only` entries. `makeScopeFromB` layers the A-side flow obligations on TOP
+ * of this for the FULL scope the controllers consume; this export stays the
+ * unchanged B side.
+ */
+export const rawInScopeFromB = (answers) => projectInScope(answers)
+
+// A-side flow obligations B does not model (retrofit/mapping.json, kind
+// `a-only`): the pre-journey import-type filter (`c-024`/`c-032`) and the
+// submit-time declaration. B has no counterpart, so B's evaluator omits them
+// and their owning pages would be unreachable under `MODEL=b`. Both are
+// unconditional top-level obligations in A's registry (bare-id pathKeys).
+const A_ONLY_FLOW_OBLIGATIONS = ['importType', 'declaration']
+
+// Project the A-only flow obligations onto the FULL scope using A's OWN
+// reconcile — faithful to A's scope determination (and future-proof if A ever
+// gates them), never touching B's raw evaluator scope. An additive layer only.
+const projectAOnlyFlowScope = (answers, inScope) => {
+  const { inScope: aScope } = reconcile(answers)
+  for (const id of A_ONLY_FLOW_OBLIGATIONS) {
+    if (aScope.has(id)) inScope.add(id)
+  }
+}
+
+/**
  * Project B's evaluator output into A's `scope` object shape.
  *
  * Shape-identical to `engine/read.js`'s `makeScope`.
@@ -118,12 +147,20 @@ const projectInScope = (answers) => {
  * engine/read.js` edge that inc-012/013 flagged for M4 (only `read.js ->
  * scope.js` remains — a clean DAG).
  *
+ * The FULL scope also carries the A-side flow obligations B does not model
+ * (importType, declaration — `projectAOnlyFlowScope`, inc-018), so their owning
+ * pages stay reachable under `MODEL=b`. That projection is additive on the full
+ * scope only; B's raw evaluator scope (`rawInScopeFromB`, what the oracle diffs)
+ * is unchanged and still excludes them. `readyForCheckYourAnswers` is unaffected
+ * — its task rows never cover importType/declaration.
+ *
  * @param {object} answers - A's nested answer POJO.
  * @returns {{ inScope: Set<string>, has: (id: string) => boolean,
  *   answered: (id: string) => boolean, readyForCheckYourAnswers: boolean }}
  */
 export const makeScopeFromB = (answers) => {
   const inScope = projectInScope(answers)
+  projectAOnlyFlowScope(answers, inScope)
   return {
     inScope,
     has: (id) => inScope.has(id),
