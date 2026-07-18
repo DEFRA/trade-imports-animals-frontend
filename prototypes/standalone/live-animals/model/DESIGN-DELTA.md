@@ -559,3 +559,72 @@ have the oracle's comparator filter them exactly as `scope.test.js` does
 76 -> 77 test files, 1130 -> 1147 passed (+17 scope tests), 11 skipped unchanged.
 Full `verify-increment.sh` green (purity gate + prettier + eslint clean). The
 three new `fulfilments.js` exports are additive; inc-008's tests unchanged.
+
+## 9. The full differential oracle — 3 axes · `model/bridge/model-equivalence.test.js` · `EUDPA-288` inc-010
+
+**What this is.** The M2 crux: a differential oracle that runs A's engine and
+B's (via the inc-008/009 bridge) over a broad input space and compares **three
+axes** — inScope, status (mandate), wipe (data destruction). inc-009 proved the
+**scope** axis only; inc-010 widens the input space and adds the **status** and
+**wipe** axes, emitting the divergence register that is the M2 gate deliverable
+(`retrofit/DIVERGENCE-REGISTER.md`). Additive: one new test file; one `export`
+added to `analysis/reachability.js` (`submitReadySeed`, so the oracle reuses A's
+own populated seed rather than duplicating it). Nothing wired to A's runtime.
+
+**The three axes.**
+
+- **inScope** — `makeScope` (A) vs `makeScopeFromB` (B), the inc-009 machinery,
+  over the widened space. A/B `inScope` pathKey Sets, two directed differences.
+- **status (mandate)** — for each non-group obligation in scope on BOTH engines,
+  A's static `required` (mandatory/optional) vs B's `effectiveStatus`
+  (`impl.status ?? records[0].status`). Mandate is static on both sides
+  (inc-003 §6), so this is one scalar per obligation, not a per-record
+  dimension. Groups carry no mandate (they enforce cardinality) and are skipped.
+- **wipe** — A's `reconcile(answers).wiped` (pathKeys) vs B's purge, computed by
+  diffing input `answersToFulfilments` against post-`evaluate` fulfilments and
+  projecting destroyed entries back into A's pathKey grammar. `aOnly` = A
+  destroys / B retains; `bOnly` = B destroys / A retains.
+
+**Input space (systematic, 39 states).** reachability's 24-state gate grid
+(`enumerateScopeStates`) overlaid on `submitReadySeed` — blanks toggle gates OFF
+against stored values, a natural wipe probe — PLUS `happy-path.json`, the seed
+itself, and 13 constructed edge/probe states (region yes/no/unanswered, land vs
+private transport, multi-line/multi-unit, empty collection, and dedicated wipe
+probes for region / purpose / transit / commercial-transporter). Normalised
+**A->B only** — `COMMODITY_CODES` is non-injective (inc-008 §7).
+
+**The divergence set found — three, all ruled, all "fix B", zero open:**
+
+| Obligation           | Axis    | A                            | B               | Ruled by | Class      |
+| -------------------- | ------- | ---------------------------- | --------------- | -------- | ---------- |
+| `regionOfOriginCode` | inScope | out unless requirement 'yes' | always in scope | `c-017`  | (ii) fix B |
+| `transitedCountries` | status  | mandatory (land transport)   | optional        | `c-038`  | (ii) fix B |
+| `regionOfOriginCode` | wipe    | destroys on scope-exit       | retains         | `c-017`  | (ii) fix B |
+
+The **scope** axis reproduces inc-009 exactly (region-code, pervasive — fires
+whenever the requirement ≠ 'yes'). The **status** axis newly surfaces the
+`transitedCountries` mandate divergence (inc-002 D4) — invisible to inc-009's
+scope-only preview because both engines scope it identically. The **wipe** axis
+newly surfaces region-code's data-destruction face (inc-002 D3): A destroys,
+B retains. A never over-scopes; B never over-wipes; and for every non-region
+gated value both engines destroy consistently (the control proving the wipe axis
+is not a no-op).
+
+**Divergences are FINDS, not failures.** Each is captured and asserted (via
+`KNOWN_SCOPE_BONLY` / `KNOWN_STATUS` / `KNOWN_WIPE_AONLY`) so it stays visible —
+never forced equal. A full-sweep test asserts these are the ONLY behavioural
+divergences anywhere in the input space, so a NEW divergence breaks the suite and
+demands attention. Structural deltas (M0 registers) are filtered via inc-009's
+`isStructuralAOnly`/`isStructuralBOnly` taxonomy and asserted separately from the
+raw diff so they stay documented.
+
+**M2-green ≠ behaviourally complete.** The oracle is blind to five structural
+deltas (documents topology D1, `maxEntriesFrom` D2, `requiredAtLeastOne`, `multi`
+array shape, `pathPrefix` depth) — it compares two engines over the same inputs
+and cannot see a shape one side can't represent. These are tracked by the M0
+registers, not the oracle; see `DIVERGENCE-REGISTER.md`.
+
+**Backwards compatibility / tests.** Purely additive. Model+prototype suite
+77 -> 78 test files, 1147 -> 1159 passed (+12 oracle tests), 11 skipped
+unchanged. One-line `export` on `reachability.js` (additive; its tests
+unaffected). prettier + eslint + purity gate clean.

@@ -92,7 +92,7 @@ function scaffoldFor(templatePath) {
 
 const withoutBlanks = (state) =>
   Object.fromEntries(Object.entries(state).filter(([, value]) => value !== ''))
-const submitReadySeed = {
+export const submitReadySeed = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'no',
   reasonForImport: 'internalMarket',
