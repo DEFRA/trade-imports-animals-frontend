@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { reconcile } from '../engine/evaluate/reconcile.js'
-import * as registry from '../registry.js'
+import * as obligationSource from './obligation-source.js'
 import { readyForCheckYourAnswers } from './section-status.js'
 import {
   buildDispatch,
@@ -27,11 +27,11 @@ describe('dispatch + flow', () => {
 
   it('Should crash boot when an obligation id carries a path metacharacter', () => {
     const spy = vi
-      .spyOn(registry, 'walkObligations')
+      .spyOn(obligationSource, 'walkObligations')
       .mockImplementation(function* () {
         yield {
           templatePath: 'commodityLines.animalIdentifiers',
-          obligation: { id: 'bad.id' }
+          obligation: { name: 'bad.id' }
         }
       })
     try {

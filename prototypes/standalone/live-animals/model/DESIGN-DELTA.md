@@ -1090,3 +1090,55 @@ notification-level block tests. Nothing on A's engine was touched.
 
 **Stayed per-record SCOPE — no `buildImplication`/Phase-5 change.** The gate is a
 helper + manifest change only; the evaluator core is untouched.
+
+## 18. `flow/` re-pointed to B's manifest — survives M4's `registry.js` deletion · `flow/obligation-source.js` · `flow/dispatch.js` · `flow/prerequisites.js` · `flow/entry-guard.js` · `EUDPA-288` inc-017
+
+**What this is.** `flow/`'s three registry reads (dispatch, prerequisites,
+entry-guard) resolved obligations from A's `registry.js`. M4 deletes `registry.js`,
+so those reads must move to B's manifest (`model/obligations/obligations.js`) —
+which now (post inc-016b) has the topology to answer them. Status resolution stays
+on A's registry; that swap is inc-017a's job, out of scope here.
+
+**The adapter.** `flow/obligation-source.js` is a tiny flow-level shim over B's
+flat manifest, exporting the four things `flow/` needs:
+
+- `walkObligations()` — generator yielding `{ templatePath, obligation }`, where
+  `templatePath` is the dotted chain of **names** built by walking each
+  obligation's `within` back-references (B `name` == A id, so the paths equal A's
+  `walkObligations` template paths — e.g. `commodityLines.commoditySelection`).
+  `obligation` is the real B obligation. No `.item` recursion — B is flat.
+- `obligationByName(name)` — the B analogue of A's `registry.byId(id)`.
+- `SYSTEM_POPULATED` — the totality-assert exclusion set (below).
+- `ENFORCED_AT_CONTINUE` — the flow-level continue-gate set (below).
+
+No existing model enumerator produced name-paths (`buildAncestorGroups` keys by
+`.id` UUID and returns obligation objects), so the adapter owns the tiny walk.
+
+**`SYSTEM_POPULATED` — totality exclusion.** A's dispatch boot asserts every
+non-`system` obligation is collected by exactly one page. A carries **no** `system`
+flag and **doesn't model** `poApprovedReferenceNumber`, `responsiblePersonForLoad`
+or `commodityType` at all, so its walk never sees them. B **does** model all three,
+none collected by any page, so a naive B walk would fail the totality assert. The
+adapter names them in `SYSTEM_POPULATED`; dispatch filters
+`!SYSTEM_POPULATED.has(obligation.name)` (was `!obligation.system`), and entry-guard
+reads `!SYSTEM_POPULATED.has(key)` (was `!obligation.system`) — mirroring A not
+modelling them. Group containers stay covered by A's existing `ownerOfObligation`
+ancestor-walk, preserved untouched.
+
+**`ENFORCED_AT_CONTINUE` — flow-level continue set.** A tagged two obligations
+`enforcedAt: 'continue'` (`countryOfOrigin`, `commoditySelection`); B's manifest
+carries no `enforcedAt`. Rather than retrofit the flow concern onto B's domain
+model, the flow set lives on the adapter as `new Set(['countryOfOrigin',
+'commoditySelection'])`. `prerequisites.js` filters
+`ENFORCED_AT_CONTINUE.has(obligation.name)` (was `obligation.enforcedAt !==
+'continue'`). inc-018 (importType placement) shares this source.
+
+**Path-safety on `name`.** dispatch's boot metacharacter check moved from
+`obligation.id` (a B UUID — always safe) to `obligation.name`, the actual dispatch
+key. `dispatch.test.js`'s spy re-points from `registry.walkObligations` to
+`obligationSource.walkObligations` and yields `{ name: 'bad.id' }`.
+
+**Default `a` byte-identical.** `flow/` now reads B under both flags; because B
+names == A ids and topologies match, dispatch/prereq/guard results are unchanged.
+A's `registry.js` still exports `walkObligations`/`byId` for the rest of the
+`a`-runtime — only `flow/` stopped importing it.

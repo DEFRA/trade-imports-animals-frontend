@@ -1,4 +1,4 @@
-import { walkObligations } from '../registry.js'
+import { walkObligations, ENFORCED_AT_CONTINUE } from './obligation-source.js'
 import { allFlowPages } from './flow.js'
 import { pageOfObligation } from './dispatch.js'
 
@@ -8,9 +8,9 @@ const flowIndexOfPage = (pageId) =>
 const continueObligationOwners = () => {
   const owners = []
   for (const { templatePath, obligation } of walkObligations()) {
-    if (obligation.enforcedAt !== 'continue') continue
+    if (!ENFORCED_AT_CONTINUE.has(obligation.name)) continue
     owners.push({
-      id: obligation.id,
+      id: obligation.name,
       flowIndex: flowIndexOfPage(pageOfObligation(templatePath))
     })
   }

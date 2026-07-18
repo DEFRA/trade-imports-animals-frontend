@@ -1,4 +1,4 @@
-import { walkObligations } from '../registry.js'
+import { walkObligations, SYSTEM_POPULATED } from './obligation-source.js'
 
 let pageOfObligationMap = new Map()
 let collectsByPageMap = new Map()
@@ -30,9 +30,9 @@ export function buildDispatch(pages) {
   slugByPageMap = new Map()
 
   for (const { templatePath, obligation } of walkObligations()) {
-    if (ID_UNSAFE.test(obligation.id)) {
+    if (ID_UNSAFE.test(obligation.name)) {
       throw new Error(
-        `Obligation id "${obligation.id}" (at ${templatePath}) contains a path ` +
+        `Obligation id "${obligation.name}" (at ${templatePath}) contains a path ` +
           `metacharacter ('.', '[' or ']') — ids must be path-safe`
       )
     }
@@ -55,7 +55,8 @@ export function buildDispatch(pages) {
   const uncovered = [...walkObligations()]
     .filter(
       ({ templatePath, obligation }) =>
-        !obligation.system && !ownerOfObligation(templatePath)
+        !SYSTEM_POPULATED.has(obligation.name) &&
+        !ownerOfObligation(templatePath)
     )
     .map(({ templatePath }) => templatePath)
   if (uncovered.length) {

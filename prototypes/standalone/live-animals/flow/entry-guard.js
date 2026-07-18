@@ -1,7 +1,7 @@
 import { BASE, pagePath, startPath } from '../config.js'
 import { isAnswered } from '../lib/answered.js'
 import { currentJourney } from '../engine/journey.js'
-import { registry } from '../registry.js'
+import { obligationByName, SYSTEM_POPULATED } from './obligation-source.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { importType } from '../features/import-type-filter/obligations.js'
@@ -30,8 +30,8 @@ export const guardedJourneyPath = (path) =>
  * stub and real mode diverge. */
 const userEntered = (key) => {
   if (key === importType.id) return false
-  const obligation = registry.byId(key)
-  return obligation !== undefined && !obligation.system
+  const obligation = obligationByName(key)
+  return obligation !== undefined && !SYSTEM_POPULATED.has(key)
 }
 
 export const hasCommittedNotificationAnswers = (answers) =>
