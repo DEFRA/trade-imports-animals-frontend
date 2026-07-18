@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   appendEntryAt,
   removeEntryAt,
@@ -17,27 +17,18 @@ import { dispatchPages } from '../features/index.js'
 import { wipeSetFromB } from '../model/bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
-// inc-015 — mutator behaviour under MODEL=a|b.
-//
-// A owns storage under BOTH flags (positional array; B holds no instance
-// record and infers instances from leaf composite prefixes). So every mutator's
+// Mutator behaviour. A owns storage (positional array; B holds no instance
+// record and infers instances from leaf composite prefixes), so every mutator's
 // storage mechanic — index-minting, in-place `with`, `toSpliced`, key-matched
-// reconcile — is A-side and flag-identical. inc-013 already dual-pathed the only
-// model judgment on the write path (the purge, shared by commit/remove/
-// reconcile); inc-014 ruled the append cap A-side under both flags
-// (`maxEntriesFrom`, no B channel, deferred to inc-024a). These tests prove each
-// mutator behaves correctly under `b` without any new dual-pathing:
-//   - append/update/remove/reconcile store positionally, byte-identical under
-//     both flags (instance identity is positional);
-//   - append's cap rejection fires under `b` via A's `collectionCapAt`;
-//   - an empty appended entry survives in A's storage under `b` even though B
-//     cannot address it (no leaf → no B instance);
-//   - remove/reconcile route their purge to B under `b` (B-authoritative wipe of
+// reconcile — is A-side:
+//   - append/update/remove/reconcile store positionally;
+//   - append's cap rejection fires via A's `collectionCapAt` (`maxEntriesFrom`);
+//   - an empty appended entry survives in A's storage even though B cannot
+//     address it (no leaf → no B instance);
+//   - remove/reconcile route their purge to B (B-authoritative wipe of
 //     now-orphaned notification-level data).
-// Env hygiene: `process.env.MODEL` is saved/restored so the flag never leaks.
 
 let journeyId
-let savedModel
 const buildRequest = () => journeyRequest(journeyId)
 const answersNow = async () => (await store.get(journeyId)).answers
 
@@ -54,7 +45,7 @@ const identifiersPath = (lineIndex) => [
   'animalIdentifiers'
 ]
 
-describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-selected', () => {
+describe('mutators — storage is A-positional, purge is B-authoritative', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -62,81 +53,64 @@ describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-se
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(async () => {
-    savedModel = process.env.MODEL
     await store.clear()
     journeyId = (await store.create()).journeyId
   })
-  afterEach(() => {
-    if (savedModel === undefined) delete process.env.MODEL
-    else process.env.MODEL = savedModel
+
+  describe('appendEntryAt — mints the next index, stores positionally', () => {
+    it('Should append a commodity line and persist it in A order', async () => {
+      const first = await appendEntryAt(
+        buildRequest(),
+        stubH(),
+        ['commodityLines'],
+        { commoditySelection: 'Cow' }
+      )
+      expect(first).toBe(0)
+      const second = await appendEntryAt(
+        buildRequest(),
+        stubH(),
+        ['commodityLines'],
+        { commoditySelection: '010420 - Goats' }
+      )
+      expect(second).toBe(1)
+      expect((await answersNow()).commodityLines).toEqual([
+        { commoditySelection: 'Cow' },
+        { commoditySelection: '010420 - Goats' }
+      ])
+    })
   })
 
-  describe.each(['a', 'b'])(
-    'appendEntryAt under MODEL=%s — mints the next index, stores positionally',
-    (model) => {
-      it('Should append a commodity line and persist it in A order regardless of flag', async () => {
-        process.env.MODEL = model
-        const first = await appendEntryAt(
-          buildRequest(),
-          stubH(),
-          ['commodityLines'],
-          { commoditySelection: 'Cow' }
-        )
-        expect(first).toBe(0)
-        const second = await appendEntryAt(
-          buildRequest(),
-          stubH(),
-          ['commodityLines'],
-          { commoditySelection: '010420 - Goats' }
-        )
-        expect(second).toBe(1)
-        expect((await answersNow()).commodityLines).toEqual([
-          { commoditySelection: 'Cow' },
-          { commoditySelection: '010420 - Goats' }
-        ])
+  describe('updateEntryAt — edits in place, siblings intact', () => {
+    it('Should edit a line in place', async () => {
+      await store.saveAnswers(journeyId, {
+        commodityLines: [line('Cow'), line('010420 - Goats')]
       })
-    }
-  )
+      await updateEntryAt(
+        buildRequest(),
+        stubH(),
+        ['commodityLines'],
+        0,
+        line('Horse')
+      )
+      const lines = (await answersNow()).commodityLines
+      expect(lines[0].commoditySelection).toBe('Horse')
+      expect(lines[1].commoditySelection).toBe('010420 - Goats')
+    })
+  })
 
-  describe.each(['a', 'b'])(
-    'updateEntryAt under MODEL=%s — edits in place, siblings intact',
-    (model) => {
-      it('Should edit a line in place under either flag', async () => {
-        process.env.MODEL = model
-        await store.saveAnswers(journeyId, {
-          commodityLines: [line('Cow'), line('010420 - Goats')]
-        })
-        await updateEntryAt(
-          buildRequest(),
-          stubH(),
-          ['commodityLines'],
-          0,
-          line('Horse')
-        )
-        const lines = (await answersNow()).commodityLines
-        expect(lines[0].commoditySelection).toBe('Horse')
-        expect(lines[1].commoditySelection).toBe('010420 - Goats')
+  describe('removeEntryAt — splices positionally, siblings intact', () => {
+    it('Should remove a line by index', async () => {
+      await store.saveAnswers(journeyId, {
+        commodityLines: [line('Cow'), line('010420 - Goats')]
       })
-    }
-  )
+      await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
+      expect(
+        (await answersNow()).commodityLines.map((e) => e.commoditySelection)
+      ).toEqual(['010420 - Goats'])
+    })
+  })
 
-  describe.each(['a', 'b'])(
-    'removeEntryAt under MODEL=%s — splices positionally, siblings intact',
-    (model) => {
-      it('Should remove a line by index under either flag', async () => {
-        process.env.MODEL = model
-        await store.saveAnswers(journeyId, {
-          commodityLines: [line('Cow'), line('010420 - Goats')]
-        })
-        await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
-        expect(
-          (await answersNow()).commodityLines.map((e) => e.commoditySelection)
-        ).toEqual(['010420 - Goats'])
-      })
-    }
-  )
-
-  describe('appendEntryAt cap — A-side `maxEntriesFrom` fires under BOTH flags (inc-014)', () => {
+  describe('appendEntryAt cap — A-side `maxEntriesFrom` fires (inc-014)', () => {
     const cappedLine = () => ({
       commoditySelection: 'Cat',
       numberOfAnimalsQuantity: '2',
@@ -146,28 +120,23 @@ describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-se
       ]
     })
 
-    it.each(['a', 'b'])(
-      'Should reject an append at the sibling-count cap under MODEL=%s',
-      async (model) => {
-        process.env.MODEL = model
-        await store.saveAnswers(journeyId, { commodityLines: [cappedLine()] })
-        const rejected = await appendEntryAt(
-          buildRequest(),
-          stubH(),
-          identifiersPath(0),
-          { animalIdentifierPassport: 'UK-3' }
-        )
-        expect(rejected).toBe(null)
-        expect(
-          (await answersNow()).commodityLines[0].animalIdentifiers
-        ).toHaveLength(2)
-      }
-    )
+    it('Should reject an append at the sibling-count cap', async () => {
+      await store.saveAnswers(journeyId, { commodityLines: [cappedLine()] })
+      const rejected = await appendEntryAt(
+        buildRequest(),
+        stubH(),
+        identifiersPath(0),
+        { animalIdentifierPassport: 'UK-3' }
+      )
+      expect(rejected).toBe(null)
+      expect(
+        (await answersNow()).commodityLines[0].animalIdentifiers
+      ).toHaveLength(2)
+    })
   })
 
-  describe('appendEntryAt under MODEL=b — an empty appended entry survives in A storage', () => {
+  describe('appendEntryAt — an empty appended entry survives in A storage', () => {
     it('Should hold an empty unit A cannot express in B — positional identity, not B-addressability, owns storage', async () => {
-      process.env.MODEL = 'b'
       // No numberOfAnimalsQuantity → uncapped (ruled blank-count semantics).
       await store.saveAnswers(journeyId, {
         commodityLines: [{ commoditySelection: 'Cat', animalIdentifiers: [] }]
@@ -188,9 +157,8 @@ describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-se
     })
   })
 
-  describe('removeEntryAt under MODEL=b — the purge is B-authoritative', () => {
+  describe('removeEntryAt — the purge is B-authoritative', () => {
     it('Should let B purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
-      process.env.MODEL = 'b'
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
       // triggering commodity (Cow) existing in ANY line, and carries wipeOnExit.
       await store.saveAnswers(journeyId, {
@@ -218,7 +186,7 @@ describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-se
     })
   })
 
-  describe('reconcileEntriesAt under MODEL=b — multi-select sync + B-authoritative purge', () => {
+  describe('reconcileEntriesAt — multi-select sync + B-authoritative purge', () => {
     const keyOf = (entry) =>
       `${entry.commoditySelection}|${entry.speciesSelection}`
     const reconcileLines = (entries) =>
@@ -231,7 +199,6 @@ describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-se
       )
 
     it('Should sync the collection to the desired species set, preserving kept lines', async () => {
-      process.env.MODEL = 'b'
       await store.saveAnswers(journeyId, {
         commodityLines: [
           {
@@ -259,7 +226,6 @@ describe('mutators under MODEL=a|b — storage is A-positional, purge is flag-se
     })
 
     it('Should run B as the wipe authority: deselecting the last triggering commodity destroys the dependent', async () => {
-      process.env.MODEL = 'b'
       await store.saveAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [

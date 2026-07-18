@@ -3,7 +3,6 @@ import { reconcile } from './evaluate/reconcile.js'
 import { walk } from '../registry.js'
 import { isAnswered } from '../lib/answered.js'
 import { valueAt } from '../lib/path.js'
-import { isModelB } from './model-flag.js'
 import { makeScopeFromB } from '../model/bridge/scope.js'
 import {
   configureReadyForCheckYourAnswers,
@@ -31,8 +30,7 @@ export const makeScopeA = (answers) => {
   }
 }
 
-export const makeScope = (answers) =>
-  isModelB() ? makeScopeFromB(answers) : makeScopeA(answers)
+export const makeScope = (answers) => makeScopeFromB(answers)
 
 const readViewOf = (journey) => ({
   journey,

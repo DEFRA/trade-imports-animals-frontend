@@ -1452,3 +1452,54 @@ drop the a-path helpers. The dual-path sites added here (all in
 imports `unweanedApplies` / `packagesApply` / `cphApplies` and
 `transportReference.overlandMeans` become unused HERE (still used by the
 siblings) and can be dropped from this controller's import list.
+
+## §25 — inc-025: the `MODEL=a|b` flag REMOVED — B is the sole runtime model · `EUDPA-288`
+
+The point of no return. `engine/model-flag.js` (and its `model-flag.test.js`)
+are DELETED — nothing in runtime source imports `isModelB`/`model` after the
+collapse (grep-confirmed empty). Each of the 7 runtime dispatch sites is
+collapsed to its b-branch:
+
+1. `engine/read.js` — `makeScope` = `makeScopeFromB` unconditionally (`makeScopeA` KEPT, now oracle-only).
+2. `engine/write.js` — `purge` = `wipeSetFromB` unconditionally; `reconcile` import dropped.
+3. `engine/evaluate/collection-view.js` — `completeAt` = `entryCompleteFromB`; `entryComplete` import dropped; the now-unused `entry` param removed.
+4. `flow/task-rows.js` — `rowStatus` = `statusOfFromB`; `statusOf` import dropped.
+5. `flow/section-status.js` — `sectionStatus` = `statusOfFromB`; `statusOf` dropped from import (NA/FULFILLED/OPTIONAL kept).
+6. `features/commodities/animal-identification.controller.js` — `typeApplies`/`fallbackApplies`/`permanentAddressApplies` read B `.metadata`; `includesUnion` import dropped.
+7. `features/check-answers/controller.js` — the 7 CYA gates (§24 list) read B; imports `packagesApply`/`unweanedApplies`/`cphApplies`/`transportReference` dropped.
+
+**A's model modules are KEPT** (deletion is inc-022's job): `engine/read.js`'s
+`makeScopeA`, `engine/status.js` (`statusOf`), `engine/evaluate/{reconcile,
+predicate,complete,cardinality}.js`, `registry.js`, the 12 `features/*/
+obligations.js`. After this increment they are referenced ONLY by (a) the oracle
+(`model-equivalence.test.js`, `scope.test.js`) which compares A-vs-B via direct
+module refs (flag-independent — still green, still proves ZERO divergence), and
+(b) `collects` (`kit.collectsFrom(obligations)` reads A's obligation arrays for
+the obligation→page index). That is the expected intermediate state.
+
+**Tests.** The runtime a-vs-b comparisons are now moot and were rewritten to
+assert B directly, or (where the a-vs-b was a model-level proof) re-expressed
+via DIRECT module refs so the proof survives without the flag:
+
+- `model-flag.test.js` DELETED (7 tests — it tested the flag + `makeScope` dispatch).
+- `engine/commit-purge-authority.test.js` — dropped the redundant `MODEL=a` twin (−1); kept the B region + purge-set tests, flag harness removed.
+- `engine/mutators-under-b.test.js` — the 4 `describe.each(['a','b'])`/`it.each` storage blocks collapsed to single B runs (−4); the MODEL=b-only purge tests kept, harness removed.
+- `engine/submit-under-b.test.js` — flag harness removed, tests unchanged.
+- `model/bridge/status.test.js` — the flag-flipping rollup comparison rewritten to compare `statusOf` vs `statusOfFromB` (rows/sections) and A-readiness vs `readyForCheckYourAnswers` DIRECTLY (model-level, no flag). Facet-split describe already direct — untouched.
+- `model/bridge/collection-complete.test.js` — `completeAtBothFlags` (flag-flip) → `completeAtBothModels` comparing `entryComplete` (A, direct) vs `entryCompleteFromB` (B, direct); the KNOWN-DIVERGENCE finds preserved at model level.
+- `features/check-answers/check-answers.test.js` + `features/commodities/animal-identification.controller.test.js` — the gate/render matrices drop the moot a-vs-b twin and pin B's outcome per selectable species.
+
+**Test count.** 1221 → 1209 passed (−12: −7 model-flag, −1 commit-purge twin,
+−4 mutators storage twins), 11 skipped, 84 → 83 files (model-flag.test.js gone).
+Purity gate green. Oracle green (A-vs-B zero divergence still proven at model
+level). `VERIFY OK`.
+
+**Left for inc-022 (delete A + retire oracle + re-point collects).** The
+`collects` index still reads A's `obligations.js` arrays via
+`kit.collectsFrom` — re-point to B before deleting them. Oracle-only A modules
+after this increment: `makeScopeA` (read.js), `statusOf` (status.js),
+`reconcile`/`predicate`/`complete`/`cardinality` (evaluate/), `registry.js`.
+Also stale: the B-module JSDoc in `model/bridge/{purge,status,scope}.js`,
+`engine/readiness-config.js`, `engine/evaluate/cardinality.js` still narrates
+"wired behind `MODEL=b`" / "dual-paths" — a flag that no longer exists; refresh
+when those modules are next touched.

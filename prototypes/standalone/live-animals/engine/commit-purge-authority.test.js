@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { commit } from './index.js'
 import { records, configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
@@ -8,15 +8,11 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { wipeSetFromB } from '../model/bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
-// inc-013 dual-paths the write purge: under `a` the wipe authority is A's
-// `reconcile`; under `b` it is B's evaluator purge. These prove `commit`
-// selects the authority by flag while sharing A's session/journey/save layer.
-//
-// The region-requirement gate is the c-017 case: answering the requirement
-// 'no' flips regionOfOriginCode out of scope. Both engines wipe the stored
-// code — B's retain-value branch was ruled wrong (c-017) and fixed in B's
-// manifest at inc-016a, so B now purges it too. The purpose gate is a second
-// case both engines purge, proving B's purge fires under `b` more widely.
+// commit's wipe authority is B's evaluator purge (projected to A pathKeys),
+// sharing A's session/journey/save layer. The region-requirement gate is the
+// c-017 case: answering the requirement 'no' flips regionOfOriginCode out of
+// scope and B's purge destroys the stored code. The purpose gate is a second
+// case B purges, proving the purge fires widely.
 
 const REGION_ANSWERED = {
   countryOfOrigin: 'FR',
@@ -32,14 +28,12 @@ const PURPOSE_ANSWERED = {
 const TURN_PURPOSE_GATE_OFF = { reasonForImport: 'research' }
 
 let journeyId
-let savedModel
 const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) => records.saveAnswers(journeyId, answers)
 const durable = async () => (await records.load({ journeyId })).answers
 
-describe('commit — dual-pathed purge authority under MODEL', () => {
+describe('commit — B-authoritative purge', () => {
   beforeEach(async () => {
-    savedModel = process.env.MODEL
     configureRecords(recordsStub)
     configureSession(sessionStub)
     await records.clear()
@@ -47,33 +41,15 @@ describe('commit — dual-pathed purge authority under MODEL', () => {
     journeyId = (await records.create()).journeyId
   })
 
-  afterEach(() => {
-    if (savedModel === undefined) delete process.env.MODEL
-    else process.env.MODEL = savedModel
-  })
-
-  it('Under MODEL=a A wipes regionOfOriginCode when its gate is answered "no"', async () => {
-    process.env.MODEL = 'a'
+  it('Should wipe regionOfOriginCode when its gate is answered "no"', async () => {
     await seed(REGION_ANSWERED)
     const { answers } = await commit(
       buildRequest(),
       stubH(),
       TURN_REGION_GATE_OFF
     )
-    expect(answers.regionOfOriginCode).toBeUndefined()
-    expect((await durable()).regionOfOriginCode).toBeUndefined()
-  })
-
-  it('Under MODEL=b B wipes regionOfOriginCode too — the c-017 divergence fixed at inc-016a', async () => {
-    process.env.MODEL = 'b'
-    await seed(REGION_ANSWERED)
-    const { answers } = await commit(
-      buildRequest(),
-      stubH(),
-      TURN_REGION_GATE_OFF
-    )
-    // c-017 fixed at inc-016a: B now gates regionOfOriginCode out of scope and
-    // its purge set destroys the stored value, matching A.
+    // c-017 fixed at inc-016a: B gates regionOfOriginCode out of scope and its
+    // purge set destroys the stored value.
     expect(
       wipeSetFromB({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })
     ).toContain('regionOfOriginCode')
@@ -81,8 +57,7 @@ describe('commit — dual-pathed purge authority under MODEL', () => {
     expect((await durable()).regionOfOriginCode).toBeUndefined()
   })
 
-  it("Under MODEL=b commit's destroyed set equals B's evaluator purge", async () => {
-    process.env.MODEL = 'b'
+  it("Should destroy exactly B's evaluator purge set", async () => {
     await seed(PURPOSE_ANSWERED)
     const merged = { ...PURPOSE_ANSWERED, ...TURN_PURPOSE_GATE_OFF }
     const expectedWipe = wipeSetFromB(merged)

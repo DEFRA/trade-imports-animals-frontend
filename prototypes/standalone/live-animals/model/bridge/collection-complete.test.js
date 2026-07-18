@@ -1,6 +1,10 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { collectionView } from '../../engine/evaluate/collection-view.js'
 import { collectionCapAt } from '../../engine/evaluate/cardinality.js'
+import { entryComplete } from '../../engine/evaluate/complete.js'
+import { entryCompleteFromB } from './collection-complete.js'
+import { registry } from '../../registry.js'
+import { valueAt } from '../../lib/path.js'
 
 // A complete address in the flat sub-field shape B's `isComplete` accepts
 // (name / addressLine1 / town / postcode / country / telephone / email); A's
@@ -32,29 +36,28 @@ const partialLine = { commoditySelection: 'Cow' }
 
 const emptyLine = {}
 
-const completeAtBothFlags = (answers, collectionPath) => {
-  process.env.MODEL = 'a'
-  const underA = collectionView(answers, collectionPath).map((r) => r.complete)
-  process.env.MODEL = 'b'
-  const underB = collectionView(answers, collectionPath).map((r) => r.complete)
+// A's completeness via `entryComplete` (ctx-less), B's via `entryCompleteFromB`
+// — the two authorities `collectionView`'s `completeAt` used to select between,
+// now compared directly at the model level (no flag).
+const completeAtBothModels = (answers, collectionPath) => {
+  const templatePath = collectionPath
+    .filter((segment) => typeof segment === 'string')
+    .join('.')
+  const obligation = registry.byPath(templatePath)
+  const entries = valueAt(answers, collectionPath) ?? []
+  const underA = entries.map((entry) =>
+    obligation ? entryComplete(obligation, entry) : true
+  )
+  const underB = entries.map((entry, index) =>
+    obligation ? entryCompleteFromB(answers, collectionPath, index) : true
+  )
   return { underA, underB }
 }
 
-describe('collectionView `complete` — B dual-path (inc-014)', () => {
-  let savedModel
-
-  beforeEach(() => {
-    savedModel = process.env.MODEL
-  })
-
-  afterEach(() => {
-    if (savedModel === undefined) delete process.env.MODEL
-    else process.env.MODEL = savedModel
-  })
-
+describe('collectionView `complete` — A vs B agreement (inc-014)', () => {
   it('agrees A vs B across a multi-line state — full / partial / empty', () => {
     const answers = { commodityLines: [completeLine, partialLine, emptyLine] }
-    const { underA, underB } = completeAtBothFlags(answers, ['commodityLines'])
+    const { underA, underB } = completeAtBothModels(answers, ['commodityLines'])
     expect(underA).toEqual([true, false, false])
     expect(underB).toEqual(underA)
   })
@@ -74,22 +77,22 @@ describe('collectionView `complete` — B dual-path (inc-014)', () => {
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    const { underA, underB } = completeAtBothFlags(answers, path)
+    const { underA, underB } = completeAtBothModels(answers, path)
     expect(underA).toEqual([true, true])
     expect(underB).toEqual(underA)
   })
 
-  it('entries / index / path stay A-side and identical under both flags', () => {
+  it('entries / index / path stay A-side (positional storage)', () => {
     const answers = { commodityLines: [completeLine, emptyLine] }
-    process.env.MODEL = 'a'
-    const a = collectionView(answers, ['commodityLines'])
-    process.env.MODEL = 'b'
-    const b = collectionView(answers, ['commodityLines'])
+    const view = collectionView(answers, ['commodityLines'])
     expect(
-      b.map((r) => ({ index: r.index, path: r.path, entry: r.entry }))
-    ).toEqual(a.map((r) => ({ index: r.index, path: r.path, entry: r.entry })))
-    // entry is the SAME array reference A stored, unchanged by the B path.
-    expect(b[0].entry).toBe(completeLine)
+      view.map((r) => ({ index: r.index, path: r.path, entry: r.entry }))
+    ).toEqual([
+      { index: 0, path: ['commodityLines', 0], entry: completeLine },
+      { index: 1, path: ['commodityLines', 1], entry: emptyLine }
+    ])
+    // entry is the SAME reference A stored, unchanged by the B path.
+    expect(view[0].entry).toBe(completeLine)
   })
 
   // KNOWN DIVERGENCES (finds — NOT repaired). Captured so a future change
@@ -111,7 +114,7 @@ describe('collectionView `complete` — B dual-path (inc-014)', () => {
         }
       ]
     }
-    const { underA, underB } = completeAtBothFlags(answers, ['commodityLines'])
+    const { underA, underB } = completeAtBothModels(answers, ['commodityLines'])
     expect(underA).toEqual([false])
     expect(underB).toEqual([true])
   })
@@ -131,36 +134,20 @@ describe('collectionView `complete` — B dual-path (inc-014)', () => {
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    const { underA, underB } = completeAtBothFlags(answers, path)
+    const { underA, underB } = completeAtBothModels(answers, path)
     expect(underA).toEqual([false])
     expect(underB).toEqual([true])
   })
 })
 
-describe('collectionCapAt stays A-side under both flags (maxEntriesFrom, inc-024a)', () => {
-  let savedModel
-
-  beforeEach(() => {
-    savedModel = process.env.MODEL
-  })
-
-  afterEach(() => {
-    if (savedModel === undefined) delete process.env.MODEL
-    else process.env.MODEL = savedModel
-  })
-
-  it('returns A cardinality regardless of MODEL', () => {
+describe('collectionCapAt stays A-side (maxEntriesFrom, inc-024a)', () => {
+  it('returns A cardinality', () => {
     const answers = {
       commodityLines: [
         { numberOfAnimalsQuantity: '3', animalIdentifiers: [{}, {}] }
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    process.env.MODEL = 'a'
-    const capA = collectionCapAt(answers, path)
-    process.env.MODEL = 'b'
-    const capB = collectionCapAt(answers, path)
-    expect(capA).toBe(3)
-    expect(capB).toBe(capA)
+    expect(collectionCapAt(answers, path)).toBe(3)
   })
 })

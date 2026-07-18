@@ -2,23 +2,18 @@ import { breadcrumbs, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import { nextInSection } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
-import { isModelB } from '../../engine/model-flag.js'
 import { isBlank } from '../../lib/answered.js'
 import { journeyStrip, pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
-import { packagesApply } from '../commodities/consignment-details.controller.js'
 import {
   animalIdentificationPage,
   consignmentDetailsPage
 } from '../commodities/page.js'
 import { IDENTIFIER_LABELS } from '../commodities/animal-identification.controller.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
-import { unweanedApplies } from '../additional-details/controller.js'
 import * as certification from '../../services/certification-purposes/index.js'
-import { cphApplies } from '../cph-number/controller.js'
-import * as transportReference from '../../services/transport-reference/index.js'
 import * as ports from '../../services/ports/index.js'
 import { obligations as modelObligations } from '../../model/obligations/obligations.js'
 
@@ -44,35 +39,21 @@ const anyLineInMetadata = (answers, name) =>
     .concat(answers.commodityLines ?? [])
     .some((line) => commodityInMetadata(name, line?.commoditySelection))
 
-const regionCodeApplies = (answers, scope) =>
-  isModelB()
-    ? scope.has('regionOfOriginCode')
-    : answers.regionOfOriginCodeRequirement === 'yes'
+const regionCodeApplies = (answers, scope) => scope.has('regionOfOriginCode')
 
-const purposeApplies = (answers, scope) =>
-  isModelB()
-    ? scope.has('purposeInInternalMarket')
-    : answers.reasonForImport === 'internalMarket'
+const purposeApplies = (answers, scope) => scope.has('purposeInInternalMarket')
 
 const transitedCountriesApplies = (answers, scope) =>
-  isModelB()
-    ? scope.has('transitedCountries')
-    : transportReference.overlandMeans().includes(answers.meansOfTransport)
+  scope.has('transitedCountries')
 
 const unweanedGate = (answers) =>
-  isModelB()
-    ? anyLineInMetadata(answers, 'containsUnweanedAnimals')
-    : unweanedApplies(answers)
+  anyLineInMetadata(answers, 'containsUnweanedAnimals')
 
 const cphGate = (answers) =>
-  isModelB()
-    ? anyLineInMetadata(answers, 'countyParishHoldingCph')
-    : cphApplies(answers)
+  anyLineInMetadata(answers, 'countyParishHoldingCph')
 
 const packagesGate = (commoditySelection) =>
-  isModelB()
-    ? commodityInMetadata('numberOfPackages', commoditySelection)
-    : packagesApply(commoditySelection)
+  commodityInMetadata('numberOfPackages', commoditySelection)
 
 const withChange = (href) => `${href}?change=1`
 
@@ -347,22 +328,13 @@ const arrivalDetailsCard = (answers, scope) => ({
 })
 
 const activeTransporter = (answers, scope) => {
-  if (isModelB()) {
-    if (scope.has('commercialTransporter')) {
-      return {
-        party: answers.commercialTransporter,
-        id: 'commercialTransporter'
-      }
+  if (scope.has('commercialTransporter')) {
+    return {
+      party: answers.commercialTransporter,
+      id: 'commercialTransporter'
     }
-    if (scope.has('privateTransporter')) {
-      return { party: answers.privateTransporter, id: 'privateTransporter' }
-    }
-    return null
   }
-  if (answers.transporterType === 'Commercial') {
-    return { party: answers.commercialTransporter, id: 'commercialTransporter' }
-  }
-  if (answers.transporterType === 'Private') {
+  if (scope.has('privateTransporter')) {
     return { party: answers.privateTransporter, id: 'privateTransporter' }
   }
   return null

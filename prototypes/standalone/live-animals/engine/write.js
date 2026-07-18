@@ -1,8 +1,6 @@
 import { currentJourney, saveJourneyAnswers } from './journey.js'
-import { reconcile } from './evaluate/reconcile.js'
 import { collectionCapAt } from './evaluate/cardinality.js'
 import { makeScope } from './read.js'
-import { isModelB } from './model-flag.js'
 import { wipeSetFromB } from '../model/bridge/purge.js'
 import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
@@ -10,14 +8,8 @@ import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 const isValidIndex = (index, list) =>
   Number.isInteger(index) && index >= 0 && index < list.length
 
-// The wipe authority is flag-selected: A's `reconcile` (its obligation-forest
-// walk) under `a`, B's evaluator purge (projected to A pathKeys) under `b`.
-// Both return A pathKeys for `destroyWiped`, so the session/journey/save layer
-// around every mutator is shared. Under `b`, B's ruled divergences ride along
-// unrepaired (c-017 regionOfOriginCode retained) — that is inc-017's fix.
 const purge = (answers) => {
-  const wiped = isModelB() ? wipeSetFromB(answers) : reconcile(answers).wiped
-  destroyWiped(answers, wiped)
+  destroyWiped(answers, wipeSetFromB(answers))
 }
 
 export const commit = async (request, h, patch) => {

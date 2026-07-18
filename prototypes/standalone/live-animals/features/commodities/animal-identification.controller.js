@@ -1,7 +1,5 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
-import { includesUnion } from '../../engine/evaluate/predicate.js'
-import { isModelB } from '../../engine/model-flag.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
@@ -59,9 +57,7 @@ const metadataFallbackApplies = (obligation, commodity) =>
   )
 
 const typeApplies = (obligation, commodity) =>
-  isModelB()
-    ? metadataAllowListApplies(obligation, commodity)
-    : obligation.activatedBy.includes.includes(commodity)
+  metadataAllowListApplies(obligation, commodity)
 
 const TYPE_FIELDS = [
   {
@@ -86,9 +82,7 @@ const TYPE_FIELDS = [
 ]
 
 const fallbackApplies = (obligation, commodity) =>
-  isModelB()
-    ? metadataFallbackApplies(obligation, commodity)
-    : !includesUnion(obligation.activatedBy.notInUnionOf).includes(commodity)
+  metadataFallbackApplies(obligation, commodity)
 
 const FALLBACK_FIELDS = [
   {
@@ -152,9 +146,7 @@ const scopedFields = (commodity) => [
 ]
 
 const permanentAddressApplies = (commodity) =>
-  isModelB()
-    ? metadataAllowListApplies(permanentAddress, commodity)
-    : permanentAddress.activatedBy.includes.includes(commodity)
+  metadataAllowListApplies(permanentAddress, commodity)
 
 const identifierChecksFor = (commodity, index) =>
   compose(

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, submitJourney } from './index.js'
 import {
   records,
@@ -12,36 +12,23 @@ import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
-// inc-016 — submitJourney under MODEL=b. No new dual-pathing: submit reads its
-// scope through the inc-012 `makeScope` dispatcher (B-derived under `b`) and
-// gates on that scope's `readyForCheckYourAnswers`. Under `b` that flag still
-// delegates to A's boot-injected fn (makeScopeFromB → makeScopeA), because
-// migrating readiness to B's journeyState/containerStatus is inc-017a's job —
-// the whole status/flow class moves together there. `records.finalise` is A's
-// persistence under both flags (B has none). These tests confirm submit
-// finalises the journey by its journeyId when CYA-ready and blocks when not,
-// under `b`. Env hygiene: process.env.MODEL is saved/restored so the flag never
-// leaks into a reused worker process.
+// submitJourney reads its scope through `makeScope` (B-derived) and gates on
+// that scope's `readyForCheckYourAnswers`. `records.finalise` is A's
+// persistence (B has none). These tests confirm submit finalises the journey
+// by its journeyId when CYA-ready and blocks when not.
 
 let journeyId
-let savedModel
 const buildRequest = () => journeyRequest(journeyId)
 
-describe('submitJourney under MODEL=b — B-derived scope gate, A finalise', () => {
+describe('submitJourney — B-derived scope gate, A finalise', () => {
   beforeEach(async () => {
-    savedModel = process.env.MODEL
-    process.env.MODEL = 'b'
     configureRecords(recordsStub)
     configureSession(sessionStub)
     await records.clear()
     journeyId = (await records.create()).journeyId
   })
-  afterEach(() => {
-    if (savedModel === undefined) delete process.env.MODEL
-    else process.env.MODEL = savedModel
-  })
 
-  it('Should finalise the CYA-ready journey by its journeyId under b', async () => {
+  it('Should finalise the CYA-ready journey by its journeyId', async () => {
     configureReadyForCheckYourAnswers(() => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
@@ -54,7 +41,7 @@ describe('submitJourney under MODEL=b — B-derived scope gate, A finalise', () 
     expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
   })
 
-  it('Should return { ok: false } and leave the journey in-progress when not CYA-ready under b', async () => {
+  it('Should return { ok: false } and leave the journey in-progress when not CYA-ready', async () => {
     configureReadyForCheckYourAnswers(() => false)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 

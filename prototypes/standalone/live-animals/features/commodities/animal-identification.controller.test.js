@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
@@ -245,29 +245,11 @@ describe('animal identification — the single card-per-species surface (inc-063
     })
   })
 
-  // inc-019 — the identifier-field render is dual-pathed: under MODEL=a the
-  // controller reads A's gate AST (activatedBy.includes / notInUnionOf); under
-  // MODEL=b it reads B's `.metadata.values` (the coverage-gated sidecar),
-  // normalising the selected commodity NAME to a CN code via commodityCodeFor
-  // before comparing. This is the whitelist-membership question at the
-  // rendering layer (inc-002's open thread). A's lists are NAME-keyed and
-  // narrower ('Cow' only for earTag); B's are CODE-keyed and wider (adds Pig /
-  // Sheep / Goats). The extra B codes are NOT reachable from the five
-  // selectable species (Cow/Horse/Cat/Dog/Fish), so A-render and B-render AGREE
-  // in every cell — the raw-list divergence is masked by the selectable
-  // vocabulary. This block asserts that agreement across the full 5×fields
-  // matrix so a future divergence (a new selectable species that reaches a
-  // B-only code) fails loudly. Env hygiene: process.env.MODEL saved/restored.
-  describe('identifier render matrix — A gate AST vs B metadata agree per selectable species', () => {
-    let savedModel
-    beforeEach(() => {
-      savedModel = process.env.MODEL
-    })
-    afterEach(() => {
-      if (savedModel === undefined) delete process.env.MODEL
-      else process.env.MODEL = savedModel
-    })
-
+  // The identifier-field render reads B's `.metadata.values` (the coverage-gated
+  // sidecar), normalising the selected commodity NAME to a CN code via
+  // commodityCodeFor before comparing. This matrix pins the rendered fields per
+  // selectable species (Cow/Horse/Cat/Dog/Fish).
+  describe('identifier render matrix — B metadata per selectable species', () => {
     const speciesLine = (commoditySelection, speciesSelection) => ({
       commoditySelection,
       speciesSelection,
@@ -275,8 +257,7 @@ describe('animal identification — the single card-per-species surface (inc-063
       numberOfAnimalsQuantity: ''
     })
 
-    const renderFor = async (model, commodity, species) => {
-      process.env.MODEL = model
+    const renderFor = async (commodity, species) => {
       const [card] = await viewCards({
         commodityLines: [speciesLine(commodity, species)]
       })
@@ -327,14 +308,11 @@ describe('animal identification — the single card-per-species surface (inc-063
     ]
 
     it.each(MATRIX)(
-      'Should render the same identifier fields under both models for $commodity',
+      'Should render the identifier fields for $commodity',
       async ({ commodity, species, fieldIds, showAddress }) => {
-        const rendered = await renderFor('b', commodity, species)
+        const rendered = await renderFor(commodity, species)
         expect(rendered.fieldIds).toEqual(fieldIds)
         expect(rendered.showAddress).toBe(showAddress)
-
-        const underA = await renderFor('a', commodity, species)
-        expect(rendered).toEqual(underA)
       }
     )
   })

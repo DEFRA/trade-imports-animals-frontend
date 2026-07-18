@@ -4,30 +4,18 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { dispatchPages } from '../../features/index.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { reconcile } from '../../engine/evaluate/reconcile.js'
-import { rowStatus, taskRows } from '../../flow/task-rows.js'
+import { rowParts, taskRows } from '../../flow/task-rows.js'
 import {
   readyForCheckYourAnswers,
-  sectionStatus
+  sectionObligationIds
 } from '../../flow/section-status.js'
 import { answerSections } from '../../flow/flow.js'
-import { statusOf } from '../../engine/status.js'
+import { statusOf, FULFILLED, NA, OPTIONAL } from '../../engine/status.js'
 import { statusOfFromB } from './status.js'
 
 // The oracle proves A/B scope + status agree; this pins the presentation-facing
-// rollup: under MODEL=b the row / section / readiness derivations (all now
-// B-sourced via `statusOfFromB`) return exactly what A's `statusOf` returns for
-// the same (answers, inScope). Env hygiene: MODEL is flipped per call and always
-// restored, so the flag never leaks into a reused worker.
-const underModel = (model, run) => {
-  const saved = process.env.MODEL
-  process.env.MODEL = model
-  try {
-    return run()
-  } finally {
-    if (saved === undefined) delete process.env.MODEL
-    else process.env.MODEL = saved
-  }
-}
+// rollup: the B-sourced row / section / readiness derivations (`statusOfFromB`)
+// return exactly what A's `statusOf` returns for the same (answers, inScope).
 
 const { values: happyPath } = JSON.parse(
   readFileSync(new URL('../../spec/fixtures/happy-path.json', import.meta.url))
@@ -60,36 +48,34 @@ const states = {
 describe('statusOfFromB — the B-derived rollup agrees with A', () => {
   beforeAll(() => buildDispatch(dispatchPages))
 
+  const isReady = (statusFn, answers, inScope) =>
+    taskRows.every((row) => {
+      const status = statusFn(rowParts(row), answers, inScope)
+      return status === FULFILLED || status === NA || status === OPTIONAL
+    })
+
   describe.each(Object.entries(states))('%s', (_label, answers) => {
     const { inScope } = reconcile(answers)
 
-    it('Should match A row-for-row under MODEL=b', () => {
+    it('Should match A row-for-row', () => {
       for (const row of taskRows) {
-        const a = underModel('a', () => rowStatus(row, answers, inScope))
-        const b = underModel('b', () => rowStatus(row, answers, inScope))
+        const a = statusOf(rowParts(row), answers, inScope)
+        const b = statusOfFromB(rowParts(row), answers, inScope)
         expect(b, `row ${row.id}`).toBe(a)
       }
     })
 
-    it('Should match A section-for-section under MODEL=b', () => {
+    it('Should match A section-for-section', () => {
       for (const section of answerSections) {
-        const a = underModel('a', () =>
-          sectionStatus(section, answers, inScope)
-        )
-        const b = underModel('b', () =>
-          sectionStatus(section, answers, inScope)
-        )
+        const a = statusOf(sectionObligationIds(section), answers, inScope)
+        const b = statusOfFromB(sectionObligationIds(section), answers, inScope)
         expect(b, `section ${section.id}`).toBe(a)
       }
     })
 
-    it('Should match A readiness under MODEL=b', () => {
-      const a = underModel('a', () =>
-        readyForCheckYourAnswers(answers, inScope)
-      )
-      const b = underModel('b', () =>
-        readyForCheckYourAnswers(answers, inScope)
-      )
+    it('Should match A readiness', () => {
+      const a = isReady(statusOf, answers, inScope)
+      const b = readyForCheckYourAnswers(answers, inScope)
       expect(b).toBe(a)
     })
   })

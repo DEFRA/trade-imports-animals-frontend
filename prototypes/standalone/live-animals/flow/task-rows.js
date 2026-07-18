@@ -1,6 +1,4 @@
-import { statusOf } from '../engine/status.js'
 import { statusOfFromB } from '../model/bridge/status.js'
-import { isModelB } from '../engine/model-flag.js'
 import { collectsOf } from './dispatch.js'
 import { originPage } from '../features/origin/page.js'
 import {
@@ -58,6 +56,4 @@ export const rowParts = (row) =>
   row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
 
 export const rowStatus = (row, answers, inScope) =>
-  isModelB()
-    ? statusOfFromB(rowParts(row), answers, inScope)
-    : statusOf(rowParts(row), answers, inScope)
+  statusOfFromB(rowParts(row), answers, inScope)
