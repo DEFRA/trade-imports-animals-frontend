@@ -16,6 +16,13 @@ const templatePathOf = (collectionPath) =>
  * the stored value is not a non-negative integer. An unanswered count is
  * deliberately NO cap — the per-species at-least-one floor still bites at
  * submit, so leaving the count blank never lets a journey finish early.
+ *
+ * A-side under BOTH flags (`MODEL=a` and `MODEL=b`). `maxEntriesFrom`
+ * (c-031) is the one A-only capability with no B channel — B's decision
+ * surface has no numeric reference and no admission-control primitive (PLAN
+ * §5.1'). Porting it to B is deferred to inc-024a; until then the cap reads
+ * A's cardinality regardless of `MODEL`, mirroring how inc-013 kept A's save
+ * layer for both flags.
  */
 export const collectionCapAt = (answers, collectionPath) => {
   const obligation = registry.byPath(templatePathOf(collectionPath))

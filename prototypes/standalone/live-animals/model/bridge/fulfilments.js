@@ -216,6 +216,26 @@ export const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
   return path
 }
 
+// The composite fulfilmentId of a whole collection INSTANCE, from its A
+// positional path. The instance-level counterpart of `fulfilmentIdToPath`
+// (which addresses a single leaf): given an A collection path in the
+// `a.b[0].c` grammar (e.g. `['commodityLines', 0, 'animalIdentifiers']`) and
+// a positional index, emit B's group fulfilmentId prefix (`line0/unit<index>`).
+// Reuses `segmentToken` + `ancestorChain`, so a third collection level needs
+// no change here. Instance identity is positional under both flags.
+export const instanceFulfilmentId = (collectionPath, index) => {
+  const names = collectionPath.filter((segment) => typeof segment === 'string')
+  const group = byAId.get(names[names.length - 1])
+  const chain = [...ancestorChain(group), group]
+  const indices = [
+    ...collectionPath.filter((segment) => typeof segment === 'number'),
+    index
+  ]
+  return chain
+    .map((groupNode, depth) => `${segmentToken(groupNode)}${indices[depth]}`)
+    .join('/')
+}
+
 const fulfilmentsToDocuments = (fulfilments, answers) => {
   const document = {}
   for (const aId of DOCUMENT_FIELD_AIDS) {

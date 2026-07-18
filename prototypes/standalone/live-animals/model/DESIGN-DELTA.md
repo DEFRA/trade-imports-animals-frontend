@@ -789,3 +789,69 @@ own (`t2-hub-copy`, `reachability`, `read`, `resume-self-heal`, `gates`,
 `task-rows`, `check-answers` navigation) — B's not-yet-applied ruled divergences
 plus status/`flow/` still being A. None is a write/purge failure; green-under-
 both-flags stays the inc-017a target.
+
+## 12. `collectionView`'s `complete` dual-pathed — B judges per-instance completeness under `b` · `engine/evaluate/collection-view.js` · `model/bridge/collection-complete.js` · `EUDPA-288` inc-014
+
+**What this is.** `collectionView(answers, collectionPath)` returns
+`[{index, path, entry, complete}]`. A owns storage under BOTH flags (the bridge
+converts A↔B on demand; B has no persistence), so `entries`, `index` and `path`
+come from A's positional array and are **identical under `a` and `b`** — an
+empty or partial A entry is never lost. Only **`complete`** is a model judgment,
+so only `complete` is dual-pathed: under `a` A's `entryComplete`; under `b`
+`entryCompleteFromB` (`model/bridge/collection-complete.js`). **Default `a` is
+byte-identical** — the existing suite is unchanged (80 → 81 files, 1169 → 1175
+passed, 11 skipped; the +6 are inc-014's own test).
+
+**Instance identity is positional** — A's array index, the same under both flags.
+`instanceFulfilmentId(collectionPath, index)` (new export in
+`bridge/fulfilments.js`) maps an A positional entry to B's composite fulfilmentId
+prefix (`line0/unit<i>`) reusing the existing `segmentToken` + `ancestorChain`
+machinery — the instance-level counterpart of `fulfilmentIdToPath`.
+
+**How `entryCompleteFromB` derives `complete`.** It reproduces B's
+`containerStatus`-FULFILLED verdict scoped to one instance: evaluate
+`answersToFulfilments(answers)`, then the instance is complete iff there is **no
+unsatisfied mandatory concern** beneath its fulfilmentId — a mandatory leaf
+record left unfulfilled (`effectiveStatus` record `status`, defaulting to
+mandatory; addresses via `domain.isComplete`) or an unmet per-instance `anyOf`
+invariant (`groupInvariantErrors`). A fully-empty TOP-LEVEL entry is caught by
+its unconditional mandatory field leaves (checked at the instance even without a
+B record), so A and B agree it is incomplete. **Structural B-only obligations
+(`commodityType` c-037, the `accompanyingDocument*` block, the two system
+fields) are excluded** — the model-equivalence oracle filters them off every
+axis (`isStructuralBOnly`), and A's model never carries `commodityType` at all,
+so admitting it would read every line incomplete under `b`.
+
+**`collectionCapAt` stays A-side under BOTH flags.** `maxEntriesFrom` (c-031) is
+the one A-only capability with no B channel — B's decision surface has no numeric
+reference and no admission-control primitive (PLAN §5.1′). Porting it to B is
+deferred to **inc-024a**; until then the cap reads A's `cardinality.js`
+regardless of `MODEL`, mirroring how inc-013 kept A's save layer for both flags.
+Stated in the `collectionCapAt` doc comment.
+
+**Agreement, and two captured finds (NOT repaired).** For representative
+full/partial/empty states the completeness path **agrees** A vs B — the 3 ruled
+divergences (region-code, transit) are not in the collection-entry completeness
+path (region-code is top-level; transit is a scalar mandate). Two NEW structural
+divergences surfaced and are captured as known-divergence assertions in
+`collection-complete.test.js`, not forced equal:
+
+1. **A's `collectionView` calls `entryComplete` with no `ctx`.** With `ctx` null
+   the enclosing-frame `activatedBy` predicate is never evaluated, so
+   `permanentAddress` (required, gated on 01061900) is treated as mandatory for
+   **every** unit regardless of commodity. B scopes it correctly, so a Cow line
+   carrying an identifier but no `permanentAddress` — the `happy-path.json` shape
+   — reads **complete under `b`, incomplete under `a`** (B is the more faithful
+   reading; A's collectionView is over-strict).
+2. **A fully-empty NESTED instance vanishes from B.** B infers instances from
+   leaf composite prefixes, so a unit with no stored leaf is never enumerated and
+   B cannot flag its unmet `anyOf`; A, reading its own array, still shows the
+   entry and marks it incomplete. So an empty unit reads **complete under `b`,
+   incomplete under `a`**. (A fully-empty TOP-LEVEL line does agree — its
+   unconditional mandatory field leaves are checked directly.)
+
+**Result under `MODEL=b`.** Suite failures stay at **8** — the exact
+inc-013 set (`t2-hub-copy`, `reachability`, `read`, `resume-self-heal`, `gates`,
+`task-rows`, `check-answers` navigation), all status/flow/scope class that
+inc-017/inc-017a own. inc-014 adds **zero** new `b` failures; no collectionView
+or completeness test is among them.
