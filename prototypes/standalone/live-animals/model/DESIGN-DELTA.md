@@ -919,3 +919,53 @@ function still fully A: it reads `makeScope(answers).readyForCheckYourAnswers`
 `submitJourney`'s readiness gate reads B's `journeyState` under `b`, or whether
 that is left entirely to inc-017a's status migration. The save/finalise layer is
 A under both flags (B has no persistence), mirroring every other mutator.
+
+## 14. `submitJourney` audited under `b` — verification, no code change · `engine/submit-under-b.test.js` · `EUDPA-288` inc-016
+
+**What this is.** inc-015 closed the write-mutator cutover; inc-016 closes the
+last barrel function, `submitJourney`, by **auditing it under `MODEL=b`** and
+pinning it with a submit-under-`b` test. **The verdict is NO code change** —
+the expected outcome, mirroring inc-015. **Default `a` is byte-identical** (82
+→ 83 files, 1187 → 1189 passed, 11 skipped unchanged; the +2 are inc-016's own
+tests). MODEL=b failures stay at **8** (the inc-013 status/flow/scope set);
+inc-016 adds zero new `b` failures.
+
+**`submitJourney` verdict — correct under `b` as written, no change.** Its two
+model-relevant parts were traced:
+
+- **The readiness gate reads a B-derived scope.** `submitJourney` calls
+  `makeScope(journey.answers)` — the inc-012 dispatcher — so under `b` the
+  `scope` object (its `inScope`, `has`, `answered`) is B-derived via
+  `makeScopeFromB`. The gate reads `scope.readyForCheckYourAnswers`, which
+  under `b` still delegates to A's boot-injected fn
+  (`makeScopeFromB` → `makeScopeA` → `configureReadyForCheckYourAnswers`).
+  So submit already gates on the B-dispatched scope's ready flag; no new
+  dual-pathing is needed here.
+- **`records.finalise` stays A under BOTH flags.** It is A's persistence
+  (session/records save layer); B has no persistence, so finalise is
+  flag-agnostic, exactly like every other mutator's save layer (inc-013/015).
+
+**The readiness→B migration is DEFERRED to inc-017a — explicitly.**
+`readyForCheckYourAnswers` under `b` is still A-computed (via `makeScopeA`'s
+boot-injected `flow/section-status.js` fn). Migrating it to a B
+`journeyState`/`containerStatus` derivation is **not** inc-016's job — the whole
+status/flow status class (`read`/`gates`/`task-rows`/`section-status`) moves
+together at inc-017a, and pulling only submit's ready flag onto B here would
+split that class. inc-016 confirms submit's gate correctly reads the B-derived
+scope's ready flag (currently A-computed) and works; **inc-017a completes the
+readiness→B migration.**
+
+**Test.** `engine/submit-under-b.test.js` (+2) forces `MODEL=b` (saved/restored
+for env hygiene) and proves both directions with the boot-injected ready fn
+stubbed (the isolation the existing `submit-is-finalise.test.js` uses): when
+CYA-ready, submit finalises the journey **by its journeyId** (`result.ok`,
+`result.journey.journeyId === journeyId`, status flipped to `SUBMITTED` on that
+record — the observable proof finalise ran with the right id); when not ready,
+`{ ok: false }` and the record stays `IN_PROGRESS` (finalise never ran). Both
+the ready-flag delegation and finalise flow through the `b` path.
+
+**No new divergence.** `submitJourney`'s storage/finalise does not diverge under
+`b` (A owns persistence), and its gate is the already-B-derived scope. The only
+`b`-visible submit behaviour is inherited from the ruled, not-yet-repaired
+status/scope class (region-code retention c-017 et al.) that inc-017/inc-017a
+own — none is on submit's own path.
