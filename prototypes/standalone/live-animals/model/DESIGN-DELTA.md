@@ -1366,3 +1366,89 @@ Cutover is now behaviourally complete and validated. Remaining: M4 retires A's
 model (status.js/registry.js/A prover, remove flag) + the 2 latent-A-bug fixes
 (CYA hand-copied gates inc-024, permanentAddress over-mandate already B-correct),
 then inc-024a (maxEntriesFrom), M5 deferred.
+
+## §24 — inc-024: the CYA hand-copied gates re-pointed to B (dual-pathed)
+
+**The leak.** `features/check-answers/controller.js` hand-re-implemented seven
+gate conditions the obligation model already declares, so a rule change would
+have to land in two places or the CYA silently drifts. All seven are now
+dual-pathed on `isModelB()`: the a-path keeps A's condition byte-identical (the
+flag is retired at inc-025), the b-path derives the gate from B.
+
+**Two b-path mechanisms.**
+
+- **VALUE/PRESENCE gates read B's projected `scope`** — the same
+  model-dispatched scope `state.get` already hands the controller (under `b` it
+  is `makeScopeFromB`; threaded `get -> renderCya -> buildSections` and into the
+  four affected cards). No literal is re-hardcoded:
+  - `regionCodeApplies` — `scope.has('regionOfOriginCode')`
+    (a: `answers.regionOfOriginCodeRequirement === 'yes'`).
+  - `purposeApplies` — `scope.has('purposeInInternalMarket')`
+    (a: `answers.reasonForImport === 'internalMarket'`).
+  - `transitedCountriesApplies` — `scope.has('transitedCountries')`
+    (a: `transportReference.overlandMeans().includes(answers.meansOfTransport)`).
+  - `activeTransporter` — `scope.has('commercialTransporter')` /
+    `scope.has('privateTransporter')` select the active party
+    (a: the `answers.transporterType === 'Commercial'|'Private'` ladder, kept
+    verbatim below the `isModelB()` branch).
+
+- **COMMODITY-WHITELIST gates read B's obligation `applyTo.metadata.values`**
+  (CN codes) with A-name -> code normalisation via `commodities.commodityCodeFor`
+  — inc-019's mechanism. B obligations are looked up by `name` from
+  `model/obligations/obligations.js` (the allowed UI->model contamination; the
+  purity gate only inspects `features/*/obligations.js`, not controllers).
+  `unweanedGate`/`cphGate` aggregate across `commodityLines` (mirroring B's
+  `anyAllowListed` "any line" shape); `packagesGate` is per-line:
+  - `packagesGate` — `numberOfPackages` metadata (a: `packagesApply`).
+  - `unweanedGate` — `containsUnweanedAnimals` metadata (a: `unweanedApplies`).
+  - `cphGate` — `countyParishHoldingCph` metadata (a: `cphApplies`).
+
+The A-path helpers `unweanedApplies` / `packagesApply` / `cphApplies` are still
+imported from their sibling controllers (`additional-details`, `commodities/
+consignment-details`, `cph-number`) — untouched; inc-024 is CYA-scoped. Those
+siblings hold the SAME hand-copied conditions for their own validation/storage
+and remain latent-A dual-path candidates for a later increment (out of scope
+here — the CYA was the highest-drift-risk consumer because it re-derives all
+seven in one file).
+
+**★ The cph/unweaned/packages matrix (inc-019's open thread for these gates,
+ANSWERED).** A's lists are NAME-keyed and narrow (`CPH_COMMODITIES=['Cow']`,
+`UNWEANED_ANIMAL_COMMODITIES=['Cow','Horse']`, stub `PACKAGE_COUNT_COMMODITIES`
+carries `Cow/Horse/Cat/Dog` among labels); B's are CODE-keyed and wide
+(`CPH_REQUIRED_COMMODITIES` adds pig/sheep/goat/poultry codes,
+`UNWEANED_APPLICABLE_COMMODITIES=['0101','0102','0103','010410','010420']`,
+`PACKAGE_COUNT_COMMODITIES(codes)` adds 0103/010410/010420/01063100/01064100).
+But for the FIVE selectable species (Cow=0102, Horse=0101, Cat/Dog=01061900,
+Fish=0301) the extra B codes are UNREACHABLE, so **A-gate and B-gate AGREE in
+every cell**:
+
+| species (code) | packages | unweaned | cph |
+| -------------- | -------- | -------- | --- |
+| Cow (0102)     | ✓        | ✓        | ✓   |
+| Horse (0101)   | ✓        | ✓        | –   |
+| Cat (01061900) | ✓        | –        | –   |
+| Dog (01061900) | ✓        | –        | –   |
+| Fish (0301)    | –        | –        | –   |
+
+No divergent cell — the clean outcome (like inc-019's identifier matrix): the
+raw-list divergence is dormant, masked by the selectable vocabulary. No PO/Sam
+ruling needed. Add a selectable species mapping to a B-only code (e.g. a
+pig/sheep/goat CN) and A would under-gate where B gates — asserted as a
+regression guard by `check-answers.test.js`'s matrix block (drives each species
+under both models, asserts equality + the expected booleans), so any future
+selectable-vocabulary widening that reaches a B-only code fails loudly. Env
+hygiene: `process.env.MODEL` saved/restored.
+
+**Result.** Default `a` byte-identical (a-path conditions unchanged;
+84 files / 1216 -> 1221 passed with the +5 matrix cases / 11 skipped). Under
+`MODEL=b` the whole suite is 1221 passed / 0 failed — the CYA now derives its
+gates from B.
+
+**For inc-025 (remove the flag).** Collapse each dual-path to its b-path and
+drop the a-path helpers. The dual-path sites added here (all in
+`features/check-answers/controller.js`): `regionCodeApplies`, `purposeApplies`,
+`transitedCountriesApplies`, `activeTransporter` (the `isModelB()` branch),
+`unweanedGate`, `cphGate`, `packagesGate`. After the flag goes, the sibling
+imports `unweanedApplies` / `packagesApply` / `cphApplies` and
+`transportReference.overlandMeans` become unused HERE (still used by the
+siblings) and can be dropped from this controller's import list.

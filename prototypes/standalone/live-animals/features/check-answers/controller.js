@@ -2,6 +2,7 @@ import { breadcrumbs, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import { nextInSection } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
+import { isModelB } from '../../engine/model-flag.js'
 import { isBlank } from '../../lib/answered.js'
 import { journeyStrip, pageRoutes } from '../../shared/kit.js'
 import { notificationViewPage as page } from './page.js'
@@ -19,11 +20,59 @@ import * as certification from '../../services/certification-purposes/index.js'
 import { cphApplies } from '../cph-number/controller.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import * as ports from '../../services/ports/index.js'
+import { obligations as modelObligations } from '../../model/obligations/obligations.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
 
 const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
+
+const modelObligationByName = new Map(
+  modelObligations.map((obligation) => [obligation.name, obligation])
+)
+
+const metadataWhitelistFor = (name) =>
+  modelObligationByName.get(name)?.applyTo?.metadata?.values ?? []
+
+const commodityInMetadata = (name, commoditySelection) =>
+  metadataWhitelistFor(name).includes(
+    commodities.commodityCodeFor(commoditySelection)
+  )
+
+const anyLineInMetadata = (answers, name) =>
+  []
+    .concat(answers.commodityLines ?? [])
+    .some((line) => commodityInMetadata(name, line?.commoditySelection))
+
+const regionCodeApplies = (answers, scope) =>
+  isModelB()
+    ? scope.has('regionOfOriginCode')
+    : answers.regionOfOriginCodeRequirement === 'yes'
+
+const purposeApplies = (answers, scope) =>
+  isModelB()
+    ? scope.has('purposeInInternalMarket')
+    : answers.reasonForImport === 'internalMarket'
+
+const transitedCountriesApplies = (answers, scope) =>
+  isModelB()
+    ? scope.has('transitedCountries')
+    : transportReference.overlandMeans().includes(answers.meansOfTransport)
+
+const unweanedGate = (answers) =>
+  isModelB()
+    ? anyLineInMetadata(answers, 'containsUnweanedAnimals')
+    : unweanedApplies(answers)
+
+const cphGate = (answers) =>
+  isModelB()
+    ? anyLineInMetadata(answers, 'countyParishHoldingCph')
+    : cphApplies(answers)
+
+const packagesGate = (commoditySelection) =>
+  isModelB()
+    ? commodityInMetadata('numberOfPackages', commoditySelection)
+    : packagesApply(commoditySelection)
 
 const withChange = (href) => `${href}?change=1`
 
@@ -95,7 +144,7 @@ const partyRow = (key, party, obligationId, visuallyHiddenText = null) => {
   }
 }
 
-const importDetailsCard = (answers) => ({
+const importDetailsCard = (answers, scope) => ({
   title: 'Import details',
   rows: [
     row(
@@ -108,7 +157,7 @@ const importDetailsCard = (answers) => ({
       YES_NO_LABEL[answers.regionOfOriginCodeRequirement] ?? '',
       'regionOfOriginCodeRequirement'
     ),
-    ...(answers.regionOfOriginCodeRequirement === 'yes'
+    ...(regionCodeApplies(answers, scope)
       ? [
           row(
             'Region of origin code',
@@ -125,7 +174,7 @@ const importDetailsCard = (answers) => ({
   ]
 })
 
-const additionalAnimalDetailsCard = (answers) => ({
+const additionalAnimalDetailsCard = (answers, scope) => ({
   title: 'Additional animal details',
   rows: [
     row(
@@ -133,7 +182,7 @@ const additionalAnimalDetailsCard = (answers) => ({
       certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
       'animalsCertifiedFor'
     ),
-    ...(unweanedApplies(answers)
+    ...(unweanedGate(answers)
       ? [
           row(
             'Includes unweaned animals',
@@ -147,7 +196,7 @@ const additionalAnimalDetailsCard = (answers) => ({
       importReasonPurpose.reasonLabel(answers.reasonForImport) ?? '',
       'reasonForImport'
     ),
-    ...(answers.reasonForImport === 'internalMarket'
+    ...(purposeApplies(answers, scope)
       ? [
           row(
             'Purpose in the market',
@@ -250,7 +299,7 @@ const speciesCards = (answers) =>
         readOnlyRow('Common name', entry.commoditySelection),
         readOnlyRow('Species', speciesText(entry)),
         readOnlyRow('Number of animals', entry.numberOfAnimalsQuantity),
-        ...(packagesApply(entry.commoditySelection)
+        ...(packagesGate(entry.commoditySelection)
           ? [readOnlyRow('Number of packages', entry.numberOfPackages)]
           : [])
       ],
@@ -258,7 +307,7 @@ const speciesCards = (answers) =>
     }
   })
 
-const arrivalDetailsCard = (answers) => ({
+const arrivalDetailsCard = (answers, scope) => ({
   title: 'Arrival details',
   rows: [
     row(
@@ -272,7 +321,7 @@ const arrivalDetailsCard = (answers) => ({
       'arrivalDateAtPort'
     ),
     row('Means of transport', answers.meansOfTransport, 'meansOfTransport'),
-    ...(transportReference.overlandMeans().includes(answers.meansOfTransport)
+    ...(transitedCountriesApplies(answers, scope)
       ? [
           row(
             'Countries that the consignment will travel through',
@@ -297,7 +346,19 @@ const arrivalDetailsCard = (answers) => ({
   ]
 })
 
-const activeTransporter = (answers) => {
+const activeTransporter = (answers, scope) => {
+  if (isModelB()) {
+    if (scope.has('commercialTransporter')) {
+      return {
+        party: answers.commercialTransporter,
+        id: 'commercialTransporter'
+      }
+    }
+    if (scope.has('privateTransporter')) {
+      return { party: answers.privateTransporter, id: 'privateTransporter' }
+    }
+    return null
+  }
   if (answers.transporterType === 'Commercial') {
     return { party: answers.commercialTransporter, id: 'commercialTransporter' }
   }
@@ -324,8 +385,8 @@ const transporterAddressRow = (party, id) => {
   }
 }
 
-const transportDetailsCard = (answers) => {
-  const active = activeTransporter(answers)
+const transportDetailsCard = (answers, scope) => {
+  const active = activeTransporter(answers, scope)
   return {
     title: 'Transport details',
     rows: [
@@ -373,7 +434,7 @@ const rolesAndAddressesCard = (answers) => ({
       answers.placeOfDestination,
       'placeOfDestination'
     ),
-    ...(cphApplies(answers)
+    ...(cphGate(answers)
       ? [
           row(
             'County Parish Holding number (CPH)',
@@ -428,17 +489,20 @@ const documentsCard = (answers) => {
   }
 }
 
-export const buildSections = (answers) => {
+export const buildSections = (answers, scope) => {
   const species = speciesCards(answers)
   const documents = documentsCard(answers)
   return [
     {
       heading: '1. About the consignment',
       groups: [
-        { heading: 'Consignment details', cards: [importDetailsCard(answers)] },
+        {
+          heading: 'Consignment details',
+          cards: [importDetailsCard(answers, scope)]
+        },
         {
           heading: 'Commodity details',
-          cards: [additionalAnimalDetailsCard(answers)]
+          cards: [additionalAnimalDetailsCard(answers, scope)]
         },
         ...(species.length ? [{ heading: 'Species', cards: species }] : [])
       ]
@@ -448,7 +512,10 @@ export const buildSections = (answers) => {
       groups: [
         {
           heading: null,
-          cards: [arrivalDetailsCard(answers), transportDetailsCard(answers)]
+          cards: [
+            arrivalDetailsCard(answers, scope),
+            transportDetailsCard(answers, scope)
+          ]
         }
       ]
     },
@@ -472,19 +539,19 @@ export const buildSections = (answers) => {
   ]
 }
 
-const renderCya = (h, journey) =>
+const renderCya = (h, journey, scope) =>
   h.view(view, {
     pageTitle: 'Check your answers',
     heading: 'Check your answers',
     journeyStrip: journeyStrip(journey),
-    sections: buildSections(journey.answers),
+    sections: buildSections(journey.answers, scope),
     backLink: hubPath(),
     breadcrumbs: breadcrumbs('Check your answers')
   })
 
 const get = async (request, h) => {
-  const { journey } = await state.get(request, h)
-  return renderCya(h, journey)
+  const { journey, scope } = await state.get(request, h)
+  return renderCya(h, journey, scope)
 }
 
 const post = async (request, h) => {

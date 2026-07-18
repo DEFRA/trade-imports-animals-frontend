@@ -1,6 +1,7 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
+import { commodityCodeFor } from '../../services/commodities/index.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import { store } from '../../engine/store.js'
@@ -370,6 +371,62 @@ describe('#buildSections (check-answers GET)', () => {
       )
       expect(valueOf(card.rows, 'Consignor')).toBe('Not provided')
     })
+  })
+
+  // inc-024 — the CYA commodity gates (packages / unweaned / CPH) are dual-
+  // pathed: under MODEL=a they keep A's name-keyed whitelist condition; under
+  // MODEL=b they read B's obligation `.metadata.values` (CN codes) with A-name
+  // -> code normalisation. A's lists are narrow and name-keyed, B's are wide and
+  // code-keyed, but for the five selectable species (Cow/Horse/Cat/Dog/Fish) the
+  // extra B codes are unreachable, so A-gate and B-gate AGREE in every cell. This
+  // matrix drives each species under both models and asserts equality so a future
+  // divergence (a selectable species reaching a B-only code) fails loudly. Env
+  // hygiene: process.env.MODEL saved/restored.
+  describe('commodity-gate render matrix — A condition vs B metadata agree per selectable species', () => {
+    let savedModel
+    beforeEach(() => {
+      savedModel = process.env.MODEL
+    })
+    afterEach(() => {
+      if (savedModel === undefined) delete process.env.MODEL
+      else process.env.MODEL = savedModel
+    })
+
+    const gatesFor = async (model, commodity) => {
+      process.env.MODEL = model
+      const sections = await sectionsFor({
+        commodityLines: [{ commoditySelection: commodity }]
+      })
+      const allKeys = keysOf(rowsOf(sections))
+      const speciesCard = cardByTitle(
+        sections,
+        `${commodity} (${commodityCodeFor(commodity)})`
+      )
+      return {
+        packages: keysOf(speciesCard.rows).includes('Number of packages'),
+        unweaned: allKeys.includes('Includes unweaned animals'),
+        cph: allKeys.includes('County Parish Holding number (CPH)')
+      }
+    }
+
+    const MATRIX = [
+      { commodity: 'Cow', packages: true, unweaned: true, cph: true },
+      { commodity: 'Horse', packages: true, unweaned: true, cph: false },
+      { commodity: 'Cat', packages: true, unweaned: false, cph: false },
+      { commodity: 'Dog', packages: true, unweaned: false, cph: false },
+      { commodity: 'Fish', packages: false, unweaned: false, cph: false }
+    ]
+
+    it.each(MATRIX)(
+      'Should gate packages/unweaned/CPH identically under both models for $commodity',
+      async ({ commodity, packages, unweaned, cph }) => {
+        const underB = await gatesFor('b', commodity)
+        expect(underB).toEqual({ packages, unweaned, cph })
+
+        const underA = await gatesFor('a', commodity)
+        expect(underA).toEqual(underB)
+      }
+    )
   })
 
   describe('POST navigation', () => {
