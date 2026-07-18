@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
@@ -243,5 +243,99 @@ describe('animal identification — the single card-per-species surface (inc-063
       })
       expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
     })
+  })
+
+  // inc-019 — the identifier-field render is dual-pathed: under MODEL=a the
+  // controller reads A's gate AST (activatedBy.includes / notInUnionOf); under
+  // MODEL=b it reads B's `.metadata.values` (the coverage-gated sidecar),
+  // normalising the selected commodity NAME to a CN code via commodityCodeFor
+  // before comparing. This is the whitelist-membership question at the
+  // rendering layer (inc-002's open thread). A's lists are NAME-keyed and
+  // narrower ('Cow' only for earTag); B's are CODE-keyed and wider (adds Pig /
+  // Sheep / Goats). The extra B codes are NOT reachable from the five
+  // selectable species (Cow/Horse/Cat/Dog/Fish), so A-render and B-render AGREE
+  // in every cell — the raw-list divergence is masked by the selectable
+  // vocabulary. This block asserts that agreement across the full 5×fields
+  // matrix so a future divergence (a new selectable species that reaches a
+  // B-only code) fails loudly. Env hygiene: process.env.MODEL saved/restored.
+  describe('identifier render matrix — A gate AST vs B metadata agree per selectable species', () => {
+    let savedModel
+    beforeEach(() => {
+      savedModel = process.env.MODEL
+    })
+    afterEach(() => {
+      if (savedModel === undefined) delete process.env.MODEL
+      else process.env.MODEL = savedModel
+    })
+
+    const speciesLine = (commoditySelection, speciesSelection) => ({
+      commoditySelection,
+      speciesSelection,
+      numberOfPackages: '',
+      numberOfAnimalsQuantity: ''
+    })
+
+    const renderFor = async (model, commodity, species) => {
+      process.env.MODEL = model
+      const [card] = await viewCards({
+        commodityLines: [speciesLine(commodity, species)]
+      })
+      return {
+        fieldIds: card.fields.map((field) => field.id),
+        showAddress: card.showAddress
+      }
+    }
+
+    const MATRIX = [
+      {
+        commodity: 'Cow',
+        species: '1148346',
+        fieldIds: [
+          'animalIdentifierPassport-0',
+          'animalIdentifierTattoo-0',
+          'animalIdentifierEarTag-0'
+        ],
+        showAddress: false
+      },
+      {
+        commodity: 'Horse',
+        species: '822332',
+        fieldIds: ['animalIdentifierPassport-0', 'horseName-0'],
+        showAddress: false
+      },
+      {
+        commodity: 'Cat',
+        species: '923501',
+        fieldIds: ['animalIdentifierPassport-0', 'animalIdentifierTattoo-0'],
+        showAddress: true
+      },
+      {
+        commodity: 'Dog',
+        species: '923502',
+        fieldIds: ['animalIdentifierPassport-0', 'animalIdentifierTattoo-0'],
+        showAddress: true
+      },
+      {
+        commodity: 'Fish',
+        species: '801204',
+        fieldIds: [
+          'animalIdentifierIdentificationDetails-0',
+          'animalIdentifierDescription-0'
+        ],
+        showAddress: false
+      }
+    ]
+
+    it.each(MATRIX)(
+      'Should render the same identifier fields under both models for $commodity',
+      async ({ commodity, species, fieldIds, showAddress }) => {
+        const rendered = await renderFor('b', commodity, species)
+        expect(rendered.fieldIds).toEqual(fieldIds)
+        expect(rendered.showAddress).toBe(showAddress)
+
+        const underA = await renderFor('a', commodity, species)
+        expect(rendered).toEqual(underA)
+      }
+    )
   })
 })

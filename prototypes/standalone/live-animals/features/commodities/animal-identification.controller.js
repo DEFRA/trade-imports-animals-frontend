@@ -1,6 +1,7 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { includesUnion } from '../../engine/evaluate/predicate.js'
+import { isModelB } from '../../engine/model-flag.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
@@ -16,6 +17,7 @@ import {
   horseName,
   permanentAddress
 } from './obligations.js'
+import { obligations as modelObligations } from '../../model/obligations/obligations.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification`
@@ -39,8 +41,27 @@ export const animalIdentifierSummary = (unit) => {
   return parts.length ? parts.join(', ') : 'No identifier provided'
 }
 
+const modelObligationByName = new Map(
+  modelObligations.map((obligation) => [obligation.name, obligation])
+)
+
+const metadataWhitelistFor = (obligation) =>
+  modelObligationByName.get(obligation.id)?.applyTo?.metadata?.values ?? []
+
+const metadataAllowListApplies = (obligation, commodity) =>
+  metadataWhitelistFor(obligation).includes(
+    commodities.commodityCodeFor(commodity)
+  )
+
+const metadataFallbackApplies = (obligation, commodity) =>
+  !metadataWhitelistFor(obligation).includes(
+    commodities.commodityCodeFor(commodity)
+  )
+
 const typeApplies = (obligation, commodity) =>
-  obligation.activatedBy.includes.includes(commodity)
+  isModelB()
+    ? metadataAllowListApplies(obligation, commodity)
+    : obligation.activatedBy.includes.includes(commodity)
 
 const TYPE_FIELDS = [
   {
@@ -65,7 +86,9 @@ const TYPE_FIELDS = [
 ]
 
 const fallbackApplies = (obligation, commodity) =>
-  !includesUnion(obligation.activatedBy.notInUnionOf).includes(commodity)
+  isModelB()
+    ? metadataFallbackApplies(obligation, commodity)
+    : !includesUnion(obligation.activatedBy.notInUnionOf).includes(commodity)
 
 const FALLBACK_FIELDS = [
   {
@@ -129,7 +152,9 @@ const scopedFields = (commodity) => [
 ]
 
 const permanentAddressApplies = (commodity) =>
-  permanentAddress.activatedBy.includes.includes(commodity)
+  isModelB()
+    ? metadataAllowListApplies(permanentAddress, commodity)
+    : permanentAddress.activatedBy.includes.includes(commodity)
 
 const identifierChecksFor = (commodity, index) =>
   compose(

@@ -1261,3 +1261,63 @@ identical readiness. The oracle's behavioural axes filter both keys via
 `MODEL=b` the whole live-animals suite is now 1211 passed / 0 failed — the last two
 `MODEL=b` failures cleared. Oracle stays zero behavioural divergence; the raw-scope
 D7/D8 test stays green.
+
+## 21. Leak B fixed — the identifier-render gate-AST read re-pointed to B's `.metadata` · `features/commodities/animal-identification.controller.js` · `EUDPA-288` inc-019
+
+**The leak.** `animal-identification.controller.js` decided which identifier fields
+to render per commodity by reaching PAST the barrel into A's engine internals and
+gate ASTs: it imported `includesUnion` from `engine/evaluate/predicate.js` (an A engine
+internal deleted at M4) and read `obligation.activatedBy.includes` / `.notInUnionOf`
+directly off A's feature obligations (`typeApplies`, `fallbackApplies`, the
+`permanentAddress` check). The AST read was never a designed API; B's `.metadata`
+sidecar (`allowListed`/`notInUnionOf` pin the whitelist on `.metadata.values`) is —
+it is coverage-gated by `obligations/coverage.test.js`.
+
+**The re-point (dual-pathed).** The three predicates now dispatch on `isModelB()`:
+
+- under default `a` they keep A's AST reads verbatim (byte-identical; the a-path
+  imports — `includesUnion` + A's obligations — are retained for M4 to remove);
+- under `b` they read B's obligation (looked up by `name`, which `inc-007` set == A's
+  obligation id) and test membership against `applyTo.metadata.values`.
+
+`metadataAllowListApplies` = `values.includes(code)`; `metadataFallbackApplies` =
+`!values.includes(code)` (B's `notInUnionOf` pins the derived union on `.metadata.values`).
+B's obligations are imported by name from `model/obligations/obligations.js` (UI→model,
+the allowed contamination direction — the purity gate is untouched).
+
+**★ The name→code normalisation (subtlety 1).** The controller compares a selected
+`commodity` that is a NAME (`'Cow'`, from `services/commodities` `COMMODITY_OPTIONS`);
+B's `metadata.values` are CN CODES (`'0102'`). So the b-path normalises name→code via
+`commodities.commodityCodeFor(name)` before comparing. A→B only (code→name is lossy —
+`Cat`/`Dog` both map to `01061900`), which is fine here: the controller only ever holds
+a NAME and asks "does this render?".
+
+**★ The A-vs-B render matrix (subtlety 2 — inc-002's open whitelist thread, ANSWERED).**
+The raw whitelists genuinely DIFFER: A's are NAME-keyed and narrow (`earTag`=`['Cow']`,
+`tattoo`=`['Cat','Dog','Cow']`); B's are CODE-keyed and wide (`earTag` adds Pig/Sheep/
+Goats `['0102','0103','010410','010420']`; `tattoo` adds Pig). But for the FIVE
+selectable species (Cow/Horse/Cat/Dog/Fish → codes `0102/0101/01061900/01061900/0301`)
+the extra B codes are UNREACHABLE — no selectable species maps to `0103`/`010410`/
+`010420`. So A-render and B-render **AGREE in every cell** of the 5×6 matrix
+(passport/tattoo/earTag/identificationDetails/description/permanentAddress):
+
+| species (code) | passport | tattoo | earTag | idDetails | description | permAddr |
+| -------------- | -------- | ------ | ------ | --------- | ----------- | -------- |
+| Cow (0102)     | ✓        | ✓      | ✓      | –         | –           | –        |
+| Horse (0101)   | ✓        | –      | –      | –         | –           | –        |
+| Cat (01061900) | ✓        | ✓      | –      | –         | –           | ✓        |
+| Dog (01061900) | ✓        | ✓      | –      | –         | –           | ✓        |
+| Fish (0301)    | –        | –      | –      | ✓         | ✓           | –        |
+
+(horseName renders for Horse only; it is a TYPE_FIELD but outside the six-identifier
+matrix.) **This is the clean outcome inc-002 predicted (correction 2): the raw-list
+divergence is masked by the selectable vocabulary — no PO/Sam ruling needed.** The
+divergence is dormant, not resolved: add a selectable species that maps to a B-only
+code (a pig/sheep/goat CN) and A would under-render earTag/tattoo where B renders it.
+Asserted as a regression guard by `animal-identification.controller.test.js`'s render-
+matrix block (drives each species under `b` AND `a`, asserts equality) so any future
+selectable-vocabulary widening that reaches a B-only code fails loudly.
+
+**Result.** Default `a` byte-identical (84 files / 1211 passed / 11 skipped baseline;
++5 from the new render-matrix cases → 1216 passed). Under `MODEL=b` the whole suite is
+1216 passed / 0 failed. Env hygiene: `process.env.MODEL` saved/restored in the new test.
