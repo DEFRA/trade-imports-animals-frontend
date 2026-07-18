@@ -1,5 +1,4 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
-import { SUBMITTED } from '../../engine/persistence/records.js'
 import * as state from '../../engine/index.js'
 import { base, open } from '../../shared/kit.js'
 import { dashboardPage } from '../dashboard/page.js'
@@ -16,7 +15,7 @@ const dateText = (value) =>
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (journey.status !== SUBMITTED) return h.redirect(hubPath())
+  if (journey.status !== state.SUBMITTED) return h.redirect(hubPath())
   return h.view(view, {
     ...base('Import notification submitted'),
     referenceNumber: journey.journeyId,

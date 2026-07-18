@@ -1,5 +1,4 @@
 import { pagePath, TEMPLATES } from '../../config.js'
-import { SUBMITTED } from '../../engine/persistence/records.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
@@ -44,7 +43,7 @@ const render = (h, journey, values, errors = {}) =>
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  if (journey.status === SUBMITTED) {
+  if (journey.status === state.SUBMITTED) {
     return h.redirect(pagePath(confirmationPage.slug))
   }
   return render(h, journey, { declaration: answers.declaration ?? '' })
@@ -52,7 +51,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (journey.status === SUBMITTED) {
+  if (journey.status === state.SUBMITTED) {
     return h.redirect(pagePath(confirmationPage.slug))
   }
 

@@ -1321,3 +1321,27 @@ selectable-vocabulary widening that reaches a B-only code fails loudly.
 **Result.** Default `a` byte-identical (84 files / 1211 passed / 11 skipped baseline;
 +5 from the new render-matrix cases → 1216 passed). Under `MODEL=b` the whole suite is
 1216 passed / 0 failed. Env hygiene: `process.env.MODEL` saved/restored in the new test.
+
+## 22. Leaks E + F — barrel-routing tidy · `EUDPA-288` inc-020
+
+**Leak E — `SUBMITTED` routed through the barrel (pure re-route).** Four sites imported
+the persistence status constant `SUBMITTED` (`export const SUBMITTED = 'submitted'` in
+`engine/persistence/records.js`) by reaching PAST the barrel into the internal path:
+`features/confirmation/controller.js`, `features/dashboard/controller.js`,
+`features/declaration/controller.js`, `shared/kit.js`. It is a status constant compared
+against `journey.status` — NOT model-coupled (no A-vs-B, identical under both flags), so
+this is a seam tidy, not a dual-path. `engine/index.js` now re-exports it
+(`export { SUBMITTED } from './persistence/records.js'`). confirmation + declaration
+already `import * as state from '../../engine/index.js'`, so they now read `state.SUBMITTED`
+and drop the internal import; dashboard + kit (no `* as state`) take a named
+`import { SUBMITTED } from '../../engine/index.js'`. Byte-identical.
+
+**Leak F — confirmed clean, no change.** `hasCommittedNotificationAnswers` (from
+`flow/entry-guard.js`) is imported by `features/import-type-filter/controller.js` and
+`features/origin/controller.js`. This is NOT an architectural leak: `entry-guard.js` was
+re-pointed to B's manifest at inc-017 and is model-clean (imports `obligationByName` +
+`SYSTEM_POPULATED` from the flow-layer `obligation-source.js`; no A-vs-B branching, no
+direct model-manifest read), and `hasCommittedNotificationAnswers` is a pure flow-layer
+predicate over `answers`. Both controllers already legitimately depend on the flow layer
+(`flow/run.js`, `flow/run-state.js`), so this is a normal features→flow dependency on the
+same seam the hub uses. No cleaner seam to route through; left as-is.

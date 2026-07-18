@@ -12,3 +12,4 @@ export {
 } from './write.js'
 export { collectionView } from './evaluate/collection-view.js'
 export { collectionCapAt } from './evaluate/cardinality.js'
+export { SUBMITTED } from './persistence/records.js'

@@ -1,5 +1,5 @@
 import { BASE, hubPath, pagePath, startPath, TEMPLATES } from '../../config.js'
-import { SUBMITTED } from '../../engine/persistence/records.js'
+import { SUBMITTED } from '../../engine/index.js'
 import {
   amendJourney,
   listKnownJourneys,
