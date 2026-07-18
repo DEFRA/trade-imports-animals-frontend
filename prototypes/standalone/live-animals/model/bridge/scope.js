@@ -4,8 +4,9 @@
  * `makeScopeFromB(answers)` is a drop-in for `engine/read.js`'s
  * `makeScope(answers)` (PLAN §3, M2 inc-009): same four members, same
  * types, so at cutover (inc-012) A's controllers/hub consume B's scope
- * through the interface they use today. Dark — nothing is wired to A's
- * runtime yet.
+ * through the interface they use today. Wired behind `MODEL=b` at
+ * inc-012 — `engine/read.js`'s `makeScope` dispatches here when the flag
+ * is 'b'; A's engine (`makeScopeA`) stays the default.
  *
  * The load-bearing member is `inScope: Set<pathKey>`. A builds it in
  * `engine/evaluate/reconcile.js` by walking its obligation forest and
@@ -40,7 +41,7 @@ import {
 import { pathKey, valueAt } from '../../lib/path.js'
 import { walk } from '../../registry.js'
 import { isAnswered } from '../../lib/answered.js'
-import { makeScope } from '../../engine/read.js'
+import { makeScopeA } from '../../engine/read.js'
 
 const evaluator = createObligationEvaluator()
 
@@ -109,7 +110,7 @@ const projectInScope = (answers) => {
  * Shape-identical to `engine/read.js`'s `makeScope`.
  *
  * `readyForCheckYourAnswers` is deferred to A's boot-injected fn (via
- * A's `makeScope`) for the dark phase — status derivation from B's
+ * A's `makeScopeA`) for the dark phase — status derivation from B's
  * `journeyState`/`containerStatus` is inc-017a's job, and deferring
  * keeps the shape identical without pulling status derivation forward.
  *
@@ -123,6 +124,6 @@ export const makeScopeFromB = (answers) => {
     inScope,
     has: (id) => inScope.has(id),
     answered: (id) => anyInstanceAnswered(answers, id),
-    readyForCheckYourAnswers: makeScope(answers).readyForCheckYourAnswers
+    readyForCheckYourAnswers: makeScopeA(answers).readyForCheckYourAnswers
   }
 }

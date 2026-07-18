@@ -628,3 +628,86 @@ registers, not the oracle; see `DIVERGENCE-REGISTER.md`.
 77 -> 78 test files, 1147 -> 1159 passed (+12 oracle tests), 11 skipped
 unchanged. One-line `export` on `reachability.js` (additive; its tests
 unaffected). prettier + eslint + purity gate clean.
+
+## 10. The `MODEL=a|b` flag — first wiring of B into A's runtime · `engine/model-flag.js` · `EUDPA-288` inc-012
+
+**What this is.** The dark phase ends here. `engine/read.js`'s `makeScope` — the
+sole `scope`-producing seam behind the 9-fn barrel — now dispatches through
+either A's engine or B's bridge under a runtime flag. This is the first
+increment where B's model informs A's live scope reads.
+
+**The flag.** `engine/model-flag.js` mirrors `services/mode.js`:
+`model() => process.env.MODEL ?? 'a'` and `isModelB() => model() === 'b'`.
+**`a` is the default** — with `MODEL` unset the behaviour is byte-identical to
+A's today. That is the reversibility guarantee.
+
+**The dual-path.** A's original `makeScope` body is preserved verbatim as the
+exported `makeScopeA` (pure, always A). A thin dispatcher replaces `makeScope`:
+
+```
+export const makeScope = (answers) =>
+  isModelB() ? makeScopeFromB(answers) : makeScopeA(answers)
+```
+
+Every consumer (controllers via the barrel, `engine/write.js`, `flow/`,
+`analysis/simulate.js`) reaches `scope` through this one function, so the flag
+routes all of them at once. `get(request, h)` is unchanged in structure — it
+still builds `{ journey, answers, scope }` from A's session/journey layer
+(`currentJourney`); only the `scope` member now flows through the dispatcher, so
+under `b` the journey+answers are A's and the scope is B-derived.
+
+**Recursion break.** `model/bridge/scope.js`'s `makeScopeFromB` computes
+`readyForCheckYourAnswers` by delegating to A's engine. It previously imported
+`makeScope`; under the flag that would self-recurse when `MODEL=b`
+(`makeScope → makeScopeFromB → makeScope → …`). Re-pointed to `makeScopeA`
+(A's pure path) — semantically identical (`readyForCheckYourAnswers` was always
+A's boot-injected fn) and recursion-free. This introduces an
+`engine/read.js ⇄ model/bridge/scope.js` ESM cycle, safe because every
+cross-reference is call-time, never module-load-time.
+
+**The other 7 barrel fns stay A-only.** `commit`, `collectionView`,
+`collectionCapAt`, `append/update/remove/reconcile`, `submitJourney` keep A's
+implementation under both flags. Their write/purge logic is A's `reconcile` +
+`destroyWiped`; they call `makeScope` only to return the scope _view_, which now
+reflects the active model. inc-013+ reimplements each over B.
+
+**Purity gate.** Untouched — `obligation-purity.js` scans only
+`features/*/obligations.js`; the `engine → model/bridge` import is outside its
+remit.
+
+**Tests.** `engine/model-flag.test.js` (+7) proves both directions with strict
+`process.env.MODEL` hygiene (boot value captured, restored in `afterEach`, so no
+leak into other files in a reused worker process): the flag defaults to `a`;
+`makeScope` under unset/`a` is byte-identical to `makeScopeA`; under `b` it
+delegates verbatim to `makeScopeFromB`; and the flag flips the ruled c-017
+divergence (`regionOfOriginCode` gated out under A, retained under B). The full
+behavioural sweep stays the oracle's job — `makeScope`'s verbatim delegation
+transfers those guarantees. Verify (DEFAULT `a`): 78 -> 79 files, 1159 -> 1166
+passed, 11 skipped unchanged; purity + prettier + eslint clean.
+
+**Under `MODEL=b` the suite is NOT green yet (18 failures) — and that is
+expected at inc-012, not a regression.** Two kinds: (i) _differential tests_
+(`model-equivalence.test.js`, `model/bridge/scope.test.js`) that use `makeScope`
+as their A reference — now that it dispatches, `MODEL=b` collapses the A-vs-B
+diff to zero. These should re-point their A reference to `makeScopeA` to stay
+flag-independent (a test-repoint for inc-013+ / the oracle owner; NOT done here
+to avoid editing the safety net mid-increment). (ii) _scope-driven behavioural
+tests_ (`read.test.js`, `resume-self-heal`, `gates`, `task-rows`,
+`check-answers`, `reachability`, `t2-hub-copy`) surfacing B's not-yet-applied
+divergences — c-017 `regionOfOriginCode` retained, B's system fields
+(`poApprovedReferenceNumber`, `responsiblePersonForLoad`) now in scope, documents
+D1 topology — plus the fact that status derivation, `flow/`, and the write/purge
+path are still A. Green-under-both-flags is an **end-of-M3 target** (inc-017a),
+not inc-012's.
+
+**For inc-013 (commit over B).** While both halves are half-wired, the write
+path is fully A: `engine/write.js`'s `commit`/`append/*` run A's `reconcile` +
+`destroyWiped` for mutation, then call `makeScope` only for the returned view.
+So under `MODEL=b` today, **B's evaluator purge never runs** — A destroys
+out-of-scope data, and the B-derived scope view is computed _after_ A's wipe.
+The one place this shows: on a region-gate-off commit, A destroys
+`regionOfOriginCode` (A wipes) but the B scope view reports it in scope (c-017,
+B retains) — a transient view/data mismatch that disappears once inc-013 moves
+the purge onto B _and_ inc-017 applies the c-017 "fix B". inc-013 must decide
+whether `commit` under `b` runs B's purge instead of A's `destroyWiped`, and
+must re-point its own `makeScope` reads consistently.
