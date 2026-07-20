@@ -1,7 +1,7 @@
 import { currentJourney, saveJourneyAnswers } from './journey.js'
 import { collectionCapAt } from './evaluate/cardinality.js'
 import { makeScope } from './read.js'
-import { wipeSetFromB } from '../model/bridge/purge.js'
+import { wipeSet } from '../model/bridge/purge.js'
 import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 
@@ -9,7 +9,7 @@ const isValidIndex = (index, list) =>
   Number.isInteger(index) && index >= 0 && index < list.length
 
 const purge = (answers) => {
-  destroyWiped(answers, wipeSetFromB(answers))
+  destroyWiped(answers, wipeSet(answers))
 }
 
 export const commit = async (request, h, patch) => {

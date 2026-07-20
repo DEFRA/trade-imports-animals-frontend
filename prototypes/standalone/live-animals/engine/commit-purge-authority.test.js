@@ -5,7 +5,7 @@ import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { wipeSetFromB } from '../model/bridge/purge.js'
+import { wipeSet } from '../model/bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // commit's wipe authority is B's evaluator purge (projected to A pathKeys),
@@ -50,9 +50,9 @@ describe('commit — B-authoritative purge', () => {
     )
     // c-017 fixed at inc-016a: B gates regionOfOriginCode out of scope and its
     // purge set destroys the stored value.
-    expect(
-      wipeSetFromB({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })
-    ).toContain('regionOfOriginCode')
+    expect(wipeSet({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })).toContain(
+      'regionOfOriginCode'
+    )
     expect(answers.regionOfOriginCode).toBeUndefined()
     expect((await durable()).regionOfOriginCode).toBeUndefined()
   })
@@ -60,7 +60,7 @@ describe('commit — B-authoritative purge', () => {
   it("Should destroy exactly B's evaluator purge set", async () => {
     await seed(PURPOSE_ANSWERED)
     const merged = { ...PURPOSE_ANSWERED, ...TURN_PURPOSE_GATE_OFF }
-    const expectedWipe = wipeSetFromB(merged)
+    const expectedWipe = wipeSet(merged)
 
     const { answers } = await commit(
       buildRequest(),

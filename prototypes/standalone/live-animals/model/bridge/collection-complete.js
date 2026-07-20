@@ -1,37 +1,32 @@
 /**
- * Bridge — B's per-instance completeness -> collectionView's `complete`.
+ * Per-instance completeness -> collectionView's `complete`.
  *
- * collectionView reads A's positional storage for a collection's entries;
- * inc-014 dual-paths ONLY the per-entry `complete` flag. entries / index /
- * path stay A-side (A owns storage under both flags — inc-012, inc-013), so
- * an empty or partial A entry is never lost; only its completeness follows B.
+ * collectionView reads positional storage for a collection's entries; this
+ * module supplies the per-entry `complete` flag. entries / index / path stay
+ * positional, so an empty or partial entry is never lost; only its completeness
+ * comes from the evaluator.
  *
- * Instance identity is positional (A's array index), the same under both
- * flags. `instanceFulfilmentId` maps an A positional entry to B's composite
- * fulfilmentId prefix with the bridge's existing segment machinery, exactly
- * as scope.js / purge.js convert composite <-> positional.
+ * Instance identity is positional (the array index). `instanceFulfilmentId`
+ * maps a positional entry to its composite fulfilmentId prefix with the segment
+ * machinery, exactly as scope.js / purge.js convert composite <-> positional.
  *
- * `entryCompleteFromB` reproduces B's `containerStatus`-FULFILLED verdict
- * scoped to one instance: the instance is complete iff B's evaluator finds
- * no unsatisfied mandatory concern beneath it — a mandatory leaf record left
- * unfulfilled (`effectiveStatus` semantics: a record's `status`, defaulting
- * to mandatory), or an unmet per-instance group invariant
- * (`groupInvariantErrors`, the `requires.anyOf` at-least-one rule).
+ * `entryComplete` reproduces the `containerStatus`-FULFILLED verdict scoped to
+ * one instance: the instance is complete iff the evaluator finds no unsatisfied
+ * mandatory concern beneath it — a mandatory leaf record left unfulfilled
+ * (`effectiveStatus` semantics: a record's `status`, defaulting to mandatory),
+ * or an unmet per-instance group invariant (`groupInvariantErrors`, the
+ * `requires.anyOf` at-least-one rule).
  *
- * Structural B-only obligations (commodityType c-037, the two system fields)
- * are declared in B but
- * not in A's model, so the model-equivalence oracle filters them out of every
- * axis (`isStructuralBOnly`). The completeness axis mirrors that: A's
- * entryComplete never sees them, so B must not let them mark an instance
- * incomplete — otherwise every commodity line would read incomplete under `b`
- * (A carries no `commodityType` value at all).
+ * Structural placeholder obligations (commodityType c-037, the two system
+ * fields) are declared in the manifest but no page collects them, so they must
+ * not mark an instance incomplete — otherwise every commodity line would read
+ * incomplete (no `commodityType` value is ever stored).
  *
- * Known structural divergence (a find, not repaired): B infers instances from
- * leaf composite prefixes, so a fully-EMPTY nested instance (a unit with no
- * stored leaf) vanishes on round-trip and B cannot flag its unmet `anyOf`.
- * A, reading its own array, still shows that entry and marks it incomplete.
- * A fully-empty TOP-LEVEL entry is caught here via its unconditional
- * mandatory field leaves, which A and B agree on. See DESIGN-DELTA.md §12.
+ * Known structural divergence: instances are inferred from leaf composite
+ * prefixes, so a fully-EMPTY nested instance (a unit with no stored leaf)
+ * vanishes on round-trip and its unmet `anyOf` cannot be flagged. A fully-empty
+ * TOP-LEVEL entry is caught here via its unconditional mandatory field leaves.
+ * See DESIGN-DELTA.md §12.
  */
 
 import { obligations } from '../obligations/obligations.js'
@@ -51,7 +46,7 @@ const evaluate = (answers) => evaluator.evaluate(answersToFulfilments(answers))
 
 const byAName = new Map(obligations.map((o) => [o.name, o]))
 
-const STRUCTURAL_B_ONLY = new Set([
+const STRUCTURAL_PLACEHOLDERS = new Set([
   'commodityType',
   'poApprovedReferenceNumber',
   'responsiblePersonForLoad'
@@ -86,16 +81,16 @@ const groupsFrom = (group) =>
   )
 
 /**
- * B's per-instance completeness for the A collection entry at
- * `collectionPath[index]`. True iff B's evaluator finds no unsatisfied
- * mandatory concern anywhere beneath the instance.
+ * Per-instance completeness for the collection entry at `collectionPath[index]`.
+ * True iff the evaluator finds no unsatisfied mandatory concern anywhere
+ * beneath the instance.
  *
- * @param {object} answers - A's nested answer POJO.
- * @param {Array<string|number>} collectionPath - A collection path.
+ * @param {object} answers - the nested answer POJO.
+ * @param {Array<string|number>} collectionPath - a collection path.
  * @param {number} index - positional entry index within that collection.
  * @returns {boolean}
  */
-export const entryCompleteFromB = (answers, collectionPath, index) => {
+export const entryComplete = (answers, collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
   const group = byAName.get(names[names.length - 1])
   if (!group) return true
@@ -103,7 +98,7 @@ export const entryCompleteFromB = (answers, collectionPath, index) => {
   const { obligations: implications, fulfilments } = evaluate(answers)
 
   for (const leaf of leavesUnder(group)) {
-    if (STRUCTURAL_B_ONLY.has(leaf.name)) continue
+    if (STRUCTURAL_PLACEHOLDERS.has(leaf.name)) continue
     const implication = implications[leaf.id]
     if (!implication?.inScope) continue
     const stored = fulfilments[leaf.id]
@@ -111,9 +106,9 @@ export const entryCompleteFromB = (answers, collectionPath, index) => {
       belongsToInstance(record.fulfilmentId, instanceId)
     )
     // An unconditional mandatory field leaf directly under this group is a
-    // concern for the instance even when B enumerated no record — an empty A
-    // entry has no B leaf storage, so B never sees the instance, but A still
-    // shows the entry and its mandatory fields are unfilled.
+    // concern for the instance even when the evaluator enumerated no record —
+    // an empty entry has no leaf storage, so the evaluator never sees the
+    // instance, but the entry still shows and its mandatory fields are unfilled.
     if (belonging.length === 0 && leaf.within === group && !leaf.applyTo) {
       if ((leaf.status ?? 'mandatory') === 'mandatory') {
         if (!isFulfilled(leaf.id, stored?.[instanceId])) return false

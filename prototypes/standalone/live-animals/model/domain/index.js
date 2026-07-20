@@ -89,9 +89,9 @@ import {
 //   accompanyingDocumentType           → document-types.documentTypes()
 //   accompanyingDocumentAttachmentType → document-types.attachmentTypes()
 // Left static (no MDM source): containsUnweanedAnimals, regionCodeRequirement
-//   (yes/no), commodityType (B-only placeholder set — A has no service for it).
+//   (yes/no), commodityType (system-populated placeholder — no service for it).
 // Address-block country sub-field validation is out of scope (not a top-level
-// enum entry; A renders it from countries.addressCountries()).
+// enum entry; rendered from countries.addressCountries()).
 import * as countries from '../../services/countries/index.js'
 import * as ports from '../../services/ports/index.js'
 import * as commodities from '../../services/commodities/index.js'

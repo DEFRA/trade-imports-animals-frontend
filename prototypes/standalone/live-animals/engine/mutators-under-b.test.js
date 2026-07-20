@@ -14,7 +14,7 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { readyForCheckYourAnswers } from '../flow/section-status.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
-import { wipeSetFromB } from '../model/bridge/purge.js'
+import { wipeSet } from '../model/bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // Mutator behaviour. A owns storage (positional array; B holds no instance
@@ -175,7 +175,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
           { commoditySelection: 'Cat', speciesSelection: '923501' }
         ]
       }
-      expect(wipeSetFromB(afterRemoval)).toContain('containsUnweanedAnimals')
+      expect(wipeSet(afterRemoval)).toContain('containsUnweanedAnimals')
 
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       const answers = await answersNow()

@@ -1,10 +1,9 @@
 import { currentJourney } from './journey.js'
-import { makeScopeFromB } from '../model/bridge/scope.js'
+import { makeScope } from '../model/bridge/scope.js'
 import { configureReadyForCheckYourAnswers } from './readiness-config.js'
 
 export { configureReadyForCheckYourAnswers }
-
-export const makeScope = (answers) => makeScopeFromB(answers)
+export { makeScope }
 
 const readViewOf = (journey) => ({
   journey,

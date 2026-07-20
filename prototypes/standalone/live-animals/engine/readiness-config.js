@@ -1,20 +1,14 @@
 /**
  * Boot-injected `readyForCheckYourAnswers` registry.
  *
- * Extracted from `engine/read.js` at inc-017a so BOTH scope builders can
- * consume the injected fn without importing each other: `makeScopeA`
- * (engine/read.js) and `makeScopeFromB` (model/bridge/scope.js) each call
- * `computeReadyForCheckYourAnswers` with their own `inScope`. Before this
- * split, `scope.js` imported `makeScopeA` from `read.js` purely to reach the
- * readiness value — a `read.js <-> scope.js` cycle inc-012/013 flagged for
- * M4. Housing the registry here severs that edge (only `read.js -> scope.js`
- * remains — a clean DAG).
+ * Housed here (not in `engine/read.js`) so `model/bridge/scope.js`'s `makeScope`
+ * can consume the injected fn without importing `read.js` — keeping the module
+ * graph a clean DAG (`read.js -> scope.js`, no cycle).
  *
  * The injected fn is `flow/section-status.js`'s `readyForCheckYourAnswers`
  * (wired in `routes.js` at boot), which rolls up the task rows through
- * `rowStatus`; under `MODEL=b` that dual-paths to `statusOfFromB`, so the
- * readiness value is B-derived on the `b` path without this module knowing
- * which model is live.
+ * `rowStatus` / `statusOf`, so the readiness value is derived without this
+ * module reaching back into the scope builder.
  */
 
 let readyForCheckYourAnswersFn = () => {

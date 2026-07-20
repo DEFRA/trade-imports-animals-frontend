@@ -1,15 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { collectionView } from '../../engine/evaluate/collection-view.js'
 import { collectionCapAt } from '../../engine/evaluate/cardinality.js'
-import { entryCompleteFromB } from './collection-complete.js'
+import { entryComplete } from './collection-complete.js'
 import { valueAt } from '../../lib/path.js'
 
-// B's per-instance completeness (entryCompleteFromB), pinned directly against B.
-// The A-vs-B oracle this file used to host (entryComplete diffed against
-// entryCompleteFromB) retired at inc-023 with zero behavioural divergence; the
-// expectations below are the B side of that agreement, now stated as B-only
-// facts. The two former "known divergences" are retained as B behaviour with
-// their DESIGN-DELTA.md §12 rationale so a regression fails loudly.
+// Per-instance completeness (entryComplete), pinned against the manifest. The
+// two known structural divergences are retained with their DESIGN-DELTA.md §12
+// rationale so a regression fails loudly.
 
 const address = {
   name: 'Owner',
@@ -34,17 +31,17 @@ const partialLine = { commoditySelection: 'Cow' }
 
 const emptyLine = {}
 
-const completeUnderB = (answers, collectionPath) => {
+const completeFlags = (answers, collectionPath) => {
   const entries = valueAt(answers, collectionPath) ?? []
   return entries.map((_entry, index) =>
-    entryCompleteFromB(answers, collectionPath, index)
+    entryComplete(answers, collectionPath, index)
   )
 }
 
-describe('collectionView `complete` — B per-instance completeness (inc-014)', () => {
+describe('collectionView `complete` — per-instance completeness', () => {
   it('reads a multi-line state — full / partial / empty', () => {
     const answers = { commodityLines: [completeLine, partialLine, emptyLine] }
-    expect(completeUnderB(answers, ['commodityLines'])).toEqual([
+    expect(completeFlags(answers, ['commodityLines'])).toEqual([
       true,
       false,
       false
@@ -66,7 +63,7 @@ describe('collectionView `complete` — B per-instance completeness (inc-014)', 
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    expect(completeUnderB(answers, path)).toEqual([true, true])
+    expect(completeFlags(answers, path)).toEqual([true, true])
   })
 
   it('entries / index / path stay A-side (positional storage)', () => {
@@ -97,7 +94,7 @@ describe('collectionView `complete` — B per-instance completeness (inc-014)', 
         }
       ]
     }
-    expect(completeUnderB(answers, ['commodityLines'])).toEqual([true])
+    expect(completeFlags(answers, ['commodityLines'])).toEqual([true])
   })
 
   it('a fully-empty nested unit vanishes from B — B reads complete', () => {
@@ -114,7 +111,7 @@ describe('collectionView `complete` — B per-instance completeness (inc-014)', 
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    expect(completeUnderB(answers, path)).toEqual([true])
+    expect(completeFlags(answers, path)).toEqual([true])
   })
 })
 

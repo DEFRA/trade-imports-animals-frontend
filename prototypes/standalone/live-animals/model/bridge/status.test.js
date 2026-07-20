@@ -12,7 +12,7 @@ import {
 } from '../../flow/section-status.js'
 import { answerSections } from '../../flow/flow.js'
 import {
-  statusOfFromB,
+  statusOf,
   NA,
   NOT_STARTED,
   IN_PROGRESS,
@@ -20,11 +20,8 @@ import {
   OPTIONAL
 } from './status.js'
 
-// The B-derived presentation rollup (statusOfFromB), pinned directly against B.
-// The A-vs-B oracle this file used to host (statusOfFromB diffed against A's
-// statusOf) retired at inc-023 with zero behavioural divergence (see
-// retrofit/DIVERGENCE-REGISTER.md); the expected statuses below are the B side
-// of that agreement, stated as literals so a regression fails loudly. The
+// The presentation rollup (statusOf), pinned against the manifest. The expected
+// statuses below are stated as literals so a regression fails loudly. The
 // concrete single-row walk (Not started → In progress → Completed) lives in
 // flow/task-rows.test.js; this file pins the whole row / section / readiness
 // rollup across representative journey states.
@@ -217,7 +214,7 @@ const cases = {
   }
 }
 
-describe('statusOfFromB — the B-derived presentation rollup', () => {
+describe('statusOf — the presentation rollup', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
@@ -231,7 +228,7 @@ describe('statusOfFromB — the B-derived presentation rollup', () => {
       it('rolls each task row up to the expected status', () => {
         const inScope = scope()
         expect(
-          taskRows.map((row) => statusOfFromB(rowParts(row), answers, inScope))
+          taskRows.map((row) => statusOf(rowParts(row), answers, inScope))
         ).toEqual(rows)
       })
 
@@ -239,7 +236,7 @@ describe('statusOfFromB — the B-derived presentation rollup', () => {
         const inScope = scope()
         expect(
           answerSections.map((section) =>
-            statusOfFromB(sectionObligationIds(section), answers, inScope)
+            statusOf(sectionObligationIds(section), answers, inScope)
           )
         ).toEqual(sections)
       })
@@ -251,7 +248,7 @@ describe('statusOfFromB — the B-derived presentation rollup', () => {
   )
 })
 
-describe('statusOfFromB — the commodities/identification facet split', () => {
+describe('statusOf — the commodities/identification facet split', () => {
   const inScope = new Set(['commodityLines'])
   const exceptIdentifiers = {
     collection: 'commodityLines',
@@ -299,12 +296,8 @@ describe('statusOfFromB — the commodities/identification facet split', () => {
 
   it('classifies each facet as B derives it', () => {
     for (const [answers, exceptStatus, onlyStatus] of facetCases) {
-      expect(statusOfFromB([exceptIdentifiers], answers, inScope)).toBe(
-        exceptStatus
-      )
-      expect(statusOfFromB([onlyIdentifiers], answers, inScope)).toBe(
-        onlyStatus
-      )
+      expect(statusOf([exceptIdentifiers], answers, inScope)).toBe(exceptStatus)
+      expect(statusOf([onlyIdentifiers], answers, inScope)).toBe(onlyStatus)
     }
   })
 })

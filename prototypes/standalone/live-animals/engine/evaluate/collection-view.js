@@ -1,6 +1,6 @@
 import { valueAt } from '../../lib/path.js'
 import { obligationByPath } from '../../flow/obligation-source.js'
-import { entryCompleteFromB } from '../../model/bridge/collection-complete.js'
+import { entryComplete } from '../../model/bridge/collection-complete.js'
 
 export const collectionView = (answers, collectionPath) => {
   const templatePath = collectionPath
@@ -18,5 +18,5 @@ export const collectionView = (answers, collectionPath) => {
 
 const completeAt = (obligation, answers, collectionPath, index) => {
   if (!obligation) return true
-  return entryCompleteFromB(answers, collectionPath, index)
+  return entryComplete(answers, collectionPath, index)
 }

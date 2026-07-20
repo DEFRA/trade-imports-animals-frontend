@@ -1,33 +1,24 @@
 /**
- * Bridge — B's obligation implications -> A's `scope` object.
+ * Project the obligation evaluator's implications into the `scope` object the
+ * controllers and hub consume — `makeScope(answers)`, four members.
  *
- * `makeScopeFromB(answers)` is a drop-in for `engine/read.js`'s
- * `makeScope(answers)` (PLAN §3, M2 inc-009): same four members, same
- * types, so at cutover (inc-012) A's controllers/hub consume B's scope
- * through the interface they use today. Wired behind `MODEL=b` at
- * inc-012 — `engine/read.js`'s `makeScope` dispatches here when the flag
- * is 'b'; A's engine (`makeScopeA`) stays the default.
- *
- * The load-bearing member is `inScope: Set<pathKey>`. A builds it in
- * `engine/evaluate/reconcile.js` by walking its obligation forest and
- * adding `pathKey(node.path)` for every in-scope node — a mix of:
+ * The load-bearing member is `inScope: Set<pathKey>` — one key for every
+ * in-scope node, a mix of:
  *   - bare top-level ids            `'countryOfOrigin'`
  *   - the group obligation node     `'commodityLines'`,
  *                                   `'commodityLines[0].animalIdentifiers'`
  *   - positional leaf paths         `'commodityLines[0].commoditySelection'`,
  *                                   `'commodityLines[0].animalIdentifiers[1].animalIdentifierPassport'`
- * A keys the group OBLIGATION node (once per parent instance), never a
- * bare group instance (`'commodityLines[0]'` is not a key).
+ * The group OBLIGATION node is keyed once per parent instance, never a bare
+ * group instance (`'commodityLines[0]'` is not a key).
  *
- * This module reproduces that exact set from B's evaluator output:
- * A's answers -> `answersToFulfilments` (inc-008, A->B vocab normalised)
- * -> `evaluate` -> project each in-scope implication back into A's
- * pathKey grammar with inc-008's composite->positional conversion.
+ * The set is built from the evaluator output: answers ->
+ * `answersToFulfilments` -> `evaluate` -> project each in-scope implication
+ * into the pathKey grammar (composite->positional conversion).
  *
- * Vocabulary does NOT bite here: inScope keys are obligation ids and
- * positional indices, never values, so the A->B normalisation that
- * `answersToFulfilments` applies to drive B's gates leaves the projected
- * keys A-vocab on both sides. See DESIGN-DELTA.md §8.
+ * Vocabulary does NOT bite here: inScope keys are obligation ids and positional
+ * indices, never values, so the normalisation `answersToFulfilments` applies
+ * leaves the projected keys unchanged. See DESIGN-DELTA.md §8.
  */
 
 import { obligations } from '../obligations/obligations.js'
@@ -44,15 +35,12 @@ import { computeReadyForCheckYourAnswers } from '../../engine/readiness-config.j
 
 const evaluator = createObligationEvaluator()
 
-// B-native `anyInstanceAnswered` — replaces A's version (engine/read.js), which
-// walked A's registry forest and matched on A's obligation id. Here we look up
-// the B obligation named `id` (B `name` === A id) and walk A's answers tree over
-// its ancestor-group chain, testing each positional instance with `isAnswered`.
-// Same instances A's registry walk visited (same collection nesting, positional
-// indices), no dependency on A's registry. B does not model importType /
-// declaration, but `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE`
-// prerequisites (`countryOfOrigin`, `commoditySelection`, flow/gates.js), both
-// B-modelled — so the projection is exact.
+// `anyInstanceAnswered` — look up the obligation named `id` and walk the
+// answers tree over its ancestor-group chain, testing each positional instance
+// with `isAnswered`. The manifest does not carry importType / declaration, but
+// `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE` prerequisites
+// (`countryOfOrigin`, `commoditySelection`, flow/gates.js), which it does — so
+// the check is exact.
 const collectInstanceValues = (answers, chain, name) => {
   const values = []
   const visit = (node, remainingGroups) => {
@@ -77,17 +65,16 @@ const anyInstanceAnswered = (answers, id) => {
   )
 }
 
-// Add every A pathKey an in-scope implication projects onto.
+// Add every pathKey an in-scope implication projects onto.
 const addProjectedKeys = (inScope, implications, obligation) => {
   const aId = obligation.name
   const chain = ancestorChain(obligation)
 
   if (groupObligations.has(obligation)) {
-    // A keys the group node once per PARENT-group instance (a depth-0
+    // The group node is keyed once per PARENT-group instance (a depth-0
     // group has no parent, so a single bare key). Derived from the
     // parent's instances, not the group's own records, so a parent
-    // instance whose nested group is empty still contributes its node
-    // key — matching A's structural walk.
+    // instance whose nested group is empty still contributes its node key.
     if (chain.length === 0) {
       inScope.add(aId)
       return
@@ -125,60 +112,53 @@ const projectInScope = (answers) => {
 }
 
 /**
- * B's RAW evaluator scope, projected into A's pathKey grammar — B's manifest
- * only, before any A-side flow projection. This is the set the oracle diffs
- * against A (model-equivalence.test.js's `rawScope`): importType/declaration
- * are ABSENT here because B does not model them, per retrofit/mapping.json's
- * `a-only` entries. `makeScopeFromB` layers the A-side flow obligations on TOP
- * of this for the FULL scope the controllers consume; this export stays the
- * unchanged B side.
+ * The RAW evaluator scope, projected into the pathKey grammar — the manifest
+ * only, before the flow-only projection. importType/declaration are ABSENT here
+ * because the notification model does not carry them. `makeScope` layers the
+ * flow-only obligations on TOP of this for the FULL scope the controllers
+ * consume; this export stays the raw evaluator scope.
  */
-export const rawInScopeFromB = (answers) => projectInScope(answers)
+export const rawInScope = (answers) => projectInScope(answers)
 
-// A-side flow obligations B does not model (retrofit/mapping.json, kind
-// `a-only`): the pre-journey import-type filter (`c-024`/`c-032`) and the
-// submit-time declaration. B has no counterpart, so B's evaluator omits them
-// and their owning pages would be unreachable under `MODEL=b`. Both are
-// unconditional top-level obligations in A's registry (bare-id pathKeys).
-const A_ONLY_FLOW_OBLIGATIONS = ['importType', 'declaration']
+// Flow-only obligations the notification model does not carry: the pre-journey
+// import-type filter (`c-024`/`c-032`, the service entry filter) and the
+// submit-time declaration step. The evaluator omits them, so without this layer
+// their owning pages would be unreachable. Both are unconditional top-level
+// obligations (bare-id pathKeys).
+const FLOW_ONLY_OBLIGATIONS = ['importType', 'declaration']
 
-// Project the A-only flow obligations onto the FULL scope. Both are
-// unconditional top-level obligations (no `activatedBy`, no collection
-// ancestor), so A's reconcile always returned them in scope regardless of
-// answers — this is that result, without importing A's reconcile. An additive
-// layer only; B's raw evaluator scope (`rawInScopeFromB`) is untouched.
-const projectAOnlyFlowScope = (inScope) => {
-  for (const id of A_ONLY_FLOW_OBLIGATIONS) inScope.add(id)
+// Project the flow-only obligations onto the FULL scope. Both are unconditional
+// top-level obligations (no `activatedBy`, no collection ancestor), always in
+// scope regardless of answers. An additive layer only; the raw evaluator scope
+// (`rawInScope`) is untouched.
+const projectFlowOnlyScope = (inScope) => {
+  for (const id of FLOW_ONLY_OBLIGATIONS) inScope.add(id)
 }
 
 /**
- * Project B's evaluator output into A's `scope` object shape.
+ * Project the evaluator output into the `scope` object the controllers and hub
+ * consume.
  *
- * Shape-identical to `engine/read.js`'s `makeScope`.
+ * `readyForCheckYourAnswers` comes from the boot-injected fn
+ * (`flow/section-status.js`'s `readyForCheckYourAnswers`, reached through
+ * `engine/readiness-config.js`), which rolls up the task rows via `rowStatus` /
+ * `statusOf` — so passing the projected `inScope` yields readiness without this
+ * module importing `read.js`.
  *
- * `readyForCheckYourAnswers` is now B-derived (inc-017a): the boot-injected
- * fn (`flow/section-status.js`'s `readyForCheckYourAnswers`, reached through
- * `engine/readiness-config.js`) rolls up the task rows via `rowStatus`, which
- * dual-paths to `statusOfFromB` under `MODEL=b` — so passing B's projected
- * `inScope` yields a fully B-derived readiness with no call into `makeScopeA`.
- * Consuming the registry module (not `read.js`) severs the `scope.js ->
- * engine/read.js` edge that inc-012/013 flagged for M4 (only `read.js ->
- * scope.js` remains — a clean DAG).
+ * The FULL scope also carries the flow-only obligations the notification model
+ * does not model (importType, declaration — `projectFlowOnlyScope`), so their
+ * owning pages stay reachable. That projection is additive on the full scope
+ * only; the raw evaluator scope (`rawInScope`) still excludes them.
+ * `readyForCheckYourAnswers` is unaffected — its task rows never cover
+ * importType/declaration.
  *
- * The FULL scope also carries the A-side flow obligations B does not model
- * (importType, declaration — `projectAOnlyFlowScope`, inc-018), so their owning
- * pages stay reachable under `MODEL=b`. That projection is additive on the full
- * scope only; B's raw evaluator scope (`rawInScopeFromB`, what the oracle diffs)
- * is unchanged and still excludes them. `readyForCheckYourAnswers` is unaffected
- * — its task rows never cover importType/declaration.
- *
- * @param {object} answers - A's nested answer POJO.
+ * @param {object} answers - the nested answer POJO.
  * @returns {{ inScope: Set<string>, has: (id: string) => boolean,
  *   answered: (id: string) => boolean, readyForCheckYourAnswers: boolean }}
  */
-export const makeScopeFromB = (answers) => {
+export const makeScope = (answers) => {
   const inScope = projectInScope(answers)
-  projectAOnlyFlowScope(inScope)
+  projectFlowOnlyScope(inScope)
   return {
     inScope,
     has: (id) => inScope.has(id),
