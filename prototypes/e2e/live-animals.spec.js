@@ -1506,11 +1506,11 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await consignorRow.getByRole('link', { name: 'Add' }).click()
 
-    // The book opens on page 1 of 8 — five of the forty records. (The
-    // create-address spec may have minted an extra record into the same
-    // server's book, so the total is matched loosely; the pages it splits into
-    // are not, because a created record is appended to the END of the book.)
-    const showingFive = /Showing 5 of 4\d addresses/
+    // The book opens on page 1 — five of its ~forty records. It is a shared,
+    // mutable server book: the create-address spec (and repeated runs against a
+    // persistent stack) append records to its END, so both the total and the
+    // page count are matched from what the page actually shows, never a literal.
+    const showingFive = /Showing 5 of \d+ addresses/
     await expect(page.getByText(showingFive)).toBeVisible()
     await expect(
       page.getByRole('radio', { name: values.consignor.name })
@@ -1542,8 +1542,14 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // GDS pagination renders a WINDOW, not every page: from page 1 that is
     // 1, 2, an ellipsis and the last page — so page 3 is reached by stepping
-    // through the neighbours the component actually offers.
-    await expect(page.getByRole('link', { name: 'Page 8' })).toBeVisible()
+    // through the neighbours the component actually offers. The last page is
+    // derived from the current total (5 per page), not a fixed 8, because the
+    // book grows as records are appended.
+    const showingText = await page.getByText(showingFive).textContent()
+    const lastPage = Math.ceil(Number(showingText.match(/of (\d+)/)[1]) / 5)
+    await expect(
+      page.getByRole('link', { name: `Page ${lastPage}` })
+    ).toBeVisible()
     await expect(page.getByRole('link', { name: 'Page 3' })).toHaveCount(0)
     await page.getByRole('link', { name: 'Page 2' }).click()
 
