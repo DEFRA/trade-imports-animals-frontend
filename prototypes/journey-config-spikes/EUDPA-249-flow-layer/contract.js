@@ -172,17 +172,18 @@ export function changeLinkFor(obligationId) {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns errors for every in-scope group instance that violates its
- * `requires.anyOf` invariant. Aggregated across every group in the
- * manifest that declares `requires`. Empty when nothing is violated
- * (or when no groups declare `requires` — the empty-manifest case).
+ * Returns errors for every in-scope group instance that violates ANY
+ * of its declared invariants (`anyOfIds`, `allOrNothingOfIds`,
+ * `recordCountEquals`, `minEntries`). Aggregated across every group
+ * in the manifest that declares `requires`. Empty when nothing is
+ * violated.
  *
- * Shape: `[{ code, groupId, groupName, instanceId }]`. Callers map
- * `instanceId` to a human label (e.g. "Animal 1 on commodity line 2")
- * before rendering.
+ * Shape varies by invariant kind (see engine/index.js#groupInvariantErrors);
+ * CYA + task-list callers switch on `err.code` and read the fields
+ * relevant to that shape.
  */
 export function groupInvariantErrorsForState(state) {
-  const groupsWithRequires = v4Obligations.filter((o) => o?.requires?.anyOfIds)
+  const groupsWithRequires = v4Obligations.filter((o) => o?.requires)
   const out = []
   for (const group of groupsWithRequires) {
     out.push(...groupInvariantErrors(group, state))

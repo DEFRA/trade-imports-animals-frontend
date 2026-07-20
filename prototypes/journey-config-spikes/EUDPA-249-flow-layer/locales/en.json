@@ -501,6 +501,8 @@
     "promptCompleteAddress": "Complete the {label} address",
     "promptCompleteAddressForUnit": "Complete the permanent address for animal {unitN} on commodity line {lineN}",
     "promptGroupInvariant": "Add at least one identifier for animal {unitN} on commodity line {lineN}",
+    "promptUnitCountMismatch": "Commodity line {lineN} lists {expected} animals but you've added {actual} sets of identifiers",
+    "promptAccompanyingDocumentPartial": "Complete every accompanying-document field or clear them all",
     "submitReady": "All required obligations are fulfilled. In a real service, this is where the user would submit."
   },
   "commodityLines": {

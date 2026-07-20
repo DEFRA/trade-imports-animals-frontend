@@ -3,7 +3,7 @@
 Auto-generated from the manifest by `docs/generate-model.js`.
 DO NOT EDIT — run `npm run docs:model` to regenerate.
 
-Baseline SHA: `c6d944fc00d8` (sha256 of manifest + helpers + flow)
+Baseline SHA: `32b5c84361d0` (sha256 of manifest + helpers + flow)
 
 ## 1. Data dictionary
 
@@ -63,9 +63,11 @@ Baseline SHA: `c6d944fc00d8` (sha256 of manifest + helpers + flow)
 Solid edges (`-->`) are gate reads (an obligation whose `applyTo`
 closure reads the source obligation's stored value). Dotted edges
 (`-.->`) are group-level invariants — `requires.anyOfIds`
-("at least one of these leaves must be filled per instance") or
-`requires.allOrNothingOfIds` ("either all listed scalar members are
-filled or none are"). Group containers use `[[name]]` shape.
+("at least one of these leaves must be filled per instance"),
+`requires.allOrNothingOfIds` ("either all listed scalar members
+are filled or none are"), or `requires.recordCountEquals` ("group
+record count per parent instance equals the named scalar sibling").
+Group containers use `[[name]]` shape.
 
 ```mermaid
 graph LR
@@ -99,6 +101,7 @@ graph LR
   accompanyingDocument -.-> accompanyingDocumentAttachmentType
   accompanyingDocument -.-> accompanyingDocumentReference
   accompanyingDocument -.-> accompanyingDocumentDateOfIssue
+  unitRecord -.-> numberOfAnimals
 ```
 
 ## 3. Page → obligations flow

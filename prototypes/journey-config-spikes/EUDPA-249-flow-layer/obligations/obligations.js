@@ -706,6 +706,16 @@ export const unitRecord = {
   // invariant. `containerStatus` treats a violating instance as
   // "not fulfilled" so the per-unit-records subsection stays IP
   // until the user fixes it. See engine/index.js.
+  //
+  // V4 spec cross-check ("unit records ARE animals" reading of
+  // Confluence page 6497338582): the count of unit-record instances
+  // on a given commodity line must equal `numberOfAnimals` on that
+  // line. Modelled as `requires.recordCountEquals` — a per-parent-
+  // instance count check that fires one error per mismatched line
+  // (see engine/index.js#groupInvariantErrors). Rollup-only: neither
+  // `numberOfAnimals` nor `unitRecord` records are purged when the
+  // other changes — the user resolves the mismatch by adding /
+  // removing units or amending the number.
   requires: {
     anyOfIds: [
       '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
@@ -715,7 +725,11 @@ export const unitRecord = {
       '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95', // identificationDetails
       '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6' // description
     ],
-    errorCode: 'obligation.unitRecord.identifiersRequired'
+    errorCode: 'obligation.unitRecord.identifiersRequired',
+    recordCountEquals: {
+      fieldId: numberOfAnimals.id,
+      errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
+    }
   }
 }
 

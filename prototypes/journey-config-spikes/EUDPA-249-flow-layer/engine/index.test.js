@@ -1260,6 +1260,201 @@ describe('groupInvariantErrors (V4 requires.allOrNothingOfIds)', () => {
   })
 })
 
+// The V4 "unit records ARE animals" invariant. On unitRecord the
+// rule reads: for each parent commodityLine instance lineX, the count
+// of unitRecord records with fulfilmentId prefixed `lineX/` equals the
+// scalar `numberOfAnimals[lineX]`. Skips when the scalar is blank
+// (mandatoryToProceed on the number-of-animals page handles that
+// separately).
+describe('groupInvariantErrors (V4 requires.recordCountEquals)', () => {
+  const parentGroup = { id: 'parent-group', name: 'commodityLine' }
+  const childGroup = {
+    id: 'child-group',
+    name: 'unitRecord',
+    within: parentGroup
+  }
+  const countField = { id: 'count-field', name: 'numberOfAnimals' }
+  const childWithRule = {
+    ...childGroup,
+    requires: {
+      recordCountEquals: {
+        fieldId: countField.id,
+        errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
+      }
+    }
+  }
+
+  const stateWith = ({ parentIds = [], childIds = [], counts = {} } = {}) => ({
+    fulfilments: {
+      [countField.id]: counts
+    },
+    obligations: impls([
+      {
+        obligation: parentGroup,
+        impl: {
+          inScope: true,
+          records: parentIds.map((id) => ({ fulfilmentId: id }))
+        }
+      },
+      {
+        obligation: childWithRule,
+        impl: {
+          inScope: true,
+          records: childIds.map((id) => ({ fulfilmentId: id }))
+        }
+      }
+    ])
+  })
+
+  it('empty list when the field is blank for every parent (skip case)', () => {
+    // numberOfAnimals not yet filled — the mandatoryToProceed rule on
+    // the number-of-animals page handles the "you forgot to answer"
+    // case; the count invariant only fires once you have a value.
+    const st = stateWith({
+      parentIds: ['lineA'],
+      childIds: ['lineA/unit1', 'lineA/unit2'],
+      counts: {}
+    })
+    expect(groupInvariantErrors(childWithRule, st)).toEqual([])
+  })
+
+  it('empty list when the group is out of scope', () => {
+    const st = {
+      fulfilments: { [countField.id]: { lineA: 3 } },
+      obligations: impls([
+        { obligation: parentGroup, impl: { inScope: true, records: [] } },
+        { obligation: childWithRule, impl: { inScope: false } }
+      ])
+    }
+    expect(groupInvariantErrors(childWithRule, st)).toEqual([])
+  })
+
+  it('zero errors when actual === expected', () => {
+    const st = stateWith({
+      parentIds: ['lineA'],
+      childIds: ['lineA/unit1', 'lineA/unit2'],
+      counts: { lineA: 2 }
+    })
+    expect(groupInvariantErrors(childWithRule, st)).toEqual([])
+  })
+
+  it('one error when actual < expected (too few units for the declared count)', () => {
+    const st = stateWith({
+      parentIds: ['lineA'],
+      childIds: ['lineA/unit1'],
+      counts: { lineA: 3 }
+    })
+    expect(groupInvariantErrors(childWithRule, st)).toEqual([
+      {
+        code: 'obligation.unitRecord.countMustMatchNumberOfAnimals',
+        groupId: childGroup.id,
+        groupName: 'unitRecord',
+        instanceId: 'lineA',
+        expected: 3,
+        actual: 1
+      }
+    ])
+  })
+
+  it('one error when actual > expected (user reduced numberOfAnimals below current unit count)', () => {
+    const st = stateWith({
+      parentIds: ['lineA'],
+      childIds: ['lineA/unit1', 'lineA/unit2', 'lineA/unit3'],
+      counts: { lineA: 1 }
+    })
+    const errors = groupInvariantErrors(childWithRule, st)
+    expect(errors).toEqual([
+      {
+        code: 'obligation.unitRecord.countMustMatchNumberOfAnimals',
+        groupId: childGroup.id,
+        groupName: 'unitRecord',
+        instanceId: 'lineA',
+        expected: 1,
+        actual: 3
+      }
+    ])
+  })
+
+  it('emits one error per violating parent instance, silent on matching ones', () => {
+    const st = stateWith({
+      parentIds: ['lineA', 'lineB', 'lineC'],
+      childIds: [
+        // lineA: 2 expected, 2 actual → OK
+        'lineA/unit1',
+        'lineA/unit2',
+        // lineB: 3 expected, 1 actual → error
+        'lineB/unit1',
+        // lineC: 1 expected, 2 actual → error
+        'lineC/unit1',
+        'lineC/unit2'
+      ],
+      counts: { lineA: 2, lineB: 3, lineC: 1 }
+    })
+    const errors = groupInvariantErrors(childWithRule, st)
+    expect(errors).toHaveLength(2)
+    expect(errors.map((e) => e.instanceId).sort()).toEqual(['lineB', 'lineC'])
+  })
+
+  it('skips a parent instance whose scalar is blank while checking others', () => {
+    const st = stateWith({
+      parentIds: ['lineA', 'lineB'],
+      childIds: ['lineA/unit1', 'lineB/unit1', 'lineB/unit2'],
+      counts: { lineB: 1 } // lineA blank → skip; lineB mismatched → error
+    })
+    const errors = groupInvariantErrors(childWithRule, st)
+    expect(errors).toHaveLength(1)
+    expect(errors[0].instanceId).toBe('lineB')
+  })
+
+  it('composes with anyOfIds — a single group can emit both kinds', () => {
+    const identifier = { id: 'identifier-leaf' }
+    const composite = {
+      ...childGroup,
+      requires: {
+        anyOfIds: [identifier.id],
+        errorCode: 'obligation.unitRecord.identifiersRequired',
+        recordCountEquals: {
+          fieldId: countField.id,
+          errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
+        }
+      }
+    }
+    // lineA has 1 unit-record with no identifier filled (anyOfIds
+    // fires) and expected count is 2 (recordCountEquals fires).
+    const st = {
+      fulfilments: {
+        [countField.id]: { lineA: 2 }
+      },
+      obligations: impls([
+        {
+          obligation: parentGroup,
+          impl: { inScope: true, records: [{ fulfilmentId: 'lineA' }] }
+        },
+        {
+          obligation: composite,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'lineA/unit1' }]
+          }
+        },
+        {
+          obligation: identifier,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'lineA/unit1', status: 'optional' }]
+          }
+        }
+      ])
+    }
+    const errors = groupInvariantErrors(composite, st)
+    expect(errors).toHaveLength(2)
+    expect(errors.map((e) => e.code).sort()).toEqual([
+      'obligation.unitRecord.countMustMatchNumberOfAnimals',
+      'obligation.unitRecord.identifiersRequired'
+    ])
+  })
+})
+
 describe('containerStatus + journeyState with `requires.minEntries`', () => {
   // Integration: a container that presentsForEach off a floored group
   // must roll up to NS when zero records exist — today (pre-floor) it

@@ -244,6 +244,13 @@ const requiresAllOrNothingEdges = () =>
     return memberIds.map((id) => `  ${obligation.name} -.-> ${lookupName(id)}`)
   })
 
+const requiresRecordCountEqualsEdges = () =>
+  sortedObligations().flatMap((obligation) => {
+    const fieldId = obligation.requires?.recordCountEquals?.fieldId
+    if (!fieldId) return []
+    return [`  ${obligation.name} -.-> ${lookupName(fieldId)}`]
+  })
+
 /**
  * A node only needs an explicit shape declaration once. Emit shape lines
  * for every obligation that appears in an edge (either endpoint), so
@@ -255,11 +262,18 @@ const dependencyNodeShapes = () => {
     const deps = obligationMetadata(obligation).dependsOn ?? []
     const anyOf = obligation.requires?.anyOfIds ?? []
     const allOrNothing = obligation.requires?.allOrNothingOfIds ?? []
-    if (deps.length > 0 || anyOf.length > 0 || allOrNothing.length > 0) {
+    const recordCountFieldId = obligation.requires?.recordCountEquals?.fieldId
+    if (
+      deps.length > 0 ||
+      anyOf.length > 0 ||
+      allOrNothing.length > 0 ||
+      recordCountFieldId
+    ) {
       withEdges.add(obligation.name)
       for (const depId of deps) withEdges.add(lookupName(depId))
       for (const id of anyOf) withEdges.add(lookupName(id))
       for (const id of allOrNothing) withEdges.add(lookupName(id))
+      if (recordCountFieldId) withEdges.add(lookupName(recordCountFieldId))
     }
   }
   return sortedObligations()
@@ -275,9 +289,11 @@ const dependencyGraphSection = () => {
     'Solid edges (`-->`) are gate reads (an obligation whose `applyTo`',
     "closure reads the source obligation's stored value). Dotted edges",
     '(`-.->`) are group-level invariants — `requires.anyOfIds`',
-    '("at least one of these leaves must be filled per instance") or',
-    '`requires.allOrNothingOfIds` ("either all listed scalar members are',
-    'filled or none are"). Group containers use `[[name]]` shape.',
+    '("at least one of these leaves must be filled per instance"),',
+    '`requires.allOrNothingOfIds` ("either all listed scalar members',
+    'are filled or none are"), or `requires.recordCountEquals` ("group',
+    'record count per parent instance equals the named scalar sibling").',
+    'Group containers use `[[name]]` shape.',
     '',
     '```mermaid',
     'graph LR',
@@ -285,6 +301,7 @@ const dependencyGraphSection = () => {
     ...dependencyEdges(),
     ...requiresAnyOfEdges(),
     ...requiresAllOrNothingEdges(),
+    ...requiresRecordCountEqualsEdges(),
     '```'
   ]
   return lines.join('\n')

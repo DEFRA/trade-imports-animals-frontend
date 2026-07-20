@@ -318,11 +318,14 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
     })
+    // numberOfAnimals: 1 to match the single unit record added below.
+    // The unit-count-equals-numberOfAnimals invariant (see
+    // unitRecord.requires.recordCountEquals) fires if these disagree.
     await fillLinePage(
       jar,
       'line1',
       'number-of-animals',
-      { 'numberOfAnimals-line1': 25 },
+      { 'numberOfAnimals-line1': 1 },
       { expectedNext: `${BASE}/lines` }
     )
 
@@ -335,6 +338,23 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       containsUnweanedAnimals: 'no'
     })
 
+    // -- Section 6: unit records for line1 -------------------------------
+    // V4 "unit records ARE animals" reading (Confluence 6497338582):
+    // count(unitRecord for line1) must equal numberOfAnimals for line1.
+    // Also every unit-record must carry ≥ 1 identifier (anyOfIds).
+    // Cattle triggers ear-tag scope (EAR_TAG_COMMODITIES); fill that.
+    const addUnitRes = await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/units/add`,
+      payload: {}
+    })
+    expect(addUnitRes.statusCode).toBe(302)
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/units/unit1/ear-tag`,
+      payload: { 'earTag-line1/unit1': 'UK123456789012' }
+    })
+
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {
       method: 'GET',
@@ -342,22 +362,23 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
     })
     expect(list.statusCode).toBe(200)
     // 15 subsections total (14 pre-CPH + the new CPH subsection).
-    // 14 read Completed. The one exception is `trader-reference` —
+    // 15 read Completed. The one exception is `trader-reference` —
     // its only obligation (internalReferenceNumber) is completion-
     // optional and the walk deliberately skips it, so the subsection
     // reads Optional under the 5-way alphabet (Case A — no mandatory
-    // in scope, nothing filled). Under the old alphabet this was
-    // vacuously F; the Optional tag is the visible surface of the P0
-    // UX fix. Note that `accompanying-documents` IS filled on this
-    // walk (exercises branchedGate's all-mandatory branch), so it
-    // reads Completed — the transit walk below skips it and picks
-    // up the second Optional tag. A numeric assertion catches new
-    // subsections being added without their fulfilment being wired.
+    // in scope, nothing filled). WS3 (unit-count invariant) turned
+    // `per-unit-records` from NA into Completed once the ear-tag is
+    // filled on the added unit — hence 15 rather than 14.
+    // `accompanying-documents` IS filled on this walk (all four
+    // fields), so it reads Completed — the transit walk below skips
+    // it and picks up the second Optional tag. A numeric assertion
+    // catches new subsections being added without their fulfilment
+    // being wired.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 14 Completed tags on the task list, got ${completedCount}`
-    ).toBe(14)
+      `expected 15 Completed tags on the task list, got ${completedCount}`
+    ).toBe(15)
     const optionalCount = (list.payload.match(/Optional/g) ?? []).length
     expect(
       optionalCount,
@@ -531,11 +552,13 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     await fillLinePage(jar, 'line1', 'species-details', {
       'species-line1': ['cattle']
     })
+    // numberOfAnimals: 1 to match the single unit record added below
+    // (recordCountEquals invariant on unitRecord).
     await fillLinePage(
       jar,
       'line1',
       'number-of-animals',
-      { 'numberOfAnimals-line1': 25 },
+      { 'numberOfAnimals-line1': 1 },
       { expectedNext: `${BASE}/lines` }
     )
 
@@ -546,6 +569,21 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
       containsUnweanedAnimals: 'no'
     })
 
+    // Unit records for line1 — one unit with an ear-tag to satisfy
+    // both the count-equals-numberOfAnimals invariant and the
+    // at-least-one-identifier-per-unit invariant.
+    const addUnitRes = await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/units/add`,
+      payload: {}
+    })
+    expect(addUnitRes.statusCode).toBe(302)
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/lines/line1/units/unit1/ear-tag`,
+      payload: { 'earTag-line1/unit1': 'UK123456789012' }
+    })
+
     // -- Terminal: task list shows every subsection Completed -----------
     const list = await inject(jar, {
       method: 'GET',
@@ -553,7 +591,7 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     })
     expect(list.statusCode).toBe(200)
     // 15 subsections — same as internal-market (14 pre-CPH + CPH).
-    // 13 read Completed; TWO read Optional. The internal-market
+    // 14 read Completed; TWO read Optional. The internal-market
     // walk above filled `accompanying-documents` and left only
     // `trader-reference` untouched; this walk deliberately skips
     // both. Both are optional-only subsections, so under the 5-way
@@ -564,8 +602,8 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
-      `expected 13 Completed tags on the task list, got ${completedCount}`
-    ).toBe(13)
+      `expected 14 Completed tags on the task list, got ${completedCount}`
+    ).toBe(14)
     const optionalCount = (list.payload.match(/Optional/g) ?? []).length
     expect(
       optionalCount,

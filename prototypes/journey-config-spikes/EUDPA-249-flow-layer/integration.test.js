@@ -28,6 +28,8 @@ import {
   species,
   numberOfAnimals,
   commodityLine,
+  unitRecord,
+  earTag,
   transitedCountries,
   internalReferenceNumber,
   countryOfOrigin,
@@ -514,5 +516,86 @@ describe('end-to-end walk with real V4 predicates', () => {
     expect(
       pageStatus(findPage('commodity-lines', 'number-of-animals'), state)
     ).toBe(STATUSES.FULFILLED)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// V4 unit-count-equals-numberOfAnimals invariant — the "unit records
+// ARE animals" reading of the spec (Confluence page 6497338582). Golden
+// path from the thought experiment: numberOfAnimals: 2 + 2 unit records
+// = F on the per-unit-records subsection; drop numberOfAnimals to 1 and
+// the same subsection flips to IP with the mismatch surfacing there
+// (not just at journey level).
+// ---------------------------------------------------------------------------
+describe('unit-count-equals-numberOfAnimals invariant', () => {
+  const perUnitRecords = () => {
+    for (const section of flow.sections) {
+      for (const sub of section.children ?? []) {
+        if (sub.id === 'per-unit-records') return sub
+      }
+    }
+    return null
+  }
+
+  const baseLine = {
+    [commodityCode.id]: { line1: '0102' },
+    [species.id]: { line1: ['cattle'] }
+  }
+
+  it('numberOfAnimals set but no unit records → per-unit-records subsection is NS (invariant fires)', () => {
+    const state = evaluate({
+      ...baseLine,
+      [numberOfAnimals.id]: { line1: 2 }
+    })
+    // Group invariant fires: expected 2, actual 0. classifyEntries
+    // treats it as an unsatisfied mandatory concern.
+    expect(containerStatus(perUnitRecords(), state)).toBe(STATUSES.NOT_STARTED)
+  })
+
+  it('numberOfAnimals: 2 with 2 filled unit records → F', () => {
+    const state = evaluate({
+      ...baseLine,
+      [numberOfAnimals.id]: { line1: 2 },
+      // Cattle triggers ear-tag scope; one identifier per unit
+      // satisfies the anyOfIds rule too.
+      [earTag.id]: {
+        'line1/unit1': 'UK111',
+        'line1/unit2': 'UK222'
+      }
+    })
+    expect(state.obligations[unitRecord.id].records).toHaveLength(2)
+    expect(containerStatus(perUnitRecords(), state)).toBe(STATUSES.FULFILLED)
+  })
+
+  it('user amends numberOfAnimals from 2 to 1 → subsection flips back to IP (2 units still stored, mismatch fires)', () => {
+    // Simulates the amend step in the thought experiment. No purge —
+    // the two unit records persist; the invariant surfaces the
+    // mismatch on the per-unit-records subsection.
+    const state = evaluate({
+      ...baseLine,
+      [numberOfAnimals.id]: { line1: 1 },
+      [earTag.id]: {
+        'line1/unit1': 'UK111',
+        'line1/unit2': 'UK222'
+      }
+    })
+    // Both units still present post-evaluate.
+    expect(state.obligations[unitRecord.id].records).toHaveLength(2)
+    // Subsection now IP (touched: 2 filled identifiers exist,
+    // mandatory concern from group error is unsatisfied).
+    expect(containerStatus(perUnitRecords(), state)).toBe(STATUSES.IN_PROGRESS)
+  })
+
+  it('numberOfAnimals unset → invariant skips (no error), other mandatoriness rules handle the missing value', () => {
+    const state = evaluate({
+      ...baseLine
+      // numberOfAnimals deliberately absent
+    })
+    // With numberOfAnimals blank the count invariant doesn't fire —
+    // the numberOfAnimals field itself is mandatory-to-proceed which
+    // catches the missing value at page level. journeyState is IP
+    // (some mandatory unfilled) but the mismatch specifically isn't
+    // one of the reasons.
+    expect(journeyState(flow, state)).not.toBe(STATUSES.FULFILLED)
   })
 })

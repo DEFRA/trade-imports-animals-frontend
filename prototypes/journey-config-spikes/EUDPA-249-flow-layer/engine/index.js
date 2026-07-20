@@ -497,7 +497,7 @@ function collectInScopePresentedEntries(container, state) {
  * groupInvariantErrors(group, state)
  *   → [{ code, groupId, groupName, ... }]
  *
- * Emits one entry per unsatisfied invariant on the group. Three rules
+ * Emits one entry per unsatisfied invariant on the group. Four rules
  * are supported; a group may carry any combination.
  *
  *   - `requires.minEntries` — collection floor. Emits ONE
@@ -531,9 +531,19 @@ function collectInScopePresentedEntries(container, state) {
  *     the V4 "accompanying-document Field Block — Optional — All-or-
  *     nothing" rule rides on (Confluence page 6497338582).
  *
- * All three rule shapes contribute uniformly to `classifyEntries`'
- * `groupErrorCount` — an unmet floor / anyOf / all-or-nothing blocks
- * F identically.
+ *   - `requires.recordCountEquals` — cross-group per-parent-instance
+ *     count check. `{ fieldId, errorCode }`. For each in-scope parent
+ *     (`group.within`) instance `parentId`: read the expected count
+ *     from `state.fulfilments[fieldId][parentId]`, skip when blank
+ *     (relies on the field's own mandatory rule to catch the missing
+ *     case), count `records` whose `fulfilmentId.startsWith(parentId
+ *     + '/')`, emit one error per mismatch. Wired into `unitRecord`
+ *     (`fieldId = numberOfAnimals.id`) so the count of animals on a
+ *     commodity line matches the trader's declared quantity.
+ *
+ * All four rule shapes contribute uniformly to `classifyEntries`'
+ * `groupErrorCount` — an unmet floor / anyOf / all-or-nothing /
+ * count-mismatch blocks F identically.
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) return []
@@ -590,6 +600,30 @@ export function groupInvariantErrors(group, state) {
         groupName: group.name,
         missingIds
       })
+    }
+  }
+  if (group.requires.recordCountEquals && group.within) {
+    const { fieldId, errorCode: countErrorCode } =
+      group.requires.recordCountEquals
+    const parentImpl = state.obligations?.[group.within.id]
+    const parentRecords = parentImpl?.records ?? []
+    for (const parentRec of parentRecords) {
+      const parentId = parentRec.fulfilmentId
+      const expected = state.fulfilments?.[fieldId]?.[parentId]
+      if (isBlankValue(expected)) continue
+      const actual = records.filter((r) =>
+        r.fulfilmentId.startsWith(`${parentId}/`)
+      ).length
+      if (actual !== expected) {
+        errors.push({
+          code: countErrorCode,
+          groupId: group.id,
+          groupName: group.name,
+          instanceId: parentId,
+          expected,
+          actual
+        })
+      }
     }
   }
   return errors

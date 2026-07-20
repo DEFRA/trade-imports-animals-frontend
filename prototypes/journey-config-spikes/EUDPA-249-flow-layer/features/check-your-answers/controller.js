@@ -303,27 +303,53 @@ export const cyaController = {
         )
       }
 
-      // Group-invariant prompts — currently just the V4 "at least one
-      // Animal Identifier per unit-record" rule. Each violating unit
-      // gets a prompt with a Change link into the parent line's
-      // units index, where the user picks a specific unit and fills
-      // any one identifier. The composite instanceId is
-      // `${lineId}/${unitId}`. We surface the human ordinal position
-      // for both — the CYA copy reads "Animal 1 on commodity line 2"
-      // the same way the units list page does.
+      // Group-invariant prompts — routed by error code because the
+      // error shape differs per invariant kind (see
+      // engine/index.js#groupInvariantErrors).
+      //
+      //   - obligation.unitRecord.identifiersRequired — per-unit
+      //     "at least one Animal Identifier" (V4 identifier rule).
+      //     `instanceId` = `${lineId}/${unitId}`.
+      //   - obligation.unitRecord.countMustMatchNumberOfAnimals —
+      //     per-line "unit-record count equals numberOfAnimals" (V4
+      //     "unit records ARE animals" reading). `instanceId` =
+      //     `${lineId}` only; `expected` + `actual` on the error.
+      //   - obligation.accompanyingDocument.allOrNothing — one
+      //     notification-level prompt when the block is partial.
       for (const err of groupInvariantErrorsForState(state)) {
-        const [lineId, unitId] = err.instanceId.split('/')
-        if (!lineId || !unitId) continue
-        const lineIx = ordinalOfLineId(state, lineId)
-        const unitIx = ordinalOfUnitId(state, lineId, unitId)
-        prompts.push({
-          text: t('cya.promptGroupInvariant', {
-            lineN: lineIx,
-            unitN: unitIx
-          }),
-          href: `${BASE}/lines/${lineId}/units`,
-          because: []
-        })
+        if (err.code === 'obligation.unitRecord.identifiersRequired') {
+          const [lineId, unitId] = err.instanceId.split('/')
+          if (!lineId || !unitId) continue
+          prompts.push({
+            text: t('cya.promptGroupInvariant', {
+              lineN: ordinalOfLineId(state, lineId),
+              unitN: ordinalOfUnitId(state, lineId, unitId)
+            }),
+            href: `${BASE}/lines/${lineId}/units`,
+            because: []
+          })
+        } else if (
+          err.code === 'obligation.unitRecord.countMustMatchNumberOfAnimals'
+        ) {
+          const lineId = err.instanceId
+          prompts.push({
+            text: t('cya.promptUnitCountMismatch', {
+              lineN: ordinalOfLineId(state, lineId),
+              expected: err.expected,
+              actual: err.actual
+            }),
+            href: `${BASE}/lines/${lineId}/units`,
+            because: []
+          })
+        } else if (
+          err.code === 'obligation.accompanyingDocument.allOrNothing'
+        ) {
+          prompts.push({
+            text: t('cya.promptAccompanyingDocumentPartial'),
+            href: `${BASE}/pages/accompanying-documents`,
+            because: []
+          })
+        }
       }
 
       return h.view('features/check-your-answers/template', {
