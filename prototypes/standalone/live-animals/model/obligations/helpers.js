@@ -1,5 +1,5 @@
 import { isRecordMap, readGate } from './helper-internals.js'
-import { isAnswered } from '../../lib/answered.js'
+import { isBlankValue } from '../engine/is-blank-value.js'
 
 /**
  * applyTo helper library — pure functions that build applyTo functions.
@@ -196,7 +196,7 @@ export function presentPerRecord(gateObligation, projectionGroup, reasons) {
   const fn = (fulfilments, fulfilmentIdsByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
-      (value) => isAnswered(value),
+      (value) => !isBlankValue(value),
       projectionGroup,
       fulfilmentIdsByObligationId
     )
