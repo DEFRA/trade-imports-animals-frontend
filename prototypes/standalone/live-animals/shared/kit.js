@@ -24,11 +24,6 @@ export const journeyStrip = (journey) =>
 
 export const CYA_SLUG = 'notification-view'
 
-export const collectsFrom = (obligations) =>
-  obligations
-    .filter((obligation) => !obligation.system)
-    .map((obligation) => obligation.id)
-
 export const errorSummary = (fieldErrors) => {
   const entries = Object.entries(fieldErrors ?? {})
   if (entries.length === 0) return null

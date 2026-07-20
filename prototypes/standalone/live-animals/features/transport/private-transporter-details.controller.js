@@ -4,9 +4,8 @@ import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
 import { privateTransporterDetailsPage as page } from './page.js'
-import { privateTransporter } from './obligations.js'
 
-export const meta = { ...page, collects: [privateTransporter.id] }
+export const meta = { ...page, collects: ['privateTransporter'] }
 const view = `${TEMPLATES}/features/transport/private-transporter-details`
 
 const MANDATORY_MESSAGES = {

@@ -5,9 +5,11 @@ import * as kit from '../../shared/kit.js'
 import * as certification from '../../services/certification-purposes/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { additionalDetailsPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = {
+  ...page,
+  collects: ['animalsCertifiedFor', 'containsUnweanedAnimals']
+}
 const view = `${TEMPLATES}/features/additional-details/template`
 
 export const unweanedApplies = (answers) =>

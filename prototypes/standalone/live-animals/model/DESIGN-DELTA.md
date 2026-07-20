@@ -1503,3 +1503,82 @@ Also stale: the B-module JSDoc in `model/bridge/{purge,status,scope}.js`,
 `engine/readiness-config.js`, `engine/evaluate/cardinality.js` still narrates
 "wired behind `MODEL=b`" / "dual-paths" — a flag that no longer exists; refresh
 when those modules are next touched.
+
+## §26 — inc-022: A's obligation model DECOUPLED from the runtime (deletions carry over) · `EUDPA-288`
+
+Two load-bearing re-points so the runtime stops reading A's obligation
+objects. NO A files deleted this increment — the file deletions §25 anticipated
+are BLOCKED by KEPT B files that still import A (below); a green, decoupled tree
+is the deliverable, the deletions carry over to a follow-up.
+
+**(1) `statusOfFromB` structure re-pointed off A's `registry` → B's manifest ·
+`model/bridge/status.js`.** The status bridge no longer imports `registry.js`.
+The row/section STRUCTURE it read from A's registry is now projected from B's
+`obligations`/`groups` exports into A's registry object shape by a local
+`toStructural`:
+
+- `registry.byId(id)` → B obligation whose `name === id` (`structuralOf`).
+- A's `.required` → `status: 'mandatory'` OR, for conditionally-scoped
+  obligations, the gate's `applyTo.metadata.whenTrue.status === 'mandatory'`
+  (`bIsMandatory`). A marked `transitedCountries` / `commercial`+`private
+Transporter` / `regionCode` / `purposeInInternalMarket` / `cph` /
+  `containsUnweanedAnimals` `required: true` statically; in B those are
+  mandatory only via their gate's whenTrue branch — reading `.status` alone
+  mis-classified them as optional (4 transporter/transit rows went red until
+  `bIsMandatory` also read the gate).
+- A's `.requiredAtLeastOne` → `requires.minEntries` (commodityLines) OR
+  `requires.anyOfIds` (animalIdentifiers — B expresses A's collection floor as
+  the per-unit any-of).
+- A's `.requiredOneOf` → `requires.anyOfIds`, resolved UUID→member `name`.
+- facet `.item` (collection members) → B obligations whose `within` is the
+  group, MINUS `SYSTEM_POPULATED` (`flow/obligation-source.js`). Critical: B's
+  raw `within` set for `commodityLine` includes `commodityType`, a
+  system-populated placeholder no page collects; leaving it in makes every
+  commodity line permanently IN_PROGRESS. Excluding `SYSTEM_POPULATED`
+  reproduces A's curated `item` sets EXACTLY (same exclusion `flow/dispatch.js`
+  applies when indexing pages→obligations). ZERO status divergence — the oracle
+  (`status.test.js`, A-vs-B) stays green.
+
+**(2) `collects` re-pointed off A's obligation objects → explicit string arrays ·
+16 controllers + `shared/kit.js`.** Every `collects: kit.collectsFrom(obligations)`
+and `collects: [someObligation.id]` replaced with a literal string array of the
+obligation ids (== B names == stable strings), derived from each feature's
+current `obligations.js`. `kit.collectsFrom` deleted (now unused). No controller
+imports a `features/*/obligations.js` for collects. (One residual non-collects
+importer: `features/commodities/animal-identification.controller.js` still imports
+A identifier obligations for its render config — re-point when its file is deleted.)
+
+**A files NOT deleted (carried over) + why — the residual live-importer web.**
+§25's "oracle-only A modules" list under-counted: `registry.js` and
+`reconcile.js` are LIVE deps of KEPT B files, so neither they nor what they pull
+in can be deleted yet:
+
+- `registry.js` — imported (live) by `engine/evaluate/collection-view.js`
+  (`registry.byPath`, KEPT/B-wired), `engine/evaluate/cardinality.js` (KEPT for
+  `collectionCapAt`/inc-024a), `model/bridge/scope.js` (`walk` in
+  `anyInstanceAnswered`), `engine/read.js` (`walk`, via `makeScopeA`),
+  `analysis/reachability.js`. `registry.js` imports all 12
+  `features/*/obligations.js`, so those 12 survive with it.
+- `reconcile.js` — imported (live) by `model/bridge/scope.js`
+  (`projectAOnlyFlowScope`, the importType/declaration layer of the LIVE B
+  scope), `analysis/reachability.js`, `engine/read.js` (`makeScopeA`).
+- `predicate.js` — `analysis/reachability.js` (`includesUnion`).
+- `complete.js` — `engine/status.js` + A-model tests.
+- `cardinality.js` — KEPT (barrel + `engine/write.js`, inc-024a `collectionCapAt`).
+- `engine/status.js` (`statusOf`) — live importers are the 5 status CONSTANTS
+  in `flow/section-status.js` + `features/hub/controller.js` (re-pointable to
+  the bridge's constants) plus the oracle (`status.test.js`). Deletable only
+  once the status oracle retires.
+- `makeScopeA` (`engine/read.js`) — oracle-only (`scope.test.js`,
+  `model-equivalence.test.js`).
+
+**Oracle NOT retired.** §25 anticipated inc-022 deleting A + retiring the oracle,
+but A cannot be deleted here (above), so the A-vs-B oracle still passes and still
+provides value — retiring it now would drop coverage for no deletion. It retires
+when A is actually deleted (needs `scope.js` off `reconcile`/`walk`,
+`collection-view`/`cardinality` off `registry` — the "retire A's prover" work).
+
+**Verify.** Full unit suite green at baseline: 83 files / 1209 passed / 11
+skipped (no count change — no tests deleted). Purity gate green. Dispatch boot
+asserts pass with string `collects`. `KEEP`: `cardinality.js`/`collectionCapAt`
+(inc-024a), `obligation-purity.js`.

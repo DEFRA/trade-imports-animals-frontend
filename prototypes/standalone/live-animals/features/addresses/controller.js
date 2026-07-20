@@ -3,10 +3,18 @@ import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import { cphApplies } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
-import { obligations } from './obligations.js'
 import { PARTIES } from './parties.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = {
+  ...page,
+  collects: [
+    'consignor',
+    'placeOfDestination',
+    'placeOfOrigin',
+    'consignee',
+    'importer'
+  ]
+}
 const view = `${TEMPLATES}/features/addresses/template`
 
 const CPH_ROW = {

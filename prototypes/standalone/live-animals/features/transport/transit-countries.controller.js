@@ -3,9 +3,8 @@ import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
 import { transitCountriesPage as page } from './page.js'
-import { transitedCountries } from './obligations.js'
 
-export const meta = { ...page, collects: [transitedCountries.id] }
+export const meta = { ...page, collects: ['transitedCountries'] }
 const view = `${TEMPLATES}/features/transport/transit-countries`
 
 export const MAX_TRANSITED_COUNTRIES = 12

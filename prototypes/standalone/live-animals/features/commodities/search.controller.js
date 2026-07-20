@@ -3,9 +3,8 @@ import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import * as commodities from '../../services/commodities/index.js'
 import { commoditiesPage as page, consignmentDetailsPage } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search`
 
 /** One commodity line = one commodity plus ONE species (inc-062). The pair is

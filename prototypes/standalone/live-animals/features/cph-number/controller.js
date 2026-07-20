@@ -4,9 +4,8 @@ import { compose, maxText, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as commodities from '../../services/commodities/index.js'
 import { cphNumberPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = { ...page, collects: ['countyParishHoldingCph'] }
 const view = `${TEMPLATES}/features/cph-number/template`
 
 export const cphApplies = (answers) =>

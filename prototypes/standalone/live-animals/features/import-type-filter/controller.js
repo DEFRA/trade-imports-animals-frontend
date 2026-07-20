@@ -6,9 +6,8 @@ import { nextRunTarget } from '../../flow/run.js'
 import { beginOpeningRun, inOpeningRun } from '../../flow/run-state.js'
 import * as kit from '../../shared/kit.js'
 import { importTypeFilterPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = { ...page, collects: ['importType'] }
 const view = `${TEMPLATES}/features/import-type-filter/template`
 const holdingView = `${TEMPLATES}/features/import-type-filter/not-available`
 

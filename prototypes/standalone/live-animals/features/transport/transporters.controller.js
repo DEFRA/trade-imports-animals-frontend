@@ -4,9 +4,8 @@ import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { transportersPage as page } from './page.js'
-import { transporterType } from './obligations.js'
 
-export const meta = { ...page, collects: [transporterType.id] }
+export const meta = { ...page, collects: ['transporterType'] }
 const view = `${TEMPLATES}/features/transport/transporters`
 
 const fields = compose(

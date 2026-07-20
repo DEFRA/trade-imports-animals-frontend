@@ -12,9 +12,16 @@ import * as kit from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
 import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = {
+  ...page,
+  collects: [
+    'countryOfOrigin',
+    'regionOfOriginCodeRequirement',
+    'regionOfOriginCode',
+    'internalReferenceNumber'
+  ]
+}
 const view = `${TEMPLATES}/features/origin/template`
 
 const countryItems = () => [

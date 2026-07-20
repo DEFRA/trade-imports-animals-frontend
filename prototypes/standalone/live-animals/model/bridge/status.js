@@ -1,25 +1,21 @@
 /**
  * Bridge — B's obligation implications -> A's 5-way task/section status.
  *
- * `statusOfFromB(parts, answers, inScope)` is the B-derived analogue of
- * `engine/status.js`'s `statusOf` (PLAN §5.5, inc-017a). It returns the
- * SAME five constants and is wired behind `MODEL=b` at the row/section
- * callers (`flow/task-rows.js` `rowStatus`, `flow/section-status.js`
- * `sectionStatus`; `readyForCheckYourAnswers` rolls up through the former).
- * A's `statusOf` stays the default path until M4 (inc-022).
+ * `statusOfFromB(parts, answers, inScope)` is the sole runtime source of the
+ * 5-way task/section status at the row/section callers (`flow/task-rows.js`
+ * `rowStatus`, `flow/section-status.js` `sectionStatus`;
+ * `readyForCheckYourAnswers` rolls up through the former).
  *
- * The OUTER classification is copied verbatim from A's `statusOf` — same
- * NA / OPTIONAL / NOT_STARTED / IN_PROGRESS / FULFILLED branches, same
- * `partRequired` / `partStarted` reads — so the presentation-facing edge
- * cases (empty optional collection -> OPTIONAL, partial optional ->
- * IN_PROGRESS, empty required collection -> NOT_STARTED) match A exactly.
- * Row/section STRUCTURE (which parts, facet membership, the requiredAtLeastOne
- * collection floor) stays A's — read from A's registry.
+ * The OUTER classification branches on NA / OPTIONAL / NOT_STARTED /
+ * IN_PROGRESS / FULFILLED via `partRequired` / `partStarted` — so the
+ * presentation-facing edge cases (empty optional collection -> OPTIONAL,
+ * partial optional -> IN_PROGRESS, empty required collection -> NOT_STARTED)
+ * hold. Row/section STRUCTURE (which parts, facet membership, the collection
+ * floor, the any-of rule) is sourced from B's manifest, projected into A's
+ * registry object shape by `toStructural` below.
  *
- * The ONE thing that moves to B is `partSatisfied` — the completeness
- * judgement. A's `collectionComplete` walks its own registry conditionality
- * (`activatedBy` predicates, per-member `required`); `partSatisfiedB` walks
- * the SAME collection tree but sources three things from B's evaluator state:
+ * `partSatisfied` — the completeness judgement — `partSatisfiedB` walks the
+ * collection tree and sources three things from B's evaluator state:
  *
  *   - per-record SCOPE   — a leaf is present for a record iff B's implication
  *                          `records[]` carries that record's fulfilmentId
@@ -30,21 +26,20 @@
  *                          `!isBlankValue` (B's completeness, incl. partial-
  *                          address handling).
  *
- * The collection floor (`requiredAtLeastOne`) is read from A's registry
- * because B models it only partially (a `commodityLine` min-entries but no
- * per-line unit floor on `animalIdentifiers`); the bridge composes A's
- * structural cardinality with B's per-record implications. See
- * DESIGN-DELTA.md §19.
+ * The collection floor is B-sourced: `commodityLines` from
+ * `requires.minEntries`, `animalIdentifiers` from `requires.anyOfIds` (B's
+ * per-unit any-of stands in for A's `requiredAtLeastOne`). See
+ * DESIGN-DELTA.md §19, §26.
  */
 
-import { obligations } from '../obligations/obligations.js'
+import { obligations, groups } from '../obligations/obligations.js'
 import { createObligationEvaluator } from '../obligations/evaluator.js'
 import { answersToFulfilments } from './fulfilments.js'
 import { effectiveStatus } from '../engine/index.js'
 import { isBlankValue } from '../engine/is-blank-value.js'
 import { domain } from '../domain/index.js'
-import { registry } from '../../registry.js'
 import { isAnswered } from '../../lib/answered.js'
+import { SYSTEM_POPULATED } from '../../flow/obligation-source.js'
 
 export const NA = 'not-applicable'
 export const NOT_STARTED = 'not-started'
@@ -56,10 +51,56 @@ const evaluator = createObligationEvaluator()
 const bByAId = new Map(obligations.map((o) => [o.name, o]))
 const bOf = (aId) => bByAId.get(aId)
 
-// --- structure: A's registry (copied from engine/status.js) --------------
+// --- structure: B's manifest, projected into A's registry shape ----------
+//
+// The row/section STRUCTURE (which parts, facet membership, the collection
+// floor, the any-of rule) is sourced from B's obligations/groups exports and
+// exposed under the same object shape `engine/status.js` read from A's
+// registry — so the classification below is byte-identical:
+//   .id                → B `name`
+//   .collection        → obligation is a `within` group
+//   .required          → B `status: 'mandatory'`
+//   .requiredAtLeastOne→ B `requires.minEntries` OR `requires.anyOfIds`
+//                        (A's animalIdentifiers floor is B's per-unit any-of)
+//   .requiredOneOf     → B `requires.anyOfIds`, resolved to member names
+//   .item              → B obligations whose `within` is this group
+
+const bByUuid = new Map(obligations.map((o) => [o.id, o]))
+const bIsGroup = (o) => groups.includes(o)
+
+// Collection members for status = the group's `within` obligations MINUS the
+// system-populated placeholders (`commodityType` et al) that no page collects
+// — the same set A curated in each feature's `item`, and the same exclusion
+// `flow/dispatch.js` applies when indexing pages to obligations.
+const bMembersOf = (group) =>
+  obligations.filter((o) => o.within === group && !SYSTEM_POPULATED.has(o.name))
+
+// Mandatory-when-in-scope: a static `status: 'mandatory'`, or a conditional
+// gate whose in-scope (whenTrue) branch is mandatory (transitedCountries,
+// commercial/privateTransporter, regionCode, purposeInInternalMarket, cph,
+// containsUnweanedAnimals). Mirrors A's static `required: true` on those.
+const bIsMandatory = (o) =>
+  o.status === 'mandatory' ||
+  o.applyTo?.metadata?.whenTrue?.status === 'mandatory'
+
+const toStructural = (o) => ({
+  id: o.name,
+  collection: bIsGroup(o),
+  required: bIsMandatory(o),
+  requiredAtLeastOne: Boolean(o.requires?.minEntries || o.requires?.anyOfIds),
+  requiredOneOf: o.requires?.anyOfIds?.map((uuid) => bByUuid.get(uuid).name),
+  item: bIsGroup(o) ? bMembersOf(o).map(toStructural) : undefined
+})
+
+const structuralByName = new Map(
+  obligations.map((o) => [o.name, toStructural(o)])
+)
+const structuralOf = (name) => structuralByName.get(name)
+
+// --- structure (copied from engine/status.js) ----------------------------
 
 const isFacet = (part) => typeof part !== 'string'
-const facetParent = (part) => registry.byId(part.collection)
+const facetParent = (part) => structuralOf(part.collection)
 const facetMemberFilter = (part) =>
   part.only
     ? (member) => part.only.includes(member.id)
@@ -72,7 +113,7 @@ const isCollection = (o) => Boolean(o?.collection)
 const partKey = (part) => (isFacet(part) ? part.collection : part)
 
 const partRequired = (part) => {
-  if (!isFacet(part)) return isRequiredObligation(registry.byId(part))
+  if (!isFacet(part)) return isRequiredObligation(structuralOf(part))
   return (
     isRequiredObligation(facetParent(part)) ||
     facetMembers(part).some(isRequiredObligation)
@@ -202,7 +243,7 @@ const partSatisfiedB = (part, answers, state) => {
       state
     )
   }
-  const aObl = registry.byId(part)
+  const aObl = structuralOf(part)
   if (isCollection(aObl)) return collectionSatisfiedB(aObl, null, null, state)
   return singletonFulfilled(part, answers, state)
 }

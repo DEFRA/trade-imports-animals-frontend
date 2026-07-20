@@ -11,22 +11,15 @@ import * as kit from '../../shared/kit.js'
 import * as ports from '../../services/ports/index.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { portOfEntryPage as page } from './page.js'
-import {
-  arrivalDateAtPort,
-  meansOfTransport,
-  portOfEntry,
-  transportDocumentReference,
-  transportIdentification
-} from './obligations.js'
 
 export const meta = {
   ...page,
   collects: [
-    arrivalDateAtPort.id,
-    portOfEntry.id,
-    meansOfTransport.id,
-    transportIdentification.id,
-    transportDocumentReference.id
+    'arrivalDateAtPort',
+    'portOfEntry',
+    'meansOfTransport',
+    'transportIdentification',
+    'transportDocumentReference'
   ]
 }
 const view = `${TEMPLATES}/features/transport/port-of-entry`

@@ -4,9 +4,8 @@ import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { confirmationPage } from '../confirmation/page.js'
 import { declarationPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = { ...page, collects: ['declaration'] }
 const view = `${TEMPLATES}/features/declaration/template`
 
 export const DECLARATION_LABEL =

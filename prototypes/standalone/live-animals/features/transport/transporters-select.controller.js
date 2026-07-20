@@ -4,9 +4,8 @@ import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { transportersSelectPage as page } from './page.js'
-import { commercialTransporter } from './obligations.js'
 
-export const meta = { ...page, collects: [commercialTransporter.id] }
+export const meta = { ...page, collects: ['commercialTransporter'] }
 const view = `${TEMPLATES}/features/transport/transporters-select`
 
 const fields = compose(

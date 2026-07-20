@@ -4,9 +4,8 @@ import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import { importReasonPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = { ...page, collects: ['reasonForImport'] }
 const view = `${TEMPLATES}/features/import-reason/template`
 
 const REASON_HINT = {

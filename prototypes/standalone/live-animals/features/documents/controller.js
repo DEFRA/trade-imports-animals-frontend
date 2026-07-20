@@ -24,9 +24,8 @@ import {
   attachmentTypeFor
 } from './upload-config.js'
 import { documentsPage as page } from './page.js'
-import { obligations } from './obligations.js'
 
-export const meta = { ...page, collects: kit.collectsFrom(obligations) }
+export const meta = { ...page, collects: ['documents'] }
 const view = `${TEMPLATES}/features/documents/template`
 
 export const MAX_DOCUMENTS = 10
