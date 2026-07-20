@@ -20,6 +20,10 @@ export const commit = async (request, h, patch) => {
   return { answers, scope: makeScope(answers) }
 }
 
+// Entry-level writes save without purging — commit/removeEntryAt/
+// reconcileEntriesAt are the purge authorities. Safe only while no
+// entry-write caller mutates a gate input (a gate flip must ride a
+// purging write); see entry-write-purge-window.test.js.
 export const appendEntryAt = async (request, h, collectionPath, entry) => {
   const journey = await currentJourney(request, h)
   const list = valueAt(journey.answers, collectionPath) ?? []
