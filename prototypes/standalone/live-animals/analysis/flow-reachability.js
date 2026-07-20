@@ -14,6 +14,10 @@
  *                                      presents it (dispatch has no owner).
  *   - `owning-page-unreachable-in-scope` the owning page is not reached by the
  *                                      flow gates in that same state.
+ * Plus the enumeration's own completeness check (`proveScopeCompleteness`) —
+ * A's third problem kind (`no-witness-puts-in-scope`) recast for the
+ * seed-driven port: a manifest obligation no seed variant × scope state ever
+ * scopes is reported rather than silently skipped.
  *
  * B-native throughout: scope comes from `engine`'s `makeScope` (B's evaluator
  * projected into A's pathKey grammar), page ownership from `flow/dispatch.js`,
@@ -24,6 +28,7 @@
 
 import { pageOfObligation } from '../flow/dispatch.js'
 import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
+import { obligations } from '../model/obligations/obligations.js'
 import { makeScope } from '../engine/index.js'
 import { simulateJourney } from './simulate.js'
 
@@ -124,6 +129,95 @@ export const submitReadySeed = {
   declaration: 'confirmed'
 }
 
+/**
+ * Seed variants — overlays on `submitReadySeed` whose commodity/documents
+ * choices open the gates the base seed leaves shut. The base seed's single
+ * Cow (0102) line never scopes the 0101-gated `horseName`, the 01061900-gated
+ * `permanentAddress`, the `notInUnionOf` free-text identifiers (0102 sits in
+ * the passport∪tattoo∪earTag union) or the four per-document leaves (no
+ * `documents` records). Values are the services' real canned data
+ * (`services/commodities`, `services/document-types`) — the same vocabulary
+ * the pages store.
+ *
+ * Both provers run every variant × every scope state, so page reachability
+ * is proven in the states these variants create, and `proveScopeCompleteness`
+ * fails loudly when a manifest obligation is scoped by NO variant/state pair.
+ *
+ * @returns {Array<{ id: string, answers: object }>} named answer sets.
+ */
+export const seedVariants = () => [
+  { id: 'base', answers: submitReadySeed },
+  {
+    // 0101: horseName (and passport) per unit record.
+    id: 'horse-line',
+    answers: {
+      ...submitReadySeed,
+      commodityLines: [
+        {
+          commoditySelection: 'Horse',
+          speciesSelection: '822332',
+          numberOfPackages: '2',
+          numberOfAnimalsQuantity: '1',
+          animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0001' }]
+        }
+      ]
+    }
+  },
+  {
+    // 01061900: permanentAddress (mandatory when in scope) per unit record.
+    id: 'cat-line',
+    answers: {
+      ...submitReadySeed,
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          speciesSelection: '923501',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierPassport: 'GB-2026-0002' }]
+        }
+      ]
+    }
+  },
+  {
+    // 0301 is outside the specific-identifier union — the notInUnionOf
+    // free-text identifiers (identificationDetails, description) apply.
+    id: 'fish-line',
+    answers: {
+      ...submitReadySeed,
+      commodityLines: [
+        {
+          commoditySelection: 'Fish',
+          speciesSelection: '801204',
+          numberOfAnimalsQuantity: '40',
+          animalIdentifiers: [
+            { animalIdentifierIdentificationDetails: 'Tank 12, batch 7' }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    // A typed document record scopes the three presentPerRecord dependants.
+    id: 'with-documents',
+    answers: {
+      ...submitReadySeed,
+      documents: [
+        {
+          accompanyingDocumentType: 'ITAHC',
+          accompanyingDocumentAttachmentType: 'PDF',
+          accompanyingDocumentReference: 'DOC-2026-001',
+          accompanyingDocumentDateOfIssue: {
+            day: '01',
+            month: '06',
+            year: '2026'
+          }
+        }
+      ]
+    }
+  }
+]
+
 // `makeScope` layers two A-side flow obligations (importType, declaration) onto
 // the projected inScope set so their owning pages stay reachable under B; they
 // are not B-modelled obligations, so the flow prover skips them — their page
@@ -144,11 +238,11 @@ const isNotPagePresented = (key) =>
   SYSTEM_POPULATED.has(leafName(key))
 
 /**
- * proveFlowReachability — for every scope state, confirm each in-scope
- * obligation is presented by a page (`pageOfObligation`) AND that page is
- * reachable through the flow gates in that state (`simulateJourney`). Returns
- * the deduplicated list of problems; `[]` means every owed obligation is
- * page-reachable.
+ * proveFlowReachability — for every seed variant × scope state, confirm each
+ * in-scope obligation is presented by a page (`pageOfObligation`) AND that
+ * page is reachable through the flow gates in that state (`simulateJourney`).
+ * Returns the deduplicated list of problems; `[]` means every owed obligation
+ * is page-reachable.
  *
  * `scopeFor` / `pagesFor` are injectable so a test can drop a page and confirm
  * the prover has teeth (the dropped page's in-scope obligations become
@@ -168,8 +262,7 @@ export function proveFlowReachability({
     if (!problems.has(dedupeKey)) problems.set(dedupeKey, problem)
   }
 
-  for (const state of enumerateScopeStates()) {
-    const answers = { ...submitReadySeed, ...withoutBlanks(state) }
+  for (const answers of enumerateAnswerStates()) {
     const { inScope } = scopeFor(answers)
     const reachablePages = new Set(pagesFor(answers))
     for (const key of inScope) {
@@ -190,4 +283,38 @@ export function proveFlowReachability({
   }
 
   return [...problems.values()]
+}
+
+// Every prover input: each seed variant overlaid with each scope state.
+const enumerateAnswerStates = () =>
+  seedVariants().flatMap(({ answers }) =>
+    enumerateScopeStates().map((state) => ({
+      ...answers,
+      ...withoutBlanks(state)
+    }))
+  )
+
+/**
+ * proveScopeCompleteness — the enumeration's own completeness check, the
+ * counterpart of A's retired `no-witness-puts-in-scope` problem kind. A
+ * manifest obligation that NO variant × state pair puts in scope is one the
+ * flow prover silently never checks — exactly how a newly imported obligation
+ * (a re-vendor of the model) would dodge `proveFlowReachability` when its
+ * gate values are missing from the seeds. Returns the names of every such
+ * obligation; `[]` means the enumeration reaches the whole manifest
+ * (SYSTEM_POPULATED fields excepted — no page presents them).
+ *
+ * `scopeFor` is injectable so a test can prove the check has teeth.
+ *
+ * @param {{ scopeFor?: (answers: object) => { inScope: Set<string> } }} [deps]
+ * @returns {string[]} manifest obligation names never seen in scope.
+ */
+export function proveScopeCompleteness({ scopeFor = makeScope } = {}) {
+  const seen = new Set()
+  for (const answers of enumerateAnswerStates()) {
+    for (const key of scopeFor(answers).inScope) seen.add(leafName(key))
+  }
+  return obligations
+    .map((obligation) => obligation.name)
+    .filter((name) => !SYSTEM_POPULATED.has(name) && !seen.has(name))
 }

@@ -10,6 +10,8 @@ import { simulateJourney } from './simulate.js'
 import {
   enumerateScopeStates,
   proveFlowReachability,
+  proveScopeCompleteness,
+  seedVariants,
   submitReadySeed
 } from './flow-reachability.js'
 
@@ -83,5 +85,61 @@ describe('flow reachability / dead-end prover (B)', () => {
     expect(problems).toEqual([
       { obligation: 'obligationWithNoPage', reason: 'no-owning-page' }
     ])
+  })
+
+  it('Should put every manifest obligation in scope under some enumerated state', () => {
+    // The completeness half of the prover: a manifest obligation the seed
+    // variants never scope would dodge proveFlowReachability silently — a
+    // re-vendored model addition whose gate values are missing from the
+    // seeds turns this red instead.
+    expect(proveScopeCompleteness()).toEqual([])
+  })
+
+  it('Should have teeth — reporting obligations no enumerated state scopes', () => {
+    // Freeze the scope to a single obligation: everything else in the
+    // manifest (bar SYSTEM_POPULATED) must be reported as never-scoped.
+    const scopeFor = () => ({ inScope: new Set(['countryOfOrigin']) })
+    const neverScoped = proveScopeCompleteness({ scopeFor })
+    expect(neverScoped).not.toContain('countryOfOrigin')
+    expect(neverScoped).toContain('horseName')
+    expect(neverScoped).toContain('permanentAddress')
+    expect(neverScoped).toContain('accompanyingDocumentReference')
+  })
+
+  it('Should cover the base seed gaps through the seed variants', () => {
+    // The specific obligations the base Cow-line seed cannot scope: the
+    // 0101-gated horse name, the 01061900-gated permanent address, the
+    // notInUnionOf free-text identifiers (0301 line) and the per-document
+    // dependants (typed document record). Each must be scoped by at least
+    // one variant × state — this pins the variants to their purpose.
+    const scopedNames = new Set()
+    for (const { answers } of seedVariants()) {
+      for (const state of enumerateScopeStates()) {
+        const overlay = Object.fromEntries(
+          Object.entries(state).filter(([, value]) => value !== '')
+        )
+        const merged = { ...answers, ...overlay }
+        for (const key of makeScope(merged).inScope) {
+          scopedNames.add(
+            key
+              .replace(/\[\d+\]/g, '')
+              .split('.')
+              .pop()
+          )
+        }
+      }
+    }
+    for (const name of [
+      'horseName',
+      'permanentAddress',
+      'animalIdentifierIdentificationDetails',
+      'animalIdentifierDescription',
+      'accompanyingDocumentType',
+      'accompanyingDocumentAttachmentType',
+      'accompanyingDocumentReference',
+      'accompanyingDocumentDateOfIssue'
+    ]) {
+      expect(scopedNames).toContain(name)
+    }
   })
 })
