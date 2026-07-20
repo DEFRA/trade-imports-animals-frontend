@@ -314,8 +314,10 @@ export const cyaController = {
       //     per-line "unit-record count equals numberOfAnimals" (V4
       //     "unit records ARE animals" reading). `instanceId` =
       //     `${lineId}` only; `expected` + `actual` on the error.
-      //   - obligation.accompanyingDocument.allOrNothing — one
-      //     notification-level prompt when the block is partial.
+      //   - MAX_ENTRIES — one notification-level prompt when a
+      //     collection is over its cap (WS4 accompanyingDocument
+      //     redeploy-safety case: user saved N docs, redeploy lowers
+      //     the cap under N, invariant fires until they delete some).
       for (const err of groupInvariantErrorsForState(state)) {
         if (err.code === 'obligation.unitRecord.identifiersRequired') {
           const [lineId, unitId] = err.instanceId.split('/')
@@ -342,11 +344,15 @@ export const cyaController = {
             because: []
           })
         } else if (
-          err.code === 'obligation.accompanyingDocument.allOrNothing'
+          err.code === 'MAX_ENTRIES' &&
+          err.groupName === 'accompanyingDocument'
         ) {
           prompts.push({
-            text: t('cya.promptAccompanyingDocumentPartial'),
-            href: `${BASE}/pages/accompanying-documents`,
+            text: t('cya.promptAccompanyingDocumentTooMany', {
+              max: err.maxEntries,
+              actual: err.actual
+            }),
+            href: `${BASE}/accompanying-documents`,
             because: []
           })
         }

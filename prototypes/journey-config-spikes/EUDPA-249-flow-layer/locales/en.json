@@ -502,7 +502,7 @@
     "promptCompleteAddressForUnit": "Complete the permanent address for animal {unitN} on commodity line {lineN}",
     "promptGroupInvariant": "Add at least one identifier for animal {unitN} on commodity line {lineN}",
     "promptUnitCountMismatch": "Commodity line {lineN} lists {expected} animals but you've added {actual} sets of identifiers",
-    "promptAccompanyingDocumentPartial": "Complete every accompanying-document field or clear them all",
+    "promptAccompanyingDocumentTooMany": "Remove accompanying documents so you have no more than {max} (you have added {actual})",
     "submitReady": "All required obligations are fulfilled. In a real service, this is where the user would submit."
   },
   "commodityLines": {
@@ -520,6 +520,22 @@
     "deleteButton": "Delete this line",
     "deleteHidden": "Delete commodity line {n}",
     "manageAnimalsButton": "Manage animals on this line"
+  },
+  "accompanyingDocuments": {
+    "pageTitle": "Accompanying documents",
+    "heading": "Accompanying documents",
+    "lead": "Optionally attach up to 10 supporting documents. Each document needs a type, attachment format, reference, and date of issue.",
+    "notFilled": "-",
+    "changeLinkText": "Change",
+    "changeLinkHidden": "{label} for document {n}",
+    "breadcrumbSelf": "Accompanying documents",
+    "empty": "No accompanying documents added yet.",
+    "addButton": "Add an accompanying document",
+    "atCap": "You have added {max} documents, which is the maximum.",
+    "backToTaskList": "Back to task list",
+    "docHeading": "Document {n}",
+    "deleteButton": "Delete this document",
+    "deleteHidden": "Delete document {n}"
   },
   "units": {
     "pageTitle": "Animals on commodity line {lineN}",
@@ -578,6 +594,9 @@
     },
     "contactAddress": {
       "required": "Complete the contact address"
+    },
+    "accompanyingDocumentType": {
+      "required": "Choose the document type"
     },
     "accompanyingDocumentAttachmentType": {
       "required": "Choose the attachment format"

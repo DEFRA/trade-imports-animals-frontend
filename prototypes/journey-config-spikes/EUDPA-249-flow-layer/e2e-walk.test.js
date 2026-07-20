@@ -267,29 +267,40 @@ describe('happy-path e2e walk — internal-market with 1 commodity line', () => 
       contactAddress__email: 'contact@example.com'
     })
     // internal-reference omitted — internalReferenceNumber is optional.
-    // Accompanying-documents: this walk exercises the branchedGate
-    // all-mandatory branch — filling one field flips all four to
-    // mandatory and the domain checks the enum + string-max + date
-    // predicates all fire cleanly. See the transit walk below for the
-    // all-optional branch (subsection F without any submission).
-    //
-    // Posted directly (not via `fill()`) because the branchedGate
-    // starts all four fields optional, so /start skips the page —
-    // the user reaches it voluntarily via the task-list.
-    const accompRes = await inject(jar, {
+    // Accompanying-documents (WS4): records-shape group, 0..10 per
+    // notification. Add one doc via the summary index and fill all
+    // four per-doc pages. Transit walk below deliberately skips the
+    // whole subsection (NA when empty).
+    const addDocRes = await inject(jar, {
       method: 'POST',
-      url: `${BASE}/pages/accompanying-documents`,
+      url: `${BASE}/accompanying-documents/add`,
+      payload: {}
+    })
+    expect(addDocRes.statusCode).toBe(302)
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/accompanying-documents/doc1/accompanying-document-type`,
+      payload: { 'accompanyingDocumentType-doc1': 'health-certificate' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/accompanying-documents/doc1/accompanying-document-attachment`,
+      payload: { 'accompanyingDocumentAttachmentType-doc1': 'pdf' }
+    })
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/accompanying-documents/doc1/accompanying-document-reference`,
       payload: {
-        accompanyingDocumentType: 'health-certificate',
-        accompanyingDocumentAttachmentType: 'pdf',
-        accompanyingDocumentReference: 'HC-2026-00042',
-        accompanyingDocumentDateOfIssue: '01/06/2026'
+        'accompanyingDocumentReference-doc1': 'HC-2026-00042'
       }
     })
-    expect(
-      accompRes.statusCode,
-      `POST /pages/accompanying-documents (all 4 fields filled) failed`
-    ).toBe(302)
+    await inject(jar, {
+      method: 'POST',
+      url: `${BASE}/accompanying-documents/doc1/accompanying-document-date-of-issue`,
+      payload: {
+        'accompanyingDocumentDateOfIssue-doc1': '01/06/2026'
+      }
+    })
 
     // -- Section 5: commodity lines -------------------------------------
     // Minting a line is bespoke `/lines/add`; add-then-fill redirects
@@ -591,14 +602,16 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     })
     expect(list.statusCode).toBe(200)
     // 15 subsections — same as internal-market (14 pre-CPH + CPH).
-    // 14 read Completed; TWO read Optional. The internal-market
-    // walk above filled `accompanying-documents` and left only
-    // `trader-reference` untouched; this walk deliberately skips
-    // both. Both are optional-only subsections, so under the 5-way
-    // alphabet they read Optional (Case A). The `reason` subsection
-    // still rolls up to F once reason-for-import is filled —
-    // purposeInInternalMarket goes NA, and NA obligations don't
-    // hold the subsection open.
+    // 14 read Completed; ONE reads Optional (`trader-reference`,
+    // whose only obligation is completion-optional and the walk
+    // skips it). WS4 changed the shape of `accompanying-documents`:
+    // it's now a records-shape group. When the walk skips it (0
+    // docs added) the subsection has zero in-scope entries and
+    // classifies as NA — no tag on the task list. Previously (WS2)
+    // it had 4 in-scope optional scalars and read Optional. The
+    // `reason` subsection still rolls up to F once reason-for-import
+    // is filled — purposeInInternalMarket goes NA, and NA
+    // obligations don't hold the subsection open.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
@@ -607,8 +620,8 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     const optionalCount = (list.payload.match(/Optional/g) ?? []).length
     expect(
       optionalCount,
-      `expected 2 Optional tags on the task list, got ${optionalCount}`
-    ).toBe(2)
+      `expected 1 Optional tag on the task list, got ${optionalCount}`
+    ).toBe(1)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 

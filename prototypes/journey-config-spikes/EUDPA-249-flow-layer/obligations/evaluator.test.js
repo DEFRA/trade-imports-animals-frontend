@@ -43,6 +43,7 @@ import {
   identificationDetails,
   description,
   permanentAddress,
+  accompanyingDocument,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -1208,18 +1209,17 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
 })
 
 // ---------------------------------------------------------------------------
-// V4 — Accompanying Documents (notification-level all-or-nothing block)
+// V4 — Accompanying Documents (0..10 user-driven records group, WS4)
 //
-// Confluence page 6497338582 labels the block as a "Field Block —
-// Optional — All-or-nothing". Modelled here as four scalar notification-
-// level obligations (all `status: 'optional'`) plus a structural
-// container `accompanyingDocument` carrying
-// `requires.allOrNothingOfIds`. The container's implication is a plain
-// in-scope singleton; the invariant fires at the state level via
-// `engine/index.js#groupInvariantErrors`. The four fields are ALWAYS
-// individually optional-in-scope — there is no scope swap, no self-
-// loop, no retain-vs-purge nuance. Stored values round-trip as
-// scalars.
+// Confluence page 6497338582 still labels the block as "at most one"
+// but the team (2026-07-20) confirmed it's actually 0..10 per
+// notification. Modelled here as a records-shape user-driven group
+// (`accompanyingDocument` — same category as `commodityLine`) with
+// four member fields `within: accompanyingDocument`, `status:
+// 'mandatory'`. `requires.maxEntries: 10` caps the collection; the
+// summary controller also greys out the Add button at the cap.
+// Stored values round-trip as records-keyed maps
+// (`{ [docId]: value }`).
 // ---------------------------------------------------------------------------
 
 const documentBlockFields = [
@@ -1229,64 +1229,72 @@ const documentBlockFields = [
   ['DateOfIssue', accompanyingDocumentDateOfIssue]
 ]
 
-describe('V4 — accompanying document block: fields are always optional in-scope', () => {
+describe('V4 — accompanying document group: records-shape wiring', () => {
+  it('accompanyingDocument is an in-scope group with an empty records list on empty input', () => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[accompanyingDocument.id]).toEqual({
+      inScope: true,
+      records: []
+    })
+  })
+
   it.each(documentBlockFields)(
-    '%s is optional in-scope on empty input',
+    '%s is an in-scope leaf with an empty records list on empty input',
     (_name, obligation) => {
       const result = evaluator.evaluate({})
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        status: 'optional'
+        records: []
       })
     }
   )
 
-  it.each(documentBlockFields)(
-    '%s stays optional in-scope when only that field is filled (no scope swap)',
-    (_name, obligation) => {
-      const result = evaluator.evaluate({ [obligation.id]: 'some-value' })
-      for (const [, sibling] of documentBlockFields) {
-        expect(result.obligations[sibling.id]).toEqual({
-          inScope: true,
-          status: 'optional'
-        })
-      }
+  it('one doc with one field filled — group has one record, each field is per-record mandatory', () => {
+    // Presence of any doc-scoped fulfilment adds the record to the
+    // group's post-purge records list (same as commodityLine).
+    const result = evaluator.evaluate({
+      [accompanyingDocumentType.id]: { doc1: 'veterinary-health-certificate' }
+    })
+    expect(result.obligations[accompanyingDocument.id].records).toEqual([
+      { fulfilmentId: 'doc1' }
+    ])
+    for (const [, obligation] of documentBlockFields) {
+      expect(result.obligations[obligation.id].records).toEqual([
+        { fulfilmentId: 'doc1', status: 'mandatory' }
+      ])
     }
-  )
+  })
 
-  it('stays optional in-scope even with all four fields filled (the invariant fires elsewhere)', () => {
+  it('all four fields filled on one doc — values round-trip', () => {
     const stored = {
-      [accompanyingDocumentType.id]: 'Veterinary health certificate',
-      [accompanyingDocumentAttachmentType.id]: 'PDF',
-      [accompanyingDocumentReference.id]: 'GBHC1234567890',
-      [accompanyingDocumentDateOfIssue.id]: '2025-12-12'
+      [accompanyingDocumentType.id]: {
+        doc1: 'veterinary-health-certificate'
+      },
+      [accompanyingDocumentAttachmentType.id]: { doc1: 'pdf' },
+      [accompanyingDocumentReference.id]: { doc1: 'GBHC1234567890' },
+      [accompanyingDocumentDateOfIssue.id]: { doc1: '12/12/2025' }
     }
     const result = evaluator.evaluate(stored)
     for (const [, obligation] of documentBlockFields) {
-      expect(result.obligations[obligation.id]).toEqual({
-        inScope: true,
-        status: 'optional'
-      })
-      // Scalars round-trip verbatim.
-      expect(result.fulfilments[obligation.id]).toBe(stored[obligation.id])
+      expect(result.fulfilments[obligation.id]).toEqual(stored[obligation.id])
     }
   })
-})
 
-describe('V4 — accompanying document block: retain-value semantic', () => {
-  it('never purges a stored value regardless of sibling state', () => {
-    // Fields are unconditional scalars — no applyTo, no purge branch.
-    // Filling Reference alone leaves the value untouched even though
-    // the group invariant will fire (partial block) at state level.
+  it('two docs — group carries two records, each field is per-record mandatory on both', () => {
     const result = evaluator.evaluate({
-      [accompanyingDocumentReference.id]: 'GBHC1234567890'
+      [accompanyingDocumentType.id]: {
+        doc1: 'veterinary-health-certificate',
+        doc2: 'commercial-invoice'
+      }
     })
-    expect(result.fulfilments[accompanyingDocumentReference.id]).toBe(
-      'GBHC1234567890'
-    )
-    expect(result.obligations[accompanyingDocumentReference.id].status).toBe(
-      'optional'
-    )
+    expect(result.obligations[accompanyingDocument.id].records).toEqual([
+      { fulfilmentId: 'doc1' },
+      { fulfilmentId: 'doc2' }
+    ])
+    expect(result.obligations[accompanyingDocumentType.id].records).toEqual([
+      { fulfilmentId: 'doc1', status: 'mandatory' },
+      { fulfilmentId: 'doc2', status: 'mandatory' }
+    ])
   })
 })
 

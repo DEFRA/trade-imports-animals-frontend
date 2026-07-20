@@ -735,77 +735,105 @@ describe('page-controller — address-block composite widget (commercialTranspor
   })
 })
 
-describe('page-controller — accompanying-documents all-or-nothing block', () => {
-  // WS2 rework (2026-07): the block is now an
-  // `accompanyingDocument` container carrying
-  // `requires.allOrNothingOfIds` on its four scalar members. Fields
-  // are individually always-optional; the invariant fires at the
-  // container / journey level via `groupInvariantErrors` when the
-  // block is partially filled. Page-save intentionally accepts any
-  // partial submission — the block is validated at the subtree level,
-  // not per-field, so mid-typing saves don't 400.
-  it('POST with every field blank saves cleanly and shows no CYA per-field prompts', async () => {
+describe('page-controller — accompanying-documents 0..10 records group', () => {
+  // WS4 rework (2026-07-20): `accompanyingDocument` is a records-
+  // shape user-driven group. Traders add / delete / fill documents
+  // via a summary index (`/accompanying-documents`) with per-doc
+  // pages (`/accompanying-documents/{docId}/{page}`). Each of the
+  // four per-doc pages is mandatoryToProceed:true so a half-filled
+  // document 400s on save. The summary index disables the Add
+  // button at the maxEntries cap (10); the invariant is
+  // authoritative for after-the-fact defence.
+  it('GET /accompanying-documents shows the empty state', async () => {
     const jar = makeCookieJar()
-    const post = await inject(jar, {
+    const res = await inject(jar, {
+      method: 'GET',
+      url: '/prototype/eudpa-249/accompanying-documents'
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toContain('No accompanying documents added yet.')
+    expect(res.payload).toContain('Add an accompanying document')
+  })
+
+  it('POST /accompanying-documents/add mints a doc and redirects to the type page', async () => {
+    const jar = makeCookieJar()
+    const res = await inject(jar, {
       method: 'POST',
-      url: '/prototype/eudpa-249/pages/accompanying-documents',
+      url: '/prototype/eudpa-249/accompanying-documents/add',
       payload: {}
     })
-    expect(post.statusCode).toBe(302)
-    const cya = await inject(jar, {
-      method: 'GET',
-      url: '/prototype/eudpa-249/check-your-answers'
-    })
-    // No per-field prompts on the all-blank path — the invariant is
-    // satisfied vacuously.
-    expect(cya.payload).not.toContain('Enter a value for Document type')
-    expect(cya.payload).not.toContain('Enter a value for Attachment format')
-    expect(cya.payload).not.toContain('Enter a value for Document reference')
-    expect(cya.payload).not.toContain('Enter a value for Date of issue')
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe(
+      '/prototype/eudpa-249/accompanying-documents/doc1/accompanying-document-type'
+    )
   })
 
-  it('POST with only Document type filled saves (partial is a rollup concern, not a page-save block)', async () => {
+  it('per-doc page-save 400s on blank required input (mandatoryToProceed)', async () => {
     const jar = makeCookieJar()
-    const post = await inject(jar, {
+    await inject(jar, {
       method: 'POST',
-      url: '/prototype/eudpa-249/pages/accompanying-documents',
-      payload: { accompanyingDocumentType: 'health-certificate' }
+      url: '/prototype/eudpa-249/accompanying-documents/add',
+      payload: {}
     })
-    // Page-save no longer 400s on partial — the four fields are
-    // individually optional; the "all-or-nothing" invariant is
-    // enforced at container-status / journeyState rollup.
-    expect(post.statusCode).toBe(302)
-    const cya = await inject(jar, {
-      method: 'GET',
-      url: '/prototype/eudpa-249/check-your-answers'
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/accompanying-documents/doc1/accompanying-document-type',
+      payload: {}
     })
-    // The type row still renders — value round-tripped.
-    expect(cya.payload).toContain('Health certificate')
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toContain('Choose the document type')
   })
 
-  it('POST with only a non-Type field filled (Reference only) saves and round-trips', async () => {
-    // Under the new symmetric all-or-nothing reading the block is
-    // partially filled here — the group invariant fires at rollup
-    // level. Page-save still accepts the submission (spec: "Optional"
-    // at the block level).
+  it('per-doc page-save 302s with a filled value + redirects to the next per-doc page', async () => {
     const jar = makeCookieJar()
-    const post = await inject(jar, {
+    await inject(jar, {
       method: 'POST',
-      url: '/prototype/eudpa-249/pages/accompanying-documents',
-      payload: { accompanyingDocumentReference: 'HC-2026-00042' }
+      url: '/prototype/eudpa-249/accompanying-documents/add',
+      payload: {}
     })
-    expect(post.statusCode).toBe(302)
-    const cya = await inject(jar, {
+    const res = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/accompanying-documents/doc1/accompanying-document-type',
+      payload: { 'accompanyingDocumentType-doc1': 'health-certificate' }
+    })
+    expect(res.statusCode).toBe(302)
+    // nextAfterForDoc walks unfilled per-doc pages in declared order
+    // — the next mandatory-unfilled page in the subsection is
+    // accompanying-document-attachment.
+    expect(res.headers.location).toBe(
+      '/prototype/eudpa-249/accompanying-documents/doc1/accompanying-document-attachment'
+    )
+  })
+
+  it('POST /accompanying-documents/{id}/delete drops the doc and returns to the summary', async () => {
+    const jar = makeCookieJar()
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/accompanying-documents/add',
+      payload: {}
+    })
+    // Fill one field.
+    await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/accompanying-documents/doc1/accompanying-document-type',
+      payload: { 'accompanyingDocumentType-doc1': 'health-certificate' }
+    })
+    // Delete.
+    const del = await inject(jar, {
+      method: 'POST',
+      url: '/prototype/eudpa-249/accompanying-documents/doc1/delete',
+      payload: {}
+    })
+    expect(del.statusCode).toBe(302)
+    expect(del.headers.location).toBe(
+      '/prototype/eudpa-249/accompanying-documents'
+    )
+    // Empty state re-appears.
+    const summary = await inject(jar, {
       method: 'GET',
-      url: '/prototype/eudpa-249/check-your-answers'
+      url: '/prototype/eudpa-249/accompanying-documents'
     })
-    // The reference row renders.
-    expect(cya.payload).toContain('HC-2026-00042')
-    // No per-field prompts fire — required-ness is a group invariant,
-    // not a per-field concern.
-    expect(cya.payload).not.toContain('Enter a value for Document type')
-    expect(cya.payload).not.toContain('Enter a value for Attachment format')
-    expect(cya.payload).not.toContain('Enter a value for Date of issue')
+    expect(summary.payload).toContain('No accompanying documents added yet.')
   })
 })
 

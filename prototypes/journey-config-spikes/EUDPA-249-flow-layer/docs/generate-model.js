@@ -51,8 +51,9 @@ const modelPath = path.join(prototypeDir, 'MODEL.md')
 const ID_SHORT_LENGTH = 8
 // Structural containers — obligations rendered with the `[[name]]`
 // Mermaid shape and marked "structural" in the data dictionary.
-// Includes both records-shape groups (commodityLine, unitRecord) and
-// notification-level invariant-carrier containers (accompanyingDocument).
+// commodityLine + unitRecord + accompanyingDocument are all records-
+// shape user-driven groups (WS4 reshaped accompanyingDocument into
+// the records-shape category).
 const STRUCTURAL_GROUP_NAMES = new Set([
   'commodityLine',
   'unitRecord',
@@ -293,7 +294,9 @@ const dependencyGraphSection = () => {
     '`requires.allOrNothingOfIds` ("either all listed scalar members',
     'are filled or none are"), or `requires.recordCountEquals` ("group',
     'record count per parent instance equals the named scalar sibling").',
-    'Group containers use `[[name]]` shape.',
+    'Two additional invariant kinds — `requires.minEntries` and',
+    '`requires.maxEntries` — are collection floor / cap self-invariants',
+    'and do not render as edges. Group containers use `[[name]]` shape.',
     '',
     '```mermaid',
     'graph LR',

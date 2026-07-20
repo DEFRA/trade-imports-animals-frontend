@@ -12,10 +12,11 @@
  */
 
 import { pages } from './contract.js'
-import { unitRecord } from './obligations/obligations.js'
+import { unitRecord, accompanyingDocument } from './obligations/obligations.js'
 import { makePageController } from './lib/page-controller.js'
 import { makeLinePageController } from './lib/line-page-controller.js'
 import { makeUnitPageController } from './lib/unit-page-controller.js'
+import { makeAccompanyingDocPageController } from './lib/accompanying-doc-page-controller.js'
 import { hubController } from './features/hub/controller.js'
 import { cyaController } from './features/check-your-answers/controller.js'
 import {
@@ -28,6 +29,11 @@ import {
   linesUnitsAddController,
   linesUnitsDeleteController
 } from './features/units/controller.js'
+import {
+  accompanyingDocumentsIndexController,
+  accompanyingDocumentsAddController,
+  accompanyingDocumentsDeleteController
+} from './features/accompanying-documents/controller.js'
 import { startController } from './features/start/controller.js'
 import { resetController } from './features/reset/controller.js'
 
@@ -108,6 +114,30 @@ export const journeyConfigFlow = {
         })
       )
 
+      // Accompanying-documents index / add / delete (bespoke, WS4 —
+      // 0..10 documents per notification).
+      routes.push(
+        publicRoute({
+          method: 'GET',
+          path: `${BASE}/accompanying-documents`,
+          ...accompanyingDocumentsIndexController.get
+        })
+      )
+      routes.push(
+        publicRoute({
+          method: 'POST',
+          path: `${BASE}/accompanying-documents/add`,
+          ...accompanyingDocumentsAddController.post
+        })
+      )
+      routes.push(
+        publicRoute({
+          method: 'POST',
+          path: `${BASE}/accompanying-documents/{id}/delete`,
+          ...accompanyingDocumentsDeleteController.post
+        })
+      )
+
       // Per-line units index / add / delete (bespoke, depth-2).
       routes.push(
         publicRoute({
@@ -164,6 +194,24 @@ export const journeyConfigFlow = {
               publicRoute({
                 method: 'POST',
                 path: `${BASE}/lines/{lineId}/units/{unitId}/${page.page}`,
+                ...handlers.post
+              })
+            )
+            continue
+          }
+          if (page.presentsForEach.forEachOf === accompanyingDocument) {
+            const handlers = makeAccompanyingDocPageController(page)
+            routes.push(
+              publicRoute({
+                method: 'GET',
+                path: `${BASE}/accompanying-documents/{docId}/${page.page}`,
+                ...handlers.get
+              })
+            )
+            routes.push(
+              publicRoute({
+                method: 'POST',
+                path: `${BASE}/accompanying-documents/{docId}/${page.page}`,
                 ...handlers.post
               })
             )

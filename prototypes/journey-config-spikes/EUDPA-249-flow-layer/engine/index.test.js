@@ -1166,6 +1166,106 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
   })
 })
 
+// Symmetric to `minEntries`. Wired into `accompanyingDocument`
+// (maxEntries: 10) as the authoritative cap — the summary UI mirrors
+// it but this invariant is the redeploy-safety net (state saved with
+// 10 records survives; a redeploy lowering the cap to 9 fires the
+// invariant on the 10th record until the user deletes one).
+describe('groupInvariantErrors — `requires.maxEntries` collection cap', () => {
+  const group = { id: 'g', name: 'accompanyingDocument' }
+  const groupWithCap = {
+    ...group,
+    requires: {
+      maxEntries: 10,
+      maxEntriesErrorCode: 'obligation.accompanyingDocument.tooMany'
+    }
+  }
+  const records = (n) =>
+    Array.from({ length: n }, (_, i) => ({ fulfilmentId: `doc${i + 1}` }))
+
+  it('emits no error when records.length is below the cap', () => {
+    const st = state({
+      obligations: impls([
+        { obligation: group, impl: { inScope: true, records: records(3) } }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithCap, st)).toEqual([])
+  })
+
+  it('emits no error when records.length equals the cap', () => {
+    const st = state({
+      obligations: impls([
+        { obligation: group, impl: { inScope: true, records: records(10) } }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithCap, st)).toEqual([])
+  })
+
+  it('emits one MAX_ENTRIES error when records.length exceeds the cap', () => {
+    const st = state({
+      obligations: impls([
+        { obligation: group, impl: { inScope: true, records: records(11) } }
+      ])
+    })
+    expect(groupInvariantErrors(groupWithCap, st)).toEqual([
+      {
+        code: 'MAX_ENTRIES',
+        groupId: group.id,
+        groupName: 'accompanyingDocument',
+        errorCode: 'obligation.accompanyingDocument.tooMany',
+        maxEntries: 10,
+        actual: 11
+      }
+    ])
+  })
+
+  it('emits no error when the group is out of scope', () => {
+    const st = state({
+      obligations: impls([{ obligation: group, impl: { inScope: false } }])
+    })
+    expect(groupInvariantErrors(groupWithCap, st)).toEqual([])
+  })
+
+  it('composes with `requires.minEntries` — both a floor error and a cap error can coexist', () => {
+    // Not realistic in practice (a cap below a floor is nonsense) but
+    // proves the invariants compose without cross-talk.
+    const composite = {
+      ...group,
+      requires: {
+        minEntries: 5,
+        maxEntries: 3,
+        errorCode: 'floor-err',
+        maxEntriesErrorCode: 'cap-err'
+      }
+    }
+    const st = state({
+      obligations: impls([
+        { obligation: group, impl: { inScope: true, records: records(4) } }
+      ])
+    })
+    const errors = groupInvariantErrors(composite, st)
+    expect(errors.map((e) => e.code).sort()).toEqual([
+      'MAX_ENTRIES',
+      'MIN_ENTRIES'
+    ])
+  })
+
+  it('falls back to `errorCode` when maxEntriesErrorCode is omitted', () => {
+    const composite = {
+      ...group,
+      requires: { maxEntries: 2, errorCode: 'shared-err' }
+    }
+    const st = state({
+      obligations: impls([
+        { obligation: group, impl: { inScope: true, records: records(3) } }
+      ])
+    })
+    const errors = groupInvariantErrors(composite, st)
+    expect(errors).toHaveLength(1)
+    expect(errors[0].errorCode).toBe('shared-err')
+  })
+})
+
 // The V4 accompanying-document field block. Container obligation
 // carries `requires.allOrNothingOfIds` naming its four scalar member
 // obligations. Errors emerge from state.fulfilments directly (no

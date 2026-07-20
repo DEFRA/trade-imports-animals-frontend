@@ -175,12 +175,6 @@ const permanentAddressReason = {
     'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
 }
 
-const accompanyingDocumentAllOrNothingReason = {
-  code: 'obligation.accompanyingDocument.allOrNothing.becausePartiallyFilled',
-  explanation:
-    'accompanying document field block must be filled completely or left blank (V4 all-or-nothing)'
-}
-
 // -----------------------------------------------------------------------------
 // System-populated fields — declared for V4 completeness but NOT
 // presented in the flow layer. Value legality is enforced upstream
@@ -869,65 +863,68 @@ export const permanentAddress = {
 }
 
 // -----------------------------------------------------------------------------
-// Accompanying Documents — notification-level all-or-nothing field block.
+// Accompanying Documents — user-driven indexed group (0..10 documents
+// per notification).
 //
-// V4 spec (Confluence page 6497338582): the four fields are labelled as a
-// "Field Block — Optional — All-or-nothing". Modelled here via a
-// structural container obligation `accompanyingDocument` carrying a
-// group-level `requires.allOrNothingOfIds` invariant. The four member
-// fields stay at notification level (scalar `fulfilments[id] = value`
-// storage — no records-shape change); the invariant fires at the state
-// level when partial. Replaces the earlier `presentGate` self-loop that
-// only tripped on Type (audit finding #15) with the symmetric field-
-// block reading the spec calls for.
+// Spec source (2026-07-20 conversation with team, PO absent): traders
+// can attach between 0 and 10 accompanying documents to a notification.
+// Each document carries its own type / attachment / reference / date-of-
+// issue. Confluence page 6497338582 still reads as if there is at most
+// one document (WS4 preceded the PO update); the page will be amended
+// later. If you're running the spec-vs-model comparison and see the
+// single-document phrasing, this is the reason — model is the source
+// of truth until the page is updated.
 //
-// Semantics enforced by `engine/index.js#groupInvariantErrors`:
-//   - 0 filled  → no error (block inactive)
-//   - all 4 filled → no error (block complete)
-//   - 1..3 filled → one error {code, groupId, missingIds}
-//
-// Container back-refs (`member.containers`) are wired at the bottom of
-// this file so `collectGroupsPresentedIn` in the engine can reach the
-// container from any page that presents a member obligation.
+// WS4 (2026-07-20) reshaped this from a notification-level all-or-
+// nothing scalar block (WS2) into a records-shape user-driven group,
+// same category as `commodityLine`. Per-document mandatoriness is
+// expressed at the field level (`status: 'mandatory'` within the
+// group) plus per-page `mandatoryToProceed: true` in flow.js.
+// `requires.maxEntries: 10` caps the collection; the summary
+// controller also greys out the Add button at the cap but the
+// invariant is authoritative for after-the-fact defence (e.g. a
+// redeploy lowering the cap after the user saved records over the
+// new limit).
 // -----------------------------------------------------------------------------
+
+export const accompanyingDocument = {
+  id: '52210b3b-4c53-4b81-8ef0-fa0b1223e40c',
+  name: 'accompanyingDocument',
+  // No `within` — top-level user-driven indexed group. Same category
+  // as `commodityLine`; instance ids are session-scoped counter values
+  // (`doc1`, `doc2`, …).
+  requires: {
+    maxEntries: 10,
+    maxEntriesErrorCode: 'obligation.accompanyingDocument.tooMany'
+  }
+}
 
 export const accompanyingDocumentType = {
   id: '4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8',
   name: 'accompanyingDocumentType',
-  status: 'optional'
+  within: accompanyingDocument,
+  status: 'mandatory'
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
   name: 'accompanyingDocumentAttachmentType',
-  status: 'optional'
+  within: accompanyingDocument,
+  status: 'mandatory'
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
   name: 'accompanyingDocumentReference',
-  status: 'optional'
+  within: accompanyingDocument,
+  status: 'mandatory'
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
   name: 'accompanyingDocumentDateOfIssue',
-  status: 'optional'
-}
-
-export const accompanyingDocument = {
-  id: '52210b3b-4c53-4b81-8ef0-fa0b1223e40c',
-  name: 'accompanyingDocument',
-  requires: {
-    allOrNothingOfIds: [
-      accompanyingDocumentType.id,
-      accompanyingDocumentAttachmentType.id,
-      accompanyingDocumentReference.id,
-      accompanyingDocumentDateOfIssue.id
-    ],
-    errorCode: 'obligation.accompanyingDocument.allOrNothing',
-    reasons: [accompanyingDocumentAllOrNothingReason]
-  }
+  within: accompanyingDocument,
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------
@@ -979,6 +976,9 @@ export const obligations = [
   identificationDetails,
   description,
   permanentAddress,
+  // Accompanying documents live at notification level (no `within`);
+  // the container comes first so the four members' `within` back-refs
+  // land in a natural declaration order.
   accompanyingDocument,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
@@ -997,7 +997,17 @@ export const groups = obligations.filter((o) =>
 // invariant carrier. Consumed by `engine/index.js#collectGroupsPresentedIn`
 // so a flow page presenting any member surfaces its parent invariant
 // container the same way `presentsForEach.forEachOf` surfaces records
-// groups. Idempotent — repeated imports rebuild the same list.
+// groups.
+//
+// After WS4 the current manifest has zero `allOrNothingOfIds` carriers
+// — accompanying-documents were reshaped into a records-shape user-
+// driven group. The loop is retained as a general primitive: any
+// future notification-level scalar invariant block (e.g. a "two of
+// three optional fields must be filled" pattern) can be modelled as a
+// container obligation carrying `allOrNothingOfIds` (or a future
+// sibling invariant kind) and this pass wires up the visibility back-
+// refs without further engine changes. Idempotent — repeated imports
+// rebuild the same list.
 // -----------------------------------------------------------------------------
 for (const container of obligations) {
   if (!container?.requires?.allOrNothingOfIds) continue

@@ -497,7 +497,7 @@ function collectInScopePresentedEntries(container, state) {
  * groupInvariantErrors(group, state)
  *   → [{ code, groupId, groupName, ... }]
  *
- * Emits one entry per unsatisfied invariant on the group. Four rules
+ * Emits one entry per unsatisfied invariant on the group. Five rules
  * are supported; a group may carry any combination.
  *
  *   - `requires.minEntries` — collection floor. Emits ONE
@@ -507,6 +507,15 @@ function collectInScopePresentedEntries(container, state) {
  *     records collapses to NA and `journeyState → fulfilled` for an
  *     empty consignment. Wired into `commodityLine` (minEntries: 1)
  *     in obligations.js.
+ *
+ *   - `requires.maxEntries` — collection cap. Symmetric to
+ *     minEntries. Emits ONE `{ code: 'MAX_ENTRIES', maxEntries,
+ *     actual, errorCode }` when `records.length` exceeds the cap.
+ *     Wired into `accompanyingDocument` (maxEntries: 10) — a UI
+ *     also enforces the cap on the Add button but the invariant is
+ *     authoritative for after-the-fact defence (e.g. a redeploy
+ *     lowering the cap after the user saved records over the new
+ *     limit).
  *
  *   - `requires.anyOfIds` — per-instance rule. Emits one error per
  *     in-scope instance where NONE of the required leaves has a
@@ -541,9 +550,9 @@ function collectInScopePresentedEntries(container, state) {
  *     (`fieldId = numberOfAnimals.id`) so the count of animals on a
  *     commodity line matches the trader's declared quantity.
  *
- * All four rule shapes contribute uniformly to `classifyEntries`'
- * `groupErrorCount` — an unmet floor / anyOf / all-or-nothing /
- * count-mismatch blocks F identically.
+ * All five rule shapes contribute uniformly to `classifyEntries`'
+ * `groupErrorCount` — an unmet floor / cap / anyOf / all-or-nothing
+ * / count-mismatch blocks F identically.
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) return []
@@ -551,7 +560,7 @@ export function groupInvariantErrors(group, state) {
   if (!groupImpl?.inScope) return []
   const errors = []
   const records = groupImpl.records ?? []
-  const { minEntries, errorCode } = group.requires
+  const { minEntries, maxEntries, errorCode } = group.requires
   if (typeof minEntries === 'number' && records.length < minEntries) {
     errors.push({
       code: 'MIN_ENTRIES',
@@ -559,6 +568,16 @@ export function groupInvariantErrors(group, state) {
       groupName: group.name,
       errorCode,
       minEntries,
+      actual: records.length
+    })
+  }
+  if (typeof maxEntries === 'number' && records.length > maxEntries) {
+    errors.push({
+      code: 'MAX_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
+      maxEntries,
       actual: records.length
     })
   }

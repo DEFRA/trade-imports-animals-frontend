@@ -81,6 +81,7 @@ import {
   horseName,
   identificationDetails,
   description,
+  accompanyingDocument,
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
@@ -402,26 +403,63 @@ export const flow = {
           ]
         },
         {
-          // Accompanying-document block. All four fields are individually
-          // optional — the "either fill all four or leave all four blank"
-          // rule is expressed as the `accompanyingDocument` container's
-          // `requires.allOrNothingOfIds` invariant (obligations.js) and
-          // surfaces through `groupInvariantErrors` at container /
-          // journey / CYA rollup. Page-save intentionally accepts any
-          // partial submission — the block is validated at the subtree
-          // level, not per-field, so a mid-typing save doesn't 400.
+          // Accompanying-document block (WS4 shape). Records-shape user-
+          // driven group — traders can attach 0..10 documents per
+          // notification, each with all four fields mandatory. Same
+          // fan-out pattern as commodity-lines: a bespoke summary/add/
+          // delete controller (`features/accompanying-documents/`)
+          // handles `/accompanying-documents` and its add / delete
+          // endpoints; the four per-document pages below fan out via
+          // presentsForEach on `accompanyingDocument`.
+          //
+          // `requires.maxEntries: 10` on the group is authoritative for
+          // the cap; the summary controller mirrors it by greying out
+          // the Add button once the user is at 10.
           kind: 'subsection',
           id: 'accompanying-documents',
           titleKey: 'flow.subsection.accompanying-documents.title',
           children: [
             {
-              page: 'accompanying-documents',
-              presents: [
-                { obligation: accompanyingDocumentType },
-                { obligation: accompanyingDocumentAttachmentType },
-                { obligation: accompanyingDocumentReference },
-                { obligation: accompanyingDocumentDateOfIssue }
-              ]
+              page: 'accompanying-document-type',
+              presentsForEach: {
+                obligation: accompanyingDocumentType,
+                forEachOf: accompanyingDocument,
+                mandatoryToProceed: true,
+                errors: { required: 'errors.accompanyingDocumentType.required' }
+              }
+            },
+            {
+              page: 'accompanying-document-attachment',
+              presentsForEach: {
+                obligation: accompanyingDocumentAttachmentType,
+                forEachOf: accompanyingDocument,
+                mandatoryToProceed: true,
+                errors: {
+                  required: 'errors.accompanyingDocumentAttachmentType.required'
+                }
+              }
+            },
+            {
+              page: 'accompanying-document-reference',
+              presentsForEach: {
+                obligation: accompanyingDocumentReference,
+                forEachOf: accompanyingDocument,
+                mandatoryToProceed: true,
+                errors: {
+                  required: 'errors.accompanyingDocumentReference.required'
+                }
+              }
+            },
+            {
+              page: 'accompanying-document-date-of-issue',
+              presentsForEach: {
+                obligation: accompanyingDocumentDateOfIssue,
+                forEachOf: accompanyingDocument,
+                mandatoryToProceed: true,
+                errors: {
+                  required: 'errors.accompanyingDocumentDateOfIssue.required'
+                }
+              }
             }
           ]
         }

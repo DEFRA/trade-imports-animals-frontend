@@ -14,6 +14,8 @@ export const SESSION_KEY = 'prototype:eudpa-249:fulfilments'
 export const NEXT_LINE_ID_KEY = 'prototype:eudpa-249:next-line-id'
 export const NEXT_UNIT_ID_BY_LINE_KEY =
   'prototype:eudpa-249:next-unit-id-by-line'
+export const NEXT_ACCOMPANYING_DOC_ID_KEY =
+  'prototype:eudpa-249:next-accompanying-doc-id'
 
 // Composite-key delimiter — matches obligations/evaluator.js PATH_DELIMITER
 // so a leaf on unitRecord is keyed by `${lineId}${DELIM}${unitId}`.
@@ -237,6 +239,64 @@ export function deleteUnitRecord(request, lineId, unitId, unitLeafObligations) {
 }
 
 // ---------------------------------------------------------------------------
+// Accompanying documents — top-level user-driven records group (0..10
+// per notification, WS4). Composite key shape: single-segment `docN`.
+// Same design as commodity-line ids — session-scoped monotonic counter
+// so a Delete cannot recycle an id and rehydrate stale per-doc state
+// via any doc-scoped obligation the caller forgot to pass to
+// deleteAccompanyingDocument.
+//
+// Not extracted with commodity-line into a generic addRecord /
+// deleteRecord — WS4 plan §5 evaluated the refactor and fell back to
+// option (b) (copy) because deleteCommodityLine's nested-cascade
+// branch would leave the extraction messy. If a fourth top-level
+// user-driven records group ever lands, extract then.
+// ---------------------------------------------------------------------------
+
+function readNextAccompanyingDocId(request) {
+  return request.yar?.get(NEXT_ACCOMPANYING_DOC_ID_KEY) ?? 1
+}
+
+function writeNextAccompanyingDocId(request, n) {
+  request.yar?.set(NEXT_ACCOMPANYING_DOC_ID_KEY, n)
+}
+
+export function addAccompanyingDocument(
+  request,
+  accompanyingDocumentObligation,
+  seedObligation
+) {
+  const fulfilments = { ...readFulfilments(request) }
+  const n = readNextAccompanyingDocId(request)
+  const id = `doc${n}`
+  const seed = {
+    ...(fulfilments[seedObligation.id] ?? {}),
+    [id]: ''
+  }
+  fulfilments[seedObligation.id] = seed
+  writeFulfilments(request, fulfilments)
+  writeNextAccompanyingDocId(request, n + 1)
+  return id
+}
+
+export function deleteAccompanyingDocument(request, docId, docLeafObligations) {
+  const fulfilments = { ...readFulfilments(request) }
+  for (const obligation of docLeafObligations) {
+    const stored = fulfilments[obligation.id]
+    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+      const next = { ...stored }
+      delete next[docId]
+      if (Object.keys(next).length === 0) {
+        delete fulfilments[obligation.id]
+      } else {
+        fulfilments[obligation.id] = next
+      }
+    }
+  }
+  writeFulfilments(request, fulfilments)
+}
+
+// ---------------------------------------------------------------------------
 // Reset
 // ---------------------------------------------------------------------------
 
@@ -244,4 +304,5 @@ export function resetState(request) {
   request.yar?.clear(SESSION_KEY)
   request.yar?.clear(NEXT_LINE_ID_KEY)
   request.yar?.clear(NEXT_UNIT_ID_BY_LINE_KEY)
+  request.yar?.clear(NEXT_ACCOMPANYING_DOC_ID_KEY)
 }

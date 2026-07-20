@@ -30,6 +30,11 @@ import {
   commodityLine,
   unitRecord,
   earTag,
+  accompanyingDocument,
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue,
   transitedCountries,
   internalReferenceNumber,
   countryOfOrigin,
@@ -597,5 +602,116 @@ describe('unit-count-equals-numberOfAnimals invariant', () => {
     // (some mandatory unfilled) but the mismatch specifically isn't
     // one of the reasons.
     expect(journeyState(flow, state)).not.toBe(STATUSES.FULFILLED)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// V4 accompanying-documents (WS4) — 0..10 user-driven records group.
+// The four field obligations are `within: accompanyingDocument`, each
+// `status: 'mandatory'` per record. Section is NA when empty (0 docs
+// added) and F once each present doc has all four fields filled.
+// `requires.maxEntries: 10` catches state that somehow exceeds the cap.
+// ---------------------------------------------------------------------------
+describe('accompanying-documents indexed group (WS4)', () => {
+  const accompanyingDocumentsSection = () => {
+    for (const section of flow.sections) {
+      for (const sub of section.children ?? []) {
+        if (sub.id === 'accompanying-documents') return sub
+      }
+    }
+    return null
+  }
+
+  const oneDocFilled = (docId) => ({
+    [accompanyingDocumentType.id]: { [docId]: 'veterinary-health-certificate' },
+    [accompanyingDocumentAttachmentType.id]: { [docId]: 'pdf' },
+    [accompanyingDocumentReference.id]: { [docId]: 'GBHC1234567890' },
+    [accompanyingDocumentDateOfIssue.id]: { [docId]: '12/12/2025' }
+  })
+
+  it('0 docs added → subsection is NA (no in-scope entries)', () => {
+    const state = evaluate({})
+    expect(containerStatus(accompanyingDocumentsSection(), state)).toBe(
+      STATUSES.NOT_APPLICABLE
+    )
+  })
+
+  it('1 doc with all four fields filled → subsection F', () => {
+    const state = evaluate(oneDocFilled('doc1'))
+    expect(containerStatus(accompanyingDocumentsSection(), state)).toBe(
+      STATUSES.FULFILLED
+    )
+  })
+
+  it('1 doc with only Type filled → subsection IP (per-record mandatoriness)', () => {
+    const state = evaluate({
+      [accompanyingDocumentType.id]: { doc1: 'veterinary-health-certificate' }
+    })
+    // Group has 1 record; four per-record obligations are all mandatory;
+    // three are unfilled → three unsatisfied mandatory concerns.
+    expect(containerStatus(accompanyingDocumentsSection(), state)).toBe(
+      STATUSES.IN_PROGRESS
+    )
+  })
+
+  it('10 docs all filled → subsection F (at the cap, no invariant error)', () => {
+    const fulfilments = {}
+    for (let i = 1; i <= 10; i++) {
+      const docId = `doc${i}`
+      fulfilments[accompanyingDocumentType.id] = {
+        ...(fulfilments[accompanyingDocumentType.id] ?? {}),
+        [docId]: 'veterinary-health-certificate'
+      }
+      fulfilments[accompanyingDocumentAttachmentType.id] = {
+        ...(fulfilments[accompanyingDocumentAttachmentType.id] ?? {}),
+        [docId]: 'pdf'
+      }
+      fulfilments[accompanyingDocumentReference.id] = {
+        ...(fulfilments[accompanyingDocumentReference.id] ?? {}),
+        [docId]: `REF-${i}`
+      }
+      fulfilments[accompanyingDocumentDateOfIssue.id] = {
+        ...(fulfilments[accompanyingDocumentDateOfIssue.id] ?? {}),
+        [docId]: '12/12/2025'
+      }
+    }
+    const state = evaluate(fulfilments)
+    expect(state.obligations[accompanyingDocument.id].records).toHaveLength(10)
+    expect(containerStatus(accompanyingDocumentsSection(), state)).toBe(
+      STATUSES.FULFILLED
+    )
+  })
+
+  it('11 docs → subsection IP (maxEntries cap fires as one MAX_ENTRIES error)', () => {
+    // Simulates a hand-crafted state or a post-redeploy cap lowering.
+    // The controller UI blocks the 11th add, but the invariant is
+    // authoritative for defence-in-depth.
+    const fulfilments = {}
+    for (let i = 1; i <= 11; i++) {
+      const docId = `doc${i}`
+      fulfilments[accompanyingDocumentType.id] = {
+        ...(fulfilments[accompanyingDocumentType.id] ?? {}),
+        [docId]: 'veterinary-health-certificate'
+      }
+      fulfilments[accompanyingDocumentAttachmentType.id] = {
+        ...(fulfilments[accompanyingDocumentAttachmentType.id] ?? {}),
+        [docId]: 'pdf'
+      }
+      fulfilments[accompanyingDocumentReference.id] = {
+        ...(fulfilments[accompanyingDocumentReference.id] ?? {}),
+        [docId]: `REF-${i}`
+      }
+      fulfilments[accompanyingDocumentDateOfIssue.id] = {
+        ...(fulfilments[accompanyingDocumentDateOfIssue.id] ?? {}),
+        [docId]: '12/12/2025'
+      }
+    }
+    const state = evaluate(fulfilments)
+    expect(state.obligations[accompanyingDocument.id].records).toHaveLength(11)
+    // All fields filled per-record; but the cap invariant fires once
+    // — that's an unsatisfied mandatory concern that keeps rollup at IP.
+    expect(containerStatus(accompanyingDocumentsSection(), state)).toBe(
+      STATUSES.IN_PROGRESS
+    )
   })
 })
