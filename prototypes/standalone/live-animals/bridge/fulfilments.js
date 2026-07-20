@@ -1,33 +1,32 @@
 /**
- * Bridge — A's `answers` <-> B's `fulfilments`.
+ * Bridge — page `answers` <-> model `fulfilments`.
  *
- * A pure, storage-agnostic translation between the two shapes the retrofit
- * has to reconcile (PLAN §2.3, §3):
+ * A pure, storage-agnostic translation between the two shapes:
  *
- *   A `answers`     nested POJO keyed by A's obligation id. Collections are
- *                   positional arrays in `lib/path.js`'s `a.b[0].c` grammar:
- *                   `answers.commodityLines[0].animalIdentifiers[1].animalIdentifierPassport`.
+ *   `answers`     nested POJO keyed by obligation name. Collections are
+ *                 positional arrays in `lib/path.js`'s `a.b[0].c` grammar:
+ *                 `answers.commodityLines[0].animalIdentifiers[1].animalIdentifierPassport`.
  *
- *   B `fulfilments` flat map keyed by the obligation UUID (`obligation.id`,
- *                   NOT `name` — verified against `evaluator.js`'s
- *                   `dropUnknownFulfilments`/`buildObligationsById`). Grouped
- *                   values are records-maps `{ fulfilmentId: value }` whose
- *                   fulfilmentId is a `/`-delimited composite of one segment
- *                   per enclosing group (`line0` at depth 1, `line0/unit1` at
- *                   depth 2). Top-level scalars store the value directly.
+ *   `fulfilments` flat map keyed by the obligation UUID (`obligation.id`,
+ *                 NOT `name` — verified against `evaluator.js`'s
+ *                 `dropUnknownFulfilments`/`buildObligationsById`). Grouped
+ *                 values are records-maps `{ fulfilmentId: value }` whose
+ *                 fulfilmentId is a `/`-delimited composite of one segment
+ *                 per enclosing group (`line0` at depth 1, `line0/unit1` at
+ *                 depth 2). Top-level scalars store the value directly.
  *
  * The structure is derived from the vendored manifest, not restated here: an
- * obligation's `name` is its A id (inc-007), its `id` is its B UUID, and its
- * `within` chain gives its depth. Group obligations (`commodityLines`,
- * `animalIdentifiers`) carry no value of their own — their instances are
- * inferred from descendant records — so the bridge never emits a fulfilment
- * for them and rebuilds A's arrays from the leaves.
+ * obligation's `name` is its answers key, its `id` is its fulfilments UUID,
+ * and its `within` chain gives its depth. Group obligations
+ * (`commodityLines`, `animalIdentifiers`) carry no value of their own —
+ * their instances are inferred from descendant records — so the bridge never
+ * emits a fulfilment for them and rebuilds the answer arrays from the leaves.
  *
- * Vocabulary is normalised A->B at the boundary (PLAN §3 "Vocabulary"):
- * A stores A-vocab (MDM options), B's gates compare B-vocab. The commodity
- * case is the one non-injective transform — `Cat`/`Dog` both map to
- * `01061900` — so B->A recovers only a representative name. See
- * `DESIGN-DELTA.md` §7.
+ * Vocabulary is normalised answers->model at the boundary: answers store the
+ * MDM option vocabulary, the manifest's gates compare the model vocabulary.
+ * The commodity case is the one non-injective transform — `Cat`/`Dog` both
+ * map to `01061900` — so the reverse direction recovers only a
+ * representative name.
  */
 
 import { obligations } from '../model/obligations/obligations.js'
@@ -38,8 +37,8 @@ import {
 import { setAt } from '../lib/path.js'
 
 // The nested collection groups, outermost first. The prefix is cosmetic
-// and reversible — B treats a fulfilmentId as opaque; only the trailing
-// integer carries the positional index. A group whose depth exceeds this
+// and reversible — the evaluator treats a fulfilmentId as opaque; only the
+// trailing integer carries the positional index. A group whose depth exceeds this
 // list falls back to `grp<depth>`. `documents` is a depth-0 collection and
 // so shares the `line` token with `commodityLines`; the tokens never
 // collide because each obligation owns a separate record map.
@@ -94,9 +93,9 @@ const stripGbPrefix = (s) => (s.startsWith('GB ') ? s.slice(3) : s)
 const addGbPrefix = (s) => (s.startsWith('GB') ? s : `GB ${s}`)
 
 const VOCAB = {
-  // A stores the display name (`Cow`); B's gates compare the CN code (`0102`).
-  // `COMMODITY_CODES` is NON-INJECTIVE — `Cat`/`Dog` -> `01061900` — so `toA`
-  // is lossy and recovers a representative name only (DESIGN-DELTA §7).
+  // Answers store the display name (`Cow`); the manifest's gates compare the
+  // CN code (`0102`). The commodity map is NON-INJECTIVE — `Cat`/`Dog` ->
+  // `01061900` — so `toA` is lossy and recovers a representative name only.
   commoditySelection: { toB: commodityCodeFor, toA: commodityNameFor },
   reasonForImport: { toB: camelToKebab, toA: kebabToCamel },
   transporterType: { toB: titleToKebab, toA: kebabToTitle },
@@ -117,10 +116,10 @@ const normaliseToB = (aId, value) => normalise('toB', aId, value)
 const normaliseToA = (aId, value) => normalise('toA', aId, value)
 
 // ---------------------------------------------------------------------------
-// A -> B
+// answers -> fulfilments
 // ---------------------------------------------------------------------------
 
-// Walk A's nested arrays for one leaf obligation, emitting one
+// Walk the nested answer arrays for one leaf obligation, emitting one
 // `[compositeFulfilmentId, value]` per answered instance.
 const collectGroupedRecords = (answers, chain, aId) => {
   const records = {}
@@ -145,10 +144,10 @@ const collectGroupedRecords = (answers, chain, aId) => {
 }
 
 /**
- * Translate A's `answers` into B's `fulfilments`.
+ * Translate the page `answers` into the model `fulfilments`.
  *
- * @param {object} answers - A's nested answer POJO.
- * @returns {object} B's flat, UUID-keyed fulfilments map.
+ * @param {object} answers - the nested answer POJO.
+ * @returns {object} the flat, UUID-keyed fulfilments map.
  */
 export const answersToFulfilments = (answers = {}) => {
   const fulfilments = {}
@@ -172,12 +171,13 @@ export const answersToFulfilments = (answers = {}) => {
 }
 
 // ---------------------------------------------------------------------------
-// B -> A
+// fulfilments -> answers
 // ---------------------------------------------------------------------------
 
 // Positional index carried by one composite segment (`line0` -> 0). The
 // inverse is defined over bridge-convention fulfilmentIds; opaque
-// orchestrator ULIDs carry no positional index and are out of scope for B->A.
+// orchestrator ULIDs carry no positional index and are out of scope for
+// the reverse direction.
 const indexOfSegment = (segment) => Number(segment.match(/\d+$/)?.[0])
 
 export const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
@@ -190,13 +190,13 @@ export const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
   return path
 }
 
-// The composite fulfilmentId of a whole collection INSTANCE, from its A
-// positional path. The instance-level counterpart of `fulfilmentIdToPath`
-// (which addresses a single leaf): given an A collection path in the
-// `a.b[0].c` grammar (e.g. `['commodityLines', 0, 'animalIdentifiers']`) and
-// a positional index, emit B's group fulfilmentId prefix (`line0/unit<index>`).
-// Reuses `segmentToken` + `ancestorChain`, so a third collection level needs
-// no change here. Instance identity is positional under both flags.
+// The composite fulfilmentId of a whole collection INSTANCE, from its
+// positional answer path. The instance-level counterpart of
+// `fulfilmentIdToPath` (which addresses a single leaf): given a collection
+// path in the `a.b[0].c` grammar (e.g. `['commodityLines', 0,
+// 'animalIdentifiers']`) and a positional index, emit the group fulfilmentId
+// prefix (`line0/unit<index>`). Reuses `segmentToken` + `ancestorChain`, so
+// a third collection level needs no change here.
 export const instanceFulfilmentId = (collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
   const group = byAId.get(names[names.length - 1])
@@ -211,14 +211,14 @@ export const instanceFulfilmentId = (collectionPath, index) => {
 }
 
 /**
- * Translate B's `fulfilments` back into A's `answers`.
+ * Translate the model `fulfilments` back into the page `answers`.
  *
  * The inverse of {@link answersToFulfilments} over bridge-convention
  * fulfilmentIds. Non-injective commodity codes recover a representative name
- * only (DESIGN-DELTA §7).
+ * only.
  *
- * @param {object} fulfilments - B's flat, UUID-keyed fulfilments map.
- * @returns {object} A's nested answer POJO.
+ * @param {object} fulfilments - the flat, UUID-keyed fulfilments map.
+ * @returns {object} the nested answer POJO.
  */
 export const fulfilmentsToAnswers = (fulfilments = {}) => {
   let answers = {}

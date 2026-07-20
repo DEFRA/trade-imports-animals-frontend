@@ -18,7 +18,7 @@
  *
  * Vocabulary does NOT bite here: inScope keys are obligation ids and positional
  * indices, never values, so the normalisation `answersToFulfilments` applies
- * leaves the projected keys unchanged. See DESIGN-DELTA.md §8.
+ * leaves the projected keys unchanged.
  */
 
 import { obligations } from '../model/obligations/obligations.js'
@@ -121,7 +121,7 @@ const projectInScope = (answers) => {
 export const rawInScope = (answers) => projectInScope(answers)
 
 // Flow-only obligations the notification model does not carry: the pre-journey
-// import-type filter (`c-024`/`c-032`, the service entry filter) and the
+// import-type filter (the service entry filter) and the
 // submit-time declaration step. The evaluator omits them, so without this layer
 // their owning pages would be unreachable. Both are unconditional top-level
 // obligations (bare-id pathKeys).

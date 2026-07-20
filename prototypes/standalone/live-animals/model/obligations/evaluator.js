@@ -22,8 +22,7 @@ import { obligations as defaultObligations } from './obligations.js'
  * Algorithm per call:
  *
  *   1. Drop unknown obligation ids (tolerate-and-amend).
- *   2. Converge on the post-purge view via fixpoint iteration
- *      (BRIEF §Migration #1, REPORT §7 "Sharper than resurrection"):
+ *   2. Converge on the post-purge view via fixpoint iteration:
  *      repeat {enumerate group paths → evaluate `applyTo` →
  *      compute effective inScope → purge storage} until the
  *      fulfilments map stops changing. Every `applyTo` is thus
@@ -77,8 +76,8 @@ export function createObligationEvaluator({
       // inScope, and purges storage. When the view stops changing,
       // every applyTo has been exercised against the same post-purge
       // fulfilments — a value purged in this call cannot leak into
-      // another gate's decision. See REPORT §7 "Sharper than
-      // resurrection" for the two-hop failure mode this closes.
+      // another gate's decision (the two-hop failure mode where a
+      // purged value silently drives a second gate).
       const {
         amendedFulfilments,
         obligationApplicabilityDecisions,
@@ -533,8 +532,7 @@ export function buildImplication(obligation, context) {
     //      natural data-only shape for an always-in-scope obligation.
     //      There is no parent group to enumerate, so return the status
     //      directly, mirroring what `applyTo: () => ({ inScope: true,
-    //      status })` would return (BRIEF §Migration #1; REPORT §3.1,
-    //      §5.1 — this deref used to throw TypeError unconditionally).
+    //      status })` would return.
     if (!obligation.within) {
       return { inScope: true, status: obligation.status }
     }

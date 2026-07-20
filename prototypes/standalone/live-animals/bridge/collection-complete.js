@@ -17,7 +17,7 @@
  * or an unmet per-instance group invariant (`groupInvariantErrors`, the
  * `requires.anyOf` at-least-one rule).
  *
- * Structural placeholder obligations (commodityType c-037, the two system
+ * Structural placeholder obligations (commodityType, the two system
  * fields) are declared in the manifest but no page collects them, so they must
  * not mark an instance incomplete — otherwise every commodity line would read
  * incomplete (no `commodityType` value is ever stored).
@@ -26,7 +26,6 @@
  * prefixes, so a fully-EMPTY nested instance (a unit with no stored leaf)
  * vanishes on round-trip and its unmet `anyOf` cannot be flagged. A fully-empty
  * TOP-LEVEL entry is caught here via its unconditional mandatory field leaves.
- * See DESIGN-DELTA.md §12.
  */
 
 import { obligations } from '../model/obligations/obligations.js'

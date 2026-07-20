@@ -6,7 +6,7 @@ import { open } from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { animalIdentificationPage as page } from './page.js'
-import { obligations as modelObligations } from '../../model/obligations/obligations.js'
+import { appliesForCommodity } from '../../bridge/applicability.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification`
@@ -30,26 +30,6 @@ export const animalIdentifierSummary = (unit) => {
   return parts.length ? parts.join(', ') : 'No identifier provided'
 }
 
-const modelObligationByName = new Map(
-  modelObligations.map((obligation) => [obligation.name, obligation])
-)
-
-// Render config resolves the per-identifier commodity whitelist from B's
-// obligation manifest by name (B `name` === A id) — the same by-name lookup
-// inc-019 used for this controller's gate reads. No dependency on A's
-// feature obligation objects.
-const metadataWhitelistFor = (name) =>
-  modelObligationByName.get(name)?.applyTo?.metadata?.values ?? []
-
-const metadataAllowListApplies = (name, commodity) =>
-  metadataWhitelistFor(name).includes(commodities.commodityCodeFor(commodity))
-
-const metadataFallbackApplies = (name, commodity) =>
-  !metadataWhitelistFor(name).includes(commodities.commodityCodeFor(commodity))
-
-const typeApplies = (name, commodity) =>
-  metadataAllowListApplies(name, commodity)
-
 const TYPE_FIELDS = [
   {
     id: 'animalIdentifierPassport',
@@ -68,9 +48,6 @@ const TYPE_FIELDS = [
   },
   { id: 'horseName', label: 'Horse name' }
 ]
-
-const fallbackApplies = (name, commodity) =>
-  metadataFallbackApplies(name, commodity)
 
 const FALLBACK_FIELDS = [
   {
@@ -119,10 +96,10 @@ const ADDRESS_FIELD_ORDER = [
 const fieldName = (id, index) => `${id}-${index}`
 
 const scopedTypeFields = (commodity) =>
-  TYPE_FIELDS.filter((field) => typeApplies(field.id, commodity))
+  TYPE_FIELDS.filter((field) => appliesForCommodity(field.id, commodity))
 
 const scopedFallbackFields = (commodity) =>
-  FALLBACK_FIELDS.filter((field) => fallbackApplies(field.id, commodity))
+  FALLBACK_FIELDS.filter((field) => appliesForCommodity(field.id, commodity))
 
 const scopedFields = (commodity) => [
   ...scopedTypeFields(commodity),
@@ -130,7 +107,7 @@ const scopedFields = (commodity) => [
 ]
 
 const permanentAddressApplies = (commodity) =>
-  metadataAllowListApplies('permanentAddress', commodity)
+  appliesForCommodity('permanentAddress', commodity)
 
 const identifierChecksFor = (commodity, index) =>
   compose(

@@ -3,7 +3,7 @@ import { valueAt } from '../../lib/path.js'
 import { MAX_ENTRIES_FROM } from '../../flow/obligation-source.js'
 
 /**
- * The collection cardinality link (c-031): a collection whose name is declared
+ * The collection cardinality link: a collection whose name is declared
  * in `MAX_ENTRIES_FROM` has its entry count capped at the value of the named
  * sibling count field in the frame that holds it. `appendEntryAt` rejects an
  * append at the cap.

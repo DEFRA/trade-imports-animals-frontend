@@ -26,16 +26,13 @@ import { isBlankValue } from '../engine/is-blank-value.js'
  *   - `dependsOn?: string[]` — ids of obligations whose stored values
  *     the `applyTo` closure reads. Makes the dependency graph explicit
  *     data alongside the opaque closure so a static reachability prover
- *     can invert gates without executing them. See BRIEF §Migration #2
- *     (★ highest value-per-line) and REPORT §5.1 — "closures must be an
- *     exception with a build-time guard". Phase 2 commit 2 lands the
- *     coverage assertion that fails the build for any gated obligation
- *     without a complete `dependsOn`. Phase 2 commit 1 lands the schema
- *     + this accessor; nothing is enforced yet.
+ *     can invert gates without executing them. A coverage assertion
+ *     fails the build for any gated obligation without a complete
+ *     (declared or derived) `dependsOn`.
  *
  * All helpers are unit-testable in isolation — see helpers.test.js.
  *
- * Helper taxonomy — which to use when (Phase 4.6 Q2 clarification):
+ * Helper taxonomy — which to use when:
  *
  *   Two shapes of gate exist in this manifest, and they take different
  *   helpers. The distinction is NOT about "same frame vs cross frame"
@@ -132,7 +129,7 @@ export function allowListed(gateObligation, values, projectionGroup, reasons) {
  *   - `[a, b, c]` — a flat list of values (single-allowlist complement).
  *     Ergonomic shorthand; the derived union is just the input.
  *
- * Rationale — REPORT §5.2, BRIEF §Migration #4. `notInUnionOf` as a
+ * Rationale — `notInUnionOf` as a
  * derived-union helper over `.metadata.values` is STRICTLY better than
  * a hand-restated four-whitelist complement expressed as an opaque JS
  * predicate: adding a fifth typed identifier to one of the source
@@ -255,14 +252,12 @@ export function anyAllowListed(gateObligation, values, whenTrue, whenFalse) {
  * trivially open). The four accompanying-document siblings are the
  * only manifest occurrence of that shape today; they omit
  * `predicateMeta` because it isn't consulted. All non-total sites
- * MUST supply `predicateMeta` — Phase 3 commit 3 will land a coverage
- * assertion that fails the build for a non-total `branchedGate`
- * without one.
+ * MUST supply `predicateMeta` — the coverage assertion fails the build
+ * for a non-total `branchedGate` without one.
  *
- * BRIEF §Migration #3 + REPORT §5.1 tax warning: every new predicate
- * operator carries a second tax — a witness synthesiser + a seeding
- * rule. Adding a new `operator` here means updating
- * `analysis/reachability.js` `synthesiseWitness`.
+ * Every new predicate operator carries a second tax — a witness
+ * synthesiser + a seeding rule. Adding a new `operator` here means
+ * updating `analysis/reachability.js` `synthesiseWitness`.
  */
 export function branchedGate(predicate, whenTrue, whenFalse, predicateMeta) {
   const fn = (fulfilments, fulfilmentIdsByObligationId) =>
@@ -309,7 +304,7 @@ export function present(obligation) {
 }
 
 // -----------------------------------------------------------------------------
-// Meta-first gate helpers — EUDPA-288 Phase 4.5.1.
+// Meta-first gate helpers.
 //
 // The `branchedGate`-plus-`predicateMeta` pattern used by regionCode /
 // purposeInInternalMarket / commercialTransporter / privateTransporter /
@@ -475,17 +470,16 @@ export function alwaysInScope(status, reasons) {
  * helper (`allowListed`, `equalsGate`, etc.) with the obligation-
  * level `dependsOn` schema key.
  *
- * Rationale — BRIEF §Migration #2 (★ highest value-per-line) +
- * REPORT §5.1: closures are opaque to a reachability prover unless
+ * Rationale — closures are opaque to a reachability prover unless
  * they declare their dependency graph as data. `dependsOn` is that
- * declaration; this accessor is the single call site the Phase 2
- * commit 2 coverage assertion uses — "every gated obligation carries
- * a complete dependsOn". The accessor is deliberately tolerant
+ * declaration; this accessor is the single call site the coverage
+ * assertion uses — "every gated obligation carries a complete
+ * dependsOn". The accessor is deliberately tolerant
  * (missing `applyTo` or missing `dependsOn` return an empty shape
  * rather than throwing) so future callers get one predictable envelope
  * regardless of author-side omissions.
  *
- * `dependsOn` resolution order (Phase 4.5.2):
+ * `dependsOn` resolution order:
  *   1. If the obligation declares an explicit `dependsOn: string[]`,
  *      use it verbatim (belt-and-braces on hand-authored sites).
  *   2. Otherwise DERIVE from the applyTo helper's `.metadata` — the

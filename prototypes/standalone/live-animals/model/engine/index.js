@@ -202,10 +202,9 @@ const STATUSES = {
 // { fulfilmentId, status: 'mandatory' | 'optional' }. Singleton
 // implications carry `status` at the top level.
 //
-// Exported so contract.js can consult effective status when gating
-// page-save mandates on branchedGate obligations — see audit re-
-// review finding NEW-1 (regionCode `mandatoryToProceed` on the
-// `no` branch).
+// Exported so callers can consult effective status when gating
+// page-save mandates on branchedGate obligations (e.g. regionCode
+// `mandatoryToProceed` on the `no` branch).
 export function effectiveStatus(obligation, path, state) {
   const impl = state.obligations?.[obligation.id]
   if (!impl) return undefined
@@ -420,10 +419,9 @@ function collectInScopePresentedEntries(container, state) {
  *
  *   - `requires.minEntries` — collection floor. Emits ONE
  *     `{ code: 'MIN_ENTRIES', minEntries, actual }` when
- *     `records.length` is below the floor. Closes REPORT §7 "No
- *     minimum-instance floor": without this, a group with zero
- *     records collapses to NA and `journeyState → fulfilled` for an
- *     empty consignment. Wired into `commodityLine` (minEntries: 1)
+ *     `records.length` is below the floor. Without this, a group with
+ *     zero records collapses to NA and `journeyState → fulfilled` for
+ *     an empty consignment. Wired into `commodityLine` (minEntries: 1)
  *     in obligations.js.
  *
  *   - `requires.anyOf` — per-instance rule. Emits one error per

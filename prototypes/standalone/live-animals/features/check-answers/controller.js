@@ -15,29 +15,17 @@ import { IDENTIFIER_LABELS } from '../commodities/animal-identification.controll
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import * as certification from '../../services/certification-purposes/index.js'
 import * as ports from '../../services/ports/index.js'
-import { obligations as modelObligations } from '../../model/obligations/obligations.js'
+import { appliesForCommodity } from '../../bridge/applicability.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 const NOT_PROVIDED = 'Not provided'
 
 const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
 
-const modelObligationByName = new Map(
-  modelObligations.map((obligation) => [obligation.name, obligation])
-)
-
-const metadataWhitelistFor = (name) =>
-  modelObligationByName.get(name)?.applyTo?.metadata?.values ?? []
-
-const commodityInMetadata = (name, commoditySelection) =>
-  metadataWhitelistFor(name).includes(
-    commodities.commodityCodeFor(commoditySelection)
-  )
-
-const anyLineInMetadata = (answers, name) =>
+const anyLineApplies = (answers, name) =>
   []
     .concat(answers.commodityLines ?? [])
-    .some((line) => commodityInMetadata(name, line?.commoditySelection))
+    .some((line) => appliesForCommodity(name, line?.commoditySelection))
 
 const regionCodeApplies = (answers, scope) => scope.has('regionOfOriginCode')
 
@@ -47,13 +35,12 @@ const transitedCountriesApplies = (answers, scope) =>
   scope.has('transitedCountries')
 
 const unweanedGate = (answers) =>
-  anyLineInMetadata(answers, 'containsUnweanedAnimals')
+  anyLineApplies(answers, 'containsUnweanedAnimals')
 
-const cphGate = (answers) =>
-  anyLineInMetadata(answers, 'countyParishHoldingCph')
+const cphGate = (answers) => anyLineApplies(answers, 'countyParishHoldingCph')
 
 const packagesGate = (commoditySelection) =>
-  commodityInMetadata('numberOfPackages', commoditySelection)
+  appliesForCommodity('numberOfPackages', commoditySelection)
 
 const withChange = (href) => `${href}?change=1`
 

@@ -6,7 +6,7 @@ import { obligations } from './model/obligations/obligations.js'
 import { domain } from './model/domain/index.js'
 import { assertNoDisplayKeys } from './model/no-display-keys.js'
 
-// Model purity gate (Sam's ruling, PLAN §5.4: no display logic in the model).
+// Model purity gate (ruling: no display logic in the model).
 // Two boot-time checks over the live vendored model:
 //   - key-level: no `label`/`title`/`hint` etc. on any obligation or domain
 //     entry (assertNoDisplayKeys);

@@ -31,7 +31,7 @@
  * empty required collection must still block FULFILLED. The per-record
  * any-of verdict is sourced from the engine's `groupInvariantErrors`
  * (filtered by instanceId), the same interpreter collection-complete
- * uses. See DESIGN-DELTA.md §19, §26.
+ * uses.
  */
 
 import { obligations, groups } from '../model/obligations/obligations.js'

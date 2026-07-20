@@ -38,10 +38,10 @@ export const ENFORCED_AT_CONTINUE = new Set([
   'commoditySelection'
 ])
 
-// Collection admission-control cap (c-031): a collection's entry count is
+// Collection admission-control cap: a collection's entry count is
 // capped at the value of a sibling count field in the frame that holds it.
-// Enforcement stays A-side on the write path (engine/evaluate/cardinality.js
-// `collectionCapAt`, appendEntryAt rejects at the cap) per Sam's ruling; only
+// Enforcement lives on the write path (engine/evaluate/cardinality.js
+// `collectionCapAt`, appendEntryAt rejects at the cap); only
 // the declaration lives here. Keyed by collection name → sibling count field.
 export const MAX_ENTRIES_FROM = {
   animalIdentifiers: 'numberOfAnimalsQuantity'

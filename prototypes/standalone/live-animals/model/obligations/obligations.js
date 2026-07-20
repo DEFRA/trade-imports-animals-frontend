@@ -18,7 +18,7 @@
  * function call with plain inputs (no evaluator, no resolver, no
  * obligationsById).
  *
- * Helper choice convention (EUDPA-288 Phase 4.5.2):
+ * Helper choice convention:
  *   - `equals`-shape non-total gates → `equalsGate(gate, value, whenTrue, whenFalse)`
  *   - `equals`-shape status-flip (both branches in-scope) → same helper,
  *     both branches with `inScope: true` and different `status`
@@ -28,16 +28,14 @@
  * the closure body, the metadata sidecar and the dependency graph as a
  * single value, so renaming a gate obligation touches one call site.
  *
- * Dependency declaration (added Phase 2 commit 1, refined Phase 4.5.2,
- * EUDPA-288): gated obligations may carry an explicit `dependsOn:
- * string[]` schema key OR let it be DERIVED from the applyTo helper's
- * metadata. Meta-first helpers all name their gate obligation on
- * `.metadata.obligation`, so `obligationMetadata()` recovers the
+ * Dependency declaration: gated obligations may carry an explicit
+ * `dependsOn: string[]` schema key OR let it be DERIVED from the applyTo
+ * helper's metadata. Meta-first helpers all name their gate obligation
+ * on `.metadata.obligation`, so `obligationMetadata()` recovers the
  * dependency graph without duplication. Closures are opaque to a
  * reachability prover; the derived-or-declared `dependsOn` makes the
- * graph explicit data alongside the closure. See BRIEF §Migration #2 +
- * REPORT §5.1. Phase 2 commit 2 landed the coverage assertion;
- * Phase 4.5.2 relaxes it to accept the derived path.
+ * graph explicit data alongside the closure, and the coverage assertion
+ * accepts either path.
  *
  * System-populated fields are declared but NOT presented in the flow
  * layer:
@@ -436,11 +434,10 @@ export const commodityLine = {
   // every consignment. Without this floor a zero-line session
   // collapses to NA in `commodity-lines-details` and
   // `journeyState → fulfilled` — see engine/index.js
-  // `groupInvariantErrors` and REPORT §7 "No minimum-instance
-  // floor". Hub also has an imperative `linesManageStatus` override
-  // that pins the manage-subsection tag; the floor here is the
-  // engine-level fix that propagates through `journeyState` and
-  // container rollups uniformly.
+  // `groupInvariantErrors`. Hub also has an imperative
+  // `linesManageStatus` override that pins the manage-subsection tag;
+  // the floor here is the engine-level fix that propagates through
+  // `journeyState` and container rollups uniformly.
   requires: {
     minEntries: 1,
     errorCode: 'obligation.commodityLine.atLeastOne'
@@ -561,10 +558,10 @@ export const cph = {
 
 // -----------------------------------------------------------------------------
 // Contains unweaned animals — notification-level yes/no, gated on the
-// active commodity codes per V4 audit #11. Only mandatory when the
+// active commodity codes per V4. Only mandatory when the
 // consignment includes at least one commodity requiring unweaned
-// tracking (equines / cattle / pigs / sheep / goats). Pre-audit this
-// was unconditional mandatory. Declared here (rather than up top with
+// tracking (equines / cattle / pigs / sheep / goats). Declared here
+// (rather than up top with
 // the other notification-level scalar obligations) because the
 // applyTo closure captures `commodityCode` — declaring it before
 // commodityCode would trip the temporal dead zone.
@@ -611,9 +608,8 @@ export const unitRecord = {
   // to Submit - At least one Animal Identifier". Every unit-record
   // must carry ≥ 1 of the six identifier obligations. Listed as
   // literal ids in `requires.anyOfIds` rather than obligation
-  // references — id-based deferred resolution (Phase 4.6.3 Q3)
-  // avoids the declaration-order coupling the old `get anyOf()`
-  // getter worked around and makes the "requires-any-of" edge
+  // references — id-based deferred resolution avoids
+  // declaration-order coupling and makes the "requires-any-of" edge
   // legible as data to the reachability prover.
   //
   // Engine primitive `groupInvariantErrors` walks in-scope
@@ -678,9 +674,9 @@ export const passport = {
     passportReason
   ])
   // Note: `unitRecord` is a structural projection group (the closure's
-  // 3rd arg), not a value read. Per Phase 2 commit 1's hand-off, list
-  // only the gate obligation (`commodityCode.id`) — projection groups
-  // are structural and are not part of the reachability dependency graph.
+  // 3rd arg), not a value read. Only the gate obligation
+  // (`commodityCode.id`) is a dependency — projection groups are
+  // structural and are not part of the reachability dependency graph.
 }
 
 export const tattoo = {
@@ -714,9 +710,9 @@ export const horseName = {
 }
 
 // Inverse gate — the free-text identifiers apply on units whose parent
-// line's commodity has NO specific identifier. Phase 4 §Migration #4
-// (REPORT §5.2): expressed as `notInUnionOf` over the four specific-
-// identifier whitelists. The derived union lives on `.metadata.values`
+// line's commodity has NO specific identifier. Expressed as
+// `notInUnionOf` over the four specific-identifier whitelists.
+// The derived union lives on `.metadata.values`
 // so the reachability prover can synthesise a witness value (any code
 // not in the union) and the browser-side controllers can inspect
 // admissibility without executing the closure. Adding a fifth typed
@@ -771,11 +767,8 @@ export const permanentAddress = {
 
 // -----------------------------------------------------------------------------
 // Accompanying Documents — repeatable per-document collection (V4 cap-10,
-// enforced controller-side via MAX_DOCUMENTS; c-034 / journey-spec:1353 /
-// DIVERGENCE-REGISTER D1). Topology now matches A's `documents` collection
-// (features/documents/obligations.js): a `documents` group with four
-// fields `within` it. inc-016b resolved D1 — B previously modelled these
-// as four notification-level singletons.
+// enforced controller-side via MAX_DOCUMENTS): a `documents` group with
+// four fields `within` it.
 //
 // Per-record scope (V4, Confluence page 6497338582): "once a document
 // type is selected, the attachment, reference and date of issue are

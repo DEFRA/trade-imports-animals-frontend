@@ -1,8 +1,8 @@
 /**
  * Shared internals for `helpers.js` — canonical "stored fulfilment
- * value → candidate scalars" normalization. Extracted in Phase 4.6.4
- * (EUDPA-288 Q4) so the same three-branch shape-test isn't duplicated
- * across `anyAllowListed`, `filterAndProject`, and `present`.
+ * value → candidate scalars" normalization. Extracted so the same
+ * three-branch shape-test isn't duplicated across `anyAllowListed`,
+ * `filterAndProject`, and `present`.
  *
  * Kept in a separate module (not a named export of `helpers.js`) so the
  * `analysis/coverage.test.js` invariant — "every helpers.js named export

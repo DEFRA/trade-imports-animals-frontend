@@ -1,29 +1,26 @@
 /**
- * flow-reachability.js — the FLOW-level reachability prover for B.
+ * flow-reachability.js — the FLOW-level reachability prover.
  *
- * B's graph prover (`model/analysis/reachability.js`) proves the obligation
+ * The graph prover (`model/analysis/reachability.js`) proves the obligation
  * DEPENDENCY graph terminates at a seed and every gate has a value-level
  * witness. It says nothing about PAGES: whether an in-scope obligation is
  * presented by a page, and whether that page is reachable through the flow
- * gates in the state that puts the obligation in scope. Those two checks were
- * the value A's retired `analysis/reachability.js` carried over the graph
- * prover; this module ports them onto B's manifest + the flow tree.
+ * gates in the state that puts the obligation in scope. This module carries
+ * those two checks over the manifest + the flow tree.
  *
- * Two problem kinds, matching A's prover verbatim:
+ * Two problem kinds:
  *   - `no-owning-page`                 an obligation is in scope but no page
  *                                      presents it (dispatch has no owner).
  *   - `owning-page-unreachable-in-scope` the owning page is not reached by the
  *                                      flow gates in that same state.
- * Plus the enumeration's own completeness check (`proveScopeCompleteness`) —
- * A's third problem kind (`no-witness-puts-in-scope`) recast for the
- * seed-driven port: a manifest obligation no seed variant × scope state ever
- * scopes is reported rather than silently skipped.
+ * Plus the enumeration's own completeness check (`proveScopeCompleteness`):
+ * a manifest obligation no seed variant × scope state ever scopes is
+ * reported rather than silently skipped.
  *
- * B-native throughout: scope comes from `engine`'s `makeScope` (B's evaluator
- * projected into A's pathKey grammar), page ownership from `flow/dispatch.js`,
- * and page reachability from `analysis/simulate.js`'s `simulateJourney` (which
- * walks the section/page gates over `makeScope`). No A evaluator, registry or
- * predicate is read.
+ * Scope comes from `engine`'s `makeScope` (the evaluator projected into the
+ * pathKey grammar), page ownership from `flow/dispatch.js`, and page
+ * reachability from `analysis/simulate.js`'s `simulateJourney` (which walks
+ * the section/page gates over `makeScope`).
  */
 
 import { pageOfObligation } from '../flow/dispatch.js'
@@ -33,11 +30,10 @@ import { makeScope } from '../engine/index.js'
 import { simulateJourney } from './simulate.js'
 
 /**
- * The scope-determining flags whose cross-product spans B's conditional
+ * The scope-determining flags whose cross-product spans the conditional
  * obligations moving into and out of scope: the region-code requirement, the
  * import reason, the means of transport and the transporter type. 2×2×2×3 = 24
- * states — the same small finite space A's prover enumerated. Ported unchanged
- * from A's `analysis/reachability.js`.
+ * states.
  *
  * @returns {Array<object>} 24 partial answer states.
  */
@@ -60,10 +56,10 @@ const withoutBlanks = (state) =>
 
 /**
  * A maximal happy-path answer set that puts (almost) every obligation in
- * scope, overlaid per state with the scope-flag cross-product above. Ported
- * from A's `analysis/reachability.js` `submitReadySeed`; A-answer-shaped, which
- * is exactly what `makeScope` consumes (its `answersToFulfilments` normalises
- * A vocab into B's on the way into the evaluator).
+ * scope, overlaid per state with the scope-flag cross-product above.
+ * Answer-shaped, which is exactly what `makeScope` consumes (its
+ * `answersToFulfilments` normalises the stored vocabulary on the way into
+ * the evaluator).
  */
 export const submitReadySeed = {
   countryOfOrigin: 'FR',
@@ -218,23 +214,23 @@ export const seedVariants = () => [
   }
 ]
 
-// `makeScope` layers two A-side flow obligations (importType, declaration) onto
-// the projected inScope set so their owning pages stay reachable under B; they
-// are not B-modelled obligations, so the flow prover skips them — their page
-// reachability is a runtime shim covered by the flow/E2E tests, not a model
-// concern.
-const A_ONLY_FLOW_OBLIGATIONS = new Set(['importType', 'declaration'])
+// `makeScope` layers two flow-only obligations (importType, declaration) onto
+// the projected inScope set so their owning pages stay reachable; the
+// notification model does not carry them, so the flow prover skips them —
+// their page reachability is a runtime shim covered by the flow/E2E tests,
+// not a model concern.
+const FLOW_ONLY_OBLIGATIONS = new Set(['importType', 'declaration'])
 
 const stripIndices = (key) => key.replace(/\[\d+\]/g, '')
 
 // The obligation name a pathKey ends on (its leaf segment, indices stripped).
 const leafName = (key) => stripIndices(key).split('.').pop()
 
-// Skip A-only flow shims and system-populated fields — neither is presented by
+// Skip flow-only shims and system-populated fields — neither is presented by
 // a page (`flow/dispatch.js` excludes SYSTEM_POPULATED from its coverage
 // assertion for the same reason), so they carry no page-reachability concern.
 const isNotPagePresented = (key) =>
-  A_ONLY_FLOW_OBLIGATIONS.has(stripIndices(key)) ||
+  FLOW_ONLY_OBLIGATIONS.has(stripIndices(key)) ||
   SYSTEM_POPULATED.has(leafName(key))
 
 /**
@@ -295,8 +291,7 @@ const enumerateAnswerStates = () =>
   )
 
 /**
- * proveScopeCompleteness — the enumeration's own completeness check, the
- * counterpart of A's retired `no-witness-puts-in-scope` problem kind. A
+ * proveScopeCompleteness — the enumeration's own completeness check. A
  * manifest obligation that NO variant × state pair puts in scope is one the
  * flow prover silently never checks — exactly how a newly imported obligation
  * (a re-vendor of the model) would dodge `proveFlowReachability` when its

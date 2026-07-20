@@ -15,10 +15,10 @@ const flowPageTarget = (page) => (scope) =>
   pageGatePasses(page, scope) ? pagePath(page.slug) : null
 
 /** The opening run's ordered steps — a null target skips the step (see
- * docs/flow-and-gates.md, "The opening run"). The commodity leg is the
- * inc-062 two-page shape: batch search then the consolidated details page
+ * docs/flow-and-gates.md, "The opening run"). The commodity leg is a
+ * two-page shape: batch search then the consolidated details page
  * (whose derived gate holds until a line exists). The identification step
- * is the inc-063 single card-per-species surface, gated like every other
+ * is a single card-per-species surface, gated like every other
  * flow page (its RULE 1 prerequisite holds it until a line exists). */
 export const RUN_STEPS = [
   { id: importTypeFilterPage.id, target: flowPageTarget(importTypeFilterPage) },

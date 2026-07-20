@@ -1,13 +1,10 @@
 /**
  * Model purity — key-level display-key ban.
  *
- * Enforces Sam's ruling (PLAN §5.4, 2026-07-17): "No display logic in the
- * model." A's `obligation-purity.js` already polices this at the
- * import-specifier level (a feature obligations.js may import only another
- * obligations.js or a reference-data service). That regex is necessary but
- * NOT sufficient — REPORT:460-465 refutes it as a structural guarantee: it
- * "never inspects a key", so it would not catch someone adding `titleKey:`
- * or `label:` directly onto an obligation or domain entry.
+ * Enforces the ruling "No display logic in the model." The import-specifier
+ * guard in `obligation-purity.js` is necessary but not sufficient — it never
+ * inspects a key, so it would not catch someone adding `titleKey:` or
+ * `label:` directly onto an obligation or domain entry.
  *
  * This checker adds the key-level teeth. It walks the LIVE obligation and
  * domain objects (not their source text) and reports any object that carries
@@ -17,14 +14,13 @@
  * they are structurally unreachable from the obligation + domain object
  * graphs this walk is handed, so they cannot.
  *
- * Pure and argument-driven so both the vitest gate (which runs now, over the
- * dark vendored model) and M3's boot-time enforcement (once the model is
- * wired) call the same code: pass the real `obligations` array and `domain`
- * map in. See `obligation-purity.js` for the M3 wiring note.
+ * Pure and argument-driven so the vitest gate and the boot-time enforcement
+ * (`obligation-purity.js`, run at plugin registration via `routes.js`) call
+ * the same code: pass the real `obligations` array and `domain` map in.
  */
 
 // Display keys banned anywhere on an obligation or domain entry. Extend this
-// list if a new display-ish key appears in B's model.
+// list if a new display-ish key appears in the model.
 export const DISPLAY_KEYS = Object.freeze([
   'label',
   'title',

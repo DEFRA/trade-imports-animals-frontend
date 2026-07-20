@@ -1,35 +1,21 @@
 /**
  * reachability.js — graph-level + value-level dependency-reachability prover.
  *
- * Ported from A's `analysis/reachability.js` (the standalone spike),
- * adapted to B's dependency model. This is Phase 3 commits 1 + 2 of the
- * EUDPA-288 blend plan (BRIEF §Migration #3, REPORT §5.1 — "closures
- * must be an exception with a build-time guard").
- *
  * ---------------------------------------------------------------------------
- * Divergence from A — the "conservative closure treatment" invariant
+ * The "conservative closure treatment" invariant
  * ---------------------------------------------------------------------------
  *
- * A's prover works because A's gates are CLOSED-VOCABULARY DATA: four
- * operators (`equals`, `includes`, `notInUnionOf`, `present`), each
- * pattern-matched in A's `predicate.js`. A's `gateValue()` can therefore
- * INVERT a gate to synthesise a witness — "what value would make this
- * gate fire?" — and A's `proveReachability` walks page-graphs proving
- * every obligation has a witness that puts its page in scope.
- *
- * B's gates are JS closures. Even after Phase 2's `dependsOn` sweep the
- * closure body is opaque; the metadata declares WHICH obligations a
- * closure reads (`dependsOn`), not WHAT VALUES would satisfy the
- * predicate. Commit 2 (this file) adds a `synthesiseWitness()` accessor
- * that inspects the structured helper sidecar (`allowListed`,
- * `anyAllowListed`, `matches`, and `branchedGate` when annotated with a
- * `predicateMeta` operator description) and returns a concrete
- * `{ obligationId, value }` that would open the gate. A tightened
- * prover (`proveWithWitnesses`) runs the actual `applyTo` closure
- * against the synthesised witness, confirming the gate really does
- * fire — no more vacuously-green graph-only pass. Commit 3 will add a
- * coverage assertion pinning that every "structured" helper carries a
- * witness synthesiser here.
+ * The manifest's gates are JS closures — the closure body is opaque; the
+ * metadata declares WHICH obligations a closure reads (`dependsOn`), not
+ * WHAT VALUES would satisfy the predicate. `synthesiseWitness()` inspects
+ * the structured helper sidecar (`allowListed`, `anyAllowListed`,
+ * `matches`, and `branchedGate` when annotated with a `predicateMeta`
+ * operator description) and returns a concrete `{ obligationId, value }`
+ * that would open the gate. A tightened prover (`proveWithWitnesses`)
+ * runs the actual `applyTo` closure against the synthesised witness,
+ * confirming the gate really does fire — no vacuously-green graph-only
+ * pass. A coverage assertion pins that every "structured" helper carries
+ * a witness synthesiser here.
  *
  * At the GRAPH level, `dependsOn` alone recovers the recovery-relevant
  * structure. Under the conservative rule:
@@ -38,11 +24,10 @@
  *    reachable, seeded from the always-in-scope set (obligations with
  *    `dependsOn: []`)."
  *
- * This is precisely what A's prover collapses to for gates whose
- * predicates it can't invert. `proveReachability` implements exactly
- * this. `proveWithWitnesses` sits on top: same graph, but each gate
- * whose helper carries a recoverable predicate must ALSO be provable
- * value-side (witness synthesis + closure re-run).
+ * `proveReachability` implements exactly this. `proveWithWitnesses`
+ * sits on top: same graph, but each gate whose helper carries a
+ * recoverable predicate must ALSO be provable value-side (witness
+ * synthesis + closure re-run).
  *
  * ---------------------------------------------------------------------------
  * Self-loop treatment
@@ -63,7 +48,7 @@
  * Dangling ids
  * ---------------------------------------------------------------------------
  *
- * Phase 2's coverage assertion should already prevent them, but the
+ * The manifest coverage assertion should already prevent them, but the
  * prover is defensive: any `dependsOn` id that doesn't resolve to a
  * record in the input manifest is reported as an error (with the
  * offending obligation id) rather than crashing. The obligation
@@ -75,8 +60,7 @@ import { obligationMetadata } from '../obligations/helpers.js'
 
 /**
  * proveReachability — run the graph-level prover over a list of
- * `{ id, dependsOn }` records. Deliverable, in the shape A's prover
- * returns for its own three-outcome enumeration:
+ * `{ id, dependsOn }` records. Three-outcome enumeration:
  *
  *   {
  *     reachable:   string[],  // ids that trace to a seed
@@ -84,9 +68,9 @@ import { obligationMetadata } from '../obligations/helpers.js'
  *     errors:      { obligationId, reason }[]  // structural defects
  *   }
  *
- * Called from `analysis/reachability.test.js` and (eventually) from
- * commit 3's coverage gate that walks `obligations` +
- * `obligationMetadata` to build the record list.
+ * Called from `analysis/reachability.test.js` and from the coverage
+ * gate that walks `obligations` + `obligationMetadata` to build the
+ * record list.
  *
  * @param {Array<{id: string, dependsOn: string[] | undefined}>} records
  * @returns {{ reachable: string[], unreachable: string[], errors: Array<{obligationId: string, reason: string}> }}
@@ -104,7 +88,7 @@ export function proveReachability(records) {
       errors.push({
         obligationId: rec.id,
         reason:
-          'missing dependsOn array (Phase 2 coverage assertion should have caught this)'
+          'missing dependsOn array (the manifest coverage assertion should have caught this)'
       })
       structurallyBad.add(rec.id)
       continue
@@ -174,8 +158,7 @@ export function proveReachability(records) {
 }
 
 // ---------------------------------------------------------------------------
-// Witness synthesis — Phase 3 commit 2 (BRIEF §Migration #3, REPORT §5.1
-// "witness synthesiser + seeding rule per operator" tax warning).
+// Witness synthesis.
 //
 // Each structured helper attaches a `.metadata` sidecar describing its
 // gate shape. `synthesiseWitness` inspects that sidecar and returns a
@@ -196,15 +179,13 @@ export function proveReachability(records) {
 //     needed. Currently the four accompanying-document siblings +
 //     regionCode.
 //   - opaque — reserved for future opaque-by-design helpers. Empty on
-//     the manifest as of Phase 4 §Migration #4: `notInUnionOf` closed
-//     the last two (identificationDetails, description) — see
-//     `OPAQUE_HELPER_TYPES` below.
+//     the current manifest — see `OPAQUE_HELPER_TYPES` below.
 // ---------------------------------------------------------------------------
 
 /**
  * Witness kind — the classification `synthesiseWitness` returns so the
- * prover can branch on it uniformly. Exported for commit 3's coverage
- * gate: every gated obligation must classify as one of these three.
+ * prover can branch on it uniformly. Exported for the coverage gate:
+ * every gated obligation must classify as one of these three.
  *
  * - `'witness'`  — value-level check available: `{ kind: 'witness',
  *                  obligationId, value }`.
@@ -229,9 +210,9 @@ export const WITNESS_KIND = Object.freeze({
  * structured helper is a three-touch change: helper in `helpers.js`,
  * case in `synthesiseWitness`, and an entry here.
  *
- * BRIEF §Migration #3 + REPORT §5.1: "every new operator carries a
- * second tax — a witness synthesiser + a seeding rule". This set is
- * the build-time enforcement of the first half of that tax.
+ * Every new operator carries a second tax — a witness synthesiser + a
+ * seeding rule. This set is the build-time enforcement of the first
+ * half of that tax.
  */
 export const STRUCTURED_HELPER_TYPES = new Set([
   'allowListed',
@@ -239,13 +220,13 @@ export const STRUCTURED_HELPER_TYPES = new Set([
   'matches',
   'branchedGate',
   'notInUnionOf',
-  // Per-record present gate (EUDPA-288 inc-016b) — the accompanying-
-  // documents dependants gate on a same-level `accompanyingDocumentType`
-  // being answered per document record. Witness = any non-blank value.
+  // Per-record present gate — the accompanying-documents dependants gate
+  // on a same-level `accompanyingDocumentType` being answered per
+  // document record. Witness = any non-blank value.
   'presentPerRecord',
-  // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. Each helper's
-  // `.metadata` fully describes the gate — the closure body is auto-
-  // generated from it, so witness synthesis reads the metadata directly.
+  // Meta-first gate helpers. Each helper's `.metadata` fully describes
+  // the gate — the closure body is auto-generated from it, so witness
+  // synthesis reads the metadata directly.
   'equalsGate',
   'presentGate',
   'includesGate',
@@ -258,15 +239,12 @@ export const STRUCTURED_HELPER_TYPES = new Set([
  * explicit deferral, not "we forgot to write the synth". Every entry
  * must be justified with a comment naming the reason.
  *
- * Currently EMPTY — Phase 4 §Migration #4 landed `notInUnionOf` as a
- * derived-union helper and migrated the two former `allowListedByPre-
- * dicate` sites (`identificationDetails`, `description`) onto it,
- * closing the last opaque gap on the manifest. The set is retained
- * (with a placeholder-invariant of `size >= 0`) as the enforcement
- * point for future opaque-by-design helpers: if a new helper CAN'T be
- * data-level inverted (e.g. an ML-scored predicate), listing it here
- * with a comment is the honest thing to do. Any addition MUST cite the
- * reason.
+ * Currently EMPTY — every manifest gate is data-level invertible. The
+ * set is retained (with a placeholder-invariant of `size >= 0`) as the
+ * enforcement point for future opaque-by-design helpers: if a new
+ * helper CAN'T be data-level inverted (e.g. an ML-scored predicate),
+ * listing it here with a comment is the honest thing to do. Any
+ * addition MUST cite the reason.
  */
 export const OPAQUE_HELPER_TYPES = new Set([])
 
@@ -558,7 +536,7 @@ function synthesiseNotInUnionOfWitness(meta) {
 export function proveWithWitnesses(obligations) {
   const records = obligations.map((o) => {
     if (typeof o.applyTo === 'function') {
-      // Phase 4.5.2: prefer the derived-or-declared dependsOn from
+      // Prefer the derived-or-declared dependsOn from
       // `obligationMetadata` — meta-first helpers name their gate
       // obligation on `.metadata`, so the dependency graph is
       // recoverable without an explicit `dependsOn` declaration.
