@@ -1,11 +1,13 @@
 {% extends 'layouts/page.njk' %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block pageContent %}
 
   {{ appHeading({ heading: heading }) }}
+
 
       <div class="govuk-body" data-testid="app-page-body">
         {% if errorList %}
@@ -25,119 +27,146 @@
         </form>
 
         {% if not errorList %}
-          <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+          <div class="notification-list__layout">
+            <aside class="notification-list__filters" aria-labelledby="filter-notifications-heading">
+              <h2 class="govuk-heading-m" id="filter-notifications-heading">Filter notifications</h2>
 
-          <div class="notification-list__toolbar">
-            <p class="govuk-label govuk-label--s notification-list__results">{{ resultsLabel }}</p>
+              <form method="get" action="/" class="notification-list__search-form" data-testid="notification-search-form">
+                {% if sort %}
+                  <input type="hidden" name="sort" value="{{ sort }}">
+                {% endif %}
+                {{ govukInput({
+                  id: "referenceNumber",
+                  name: "referenceNumber",
+                  label: {
+                    text: "Keyword or reference",
+                    classes: "govuk-label--s"
+                  },
+                  value: referenceNumber
+                }) }}
+                {{ govukButton({
+                  text: "Search"
+                }) }}
+              </form>
+            </aside>
 
-            <form method="get" action="/" class="notification-list__sort-form">
-              {% if currentPage > 1 %}
-                <input type="hidden" name="page" value="{{ currentPage }}">
-              {% endif %}
-              <div class="govuk-form-group govuk-!-width-auto">
-                <label class="govuk-label govuk-label--s" for="sort">Sort by</label>
-                <select class="govuk-select" id="sort" name="sort">
-                  {% for option in sortOptions %}
-                    <option
-                      value="{{ option.value }}"
-                      {% if option.value == sort %}selected{% endif %}>{{ option.text }}</option>
-                  {% endfor %}
-                </select>
+            <div class="notification-list__main">
+              <div class="notification-list__toolbar">
+                <p class="govuk-label govuk-label--s notification-list__results" data-testid="notification-results-label">{{ resultsLabel }}</p>
+
+                <form method="get" action="/" class="notification-list__sort-form">
+                  {% if currentPage > 1 %}
+                    <input type="hidden" name="page" value="{{ currentPage }}">
+                  {% endif %}
+                  {% if referenceNumber %}
+                    <input type="hidden" name="referenceNumber" value="{{ referenceNumber }}">
+                  {% endif %}
+                  <div class="govuk-form-group govuk-!-width-auto">
+                    <label class="govuk-label govuk-label--s" for="sort">Sort by</label>
+                    <select class="govuk-select" id="sort" name="sort">
+                      {% for option in sortOptions %}
+                        <option
+                          value="{{ option.value }}"
+                          {% if option.value == sort %}selected{% endif %}>{{ option.text }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  {{ govukButton({
+                    text: "Update sort",
+                    classes: "govuk-button--secondary"
+                  }) }}
+                </form>
               </div>
-              {{ govukButton({
-                text: "Update sort",
-                classes: "govuk-button--secondary"
-              }) }}
-            </form>
-          </div>
 
-          {% for notification in notifications %}
-              <div class="govuk-summary-card notification-list">
-                <div class="govuk-summary-card__title-wrapper">
-                  <h2 class="govuk-summary-card__title">
-                    {{ notification.referenceNumber }}
-                  </h2>
-                  <ul class="govuk-summary-card__actions">
-                    {% if notification.status == 'SUBMITTED' %}
-                    <li class="govuk-summary-card__action">
-                      <form method="post" action="/notification-amend/{{ notification.referenceNumber }}" class="app-form-inline">
-                        <input type="hidden" name="crumb" value="{{ crumb }}"/>
-                        <button type="submit" class="govuk-link app-link-button">
-                          Amend<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
-                        </button>
-                      </form>
-                    </li>
-                    {% endif %}
-                    {% if notification.status == 'DRAFT' or notification.status == 'SUBMITTED' %}
-                    <li class="govuk-summary-card__action">
-                      <form method="post" action="/notification-copy/{{ notification.referenceNumber }}" class="app-form-inline">
-                        <input type="hidden" name="crumb" value="{{ crumb }}"/>
-                        <button type="submit" class="govuk-link app-link-button">
-                          Copy as new<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
-                        </button>
-                      </form>
-                    </li>
-                    {% endif %}
-                    <li class="govuk-summary-card__action">
-                      <a
-                        class="govuk-link"
-                        href="/notification-view/{{ notification.referenceNumber }}{{ listQuerySuffix }}">
-                        View<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-                <div class="govuk-summary-card__content">
-                  <dl class="notification-list__grid-row">
-                    <div class="notification-list__grid-column-30">
-                      <dt class="notification-list__heading">Commodity</dt>
-                      <dd class="notification-list__value">{{ notification.commodity.name }}</dd>
-                    </div>
-                    <div class="notification-list__grid-column-30">
-                      <dt class="notification-list__heading">Origin</dt>
-                      <dd class="notification-list__value">{{ notification.origin.countryName or notification.origin.countryCode }}</dd>
-                    </div>
-                    <div class="notification-list__grid-column-30">
-                      <dt class="notification-list__heading">Arrival at destination</dt>
-                      <dd class="notification-list__value">{{ notification.arrivalAtDestination }}</dd>
-                    </div>
-                  </dl>
-                  <dl class="notification-list__grid-row">
-                    <div class="notification-list__grid-column-30">
-                      <dt class="notification-list__heading">Consignee</dt>
-                      {# TODO: Consignee value not defined — out of scope for EUDPA-69 #}
-                      <dd class="notification-list__value"></dd>
-                    </div>
-                    <div class="notification-list__grid-column-30">
-                      <dt class="notification-list__heading">Consignor</dt>
-                      <dd class="notification-list__value">{{ notification.consignor.name }}</dd>
-                    </div>
-                    <div class="notification-list__grid-column-30">
-                      <dt class="notification-list__heading">Status</dt>
-                      <dd class="notification-list__value">
+              {% for notification in notifications %}
+                  <div class="govuk-summary-card notification-list">
+                    <div class="govuk-summary-card__title-wrapper">
+                      <h2 class="govuk-summary-card__title">
+                        {{ notification.referenceNumber }}
+                      </h2>
+                      <ul class="govuk-summary-card__actions">
                         {% if notification.status == 'SUBMITTED' %}
-                          {% set statusTagClass = 'govuk-tag--blue' %}
-                        {% elif notification.status == 'AMEND' %}
-                          {% set statusTagClass = 'govuk-tag--yellow' %}
-                        {% else %}
-                          {% set statusTagClass = 'govuk-tag--grey' %}
+                        <li class="govuk-summary-card__action">
+                          <form method="post" action="/notification-amend/{{ notification.referenceNumber }}" class="app-form-inline">
+                            <input type="hidden" name="crumb" value="{{ crumb }}"/>
+                            <button type="submit" class="govuk-link app-link-button">
+                              Amend<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
+                            </button>
+                          </form>
+                        </li>
                         {% endif %}
-                        <strong class="govuk-tag {{ statusTagClass }}">
-                          {{ notification.status | title }}
-                        </strong>
-                      </dd>
+                        {% if notification.status == 'DRAFT' or notification.status == 'SUBMITTED' %}
+                        <li class="govuk-summary-card__action">
+                          <form method="post" action="/notification-copy/{{ notification.referenceNumber }}" class="app-form-inline">
+                            <input type="hidden" name="crumb" value="{{ crumb }}"/>
+                            <button type="submit" class="govuk-link app-link-button">
+                              Copy as new<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
+                            </button>
+                          </form>
+                        </li>
+                        {% endif %}
+                        <li class="govuk-summary-card__action">
+                          <a
+                            class="govuk-link"
+                            href="/notification-view/{{ notification.referenceNumber }}{{ listQuerySuffix }}">
+                            View<span class="govuk-visually-hidden"> {{ notification.referenceNumber }}</span>
+                          </a>
+                        </li>
+                      </ul>
                     </div>
-                  </dl>
-                  <div class="notification-list__grid-row">
-                    <div class="notification-list__grid-column-full">
-                      Date created: {{ notification.dateCreated }}
+                    <div class="govuk-summary-card__content">
+                      <dl class="notification-list__grid-row">
+                        <div class="notification-list__grid-column-30">
+                          <dt class="notification-list__heading">Commodity</dt>
+                          <dd class="notification-list__value">{{ notification.commodity.name }}</dd>
+                        </div>
+                        <div class="notification-list__grid-column-30">
+                          <dt class="notification-list__heading">Origin</dt>
+                          <dd class="notification-list__value">{{ notification.origin.countryName or notification.origin.countryCode }}</dd>
+                        </div>
+                        <div class="notification-list__grid-column-30">
+                          <dt class="notification-list__heading">Arrival at destination</dt>
+                          <dd class="notification-list__value">{{ notification.arrivalAtDestination }}</dd>
+                        </div>
+                      </dl>
+                      <dl class="notification-list__grid-row">
+                        <div class="notification-list__grid-column-30">
+                          <dt class="notification-list__heading">Consignee</dt>
+                          {# TODO: Consignee value not defined — out of scope for EUDPA-69 #}
+                          <dd class="notification-list__value"></dd>
+                        </div>
+                        <div class="notification-list__grid-column-30">
+                          <dt class="notification-list__heading">Consignor</dt>
+                          <dd class="notification-list__value">{{ notification.consignor.name }}</dd>
+                        </div>
+                        <div class="notification-list__grid-column-30">
+                          <dt class="notification-list__heading">Status</dt>
+                          <dd class="notification-list__value">
+                            {% if notification.status == 'SUBMITTED' %}
+                              {% set statusTagClass = 'govuk-tag--blue' %}
+                            {% elif notification.status == 'AMEND' %}
+                              {% set statusTagClass = 'govuk-tag--yellow' %}
+                            {% else %}
+                              {% set statusTagClass = 'govuk-tag--grey' %}
+                            {% endif %}
+                            <strong class="govuk-tag {{ statusTagClass }}">
+                              {{ notification.status | title }}
+                            </strong>
+                          </dd>
+                        </div>
+                      </dl>
+                      <div class="notification-list__grid-row">
+                        <div class="notification-list__grid-column-full">
+                          Date created: {{ notification.dateCreated }}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            {% endfor %}
+                {% endfor %}
 
-          {% include "home/_pagination.njk" %}
+              {% include "home/_pagination.njk" %}
+            </div>
+          </div>
         {% endif %}
       </div>
 

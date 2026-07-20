@@ -49,6 +49,7 @@ export function parseNotificationSort(sortQuery) {
 }
 
 export function buildHomeListQueryString({
+  referenceNumber,
   page = 1,
   sort = DEFAULT_NOTIFICATION_SORT
 } = {}) {
@@ -60,6 +61,10 @@ export function buildHomeListQueryString({
 
   if (sort && sort !== DEFAULT_NOTIFICATION_SORT) {
     params.set('sort', sort)
+  }
+
+  if (referenceNumber) {
+    params.set('referenceNumber', referenceNumber)
   }
 
   const query = params.toString()
@@ -136,8 +141,9 @@ export function mapPaginatedResponse(responseBody, countryMap = {}) {
  */
 export function buildPaginationLinks(
   pagination,
-  baseUrl = '/',
-  sort = DEFAULT_NOTIFICATION_SORT
+  referenceNumber,
+  sort = DEFAULT_NOTIFICATION_SORT,
+  baseUrl = '/'
 ) {
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
@@ -151,7 +157,7 @@ export function buildPaginationLinks(
   if (page > 1) {
     const previousPage = page - 1
     model.previous = {
-      href: `${baseUrl}${buildHomeListQueryString({ page: previousPage, sort })}`,
+      href: `${baseUrl}${buildHomeListQueryString({ page: previousPage, sort, referenceNumber })}`,
       label: 'Previous page',
       pageText: `${previousPage} of ${totalPages}`
     }
@@ -160,7 +166,7 @@ export function buildPaginationLinks(
   if (page < totalPages) {
     const nextPage = page + 1
     model.next = {
-      href: `${baseUrl}${buildHomeListQueryString({ page: nextPage, sort })}`,
+      href: `${baseUrl}${buildHomeListQueryString({ page: nextPage, sort, referenceNumber })}`,
       label: 'Next page',
       pageText: `${nextPage} of ${totalPages}`
     }
@@ -174,7 +180,7 @@ export function buildPaginationLinks(
  * eg: "Showing 1 to 25 of 75 results".
  */
 export function buildPageResultsRangeLabel(
-  { page = 1, size, totalElements = 0, totalPages = 1 } = {},
+  { size, page = 1, totalElements = 0, totalPages = 1 } = {},
   itemCount = 0
 ) {
   if (totalElements === 0 || itemCount === 0) {

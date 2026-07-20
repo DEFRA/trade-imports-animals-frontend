@@ -15,7 +15,36 @@ import {
 
 const logger = createLogger()
 
+const VIEW = 'home/index'
 const PAGE_TITLE = 'Import notification service'
+
+function parseReferenceNumber(value) {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+function renderEmptySearchResult(h, { page, sort, referenceNumber }) {
+  return h.view(VIEW, {
+    pageTitle: PAGE_TITLE,
+    heading: PAGE_TITLE,
+    notifications: [],
+    resultsLabel: 'No notifications found',
+    pagination: null,
+    currentPage: page,
+    sort,
+    sortOptions: NOTIFICATION_SORT_OPTIONS,
+    referenceNumber,
+    listQuerySuffix: buildHomeListQueryString({
+      page,
+      sort,
+      referenceNumber
+    })
+  })
+}
 
 /**
  * home page controller.
@@ -26,10 +55,15 @@ export const homeController = {
     const queryPage = Number.parseInt(_request.query.page, 10)
     const page = Number.isNaN(queryPage) ? 1 : queryPage
     const sort = parseNotificationSort(_request.query.sort)
+    const referenceNumber = parseReferenceNumber(_request.query.referenceNumber)
 
     try {
       const [response, countries] = await Promise.all([
-        notificationClient.findAll(_request, traceId, { page, sort }),
+        notificationClient.findAll(_request, traceId, {
+          page,
+          sort,
+          ...(referenceNumber ? { referenceNumber } : {})
+        }),
         countriesClient.getCountries(traceId).catch((err) => {
           logger.error(`Failed to load countries: ${err.message}`)
           return []
@@ -43,32 +77,45 @@ export const homeController = {
         countryMap
       )
 
-      return h.view('home/index', {
+      const resultsLabel =
+        referenceNumber && notifications.length === 0
+          ? 'No notifications found'
+          : buildPageResultsRangeLabel(pagination, notifications.length)
+
+      return h.view(VIEW, {
         pageTitle: PAGE_TITLE,
         heading: PAGE_TITLE,
         notifications,
-        resultsLabel: buildPageResultsRangeLabel(
-          pagination,
-          notifications.length
-        ),
-        pagination: buildPaginationLinks(pagination, '/', sort),
+        resultsLabel,
+        pagination: buildPaginationLinks(pagination, referenceNumber, sort),
         currentPage: pagination.page,
         sort,
         sortOptions: NOTIFICATION_SORT_OPTIONS,
+        referenceNumber: referenceNumber ?? '',
         listQuerySuffix: buildHomeListQueryString({
           page: pagination.page,
-          sort
+          sort,
+          referenceNumber
         })
       })
     } catch (err) {
+      if (referenceNumber && err.status === statusCodes.badRequest) {
+        return renderEmptySearchResult(h, {
+          page,
+          sort,
+          referenceNumber
+        })
+      }
+
       logger.error({ err, traceId, page }, 'Failed to load notifications')
       return h
-        .view('home/index', {
+        .view(VIEW, {
           pageTitle: PAGE_TITLE,
           heading: PAGE_TITLE,
           notifications: [],
           totalElements: 0,
           currentPage: page,
+          referenceNumber: referenceNumber ?? '',
           errorList: [
             { text: 'Something went wrong, please contact the EUDP team' }
           ]

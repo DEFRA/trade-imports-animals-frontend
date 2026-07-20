@@ -1220,6 +1220,23 @@ describe('#notificationClient', () => {
       )
     })
 
+    test('Should send GET request with referenceNumber param when provided', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ content: [] })
+      })
+
+      await notificationClient.findAll(mockRequest, traceId, {
+        page: 1,
+        referenceNumber: 'GBN-AG-26-ABC123'
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        'http://mock-backend/notifications?referenceNumber=GBN-AG-26-ABC123',
+        expect.objectContaining({ method: 'GET' })
+      )
+    })
+
     test('Should throw an error when findAll request fails', async () => {
       fetch.mockResolvedValueOnce({
         ok: false,
