@@ -1730,3 +1730,46 @@ append cap, an A-only numeric/admission-control channel B has no counterpart for
 for that cap (`collection-complete.test.js`'s "collectionCapAt stays A-side" +
 `mutators-under-b.test.js`'s append-cap pins would go red if dropped early).
 `obligation-purity.js` KEPT (Sam's ruling; scans the KEPT `features/*/obligations.js`).
+
+## §29 — inc-024a: `maxEntriesFrom` ported off A, the last A files DELETED — retrofit M0–M4 COMPLETE · `EUDPA-288`
+
+**A's obligation model is now fully deleted — B is the sole model.** The one
+genuine A-only capability (c-031: the `maxEntriesFrom` admission-control cap,
+which B's evaluator cannot express) had its DECLARATION moved to a flow-level
+map; enforcement stays A-side on the write path per Sam's ruling.
+
+**The cap declaration moved to `flow/obligation-source.js`.** New
+`MAX_ENTRIES_FROM = { animalIdentifiers: 'numberOfAnimalsQuantity' }` — keyed by
+collection name → sibling count-field name — sits alongside `SYSTEM_POPULATED`
+and `ENFORCED_AT_CONTINUE` as the flow-level declarations home. It replaces the
+single `animalIdentifiers.maxEntriesFrom = numberOfAnimalsQuantity` declaration
+that lived on A's `features/commodities/obligations.js`.
+
+**`engine/evaluate/cardinality.js` `collectionCapAt` re-pointed.** No longer
+reads `registry.byPath(path).maxEntriesFrom`; instead looks the collection up by
+its last path segment in `MAX_ENTRIES_FROM`, and (unchanged) reads the named
+count field's value from `answers` and caps on it. Enforcement is byte-identical
+— `collection-complete.test.js`'s "collectionCapAt stays A-side" (expects 3) and
+`mutators-under-b.test.js`'s append-cap pins stay green. No `registry`, no A
+obligation object.
+
+**The last A files DELETED (grep-confirmed zero importers first).**
+`git rm registry.js` + the 12 `features/*/obligations.js`. Two surviving-file
+importers were re-pointed off A first: `engine/evaluate/cardinality.js` (the cap,
+above) and `flow/entry-guard.js` (its `importType.id` guard now uses the bare
+`'importType'` key — the filter's service-routing pick, never a B notification
+obligation). The A-vs-B migration test `retrofit/mapping.test.js` (checked
+`mapping.json`'s A side against the live A registry — moot once A is gone) was
+deleted; `contract.test.js` and `indexed.test.js` were re-pointed off
+`registry.js` onto `flow/obligation-source.js`'s `walkObligations` /
+`obligationByName` (B yields the same names and templatePaths — A id === B name).
+
+**`obligation-purity.js` re-pointed.** Its import-specifier assert scanned the
+now-deleted `features/*/obligations.js`; that part is moot. It now delegates to
+`model/no-display-keys.js`'s `assertNoDisplayKeys(obligations, domain)` — the
+key-level display-key ban over the live vendored model (`model/obligations` +
+`model/domain`), which is the surviving purity gate. `routes.js`'s boot call is
+unchanged; the boot now fails on a display key added to B's model.
+
+**Retrofit M0–M4 complete.** `find features -name obligations.js` is empty;
+`model/` is the sole obligation model.

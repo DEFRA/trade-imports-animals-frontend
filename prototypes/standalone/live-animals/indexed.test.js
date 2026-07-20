@@ -7,7 +7,7 @@ import {
   sectionStatus
 } from './flow/section-status.js'
 import { sections } from './flow/flow.js'
-import { walkObligations } from './registry.js'
+import { walkObligations } from './flow/obligation-source.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
 

@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
 import { readyForCheckYourAnswers } from './flow/section-status.js'
-import { registry } from './registry.js'
+import { walkObligations, obligationByName } from './flow/obligation-source.js'
 import { store } from './engine/store.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureSession } from './engine/persistence/session.js'
@@ -39,15 +39,25 @@ import * as declaration from './features/declaration/controller.js'
 
 const drive = driveHandler
 
+const obligationNames = [...walkObligations()].map(
+  (node) => node.obligation.name
+)
+
+// importType (the filter's service-routing pick) and declaration (the final
+// attestation) are flow-collected keys the notification model does not carry as
+// obligations — enumerate them alongside the obligation names so the commit
+// contract still sees them land.
+const committableKeys = [...obligationNames, 'importType', 'declaration']
+
 const committedIds = ({ before, after }) =>
-  registry.all
-    .map((obligation) => obligation.id)
-    .filter((id) => isAnswered(after[id]) && !isAnswered(before[id]))
+  committableKeys.filter(
+    (id) => isAnswered(after[id]) && !isAnswered(before[id])
+  )
 
 const committableCollects = (collects) =>
   collects.filter((id) => {
-    const obligation = registry.byId(id)
-    return !obligation.renderOnly && !obligation.system
+    const obligation = obligationByName(id)
+    return !obligation?.renderOnly && !obligation?.system
   })
 
 const cases = [

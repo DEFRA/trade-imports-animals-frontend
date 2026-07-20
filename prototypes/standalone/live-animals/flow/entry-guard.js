@@ -4,8 +4,9 @@ import { currentJourney } from '../engine/journey.js'
 import { obligationByName, SYSTEM_POPULATED } from './obligation-source.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
-import { importType } from '../features/import-type-filter/obligations.js'
 import { hasEnteredThroughFilter } from './run-state.js'
+
+const IMPORT_TYPE_KEY = 'importType'
 
 const EXEMPT_PREFIXES = [
   pagePath(dashboardPage.slug),
@@ -29,7 +30,7 @@ export const guardedJourneyPath = (path) =>
  * carrying its server-minted referenceNumber. Counting either would make
  * stub and real mode diverge. */
 const userEntered = (key) => {
-  if (key === importType.id) return false
+  if (key === IMPORT_TYPE_KEY) return false
   const obligation = obligationByName(key)
   return obligation !== undefined && !SYSTEM_POPULATED.has(key)
 }
