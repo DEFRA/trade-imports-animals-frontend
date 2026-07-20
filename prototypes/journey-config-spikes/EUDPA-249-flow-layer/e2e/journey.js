@@ -108,6 +108,10 @@ async function goToLinePage(page, journey, lineId, name) {
   await page.goto(`${journey.base}/lines/${lineId}/${name}`)
 }
 
+async function goToAccompanyingDocPage(page, journey, docId, name) {
+  await page.goto(`${journey.base}/accompanying-documents/${docId}/${name}`)
+}
+
 export async function resetSession(page, journey) {
   // Guarantees every test starts from a clean yar session by hitting
   // the reset controller via the page's request context (which carries
@@ -140,6 +144,25 @@ export async function fillRegionCodeRequirement(
 export async function fillReasonForImport(page, journey, { reason }) {
   await goToPage(page, journey, 'reason-for-import')
   await pickRadio(page, 'reasonForImport', reason)
+  await submit(page)
+}
+
+// Transit + transhipment-or-onward-travel gate destinationCountry in
+// as mandatory (WS1). Transit + temporary-admission-horses gate
+// portOfExit in.
+export async function fillDestinationCountry(
+  page,
+  journey,
+  { country = 'FR' } = {}
+) {
+  await goToPage(page, journey, 'destination-country')
+  await selectValue(page, 'destinationCountry', country)
+  await submit(page)
+}
+
+export async function fillPortOfExit(page, journey, { port = 'DVR' } = {}) {
+  await goToPage(page, journey, 'port-of-exit')
+  await selectValue(page, 'portOfExit', port)
   await submit(page)
 }
 
@@ -243,24 +266,69 @@ export async function fillTraderAddress(page, journey, obligation, { name }) {
 
 // -- Section 5 — accompanying documents ------------------------------
 
+/**
+ * Add one accompanying document via the bespoke summary/add UX
+ * (WS4 records-shape group). Both enums exceed RADIO_MAX (5) after
+ * audit BLOCKERs #2 and #3 (type has 14 spec values, attachment has
+ * 8), so they render as selects, not radios. Field-`name` attrs are
+ * suffixed with the doc's fulfilmentId (default `doc1`).
+ */
 export async function fillAccompanyingDocuments(
   page,
   journey,
   {
+    docId = 'doc1',
     documentType = 'health-certificate',
     attachmentType = 'pdf',
     reference = 'HC-2026-00042',
     dateOfIssue = '01/06/2026'
   } = {}
 ) {
-  // Both enums exceed RADIO_MAX (5) after audit BLOCKERs #2 and #3
-  // (type has 14 spec values, attachment has 8), so they render as
-  // selects, not radios.
-  await goToPage(page, journey, 'accompanying-documents')
-  await selectValue(page, 'accompanyingDocumentType', documentType)
-  await selectValue(page, 'accompanyingDocumentAttachmentType', attachmentType)
-  await fillInput(page, 'accompanyingDocumentReference', reference)
-  await fillInput(page, 'accompanyingDocumentDateOfIssue', dateOfIssue)
+  // Mint a new document via the summary index. The Add button posts
+  // to /accompanying-documents/add which returns 302 into the first
+  // per-doc page (accompanying-document-type).
+  await page.goto(`${journey.base}/accompanying-documents`)
+  await page
+    .getByRole('button', { name: /Add.*accompanying document/i })
+    .click()
+  // Fill the four per-doc pages. name attribute is
+  // `${obligation.name}-${docId}` (single-segment records-group keying,
+  // same shape line-scoped inputs use).
+  await goToAccompanyingDocPage(
+    page,
+    journey,
+    docId,
+    'accompanying-document-type'
+  )
+  await selectValue(page, `accompanyingDocumentType-${docId}`, documentType)
+  await submit(page)
+  await goToAccompanyingDocPage(
+    page,
+    journey,
+    docId,
+    'accompanying-document-attachment'
+  )
+  await selectValue(
+    page,
+    `accompanyingDocumentAttachmentType-${docId}`,
+    attachmentType
+  )
+  await submit(page)
+  await goToAccompanyingDocPage(
+    page,
+    journey,
+    docId,
+    'accompanying-document-reference'
+  )
+  await fillInput(page, `accompanyingDocumentReference-${docId}`, reference)
+  await submit(page)
+  await goToAccompanyingDocPage(
+    page,
+    journey,
+    docId,
+    'accompanying-document-date-of-issue'
+  )
+  await fillInput(page, `accompanyingDocumentDateOfIssue-${docId}`, dateOfIssue)
   await submit(page)
 }
 
@@ -315,6 +383,28 @@ export async function fillNumberOfAnimals(
 ) {
   await goToLinePage(page, journey, lineId, 'number-of-animals')
   await fillInput(page, `numberOfAnimals-${lineId}`, count)
+  await submit(page)
+}
+
+// -- Unit records — depth-2 fan-out under a commodity line ------------
+//
+// The unit-count-equals-numberOfAnimals invariant (WS3) requires the
+// count of unit records on a line to equal numberOfAnimals for that
+// line — so any walk that fills numberOfAnimals needs to add a
+// matching number of units, else per-unit-records is IP at rollup.
+
+export async function addUnitRecord(page, journey, { lineId = 'line1' } = {}) {
+  await page.goto(`${journey.base}/lines/${lineId}/units`)
+  await page.getByRole('button', { name: /Add.*animal/i }).click()
+}
+
+export async function fillEarTag(
+  page,
+  journey,
+  { lineId = 'line1', unitId = 'unit1', earTag = 'UK123456789012' } = {}
+) {
+  await page.goto(`${journey.base}/lines/${lineId}/units/${unitId}/ear-tag`)
+  await fillInput(page, `earTag-${lineId}/${unitId}`, earTag)
   await submit(page)
 }
 

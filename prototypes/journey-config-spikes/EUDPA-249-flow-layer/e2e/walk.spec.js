@@ -6,6 +6,8 @@ import {
   fillRegionCodeRequirement,
   fillReasonForImport,
   fillPurposeInInternalMarket,
+  fillDestinationCountry,
+  fillPortOfExit,
   fillTransporterType,
   fillCommercialTransporterDetails,
   fillMeansOfTransport,
@@ -20,6 +22,8 @@ import {
   fillCommodityType,
   fillSpecies,
   fillNumberOfAnimals,
+  addUnitRecord,
+  fillEarTag,
   fillCph
 } from './journey.js'
 
@@ -92,27 +96,34 @@ for (const journey of JOURNEYS) {
       // "all-mandatory once any is filled" branch.
       await fillAccompanyingDocuments(page, journey)
 
-      // Section 6 — commodity lines
+      // Section 6 — commodity lines. numberOfAnimals: 1 to match the
+      // single unit-record added below (WS3 unit-count-equals-
+      // numberOfAnimals invariant).
       await addCommodityLine(page, journey)
       await fillCommodityCode(page, journey)
       await fillCommodityType(page, journey)
       await fillSpecies(page, journey)
-      await fillNumberOfAnimals(page, journey)
+      await fillNumberOfAnimals(page, journey, { count: 1 })
 
       // Commodity-gated notification-level fields — cattle brings
       // both containsUnweanedAnimals (audit #11) and CPH into scope.
       await fillCph(page, journey)
       await fillContainsUnweanedAnimals(page, journey)
 
-      // Terminal — task list should show 14 Completed + 1 Optional
+      // Add one unit + fill its ear-tag (satisfies both anyOfIds
+      // identifiers rule and the WS3 count invariant).
+      await addUnitRecord(page, journey)
+      await fillEarTag(page, journey)
+
+      // Terminal — task list should show 15 Completed + 1 Optional
       // (trader-reference, unfilled).
       await page.goto(`${journey.base}/task-list`)
       const completedCount = await page.getByText('Completed').count()
       const optionalCount = await page.getByText('Optional').count()
       expect(
         completedCount,
-        `expected 14 Completed tags on the task list, got ${completedCount}`
-      ).toBe(14)
+        `expected 15 Completed tags on the task list, got ${completedCount}`
+      ).toBe(15)
       expect(
         optionalCount,
         `expected 1 Optional tag on the task list, got ${optionalCount}`
@@ -131,7 +142,7 @@ for (const journey of JOURNEYS) {
       await expect(page.getByText('Cattle (0102)')).toBeVisible()
     })
 
-    test('transit happy path skipping accompanying documents surfaces two Optional tags', async ({
+    test('transit happy path skipping accompanying documents surfaces one Optional tag (trader-reference)', async ({
       page
     }) => {
       await fillCountryOfOrigin(page, journey, { country: 'FR' })
@@ -139,7 +150,10 @@ for (const journey of JOURNEYS) {
       await fillReasonForImport(page, journey, { reason: 'transit' })
       // NB: no purpose-details step — purposeInInternalMarket is NA
       // on transit, so /start would skip it. The trader still needs to
-      // walk the remaining sections.
+      // walk the remaining sections. Transit gates destination-country
+      // + port-of-exit in as mandatory (WS1); exit-date stays NA.
+      await fillDestinationCountry(page, journey, { country: 'FR' })
+      await fillPortOfExit(page, journey, { port: 'DVR' })
 
       await fillTransporterType(page, journey, {
         transporterType: 'commercial'
@@ -177,26 +191,36 @@ for (const journey of JOURNEYS) {
       await fillCommodityCode(page, journey)
       await fillCommodityType(page, journey)
       await fillSpecies(page, journey)
-      await fillNumberOfAnimals(page, journey)
+      // numberOfAnimals: 1 to match the single unit-record added below
+      // (WS3 count invariant).
+      await fillNumberOfAnimals(page, journey, { count: 1 })
 
       // Commodity-gated notification-level fields — cattle brings
       // both containsUnweanedAnimals (audit #11) and CPH into scope.
       await fillCph(page, journey)
       await fillContainsUnweanedAnimals(page, journey)
 
-      // Terminal — 13 Completed + 2 Optional. Matches the vitest
-      // e2e-walk.test.js "transit-through-EU" case.
+      // Add one unit with an ear-tag — satisfies anyOfIds identifiers
+      // rule and the WS3 count invariant.
+      await addUnitRecord(page, journey)
+      await fillEarTag(page, journey)
+
+      // Terminal — 14 visible Completed tags + 1 Optional. WS4 turned
+      // accompanying-documents into a records-shape group; when the
+      // walk skips it (0 docs added) the subsection collapses to NA
+      // (no tag rendered). Only trader-reference stays Optional (its
+      // lone obligation is completion-optional and unfilled).
       await page.goto(`${journey.base}/task-list`)
       const completedCount = await page.getByText('Completed').count()
       const optionalCount = await page.getByText('Optional').count()
       expect(
         completedCount,
-        `expected 13 Completed tags on the task list, got ${completedCount}`
-      ).toBe(13)
+        `expected 14 Completed tags on the task list, got ${completedCount}`
+      ).toBe(14)
       expect(
         optionalCount,
-        `expected 2 Optional tags on the task list, got ${optionalCount}`
-      ).toBe(2)
+        `expected 1 Optional tag on the task list, got ${optionalCount}`
+      ).toBe(1)
       await expect(page.getByText('Not started')).toHaveCount(0)
       await expect(page.getByText('In progress')).toHaveCount(0)
 
