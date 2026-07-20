@@ -291,6 +291,33 @@ describe('statusOf — the commodities/identification facet split', () => {
       },
       IN_PROGRESS,
       FULFILLED
+    ],
+    // A unit that EXISTS (permanentAddress stored, Cat-scoped) but violates
+    // the at-least-one-identifier invariant — the per-record verdict the
+    // engine's groupInvariantErrors supplies.
+    [
+      {
+        commodityLines: [
+          {
+            commoditySelection: 'Cat',
+            animalIdentifiers: [
+              {
+                permanentAddress: {
+                  name: 'Owner',
+                  addressLine1: '1 Farm Lane',
+                  town: 'Yorkton',
+                  postcode: 'YO1 1AA',
+                  country: 'United Kingdom',
+                  telephone: '01000 000000',
+                  email: 'owner@example.test'
+                }
+              }
+            ]
+          }
+        ]
+      },
+      IN_PROGRESS,
+      IN_PROGRESS
     ]
   ]
 

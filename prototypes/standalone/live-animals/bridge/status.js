@@ -25,15 +25,19 @@
  *   - FULFILMENT          — `domainEntry.isComplete` for addresses, else
  *                          `!isBlankValue` (incl. partial-address handling).
  *
- * The collection floor is manifest-sourced: `commodityLines` from
- * `requires.minEntries`, `animalIdentifiers` from `requires.anyOfIds` (a
- * per-unit any-of). See DESIGN-DELTA.md §19, §26.
+ * The empty-collection floor is manifest-sourced (`requiredAtLeastOne`:
+ * `requires.minEntries` or `requires.anyOfIds`) and stays a presentation
+ * rule — the engine emits nothing for a group with zero records, but an
+ * empty required collection must still block FULFILLED. The per-record
+ * any-of verdict is sourced from the engine's `groupInvariantErrors`
+ * (filtered by instanceId), the same interpreter collection-complete
+ * uses. See DESIGN-DELTA.md §19, §26.
  */
 
 import { obligations, groups } from '../model/obligations/obligations.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import { answersToFulfilments } from './fulfilments.js'
-import { effectiveStatus } from '../model/engine/index.js'
+import { effectiveStatus, groupInvariantErrors } from '../model/engine/index.js'
 import { isBlankValue } from '../model/engine/is-blank-value.js'
 import { domain } from '../model/domain/index.js'
 import { isAnswered } from '../lib/answered.js'
@@ -59,10 +63,8 @@ const bOf = (aId) => bByAId.get(aId)
 //   .required          → `status: 'mandatory'`
 //   .requiredAtLeastOne→ `requires.minEntries` OR `requires.anyOfIds`
 //                        (the animalIdentifiers floor is a per-unit any-of)
-//   .requiredOneOf     → `requires.anyOfIds`, resolved to member names
 //   .item              → obligations whose `within` is this group
 
-const bByUuid = new Map(obligations.map((o) => [o.id, o]))
 const bIsGroup = (o) => groups.includes(o)
 
 // Collection members for status = the group's `within` obligations MINUS the
@@ -85,7 +87,6 @@ const toStructural = (o) => ({
   collection: bIsGroup(o),
   required: bIsMandatory(o),
   requiredAtLeastOne: Boolean(o.requires?.minEntries || o.requires?.anyOfIds),
-  requiredOneOf: o.requires?.anyOfIds?.map((uuid) => bByUuid.get(uuid).name),
   item: bIsGroup(o) ? bMembersOf(o).map(toStructural) : undefined
 })
 
@@ -193,32 +194,29 @@ const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
   if (!bColl) return true
   const records = childRecords(bColl, parentRecId, state)
   if (records.length === 0) return !aColl.requiredAtLeastOne
+  const invariantErrors = groupInvariantErrors(bColl, state)
   return records.every((rec) =>
-    entrySatisfied(aColl, rec.fulfilmentId, memberFilter, state)
+    entrySatisfied(
+      aColl,
+      rec.fulfilmentId,
+      memberFilter,
+      invariantErrors,
+      state
+    )
   )
 }
 
-// The requiredOneOf any-of rule for this record, then every filtered member
-// (nested collection -> recurse; leaf -> satisfied unless in scope AND
-// mandatory AND unfulfilled).
-const entrySatisfied = (aColl, recId, memberFilter, state) => {
+// The engine's per-record group-invariant verdict (the anyOfIds rule),
+// then every filtered member (nested collection -> recurse; leaf ->
+// satisfied unless in scope AND mandatory AND unfulfilled). MIN_ENTRIES
+// errors carry no instanceId, so only per-record violations bite here.
+const entrySatisfied = (aColl, recId, memberFilter, invariantErrors, state) => {
   const members = memberFilter
     ? (aColl.item ?? []).filter(memberFilter)
     : (aColl.item ?? [])
 
-  if (aColl.requiredOneOf) {
-    const ownedIds = aColl.requiredOneOf.filter((id) =>
-      members.some((member) => member.id === id)
-    )
-    const inScopeOwned = ownedIds.filter((id) =>
-      leafInScopeForRecord(id, recId, state)
-    )
-    if (
-      inScopeOwned.length > 0 &&
-      !inScopeOwned.some((id) => leafFulfilledForRecord(id, recId, state))
-    ) {
-      return false
-    }
+  if (invariantErrors.some((error) => error.instanceId === recId)) {
+    return false
   }
 
   return members.every((member) => {
