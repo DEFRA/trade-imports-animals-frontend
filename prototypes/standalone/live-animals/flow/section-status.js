@@ -1,5 +1,9 @@
-import { NA, FULFILLED, OPTIONAL } from '../engine/status.js'
-import { statusOfFromB } from '../model/bridge/status.js'
+import {
+  NA,
+  FULFILLED,
+  OPTIONAL,
+  statusOfFromB
+} from '../model/bridge/status.js'
 import { collectsOf } from './dispatch.js'
 import { rowStatus, taskRows } from './task-rows.js'
 

@@ -1582,3 +1582,86 @@ when A is actually deleted (needs `scope.js` off `reconcile`/`walk`,
 skipped (no count change — no tests deleted). Purity gate green. Dispatch boot
 asserts pass with string `collects`. `KEEP`: `cardinality.js`/`collectionCapAt`
 (inc-024a), `obligation-purity.js`.
+
+## §27 — inc-022b: last A dependencies re-pointed off KEPT runtime files · `EUDPA-288`
+
+Behaviour-preserving decouple. Four re-points move the remaining A-model reads
+out of KEPT B/runtime files onto B-native sources, so inc-023 can delete A's
+`registry.js`/`reconcile.js`/`predicate.js`/`complete.js`/`engine/status.js`.
+No A files deleted here. Byte-identical: 83 files / 1209 passed / 11 skipped,
+oracle (A-vs-B) zero divergence, purity + boot asserts green.
+
+**(1) `model/bridge/scope.js` off `reconcile` + `registry.walk`.**
+
+- `projectAOnlyFlowScope`: A's `reconcile(answers)` → unconditional
+  `inScope.add('importType'); inScope.add('declaration')`. Both are
+  unconditional top-level A obligations (no `activatedBy`, no collection
+  ancestor), so A's reconcile always returned them in scope regardless of
+  answers — the add reproduces that result with no reconcile call.
+  `rawInScopeFromB` untouched (oracle diffs it; still excludes the two).
+- `anyInstanceAnswered`: A's `registry.walk` forest match → a B-native walk.
+  Look up the B obligation named `id` (B `name` === A id), then recurse A's
+  answers tree over its `ancestorChain` group chain, testing each positional
+  instance with `isAnswered` — same instances A's walk visited. `answered()`
+  is only consulted for `ENFORCED_AT_CONTINUE` prereqs
+  (`countryOfOrigin`/`commoditySelection`, `flow/gates.js`), both B-modelled,
+  so exact. Dropped the now-unused `valueAt` import.
+
+**(2a) `engine/evaluate/collection-view.js` off `registry.byPath` → B-native
+`obligationByPath`.** Added `obligationByPath(templatePath)` to
+`flow/obligation-source.js` (the B-manifest accessor): a `Map` keyed by each B
+obligation's `templatePathOf` (its `within` chain of names, root→leaf, joined
+by `.`) — mirrors A's `registry.byPath`, whose keys use the same id-path
+grammar (A id === B name). collection-view only truthiness-checks the result
+(`if (!obligation) return true`), and every collection path it is called with
+(`commodityLines`, `commodityLines.animalIdentifiers`, `documents`) resolves in
+both manifests → identical.
+
+**(2b) `engine/evaluate/cardinality.js` — NOT re-pointed (sanctioned residual).**
+`collectionCapAt` reads `registry.byPath(path).maxEntriesFrom`, and
+`maxEntriesFrom` (`animalIdentifiers` → `numberOfAnimalsQuantity`, c-031) is
+A-ONLY — B's manifest has no numeric/admission-control channel. A B-native
+`byPath` returns B's `unitRecord`, which has no `maxEntriesFrom`, so the cap
+would silently drop to `null` and break `collection-complete.test.js`
+("collectionCapAt stays A-side" → 3) and `mutators-under-b.test.js`
+("append cap fires"). Porting the cap to B is **inc-024a**; until then
+cardinality stays on `registry.js`. This is the After-check's clause (c)
+residual ("cardinality.js if it still needs …").
+
+**(3) `flow/section-status.js` + `features/hub/controller.js` status constants
+off `engine/status.js` → `model/bridge/status.js`.** The 5 constants
+(`NA`/`NOT_STARTED`/`IN_PROGRESS`/`FULFILLED`/`OPTIONAL`) already had a B-side
+home: `statusOfFromB`'s module (`model/bridge/status.js`) exports them with
+identical string values. Both importers re-pointed there; neither imports
+`engine/status.js` any more. `statusOfFromB` already owned the classification.
+
+**(4) `features/commodities/animal-identification.controller.js` off A
+identifier obligations → B by name.** Dropped the 7-obligation import from
+`features/commodities/obligations.js`. The render-config helpers
+(`metadataWhitelistFor`/`typeApplies`/`fallbackApplies`/`permanentAddressApplies`)
+now key by name string via the existing `modelObligationByName` map (B's
+`model/obligations/obligations.js`, the inc-019 pattern) instead of an A
+obligation object's `.id`. The redundant `obligation:` field (its `.id` already
+duplicated by the sibling `id` string) was removed from `TYPE_FIELDS`/
+`FALLBACK_FIELDS`; the njk template never read it. `collects` was already `[]`.
+
+**Residual A-module importers (non-test) after inc-022b — inc-023's set.**
+Grep of `registry|reconcile|predicate|complete|engine/status` importers,
+excluding `*.test.js`:
+
+- `analysis/reachability.js` — A's prover (retired by inc-023).
+- `engine/read.js` — `reconcile`+`walk` for `makeScopeA` ONLY (oracle-only per
+  §26; `makeScope` runtime path is B). Cleared when the oracle retires.
+- `engine/evaluate/{reconcile,complete}.js` + `engine/status.js` — the A-model
+  files themselves (import registry/each other); the delete-set, removed en bloc.
+- `engine/evaluate/cardinality.js` — `registry.byPath` for `maxEntriesFrom`,
+  deferred to inc-024a (2b above).
+- `dump.js` — a standalone dev diagnostic (`node dump.js`, no importers, inert
+  to app + tests) that hard-codes `reconcile`/`status`/`complete`. Not on the
+  task's allow-list; inc-023 should delete or re-point it.
+
+The four target files (`scope.js`, `collection-view.js`, `section-status.js`,
+`hub/controller.js`) plus the animal-identification controller are OFF all five
+A-model modules. What remains blocking each A file's deletion: reachability.js
+(prover, inc-023), read.js/makeScopeA (oracle, inc-023), cardinality.js
+(inc-024a), dump.js (delete/re-point).

@@ -38,24 +38,43 @@ import {
   fulfilmentIdToPath,
   groupObligations
 } from './fulfilments.js'
-import { pathKey, valueAt } from '../../lib/path.js'
-import { walk } from '../../registry.js'
+import { pathKey } from '../../lib/path.js'
 import { isAnswered } from '../../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from '../../engine/readiness-config.js'
-import { reconcile } from '../../engine/evaluate/reconcile.js'
 
 const evaluator = createObligationEvaluator()
 
-// A's `anyInstanceAnswered` (engine/read.js) — walks A's answers via A's
-// registry and matches on A's obligation id, so `answered()` keeps
-// delegating to A's own answered logic rather than B's fulfilments.
-const anyInstanceAnswered = (answers, id) => {
-  for (const node of walk(answers)) {
-    if (node.obligation.id === id && isAnswered(valueAt(answers, node.path))) {
-      return true
+// B-native `anyInstanceAnswered` — replaces A's version (engine/read.js), which
+// walked A's registry forest and matched on A's obligation id. Here we look up
+// the B obligation named `id` (B `name` === A id) and walk A's answers tree over
+// its ancestor-group chain, testing each positional instance with `isAnswered`.
+// Same instances A's registry walk visited (same collection nesting, positional
+// indices), no dependency on A's registry. B does not model importType /
+// declaration, but `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE`
+// prerequisites (`countryOfOrigin`, `commoditySelection`, flow/gates.js), both
+// B-modelled — so the projection is exact.
+const collectInstanceValues = (answers, chain, name) => {
+  const values = []
+  const visit = (node, remainingGroups) => {
+    if (remainingGroups.length === 0) {
+      values.push(node?.[name])
+      return
     }
+    const [group, ...rest] = remainingGroups
+    const items = node?.[group.name]
+    if (!Array.isArray(items)) return
+    for (const item of items) visit(item, rest)
   }
-  return false
+  visit(answers, chain)
+  return values
+}
+
+const anyInstanceAnswered = (answers, id) => {
+  const obligation = obligations.find((o) => o.name === id)
+  if (!obligation) return false
+  return collectInstanceValues(answers, ancestorChain(obligation), id).some(
+    isAnswered
+  )
 }
 
 // Add every A pathKey an in-scope implication projects onto.
@@ -123,14 +142,13 @@ export const rawInScopeFromB = (answers) => projectInScope(answers)
 // unconditional top-level obligations in A's registry (bare-id pathKeys).
 const A_ONLY_FLOW_OBLIGATIONS = ['importType', 'declaration']
 
-// Project the A-only flow obligations onto the FULL scope using A's OWN
-// reconcile — faithful to A's scope determination (and future-proof if A ever
-// gates them), never touching B's raw evaluator scope. An additive layer only.
-const projectAOnlyFlowScope = (answers, inScope) => {
-  const { inScope: aScope } = reconcile(answers)
-  for (const id of A_ONLY_FLOW_OBLIGATIONS) {
-    if (aScope.has(id)) inScope.add(id)
-  }
+// Project the A-only flow obligations onto the FULL scope. Both are
+// unconditional top-level obligations (no `activatedBy`, no collection
+// ancestor), so A's reconcile always returned them in scope regardless of
+// answers — this is that result, without importing A's reconcile. An additive
+// layer only; B's raw evaluator scope (`rawInScopeFromB`) is untouched.
+const projectAOnlyFlowScope = (inScope) => {
+  for (const id of A_ONLY_FLOW_OBLIGATIONS) inScope.add(id)
 }
 
 /**
@@ -160,7 +178,7 @@ const projectAOnlyFlowScope = (answers, inScope) => {
  */
 export const makeScopeFromB = (answers) => {
   const inScope = projectInScope(answers)
-  projectAOnlyFlowScope(answers, inScope)
+  projectAOnlyFlowScope(inScope)
   return {
     inScope,
     has: (id) => inScope.has(id),
