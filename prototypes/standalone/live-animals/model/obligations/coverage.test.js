@@ -1,18 +1,12 @@
 /**
- * Coverage test — closes gap 2 from `docs/testing.md` (mutation 5).
+ * Coverage test.
  *
- * Every obligation in the manifest must be either:
- *   a. wired to a `domain/index.js` entry (has legal-value semantics), OR
- *   b. explicitly present on the KNOWN_UNWIRED allow-list below (with a
- *      reason so future maintainers know why it's exempt).
- *
- * A new obligation added to the manifest without either fails this
- * test — that's the point. It stops mutation 5 (add-and-forget)
- * slipping through.
- *
- * As the V4 buildout (step 5 in NEXT.md) wires each block properly,
- * remove entries from KNOWN_UNWIRED. Ideally the list is empty when
- * step 5 completes.
+ * Domain-wiring contract (post Item 9 ruling — "validation is owned by
+ * the feature folders, not by the modelling"): the domain carries ONLY
+ * address completeness entries. Every address-block obligation must
+ * have one (the status classifiers' completeness signal), and nothing
+ * else may acquire a domain entry — a scalar entry appearing here is
+ * the deleted validation layer creeping back.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -20,89 +14,39 @@ import { obligations } from './obligations.js'
 import { obligationMetadata } from './helpers.js'
 import { domain } from '../domain/index.js'
 
-/**
- * Obligations known to be unwired at this point in the spike.
- * Grouped by reason so removing entries as V4 buildout wires them
- * is a mechanical process.
- */
-const KNOWN_UNWIRED = new Set([
-  // Group containers — no direct value at this level; children carry
-  // the semantics. commodityLines + animalIdentifiers + documents are
-  // structural.
-  'commodityLines',
-  'animalIdentifiers',
-  'documents',
-
-  // System-populated fields declared for V4 completeness but NOT
-  // presented in the flow layer (added step 5c). Value legality is
-  // enforced upstream (the system minting the reference number;
-  // gov.identity for the responsible person), so neither carries a
-  // domain entry. See obligations/obligations.js header + inline
-  // comments on each declaration.
-  'poApprovedReferenceNumber',
-  'responsiblePersonForLoad'
-
-  // Standard address blocks wired during step 4 iteration 7:
-  // - Phase A: commercialTransporter (first worked example).
-  // - Phase B: privateTransporter, placeOfOrigin, consignor, consignee,
-  //   importer, placeOfDestination, contactAddress.
-  // permanentAddress wired during step 4 iteration 9 phase C — first
-  // depth-2 obligation. `within: unitRecord` (which is
-  // `within: commodityLine`), allow-listed to commodity code
-  // 01061900 (Cats / Dogs / Ferrets). Composite fulfilment key
-  // `${lineId}/${unitId}` per the evaluator's PATH_DELIMITER.
-
-  // Yes/No enums from MDM — need domain entries during step 5.
-  // containsUnweanedAnimals wired during step 4 iteration 1.
-  // regionCodeRequirement wired during step 4 iteration 2.
-
-  // MDM-sourced enums — need domain entries during step 5 once the
-  // MDM list is available.
-  // portOfEntry wired during step 4 iteration 3.
-  // species wired during step 4 iteration 4.
-  // commodityType wired during step 4 iteration 6 (line-scoped enum).
-
-  // Free-text or integer with max-length per V4:
-  // - regionCode wired during step 4 iteration 2.
-  // - numberOfAnimals wired during step 4 iteration 5 (integer + per-
-  //   species cap predicate — see docs/add-an-obligation.md).
-  // - passport, tattoo, earTag, horseName wired during step 4
-  //   iteration 10 (allowListed per-unit identifiers).
-  // - identificationDetails, description wired during step 4
-  //   iteration 10 (originally allowListedByPredicate; migrated to
-  //   notInUnionOf in EUDPA-288 Phase 4 §Migration #4).
-
-  // Accompanying-document all-or-nothing block wired during step 4
-  // iteration 8 — four fields sharing a `branchedGate` applyTo, all
-  // presented on a single page in a new "Accompanying documents"
-  // subsection under References. Domain: two staticEnum stubs
-  // (documentType, attachmentType), a string-max-40 predicate
-  // (reference) and a DD/MM/YYYY calendar-valid predicate
-  // (dateOfIssue).
+// The manifest's address-block obligations — the composite value shape
+// whose completeness the classifiers judge via `isComplete`.
+const ADDRESS_OBLIGATIONS = new Set([
+  'commercialTransporter',
+  'privateTransporter',
+  'placeOfOrigin',
+  'consignor',
+  'consignee',
+  'importer',
+  'placeOfDestination',
+  'contactAddress',
+  'permanentAddress'
 ])
 
-describe('coverage — every obligation is wired to domain or explicitly allow-listed', () => {
-  it('has no obligation that lacks both a domain entry and an allow-list entry', () => {
+describe('coverage — domain carries exactly the address completeness entries', () => {
+  it('every address obligation has an address-typed domain entry', () => {
     const missing = obligations
-      .filter((o) => !domain.has(o.id) && !KNOWN_UNWIRED.has(o.name))
+      .filter((o) => ADDRESS_OBLIGATIONS.has(o.name))
+      .filter((o) => domain.get(o.id)?.type !== 'address')
       .map((o) => o.name)
     expect(missing).toEqual([])
   })
 
-  it('KNOWN_UNWIRED does not contain obligations that were later wired', () => {
-    // Prevents drift the other way: if we wire an obligation to domain
-    // we must remove it from the allow-list, or the allow-list slowly
-    // rots and stops being useful.
-    const overWired = [...KNOWN_UNWIRED].filter((name) => {
-      const obligation = obligations.find((o) => o.name === name)
-      return obligation && domain.has(obligation.id)
-    })
-    expect(overWired).toEqual([])
+  it('no non-address obligation has a domain entry', () => {
+    const unexpected = obligations
+      .filter((o) => domain.has(o.id) && !ADDRESS_OBLIGATIONS.has(o.name))
+      .map((o) => o.name)
+    expect(unexpected).toEqual([])
   })
 
-  it('KNOWN_UNWIRED entries all correspond to real obligations', () => {
-    // Rename in obligations.js must reach the allow-list too.
-    const orphans = [...KNOWN_UNWIRED].filter(
+  it('ADDRESS_OBLIGATIONS entries all correspond to real obligations', () => {
+    // A rename in obligations.js must reach this list too.
+    const orphans = [...ADDRESS_OBLIGATIONS].filter(
       (name) => !obligations.some((o) => o.name === name)
     )
     expect(orphans).toEqual([])

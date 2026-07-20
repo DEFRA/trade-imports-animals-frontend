@@ -3,20 +3,14 @@
  * × flow) and answer one specific question. No stateful evaluator; each
  * primitive stands alone.
  *
- * Two families:
- *
- *   1. JourneyEvaluator primitives (implementing the design captured in
- *      the parent EUDPA-277 spike doc §The JourneyEvaluator):
- *        - pageStatus(page, state)                       → NA / Optional / NS / IP / F
- *        - containerStatus(container, state)             → NA / Optional / NS / IP / F
- *        - journeyState(flow, state, submitted?)         → Optional / NS / IP / F / S
- *        - firstApplicablePage(root)                     → Page | null
- *        - firstUnfulfilledPage(root, state)             → Page | null
- *        - firstPagePresentingObligation(flow, oblId)    → Page | null
- *
- *   2. Domain primitives (new in this spike):
- *        - optionsFor(obligation, fulfilments, ids, domain, ctx?) → string[]
- *        - validate(obligation, value, fulfilments, domain, ctx?) → error[]
+ * JourneyEvaluator primitives (implementing the design captured in
+ * the parent EUDPA-277 spike doc §The JourneyEvaluator):
+ *   - pageStatus(page, state)                       → NA / Optional / NS / IP / F
+ *   - containerStatus(container, state)             → NA / Optional / NS / IP / F
+ *   - journeyState(flow, state, submitted?)         → Optional / NS / IP / F / S
+ *   - firstApplicablePage(root)                     → Page | null
+ *   - firstUnfulfilledPage(root, state)             → Page | null
+ *   - firstPagePresentingObligation(flow, oblId)    → Page | null
  *
  * The state shape here is exactly what
  * `createObligationEvaluator({ obligations }).evaluate(fulfilments)`
@@ -25,82 +19,6 @@
 
 import { isBlankValue } from './is-blank-value.js'
 import { domain } from '../domain/index.js'
-
-// ---------------------------------------------------------------------------
-// Domain primitives
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve the current legal options for an enum obligation.
- * Returns `[]` when the obligation has no domain entry or the entry is
- * not an enum.
- *
- * `ctx` (optional): `{ path }` for scoped resolution — currently just
- * forwarded to the domain closure for future-proofing.
- */
-export function optionsFor(obligation, fulfilments, ids, domain, ctx = {}) {
-  const entry = domain.get(obligation.id)
-  if (!entry || entry.type !== 'enum') return []
-  return entry.options(fulfilments, ids, ctx) ?? []
-}
-
-/**
- * Validate a single value against the domain entry for an obligation.
- * Returns an array of error records (empty on pass).
- *
- * `ctx`: `{ path?, ids? }`
- *   - path: null for singletons; group-instance path (e.g. 'line1') for
- *     obligations inside a `within` group.
- *   - ids: the same `Map<obligationId, string[]>` the ObligationEvaluator
- *     builds; forwarded to enum closures.
- *
- * `siblingValue(obligation)` reads a sibling obligation's value at the
- * same `path` — same idiom as reading fulfilments inside an obligation
- * `applyTo`.
- */
-export function validate(obligation, value, fulfilments, domain, ctx = {}) {
-  const entry = domain.get(obligation.id)
-  if (!entry) return []
-  const path = ctx.path ?? null
-
-  const siblingValue = (siblingObligation) => {
-    const stored = fulfilments[siblingObligation.id]
-    if (path === null) return stored
-    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
-      return stored[path]
-    }
-    return undefined
-  }
-  const predicateCtx = { fulfilments, path, siblingValue, ids: ctx.ids }
-
-  const errors = []
-
-  if (entry.type === 'enum') {
-    if (value === undefined || value === null || value === '') {
-      // fall through to entry.predicate if any (e.g. min-selections)
-    } else {
-      const options = entry.options(fulfilments, ctx.ids, ctx) ?? []
-      const values = Array.isArray(value) ? value : [value]
-      const invalid = values.filter((v) => !options.includes(v))
-      if (invalid.length > 0) {
-        errors.push({
-          code: 'domain.enum.notInOptions',
-          obligation: obligation.name,
-          path,
-          invalid,
-          options
-        })
-      }
-    }
-  }
-
-  // Predicates run even for enum entries — e.g. transitedCountries is
-  // an enum whose extra rule is "max 12 selections". Both errors surface.
-  if (entry.predicate) {
-    errors.push(...entry.predicate(value, predicateCtx))
-  }
-  return errors
-}
 
 // ---------------------------------------------------------------------------
 // JourneyEvaluator primitives — navigation

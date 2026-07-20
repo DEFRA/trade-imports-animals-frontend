@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
 import {
-  optionsFor,
-  validate,
   pageStatus,
   containerStatus,
   journeyState,
@@ -18,7 +16,7 @@ import {
 } from './index.js'
 
 // ---------------------------------------------------------------------------
-// Synthetic obligations + domain — the whole point is that the runtime
+// Synthetic obligations — the whole point is that the runtime
 // primitives can be exercised in isolation, without the parent obligations
 // manifest or evaluator. Same style as helpers.test.js next door.
 // ---------------------------------------------------------------------------
@@ -27,141 +25,12 @@ const reasonOb = { id: 'reason', name: 'reason' }
 const purposeOb = { id: 'purpose', name: 'purpose' }
 const lineGroup = { id: 'line-group', name: 'lineGroup' }
 const numOb = { id: 'num', name: 'num', within: lineGroup }
-const speciesOb = { id: 'species', name: 'species', within: lineGroup }
-const lookupOb = { id: 'lookup', name: 'lookup' }
 const certifiedForOb = { id: 'certifiedFor', name: 'certifiedFor' }
-
-const domain = new Map([
-  [reasonOb.id, { type: 'enum', options: () => ['a', 'b', 'c'] }],
-  [
-    purposeOb.id,
-    {
-      type: 'enum',
-      options: (f) => (f[reasonOb.id] === 'a' ? ['p1', 'p2'] : [])
-    }
-  ],
-  [
-    numOb.id,
-    {
-      type: 'integer',
-      predicate: (value, ctx) => {
-        if (!Number.isInteger(value) || value < 1) return [{ code: 'min' }]
-        const s = ctx.siblingValue(speciesOb) ?? []
-        if (s.includes('elephant') && value !== 1) return [{ code: 'elephant' }]
-        return []
-      },
-      reasons: []
-    }
-  ],
-  [certifiedForOb.id, { type: 'enum', options: (f) => f[lookupOb.id] ?? [] }]
-])
 
 // Convenience: build a state as the ObligationEvaluator would.
 function state({ fulfilments = {}, obligations = {} } = {}) {
   return { fulfilments, obligations }
 }
-
-// ---------------------------------------------------------------------------
-// optionsFor
-// ---------------------------------------------------------------------------
-
-describe('optionsFor', () => {
-  it('returns static options', () => {
-    expect(optionsFor(reasonOb, {}, new Map(), domain)).toEqual(['a', 'b', 'c'])
-  })
-
-  it('resolves computed options from state', () => {
-    expect(
-      optionsFor(purposeOb, { [reasonOb.id]: 'a' }, new Map(), domain)
-    ).toEqual(['p1', 'p2'])
-    expect(
-      optionsFor(purposeOb, { [reasonOb.id]: 'b' }, new Map(), domain)
-    ).toEqual([])
-  })
-
-  it('resolves lookup-driven options', () => {
-    expect(
-      optionsFor(certifiedForOb, { [lookupOb.id]: ['x'] }, new Map(), domain)
-    ).toEqual(['x'])
-    expect(optionsFor(certifiedForOb, {}, new Map(), domain)).toEqual([])
-  })
-
-  it('returns [] for an obligation with no domain entry', () => {
-    expect(optionsFor({ id: 'unknown' }, {}, new Map(), domain)).toEqual([])
-  })
-})
-
-// ---------------------------------------------------------------------------
-// validate
-// ---------------------------------------------------------------------------
-
-describe('validate — enum', () => {
-  it('passes a legal value', () => {
-    expect(validate(reasonOb, 'a', {}, domain)).toEqual([])
-  })
-
-  it('rejects a value not in options', () => {
-    const errs = validate(reasonOb, 'zzz', {}, domain)
-    expect(errs).toHaveLength(1)
-    expect(errs[0].code).toBe('domain.enum.notInOptions')
-    expect(errs[0].invalid).toEqual(['zzz'])
-    expect(errs[0].options).toEqual(['a', 'b', 'c'])
-  })
-
-  it('handles multi-select — array value', () => {
-    expect(validate(reasonOb, ['a', 'b'], {}, domain)).toEqual([])
-    const errs = validate(reasonOb, ['a', 'zzz'], {}, domain)
-    expect(errs[0].invalid).toEqual(['zzz'])
-  })
-
-  it('passes when value is unset (undefined / null / empty string)', () => {
-    expect(validate(reasonOb, undefined, {}, domain)).toEqual([])
-    expect(validate(reasonOb, null, {}, domain)).toEqual([])
-    expect(validate(reasonOb, '', {}, domain)).toEqual([])
-  })
-})
-
-describe('validate — predicate + siblingValue', () => {
-  it('passes with valid value', () => {
-    expect(
-      validate(numOb, 5, { [speciesOb.id]: { line1: ['cattle'] } }, domain, {
-        path: 'line1'
-      })
-    ).toEqual([])
-  })
-
-  it('rejects invalid via predicate min', () => {
-    expect(validate(numOb, 0, {}, domain, { path: 'line1' })[0].code).toBe(
-      'min'
-    )
-  })
-
-  it('resolves siblings scoped by path', () => {
-    const errs = validate(
-      numOb,
-      5,
-      { [speciesOb.id]: { line1: ['elephant'] } },
-      domain,
-      { path: 'line1' }
-    )
-    expect(errs).toEqual([{ code: 'elephant' }])
-  })
-
-  it('does not cross-contaminate between lines', () => {
-    // line2 has cattle; the elephant on line1 must not affect line2's num.
-    expect(
-      validate(
-        numOb,
-        20,
-        {
-          [speciesOb.id]: { line1: ['elephant'], line2: ['cattle'] }
-        },
-        domain,
-        { path: 'line2' }
-      )
-    ).toEqual([])
-  })
-})
 
 // ---------------------------------------------------------------------------
 // pageStatus + expandPresents
