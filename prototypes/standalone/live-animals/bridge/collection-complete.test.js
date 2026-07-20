@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { collectionView } from '../../engine/evaluate/collection-view.js'
-import { collectionCapAt } from '../../engine/evaluate/cardinality.js'
+import { collectionView } from '../engine/evaluate/collection-view.js'
+import { collectionCapAt } from '../engine/evaluate/cardinality.js'
 import { entryComplete } from './collection-complete.js'
-import { valueAt } from '../../lib/path.js'
+import { valueAt } from '../lib/path.js'
 
 // Per-instance completeness (entryComplete), pinned against the manifest. The
 // two known structural divergences are retained with their DESIGN-DELTA.md §12

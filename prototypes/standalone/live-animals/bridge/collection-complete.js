@@ -29,17 +29,17 @@
  * See DESIGN-DELTA.md §12.
  */
 
-import { obligations } from '../obligations/obligations.js'
-import { createObligationEvaluator } from '../obligations/evaluator.js'
+import { obligations } from '../model/obligations/obligations.js'
+import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
   answersToFulfilments,
   ancestorChain,
   groupObligations,
   instanceFulfilmentId
 } from './fulfilments.js'
-import { groupInvariantErrors } from '../engine/index.js'
-import { isBlankValue } from '../engine/is-blank-value.js'
-import { domain } from '../domain/index.js'
+import { groupInvariantErrors } from '../model/engine/index.js'
+import { isBlankValue } from '../model/engine/is-blank-value.js'
+import { domain } from '../model/domain/index.js'
 
 const evaluator = createObligationEvaluator()
 const evaluate = (answers) => evaluator.evaluate(answersToFulfilments(answers))

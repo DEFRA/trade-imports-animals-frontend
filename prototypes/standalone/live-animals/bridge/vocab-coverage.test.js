@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { obligations } from '../obligations/obligations.js'
+import { obligations } from '../model/obligations/obligations.js'
 import { answersToFulfilments, ancestorChain } from './fulfilments.js'
-import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
-import * as transportReference from '../../services/transport-reference/index.js'
-import * as commodities from '../../services/commodities/index.js'
+import * as importReasonPurpose from '../services/import-reason-purpose/index.js'
+import * as transportReference from '../services/transport-reference/index.js'
+import * as commodities from '../services/commodities/index.js'
 
 // The A→B vocabulary loop, closed: stored answers hold the MDM services'
 // vocabulary ('internalMarket', 'Road Vehicle', 'Cow'), the manifest's gates

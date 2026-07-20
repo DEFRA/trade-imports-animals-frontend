@@ -1,4 +1,4 @@
-import { statusOf } from '../model/bridge/status.js'
+import { statusOf } from '../bridge/status.js'
 import { collectsOf } from './dispatch.js'
 import { originPage } from '../features/origin/page.js'
 import {

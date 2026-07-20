@@ -1,7 +1,7 @@
 /**
  * Boot-injected `readyForCheckYourAnswers` registry.
  *
- * Housed here (not in `engine/read.js`) so `model/bridge/scope.js`'s `makeScope`
+ * Housed here (not in `engine/read.js`) so `bridge/scope.js`'s `makeScope`
  * can consume the injected fn without importing `read.js` — keeping the module
  * graph a clean DAG (`read.js -> scope.js`, no cycle).
  *

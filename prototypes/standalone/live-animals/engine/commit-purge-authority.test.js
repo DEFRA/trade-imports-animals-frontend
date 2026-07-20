@@ -5,7 +5,7 @@ import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { wipeSet } from '../model/bridge/purge.js'
+import { wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // commit's wipe authority is B's evaluator purge (projected to A pathKeys),

@@ -1,4 +1,4 @@
-import { NA, FULFILLED, OPTIONAL, statusOf } from '../model/bridge/status.js'
+import { NA, FULFILLED, OPTIONAL, statusOf } from '../bridge/status.js'
 import { collectsOf } from './dispatch.js'
 import { rowStatus, taskRows } from './task-rows.js'
 

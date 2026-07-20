@@ -21,17 +21,17 @@
  * leaves the projected keys unchanged. See DESIGN-DELTA.md §8.
  */
 
-import { obligations } from '../obligations/obligations.js'
-import { createObligationEvaluator } from '../obligations/evaluator.js'
+import { obligations } from '../model/obligations/obligations.js'
+import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
   answersToFulfilments,
   ancestorChain,
   fulfilmentIdToPath,
   groupObligations
 } from './fulfilments.js'
-import { pathKey } from '../../lib/path.js'
-import { isAnswered } from '../../lib/answered.js'
-import { computeReadyForCheckYourAnswers } from '../../engine/readiness-config.js'
+import { pathKey } from '../lib/path.js'
+import { isAnswered } from '../lib/answered.js'
+import { computeReadyForCheckYourAnswers } from '../engine/readiness-config.js'
 
 const evaluator = createObligationEvaluator()
 

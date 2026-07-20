@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { makeScope } from './engine/index.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
-import { FULFILLED, IN_PROGRESS, OPTIONAL } from './model/bridge/status.js'
+import { FULFILLED, IN_PROGRESS, OPTIONAL } from './bridge/status.js'
 import {
   readyForCheckYourAnswers,
   sectionStatus

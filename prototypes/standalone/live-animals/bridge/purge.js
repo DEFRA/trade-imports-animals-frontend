@@ -15,16 +15,16 @@
  * applies over the session/journey/save layer.
  */
 
-import { obligations } from '../obligations/obligations.js'
-import { createObligationEvaluator } from '../obligations/evaluator.js'
+import { obligations } from '../model/obligations/obligations.js'
+import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
   answersToFulfilments,
   ancestorChain,
   fulfilmentIdToPath,
   groupObligations
 } from './fulfilments.js'
-import { pathKey } from '../../lib/path.js'
-import { isAnswered } from '../../lib/answered.js'
+import { pathKey } from '../lib/path.js'
+import { isAnswered } from '../lib/answered.js'
 
 const evaluator = createObligationEvaluator()
 

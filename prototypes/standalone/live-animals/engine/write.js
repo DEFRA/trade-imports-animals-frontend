@@ -1,7 +1,7 @@
 import { currentJourney, saveJourneyAnswers } from './journey.js'
 import { collectionCapAt } from './evaluate/cardinality.js'
 import { makeScope } from './read.js'
-import { wipeSet } from '../model/bridge/purge.js'
+import { wipeSet } from '../bridge/purge.js'
 import { records } from './persistence/records.js'
 import { setAt, valueAt, destroyWiped } from '../lib/path.js'
 

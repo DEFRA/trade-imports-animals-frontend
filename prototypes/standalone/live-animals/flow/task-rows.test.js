@@ -10,7 +10,7 @@ import {
   NA,
   NOT_STARTED,
   OPTIONAL
-} from '../model/bridge/status.js'
+} from '../bridge/status.js'
 import { buildDispatch } from './dispatch.js'
 import { answerSections, sections } from './flow.js'
 import { readyForCheckYourAnswers, sectionStatus } from './section-status.js'

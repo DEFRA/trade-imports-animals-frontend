@@ -14,7 +14,7 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { readyForCheckYourAnswers } from '../flow/section-status.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
-import { wipeSet } from '../model/bridge/purge.js'
+import { wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // Mutator behaviour. A owns storage (positional array; B holds no instance

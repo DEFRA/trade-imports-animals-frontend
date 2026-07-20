@@ -1,5 +1,5 @@
 import { currentJourney } from './journey.js'
-import { makeScope } from '../model/bridge/scope.js'
+import { makeScope } from '../bridge/scope.js'
 import { configureReadyForCheckYourAnswers } from './readiness-config.js'
 
 export { configureReadyForCheckYourAnswers }

@@ -1,6 +1,6 @@
 import { valueAt } from '../../lib/path.js'
 import { obligationByPath } from '../../flow/obligation-source.js'
-import { entryComplete } from '../../model/bridge/collection-complete.js'
+import { entryComplete } from '../../bridge/collection-complete.js'
 
 export const collectionView = (answers, collectionPath) => {
   const templatePath = collectionPath

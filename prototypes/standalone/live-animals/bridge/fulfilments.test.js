@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
 import { answersToFulfilments, fulfilmentsToAnswers } from './fulfilments.js'
-import { createObligationEvaluator } from '../obligations/evaluator.js'
+import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
   countryOfOrigin,
   regionCode,
@@ -26,10 +26,10 @@ import {
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
   accompanyingDocumentDateOfIssue
-} from '../obligations/obligations.js'
+} from '../model/obligations/obligations.js'
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
 ).values
 
 const address = {

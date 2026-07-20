@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, it, expect } from 'vitest'
 import { makeScope, rawInScope } from './scope.js'
-import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
+import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 
 // The scope projection, pinned against the manifest: each gate scopes its
 // obligation in/out as the manifest declares, positional keys project under
@@ -9,7 +9,7 @@ import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 // controllers consume.
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
 ).values
 
 // makeScope computes readyForCheckYourAnswers via the boot-injected fn.

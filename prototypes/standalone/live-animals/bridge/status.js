@@ -30,14 +30,14 @@
  * per-unit any-of). See DESIGN-DELTA.md §19, §26.
  */
 
-import { obligations, groups } from '../obligations/obligations.js'
-import { createObligationEvaluator } from '../obligations/evaluator.js'
+import { obligations, groups } from '../model/obligations/obligations.js'
+import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import { answersToFulfilments } from './fulfilments.js'
-import { effectiveStatus } from '../engine/index.js'
-import { isBlankValue } from '../engine/is-blank-value.js'
-import { domain } from '../domain/index.js'
-import { isAnswered } from '../../lib/answered.js'
-import { SYSTEM_POPULATED } from '../../flow/obligation-source.js'
+import { effectiveStatus } from '../model/engine/index.js'
+import { isBlankValue } from '../model/engine/is-blank-value.js'
+import { domain } from '../model/domain/index.js'
+import { isAnswered } from '../lib/answered.js'
+import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
 
 export const NA = 'not-applicable'
 export const NOT_STARTED = 'not-started'

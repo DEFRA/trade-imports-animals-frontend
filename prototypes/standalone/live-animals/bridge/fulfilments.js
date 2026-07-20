@@ -30,12 +30,12 @@
  * `DESIGN-DELTA.md` §7.
  */
 
-import { obligations } from '../obligations/obligations.js'
+import { obligations } from '../model/obligations/obligations.js'
 import {
   commodityCodeFor,
   commodityNameFor
-} from '../../services/commodities/index.js'
-import { setAt } from '../../lib/path.js'
+} from '../services/commodities/index.js'
+import { setAt } from '../lib/path.js'
 
 // The nested collection groups, outermost first. The prefix is cosmetic
 // and reversible — B treats a fulfilmentId as opaque; only the trailing
