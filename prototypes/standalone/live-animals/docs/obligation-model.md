@@ -1,327 +1,382 @@
 # The obligation model
 
 An obligation is a small data record that says "the journey owes this
-answer". Every feature declares its own obligations in a pure
-`features/<feature>/obligations.js` file. The engine reads those
-declarations to work out scope, wiping, completeness and status — it
-never reads a page, a template or a validator.
+answer". The model is a single manifest of obligations plus a parallel
+registry of value rules. It carries identity, scope and legality — never
+display copy. Pages own presentation, controllers own save-blocking, and
+the model keeps only the facts the evaluator and the derivation engine
+read.
+
+The model has two files at its core:
+
+- `model/obligations/obligations.js` — the obligation manifest: what the
+  journey can owe, and when.
+- `model/domain/index.js` — the value-legality registry: what a legal
+  answer to each obligation looks like.
+
+Two supporting files complete the picture: `model/obligations/helpers.js`
+(the gate-helper library that builds scope closures) and
+`model/no-display-keys.js` (the boot-time purity check).
 
 All file paths in this document are relative to the spike root
 (`prototypes/standalone/live-animals/`).
 
 ## What an obligation carries
 
-An obligation is a plain object with at most these fields:
+An obligation is a plain object with at most these keys:
 
-| Field                | Kind         | Meaning                                                                                                                                                                                                          |
-| -------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                 | identity     | The obligation's name. Also the key in the answers map and the DOM field name — one string, three roles.                                                                                                         |
-| `required`           | mandate      | This answer is owed before the obligation counts as complete.                                                                                                                                                    |
-| `requiredAtLeastOne` | mandate      | A collection owes at least one entry (only meaningful with `collection: true`).                                                                                                                                  |
-| `requiredOneOf`      | mandate      | A collection whose every entry owes at least one answer among a NAMED subset of its `item` fields (each of which stays individually optional). Only meaningful with `collection: true`; absent = no group check. |
-| `collection`         | structure    | This obligation is a repeating list. Its `item` array holds the sub-obligations of each entry.                                                                                                                   |
-| `item`               | structure    | Real nested obligation definitions — not field-name strings (see [collections](#collections-are-a-recursive-tree)).                                                                                              |
-| `system`             | structure    | Computed on demand, never collected or stored (see [system and renderOnly](#system-and-renderonly-flags)).                                                                                                       |
-| `renderOnly`         | structure    | Presented on a page but never committed to the store.                                                                                                                                                            |
-| `activatedBy`        | relationship | A predicate over another obligation's answer. When it holds, this obligation is in scope.                                                                                                                        |
-| `wipeOnExit`         | relationship | When this obligation leaves scope, destroy its stored answer.                                                                                                                                                    |
-| `maxEntriesFrom`     | relationship | A collection's entry count is capped at the value of this SIBLING count obligation (see [the cardinality link](#the-collection-cardinality-link-maxentriesfrom)). Only meaningful with `collection: true`.       |
+| Key        | Kind      | Meaning                                                                                                                                                             |
+| ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | identity  | A stable UUID. The key under which the obligation's value is stored in the flat `fulfilments` map, and the key the domain registry uses.                            |
+| `name`     | identity  | The obligation's field name (`countryOfOrigin`, `commoditySelection`). The vocabulary the frontend, storage answers and bridge speak.                               |
+| `within`   | structure | A direct JS reference to the parent group obligation. Present on every member of a group; absent on notification-level obligations.                                 |
+| `status`   | mandate   | `'mandatory'` or `'optional'`. Present on an obligation that is always in scope. A group carries no `status`; a gated obligation gets it from its gate.             |
+| `applyTo`  | scope     | A closure `(fulfilments, fulfilmentIdsByObligationId) → decision` that decides whether this obligation is in scope, and with what status. Absent = always in scope. |
+| `requires` | mandate   | Group-level invariants: a collection floor (`minEntries`) and/or a per-instance "at least one of" rule (`anyOfIds`). Only meaningful on a group.                    |
 
-That is the whole vocabulary. Because `id` doubles as the store key and
-the DOM field name, a definition, its stored answer and its form input
-always line up — there is no mapping layer to drift.
+That is the whole vocabulary. There is deliberately no `type`, no copy,
+no widget choice and no page-level validation on an obligation. Those
+live where they are read — in the templates, controllers and the domain
+registry.
 
-### Why so thin
+`id` and `name` split two roles. `id` is the storage key and the domain
+registry key; `name` is the field vocabulary the frontend and the storage
+answers speak. The bridge layer (`model/bridge/`)
+converts between the model's flat `fulfilments` map (keyed by `id`) and
+the frontend's nested answers (keyed by `name`).
 
-There is deliberately no `type`, no copy, no widget choice and no
-validation on an obligation. The v1 model carried all of those, and a
-usage trace during the rebuild found that no runtime code read them —
-every widget, label and value domain was already re-declared in the
-page templates and controllers. So v2 dropped the dead copies: pages
-own presentation, controllers own validation, and the model keeps only
-the facts the engine actually evaluates.
+### Always-in-scope vs gated
 
-## required means owed, not save-blocking
+An obligation with a `status` and no `applyTo` is always in scope —
+`countryOfOrigin`, the address blocks, the notification-level scalars.
+An obligation with an `applyTo` closure is gated: the closure decides,
+per evaluation, whether the obligation is in scope and (when in scope)
+what status it takes. A group is neither — it has neither `status` nor a
+value; it exists to hold members via `within`.
 
-`required: true` is a completion fact: the status roll-up reads it to
-decide whether a section is fulfilled. It does not stop a user saving a
-blank form. Save-blocking rules are a controller concern, written as
-validators — the journey's only hard mandate is `countryOfOrigin`,
-expressed as a `requiredOneOf` rule in `features/origin/controller.js`,
-not as an obligation flag.
+## The manifest
 
-See [validation.md](validation.md) for the validation seam.
+`model/obligations/obligations.js` exports one obligation object per
+declaration, plus two collection exports:
 
-## The purity contract
+- `obligations` — the flat array of every obligation, in declaration
+  order. Order does not affect evaluation: the evaluator rebuilds the
+  group hierarchy from `within` back-references, so an obligation may be
+  declared before or after the group it belongs to.
+- `groups` — derived, not authored:
 
-An `obligations.js` file imports nothing outward — no view, request,
-controller, engine, validator or config. The only import it may make is
-sideways, to another feature's `obligations.js`, when a relationship
-references an obligation owned elsewhere.
+  ```js
+  export const groups = obligations.filter((o) =>
+    obligations.some((other) => other.within === o)
+  )
+  ```
 
-The rule is enforced at boot. `routes.js` calls
-`assertObligationPurity()` (in `obligation-purity.js`), which reads the
-source text of every `features/<feature>/obligations.js` and rejects
-any import specifier that is not another `obligations.js`. The server
-does not start if the model has been re-coupled to presentation.
+  A group is simply an obligation that at least one other obligation
+  points at via `within`. Today the groups are `commodityLine`
+  (name `commodityLines`), `unitRecord` (name `animalIdentifiers`,
+  nested inside `commodityLine`) and `documents`.
 
-It scans source text rather than the module graph on purpose:
+The manifest also exports the commodity-code whitelists that the gates
+read as plain const arrays — `PACKAGE_COUNT_COMMODITIES`,
+`CPH_REQUIRED_COMMODITIES`, `PASSPORT_COMMODITIES`, `TATTOO_COMMODITIES`,
+`EAR_TAG_COMMODITIES`, `HORSE_NAME_COMMODITIES`,
+`PERMANENT_ADDRESS_COMMODITIES`, `UNWEANED_APPLICABLE_COMMODITIES` and
+`SPECIFIC_IDENTIFIER_WHITELISTS`. Keeping them named and exported means
+a gate declaration stays a one-liner and the same list can be inspected
+by tests.
 
-- a text scan catches a forbidden import even in a feature the
-  registry barrel forgot to assemble
-- it needs no runtime resolution of the offending module — the check
-  cannot itself be broken by the import it is trying to reject
+### Structure of the manifest
 
-## Cross-feature references form a DAG
+The manifest lays out the V4 data fields:
 
-When one feature's obligation is activated by another feature's answer,
-the reference is a real JS import of the obligation constant — never a
-string or an id lookup. Live-animals currently has no cross-feature
-edge; the vendored car add-on sections (named-driver, modifications,
-protected-ncd) used to import the `addons` picker sideways, but they were
-removed in inc-025..027 along with the addons feature (inc-024). The last
-vendored stub — `coverType`, the module-local activator for the system
-`premium` in the quote feature — went with the quote feature itself in
-inc-028. No car-domain feature remains: every activator now resolves to a
-registered obligation.
+- **Notification-level scalars and address blocks** — `countryOfOrigin`,
+  `reasonForImport`, `transporterType`, `meansOfTransport`, the arrival
+  and port fields, `animalsCertifiedFor`, and the address blocks
+  (`placeOfOrigin`, `consignor`, `consignee`, `importer`,
+  `placeOfDestination`, `contactAddress`).
+- **`commodityLine`** (name `commodityLines`) — a user-driven group.
+  Each line owns `commodityCode` (name `commoditySelection`),
+  `commodityType`, `species` (name `speciesSelection`), `numberOfAnimals`
+  and the conditionally-scoped `numberOfPackages`.
+- **`unitRecord`** (name `animalIdentifiers`) — a group nested inside
+  `commodityLine`. Each unit owns the six identifier obligations
+  (`passport`, `tattoo`, `earTag`, `horseName`, `identificationDetails`,
+  `description`) and `permanentAddress`.
+- **`documents`** — a group of four accompanying-document fields.
 
-Activation always flows from a controlling answer to the details it
-unlocks, so the graph is acyclic.
+Two obligations are **system-populated**: `poApprovedReferenceNumber`
+(minted at notification-creation time) and `responsiblePersonForLoad`
+(taken from gov.identity). They are declared for completeness and carry
+`status: 'mandatory'`, but no page presents them and their value
+legality is enforced upstream, so neither carries a domain entry.
 
-Real references buy three things over the UUIDs the v1 model used:
+## Scope: the gate helpers and their metadata
 
-- **greppable** — search for `commoditySelection` and you find the
-  definition and every relationship that depends on it
-- **navigable** — editors jump straight from the reference to the
-  definition
-- **fail-loud** — a misspelt import throws when the module loads; a
-  misspelt UUID silently matches nothing
+Every conditionally-scoped obligation carries an `applyTo` closure. The
+closure is never hand-written — it is built by a pure helper from
+`model/obligations/helpers.js`. Each helper returns the closure and hangs
+a `.metadata` sidecar off it describing the gate as data. That gives one
+mechanism and one testing story: any obligation's `applyTo` runs as a
+plain function call over a `fulfilments` map, and the same gate is
+inspectable without executing it.
 
-## The activation vocabulary
+The closure signature is
+`(fulfilments, fulfilmentIdsByObligationId) → decision`, where
+`fulfilments` is the flat storage map and `fulfilmentIdsByObligationId`
+maps each obligation id to its current instance-paths (so a gate can look
+up a group's live instances without walking storage itself).
 
-`activatedBy` is a data literal over an obligation reference — never a
-closure. There are exactly four operators, interpreted in one place
-(`engine/evaluate/predicate.js`):
+The decision object is `{ inScope, status?, reasons?, records? }`:
+
+- `inScope: false` — out of scope. Any stored value is purged.
+- `inScope: true` with a `status` — in scope, mandatory or optional.
+- `reasons` — an array of reason objects explaining the decision (no
+  display copy — a machine-readable code plus an explanation string).
+- `records` — for a group-scoped gate, the instance-paths on which the
+  obligation is in scope.
+
+Two decision patterns recur:
+
+- **Status-flip** — both branches are `inScope: true` with different
+  `status`. `regionCode` is mandatory when
+  `regionOfOriginCodeRequirement` is `yes` and drops out of scope
+  otherwise.
+- **Purge-on-flip** — the false branch is `{ inScope: false }`, so
+  leaving scope destroys the stored value. `purposeInInternalMarket`
+  (gated on `reasonForImport`) and `commercialTransporter` (gated on
+  `transporterType`) work this way.
+
+### Which helper for which gate
+
+The helper depends on the SHAPE of the value the gate reads, not on how
+deep the gated obligation sits.
+
+**Scalar gates** read a plain top-level value (`fulfilments[gate.id]` is
+a scalar) and return a single decision:
+
+- `equalsGate(gate, value, whenTrue, whenFalse)` — value equality. The
+  workhorse for status-flip and purge-on-flip (`regionCode`,
+  `purposeInInternalMarket`, `commercialTransporter`,
+  `privateTransporter`).
+- `includesGate(gate, values, whenTrue, whenFalse)` — the gate value is
+  one of a set (`transitedCountries` on land-transport modes).
+- `presentGate(gate, whenTrue, whenFalse)` — the gate has any non-blank
+  answer.
+- `anyAllowListed(gate, values, whenTrue, whenFalse)` — aggregates over a
+  group's records to a single notification-level decision. `cph` and
+  `containsUnweanedAnimals` use it: in scope when ANY commodity line has
+  a qualifying code.
+- `alwaysInScope(status, reasons)` — no gate; unconditional, but with a
+  `reasons` list attached. Reserved for an always-in-scope obligation
+  that must explain itself; idle on the manifest today.
+- `matches` and `branchedGate` are escape hatches for opaque predicates.
+  Neither appears on the manifest.
+
+**Group-scoped gates** read a records-map (`fulfilments[gate.id]` is
+`{ instancePath: value }`, because the gate obligation is `within` a
+group) and return per-record decisions:
+
+- `allowListed(gate, values, projectionGroup, reasons)` — in scope on
+  records whose gate value is in the allowlist.
+- `notInUnionOf(gate, unionOfAllowlists, projectionGroup, reasons)` — the
+  dual: in scope where the gate value is in NONE of the given allowlists.
+  The union is derived once at build time and pinned on
+  `.metadata.values`, so the complement can never drift from the
+  positive gates it negates. The two free-text identifier fields
+  (`identificationDetails`, `description`) use it — they apply on units
+  whose commodity has no typed identifier.
+- `presentPerRecord(gate, projectionGroup, reasons)` — in scope on each
+  record where the gate value is answered. The three dependent
+  accompanying-document fields gate on `accompanyingDocumentType` this
+  way.
+
+The `projectionGroup` argument handles depth. Pass `null` when the gate
+and the gated obligation sit at the same identity level — `numberOfPackages`
+reads `commoditySelection`, both `within: commodityLine`. Pass the gated
+obligation's parent group when it sits deeper — the per-unit identifiers
+read the line's `commoditySelection` and project onto `unitRecord`, so
+the engine walks each matching line's unit records.
+
+### Metadata and the dependency graph
+
+Every helper attaches `.metadata` describing the gate: `{ type,
+obligation, values?, projection?, whenTrue?, whenFalse?, reasons? }`.
+`obligationMetadata(obligation)` merges that sidecar with a derived
+`dependsOn` list — `deriveDependsOn` reads `metadata.obligation` to
+recover which obligation each gate reads. A closure is opaque to a static
+reachability prover; the metadata makes the gate's dependency graph
+inspectable data without duplicating it on the obligation.
+
+## Groups and the `within` reference
+
+A repeating list is a group obligation — one that other obligations
+reference via `within`. The reference is a real JS object reference, not
+a string id:
 
 ```js
-{ obligation: regionOfOriginCodeRequirement, equals: 'yes' }        // scalar equality
-{ obligation: meansOfTransport, includes: ['Railway', 'Road Vehicle'] } // answer is one of these
-{ obligation: someAnswer, present: true }                          // answered (non-blank)
-{ obligation: commoditySelection, notInUnionOf: [passport, earTag] } // answered, and in NONE of the named obligations' includes lists
-```
-
-`present` fires on any non-blank answer. It remains fully supported by
-`engine/evaluate/predicate.js`, but no live obligation currently uses it —
-its only carrier was the car quote's `premium` (`{ obligation: coverType,
-present: true }`), removed with the quote feature in inc-028. The example
-above is illustrative.
-
-`includes` is set intersection, so it reads "is one of these" whether the
-answer is a scalar or a multi-select. The same operator gates an
-item-conditional obligation inside a collection — the number-of-packages
-commodity list in `features/commodities/obligations.js`:
-
-```js
-{ obligation: commoditySelection, includes: PACKAGE_COUNT_COMMODITIES }
-```
-
-`notInUnionOf` is the negated complement of `includes`, expressed BY
-REFERENCE (inc-040, DESIGN-DELTA #7): it names sibling obligations, and the
-predicate holds when the gating answer is answered and appears in NONE of the
-named obligations' `includes` lists. The engine derives the union at runtime
-(`includesUnion`), so the complement can never drift from the positive gates
-it negates. An unanswered gate activates nothing — activation stays strictly
-positive. The live carriers are the two free-text fallback identifier fields
-(`animalIdentifierIdentificationDetails` / `animalIdentifierDescription`),
-gated on the enclosing `commoditySelection` being in no typed-identifier
-list.
-
-The vocabulary is deliberately small. It covers "this answer unlocks
-that obligation" and nothing more. Anything that needs real branching —
-arithmetic, multi-condition logic, external state — belongs in a page
-controller. That is the pressure valve: the model stays declarative
-because controllers absorb the cases it refuses to express.
-
-## Collections are a recursive tree
-
-A repeating list is a first-class obligation: `collection: true` plus
-an `item` array of real sub-obligation definitions. From
-`features/commodities/obligations.js`:
-
-```js
-export const commodityLines = {
-  id: 'commodityLines',
-  collection: true,
-  item: [
-    commoditySelection,
-    typeSelection,
-    speciesSelection,
-    numberOfPackages,
-    numberOfAnimalsQuantity
-  ],
-  requiredAtLeastOne: true
+export const commodityCode = {
+  id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
+  name: 'commoditySelection',
+  within: commodityLine,
+  status: 'mandatory'
 }
 ```
 
-Because the items are real obligations, the engine sees them:
-per-instance scope, per-instance wipe, per-item completeness and
-dispatch coverage all descend into the item. Nesting is literal — a
-collection's item can contain another collection. The car named-driver
-feature was the live depth-2 carrier (`drivers[i].claims[j].claimType`)
-and was removed in inc-025; the engine still supports depth 2, but no live
-obligation nests a collection until M2's `animalIdentifiers` (see
-[limits.md](limits.md)).
+Because members point at the group object directly, a misspelt reference
+throws when the module loads, editors navigate straight to the group
+definition, and searching for the group constant finds every member. The
+group itself carries no `status` and no value — it is a structural node.
 
-Sub-obligation ids are frame-relative: `commoditySelection`, not
-`commodityLines.commoditySelection`. The id is the key inside each
-entry object (`answers.commodityLines[0].commoditySelection`) and the
-DOM field name — the same three-roles-one-string rule as at the root,
-just relative to the entry.
+Nesting is literal: `unitRecord` is `within: commodityLine`, and the
+six identifier obligations are `within: unitRecord`. That gives the
+model its depth-2 shape — a unit record lives inside a commodity line,
+and each unit owns its own identifier fields.
 
-## The collection cardinality link (`maxEntriesFrom`)
+### Group invariants: `requires`
 
-A collection may cap its entry count by a sibling count field (inc-063,
-DESIGN-DELTA #15). From `features/commodities/obligations.js`:
+A group can pin invariants the evaluator enforces:
+
+- **Collection floor** — `{ minEntries, errorCode }`. `commodityLine`
+  requires at least one line on every consignment:
+
+  ```js
+  requires: {
+    minEntries: 1,
+    errorCode: 'obligation.commodityLine.atLeastOne'
+  }
+  ```
+
+  Without the floor a zero-line session would collapse to
+  not-applicable in the status roll-up.
+
+- **Per-instance "at least one of"** — `{ anyOfIds, errorCode }`. Every
+  `unitRecord` must carry at least one of the six identifier obligations,
+  named by literal id:
+
+  ```js
+  requires: {
+    anyOfIds: [
+      '39657a80-...', // passport
+      '3a768b91-...', // tattoo
+      /* ...earTag, horseName, identificationDetails, description */
+    ],
+    errorCode: 'obligation.unitRecord.identifiersRequired'
+  }
+  ```
+
+  Referencing by literal id (rather than obligation reference) keeps the
+  "requires-any-of" edge legible as data, and avoids coupling to
+  declaration order.
+
+The derivation engine (`model/engine/`) reads `requires` to emit one
+invariant error per violating instance and to hold a group's status at
+in-progress until the invariant is satisfied.
+
+## The domain: value legality
+
+`model/domain/index.js` is the value-legality registry — Layer 1.25 of
+the architecture. It owns "what is a legal value?" and nothing else. No
+identity, no cardinality, no scope (those are the obligation manifest);
+no pages, sections or navigation (those are the flow); and no display
+copy.
+
+`domain` is a `Map` keyed by obligation `id`. Each entry is a pure
+function of `fulfilments`, the same idiom as an obligation's `applyTo`.
+There are five entry shapes:
+
+- **`enum`** — `options(fulfilments, ids, ctx) → string[]`. The legal
+  option list, as codes/values only.
+- **`integer` / `string` / `date`** — `predicate(value, ctx) → error[]`
+  plus a `reasons` list. Returns an empty array on pass.
+- **`address`** — a composite block: `subFields`, `required`,
+  `subFieldRules`, an `isComplete(value)` check and a `predicate`.
+
+Four factories build these entries, each attaching a `.metadata`
+sidecar mirroring the obligations helpers: `staticEnum`, `computedEnum`,
+`predicate` and `addressBlock`. A shared `reasons` map at the top of the
+file holds every failure code (`domain.enum.notInOptions`,
+`domain.string.maxLength`, the address sub-field codes, and so on), so
+error formatting can name-check them.
+
+### Options come from the reference-data services
+
+Enum options are codes, not copy, and the closed lists come from the
+MDM reference-data services — the same accessors the frontend
+controllers call:
+
+| Obligation                              | Service accessor                                 |
+| --------------------------------------- | ------------------------------------------------ |
+| `reasonForImport`                       | `import-reason-purpose.reasons()`                |
+| `purposeInInternalMarket`               | `import-reason-purpose.purposes()` (gated)       |
+| `countryOfOrigin`, `transitedCountries` | `countries.originCountries()`                    |
+| `portOfEntry`                           | `ports.list()`                                   |
+| `meansOfTransport`                      | `transport-reference.meansOfTransport()`         |
+| `transporterType`                       | `transport-reference.transporterTypes()`         |
+| `commodityCode`                         | `commodities.list()`                             |
+| `species`                               | `commodities.speciesFor(line's commodity)`       |
+| `animalsCertifiedFor`                   | `certification-purposes.certificationPurposes()` |
+| `accompanyingDocumentType`              | `document-types.documentTypes()`                 |
+| `accompanyingDocumentAttachmentType`    | `document-types.attachmentTypes()`               |
+
+A `computedEnum` closure delegates to the service and returns values
+only. A handful of enums stay static because no service backs them —
+`containsUnweanedAnimals` and `regionOfOriginCodeRequirement` (yes/no)
+and `commodityType` (a small placeholder set). The domain never carries
+option labels: the templates render the copy, the services supply the
+codes.
+
+### Predicates and address blocks
+
+The `predicate` entries express the V4 field rules: max-length caps
+(`internalReferenceNumber` max 58, `cph` max 11, `regionCode` max 5),
+integer floors (`numberOfPackages`, `numberOfAnimals` — at least 1),
+date format (`arrivalDateAtPort`, `accompanyingDocumentDateOfIssue` —
+calendar-valid DD/MM/YYYY), and the transited-countries max-12-selection
+cap. A blank value passes every predicate — completeness is a separate
+concern from legality, decided by the derivation engine.
+
+The `addressBlock` factory models the V4 standard address as a composite
+of nine sub-fields (six required, three optional) with per-sub-field
+rules for max-length, email format and the MDM country enum. Every
+address obligation reuses it; `commercialTransporter` extends the base
+set with a `transporterAuthorisationNumber` sub-field. The block
+validates only the sub-fields the user supplied; whether a partly-blank
+address blocks completeness is surfaced by `isComplete(value)`, not by
+the predicate.
+
+## No display logic in the model
+
+The model carries no display copy — no `label`, `title`, `titleKey`,
+`hint`, `legend` or `widget` on any obligation or domain entry. Copy
+lives in the `.njk` templates; option lists come from the reference-data
+services. The model owns identity, cardinality and scope (obligations),
+value legality (domain), and status and navigation derivation (engine) —
+never presentation.
+
+This is enforced at boot, not just in tests. `model/no-display-keys.js`
+exports `assertNoDisplayKeys(obligations, domain)`, which walks the live
+obligation and domain object graphs — objects, arrays and the `.metadata`
+sidecars hung off gate closures — and throws if any object carries a
+banned key from `DISPLAY_KEYS`:
 
 ```js
-export const animalIdentifiers = {
-  id: 'animalIdentifiers',
-  collection: true,
-  item: [
-    /* ... */
-  ],
-  requiredAtLeastOne: true,
-  requiredOneOf: ANIMAL_IDENTIFIER_GROUP,
-  maxEntriesFrom: numberOfAnimalsQuantity
-}
+export const DISPLAY_KEYS = Object.freeze([
+  'label',
+  'title',
+  'titleKey',
+  'hint',
+  'legend',
+  'widget'
+])
 ```
 
-`maxEntriesFrom` references a real sibling obligation — one that lives in
-the same frame as the collection (here both are members of
-`commodityLines.item`, so each line's records are capped by that line's own
-count). The engine interprets the fact in exactly one place:
-`appendEntryAt` consults `collectionCapAt`
-(`engine/evaluate/cardinality.js`) and rejects an append at the cap,
-returning `null` instead of the new index.
+`obligation-purity.js` wraps it as `assertObligationPurity()`, and
+`routes.js` calls that during plugin registration. A display key added to
+an obligation or a domain entry fails the boot — the server does not
+start with presentation smuggled into the model.
 
-Three deliberate boundaries:
-
-- **An unanswered count is no cap.** The entry surface stays open while the
-  count is blank; the `requiredAtLeastOne` floor still bites at submit, so
-  a blank count never lets a journey finish early.
-- **The cap is a max, not a completion mandate.** Status and completeness
-  are untouched — one record against a count of 100 still fulfils the
-  collection (V4's banner rule).
-- **Save-blocking above the cap is controller-owned**, like all
-  save-blocking: lowering a count below the existing record count is
-  rejected by the consignment-details controller with an error naming the
-  species — the engine never silently trims stored records.
-
-## Item-relative predicates
-
-A sub-obligation can be gated on a sibling field within the same entry.
-From `features/commodities/obligations.js`:
-
-```js
-export const numberOfPackages = {
-  id: 'numberOfPackages',
-  activatedBy: {
-    obligation: commoditySelection,
-    includes: PACKAGE_COUNT_COMMODITIES
-  },
-  wipeOnExit: true
-}
-```
-
-Nothing in the literal says "item-relative". Resolution is inferred
-from sibling identity: if the referenced obligation is one of the
-current node's siblings (the same `item` list it was walked from), the
-reference resolves inside this entry's frame; otherwise it is a
-top-level answer. The same literal works at any depth, with no marker
-and no extra operator.
-
-Two resolvers apply this rule and must not diverge:
-
-- `evalPredicate` in `engine/evaluate/predicate.js` — decides scope
-  during reconcile
-- `entryComplete` in `engine/evaluate/complete.js` — decides whether
-  an entry is complete
-
-Both use the identical criterion, `siblings.includes(ref)`. That is the
-resolver-unity invariant: an obligation reconcile puts in scope is the
-same one completeness counts as owed. One asymmetry is deliberate — a
-sub-obligation gated on a non-sibling cannot be resolved from inside
-the entry, so `entryComplete` treats it as owed. Conservative: the
-engine may ask for an answer it did not strictly need, but it never
-reports an entry complete when it is not.
-
-## Cross-frame predicates (`frame`)
-
-A predicate can also reference an obligation in a DIFFERENT frame, by
-adding an OPT-IN `frame` key (inc-031, see DESIGN-DELTA #3):
-
-- `frame: "enclosing"` — the reference lives in an ENCLOSING frame.
-  Resolution walks strictly outward to the nearest ancestor frame that
-  holds it. Used by the unit-level identifiers and `permanentAddress`,
-  gated on the enclosing `commodityLines[i].commoditySelection`.
-- `frame: "anyItem"` — the reference lives in the ITEMS of a collection;
-  the predicate holds if ANY item satisfies it. Used by the
-  notification-level `countyParishHoldingCph` / `containsUnweanedAnimals`.
-
-Absence of `frame` is exactly today's two-case resolver, unchanged. The
-resolver walks the node's frame chain (`frames`, innermost-first, from
-[registry.js](../registry.js)#walk) rather than a single frame.
-
-The resolver-unity invariant applies with one M2 caveat: `evalPredicate`
-(scope) now honours `frame`, but `entryComplete` (completeness) still
-resolves same-frame siblings only — it has no enclosing context in its
-signature. For a REQUIRED enclosing-gated unit field this diverges
-(completeness would treat it as owed off-gate); the increment that
-registers the first such carrier (`permanentAddress`, inc-035) must
-thread frame context into `entryComplete`. anyItem consumers are
-notification-level roots whose completeness is driven by scope, so they
-are unaffected.
-
-## system and renderOnly flags
-
-Two flags mark obligations that exist in the model but not in the
-answers map:
-
-- **`system`** — computed on demand, never collected or stored. No
-  current obligation carries the flag; the only one was the car quote's
-  `premium`, removed with the quote feature in inc-028. `kit.collectsFrom`
-  filters `system` obligations out of every page's `collects`, and the
-  boot coverage assertion in `flow/dispatch.js` skips them — no page owns
-  them. The flag stands ready for a future computed value.
-- **`renderOnly`** — presented on a page but never committed: the
-  input renders, but the controller never writes it. Unlike `system`
-  obligations it stays in the page's `collects` (the presenting page
-  owns it), and the commit contract test (`contract.test.js`)
-  excludes it from the "committed equals collects" check. No current
-  obligation carries the flag; the contract stands ready for one that
-  does.
-
-Both flags enforce the same principle: nothing derived or decorative is
-ever stored. See the persistence documentation for the wider
-"nothing derived is stored" invariant.
-
-## registry.js assembles, never defines
-
-`registry.js` imports every feature's `obligations.js` and concatenates
-them. No obligation is born in the barrel — relationships are authored
-in the feature files, and the barrel is a pure assembly point.
-
-Its surfaces, and who consumes each:
-
-| Surface                         | What it is                                                                                                                                                                                                               | Consumers                                                                                                          |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `registry.all`                  | Every root obligation, flat, in flow order                                                                                                                                                                               | the commit contract test (`contract.test.js`) iterates it                                                          |
-| `registry.byId(id)`             | Root id → obligation                                                                                                                                                                                                     | `engine/status.js` and `engine/evaluate/complete.js` (status and completeness look-ups)                            |
-| `registry.byPath(templatePath)` | Index-free dotted address → obligation, at any depth (`commodityLines.numberOfPackages`)                                                                                                                                 | `engine/evaluate/collection-view.js`                                                                               |
-| `walkObligations()`             | The full structural catalogue — every obligation at every depth, independent of any answers; yields `{ templatePath, obligation }`                                                                                       | `flow/dispatch.js` (`buildDispatch` coverage-asserts every non-system obligation is collected by exactly one page) |
-| `walk(answers)`                 | The per-instance catalogue — the tree materialised against a concrete answers map, one yield per stored collection entry; also yields the frame facts (`collectionAncestorKey`, `framePath`, `siblings`) reconcile needs | `engine/evaluate/reconcile.js`                                                                                     |
-
-The split between the last two matters: `walkObligations` answers
-"what can the model ever owe?" (boot-time coverage), while
-`walk(answers)` answers "what does the model owe right now, instance by
-instance?" (every reconcile).
+The check walks the live object graph rather than the source text on
+purpose: it inspects the actual keys reachable from the obligation array
+and domain map, so it cannot false-positive on the engine-introspection
+constants elsewhere in the tree that merely name AST operators, and it
+catches a display key however it was assembled.

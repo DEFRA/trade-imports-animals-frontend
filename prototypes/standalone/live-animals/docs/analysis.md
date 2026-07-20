@@ -1,26 +1,52 @@
-# Model analysis: simulation and the reachability prover
+# Model analysis: the simulator and the two reachability provers
 
-The `analysis/` folder holds two tools that interrogate the journey without a browser or a server:
+The prototype ships three tools that interrogate the journey without a browser
+or a running server. They compute over the model, so they are cheap to run and
+they cannot drift from what the app does.
 
-- [`analysis/simulate.js`](../analysis/simulate.js) — walk a persona through the journey and get the ordered page sequence back
-- [`analysis/reachability.js`](../analysis/reachability.js) — prove that no owed obligation is ever unreachable
+- [`analysis/simulate.js`](../analysis/simulate.js) — walk a persona through the
+  flow and get the ordered page sequence back.
+- [`analysis/flow-reachability.js`](../analysis/flow-reachability.js) — the
+  **page-level** prover: every in-scope obligation is presented by a page, and
+  that page is reachable in the state that scopes it.
+- [`model/analysis/reachability.js`](../model/analysis/reachability.js) — the
+  **obligation-dependency** prover: every gated obligation's `dependsOn` graph
+  terminates at an always-in-scope seed, and every gate can be opened by a
+  synthesised value.
 
-Both run inside the unit suite (`npm run test:live-animals` from the repo root). This page explains what they do, why they are trustworthy, and where the proof deliberately stops.
+All three run inside the unit suite. Run it with `npm run test:live-animals`.
+This page explains what each tool proves, why it can be trusted, and where the
+proof deliberately stops.
 
 ## Why the model can be analysed at all
 
-This is the payoff of the paradigm. Two design choices make the journey a checkable object rather than something you click through:
+Two design choices make the journey a checkable object rather than something you
+click through:
 
-1. **The state layer is pure and browser-free.** Scope, completeness and status are derived from the answers map alone, on every read (see [scope-and-wipe.md](scope-and-wipe.md)). Nothing derived is stored, and the engine touches no request, view or browser API. Any code that holds an answers map can ask the same questions the running app asks.
-2. **The predicate vocabulary is tiny and finite.** An obligation enters scope through `activatedBy` — a data literal with exactly three operators (`equals`, `includes`, `present`) over a real obligation reference, interpreted in one place (`engine/evaluate/predicate.js`). See [obligation-model.md](obligation-model.md). Because activation is data over a small finite domain, the full space of scope states can be enumerated, not sampled.
+1. **Derivation is pure and browser-free.** Scope, completeness and status are
+   computed from the answers map on every read (see
+   [scope-and-wipe.md](scope-and-wipe.md)). Nothing derived is stored, and the
+   engine touches no request, view or browser API. Any code that holds an
+   answers map can ask the same questions the running app asks.
+2. **The scope space is small and finite.** An obligation enters scope through
+   its `applyTo` closure, which reads a handful of top-level answers. The full
+   product of those scope-controlling answers is 24 states — small enough to
+   enumerate rather than sample (see [obligation-model.md](obligation-model.md)
+   and [flow-and-gates.md](flow-and-gates.md)).
 
-Together these mean journey properties are functions you can call. The simulator and the prover are both short because they compute over the model — they do not drive a UI.
+Each `applyTo` closure is opaque JavaScript, but it carries a structured
+`.metadata` sidecar built by the helper factories in
+[`model/obligations/helpers.js`](../model/obligations/helpers.js). The metadata
+declares **which obligation the gate reads** (`dependsOn`) and, for the
+structured helper family, **what value would open it**. That sidecar is what
+turns the closures into analysable data.
 
 ## The simulator: persona in, page sequence out
 
-`simulateJourney(answers)` in [`analysis/simulate.js`](../analysis/simulate.js) takes a persona and returns the ordered list of page ids that persona would visit.
-
-A persona is just an answers map — the same shape the store holds. There is no persona DSL:
+`simulateJourney(answers)` in [`analysis/simulate.js`](../analysis/simulate.js)
+takes a persona and returns the ordered list of page ids that persona would
+visit. A persona is just an answers map — the same shape the store holds. There
+is no persona DSL:
 
 ```js
 simulateJourney({
@@ -30,58 +56,204 @@ simulateJourney({
 // -> ['origin', 'commodities', ..., 'declaration'] in flow order
 ```
 
-The simulator derives scope with the real `makeScope` from `engine/index.js`, then threads the flow section by section. It emits each page whose section gate and page gate both pass, using the real `sectionGatePasses` and `pageGatePasses` from `flow/gates.js`. That reproduces the journey shape — a linear run through each open section, back to the hub, on to the next — as one flat ordered list.
+The simulator derives scope with the real `makeScope` from
+[`engine/index.js`](../engine/index.js), then threads the flow section by
+section. It emits each page whose section gate and page gate both pass, using
+the real `sectionGatePasses` and `pageGatePasses` from
+[`flow/gates.js`](../flow/gates.js). That reproduces the journey shape — a run
+through each open section, back to the hub, on to the next — as one flat ordered
+list.
 
-The whole function is a dozen lines because **it re-implements nothing**. Scope comes from the engine the app uses; gating comes from the flow the app uses. There is no second copy of the rules, so the simulation cannot drift from runtime behaviour.
+The whole function is a dozen lines because **it re-implements nothing**. Scope
+comes from the engine the app uses; gating comes from the flow the app uses.
+There is no second copy of the rules, so the simulation cannot drift from
+runtime behaviour.
 
-One setup requirement: the simulator needs the same boot wiring as the app. Call `buildDispatch(dispatchPages)` and `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` first, exactly as `routes.js` does — derived gates and submit readiness both fail loud if you skip this (see [flow-and-gates.md](flow-and-gates.md)). The `beforeAll` in [`analysis/simulate.test.js`](../analysis/simulate.test.js) shows the two calls.
+One setup requirement: the simulator needs the same boot wiring as the app. Call
+`buildDispatch(dispatchPages)` and
+`configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` first, exactly as
+[`routes.js`](../routes.js) does — derived gates and submit readiness both fail
+loud if you skip this. The `beforeAll` in
+[`analysis/flow-reachability.test.js`](../analysis/flow-reachability.test.js)
+shows the two calls.
 
-## The reachability prover
+## The page-level prover: no owed obligation is a dead end
 
-`proveReachability()` in [`analysis/reachability.js`](../analysis/reachability.js) proves the property:
+`proveFlowReachability()` in
+[`analysis/flow-reachability.js`](../analysis/flow-reachability.js) proves the
+property:
 
-> No owed obligation is unreachable. There is no scope state in which an obligation is in scope (owed) but the page that owns it cannot be reached under that same scope.
+> There is no scope state in which an obligation is in scope (owed) but the page
+> that presents it cannot be reached under that same scope.
 
-The boot coverage assertion in `flow/dispatch.js` already proves that every obligation is collected by exactly one page. The prover goes further: whenever the obligation is owed, that page is actually reachable. A gap here would be a dead end — the journey demands an answer the user can never give.
+The boot coverage assertion in [`flow/dispatch.js`](../flow/dispatch.js) already
+proves that every obligation is collected by exactly one page. This prover goes
+further: whenever the obligation is owed, that page is actually reachable through
+the flow gates. A gap would be a dead end — the journey demands an answer the
+user can never give.
 
-An empty problems list means proven. The unit suite pins `expect(proveReachability()).toEqual([])`.
+It reports two problem kinds:
 
-### Representative-instance witnessing
+- **`no-owning-page`** — an obligation is in scope, but dispatch indexes no page
+  that presents it (`pageOfObligation` returns nothing).
+- **`owning-page-unreachable-in-scope`** — the owning page exists, but is not in
+  the reachable set for the state that scopes the obligation.
 
-Collections make naive enumeration impossible — a driver can hold any number of claims, so the instance space is unbounded. The prover stays tractable by building one minimal **witness** answers map per obligation definition, at every depth (`walkObligations()` yields the full tree):
+An empty problems list means proven. The unit suite pins
+`expect(proveFlowReachability()).toEqual([])`.
 
-- **Top-level activators** come from `enumerateScopeStates()`: every combination of the scope-controlling top-level answers (`regionOfOriginCodeRequirement` × `reasonForImport` × `meansOfTransport` × `transporterType` — 24 states). Non-activating answers cannot affect scope, so this product is the complete top-level space.
-- **Collection ancestors** each get a single representative entry at index 0 (`scaffoldFor`). Per-instance independence means instance 0 stands in for instance n: all instances of a definition share the same derived owning page.
-- **Item-conditional gates** are satisfied inside that representative entry. To witness `numberOfPackages`, the scaffold sets the sibling `commoditySelection` to a package-count commodity in line 0.
+### How the state space is covered
 
-Each candidate witness is checked with the real `reconcile` — the prover asserts the target's instance path (for example `commodityLines[0].numberOfPackages`) is genuinely in scope before testing reachability. The cost is linear in the number of obligation definitions times their item-conditional branches. It is never exponential in nesting depth or instance count, because one representative instance generalises.
+Naive enumeration is impossible because collections hold any number of
+instances. The prover stays finite by combining a fixed happy-path base with the
+scope-flag cross-product:
 
-One maintenance fact follows from this design:
+- **`enumerateScopeStates()`** yields the 24 top-level scope states — the
+  cross-product of `regionOfOriginCodeRequirement` × `reasonForImport` ×
+  `meansOfTransport` × `transporterType` (2 × 2 × 2 × 3). These are the answers
+  that move conditional obligations into and out of scope; non-activating
+  answers cannot change scope, so this product is the complete top-level space.
+- **`submitReadySeed`** is a maximal, submit-ready base answer set with one
+  representative commodity line and one animal identifier. It puts almost every
+  obligation in scope. Each of the 24 states is overlaid on top of it, so every
+  step's answer-based prerequisites stay satisfied while the state's own
+  triggering answers win.
+- **`withoutBlanks`** strips empty axes from a state before overlaying. Blank
+  values would knock the always-in-scope `declaration` out of the review gate
+  and false-fail the run; activation is always positive, so no witness needs a
+  blank axis.
 
-- **A new top-level activator must be added to `enumerateScopeStates()`.** The function names the top-level scope-controlling answers explicitly. If you add an obligation whose scope is steered by a new top-level answer, extend the enumeration or the prover will never witness it.
+For each state the prover reads `inScope` from `makeScope`, reads the reachable
+pages from `simulateJourney`, and checks every in-scope obligation against
+`pageOfObligation`. `makeScope` layers two frontend-only flow obligations
+(`importType`, `declaration`) onto the projected scope so their pages stay
+reachable; the prover skips them via `A_ONLY_FLOW_OBLIGATIONS`, along with the
+`SYSTEM_POPULATED` fields, because none of those is presented by a page. Their
+page reachability is a runtime concern covered by the flow and E2E tests, not a
+model fact.
 
-## The fail-loud contract
+### It proves it has teeth
 
-The prover never skips silently. `buildWitnesses()` pairs every non-system obligation with its witness; if no enumerated state puts the target in scope, the witness is `null` and `proveReachability()` reports it as a problem with reason `no-witness-puts-in-scope`. That is surfaced as a prover bug — a hole in the enumeration — not quietly passed over. A missing owning page is reported the same way (`no-owning-page`).
+`proveFlowReachability({ scopeFor, pagesFor })` accepts injectable scope and page
+oracles, and
+[`analysis/flow-reachability.test.js`](../analysis/flow-reachability.test.js)
+feeds it a flow with pages dropped. Dropping every page except `origin` and
+`commodities` makes the prover report each in-scope obligation owned by a
+removed page (for example `transporterType`) as
+`owning-page-unreachable-in-scope`. Injecting a scope that carries an
+obligation dispatch never indexed makes it report `no-owning-page`. A prover that
+cannot fail proves nothing; the injection points keep that checkable.
 
-There is one deliberate, self-emptying exclusion: an obligation whose activator obligation is no longer registered (the activator survives only as a module-local identity stub after its collecting feature was removed) can never enter scope by construction, so it drops out of the witness set instead of reporting as a prover bug. The exclusion set is derived from the registry and emptied as the stub-bearing car features were deleted — its last member was the system `premium` (activated off the unregistered `coverType` stub), which went with the quote feature in inc-028. The set is now empty: every registered activator resolves to a registered obligation. The mechanism is kept as a live guard, so if a future feature ever leaves an unregistered activator behind, its root re-enters the exclusion set rather than failing the prover.
+### The soundness condition
 
-The prover also proves it has teeth. `proveReachability({ pagesFor })` accepts an injectable page oracle, and [`analysis/reachability.test.js`](../analysis/reachability.test.js) feeds it a flow with pages dropped. Dropping the `commodities` collection-hub page makes the prover report `commodityLines[0].numberOfPackages` as a dead end, naming the dropped hub as the derived owning page. A prover that cannot fail proves nothing; the injection point keeps that checkable.
+One representative instance per obligation suffices only under a condition worth
+stating plainly:
 
-## The soundness condition
+> Every flow gate is a read of scope or of answers the base already supplies.
 
-One witness per obligation would suffice trivially only under a condition worth stating plainly:
+Flow gates read answers as well as scope. Mandate-derived sequencing gates a step
+on earlier `enforcedAt: 'continue'` obligations being answered, and the `review`
+section gates on submit-readiness (`(scope) => scope.readyForCheckYourAnswers`).
+Because every candidate rides the fully submit-ready `submitReadySeed`, those
+answer-based prerequisites are met in every state, so a state that owes an
+obligation also reaches its page. If you author a gate that keys off an answer
+the base does not already supply, extend `submitReadySeed` or the enumeration —
+otherwise the prover will false-fail the step whose prerequisite is unmet. See
+[flow-and-gates.md](flow-and-gates.md) for the gate seam itself.
 
-> Every flow gate is a pure read of scope (`scope.inScope`).
+## The obligation-dependency prover: every gate can open
 
-When that holds, page reachability is a function of the very scope predicate that owes the obligation — so any state that owes the obligation also reaches the page, and one owing state is as good as all of them.
+[`model/analysis/reachability.js`](../model/analysis/reachability.js) proves a
+different property, one level below pages — that the obligation dependency graph
+is sound:
 
-That condition no longer holds: flow gates now read ANSWERS as well as scope. RULE 1 (mandate-derived sequencing) gates a step on earlier `enforcedAt: 'continue'` obligations being answered, and RULE 2 gates the `review` section on submit-readiness — an authored gate `(scope) => scope.readyForCheckYourAnswers`. A scope-only witness fragment would therefore false-FAIL a step whose answer-based prerequisites are unmet.
+> Every gated obligation's `dependsOn` chain terminates at an always-in-scope
+> seed, and every gate whose helper carries recoverable metadata can be opened
+> by a concrete synthesised value.
 
-The prover answers this the way its own soundness note always reserved — by enumerating richer witnesses. Each candidate now rides a fully submit-ready BASE journey (`submitReadySeed` in `reachability.js`), layered under the enumerated scope state and the target's own scaffold, so every step's answer-based prerequisites are met while the target's specific triggering state still wins. Blank enumerated axes are dropped before layering (activation is always positive, so no witness needs a blank axis, but a blank would defeat the RULE 2 review gate for the always-in-scope `declaration`). If you author a gate that keys off an answer this base does not already supply, extend the base or the enumeration. See [flow-and-gates.md](flow-and-gates.md) for the gate seam itself.
+It runs in two layers.
+
+### Layer 1 — the graph check
+
+`proveReachability(records)` operates over `{ id, dependsOn }` records and
+returns `{ reachable, unreachable, errors }`. An obligation is **reachable** if:
+
+- its `dependsOn` is empty (an always-in-scope seed); or
+- its `dependsOn` is a pure self-loop `[own-id]` — no external prerequisite, so
+  it acts as a seed; or
+- every non-self dependency is already reachable.
+
+The classification is a fixpoint iteration that stops when no new node is marked.
+Structural defects are reported in `errors` and excluded from the
+reachable/unreachable split: a missing `dependsOn` array, or a `dependsOn` id
+that resolves to no obligation in the manifest (a dangling reference). A dangling
+id is reported, never crashed on.
+
+The records come from the manifest: an obligation with an `applyTo` contributes
+`obligationMetadata(o).dependsOn` (the derived-or-declared dependency the helper
+metadata names), and an obligation without one is a seed. On the real manifest
+the prover reports zero unreachable and zero errors — the unit suite pins that.
+
+### Layer 2 — witness synthesis
+
+The graph check alone would pass vacuously for a gate whose predicate can never
+fire. `synthesiseWitness(obligation)` closes that gap. It inspects the gate's
+`applyTo.metadata` and returns one of three kinds (`WITNESS_KIND`):
+
+- **`witness`** — `{ obligationId, value, projection? }`: a concrete value that,
+  written under `obligationId` in a fulfilments map, opens the gate. The value
+  comes straight from the metadata — the first entry of an allowlist
+  (`allowListed`, `anyAllowListed`, `includesGate`), the scalar target
+  (`matches`, `equalsGate`), a non-blank sentinel (`presentGate`,
+  `presentPerRecord`), or a sentinel outside the derived union (`notInUnionOf`).
+  A `projection` group id is carried for depth-N gates whose gated obligation
+  sits deeper than the gate (per-unit identifiers project onto `unitRecord`).
+- **`trivial`** — the gate is always open: a structural group with no `applyTo`,
+  a bare always-in-scope closure, an `alwaysInScope` helper, or a status-flip
+  gate whose two branches are both `inScope: true`. No witness is needed.
+- **`opaque`** — the metadata carries no data-level target, so only the
+  graph-level check applies. The manifest currently has none.
+
+`proveWithWitnesses(obligations)` runs the graph check, then for every `witness`
+kind feeds the synthesised value through the **real `applyTo` closure** and
+asserts it returns `inScope: true`, seeding a synthetic projection path for
+depth-N gates. A witness that fails to open its own closure is a build-time
+defect — metadata drift against the real predicate — and is pushed to `errors`.
+The result reports how much of the manifest each kind covers:
+`{ reachable, unreachable, errors, witnesses: { synthesisable, trivial, opaque } }`.
+On the real manifest every witness opens its closure, the opaque set is empty,
+and at least fourteen gates are value-level proved.
+
+### The coverage gate keeps synthesis honest
+
+Every helper in [`model/obligations/helpers.js`](../model/obligations/helpers.js)
+that attaches a `.metadata.type` must be classified — either as a
+witness-synthesisable helper in `STRUCTURED_HELPER_TYPES`, or as opaque-by-design
+in `OPAQUE_HELPER_TYPES`.
+[`model/analysis/coverage.test.js`](../model/analysis/coverage.test.js) pins this
+in both directions: the two sets are disjoint, `STRUCTURED_HELPER_TYPES` matches
+the `case` labels dispatched inside `synthesiseWitness` exactly, and every helper
+export whose gate carries a `.metadata.type` classifies as one or the other.
+
+This is the maintenance fact that follows from the design: **a new gate helper is
+a three-touch change** — the factory in `helpers.js`, a `case` in
+`synthesiseWitness`, and an entry in `STRUCTURED_HELPER_TYPES`. Skip any one and
+the coverage gate fails, so the prover can never silently drift toward
+classifying everything as opaque and passing vacuously.
 
 ## What the proof deliberately does not cover
 
-The prover reasons about **page reachability under scope**, not **input validity**. Whether a given answer is valid is not a model fact — it lives in the controller's validation schema (see [validation.md](validation.md)), and exposing those schemas to the model layer would re-couple model and controller, the exact coupling the v2 seams exist to avoid. The witnesses set gate and sibling answers only to steer scope; they are not claims that those values would pass validation. Completion-readiness (`required`, `requiredAtLeastOne`) stays a pure model fact and is provable; input validity deliberately is not.
+Both provers reason about **reachability**, not **input validity**. Whether a
+given answer is valid is not a model fact — it lives in the controller's
+validation schema (see [validation.md](validation.md)), and exposing those
+schemas to the model would re-couple model and controller, the exact coupling the
+seams exist to avoid. Synthesised witnesses and seed answers steer scope; they
+are not claims that those values would pass validation. Completion-readiness
+(`requires`, `anyOfIds`) stays a pure model fact and is provable; input validity
+deliberately is not.
 
-The same boundary explains a rule of the paradigm from the other direction: **a controller `if` that affects navigation is invisible to any prover**. The simulator and prover see only the model and the gate seam. Navigation decisions must therefore flow through gates, where analysis can see them — bury one in a controller and every guarantee on this page silently excludes it.
+The same boundary cuts the other way: **a controller `if` that affects
+navigation is invisible to every prover**. The simulator and both provers see
+only the model, the flow and the gate seam. Navigation decisions must flow
+through gates, where analysis can see them — bury one in a controller and every
+guarantee on this page silently excludes it.

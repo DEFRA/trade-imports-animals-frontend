@@ -1,72 +1,152 @@
 # How to add a field to an existing page
 
-This guide walks through adding one optional field to a page that already
-exists. The worked example adds `exporterReference` (the exporter's own
-reference for the consignment) to the Origin page. Every step names the real
-file to edit.
+This guide adds one data field to a page that already exists. The worked
+example adds `exporterReference` — the exporter's own reference for the
+consignment — to the Origin page. Every step names the real file to edit.
 
-The model never renders. Declaring an obligation buys you the state-layer
-behaviour only: the field joins scope, `reconcile` preserves or wipes its
-value like any other, and (because it is optional) it never moves a task's
-status. You author the rendering, the validation, the persistence wiring and
-the Check your answers row by hand. That is the paradigm's deliberate
-inversion — see [add-a-page.md](add-a-page.md) for the page-level version of
-the same shape.
+The prototype has three layers. The **model** owns identity, scope and value
+legality. The **flow** owns which page presents the field. The **frontend**
+owns rendering, validation and persistence. A field is a small slice through
+all three.
 
-Adding a field touches five places. Steps 1 to 4 are the feature slice.
-Step 5 is named for you by a failing test.
+A field is called an **obligation** in the model — a data-field requirement.
+The model never renders and carries no display copy. Declaring an obligation
+buys you the state-layer behaviour: the field joins scope, the evaluator
+preserves or purges its value with the rest of the notification, and its
+`status` decides whether it moves a section's completeness. You author the
+widget, the page-level validation, the persistence wiring and the Check your
+answers row by hand.
+
+Adding a field touches up to six places:
+
+1. Declare the obligation in the model manifest.
+2. Add a domain entry if the value has legality rules.
+3. Add the obligation name to the owning page's `collects`.
+4. Wire the controller — the GET seed and the POST value map.
+5. Render the widget in the template.
+6. Add the Check your answers row.
 
 To add a repeating collection rather than a single field, see
-[add-a-collection.md](add-a-collection.md).
+[add-a-collection.md](add-a-collection.md). To add a whole new page, see
+[add-a-page.md](add-a-page.md).
 
 ## 1. Declare the obligation
 
-Add a one-line def to the feature's model, `features/origin/obligations.js`,
-and include it in the exported `obligations` array:
+All obligations live in one manifest, `model/obligations/obligations.js`.
+Add an exported object and include it in the exported `obligations` array:
 
 ```js
-export const exporterReference = { id: 'exporterReference' }
+export const exporterReference = {
+  id: '7c3e9a41-2b8d-4f6a-9c1e-0d5b7a8f2e14',
+  name: 'exporterReference',
+  status: 'optional'
+}
+```
 
+- `id` is a UUID and is the obligation's storage key. Mint a fresh one
+  (`uuidgen`); never reuse another obligation's id.
+- `name` is the field's stable model name. Controllers, `collects` and the
+  Check your answers rows all reference the obligation by this name.
+- `status` is `'optional'` or `'mandatory'`. An optional field never moves a
+  section's completeness; a mandatory field holds the section In progress and
+  keeps the submit gate closed until it is answered.
+
+Add it to the `obligations` array at the foot of the file:
+
+```js
 export const obligations = [
-  countryOfOrigin,
-  regionOfOriginCodeRequirement,
-  regionOfOriginCode,
-  internalReferenceNumber,
+  // ...existing obligations...
   exporterReference
 ]
 ```
 
-Order in the array does not matter — the contract test is set-based and the
-Check your answers page hand-orders its own rows.
+Order in the array does not affect evaluation — the evaluator builds the group
+hierarchy from each obligation's `within` back-reference, and Check your
+answers hand-orders its own rows.
 
-You do not edit `registry.js`. It spreads `...origin.obligations`, so growing
-the array is enough. You do not edit the page's `collects` either: the
-controller declares `collects: kit.collectsFrom(obligations)`, which derives
-the list from the same array.
+An always-in-scope field is a plain `status` with no `applyTo`. A conditional
+field carries an `applyTo` scope closure instead — see
+[Variation: make the field conditional](#variation-make-the-field-conditional).
 
-The one exception is a feature that splits its obligations across pages.
-Transport does this — each of its controllers lists an explicit subset, for
-example `collects: [transporterType.id]` in
-`features/transport/transporters.controller.js`. In a split feature, add the
-new id to the page that owns it.
+The model carries no `label`, `title`, `hint`, `legend` or `widget`. Those are
+display keys. `model/no-display-keys.js` runs at boot (via
+`obligation-purity.js`) and fails startup if any appear on an obligation or a
+domain entry. Copy lives in the template; option lists come from the services.
 
-## 2. Wire the controller
+## 2. Add a domain entry (only if the value has legality rules)
 
-Three small edits in `features/origin/controller.js`.
+The domain layer, `model/domain/index.js`, owns "what is a legal value?" —
+enum option lists, length caps, format predicates — keyed by obligation id.
+It owns nothing about identity, cardinality, scope or presentation.
 
-Add a format validator to the page's schema. Validators are optional by
-default: a blank field still saves, a malformed non-blank value is caught.
+`exporterReference` is free text capped at 58 characters, so it earns a
+predicate entry. Import the obligation, build the entry with the `predicate`
+factory, and register it in the `domain` map:
 
 ```js
-const fields = compose(
-  // ...the existing origin validators...
-  maxText(
-    'exporterReference',
-    30,
-    'Exporter reference must be 30 characters or less'
-  )
+import { exporterReference } from '../obligations/obligations.js'
+
+export const exporterReferenceDomain = predicate(
+  'string',
+  stringMaxLength(58, exporterReference),
+  [reasons.stringMaxLength]
 )
 ```
+
+```js
+export const domain = new Map([
+  // ...existing entries...
+  [exporterReference.id, exporterReferenceDomain]
+])
+```
+
+The factory to reach for depends on the value:
+
+- `staticEnum(options)` — a fixed option list.
+- `computedEnum(fn, readsFrom)` — options that depend on other answers or come
+  from a service. Every MDM-backed field delegates its `options` to the same
+  reference-data accessor the controllers call (for example
+  `countries.originCountries()`), returning codes only.
+- `predicate(type, fn, reasons)` — a scalar with a length, range or format
+  rule. `type` is `'string'`, `'integer'` or `'date'`.
+- `addressBlock(obligation, { subFields, required, subFieldRules })` — a
+  composite address value.
+
+Skip this step for a field with no value-legality rule (a plain yes/no radio
+whose two values are enforced by the controller's `oneOf`, say). The domain
+map is sparse — not every obligation has an entry.
+
+## 3. Add the obligation to the page's `collects`
+
+Each page declares the obligations it presents as a string array of obligation
+names on its controller `meta`. Add the new name to the owning page —
+`features/origin/controller.js`:
+
+```js
+export const meta = {
+  ...page,
+  collects: [
+    'countryOfOrigin',
+    'regionOfOriginCodeRequirement',
+    'regionOfOriginCode',
+    'internalReferenceNumber',
+    'exporterReference'
+  ]
+}
+```
+
+At boot, `buildDispatch` (`flow/dispatch.js`) reads every page's `collects` and
+builds the obligation-to-page index. It throws if two pages collect the same
+obligation, or if any non-system obligation is collected by no page. So a
+declared-but-uncollected field crashes startup rather than failing silently —
+the missing `collects` entry is the crash message.
+
+The Change links on Check your answers resolve the owning page through this
+index (`pageOfObligation`), so you never hardcode a slug.
+
+## 4. Wire the controller
+
+Two edits in `features/origin/controller.js`.
 
 Seed the field in the GET view-model, so a returning user sees their saved
 answer:
@@ -75,145 +155,173 @@ answer:
 exporterReference: answers.exporterReference ?? ''
 ```
 
-Read it in the POST value map, so `state.commit` persists it:
+Read it in the POST value map, so `state.commit` persists it, and add a
+page-level validator. Validation is in-controller, composed from
+`lib/validate/`:
 
 ```js
-exporterReference: (payload.exporterReference ?? '').trim()
+const fields = () =>
+  compose(
+    // ...the existing origin validators...
+    maxText(
+      'exporterReference',
+      58,
+      'Exporter reference must be 58 characters or less'
+    )
+  )
 ```
 
-## 3. Render it
+```js
+const values = {
+  // ...the existing origin values...
+  exporterReference: (payload.exporterReference ?? '').trim()
+}
+```
 
-Add a govuk macro to `features/origin/template.njk`. This template
-already imports `govukInput`:
+`lib/validate/` gives GDS-shaped field errors: `compose`, `requiredText`,
+`maxText`, `oneOf`, `requiredOneOf`, `pattern`, `dateParts` and more. These are
+the page's own Joi-style checks and are separate from the domain predicates in
+step 2 — the domain layer proves the value is legal for the model; the
+controller shapes the error the user sees.
+
+`state.commit(request, h, values)` writes the answers and returns the
+recomputed `scope`; the origin controller already redirects with
+`kit.nextTarget`.
+
+## 5. Render the widget
+
+Add a govuk macro to `features/origin/template.njk`. The template already
+imports `govukInput`:
 
 ```njk
 {{ govukInput({
-  id: "exporterReference", name: "exporterReference",
+  id: "exporterReference",
+  name: "exporterReference",
   label: { text: "Exporter reference (optional)" },
   hint: { text: "The exporter's own reference for this consignment" },
-  classes: "govuk-input--width-10",
+  classes: "govuk-!-width-three-quarters",
   value: values.exporterReference,
   errorMessage: errors.exporterReference and { text: errors.exporterReference }
 }) }}
 ```
 
-## 4. Add the Check your answers row
+Copy lives here, in the template — the label, hint and legend the model is
+forbidden to hold. Stay inside the govuk-frontend toolbox: govuk-\* components
+and utility classes, no custom CSS.
 
-Check your answers is bespoke composition, sectioned into summary cards
-(`buildSections` in `features/check-answers/controller.js`). Add one
-`row(...)` to the card that owns the field's section — e.g. the import
-details card for an origin field:
+## 6. Add the Check your answers row
+
+Check your answers is bespoke composition, sectioned into summary cards in
+`features/check-answers/controller.js`. Add one `row(...)` to the card that
+owns the field — the import details card for an origin field:
 
 ```js
 row('Exporter reference', answers.exporterReference, 'exporterReference'),
 ```
 
-The third argument is the obligation id. The row's Change link resolves the
-owning page through the dispatch seam — `changeHref` calls
-`pageOfObligation('exporterReference')` against the index built at boot from
-every page's `collects`. You never hardcode a slug.
+The third argument is the obligation name. `row` resolves the Change link with
+`changeHref`, which calls `pageOfObligation('exporterReference')` against the
+dispatch index built at boot. You never name the page.
 
-## 5. Let the contract test name the last edit
+## The discovery mechanism is behavioural
 
-Run the unit suite from the repo root:
+There is no checklist to memorise. `contract.test.js` drives every page's real
+POST handler with a synthetic payload and asserts the committed obligation set
+equals the page's declared `collects`. So:
+
+- A name in `collects` the handler never commits fails the page's contract
+  case — the declared set and the committed set differ.
+- A field the handler commits but no page declares also fails, and boot's
+  `buildDispatch` refuses to start until some page collects it.
+
+Run the unit suite from the frontend repo root:
 
 ```bash
 npm run test:live-animals
 ```
 
-Exactly one test fails: the `origin` case in `contract.test.js`. That
-test drives the page's real POST handler with a synthetic payload and asserts
-the handler commits exactly the obligation ids the page declares. Your new id
-is now declared but absent from the payload, so it is never committed — the
-test fails and names the file.
-
-Add one line to the `origin` case's payload:
-
-```js
-exporterReference: 'EXP-2026-0142'
-```
-
-Re-run the suite. Everything passes.
-
-## The discovery mechanism is behavioural
-
-There is no checklist to memorise: declare-but-don't-wire drift is caught by
-the suite, not by review.
-
-- A declared id the handler never commits fails the page's contract case
-  (as in step 5).
-- An id the handler commits but the page does not declare — in a
-  split-`collects` feature, or one declared by a different page — also fails
-  the same case, because the committed set no longer equals the declared set.
-
-Either way the failure is one test, and it names the page. Boot has its own
-guard for the model side: `buildDispatch` asserts every non-system obligation
-is collected by exactly one page, so a def that no page collects crashes the
-server at startup rather than failing silently.
-
 ## What you do not touch
 
-- `registry.js` — it spreads the feature's `obligations` array.
-- `flow/flow.js` and `flow/dispatch.js` — the owning page already exists, and
+- `flow/dispatch.js` and `flow/flow.js` — the owning page already exists, and
   coverage derives from `collects`.
-- `flow/gates.js`, the engine, the status roll-up and the hub — an optional
+- The evaluator, the status roll-up and the hub — an always-in-scope optional
   field never changes scope, completeness or a section's status.
-- No new test file — the contract case covers the commit, and `lib/validate`
-  is tested generically.
+- No new test file — the contract case covers the commit and `lib/validate` is
+  tested generically.
 
 ## Variation: make the field required
 
-Requiredness is a one-word model change:
+Requiredness is one word on the obligation:
 
 ```js
-export const exporterReference = { id: 'exporterReference', required: true }
+export const exporterReference = {
+  id: '7c3e9a41-2b8d-4f6a-9c1e-0d5b7a8f2e14',
+  name: 'exporterReference',
+  status: 'mandatory'
+}
 ```
 
-`required` is the completion fact the status roll-up reads. The section now
-shows In progress until the field is answered, and `readyForCheckYourAnswers`
-(the submit-readiness gate) stays false, so the journey cannot be submitted. It
-does not block saving — save-blocking is a controller decision (see
-`countryOfOrigin` in `features/origin/controller.js`, the journey's only
-save-blocking field).
+`status: 'mandatory'` is the completion fact the status bridge reads. The
+section now shows In progress until the field is answered, and the submit gate
+(`readyForCheckYourAnswers`) stays closed. It does not block saving — a blank
+mandatory field still saves; save-blocking is a controller decision. Two
+follow-ons:
 
-Two follow-ons:
-
-- Make the validator reject blank. Compose
-  `requiredText('exporterReference', '...')` with the format check in the
-  controller's schema.
+- Make the validator reject blank. Compose `requiredText('exporterReference',
+'...')` with the length check.
 - Teach the shared E2E walk to fill it. The specs in `prototypes/e2e/` walk
-  every journey with the same helpers in `prototypes/e2e/journey.js`, and the
-  other journeys do not have your field. Fill it only when present:
+  every journey with the helpers in `prototypes/e2e/journey.js`, and the other
+  journeys do not have your field. Fill it only when present:
 
 ```js
 const reference = page.getByLabel('Exporter reference (optional)')
 if (await reference.count()) await reference.fill('EXP-2026-0142')
 ```
 
-Then run `npm run test:prototype` from the repo root.
+Then run `npm run test:prototype` from the frontend repo root.
 
 ## Variation: make the field conditional
 
-A conditional field adds two facts to its def and reveal markup to its page.
-The reference example is `regionOfOriginCode` in
-`features/origin/obligations.js`:
+A conditional field is in scope only while another answer holds. It carries an
+`applyTo` scope closure instead of a plain `status`. The closure is built by a
+gate helper from `model/obligations/helpers.js`, which co-declares the closure
+body, its metadata sidecar and its dependency edge. The reference example is
+`regionCode` in `model/obligations/obligations.js`:
 
 ```js
-export const regionOfOriginCode = {
-  id: 'regionOfOriginCode',
-  required: true,
-  activatedBy: { obligation: regionOfOriginCodeRequirement, equals: 'yes' },
-  wipeOnExit: true
+export const regionCode = {
+  id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
+  name: 'regionOfOriginCode',
+  applyTo: equalsGate(
+    regionCodeRequirement,
+    'yes',
+    { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
+    { inScope: false }
+  )
 }
 ```
 
-`activatedBy` puts the field in scope only while the referenced answer
-matches. `wipeOnExit` destroys its value when it leaves scope, so re-entering
-scope starts blank. The reveal markup stays page-side —
-`features/origin/template.njk` nests the input inside a govuk radios
-`conditional` block. The model owns scope and wipe; the page owns how the
-reveal looks.
+`equalsGate(gate, value, whenTrue, whenFalse)` puts the field in scope with the
+`whenTrue` decision while the gate obligation equals `value`, and applies
+`whenFalse` otherwise. Because the false branch is `{ inScope: false }`, the
+evaluator purges any stored value when the field leaves scope — re-entering
+scope starts blank. Common helpers:
 
-If the activating obligation belongs to another feature, import it from that
-feature's `obligations.js`. Sideways model imports are the one permitted
-direction — the boot purity check allows nothing else.
+- `equalsGate` / `includesGate` / `presentGate` — scalar gates on a
+  notification-level answer.
+- `allowListed` / `notInUnionOf` / `presentPerRecord` — group-scoped gates that
+  read a per-instance value inside a collection (a commodity line or an animal
+  identifier record).
+- `anyAllowListed` — aggregates a group's records into a single notification-
+  level decision (for example, CPH becomes mandatory when any commodity line
+  needs it).
+
+A status flip — mandatory in one branch, optional in the other — keeps
+`inScope: true` on both branches with a different `status`. The reveal markup
+stays page-side: `features/origin/template.njk` nests the region-code input
+inside a govuk radios `conditional` block. The model owns scope and purge; the
+page owns how the reveal looks.
+
+If the gate obligation lives elsewhere in the manifest, it is already in the
+same file — one manifest, no cross-feature imports. Give the conditional field
+a domain entry (step 2) as usual; scope and value legality are independent.

@@ -1,6 +1,6 @@
 # Testing and verification
 
-How to run the spike's tests, what each layer of the regression net covers, and the rules and gotchas for writing new specs.
+How to run the live-animals prototype's tests, what each layer of the regression net guards, and the rules and gotchas for writing new specs.
 
 All commands run from the frontend repo root (`trade-imports-animals-frontend`).
 
@@ -12,7 +12,7 @@ All commands run from the frontend repo root (`trade-imports-animals-frontend`).
 npm run test:live-animals
 ```
 
-Vitest runs every `*.test.js` under the spike in well under a second. The suite loads the whole module graph, and two of its specs run the boot guards directly: `obligation-purity.test.js` runs the model-purity check and `contract.test.js` runs `buildDispatch`, which coverage-asserts every obligation against the pages' `collects` declarations. A mis-wired model fails the unit run — you do not need to start the server to find out.
+Vitest runs every `*.test.js` under the prototype in well under a second (`TZ=UTC vitest run prototypes/standalone/live-animals --no-coverage`). The suite loads the whole module graph, and two specs run the boot guards directly: `obligation-purity.test.js` runs the model-purity check and `contract.test.js` runs `buildDispatch`, which coverage-asserts every obligation against each page's `collects` declaration. A mis-wired model fails the unit run — you do not need to start the server to find out.
 
 ### E2E suite
 
@@ -20,16 +20,16 @@ Vitest runs every `*.test.js` under the spike in well under a second. The suite 
 npm run test:prototype
 ```
 
-Playwright, Chromium only, one config (`playwright.config.js` at the repo root) with **two projects** — and this one command runs both:
+Playwright, Chromium only, one config (`playwright.config.js` at the repo root) with **two projects** — this one command runs both:
 
-- `prototype` — every prototype journey's demo walk (not just this spike), against a stub-mode server on port 3000.
+- `prototype` — every prototype journey's demo walk, against a stub-mode server on port 3000. The live-animals net (`prototypes/e2e/live-animals.spec.js`) runs here, alongside the sibling prototype specs in the same folder.
 - `parity` — `skeleton-vs-prototype-mongo.spec.js` only, against a **real**-mode server on port 3001.
 
-The parity project drives the production skeleton journey and this prototype against the same real backend and compares the two persisted notifications field-by-field — the browser-level proof of [the mapper](persistence.md#mapper-a-round-trip-losses-the-lossy-a-caveat). It is in the normal suite on purpose: when it had a config and a command of its own it was easy to forget, and a persistence bug hid behind two green suites.
+The parity project drives the production skeleton journey (`src/server`) and this prototype against the same real backend and compares the two persisted notifications field by field — the browser-level proof of [the mapper](persistence.md). It sits in the normal suite on purpose: a persistence break must not hide behind a green demo run.
 
-**The workspace stack must be up.** The real-mode server persists through the backend (`:8085`), Mongo and Redis. Start it with `scripts/stack/run-stack.sh` from the workspace. The suite probes the backend before Playwright starts and exits in a second with that instruction if the stack is down, rather than timing out.
+**The workspace stack must be up.** The real-mode server persists through the backend, Mongo and Redis. Start it with `scripts/stack/run-stack.sh` from the workspace. The `test:prototype*` scripts probe the backend first (`npm run check:workspace-stack`), so a stack-down run fails in a second with an actionable message rather than a web-server timeout.
 
-The npm script builds the frontend assets once, then starts both servers. The stub server refuses to reuse an existing one — if a dev server is already holding port 3000, the run fails at startup. Kill the stale server first:
+Each script builds the frontend assets once, then starts both servers. The stub server on 3000 refuses to reuse an existing one — if a dev server is already holding the port, the run fails at startup. Kill the stale server first:
 
 ```
 lsof -ti:3000 | xargs kill
@@ -40,64 +40,75 @@ The real-mode server on 3001 **is** reused if one is already answering, so a `np
 To run one project, or filter by title:
 
 ```
-npm run test:prototype:journeys                 # demo project only
-npm run test:prototype:parity                   # parity project only
-npm run test:prototype -- -g "obligations v2"   # filter by title
+npm run test:prototype:journeys              # demo project only
+npm run test:prototype:parity                # parity project only
+npm run test:prototype -- -g "live-animals"  # filter by title
 ```
 
-The title filter matches both the shared-spec entry for this journey (labelled `standalone obligations v2 (page-owned spine)`) and the spike-only specs (titled `obligations v2 — ...`).
-
-### Headless model inspector
-
-```
-npm run dump:live-animals
-```
-
-Runs `dump.js`, which prints derived scope, the wiped set, per-section status and submit readiness (`readyForCheckYourAnswers`) for a fixture answers map — no server, no rendering. Edit the fixture to explore the model.
-
-The fixture is deliberately messy. Do not tidy it. Two of its oddities are the whole point:
-
-- the second cattle line omits `numberOfPackages` — an OPTIONAL item-conditional field, so its absence does not gate the line's completeness; `whyNotReady` still shows `readyForCheckYourAnswers: false`, but because most sections are unanswered, not because of this line
-- the fish line (not on the package-count list) carries a **stale** `numberOfPackages` — out of scope for that line, so the output shows it in `wiped`: field-level destruction inside a collection item (see [scope-and-wipe.md](scope-and-wipe.md))
+The title filter matches this journey's own describe blocks — `live-animals (page-owned spine)` and `live-animals — country of origin without JavaScript`.
 
 ## The regression net
 
-### The live-animals spec
+The net is layered: the model tiers prove the engine headlessly, the bridge and frontend tiers prove the seam and the controllers, and the E2E specs prove the rendered journey and the persisted result. Each tier is fast enough to run on every change.
 
-`prototypes/e2e/live-animals.spec.js` is this journey's own browser-level
-net: a happy-path walk that grows one leg per increment, fed from
-`spec/fixtures/happy-path.json`, plus per-section specs pinning gates,
-loops and validation in the rendered DOM.
+### Model unit tiers (`model/**`)
 
-### The persistence-parity compare
+The obligation model is pure and synchronous, so it is proven entirely in unit tests with no server:
 
-`prototypes/e2e/skeleton-vs-prototype-mongo.spec.js` is the top of the net. It drives BOTH journeys this frontend serves — the production skeleton (`src/server`) and this prototype — against the same real backend, then strips the volatile fields and asserts the two persisted notifications are equal. `skeleton-equivalence.test.js` pins the same claim at unit level against the mapper; this pins it through the real HTTP adapter, the real backend and Mongo.
+- **Obligations** — `model/obligations/evaluator.test.js`, `evaluator.units.test.js`, `helpers.test.js`, `whitelists.test.js` and `coverage.test.js` pin the evaluator's scope, purge-to-fixpoint and implication output, the gate-helper factories, the exported whitelist arrays, and full obligation coverage.
+- **Domain** — `model/domain/index.test.js` pins value-legality: enum option sourcing, predicate error codes and the address-block rules.
+- **Engine (derivation)** — `model/engine/index.test.js` and `is-blank-value.test.js` pin the pure status/navigation primitives over evaluator output.
+- **Analysis** — `model/analysis/reachability.test.js` and `coverage.test.js` pin the obligation-dependency reachability prover and its witness synthesis.
+- **No display copy** — `model/no-display-keys.test.js` pins the rule that no obligation or domain entry carries a display key (`label`, `title`, `titleKey`, `hint`, `legend`, `widget`). `obligation-purity.test.js` runs the same assertion the server runs at boot.
 
-It runs in the `parity` project of the normal E2E suite. Nothing to remember, nothing to opt into — every increment is parity-checked.
+### Bridge tier (`model/bridge/**`)
 
-### Shared journey specs (the car ancestors)
+The bridge is the only door between the model and the hapi frontend. Its four specs pin the projections the controllers and templates depend on:
 
-Three specs in `prototypes/e2e/` (outside the spike folder) run against every **car-journey** prototype in `JOURNEYS` (`prototypes/e2e/journey.js`) — the ancestors this journey was forked from, including `obligations-v2-spike`. This journey is not in that list; the table below documents what the shared net pins for those journeys, because the engine under this journey is proven there too:
+- `fulfilments.test.js` — nested answers ⇄ flat fulfilments, composite-key ↔ positional-path conversion, and the A↔B vocabulary normalisation.
+- `scope.test.js` — the in-scope path-key set the controllers read.
+- `status.test.js` — the five status constants (`NA`, `NOT_STARTED`, `IN_PROGRESS`, `FULFILLED`, `OPTIONAL`) and the completeness projection.
+- `collection-complete.test.js` — per-instance completeness for the collection views.
 
-| Spec                                  | What it pins for each journey                                                                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `task-list-with-linear-tasks.spec.js` | The full walk, start page to confirmation                                                                                                      |
-| `mandatory-fields.spec.js`            | Full name blocks save with a GDS error summary; every other About-you field is optional                                                        |
-| `invalidation.spec.js`                | Changing claims to No removes the claims data, and a yes → no → yes round trip does not rehydrate it — a direct assertion of the wipe paradigm |
+### Engine tier (`engine/**`)
 
-### Spike-only specs (obligations-v2 ancestor)
+The hapi/session/records engine wraps the model behind the store the controllers call. Its specs pin the runtime seam: the store contract and commit/purge authority (`store-contract.test.js`, `commit-purge-authority.test.js`, `write-through-per-commit.test.js`), read and scope (`read.test.js`), submit finalisation (`submit-is-finalise.test.js`), the journey lifecycle (`journey.test.js`, `journey-user-assoc.test.js`), resume self-heal, one-load-per-request memoisation and the collection view (`evaluate/collection-view.test.js`).
 
-Three more specs in `prototypes/e2e/` drive the `obligations-v2-spike` ancestor, pinning engine behaviour this journey inherits:
+### Flow tier (`flow/**`)
 
-| Spec                       | What it pins                                                                                                                                                                              |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nested-drivers.spec.js`   | A loop inside a loop: two drivers hold independent nested claims, removing a driver destroys only that driver's subtree, and yes → no → yes on the collection does not rehydrate at depth |
-| `item-conditional.spec.js` | Choosing Windscreen inside one claim reveals the approved-repairer question for that claim only                                                                                           |
-| `hub-copy.spec.js`         | The named-driver hub row shows its authored hint in the real DOM, never an internal page id                                                                                               |
+`dispatch.test.js` and `gates.test.js` pin the obligation→page index and the page/section gates; `task-rows.test.js`, `run.test.js` and `opening-run.test.js` pin the hub rows, section status and the opening linear run.
+
+### Reachability provers (`analysis/**`)
+
+`analysis/flow-reachability.test.js` and `simulate.test.js` pin the page-level reachability check: every in-scope obligation must have an owning page, and that page must be reachable across the enumerated scope states. This is distinct from the obligation-dependency prover under `model/analysis/`.
+
+### Feature controller tier (`features/**`)
+
+Each page's controller has a spec that drives its real GET/POST handler headlessly and asserts on the rendered context or the committed answers — origin, CPH number, import reason and purpose, additional details, declaration, dashboard, confirmation, the commodities pages (`search`, `consignment-details`, `animal-identification`), the addresses pages (`controller`, `create-address`, `party-picker`), documents (`controller`, `upload-config`), transport (`port-of-entry`, `transit-countries`) and check-answers.
+
+### Services tier (`services/**`)
+
+The persistence and reference-data services are proven against their ports:
+
+- **Records** — `services/persistence/records/notification-mapper.test.js` pins both mappers; `skeleton-equivalence.test.js` pins, at unit level, that the mapper produces a notification equivalent to the production skeleton's; `records-port.test.js` and the `real.*` specs pin the backend REST client (null stripping, amend, resume scoping).
+- **Session** — `services/persistence/session/*` pins the stub and the Redis/yar real port.
+- **Reference data and uploads** — `address-book`, `document-uploads` (stub and real) and `run-mode` pin the MDM and upload services and the `stub`/`real` mode switch.
+
+### The live-animals E2E spec
+
+`prototypes/e2e/live-animals.spec.js` is this journey's browser-level net: a happy-path walk fed from `prototypes/standalone/live-animals/spec/fixtures/happy-path.json` that grows one leg per increment, plus per-section specs pinning gates, loops and validation in the rendered DOM — import type, the opening linear run, the hub, origin (including the no-JS plain select and the accessible-autocomplete enhancement), the commodities batch search and per-species counts, animal identifiers, the N-of-M identifier cap, import reason and purpose, accompanying documents and upload rejection, addresses and the party picker, the transport rows, CPH number, check-your-answers, change-from-CYA threading, declaration and confirmation, and the dashboard amend flow.
+
+### The persistence-parity oracle
+
+`prototypes/e2e/skeleton-vs-prototype-mongo.spec.js` is the top of the net. It drives BOTH journeys this frontend serves — the production skeleton (`src/server`) and this prototype — against the same real backend, strips the volatile fields, and asserts the two persisted notifications are equal. `skeleton-equivalence.test.js` pins the same claim at unit level against the mapper; this pins it through the real HTTP adapter, the real backend and Mongo. It runs in the `parity` project, so every change is parity-checked with nothing to opt into.
+
+### Sibling prototype specs
+
+The `prototype` project runs every spec in `prototypes/e2e/` except the parity spec, so `npm run test:prototype` also walks the sibling car-insurance prototypes (`journey.js` `JOURNEYS`) and the obligations-model specs under `prototypes/e2e/obligations/`. These exercise the shared engine and page-kit primitives on other journeys; they do not touch the live-animals model. Filter them out with `-g "live-animals"` when you only want this journey.
 
 ### Why the specs pin exact DOM
 
-The specs assert the rendered page — headings, roles, `govuk-*` classes, row text — not internal state. That is what makes refactors provably safe: a pure rename or restructure that changes no behaviour and no markup passes both suites byte-for-byte unchanged. If a "pure" refactor turns a spec red, it was not pure.
+The E2E specs assert the rendered page — headings, roles, `govuk-*` classes, row text — not internal state. That is what makes refactors provably safe: a pure rename or restructure that changes no behaviour and no markup passes unchanged. If a "pure" refactor turns a spec red, it was not pure.
 
 ### Why the hub hint is also pinned in a unit test
 
@@ -105,19 +116,33 @@ The E2E specs navigate hub rows by **title** and never read the hint text, so hi
 
 ## The boot-replication rule
 
-The server boots the journey in `routes.js` by running, in order: `assertObligationPurity()`, `buildDispatch(dispatchPages)`, `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)`. Any spec that commits answers, builds scope or reads section status must replicate the middle two in a `beforeAll`:
+The server boots the journey in `routes.js` by running, in order:
+
+```
+assertObligationPurity()
+buildDispatch(dispatchPages)
+configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+configureRecords(records)
+configureSession(session)
+registerJourneyCookie(server)
+```
+
+Any spec that commits answers, builds scope, reads section status or drives a controller handler must replicate the configure steps in a `beforeAll`:
 
 ```js
 beforeAll(() => {
+  configureRecords(recordsStub)
+  configureSession(sessionStub)
   buildDispatch(dispatchPages)
   configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
 })
 ```
 
-If you skip this, the engine throws — deliberately:
+If you skip these, the engine throws — deliberately:
 
-- every scope build (`state.get`, `state.commit`, and so on) computes `readyForCheckYourAnswers`, and the unconfigured default in `engine/read.js` throws rather than return a silent wrong answer
-- derived gates and section status read the dispatch index, and `flow/gates.js` refuses to answer before `buildDispatch()` has run, because an empty index would silently gate every page out
+- every scope build computes `readyForCheckYourAnswers`, and the unconfigured default in `engine/read.js` throws rather than return a silent wrong answer.
+- derived gates and section status read the dispatch index, and `flow/gates.js` refuses to answer before `buildDispatch()` has run, because an empty index would silently gate every page out.
+- the store reads and writes through the records and session ports, so a handler-driving spec must configure both to the stubs.
 
 See `contract.test.js` for the pattern in use, and [architecture.md](architecture.md) for why these seams exist.
 
@@ -134,26 +159,26 @@ One module holds every shared fake. Import from it — do not hand-copy a stub i
 | `postHandlerOf(featureModule)`                     | The single POST handler a feature declares                                                                                                                    |
 | `postHandlerEndingWith(featureModule, suffix)`     | The POST handler whose path ends with `suffix`, for features with more than one POST route                                                                    |
 
-The file is deliberately **not** named `.test.js`, so Vitest never collects it as a spec.
+The file is named `test-support.js`, not `*.test.js`, so Vitest never collects it as a spec.
 
 ### The seeding gotcha
 
-When you seed a gated answer, keep its activating answer in place. Seeding `commercialTransporter` without `transporterType: 'Commercial'` puts it out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. The same applies to any item-conditional field (seed a `commoditySelection` on the package-count list before seeding that line's `numberOfPackages`) or any gated collection.
+When you seed a gated answer, keep its activating answer in place. Seeding `commercialTransporter` without `transporterType: 'Commercial'` puts it out of scope, so the first reconcile **correctly wipes it** — and your spec then fails for a reason that has nothing to do with what it tests. The same applies to any item-conditional field (seed a `commoditySelection` on the package-count whitelist before seeding that line's `numberOfPackages`) or any gated collection.
 
 ## The contract test
 
 `contract.test.js` pins the binding the boot assertion cannot see. Boot checks that every obligation is **declared** by exactly one page's `collects`; the contract test checks each handler **honours** its declaration:
 
-> The set of obligation ids a controller actually commits must equal its declared `collects`, minus `renderOnly` and `system` obligations.
+> The set of obligation ids a controller actually commits must equal its declared `collects`, minus system-populated obligations.
 
 It drives every collecting page's real POST handler headlessly with a valid payload, then diffs the obligation ids newly written against `meta.collects` as sets.
 
-Collections are measured against the **entry append handler**. The documents list page declares `collects: ['documents']` and the commodities list page declares `collects: ['commodityLines']`, but the write that mints an entry's identity happens in the add sub-page's append handler — so that is the handler the contract drives.
+Collections are measured against the **entry-append handler**. The documents list page declares `collects: ['documents']` and the commodities list page declares `collects: ['commodityLines']`, but the write that mints an entry's identity happens in the add sub-page's append handler — so that is the handler the contract drives.
 
 When you mis-wire a field, the failing set diff names it:
 
-- the handler commits a field outside its `collects` — the committed set has an extra id
-- a declared id is never written — the committed set is missing an id
+- the handler commits a field outside its `collects` — the committed set has an extra id.
+- a declared id is never written — the committed set is missing an id.
 
 Either way the assertion output shows exactly which obligation drifted, on which page. If you add a field to a page, add it to that page's payload in the contract case — a valid payload must fill every committable collected id, or the "declared but never written" direction stops being exercised. The worked examples in [add-a-field.md](add-a-field.md) show this pin naming itself.
 
@@ -165,7 +190,7 @@ Engine and controller specs use `describe('#functionName ...')` for the unit und
 
 ### Prove changes by running them
 
-When you change model or engine behaviour, prove it against the running code: extend a spec (or the `dump.js` fixture) so the change is demonstrated, run the suites, and for a doc or plan, apply-run-revert rather than reason from the code alone. The add-a-page and add-a-field guides were validated this way.
+When you change model or engine behaviour, prove it against the running code: extend a spec so the change is demonstrated, run the suites, and for a doc or plan, apply-run-revert rather than reason from the code alone. The add-a-page and add-a-field guides were validated this way.
 
 ### The pre-commit hook
 

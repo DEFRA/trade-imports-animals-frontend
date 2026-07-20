@@ -1,223 +1,255 @@
-# Architecture: pages as the spine
-
-This spike inverts the v1 design. v1 made a config engine the spine: a central
-catalogue plus a flow tree owned every page's copy, rendered through one
-generic template. v2 makes the pages the spine. Each page is an ordinary Hapi
-GET/POST pair with its own template, owning its copy, validation and
-view-model. What survives from v1 is a deliberately thin state layer.
+# Architecture: the layers and how a request flows
 
 Read this file first. Then use the [index](README.md) to find the topic you
 need.
 
-## The paradigm in three claims
+The live-animals journey is one Hapi plugin ([`routes.js`](../routes.js), export
+`liveAnimals`). It is built on an **obligation model** with a **page-owned
+spine**: each page is an ordinary Hapi GET/POST pair that owns its copy,
+validation and template, while a single pure model owns what data is owed, when
+each field is in scope, and what a partly-filled journey's status is.
 
-### 1. Features are the spine
-
-Every feature under [`features/`](../features/) is a vertical slice: one or
-more controllers, a template, a `page.js` identity leaf and (for collecting
-pages) an `obligations.js` model. The slice owns its copy, its validation and
-its rendering. Nothing central projects a page for it.
-
-### 2. A central engine over an assembling model barrel
-
-The model is inert plain-JS data. Each feature's `obligations.js` describes
-identity, structure (`collection`, `item`, `system`, `renderOnly`), mandate
-facts (`required`, `requiredAtLeastOne`) and activation and wipe relationships
-(`activatedBy`, `wipeOnExit`). Relationships are data literals over real JS
-references to other obligations — never strings, never closures.
-
-[`registry.js`](../registry.js) assembles those slices into one catalogue
-(`all`, `byId`, `byPath`, `walkObligations()`, `walk(answers)`). It defines
-nothing. The [`engine/`](../engine/) evaluates the catalogue: scope, wipe,
-completeness and status are all derived from the answers, never authored.
-
-### 3. The seam is one-directional and derived
-
-Each collecting page declares the obligations it `collects`. At boot,
-[`flow/dispatch.js`](../flow/dispatch.js) inverts those declarations into an
-obligation-to-page index, so the hub and Check your answers can ask "which
-page owns obligation X" without the model ever naming a page.
-
-Data crosses the seam in one direction only. Pages write answers down
-(`state.commit`, `state.appendEntry` and friends). The engine derives scope,
-wipe and status and hands them up as read-only facts. There is no `setScope`
-and no per-key delete anywhere in the stack — a page physically cannot
-hand-roll a wipe. See [scope, reconcile and wipe](scope-and-wipe.md).
-
-## Three layers, one dependency direction
+## The four layers
 
 ```
-features/  →  flow/  →  engine/
+features/  →  flow/            (page spine + sequencing)
+           →  engine/          (the state facade pages call)
+                 └─ model/bridge/  (the seam)
+                       └─ model/   (identity, scope, legality, derivation)
+services/  supplies option lists and the persistence ports
 ```
 
-- **features/** — the pages. Controllers import the flow (for navigation) and
-  the engine facade (`import * as state` from `engine/index.js`).
-- **flow/** — sequence and gating. An ordered `sections` array of ordered page
-  lists ([`flow/flow.js`](../flow/flow.js)); it owns no copy, no validation
-  and no templates. Gates are derived by default: a page or section with no
-  authored `gate` is reachable exactly when some obligation it collects is in
-  scope ([`flow/gates.js`](../flow/gates.js)). Four of the five original
-  hand-authored gates were bare `inScope.has('<key>')` restatements of the
-  model, coupled by a raw string. Divergence meant a ghost Not applicable row
-  or a stuck section. Deriving the default makes "gate passes exactly when
-  section status is not Not applicable" hold by construction (holding RULE 1
-  prerequisites satisfied — the default gate also requires earlier
-  `enforcedAt: 'continue'` obligations to be answered). Exactly one authored
-  gate exists: the `review` section's `(scope) => scope.readyForCheckYourAnswers`
-  (submit-readiness); the car `get-your-quote` gate that once used the same
-  roll-up went with the quote feature in inc-028. The authored-gate mechanism is
-  otherwise dormant, for a future flow-level fact the model cannot express. The
-  flow-aware roll-ups (`sectionStatus`, `readyForCheckYourAnswers`) live in
-  [`flow/section-status.js`](../flow/section-status.js) because they need the
-  dispatch index and the section list; `readyForCheckYourAnswers` is both the
-  review section's authored gate and the submit-readiness gate consulted by
-  `submitJourney`.
-- **engine/** — the pure state core. Read, write, reconcile, completeness,
-  the five-status roll-up and the persistence ports.
+Dependencies point inward. Pages depend on the flow and the engine facade; the
+facade depends on the bridge; the bridge depends on the model. The model depends
+on nothing in the frontend — it never imports a controller, a template or a
+request.
 
-The dependency direction is mechanically checkable: the engine imports zero
-`flow/` modules.
+### model/ — the pure core
 
-```bash
-grep -rn "flow/" engine/   # no matches
-```
+The model is plain data plus pure functions. It has four parts:
 
-The engine has one flow-shaped need — submit readiness
-(`readyForCheckYourAnswers`) — and it is injected downward at boot via
-`configureReadyForCheckYourAnswers` in [`engine/read.js`](../engine/read.js). The unconfigured default throws, so a
-`makeScope` call before boot is a hard, loud failure rather than a silent
-wrong answer.
+- **Obligations** — [`model/obligations/obligations.js`](../model/obligations/obligations.js)
+  is the manifest: one object per data requirement, each with a UUID `id`, a
+  `name`, an optional parent `within` group, a `status` and an optional `applyTo`
+  scope closure built by [`model/obligations/helpers.js`](../model/obligations/helpers.js).
+  [`model/obligations/evaluator.js`](../model/obligations/evaluator.js) exports
+  `createObligationEvaluator`, whose `evaluate(fulfilments)` runs the scope
+  fixpoint, purges out-of-scope data and returns
+  `{ fulfilments, obligations: implicationsByObligation }`. See
+  [obligation-model.md](obligation-model.md).
+- **Domain** — [`model/domain/index.js`](../model/domain/index.js) holds value
+  legality: enums, integer/string/date predicates and address blocks, keyed by
+  obligation id. Enum options are delegated to the MDM services under
+  `services/`; the domain carries no display copy.
+- **Derivation primitives** — [`model/engine/index.js`](../model/engine/index.js)
+  is a barrel of small pure functions over evaluator output: page and container
+  status, `journeyState`, `effectiveStatus`, group-invariant checks and the
+  navigation walkers (`firstApplicablePage`, `firstUnfulfilledPage`). One 5-way
+  classifier (`not-applicable / not-started / optional / in-progress /
+fulfilled`, plus `submitted`) serves every level.
+- **Analysis** — [`model/analysis/reachability.js`](../model/analysis/reachability.js)
+  proves every obligation's scope gate can fire. See [analysis.md](analysis.md).
+
+The model carries **no display copy** — no `label`, `title`, `hint`, `legend`
+or `widget` on any obligation or domain entry. This is enforced at boot by
+[`model/no-display-keys.js`](../model/no-display-keys.js) (called through
+[`obligation-purity.js`](../obligation-purity.js)): a display key on the model
+fails the boot, not just a test. Copy lives in the `.njk` templates; value
+options come from the services.
+
+### model/bridge/ — the seam
+
+The evaluator speaks in **fulfilments**: a flat map keyed by obligation UUID,
+with grouped values held as `{ fulfilmentId: value }` maps under composite keys
+(`line0`, `line0/unit1`). Controllers and templates speak in **answers**: a
+nested POJO (`answers.commodityLines[0].animalIdentifiers[1]…`). The bridge is
+the only door between the two.
+
+- [`model/bridge/fulfilments.js`](../model/bridge/fulfilments.js) —
+  `answersToFulfilments` / `fulfilmentsToAnswers`: nested answers ⇄ flat
+  fulfilments, including composite-key ↔ positional-path conversion and the
+  vocabulary normalisation the evaluator's gates need.
+- [`model/bridge/scope.js`](../model/bridge/scope.js) — `makeScopeFromB(answers)`
+  returns `{ inScope: Set<pathKey>, has(id), answered(id),
+readyForCheckYourAnswers }`. It runs the evaluator and projects every in-scope
+  implication back into the positional path grammar the controllers use.
+- [`model/bridge/status.js`](../model/bridge/status.js) — `statusOfFromB` is the
+  sole runtime source of task-list and section status (the 5-way alphabet).
+- [`model/bridge/purge.js`](../model/bridge/purge.js) — `wipeSetFromB(answers)`
+  lists the answer paths the evaluator's purge destroys; the write path feeds
+  this to `destroyWiped`.
+- [`model/bridge/collection-complete.js`](../model/bridge/collection-complete.js)
+  — per-instance completeness for the collection views.
+
+Each bridge instantiates its own evaluator and runs the answers through it, so
+the frontend never touches the evaluator directly. See
+[scope-and-wipe.md](scope-and-wipe.md).
+
+### engine/ — the state facade
+
+[`engine/index.js`](../engine/index.js) is the barrel controllers import as
+`import * as state`. It exposes:
+
+- **Read** — `get` and `makeScope` ([`engine/read.js`](../engine/read.js)).
+  `makeScope` dispatches straight to the bridge's `makeScopeFromB`.
+- **Write** — `commit`, `appendEntryAt`, `updateEntryAt`, `removeEntryAt`,
+  `reconcileEntriesAt` and `submitJourney` ([`engine/write.js`](../engine/write.js)).
+- **Collection views** — `collectionView`, `collectionCapAt`.
+- **Journey lifecycle** — [`engine/journey.js`](../engine/journey.js) owns the
+  cookie, load-or-create, and the dashboard verbs (list, select, amend a known
+  journey), with a per-request memo.
+- **Persistence ports** — [`engine/persistence/records.js`](../engine/persistence/records.js)
+  and [`engine/persistence/session.js`](../engine/persistence/session.js) are
+  configurable ports, wired at boot to the implementations under
+  `services/persistence/`. See [persistence.md](persistence.md).
+
+Data crosses the seam in one direction only. Pages write answers down (`commit`
+and the entry verbs); the model derives scope, status and wipe and hands them
+back as read-only facts. There is no `setScope` and no per-key delete: a page
+cannot hand-roll a wipe. The write path applies the wipe itself, in `purge`,
+using the bridge's `wipeSetFromB`.
+
+### flow/ — the page spine and sequencing
+
+- [`flow/flow.js`](../flow/flow.js) — the ordered `sections` array (each an `id`
+  plus its `pages`, and an optional `gate`). The `review` section carries the one
+  authored gate: `(scope) => scope.readyForCheckYourAnswers`.
+- [`flow/dispatch.js`](../flow/dispatch.js) — `buildDispatch(pages)` inverts each
+  page's `collects` array into an obligation-to-page index. It throws if two
+  pages collect the same obligation, if an id contains a path metacharacter, or
+  if any non-system obligation is collected by no page.
+- [`flow/gates.js`](../flow/gates.js) — a page or section with no authored gate
+  is reachable exactly when its prerequisites are answered and at least one
+  obligation it collects is in scope.
+- [`flow/task-rows.js`](../flow/task-rows.js) and
+  [`flow/section-status.js`](../flow/section-status.js) — the hub rows and the
+  section roll-ups, both resolving through `statusOfFromB`.
+  `readyForCheckYourAnswers` is true when every task row is fulfilled, not
+  applicable or optional.
+- [`flow/entry-guard.js`](../flow/entry-guard.js) — the deep-link guard, run as an
+  `onPreHandler` extension.
+
+### features/ — the pages
+
+Each feature under [`features/`](../features/) is a vertical slice. A page has a
+`page.js` (id and slug), a `controller.js` that exports `meta` (the page plus its
+`collects` list), GET/POST handlers and `routes` (via `kit.pageRoutes`), and a
+`template.njk`. Multi-page features (commodities, transport, addresses) hold
+several controller/template pairs. [`features/index.js`](../features/index.js)
+aggregates `dispatchPages` (the `meta`s that feed `buildDispatch`) and
+`allRoutes`. Validation is in-controller, via [`lib/validate/`](../lib/validate/).
+See [features.md](features.md) and [validation.md](validation.md).
+
+### services/ — reference data and persistence
+
+Each service under [`services/`](../services/) supplies option lists from the
+reference-data (MDM) services — `countries`, `ports`, `commodities`,
+`document-types`, `certification-purposes`, `import-reason-purpose`,
+`transport-reference` — plus `address-book`, `document-uploads`, and the
+`records` and `session` persistence implementations. A `stub` mode and a `real`
+mode are selected by `LIVE_ANIMALS_MODE` ([`services/mode.js`](../services/mode.js)).
+See [services.md](services.md).
+
+## How a request flows
+
+A **GET** for a collecting page:
+
+1. The route (from `kit.pageRoutes`) runs the entry-guard `onPreHandler`, then
+   the controller's `get`.
+2. `get` calls `state.get(request, h)`. `engine/read.js` loads the journey's
+   answers through the session port (`currentJourney`) and builds the read view
+   `{ journey, answers, scope: makeScope(answers) }`.
+3. `makeScope(answers)` runs `answersToFulfilments`, evaluates the model, and
+   projects the in-scope implications into the `scope` object.
+4. The controller renders its template with the answers and the scope-derived
+   facts. Enum options come from the services.
+
+A **POST**:
+
+1. The controller validates the payload with `lib/validate/`. On error it
+   re-renders with a GDS error summary.
+2. On success it calls `state.commit(request, h, values)`.
+   [`engine/write.js`](../engine/write.js) merges the patch into the answers,
+   runs `purge` (which asks the bridge for `wipeSetFromB` and calls
+   `destroyWiped`), saves through the session port, and returns the fresh scope.
+3. The controller asks the flow where to go next (`kit.nextTarget`), which
+   consults the gates, and redirects.
+
+The **hub** and **Check your answers** read status the same way: they call the
+flow's `rowStatus` / `sectionStatus`, which run through `statusOfFromB`. Nothing
+derived is stored — scope and status are rebuilt from the answers on every read,
+so a days-later resume self-heals to the current rules.
+
+**Submit** is a pure status flip: `submitJourney` checks
+`scope.readyForCheckYourAnswers` and, if ready, finalises the record through the
+records port.
 
 ## Boot sequence
 
-The whole journey is one Hapi plugin, [`routes.js`](../routes.js). At
-registration it runs, in order:
+At plugin registration, [`routes.js`](../routes.js) runs, in order:
 
-1. `assertObligationPurity()` — reads every `features/<feature>/obligations.js`
-   as source and asserts it imports nothing outward. Only sideways imports of
-   another feature's `obligations.js` are allowed. This is the guard that
-   co-locating the model beside controllers has not re-coupled it to views or
-   requests.
-2. `buildDispatch(dispatchPages)` — inverts the page-side `collects`
-   declarations and coverage-asserts them: every non-system obligation, at
-   every tree depth, must be collected by exactly one page. A forgotten or
-   duplicated `collects` is a startup crash, not a silent runtime break.
-3. `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` — hands the
-   flow's submit-readiness roll-up into the engine, keeping the engine free of
-   `flow/` imports.
-4. `registerJourneyCookie(server)` — defines the journey cookie, path-scoped
-   to the spike's base path.
-5. `server.route(allRoutes)` — registers every route assembled by
-   [`features/index.js`](../features/index.js).
+1. `assertObligationPurity()` — fails the boot if the model carries any display
+   key.
+2. `buildDispatch(dispatchPages)` — builds the obligation-to-page index and
+   coverage-asserts every obligation is collected by exactly one page.
+3. `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` — injects the
+   flow's submit-readiness roll-up so the engine holds no `flow/` import.
+4. `configureRecords(records)` and `configureSession(session)` — wire the
+   persistence ports to their `services/persistence/` implementations.
+5. `registerJourneyCookie(server)` — defines the journey cookie.
+6. `onPreHandler` — installs the entry-guard redirect.
+7. In real mode only, `countries.prime()` and `ports.prime()` warm the MDM
+   caches.
+8. `server.route(allRoutes)` — registers every route.
 
-Both guards fail loud. So does the derived-gate seam: a derived gate consulted
-before `buildDispatch()` has run throws, because an unbuilt index is
-indistinguishable from "this page collects nothing" and would silently gate
-every step out.
+The guards fail loud. So does a gate consulted before `buildDispatch` has run:
+an unbuilt index is indistinguishable from "this page collects nothing" and
+would silently gate every step out, so `gates.js` throws instead.
 
 ## Where things live
 
 ```
 live-animals/
-  routes.js               one Hapi plugin: boot guards, cookie, routes
-  registry.js             assembling barrel over the feature obligation slices
-  obligation-purity.js    per-file model-purity guard (run at boot)
-  config.js               shell identity: BASE mount path, template root, breadcrumbs
+  routes.js               the Hapi plugin: boot guards, cookie, routes
+  obligation-purity.js    boot guard delegating to model/no-display-keys.js
+  config.js               shell identity: BASE mount path, template root
   dump.js                 headless state dump for an editable fixture
-  docs/                   this documentation
 
-  features/               THE SPINE — one vertical slice per feature
-    index.js              assembles dispatchPages (collects) + allRoutes
-    <feature>/            controller(s), template(s), page.js, obligations.js
+  model/                  THE PURE CORE — no frontend imports
+    obligations/          obligations.js manifest, helpers.js, evaluator.js
+    domain/               value legality (enum/predicate/address)
+    engine/               derivation primitives (status, navigation)
+    analysis/             reachability prover
+    bridge/               THE SEAM — answers ⇄ fulfilments, scope/status/purge
+    no-display-keys.js    the purity assertion
 
-  flow/                   sequence and gating
-    flow.js               ordered sections -> pages
+  engine/                 the state facade pages import (import * as state)
+    index.js              the barrel
+    read.js               get, makeScope (→ bridge scope)
+    write.js              commit + entry verbs + submitJourney
+    journey.js            journey lifecycle, cookie, dashboard verbs
+    evaluate/             collection-view, cardinality (append cap)
+    persistence/          the records + session ports
+
+  flow/                   the page spine + sequencing
+    flow.js               ordered sections → pages
+    dispatch.js           obligation → owning page index, built at boot
     gates.js              derived-default / authored-override gate seam
-    dispatch.js           obligation -> owning page index, built at boot
-    navigation.js         sectionEntry, nextInSection (else back to the hub)
-    section-status.js     flow-aware roll-ups: sectionStatus, readyForCheckYourAnswers
+    task-rows.js          hub rows → statusOfFromB
+    section-status.js     sectionStatus, readyForCheckYourAnswers
+    entry-guard.js        deep-link guard (onPreHandler)
 
-  engine/                 the pure state core
-    index.js              the facade barrel controllers import (import * as state)
-    read.js               get, makeScope (+ configureReadyForCheckYourAnswers)
-    write.js              commit, appendEntry(At), updateEntry(At), removeEntry(At), submitJourney
-    status.js             the five-status roll-up (engine-pure)
-    journey.js            journey-isolation seam: cookies, load-or-create,
-                          the dashboard verbs (list/select/amend known journeys)
-    store.js              compat shim over the records port (pre-reshape consumers)
-    test-support.js       shared fakes for engine and controller specs
-    evaluate/             reconcile (scope + wipe), predicate, complete, collection-view
-    persistence/          the two ports: records (durable) + session (identity)
+  features/               THE PAGE SPINE — one vertical slice per feature
+    index.js              assembles dispatchPages (collects) + allRoutes
+    <feature>/            page.js, controller.js (meta + routes), template.njk
 
-  lib/                    context-free helpers: path maths, answered-ness,
-                          validate/ (Joi validators)
-  shared/                 kit.js (page library), layout.njk, error-summary.njk
-  analysis/               model-level tooling: simulate.js, reachability.js
-
-  *.test.js               spike-root scenario tests that span the whole stack:
-                          contract, store-ops, indexed, nested, item-conditional,
-                          obligation-purity, t1-currency-persist, t2-hub-copy
+  services/               reference-data (MDM) + persistence, stub|real
+  lib/                    path maths, answered-ness, validate/ (validators)
+  shared/                 kit.js (page library), layout + partial templates
+  analysis/               flow-reachability, headless simulator
 ```
 
-The root scenario tests earn their place at the root because they cut across
-layers. The most important is `contract.test.js`: for each collecting page it
-drives the real POST handler and asserts the set of obligation ids the handler
-commits equals the page's declared `collects` (minus `renderOnly` and
-`system`). It is the safety net that names the file you forgot to wire.
-
-## What survives from v1, and what was dropped
-
-Kept, because it is page-agnostic and the bespoke pages already leaned on it:
-
-- **Scope-exit wipe (the Yes-No-Yes invariant).** Answering yes, filling data,
-  then answering no destroys the data — so re-answering yes starts blank.
-  Destroyed, not hidden.
-- **Activation relationships.** A controlling answer brings other obligations
-  into scope. This is the concept the whole state layer exists for.
-- **The pure-evaluator / side-effecting-write split.** Evaluation is pure;
-  only the write path persists. Keeps state reasoning testable.
-- **Nothing derived is stored.** Scope is rebuilt from the answers on every
-  read, so a days-later resume self-heals to current scope.
-- **The five-status roll-up.** Not applicable / Optional / Not started / In
-  progress / Fulfilled — exactly what the hub task list and submit gating need.
-- **Section grouping.** The journey returns to the hub after each section and
-  the hub renders one task per section.
-
-Dropped, because it served the generic engine rather than the journey:
-
-- **UUID identifiers.** With one hand-authored model and no migration story,
-  opaque ids are pure overhead. The name is the key.
-- **Model-owned copy.** The key inversion: copy, layout and widget choice
-  moved into per-page templates and controllers.
-- **The generic renderer** (one `page.njk` plus a type-to-widget registry).
-  On this journey every interesting page — the commodities loop, Check your
-  answers, the declaration, the hub — had already bypassed it with bespoke
-  code.
-  The config engine paid off only on the boring pages.
-- **The 21-export contract barrel.** It existed to feed the generic routes.
-  Controllers import the small state facade directly.
-- **The scope-predicate registry, dotted reason codes, mandate composition
-  table and equivalence harness.** Machinery for the paradigm demonstration,
-  not the journey. Mandates became ordinary controller validation.
-- **The obligation `type` taxonomy and constraint metadata.** A usage trace
-  showed no runtime code read them — every widget and value-domain was
-  already re-declared page-side. Validation is a controller concern backed by
-  [`lib/validate/`](../lib/validate/) (see [validation](validation.md)).
-
-## The honest trade
-
-There is no free rendering and no free Check your answers row. Adding a field
-means editing a real template, a real controller and a hand-composed CYA row.
-Declaring the obligation buys you only the state-layer behaviour: scope,
-wipe, completeness and status.
-
-What you get back: everything is explicit and greppable. There is no
-type-to-widget registry to learn, no config schema to satisfy and no generic
-engine to bypass the moment a page gets interesting. The cost is more files
-per change; the boot assertions and the contract test exist to make each of
-those files name itself when you forget one.
-
-For the mechanics, follow the guides: [add a page](add-a-page.md) and
-[add a field or obligation](add-a-field.md). For the state layer, see
-[scope, reconcile and wipe](scope-and-wipe.md) and
-[persistence ports](persistence.md).
+For the mechanics, follow the guides: [add a page](add-a-page.md),
+[add a field](add-a-field.md) and [add a collection](add-a-collection.md). For
+the model, see [obligation-model.md](obligation-model.md); for the state facade,
+[engine.md](engine.md); for the gates, [flow-and-gates.md](flow-and-gates.md).
