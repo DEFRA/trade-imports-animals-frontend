@@ -602,16 +602,14 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     })
     expect(list.statusCode).toBe(200)
     // 15 subsections — same as internal-market (14 pre-CPH + CPH).
-    // 14 read Completed; ONE reads Optional (`trader-reference`,
-    // whose only obligation is completion-optional and the walk
-    // skips it). WS4 changed the shape of `accompanying-documents`:
-    // it's now a records-shape group. When the walk skips it (0
-    // docs added) the subsection has zero in-scope entries and
-    // classifies as NA — no tag on the task list. Previously (WS2)
-    // it had 4 in-scope optional scalars and read Optional. The
-    // `reason` subsection still rolls up to F once reason-for-import
-    // is filled — purposeInInternalMarket goes NA, and NA
-    // obligations don't hold the subsection open.
+    // 14 read Completed; TWO read Optional (`trader-reference` and
+    // `accompanying-documents` — both walk-skipped). Under 5-way
+    // rollup accompanying-documents with 0 records is NA, but the
+    // hub controller patches it to Optional so a trader isn't stuck
+    // on a bare "Not applicable" tag for a subsection they could
+    // still choose to walk (parallel to the pre-existing
+    // linesManageStatus patch on `commodity-lines-manage`). See
+    // `features/hub/controller.js#accompanyingDocumentsStatus`.
     const completedCount = (list.payload.match(/Completed/g) ?? []).length
     expect(
       completedCount,
@@ -620,8 +618,8 @@ describe('happy-path e2e walk — transit-through-EU with 1 commodity line', () 
     const optionalCount = (list.payload.match(/Optional/g) ?? []).length
     expect(
       optionalCount,
-      `expected 1 Optional tag on the task list, got ${optionalCount}`
-    ).toBe(1)
+      `expected 2 Optional tags on the task list, got ${optionalCount}`
+    ).toBe(2)
     expect(list.payload).not.toContain('Not started')
     expect(list.payload).not.toContain('In progress')
 

@@ -13,7 +13,10 @@ import {
   firstUnfulfilledPage,
   STATUSES
 } from '../../engine/index.js'
-import { commodityLine } from '../../obligations/obligations.js'
+import {
+  commodityLine,
+  accompanyingDocument
+} from '../../obligations/obligations.js'
 import { t } from '../../lib/i18n.js'
 import { chrome } from '../../lib/chrome.js'
 
@@ -68,6 +71,21 @@ function linesManageStatus(state) {
   return records.length === 0 ? STATUSES.NOT_STARTED : STATUSES.FULFILLED
 }
 
+function accompanyingDocumentsStatus(state) {
+  // Records-shape group where 0 documents is a valid submission (WS4
+  // spec: "optional" at the block level). With 0 records containerStatus
+  // returns NA — accurate to the alphabet (no in-scope entries + no
+  // group errors) but confusing to a trader who could still choose to
+  // opt in. Patch to Optional (matches the trader-reference subsection
+  // shape). Once ≥ 1 record exists containerStatus does the right
+  // thing — per-record mandatoriness rolls up to IP / F normally, and
+  // the maxEntries invariant surfaces cap violations as extra
+  // mandatory concerns.
+  const records = state.obligations?.[accompanyingDocument.id]?.records ?? []
+  if (records.length === 0) return STATUSES.OPTIONAL
+  return null
+}
+
 function subsectionHref(subsection, state) {
   // All commodity-lines subsections (line management, per-line
   // details, and depth-2 per-unit records) route into the bespoke
@@ -84,6 +102,12 @@ function subsectionHref(subsection, state) {
   ) {
     return `${BASE}/lines`
   }
+  // Accompanying-documents subsection routes into the bespoke
+  // /accompanying-documents summary (records-shape group, WS4). Same
+  // pattern as /lines for commodity-lines subsections.
+  if (subsection.id === 'accompanying-documents') {
+    return `${BASE}/accompanying-documents`
+  }
   const page = firstNavigablePage(subsection, state)
   if (!page) return null
   return `${BASE}/pages/${page.page}`
@@ -96,21 +120,29 @@ export const hubController = {
       const modelSections = sections().map((section) => {
         const items = (section.children ?? []).map((subsection) => {
           const isLinesManage = subsection.id === 'commodity-lines-manage'
-          // The lines-manage subsection is the entry point to the
-          // bespoke commodity-lines UX; derive its status from the
-          // number of line records instead of rolling up the read-only
-          // intro page, so it doesn't parrot NA.
-          const status = isLinesManage
+          const isAccompanyingDocs = subsection.id === 'accompanying-documents'
+          // Two subsections get a UI-level status override so that a
+          // stakeholder isn't confronted with a bare "Not applicable"
+          // on rows they can still choose to walk. Both patch NA →
+          // an actionable tag (Not started / Optional) at rollup time
+          // only — containerStatus stays honest to the alphabet.
+          const patched = isLinesManage
             ? linesManageStatus(state)
-            : statusOfContainer(subsection, state)
+            : isAccompanyingDocs
+              ? accompanyingDocumentsStatus(state)
+              : null
+          const status =
+            patched !== null ? patched : statusOfContainer(subsection, state)
           const href = subsectionHref(subsection, state)
           const item = {
             title: { text: t(subsection.titleKey) },
             status: { tag: statusTagFor(status) }
           }
-          // Always let lines-manage be clickable; other subsections
-          // stay locked when NA.
-          if (href && (isLinesManage || status !== STATUSES.NOT_APPLICABLE)) {
+          // Lines-manage and accompanying-documents rows stay
+          // clickable in every state (entry points into their bespoke
+          // add/list UX); other subsections stay locked when NA.
+          const alwaysClickable = isLinesManage || isAccompanyingDocs
+          if (href && (alwaysClickable || status !== STATUSES.NOT_APPLICABLE)) {
             item.href = href
           }
           return item
