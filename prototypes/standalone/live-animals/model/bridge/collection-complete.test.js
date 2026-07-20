@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { collectionView } from '../../engine/evaluate/collection-view.js'
 import { collectionCapAt } from '../../engine/evaluate/cardinality.js'
-import { entryComplete } from '../../engine/evaluate/complete.js'
 import { entryCompleteFromB } from './collection-complete.js'
-import { registry } from '../../registry.js'
 import { valueAt } from '../../lib/path.js'
 
-// A complete address in the flat sub-field shape B's `isComplete` accepts
-// (name / addressLine1 / town / postcode / country / telephone / email); A's
-// `isAnswered` treats any non-blank object as present, so both engines agree.
+// B's per-instance completeness (entryCompleteFromB), pinned directly against B.
+// The A-vs-B oracle this file used to host (entryComplete diffed against
+// entryCompleteFromB) retired at inc-023 with zero behavioural divergence; the
+// expectations below are the B side of that agreement, now stated as B-only
+// facts. The two former "known divergences" are retained as B behaviour with
+// their DESIGN-DELTA.md §12 rationale so a regression fails loudly.
+
 const address = {
   name: 'Owner',
   addressLine1: '1 Farm Lane',
@@ -19,10 +21,6 @@ const address = {
   email: 'owner@example.test'
 }
 
-// Cow (0102): earTag satisfies the at-least-one identifier rule on both
-// sides; permanentAddress is out of B's scope (01061900 only) but present,
-// so A's ctx-less collectionView (which treats it as always-required) is
-// satisfied too. Agreement point.
 const completeLine = {
   commoditySelection: 'Cow',
   speciesSelection: ['1148346'],
@@ -36,33 +34,24 @@ const partialLine = { commoditySelection: 'Cow' }
 
 const emptyLine = {}
 
-// A's completeness via `entryComplete` (ctx-less), B's via `entryCompleteFromB`
-// — the two authorities `collectionView`'s `completeAt` used to select between,
-// now compared directly at the model level (no flag).
-const completeAtBothModels = (answers, collectionPath) => {
-  const templatePath = collectionPath
-    .filter((segment) => typeof segment === 'string')
-    .join('.')
-  const obligation = registry.byPath(templatePath)
+const completeUnderB = (answers, collectionPath) => {
   const entries = valueAt(answers, collectionPath) ?? []
-  const underA = entries.map((entry) =>
-    obligation ? entryComplete(obligation, entry) : true
+  return entries.map((_entry, index) =>
+    entryCompleteFromB(answers, collectionPath, index)
   )
-  const underB = entries.map((entry, index) =>
-    obligation ? entryCompleteFromB(answers, collectionPath, index) : true
-  )
-  return { underA, underB }
 }
 
-describe('collectionView `complete` — A vs B agreement (inc-014)', () => {
-  it('agrees A vs B across a multi-line state — full / partial / empty', () => {
+describe('collectionView `complete` — B per-instance completeness (inc-014)', () => {
+  it('reads a multi-line state — full / partial / empty', () => {
     const answers = { commodityLines: [completeLine, partialLine, emptyLine] }
-    const { underA, underB } = completeAtBothModels(answers, ['commodityLines'])
-    expect(underA).toEqual([true, false, false])
-    expect(underB).toEqual(underA)
+    expect(completeUnderB(answers, ['commodityLines'])).toEqual([
+      true,
+      false,
+      false
+    ])
   })
 
-  it('agrees A vs B across a multi-unit state — full unit complete', () => {
+  it('reads a multi-unit state — full unit complete', () => {
     const answers = {
       commodityLines: [
         {
@@ -77,9 +66,7 @@ describe('collectionView `complete` — A vs B agreement (inc-014)', () => {
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    const { underA, underB } = completeAtBothModels(answers, path)
-    expect(underA).toEqual([true, true])
-    expect(underB).toEqual(underA)
+    expect(completeUnderB(answers, path)).toEqual([true, true])
   })
 
   it('entries / index / path stay A-side (positional storage)', () => {
@@ -91,19 +78,15 @@ describe('collectionView `complete` — A vs B agreement (inc-014)', () => {
       { index: 0, path: ['commodityLines', 0], entry: completeLine },
       { index: 1, path: ['commodityLines', 1], entry: emptyLine }
     ])
-    // entry is the SAME reference A stored, unchanged by the B path.
+    // entry is the SAME reference the store held, unchanged by the B path.
     expect(view[0].entry).toBe(completeLine)
   })
 
-  // KNOWN DIVERGENCES (finds — NOT repaired). Captured so a future change
-  // that closes them fails loudly. See DESIGN-DELTA.md §12.
+  // Behaviour retained from the oracle's "known divergence" pins (finds, NOT
+  // repaired). B scopes each concern precisely, so these read complete; a future
+  // change that flips them fails loudly. See DESIGN-DELTA.md §12.
 
-  it('divergence: Cow unit without permanentAddress — A incomplete (ctx-less), B complete', () => {
-    // A's collectionView calls entryComplete with no ctx, so permanentAddress
-    // (required, enclosing-gated) is treated as mandatory for EVERY unit
-    // regardless of commodity. B scopes it to 01061900 only, so a Cow line
-    // with an identifier but no permanentAddress (the happy-path shape) reads
-    // complete under B, incomplete under A.
+  it('Cow unit without permanentAddress — B reads complete (scoped to 01061900)', () => {
     const answers = {
       commodityLines: [
         {
@@ -114,15 +97,12 @@ describe('collectionView `complete` — A vs B agreement (inc-014)', () => {
         }
       ]
     }
-    const { underA, underB } = completeAtBothModels(answers, ['commodityLines'])
-    expect(underA).toEqual([false])
-    expect(underB).toEqual([true])
+    expect(completeUnderB(answers, ['commodityLines'])).toEqual([true])
   })
 
-  it('divergence: a fully-empty nested unit vanishes from B — A incomplete, B complete', () => {
+  it('a fully-empty nested unit vanishes from B — B reads complete', () => {
     // B infers instances from leaf composite prefixes; a unit with no stored
     // leaf is never enumerated, so B cannot flag its unmet at-least-one rule.
-    // A, reading its own array, still shows the entry and marks it incomplete.
     const answers = {
       commodityLines: [
         {
@@ -134,9 +114,7 @@ describe('collectionView `complete` — A vs B agreement (inc-014)', () => {
       ]
     }
     const path = ['commodityLines', 0, 'animalIdentifiers']
-    const { underA, underB } = completeAtBothModels(answers, path)
-    expect(underA).toEqual([false])
-    expect(underB).toEqual([true])
+    expect(completeUnderB(answers, path)).toEqual([true])
   })
 })
 

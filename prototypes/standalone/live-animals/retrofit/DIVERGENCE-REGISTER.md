@@ -1,5 +1,15 @@
 # Divergence register — the M2 gate deliverable
 
+> **ORACLE RETIRED AT inc-023 — final state zero behavioural divergence.** A's
+> engine and the A-vs-B oracle (`model/bridge/model-equivalence.test.js`) were
+> deleted at inc-023: B is the sole runtime model, so there is no A side left to
+> diff. Every divergence below reached its resolved/subsumed state and the
+> oracle was green (zero behavioural divergence on inScope, status and wipe)
+> when retired. The former oracle assertions were re-expressed as B-only pins
+> (`model/bridge/{scope,status,collection-complete}.test.js`); the two flow-level
+> reachability checks A's prover carried moved to `analysis/flow-reachability.js`.
+> This register is kept as the historical record of the M2→M3 convergence.
+
 **Produced by** `inc-010` (the model-equivalence oracle), 2026-07-17. **For:** Sam, at the M2 gate.
 **Oracle:** `model/bridge/model-equivalence.test.js` — runs A's engine and B's (via the bridge) over a broad input space and compares three axes: **inScope**, **status (mandate)**, **wipe (data destruction)**.
 

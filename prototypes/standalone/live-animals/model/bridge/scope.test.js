@@ -1,106 +1,27 @@
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, it, expect } from 'vitest'
 import { makeScopeFromB, rawInScopeFromB } from './scope.js'
-import {
-  makeScopeA,
-  configureReadyForCheckYourAnswers
-} from '../../engine/read.js'
+import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
+
+// B's scope projection, pinned directly against B (the A-vs-B oracle that this
+// file used to host — makeScopeA diffed against rawInScopeFromB — retired at
+// inc-023 with zero behavioural divergence; see retrofit/DIVERGENCE-REGISTER.md).
+// These assertions re-express the oracle's agreement points as B-only facts:
+// each gate scopes its obligation in/out as the manifest declares, positional
+// keys project under multi-line/multi-unit answers, and makeScopeFromB stays a
+// shape-identical drop-in for the runtime makeScope.
 
 const happyPath = JSON.parse(
   readFileSync(new URL('../../spec/fixtures/happy-path.json', import.meta.url))
 ).values
 
-// makeScopeFromB defers readyForCheckYourAnswers to A's boot-injected fn
-// (via A's makeScope), so the differential needs it configured.
+// makeScopeFromB computes readyForCheckYourAnswers via the boot-injected fn.
 beforeAll(() => configureReadyForCheckYourAnswers(() => false))
 
-const sorted = (set) => [...set].sort()
-
-// A's real inScope vs B's RAW projected inScope (`rawInScopeFromB`, B's
-// manifest only), as the two directed differences (A-only keys, B-only keys).
-// Empty differences == agreement. The full scope makeScopeFromB now returns
-// additionally carries the A-side flow obligations (importType, declaration —
-// inc-018); the raw B side still excludes them, so the structural-divergence
-// assertions below hold.
-const diff = (answers) => {
-  const a = makeScopeA(answers).inScope
-  const b = rawInScopeFromB(answers)
-  return {
-    aOnly: sorted(a).filter((k) => !b.has(k)),
-    bOnly: sorted(b).filter((k) => !a.has(k))
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Structural divergences — present in EVERY comparison because one side
-// cannot represent the shape the other does (M0 registers, not gate
-// behaviour). Filtered out so the behavioural divergences stand alone;
-// asserted explicitly in their own block below so they stay documented.
-// ---------------------------------------------------------------------------
-
-// B declares two system-populated fields A never models, and a
-// commodityType field per line (c-037, drop pending PO sign-off).
-const isStructuralBOnly = (k) =>
-  k === 'poApprovedReferenceNumber' ||
-  k === 'responsiblePersonForLoad' ||
-  /^commodityLines\[\d+\]\.commodityType$/.test(k)
-
-// A models importType + declaration (A-side flow, not admitted to the
-// model). Documents D1 was resolved at inc-016b — B now carries a
-// `documents` collection matching A's topology, so it no longer
-// registers as a structural divergence.
-const isStructuralAOnly = (k) => k === 'importType' || k === 'declaration'
-
-const behavioural = (answers) => {
-  const { aOnly, bOnly } = diff(answers)
-  return {
-    aOnly: aOnly.filter((k) => !isStructuralAOnly(k)),
-    bOnly: bOnly.filter((k) => !isStructuralBOnly(k))
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Constructed states exercising the gates the plan flags.
-// ---------------------------------------------------------------------------
-
-// c-017 makes regionOfOriginCode a PERVASIVE behavioural divergence: B
-// keeps it in scope unless requirement==='yes', A only when it is 'yes'.
-// So every state that leaves the requirement unanswered shows the region
-// divergence. Resolve the region axis (requirement='yes') in the gate-
-// isolation states so each one tests only its own gate; the region
-// divergence gets its own explicit tests below.
 const resolveRegion = (answers) => ({
   regionOfOriginCodeRequirement: 'yes',
   regionOfOriginCode: 'FR-75',
   ...answers
-})
-
-const regionRequired = resolveRegion({ countryOfOrigin: 'FR' })
-
-const regionNotRequired = {
-  countryOfOrigin: 'FR',
-  regionOfOriginCodeRequirement: 'no',
-  regionOfOriginCode: 'FR-75'
-}
-
-const regionUnanswered = { countryOfOrigin: 'FR' }
-
-const reasonInternalMarket = resolveRegion({
-  reasonForImport: 'internalMarket',
-  purposeInInternalMarket: 'breeding'
-})
-
-const reasonOther = resolveRegion({ reasonForImport: 'research' })
-
-const transportCommercial = resolveRegion({
-  transporterType: 'Commercial',
-  meansOfTransport: 'Road Vehicle',
-  transitedCountries: ['FR']
-})
-
-const transportPrivate = resolveRegion({
-  transporterType: 'Private',
-  meansOfTransport: 'Aeroplane'
 })
 
 const line = (commodity, units) => ({
@@ -110,107 +31,115 @@ const line = (commodity, units) => ({
   animalIdentifiers: units
 })
 
-const multiLineMultiUnit = resolveRegion({
-  commodityLines: [
-    line('Cow', [
-      { animalIdentifierEarTag: 'UK111' },
-      { animalIdentifierEarTag: 'UK222' }
-    ]),
-    line('Horse', [{ horseName: 'Dobbin' }])
-  ]
+describe('scope bridge — per-gate scoping (B)', () => {
+  it('keeps regionOfOriginCode in scope only when the requirement is "yes"', () => {
+    expect(
+      makeScopeFromB(resolveRegion({ countryOfOrigin: 'FR' })).has(
+        'regionOfOriginCode'
+      )
+    ).toBe(true)
+    expect(
+      makeScopeFromB({
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCode: 'FR-75'
+      }).has('regionOfOriginCode')
+    ).toBe(false)
+    // Unanswered requirement — out of scope (c-017).
+    expect(
+      makeScopeFromB({ countryOfOrigin: 'FR' }).has('regionOfOriginCode')
+    ).toBe(false)
+  })
+
+  it('scopes purposeInInternalMarket only under the internal-market reason', () => {
+    expect(
+      makeScopeFromB(
+        resolveRegion({
+          reasonForImport: 'internalMarket',
+          purposeInInternalMarket: 'breeding'
+        })
+      ).has('purposeInInternalMarket')
+    ).toBe(true)
+    expect(
+      makeScopeFromB(resolveRegion({ reasonForImport: 'research' })).has(
+        'purposeInInternalMarket'
+      )
+    ).toBe(false)
+  })
+
+  it('scopes the commercial transporter + land-transit branch', () => {
+    const scope = makeScopeFromB(
+      resolveRegion({
+        transporterType: 'Commercial',
+        meansOfTransport: 'Road Vehicle',
+        transitedCountries: ['FR']
+      })
+    )
+    expect(scope.has('commercialTransporter')).toBe(true)
+    expect(scope.has('transitedCountries')).toBe(true)
+  })
+
+  it('scopes the private transporter + non-land branch', () => {
+    const scope = makeScopeFromB(
+      resolveRegion({
+        transporterType: 'Private',
+        meansOfTransport: 'Aeroplane'
+      })
+    )
+    expect(scope.has('privateTransporter')).toBe(true)
+    expect(scope.has('transitedCountries')).toBe(false)
+  })
+
+  it('projects positional keys across multi-line / multi-unit answers', () => {
+    const scope = makeScopeFromB(
+      resolveRegion({
+        commodityLines: [
+          line('Cow', [
+            { animalIdentifierEarTag: 'UK111' },
+            { animalIdentifierEarTag: 'UK222' }
+          ]),
+          line('Horse', [{ horseName: 'Dobbin' }])
+        ]
+      })
+    )
+    expect(scope.has('commodityLines[0].commoditySelection')).toBe(true)
+    expect(scope.has('commodityLines[1].commoditySelection')).toBe(true)
+  })
+
+  it('keeps the group node in scope for an empty required collection', () => {
+    const scope = makeScopeFromB(resolveRegion({ commodityLines: [] }))
+    expect(scope.has('commodityLines')).toBe(true)
+    expect(scope.has('commodityLines[0].commoditySelection')).toBe(false)
+  })
 })
 
-const emptyCollection = resolveRegion({ commodityLines: [] })
-
 // ---------------------------------------------------------------------------
-// The differential oracle — inScope agreement, modulo documented
-// structural divergences.
-// ---------------------------------------------------------------------------
-
-describe('scope bridge — A vs B inScope differential (preview of inc-010 oracle)', () => {
-  it('agrees on the full happy path (no behavioural divergence)', () => {
-    expect(behavioural(happyPath)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  it('agrees when the region code is required', () => {
-    expect(behavioural(regionRequired)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  // c-017 fix applied at inc-016a: B now gates regionOfOriginCode out of
-  // scope whenever the requirement is not 'yes' (answered 'no' or left
-  // unanswered), matching A. The pervasive divergence the M2 oracle found is
-  // resolved — both engines agree across the region axis.
-  it('agrees on regionOfOriginCode when the requirement is answered "no"', () => {
-    expect(behavioural(regionNotRequired)).toEqual({
-      aOnly: [],
-      bOnly: []
-    })
-  })
-
-  it('agrees on regionOfOriginCode when the requirement is unanswered', () => {
-    expect(behavioural(regionUnanswered)).toEqual({
-      aOnly: [],
-      bOnly: []
-    })
-  })
-
-  it('agrees on internal-market purpose gating (in scope)', () => {
-    expect(behavioural(reasonInternalMarket)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  it('agrees on internal-market purpose gating (out of scope)', () => {
-    expect(behavioural(reasonOther)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  it('agrees on the commercial transporter + land-transport branch', () => {
-    expect(behavioural(transportCommercial)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  it('agrees on the private transporter + non-land branch', () => {
-    expect(behavioural(transportPrivate)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  it('agrees across multi-line / multi-unit positional paths', () => {
-    expect(behavioural(multiLineMultiUnit)).toEqual({ aOnly: [], bOnly: [] })
-  })
-
-  it('agrees on the empty collection (group node in scope, no leaves)', () => {
-    const { inScope } = makeScopeFromB(emptyCollection)
-    expect(inScope.has('commodityLines')).toBe(true)
-    expect(behavioural(emptyCollection)).toEqual({ aOnly: [], bOnly: [] })
-  })
-})
-
-// ---------------------------------------------------------------------------
-// The structural divergences, asserted so they stay visible (M0 registers).
+// The A-side flow shim — the two obligations B does not model, layered onto the
+// FULL scope (inc-018) so their owning pages stay reachable under B; the RAW
+// projection excludes them. These were the oracle's "structural A-only" axis.
 // ---------------------------------------------------------------------------
 
-describe('scope bridge — structural divergences (documented, not gate behaviour)', () => {
-  it('B carries two system fields A never models', () => {
-    const { bOnly } = diff(happyPath)
-    expect(bOnly).toContain('poApprovedReferenceNumber')
-    expect(bOnly).toContain('responsiblePersonForLoad')
+describe('scope bridge — A-only flow obligations layered on the full scope', () => {
+  it('adds importType + declaration to the full scope, not the raw projection', () => {
+    const full = makeScopeFromB(happyPath).inScope
+    const raw = rawInScopeFromB(happyPath)
+    expect(full.has('importType')).toBe(true)
+    expect(full.has('declaration')).toBe(true)
+    expect(raw.has('importType')).toBe(false)
+    expect(raw.has('declaration')).toBe(false)
   })
 
-  it('B carries a commodityType per line (c-037, drop pending PO)', () => {
-    const { bOnly } = diff(happyPath)
-    expect(bOnly).toContain('commodityLines[0].commodityType')
+  it('carries B system fields the raw projection owns', () => {
+    const raw = rawInScopeFromB(happyPath)
+    expect(raw.has('poApprovedReferenceNumber')).toBe(true)
+    expect(raw.has('responsiblePersonForLoad')).toBe(true)
+    expect(raw.has('commodityLines[0].commodityType')).toBe(true)
   })
 
-  it('A models importType + declaration, not admitted to B', () => {
-    const { aOnly } = diff(happyPath)
-    expect(aOnly).toContain('importType')
-    expect(aOnly).toContain('declaration')
-  })
-
-  it('documents D1 RESOLVED (inc-016b) — the documents collection now converges', () => {
-    const { aOnly, bOnly } = diff(happyPath)
-    expect(aOnly).not.toContain('documents')
-    expect(aOnly).not.toContain('documents[0].accompanyingDocumentType')
-    expect(bOnly).not.toContain('accompanyingDocumentType')
-    const b = makeScopeFromB(happyPath).inScope
-    expect(b.has('documents')).toBe(true)
-    expect(b.has('documents[0].accompanyingDocumentType')).toBe(true)
+  it('carries the documents collection (D1 resolved at inc-016b)', () => {
+    const full = makeScopeFromB(happyPath).inScope
+    expect(full.has('documents')).toBe(true)
+    expect(full.has('documents[0].accompanyingDocumentType')).toBe(true)
   })
 })
 
@@ -234,7 +163,7 @@ describe('scope bridge — makeScopeFromB shape parity with makeScope', () => {
     expect(scope.has('nonExistent')).toBe(false)
   })
 
-  it('answered(id) delegates to A answered semantics over A answers', () => {
+  it('answered(id) reads whether an obligation instance is answered', () => {
     const scope = makeScopeFromB(happyPath)
     expect(scope.answered('countryOfOrigin')).toBe(true)
     expect(scope.answered('commoditySelection')).toBe(true)

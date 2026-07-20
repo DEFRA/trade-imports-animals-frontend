@@ -3,10 +3,9 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { transportersSelectPage } from '../features/transport/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
-import { reconcile } from '../engine/evaluate/reconcile.js'
 import { makeScope } from '../engine/index.js'
 import { configureReadyForCheckYourAnswers } from '../engine/read.js'
-import { enumerateScopeStates } from '../analysis/reachability.js'
+import { enumerateScopeStates } from '../analysis/flow-reachability.js'
 import { buildDispatch } from './dispatch.js'
 import { sections } from './flow.js'
 import { readyForCheckYourAnswers } from './section-status.js'
@@ -56,12 +55,15 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
   })
 
   describe('once the dispatch index is built', () => {
-    beforeAll(() => buildDispatch(dispatchPages))
+    beforeAll(() => {
+      buildDispatch(dispatchPages)
+      configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+    })
 
     it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
       const answered = () => true
       for (const answers of enumerateScopeStates()) {
-        const { inScope } = reconcile(answers)
+        const { inScope } = makeScope(answers)
         expect(
           pageGatePasses(transportersSelectPage, { inScope, answered })
         ).toBe(inScope.has('commercialTransporter'))

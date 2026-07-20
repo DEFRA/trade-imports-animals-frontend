@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
-import { reconcile } from '../engine/evaluate/reconcile.js'
 import { makeScope } from '../engine/index.js'
 import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import {
@@ -11,7 +10,7 @@ import {
   NA,
   NOT_STARTED,
   OPTIONAL
-} from '../engine/status.js'
+} from '../model/bridge/status.js'
 import { buildDispatch } from './dispatch.js'
 import { answerSections, sections } from './flow.js'
 import { readyForCheckYourAnswers, sectionStatus } from './section-status.js'
@@ -24,7 +23,7 @@ const { values: happyPath } = JSON.parse(
 )
 
 const statusIn = (rowId, answers) =>
-  rowStatus(taskRowById(rowId), answers, reconcile(answers).inScope)
+  rowStatus(taskRowById(rowId), answers, makeScope(answers).inScope)
 
 const unlocked = {
   countryOfOrigin: 'FR',
@@ -288,7 +287,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
   it.each(Object.entries({ ...submittable, ...notSubmittable }))(
     'Should agree with the retired section roll-up for %s',
     (label, answers) => {
-      const { inScope } = reconcile(answers)
+      const { inScope } = makeScope(answers)
       expect(readyForCheckYourAnswers(answers, inScope)).toBe(
         sectionRollUp(answers, inScope)
       )
@@ -298,7 +297,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
   it.each(Object.entries(submittable))(
     'Should hold %s submittable',
     (label, answers) => {
-      const { inScope } = reconcile(answers)
+      const { inScope } = makeScope(answers)
       expect(readyForCheckYourAnswers(answers, inScope)).toBe(true)
     }
   )
@@ -306,7 +305,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
   it.each(Object.entries(notSubmittable))(
     'Should hold %s not submittable',
     (label, answers) => {
-      const { inScope } = reconcile(answers)
+      const { inScope } = makeScope(answers)
       expect(readyForCheckYourAnswers(answers, inScope)).toBe(false)
     }
   )

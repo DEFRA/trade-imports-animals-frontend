@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
-import { reconcile } from '../engine/evaluate/reconcile.js'
+import { makeScope } from '../engine/index.js'
+import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import * as obligationSource from './obligation-source.js'
 import { readyForCheckYourAnswers } from './section-status.js'
 import {
@@ -12,7 +13,10 @@ import {
 import { nextInSection, sectionEntry } from './navigation.js'
 
 describe('dispatch + flow', () => {
-  beforeAll(() => buildDispatch(dispatchPages))
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
 
   it('Should assert coverage of every non-system obligation to exactly one page', () => {
     expect(() => buildDispatch(dispatchPages)).not.toThrow()
@@ -92,13 +96,13 @@ describe('dispatch + flow', () => {
 
   it('Should walk the transport section, skipping the spokes the type gates out', () => {
     const answered = () => true
-    const scopeNoType = { inScope: reconcile({}).inScope, answered }
+    const scopeNoType = { inScope: makeScope({}).inScope, answered }
     const scopeCommercial = {
-      inScope: reconcile({ transporterType: 'Commercial' }).inScope,
+      inScope: makeScope({ transporterType: 'Commercial' }).inScope,
       answered
     }
     const scopePrivate = {
-      inScope: reconcile({ transporterType: 'Private' }).inScope,
+      inScope: makeScope({ transporterType: 'Private' }).inScope,
       answered
     }
     expect(nextInSection('transporters', scopeCommercial)).toMatch(
@@ -114,7 +118,7 @@ describe('dispatch + flow', () => {
   })
 
   it('Should enter a section at its first gated-in page', () => {
-    const scope = { inScope: reconcile({}).inScope, answered: () => true }
+    const scope = { inScope: makeScope({}).inScope, answered: () => true }
     expect(sectionEntry('transport', scope)).toMatch(/\/port-of-entry$/)
   })
 
@@ -186,7 +190,7 @@ describe('dispatch + flow', () => {
       },
       declaration: 'confirmed'
     }
-    const { inScope } = reconcile(complete)
+    const { inScope } = makeScope(complete)
     expect(readyForCheckYourAnswers(complete, inScope)).toBe(true)
 
     const incomplete = {
@@ -194,7 +198,7 @@ describe('dispatch + flow', () => {
       regionOfOriginCodeRequirement: 'no'
     }
     expect(
-      readyForCheckYourAnswers(incomplete, reconcile(incomplete).inScope)
+      readyForCheckYourAnswers(incomplete, makeScope(incomplete).inScope)
     ).toBe(false)
   })
 })

@@ -1665,3 +1665,68 @@ The four target files (`scope.js`, `collection-view.js`, `section-status.js`,
 A-model modules. What remains blocking each A file's deletion: reachability.js
 (prover, inc-023), read.js/makeScopeA (oracle, inc-023), cardinality.js
 (inc-024a), dump.js (delete/re-point).
+
+## §28 — inc-023: A's prover + oracle retired, A's evaluator/status DELETED · `EUDPA-288`
+
+B is now the sole model **and** the sole model tree: A's prover, the A-vs-B
+oracle and A's evaluator/status are gone. The only A files left are the four
+`inc-024a` defers (below). Unit suite: **75 test files passed / 2 skipped,
+1139 passed / 11 skipped** (baseline 83/2/1209/11 — 9 A-model test files
+removed, 1 flow-level test added; net −70 tests). Purity + dispatch-boot
+asserts green; prettier + eslint clean.
+
+**Phase 1 — A's prover (`analysis/reachability.js`) retired; its 2 flow-level
+checks ported onto B.** B's graph prover (`model/analysis/reachability.js`)
+proves the dependency graph + value-witnesses but says nothing about PAGES.
+A's prover uniquely carried two flow-level checks — `no-owning-page` (an
+in-scope obligation presented by no page) and `owning-page-unreachable-in-scope`
+(its owning page not reached by the flow gates in that state, via
+`simulateJourney`). Ported into a new B-native **`analysis/flow-reachability.js`**
+(+ test), kept in `analysis/` alongside `simulate.js` — NOT in `model/` — so the
+model stays free of any engine/flow dependency (flow checks legitimately read
+`flow/dispatch.js` + `analysis/simulate.js` + `engine`'s `makeScope`).
+`proveFlowReachability` enumerates the 24 scope states (A's `enumerateScopeStates`
+
+- `submitReadySeed`, ported verbatim), computes `makeScope(answers).inScope` (B),
+  and for each in-scope key checks `pageOfObligation` + `simulateJourney` — skipping
+  the A-only flow shims (importType/declaration) and `SYSTEM_POPULATED` fields,
+  which no page presents (dispatch excludes them identically). Real manifest =
+  zero problems; teeth tests inject a `pagesFor` that drops a page and confirm the
+  dead-ends surface. `flow/gates.test.js` re-pointed to import `enumerateScopeStates`
+  from the new module and to build scope via `makeScope` not A's `reconcile`.
+
+**Phase 2 — the A-vs-B oracle retired.** `model/bridge/model-equivalence.test.js`
+deleted. The three bridge tests that diffed A against B
+(`scope.test.js`, `status.test.js`, `collection-complete.test.js`) were
+re-expressed as **B-only** pins (same coverage, no A side): scope-per-gate,
+the statusOfFromB row/section/readiness rollup (concrete literals captured from
+B, since the concrete single-row walk lives in `flow/task-rows.test.js`), and
+B's per-instance completeness incl. the two documented §12 divergences held as
+B behaviour. `commit-purge-authority.test.js` was already pure-B (uses
+`wipeSetFromB`) — no change. Retiring the oracle freed `makeScopeA`.
+`retrofit/DIVERGENCE-REGISTER.md` carries the "oracle retired at inc-023 — final
+state zero behavioural divergence" note.
+
+**Phase 3 — A's evaluator/status DELETED.** `git rm`
+`engine/evaluate/{reconcile,predicate,complete}.js`, `engine/status.js`,
+`makeScopeA`/`anyInstanceAnswered` (+ their A imports) out of `engine/read.js`,
+and `dump.js` (dev-only diagnostic, no importers — deleted, not re-pointed).
+Their A-model tests went with them: `nested`, `item-conditional`,
+`engine/evaluate/{reconcile,cross-frame,sibling-at-least-one,enclosing-complete}`,
+`engine/status` — 9 A-model/oracle test files in total. B-flow tests that only
+used A's `reconcile` as a scope-builder were re-pointed to `makeScope` and their
+status constants to `model/bridge/status.js` (`indexed`, `flow/task-rows`,
+`flow/dispatch`, `flow/gates`). `contract.test.js`'s lone A-completeness flourish
+(`satisfied('commodityLines', …)`) was dropped: A's `satisfied` and B's
+`entryCompleteFromB` legitimately diverge on that shape (a §12 divergence), and
+the test's subject — the depth-2 unit append writing only the commodity-gated
+fields — is already pinned by the surviving assertions.
+
+**KEPT for inc-024a (the only A files left) + why.** `registry.js` + the 12
+`features/*/obligations.js` (registry imports them) + `engine/evaluate/cardinality.js`.
+`collectionCapAt` still reads `registry.byPath(path).maxEntriesFrom` — the c-031
+append cap, an A-only numeric/admission-control channel B has no counterpart for
+(D2 / SEMANTICS). Porting the cap onto B is inc-024a; those four survive **solely**
+for that cap (`collection-complete.test.js`'s "collectionCapAt stays A-side" +
+`mutators-under-b.test.js`'s append-cap pins would go red if dropped early).
+`obligation-purity.js` KEPT (Sam's ruling; scans the KEPT `features/*/obligations.js`).

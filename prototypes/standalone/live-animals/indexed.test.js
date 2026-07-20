@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { reconcile } from './engine/evaluate/reconcile.js'
-import { FULFILLED, IN_PROGRESS, OPTIONAL } from './engine/status.js'
+import { makeScope } from './engine/index.js'
+import { configureReadyForCheckYourAnswers } from './engine/read.js'
+import { FULFILLED, IN_PROGRESS, OPTIONAL } from './model/bridge/status.js'
 import {
   readyForCheckYourAnswers,
   sectionStatus
@@ -23,7 +24,10 @@ const completeDocument = {
 }
 
 describe('indexed obligations are first-class', () => {
-  beforeAll(() => buildDispatch(dispatchPages))
+  beforeAll(() => {
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
 
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {
     const addresses = [...walkObligations()].map((node) => node.templatePath)
@@ -33,7 +37,7 @@ describe('indexed obligations are first-class', () => {
   })
 
   it('Should scope each stored commodity line instance path when the collection is in scope', () => {
-    const { inScope } = reconcile({
+    const { inScope } = makeScope({
       commodityLines: [
         { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' },
         { commoditySelection: '010420 - Goats', numberOfAnimalsQuantity: '9' }
@@ -119,15 +123,15 @@ describe('indexed obligations are first-class', () => {
       commodityLines: [{ commoditySelection: 'Cow' }]
     }
     expect(
-      readyForCheckYourAnswers(complete, reconcile(complete).inScope)
+      readyForCheckYourAnswers(complete, makeScope(complete).inScope)
     ).toBe(true)
     expect(
-      readyForCheckYourAnswers(incomplete, reconcile(incomplete).inScope)
+      readyForCheckYourAnswers(incomplete, makeScope(incomplete).inScope)
     ).toBe(false)
   })
 
   it('Should read an untouched optional section as OPTIONAL (not Completed, does not count)', () => {
-    expect(sectionStatus(documentsSection, {}, reconcile({}).inScope)).toBe(
+    expect(sectionStatus(documentsSection, {}, makeScope({}).inScope)).toBe(
       OPTIONAL
     )
   })
@@ -137,14 +141,14 @@ describe('indexed obligations are first-class', () => {
       documents: [{ accompanyingDocumentType: 'health-certificate' }]
     }
     expect(
-      sectionStatus(documentsSection, answers, reconcile(answers).inScope)
+      sectionStatus(documentsSection, answers, makeScope(answers).inScope)
     ).toBe(IN_PROGRESS)
   })
 
   it('Should read an optional section with a complete entry as FULFILLED', () => {
     const answers = { documents: [completeDocument] }
     expect(
-      sectionStatus(documentsSection, answers, reconcile(answers).inScope)
+      sectionStatus(documentsSection, answers, makeScope(answers).inScope)
     ).toBe(FULFILLED)
   })
 
@@ -168,14 +172,14 @@ describe('indexed obligations are first-class', () => {
       sectionStatus(
         commoditiesSection,
         withIncompleteLine,
-        reconcile(withIncompleteLine).inScope
+        makeScope(withIncompleteLine).inScope
       )
     ).toBe(IN_PROGRESS)
     expect(
       sectionStatus(
         commoditiesSection,
         withCompleteLine,
-        reconcile(withCompleteLine).inScope
+        makeScope(withCompleteLine).inScope
       )
     ).toBe(FULFILLED)
   })

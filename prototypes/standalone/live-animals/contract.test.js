@@ -15,7 +15,6 @@ import {
   postHandlerEndingWith
 } from './engine/test-support.js'
 import { isAnswered } from './lib/answered.js'
-import { satisfied } from './engine/evaluate/complete.js'
 import { dispatchPages } from './features/index.js'
 
 import * as importTypeFilter from './features/import-type-filter/controller.js'
@@ -270,13 +269,6 @@ describe('controller <-> model commit contract', () => {
     expect(unit.animalIdentifierPassport).toBe('UK123456789')
     expect('animalIdentifierEarTag' in unit).toBe(false)
     expect(unit.permanentAddress.name).toBe('Pet Owner')
-
-    result.after.commodityLines[0] = {
-      ...result.after.commodityLines[0],
-      speciesSelection: '923501',
-      numberOfAnimalsQuantity: '2'
-    }
-    expect(satisfied('commodityLines', result.after)).toBe(true)
   })
 
   it('Should commit each party via its select (copy) spoke, covering the landing collects', async () => {
