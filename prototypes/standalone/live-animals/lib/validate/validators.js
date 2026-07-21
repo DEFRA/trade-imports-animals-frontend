@@ -3,10 +3,11 @@ import Joi from 'joi'
 import { isRealDate } from './calendar.js'
 import { copyFor } from '../../shared/copy.js'
 import { validatorDefaults as en } from '../../shared/copy.en.js'
+import { validatorDefaults as cy } from '../../shared/copy.cy.js'
 
 // Default messages when a call site passes no feature message — sourced
 // from the shared copy module so they swap with the locale.
-const defaults = copyFor({ en })
+const defaults = copyFor({ en, cy })
 
 const POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
 const VEHICLE_REG = /^[A-Za-z]{2}\d{2}\s?[A-Za-z]{3}$/

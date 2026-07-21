@@ -6,11 +6,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import { importReasonPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['reasonForImport'] }
 const view = `${TEMPLATES}/features/import-reason/template`
 
-const copy = copyFor({ en })
+const copy = copyFor({ en, cy })
 
 const fields = compose(
   oneOf(

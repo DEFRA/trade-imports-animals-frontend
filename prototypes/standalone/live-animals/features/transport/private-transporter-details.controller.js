@@ -6,11 +6,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import { privateTransporterDetailsPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['privateTransporter'] }
 const view = `${TEMPLATES}/features/transport/private-transporter-details`
 
-const copy = copyFor({ en }).privateTransporterDetails
+const copy = copyFor({ en, cy }).privateTransporterDetails
 
 const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,

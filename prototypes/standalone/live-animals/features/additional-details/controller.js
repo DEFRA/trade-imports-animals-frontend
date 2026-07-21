@@ -7,6 +7,7 @@ import * as certification from '../../services/certification-purposes/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { additionalDetailsPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = {
   ...page,
@@ -14,7 +15,7 @@ export const meta = {
 }
 const view = `${TEMPLATES}/features/additional-details/template`
 
-const copy = copyFor({ en })
+const copy = copyFor({ en, cy })
 
 export const unweanedApplies = (answers) =>
   []

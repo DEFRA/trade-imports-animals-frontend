@@ -9,13 +9,15 @@ import { animalIdentificationPage as page } from './page.js'
 import { appliesForCommodity } from '../../bridge/applicability.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
+import { copy as sharedCy } from '../../shared/copy.cy.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification`
 
-const copy = copyFor({ en }).identification
-const sharedCopy = copyFor({ en: sharedEn })
+const copy = copyFor({ en, cy }).identification
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 export const IDENTIFIER_LABELS = copy.identifierLabels
 

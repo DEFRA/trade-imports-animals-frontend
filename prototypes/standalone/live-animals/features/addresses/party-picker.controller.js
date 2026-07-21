@@ -4,15 +4,17 @@ import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
+import { copy as sharedCy } from '../../shared/copy.cy.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { CREATE_ADDRESS_SLUG } from './create-address.controller.js'
 import { PARTIES } from './parties.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker`
 
-const copy = copyFor({ en }).picker
-const sharedCopy = copyFor({ en: sharedEn })
+const copy = copyFor({ en, cy }).picker
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const ADDRESS_PARTS = [
   'addressLine1',

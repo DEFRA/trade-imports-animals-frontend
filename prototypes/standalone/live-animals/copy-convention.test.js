@@ -24,10 +24,13 @@ describe('copy convention — every feature owns its copy', () => {
   })
 
   it.each(featuresWithTemplates)(
-    'Should give %s a copy.en.js and a copy.test.js',
+    'Should give %s a copy.en.js, a copy.cy.js and a copy.test.js',
     (feature) => {
       const files = filesOf(feature)
       expect(files, `${feature} must own its copy`).toContain('copy.en.js')
+      expect(files, `${feature} must carry its Welsh copy`).toContain(
+        'copy.cy.js'
+      )
       expect(files, `${feature} must test its copy`).toContain('copy.test.js')
     }
   )

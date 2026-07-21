@@ -8,6 +8,7 @@ import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { importTypeFilterPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['importType'] }
 const view = `${TEMPLATES}/features/import-type-filter/template`
@@ -16,7 +17,7 @@ const holdingView = `${TEMPLATES}/features/import-type-filter/not-available`
 export const LIVE_ANIMALS = 'live-animals'
 export const NOT_AVAILABLE_SLUG = 'import-type/not-available'
 
-const copy = copyFor({ en })
+const copy = copyFor({ en, cy })
 
 const IMPORT_TYPES = [LIVE_ANIMALS, 'poao', 'hrfnao', 'plants'].map(
   (value) => ({ value, text: copy.importTypes[value] })

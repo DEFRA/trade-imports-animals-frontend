@@ -6,11 +6,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import { destinationCountryPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['destinationCountry'] }
 const view = `${TEMPLATES}/features/destination-country/template`
 
-const copy = copyFor({ en })
+const copy = copyFor({ en, cy })
 
 const countryItems = () => [
   { value: '', text: copy.country.placeholder },

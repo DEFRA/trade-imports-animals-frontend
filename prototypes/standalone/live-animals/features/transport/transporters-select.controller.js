@@ -6,11 +6,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { transportersSelectPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['commercialTransporter'] }
 const view = `${TEMPLATES}/features/transport/transporters-select`
 
-const copy = copyFor({ en }).transportersSelect
+const copy = copyFor({ en, cy }).transportersSelect
 
 const fields = compose(
   oneOf(

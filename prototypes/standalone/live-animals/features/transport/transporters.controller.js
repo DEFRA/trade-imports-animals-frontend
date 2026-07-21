@@ -6,11 +6,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { transportersPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['transporterType'] }
 const view = `${TEMPLATES}/features/transport/transporters`
 
-const copy = copyFor({ en }).transporters
+const copy = copyFor({ en, cy }).transporters
 
 const fields = compose(
   oneOf('transporterType', transportReference.transporterTypes())

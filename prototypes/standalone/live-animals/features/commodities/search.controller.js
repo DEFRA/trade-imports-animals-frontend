@@ -5,11 +5,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import { commoditiesPage as page, consignmentDetailsPage } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search`
 
-const copy = copyFor({ en }).search
+const copy = copyFor({ en, cy }).search
 
 /** One commodity line = one commodity plus ONE species (inc-062). The pair is
  * the line's identity for batch reconcile. */

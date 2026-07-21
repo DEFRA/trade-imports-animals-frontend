@@ -1,7 +1,8 @@
 import { copyFor } from '../../shared/copy.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
-const partyCopy = copyFor({ en }).parties
+const partyCopy = copyFor({ en, cy }).parties
 
 /** The five consignment parties. Each is one obligation, one address-book role
  * and one page of copy — everything else about the five spokes is identical, so

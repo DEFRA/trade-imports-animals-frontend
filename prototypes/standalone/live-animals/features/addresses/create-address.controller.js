@@ -8,12 +8,13 @@ import * as countries from '../../services/countries/index.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { partyOf } from './parties.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 const view = `${TEMPLATES}/features/addresses/create-address`
 
 export const CREATE_ADDRESS_SLUG = 'addresses/create'
 
-const copy = copyFor({ en }).createAddress
+const copy = copyFor({ en, cy }).createAddress
 
 const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,

@@ -6,11 +6,12 @@ import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import { cphNumberPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['countyParishHoldingCph'] }
 const view = `${TEMPLATES}/features/cph-number/template`
 
-const copy = copyFor({ en })
+const copy = copyFor({ en, cy })
 
 export const cphApplies = (answers) =>
   []

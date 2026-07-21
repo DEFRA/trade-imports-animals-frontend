@@ -12,13 +12,15 @@ import {
 } from './page.js'
 import { lineKey } from './search.controller.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
+import { copy as sharedCy } from '../../shared/copy.cy.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/consignment-details`
 
-const copy = copyFor({ en }).consignmentDetails
-const sharedCopy = copyFor({ en: sharedEn })
+const copy = copyFor({ en, cy }).consignmentDetails
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 export const packagesApply = (commoditySelection) =>
   commodities.packageCountCommodities().includes(commoditySelection)

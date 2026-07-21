@@ -5,13 +5,14 @@ import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import { transitCountriesPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['transitedCountries'] }
 const view = `${TEMPLATES}/features/transport/transit-countries`
 
 export const MAX_TRANSITED_COUNTRIES = 12
 
-const copy = copyFor({ en }).transitCountries
+const copy = copyFor({ en, cy }).transitCountries
 
 const countryItems = (selected) => [
   { value: '', text: copy.placeholder },

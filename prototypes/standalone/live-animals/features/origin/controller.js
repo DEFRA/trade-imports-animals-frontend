@@ -14,6 +14,7 @@ import * as countries from '../../services/countries/index.js'
 import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = {
   ...page,
@@ -26,7 +27,7 @@ export const meta = {
 }
 const view = `${TEMPLATES}/features/origin/template`
 
-const copy = copyFor({ en })
+const copy = copyFor({ en, cy })
 
 const countryItems = () => [
   { value: '', text: copy.country.placeholder },

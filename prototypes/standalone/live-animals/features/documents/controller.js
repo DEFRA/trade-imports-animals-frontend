@@ -11,6 +11,7 @@ import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
+import { copy as sharedCy } from '../../shared/copy.cy.js'
 import { maxDocuments } from '../../bridge/applicability.js'
 import { documentUploads } from '../../services/document-uploads/index.js'
 import { deriveDocumentTypeFromFilename } from './derive-document-type.js'
@@ -27,6 +28,7 @@ import {
 } from './upload-config.js'
 import { documentsPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = { ...page, collects: ['documents'] }
 const view = `${TEMPLATES}/features/documents/template`
@@ -34,8 +36,8 @@ const view = `${TEMPLATES}/features/documents/template`
 export const MAX_DOCUMENTS = maxDocuments()
 export const MAX_POLLING_ATTEMPTS = 10
 
-const copy = copyFor({ en })
-const sharedCopy = copyFor({ en: sharedEn })
+const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const NOT_PROVIDED = copy.notProvided
 const CANNOT_CONTINUE_MESSAGE = copy.errors.cannotContinue

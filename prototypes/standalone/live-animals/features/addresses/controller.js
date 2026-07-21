@@ -6,6 +6,7 @@ import { cphApplies } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = {
   ...page,
@@ -19,7 +20,7 @@ export const meta = {
 }
 const view = `${TEMPLATES}/features/addresses/template`
 
-const copy = copyFor({ en }).hub
+const copy = copyFor({ en, cy }).hub
 
 const CPH_ROW = {
   ...copy.cph,

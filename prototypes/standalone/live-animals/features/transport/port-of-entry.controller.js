@@ -13,6 +13,7 @@ import * as ports from '../../services/ports/index.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { portOfEntryPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 
 export const meta = {
   ...page,
@@ -26,7 +27,7 @@ export const meta = {
 }
 const view = `${TEMPLATES}/features/transport/port-of-entry`
 
-const copy = copyFor({ en }).portOfEntry
+const copy = copyFor({ en, cy }).portOfEntry
 
 const portItems = (selected) => [
   { value: '', text: copy.port.placeholder },

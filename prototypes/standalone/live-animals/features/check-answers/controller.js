@@ -18,12 +18,14 @@ import * as certification from '../../services/certification-purposes/index.js'
 import * as ports from '../../services/ports/index.js'
 import { appliesForCommodity } from '../../bridge/applicability.js'
 import { copy as en } from './copy.en.js'
+import { copy as cy } from './copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
+import { copy as sharedCy } from '../../shared/copy.cy.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
-const copy = copyFor({ en })
-const sharedCopy = copyFor({ en: sharedEn })
+const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const NOT_PROVIDED = copy.notProvided
 

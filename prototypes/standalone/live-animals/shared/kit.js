@@ -5,10 +5,11 @@ import { nextRunTarget } from '../flow/run.js'
 import { inOpeningRun } from '../flow/run-state.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
+import { copy as sharedCy } from './copy.cy.js'
 
 export const open = { auth: false }
 
-const sharedCopy = copyFor({ en: sharedEn })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const STRIP_STATUS = {
   draft: { text: sharedCopy.journeyStrip.draft, classes: 'govuk-tag--blue' },
