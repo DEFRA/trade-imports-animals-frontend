@@ -2,11 +2,12 @@ import { randomInt } from 'node:crypto'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+const REFERENCE_BODY_LENGTH = 6
 
 const mintReferenceNumber = () => {
   const year = String(new Date().getFullYear() % 100).padStart(2, '0')
   const body = Array.from(
-    { length: 6 },
+    { length: REFERENCE_BODY_LENGTH },
     () => CROCKFORD_BASE32[randomInt(CROCKFORD_BASE32.length)]
   ).join('')
   return `GBN-AG-${year}-${body}`

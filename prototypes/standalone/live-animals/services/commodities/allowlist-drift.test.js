@@ -36,20 +36,22 @@ const COMPLEMENT_GATES = new Set([
   'animalIdentifierDescription'
 ])
 
-const byUuid = new Map(obligations.map((o) => [o.id, o]))
+const byUuid = new Map(
+  obligations.map((obligation) => [obligation.id, obligation])
+)
 
 // Every manifest gate that allowlists on the stored commodity selection,
 // derived from the applyTo metadata sidecar so new gates land here
 // automatically.
 const commodityGates = () =>
-  obligations.flatMap((o) => {
-    const meta = o.applyTo?.metadata
+  obligations.flatMap((obligation) => {
+    const meta = obligation.applyTo?.metadata
     if (!meta) return []
     if (meta.type !== 'allowListed' && meta.type !== 'anyAllowListed') {
       return []
     }
     if (byUuid.get(meta.obligation)?.name !== 'commoditySelection') return []
-    return [{ gated: o.name, codes: meta.values }]
+    return [{ gated: obligation.name, codes: meta.values }]
   })
 
 const pickerNames = () => new Set(commodities.list())
@@ -127,7 +129,7 @@ describe('allowlist drift — service name-lists vs manifest code-lists', () => 
   })
 })
 
-describe('packageCountCommodities — mixed-format characterisation', () => {
+describe('#packageCountCommodities — mixed-format characterisation', () => {
   // The list mirrors the real frontend's reference data verbatim: four
   // picker names plus 'CODE - Label' display strings. Only the names can
   // match a stored commoditySelection; the rest are INERT under the

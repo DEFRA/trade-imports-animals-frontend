@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 import { records } from './real.js'
@@ -27,7 +27,7 @@ describe('real records adapter — amend', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should POST the amend endpoint and marshal AMEND as a writable in-progress record', async () => {
+  test('Should POST the amend endpoint and marshal AMEND as a writable in-progress record', async () => {
     fetchMocker.mockResponse(JSON.stringify(notification('GBN-1', 'AMEND')))
 
     const amended = await records.amend('GBN-1')
@@ -40,7 +40,7 @@ describe('real records adapter — amend', () => {
     expect(amended.createdAt).toBe('2026-07-14T09:00:00')
   })
 
-  it('Should surface a failed amend as an error carrying the response status', async () => {
+  test('Should surface a failed amend as an error carrying the response status', async () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     await expect(records.amend('GBN-1')).rejects.toThrow(
@@ -54,7 +54,7 @@ describe('real records adapter — session-scoped list', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should GET exactly the handed references and marshal each record', async () => {
+  test('Should GET exactly the handed references and marshal each record', async () => {
     fetchMocker.mockResponse((request) =>
       request.url.endsWith('/GBN-1')
         ? JSON.stringify(notification('GBN-1', 'DRAFT'))
@@ -76,7 +76,7 @@ describe('real records adapter — session-scoped list', () => {
     expect(listed[1].submittedAt).toBe('2026-07-14T10:00:00')
   })
 
-  it('Should skip references the backend no longer knows', async () => {
+  test('Should skip references the backend no longer knows', async () => {
     fetchMocker.mockResponse((request) =>
       request.url.endsWith('/GBN-GONE')
         ? { status: 404, body: 'Not Found' }
@@ -88,7 +88,7 @@ describe('real records adapter — session-scoped list', () => {
     expect(listed.map((journey) => journey.journeyId)).toEqual(['GBN-1'])
   })
 
-  it('Should issue no fetch for an empty reference set', async () => {
+  test('Should issue no fetch for an empty reference set', async () => {
     expect(await records.list({ journeyIds: [] })).toEqual([])
     expect(fetchMocker.requests()).toHaveLength(0)
   })

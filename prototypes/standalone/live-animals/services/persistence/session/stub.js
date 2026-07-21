@@ -20,29 +20,29 @@ export const session = {
     return request?.state?.[JOURNEY_COOKIE]
   },
 
-  async setActiveJourney(h, journeyId) {
-    h.state(JOURNEY_COOKIE, journeyId)
+  async setActiveJourney(toolkit, journeyId) {
+    toolkit.state(JOURNEY_COOKIE, journeyId)
   },
 
   async knownJourneyIds(request) {
     return knownFrom(request)
   },
 
-  async addKnownJourney(request, h, journeyId) {
+  async addKnownJourney(request, toolkit, journeyId) {
     const known = knownFrom(request)
     if (known.includes(journeyId)) return
-    h.state(KNOWN_JOURNEYS_COOKIE, [...known, journeyId])
+    toolkit.state(KNOWN_JOURNEYS_COOKIE, [...known, journeyId])
   },
 
-  async clearActive(h) {
-    h.unstate(JOURNEY_COOKIE)
+  async clearActive(toolkit) {
+    toolkit.unstate(JOURNEY_COOKIE)
   },
 
   async openingRun(request) {
     return request?.state?.[OPENING_RUN_COOKIE]
   },
 
-  async setOpeningRun(h, record) {
-    h.state(OPENING_RUN_COOKIE, record)
+  async setOpeningRun(toolkit, record) {
+    toolkit.state(OPENING_RUN_COOKIE, record)
   }
 }

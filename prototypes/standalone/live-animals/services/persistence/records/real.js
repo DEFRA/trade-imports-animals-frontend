@@ -9,6 +9,7 @@ const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
 const notificationsUrl = `${backendBaseUrl}/notifications`
 
 const BACKEND_SUBMITTED = 'SUBMITTED'
+const HTTP_NOT_FOUND = 404
 
 const headers = () => ({
   'Content-Type': 'application/json',
@@ -34,8 +35,10 @@ const stripNulls = (value) => {
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value)
-        .filter(([, v]) => v !== null && v !== undefined)
-        .map(([key, v]) => [key, stripNulls(v)])
+        .filter(
+          ([, entryValue]) => entryValue !== null && entryValue !== undefined
+        )
+        .map(([key, entryValue]) => [key, stripNulls(entryValue)])
     )
   }
   return value
@@ -58,7 +61,7 @@ const getNotification = async (referenceNumber) => {
     method: 'GET',
     headers: headers()
   })
-  if (response.status === 404) return undefined
+  if (response.status === HTTP_NOT_FOUND) return undefined
   if (!response.ok) throw failed('get notification', response)
   return response.json()
 }

@@ -8,10 +8,10 @@ export const fetchCountries = async () => {
   })
 
   if (!response.ok) {
-    const error = new Error('Failed to get countries')
-    error.status = response.status
-    error.statusText = response.statusText
-    throw error
+    throw Object.assign(new Error('Failed to get countries'), {
+      status: response.status,
+      statusText: response.statusText
+    })
   }
 
   return response.json()

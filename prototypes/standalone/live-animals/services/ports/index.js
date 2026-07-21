@@ -12,6 +12,6 @@ export const prime = async () => {
 export const list = () => ports
 
 export const label = (code) => {
-  const port = ports.find((p) => p.code === code)
+  const port = ports.find((entry) => entry.code === code)
   return port ? `${port.name} (${port.code})` : undefined
 }

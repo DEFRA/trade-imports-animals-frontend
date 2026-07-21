@@ -16,7 +16,7 @@ import * as ports from './services/ports/index.js'
 export const liveAnimals = {
   plugin: {
     name: 'standalone-live-animals',
-    async register(server) {
+    register: async (server) => {
       assertObligationPurity()
       buildDispatch(dispatchPages)
       configureReadyForCheckYourAnswers(readyForCheckYourAnswers)

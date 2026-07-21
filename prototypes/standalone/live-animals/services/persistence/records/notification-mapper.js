@@ -19,13 +19,10 @@ import {
   commodityNameFor
 } from '../../commodities/index.js'
 
-const compact = (obj) => {
-  const out = {}
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) out[key] = value
-  }
-  return out
-}
+const compact = (source) =>
+  Object.fromEntries(
+    Object.entries(source).filter(([, value]) => value !== undefined)
+  )
 
 const orUndefined = (obj) => (Object.keys(obj).length ? obj : undefined)
 
@@ -50,25 +47,20 @@ const datePartsFromIso = (iso) => {
 // The skeleton commodity blob is one complement per COMMODITY with a species
 // array, per-species counts and complement-level totals — so both mappers
 // group lines by commodity and consolidate counts UP to the complement total.
-const groupLinesByCommodity = (lines) => {
-  const groups = new Map()
-  for (const line of lines) {
-    const key = line.commoditySelection
-    if (!groups.has(key)) groups.set(key, [])
-    groups.get(key).push(line)
-  }
-  return [...groups.values()]
-}
+const groupLinesByCommodity = (lines) =>
+  Object.values(Object.groupBy(lines, (line) => line.commoditySelection))
 
 // Skeleton parity: getTotal (lodash) maps Number, drops NaN and sums — a blank
 // count contributes 0. Omitted entirely when no line carries the field.
 const totalOf = (lines, field) => {
-  const values = lines.map((line) => line[field]).filter((v) => v !== undefined)
+  const values = lines
+    .map((line) => line[field])
+    .filter((value) => value !== undefined)
   if (values.length === 0) return undefined
   return values
     .map(Number)
-    .filter((n) => !Number.isNaN(n))
-    .reduce((sum, n) => sum + n, 0)
+    .filter((number) => !Number.isNaN(number))
+    .reduce((sum, number) => sum + number, 0)
 }
 
 // Species value → display name via the prototype's commodity reference data,

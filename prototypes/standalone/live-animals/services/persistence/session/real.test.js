@@ -76,7 +76,7 @@ const buildServer = async () => {
 
 const cookieOf = (res) => res.headers['set-cookie']?.[0]?.split(';')[0]
 
-describe('real session adapter over yar/Catbox-memory', () => {
+describe('#session.activeJourneyId (real, yar/Catbox-memory)', () => {
   it('Should round-trip the active-journey pointer through server-side yar', async () => {
     const server = await buildServer()
     const set = await server.inject({
@@ -147,7 +147,7 @@ describe('real session adapter over yar/Catbox-memory', () => {
   })
 })
 
-describe('real session adapter known journeys over yar', () => {
+describe('#session.knownJourneyIds (real, yar)', () => {
   it('Should accumulate known journeys server-side without duplicates', async () => {
     const server = await buildServer()
     const firstAdd = await server.inject({
@@ -184,7 +184,7 @@ describe('real session adapter known journeys over yar', () => {
   })
 })
 
-describe('real session adapter opening run over yar', () => {
+describe('#session.openingRun (real, yar)', () => {
   it('Should round-trip the opening-run record server-side', async () => {
     const server = await buildServer()
     const record = { journeyId: 'J-1', phase: 'active' }
@@ -208,7 +208,7 @@ describe('real session adapter opening run over yar', () => {
   })
 })
 
-describe('real session adapter userId', () => {
+describe('#session.userId (real, yar)', () => {
   it('Should read the authenticated OIDC sub when present', async () => {
     expect(
       await session.userId({ auth: { credentials: { sub: 'user-99' } } })

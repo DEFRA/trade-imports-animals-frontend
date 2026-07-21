@@ -37,9 +37,9 @@ export const copy = {
 /**
  * Default validator messages — the fallbacks `lib/validate` composers use
  * when a call site passes no feature message. A separate export (not a
- * `copy` key) because parameterised defaults are function leaves and the
- * chrome walker above pins string-only leaves. Locale-swappable the same
- * way: a `copy.cy.js` exports its own `validatorDefaults`.
+ * `copy` key) because parameterised defaults are function leaves and
+ * `copy-leaves.js`'s `isCopyLeaf` pins string-only leaves. Locale-swappable
+ * the same way: a `copy.cy.js` exports its own `validatorDefaults`.
  */
 export const validatorDefaults = {
   oneOf: 'Select a valid option',

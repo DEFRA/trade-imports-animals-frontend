@@ -1,9 +1,9 @@
 export const pathKey = (path) =>
   path.reduce(
-    (key, segment, i) =>
+    (key, segment, index) =>
       typeof segment === 'number'
         ? `${key}[${segment}]`
-        : i === 0
+        : index === 0
           ? segment
           : `${key}.${segment}`,
     ''
@@ -46,10 +46,10 @@ export const isStrictPathPrefix = (prefix, path) =>
 
 export const wipeOrder = (pathA, pathB) => {
   const shared = Math.min(pathA.length, pathB.length)
-  for (let i = 0; i < shared; i++) {
-    if (pathA[i] === pathB[i]) continue
-    if (typeof pathA[i] === 'number' && typeof pathB[i] === 'number') {
-      return pathB[i] - pathA[i]
+  for (let index = 0; index < shared; index++) {
+    if (pathA[index] === pathB[index]) continue
+    if (typeof pathA[index] === 'number' && typeof pathB[index] === 'number') {
+      return pathB[index] - pathA[index]
     }
     return 0
   }

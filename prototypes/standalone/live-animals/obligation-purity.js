@@ -52,21 +52,21 @@ const insideModel = (absolute) => {
  *
  * @param {{ files?: string[], read?: (path: string, enc: string) => string }} [deps]
  */
-export function assertModelImportBoundary({
+export const assertModelImportBoundary = ({
   files = modelSourceFiles(),
   read = readFileSync
-} = {}) {
-  const violations = []
-  for (const file of files) {
-    for (const specifier of specifiersIn(read(file, 'utf8'))) {
-      if (specifier.startsWith('.')) {
+} = {}) => {
+  const violations = files.flatMap((file) =>
+    specifiersIn(read(file, 'utf8'))
+      .filter((specifier) => {
+        if (!specifier.startsWith('.')) return true
         const resolved = resolve(dirname(file), specifier)
-        if (insideModel(resolved)) continue
-        if (SERVICE_INDEX_PATH.test(appPath(resolved))) continue
-      }
-      violations.push(`${appPath(file)} imports '${specifier}'`)
-    }
-  }
+        if (insideModel(resolved)) return false
+        if (SERVICE_INDEX_PATH.test(appPath(resolved))) return false
+        return true
+      })
+      .map((specifier) => `${appPath(file)} imports '${specifier}'`)
+  )
   if (violations.length > 0) {
     throw new Error(
       'Model import boundary violated — model/** may import only ' +
@@ -76,7 +76,7 @@ export function assertModelImportBoundary({
   }
 }
 
-export function assertObligationPurity() {
+export const assertObligationPurity = () => {
   assertNoDisplayKeys(obligations, domain)
   assertModelImportBoundary()
 }

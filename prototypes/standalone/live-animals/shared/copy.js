@@ -9,7 +9,7 @@ const DEFAULT_LOCALE = 'en'
  * language toggle) plugs in via the `locale` argument when it is.
  *
  * @param {Record<string, object>} locales - copy modules keyed by locale.
- * @param {string} [locale] - the locale to resolve.
+ * @param {string} [locale=en] - the locale to resolve.
  * @returns {object} the locale's copy module, or English when unknown.
  */
 export const copyFor = (locales, locale = DEFAULT_LOCALE) =>

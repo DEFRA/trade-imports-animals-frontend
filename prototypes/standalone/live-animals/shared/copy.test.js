@@ -10,7 +10,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('copyFor', () => {
+describe('#copyFor', () => {
   it('Should resolve the requested locale', () => {
     const en = { title: 'Hello' }
     expect(copyFor({ en }, 'en')).toBe(en)

@@ -33,7 +33,7 @@ const unlockedSeed = {
   commodityLines: [{ commoditySelection: 'Cat' }]
 }
 
-describe('#handler hub copy', () => {
+describe('#hubHandler', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

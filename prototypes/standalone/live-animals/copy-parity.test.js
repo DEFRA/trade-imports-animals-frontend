@@ -58,8 +58,12 @@ describe('copy parity — cy mirrors en structurally', () => {
 
   it('Should give cy the same paths, leaf kinds and function arities as en', async () => {
     for (const { name, en, cy } of await modulePairs()) {
-      const enLeaves = new Map(leaves(en).map((l) => [l.path, l.value]))
-      const cyLeaves = new Map(leaves(cy).map((l) => [l.path, l.value]))
+      const enLeaves = new Map(
+        leaves(en).map((leaf) => [leaf.path, leaf.value])
+      )
+      const cyLeaves = new Map(
+        leaves(cy).map((leaf) => [leaf.path, leaf.value])
+      )
       expect(
         [...cyLeaves.keys()].sort(),
         `${name}: cy paths must equal en paths`
@@ -92,7 +96,9 @@ describe('copy parity — cy mirrors en structurally', () => {
 
   it('Should translate every string leaf unless allowlisted as identical', async () => {
     for (const { name, en, cy } of await modulePairs()) {
-      const cyLeaves = new Map(leaves(cy).map((l) => [l.path, l.value]))
+      const cyLeaves = new Map(
+        leaves(cy).map((leaf) => [leaf.path, leaf.value])
+      )
       for (const { path: leafPath, value: enValue } of leaves(en)) {
         if (typeof enValue !== 'string') continue
         if (IDENTICAL_ALLOWLIST.has(`${name}:${leafPath}`)) continue

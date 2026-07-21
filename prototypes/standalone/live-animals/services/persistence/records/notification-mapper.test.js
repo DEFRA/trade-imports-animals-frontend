@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   answersToNotification,
   notificationToAnswers,
@@ -125,14 +125,14 @@ const groupedLines = () => [
 ]
 
 describe('Mapper A — current backend notification (as-is)', () => {
-  it('Should round-trip every mapped obligation losslessly for a single commodity', () => {
+  test('Should round-trip every mapped obligation losslessly for a single commodity', () => {
     const answers = mappedAnswers()
     expect(notificationToAnswers(answersToNotification(answers))).toEqual(
       answers
     )
   })
 
-  it('Should reshape per-species lines into the fixed backend commodity shape', () => {
+  test('Should reshape per-species lines into the fixed backend commodity shape', () => {
     const { commodity } = answersToNotification(mappedAnswers())
     expect(commodity).toEqual({
       name: 'Cow',
@@ -155,7 +155,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
   })
 
-  it('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
+  test('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
     const { commodity } = answersToNotification({
       commodityLines: groupedLines()
     })
@@ -182,7 +182,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ])
   })
 
-  it('Should lose the commodity identity of every group after the first on a round-trip (the lossy-A caveat)', () => {
+  test('Should lose the commodity identity of every group after the first on a round-trip (the lossy-A caveat)', () => {
     const recovered = notificationToAnswers(
       answersToNotification({ commodityLines: groupedLines() })
     )
@@ -195,7 +195,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ).toEqual(['25', '10', '2'])
   })
 
-  it('Should place every storable answer in its skeleton field home', () => {
+  test('Should place every storable answer in its skeleton field home', () => {
     const notification = answersToNotification({
       ...mappedAnswers(),
       transporterType: 'Commercial'
@@ -246,13 +246,13 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
   })
 
-  it('Should convert the arrival date parts to an ISO string', () => {
+  test('Should convert the arrival date parts to an ISO string', () => {
     expect(answersToNotification(mappedAnswers()).transport.arrivalDate).toBe(
       '2026-12-12'
     )
   })
 
-  it('Should omit every gap obligation from the notification', () => {
+  test('Should omit every gap obligation from the notification', () => {
     const notification = answersToNotification(answersWithGaps())
 
     expect('responsiblePersonForLoad' in notification).toBe(false)
@@ -275,7 +275,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ).toBe(false)
   })
 
-  it('Should keep only earTag and passport on the species entry, dropping the five unit identifiers', () => {
+  test('Should keep only earTag and passport on the species entry, dropping the five unit identifiers', () => {
     const notification = answersToNotification(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
@@ -290,7 +290,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect('animalIdentifiers' in notification.commodity).toBe(false)
   })
 
-  it('Should lose every gap obligation across a full round-trip (pinning the lossiness)', () => {
+  test('Should lose every gap obligation across a full round-trip (pinning the lossiness)', () => {
     const answers = answersWithGaps()
     const recovered = notificationToAnswers(answersToNotification(answers))
 
@@ -419,14 +419,14 @@ const allAnswers = () => ({
 })
 
 describe('Mapper B — proposed target notification (superset, lossless)', () => {
-  it('Should round-trip every captured obligation losslessly, including multi-commodity per-species lines', () => {
+  test('Should round-trip every captured obligation losslessly, including multi-commodity per-species lines', () => {
     const answers = allAnswers()
     expect(
       targetNotificationToAnswers(answersToTargetNotification(answers))
     ).toEqual(answers)
   })
 
-  it('Should give every gap obligation a typed home in the target notification', () => {
+  test('Should give every gap obligation a typed home in the target notification', () => {
     const notification = answersToTargetNotification(allAnswers())
 
     expect(notification.origin.regionCode).toBe('FR-75')
@@ -454,7 +454,7 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
     })
   })
 
-  it('Should keep every group commodity identity and the full per-species identifier records', () => {
+  test('Should keep every group commodity identity and the full per-species identifier records', () => {
     const notification = answersToTargetNotification(allAnswers())
     const complements = notification.commodity.commodityComplement
 
@@ -480,7 +480,7 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
     ])
   })
 
-  it('Should carry the storable species fields Mapper A does (counts + earTag/passport)', () => {
+  test('Should carry the storable species fields Mapper A does (counts + earTag/passport)', () => {
     const notification = answersToTargetNotification(mappedAnswers())
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
       value: '1148346',
@@ -493,19 +493,21 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
     })
   })
 
-  it('Should be a superset of Mapper A — B contains every field A produces, plus extras', () => {
+  test('Should be a superset of Mapper A — B contains every field A produces, plus extras', () => {
     const answers = allAnswers()
-    const a = answersToNotification(answers)
-    const b = answersToTargetNotification(answers)
+    const mapperANotification = answersToNotification(answers)
+    const mapperBNotification = answersToTargetNotification(answers)
 
-    expect(b).toMatchObject(a)
+    expect(mapperBNotification).toMatchObject(mapperANotification)
     // ...plus the extras A has no home for.
-    expect(b.purpose).toBe('Breeding')
-    expect(b.documents).toBeDefined()
-    expect(b.commodity.commodityComplement[0].commodityCode).toBeDefined()
+    expect(mapperBNotification.purpose).toBe('Breeding')
+    expect(mapperBNotification.documents).toBeDefined()
+    expect(
+      mapperBNotification.commodity.commodityComplement[0].commodityCode
+    ).toBeDefined()
   })
 
-  it('Should collapse a private transporter into the single Transporter, then restore it', () => {
+  test('Should collapse a private transporter into the single Transporter, then restore it', () => {
     const answers = {
       transporterType: 'Private',
       privateTransporter: {
@@ -607,7 +609,7 @@ const storableAnswers = () => ({
 })
 
 describe('Mapper B storable superset — survives the real backend field set', () => {
-  it('Should round-trip every storable answer through the backend-kept fields', () => {
+  test('Should round-trip every storable answer through the backend-kept fields', () => {
     const answers = storableAnswers()
     const recovered = targetNotificationToAnswers(
       storableSubset(answersToTargetNotification(answers))
@@ -615,7 +617,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
     expect(recovered).toEqual(answers)
   })
 
-  it('Should recover earTag and passport from species when the extra identifiers are dropped', () => {
+  test('Should recover earTag and passport from species when the extra identifiers are dropped', () => {
     const recovered = targetNotificationToAnswers(
       storableSubset(answersToTargetNotification(storableAnswers()))
     )
@@ -627,7 +629,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
     ])
   })
 
-  it('Should restore the commercial transporter object and its type from the single Transporter', () => {
+  test('Should restore the commercial transporter object and its type from the single Transporter', () => {
     const recovered = targetNotificationToAnswers(
       storableSubset(answersToTargetNotification(storableAnswers()))
     )
@@ -639,7 +641,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
     })
   })
 
-  it('Should drop the Stage-2 extras that have no backend home', () => {
+  test('Should drop the Stage-2 extras that have no backend home', () => {
     const answers = {
       ...storableAnswers(),
       regionOfOriginCode: 'FR-75',

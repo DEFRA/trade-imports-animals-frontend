@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import * as addressBook from './index.js'
 
@@ -10,8 +10,8 @@ const PARTY_ROLES = [
   'destination'
 ]
 
-describe('address-book — the book each party spoke picks from', () => {
-  it('Should hold 40 records per party role, every one with a stable id', () => {
+describe('#parties / #party', () => {
+  test('Should hold 40 records per party role, every one with a stable id', () => {
     for (const role of PARTY_ROLES) {
       const records = addressBook.parties(role)
       expect(records).toHaveLength(40)
@@ -22,7 +22,7 @@ describe('address-book — the book each party spoke picks from', () => {
     }
   })
 
-  it('Should look a record up by its id, whatever page of results it falls on', () => {
+  test('Should look a record up by its id, whatever page of results it falls on', () => {
     const last = addressBook.parties('consignor').at(-1)
     const onLastPage = addressBook
       .search('consignor', { page: 8 })
@@ -33,8 +33,8 @@ describe('address-book — the book each party spoke picks from', () => {
   })
 })
 
-describe('address-book search — the book owns filtering and pagination', () => {
-  it('Should page an unfiltered book five at a time over eight pages', () => {
+describe('#search', () => {
+  test('Should page an unfiltered book five at a time over eight pages', () => {
     const first = addressBook.search('consignor', { page: 1 })
 
     expect(first).toMatchObject({
@@ -58,7 +58,7 @@ describe('address-book search — the book owns filtering and pagination', () =>
     )
   })
 
-  it('Should match on name, on any address line and on country, case-insensitively', () => {
+  test('Should match on name, on any address line and on country, case-insensitively', () => {
     const byName = addressBook.search('consignor', { query: 'danish meat' })
     expect(byName.total).toBe(1)
     expect(byName.results[0].id).toBe('danish-meat-export')
@@ -77,7 +77,7 @@ describe('address-book search — the book owns filtering and pagination', () =>
     ])
   })
 
-  it('Should repaginate the filtered results, not the whole book', () => {
+  test('Should repaginate the filtered results, not the whole book', () => {
     const filtered = addressBook.search('placeOfOrigin', { query: 'france' })
 
     expect(filtered.total).toBe(3)
@@ -89,7 +89,7 @@ describe('address-book search — the book owns filtering and pagination', () =>
     ])
   })
 
-  it('Should return an empty page one when nothing matches', () => {
+  test('Should return an empty page one when nothing matches', () => {
     const none = addressBook.search('importer', { query: 'no such trader' })
 
     expect(none).toMatchObject({
@@ -100,7 +100,7 @@ describe('address-book search — the book owns filtering and pagination', () =>
     })
   })
 
-  it('Should fall back to the first page when the asked-for page is out of range', () => {
+  test('Should fall back to the first page when the asked-for page is out of range', () => {
     const beyond = addressBook.search('consignee', { page: 99 })
     const nonsense = addressBook.search('consignee', { page: Number.NaN })
 
@@ -109,7 +109,7 @@ describe('address-book search — the book owns filtering and pagination', () =>
     expect(nonsense.page).toBe(1)
   })
 
-  it('Should offer a user-created address through search under its minted id', () => {
+  test('Should offer a user-created address through search under its minted id', () => {
     const record = addressBook.addParty('destination', {
       name: 'Searchable Created Holding',
       address: { addressLine1: '1 New Way', country: 'United Kingdom' }

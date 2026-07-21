@@ -31,7 +31,7 @@ export const parties = (role) => [
 ]
 
 export const party = (role, id) =>
-  parties(role).find((option) => option.id === id)
+  parties(role).find((record) => record.id === id)
 
 export const addParty = (role, { name, address }) => {
   const entries = created.get(role) ?? []

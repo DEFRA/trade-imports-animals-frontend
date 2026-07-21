@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 describe('countries client', () => {
-  it('parses a fetched [{code,name}] payload', async () => {
+  it('Should parse a fetched [{code,name}] payload', async () => {
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const { fetchCountries } = await import('./countries/client.js')
     await expect(fetchCountries()).resolves.toEqual([
@@ -25,7 +25,7 @@ describe('countries client', () => {
     ])
   })
 
-  it('throws on a non-ok response', async () => {
+  it('Should throw on a non-ok response', async () => {
     stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
     const { fetchCountries } = await import('./countries/client.js')
     await expect(fetchCountries()).rejects.toThrow('Failed to get countries')
@@ -33,7 +33,7 @@ describe('countries client', () => {
 })
 
 describe('ports client', () => {
-  it('parses a fetched [{code,name}] payload', async () => {
+  it('Should parse a fetched [{code,name}] payload', async () => {
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const { fetchPortsOfEntry } = await import('./ports/client.js')
     await expect(fetchPortsOfEntry()).resolves.toEqual([
@@ -41,7 +41,7 @@ describe('ports client', () => {
     ])
   })
 
-  it('throws on a non-ok response', async () => {
+  it('Should throw on a non-ok response', async () => {
     stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
     const { fetchPortsOfEntry } = await import('./ports/client.js')
     await expect(fetchPortsOfEntry()).rejects.toThrow(
@@ -51,7 +51,7 @@ describe('ports client', () => {
 })
 
 describe('countries service — default stub mode', () => {
-  it('accessors serve stub data without priming', async () => {
+  it('Should serve stub data through the accessors without priming', async () => {
     delete process.env.LIVE_ANIMALS_MODE
     const countries = await import('./countries/index.js')
     expect(countries.originLabel('AT')).toBe('Austria')
@@ -61,7 +61,7 @@ describe('countries service — default stub mode', () => {
     })
   })
 
-  it('prime() is a no-op in stub mode (no fetch, stub retained)', async () => {
+  it('Should treat prime() as a no-op in stub mode (no fetch, stub retained)', async () => {
     delete process.env.LIVE_ANIMALS_MODE
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
@@ -73,7 +73,7 @@ describe('countries service — default stub mode', () => {
 })
 
 describe('countries service — real mode', () => {
-  it('prime() replaces the cache so sync accessors serve fetched data', async () => {
+  it('Should replace the cache on prime() so sync accessors serve fetched data', async () => {
     process.env.LIVE_ANIMALS_MODE = 'real'
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
@@ -91,7 +91,7 @@ describe('countries service — real mode', () => {
 })
 
 describe('ports service — default stub mode', () => {
-  it('list() serves stub data without priming', async () => {
+  it('Should serve stub data through list() without priming', async () => {
     delete process.env.LIVE_ANIMALS_MODE
     const ports = await import('./ports/index.js')
     expect(ports.list()).toContainEqual({
@@ -102,7 +102,7 @@ describe('ports service — default stub mode', () => {
 })
 
 describe('ports service — real mode', () => {
-  it('prime() replaces the cache so list() serves fetched ports', async () => {
+  it('Should replace the cache on prime() so list() serves fetched ports', async () => {
     process.env.LIVE_ANIMALS_MODE = 'real'
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const ports = await import('./ports/index.js')

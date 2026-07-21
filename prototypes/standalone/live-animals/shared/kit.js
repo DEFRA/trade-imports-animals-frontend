@@ -45,7 +45,7 @@ export const fieldError = (fieldErrors, field) =>
   fieldErrors?.[field] ? { text: fieldErrors[field] } : undefined
 
 export const hubExitTarget = (request) =>
-  (request.payload ?? {}).exit === 'hub' ? hubPath() : null
+  request.payload?.exit === 'hub' ? hubPath() : null
 
 export const changeContext = (request) => Boolean(request.query.change)
 

@@ -63,13 +63,13 @@ const uploadFile = async (uploadId, { filename, contentType, bytes }) => {
 }
 
 export const documentUploads = {
-  async upload(details) {
+  upload: async (details) => {
     const { uploadId } = await initiate(details)
     await uploadFile(uploadId, details)
     return uploadId
   },
 
-  async scanStatus({ uploadId }) {
+  scanStatus: async ({ uploadId }) => {
     const response = await fetch(
       `${backendBaseUrl}/document-uploads/${uploadId}`,
       { method: 'GET', headers: traceHeaders() }
@@ -79,7 +79,7 @@ export const documentUploads = {
     return scanStatus
   },
 
-  async remove(uploadId) {
+  remove: async (uploadId) => {
     const response = await fetch(
       `${backendBaseUrl}/document-uploads/${uploadId}`,
       { method: 'DELETE', headers: traceHeaders() }

@@ -28,7 +28,7 @@ const line = (commoditySelection, extra = {}) => ({
   ...extra
 })
 
-describe('path-addressed store ops at depth-1 (commodityLines — live carrier)', () => {
+const setupJourneyEngine = () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -39,6 +39,10 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
     await store.clear()
     journeyId = (await store.create()).journeyId
   })
+}
+
+describe('path-addressed store ops at depth-1 (commodityLines — live carrier)', () => {
+  setupJourneyEngine()
 
   it('Should append a commodity line, minting the next index and persisting it', async () => {
     const first = await appendEntryAt(
@@ -171,16 +175,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
 })
 
 describe('batch reconcile (reconcileEntriesAt — the inc-062 species-grain create)', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
-  })
-  beforeEach(async () => {
-    await store.clear()
-    journeyId = (await store.create()).journeyId
-  })
+  setupJourneyEngine()
 
   const keyOf = (entry) =>
     `${entry.commoditySelection}|${entry.speciesSelection}`
@@ -277,16 +272,7 @@ describe('batch reconcile (reconcileEntriesAt — the inc-062 species-grain crea
 })
 
 describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
-  })
-  beforeEach(async () => {
-    await store.clear()
-    journeyId = (await store.create()).journeyId
-  })
+  setupJourneyEngine()
 
   const identifiersPath = (lineIndex) => [
     'commodityLines',

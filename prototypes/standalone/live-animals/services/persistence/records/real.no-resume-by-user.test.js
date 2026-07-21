@@ -18,7 +18,10 @@ const notificationsUrl = 'http://localhost:8085/notifications'
 const getsToList = () =>
   fetchMocker
     .requests()
-    .filter((r) => r.method === 'GET' && r.url.startsWith(notificationsUrl))
+    .filter(
+      (request) =>
+        request.method === 'GET' && request.url.startsWith(notificationsUrl)
+    )
 
 describe('real records adapter — no resume-by-user list read', () => {
   beforeEach(() => {

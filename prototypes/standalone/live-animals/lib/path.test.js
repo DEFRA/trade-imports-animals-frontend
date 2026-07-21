@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { deleteAt, destroyWiped, pathKey, setAt, valueAt } from './path.js'
 
-describe('path helpers', () => {
+describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
   it('Should collapse a depth-0 path to the legacy bare id', () => {
     expect(pathKey(['commodityLines'])).toBe('commodityLines')
     expect(pathKey(['countryOfOrigin'])).toBe('countryOfOrigin')
@@ -16,23 +16,33 @@ describe('path helpers', () => {
     )
   })
 
-  it('Should read a value at a nested path', () => {
-    const answers = {
-      commodityLines: [
-        { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
-      ]
-    }
-    expect(valueAt(answers, ['commodityLines', 0, 'commoditySelection'])).toBe(
-      'Cow'
-    )
+  const nestedAnswers = {
+    commodityLines: [
+      { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
+    ]
+  }
+
+  it('Should read a leaf value at a nested path', () => {
     expect(
-      valueAt(answers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
+      valueAt(nestedAnswers, ['commodityLines', 0, 'commoditySelection'])
+    ).toBe('Cow')
+  })
+
+  it('Should read a sibling leaf value at a nested path', () => {
+    expect(
+      valueAt(nestedAnswers, ['commodityLines', 0, 'numberOfAnimalsQuantity'])
     ).toBe('25')
-    expect(valueAt(answers, ['commodityLines'])).toEqual([
+  })
+
+  it('Should return the whole array when the path targets a collection', () => {
+    expect(valueAt(nestedAnswers, ['commodityLines'])).toEqual([
       { commoditySelection: 'Cow', numberOfAnimalsQuantity: '25' }
     ])
+  })
+
+  it('Should return undefined for an out-of-range index', () => {
     expect(
-      valueAt(answers, ['commodityLines', 5, 'commoditySelection'])
+      valueAt(nestedAnswers, ['commodityLines', 5, 'commoditySelection'])
     ).toBeUndefined()
   })
 
@@ -79,7 +89,7 @@ describe('path helpers', () => {
   })
 })
 
-describe('wipeOrder — sibling-safe deletion order', () => {
+describe('#wipeOrder — sibling-safe deletion order', () => {
   const applyWipes = (answers, keys) => {
     destroyWiped(answers, keys)
     return answers

@@ -32,7 +32,7 @@ describe('#session.clearActive', () => {
   })
 })
 
-describe('#session known journeys', () => {
+describe('#session.knownJourneyIds', () => {
   it('Should start with no known journeys', async () => {
     expect(await session.knownJourneyIds({ state: {} })).toEqual([])
   })
@@ -56,7 +56,7 @@ describe('#session known journeys', () => {
   })
 })
 
-describe('#session opening run', () => {
+describe('#session.openingRun', () => {
   const record = { journeyId: 'journey-1', phase: 'active' }
 
   it('Should round-trip the opening-run record through the cookie', async () => {
