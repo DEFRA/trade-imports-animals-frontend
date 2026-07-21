@@ -53,6 +53,25 @@ describe('coverage — domain carries exactly the address completeness entries',
   })
 })
 
+// Guard against a self-loop or a cycle hanging buildAncestorGroups' `while
+// (cur) cur = cur.within` walk forever. Any real `within` chain in the
+// manifest is a handful of levels deep — 100 is a generous ceiling that
+// only a genuine cycle could reach.
+const MAX_WITHIN_CHAIN_DEPTH = 100
+
+// Shared by the id/name uniqueness checks below — counts occurrences of
+// `keyFn(item)` across `items` and reports every key seen more than once.
+const duplicatesOf = (items, keyFn) => {
+  const counts = new Map()
+  for (const item of items) {
+    const key = keyFn(item)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([key, count]) => `${key} (×${count})`)
+}
+
 describe('structural integrity — no cycles in `within` references', () => {
   it('every obligation has a within-chain that terminates in null', () => {
     // Without this, a self-loop or a cycle in the manifest hangs the
@@ -74,8 +93,10 @@ describe('structural integrity — no cycles in `within` references', () => {
         seen.add(cur.id)
         cur = cur.within
         depth += 1
-        if (depth > 100) {
-          problems.push(`${o.name} → chain deeper than 100 (likely cycle)`)
+        if (depth > MAX_WITHIN_CHAIN_DEPTH) {
+          problems.push(
+            `${o.name} → chain deeper than ${MAX_WITHIN_CHAIN_DEPTH} (likely cycle)`
+          )
           break
         }
       }
@@ -90,14 +111,7 @@ describe('uniqueness — every obligation has a distinct id and name', () => {
     // builds (obligationsById, obligationChildren, etc.); one wins and
     // the loser is silently invisible. A rename or copy-paste that
     // reuses the same id must fail immediately.
-    const counts = new Map()
-    for (const o of obligations) {
-      counts.set(o.id, (counts.get(o.id) ?? 0) + 1)
-    }
-    const duplicates = [...counts.entries()]
-      .filter(([, count]) => count > 1)
-      .map(([id, count]) => `${id} (×${count})`)
-    expect(duplicates).toEqual([])
+    expect(duplicatesOf(obligations, (obligation) => obligation.id)).toEqual([])
   })
 
   it('has no duplicate names in the manifest', () => {
@@ -106,14 +120,9 @@ describe('uniqueness — every obligation has a distinct id and name', () => {
     // name-based lookup returns whichever entry matches first;
     // KNOWN_UNWIRED status becomes ambiguous. Mutation 11 in
     // docs/testing.md is exactly this.
-    const counts = new Map()
-    for (const o of obligations) {
-      counts.set(o.name, (counts.get(o.name) ?? 0) + 1)
-    }
-    const duplicates = [...counts.entries()]
-      .filter(([, count]) => count > 1)
-      .map(([name, count]) => `${name} (×${count})`)
-    expect(duplicates).toEqual([])
+    expect(duplicatesOf(obligations, (obligation) => obligation.name)).toEqual(
+      []
+    )
   })
 })
 

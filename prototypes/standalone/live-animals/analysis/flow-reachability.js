@@ -224,6 +224,9 @@ export const seedVariants = () => [
 // not a model concern.
 const FLOW_ONLY_OBLIGATIONS = new Set(['importType', 'declaration'])
 
+export const REASON_NO_OWNING_PAGE = 'no-owning-page'
+export const REASON_UNREACHABLE_IN_SCOPE = 'owning-page-unreachable-in-scope'
+
 const stripIndices = (key) => key.replace(/\[\d+\]/g, '')
 
 // The obligation name a pathKey ends on (its leaf segment, indices stripped).
@@ -268,14 +271,14 @@ export function proveFlowReachability({
       if (isNotPagePresented(key)) continue
       const pageId = pageOfObligation(key)
       if (!pageId) {
-        record({ obligation: key, reason: 'no-owning-page' })
+        record({ obligation: key, reason: REASON_NO_OWNING_PAGE })
         continue
       }
       if (!reachablePages.has(pageId)) {
         record({
           obligation: key,
           pageId,
-          reason: 'owning-page-unreachable-in-scope'
+          reason: REASON_UNREACHABLE_IN_SCOPE
         })
       }
     }

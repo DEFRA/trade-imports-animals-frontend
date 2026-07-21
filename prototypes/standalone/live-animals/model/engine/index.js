@@ -4,13 +4,22 @@
  * primitive stands alone.
  *
  * JourneyEvaluator primitives (implementing the design captured in
- * the parent EUDPA-277 spike doc §The JourneyEvaluator):
+ * the parent EUDPA-277 spike doc §The JourneyEvaluator). The original
+ * six primitives from that spec, plus the line/unit-scoped and
+ * group-invariant primitives added since:
  *   - pageStatus(page, state)                       → NA / Optional / NS / IP / F
  *   - containerStatus(container, state)             → NA / Optional / NS / IP / F
  *   - journeyState(flow, state, submitted?)         → Optional / NS / IP / F / S
  *   - firstApplicablePage(root)                     → Page | null
  *   - firstUnfulfilledPage(root, state)             → Page | null
  *   - firstPagePresentingObligation(flow, oblId)    → Page | null
+ *   - firstUnfulfilledPageForLine(root, state, lineId) → Page | null
+ *   - firstUnfulfilledPageForUnit(root, state, lineId, unitId) → Page | null
+ *   - expandPresents(page, state)                   → entry[]
+ *   - effectiveStatus(obligation, path, state)       → 'mandatory' | 'optional' | undefined
+ *   - groupInvariantErrors(group, state)             → error[]
+ *   - groupInvariantErrorsForContainer(container, state) → error[]
+ *   - STATUSES                                       → status constant map
  *
  * The state shape here is exactly what
  * `createObligationEvaluator({ obligations }).evaluate(fulfilments)`
@@ -46,7 +55,9 @@ export function firstApplicablePage(root) {
 export function firstUnfulfilledPage(root, state) {
   if (isPage(root)) {
     const status = pageStatus(root, state)
-    if (status === 'not-started' || status === 'in-progress') return root
+    if (status === STATUSES.NOT_STARTED || status === STATUSES.IN_PROGRESS) {
+      return root
+    }
     return null
   }
   for (const child of root.children ?? []) {
@@ -70,7 +81,9 @@ export function firstUnfulfilledPageForLine(root, state, lineId) {
     if (!forEach) return null
     const impl = state.obligations?.[forEach.obligation.id]
     if (!impl?.inScope) return null
-    const record = impl.records?.find((r) => r.fulfilmentId === lineId)
+    const record = impl.records?.find(
+      (candidate) => candidate.fulfilmentId === lineId
+    )
     if (!record) return null
     if ((record.status ?? 'mandatory') !== 'mandatory') return null
     const stored = state.fulfilments?.[forEach.obligation.id]?.[lineId]
@@ -104,7 +117,9 @@ export function firstUnfulfilledPageForUnit(root, state, lineId, unitId) {
     if (!forEach) return null
     const impl = state.obligations?.[forEach.obligation.id]
     if (!impl?.inScope) return null
-    const record = impl.records?.find((r) => r.fulfilmentId === compositeKey)
+    const record = impl.records?.find(
+      (candidate) => candidate.fulfilmentId === compositeKey
+    )
     if (!record) return null
     if ((record.status ?? 'mandatory') !== 'mandatory') return null
     const stored = state.fulfilments?.[forEach.obligation.id]?.[compositeKey]
@@ -126,7 +141,7 @@ export function firstUnfulfilledPageForUnit(root, state, lineId, unitId) {
 export function firstPagePresentingObligation(flow, obligationId) {
   const pageMentions = (page) => {
     const inPresents = (page.presents ?? []).some(
-      (e) => e.obligation.id === obligationId
+      (entry) => entry.obligation.id === obligationId
     )
     if (inPresents) return true
     return page.presentsForEach?.obligation?.id === obligationId
@@ -209,7 +224,9 @@ export function effectiveStatus(obligation, path, state) {
   const impl = state.obligations?.[obligation.id]
   if (!impl) return undefined
   if (path === null) return impl.status ?? 'mandatory'
-  const record = (impl.records ?? []).find((r) => r.fulfilmentId === path)
+  const record = (impl.records ?? []).find(
+    (candidate) => candidate.fulfilmentId === path
+  )
   return record?.status ?? 'mandatory'
 }
 
@@ -222,7 +239,7 @@ function entryInScope(entry, state) {
   if (!impl || !impl.inScope) return false
   if (entry.path === null) return true
   const records = impl.records ?? []
-  return records.some((r) => r.fulfilmentId === entry.path)
+  return records.some((record) => record.fulfilmentId === entry.path)
 }
 
 /** Check whether a single value counts as "fulfilled" for an
@@ -305,12 +322,13 @@ function classifyEntries(inScope, state, groupErrorCount) {
     return STATUSES.NOT_APPLICABLE
   }
 
-  const touched = inScope.filter((e) => hasAnyInput(e, state))
+  const touched = inScope.filter((entry) => hasAnyInput(entry, state))
   const mandatoryInScope = inScope.filter(
-    (e) => effectiveStatus(e.obligation, e.path, state) === 'mandatory'
+    (entry) =>
+      effectiveStatus(entry.obligation, entry.path, state) === 'mandatory'
   )
   const mandatoryUnfulfilled = mandatoryInScope.filter(
-    (e) => !hasFulfilment(e, state)
+    (entry) => !hasFulfilment(entry, state)
   )
   const totalMandatoryConcerns = mandatoryInScope.length + groupErrorCount
   const totalMandatoryUnsatisfied =
@@ -357,8 +375,8 @@ function hasAnyInput(entry, state) {
  * See classifyEntries for the alphabet.
  */
 export function pageStatus(page, state) {
-  const inScope = expandPresents(page, state).filter((e) =>
-    entryInScope(e, state)
+  const inScope = expandPresents(page, state).filter((entry) =>
+    entryInScope(entry, state)
   )
   return classifyEntries(inScope, state, 0)
 }
@@ -398,8 +416,8 @@ function collectInScopePresentedEntries(container, state) {
   const out = []
   const visit = (node) => {
     if (isPage(node)) {
-      const entries = expandPresents(node, state).filter((e) =>
-        entryInScope(e, state)
+      const entries = expandPresents(node, state).filter((entry) =>
+        entryInScope(entry, state)
       )
       out.push(...entries)
       return
@@ -408,6 +426,118 @@ function collectInScopePresentedEntries(container, state) {
   }
   visit(container)
   return out
+}
+
+// Each `checkXxx` below implements one `requires` rule shape from
+// `groupInvariantErrors`'s doc comment. Single-error rules return the
+// error object or `null`; multi-error rules (one error per instance)
+// return an array. `groupInvariantErrors` composes and flattens them.
+
+const checkMinEntries = (group, records) => {
+  const { minEntries, errorCode } = group.requires
+  if (typeof minEntries !== 'number' || records.length >= minEntries) {
+    return null
+  }
+  return {
+    code: 'MIN_ENTRIES',
+    groupId: group.id,
+    groupName: group.name,
+    errorCode,
+    minEntries,
+    actual: records.length
+  }
+}
+
+const checkMaxEntries = (group, records) => {
+  const { maxEntries, errorCode } = group.requires
+  if (typeof maxEntries !== 'number' || records.length <= maxEntries) {
+    return null
+  }
+  return {
+    code: 'MAX_ENTRIES',
+    groupId: group.id,
+    groupName: group.name,
+    errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
+    maxEntries,
+    actual: records.length
+  }
+}
+
+const checkAnyOfIds = (group, records, state) => {
+  if (!group.requires.anyOfIds) return []
+  const errors = []
+  for (const record of records) {
+    const instanceId = record.fulfilmentId
+    const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
+      const impl = state.obligations?.[leafId]
+      if (!impl?.inScope) return false
+      return (impl.records ?? []).some(
+        (candidate) => candidate.fulfilmentId === instanceId
+      )
+    })
+    if (inScopeLeafIds.length === 0) continue
+    const anyFilled = inScopeLeafIds.some((leafId) => {
+      const stored = state.fulfilments?.[leafId]?.[instanceId]
+      return !isBlankValue(stored)
+    })
+    if (!anyFilled) {
+      errors.push({
+        code: group.requires.errorCode,
+        groupId: group.id,
+        groupName: group.name,
+        instanceId
+      })
+    }
+  }
+  return errors
+}
+
+const checkAllOrNothingOfIds = (group, state) => {
+  if (!group.requires.allOrNothingOfIds) return null
+  const memberIds = group.requires.allOrNothingOfIds
+  const filledIds = memberIds.filter(
+    (id) => !isBlankValue(state.fulfilments?.[id])
+  )
+  if (filledIds.length === 0 || filledIds.length >= memberIds.length) {
+    return null
+  }
+  const missingIds = memberIds.filter((id) =>
+    isBlankValue(state.fulfilments?.[id])
+  )
+  return {
+    code: group.requires.errorCode,
+    groupId: group.id,
+    groupName: group.name,
+    missingIds
+  }
+}
+
+const checkRecordCountEquals = (group, records, state) => {
+  if (!group.requires.recordCountEquals || !group.within) return []
+  const { fieldId, errorCode: countErrorCode } =
+    group.requires.recordCountEquals
+  const parentImpl = state.obligations?.[group.within.id]
+  const parentRecords = parentImpl?.records ?? []
+  const errors = []
+  for (const parentRec of parentRecords) {
+    const parentId = parentRec.fulfilmentId
+    const expected = state.fulfilments?.[fieldId]?.[parentId]
+    if (isBlankValue(expected)) continue
+    const actual = records.filter((record) =>
+      record.fulfilmentId.startsWith(`${parentId}/`)
+    ).length
+    if (actual !== expected) {
+      errors.push({
+        code: countErrorCode,
+        groupId: group.id,
+        groupName: group.name,
+        instanceId: parentId,
+        expected,
+        actual
+      })
+    }
+  }
+  return errors
 }
 
 /**
@@ -474,94 +604,14 @@ export function groupInvariantErrors(group, state) {
   if (!group?.requires) return []
   const groupImpl = state.obligations?.[group.id]
   if (!groupImpl?.inScope) return []
-  const errors = []
   const records = groupImpl.records ?? []
-  const { minEntries, maxEntries, errorCode } = group.requires
-  if (typeof minEntries === 'number' && records.length < minEntries) {
-    errors.push({
-      code: 'MIN_ENTRIES',
-      groupId: group.id,
-      groupName: group.name,
-      errorCode,
-      minEntries,
-      actual: records.length
-    })
-  }
-  if (typeof maxEntries === 'number' && records.length > maxEntries) {
-    errors.push({
-      code: 'MAX_ENTRIES',
-      groupId: group.id,
-      groupName: group.name,
-      errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
-      maxEntries,
-      actual: records.length
-    })
-  }
-  if (group.requires.anyOfIds) {
-    for (const record of records) {
-      const instanceId = record.fulfilmentId
-      const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
-        const impl = state.obligations?.[leafId]
-        if (!impl?.inScope) return false
-        return (impl.records ?? []).some((r) => r.fulfilmentId === instanceId)
-      })
-      if (inScopeLeafIds.length === 0) continue
-      const anyFilled = inScopeLeafIds.some((leafId) => {
-        const stored = state.fulfilments?.[leafId]?.[instanceId]
-        return !isBlankValue(stored)
-      })
-      if (!anyFilled) {
-        errors.push({
-          code: group.requires.errorCode,
-          groupId: group.id,
-          groupName: group.name,
-          instanceId
-        })
-      }
-    }
-  }
-  if (group.requires.allOrNothingOfIds) {
-    const memberIds = group.requires.allOrNothingOfIds
-    const filledIds = memberIds.filter(
-      (id) => !isBlankValue(state.fulfilments?.[id])
-    )
-    if (filledIds.length > 0 && filledIds.length < memberIds.length) {
-      const missingIds = memberIds.filter((id) =>
-        isBlankValue(state.fulfilments?.[id])
-      )
-      errors.push({
-        code: group.requires.errorCode,
-        groupId: group.id,
-        groupName: group.name,
-        missingIds
-      })
-    }
-  }
-  if (group.requires.recordCountEquals && group.within) {
-    const { fieldId, errorCode: countErrorCode } =
-      group.requires.recordCountEquals
-    const parentImpl = state.obligations?.[group.within.id]
-    const parentRecords = parentImpl?.records ?? []
-    for (const parentRec of parentRecords) {
-      const parentId = parentRec.fulfilmentId
-      const expected = state.fulfilments?.[fieldId]?.[parentId]
-      if (isBlankValue(expected)) continue
-      const actual = records.filter((r) =>
-        r.fulfilmentId.startsWith(`${parentId}/`)
-      ).length
-      if (actual !== expected) {
-        errors.push({
-          code: countErrorCode,
-          groupId: group.id,
-          groupName: group.name,
-          instanceId: parentId,
-          expected,
-          actual
-        })
-      }
-    }
-  }
-  return errors
+  return [
+    checkMinEntries(group, records),
+    checkMaxEntries(group, records),
+    ...checkAnyOfIds(group, records, state),
+    checkAllOrNothingOfIds(group, state),
+    ...checkRecordCountEquals(group, records, state)
+  ].filter(Boolean)
 }
 
 /** Collect every group obligation whose invariants apply to this
@@ -582,12 +632,12 @@ function collectGroupsPresentedIn(container) {
   const groups = new Map()
   const visit = (node) => {
     if (node.presentsForEach?.forEachOf) {
-      const g = node.presentsForEach.forEachOf
-      groups.set(g.id, g)
+      const group = node.presentsForEach.forEachOf
+      groups.set(group.id, group)
     }
     for (const entry of node.presents ?? []) {
-      for (const c of entry.obligation?.containers ?? []) {
-        groups.set(c.id, c)
+      for (const groupContainer of entry.obligation?.containers ?? []) {
+        groups.set(groupContainer.id, groupContainer)
       }
     }
     for (const child of node.children ?? []) visit(child)

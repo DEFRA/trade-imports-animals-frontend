@@ -143,12 +143,12 @@ const SAMPLE_OBLIGATIONS = {
 // ---------------------------------------------------------------------------
 
 describe('coverage — helper classification sets are exported and disjoint', () => {
-  it('exports STRUCTURED_HELPER_TYPES as a non-empty Set', () => {
+  it('Should export STRUCTURED_HELPER_TYPES as a non-empty Set', () => {
     expect(STRUCTURED_HELPER_TYPES).toBeInstanceOf(Set)
     expect(STRUCTURED_HELPER_TYPES.size).toBeGreaterThan(0)
   })
 
-  it('exports OPAQUE_HELPER_TYPES as a Set (may be empty — see reachability.js)', () => {
+  it('Should export OPAQUE_HELPER_TYPES as a Set (may be empty — see reachability.js)', () => {
     // Phase 4 §Migration #4 landed `notInUnionOf` and migrated the two
     // former opaque sites (identificationDetails, description) onto it.
     // The set is retained as the enforcement point for future opaque-
@@ -158,7 +158,7 @@ describe('coverage — helper classification sets are exported and disjoint', ()
     expect(OPAQUE_HELPER_TYPES).toBeInstanceOf(Set)
   })
 
-  it('STRUCTURED and OPAQUE helper-type sets are disjoint', () => {
+  it('Should keep STRUCTURED and OPAQUE helper-type sets disjoint', () => {
     const overlap = [...STRUCTURED_HELPER_TYPES].filter((t) =>
       OPAQUE_HELPER_TYPES.has(t)
     )
@@ -206,7 +206,7 @@ describe('coverage — synthesiseWitness dispatch matches the declared sets', ()
     (label) => !OPERATOR_LABELS.has(label)
   )
 
-  it('every synthesiseWitness case label is in STRUCTURED or OPAQUE', () => {
+  it('Should classify every synthesiseWitness case label as STRUCTURED or OPAQUE', () => {
     const unclassified = topLevelCaseLabels.filter(
       (label) =>
         !STRUCTURED_HELPER_TYPES.has(label) && !OPAQUE_HELPER_TYPES.has(label)
@@ -214,14 +214,14 @@ describe('coverage — synthesiseWitness dispatch matches the declared sets', ()
     expect(unclassified).toEqual([])
   })
 
-  it('every STRUCTURED helper type appears as a case label in synthesiseWitness', () => {
+  it('Should have a synthesiseWitness case label for every STRUCTURED helper type', () => {
     const missingCase = [...STRUCTURED_HELPER_TYPES].filter(
       (t) => !topLevelCaseLabels.includes(t)
     )
     expect(missingCase).toEqual([])
   })
 
-  it('every OPAQUE helper type appears as a case label in synthesiseWitness', () => {
+  it('Should have a synthesiseWitness case label for every OPAQUE helper type', () => {
     const missingCase = [...OPAQUE_HELPER_TYPES].filter(
       (t) => !topLevelCaseLabels.includes(t)
     )
@@ -249,7 +249,7 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
     ([, exp]) => typeof exp === 'function'
   )
 
-  it('every helper export whose gate carries .metadata.type is classified', () => {
+  it('Should classify every helper export whose gate carries .metadata.type', () => {
     // For each helper export, try to produce a gate. If the helper
     // isn't in `SAMPLE_OBLIGATIONS`, we can't probe it — but we CAN
     // fail the test with a clear message: "helper X has no sample; add
@@ -301,7 +301,7 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
 // ---------------------------------------------------------------------------
 
 describe('coverage — synthesiseWitness classifies each helper sample as declared', () => {
-  it('every STRUCTURED helper type synthesises a WITNESS or TRIVIAL kind', () => {
+  it('Should synthesise every STRUCTURED helper type as a WITNESS or TRIVIAL kind', () => {
     for (const type of STRUCTURED_HELPER_TYPES) {
       const sample = Object.values(SAMPLE_OBLIGATIONS).find(
         (s) => s.applyTo?.metadata?.type === type
@@ -318,7 +318,7 @@ describe('coverage — synthesiseWitness classifies each helper sample as declar
     }
   })
 
-  it('every OPAQUE helper type synthesises to WITNESS_KIND.OPAQUE', () => {
+  it('Should synthesise every OPAQUE helper type to WITNESS_KIND.OPAQUE', () => {
     for (const type of OPAQUE_HELPER_TYPES) {
       const sample = Object.values(SAMPLE_OBLIGATIONS).find(
         (s) => s.applyTo?.metadata?.type === type

@@ -32,7 +32,8 @@ import { obligations as defaultObligations } from './obligations.js'
  *      convergence typically hits in 1-2 iterations for real
  *      manifests because `purgeStorage` is monotonic (never adds).
  *   3. Post-purge enumeration for group implications.
- *   4. Build per-obligation implications (each with a `records` array).
+ *   4. Build per-obligation implications (category-specific shape;
+ *      groups/leaves carry a `records` array).
  */
 
 const PATH_DELIMITER = '/'
@@ -162,7 +163,7 @@ export function convergePurge(recognisedFulfilments, context) {
       obligationApplicabilityDecisions,
       obligationAncestorGroups
     )
-    for (const o of obligations) isInScope(o)
+    for (const obligation of obligations) isInScope(obligation)
 
     const next = purgeStorage(view, {
       obligationsById,
@@ -191,17 +192,17 @@ export function convergePurge(recognisedFulfilments, context) {
 // ---------------------------------------------------------------------------
 
 export function buildObligationsById(obligations) {
-  return new Map(obligations.map((o) => [o.id, o]))
+  return new Map(obligations.map((obligation) => [obligation.id, obligation]))
 }
 
 // Immediate children per obligation, from `within` back-refs.
 export function buildObligationChildren(obligations) {
   const obligationChildren = new Map()
-  for (const o of obligations) {
-    if (o.within) {
-      const children = obligationChildren.get(o.within.id) ?? []
-      children.push(o)
-      obligationChildren.set(o.within.id, children)
+  for (const obligation of obligations) {
+    if (obligation.within) {
+      const children = obligationChildren.get(obligation.within.id) ?? []
+      children.push(obligation)
+      obligationChildren.set(obligation.within.id, children)
     }
   }
   return obligationChildren
@@ -222,20 +223,20 @@ export function buildObligationChildren(obligations) {
 //   'single'       — otherwise (scalar leaf value at fulfilments[o.id]).
 export function classifyObligations(obligations, obligationChildren) {
   const obligationsByCategory = new Map()
-  for (const o of obligations) {
-    if (o.indexedBy) {
+  for (const obligation of obligations) {
+    if (obligation.indexedBy) {
       obligationsByCategory.set(
-        o.id,
-        o.indexedBy.source === 'derived' ? 'derived-leaf' : 'user-leaf'
+        obligation.id,
+        obligation.indexedBy.source === 'derived' ? 'derived-leaf' : 'user-leaf'
       )
-    } else if (o.applyTo && o.within) {
-      obligationsByCategory.set(o.id, 'derived-leaf')
-    } else if (o.status !== undefined && !o.applyTo) {
-      obligationsByCategory.set(o.id, 'field')
-    } else if (obligationChildren.has(o.id)) {
-      obligationsByCategory.set(o.id, 'group')
+    } else if (obligation.applyTo && obligation.within) {
+      obligationsByCategory.set(obligation.id, 'derived-leaf')
+    } else if (obligation.status !== undefined && !obligation.applyTo) {
+      obligationsByCategory.set(obligation.id, 'field')
+    } else if (obligationChildren.has(obligation.id)) {
+      obligationsByCategory.set(obligation.id, 'group')
     } else {
-      obligationsByCategory.set(o.id, 'single')
+      obligationsByCategory.set(obligation.id, 'single')
     }
   }
   return obligationsByCategory
@@ -244,14 +245,14 @@ export function classifyObligations(obligations, obligationChildren) {
 // Ancestor groups from root down to immediate parent (excluding self).
 export function buildAncestorGroups(obligations) {
   const obligationAncestorGroups = new Map()
-  for (const o of obligations) {
+  for (const obligation of obligations) {
     const chain = []
-    let cur = o.within
+    let cur = obligation.within
     while (cur) {
       chain.unshift(cur)
       cur = cur.within
     }
-    obligationAncestorGroups.set(o.id, chain)
+    obligationAncestorGroups.set(obligation.id, chain)
   }
   return obligationAncestorGroups
 }
@@ -259,9 +260,9 @@ export function buildAncestorGroups(obligations) {
 // Transitive descendants (excluding self).
 export function buildDescendants(obligations, obligationChildren) {
   const obligationDescendants = new Map()
-  for (const o of obligations) {
+  for (const obligation of obligations) {
     const acc = []
-    const stack = [...(obligationChildren.get(o.id) ?? [])]
+    const stack = [...(obligationChildren.get(obligation.id) ?? [])]
     while (stack.length) {
       const child = stack.pop()
       acc.push(child)
@@ -269,7 +270,7 @@ export function buildDescendants(obligations, obligationChildren) {
         stack.push(grandchild)
       }
     }
-    obligationDescendants.set(o.id, acc)
+    obligationDescendants.set(obligation.id, acc)
   }
   return obligationDescendants
 }
@@ -306,13 +307,13 @@ export function enumerateGroupPathsFromStorage(
   fulfilments
 ) {
   const paths = new Map()
-  for (const o of obligations) {
-    if (obligationsByCategory.get(o.id) !== 'group') {
+  for (const obligation of obligations) {
+    if (obligationsByCategory.get(obligation.id) !== 'group') {
       continue
     }
-    const prefixLen = obligationAncestorGroups.get(o.id).length + 1
+    const prefixLen = obligationAncestorGroups.get(obligation.id).length + 1
     const ids = new Set()
-    for (const desc of obligationDescendants.get(o.id)) {
+    for (const desc of obligationDescendants.get(obligation.id)) {
       const stored = fulfilments[desc.id]
       if (!isKeyedRecord(stored)) continue
       for (const key of Object.keys(stored)) {
@@ -322,7 +323,7 @@ export function enumerateGroupPathsFromStorage(
         }
       }
     }
-    paths.set(o.id, [...ids])
+    paths.set(obligation.id, [...ids])
   }
   return paths
 }
@@ -338,11 +339,11 @@ export function runApplicabilityDecisions(
   fulfilmentIdsByObligationId = new Map()
 ) {
   const obligationApplicabilityDecisions = new Map()
-  for (const o of obligations) {
-    if (o.applyTo) {
+  for (const obligation of obligations) {
+    if (obligation.applyTo) {
       obligationApplicabilityDecisions.set(
-        o.id,
-        o.applyTo(recognisedFulfilments, fulfilmentIdsByObligationId)
+        obligation.id,
+        obligation.applyTo(recognisedFulfilments, fulfilmentIdsByObligationId)
       )
     }
   }
@@ -454,15 +455,15 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
   } = context
 
   const fulfilmentIdsByObligationId = new Map()
-  for (const o of obligations) {
-    if (obligationsByCategory.get(o.id) !== 'group') continue
-    if (!isInScope(o)) {
-      fulfilmentIdsByObligationId.set(o.id, new Set())
+  for (const obligation of obligations) {
+    if (obligationsByCategory.get(obligation.id) !== 'group') continue
+    if (!isInScope(obligation)) {
+      fulfilmentIdsByObligationId.set(obligation.id, new Set())
       continue
     }
-    const prefixLen = obligationAncestorGroups.get(o.id).length + 1
+    const prefixLen = obligationAncestorGroups.get(obligation.id).length + 1
     const ids = new Set()
-    for (const desc of obligationDescendants.get(o.id)) {
+    for (const desc of obligationDescendants.get(obligation.id)) {
       const descendantFulfilment = amendedFulfilments[desc.id]
       if (!isKeyedRecord(descendantFulfilment)) continue
       for (const key of Object.keys(descendantFulfilment)) {
@@ -472,7 +473,7 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
         }
       }
     }
-    fulfilmentIdsByObligationId.set(o.id, ids)
+    fulfilmentIdsByObligationId.set(obligation.id, ids)
   }
   return fulfilmentIdsByObligationId
 }
@@ -483,8 +484,11 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
 // Returns `Object<obligationId, implication>`.
 export function buildImplications(obligations, context) {
   const implicationsByObligation = {}
-  for (const o of obligations) {
-    implicationsByObligation[o.id] = buildImplication(o, context)
+  for (const obligation of obligations) {
+    implicationsByObligation[obligation.id] = buildImplication(
+      obligation,
+      context
+    )
   }
   return implicationsByObligation
 }
@@ -594,24 +598,24 @@ function isKeyedRecord(value) {
 // re-uses the previous object refs for untouched entries; a filter
 // produces a new object even when its contents are identical, which we
 // resolve by deep-comparing the keyed-record case).
-function viewsEqual(a, b) {
-  if (a === b) return true
-  const keysA = Object.keys(a)
-  const keysB = Object.keys(b)
+function viewsEqual(viewA, viewB) {
+  if (viewA === viewB) return true
+  const keysA = Object.keys(viewA)
+  const keysB = Object.keys(viewB)
   if (keysA.length !== keysB.length) return false
-  for (const k of keysA) {
-    if (!Object.hasOwn(b, k)) return false
-    const va = a[k]
-    const vb = b[k]
-    if (va === vb) continue
+  for (const key of keysA) {
+    if (!Object.hasOwn(viewB, key)) return false
+    const valueA = viewA[key]
+    const valueB = viewB[key]
+    if (valueA === valueB) continue
     // purge may recreate keyed-record entries — compare their keys.
-    if (isKeyedRecord(va) && isKeyedRecord(vb)) {
-      const rka = Object.keys(va)
-      const rkb = Object.keys(vb)
-      if (rka.length !== rkb.length) return false
-      for (const rk of rka) {
-        if (!Object.hasOwn(vb, rk)) return false
-        if (va[rk] !== vb[rk]) return false
+    if (isKeyedRecord(valueA) && isKeyedRecord(valueB)) {
+      const recordKeysA = Object.keys(valueA)
+      const recordKeysB = Object.keys(valueB)
+      if (recordKeysA.length !== recordKeysB.length) return false
+      for (const recordKey of recordKeysA) {
+        if (!Object.hasOwn(valueB, recordKey)) return false
+        if (valueA[recordKey] !== valueB[recordKey]) return false
       }
       continue
     }

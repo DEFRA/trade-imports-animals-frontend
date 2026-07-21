@@ -1196,7 +1196,7 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
     name: 'g1',
     applyTo: () => ({ inScope: true, status: 'mandatory' })
   }
-  const d = {
+  const dependent = {
     id: 'd',
     name: 'd',
     applyTo: (fulfilments) =>
@@ -1208,7 +1208,7 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
     id: 'd2',
     name: 'd2',
     applyTo: (fulfilments) =>
-      fulfilments[d.id] === 'yes'
+      fulfilments[dependent.id] === 'yes'
         ? { inScope: true, status: 'mandatory' }
         : { inScope: false }
   }
@@ -1217,7 +1217,7 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
     name: 'unrelated',
     applyTo: () => ({ inScope: true, status: 'optional' })
   }
-  const cascadeManifest = [g1, d, d2, unrelated]
+  const cascadeManifest = [g1, dependent, d2, unrelated]
 
   it('two-hop cascade: closing G1 purges D AND takes D2 out of scope in the same call', () => {
     const cascadeEvaluator = createObligationEvaluator({
@@ -1227,11 +1227,11 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
     // dependent also answered.
     const result = cascadeEvaluator.evaluate({
       [g1.id]: 'closed',
-      [d.id]: 'yes',
+      [dependent.id]: 'yes',
       [d2.id]: 'anything'
     })
     // D goes out of scope because G1 is closed — its value is purged.
-    expect(result.fulfilments[d.id]).toBeUndefined()
+    expect(result.fulfilments[dependent.id]).toBeUndefined()
     // Load-bearing: D2's applyTo reads D. With pre-purge evaluation,
     // D2's applyTo sees the stale `d: 'yes'` and D2 stays in scope —
     // its value survives the purge. With post-purge evaluation, D2's
@@ -1250,7 +1250,7 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
     // accidentally dropping obligations whose applyTo is a constant.
     const result = cascadeEvaluator.evaluate({
       [g1.id]: 'closed',
-      [d.id]: 'yes',
+      [dependent.id]: 'yes',
       [d2.id]: 'anything',
       [unrelated.id]: 'kept'
     })

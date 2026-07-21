@@ -90,7 +90,12 @@ import { isRecordMap, readGate } from './helper-internals.js'
  * `fulfilmentIdsByObligationId` map supplies the paths — the
  * obligation code doesn't enumerate them itself.
  */
-export function allowListed(gateObligation, values, projectionGroup, reasons) {
+export const allowListed = (
+  gateObligation,
+  values,
+  projectionGroup,
+  reasons
+) => {
   const fn = (fulfilments, fulfilmentIdsByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
@@ -139,14 +144,14 @@ export function allowListed(gateObligation, values, projectionGroup, reasons) {
  * See also `allowListed` (identical projection/frame semantics — the
  * two are duals).
  */
-export function notInUnionOf(
+export const notInUnionOf = (
   gateObligation,
   unionOfAllowlists,
   projectionGroup,
   reasons
-) {
+) => {
   const derivedUnion = deriveUnion(unionOfAllowlists)
-  const admit = (v) => !derivedUnion.includes(v)
+  const admit = (value) => !derivedUnion.includes(value)
   const fn = (fulfilments, fulfilmentIdsByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
@@ -172,7 +177,7 @@ export function notInUnionOf(
  * match, whenFalse on miss. Handles per-line-gate → notification-level-
  * gated shape (e.g. CPH: "any commodity line has a CPH-required code").
  */
-export function anyAllowListed(gateObligation, values, whenTrue, whenFalse) {
+export const anyAllowListed = (gateObligation, values, whenTrue, whenFalse) => {
   const fn = (fulfilments) => {
     const { candidates } = readGate(fulfilments, gateObligation.id)
     return candidates.some((v) => values.includes(v)) ? whenTrue : whenFalse
@@ -217,7 +222,7 @@ export function anyAllowListed(gateObligation, values, whenTrue, whenFalse) {
  * synthesiser + a seeding rule. Adding a new `operator` here means
  * updating `analysis/reachability.js` `synthesiseWitness`.
  */
-export function branchedGate(predicate, whenTrue, whenFalse, predicateMeta) {
+export const branchedGate = (predicate, whenTrue, whenFalse, predicateMeta) => {
   const fn = (fulfilments, fulfilmentIdsByObligationId) =>
     predicate(fulfilments, fulfilmentIdsByObligationId) ? whenTrue : whenFalse
   fn.metadata = {
@@ -233,7 +238,7 @@ export function branchedGate(predicate, whenTrue, whenFalse, predicateMeta) {
  * matches — scalar equality check. True where `gateObligation`'s
  * stored value equals `value`. Returns a scalar decision.
  */
-export function matches(gateObligation, value) {
+export const matches = (gateObligation, value) => {
   const fn = (fulfilments) =>
     fulfilments[gateObligation.id] === value
       ? { inScope: true }
@@ -251,7 +256,7 @@ export function matches(gateObligation, value) {
  * or `.some()` / `.every()` chain with other siblings for
  * cross-sibling patterns.
  */
-export function present(obligation) {
+export const present = (obligation) => {
   return (fulfilments) => {
     const stored = fulfilments[obligation.id]
     if (stored === undefined) return false
@@ -311,7 +316,7 @@ export function present(obligation) {
  * @param {object} whenTrue — decision returned on match.
  * @param {object} whenFalse — decision returned on mismatch.
  */
-export function equalsGate(gateObligation, value, whenTrue, whenFalse) {
+export const equalsGate = (gateObligation, value, whenTrue, whenFalse) => {
   const fn = (fulfilments) =>
     fulfilments[gateObligation.id] === value ? whenTrue : whenFalse
   fn.metadata = {
@@ -341,7 +346,7 @@ export function equalsGate(gateObligation, value, whenTrue, whenFalse) {
  * @param {object} whenTrue — decision returned when gate is answered.
  * @param {object} whenFalse — decision returned when gate is unanswered.
  */
-export function presentGate(gateObligation, whenTrue, whenFalse) {
+export const presentGate = (gateObligation, whenTrue, whenFalse) => {
   const isPresent = present(gateObligation)
   const fn = (fulfilments) => (isPresent(fulfilments) ? whenTrue : whenFalse)
   fn.metadata = {
@@ -371,7 +376,7 @@ export function presentGate(gateObligation, whenTrue, whenFalse) {
  * @param {object} whenTrue — decision returned on inclusion.
  * @param {object} whenFalse — decision returned on exclusion.
  */
-export function includesGate(gateObligation, values, whenTrue, whenFalse) {
+export const includesGate = (gateObligation, values, whenTrue, whenFalse) => {
   const fn = (fulfilments) =>
     values.includes(fulfilments[gateObligation.id]) ? whenTrue : whenFalse
   fn.metadata = {
@@ -409,7 +414,7 @@ export function includesGate(gateObligation, values, whenTrue, whenFalse) {
  * @param {string} status — 'mandatory' or 'optional'.
  * @param {Array} [reasons] — optional reasons to attach.
  */
-export function alwaysInScope(status, reasons) {
+export const alwaysInScope = (status, reasons) => {
   const decision = reasons
     ? { inScope: true, status, reasons }
     : { inScope: true, status }
@@ -457,7 +462,7 @@ export function alwaysInScope(status, reasons) {
  *   explicit `dependsOn` nor a recoverable helper metadata — commit 2
  *   uses that to detect uncovered gates).
  */
-export function obligationMetadata(obligation) {
+export const obligationMetadata = (obligation) => {
   const gateMeta = obligation?.applyTo?.metadata ?? {}
   const explicit = obligation?.dependsOn
   const dependsOn = Array.isArray(explicit)
@@ -489,7 +494,7 @@ export function obligationMetadata(obligation) {
  * @returns {string[] | undefined} — the derived dependsOn list, or
  *   `undefined` when the metadata alone can't answer.
  */
-function deriveDependsOn(gateMeta) {
+const deriveDependsOn = (gateMeta) => {
   switch (gateMeta?.type) {
     case 'allowListed':
     case 'anyAllowListed':
@@ -524,35 +529,35 @@ function deriveDependsOn(gateMeta) {
  * values) into a set-like array. Preserves first-seen order across
  * inputs so `.metadata.values` is deterministic + comparable.
  */
-function deriveUnion(unionOfAllowlists) {
+const deriveUnion = (unionOfAllowlists) => {
   const flat =
     unionOfAllowlists.length > 0 && Array.isArray(unionOfAllowlists[0])
       ? unionOfAllowlists.flat()
       : unionOfAllowlists
-  const seen = new Set()
-  const out = []
-  for (const v of flat) {
-    if (seen.has(v)) continue
-    seen.add(v)
-    out.push(v)
-  }
-  return out
+  return [...new Set(flat)]
 }
 
-function filterAndProject(
+// The two storage shapes `filterAndProject` reads: a keyed-record map
+// (one candidate per key) or a bare scalar (a single candidate, keyed
+// by the empty string so the downstream record/projection logic can
+// treat both shapes uniformly).
+const recordMapPassingKeys = (stored, predicate) =>
+  Object.entries(stored)
+    .filter(([, value]) => predicate(value))
+    .map(([key]) => key)
+
+const scalarPassingKeys = (stored, predicate) => (predicate(stored) ? [''] : [])
+
+const filterAndProject = (
   storedForGate,
   predicate,
   projectionGroup,
   fulfilmentIdsByObligationId
-) {
+) => {
   const stored = storedForGate ?? {}
   const passingKeys = isRecordMap(stored)
-    ? Object.entries(stored)
-        .filter(([, value]) => predicate(value))
-        .map(([key]) => key)
-    : predicate(stored)
-      ? ['']
-      : []
+    ? recordMapPassingKeys(stored, predicate)
+    : scalarPassingKeys(stored, predicate)
 
   if (passingKeys.length === 0) return { inScope: false }
 

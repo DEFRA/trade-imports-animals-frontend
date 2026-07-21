@@ -43,8 +43,8 @@ export const isRecordMap = (value) =>
  * readGate — canonical "stored → candidates" normalization. Reads
  * `fulfilments[gateId]` and returns `{ present, candidates }`.
  *
- * @param {object} fulfilments — the raw storage map.
- * @param {string} gateId — the obligation id whose stored value to read.
+ * @param {object} fulfilments - the raw storage map.
+ * @param {string} gateId - the obligation id whose stored value to read.
  * @returns {{ present: boolean, candidates: unknown[] }}
  */
 export const readGate = (fulfilments, gateId) => {

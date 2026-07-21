@@ -25,13 +25,13 @@ const groupObl = { id: 'group-obl' }
 // ---------------------------------------------------------------------------
 
 describe('allowListed', () => {
-  it('returns inScope: false when no stored keys pass the allowlist', () => {
+  it('Should return inScope: false when no stored keys pass the allowlist', () => {
     const gate = allowListed(codeObl, ['a', 'b'])
     const decision = gate({ [codeObl.id]: { k1: 'x', k2: 'y' } }, new Map())
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('returns records at gate level when no projection group', () => {
+  it('Should return records at gate level when no projection group', () => {
     const gate = allowListed(codeObl, ['a', 'b'])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'x', k3: 'b' } },
@@ -40,7 +40,7 @@ describe('allowListed', () => {
     expect(decision).toEqual({ inScope: true, records: ['k1', 'k3'] })
   })
 
-  it('projects to group instance-paths when a projection group is supplied', () => {
+  it('Should project to group instance-paths when a projection group is supplied', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a', line2: 'x' } }
     const ids = new Map([
@@ -53,7 +53,7 @@ describe('allowListed', () => {
     })
   })
 
-  it('returns empty records when the group has no instances yet', () => {
+  it('Should return empty records when the group has no instances yet', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a' } }
     const ids = new Map()
@@ -61,7 +61,7 @@ describe('allowListed', () => {
     expect(decision).toEqual({ inScope: false, records: [] })
   })
 
-  it('exposes metadata for introspection', () => {
+  it('Should expose metadata for introspection', () => {
     const gate = allowListed(codeObl, ['a', 'b'], groupObl)
     expect(gate.metadata).toEqual({
       type: 'allowListed',
@@ -72,7 +72,7 @@ describe('allowListed', () => {
     })
   })
 
-  it('merges reasons into the decision when in scope', () => {
+  it('Should merge reasons into the decision when in scope', () => {
     const reason = { code: 'x.applicable', explanation: 'because x' }
     const gate = allowListed(codeObl, ['a'], null, [reason])
     const decision = gate({ [codeObl.id]: { k1: 'a' } }, new Map())
@@ -83,7 +83,7 @@ describe('allowListed', () => {
     })
   })
 
-  it('does not attach reasons to out-of-scope decisions', () => {
+  it('Should not attach reasons to out-of-scope decisions', () => {
     const reason = { code: 'x', explanation: 'y' }
     const gate = allowListed(codeObl, ['a'], null, [reason])
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
@@ -108,17 +108,17 @@ describe('allowListed', () => {
 // ---------------------------------------------------------------------------
 
 describe('notInUnionOf', () => {
-  const A = ['a', 'b']
-  const B = ['c', 'd']
+  const firstAllowlist = ['a', 'b']
+  const secondAllowlist = ['c', 'd']
 
-  it('returns inScope: false when every stored key IS in the union', () => {
-    const gate = notInUnionOf(codeObl, [A, B])
+  it('Should return inScope: false when every stored key IS in the union', () => {
+    const gate = notInUnionOf(codeObl, [firstAllowlist, secondAllowlist])
     const decision = gate({ [codeObl.id]: { k1: 'a', k2: 'c' } }, new Map())
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('returns records at gate level for keys whose value is NOT in the union', () => {
-    const gate = notInUnionOf(codeObl, [A, B])
+  it('Should return records at gate level for keys whose value is NOT in the union', () => {
+    const gate = notInUnionOf(codeObl, [firstAllowlist, secondAllowlist])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'z', k3: 'c', k4: 'q' } },
       new Map()
@@ -126,8 +126,12 @@ describe('notInUnionOf', () => {
     expect(decision).toEqual({ inScope: true, records: ['k2', 'k4'] })
   })
 
-  it('projects to group instance-paths when a projection group is supplied', () => {
-    const gate = notInUnionOf(codeObl, [A, B], groupObl)
+  it('Should project to group instance-paths when a projection group is supplied', () => {
+    const gate = notInUnionOf(
+      codeObl,
+      [firstAllowlist, secondAllowlist],
+      groupObl
+    )
     const fulfilments = { [codeObl.id]: { line1: 'z', line2: 'a' } }
     const ids = new Map([
       [groupObl.id, ['line1/unit1', 'line1/unit2', 'line2/unit1']]
@@ -139,12 +143,17 @@ describe('notInUnionOf', () => {
     })
   })
 
-  it('exposes metadata.values as the union of the input allowlists (derived at helper-invocation time)', () => {
+  it('Should expose metadata.values as the union of the input allowlists (derived at helper-invocation time)', () => {
     // The load-bearing REPORT §5.2 point: the union is DATA on the
     // metadata sidecar, not a re-computation on each call. Adds a
     // fifth typed identifier to the list of allowlists → the union
     // widens; the closure body doesn't need updating.
-    const gate = notInUnionOf(codeObl, [A, B], groupObl, null)
+    const gate = notInUnionOf(
+      codeObl,
+      [firstAllowlist, secondAllowlist],
+      groupObl,
+      null
+    )
     expect(gate.metadata).toEqual({
       type: 'notInUnionOf',
       obligation: codeObl.id,
@@ -154,7 +163,7 @@ describe('notInUnionOf', () => {
     })
   })
 
-  it('metadata.values de-duplicates across overlapping input allowlists', () => {
+  it('Should de-duplicate metadata.values across overlapping input allowlists', () => {
     // Real manifest: PASSPORT + TATTOO share '01061900', '0102' — the
     // derived union must be a set-like list, not a bag.
     const gate = notInUnionOf(codeObl, [
@@ -164,9 +173,14 @@ describe('notInUnionOf', () => {
     expect(gate.metadata.values).toEqual(['0101', '0102', '0103'])
   })
 
-  it('merges reasons into the decision when in scope', () => {
+  it('Should merge reasons into the decision when in scope', () => {
     const reason = { code: 'x.applicable', explanation: 'because x' }
-    const gate = notInUnionOf(codeObl, [A, B], null, [reason])
+    const gate = notInUnionOf(
+      codeObl,
+      [firstAllowlist, secondAllowlist],
+      null,
+      [reason]
+    )
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
     expect(decision).toEqual({
       inScope: true,
@@ -175,14 +189,19 @@ describe('notInUnionOf', () => {
     })
   })
 
-  it('does not attach reasons to out-of-scope decisions', () => {
+  it('Should not attach reasons to out-of-scope decisions', () => {
     const reason = { code: 'x', explanation: 'y' }
-    const gate = notInUnionOf(codeObl, [A, B], null, [reason])
+    const gate = notInUnionOf(
+      codeObl,
+      [firstAllowlist, secondAllowlist],
+      null,
+      [reason]
+    )
     const decision = gate({ [codeObl.id]: { k1: 'a' } }, new Map())
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('accepts a flat list of values too (single-allowlist complement)', () => {
+  it('Should accept a flat list of values too (single-allowlist complement)', () => {
     // The typical shape is `notInUnionOf(gate, [listA, listB, ...])` —
     // but the helper is ergonomic-tolerant: a flat list of strings is
     // treated as a single allowlist. Keeps single-list complements
@@ -198,24 +217,24 @@ describe('anyAllowListed', () => {
   const whenTrue = { inScope: true, status: 'mandatory' }
   const whenFalse = { inScope: false }
 
-  it('returns whenTrue when any stored value is in the allowlist', () => {
+  it('Should return whenTrue when any stored value is in the allowlist', () => {
     const gate = anyAllowListed(codeObl, ['a', 'b'], whenTrue, whenFalse)
     const decision = gate({ [codeObl.id]: { k1: 'x', k2: 'a', k3: 'y' } })
     expect(decision).toEqual(whenTrue)
   })
 
-  it('returns whenFalse when no stored value is in the allowlist', () => {
+  it('Should return whenFalse when no stored value is in the allowlist', () => {
     const gate = anyAllowListed(codeObl, ['a'], whenTrue, whenFalse)
     const decision = gate({ [codeObl.id]: { k1: 'x', k2: 'y' } })
     expect(decision).toEqual(whenFalse)
   })
 
-  it('returns whenFalse when nothing is stored at all', () => {
+  it('Should return whenFalse when nothing is stored at all', () => {
     const gate = anyAllowListed(codeObl, ['a'], whenTrue, whenFalse)
     expect(gate({})).toEqual(whenFalse)
   })
 
-  it('handles scalar stored values (not just maps)', () => {
+  it('Should handle scalar stored values (not just maps)', () => {
     const gate = anyAllowListed(codeObl, ['yes'], whenTrue, whenFalse)
     expect(gate({ [codeObl.id]: 'yes' })).toEqual(whenTrue)
     expect(gate({ [codeObl.id]: 'no' })).toEqual(whenFalse)
@@ -230,30 +249,30 @@ describe('branchedGate', () => {
   const whenTrue = { inScope: true, status: 'mandatory' }
   const whenFalse = { inScope: true, status: 'optional' }
 
-  it('returns whenTrue when the predicate is true', () => {
+  it('Should return whenTrue when the predicate is true', () => {
     const gate = branchedGate(() => true, whenTrue, whenFalse)
     expect(gate({}, new Map())).toEqual(whenTrue)
   })
 
-  it('returns whenFalse when the predicate is false', () => {
+  it('Should return whenFalse when the predicate is false', () => {
     const gate = branchedGate(() => false, whenTrue, whenFalse)
     expect(gate({}, new Map())).toEqual(whenFalse)
   })
 
-  it('threads fulfilments and ids into the predicate', () => {
+  it('Should thread fulfilments and ids into the predicate', () => {
     let seen = null
     const gate = branchedGate(
-      (f, ids) => {
-        seen = { f, ids }
+      (fulfilments, ids) => {
+        seen = { fulfilments, ids }
         return false
       },
       whenTrue,
       whenFalse
     )
-    const f = { any: 'thing' }
+    const fulfilments = { any: 'thing' }
     const ids = new Map([['k', ['v']]])
-    gate(f, ids)
-    expect(seen).toEqual({ f, ids })
+    gate(fulfilments, ids)
+    expect(seen).toEqual({ fulfilments, ids })
   })
 })
 
@@ -262,17 +281,17 @@ describe('branchedGate', () => {
 // ---------------------------------------------------------------------------
 
 describe('matches', () => {
-  it('returns inScope: true when the stored value matches', () => {
+  it('Should return inScope: true when the stored value matches', () => {
     const gate = matches(boolObl, 'yes')
     expect(gate({ [boolObl.id]: 'yes' })).toEqual({ inScope: true })
   })
 
-  it('returns inScope: false when the stored value differs', () => {
+  it('Should return inScope: false when the stored value differs', () => {
     const gate = matches(boolObl, 'yes')
     expect(gate({ [boolObl.id]: 'no' })).toEqual({ inScope: false })
   })
 
-  it('returns inScope: false when nothing is stored', () => {
+  it('Should return inScope: false when nothing is stored', () => {
     const gate = matches(boolObl, 'yes')
     expect(gate({})).toEqual({ inScope: false })
   })
@@ -283,24 +302,24 @@ describe('matches', () => {
 // ---------------------------------------------------------------------------
 
 describe('present', () => {
-  it('returns true when a scalar value is stored', () => {
+  it('Should return true when a scalar value is stored', () => {
     expect(present(boolObl)({ [boolObl.id]: 'anything' })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: 0 })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: false })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: '' })).toBe(true)
   })
 
-  it('returns false when nothing is stored', () => {
+  it('Should return false when nothing is stored', () => {
     expect(present(boolObl)({})).toBe(false)
     expect(present(boolObl)({ [boolObl.id]: undefined })).toBe(false)
     expect(present(boolObl)({ [boolObl.id]: null })).toBe(false)
   })
 
-  it('returns true for indexed obligations with at least one key', () => {
+  it('Should return true for indexed obligations with at least one key', () => {
     expect(present(groupObl)({ [groupObl.id]: { k1: 'v' } })).toBe(true)
   })
 
-  it('returns false for indexed obligations with no keys', () => {
+  it('Should return false for indexed obligations with no keys', () => {
     expect(present(groupObl)({ [groupObl.id]: {} })).toBe(false)
   })
 })
@@ -317,7 +336,7 @@ describe('present', () => {
 // ---------------------------------------------------------------------------
 
 describe('obligationMetadata', () => {
-  it('surfaces dependsOn from an obligation authored with the new schema key', () => {
+  it('Should surface dependsOn from an obligation authored with the new schema key', () => {
     const obligation = {
       id: 'x-id',
       name: 'x',
@@ -329,7 +348,7 @@ describe('obligationMetadata', () => {
     expect(meta.dependsOn).toEqual(['A', 'B'])
   })
 
-  it('returns dependsOn: undefined when the obligation omits the key', () => {
+  it('Should return dependsOn: undefined when the obligation omits the key', () => {
     // Commit 2 will grep this shape: "if dependsOn is undefined and the
     // obligation carries a gated applyTo, fail the coverage assertion."
     const obligation = {
@@ -341,7 +360,7 @@ describe('obligationMetadata', () => {
     expect(meta.dependsOn).toBeUndefined()
   })
 
-  it('merges the applyTo helper sidecar (gate shape) with dependsOn', () => {
+  it('Should merge the applyTo helper sidecar (gate shape) with dependsOn', () => {
     // The helper-attached `.metadata` (allowListed/branchedGate/etc.)
     // still surfaces — dependsOn is additive, not a replacement.
     const gateObl = { id: 'gate-id' }
@@ -357,7 +376,7 @@ describe('obligationMetadata', () => {
     expect(meta.dependsOn).toEqual([gateObl.id])
   })
 
-  it('handles obligations with no applyTo (structural / always-in-scope)', () => {
+  it('Should handle obligations with no applyTo (structural / always-in-scope)', () => {
     // Group containers and unconditional obligations have no applyTo.
     // The accessor must not throw — it returns just the schema-level
     // fields (dependsOn is undefined here).
@@ -391,22 +410,22 @@ describe('equalsGate', () => {
   const whenTrue = { inScope: true, status: 'mandatory' }
   const whenFalse = { inScope: true, status: 'optional' }
 
-  it('returns whenTrue when the stored value equals the target', () => {
+  it('Should return whenTrue when the stored value equals the target', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'yes' })).toEqual(whenTrue)
   })
 
-  it('returns whenFalse when the stored value differs', () => {
+  it('Should return whenFalse when the stored value differs', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'no' })).toEqual(whenFalse)
   })
 
-  it('returns whenFalse when nothing is stored', () => {
+  it('Should return whenFalse when nothing is stored', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate({})).toEqual(whenFalse)
   })
 
-  it('handles status flip (mandatory → optional) — regionCode shape', () => {
+  it('Should handle status flip (mandatory → optional) — regionCode shape', () => {
     // regionCode uses `whenTrue: {inScope:true, status:'mandatory'}` +
     // `whenFalse: {inScope:true, status:'optional'}`. Both branches
     // in-scope; only status flips. The helper must pass through
@@ -429,7 +448,7 @@ describe('equalsGate', () => {
     })
   })
 
-  it('exposes metadata with obligationId + value + branches', () => {
+  it('Should expose metadata with obligationId + value + branches', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
       type: 'equalsGate',
@@ -445,12 +464,12 @@ describe('presentGate', () => {
   const whenTrue = { inScope: true, status: 'mandatory' }
   const whenFalse = { inScope: true, status: 'optional' }
 
-  it('returns whenTrue when the gate has any scalar value', () => {
+  it('Should return whenTrue when the gate has any scalar value', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'anything' })).toEqual(whenTrue)
   })
 
-  it('returns whenTrue for truthy-but-falsy values (0, false, "")', () => {
+  it('Should return whenTrue for truthy-but-falsy values (0, false, "")', () => {
     // Matches `present`'s semantics: any non-null/non-undefined scalar
     // counts as "answered". Empty-string is a stored answer (the user
     // saved the page blank), which regionCode's status-swap needs to
@@ -461,24 +480,24 @@ describe('presentGate', () => {
     expect(gate({ [boolObl.id]: '' })).toEqual(whenTrue)
   })
 
-  it('returns whenFalse when the gate is undefined / null', () => {
+  it('Should return whenFalse when the gate is undefined / null', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate({})).toEqual(whenFalse)
     expect(gate({ [boolObl.id]: undefined })).toEqual(whenFalse)
     expect(gate({ [boolObl.id]: null })).toEqual(whenFalse)
   })
 
-  it('returns whenTrue for indexed obligations with at least one key', () => {
+  it('Should return whenTrue for indexed obligations with at least one key', () => {
     const gate = presentGate(groupObl, whenTrue, whenFalse)
     expect(gate({ [groupObl.id]: { k1: 'v' } })).toEqual(whenTrue)
   })
 
-  it('returns whenFalse for indexed obligations with no keys', () => {
+  it('Should return whenFalse for indexed obligations with no keys', () => {
     const gate = presentGate(groupObl, whenTrue, whenFalse)
     expect(gate({ [groupObl.id]: {} })).toEqual(whenFalse)
   })
 
-  it('exposes metadata with obligationId + branches (no value)', () => {
+  it('Should expose metadata with obligationId + branches (no value)', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
       type: 'presentGate',
@@ -494,23 +513,23 @@ describe('includesGate', () => {
   const whenFalse = { inScope: false }
   const LAND_MODES = ['railway', 'road-vehicle']
 
-  it('returns whenTrue when the stored value is in the list', () => {
+  it('Should return whenTrue when the stored value is in the list', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'railway' })).toEqual(whenTrue)
     expect(gate({ [boolObl.id]: 'road-vehicle' })).toEqual(whenTrue)
   })
 
-  it('returns whenFalse when the stored value is not in the list', () => {
+  it('Should return whenFalse when the stored value is not in the list', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'sea' })).toEqual(whenFalse)
   })
 
-  it('returns whenFalse when nothing is stored', () => {
+  it('Should return whenFalse when nothing is stored', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate({})).toEqual(whenFalse)
   })
 
-  it('exposes metadata with obligationId + values + branches', () => {
+  it('Should expose metadata with obligationId + values + branches', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
       type: 'includesGate',
@@ -523,7 +542,7 @@ describe('includesGate', () => {
 })
 
 describe('alwaysInScope', () => {
-  it('returns a fixed decision with the given status', () => {
+  it('Should return a fixed decision with the given status', () => {
     const gate = alwaysInScope('mandatory')
     expect(gate({})).toEqual({ inScope: true, status: 'mandatory' })
     // The stored view doesn't matter — same decision.
@@ -533,7 +552,7 @@ describe('alwaysInScope', () => {
     })
   })
 
-  it('attaches reasons when provided', () => {
+  it('Should attach reasons when provided', () => {
     const reason = { code: 'x', explanation: 'y' }
     const gate = alwaysInScope('mandatory', [reason])
     expect(gate({})).toEqual({
@@ -543,12 +562,12 @@ describe('alwaysInScope', () => {
     })
   })
 
-  it('supports optional status too', () => {
+  it('Should support optional status too', () => {
     const gate = alwaysInScope('optional')
     expect(gate({})).toEqual({ inScope: true, status: 'optional' })
   })
 
-  it('exposes metadata with status (+ optional reasons)', () => {
+  it('Should expose metadata with status (+ optional reasons)', () => {
     const gate = alwaysInScope('mandatory')
     expect(gate.metadata).toEqual({
       type: 'alwaysInScope',
@@ -577,37 +596,37 @@ describe('alwaysInScope', () => {
 // ---------------------------------------------------------------------------
 
 describe('isRecordMap', () => {
-  it('returns true for a plain records-keyed object', () => {
+  it('Should return true for a plain records-keyed object', () => {
     expect(isRecordMap({ line1: 'a', line2: 'b' })).toBe(true)
   })
 
-  it('returns true for an empty object (still a records-map shape)', () => {
+  it('Should return true for an empty object (still a records-map shape)', () => {
     // Empty-map is treated as a records-map at the shape level — callers
     // that care about "has any records" use `present` semantics on top.
     expect(isRecordMap({})).toBe(true)
   })
 
-  it('returns false for scalar strings', () => {
+  it('Should return false for scalar strings', () => {
     expect(isRecordMap('a')).toBe(false)
     expect(isRecordMap('')).toBe(false)
   })
 
-  it('returns false for other scalar primitives', () => {
+  it('Should return false for other scalar primitives', () => {
     expect(isRecordMap(0)).toBe(false)
     expect(isRecordMap(false)).toBe(false)
     expect(isRecordMap(true)).toBe(false)
   })
 
-  it('returns false for undefined', () => {
+  it('Should return false for undefined', () => {
     expect(isRecordMap(undefined)).toBe(false)
   })
 
-  it('returns false for null', () => {
+  it('Should return false for null', () => {
     // null is `typeof 'object'` in JS — the check must exclude it.
     expect(isRecordMap(null)).toBe(false)
   })
 
-  it('returns false for arrays', () => {
+  it('Should return false for arrays', () => {
     // Arrays are `typeof 'object'` but semantically not records-maps.
     // The original inline check used `!Array.isArray(stored)` — pin it.
     expect(isRecordMap([])).toBe(false)
@@ -618,11 +637,11 @@ describe('isRecordMap', () => {
 describe('readGate', () => {
   const gateId = 'gate-id'
 
-  it('returns { present: false, candidates: [] } when nothing is stored', () => {
+  it('Should return { present: false, candidates: [] } when nothing is stored', () => {
     expect(readGate({}, gateId)).toEqual({ present: false, candidates: [] })
   })
 
-  it('returns { present: false, candidates: [] } for undefined stored value', () => {
+  it('Should return { present: false, candidates: [] } for undefined stored value', () => {
     // Explicitly-stored-as-undefined is treated the same as missing.
     expect(readGate({ [gateId]: undefined }, gateId)).toEqual({
       present: false,
@@ -630,14 +649,14 @@ describe('readGate', () => {
     })
   })
 
-  it('wraps a scalar string in a single-element candidates array', () => {
+  it('Should wrap a scalar string in a single-element candidates array', () => {
     expect(readGate({ [gateId]: 'yes' }, gateId)).toEqual({
       present: true,
       candidates: ['yes']
     })
   })
 
-  it('wraps other scalar primitives (0, false, empty string) as present', () => {
+  it('Should wrap other scalar primitives (0, false, empty string) as present', () => {
     // Matches the original inline `stored !== undefined ? [stored] : []`
     // — falsy-but-defined values ARE present as candidates.
     expect(readGate({ [gateId]: 0 }, gateId)).toEqual({
@@ -654,7 +673,7 @@ describe('readGate', () => {
     })
   })
 
-  it('treats null as a scalar (present with a single null candidate)', () => {
+  it('Should treat null as a scalar (present with a single null candidate)', () => {
     // The original inline check was `stored && typeof stored === 'object'
     // && !Array.isArray(stored)` — null fails the truthiness gate and
     // falls to the scalar branch as `!== undefined`. Pin that.
@@ -664,14 +683,14 @@ describe('readGate', () => {
     })
   })
 
-  it('projects a records-map to its values as candidates', () => {
+  it('Should project a records-map to its values as candidates', () => {
     expect(readGate({ [gateId]: { line1: 'a', line2: 'b' } }, gateId)).toEqual({
       present: true,
       candidates: ['a', 'b']
     })
   })
 
-  it('returns present:true with empty candidates for an empty records-map', () => {
+  it('Should return present:true with empty candidates for an empty records-map', () => {
     // Empty object is a records-map shape but has no values; `some()`
     // over an empty candidates array still returns false — matches the
     // original inline behaviour for `{}` (Object.values({}) is []).
@@ -681,7 +700,7 @@ describe('readGate', () => {
     })
   })
 
-  it('treats arrays as scalars (single-element candidates wrapping the array)', () => {
+  it('Should treat arrays as scalars (single-element candidates wrapping the array)', () => {
     // The original inline check falls arrays through to the scalar branch
     // because of `!Array.isArray(stored)`. Preserve that verbatim — a
     // helper caller receiving an array-shaped stored value gets ONE

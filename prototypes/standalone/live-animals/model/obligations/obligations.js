@@ -970,8 +970,8 @@ export const obligations = [
 ]
 
 // Groups are obligations that other obligations reference via `within`.
-export const groups = obligations.filter((o) =>
-  obligations.some((other) => other.within === o)
+export const groups = obligations.filter((obligation) =>
+  obligations.some((other) => other.within === obligation)
 )
 
 // -----------------------------------------------------------------------------
@@ -988,10 +988,20 @@ export const groups = obligations.filter((o) =>
 for (const container of obligations) {
   if (!container?.requires?.allOrNothingOfIds) continue
   for (const memberId of container.requires.allOrNothingOfIds) {
-    const member = obligations.find((o) => o.id === memberId)
+    const member = obligations.find((candidate) => candidate.id === memberId)
     if (!member) continue
     const existing = member.containers ?? []
-    if (existing.some((c) => c.id === container.id)) continue
+    if (
+      existing.some(
+        (existingContainer) => existingContainer.id === container.id
+      )
+    ) {
+      continue
+    }
+    // Deliberate exception to the no-in-place-mutation style rule: the
+    // back-ref must land on the SAME obligation object instance already
+    // referenced elsewhere in the manifest (`within` etc.), so a
+    // copy-and-replace here would silently break that shared identity.
     member.containers = existing.concat(container)
   }
 }

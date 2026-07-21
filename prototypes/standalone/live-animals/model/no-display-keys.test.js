@@ -109,10 +109,12 @@ describe('model has no display keys', () => {
   })
 
   it('terminates on a cyclic obligation graph', () => {
-    const a = { id: 'a', name: 'a' }
-    const b = { id: 'b', name: 'b', within: a }
-    a.within = b
-    expect(() => findDisplayKeyOffenders([a, b], new Map())).not.toThrow()
-    expect(findDisplayKeyOffenders([a, b], new Map())).toEqual([])
+    const nodeA = { id: 'a', name: 'a' }
+    const nodeB = { id: 'b', name: 'b', within: nodeA }
+    nodeA.within = nodeB
+    expect(() =>
+      findDisplayKeyOffenders([nodeA, nodeB], new Map())
+    ).not.toThrow()
+    expect(findDisplayKeyOffenders([nodeA, nodeB], new Map())).toEqual([])
   })
 })

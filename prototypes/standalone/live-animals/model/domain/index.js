@@ -51,16 +51,14 @@ const COMMERCIAL_TRANSPORTER_REQUIRED = [
 
 // Address-block composite. Value is a plain object keyed by sub-field
 // name; complete iff every required sub-field is a non-blank string.
-export function addressBlock({ required }) {
+export const addressBlock = ({ required }) => {
   const isComplete = (value) => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       return false
     }
-    for (const sub of required ?? []) {
-      const leaf = value[sub]
-      if (typeof leaf !== 'string' || leaf.trim() === '') return false
-    }
-    return true
+    return (required ?? []).every(
+      (sub) => typeof value[sub] === 'string' && value[sub].trim() !== ''
+    )
   }
   return { type: 'address', required, isComplete }
 }

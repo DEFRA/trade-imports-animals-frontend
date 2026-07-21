@@ -59,16 +59,16 @@ beforeAll(() => {
 
 describe('PACKAGE_COUNT_COMMODITIES → numberOfPackages (line-scoped)', () => {
   for (const code of PACKAGE_COUNT_COMMODITIES) {
-    it(`puts numberOfPackages in scope for a line with commodityCode = '${code}'`, () => {
+    it(`Should put numberOfPackages in scope for a line with commodityCode = '${code}'`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: code }
       })
       const records = state.obligations[numberOfPackages.id].records ?? []
-      expect(records.map((r) => r.fulfilmentId)).toContain('line1')
+      expect(records.map((record) => record.fulfilmentId)).toContain('line1')
     })
   }
 
-  it(`does NOT put numberOfPackages in scope for a control code`, () => {
+  it(`Should not put numberOfPackages in scope for a control code`, () => {
     const state = evaluate({
       [commodityCode.id]: { line1: CONTROL_CODE }
     })
@@ -87,7 +87,7 @@ describe('PACKAGE_COUNT_COMMODITIES → numberOfPackages (line-scoped)', () => {
 
 describe('CPH_REQUIRED_COMMODITIES → cph (top-level anyAllowListed)', () => {
   for (const code of CPH_REQUIRED_COMMODITIES) {
-    it(`puts cph in scope when a line has commodityCode = '${code}'`, () => {
+    it(`Should put cph in scope when a line has commodityCode = '${code}'`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: code }
       })
@@ -95,7 +95,7 @@ describe('CPH_REQUIRED_COMMODITIES → cph (top-level anyAllowListed)', () => {
     })
   }
 
-  it(`does NOT put cph in scope when no line matches`, () => {
+  it(`Should not put cph in scope when no line matches`, () => {
     const state = evaluate({
       [commodityCode.id]: { line1: CONTROL_CODE }
     })
@@ -138,17 +138,19 @@ const UNIT_SCOPED_WHITELISTS = [
 for (const { name, codes, gated } of UNIT_SCOPED_WHITELISTS) {
   describe(`${name} → ${gated.name} (unit-record-scoped)`, () => {
     for (const code of codes) {
-      it(`puts ${gated.name} in scope for a unit under commodityCode = '${code}'`, () => {
+      it(`Should put ${gated.name} in scope for a unit under commodityCode = '${code}'`, () => {
         const state = evaluate({
           [commodityCode.id]: { line1: code },
           [gated.id]: { 'line1/unit1': '' }
         })
         const records = state.obligations[gated.id].records ?? []
-        expect(records.map((r) => r.fulfilmentId)).toContain('line1/unit1')
+        expect(records.map((record) => record.fulfilmentId)).toContain(
+          'line1/unit1'
+        )
       })
     }
 
-    it(`does NOT put ${gated.name} in scope for a control code`, () => {
+    it(`Should not put ${gated.name} in scope for a control code`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: CONTROL_CODE },
         [gated.id]: { 'line1/unit1': '' }
@@ -230,7 +232,7 @@ const WHITELISTS_UNDER_TEST = [
 
 describe('anti-drift — every whitelist matches its expected shape', () => {
   for (const { name, codes } of WHITELISTS_UNDER_TEST) {
-    it(`${name} contains exactly the expected codes`, () => {
+    it(`Should have ${name} contain exactly the expected codes`, () => {
       // Order-insensitive: a reordering is not drift.
       expect([...codes].sort()).toEqual([...EXPECTED[name]].sort())
     })

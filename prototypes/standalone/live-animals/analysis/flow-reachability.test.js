@@ -11,6 +11,8 @@ import {
   enumerateScopeStates,
   proveFlowReachability,
   proveScopeCompleteness,
+  REASON_NO_OWNING_PAGE,
+  REASON_UNREACHABLE_IN_SCOPE,
   seedVariants,
   submitReadySeed
 } from './flow-reachability.js'
@@ -20,7 +22,7 @@ import {
 // has an owning page (`no-owning-page`) and that page is reachable through the
 // flow gates in the state that scopes it (`owning-page-unreachable-in-scope`).
 
-describe('flow reachability / dead-end prover (B)', () => {
+describe('#proveFlowReachability', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
@@ -42,7 +44,7 @@ describe('flow reachability / dead-end prover (B)', () => {
     expect(problems.length).toBeGreaterThan(0)
     expect(
       problems.every(
-        (problem) => problem.reason === 'owning-page-unreachable-in-scope'
+        (problem) => problem.reason === REASON_UNREACHABLE_IN_SCOPE
       )
     ).toBe(true)
     // A transport obligation (owned by transporters-select) is dead — its page
@@ -70,9 +72,7 @@ describe('flow reachability / dead-end prover (B)', () => {
     const pagesFor = (answers) =>
       simulateJourney(answers).filter((pageId) => pageId !== 'commodities')
     const deadEnds = proveFlowReachability({ pagesFor })
-      .filter(
-        (problem) => problem.reason === 'owning-page-unreachable-in-scope'
-      )
+      .filter((problem) => problem.reason === REASON_UNREACHABLE_IN_SCOPE)
       .map((problem) => problem.obligation)
     for (const key of commodityKeys) expect(deadEnds).toContain(key)
   })
@@ -83,7 +83,7 @@ describe('flow reachability / dead-end prover (B)', () => {
     const scopeFor = () => ({ inScope: new Set(['obligationWithNoPage']) })
     const problems = proveFlowReachability({ scopeFor, pagesFor: () => [] })
     expect(problems).toEqual([
-      { obligation: 'obligationWithNoPage', reason: 'no-owning-page' }
+      { obligation: 'obligationWithNoPage', reason: REASON_NO_OWNING_PAGE }
     ])
   })
 

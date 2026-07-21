@@ -31,18 +31,18 @@ describe('buildObligationsById', () => {
   })
 
   it('single obligation → one entry keyed by id', () => {
-    const o = { id: 'o1', name: 'one' }
-    const result = buildObligationsById([o])
+    const obligation = { id: 'o1', name: 'one' }
+    const result = buildObligationsById([obligation])
     expect(result.size).toBe(1)
-    expect(result.get('o1')).toBe(o)
+    expect(result.get('o1')).toBe(obligation)
   })
 
   it('multiple obligations → each id maps to its own record', () => {
-    const a = { id: 'a', name: 'a' }
-    const b = { id: 'b', name: 'b' }
-    const result = buildObligationsById([a, b])
-    expect(result.get('a')).toBe(a)
-    expect(result.get('b')).toBe(b)
+    const first = { id: 'a', name: 'a' }
+    const second = { id: 'b', name: 'b' }
+    const result = buildObligationsById([first, second])
+    expect(result.get('a')).toBe(first)
+    expect(result.get('b')).toBe(second)
   })
 })
 
@@ -79,51 +79,51 @@ describe('classifyObligations', () => {
   const noChildren = new Map()
 
   it('single-cardinality (no indexedBy / status / children) → "single"', () => {
-    const o = { id: 'o', applyTo: () => ({}) }
-    const result = classifyObligations([o], noChildren)
+    const obligation = { id: 'o', applyTo: () => ({}) }
+    const result = classifyObligations([obligation], noChildren)
     expect(result.get('o')).toBe('single')
   })
 
   it('field record (status, no applyTo, no indexedBy) → "field"', () => {
-    const o = { id: 'o', status: 'mandatory', within: { id: 'g' } }
-    const result = classifyObligations([o], noChildren)
+    const obligation = { id: 'o', status: 'mandatory', within: { id: 'g' } }
+    const result = classifyObligations([obligation], noChildren)
     expect(result.get('o')).toBe('field')
   })
 
   it('group (has children, no status/indexedBy) → "group"', () => {
-    const g = { id: 'g' }
-    const c = { id: 'c', within: g }
-    const children = buildObligationChildren([g, c])
-    const result = classifyObligations([g, c], children)
+    const group = { id: 'g' }
+    const child = { id: 'c', within: group }
+    const children = buildObligationChildren([group, child])
+    const result = classifyObligations([group, child], children)
     expect(result.get('g')).toBe('group')
   })
 
   it('derived indexed leaf → "derived-leaf"', () => {
-    const o = {
+    const obligation = {
       id: 'o',
       indexedBy: { source: 'derived', controllingObligation: {} },
       applyTo: () => ({})
     }
-    const result = classifyObligations([o], noChildren)
+    const result = classifyObligations([obligation], noChildren)
     expect(result.get('o')).toBe('derived-leaf')
   })
 
   it('user indexed leaf → "user-leaf"', () => {
-    const o = { id: 'o', indexedBy: { source: 'user' } }
-    const result = classifyObligations([o], noChildren)
+    const obligation = { id: 'o', indexedBy: { source: 'user' } }
+    const result = classifyObligations([obligation], noChildren)
     expect(result.get('o')).toBe('user-leaf')
   })
 
   it('non-derived indexedBy source falls through to "user-leaf" (seeded case)', () => {
-    const o = { id: 'o', indexedBy: { source: 'seeded' } }
-    const result = classifyObligations([o], noChildren)
+    const obligation = { id: 'o', indexedBy: { source: 'seeded' } }
+    const result = classifyObligations([obligation], noChildren)
     expect(result.get('o')).toBe('user-leaf')
   })
 
   it('single-cardinality with applyTo is preferred over field even if status present', () => {
     // Any obligation with applyTo bypasses the "field" branch.
-    const o = { id: 'o', status: 'mandatory', applyTo: () => ({}) }
-    const result = classifyObligations([o], noChildren)
+    const obligation = { id: 'o', status: 'mandatory', applyTo: () => ({}) }
+    const result = classifyObligations([obligation], noChildren)
     expect(result.get('o')).not.toBe('field')
   })
 })
@@ -134,16 +134,16 @@ describe('buildAncestorGroups', () => {
   })
 
   it('obligation with no `within` → empty chain', () => {
-    const o = { id: 'o' }
-    const result = buildAncestorGroups([o])
+    const obligation = { id: 'o' }
+    const result = buildAncestorGroups([obligation])
     expect(result.get('o')).toEqual([])
   })
 
   it('depth-1 → single-element chain', () => {
-    const g = { id: 'g' }
-    const c = { id: 'c', within: g }
-    const result = buildAncestorGroups([g, c])
-    expect(result.get('c')).toEqual([g])
+    const group = { id: 'g' }
+    const child = { id: 'c', within: group }
+    const result = buildAncestorGroups([group, child])
+    expect(result.get('c')).toEqual([group])
   })
 
   it('depth-3 → chain in root-to-leaf order', () => {
@@ -161,18 +161,18 @@ describe('buildDescendants', () => {
   })
 
   it('leaf → empty descendants array', () => {
-    const o = { id: 'o' }
-    const children = buildObligationChildren([o])
-    const result = buildDescendants([o], children)
+    const obligation = { id: 'o' }
+    const children = buildObligationChildren([obligation])
+    const result = buildDescendants([obligation], children)
     expect(result.get('o')).toEqual([])
   })
 
   it('group with two children → both children are descendants', () => {
-    const g = { id: 'g' }
-    const c1 = { id: 'c1', within: g }
-    const c2 = { id: 'c2', within: g }
-    const children = buildObligationChildren([g, c1, c2])
-    const descendants = buildDescendants([g, c1, c2], children).get('g')
+    const group = { id: 'g' }
+    const c1 = { id: 'c1', within: group }
+    const c2 = { id: 'c2', within: group }
+    const children = buildObligationChildren([group, c1, c2])
+    const descendants = buildDescendants([group, c1, c2], children).get('g')
     expect(descendants).toHaveLength(2)
     expect(descendants).toContain(c1)
     expect(descendants).toContain(c2)
@@ -230,37 +230,37 @@ describe('dropUnknownFulfilments', () => {
 
 describe('runApplicabilityDecisions', () => {
   it('obligation without applyTo → no entry in result', () => {
-    const o = { id: 'o' }
-    const result = runApplicabilityDecisions([o], {})
+    const obligation = { id: 'o' }
+    const result = runApplicabilityDecisions([obligation], {})
     expect(result.has('o')).toBe(false)
   })
 
   it('obligation with applyTo → applyTo return in result', () => {
-    const o = {
+    const obligation = {
       id: 'o',
       applyTo: () => ({ inScope: true, status: 'mandatory' })
     }
-    const result = runApplicabilityDecisions([o], {})
+    const result = runApplicabilityDecisions([obligation], {})
     expect(result.get('o')).toEqual({ inScope: true, status: 'mandatory' })
   })
 
   it('applyTo receives the recognised fulfilments', () => {
     let received
-    const o = {
+    const obligation = {
       id: 'o',
-      applyTo: (f) => {
-        received = f
+      applyTo: (fulfilments) => {
+        received = fulfilments
         return { inScope: true }
       }
     }
-    runApplicabilityDecisions([o], { some: 'input' })
+    runApplicabilityDecisions([obligation], { some: 'input' })
     expect(received).toEqual({ some: 'input' })
   })
 
   it('multiple obligations → each with its own entry', () => {
-    const a = { id: 'a', applyTo: () => ({ inScope: true }) }
-    const b = { id: 'b', applyTo: () => ({ inScope: false }) }
-    const result = runApplicabilityDecisions([a, b], {})
+    const first = { id: 'a', applyTo: () => ({ inScope: true }) }
+    const second = { id: 'b', applyTo: () => ({ inScope: false }) }
+    const result = runApplicabilityDecisions([first, second], {})
     expect(result.get('a')).toEqual({ inScope: true })
     expect(result.get('b')).toEqual({ inScope: false })
   })
@@ -352,11 +352,11 @@ describe('purgeStorage', () => {
   })
 
   it('out-of-scope obligation → its entry dropped', () => {
-    const o = { id: 'o' }
+    const obligation = { id: 'o' }
     const result = purgeStorage(
       { o: 'value' },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'single']]),
         obligationApplicabilityDecisions: new Map(),
         isInScope: alwaysOutOfScope
@@ -366,11 +366,11 @@ describe('purgeStorage', () => {
   })
 
   it('single-cardinality in scope → value kept verbatim', () => {
-    const o = { id: 'o' }
+    const obligation = { id: 'o' }
     const result = purgeStorage(
       { o: 'Alex' },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'single']]),
         obligationApplicabilityDecisions: new Map(),
         isInScope: alwaysInScope
@@ -380,11 +380,11 @@ describe('purgeStorage', () => {
   })
 
   it('derived leaf → keys in applyTo set kept, others dropped', () => {
-    const o = { id: 'o', indexedBy: { source: 'derived' } }
+    const obligation = { id: 'o', indexedBy: { source: 'derived' } }
     const result = purgeStorage(
       { o: { turbo: '800', alloys: '200', stale: '999' } },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'derived-leaf']]),
         obligationApplicabilityDecisions: new Map([
           ['o', { records: ['turbo', 'alloys'] }]
@@ -396,11 +396,11 @@ describe('purgeStorage', () => {
   })
 
   it('derived leaf with empty applyTo set → entry omitted entirely', () => {
-    const o = { id: 'o', indexedBy: { source: 'derived' } }
+    const obligation = { id: 'o', indexedBy: { source: 'derived' } }
     const result = purgeStorage(
       { o: { turbo: '800' } },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'derived-leaf']]),
         obligationApplicabilityDecisions: new Map([['o', { records: [] }]]),
         isInScope: alwaysInScope
@@ -410,12 +410,12 @@ describe('purgeStorage', () => {
   })
 
   it('field record → map kept as-is', () => {
-    const o = { id: 'o', within: { id: 'g' }, status: 'mandatory' }
+    const obligation = { id: 'o', within: { id: 'g' }, status: 'mandatory' }
     const stored = { c1: 'accident', c2: 'theft' }
     const result = purgeStorage(
       { o: stored },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'field']]),
         obligationApplicabilityDecisions: new Map(),
         isInScope: alwaysInScope
@@ -425,12 +425,12 @@ describe('purgeStorage', () => {
   })
 
   it('user leaf → map kept as-is', () => {
-    const o = { id: 'o', indexedBy: { source: 'user' } }
+    const obligation = { id: 'o', indexedBy: { source: 'user' } }
     const stored = { 'd1/a1': { line1: '10 High St' } }
     const result = purgeStorage(
       { o: stored },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'user-leaf']]),
         obligationApplicabilityDecisions: new Map(),
         isInScope: alwaysInScope
@@ -440,11 +440,11 @@ describe('purgeStorage', () => {
   })
 
   it('empty object storage → entry omitted entirely', () => {
-    const o = { id: 'o', indexedBy: { source: 'user' } }
+    const obligation = { id: 'o', indexedBy: { source: 'user' } }
     const result = purgeStorage(
       { o: {} },
       {
-        obligationsById: new Map([['o', o]]),
+        obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'user-leaf']]),
         obligationApplicabilityDecisions: new Map(),
         isInScope: alwaysInScope
@@ -469,8 +469,8 @@ describe('enumerateGroupFulfilmentIds', () => {
   })
 
   it('skips non-group obligations', () => {
-    const o = { id: 'o' }
-    const result = enumerateGroupFulfilmentIds([o], {
+    const obligation = { id: 'o' }
+    const result = enumerateGroupFulfilmentIds([obligation], {
       obligationsByCategory: new Map([['o', 'single']]),
       obligationAncestorGroups: new Map([['o', []]]),
       obligationDescendants: new Map([['o', []]]),
@@ -481,8 +481,8 @@ describe('enumerateGroupFulfilmentIds', () => {
   })
 
   it('out-of-scope group → empty Set', () => {
-    const g = { id: 'g' }
-    const result = enumerateGroupFulfilmentIds([g], {
+    const group = { id: 'g' }
+    const result = enumerateGroupFulfilmentIds([group], {
       obligationsByCategory: new Map([['g', 'group']]),
       obligationAncestorGroups: new Map([['g', []]]),
       obligationDescendants: new Map([['g', []]]),
@@ -493,19 +493,19 @@ describe('enumerateGroupFulfilmentIds', () => {
   })
 
   it('top-level group (prefixLen=1) with one descendant field → single instance id', () => {
-    const g = { id: 'g' }
-    const f = { id: 'f', within: g }
-    const result = enumerateGroupFulfilmentIds([g, f], {
+    const group = { id: 'g' }
+    const field = { id: 'f', within: group }
+    const result = enumerateGroupFulfilmentIds([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
         ['f', 'field']
       ]),
       obligationAncestorGroups: new Map([
         ['g', []],
-        ['f', [g]]
+        ['f', [group]]
       ]),
       obligationDescendants: new Map([
-        ['g', [f]],
+        ['g', [field]],
         ['f', []]
       ]),
       isInScope: alwaysInScope,
@@ -555,19 +555,19 @@ describe('enumerateGroupFulfilmentIds', () => {
   })
 
   it('descendant with non-object storage → skipped', () => {
-    const g = { id: 'g' }
-    const f = { id: 'f', within: g }
-    const result = enumerateGroupFulfilmentIds([g, f], {
+    const group = { id: 'g' }
+    const field = { id: 'f', within: group }
+    const result = enumerateGroupFulfilmentIds([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
         ['f', 'field']
       ]),
       obligationAncestorGroups: new Map([
         ['g', []],
-        ['f', [g]]
+        ['f', [group]]
       ]),
       obligationDescendants: new Map([
-        ['g', [f]],
+        ['g', [field]],
         ['f', []]
       ]),
       isInScope: alwaysInScope,
@@ -590,13 +590,13 @@ describe('buildImplications', () => {
   })
 
   it('one entry per obligation, indexed by obligation id', () => {
-    const a = {
+    const first = {
       id: 'a',
       applyTo: () => ({ inScope: true, status: 'mandatory' })
     }
-    const b = { id: 'b', applyTo: () => ({ inScope: false }) }
-    const result = buildImplications([a, b], {
-      isInScope: (o) => o.id === 'a',
+    const second = { id: 'b', applyTo: () => ({ inScope: false }) }
+    const result = buildImplications([first, second], {
+      isInScope: (obligation) => obligation.id === 'a',
       obligationsByCategory: new Map([
         ['a', 'single'],
         ['b', 'single']
@@ -617,8 +617,8 @@ describe('buildImplication', () => {
   const inScopeAlways = () => true
 
   it('out of scope → { inScope: false } regardless of category', () => {
-    const o = { id: 'o' }
-    const result = buildImplication(o, {
+    const obligation = { id: 'o' }
+    const result = buildImplication(obligation, {
       isInScope: () => false,
       obligationsByCategory: new Map([['o', 'single']]),
       obligationApplicabilityDecisions: new Map(),
@@ -629,9 +629,9 @@ describe('buildImplication', () => {
   })
 
   it('single-cardinality → returns applyTo output verbatim', () => {
-    const o = { id: 'o' }
+    const obligation = { id: 'o' }
     const own = { inScope: true, status: 'optional', reasons: [{ code: 'x' }] }
-    const result = buildImplication(o, {
+    const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
       obligationApplicabilityDecisions: new Map([['o', own]]),
@@ -642,8 +642,8 @@ describe('buildImplication', () => {
   })
 
   it('single-cardinality with no applyTo entry → { inScope: true }', () => {
-    const o = { id: 'o' }
-    const result = buildImplication(o, {
+    const obligation = { id: 'o' }
+    const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
       obligationApplicabilityDecisions: new Map(),
@@ -654,8 +654,8 @@ describe('buildImplication', () => {
   })
 
   it('group with reasons and instance ids → reasons + records list', () => {
-    const g = { id: 'g' }
-    const result = buildImplication(g, {
+    const group = { id: 'g' }
+    const result = buildImplication(group, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
       obligationApplicabilityDecisions: new Map([
@@ -672,8 +672,8 @@ describe('buildImplication', () => {
   })
 
   it('group without reasons → reasons field omitted', () => {
-    const g = { id: 'g' }
-    const result = buildImplication(g, {
+    const group = { id: 'g' }
+    const result = buildImplication(group, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
       obligationApplicabilityDecisions: new Map(),
@@ -685,8 +685,8 @@ describe('buildImplication', () => {
 
   it('field record → parent group instances with own status; no reasons', () => {
     const parent = { id: 'g' }
-    const f = { id: 'f', within: parent, status: 'mandatory' }
-    const result = buildImplication(f, {
+    const field = { id: 'f', within: parent, status: 'mandatory' }
+    const result = buildImplication(field, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['f', 'field']]),
       obligationApplicabilityDecisions: new Map(),
@@ -711,8 +711,8 @@ describe('buildImplication', () => {
   // Guarding the deref is a precondition for the Phase 2
   // closure-to-data sweep.
   it('field record with no `within` (top-level scalar) → { inScope, status } like an always-in-scope applyTo', () => {
-    const o = { id: 'o', status: 'optional' }
-    const result = buildImplication(o, {
+    const obligation = { id: 'o', status: 'optional' }
+    const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'field']]),
       obligationApplicabilityDecisions: new Map(),
@@ -723,8 +723,8 @@ describe('buildImplication', () => {
   })
 
   it('derived-leaf → applyTo records × own status', () => {
-    const o = { id: 'o', status: 'mandatory' }
-    const result = buildImplication(o, {
+    const obligation = { id: 'o', status: 'mandatory' }
+    const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'derived-leaf']]),
       obligationApplicabilityDecisions: new Map([
@@ -751,8 +751,8 @@ describe('buildImplication', () => {
   })
 
   it('user-leaf → own storage keys × own status', () => {
-    const o = { id: 'o', status: 'mandatory' }
-    const result = buildImplication(o, {
+    const obligation = { id: 'o', status: 'mandatory' }
+    const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'user-leaf']]),
       obligationApplicabilityDecisions: new Map(),
@@ -766,8 +766,8 @@ describe('buildImplication', () => {
   })
 
   it('user-leaf with no storage → empty records array', () => {
-    const o = { id: 'o', status: 'mandatory' }
-    const result = buildImplication(o, {
+    const obligation = { id: 'o', status: 'mandatory' }
+    const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'user-leaf']]),
       obligationApplicabilityDecisions: new Map(),

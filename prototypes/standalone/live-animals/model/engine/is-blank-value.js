@@ -26,14 +26,16 @@
  * in the model yet, so this checks one level of composite depth.
  */
 
-export function isBlankValue(value) {
+export const isBlankValue = (value) => {
   if (value === undefined || value === null) return true
   if (typeof value === 'string') return value === ''
   if (Array.isArray(value)) return value.length === 0
   if (typeof value === 'object') {
     const values = Object.values(value)
     if (values.length === 0) return true
-    return values.every((v) => v === undefined || v === null || v === '')
+    return values.every(
+      (leaf) => leaf === undefined || leaf === null || leaf === ''
+    )
   }
   return false
 }

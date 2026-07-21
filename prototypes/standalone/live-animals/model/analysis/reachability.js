@@ -68,15 +68,15 @@ import { obligationMetadata } from '../obligations/helpers.js'
  *     errors:      { obligationId, reason }[]  // structural defects
  *   }
  *
- * Called from `analysis/reachability.test.js` and from the coverage
- * gate that walks `obligations` + `obligationMetadata` to build the
- * record list.
+ * Called from `analysis/reachability.test.js` and from this module's
+ * own `proveWithWitnesses`, which walks `obligations` +
+ * `obligationMetadata` to build the record list.
  *
  * @param {Array<{id: string, dependsOn: string[] | undefined}>} records
  * @returns {{ reachable: string[], unreachable: string[], errors: Array<{obligationId: string, reason: string}> }}
  */
-export function proveReachability(records) {
-  const byId = new Map(records.map((r) => [r.id, r]))
+export const proveReachability = (records) => {
+  const byId = new Map(records.map((record) => [record.id, record]))
   const errors = []
 
   // First pass — surface structural anomalies (dangling ids, missing
@@ -249,11 +249,11 @@ export const OPAQUE_HELPER_TYPES = new Set([])
  * return a witness classification.
  *
  * @param {object} obligation — manifest entry with `.applyTo` (or not).
- * @returns {{ kind: 'witness', obligationId: string, value: any }
+ * @returns {{ kind: 'witness', obligationId: string, value: any, projection?: string | null }
  *          | { kind: 'trivial' }
  *          | { kind: 'opaque', reason: string }}
  */
-export function synthesiseWitness(obligation) {
+export const synthesiseWitness = (obligation) => {
   const applyTo = obligation?.applyTo
   if (typeof applyTo !== 'function') {
     // No applyTo — structural group (commodityLine, unitRecord). The
@@ -404,23 +404,26 @@ function synthesiseBranchedGateWitness(meta) {
     return { kind: WITNESS_KIND.TRIVIAL }
   }
 
-  const pm = meta.predicateMeta
-  if (!pm) {
+  const predicateMeta = meta.predicateMeta
+  if (!predicateMeta) {
     return {
       kind: WITNESS_KIND.OPAQUE,
       reason: 'branchedGate without predicateMeta (annotate the call site)'
     }
   }
 
-  switch (pm.operator) {
+  switch (predicateMeta.operator) {
     case 'equals':
       return {
         kind: WITNESS_KIND.WITNESS,
-        obligationId: pm.obligationId,
-        value: pm.value
+        obligationId: predicateMeta.obligationId,
+        value: predicateMeta.value
       }
     case 'includes':
-      if (!Array.isArray(pm.values) || pm.values.length === 0) {
+      if (
+        !Array.isArray(predicateMeta.values) ||
+        predicateMeta.values.length === 0
+      ) {
         return {
           kind: WITNESS_KIND.OPAQUE,
           reason: 'branchedGate predicateMeta.includes has empty values'
@@ -428,8 +431,8 @@ function synthesiseBranchedGateWitness(meta) {
       }
       return {
         kind: WITNESS_KIND.WITNESS,
-        obligationId: pm.obligationId,
-        value: pm.values[0]
+        obligationId: predicateMeta.obligationId,
+        value: predicateMeta.values[0]
       }
     case 'isFilled':
       // Any non-blank value opens the gate. Pick a stable sentinel — a
@@ -437,13 +440,13 @@ function synthesiseBranchedGateWitness(meta) {
       // used across the manifest (see obligations.js `isFilled`).
       return {
         kind: WITNESS_KIND.WITNESS,
-        obligationId: pm.obligationId,
+        obligationId: predicateMeta.obligationId,
         value: '__witness__'
       }
     default:
       return {
         kind: WITNESS_KIND.OPAQUE,
-        reason: `branchedGate predicateMeta has unrecognised operator '${pm.operator}'`
+        reason: `branchedGate predicateMeta has unrecognised operator '${predicateMeta.operator}'`
       }
   }
 }
@@ -518,16 +521,19 @@ function synthesiseNotInUnionOfWitness(meta) {
  *   }
  * }}
  */
-export function proveWithWitnesses(obligations) {
-  const records = obligations.map((o) => {
-    if (typeof o.applyTo === 'function') {
+export const proveWithWitnesses = (obligations) => {
+  const records = obligations.map((obligation) => {
+    if (typeof obligation.applyTo === 'function') {
       // Prefer the derived-or-declared dependsOn from
       // `obligationMetadata` — meta-first helpers name their gate
       // obligation on `.metadata`, so the dependency graph is
       // recoverable without an explicit `dependsOn` declaration.
-      return { id: o.id, dependsOn: obligationMetadata(o).dependsOn }
+      return {
+        id: obligation.id,
+        dependsOn: obligationMetadata(obligation).dependsOn
+      }
     }
-    return { id: o.id, dependsOn: [] }
+    return { id: obligation.id, dependsOn: [] }
   })
 
   const graph = proveReachability(records)
@@ -537,14 +543,14 @@ export function proveWithWitnesses(obligations) {
   const opaque = []
   const errors = [...graph.errors]
 
-  for (const o of obligations) {
-    const w = synthesiseWitness(o)
-    switch (w.kind) {
+  for (const obligation of obligations) {
+    const witness = synthesiseWitness(obligation)
+    switch (witness.kind) {
       case WITNESS_KIND.TRIVIAL:
-        trivial.push(o.id)
+        trivial.push(obligation.id)
         break
       case WITNESS_KIND.OPAQUE:
-        opaque.push(o.id)
+        opaque.push(obligation.id)
         break
       case WITNESS_KIND.WITNESS: {
         // Fidelity check — the witness must actually open the closure.
@@ -570,38 +576,38 @@ export function proveWithWitnesses(obligations) {
         //     interchangeably; a scalar is simplest.
         const fulfilmentIds = new Map()
         let fulfilments
-        if (w.projection) {
+        if (witness.projection) {
           // Depth-N gate — seed one synthetic unit path whose prefix
           // (`line1`) matches the map key we place the value under.
-          fulfilments = { [w.obligationId]: { line1: w.value } }
-          fulfilmentIds.set(w.projection, ['line1/unit1'])
+          fulfilments = { [witness.obligationId]: { line1: witness.value } }
+          fulfilmentIds.set(witness.projection, ['line1/unit1'])
         } else if (
-          o.applyTo.metadata?.type === 'allowListed' ||
-          o.applyTo.metadata?.type === 'notInUnionOf'
+          obligation.applyTo.metadata?.type === 'allowListed' ||
+          obligation.applyTo.metadata?.type === 'notInUnionOf'
         ) {
           // Depth-1 allowListed / notInUnionOf without a projection
           // group — still reads as a map (filterAndProject enumerates
           // entries).
-          fulfilments = { [w.obligationId]: { line1: w.value } }
+          fulfilments = { [witness.obligationId]: { line1: witness.value } }
         } else {
-          fulfilments = { [w.obligationId]: w.value }
+          fulfilments = { [witness.obligationId]: witness.value }
         }
-        const decision = o.applyTo(fulfilments, fulfilmentIds)
+        const decision = obligation.applyTo(fulfilments, fulfilmentIds)
         if (!decision || decision.inScope !== true) {
           errors.push({
-            obligationId: o.id,
-            reason: `synthesised witness { ${w.obligationId}: ${JSON.stringify(w.value)} } did not open the gate (got ${JSON.stringify(decision)})`
+            obligationId: obligation.id,
+            reason: `synthesised witness { ${witness.obligationId}: ${JSON.stringify(witness.value)} } did not open the gate (got ${JSON.stringify(decision)})`
           })
         } else {
-          synthesisable.push(o.id)
+          synthesisable.push(obligation.id)
         }
         break
       }
       /* c8 ignore next 2 */
       default:
         errors.push({
-          obligationId: o.id,
-          reason: `synthesiseWitness returned unknown kind '${w.kind}'`
+          obligationId: obligation.id,
+          reason: `synthesiseWitness returned unknown kind '${witness.kind}'`
         })
     }
   }

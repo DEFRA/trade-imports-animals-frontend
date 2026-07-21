@@ -36,7 +36,7 @@ export const DISPLAY_KEYS = Object.freeze([
 const isWalkable = (value) =>
   value !== null && (typeof value === 'object' || typeof value === 'function')
 
-function walk(value, path, banned, seen, offenders) {
+const walk = (value, path, banned, seen, offenders) => {
   if (!isWalkable(value)) return
   if (seen.has(value)) return
   seen.add(value)

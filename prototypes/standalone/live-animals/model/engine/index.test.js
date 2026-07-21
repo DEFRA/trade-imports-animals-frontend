@@ -39,11 +39,9 @@ function state({ fulfilments = {}, obligations = {} } = {}) {
 // Minimal implication builder: mimics what ObligationEvaluator returns
 // for a given set of in-scope obligations + fulfilments.
 function impls(entries) {
-  const out = {}
-  for (const e of entries) {
-    out[e.obligation.id] = e.impl
-  }
-  return out
+  return Object.fromEntries(
+    entries.map((entry) => [entry.obligation.id, entry.impl])
+  )
 }
 
 describe('expandPresents', () => {
