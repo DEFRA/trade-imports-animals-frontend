@@ -10,7 +10,7 @@ import { stubH, journeyRequest } from './test-support.js'
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
-describe('write-through on every commit', () => {
+describe('#commit', () => {
   beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

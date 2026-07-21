@@ -23,12 +23,14 @@ const ownerOfObligation = (address) => {
   return undefined
 }
 
-export function buildDispatch(pages) {
+const resetDispatchState = () => {
   dispatchBuilt = false
   pageOfObligationMap = new Map()
   collectsByPageMap = new Map()
   slugByPageMap = new Map()
+}
 
+const assertPathSafeIds = () => {
   for (const { templatePath, obligation } of walkObligations()) {
     if (ID_UNSAFE.test(obligation.name)) {
       throw new Error(
@@ -37,7 +39,9 @@ export function buildDispatch(pages) {
       )
     }
   }
+}
 
+const indexPages = (pages) => {
   for (const page of pages) {
     collectsByPageMap.set(page.id, page.collects ?? [])
     slugByPageMap.set(page.id, page.slug)
@@ -51,7 +55,9 @@ export function buildDispatch(pages) {
       pageOfObligationMap.set(obligationId, page.id)
     }
   }
+}
 
+const assertFullCoverage = () => {
   const uncovered = [...walkObligations()]
     .filter(
       ({ templatePath, obligation }) =>
@@ -62,6 +68,13 @@ export function buildDispatch(pages) {
   if (uncovered.length) {
     throw new Error(`Obligations collected by no page: ${uncovered.join(', ')}`)
   }
+}
+
+export const buildDispatch = (pages) => {
+  resetDispatchState()
+  assertPathSafeIds()
+  indexPages(pages)
+  assertFullCoverage()
   dispatchBuilt = true
 }
 

@@ -19,7 +19,7 @@ import { stubH, journeyRequest } from './test-support.js'
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
-describe('answer-key write guard', () => {
+describe('#write.js — answer-key guard', () => {
   beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

@@ -13,9 +13,13 @@ import { MAX_ENTRIES_FROM } from '../../flow/obligation-source.js'
  * is not a non-negative integer. An unanswered count is deliberately NO cap —
  * the per-species at-least-one floor still bites at submit, so leaving the
  * count blank never lets a journey finish early.
+ *
+ * @param {object} answers - the nested answer POJO.
+ * @param {Array} collectionPath - a collection path.
+ * @returns {number|null} the cap, or null when uncapped.
  */
 export const collectionCapAt = (answers, collectionPath) => {
-  const collectionName = collectionPath[collectionPath.length - 1]
+  const collectionName = collectionPath.at(-1)
   const countField = MAX_ENTRIES_FROM[collectionName]
   if (!countField) return null
   const value = valueAt(answers, [...collectionPath.slice(0, -1), countField])

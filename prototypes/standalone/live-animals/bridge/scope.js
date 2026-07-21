@@ -59,7 +59,7 @@ const collectInstanceValues = (answers, chain, name) => {
 }
 
 const anyInstanceAnswered = (answers, id) => {
-  const obligation = obligations.find((o) => o.name === id)
+  const obligation = obligations.find((candidate) => candidate.name === id)
   if (!obligation) return false
   return collectInstanceValues(answers, ancestorChain(obligation), id).some(
     isAnswered

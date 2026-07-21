@@ -24,28 +24,12 @@ export const configureSession = (newImpl) => {
 }
 
 export const session = {
-  userId(...args) {
-    return impl.userId(...args)
-  },
-  activeJourneyId(...args) {
-    return impl.activeJourneyId(...args)
-  },
-  setActiveJourney(...args) {
-    return impl.setActiveJourney(...args)
-  },
-  knownJourneyIds(...args) {
-    return impl.knownJourneyIds(...args)
-  },
-  addKnownJourney(...args) {
-    return impl.addKnownJourney(...args)
-  },
-  clearActive(...args) {
-    return impl.clearActive(...args)
-  },
-  openingRun(...args) {
-    return impl.openingRun(...args)
-  },
-  setOpeningRun(...args) {
-    return impl.setOpeningRun(...args)
-  }
+  userId: (...args) => impl.userId(...args),
+  activeJourneyId: (...args) => impl.activeJourneyId(...args),
+  setActiveJourney: (...args) => impl.setActiveJourney(...args),
+  knownJourneyIds: (...args) => impl.knownJourneyIds(...args),
+  addKnownJourney: (...args) => impl.addKnownJourney(...args),
+  clearActive: (...args) => impl.clearActive(...args),
+  openingRun: (...args) => impl.openingRun(...args),
+  setOpeningRun: (...args) => impl.setOpeningRun(...args)
 }

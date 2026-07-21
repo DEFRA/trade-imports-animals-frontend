@@ -32,7 +32,7 @@ const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) => records.saveAnswers(journeyId, answers)
 const durable = async () => (await records.load({ journeyId })).answers
 
-describe('commit — B-authoritative purge', () => {
+describe('#commit — B-authoritative purge', () => {
   beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

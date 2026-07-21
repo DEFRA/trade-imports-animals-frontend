@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { configureReadyForCheckYourAnswers, get, makeScope } from './read.js'
 import { store } from './store.js'
 import { configureRecords } from './persistence/records.js'
@@ -8,7 +8,7 @@ import { journeyRequest, recordingH } from './test-support.js'
 import { JOURNEY_COOKIE, configureSession } from './persistence/session.js'
 
 describe('#makeScope', () => {
-  it('Should throw when readyForCheckYourAnswers has not been configured at boot', () => {
+  test('Should throw when readyForCheckYourAnswers has not been configured at boot', () => {
     expect(() => makeScope({})).toThrow(/not configured/)
   })
 })
@@ -21,7 +21,7 @@ describe('#get — per-request read view', () => {
   })
   afterEach(() => store.clear())
 
-  it('Should return the seeded answers verbatim with scope derived from them', async () => {
+  test('Should return the seeded answers verbatim with scope derived from them', async () => {
     const seed = {
       countryOfOrigin: 'FR',
       transporterType: 'Commercial'
@@ -38,7 +38,7 @@ describe('#get — per-request read view', () => {
     expect(view.scope.has('commercialTransporter')).toBe(true)
   })
 
-  it('Should start a journey and pin the journey cookie when none is active', async () => {
+  test('Should start a journey and pin the journey cookie when none is active', async () => {
     const h = recordingH()
 
     const view = await get(journeyRequest(undefined, { state: {} }), h)

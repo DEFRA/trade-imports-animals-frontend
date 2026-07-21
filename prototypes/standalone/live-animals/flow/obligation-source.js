@@ -1,14 +1,9 @@
 import { obligations } from '../model/obligations/obligations.js'
 
-const templatePathOf = (obligation) => {
-  const names = []
-  let current = obligation
-  while (current) {
-    names.unshift(current.name)
-    current = current.within
-  }
-  return names.join('.')
-}
+const namesUpTo = (obligation) =>
+  obligation ? [...namesUpTo(obligation.within), obligation.name] : []
+
+const templatePathOf = (obligation) => namesUpTo(obligation).join('.')
 
 export function* walkObligations() {
   for (const obligation of obligations) {
@@ -71,37 +66,41 @@ export const AUX_ENTRY_KEYS = {
 }
 
 const groupSet = new Set(
-  obligations.filter((o) => obligations.some((other) => other.within === o))
+  obligations.filter((obligation) =>
+    obligations.some((other) => other.within === obligation)
+  )
 )
 
 const topLevelKeys = new Set([
-  ...obligations.filter((o) => !o.within).map((o) => o.name),
+  ...obligations
+    .filter((obligation) => !obligation.within)
+    .map((obligation) => obligation.name),
   ...FLOW_ONLY_OBLIGATIONS,
   ...SYSTEM_ANSWER_KEYS
 ])
 
 const memberKeysOf = (group) =>
   new Set([
-    ...obligations.filter((o) => o.within === group).map((o) => o.name),
+    ...obligations
+      .filter((obligation) => obligation.within === group)
+      .map((obligation) => obligation.name),
     ...(AUX_ENTRY_KEYS[group.name] ?? [])
   ])
 
-const sweepEntries = (group, items, path, problems) => {
-  if (!Array.isArray(items)) return
+const sweepEntries = (group, items, path) => {
+  if (!Array.isArray(items)) return []
   const memberKeys = memberKeysOf(group)
-  items.forEach((entry, index) => {
-    if (entry === null || typeof entry !== 'object') return
-    for (const [key, value] of Object.entries(entry)) {
-      const entryPath = `${path}[${index}]`
-      if (!memberKeys.has(key)) {
-        problems.push({ key, path: entryPath })
-        continue
-      }
+  return items.flatMap((entry, index) => {
+    if (entry === null || typeof entry !== 'object') return []
+    const entryPath = `${path}[${index}]`
+    return Object.entries(entry).flatMap(([key, value]) => {
+      if (!memberKeys.has(key)) return [{ key, path: entryPath }]
       const member = byNameMap.get(key)
       if (member && groupSet.has(member)) {
-        sweepEntries(member, value, `${entryPath}.${key}`, problems)
+        return sweepEntries(member, value, `${entryPath}.${key}`)
       }
-    }
+      return []
+    })
   })
 }
 
@@ -115,23 +114,24 @@ const sweepEntries = (group, items, path, problems) => {
  * @returns {Array<{ key: string, path: string }>} empty when fully recognised.
  */
 export const unrecognisedAnswerKeys = (answers) => {
-  const problems = []
-  if (answers === null || typeof answers !== 'object') return problems
-  for (const [key, value] of Object.entries(answers)) {
-    if (!topLevelKeys.has(key)) {
-      problems.push({ key, path: '(top level)' })
-      continue
-    }
+  if (answers === null || typeof answers !== 'object') return []
+  return Object.entries(answers).flatMap(([key, value]) => {
+    if (!topLevelKeys.has(key)) return [{ key, path: '(top level)' }]
     const obligation = byNameMap.get(key)
     if (obligation && groupSet.has(obligation)) {
-      sweepEntries(obligation, value, key, problems)
+      return sweepEntries(obligation, value, key)
     }
-  }
-  return problems
+    return []
+  })
 }
 
-/** Throw when the answers tree carries any unrecognised key — an inert key
- *  would otherwise persist silently and ship at finalise. */
+/**
+ * Throw when the answers tree carries any unrecognised key — an inert key
+ * would otherwise persist silently and ship at finalise.
+ *
+ * @param {object} answers - the nested answer POJO to check.
+ * @param {string} context - the call-site label folded into the thrown error message.
+ */
 export const assertRecognisedAnswerKeys = (answers, context) => {
   const problems = unrecognisedAnswerKeys(answers)
   if (problems.length === 0) return

@@ -43,7 +43,9 @@ import { domain } from '../model/domain/index.js'
 const evaluator = createObligationEvaluator()
 const evaluate = (answers) => evaluator.evaluate(answersToFulfilments(answers))
 
-const byAName = new Map(obligations.map((o) => [o.name, o]))
+const byAName = new Map(
+  obligations.map((obligation) => [obligation.name, obligation])
+)
 
 const STRUCTURAL_PLACEHOLDERS = new Set([
   'commodityType',
@@ -109,10 +111,9 @@ export const entryComplete = (answers, collectionPath, index) => {
     // an empty entry has no leaf storage, so the evaluator never sees the
     // instance, but the entry still shows and its mandatory fields are unfilled.
     if (belonging.length === 0 && leaf.within === group && !leaf.applyTo) {
-      if ((leaf.status ?? 'mandatory') === 'mandatory') {
-        if (!isFulfilled(leaf.id, stored?.[instanceId])) return false
-      }
-      continue
+      if ((leaf.status ?? 'mandatory') !== 'mandatory') continue
+      if (isFulfilled(leaf.id, stored?.[instanceId])) continue
+      return false
     }
     for (const record of belonging) {
       if ((record.status ?? 'mandatory') !== 'mandatory') continue

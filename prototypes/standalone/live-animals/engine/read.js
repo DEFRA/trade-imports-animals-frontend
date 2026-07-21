@@ -5,11 +5,10 @@ import { configureReadyForCheckYourAnswers } from './readiness-config.js'
 export { configureReadyForCheckYourAnswers }
 export { makeScope }
 
-const readViewOf = (journey) => ({
-  journey,
-  answers: journey.answers,
-  scope: makeScope(journey.answers)
-})
+const readViewOf = (journey) => {
+  const { answers } = journey
+  return { journey, answers, scope: makeScope(answers) }
+}
 
 export const get = async (request, h) =>
   readViewOf(await currentJourney(request, h))

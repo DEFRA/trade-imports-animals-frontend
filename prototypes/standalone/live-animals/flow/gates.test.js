@@ -81,7 +81,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
   })
 })
 
-describe('RULE 1 — mandate-derived flow sequencing', () => {
+describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
@@ -136,7 +136,7 @@ describe('RULE 1 — mandate-derived flow sequencing', () => {
   })
 })
 
-describe('RULE 2 — review gates on submit-readiness (no deadlock)', () => {
+describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no deadlock)', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)

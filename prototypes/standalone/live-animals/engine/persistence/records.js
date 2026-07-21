@@ -21,28 +21,12 @@ export const configureRecords = (newImpl) => {
 }
 
 export const records = {
-  create(...args) {
-    return impl.create(...args)
-  },
-  load(...args) {
-    return impl.load(...args)
-  },
-  list(...args) {
-    return impl.list(...args)
-  },
-  has(...args) {
-    return impl.has(...args)
-  },
-  saveAnswers(...args) {
-    return impl.saveAnswers(...args)
-  },
-  finalise(...args) {
-    return impl.finalise(...args)
-  },
-  amend(...args) {
-    return impl.amend(...args)
-  },
-  clear(...args) {
-    return impl.clear(...args)
-  }
+  create: (...args) => impl.create(...args),
+  load: (...args) => impl.load(...args),
+  list: (...args) => impl.list(...args),
+  has: (...args) => impl.has(...args),
+  saveAnswers: (...args) => impl.saveAnswers(...args),
+  finalise: (...args) => impl.finalise(...args),
+  amend: (...args) => impl.amend(...args),
+  clear: (...args) => impl.clear(...args)
 }

@@ -11,7 +11,7 @@ const happyPath = JSON.parse(
   readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
 ).values
 
-describe('unrecognisedAnswerKeys', () => {
+describe('#unrecognisedAnswerKeys', () => {
   it('Should recognise the full happy-path fixture end to end', () => {
     expect(unrecognisedAnswerKeys(happyPath)).toEqual([])
   })

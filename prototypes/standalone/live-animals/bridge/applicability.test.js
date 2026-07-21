@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { appliesForCommodity } from './applicability.js'
 
-describe('appliesForCommodity', () => {
+describe('#appliesForCommodity', () => {
   it('Should apply an allowListed obligation for a commodity in its list', () => {
     expect(appliesForCommodity('horseName', 'Horse')).toBe(true)
     expect(appliesForCommodity('animalIdentifierPassport', 'Horse')).toBe(true)

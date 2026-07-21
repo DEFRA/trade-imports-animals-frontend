@@ -35,26 +35,26 @@ const evaluator = createObligationEvaluator()
  * @returns {string[]} pathKeys to pass to `destroyWiped`.
  */
 export const wipeSet = (answers) => {
-  const fIn = answersToFulfilments(answers)
-  const { fulfilments: fOut } = evaluator.evaluate(fIn)
-  const wiped = []
-  for (const o of obligations) {
-    if (groupObligations.has(o)) continue
-    const inVal = fIn[o.id]
-    if (inVal === undefined) continue
-    const chain = ancestorChain(o)
+  const fulfilmentsIn = answersToFulfilments(answers)
+  const { fulfilments: fulfilmentsOut } = evaluator.evaluate(fulfilmentsIn)
+  return obligations.flatMap((obligation) => {
+    if (groupObligations.has(obligation)) return []
+    const inVal = fulfilmentsIn[obligation.id]
+    if (inVal === undefined) return []
+    const chain = ancestorChain(obligation)
     if (chain.length === 0) {
-      if (isAnswered(inVal) && fOut[o.id] === undefined) {
-        wiped.push(pathKey([o.name]))
-      }
-      continue
+      return isAnswered(inVal) && fulfilmentsOut[obligation.id] === undefined
+        ? [pathKey([obligation.name])]
+        : []
     }
-    const outRecords = fOut[o.id] ?? {}
-    for (const [fulfilmentId, value] of Object.entries(inVal)) {
-      if (isAnswered(value) && outRecords[fulfilmentId] === undefined) {
-        wiped.push(pathKey(fulfilmentIdToPath(chain, fulfilmentId, o.name)))
-      }
-    }
-  }
-  return wiped
+    const outRecords = fulfilmentsOut[obligation.id] ?? {}
+    return Object.entries(inVal)
+      .filter(
+        ([fulfilmentId, value]) =>
+          isAnswered(value) && outRecords[fulfilmentId] === undefined
+      )
+      .map(([fulfilmentId]) =>
+        pathKey(fulfilmentIdToPath(chain, fulfilmentId, obligation.name))
+      )
+  })
 }

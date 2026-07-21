@@ -38,8 +38,8 @@ const completeFlags = (answers, collectionPath) => {
   )
 }
 
-describe('collectionView `complete` — per-instance completeness', () => {
-  it('reads a multi-line state — full / partial / empty', () => {
+describe('#entryComplete', () => {
+  it('Should read a multi-line state — full / partial / empty', () => {
     const answers = { commodityLines: [completeLine, partialLine, emptyLine] }
     expect(completeFlags(answers, ['commodityLines'])).toEqual([
       true,
@@ -48,7 +48,7 @@ describe('collectionView `complete` — per-instance completeness', () => {
     ])
   })
 
-  it('reads a multi-unit state — full unit complete', () => {
+  it('Should read a multi-unit state — full unit complete', () => {
     const answers = {
       commodityLines: [
         {
@@ -66,7 +66,7 @@ describe('collectionView `complete` — per-instance completeness', () => {
     expect(completeFlags(answers, path)).toEqual([true, true])
   })
 
-  it('entries / index / path stay A-side (positional storage)', () => {
+  it('Should keep entries / index / path A-side (positional storage)', () => {
     const answers = { commodityLines: [completeLine, emptyLine] }
     const view = collectionView(answers, ['commodityLines'])
     expect(
@@ -83,7 +83,7 @@ describe('collectionView `complete` — per-instance completeness', () => {
   // repaired). B scopes each concern precisely, so these read complete; a future
   // change that flips them fails loudly. See DESIGN-DELTA.md §12.
 
-  it('Cow unit without permanentAddress — B reads complete (scoped to 01061900)', () => {
+  it('Should read a Cow unit without permanentAddress as complete (scoped to 01061900)', () => {
     const answers = {
       commodityLines: [
         {
@@ -97,7 +97,7 @@ describe('collectionView `complete` — per-instance completeness', () => {
     expect(completeFlags(answers, ['commodityLines'])).toEqual([true])
   })
 
-  it('a fully-empty nested unit vanishes from B — B reads complete', () => {
+  it('Should read a fully-empty nested unit as complete (vanishes from B)', () => {
     // B infers instances from leaf composite prefixes; a unit with no stored
     // leaf is never enumerated, so B cannot flag its unmet at-least-one rule.
     const answers = {

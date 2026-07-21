@@ -50,7 +50,9 @@ export const FULFILLED = 'fulfilled'
 export const OPTIONAL = 'optional'
 
 const evaluator = createObligationEvaluator()
-const bByAId = new Map(obligations.map((o) => [o.name, o]))
+const bByAId = new Map(
+  obligations.map((obligation) => [obligation.name, obligation])
+)
 const bOf = (aId) => bByAId.get(aId)
 
 // --- structure: the manifest, projected into the status object shape ------
@@ -65,34 +67,41 @@ const bOf = (aId) => bByAId.get(aId)
 //                        (the animalIdentifiers floor is a per-unit any-of)
 //   .item              → obligations whose `within` is this group
 
-const bIsGroup = (o) => groups.includes(o)
+const bIsGroup = (obligation) => groups.includes(obligation)
 
 // Collection members for status = the group's `within` obligations MINUS the
 // system-populated placeholders (`commodityType` et al) that no page collects
 // — the same exclusion `flow/dispatch.js` applies when indexing pages to
 // obligations.
 const bMembersOf = (group) =>
-  obligations.filter((o) => o.within === group && !SYSTEM_POPULATED.has(o.name))
+  obligations.filter(
+    (obligation) =>
+      obligation.within === group && !SYSTEM_POPULATED.has(obligation.name)
+  )
 
 // Structural mandatory-when-in-scope fallback: a static `status:
 // 'mandatory'`, or a conditional gate whose whenTrue branch is mandatory
 // (commercial/privateTransporter, purposeInInternalMarket, cph,
 // containsUnweanedAnimals). Top-level scalars are re-judged per state in
 // `partRequired` via `effectiveStatus`.
-const bIsMandatory = (o) =>
-  o.status === 'mandatory' ||
-  o.applyTo?.metadata?.whenTrue?.status === 'mandatory'
+const bIsMandatory = (obligation) =>
+  obligation.status === 'mandatory' ||
+  obligation.applyTo?.metadata?.whenTrue?.status === 'mandatory'
 
-const toStructural = (o) => ({
-  id: o.name,
-  collection: bIsGroup(o),
-  required: bIsMandatory(o),
-  requiredAtLeastOne: Boolean(o.requires?.minEntries || o.requires?.anyOfIds),
-  item: bIsGroup(o) ? bMembersOf(o).map(toStructural) : undefined
+const toStructural = (obligation) => ({
+  id: obligation.name,
+  collection: bIsGroup(obligation),
+  required: bIsMandatory(obligation),
+  requiredAtLeastOne: Boolean(
+    obligation.requires?.minEntries || obligation.requires?.anyOfIds
+  ),
+  item: bIsGroup(obligation)
+    ? bMembersOf(obligation).map(toStructural)
+    : undefined
 })
 
 const structuralByName = new Map(
-  obligations.map((o) => [o.name, toStructural(o)])
+  obligations.map((obligation) => [obligation.name, toStructural(obligation)])
 )
 const structuralOf = (name) => structuralByName.get(name)
 
@@ -195,7 +204,9 @@ const childRecords = (bColl, parentRecId, state) => {
   const records = state.obligations?.[bColl.id]?.records ?? []
   return parentRecId === null
     ? records
-    : records.filter((r) => r.fulfilmentId.startsWith(`${parentRecId}/`))
+    : records.filter((record) =>
+        record.fulfilmentId.startsWith(`${parentRecId}/`)
+      )
 }
 
 // Every in-scope record complete, plus the requiredAtLeastOne floor,
@@ -272,7 +283,7 @@ const partSatisfied = (part, answers, state) => {
 /**
  * The 5-way status for a list of parts.
  *
- * @param {Array<string|{collection:string, only?:string[], except?:string[]}>} parts
+ * @param {Array<string|{collection:string, only?:string[], except?:string[]}>} parts - the row/section parts to roll up
  * @param {object} answers - the nested answer POJO.
  * @param {Set<string>} inScope - the pathKey scope Set.
  * @returns {string} NA / NOT_STARTED / IN_PROGRESS / FULFILLED / OPTIONAL.

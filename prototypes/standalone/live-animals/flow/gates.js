@@ -11,8 +11,8 @@ const assertDispatchBuilt = () => {
   )
 }
 
-const prerequisitesMet = (prereqIds, scope) =>
-  prereqIds.every((id) => scope.answered(id))
+const prerequisitesMet = (prerequisiteIds, scope) =>
+  prerequisiteIds.every((id) => scope.answered(id))
 
 const inScopeReachable = (obligationIds, scope) =>
   obligationIds.length === 0 ||

@@ -48,10 +48,14 @@ const GROUP_SEGMENT_PREFIXES = ['line', 'unit']
 // Manifest-derived lookups — computed once from the vendored obligations.
 // ---------------------------------------------------------------------------
 
-const byAId = new Map(obligations.map((o) => [o.name, o]))
+const byAId = new Map(
+  obligations.map((obligation) => [obligation.name, obligation])
+)
 
 export const groupObligations = new Set(
-  obligations.filter((o) => obligations.some((other) => other.within === o))
+  obligations.filter((obligation) =>
+    obligations.some((other) => other.within === obligation)
+  )
 )
 
 // Ancestor groups from root down to immediate parent (excluding self).
@@ -75,22 +79,24 @@ const segmentToken = (group) =>
 // addresses, dates and arrays are opaque composite values.
 // ---------------------------------------------------------------------------
 
-const camelToKebab = (s) =>
-  s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+const camelToKebab = (value) =>
+  value.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
 
-const kebabToCamel = (s) => s.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())
+const kebabToCamel = (value) =>
+  value.replace(/-([a-z0-9])/g, (_, char) => char.toUpperCase())
 
-const titleToKebab = (s) => s.toLowerCase().replace(/\s+/g, '-')
+const titleToKebab = (value) => value.toLowerCase().replace(/\s+/g, '-')
 
-const kebabToTitle = (s) =>
-  s
+const kebabToTitle = (value) =>
+  value
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 
-const stripGbPrefix = (s) => (s.startsWith('GB ') ? s.slice(3) : s)
+const stripGbPrefix = (value) =>
+  value.startsWith('GB ') ? value.slice(3) : value
 
-const addGbPrefix = (s) => (s.startsWith('GB') ? s : `GB ${s}`)
+const addGbPrefix = (value) => (value.startsWith('GB') ? value : `GB ${value}`)
 
 // The pages store form payloads as strings; the model's
 // `recordCountEquals` invariant compares the stored count against a
@@ -163,7 +169,7 @@ const collectGroupedRecords = (answers, chain, aId) => {
 /**
  * Translate the page `answers` into the model `fulfilments`.
  *
- * @param {object} answers - the nested answer POJO.
+ * @param {object} [answers={}] - the nested answer POJO.
  * @returns {object} the flat, UUID-keyed fulfilments map.
  */
 export const answersToFulfilments = (answers = {}) => {
@@ -234,25 +240,26 @@ export const instanceFulfilmentId = (collectionPath, index) => {
  * fulfilmentIds. Non-injective commodity codes recover a representative name
  * only.
  *
- * @param {object} fulfilments - the flat, UUID-keyed fulfilments map.
+ * @param {object} [fulfilments={}] - the flat, UUID-keyed fulfilments map.
  * @returns {object} the nested answer POJO.
  */
-export const fulfilmentsToAnswers = (fulfilments = {}) => {
-  let answers = {}
-  for (const obligation of obligations) {
+export const fulfilmentsToAnswers = (fulfilments = {}) =>
+  obligations.reduce((answers, obligation) => {
     const aId = obligation.name
-    if (groupObligations.has(obligation)) continue
+    if (groupObligations.has(obligation)) return answers
     const stored = fulfilments?.[obligation.id]
-    if (stored === undefined) continue
+    if (stored === undefined) return answers
     const chain = ancestorChain(obligation)
     if (chain.length === 0) {
-      answers = setAt(answers, [aId], normaliseToA(aId, stored))
-    } else {
-      for (const [fulfilmentId, value] of Object.entries(stored)) {
-        const path = fulfilmentIdToPath(chain, fulfilmentId, aId)
-        answers = setAt(answers, path, normaliseToA(aId, value))
-      }
+      return setAt(answers, [aId], normaliseToA(aId, stored))
     }
-  }
-  return answers
-}
+    return Object.entries(stored).reduce(
+      (acc, [fulfilmentId, value]) =>
+        setAt(
+          acc,
+          fulfilmentIdToPath(chain, fulfilmentId, aId),
+          normaliseToA(aId, value)
+        ),
+      answers
+    )
+  }, {})

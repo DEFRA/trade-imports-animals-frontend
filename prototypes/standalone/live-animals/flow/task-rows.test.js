@@ -215,7 +215,7 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
 
   it('Should unlock every unconditional row once the origin and a commodity line are answered', () => {
     const scope = makeScope(unlocked)
-    for (const row of taskRows.filter((r) => !r.conditional)) {
+    for (const row of taskRows.filter((taskRow) => !taskRow.conditional)) {
       expect(rowGatePasses(row, scope)).toBe(true)
     }
   })

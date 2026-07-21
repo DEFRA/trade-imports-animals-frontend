@@ -12,20 +12,35 @@ import {
 } from './dispatch.js'
 import { nextInSection, sectionEntry } from './navigation.js'
 
-describe('dispatch + flow', () => {
+describe('#buildDispatch', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
     configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
-  it('Should assert coverage of every non-system obligation to exactly one page', () => {
+  it('Should build the dispatch without throwing for every non-system obligation', () => {
     expect(() => buildDispatch(dispatchPages)).not.toThrow()
+  })
+
+  it('Should resolve pageOfObligation for a top-level obligation', () => {
     expect(pageOfObligation('countryOfOrigin')).toBe('origin')
+  })
+
+  it('Should resolve pageOfObligation for a collection obligation', () => {
     expect(pageOfObligation('commodityLines')).toBe('commodities')
+  })
+
+  it('Should resolve pageOfObligation for a gated obligation', () => {
     expect(pageOfObligation('commercialTransporter')).toBe(
       'transporters-select'
     )
+  })
+
+  it('Should list collectsOf for a page', () => {
     expect(collectsOf('origin')).toContain('countryOfOrigin')
+  })
+
+  it('Should return slugOfPage for a page', () => {
     expect(slugOfPage('origin')).toBe('origin')
   })
 

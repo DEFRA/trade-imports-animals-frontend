@@ -231,14 +231,14 @@ describe('statusOf — the presentation rollup', () => {
     (_label, { answers, rows, sections, ready }) => {
       const scope = () => makeScope(answers).inScope
 
-      it('rolls each task row up to the expected status', () => {
+      it('Should roll each task row up to the expected status', () => {
         const inScope = scope()
         expect(
           taskRows.map((row) => statusOf(rowParts(row), answers, inScope))
         ).toEqual(rows)
       })
 
-      it('rolls each answer section up to the expected status', () => {
+      it('Should roll each answer section up to the expected status', () => {
         const inScope = scope()
         expect(
           answerSections.map((section) =>
@@ -247,7 +247,7 @@ describe('statusOf — the presentation rollup', () => {
         ).toEqual(sections)
       })
 
-      it('derives readiness for check-your-answers', () => {
+      it('Should derive readiness for check-your-answers', () => {
         expect(readyForCheckYourAnswers(answers, scope())).toBe(ready)
       })
     }
@@ -327,7 +327,7 @@ describe('statusOf — the commodities/identification facet split', () => {
     ]
   ]
 
-  it('classifies each facet as B derives it', () => {
+  it('Should classify each facet as B derives it', () => {
     for (const [answers, exceptStatus, onlyStatus] of facetCases) {
       expect(statusOf([exceptIdentifiers], answers, inScope)).toBe(exceptStatus)
       expect(statusOf([onlyIdentifiers], answers, inScope)).toBe(onlyStatus)
@@ -353,7 +353,7 @@ describe('statusOf — the recordCountEquals invariant in isolation', () => {
     ]
   })
 
-  it('blocks the identifiers facet while the unit count trails the declared quantity', () => {
+  it('Should block the identifiers facet while the unit count trails the declared quantity', () => {
     // One complete unit satisfies the any-of rule, so the count
     // mismatch is the only outstanding concern.
     expect(statusOf([onlyIdentifiers], lineWith('2'), inScope)).toBe(
@@ -361,7 +361,7 @@ describe('statusOf — the recordCountEquals invariant in isolation', () => {
     )
   })
 
-  it('fulfils the identifiers facet when the unit count matches the declared quantity', () => {
+  it('Should fulfil the identifiers facet when the unit count matches the declared quantity', () => {
     expect(statusOf([onlyIdentifiers], lineWith('1'), inScope)).toBe(FULFILLED)
   })
 })
@@ -378,13 +378,13 @@ describe('statusOf — the documents MAX_ENTRIES cap', () => {
     }))
   })
 
-  it('fulfils the documents part at the cap', () => {
+  it('Should fulfil the documents part at the cap', () => {
     expect(statusOf(['documents'], completeDocuments(10), inScope)).toBe(
       FULFILLED
     )
   })
 
-  it('blocks the documents part beyond the cap', () => {
+  it('Should block the documents part beyond the cap', () => {
     expect(statusOf(['documents'], completeDocuments(11), inScope)).toBe(
       IN_PROGRESS
     )

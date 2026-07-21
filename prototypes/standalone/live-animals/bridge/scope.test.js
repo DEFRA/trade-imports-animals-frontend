@@ -29,7 +29,7 @@ const line = (commodity, units) => ({
 })
 
 describe('scope bridge — per-gate scoping (B)', () => {
-  it('keeps regionOfOriginCode in scope whatever the requirement answers (retain-value)', () => {
+  it('Should keep regionOfOriginCode in scope whatever the requirement answers (retain-value)', () => {
     expect(
       makeScope(resolveRegion({ countryOfOrigin: 'FR' })).has(
         'regionOfOriginCode'
@@ -48,7 +48,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     )
   })
 
-  it('scopes purposeInInternalMarket only under the internal-market reason', () => {
+  it('Should scope purposeInInternalMarket only under the internal-market reason', () => {
     expect(
       makeScope(
         resolveRegion({
@@ -64,7 +64,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     ).toBe(false)
   })
 
-  it('scopes the commercial transporter + land-transit branch', () => {
+  it('Should scope the commercial transporter + land-transit branch', () => {
     const scope = makeScope(
       resolveRegion({
         transporterType: 'Commercial',
@@ -76,7 +76,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     expect(scope.has('transitedCountries')).toBe(true)
   })
 
-  it('scopes the private transporter + non-land branch', () => {
+  it('Should scope the private transporter + non-land branch', () => {
     const scope = makeScope(
       resolveRegion({
         transporterType: 'Private',
@@ -87,7 +87,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     expect(scope.has('transitedCountries')).toBe(false)
   })
 
-  it('projects positional keys across multi-line / multi-unit answers', () => {
+  it('Should project positional keys across multi-line / multi-unit answers', () => {
     const scope = makeScope(
       resolveRegion({
         commodityLines: [
@@ -103,7 +103,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     expect(scope.has('commodityLines[1].commoditySelection')).toBe(true)
   })
 
-  it('keeps the group node in scope for an empty required collection', () => {
+  it('Should keep the group node in scope for an empty required collection', () => {
     const scope = makeScope(resolveRegion({ commodityLines: [] }))
     expect(scope.has('commodityLines')).toBe(true)
     expect(scope.has('commodityLines[0].commoditySelection')).toBe(false)
@@ -117,7 +117,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
 // ---------------------------------------------------------------------------
 
 describe('scope bridge — flow-only obligations layered on the full scope', () => {
-  it('adds importType + declaration to the full scope, not the raw projection', () => {
+  it('Should add importType + declaration to the full scope, not the raw projection', () => {
     const full = makeScope(happyPath).inScope
     const raw = rawInScope(happyPath)
     expect(full.has('importType')).toBe(true)
@@ -126,14 +126,14 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
     expect(raw.has('declaration')).toBe(false)
   })
 
-  it('carries the system fields the raw projection owns', () => {
+  it('Should carry the system fields the raw projection owns', () => {
     const raw = rawInScope(happyPath)
     expect(raw.has('poApprovedReferenceNumber')).toBe(true)
     expect(raw.has('responsiblePersonForLoad')).toBe(true)
     expect(raw.has('commodityLines[0].commodityType')).toBe(true)
   })
 
-  it('carries the documents collection (D1 resolved at inc-016b)', () => {
+  it('Should carry the documents collection (D1 resolved at inc-016b)', () => {
     const full = makeScope(happyPath).inScope
     expect(full.has('documents')).toBe(true)
     expect(full.has('documents[0].accompanyingDocumentType')).toBe(true)
@@ -145,7 +145,7 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
 // ---------------------------------------------------------------------------
 
 describe('scope bridge — makeScope shape parity', () => {
-  it('exposes the same members with the same types', () => {
+  it('Should expose the same members with the same types', () => {
     const scope = makeScope(happyPath)
     expect(scope.inScope).toBeInstanceOf(Set)
     expect(typeof scope.has).toBe('function')
@@ -153,14 +153,14 @@ describe('scope bridge — makeScope shape parity', () => {
     expect(typeof scope.readyForCheckYourAnswers).toBe('boolean')
   })
 
-  it('has(id) reads the projected inScope set', () => {
+  it('Should read the projected inScope set via has(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.has('countryOfOrigin')).toBe(true)
     expect(scope.has('commodityLines[0].commoditySelection')).toBe(true)
     expect(scope.has('nonExistent')).toBe(false)
   })
 
-  it('answered(id) reads whether an obligation instance is answered', () => {
+  it('Should read whether an obligation instance is answered via answered(id)', () => {
     const scope = makeScope(happyPath)
     expect(scope.answered('countryOfOrigin')).toBe(true)
     expect(scope.answered('commoditySelection')).toBe(true)

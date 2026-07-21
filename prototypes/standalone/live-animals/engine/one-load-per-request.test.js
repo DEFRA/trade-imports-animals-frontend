@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { get, commit } from './index.js'
 import { configureRecords } from './persistence/records.js'
@@ -37,10 +37,14 @@ const buildRequest = () => ({
 })
 
 const getsFor = (url) =>
-  fetchMocker.requests().filter((r) => r.method === 'GET' && r.url === url)
+  fetchMocker
+    .requests()
+    .filter((request) => request.method === 'GET' && request.url === url)
 
 const postsTo = (url) =>
-  fetchMocker.requests().filter((r) => r.method === 'POST' && r.url === url)
+  fetchMocker
+    .requests()
+    .filter((request) => request.method === 'POST' && request.url === url)
 
 describe('one load per request — real records adapter GET count', () => {
   beforeEach(() => {
@@ -59,7 +63,7 @@ describe('one load per request — real records adapter GET count', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  it('Should issue exactly one GET for a read-then-write request, plus the write POST', async () => {
+  test('Should issue exactly one GET for a read-then-write request, plus the write POST', async () => {
     const request = buildRequest()
 
     await get(request, recordingH())
@@ -69,7 +73,7 @@ describe('one load per request — real records adapter GET count', () => {
     expect(postsTo(notificationsUrl)).toHaveLength(1)
   })
 
-  it('Should serve a post-write read from the request without a stale value or extra GET', async () => {
+  test('Should serve a post-write read from the request without a stale value or extra GET', async () => {
     const request = buildRequest()
 
     await get(request, recordingH())
@@ -80,7 +84,7 @@ describe('one load per request — real records adapter GET count', () => {
     expect(getsFor(notificationUrl)).toHaveLength(1)
   })
 
-  it('Should not leak the load across requests — a fresh request re-fetches', async () => {
+  test('Should not leak the load across requests — a fresh request re-fetches', async () => {
     await get(buildRequest(), recordingH())
     await get(buildRequest(), recordingH())
 

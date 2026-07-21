@@ -57,7 +57,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     journeyId = (await store.create()).journeyId
   })
 
-  describe('appendEntryAt — mints the next index, stores positionally', () => {
+  describe('#appendEntryAt — mints the next index, stores positionally', () => {
     it('Should append a commodity line and persist it in A order', async () => {
       const first = await appendEntryAt(
         buildRequest(),
@@ -80,7 +80,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('updateEntryAt — edits in place, siblings intact', () => {
+  describe('#updateEntryAt — edits in place, siblings intact', () => {
     it('Should edit a line in place', async () => {
       await store.saveAnswers(journeyId, {
         commodityLines: [line('Cow'), line('010420 - Goats')]
@@ -98,19 +98,21 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('removeEntryAt — splices positionally, siblings intact', () => {
+  describe('#removeEntryAt — splices positionally, siblings intact', () => {
     it('Should remove a line by index', async () => {
       await store.saveAnswers(journeyId, {
         commodityLines: [line('Cow'), line('010420 - Goats')]
       })
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       expect(
-        (await answersNow()).commodityLines.map((e) => e.commoditySelection)
+        (await answersNow()).commodityLines.map(
+          (entry) => entry.commoditySelection
+        )
       ).toEqual(['010420 - Goats'])
     })
   })
 
-  describe('appendEntryAt cap — A-side `maxEntriesFrom` fires (inc-014)', () => {
+  describe('#appendEntryAt cap — A-side `maxEntriesFrom` fires (inc-014)', () => {
     const cappedLine = () => ({
       commoditySelection: 'Cat',
       numberOfAnimalsQuantity: '2',
@@ -135,7 +137,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('appendEntryAt — an empty appended entry survives in A storage', () => {
+  describe('#appendEntryAt — an empty appended entry survives in A storage', () => {
     it('Should hold an empty unit A cannot express in B — positional identity, not B-addressability, owns storage', async () => {
       // No numberOfAnimalsQuantity → uncapped (ruled blank-count semantics).
       await store.saveAnswers(journeyId, {
@@ -157,7 +159,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('removeEntryAt — the purge is B-authoritative', () => {
+  describe('#removeEntryAt — the purge is B-authoritative', () => {
     it('Should let B purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
       // triggering commodity (Cow) existing in ANY line, and carries wipeOnExit.
@@ -179,14 +181,14 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
 
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       const answers = await answersNow()
-      expect(answers.commodityLines.map((e) => e.commoditySelection)).toEqual([
-        'Cat'
-      ])
+      expect(
+        answers.commodityLines.map((entry) => entry.commoditySelection)
+      ).toEqual(['Cat'])
       expect('containsUnweanedAnimals' in answers).toBe(false)
     })
   })
 
-  describe('reconcileEntriesAt — multi-select sync + B-authoritative purge', () => {
+  describe('#reconcileEntriesAt — multi-select sync + B-authoritative purge', () => {
     const keyOf = (entry) =>
       `${entry.commoditySelection}|${entry.speciesSelection}`
     const reconcileLines = (entries) =>

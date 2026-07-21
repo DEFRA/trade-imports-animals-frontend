@@ -18,7 +18,9 @@ import * as commodities from '../services/commodities/index.js'
 // Every constant is pushed through the bridge's REAL path
 // (`answersToFulfilments`), never a re-implementation of its transforms.
 
-const byUuid = new Map(obligations.map((o) => [o.id, o]))
+const byUuid = new Map(
+  obligations.map((obligation) => [obligation.id, obligation])
+)
 
 // Which helper metadata shapes carry comparison constants, and where.
 const GATE_CONSTANTS = {
@@ -33,13 +35,13 @@ const GATE_CONSTANTS = {
 // One entry per constant-bearing gate on the manifest:
 // { gated, gate (the obligation whose stored value is read), constants }.
 const gateEntries = () =>
-  obligations.flatMap((o) => {
-    const meta = o.applyTo?.metadata
+  obligations.flatMap((obligation) => {
+    const meta = obligation.applyTo?.metadata
     const constantsOf = meta && GATE_CONSTANTS[meta.type]
     if (!constantsOf) return []
     return [
       {
-        gated: o.name,
+        gated: obligation.name,
         gate: byUuid.get(meta.obligation),
         constants: constantsOf(meta)
       }

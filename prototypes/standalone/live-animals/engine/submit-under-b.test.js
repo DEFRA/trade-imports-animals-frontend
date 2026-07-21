@@ -35,7 +35,6 @@ describe('submitJourney — B-derived scope gate, A finalise', () => {
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(true)
-    // finalise ran with this journeyId — its record is the one flipped.
     expect(result.journey.journeyId).toBe(journeyId)
     expect(result.journey.status).toBe(SUBMITTED)
     expect((await records.load({ journeyId })).status).toBe(SUBMITTED)

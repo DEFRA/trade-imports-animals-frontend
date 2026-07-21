@@ -5,17 +5,13 @@ import { pageOfObligation } from './dispatch.js'
 const flowIndexOfPage = (pageId) =>
   allFlowPages.findIndex((page) => page.id === pageId)
 
-const continueObligationOwners = () => {
-  const owners = []
-  for (const { templatePath, obligation } of walkObligations()) {
-    if (!ENFORCED_AT_CONTINUE.has(obligation.name)) continue
-    owners.push({
+const continueObligationOwners = () =>
+  [...walkObligations()]
+    .filter(({ obligation }) => ENFORCED_AT_CONTINUE.has(obligation.name))
+    .map(({ templatePath, obligation }) => ({
       id: obligation.name,
       flowIndex: flowIndexOfPage(pageOfObligation(templatePath))
-    })
-  }
-  return owners
-}
+    }))
 
 const continuePrereqsBefore = (flowIndex) =>
   continueObligationOwners()
