@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
@@ -15,15 +15,17 @@ import { dispatchPages } from '../index.js'
 import * as importPurpose from './controller.js'
 import { copy } from './copy.en.js'
 
+const isPlainObject = (node) => typeof node === 'object' && node !== null
+
 const leaves = (node, path = []) =>
-  typeof node === 'object' && node !== null
+  isPlainObject(node)
     ? Object.entries(node).flatMap(([key, value]) =>
         leaves(value, [...path, key])
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('import-purpose copy module', () => {
-  it('Should have a non-empty string at every leaf', () => {
+describe('#copy', () => {
+  test('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       expect(typeof value, `${path} must be a string`).toBe('string')
       expect(value.trim().length, `${path} must not be empty`).toBeGreaterThan(
@@ -32,14 +34,14 @@ describe('import-purpose copy module', () => {
     }
   })
 
-  it('Should carry a hint for every service purpose option', () => {
+  test('Should carry a hint for every service purpose option', () => {
     for (const option of importReasonPurpose.purposes()) {
       expect(copy.purposeHints[option.value]).toBeTruthy()
     }
   })
 })
 
-describe('GET import-purpose — copy reaches the view', () => {
+describe('GET /import-purpose', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -48,7 +50,7 @@ describe('GET import-purpose — copy reaches the view', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should supply the feature copy module and hint every option from it', async () => {
+  test('Should supply the feature copy module and hint every option from it', async () => {
     const get = importPurpose.routes.find(
       (route) => route.method === 'GET'
     ).handler

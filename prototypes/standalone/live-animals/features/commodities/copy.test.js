@@ -21,7 +21,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('commodities copy module', () => {
+describe('#copy', () => {
   // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
   // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
@@ -33,20 +33,32 @@ describe('commodities copy module', () => {
     }
   })
 
-  it('Should interpolate the parameterised messages', () => {
+  it('Should interpolate selectedCount', () => {
     expect(copy.search.selectedCount(3)).toBe('3 selected')
+  })
+
+  it('Should interpolate countDrop', () => {
     expect(copy.consignmentDetails.errors.countDrop(3, 'Bos taurus', 2)).toBe(
       'You have 3 identifier records for Bos taurus but entered 2 animals. Remove identifier records or keep the higher count.'
     )
     expect(
       copy.consignmentDetails.errors.countDrop(1, 'Bos taurus', 1)
     ).toContain('1 identifier record for')
+  })
+
+  it('Should interpolate counter', () => {
     expect(copy.identification.counter('Bos taurus', 2, 2)).toBe(
       'Enter details for Bos taurus 2 of 2'
     )
+  })
+
+  it('Should interpolate overCount', () => {
     expect(copy.identification.overCount(1, 'Bos taurus', 2, 1)).toBe(
       'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
     )
+  })
+
+  it('Should interpolate capReached', () => {
     expect(copy.identification.errors.capReached(2)).toBe(
       'You have already entered details for all 2 animals — remove a record before adding another'
     )

@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
@@ -24,7 +24,7 @@ const leaves = (node, path = []) =>
 describe('transport copy module', () => {
   // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
   // sample arguments returning the finished sentence.
-  it('Should have a non-empty string (or string-returning function) at every leaf', () => {
+  test('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       const text =
         typeof value === 'function' ? value('sample', 'sample') : value
@@ -33,17 +33,20 @@ describe('transport copy module', () => {
     }
   })
 
-  it('Should interpolate the parameterised messages', () => {
+  test('Should interpolate transitCountries.errors.maxCountries', () => {
     expect(copy.transitCountries.errors.maxCountries(12)).toBe(
       'Select up to 12 countries'
     )
+  })
+
+  test('Should interpolate transportersSelect.optionHint', () => {
     expect(
       copy.transportersSelect.optionHint('1 Farm Lane, Kent', 'GB-01')
     ).toBe('1 Farm Lane, Kent — approval number GB-01')
   })
 })
 
-describe('GET arrival details — copy reaches the view', () => {
+describe('GET /port-of-entry', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -52,7 +55,7 @@ describe('GET arrival details — copy reaches the view', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should supply the page copy namespace and the shared chrome copy', async () => {
+  test('Should supply the page copy namespace and the shared chrome copy', async () => {
     const get = portOfEntry.routes.find(
       (route) => route.method === 'GET'
     ).handler

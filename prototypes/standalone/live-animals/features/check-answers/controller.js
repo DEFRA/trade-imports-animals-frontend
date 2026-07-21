@@ -29,10 +29,12 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const NOT_PROVIDED = copy.notProvided
 
+const toArray = (value) => [].concat(value ?? [])
+
 const anyLineApplies = (answers, name) =>
-  []
-    .concat(answers.commodityLines ?? [])
-    .some((line) => appliesForCommodity(name, line?.commoditySelection))
+  toArray(answers.commodityLines).some((line) =>
+    appliesForCommodity(name, line?.commoditySelection)
+  )
 
 const regionCodeApplies = (answers, scope) => scope.has('regionOfOriginCode')
 
@@ -41,12 +43,13 @@ const purposeApplies = (answers, scope) => scope.has('purposeInInternalMarket')
 const transitedCountriesApplies = (answers, scope) =>
   scope.has('transitedCountries')
 
-const unweanedGate = (answers) =>
+const unweanedApplies = (answers) =>
   anyLineApplies(answers, 'containsUnweanedAnimals')
 
-const cphGate = (answers) => anyLineApplies(answers, 'countyParishHoldingCph')
+const cphApplies = (answers) =>
+  anyLineApplies(answers, 'countyParishHoldingCph')
 
-const packagesGate = (commoditySelection) =>
+const packagesApply = (commoditySelection) =>
   appliesForCommodity('numberOfPackages', commoditySelection)
 
 const withChange = (href) => `${href}?change=1`
@@ -68,18 +71,20 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
 
+const changeAction = (obligationId, visuallyHiddenText) => ({
+  items: [
+    {
+      href: changeHref(obligationId),
+      text: copy.change,
+      visuallyHiddenText
+    }
+  ]
+})
+
 const row = (key, value, obligationId, visuallyHiddenText = null) => ({
   key: { text: key },
   value: { text: valueText(value) },
-  actions: {
-    items: [
-      {
-        href: changeHref(obligationId),
-        text: copy.change,
-        visuallyHiddenText: visuallyHiddenText ?? key.toLowerCase()
-      }
-    ]
-  }
+  actions: changeAction(obligationId, visuallyHiddenText ?? key.toLowerCase())
 })
 
 const addressLines = (address = {}) =>
@@ -107,15 +112,7 @@ const partyRow = (key, party, obligationId, visuallyHiddenText = null) => {
   return {
     key: { text: key },
     value: lines ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    actions: {
-      items: [
-        {
-          href: changeHref(obligationId),
-          text: copy.change,
-          visuallyHiddenText: visuallyHiddenText ?? key.toLowerCase()
-        }
-      ]
-    }
+    actions: changeAction(obligationId, visuallyHiddenText ?? key.toLowerCase())
   }
 }
 
@@ -157,7 +154,7 @@ const additionalAnimalDetailsCard = (answers, scope) => ({
       certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
       'animalsCertifiedFor'
     ),
-    ...(unweanedGate(answers)
+    ...(unweanedApplies(answers)
       ? [
           row(
             copy.rows.unweaned,
@@ -276,7 +273,7 @@ const speciesCards = (answers) =>
         readOnlyRow(copy.rows.commonName, entry.commoditySelection),
         readOnlyRow(copy.rows.species, speciesText(entry)),
         readOnlyRow(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
-        ...(packagesGate(entry.commoditySelection)
+        ...(packagesApply(entry.commoditySelection)
           ? [readOnlyRow(copy.rows.numberOfPackages, entry.numberOfPackages)]
           : [])
       ],
@@ -306,8 +303,7 @@ const arrivalDetailsCard = (answers, scope) => ({
       ? [
           row(
             copy.rows.transitedCountries,
-            []
-              .concat(answers.transitedCountries ?? [])
+            toArray(answers.transitedCountries)
               .map((code) => countries.originLabel(code) ?? code)
               .join(', '),
             'transitedCountries'
@@ -345,15 +341,7 @@ const transporterAddressRow = (party, id) => {
   return {
     key: { text: copy.rows.address },
     value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    actions: {
-      items: [
-        {
-          href: changeHref(id),
-          text: copy.change,
-          visuallyHiddenText: copy.hidden.transporterAddress
-        }
-      ]
-    }
+    actions: changeAction(id, copy.hidden.transporterAddress)
   }
 }
 
@@ -411,7 +399,7 @@ const rolesAndAddressesCard = (answers) => ({
       answers.placeOfDestination,
       'placeOfDestination'
     ),
-    ...(cphGate(answers)
+    ...(cphApplies(answers)
       ? [
           row(
             copy.rows.cph,

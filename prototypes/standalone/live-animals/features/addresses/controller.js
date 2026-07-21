@@ -2,7 +2,7 @@ import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
-import { cphApplies } from '../cph-number/controller.js'
+import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
 import { copy as en } from './copy.en.js'
@@ -31,7 +31,7 @@ const hubRow = ({ title, hint, slug }, valueText) => ({
   key: {
     html: `<span>${title}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${hint}</span>`
   },
-  value: { text: valueText || copy.notAddedYet },
+  value: { text: valueText ?? copy.notAddedYet },
   actions: {
     items: [
       {
@@ -45,7 +45,7 @@ const hubRow = ({ title, hint, slug }, valueText) => ({
 
 const rows = (answers) => [
   ...PARTIES.map((party) => hubRow(party, answers[party.id]?.name)),
-  ...(cphApplies(answers)
+  ...(isCphApplicable(answers)
     ? [hubRow(CPH_ROW, answers.countyParishHoldingCph)]
     : [])
 ]

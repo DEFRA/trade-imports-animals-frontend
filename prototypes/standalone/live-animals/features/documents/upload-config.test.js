@@ -10,7 +10,7 @@ import {
   OVERSIZE_FILE_MESSAGE
 } from './upload-config.js'
 
-describe('documents upload config', () => {
+describe('#upload-config', () => {
   it('Should derive the attachment type from the file extension, case-insensitively', () => {
     expect(attachmentTypeFor('invoice.pdf')).toBe('PDF')
     expect(attachmentTypeFor('SCAN.JPEG')).toBe('JPEG')
@@ -25,9 +25,9 @@ describe('documents upload config', () => {
 
   it('Should keep every derivable attachment type inside the document-types service enum', () => {
     const enumValues = new Set(attachmentTypes())
-    for (const { ext } of ALLOWED_TYPES) {
-      expect(enumValues.has(ext.toUpperCase())).toBe(true)
-    }
+    expect(
+      ALLOWED_TYPES.every(({ ext }) => enumValues.has(ext.toUpperCase()))
+    ).toBe(true)
   })
 
   it('Should de-duplicate shared MIME types in the user-facing hint', () => {

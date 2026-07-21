@@ -22,47 +22,62 @@ import * as declaration from './controller.js'
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
 
-describe('POST declaration — invalid payload', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
-  })
-  beforeEach(() => store.clear())
+describe('#declaration', () => {
+  describe('POST /declaration', () => {
+    describe('invalid payload', () => {
+      beforeAll(() => {
+        configureRecords(recordsStub)
+        configureSession(sessionStub)
+        buildDispatch(dispatchPages)
+        configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+      })
+      beforeEach(() => store.clear())
 
-  it('Should re-render an unconfirmed declaration with its message and commit nothing', async () => {
-    const result = await driveHandler(post, { payload: { declaration: '' } })
-    expect(result.view.context.errors.declaration).toBe(
-      'Confirm that the information is true and correct before submitting'
-    )
-    expect(result.after).toEqual(result.before)
-  })
-})
-
-describe('declaration — submitted journeys land on the confirmation page', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-  })
-  beforeEach(() => store.clear())
-
-  it('Should redirect to the confirmation page after a successful submit', async () => {
-    configureReadyForCheckYourAnswers(() => true)
-    const result = await driveHandler(post, {
-      payload: { declaration: 'confirmed' }
+      it('Should re-render an unconfirmed declaration with its message and commit nothing', async () => {
+        const result = await driveHandler(post, {
+          payload: { declaration: '' }
+        })
+        expect(result.view.context.errors.declaration).toBe(
+          'Confirm that the information is true and correct before submitting'
+        )
+        expect(result.after).toEqual(result.before)
+      })
     })
-    expect(result.response).toEqual({ redirect: pagePath('confirmation') })
+
+    describe('submitted journeys land on the confirmation page', () => {
+      beforeAll(() => {
+        configureRecords(recordsStub)
+        configureSession(sessionStub)
+        buildDispatch(dispatchPages)
+      })
+      beforeEach(() => store.clear())
+
+      it('Should redirect to the confirmation page after a successful submit', async () => {
+        configureReadyForCheckYourAnswers(() => true)
+        const result = await driveHandler(post, {
+          payload: { declaration: 'confirmed' }
+        })
+        expect(result.response).toEqual({ redirect: pagePath('confirmation') })
+      })
+    })
   })
 
-  it('Should redirect a GET on an already-submitted journey to the confirmation page', async () => {
-    configureReadyForCheckYourAnswers(() => true)
-    const { journeyId } = await store.create()
-    await store.submit(journeyId)
+  describe('GET /declaration', () => {
+    beforeAll(() => {
+      configureRecords(recordsStub)
+      configureSession(sessionStub)
+      buildDispatch(dispatchPages)
+    })
+    beforeEach(() => store.clear())
 
-    const response = await get(journeyRequest(journeyId), stubH())
+    it('Should redirect a GET on an already-submitted journey to the confirmation page', async () => {
+      configureReadyForCheckYourAnswers(() => true)
+      const { journeyId } = await store.create()
+      await store.submit(journeyId)
 
-    expect(response).toEqual({ redirect: pagePath('confirmation') })
+      const response = await get(journeyRequest(journeyId), stubH())
+
+      expect(response).toEqual({ redirect: pagePath('confirmation') })
+    })
   })
 })

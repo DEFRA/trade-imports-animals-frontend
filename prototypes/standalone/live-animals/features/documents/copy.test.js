@@ -27,7 +27,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('documents copy module', () => {
+describe('#copy', () => {
   // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
   // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
@@ -55,7 +55,7 @@ describe('documents copy module', () => {
   })
 })
 
-describe('GET upload documents — copy reaches the view', () => {
+describe('GET /accompanying-documents', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

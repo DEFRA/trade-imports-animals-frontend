@@ -47,20 +47,25 @@ const resultsHref = (party, { query, page, selectedId }) => {
   return `${pagePath(party.slug)}?${params.toString()}`
 }
 
-/** GDS pagination: first, last, the current page and its neighbours, with an
- * ellipsis wherever the run of numbers breaks. */
 const paginationItems = (page, totalPages, hrefFor) => {
   const shown = [1, page - 1, page, page + 1, totalPages].filter(
     (number) => number >= 1 && number <= totalPages
   )
-  const items = []
-  let last = 0
-  for (const number of [...new Set(shown)].sort((a, b) => a - b)) {
-    if (number - last > 1) items.push({ ellipsis: true })
-    items.push({ number, href: hrefFor(number), current: number === page })
-    last = number
-  }
-  return items
+  const sorted = [...new Set(shown)].sort((a, b) => a - b)
+  return sorted.reduce(
+    (acc, number) => {
+      const items =
+        number - acc.last > 1 ? [...acc.items, { ellipsis: true }] : acc.items
+      return {
+        items: [
+          ...items,
+          { number, href: hrefFor(number), current: number === page }
+        ],
+        last: number
+      }
+    },
+    { items: [], last: 0 }
+  ).items
 }
 
 const pagination = (party, { query, page, totalPages, selectedId }) => {

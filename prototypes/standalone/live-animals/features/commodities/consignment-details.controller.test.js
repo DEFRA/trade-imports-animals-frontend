@@ -42,7 +42,7 @@ const seedLines = () => ({
   ]
 })
 
-describe('consignment details — per-species quantities over every line', () => {
+describe('#consignmentDetailsController — per-species quantities over every line', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

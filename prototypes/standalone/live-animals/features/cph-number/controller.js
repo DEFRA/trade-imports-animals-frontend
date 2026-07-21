@@ -13,15 +13,17 @@ const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
 
-export const cphApplies = (answers) =>
-  []
-    .concat(answers.commodityLines ?? [])
-    .some((line) =>
-      commodities.cphCommodities().includes(line?.commoditySelection)
-    )
+const asArray = (value) => [].concat(value ?? [])
+
+export const isCphApplicable = (answers) =>
+  asArray(answers.commodityLines).some((line) =>
+    commodities.cphCommodities().includes(line?.commoditySelection)
+  )
+
+const CPH_MAX_LENGTH = 11
 
 const fields = compose(
-  maxText('countyParishHoldingCph', 11, copy.errors.cphMaxLength)
+  maxText('countyParishHoldingCph', CPH_MAX_LENGTH, copy.errors.cphMaxLength)
 )
 
 const hubEntryReturn = (request) =>

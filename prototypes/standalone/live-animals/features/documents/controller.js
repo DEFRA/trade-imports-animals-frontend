@@ -43,6 +43,14 @@ const NOT_PROVIDED = copy.notProvided
 const CANNOT_CONTINUE_MESSAGE = copy.errors.cannotContinue
 const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
 
+const SCAN_STATUS = {
+  COMPLETE: 'COMPLETE',
+  PENDING: 'PENDING',
+  REJECTED: 'REJECTED'
+}
+
+const DOCUMENTS_ADDED_ANCHOR = '#documents-added'
+
 const fields = compose(
   maxText('accompanyingDocumentReference', 58, copy.errors.referenceMaxLength),
   dateParts('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
@@ -87,7 +95,7 @@ export const fileErrors = (file) => {
 }
 
 const scanStatusOf = async (entry, refresh) => {
-  if (!entry.uploadId) return 'COMPLETE'
+  if (!entry.uploadId) return SCAN_STATUS.COMPLETE
   try {
     return await documentUploads.scanStatus({
       uploadId: entry.uploadId,
@@ -95,7 +103,7 @@ const scanStatusOf = async (entry, refresh) => {
       refresh
     })
   } catch {
-    return 'PENDING'
+    return SCAN_STATUS.PENDING
   }
 }
 
@@ -157,12 +165,12 @@ const documentRows = (request, documents) =>
 
 const rejectedErrors = (documents) =>
   documents
-    .filter((item) => item.scanStatus === 'REJECTED')
+    .filter((item) => item.scanStatus === SCAN_STATUS.REJECTED)
     .map((item) => ({
       text: copy.errors.virusFound(
         item.entry.filename ?? copy.errors.fileFallbackName
       ),
-      href: '#documents-added'
+      href: DOCUMENTS_ADDED_ANCHOR
     }))
 
 const getAttempt = (request) => {
@@ -186,7 +194,9 @@ const render = (
   extra = {}
 ) => {
   const attempt = getAttempt(request)
-  const anyPending = documents.some((item) => item.scanStatus === 'PENDING')
+  const anyPending = documents.some(
+    (item) => item.scanStatus === SCAN_STATUS.PENDING
+  )
   const errorList = [
     ...rejectedErrors(documents),
     ...summaryErrors,
@@ -218,8 +228,14 @@ const render = (
   })
 }
 
-const isoDate = ({ day, month, year } = {}) =>
-  `${String(year ?? '').padStart(4, '0')}-${String(month ?? '').padStart(2, '0')}-${String(day ?? '').padStart(2, '0')}`
+const pad = (value, length) => String(value ?? '').padStart(length, '0')
+
+const isoDate = ({ day, month, year } = {}) => {
+  const paddedYear = pad(year, 4)
+  const paddedMonth = pad(month, 2)
+  const paddedDay = pad(day, 2)
+  return `${paddedYear}-${paddedMonth}-${paddedDay}`
+}
 
 const get = async (request, h) => {
   const pageState = await loadPage(request, h)
@@ -245,7 +261,7 @@ const postAdd = async (request, h, payload) => {
     return render(request, h, pageState, bare, {}, [
       {
         text: copy.errors.maxDocuments(MAX_DOCUMENTS),
-        href: '#documents-added'
+        href: DOCUMENTS_ADDED_ANCHOR
       }
     ])
   }
@@ -290,15 +306,15 @@ const post = async (request, h) => {
   const pageState = await loadPage(request, h)
   if (!kit.hubExitTarget(request)) {
     const anyRejected = pageState.documents.some(
-      (item) => item.scanStatus === 'REJECTED'
+      (item) => item.scanStatus === SCAN_STATUS.REJECTED
     )
     const anySettling = pageState.documents.some(
-      (item) => item.scanStatus !== 'COMPLETE'
+      (item) => item.scanStatus !== SCAN_STATUS.COMPLETE
     )
     if (anySettling) {
       const summaryErrors = anyRejected
         ? []
-        : [{ text: CANNOT_CONTINUE_MESSAGE, href: '#documents-added' }]
+        : [{ text: CANNOT_CONTINUE_MESSAGE, href: DOCUMENTS_ADDED_ANCHOR }]
       return render(request, h, pageState, EMPTY_FORM, {}, summaryErrors)
     }
   }
@@ -321,8 +337,11 @@ const getRemove = async (request, h) => {
   return h.redirect(backToPage)
 }
 
+const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
+
 const isOversizeBoom = (request) =>
-  request.response?.isBoom && request.response.output?.statusCode === 413
+  request.response?.isBoom &&
+  request.response.output?.statusCode === HTTP_STATUS_PAYLOAD_TOO_LARGE
 
 const handleOversizePayload = async (request, h) => {
   if (!isOversizeBoom(request)) return h.continue

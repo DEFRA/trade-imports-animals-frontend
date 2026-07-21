@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import * as documentTypes from '../../services/document-types/index.js'
 import { deriveDocumentTypeFromFilename } from './derive-document-type.js'
 
-describe('deriveDocumentTypeFromFilename', () => {
+describe('#deriveDocumentTypeFromFilename', () => {
   it('Should derive a type from its tokens in the filename', () => {
     expect(deriveDocumentTypeFromFilename('itahc-scan.pdf')).toBe('ITAHC')
     expect(deriveDocumentTypeFromFilename('health_certificate_2026.docx')).toBe(

@@ -13,9 +13,11 @@ const view = `${TEMPLATES}/features/destination-country/template`
 
 const copy = copyFor({ en, cy })
 
+const DIVIDER_OPTION = { value: '', text: '──────────', disabled: true }
+
 const countryItems = () => [
   { value: '', text: copy.country.placeholder },
-  { value: '', text: '──────────', disabled: true },
+  DIVIDER_OPTION,
   ...countries.originCountries()
 ]
 

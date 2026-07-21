@@ -25,12 +25,11 @@ export const ACCEPT_ATTRIBUTE = ALLOWED_TYPES.map(
   (type) => `.${type.ext}`
 ).join(',')
 
-const seenMimes = new Set()
-const allowedTypeLabels = ALLOWED_TYPES.filter((type) => {
-  if (seenMimes.has(type.mime)) return false
-  seenMimes.add(type.mime)
-  return true
-}).map((type) => type.ext.toUpperCase())
+const allowedTypeLabels = ALLOWED_TYPES.map((type) => type.mime)
+  .filter((mime, index, mimes) => mimes.indexOf(mime) === index)
+  .map((mime) =>
+    ALLOWED_TYPES.find((type) => type.mime === mime).ext.toUpperCase()
+  )
 
 export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
   type: 'disjunction'

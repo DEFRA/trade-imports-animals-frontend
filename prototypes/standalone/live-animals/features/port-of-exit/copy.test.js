@@ -21,7 +21,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('port-of-exit copy module', () => {
+describe('#copy', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       expect(typeof value, `${path} must be a string`).toBe('string')
@@ -32,7 +32,7 @@ describe('port-of-exit copy module', () => {
   })
 })
 
-describe('GET port-of-exit — copy reaches the view', () => {
+describe('GET /port-of-exit', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

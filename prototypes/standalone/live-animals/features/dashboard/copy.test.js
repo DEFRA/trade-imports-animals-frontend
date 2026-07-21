@@ -18,7 +18,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('dashboard copy module', () => {
+describe('#copy', () => {
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       const text = typeof value === 'function' ? value('sample') : value
@@ -32,7 +32,7 @@ describe('dashboard copy module', () => {
   })
 })
 
-describe('GET dashboard — copy reaches the view', () => {
+describe('GET /home', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

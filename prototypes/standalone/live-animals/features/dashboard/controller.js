@@ -29,22 +29,25 @@ const dateText = (value) =>
       })
     : null
 
+const journeyActionPath = (journeyId, action) =>
+  pagePath(`home/${journeyId}/${action}`)
+
 const rowActions = (journey) =>
   journey.status === SUBMITTED
     ? [
         {
           text: copy.actions.view,
-          href: pagePath(`home/${journey.journeyId}/view`)
+          href: journeyActionPath(journey.journeyId, 'view')
         },
         {
           text: copy.actions.amend,
-          postAction: pagePath(`home/${journey.journeyId}/amend`)
+          postAction: journeyActionPath(journey.journeyId, 'amend')
         }
       ]
     : [
         {
           text: copy.actions.resume,
-          href: pagePath(`home/${journey.journeyId}/resume`)
+          href: journeyActionPath(journey.journeyId, 'resume')
         }
       ]
 

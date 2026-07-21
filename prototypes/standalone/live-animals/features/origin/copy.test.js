@@ -21,7 +21,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('origin copy module', () => {
+describe('#copy', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       expect(typeof value, `${path} must be a string`).toBe('string')
@@ -32,7 +32,7 @@ describe('origin copy module', () => {
   })
 })
 
-describe('GET origin — copy reaches the view', () => {
+describe('GET /origin', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

@@ -23,12 +23,12 @@ const leaves = (node, path = []) =>
 
 describe('import-type-filter copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
-    for (const { path, value } of leaves(copy)) {
+    leaves(copy).forEach(({ path, value }) => {
       expect(typeof value, `${path} must be a string`).toBe('string')
       expect(value.trim().length, `${path} must not be empty`).toBeGreaterThan(
         0
       )
-    }
+    })
   })
 })
 

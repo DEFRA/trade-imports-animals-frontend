@@ -25,7 +25,7 @@ export const copy = {
     actionsHidden: 'Camau gweithredu'
   },
   remove: 'Tynnu',
-  removeHidden: (n) => `dogfen ${n}`,
+  removeHidden: (documentNumber) => `dogfen ${documentNumber}`,
   refreshStatus: 'Adnewyddu statws y sgan firws',
   stillChecking: 'Yn dal i wirio rhai dogfennau. Adnewyddwch eto mewn eiliad.',
   empty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',

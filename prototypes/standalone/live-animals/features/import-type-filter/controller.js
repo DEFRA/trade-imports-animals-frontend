@@ -49,7 +49,7 @@ const get = async (request, h) => {
   return render(h, { importType: answers.importType ?? '' })
 }
 
-const opensTheRun = async (request, answersBeforeCommit) =>
+const shouldOpenRun = async (request, answersBeforeCommit) =>
   (await inOpeningRun(request)) ||
   !hasCommittedNotificationAnswers(answersBeforeCommit)
 
@@ -64,7 +64,7 @@ const post = async (request, h) => {
   if (values.importType !== LIVE_ANIMALS) {
     return h.redirect(pagePath(NOT_AVAILABLE_SLUG))
   }
-  if (await opensTheRun(request, before)) {
+  if (await shouldOpenRun(request, before)) {
     await beginOpeningRun(request, h)
     return h.redirect(kit.exitTarget(request, nextRunTarget(page.id, scope)))
   }

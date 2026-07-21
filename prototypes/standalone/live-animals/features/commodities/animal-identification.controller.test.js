@@ -51,7 +51,7 @@ const viewCards = async (seed) => {
   return h.captured.view.context.cards
 }
 
-describe('animal identification — the single card-per-species surface (inc-063, D16)', () => {
+describe('#animalIdentificationController — the single card-per-species surface (inc-063, D16)', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

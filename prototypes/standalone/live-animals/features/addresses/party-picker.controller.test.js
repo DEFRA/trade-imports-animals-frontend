@@ -33,7 +33,7 @@ const configure = () => {
   configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
 }
 
-describe('GET a party picker — the address book rendered a page at a time', () => {
+describe('GET /consignors/select', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())
 
@@ -120,7 +120,7 @@ describe('GET a party picker — the address book rendered a page at a time', ()
   })
 })
 
-describe('POST a party picker — search, then save by copy', () => {
+describe('POST /consignors/select', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())
 

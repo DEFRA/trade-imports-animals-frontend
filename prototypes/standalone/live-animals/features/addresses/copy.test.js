@@ -22,7 +22,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('addresses copy module', () => {
+describe('#copy', () => {
   // Parameterised strings are copy FUNCTIONS: a leaf may be a function of
   // sample arguments returning the finished sentence.
   it('Should have a non-empty string (or string-returning function) at every leaf', () => {

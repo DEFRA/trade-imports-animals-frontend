@@ -35,16 +35,26 @@ const FIELD_ORDER = [
   'emailAddress'
 ]
 
+const MAX_NAME_LENGTH = 255
+const MAX_TOWN_LENGTH = 100
+const MAX_POSTCODE_LENGTH = 12
+const MAX_PHONE_LENGTH = 20
+const MAX_EMAIL_LENGTH = 254
+
 const fields = compose(
-  maxText('nameOrOrganisationName', 255, copy.errors.nameMaxLength),
-  maxText('addressLine1', 255, copy.errors.addressLine1MaxLength),
-  maxText('addressLine2', 255, copy.errors.addressLine2MaxLength),
-  maxText('townOrCity', 100, copy.errors.townOrCityMaxLength),
-  maxText('county', 100, copy.errors.countyMaxLength),
-  maxText('postalOrZipCode', 12, copy.errors.postalOrZipCodeMaxLength),
+  maxText('nameOrOrganisationName', MAX_NAME_LENGTH, copy.errors.nameMaxLength),
+  maxText('addressLine1', MAX_NAME_LENGTH, copy.errors.addressLine1MaxLength),
+  maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
+  maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
+  maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
+  maxText(
+    'postalOrZipCode',
+    MAX_POSTCODE_LENGTH,
+    copy.errors.postalOrZipCodeMaxLength
+  ),
   oneOf('country', countries.addressCountries(), copy.errors.countryFromList),
-  maxText('telephoneNumber', 20, copy.errors.telephoneMaxLength),
-  maxText('emailAddress', 254, copy.errors.emailMaxLength)
+  maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength),
+  maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength)
 )
 
 const recordProvided = (values) =>

@@ -29,6 +29,8 @@ const view = `${TEMPLATES}/features/transport/port-of-entry`
 
 const copy = copyFor({ en, cy }).portOfEntry
 
+const TRANSPORT_FIELD_MAX_LENGTH = 58
+
 const portItems = (selected) => [
   { value: '', text: copy.port.placeholder },
   { value: '', text: '──────────', disabled: true },
@@ -47,10 +49,14 @@ const fields = () =>
       ports.list().map((port) => port.code)
     ),
     oneOf('meansOfTransport', transportReference.meansOfTransport()),
-    maxText('transportIdentification', 58, copy.errors.identificationMaxLength),
+    maxText(
+      'transportIdentification',
+      TRANSPORT_FIELD_MAX_LENGTH,
+      copy.errors.identificationMaxLength
+    ),
     maxText(
       'transportDocumentReference',
-      58,
+      TRANSPORT_FIELD_MAX_LENGTH,
       copy.errors.documentReferenceMaxLength
     )
   )

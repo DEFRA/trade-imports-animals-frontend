@@ -25,8 +25,9 @@ const countryItems = (selected) => [
 
 const selectRows = (selected) => {
   const rows = selected.map((code) => countryItems(code))
-  if (rows.length < MAX_TRANSITED_COUNTRIES) rows.push(countryItems(''))
-  return rows
+  return rows.length < MAX_TRANSITED_COUNTRIES
+    ? [...rows, countryItems('')]
+    : rows
 }
 
 const transitedCountriesErrors = (selected) => {

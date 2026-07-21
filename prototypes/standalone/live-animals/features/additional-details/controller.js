@@ -17,12 +17,12 @@ const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
 
+const asArray = (value) => [].concat(value ?? [])
+
 export const unweanedApplies = (answers) =>
-  []
-    .concat(answers.commodityLines ?? [])
-    .some((line) =>
-      commodities.unweanedCommodities().includes(line?.commoditySelection)
-    )
+  asArray(answers.commodityLines).some((line) =>
+    commodities.unweanedCommodities().includes(line?.commoditySelection)
+  )
 
 const UNWEANED_LABEL = { yes: copy.unweaned.yes, no: copy.unweaned.no }
 

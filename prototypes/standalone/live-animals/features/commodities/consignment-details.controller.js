@@ -49,55 +49,49 @@ const fieldsFor = (lines) =>
 // One table row + quantity block group per commodity, one species block per
 // line — the design's Consignment details page over the line-per-species
 // store (design 01-14/15).
+const groupLine = ({ index, entry }, values, errors) => ({
+  index,
+  speciesText:
+    commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection,
+  animalsField: animalsField(index),
+  packagesField: packagesField(index),
+  animalsValue: values[animalsField(index)] ?? '',
+  packagesValue: values[packagesField(index)] ?? '',
+  animalsError: errors[animalsField(index)],
+  packagesError: errors[packagesField(index)]
+})
+
 const buildGroups = (request, lines, values, errors) => {
-  const groups = new Map()
-  for (const { index, entry } of lines) {
-    const name = entry.commoditySelection
-    if (!groups.has(name)) {
-      groups.set(name, {
-        name,
-        code: commodities.commodityCodeFor(name) ?? '',
-        showPackages: packagesApply(name),
-        removeHref: kit.withChangeContext(
-          request,
-          pagePath(`${page.slug}/${encodeURIComponent(name)}/remove`)
-        ),
-        lines: []
-      })
-    }
-    groups.get(name).lines.push({
-      index,
-      speciesText:
-        commodities.speciesLabel(entry.speciesSelection) ??
-        entry.speciesSelection,
-      animalsField: animalsField(index),
-      packagesField: packagesField(index),
-      animalsValue: values[animalsField(index)] ?? '',
-      packagesValue: values[packagesField(index)] ?? '',
-      animalsError: errors[animalsField(index)],
-      packagesError: errors[packagesField(index)]
-    })
-  }
-  return [...groups.values()]
+  const names = [...new Set(lines.map(({ entry }) => entry.commoditySelection))]
+  return names.map((name) => ({
+    name,
+    code: commodities.commodityCodeFor(name) ?? '',
+    showPackages: packagesApply(name),
+    removeHref: kit.withChangeContext(
+      request,
+      pagePath(`${page.slug}/${encodeURIComponent(name)}/remove`)
+    ),
+    lines: lines
+      .filter(({ entry }) => entry.commoditySelection === name)
+      .map((line) => groupLine(line, values, errors))
+  }))
 }
 
-const storedValues = (lines) => {
-  const values = {}
-  for (const { index, entry } of lines) {
-    values[animalsField(index)] = entry.numberOfAnimalsQuantity ?? ''
-    values[packagesField(index)] = entry.numberOfPackages ?? ''
-  }
-  return values
-}
+const storedValues = (lines) =>
+  Object.fromEntries(
+    lines.flatMap(({ index, entry }) => [
+      [animalsField(index), entry.numberOfAnimalsQuantity ?? ''],
+      [packagesField(index), entry.numberOfPackages ?? '']
+    ])
+  )
 
-const payloadValues = (payload, lines) => {
-  const values = {}
-  for (const { index } of lines) {
-    values[animalsField(index)] = (payload[animalsField(index)] ?? '').trim()
-    values[packagesField(index)] = (payload[packagesField(index)] ?? '').trim()
-  }
-  return values
-}
+const payloadValues = (payload, lines) =>
+  Object.fromEntries(
+    lines.flatMap(({ index }) => [
+      [animalsField(index), (payload[animalsField(index)] ?? '').trim()],
+      [packagesField(index), (payload[packagesField(index)] ?? '').trim()]
+    ])
+  )
 
 const render = (
   request,

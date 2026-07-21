@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
@@ -15,15 +15,15 @@ import { leaves, isCopyLeaf } from '../../shared/copy-leaves.js'
 import { routes } from './controller.js'
 import { copy } from './copy.en.js'
 
-describe('hub copy module', () => {
-  it('Should have a non-empty string or copy function at every leaf', () => {
+describe('#copy', () => {
+  test('Should have a non-empty string or copy function at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)
     }
   })
 })
 
-describe('GET hub — copy reaches the view', () => {
+describe('GET /hub', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -32,7 +32,7 @@ describe('GET hub — copy reaches the view', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should supply the feature copy module and the shared chrome copy', async () => {
+  test('Should supply the feature copy module and the shared chrome copy', async () => {
     const journey = await store.create()
     const h = stubH()
     const handler = routes.find((route) => route.method === 'GET').handler

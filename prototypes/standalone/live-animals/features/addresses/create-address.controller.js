@@ -56,9 +56,11 @@ const missingMandatoryErrors = (values) =>
     Object.entries(MANDATORY_MESSAGES).filter(([field]) => values[field] === '')
   )
 
+const COUNTRY_LIST_DIVIDER = '──────────'
+
 const countryItems = (selected) => [
   { value: '', text: copy.countryPlaceholder },
-  { text: '──────────', disabled: true },
+  { text: COUNTRY_LIST_DIVIDER, disabled: true },
   ...countries.addressCountries().map((name) => ({
     value: name,
     text: name,

@@ -1,5 +1,5 @@
 import {
-  afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -155,7 +155,7 @@ describe('POST addresses/create — country membership follows the primed list',
   })
   beforeEach(() => store.clear())
 
-  afterAll(() => {
+  afterEach(() => {
     vi.unstubAllGlobals()
     if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
     else process.env.LIVE_ANIMALS_MODE = originalMode

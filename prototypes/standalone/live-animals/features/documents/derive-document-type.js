@@ -37,4 +37,4 @@ const candidates = () =>
     .documentTypes()
     .map((label) => ({ label, key: normalise(label.split('(')[0]) }))
     .filter(({ label, key }) => key.length > 0 && label !== FALLBACK)
-    .sort((a, b) => b.key.length - a.key.length)
+    .sort((first, second) => second.key.length - first.key.length)

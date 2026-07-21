@@ -15,7 +15,7 @@ import { leaves, isCopyLeaf } from '../../shared/copy-leaves.js'
 import { routes } from './controller.js'
 import { copy } from './copy.en.js'
 
-describe('check-answers copy module', () => {
+describe('#copy', () => {
   it('Should have a non-empty string or copy function at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)

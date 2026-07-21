@@ -32,7 +32,7 @@ describe('declaration copy module', () => {
   })
 })
 
-describe('GET declaration — copy reaches the view', () => {
+describe('GET /declaration', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

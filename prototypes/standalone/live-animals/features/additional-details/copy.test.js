@@ -41,13 +41,20 @@ describe('GET additional-details — copy reaches the view', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should supply the feature copy module and label the unweaned options from it', async () => {
+  it('Should supply the feature copy module to the view', async () => {
     const get = additionalDetails.routes.find(
       (route) => route.method === 'GET'
     ).handler
     const result = await driveHandler(get)
     expect(result.view.context.copy).toBe(copy)
     expect(result.view.context.pageTitle).toBe(copy.title)
+  })
+
+  it('Should label the unweaned options from the copy module', async () => {
+    const get = additionalDetails.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get)
     expect(
       result.view.context.unweanedOptions.map((option) => option.text)
     ).toEqual([copy.unweaned.yes, copy.unweaned.no])

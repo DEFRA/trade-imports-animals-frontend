@@ -16,7 +16,7 @@ import * as confirmation from './controller.js'
 
 const get = confirmation.routes.find((route) => route.method === 'GET').handler
 
-describe('GET confirmation', () => {
+describe('GET /confirmation', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

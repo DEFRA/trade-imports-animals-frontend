@@ -56,6 +56,12 @@ const ADDRESS_FIELD_ORDER = [
   'emailAddress'
 ]
 
+const ADDRESS_LINE_MAX_LENGTH = 255
+const TOWN_OR_COUNTY_MAX_LENGTH = 100
+const POSTCODE_MAX_LENGTH = 12
+const TELEPHONE_MAX_LENGTH = 20
+const EMAIL_MAX_LENGTH = 254
+
 const fieldName = (id, index) => `${id}-${index}`
 
 const scopedTypeFields = (commodity) =>
@@ -83,28 +89,32 @@ const addressChecksFor = (index) =>
   compose(
     maxText(
       fieldName('nameOrOrganisationName', index),
-      255,
+      ADDRESS_LINE_MAX_LENGTH,
       copy.errors.addressFormat.nameOrOrganisationName
     ),
     maxText(
       fieldName('addressLine1', index),
-      255,
+      ADDRESS_LINE_MAX_LENGTH,
       copy.errors.addressFormat.addressLine1
     ),
     maxText(
       fieldName('addressLine2', index),
-      255,
+      ADDRESS_LINE_MAX_LENGTH,
       copy.errors.addressFormat.addressLine2
     ),
     maxText(
       fieldName('townOrCity', index),
-      100,
+      TOWN_OR_COUNTY_MAX_LENGTH,
       copy.errors.addressFormat.townOrCity
     ),
-    maxText(fieldName('county', index), 100, copy.errors.addressFormat.county),
+    maxText(
+      fieldName('county', index),
+      TOWN_OR_COUNTY_MAX_LENGTH,
+      copy.errors.addressFormat.county
+    ),
     maxText(
       fieldName('postalOrZipCode', index),
-      12,
+      POSTCODE_MAX_LENGTH,
       copy.errors.addressFormat.postalOrZipCode
     ),
     oneOf(
@@ -114,12 +124,12 @@ const addressChecksFor = (index) =>
     ),
     maxText(
       fieldName('telephoneNumber', index),
-      20,
+      TELEPHONE_MAX_LENGTH,
       copy.errors.addressFormat.telephoneNumber
     ),
     maxText(
       fieldName('emailAddress', index),
-      254,
+      EMAIL_MAX_LENGTH,
       copy.errors.addressFormat.emailAddress
     )
   )
@@ -187,6 +197,12 @@ const counterOf = (species, records, cap) =>
   cap === null
     ? copy.counterNoCap(species)
     : copy.counter(species, records + 1, cap)
+
+const maxReachedTextFor = (cap, species, units, overBy, atMax) => {
+  if (overBy > 0) return copy.overCount(cap, species, units, overBy)
+  if (atMax) return copy.allEntered(cap, species)
+  return null
+}
 
 const unitRows = (request, index, units) =>
   units.map((unit, unitIndex) => ({
@@ -276,12 +292,13 @@ const buildCard = (request, answers, line, form, errors) => {
     title: cardTitleOf(entry),
     species,
     counter: atMax ? null : counterOf(species, units.length, cap),
-    maxReachedText:
-      overBy > 0
-        ? copy.overCount(cap, species, units.length, overBy)
-        : atMax
-          ? copy.allEntered(cap, species)
-          : null,
+    maxReachedText: maxReachedTextFor(
+      cap,
+      species,
+      units.length,
+      overBy,
+      atMax
+    ),
     atMax,
     rows: unitRows(request, index, units),
     hasUnits: units.length > 0,
@@ -349,16 +366,38 @@ const get = async (request, h) => {
 const parseAddAction = (action) =>
   action.startsWith('add:') ? Number(action.slice('add:'.length)) : null
 
-const post = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const payload = request.payload ?? {}
-  const action = (payload.action ?? '').toString()
-  const addIndex = parseAddAction(action)
-  const lines = state.collectionView(answers, ['commodityLines'])
+const buildLineForm = (payload, commodity, index) => {
+  const values = identifierValuesFromPayload(payload, commodity, index)
+  const addressValues = addressValuesFromPayload(payload, index)
+  const showAddress = permanentAddressApplies(commodity)
+  const holdsData =
+    identifierProvided(values) ||
+    (showAddress && addressRecordProvided(addressValues))
 
+  const { errors: idErrors } = validate(
+    identifierChecksFor(commodity, index),
+    payload
+  )
+  const { errors: addrFormatErrors } =
+    showAddress && addressRecordProvided(addressValues)
+      ? validate(addressChecksFor(index), payload)
+      : { errors: null }
+  const errors = {
+    ...(idErrors ?? {}),
+    ...(showAddress ? missingAddressErrors(addressValues, index) : {}),
+    ...(addrFormatErrors ?? {})
+  }
+
+  return {
+    form: { commodity, values, addressValues, showAddress, holdsData },
+    errors
+  }
+}
+
+const buildLineForms = (payload, answers, lines) => {
   const forms = new Map()
   const atMaxByIndex = new Map()
-  const errors = {}
+  let errors = {}
   for (const { index, entry } of lines) {
     const commodity = entry.commoditySelection
     const cap = state.collectionCapAt(answers, [
@@ -370,64 +409,55 @@ const post = async (request, h) => {
       atMaxByIndex.set(index, cap)
       continue
     }
-    const values = identifierValuesFromPayload(payload, commodity, index)
-    const addressValues = addressValuesFromPayload(payload, index)
-    const showAddress = permanentAddressApplies(commodity)
-    const holdsData =
-      identifierProvided(values) ||
-      (showAddress && addressRecordProvided(addressValues))
-    forms.set(index, {
+    const { form, errors: lineErrors } = buildLineForm(
+      payload,
       commodity,
-      values,
-      addressValues,
-      showAddress,
-      holdsData
-    })
-
-    const { errors: idErrors } = validate(
-      identifierChecksFor(commodity, index),
-      payload
+      index
     )
-    const { errors: addrFormatErrors } =
-      showAddress && addressRecordProvided(addressValues)
-        ? validate(addressChecksFor(index), payload)
-        : { errors: null }
-    Object.assign(
-      errors,
-      idErrors ?? {},
-      showAddress ? missingAddressErrors(addressValues, index) : {},
-      addrFormatErrors ?? {}
-    )
+    forms.set(index, form)
+    errors = { ...errors, ...lineErrors }
   }
+  return { forms, atMaxByIndex, errors }
+}
 
-  // "Save and add another" pressed against a card already at its cap — a
-  // stale form racing the engine-enforced cardinality link. Surface the
-  // rejection; never save silently.
-  if (addIndex !== null && atMaxByIndex.has(addIndex)) {
-    return render(request, h, journey, answers, {
-      forms,
-      cardErrors: [
-        {
-          index: addIndex,
-          text: copy.errors.capReached(atMaxByIndex.get(addIndex))
-        }
-      ]
-    })
-  }
+// "Save and add another" pressed against a card already at its cap — a
+// stale form racing the engine-enforced cardinality link. Surface the
+// rejection; never save silently.
+const capReachedResponse = (
+  request,
+  h,
+  journey,
+  answers,
+  forms,
+  addIndex,
+  atMaxByIndex
+) => {
+  if (addIndex === null || !atMaxByIndex.has(addIndex)) return null
+  return render(request, h, journey, answers, {
+    forms,
+    cardErrors: [
+      {
+        index: addIndex,
+        text: copy.errors.capReached(atMaxByIndex.get(addIndex))
+      }
+    ]
+  })
+}
 
-  // "Save and add another" pressed on a card with nothing entered anywhere:
-  // never append an empty record — name the gap instead.
+// "Save and add another" pressed on a card with nothing entered anywhere:
+// never append an empty record — name the gap instead.
+const withEmptyFormGuard = (errors, forms, addIndex) => {
   const anyData = [...forms.values()].some((form) => form.holdsData)
-  if (addIndex !== null && !anyData && forms.has(addIndex)) {
-    const { commodity } = forms.get(addIndex)
-    const [first] = scopedFields(commodity)
-    errors[fieldName(first.id, addIndex)] = copy.errors.atLeastOneIdentifier
+  if (addIndex === null || anyData || !forms.has(addIndex)) return errors
+  const { commodity } = forms.get(addIndex)
+  const [first] = scopedFields(commodity)
+  return {
+    ...errors,
+    [fieldName(first.id, addIndex)]: copy.errors.atLeastOneIdentifier
   }
+}
 
-  if (Object.keys(errors).length > 0) {
-    return render(request, h, journey, answers, { forms, errors })
-  }
-
+const appendLineRecords = async (request, h, forms) => {
   const cardErrors = []
   for (const [index, form] of forms) {
     if (!form.holdsData) continue
@@ -466,6 +496,40 @@ const post = async (request, h) => {
       })
     }
   }
+  return cardErrors
+}
+
+const post = async (request, h) => {
+  const { journey, answers } = await state.get(request, h)
+  const payload = request.payload ?? {}
+  const action = (payload.action ?? '').toString()
+  const addIndex = parseAddAction(action)
+  const lines = state.collectionView(answers, ['commodityLines'])
+
+  const {
+    forms,
+    atMaxByIndex,
+    errors: formErrors
+  } = buildLineForms(payload, answers, lines)
+
+  const capReached = capReachedResponse(
+    request,
+    h,
+    journey,
+    answers,
+    forms,
+    addIndex,
+    atMaxByIndex
+  )
+  if (capReached) return capReached
+
+  const errors = withEmptyFormGuard(formErrors, forms, addIndex)
+
+  if (Object.keys(errors).length > 0) {
+    return render(request, h, journey, answers, { forms, errors })
+  }
+
+  const cardErrors = await appendLineRecords(request, h, forms)
 
   if (cardErrors.length > 0) {
     const { answers: current } = await state.get(request, h)

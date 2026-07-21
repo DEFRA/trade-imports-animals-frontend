@@ -24,7 +24,7 @@ export const copy = {
     actionsHidden: 'Actions'
   },
   remove: 'Remove',
-  removeHidden: (n) => `document ${n}`,
+  removeHidden: (documentNumber) => `document ${documentNumber}`,
   refreshStatus: 'Refresh virus scan status',
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
   empty: 'You have not added any documents yet.',

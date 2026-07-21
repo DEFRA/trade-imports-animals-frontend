@@ -32,7 +32,7 @@ describe('confirmation copy module', () => {
   })
 })
 
-describe('GET confirmation — copy reaches the view', () => {
+describe('GET /confirmation', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

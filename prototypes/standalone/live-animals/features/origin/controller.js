@@ -29,6 +29,26 @@ const view = `${TEMPLATES}/features/origin/template`
 
 const copy = copyFor({ en, cy })
 
+const REGION_CODE_MAX_LENGTH = 5
+const INTERNAL_REFERENCE_MAX_LENGTH = 58
+
+const FIELD_ORDER = [
+  'countryOfOrigin',
+  'regionOfOriginCodeRequirement',
+  'regionOfOriginCode',
+  'internalReferenceNumber'
+]
+
+const valuesFrom = (source, { trim = [] } = {}) =>
+  Object.fromEntries(
+    FIELD_ORDER.map((field) => [
+      field,
+      trim.includes(field)
+        ? (source[field] ?? '').trim()
+        : (source[field] ?? '')
+    ])
+  )
+
 const countryItems = () => [
   { value: '', text: copy.country.placeholder },
   { value: '', text: '──────────', disabled: true },
@@ -43,10 +63,14 @@ const fields = () =>
       copy.errors.countryRequired
     ),
     oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
-    maxText('regionOfOriginCode', 5, copy.errors.regionCodeMaxLength),
+    maxText(
+      'regionOfOriginCode',
+      REGION_CODE_MAX_LENGTH,
+      copy.errors.regionCodeMaxLength
+    ),
     maxText(
       'internalReferenceNumber',
-      58,
+      INTERNAL_REFERENCE_MAX_LENGTH,
       copy.errors.internalReferenceMaxLength
     ),
     pattern(
@@ -74,22 +98,14 @@ const render = (h, journey, values, errors = {}) =>
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, {
-    countryOfOrigin: answers.countryOfOrigin ?? '',
-    regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
-    regionOfOriginCode: answers.regionOfOriginCode ?? '',
-    internalReferenceNumber: answers.internalReferenceNumber ?? ''
-  })
+  return render(h, journey, valuesFrom(answers))
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const values = {
-    countryOfOrigin: payload.countryOfOrigin ?? '',
-    regionOfOriginCodeRequirement: payload.regionOfOriginCodeRequirement ?? '',
-    regionOfOriginCode: (payload.regionOfOriginCode ?? '').trim(),
-    internalReferenceNumber: (payload.internalReferenceNumber ?? '').trim()
-  }
+  const values = valuesFrom(payload, {
+    trim: ['regionOfOriginCode', 'internalReferenceNumber']
+  })
   const { errors } = validate(fields(), payload)
   if (errors) {
     const { journey } = await state.get(request, h)

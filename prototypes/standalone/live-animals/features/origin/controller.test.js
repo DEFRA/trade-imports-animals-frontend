@@ -24,7 +24,7 @@ import * as origin from './controller.js'
 
 const post = postHandlerOf(origin)
 
-describe('POST origin — invalid payload', () => {
+describe('POST /origin — invalid payload', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -76,7 +76,7 @@ describe('POST origin — invalid payload', () => {
   )
 })
 
-describe('GET origin — server-rendered select data (no-JS path)', () => {
+describe('GET /origin — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -95,7 +95,7 @@ describe('GET origin — server-rendered select data (no-JS path)', () => {
   })
 })
 
-describe('POST origin — country membership follows the primed list', () => {
+describe('POST /origin — country membership follows the primed list', () => {
   const originalMode = process.env.LIVE_ANIMALS_MODE
 
   beforeAll(() => {

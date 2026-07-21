@@ -108,15 +108,18 @@ const seedLine = (key) => {
   }
 }
 
+const SEARCH_ACTION = 'search'
+const REMOVE_ACTION_PREFIX = 'remove:'
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = payload.action ?? ''
   const query = payload.search ?? ''
   let selected = selectedKeysFromPayload(payload)
 
-  if (action === 'search' || action.startsWith('remove:')) {
-    if (action.startsWith('remove:')) {
-      const removed = action.slice('remove:'.length)
+  if (action === SEARCH_ACTION || action.startsWith(REMOVE_ACTION_PREFIX)) {
+    if (action.startsWith(REMOVE_ACTION_PREFIX)) {
+      const removed = action.slice(REMOVE_ACTION_PREFIX.length)
       selected = selected.filter((key) => key !== removed)
     }
     const { journey } = await state.get(request, h)

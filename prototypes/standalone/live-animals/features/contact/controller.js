@@ -62,11 +62,11 @@ const post = async (request, h) => {
   }
 
   const chosen = addressBook.party('contact', payload.contactAddress)
-  const { scope } = await (chosen
-    ? state.commit(request, h, {
+  const { scope } = chosen
+    ? await state.commit(request, h, {
         contactAddress: { name: chosen.name, address: { ...chosen.address } }
       })
-    : state.get(request, h))
+    : await state.get(request, h)
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
