@@ -32,22 +32,25 @@ import { simulateJourney } from './simulate.js'
 /**
  * The scope-determining flags whose cross-product spans the conditional
  * obligations moving into and out of scope: the region-code requirement, the
- * import reason, the means of transport and the transporter type. 2×2×2×3 = 24
- * states.
+ * import reason, the means of transport and the transporter type. The reason
+ * axis carries transit and temporary-admission values so the reason-gated
+ * destinationCountry / portOfExit / exitDate obligations are exercised.
+ * 2×4×2×3 = 48 states.
  *
- * @returns {Array<object>} 24 partial answer states.
+ * @returns {Array<object>} 48 partial answer states.
  */
 export const enumerateScopeStates = () =>
   ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
-    ['', 'internalMarket'].flatMap((reasonForImport) =>
-      ['', 'Road Vehicle'].flatMap((meansOfTransport) =>
-        ['', 'Commercial', 'Private'].map((transporterType) => ({
-          regionOfOriginCodeRequirement,
-          reasonForImport,
-          meansOfTransport,
-          transporterType
-        }))
-      )
+    ['', 'internalMarket', 'transit', 'temporaryAdmissionHorses'].flatMap(
+      (reasonForImport) =>
+        ['', 'Road Vehicle'].flatMap((meansOfTransport) =>
+          ['', 'Commercial', 'Private'].map((transporterType) => ({
+            regionOfOriginCodeRequirement,
+            reasonForImport,
+            meansOfTransport,
+            transporterType
+          }))
+        )
     )
   )
 
@@ -194,7 +197,7 @@ export const seedVariants = () => [
     }
   },
   {
-    // A typed document record scopes the three presentPerRecord dependants.
+    // A document record scopes the four per-document mandatory fields.
     id: 'with-documents',
     answers: {
       ...submitReadySeed,

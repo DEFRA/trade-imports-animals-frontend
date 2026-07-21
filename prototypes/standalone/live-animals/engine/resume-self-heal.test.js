@@ -19,13 +19,13 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
     const { journeyId } = await records.create({ userId: STUB_USER })
     await records.saveAnswers(journeyId, {
       countryOfOrigin: 'FR',
-      regionOfOriginCodeRequirement: 'no',
-      regionOfOriginCode: 'FR-75'
+      reasonForImport: 'research',
+      purposeInInternalMarket: 'breeding'
     })
 
     const result = await get(journeyRequest(journeyId), recordingH())
 
-    expect(result.scope.has('regionOfOriginCode')).toBe(false)
+    expect(result.scope.has('purposeInInternalMarket')).toBe(false)
     expect(result.scope.has('countryOfOrigin')).toBe(true)
   })
 

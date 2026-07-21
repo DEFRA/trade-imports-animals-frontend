@@ -74,10 +74,11 @@ const bIsGroup = (o) => groups.includes(o)
 const bMembersOf = (group) =>
   obligations.filter((o) => o.within === group && !SYSTEM_POPULATED.has(o.name))
 
-// Mandatory-when-in-scope: a static `status: 'mandatory'`, or a conditional
-// gate whose in-scope (whenTrue) branch is mandatory (transitedCountries,
-// commercial/privateTransporter, regionCode, purposeInInternalMarket, cph,
-// containsUnweanedAnimals).
+// Structural mandatory-when-in-scope fallback: a static `status:
+// 'mandatory'`, or a conditional gate whose whenTrue branch is mandatory
+// (commercial/privateTransporter, purposeInInternalMarket, cph,
+// containsUnweanedAnimals). Top-level scalars are re-judged per state in
+// `partRequired` via `effectiveStatus`.
 const bIsMandatory = (o) =>
   o.status === 'mandatory' ||
   o.applyTo?.metadata?.whenTrue?.status === 'mandatory'
@@ -110,8 +111,19 @@ const isRequiredObligation = (o) =>
 const isCollection = (o) => Boolean(o?.collection)
 const partKey = (part) => (isFacet(part) ? part.collection : part)
 
-const partRequired = (part) => {
-  if (!isFacet(part)) return isRequiredObligation(structuralOf(part))
+// Top-level scalar requiredness comes from the evaluator's EFFECTIVE
+// status — a retain-value gate (regionOfOriginCode) is in scope on both
+// branches with a per-state mandatory/optional flip, so the static
+// whenTrue heuristic would over-claim. Collections, facets and flow-only
+// parts keep the structural answer.
+const partRequired = (part, state) => {
+  if (!isFacet(part)) {
+    const structural = structuralOf(part)
+    if (structural?.collection) return isRequiredObligation(structural)
+    const b = bOf(part)
+    if (b && state) return effectiveStatus(b, null, state) === 'mandatory'
+    return isRequiredObligation(structural)
+  }
   return (
     isRequiredObligation(facetParent(part)) ||
     facetMembers(part).some(isRequiredObligation)
@@ -186,7 +198,8 @@ const childRecords = (bColl, parentRecId, state) => {
     : records.filter((r) => r.fulfilmentId.startsWith(`${parentRecId}/`))
 }
 
-// Every in-scope record complete, plus the requiredAtLeastOne floor.
+// Every in-scope record complete, plus the requiredAtLeastOne floor,
+// the collection cap and the per-parent count invariant.
 // `memberFilter` applies only at THIS level (facet split); nested
 // sub-collections recurse over all members.
 const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
@@ -195,6 +208,19 @@ const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
   const records = childRecords(bColl, parentRecId, state)
   if (records.length === 0) return !aColl.requiredAtLeastOne
   const invariantErrors = groupInvariantErrors(bColl, state)
+  // Collection cap (MAX_ENTRIES) — group-level, no instanceId.
+  if (invariantErrors.some((error) => error.code === 'MAX_ENTRIES')) {
+    return false
+  }
+  // Per-parent count invariant (recordCountEquals) — keyed by the
+  // PARENT record id (the commodity line), not this collection's own
+  // record ids, so it is checked here rather than per entry.
+  if (
+    parentRecId !== null &&
+    invariantErrors.some((error) => error.instanceId === parentRecId)
+  ) {
+    return false
+  }
   return records.every((rec) =>
     entrySatisfied(
       aColl,
@@ -256,7 +282,7 @@ export const statusOf = (parts, answers, inScope) => {
   if (inScopeParts.length === 0) return NA
 
   const state = evaluator.evaluate(answersToFulfilments(answers))
-  const required = inScopeParts.filter(partRequired)
+  const required = inScopeParts.filter((part) => partRequired(part, state))
 
   const started = inScopeParts.some((part) => partStarted(part, answers))
 

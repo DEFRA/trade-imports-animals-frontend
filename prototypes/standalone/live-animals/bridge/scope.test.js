@@ -29,7 +29,7 @@ const line = (commodity, units) => ({
 })
 
 describe('scope bridge — per-gate scoping (B)', () => {
-  it('keeps regionOfOriginCode in scope only when the requirement is "yes"', () => {
+  it('keeps regionOfOriginCode in scope whatever the requirement answers (retain-value)', () => {
     expect(
       makeScope(resolveRegion({ countryOfOrigin: 'FR' })).has(
         'regionOfOriginCode'
@@ -41,10 +41,10 @@ describe('scope bridge — per-gate scoping (B)', () => {
         regionOfOriginCodeRequirement: 'no',
         regionOfOriginCode: 'FR-75'
       }).has('regionOfOriginCode')
-    ).toBe(false)
-    // Unanswered requirement — out of scope (c-017).
+    ).toBe(true)
+    // Unanswered requirement — still in scope, optional.
     expect(makeScope({ countryOfOrigin: 'FR' }).has('regionOfOriginCode')).toBe(
-      false
+      true
     )
   })
 

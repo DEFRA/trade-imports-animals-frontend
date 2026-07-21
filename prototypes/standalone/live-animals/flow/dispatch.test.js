@@ -137,7 +137,7 @@ describe('dispatch + flow', () => {
           typeSelection: 'Domestic',
           speciesSelection: ['1148346'],
           numberOfPackages: '5',
-          numberOfAnimalsQuantity: '25',
+          numberOfAnimalsQuantity: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
         }
       ],

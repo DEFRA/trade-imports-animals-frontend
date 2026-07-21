@@ -108,9 +108,12 @@ describe('storage shape translation', () => {
       ]
     }
     const fulfilments = answersToFulfilments(answers)
+    // The count field is coerced to a NUMBER on the way in — the
+    // model's recordCountEquals invariant compares it strictly against
+    // a record tally — and back to the page's string on the way out.
     expect(fulfilments[numberOfAnimals.id]).toEqual({
-      line0: '10',
-      line1: '20'
+      line0: 10,
+      line1: 20
     })
     expect(fulfilmentsToAnswers(fulfilments)).toEqual(answers)
   })
@@ -333,8 +336,7 @@ describe('B evaluator smoke — A happy-path produces real implications', () => 
     expect(result.obligations[purposeInInternalMarket.id].status).toBe(
       'mandatory'
     )
-    // c-038 (fix applied at inc-016a): transit is REQUIRED under land transport.
-    expect(result.obligations[transitedCountries.id].status).toBe('mandatory')
+    expect(result.obligations[transitedCountries.id].status).toBe('optional')
   })
 
   it('mutually-exclusive transporter gate resolves (commercial in, private out)', () => {

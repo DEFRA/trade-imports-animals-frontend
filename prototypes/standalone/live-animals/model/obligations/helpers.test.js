@@ -10,8 +10,7 @@ import {
   notInUnionOf,
   obligationMetadata,
   present,
-  presentGate,
-  presentPerRecord
+  presentGate
 } from './helpers.js'
 import { isRecordMap, readGate } from './helper-internals.js'
 
@@ -486,90 +485,6 @@ describe('presentGate', () => {
       obligation: boolObl.id,
       whenTrue,
       whenFalse
-    })
-  })
-})
-
-// ---------------------------------------------------------------------------
-// presentPerRecord — blankness is the MODEL's `isBlankValue`, the same
-// predicate the engine's fulfilment checks use, so a value can never be
-// "filled" to the classifier while the gate it opens stays shut (or vice
-// versa). Deliberate consequence pinned below: a whitespace-only string
-// opens the gate (non-blank to the model), unlike the app-side
-// `isAnswered`, which trims.
-// ---------------------------------------------------------------------------
-
-describe('presentPerRecord', () => {
-  it('opens per record where the gate value is non-blank, closes elsewhere', () => {
-    const gate = presentPerRecord(codeObl, null)
-    const decision = gate(
-      { [codeObl.id]: { doc1: 'ITAHC', doc2: '', doc3: null } },
-      new Map()
-    )
-    expect(decision).toEqual({ inScope: true, records: ['doc1'] })
-  })
-
-  it('returns inScope: false when every record value is blank', () => {
-    const gate = presentPerRecord(codeObl, null)
-    const decision = gate(
-      { [codeObl.id]: { doc1: '', doc2: undefined } },
-      new Map()
-    )
-    expect(decision).toEqual({ inScope: false })
-  })
-
-  it('treats all-blank composite values (date parts) as unanswered', () => {
-    const gate = presentPerRecord(codeObl, null)
-    const decision = gate(
-      {
-        [codeObl.id]: {
-          doc1: { day: '', month: '', year: '' },
-          doc2: { day: '01', month: '06', year: '2026' }
-        }
-      },
-      new Map()
-    )
-    expect(decision).toEqual({ inScope: true, records: ['doc2'] })
-  })
-
-  it('opens on a whitespace-only string (model isBlankValue, not app isAnswered)', () => {
-    const gate = presentPerRecord(codeObl, null)
-    const decision = gate({ [codeObl.id]: { doc1: ' ' } }, new Map())
-    expect(decision).toEqual({ inScope: true, records: ['doc1'] })
-  })
-
-  it('projects to group instance-paths when a projection group is supplied', () => {
-    const gate = presentPerRecord(codeObl, groupObl)
-    const fulfilments = { [codeObl.id]: { line1: 'answered', line2: '' } }
-    const ids = new Map([
-      [groupObl.id, ['line1/unit1', 'line1/unit2', 'line2/unit1']]
-    ])
-    expect(gate(fulfilments, ids)).toEqual({
-      inScope: true,
-      records: ['line1/unit1', 'line1/unit2']
-    })
-  })
-
-  it('merges reasons into in-scope decisions only', () => {
-    const reason = { code: 'x.applicable', explanation: 'because x' }
-    const gate = presentPerRecord(codeObl, null, [reason])
-    expect(gate({ [codeObl.id]: { doc1: 'v' } }, new Map())).toEqual({
-      inScope: true,
-      records: ['doc1'],
-      reasons: [reason]
-    })
-    expect(gate({ [codeObl.id]: { doc1: '' } }, new Map())).toEqual({
-      inScope: false
-    })
-  })
-
-  it('exposes metadata for introspection', () => {
-    const gate = presentPerRecord(codeObl, groupObl)
-    expect(gate.metadata).toEqual({
-      type: 'presentPerRecord',
-      obligation: codeObl.id,
-      projection: groupObl.id,
-      reasons: null
     })
   })
 })

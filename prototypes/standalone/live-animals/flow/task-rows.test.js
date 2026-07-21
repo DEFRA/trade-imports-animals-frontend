@@ -114,14 +114,14 @@ describe('#rowStatus — one status per hub task row', () => {
       ).toBe(NA)
     })
 
-    it('Should appear as Not yet started for each overland means and complete once countries are added', () => {
+    it('Should appear as Optional for each overland means and complete once countries are added', () => {
       for (const means of ['Railway', 'Road Vehicle']) {
         expect(
           statusIn('transitCountries', {
             ...unlocked,
             meansOfTransport: means
           })
-        ).toBe(NOT_STARTED)
+        ).toBe(OPTIONAL)
       }
       expect(
         statusIn('transitCountries', {
@@ -213,9 +213,9 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
     }
   })
 
-  it('Should unlock every row once the origin and a commodity line are answered', () => {
+  it('Should unlock every unconditional row once the origin and a commodity line are answered', () => {
     const scope = makeScope(unlocked)
-    for (const row of taskRows.filter((r) => r.id !== 'transitCountries')) {
+    for (const row of taskRows.filter((r) => !r.conditional)) {
       expect(rowGatePasses(row, scope)).toBe(true)
     }
   })
@@ -250,6 +250,12 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       ...happyPath,
       transporterType: 'Private',
       commercialTransporter: null
+    },
+    // transitedCountries is optional under land transport — leaving it
+    // empty no longer blocks submission.
+    'the happy path leaving transit countries empty': {
+      ...happyPath,
+      transitedCountries: []
     }
   }
 
@@ -272,16 +278,20 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       ...happyPath,
       commodityLines: [{ ...happyPath.commodityLines[0], speciesSelection: '' }]
     },
-    'the happy path owing transit countries': {
-      ...happyPath,
-      transitedCountries: []
-    },
     'the happy path with a partial document': {
       ...happyPath,
       documents: [{ accompanyingDocumentType: 'ITAHC' }]
     },
     'the happy path without a contact': { ...happyPath, contactAddress: null },
-    'the happy path without an importer': { ...happyPath, importer: null }
+    'the happy path without an importer': { ...happyPath, importer: null },
+    // The unit-count invariant: a line declaring more animals than it
+    // has unit records cannot submit.
+    'the happy path with a short unit count': {
+      ...happyPath,
+      commodityLines: [
+        { ...happyPath.commodityLines[0], numberOfAnimalsQuantity: '2' }
+      ]
+    }
   }
 
   it.each(Object.entries({ ...submittable, ...notSubmittable }))(

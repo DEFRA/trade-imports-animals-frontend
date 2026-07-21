@@ -296,10 +296,17 @@ describe('#buildSections (check-answers GET)', () => {
       privateTransporter: { name: 'Jean Dupont' }
     }
 
-    it('Should omit the region-of-origin-code row when the requirement is no', async () => {
-      expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).not.toContain(
+    it('Should keep the region-of-origin-code row when the requirement is no', async () => {
+      expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).toContain(
         'Region of origin code'
       )
+    })
+
+    it('Should retain a stored region-of-origin code across a requirement flip to no', async () => {
+      const rows = rowsOf(
+        await sectionsFor({ ...gatedOffSeed, regionOfOriginCode: 'FR-75' })
+      )
+      expect(valueOf(rows, 'Region of origin code')).toBe('FR-75')
     })
 
     it('Should omit the internal-market purpose row when the reason is not internalMarket', async () => {

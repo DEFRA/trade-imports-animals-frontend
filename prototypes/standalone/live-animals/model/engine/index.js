@@ -414,8 +414,8 @@ function collectInScopePresentedEntries(container, state) {
  * groupInvariantErrors(group, state)
  *   → [{ code, groupId, groupName, ... }]
  *
- * Emits one entry per unsatisfied invariant on the group. Two rules
- * are supported; a group may carry either, both, or neither.
+ * Emits one entry per unsatisfied invariant on the group. Five rules
+ * are supported; a group may carry any combination.
  *
  *   - `requires.minEntries` — collection floor. Emits ONE
  *     `{ code: 'MIN_ENTRIES', minEntries, actual }` when
@@ -424,7 +424,16 @@ function collectInScopePresentedEntries(container, state) {
  *     an empty consignment. Wired into `commodityLine` (minEntries: 1)
  *     in obligations.js.
  *
- *   - `requires.anyOf` — per-instance rule. Emits one error per
+ *   - `requires.maxEntries` — collection cap. Symmetric to
+ *     minEntries. Emits ONE `{ code: 'MAX_ENTRIES', maxEntries,
+ *     actual, errorCode }` when `records.length` exceeds the cap.
+ *     Wired into the documents group (maxEntries: 10) — a UI also
+ *     enforces the cap on the Add affordance but the invariant is
+ *     authoritative for after-the-fact defence (e.g. a redeploy
+ *     lowering the cap after the user saved records over the new
+ *     limit).
+ *
+ *   - `requires.anyOfIds` — per-instance rule. Emits one error per
  *     in-scope instance where NONE of the required leaves has a
  *     fulfilment (and where the instance has at least one required
  *     leaf in scope — otherwise the invariant is vacuously
@@ -432,12 +441,34 @@ function collectInScopePresentedEntries(container, state) {
  *     so composite-address all-blank values are treated as unfilled.
  *     This is the primitive the V4 "at least one Animal Identifier
  *     per unit-record" rule rides on. `unitRecord.requires = {
- *     anyOf: [ passport, tattoo, earTag, horseName,
+ *     anyOfIds: [ passport, tattoo, earTag, horseName,
  *     identificationDetails, description ] }` in obligations.js.
  *
- * Both rule shapes contribute uniformly to `classifyEntries`'
- * `groupErrorCount` — an unmet floor blocks F just like an unfilled
- * per-instance invariant does.
+ *   - `requires.allOrNothingOfIds` — notification-level field-block
+ *     rule. Members are ordinary scalar (notification-level)
+ *     obligations, keyed directly by their obligation id in
+ *     `state.fulfilments`. Emits ONE error `{ code, groupId,
+ *     groupName, missingIds }` when 0 < filledCount < total (partial
+ *     block); zero errors when all-blank (block inactive) or all-
+ *     filled (block complete). Uses the same `isBlankValue` predicate
+ *     as the anyOfIds walk so blank strings / null / undefined /
+ *     empty arrays all count as "not filled". No manifest carrier
+ *     today — retained as a general primitive.
+ *
+ *   - `requires.recordCountEquals` — cross-group per-parent-instance
+ *     count check. `{ fieldId, errorCode }`. For each in-scope parent
+ *     (`group.within`) instance `parentId`: read the expected count
+ *     from `state.fulfilments[fieldId][parentId]`, skip when blank
+ *     (relies on the field's own mandatory rule to catch the missing
+ *     case), count `records` whose `fulfilmentId.startsWith(parentId
+ *     + '/')`, emit one error per mismatch. Wired into the
+ *     animalIdentifiers group (`fieldId = numberOfAnimalsQuantity`'s
+ *     id) so the count of animals on a commodity line matches the
+ *     trader's declared quantity.
+ *
+ * All five rule shapes contribute uniformly to `classifyEntries`'
+ * `groupErrorCount` — an unmet floor / cap / anyOf / all-or-nothing
+ * / count-mismatch blocks F identically.
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) return []
@@ -445,7 +476,7 @@ export function groupInvariantErrors(group, state) {
   if (!groupImpl?.inScope) return []
   const errors = []
   const records = groupImpl.records ?? []
-  const { minEntries, errorCode } = group.requires
+  const { minEntries, maxEntries, errorCode } = group.requires
   if (typeof minEntries === 'number' && records.length < minEntries) {
     errors.push({
       code: 'MIN_ENTRIES',
@@ -456,41 +487,108 @@ export function groupInvariantErrors(group, state) {
       actual: records.length
     })
   }
-  if (!group.requires.anyOfIds) return errors
-  for (const record of records) {
-    const instanceId = record.fulfilmentId
-    const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
-      const impl = state.obligations?.[leafId]
-      if (!impl?.inScope) return false
-      return (impl.records ?? []).some((r) => r.fulfilmentId === instanceId)
+  if (typeof maxEntries === 'number' && records.length > maxEntries) {
+    errors.push({
+      code: 'MAX_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
+      maxEntries,
+      actual: records.length
     })
-    if (inScopeLeafIds.length === 0) continue
-    const anyFilled = inScopeLeafIds.some((leafId) => {
-      const stored = state.fulfilments?.[leafId]?.[instanceId]
-      return !isBlankValue(stored)
-    })
-    if (!anyFilled) {
+  }
+  if (group.requires.anyOfIds) {
+    for (const record of records) {
+      const instanceId = record.fulfilmentId
+      const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
+        const impl = state.obligations?.[leafId]
+        if (!impl?.inScope) return false
+        return (impl.records ?? []).some((r) => r.fulfilmentId === instanceId)
+      })
+      if (inScopeLeafIds.length === 0) continue
+      const anyFilled = inScopeLeafIds.some((leafId) => {
+        const stored = state.fulfilments?.[leafId]?.[instanceId]
+        return !isBlankValue(stored)
+      })
+      if (!anyFilled) {
+        errors.push({
+          code: group.requires.errorCode,
+          groupId: group.id,
+          groupName: group.name,
+          instanceId
+        })
+      }
+    }
+  }
+  if (group.requires.allOrNothingOfIds) {
+    const memberIds = group.requires.allOrNothingOfIds
+    const filledIds = memberIds.filter(
+      (id) => !isBlankValue(state.fulfilments?.[id])
+    )
+    if (filledIds.length > 0 && filledIds.length < memberIds.length) {
+      const missingIds = memberIds.filter((id) =>
+        isBlankValue(state.fulfilments?.[id])
+      )
       errors.push({
         code: group.requires.errorCode,
         groupId: group.id,
         groupName: group.name,
-        instanceId
+        missingIds
       })
+    }
+  }
+  if (group.requires.recordCountEquals && group.within) {
+    const { fieldId, errorCode: countErrorCode } =
+      group.requires.recordCountEquals
+    const parentImpl = state.obligations?.[group.within.id]
+    const parentRecords = parentImpl?.records ?? []
+    for (const parentRec of parentRecords) {
+      const parentId = parentRec.fulfilmentId
+      const expected = state.fulfilments?.[fieldId]?.[parentId]
+      if (isBlankValue(expected)) continue
+      const actual = records.filter((r) =>
+        r.fulfilmentId.startsWith(`${parentId}/`)
+      ).length
+      if (actual !== expected) {
+        errors.push({
+          code: countErrorCode,
+          groupId: group.id,
+          groupName: group.name,
+          instanceId: parentId,
+          expected,
+          actual
+        })
+      }
     }
   }
   return errors
 }
 
-/** Collect every group obligation referenced by a
- *  `presentsForEach.forEachOf` node under this container. Used to
- *  scope group-invariant checks to only the groups a container
- *  actually surfaces. */
+/** Collect every group obligation whose invariants apply to this
+ *  container's subtree. Two edges into the collector:
+ *
+ *   - `presentsForEach.forEachOf` — records-shaped groups the
+ *     container fans out over (e.g. commodityLine, unitRecord). These
+ *     carry `requires.minEntries` / `requires.anyOfIds`.
+ *
+ *   - Notification-level containers referenced by a member obligation's
+ *     back-ref `obligation.containers` (populated at manifest export
+ *     time by the `allOrNothingOfIds` back-linker). Any container whose
+ *     invariant reads a scalar obligation presented on this page is
+ *     relevant here — same visibility rule as `presentsForEach` but for
+ *     scalar-storage field blocks.
+ */
 function collectGroupsPresentedIn(container) {
   const groups = new Map()
   const visit = (node) => {
     if (node.presentsForEach?.forEachOf) {
       const g = node.presentsForEach.forEachOf
       groups.set(g.id, g)
+    }
+    for (const entry of node.presents ?? []) {
+      for (const c of entry.obligation?.containers ?? []) {
+        groups.set(c.id, c)
+      }
     }
     for (const child of node.children ?? []) visit(child)
   }

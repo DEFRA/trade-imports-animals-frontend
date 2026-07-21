@@ -1,0 +1,25 @@
+{% extends "standalone/live-animals/shared/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "standalone/live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukSelect({
+      id: "portOfExit",
+      name: "portOfExit",
+      label: { text: "Port of exit", classes: "govuk-label--s" },
+      hint: { text: "Choose where the consignment will leave Great Britain. Exit and entry share the same port list." },
+      value: values.portOfExit,
+      errorMessage: errors.portOfExit and { text: errors.portOfExit },
+      items: portItems
+    }) }}
+
+    {{ saveActions(hubHref) }}
+  </form>
+{% endblock %}

@@ -158,7 +158,7 @@ describe('RULE 2 — review gates on submit-readiness (no deadlock)', () => {
         typeSelection: 'Domestic',
         speciesSelection: ['1148346'],
         numberOfPackages: '5',
-        numberOfAnimalsQuantity: '25',
+        numberOfAnimalsQuantity: '1',
         animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
       }
     ],

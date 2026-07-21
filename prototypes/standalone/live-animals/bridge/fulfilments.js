@@ -71,8 +71,8 @@ const segmentToken = (group) =>
 
 // ---------------------------------------------------------------------------
 // Vocabulary normalisation — per-field, A<->B. Fields absent here pass
-// through unchanged. Only string scalars are transformed; addresses, dates
-// and arrays are opaque composite values.
+// through unchanged. Only string/number scalars are transformed;
+// addresses, dates and arrays are opaque composite values.
 // ---------------------------------------------------------------------------
 
 const camelToKebab = (s) =>
@@ -92,6 +92,20 @@ const stripGbPrefix = (s) => (s.startsWith('GB ') ? s.slice(3) : s)
 
 const addGbPrefix = (s) => (s.startsWith('GB') ? s : `GB ${s}`)
 
+// The pages store form payloads as strings; the model's
+// `recordCountEquals` invariant compares the stored count against a
+// record tally with strict equality, so the count must reach the
+// evaluator as a NUMBER. Unparseable input passes through raw —
+// validation is controller-side.
+const toNumberWhenParses = (value) => {
+  if (typeof value !== 'string' || value.trim() === '') return value
+  const n = Number(value)
+  return Number.isFinite(n) ? n : value
+}
+
+const numberToString = (value) =>
+  typeof value === 'number' ? String(value) : value
+
 const VOCAB = {
   // Answers store the display name (`Cow`); the manifest's gates compare the
   // CN code (`0102`). The commodity map is NON-INJECTIVE — `Cat`/`Dog` ->
@@ -100,12 +114,15 @@ const VOCAB = {
   reasonForImport: { toB: camelToKebab, toA: kebabToCamel },
   transporterType: { toB: titleToKebab, toA: kebabToTitle },
   meansOfTransport: { toB: titleToKebab, toA: kebabToTitle },
-  portOfEntry: { toB: stripGbPrefix, toA: addGbPrefix }
+  portOfEntry: { toB: stripGbPrefix, toA: addGbPrefix },
+  numberOfAnimalsQuantity: { toB: toNumberWhenParses, toA: numberToString }
 }
 
 const normalise = (direction, aId, value) => {
   const converter = VOCAB[aId]?.[direction]
-  if (!converter || typeof value !== 'string') return value
+  if (!converter || (typeof value !== 'string' && typeof value !== 'number')) {
+    return value
+  }
   const converted = converter(value)
   // A converter that cannot place a value (unknown commodity name/code) must
   // not destroy it — pass the original through rather than emit `undefined`.

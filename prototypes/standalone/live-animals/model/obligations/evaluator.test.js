@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
+import { groupInvariantErrors } from '../engine/index.js'
 import {
   poApprovedReferenceNumber,
   responsiblePersonForLoad,
@@ -167,9 +168,9 @@ describe('V4 smoke — evaluator wires up against fresh manifest', () => {
     expect(result.fulfilments).toEqual({})
     expect(result.obligations[countryOfOrigin.id]).toEqual(mandatory)
     expect(result.obligations[regionCodeRequirement.id]).toEqual(mandatory)
-    // c-017 (fix applied at inc-016a): regionCode is out of scope unless the
-    // requirement is 'yes'; on empty input the requirement is unset.
-    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
+    // Retain-value pattern: regionCode is always in scope — optional
+    // until the requirement is 'yes'.
+    expect(result.obligations[regionCode.id]).toEqual(optional)
   })
 
   it('unrecognised obligation ids are dropped (tolerate-and-amend)', () => {
@@ -220,17 +221,17 @@ describe('V4 — countryOfOrigin round-trip', () => {
 // regionCode conditional gate (retain-value pattern)
 // ---------------------------------------------------------------------------
 
-describe('V4 — regionCode conditional gate', () => {
-  it('is out of scope when regionCodeRequirement is absent', () => {
+describe('V4 — regionCode conditional gate (retain-value)', () => {
+  it('is optional in-scope when regionCodeRequirement is absent', () => {
     const result = evaluator.evaluate({})
-    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
+    expect(result.obligations[regionCode.id]).toEqual(optional)
   })
 
-  it('is out of scope when regionCodeRequirement is no', () => {
+  it('is optional in-scope when regionCodeRequirement is no', () => {
     const result = evaluator.evaluate({
       [regionCodeRequirement.id]: 'no'
     })
-    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
+    expect(result.obligations[regionCode.id]).toEqual(optional)
   })
 
   it('is mandatory in-scope when regionCodeRequirement is yes', () => {
@@ -244,17 +245,16 @@ describe('V4 — regionCode conditional gate', () => {
     })
   })
 
-  // c-017 (fix applied at inc-016a): the requirement flipping off takes
-  // regionCode out of scope, and the converged purge destroys the stored
-  // value — it is not retained.
-  it('purges a stored regionCode value when the requirement flips from yes to no', () => {
+  // Retain-value: the requirement flipping off demotes regionCode to
+  // optional but keeps it in scope — the stored value survives.
+  it('retains a stored regionCode value when the requirement flips from yes to no', () => {
     const stored = {
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75'
     }
     const result = evaluator.evaluate(stored)
-    expect(result.fulfilments[regionCode.id]).toBeUndefined()
-    expect(result.obligations[regionCode.id]).toEqual(outOfScope)
+    expect(result.fulfilments[regionCode.id]).toBe('FR-75')
+    expect(result.obligations[regionCode.id]).toEqual(optional)
   })
 })
 
@@ -383,26 +383,24 @@ describe('V4 — transitedCountries conditional gate', () => {
     expect(result.obligations[transitedCountries.id]).toEqual(outOfScope)
   })
 
-  // c-038 (fix applied at inc-016a): transit countries resolve REQUIRED
-  // under Railway / Road Vehicle.
-  it('is mandatory in-scope when meansOfTransport is road-vehicle', () => {
+  it('is optional in-scope when meansOfTransport is road-vehicle', () => {
     const result = evaluator.evaluate({
       [meansOfTransport.id]: 'road-vehicle'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
-      status: 'mandatory',
+      status: 'optional',
       reasons: [transitedCountriesReason]
     })
   })
 
-  it('is mandatory in-scope when meansOfTransport is railway', () => {
+  it('is optional in-scope when meansOfTransport is railway', () => {
     const result = evaluator.evaluate({
       [meansOfTransport.id]: 'railway'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
-      status: 'mandatory',
+      status: 'optional',
       reasons: [transitedCountriesReason]
     })
   })
@@ -1055,76 +1053,53 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Step 5 — Accompanying Documents (repeatable per-document collection)
-//
-// inc-016b resolved D1: the four fields now sit `within: documents`, a
-// depth-0 group. `accompanyingDocumentType` is the per-record trigger
-// (plain mandatory field); the three dependants gate on the SAME-record
-// type via `presentPerRecord` — in scope + mandatory on records whose
-// type is answered, out of scope (and purged) elsewhere. Storage is a
-// records-map keyed by document instance. See DIVERGENCE-REGISTER D1 +
-// V4 (Confluence page 6497338582) "once a document type is selected …".
+// Accompanying Documents — 0..10 user-driven indexed group. All four
+// fields are plain `status: 'mandatory'` within the group: a document
+// record demands its type, attachment, reference and date of issue
+// alike (no per-record trigger). The cap rides `requires.maxEntries`
+// via `groupInvariantErrors`.
 // ---------------------------------------------------------------------------
 
-const documentDependants = [
+const documentFields = [
+  ['Type', accompanyingDocumentType],
   ['AttachmentType', accompanyingDocumentAttachmentType],
   ['Reference', accompanyingDocumentReference],
   ['DateOfIssue', accompanyingDocumentDateOfIssue]
 ]
 
-const documentBlockMandatoryReason = {
-  code: 'obligation.accompanyingDocument.mandatory.becauseTypeSelected',
-  explanation:
-    'accompanying document fields become mandatory once a document type is selected'
-}
-
 describe('V4 — accompanying documents: no documents at all', () => {
-  it('the documents group and the Type trigger are in scope with no records', () => {
-    const result = evaluator.evaluate({})
-    expect(result.obligations[documents.id]).toEqual({
-      inScope: true,
-      records: []
-    })
-    expect(result.obligations[accompanyingDocumentType.id]).toEqual({
-      inScope: true,
-      records: []
-    })
-  })
-
-  it.each(documentDependants)(
-    '%s is out of scope when no document exists',
+  it.each([['documents group', documents], ...documentFields])(
+    '%s is in scope with no records',
     (_name, obligation) => {
       const result = evaluator.evaluate({})
-      expect(result.obligations[obligation.id]).toEqual({ inScope: false })
+      expect(result.obligations[obligation.id]).toEqual({
+        inScope: true,
+        records: []
+      })
     }
   )
 })
 
-describe('V4 — accompanying documents: type is the per-record trigger (audit #15)', () => {
+describe('V4 — accompanying documents: every field is mandatory per record', () => {
   const withType = {
     [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' }
   }
 
-  it('a document record appears once its Type is answered', () => {
+  it('a document record appears once any of its fields is stored', () => {
     const result = evaluator.evaluate(withType)
     expect(result.obligations[documents.id]).toEqual({
       inScope: true,
       records: [{ fulfilmentId: 'd0' }]
     })
-    expect(result.obligations[accompanyingDocumentType.id]).toEqual({
-      inScope: true,
-      records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
-    })
   })
 
-  it.each(documentDependants)(
-    '%s is mandatory + reason on the record whose Type is answered',
+  it.each(documentFields)(
+    '%s is mandatory on an existing record',
     (_name, obligation) => {
       const result = evaluator.evaluate(withType)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: [{ fulfilmentId: 'd0', status: 'mandatory' }],
-        reasons: [documentBlockMandatoryReason]
+        records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
       })
     }
   )
@@ -1138,47 +1113,66 @@ describe('V4 — accompanying documents: all four filled on one record', () => {
     [accompanyingDocumentDateOfIssue.id]: { d0: '2025-12-12' }
   }
 
-  it('the Type field is mandatory on the record', () => {
-    const result = evaluator.evaluate(stored)
-    expect(result.obligations[accompanyingDocumentType.id]).toEqual({
-      inScope: true,
-      records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
-    })
-  })
-
-  it.each(documentDependants)(
+  it.each(documentFields)(
     '%s is mandatory and its value round-trips',
     (_name, obligation) => {
       const result = evaluator.evaluate(stored)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: [{ fulfilmentId: 'd0', status: 'mandatory' }],
-        reasons: [documentBlockMandatoryReason]
+        records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
       })
       expect(result.fulfilments[obligation.id]).toEqual(stored[obligation.id])
     }
   )
 })
 
-describe('V4 — accompanying documents: per-record purge when Type is blank', () => {
-  it('a dependant on a record with no Type is out of scope and purged, independent of a sibling record', () => {
-    // Replaces the old notification-level retain-value semantic: the
-    // gate is now per record. Record d0 has a Type (its Reference is
-    // mandatory + kept); record d1 has only a Reference and no Type, so
-    // that Reference leaves scope and is purged. Per-record projection —
-    // the same purge behaviour `allowListed` gives the identifier gates.
+describe('V4 — accompanying documents: a partial record keeps every field owed', () => {
+  it('a record with only a Reference keeps its other fields mandatory (nothing purged)', () => {
     const result = evaluator.evaluate({
       [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' },
-      [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890', d1: 'ORPHAN' }
+      [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890', d1: 'KEPT' }
     })
     expect(result.obligations[accompanyingDocumentReference.id]).toEqual({
       inScope: true,
-      records: [{ fulfilmentId: 'd0', status: 'mandatory' }],
-      reasons: [documentBlockMandatoryReason]
+      records: [
+        { fulfilmentId: 'd0', status: 'mandatory' },
+        { fulfilmentId: 'd1', status: 'mandatory' }
+      ]
     })
     expect(result.fulfilments[accompanyingDocumentReference.id]).toEqual({
-      d0: 'GBHC1234567890'
+      d0: 'GBHC1234567890',
+      d1: 'KEPT'
     })
+  })
+})
+
+describe('V4 — accompanying documents: the 0..10 cap', () => {
+  const recordsOf = (count) =>
+    Object.fromEntries(
+      Array.from({ length: count }, (_, i) => [`d${i}`, 'ITAHC'])
+    )
+
+  it('ten documents raise no invariant error', () => {
+    const state = evaluator.evaluate({
+      [accompanyingDocumentType.id]: recordsOf(10)
+    })
+    expect(groupInvariantErrors(documents, state)).toEqual([])
+  })
+
+  it('an eleventh document trips MAX_ENTRIES', () => {
+    const state = evaluator.evaluate({
+      [accompanyingDocumentType.id]: recordsOf(11)
+    })
+    expect(groupInvariantErrors(documents, state)).toEqual([
+      {
+        code: 'MAX_ENTRIES',
+        groupId: documents.id,
+        groupName: 'documents',
+        errorCode: 'obligation.accompanyingDocument.tooMany',
+        maxEntries: 10,
+        actual: 11
+      }
+    ])
   })
 })
 

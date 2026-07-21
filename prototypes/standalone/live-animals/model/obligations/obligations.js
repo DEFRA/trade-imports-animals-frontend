@@ -67,8 +67,7 @@ import {
   anyAllowListed,
   equalsGate,
   includesGate,
-  notInUnionOf,
-  presentPerRecord
+  notInUnionOf
 } from './helpers.js'
 
 // -----------------------------------------------------------------------------
@@ -84,6 +83,24 @@ const purposeInInternalMarketReason = {
   code: 'obligation.purposeInInternalMarket.applicable.becauseInternalMarket',
   explanation:
     'purposeInInternalMarket applies when reasonForImport is internal-market'
+}
+
+const destinationCountryReason = {
+  code: 'obligation.destinationCountry.applicable.becauseTransitOrTranshipment',
+  explanation:
+    'destinationCountry applies when reasonForImport is transit or transhipment-or-onward-travel'
+}
+
+const portOfExitReason = {
+  code: 'obligation.portOfExit.applicable.becauseTransitOrTemporaryAdmissionHorses',
+  explanation:
+    'portOfExit applies when reasonForImport is transit or temporary-admission-horses'
+}
+
+const exitDateReason = {
+  code: 'obligation.exitDate.applicable.becauseTemporaryAdmissionHorses',
+  explanation:
+    'exitDate applies when reasonForImport is temporary-admission-horses'
 }
 
 const commercialTransporterReason = {
@@ -156,12 +173,6 @@ const permanentAddressReason = {
     'permanentAddress applies on units of lines whose commodityCode requires per-animal permanent address'
 }
 
-const accompanyingDocumentBlockReason = {
-  code: 'obligation.accompanyingDocument.mandatory.becauseTypeSelected',
-  explanation:
-    'accompanying document fields become mandatory once a document type is selected'
-}
-
 // -----------------------------------------------------------------------------
 // System-populated fields — declared for V4 completeness but NOT
 // presented in the flow layer. Value legality is enforced upstream
@@ -205,6 +216,9 @@ export const regionCodeRequirement = {
   status: 'mandatory'
 }
 
+// Retain-value pattern: always in scope; mandatory when the
+// requirement is 'yes', optional otherwise. Stored values are kept
+// across gate flips (V4 spec: the field itself is not purged on 'no').
 export const regionCode = {
   id: 'c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
   name: 'regionOfOriginCode',
@@ -212,7 +226,7 @@ export const regionCode = {
     regionCodeRequirement,
     'yes',
     { inScope: true, status: 'mandatory', reasons: [regionCodeRequiredReason] },
-    { inScope: false }
+    { inScope: true, status: 'optional' }
   )
 }
 
@@ -239,6 +253,69 @@ export const purposeInInternalMarket = {
       inScope: true,
       status: 'mandatory',
       reasons: [purposeInInternalMarketReason]
+    },
+    { inScope: false }
+  )
+}
+
+// V4 (Confluence page 6497338582, "Reason of Import" section):
+// destinationCountry applies when reasonForImport ∈ { transit,
+// transhipment-or-onward-travel }. Purge-on-flip.
+const DESTINATION_COUNTRY_APPLICABLE_REASONS = [
+  'transit',
+  'transhipment-or-onward-travel'
+]
+
+export const destinationCountry = {
+  id: 'f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01',
+  name: 'destinationCountry',
+  applyTo: includesGate(
+    reasonForImport,
+    DESTINATION_COUNTRY_APPLICABLE_REASONS,
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [destinationCountryReason]
+    },
+    { inScope: false }
+  )
+}
+
+// V4: portOfExit applies when reasonForImport ∈ { transit,
+// temporary-admission-horses }. Spec: "Port selected from the port of
+// entry list (Exit and Entry share the same list)." Purge-on-flip.
+const PORT_OF_EXIT_APPLICABLE_REASONS = [
+  'transit',
+  'temporary-admission-horses'
+]
+
+export const portOfExit = {
+  id: 'a67b8c9d-0e1f-4023-8145-6c7d8e9f0112',
+  name: 'portOfExit',
+  applyTo: includesGate(
+    reasonForImport,
+    PORT_OF_EXIT_APPLICABLE_REASONS,
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [portOfExitReason]
+    },
+    { inScope: false }
+  )
+}
+
+// V4: exitDate applies only when reasonForImport is
+// temporary-admission-horses. Purge-on-flip.
+export const exitDate = {
+  id: 'b78c9d0e-1f20-4134-8256-7d8e9f012023',
+  name: 'exitDate',
+  applyTo: equalsGate(
+    reasonForImport,
+    'temporary-admission-horses',
+    {
+      inScope: true,
+      status: 'mandatory',
+      reasons: [exitDateReason]
     },
     { inScope: false }
   )
@@ -361,7 +438,7 @@ export const transitedCountries = {
     LAND_TRANSPORT_MODES,
     {
       inScope: true,
-      status: 'mandatory',
+      status: 'optional',
       reasons: [transitedCountriesReason]
     },
     { inScope: false }
@@ -617,6 +694,16 @@ export const unitRecord = {
   // invariant. `containerStatus` treats a violating instance as
   // "not fulfilled" so the per-unit-records subsection stays IP
   // until the user fixes it. See engine/index.js.
+  //
+  // V4 spec cross-check ("unit records ARE animals" reading of
+  // Confluence page 6497338582): the count of unit-record instances
+  // on a given commodity line must equal `numberOfAnimals` on that
+  // line. Modelled as `requires.recordCountEquals` — a per-parent-
+  // instance count check that fires one error per mismatched line
+  // (see engine/index.js#groupInvariantErrors). Rollup-only: neither
+  // the number field nor the unit records are purged when the other
+  // changes — the user resolves the mismatch by adding / removing
+  // units or amending the number.
   requires: {
     anyOfIds: [
       '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
@@ -626,7 +713,11 @@ export const unitRecord = {
       '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95', // identificationDetails
       '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6' // description
     ],
-    errorCode: 'obligation.unitRecord.identifiersRequired'
+    errorCode: 'obligation.unitRecord.identifiersRequired',
+    recordCountEquals: {
+      fieldId: numberOfAnimals.id,
+      errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
+    }
   }
 }
 
@@ -766,26 +857,32 @@ export const permanentAddress = {
 }
 
 // -----------------------------------------------------------------------------
-// Accompanying Documents — repeatable per-document collection (V4 cap-10,
-// enforced controller-side via MAX_DOCUMENTS): a `documents` group with
-// four fields `within` it.
+// Accompanying Documents — user-driven indexed group (0..10 documents
+// per notification).
 //
-// Per-record scope (V4, Confluence page 6497338582): "once a document
-// type is selected, the attachment, reference and date of issue are
-// mandatory to proceed." The trigger is documentType, evaluated PER
-// document record: on each record whose `accompanyingDocumentType` is
-// answered, the three dependants are in scope + mandatory; elsewhere out
-// of scope. `presentPerRecord` is the projecting `presentGate` — same
-// same-level `null`-projection semantics `allowListed`/`notInUnionOf`
-// use for the `commodityLine`/`unitRecord` groups.
+// Spec source: traders can attach between 0 and 10 accompanying
+// documents to a notification; each document carries its own type /
+// attachment / reference / date-of-issue. Confluence page 6497338582
+// still reads as if there is at most one document — the model is the
+// source of truth until the page is amended.
+//
+// Per-document mandatoriness is expressed at the field level
+// (`status: 'mandatory'` within the group). `requires.maxEntries: 10`
+// caps the collection; the documents feature also caps the Add
+// affordance but the invariant is authoritative for after-the-fact
+// defence (e.g. a redeploy lowering the cap after the user saved
+// records over the new limit).
 // -----------------------------------------------------------------------------
 
 export const documents = {
-  id: '5921dbd2-9290-481b-b2d6-12d4321e6f7c',
-  name: 'documents'
-  // No applyTo — structural user-driven group, always in scope. No
-  // `requires` floor: documents are optional (match A, which has no
-  // collection floor). The V4 cap of 10 is enforced controller-side.
+  id: '52210b3b-4c53-4b81-8ef0-fa0b1223e40c',
+  name: 'documents',
+  // No applyTo — top-level user-driven indexed group, always in scope.
+  // Instance ids are session-scoped counter values (`doc1`, `doc2`, …).
+  requires: {
+    maxEntries: 10,
+    maxEntriesErrorCode: 'obligation.accompanyingDocument.tooMany'
+  }
 }
 
 export const accompanyingDocumentType = {
@@ -793,39 +890,27 @@ export const accompanyingDocumentType = {
   name: 'accompanyingDocumentType',
   within: documents,
   status: 'mandatory'
-  // The per-record trigger. A models it `required: true`; a document
-  // record cannot exist without a type. The three dependants gate on
-  // this obligation's per-record presence via `presentPerRecord`.
 }
 
 export const accompanyingDocumentAttachmentType = {
   id: '50ede208-1920-4e4e-8bcd-c78e9f0fb1d9',
   name: 'accompanyingDocumentAttachmentType',
   within: documents,
-  status: 'mandatory',
-  applyTo: presentPerRecord(accompanyingDocumentType, null, [
-    accompanyingDocumentBlockReason
-  ])
+  status: 'mandatory'
 }
 
 export const accompanyingDocumentReference = {
   id: '51fef319-2a31-4f5f-8cde-d89fa010c2ea',
   name: 'accompanyingDocumentReference',
   within: documents,
-  status: 'mandatory',
-  applyTo: presentPerRecord(accompanyingDocumentType, null, [
-    accompanyingDocumentBlockReason
-  ])
+  status: 'mandatory'
 }
 
 export const accompanyingDocumentDateOfIssue = {
   id: '5210042a-3b42-4a70-8def-e9a0b121d3fb',
   name: 'accompanyingDocumentDateOfIssue',
   within: documents,
-  status: 'mandatory',
-  applyTo: presentPerRecord(accompanyingDocumentType, null, [
-    accompanyingDocumentBlockReason
-  ])
+  status: 'mandatory'
 }
 
 // -----------------------------------------------------------------------------
@@ -841,6 +926,9 @@ export const obligations = [
   regionCode,
   reasonForImport,
   purposeInInternalMarket,
+  destinationCountry,
+  portOfExit,
+  exitDate,
   containsUnweanedAnimals,
   placeOfOrigin,
   consignor,
@@ -885,3 +973,25 @@ export const obligations = [
 export const groups = obligations.filter((o) =>
   obligations.some((other) => other.within === o)
 )
+
+// -----------------------------------------------------------------------------
+// Container back-refs — populate `member.containers` for every scalar
+// obligation that participates in a `requires.allOrNothingOfIds`
+// invariant carrier. Consumed by `engine/index.js#collectGroupsPresentedIn`
+// so a flow page presenting any member surfaces its parent invariant
+// container the same way `presentsForEach.forEachOf` surfaces records
+// groups. The current manifest has zero `allOrNothingOfIds` carriers;
+// the loop is retained as a general primitive for any future
+// notification-level scalar invariant block. Idempotent — repeated
+// imports rebuild the same list.
+// -----------------------------------------------------------------------------
+for (const container of obligations) {
+  if (!container?.requires?.allOrNothingOfIds) continue
+  for (const memberId of container.requires.allOrNothingOfIds) {
+    const member = obligations.find((o) => o.id === memberId)
+    if (!member) continue
+    const existing = member.containers ?? []
+    if (existing.some((c) => c.id === container.id)) continue
+    member.containers = existing.concat(container)
+  }
+}

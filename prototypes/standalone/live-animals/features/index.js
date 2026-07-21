@@ -7,6 +7,9 @@ import * as consignmentDetails from './commodities/consignment-details.controlle
 import * as animalIdentification from './commodities/animal-identification.controller.js'
 import * as importReason from './import-reason/controller.js'
 import * as importPurpose from './import-purpose/controller.js'
+import * as destinationCountry from './destination-country/controller.js'
+import * as portOfExit from './port-of-exit/controller.js'
+import * as exitDate from './exit-date/controller.js'
 import * as additionalDetails from './additional-details/controller.js'
 import * as documents from './documents/controller.js'
 import * as addresses from './addresses/controller.js'
@@ -32,6 +35,9 @@ export const dispatchPages = [
   animalIdentification.meta,
   importReason.meta,
   importPurpose.meta,
+  destinationCountry.meta,
+  portOfExit.meta,
+  exitDate.meta,
   additionalDetails.meta,
   documents.meta,
   addresses.meta,
@@ -55,6 +61,9 @@ export const allRoutes = [
   ...animalIdentification.routes,
   ...importReason.routes,
   ...importPurpose.routes,
+  ...destinationCountry.routes,
+  ...portOfExit.routes,
+  ...exitDate.routes,
   ...additionalDetails.routes,
   ...documents.routes,
   ...addresses.routes,

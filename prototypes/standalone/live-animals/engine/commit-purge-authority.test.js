@@ -41,20 +41,22 @@ describe('commit — B-authoritative purge', () => {
     journeyId = (await records.create()).journeyId
   })
 
-  it('Should wipe regionOfOriginCode when its gate is answered "no"', async () => {
+  it('Should retain regionOfOriginCode when its gate is answered "no" (retain-value)', async () => {
     await seed(REGION_ANSWERED)
     const { answers } = await commit(
       buildRequest(),
       stubH(),
       TURN_REGION_GATE_OFF
     )
-    // c-017 fixed at inc-016a: B gates regionOfOriginCode out of scope and its
-    // purge set destroys the stored value.
-    expect(wipeSet({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })).toContain(
-      'regionOfOriginCode'
+    // Retain-value pattern: the field stays in scope (optional) on 'no',
+    // so the purge never claims it and the stored value survives.
+    expect(
+      wipeSet({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })
+    ).not.toContain('regionOfOriginCode')
+    expect(answers.regionOfOriginCode).toBe(REGION_ANSWERED.regionOfOriginCode)
+    expect((await durable()).regionOfOriginCode).toBe(
+      REGION_ANSWERED.regionOfOriginCode
     )
-    expect(answers.regionOfOriginCode).toBeUndefined()
-    expect((await durable()).regionOfOriginCode).toBeUndefined()
   })
 
   it("Should destroy exactly B's evaluator purge set", async () => {

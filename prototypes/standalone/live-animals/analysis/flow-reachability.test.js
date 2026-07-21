@@ -27,7 +27,7 @@ describe('flow reachability / dead-end prover (B)', () => {
   })
 
   it('Should enumerate a small finite scope space', () => {
-    expect(enumerateScopeStates()).toHaveLength(24)
+    expect(enumerateScopeStates()).toHaveLength(48)
   })
 
   it('Should prove no in-scope obligation is ever page-unreachable', () => {

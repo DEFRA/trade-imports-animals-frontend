@@ -7,7 +7,7 @@ const completeLine = {
   commoditySelection: 'Cow',
   typeSelection: 'Domestic',
   speciesSelection: ['1148346'],
-  numberOfAnimalsQuantity: '25',
+  numberOfAnimalsQuantity: '1',
   animalIdentifiers: [
     { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
   ]

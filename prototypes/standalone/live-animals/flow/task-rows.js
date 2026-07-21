@@ -8,6 +8,9 @@ import {
 } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { importPurposePage } from '../features/import-purpose/page.js'
+import { destinationCountryPage } from '../features/destination-country/page.js'
+import { portOfExitPage as portOfExitFeaturePage } from '../features/port-of-exit/page.js'
+import { exitDatePage } from '../features/exit-date/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
@@ -29,6 +32,11 @@ export const taskRows = [
     parts: [{ collection: 'commodityLines', except: ['animalIdentifiers'] }]
   },
   { id: 'importReason', pages: [importReasonPage, importPurposePage] },
+  {
+    id: 'exitDetails',
+    pages: [destinationCountryPage, portOfExitFeaturePage, exitDatePage],
+    conditional: true
+  },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },
   {
     id: 'animalIdentification',

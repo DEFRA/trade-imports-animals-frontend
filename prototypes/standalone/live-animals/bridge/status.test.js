@@ -38,6 +38,7 @@ const cases = {
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
+      NA,
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
@@ -66,6 +67,7 @@ const cases = {
       IN_PROGRESS,
       NOT_STARTED,
       NOT_STARTED,
+      NA,
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
@@ -97,6 +99,7 @@ const cases = {
       IN_PROGRESS,
       IN_PROGRESS,
       NOT_STARTED,
+      NA,
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
@@ -134,6 +137,7 @@ const cases = {
       IN_PROGRESS,
       FULFILLED,
       NOT_STARTED,
+      NA,
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
@@ -162,6 +166,7 @@ const cases = {
       FULFILLED,
       FULFILLED,
       FULFILLED,
+      NA,
       FULFILLED,
       FULFILLED,
       FULFILLED,
@@ -190,6 +195,7 @@ const cases = {
       FULFILLED,
       NOT_STARTED,
       FULFILLED,
+      NA,
       FULFILLED,
       NOT_STARTED,
       FULFILLED,
@@ -326,5 +332,61 @@ describe('statusOf — the commodities/identification facet split', () => {
       expect(statusOf([exceptIdentifiers], answers, inScope)).toBe(exceptStatus)
       expect(statusOf([onlyIdentifiers], answers, inScope)).toBe(onlyStatus)
     }
+  })
+})
+
+describe('statusOf — the recordCountEquals invariant in isolation', () => {
+  const inScope = new Set(['commodityLines'])
+  const onlyIdentifiers = {
+    collection: 'commodityLines',
+    only: ['animalIdentifiers']
+  }
+
+  const lineWith = (quantity) => ({
+    commodityLines: [
+      {
+        commoditySelection: 'Cow',
+        speciesSelection: '1148346',
+        numberOfAnimalsQuantity: quantity,
+        animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+      }
+    ]
+  })
+
+  it('blocks the identifiers facet while the unit count trails the declared quantity', () => {
+    // One complete unit satisfies the any-of rule, so the count
+    // mismatch is the only outstanding concern.
+    expect(statusOf([onlyIdentifiers], lineWith('2'), inScope)).toBe(
+      IN_PROGRESS
+    )
+  })
+
+  it('fulfils the identifiers facet when the unit count matches the declared quantity', () => {
+    expect(statusOf([onlyIdentifiers], lineWith('1'), inScope)).toBe(FULFILLED)
+  })
+})
+
+describe('statusOf — the documents MAX_ENTRIES cap', () => {
+  const inScope = new Set(['documents'])
+
+  const completeDocuments = (count) => ({
+    documents: Array.from({ length: count }, (_, index) => ({
+      accompanyingDocumentType: 'ITAHC',
+      accompanyingDocumentAttachmentType: 'PDF',
+      accompanyingDocumentReference: `DOC-${index + 1}`,
+      accompanyingDocumentDateOfIssue: { day: '01', month: '06', year: '2026' }
+    }))
+  })
+
+  it('fulfils the documents part at the cap', () => {
+    expect(statusOf(['documents'], completeDocuments(10), inScope)).toBe(
+      FULFILLED
+    )
+  })
+
+  it('blocks the documents part beyond the cap', () => {
+    expect(statusOf(['documents'], completeDocuments(11), inScope)).toBe(
+      IN_PROGRESS
+    )
   })
 })

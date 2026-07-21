@@ -37,6 +37,11 @@ const GROUPS = [
         id: 'importReason',
         title: 'Main reason for importing',
         hint: 'Why you are importing the animals and their purpose in the internal market'
+      },
+      {
+        id: 'exitDetails',
+        title: 'Exit details',
+        hint: 'Where the consignment travels on to and when it leaves Great Britain'
       }
     ]
   },

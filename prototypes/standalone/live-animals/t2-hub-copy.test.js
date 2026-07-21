@@ -165,9 +165,7 @@ describe('#handler hub copy', () => {
     expect(transitRow.href).toBe(
       '/prototype-standalone/live-animals/transit-countries'
     )
-    expect(transitRow.status).toEqual({
-      tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
-    })
+    expect(transitRow.status).toEqual({ text: 'Optional' })
   })
 
   it('Should render the optional documents row as an Optional status', async () => {

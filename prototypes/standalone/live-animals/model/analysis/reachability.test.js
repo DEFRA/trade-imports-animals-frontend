@@ -500,16 +500,14 @@ describe('synthesiseWitness — per-helper metadata inversion', () => {
 // ---------------------------------------------------------------------------
 
 describe('synthesiseWitness — real manifest fidelity', () => {
-  it('regionCode (non-total branchedGate): witness opens the closure', () => {
-    // c-017 (fix applied at inc-016a): regionCode's branchedGate now has
-    // whenTrue.inScope === true, whenFalse.inScope === false — the gate no
-    // longer opens on ANY input, so a witness is needed. predicateMeta
-    // declares operator: 'equals' + value: 'yes'.
+  it('regionCode (status-swap equalsGate): trivial — both branches in scope', () => {
+    // Retain-value shape: whenTrue mandatory, whenFalse optional — every
+    // input opens the gate, so no witness is needed.
     const regionCode = obligations.find((o) => o.name === 'regionOfOriginCode')
     const w = synthesiseWitness(regionCode)
-    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
     const decision = regionCode.applyTo(
-      { [w.obligationId]: w.value },
+      { [regionCode.applyTo.metadata.obligation]: 'yes' },
       new Map()
     )
     expect(decision.inScope).toBe(true)
@@ -589,11 +587,10 @@ describe('proveWithWitnesses — real V4 manifest classification', () => {
     // now witness-synthesisable — the manifest carries ZERO opaque
     // gates.
     //
-    // Structured helpers: allowListed, anyAllowListed, notInUnionOf, the
-    // meta-first gates and (inc-016b) the three accompanying-document
-    // dependants on `presentPerRecord` are all synthesisable. Trivial:
-    // structural groups + accompanyingDocumentType (now an applyTo-less
-    // per-record trigger).
+    // Structured helpers: allowListed, anyAllowListed, notInUnionOf and
+    // the meta-first gates are all synthesisable. Trivial: structural
+    // groups, the four applyTo-less accompanying-document fields and
+    // the retain-value regionOfOriginCode (both branches in scope).
     expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(14)
     // The two former-opaque gates are now synthesisable.
     const synthesisableNames = result.witnesses.synthesisable.map(
@@ -645,8 +642,7 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     ['purposeInInternalMarket', 'mandatory'],
     ['commercialTransporter', 'mandatory'],
     ['privateTransporter', 'mandatory'],
-    // c-038 (fix applied at inc-016a): transit resolves REQUIRED under land transport.
-    ['transitedCountries', 'mandatory']
+    ['transitedCountries', 'optional']
   ])(
     '%s: witness opens the migrated closure with status=%s',
     (name, status) => {
@@ -656,7 +652,7 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
       const decision = obl.applyTo({ [w.obligationId]: w.value }, new Map())
       expect(decision.inScope).toBe(true)
       expect(decision.status).toBe(status)
-      // Reasons should be attached on the mandatory-branch — they are the
+      // Reasons should be attached on the in-scope branch — they are the
       // load-bearing verbatim decision-object bit the migration must
       // preserve.
       expect(Array.isArray(decision.reasons)).toBe(true)
@@ -664,14 +660,13 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     }
   )
 
-  // c-017 (fix applied at inc-016a): non-total gate — whenTrue in scope,
-  // whenFalse out. Witness synth returns a real WITNESS; the fidelity check
-  // exercises the closure with both a matching and non-matching value to
-  // prove the scope flip is preserved.
-  it('regionCode: matching value → mandatory + reason, non-matching → out of scope', () => {
+  // Retain-value gate — both branches in scope, so no witness is needed;
+  // the fidelity check exercises the closure with both values to prove
+  // the status flip is preserved (mandatory on 'yes', optional on 'no').
+  it('regionCode: matching value → mandatory + reason, non-matching → optional in scope', () => {
     const rc = findOblByName('regionOfOriginCode')
     const w = synthesiseWitness(rc)
-    expect(w.kind).toBe(WITNESS_KIND.WITNESS)
+    expect(w.kind).toBe(WITNESS_KIND.TRIVIAL)
     // regionCodeRequirement === 'yes' → mandatory with reason.
     const regionCodeRequirement = findOblByName('regionOfOriginCodeRequirement')
     const mand = rc.applyTo({ [regionCodeRequirement.id]: 'yes' }, new Map())
@@ -681,52 +676,28 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     })
     expect(mand.reasons).toBeDefined()
     expect(mand.reasons.length).toBeGreaterThan(0)
-    // regionCodeRequirement === 'no' → out of scope.
+    // regionCodeRequirement === 'no' → optional, still in scope.
     const opt = rc.applyTo({ [regionCodeRequirement.id]: 'no' }, new Map())
-    expect(opt).toEqual({ inScope: false })
+    expect(opt).toEqual({ inScope: true, status: 'optional' })
   })
 
-  // inc-016b: accompanyingDocumentType is now the plain per-record
-  // trigger (a mandatory `field` within `documents`, no applyTo). The
-  // graph-level classification for an obligation without an applyTo is
-  // TRIVIAL.
-  it('accompanyingDocumentType is the plain per-record trigger (no applyTo, mandatory)', () => {
-    const type = findOblByName('accompanyingDocumentType')
-    expect(type.applyTo).toBeUndefined()
-    expect(type.status).toBe('mandatory')
-    expect(synthesiseWitness(type).kind).toBe(WITNESS_KIND.TRIVIAL)
-  })
-
-  // inc-016b: the three dependants gate PER DOCUMENT RECORD on the
-  // same-level Type via `presentPerRecord`. The raw closure returns a
-  // projecting decision (`records` = the passing document keys) with a
-  // mandatory reason; a record with no Type is out of scope.
+  // The four accompanying-document fields are plain mandatory fields
+  // within the documents group (no applyTo). The graph-level
+  // classification for an obligation without an applyTo is TRIVIAL.
   it.each([
+    'accompanyingDocumentType',
     'accompanyingDocumentAttachmentType',
     'accompanyingDocumentReference',
     'accompanyingDocumentDateOfIssue'
-  ])(
-    '%s: Type answered on a record → in scope on that record + reason, no Type → out of scope',
-    (name) => {
-      const obl = findOblByName(name)
-      const w = synthesiseWitness(obl)
-      expect(w.kind).toBe(WITNESS_KIND.WITNESS)
-      const acc = findOblByName('accompanyingDocumentType')
-      // Type answered on record d0 → dependant in scope on d0 + reason.
-      const mand = obl.applyTo({ [acc.id]: { d0: 'certificate' } }, new Map())
-      expect(mand.inScope).toBe(true)
-      expect(mand.records).toEqual(['d0'])
-      expect(mand.reasons.length).toBeGreaterThan(0)
-      // No Type anywhere → out of scope.
-      expect(obl.applyTo({}, new Map())).toEqual({ inScope: false })
-    }
-  )
+  ])('%s is a plain mandatory document field (no applyTo)', (name) => {
+    const field = findOblByName(name)
+    expect(field.applyTo).toBeUndefined()
+    expect(field.status).toBe('mandatory')
+    expect(synthesiseWitness(field).kind).toBe(WITNESS_KIND.TRIVIAL)
+  })
 
   // Meta-first invariant: every branchedGate→meta-first migrated site's
-  // applyTo.metadata.type is one of the three helpers. The four
-  // accompanying-document fields left this cohort at inc-016b (D1
-  // resolution) — Type is now applyTo-less and its dependants use
-  // `presentPerRecord`.
+  // applyTo.metadata.type is one of the three helpers.
   it('every migrated site now uses a meta-first helper metadata.type', () => {
     const META_FIRST = new Set(['equalsGate', 'presentGate', 'includesGate'])
     const migratedNames = [
@@ -734,7 +705,10 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
       'commercialTransporter',
       'privateTransporter',
       'transitedCountries',
-      'regionOfOriginCode'
+      'regionOfOriginCode',
+      'destinationCountry',
+      'portOfExit',
+      'exitDate'
     ]
     const stragglers = migratedNames
       .map(findOblByName)

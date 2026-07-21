@@ -34,7 +34,7 @@ describe('#get — per-request read view', () => {
     expect(view.journey.journeyId).toBe(journey.journeyId)
     expect(view.answers).toEqual(seed)
     expect(view.scope.has('countryOfOrigin')).toBe(true)
-    expect(view.scope.has('regionOfOriginCode')).toBe(false)
+    expect(view.scope.has('purposeInInternalMarket')).toBe(false)
     expect(view.scope.has('commercialTransporter')).toBe(true)
   })
 
