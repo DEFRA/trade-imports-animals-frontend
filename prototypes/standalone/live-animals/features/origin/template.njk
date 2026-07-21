@@ -7,7 +7,7 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -15,7 +15,7 @@
     {{ govukSelect({
       id: "countryOfOrigin",
       name: "countryOfOrigin",
-      label: { text: "Country of origin", classes: "govuk-label--s" },
+      label: { text: copy.country.label, classes: "govuk-label--s" },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
       items: countryItems,
@@ -26,8 +26,8 @@
       {{ govukInput({
         id: "regionOfOriginCode",
         name: "regionOfOriginCode",
-        label: { text: "Region of origin code" },
-        hint: { text: "For example, FR-75" },
+        label: { text: copy.regionCode.label },
+        hint: { text: copy.regionCode.hint },
         classes: "govuk-input--width-5",
         value: values.regionOfOriginCode,
         errorMessage: errors.regionOfOriginCode and { text: errors.regionOfOriginCode }
@@ -36,25 +36,25 @@
 
     {{ govukRadios({
       name: "regionOfOriginCodeRequirement",
-      fieldset: { legend: { text: "Does the consignment have a region of origin code?", classes: "govuk-fieldset__legend--s" } },
-      hint: { text: "If a region of origin code is required it will be shown on your health certificate." },
+      fieldset: { legend: { text: copy.regionRequirement.legend, classes: "govuk-fieldset__legend--s" } },
+      hint: { text: copy.regionRequirement.hint },
       items: [
-        { value: "yes", text: "Yes", checked: values.regionOfOriginCodeRequirement == "yes", conditional: { html: regionCodeHtml } },
-        { value: "no", text: "No", checked: values.regionOfOriginCodeRequirement == "no" }
+        { value: "yes", text: copy.regionRequirement.yes, checked: values.regionOfOriginCodeRequirement == "yes", conditional: { html: regionCodeHtml } },
+        { value: "no", text: copy.regionRequirement.no, checked: values.regionOfOriginCodeRequirement == "no" }
       ]
     }) }}
 
     {{ govukInput({
       id: "internalReferenceNumber",
       name: "internalReferenceNumber",
-      label: { text: "Your internal reference for this consignment (optional)" },
-      hint: { text: "Enter any internal reference you want to use to identify this consignment, or leave blank." },
+      label: { text: copy.internalReference.label },
+      hint: { text: copy.internalReference.hint },
       classes: "govuk-!-width-three-quarters",
       value: values.internalReferenceNumber,
       errorMessage: errors.internalReferenceNumber and { text: errors.internalReferenceNumber }
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}
 

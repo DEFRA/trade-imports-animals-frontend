@@ -3,12 +3,19 @@ import { SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
 import { nextRunTarget } from '../flow/run.js'
 import { inOpeningRun } from '../flow/run-state.js'
+import { copyFor } from './copy.js'
+import { copy as sharedEn } from './copy.en.js'
 
 export const open = { auth: false }
 
+const sharedCopy = copyFor({ en: sharedEn })
+
 const STRIP_STATUS = {
-  draft: { text: 'Draft', classes: 'govuk-tag--blue' },
-  submitted: { text: 'Submitted', classes: 'govuk-tag--green' }
+  draft: { text: sharedCopy.journeyStrip.draft, classes: 'govuk-tag--blue' },
+  submitted: {
+    text: sharedCopy.journeyStrip.submitted,
+    classes: 'govuk-tag--green'
+  }
 }
 
 export const journeyStrip = (journey) =>
@@ -28,7 +35,7 @@ export const errorSummary = (fieldErrors) => {
   const entries = Object.entries(fieldErrors ?? {})
   if (entries.length === 0) return null
   return {
-    titleText: 'There is a problem',
+    titleText: sharedCopy.errorSummary.title,
     errorList: entries.map(([field, text]) => ({ text, href: `#${field}` }))
   }
 }
@@ -63,7 +70,8 @@ export const base = (title, { backLink, journey } = {}) => ({
   breadcrumbs: breadcrumbs(title),
   backLink,
   hubHref: hubPath(),
-  journeyStrip: journeyStrip(journey)
+  journeyStrip: journeyStrip(journey),
+  sharedCopy
 })
 
 export const pageRoutes = (page, { get, post }) => [
