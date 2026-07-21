@@ -13,31 +13,31 @@
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block pageTitle %}{% if errorSummary %}Error: {% endif %}{{ pageTitle }} | Import notification service (standalone){% endblock %}
+{% block pageTitle %}{% if errorSummary %}{{ sharedCopy.layout.errorTitlePrefix }}{% endif %}{{ pageTitle }} | {{ sharedCopy.layout.serviceName }}{% endblock %}
 
 {% block govukServiceNavigation %}
   {{ govukServiceNavigation({
-    serviceName: "Import notification service (standalone)",
+    serviceName: sharedCopy.layout.serviceName,
     serviceUrl: spikeHome
   }) }}
 {% endblock %}
 
 {% block beforeContent %}
   {{ govukPhaseBanner({
-    tag: { text: "Prototype" },
-    html: 'Obligations v2 spike standalone — a non-functional prototype, not a real service.'
+    tag: { text: sharedCopy.layout.phaseBanner.tag },
+    html: sharedCopy.layout.phaseBanner.html
   }) }}
   {% if breadcrumbs !== false %}
     {{ govukBreadcrumbs({
       items: breadcrumbs if breadcrumbs else [
-        { text: "Prototypes", href: "/prototype-standalone" },
-        { text: "Obligations v2 (standalone)", href: spikeHome },
+        { text: sharedCopy.layout.breadcrumbs.prototypes, href: "/prototype-standalone" },
+        { text: sharedCopy.layout.breadcrumbs.spikeHome, href: spikeHome },
         { text: pageTitle }
       ]
     }) }}
   {% endif %}
   {% if backLink %}
-    {{ govukBackLink({ text: "Back", href: backLink }) }}
+    {{ govukBackLink({ text: sharedCopy.layout.back, href: backLink }) }}
   {% endif %}
 {% endblock %}
 

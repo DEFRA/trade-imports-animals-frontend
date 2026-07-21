@@ -1,15 +1,14 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
-{# The literal fallbacks serve callers not yet passing copy (sharedCopy.saveActions); they must match shared/copy.en.js until the last caller converts, then they go. #}
 {% macro saveActions(hubHref, primary, copy) %}
   <div class="govuk-button-group">
-    {{ govukButton(primary or { text: copy.saveAndContinue if copy else "Save and continue" }) }}
+    {{ govukButton(primary or { text: copy.saveAndContinue }) }}
     {{ govukButton({
-      text: copy.saveAndReturnToHub if copy else "Save and return to hub",
+      text: copy.saveAndReturnToHub,
       classes: "govuk-button--secondary",
       name: "exit",
       value: "hub"
     }) }}
-    <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub if copy else "Cancel and return to hub" }}</a>
+    <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
   </div>
 {% endmacro %}

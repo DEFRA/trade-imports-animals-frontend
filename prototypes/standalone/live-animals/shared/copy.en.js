@@ -1,12 +1,25 @@
 /**
  * Shared chrome copy — the only copy that legitimately lives outside a
- * feature folder: error-summary title, save-actions buttons, journey-strip
- * tags. Layout strings stay in layout.njk until every view carries
- * `sharedCopy` (hub, check-answers and dashboard build their view models
- * without `kit.base`, so a layout conversion today would blank their
- * chrome).
+ * feature folder: the layout (service name, phase banner, breadcrumbs,
+ * back link, error title prefix), error-summary title, save-actions
+ * buttons and journey-strip tags. Every view reaches it as `sharedCopy`
+ * (via `kit.base`, or passed directly by the controllers that build
+ * their view models without it).
  */
 export const copy = {
+  layout: {
+    serviceName: 'Import notification service (standalone)',
+    errorTitlePrefix: 'Error: ',
+    phaseBanner: {
+      tag: 'Prototype',
+      html: 'Obligations v2 spike standalone — a non-functional prototype, not a real service.'
+    },
+    back: 'Back',
+    breadcrumbs: {
+      prototypes: 'Prototypes',
+      spikeHome: 'Obligations v2 (standalone)'
+    }
+  },
   errorSummary: {
     title: 'There is a problem'
   },
@@ -19,4 +32,23 @@ export const copy = {
     draft: 'Draft',
     submitted: 'Submitted'
   }
+}
+
+/**
+ * Default validator messages — the fallbacks `lib/validate` composers use
+ * when a call site passes no feature message. A separate export (not a
+ * `copy` key) because parameterised defaults are function leaves and the
+ * chrome walker above pins string-only leaves. Locale-swappable the same
+ * way: a `copy.cy.js` exports its own `validatorDefaults`.
+ */
+export const validatorDefaults = {
+  oneOf: 'Select a valid option',
+  postcode: 'Enter a valid postcode',
+  vehicleReg: 'Enter a valid registration number',
+  ukPhone: 'Enter a valid UK telephone number',
+  currency: 'Enter a valid amount',
+  date: 'Enter a valid date',
+  wholeNumber: 'Enter a whole number',
+  maxLength: (max) => `Enter ${max} characters or fewer`,
+  numberBetween: (min, max) => `Enter a number between ${min} and ${max}`
 }

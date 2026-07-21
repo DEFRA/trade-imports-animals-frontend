@@ -1,6 +1,12 @@
 import Joi from 'joi'
 
 import { isRealDate } from './calendar.js'
+import { copyFor } from '../../shared/copy.js'
+import { validatorDefaults as en } from '../../shared/copy.en.js'
+
+// Default messages when a call site passes no feature message — sourced
+// from the shared copy module so they swap with the locale.
+const defaults = copyFor({ en })
 
 const POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
 const VEHICLE_REG = /^[A-Za-z]{2}\d{2}\s?[A-Za-z]{3}$/
@@ -33,7 +39,7 @@ export const maxText = (name, max, message) =>
       .trim()
       .allow('')
       .max(max)
-      .messages({ 'string.max': message ?? `Enter ${max} characters or fewer` })
+      .messages({ 'string.max': message ?? defaults.maxLength(max) })
   )
 
 export const pattern = (name, regex, message) =>
@@ -46,15 +52,13 @@ export const pattern = (name, regex, message) =>
       .messages({ 'string.pattern.base': message })
   )
 
-export const postcode = (name, message = 'Enter a valid postcode') =>
+export const postcode = (name, message = defaults.postcode) =>
   pattern(name, POSTCODE, message)
 
-export const vehicleReg = (
-  name,
-  message = 'Enter a valid registration number'
-) => pattern(name, VEHICLE_REG, message)
+export const vehicleReg = (name, message = defaults.vehicleReg) =>
+  pattern(name, VEHICLE_REG, message)
 
-export const ukPhone = (name, message = 'Enter a valid UK telephone number') =>
+export const ukPhone = (name, message = defaults.ukPhone) =>
   single(
     name,
     Joi.string()
@@ -85,7 +89,7 @@ export const requiredOneOf = (name, values, message) =>
       })
   )
 
-export const oneOf = (name, values, message = 'Select a valid option') =>
+export const oneOf = (name, values, message = defaults.oneOf) =>
   single(
     name,
     Joi.string()
@@ -109,12 +113,12 @@ export const integerInRange = (name, { min, max, message } = {}) =>
         return raw
       })
       .messages({
-        'number.base': message ?? 'Enter a whole number',
-        'number.range': message ?? `Enter a number between ${min} and ${max}`
+        'number.base': message ?? defaults.wholeNumber,
+        'number.range': message ?? defaults.numberBetween(min, max)
       })
   )
 
-export const currency = (name, message = 'Enter a valid amount') =>
+export const currency = (name, message = defaults.currency) =>
   single(
     name,
     Joi.string()
@@ -130,7 +134,7 @@ export const currency = (name, message = 'Enter a valid amount') =>
       .messages({ 'any.invalid': message })
   )
 
-export const dateParts = (name, message = 'Enter a valid date') => {
+export const dateParts = (name, message = defaults.date) => {
   const dayKey = `${name}-day`
   const monthKey = `${name}-month`
   const yearKey = `${name}-year`

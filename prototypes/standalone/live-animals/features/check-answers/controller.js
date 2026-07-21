@@ -4,6 +4,7 @@ import { nextInSection } from '../../flow/navigation.js'
 import * as state from '../../engine/index.js'
 import { isBlank } from '../../lib/answered.js'
 import { journeyStrip, pageRoutes } from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import { notificationViewPage as page } from './page.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
@@ -16,11 +17,15 @@ import * as importReasonPurpose from '../../services/import-reason-purpose/index
 import * as certification from '../../services/certification-purposes/index.js'
 import * as ports from '../../services/ports/index.js'
 import { appliesForCommodity } from '../../bridge/applicability.js'
+import { copy as en } from './copy.en.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
-const NOT_PROVIDED = 'Not provided'
 
-const YES_NO_LABEL = { yes: 'Yes', no: 'No' }
+const copy = copyFor({ en })
+const sharedCopy = copyFor({ en: sharedEn })
+
+const NOT_PROVIDED = copy.notProvided
 
 const anyLineApplies = (answers, name) =>
   []
@@ -68,7 +73,7 @@ const row = (key, value, obligationId, visuallyHiddenText = null) => ({
     items: [
       {
         href: changeHref(obligationId),
-        text: 'Change',
+        text: copy.change,
         visuallyHiddenText: visuallyHiddenText ?? key.toLowerCase()
       }
     ]
@@ -104,7 +109,7 @@ const partyRow = (key, party, obligationId, visuallyHiddenText = null) => {
       items: [
         {
           href: changeHref(obligationId),
-          text: 'Change',
+          text: copy.change,
           visuallyHiddenText: visuallyHiddenText ?? key.toLowerCase()
         }
       ]
@@ -113,29 +118,29 @@ const partyRow = (key, party, obligationId, visuallyHiddenText = null) => {
 }
 
 const importDetailsCard = (answers, scope) => ({
-  title: 'Import details',
+  title: copy.cards.importDetails,
   rows: [
     row(
-      'Country of origin',
+      copy.rows.countryOfOrigin,
       countries.originLabel(answers.countryOfOrigin) ?? '',
       'countryOfOrigin'
     ),
     row(
-      'Region of origin code required',
-      YES_NO_LABEL[answers.regionOfOriginCodeRequirement] ?? '',
+      copy.rows.regionCodeRequired,
+      copy.yesNo[answers.regionOfOriginCodeRequirement] ?? '',
       'regionOfOriginCodeRequirement'
     ),
     ...(regionCodeApplies(answers, scope)
       ? [
           row(
-            'Region of origin code',
+            copy.rows.regionCode,
             answers.regionOfOriginCode,
             'regionOfOriginCode'
           )
         ]
       : []),
     row(
-      'Internal reference number',
+      copy.rows.internalReference,
       answers.internalReferenceNumber,
       'internalReferenceNumber'
     )
@@ -143,31 +148,31 @@ const importDetailsCard = (answers, scope) => ({
 })
 
 const additionalAnimalDetailsCard = (answers, scope) => ({
-  title: 'Additional animal details',
+  title: copy.cards.additionalAnimalDetails,
   rows: [
     row(
-      'Certified for',
+      copy.rows.certifiedFor,
       certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
       'animalsCertifiedFor'
     ),
     ...(unweanedGate(answers)
       ? [
           row(
-            'Includes unweaned animals',
-            YES_NO_LABEL[answers.containsUnweanedAnimals] ?? '',
+            copy.rows.unweaned,
+            copy.yesNo[answers.containsUnweanedAnimals] ?? '',
             'containsUnweanedAnimals'
           )
         ]
       : []),
     row(
-      'Reason for import',
+      copy.rows.reasonForImport,
       importReasonPurpose.reasonLabel(answers.reasonForImport) ?? '',
       'reasonForImport'
     ),
     ...(purposeApplies(answers, scope)
       ? [
           row(
-            'Purpose in the market',
+            copy.rows.purpose,
             importReasonPurpose.purposeLabel(answers.purposeInInternalMarket) ??
               '',
             'purposeInInternalMarket'
@@ -204,7 +209,7 @@ const identifierColumns = (units) => [
     units.some((unit) => !isBlank(unit[id]))
   ),
   ...(units.some((unit) => !isBlank(unit.permanentAddress?.name))
-    ? [['permanentAddress', 'Permanent address']]
+    ? [['permanentAddress', copy.identifierTable.permanentAddress]]
     : [])
 ]
 
@@ -218,11 +223,11 @@ const identifierTable = (units) => {
   const columns = identifierColumns(units)
   return {
     head: [
-      { text: 'Animal' },
+      { text: copy.identifierTable.animalColumn },
       ...columns.map(([, label]) => ({ text: label }))
     ],
     rows: units.map((unit, unitIndex) => [
-      { text: `Animal ${unitIndex + 1}` },
+      { text: copy.identifierTable.animalN(unitIndex + 1) },
       ...columns.map(([id]) => ({ text: identifierCell(unit, id) }))
     ])
   }
@@ -241,8 +246,8 @@ const speciesCards = (answers) =>
             // The consolidated details page is the editing surface for a
             // line's quantities and its table manages the selection itself.
             href: withChange(pagePath(consignmentDetailsPage.slug)),
-            text: 'Change',
-            visuallyHiddenText: `commodity ${index + 1}`
+            text: copy.change,
+            visuallyHiddenText: copy.hidden.commodity(index + 1)
           },
           ...(units.length
             ? [
@@ -252,8 +257,10 @@ const speciesCards = (answers) =>
                   href: `${withChange(
                     pagePath(animalIdentificationPage.slug)
                   )}#identification-card-${index}`,
-                  text: 'Change',
-                  visuallyHiddenText: `animal identifiers for commodity ${index + 1}`
+                  text: copy.change,
+                  visuallyHiddenText: copy.hidden.identifiersForCommodity(
+                    index + 1
+                  )
                 }
               ]
             : [])
@@ -261,14 +268,14 @@ const speciesCards = (answers) =>
       },
       rows: [
         readOnlyRow(
-          'Commodity code',
+          copy.rows.commodityCode,
           commodities.commodityCodeFor(entry.commoditySelection)
         ),
-        readOnlyRow('Common name', entry.commoditySelection),
-        readOnlyRow('Species', speciesText(entry)),
-        readOnlyRow('Number of animals', entry.numberOfAnimalsQuantity),
+        readOnlyRow(copy.rows.commonName, entry.commoditySelection),
+        readOnlyRow(copy.rows.species, speciesText(entry)),
+        readOnlyRow(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
         ...(packagesGate(entry.commoditySelection)
-          ? [readOnlyRow('Number of packages', entry.numberOfPackages)]
+          ? [readOnlyRow(copy.rows.numberOfPackages, entry.numberOfPackages)]
           : [])
       ],
       identifierTable: identifierTable(units)
@@ -276,23 +283,27 @@ const speciesCards = (answers) =>
   })
 
 const arrivalDetailsCard = (answers, scope) => ({
-  title: 'Arrival details',
+  title: copy.cards.arrivalDetails,
   rows: [
     row(
-      'Port of entry',
+      copy.rows.portOfEntry,
       ports.label(answers.portOfEntry) ?? answers.portOfEntry,
       'portOfEntry'
     ),
     row(
-      'Arrival date at port of entry',
+      copy.rows.arrivalDate,
       dateText(answers.arrivalDateAtPort),
       'arrivalDateAtPort'
     ),
-    row('Means of transport', answers.meansOfTransport, 'meansOfTransport'),
+    row(
+      copy.rows.meansOfTransport,
+      answers.meansOfTransport,
+      'meansOfTransport'
+    ),
     ...(transitedCountriesApplies(answers, scope)
       ? [
           row(
-            'Countries that the consignment will travel through',
+            copy.rows.transitedCountries,
             []
               .concat(answers.transitedCountries ?? [])
               .map((code) => countries.originLabel(code) ?? code)
@@ -302,12 +313,12 @@ const arrivalDetailsCard = (answers, scope) => ({
         ]
       : []),
     row(
-      'Transport identification',
+      copy.rows.transportIdentification,
       answers.transportIdentification,
       'transportIdentification'
     ),
     row(
-      'Transport document reference',
+      copy.rows.transportDocumentReference,
       answers.transportDocumentReference,
       'transportDocumentReference'
     )
@@ -330,14 +341,14 @@ const activeTransporter = (answers, scope) => {
 const transporterAddressRow = (party, id) => {
   const lines = addressLines(party?.address).map(escapeHtml)
   return {
-    key: { text: 'Address' },
+    key: { text: copy.rows.address },
     value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
     actions: {
       items: [
         {
           href: changeHref(id),
-          text: 'Change',
-          visuallyHiddenText: 'transporter address'
+          text: copy.change,
+          visuallyHiddenText: copy.hidden.transporterAddress
         }
       ]
     }
@@ -347,56 +358,61 @@ const transporterAddressRow = (party, id) => {
 const transportDetailsCard = (answers, scope) => {
   const active = activeTransporter(answers, scope)
   return {
-    title: 'Transport details',
+    title: copy.cards.transportDetails,
     rows: [
       ...(active
         ? [
-            row('Name', active.party?.name, active.id, 'transporter name'),
+            row(
+              copy.rows.name,
+              active.party?.name,
+              active.id,
+              copy.hidden.transporterName
+            ),
             transporterAddressRow(active.party, active.id),
             row(
-              'Country',
+              copy.rows.country,
               active.party?.address?.country,
               active.id,
-              'transporter country'
+              copy.hidden.transporterCountry
             ),
             ...(isBlank(active.party?.approvalNumber)
               ? []
               : [
                   row(
-                    'Approval number',
+                    copy.rows.approvalNumber,
                     active.party.approvalNumber,
                     active.id,
-                    'transporter approval number'
+                    copy.hidden.transporterApprovalNumber
                   )
                 ])
           ]
         : []),
       row(
-        'Type',
+        copy.rows.type,
         answers.transporterType,
         'transporterType',
-        'transporter type'
+        copy.hidden.transporterType
       )
     ]
   }
 }
 
 const rolesAndAddressesCard = (answers) => ({
-  title: 'Roles and addresses',
+  title: copy.cards.rolesAndAddresses,
   rows: [
-    partyRow('Place of origin', answers.placeOfOrigin, 'placeOfOrigin'),
-    partyRow('Consignor', answers.consignor, 'consignor'),
-    partyRow('Consignee', answers.consignee, 'consignee'),
-    partyRow('Importer', answers.importer, 'importer'),
+    partyRow(copy.rows.placeOfOrigin, answers.placeOfOrigin, 'placeOfOrigin'),
+    partyRow(copy.rows.consignor, answers.consignor, 'consignor'),
+    partyRow(copy.rows.consignee, answers.consignee, 'consignee'),
+    partyRow(copy.rows.importer, answers.importer, 'importer'),
     partyRow(
-      'Place of destination',
+      copy.rows.placeOfDestination,
       answers.placeOfDestination,
       'placeOfDestination'
     ),
     ...(cphGate(answers)
       ? [
           row(
-            'County Parish Holding number (CPH)',
+            copy.rows.cph,
             answers.countyParishHoldingCph,
             'countyParishHoldingCph'
           )
@@ -406,13 +422,13 @@ const rolesAndAddressesCard = (answers) => ({
 })
 
 const contactAddressCard = (answers) => ({
-  title: 'Contact address for this consignment',
+  title: copy.cards.contactAddress,
   rows: [
     partyRow(
-      'Address',
+      copy.rows.address,
       answers.contactAddress,
       'contactAddress',
-      'contact address'
+      copy.hidden.contactAddress
     )
   ]
 })
@@ -421,26 +437,32 @@ const documentsCard = (answers) => {
   const documents = state
     .collectionView(answers, ['documents'])
     .map(({ index, entry }) => ({
-      heading: `Document ${index + 1}`,
+      heading: copy.documentN(index + 1),
       rows: [
-        readOnlyRow('Document reference', entry.accompanyingDocumentReference),
-        readOnlyRow('Document type', entry.accompanyingDocumentType),
+        readOnlyRow(
+          copy.rows.documentReference,
+          entry.accompanyingDocumentReference
+        ),
+        readOnlyRow(copy.rows.documentType, entry.accompanyingDocumentType),
         {
-          key: { text: 'Date of issue' },
+          key: { text: copy.rows.dateOfIssue },
           value: { text: dateText(entry.accompanyingDocumentDateOfIssue) }
         },
-        readOnlyRow('Attachment type', entry.accompanyingDocumentAttachmentType)
+        readOnlyRow(
+          copy.rows.attachmentType,
+          entry.accompanyingDocumentAttachmentType
+        )
       ]
     }))
   if (documents.length === 0) return null
   return {
-    title: 'Uploaded documents',
+    title: copy.cards.documents,
     actions: {
       items: [
         {
           href: changeHref('documents'),
-          text: 'Change',
-          visuallyHiddenText: 'documents'
+          text: copy.change,
+          visuallyHiddenText: copy.hidden.documents
         }
       ]
     },
@@ -453,21 +475,23 @@ export const buildSections = (answers, scope) => {
   const documents = documentsCard(answers)
   return [
     {
-      heading: '1. About the consignment',
+      heading: copy.sections.aboutTheConsignment,
       groups: [
         {
-          heading: 'Consignment details',
+          heading: copy.groups.consignmentDetails,
           cards: [importDetailsCard(answers, scope)]
         },
         {
-          heading: 'Commodity details',
+          heading: copy.groups.commodityDetails,
           cards: [additionalAnimalDetailsCard(answers, scope)]
         },
-        ...(species.length ? [{ heading: 'Species', cards: species }] : [])
+        ...(species.length
+          ? [{ heading: copy.groups.species, cards: species }]
+          : [])
       ]
     },
     {
-      heading: '2. Movement',
+      heading: copy.sections.movement,
       groups: [
         {
           heading: null,
@@ -479,7 +503,7 @@ export const buildSections = (answers, scope) => {
       ]
     },
     {
-      heading: '3. Addresses',
+      heading: copy.sections.addresses,
       groups: [
         {
           heading: null,
@@ -490,7 +514,7 @@ export const buildSections = (answers, scope) => {
     ...(documents
       ? [
           {
-            heading: '4. Documents',
+            heading: copy.sections.documents,
             groups: [{ heading: null, cards: [documents] }]
           }
         ]
@@ -500,12 +524,14 @@ export const buildSections = (answers, scope) => {
 
 const renderCya = (h, journey, scope) =>
   h.view(view, {
-    pageTitle: 'Check your answers',
-    heading: 'Check your answers',
+    pageTitle: copy.title,
+    heading: copy.title,
+    copy,
+    sharedCopy,
     journeyStrip: journeyStrip(journey),
     sections: buildSections(journey.answers, scope),
     backLink: hubPath(),
-    breadcrumbs: breadcrumbs('Check your answers')
+    breadcrumbs: breadcrumbs(copy.title)
   })
 
 const get = async (request, h) => {

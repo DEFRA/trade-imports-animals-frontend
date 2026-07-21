@@ -41,7 +41,7 @@
                 {{ govukSummaryList({ rows: card.rows }) }}
               {% endif %}
               {% if card.identifierTable %}
-                <h{{ innerHeadingLevel }} class="govuk-heading-s">Animal details</h{{ innerHeadingLevel }}>
+                <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ innerHeadingLevel }}>
                 {{ govukTable({
                   head: card.identifierTable.head,
                   rows: card.identifierTable.rows
@@ -66,11 +66,11 @@
     {% endfor %}
   {% endfor %}
 
-  <h2 class="govuk-heading-m">Now submit your notification</h2>
-  <p class="govuk-body">Continue to the declaration to submit your notification.</p>
+  <h2 class="govuk-heading-m">{{ copy.submit.heading }}</h2>
+  <p class="govuk-body">{{ copy.submit.body }}</p>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
-    {{ govukButton({ text: "Continue" }) }}
+    {{ govukButton({ text: copy.submit.button }) }}
   </form>
 {% endblock %}

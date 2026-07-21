@@ -7,14 +7,14 @@
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
 
   {% if commodityTotals %}
-    <h2 class="govuk-heading-l">Your commodities</h2>
+    <h2 class="govuk-heading-l">{{ copy.commodityTotals.heading }}</h2>
     <div class="govuk-grid-row govuk-!-margin-bottom-4">
       <div class="govuk-grid-column-one-half">
         {{ govukSummaryList({
-          card: { title: { text: "Animals", headingLevel: 3 } },
+          card: { title: { text: copy.commodityTotals.animalsCardTitle, headingLevel: 3 } },
           rows: [
             {
-              key: { text: "Total number of animals in this consignment" },
+              key: { text: copy.commodityTotals.animalsRow },
               value: { text: commodityTotals.animals }
             }
           ]
@@ -22,10 +22,10 @@
       </div>
       <div class="govuk-grid-column-one-half">
         {{ govukSummaryList({
-          card: { title: { text: "Packages/boxes", headingLevel: 3 } },
+          card: { title: { text: copy.commodityTotals.packagesCardTitle, headingLevel: 3 } },
           rows: [
             {
-              key: { text: "Total number of packages in this consignment" },
+              key: { text: copy.commodityTotals.packagesRow },
               value: { text: commodityTotals.packages }
             }
           ]
@@ -44,7 +44,7 @@
   {% endfor %}
 
   {{ govukButton({
-    text: "Return to dashboard",
+    text: copy.returnToDashboard,
     href: dashboardHref,
     classes: "govuk-button--secondary"
   }) }}

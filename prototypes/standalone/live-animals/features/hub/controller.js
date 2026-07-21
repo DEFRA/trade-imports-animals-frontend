@@ -15,127 +15,49 @@ import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { completeOpeningRun } from '../../flow/run-state.js'
 import { dashboardPage } from '../dashboard/page.js'
 import { journeyStrip, open } from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
+import { copy as en } from './copy.en.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 
 const view = `${TEMPLATES}/features/hub/template`
+
+const copy = copyFor({ en })
+const sharedCopy = copyFor({ en: sharedEn })
 
 const GROUPS = [
   {
     id: 'about-the-consignment',
-    caption: '1. About the consignment',
-    rows: [
-      {
-        id: 'origin',
-        title: 'Where is this consignment coming from?',
-        hint: 'Country of origin, region of origin code, your internal reference'
-      },
-      {
-        id: 'commodities',
-        title: 'What are you importing?',
-        hint: 'The commodities, species and numbers of animals you are importing'
-      },
-      {
-        id: 'importReason',
-        title: 'Main reason for importing',
-        hint: 'Why you are importing the animals and their purpose in the internal market'
-      },
-      {
-        id: 'exitDetails',
-        title: 'Exit details',
-        hint: 'Where the consignment travels on to and when it leaves Great Britain'
-      }
-    ]
+    rows: ['origin', 'commodities', 'importReason', 'exitDetails']
   },
   {
     id: 'commodity-details',
-    caption: '2. Commodity details',
-    rows: [
-      {
-        id: 'additionalDetails',
-        title: 'Additional commodity details',
-        hint: 'What the animals are certified for and whether any are unweaned'
-      },
-      {
-        id: 'animalIdentification',
-        title: 'Animal identification details',
-        hint: 'Identification details for the animals in each commodity'
-      }
-    ]
+    rows: ['additionalDetails', 'animalIdentification']
   },
   {
     id: 'movement',
-    caption: '3. Movement',
-    rows: [
-      {
-        id: 'arrivalDetails',
-        title: 'Arrival details',
-        hint: 'The port of entry, when the consignment will arrive and how the animals will travel'
-      },
-      {
-        id: 'transitCountries',
-        title: 'Transit countries',
-        hint: 'The countries the consignment will travel through'
-      },
-      {
-        id: 'transporter',
-        title: 'Transporter',
-        hint: 'Who transports the animals to their destination'
-      }
-    ]
+    rows: ['arrivalDetails', 'transitCountries', 'transporter']
   },
-  {
-    id: 'addresses',
-    caption: '4. Addresses',
-    rows: [
-      {
-        id: 'addresses',
-        title: 'Roles and addresses',
-        hint: 'The consignor, consignee, importer and the places of origin and destination'
-      },
-      {
-        id: 'contact',
-        title: 'Contact address',
-        hint: 'Who we should contact about this notification'
-      }
-    ]
-  },
-  {
-    id: 'documents',
-    caption: '5. Documents',
-    rows: [
-      {
-        id: 'documents',
-        title: 'Uploaded documents',
-        hint: 'Certificates, permits and other documents for the consignment'
-      }
-    ]
-  },
-  {
-    id: 'check-and-submit',
-    caption: '6. Check and submit',
-    rows: [
-      {
-        id: 'review',
-        title: 'Check and submit',
-        hint: 'Check your answers before you submit the notification'
-      }
-    ]
-  }
+  { id: 'addresses', rows: ['addresses', 'contact'] },
+  { id: 'documents', rows: ['documents'] },
+  { id: 'check-and-submit', rows: ['review'] }
 ]
 
 const STATUS_TAG = {
-  [FULFILLED]: { tag: { text: 'Completed', classes: 'govuk-tag--green' } },
-  [OPTIONAL]: { text: 'Optional' },
+  [FULFILLED]: {
+    tag: { text: copy.statuses.completed, classes: 'govuk-tag--green' }
+  },
+  [OPTIONAL]: { text: copy.statuses.optional },
   [IN_PROGRESS]: {
-    tag: { text: 'In progress', classes: 'govuk-tag--light-blue' }
+    tag: { text: copy.statuses.inProgress, classes: 'govuk-tag--light-blue' }
   },
   [NOT_STARTED]: {
-    tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
+    tag: { text: copy.statuses.notYetStarted, classes: 'govuk-tag--blue' }
   }
 }
 const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
 
 const CANNOT_START_STATUS = {
-  text: 'Cannot start yet',
+  text: copy.statuses.cannotStartYet,
   classes: 'govuk-task-list__status--cannot-start-yet'
 }
 
@@ -154,7 +76,8 @@ const buildReviewItem = ({ title, hint }, answers, scope) => {
   }
 }
 
-const buildRowItem = ({ id, title, hint }, answers, scope) => {
+const buildRowItem = (id, answers, scope) => {
+  const { title, hint } = copy.rows[id]
   if (id === 'review') return buildReviewItem({ title, hint }, answers, scope)
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope)
@@ -169,9 +92,9 @@ const buildRowItem = ({ id, title, hint }, answers, scope) => {
 const buildGroups = (answers, scope) =>
   GROUPS.map((group) => ({
     id: group.id,
-    caption: group.caption,
+    caption: copy.groups[group.id],
     items: group.rows
-      .map((row) => buildRowItem(row, answers, scope))
+      .map((id) => buildRowItem(id, answers, scope))
       .filter(Boolean)
   }))
 
@@ -197,8 +120,10 @@ const handler = async (request, h) => {
   const { journey, answers, scope } = await state.get(request, h)
 
   return h.view(view, {
-    pageTitle: 'Overview',
-    heading: 'Overview',
+    pageTitle: copy.title,
+    heading: copy.title,
+    copy,
+    sharedCopy,
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers),
     groups: buildGroups(answers, scope),
