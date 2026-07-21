@@ -5,7 +5,9 @@ import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { nextRunTarget } from '../../flow/run.js'
 import { beginOpeningRun, inOpeningRun } from '../../flow/run-state.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import { importTypeFilterPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['importType'] }
 const view = `${TEMPLATES}/features/import-type-filter/template`
@@ -14,24 +16,24 @@ const holdingView = `${TEMPLATES}/features/import-type-filter/not-available`
 export const LIVE_ANIMALS = 'live-animals'
 export const NOT_AVAILABLE_SLUG = 'import-type/not-available'
 
-const IMPORT_TYPES = [
-  { value: LIVE_ANIMALS, text: 'Live animals or germinal products' },
-  { value: 'poao', text: 'Products of animal origin or animal by-products' },
-  { value: 'hrfnao', text: 'High-risk food or feed of non-animal origin' },
-  { value: 'plants', text: 'Plants, plant products or other objects' }
-]
+const copy = copyFor({ en })
+
+const IMPORT_TYPES = [LIVE_ANIMALS, 'poao', 'hrfnao', 'plants'].map(
+  (value) => ({ value, text: copy.importTypes[value] })
+)
 
 const fields = compose(
   requiredOneOf(
     'importType',
     IMPORT_TYPES.map((type) => type.value),
-    'Select what you are importing'
+    copy.errors.importTypeRequired
   )
 )
 
 const render = (h, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('What are you importing?', { backLink: pagePath('home') }),
+    ...kit.base(copy.title, { backLink: pagePath('home') }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -70,9 +72,10 @@ const post = async (request, h) => {
 
 const getNotAvailable = (_request, h) =>
   h.view(holdingView, {
-    ...kit.base('You cannot use this service', {
+    ...kit.base(copy.notAvailable.title, {
       backLink: pagePath(page.slug)
     }),
+    copy,
     changeAnswerHref: pagePath(page.slug)
   })
 

@@ -12,7 +12,7 @@
       name: "importType",
       fieldset: {
         legend: {
-          text: "What are you importing?",
+          text: copy.legend,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }
@@ -21,6 +21,6 @@
       items: importTypeOptions
     }) }}
 
-    {{ govukButton({ text: "Continue" }) }}
+    {{ govukButton({ text: copy.continueButton }) }}
   </form>
 {% endblock %}

@@ -2,17 +2,21 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { consignmentContactSelectPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['contactAddress'] }
 const view = `${TEMPLATES}/features/contact/template`
+
+const copy = copyFor({ en })
 
 const fields = compose(
   oneOf(
     'contactAddress',
     addressBook.parties('contact').map((option) => option.id),
-    'Select a contact address'
+    copy.errors.contactRequired
   )
 )
 
@@ -28,10 +32,11 @@ const addressSummary = (address) =>
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Contact address for consignment', {
+    ...kit.base(copy.title, {
       backLink: hubPath(),
       journey
     }),
+    copy,
     errors,
     errorSummary: kit.errorSummary(errors),
     contactOptions: addressBook.parties('contact').map((option) => ({

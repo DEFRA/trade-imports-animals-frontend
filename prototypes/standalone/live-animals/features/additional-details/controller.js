@@ -2,15 +2,19 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as certification from '../../services/certification-purposes/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { additionalDetailsPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = {
   ...page,
   collects: ['animalsCertifiedFor', 'containsUnweanedAnimals']
 }
 const view = `${TEMPLATES}/features/additional-details/template`
+
+const copy = copyFor({ en })
 
 export const unweanedApplies = (answers) =>
   []
@@ -19,7 +23,7 @@ export const unweanedApplies = (answers) =>
       commodities.unweanedCommodities().includes(line?.commoditySelection)
     )
 
-const UNWEANED_LABEL = { yes: 'Yes', no: 'No' }
+const UNWEANED_LABEL = { yes: copy.unweaned.yes, no: copy.unweaned.no }
 
 const certifiedField = oneOf(
   'animalsCertifiedFor',
@@ -32,10 +36,11 @@ const unweanedField = oneOf(
 
 const render = (h, journey, values, showUnweaned, errors = {}) =>
   h.view(view, {
-    ...kit.base('Additional animal details', {
+    ...kit.base(copy.title, {
       backLink: hubPath(),
       journey
     }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),

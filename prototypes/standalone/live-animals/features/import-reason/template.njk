@@ -12,7 +12,7 @@
       name: "reasonForImport",
       fieldset: {
         legend: {
-          text: "What is the main reason for importing the animals?",
+          text: copy.legend,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }
@@ -21,6 +21,6 @@
       items: reasonOptions
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

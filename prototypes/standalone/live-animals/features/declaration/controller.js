@@ -2,21 +2,18 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import { confirmationPage } from '../confirmation/page.js'
 import { declarationPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['declaration'] }
 const view = `${TEMPLATES}/features/declaration/template`
 
-export const DECLARATION_LABEL =
-  'I confirm that I have reviewed and comply with this declaration and that the information submitted in this notification is true and correct.'
+const copy = copyFor({ en })
 
 const fields = compose(
-  requiredOneOf(
-    'declaration',
-    ['confirmed'],
-    'Confirm that the information is true and correct before submitting'
-  )
+  requiredOneOf('declaration', ['confirmed'], copy.errors.declarationRequired)
 )
 
 const dateText = (value) =>
@@ -28,12 +25,11 @@ const dateText = (value) =>
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Declaration', {
+    ...kit.base(copy.title, {
       backLink: pagePath(kit.CYA_SLUG),
       journey
     }),
-    heading: 'Declaration',
-    declarationLabel: DECLARATION_LABEL,
+    copy,
     submissionDate: dateText(Date.now()),
     values,
     errors,

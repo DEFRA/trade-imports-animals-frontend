@@ -2,11 +2,15 @@ import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import { cphNumberPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['countyParishHoldingCph'] }
 const view = `${TEMPLATES}/features/cph-number/template`
+
+const copy = copyFor({ en })
 
 export const cphApplies = (answers) =>
   []
@@ -16,11 +20,7 @@ export const cphApplies = (answers) =>
     )
 
 const fields = compose(
-  maxText(
-    'countyParishHoldingCph',
-    11,
-    'County Parish Holding (CPH) number must be 11 characters or fewer'
-  )
+  maxText('countyParishHoldingCph', 11, copy.errors.cphMaxLength)
 )
 
 const hubEntryReturn = (request) =>
@@ -28,10 +28,11 @@ const hubEntryReturn = (request) =>
 
 const render = (request, h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('County Parish Holding (CPH)', {
+    ...kit.base(copy.title, {
       backLink: hubEntryReturn(request) ?? hubPath(),
       journey
     }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors)

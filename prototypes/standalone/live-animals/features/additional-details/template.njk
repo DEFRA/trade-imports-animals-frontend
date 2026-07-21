@@ -5,7 +5,7 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">Additional animal details</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -14,11 +14,11 @@
       name: "animalsCertifiedFor",
       fieldset: {
         legend: {
-          text: "What are the animals certified for?",
+          text: copy.certified.legend,
           classes: "govuk-fieldset__legend--s"
         }
       },
-      hint: { text: "You'll find this on the health certificate." },
+      hint: { text: copy.certified.hint },
       errorMessage: errors.animalsCertifiedFor and { text: errors.animalsCertifiedFor },
       items: certifiedOptions
     }) }}
@@ -28,16 +28,16 @@
         name: "containsUnweanedAnimals",
         fieldset: {
           legend: {
-            text: "Does the consignment contain any unweaned animals?",
+            text: copy.unweaned.legend,
             classes: "govuk-fieldset__legend--s"
           }
         },
-        hint: { text: "These are animals that are still feeding from their mother." },
+        hint: { text: copy.unweaned.hint },
         errorMessage: errors.containsUnweanedAnimals and { text: errors.containsUnweanedAnimals },
         items: unweanedOptions
       }) }}
     {% endif %}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

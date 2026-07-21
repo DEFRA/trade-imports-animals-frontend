@@ -5,24 +5,23 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  <h2 class="govuk-heading-m">I am the contact for the authorities and located in the UK.</h2>
+  <h2 class="govuk-heading-m">{{ copy.body.contactUk }}</h2>
 
-  <h2 class="govuk-heading-m">I confirm I am responsible for this consignment until it has cleared border control checks or reached the place of destination.</h2>
+  <h2 class="govuk-heading-m">{{ copy.body.responsible }}</h2>
 
-  <h2 class="govuk-heading-m">I confirm that I am accountable for:</h2>
+  <h2 class="govuk-heading-m">{{ copy.body.accountableFor }}</h2>
 
   <ul class="govuk-list govuk-list--bullet">
-    <li>payments for border control checks</li>
-    <li>re-dispatch of the consignment</li>
-    <li>quarantine or isolation of the animals</li>
-    <li>the costs of destruction and disposal</li>
+    {% for item in copy.body.accountableItems %}
+      <li>{{ item }}</li>
+    {% endfor %}
   </ul>
 
-  <p class="govuk-body">I am authorised as being accountable for these things if raising notifications on behalf of a third party.</p>
+  <p class="govuk-body">{{ copy.body.authorised }}</p>
 
-  <p class="govuk-body">I can legally act on behalf of a third party in relation to the conditions of this declaration.</p>
+  <p class="govuk-body">{{ copy.body.legallyAct }}</p>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -33,14 +32,14 @@
       items: [
         {
           value: "confirmed",
-          text: declarationLabel,
+          text: copy.declarationLabel,
           checked: values.declaration == "confirmed"
         }
       ]
     }) }}
 
-    <p class="govuk-body">Date of declaration: {{ submissionDate }}</p>
+    <p class="govuk-body">{{ copy.dateOfDeclaration }} {{ submissionDate }}</p>
 
-    {{ govukButton({ text: "Continue" }) }}
+    {{ govukButton({ text: copy.continueButton }) }}
   </form>
 {% endblock %}

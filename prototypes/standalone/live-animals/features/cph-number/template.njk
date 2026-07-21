@@ -12,16 +12,16 @@
       id: "countyParishHoldingCph",
       name: "countyParishHoldingCph",
       label: {
-        text: "County Parish Holding (CPH)",
+        text: copy.cph.label,
         isPageHeading: true,
         classes: "govuk-label--l"
       },
-      hint: { text: "For example, 123456789 or 123/456/789." },
+      hint: { text: copy.cph.hint },
       classes: "govuk-input--width-10",
       value: values.countyParishHoldingCph,
       errorMessage: errors.countyParishHoldingCph and { text: errors.countyParishHoldingCph }
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

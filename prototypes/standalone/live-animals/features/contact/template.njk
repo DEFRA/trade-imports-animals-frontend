@@ -12,16 +12,16 @@
       name: "contactAddress",
       fieldset: {
         legend: {
-          text: "Contact address for consignment",
+          text: copy.legend,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }
       },
-      hint: { text: "Selecting a contact copies their name and address into this notification." },
+      hint: { text: copy.hint },
       errorMessage: errors.contactAddress and { text: errors.contactAddress },
       items: contactOptions
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

@@ -12,7 +12,7 @@
       name: "purposeInInternalMarket",
       fieldset: {
         legend: {
-          text: "Purpose in the internal market",
+          text: copy.legend,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }
@@ -21,6 +21,6 @@
       items: purposeOptions
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}
