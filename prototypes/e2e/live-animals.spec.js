@@ -156,10 +156,9 @@ const setUploadFile = (page, filename, bytes) =>
     buffer: bytes ?? Buffer.from('%PDF-1.4 prototype upload')
   })
 
+// There is no type field: `accompanyingDocumentType` on an entry is the
+// type its filename should DERIVE (asserted on the read-back table row).
 const addDocument = async (page, entry) => {
-  await page
-    .getByLabel('Document type')
-    .selectOption(entry.accompanyingDocumentType)
   await page
     .getByLabel('Document reference')
     .fill(entry.accompanyingDocumentReference)
@@ -814,7 +813,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The hub row completes on line data alone (the identification row is
     // its own facet), and the stat cards sum over the per-species lines
-    // (25 + 2 animals, 5 + 1 packages).
+    // (the fixture line's counts plus the 2 animals / 1 package typed above).
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     const commoditiesRow = page.locator('.govuk-task-list__item', {
       hasText: 'What are you importing?'
@@ -832,13 +831,13 @@ test.describe('live-animals (page-owned spine)', () => {
     )
     await expect(
       statCard('Animals').locator('.govuk-summary-list__value')
-    ).toHaveText('27')
+    ).toHaveText(String(Number(line.numberOfAnimalsQuantity) + 2))
     await expect(statCard('Packages/boxes')).toContainText(
       'Total number of packages in this consignment'
     )
     await expect(
       statCard('Packages/boxes').locator('.govuk-summary-list__value')
-    ).toHaveText('6')
+    ).toHaveText(String(Number(line.numberOfPackages) + 1))
 
     // Remove-line leg: the hub row re-enters at the search page with the
     // stored selection summarised; the details table's Remove drops every
@@ -883,7 +882,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(
       statCard('Animals').locator('.govuk-summary-list__value')
-    ).toHaveText('28')
+    ).toHaveText(String(Number(line.numberOfAnimalsQuantity) + 3))
   })
 
   test('animal identifiers — a unit form shows only the identifier types the commodity requires, plus the permanent address for cats and dogs', async ({
@@ -2108,15 +2107,15 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(transitRow).toHaveCount(0)
 
     // Both overland means route through the transit-countries page. A blank
-    // save there is allowed (enforcedAt=submit) and walks on; the hub row
-    // appears, still owed.
+    // save there is allowed and walks on; the hub row appears, reading
+    // Optional — transited countries are optional when in scope.
     await openArrivalDetails()
     await page.getByRole('radio', { name: 'Railway' }).check()
     await save()
     await expect(transitHeading).toBeVisible()
     await save()
     await saveThroughTransporters()
-    await expect(transitRow).toContainText('Not yet started')
+    await expect(transitRow).toContainText('Optional')
 
     // Save two transited countries under Road Vehicle...
     await openArrivalDetails()
@@ -2236,10 +2235,24 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(reasonRow).toContainText('Completed')
 
     // Another reason: the purpose is no longer owed — saving skips the purpose
-    // page and walks on to the tail page; the certified-for answer persists, so
-    // a save there returns to the hub with the task still complete.
+    // page, but Transit brings the reason-gated exit-details pages into scope
+    // (destination country + port of exit; exit date stays out — it is owed
+    // only for temporary admission of horses). Both are save-enforced, so the
+    // walk answers them before reaching the tail page; the certified-for
+    // answer persists, so a save there returns to the hub with the reason
+    // task still complete.
     await page.getByRole('link', { name: 'Main reason for importing' }).click()
     await page.getByRole('radio', { name: 'Transit' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Destination country' })
+    ).toBeVisible()
+    await page.getByLabel('Destination country').selectOption('FR')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Port of exit' })
+    ).toBeVisible()
+    await page.getByLabel('Port of exit').selectOption({ index: 2 })
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: 'Additional animal details' })
@@ -2537,11 +2550,21 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(documentsCard).toContainText('PDF')
 
     // Species-card leg: Change enters the identification surface with the
-    // change context; the Save-and-add-another PRG cycle stays on the
-    // surface; Save and finish exits back to the review with the new unit
+    // change context. The fixture line already holds its declared 1 unit, so
+    // the surface is at the count-must-match ceiling and offers Remove only —
+    // replace the unit: Remove threads the change context, the add form
+    // returns, and the Save-and-add-another PRG cycle stays on the surface;
+    // Save and finish exits back to the review with the replacement unit
     // rendered.
     await page
       .getByRole('link', { name: 'Change animal identifiers for commodity 1' })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Animal identification details' })
+    ).toBeVisible()
+    expect(page.url()).toContain('change=1')
+    await page
+      .getByRole('link', { name: 'Remove animal 1', exact: true })
       .click()
     await expect(
       page.getByRole('heading', { name: 'Animal identification details' })
