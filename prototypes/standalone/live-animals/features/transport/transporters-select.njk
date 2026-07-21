@@ -12,16 +12,16 @@
       name: "commercialTransporter",
       fieldset: {
         legend: {
-          text: "Search for an approved commercial transporter",
+          text: copy.title,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }
       },
-      hint: { text: "Selecting a transporter copies their name, address and approval number into this notification." },
+      hint: { text: copy.hint },
       errorMessage: errors.commercialTransporter and { text: errors.commercialTransporter },
       items: transporterOptions
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

@@ -2,17 +2,21 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { transportersSelectPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['commercialTransporter'] }
 const view = `${TEMPLATES}/features/transport/transporters-select`
+
+const copy = copyFor({ en }).transportersSelect
 
 const fields = compose(
   oneOf(
     'commercialTransporter',
     addressBook.parties('commercialTransporter').map((option) => option.id),
-    'Select a transporter from the list'
+    copy.errors.transporterRequired
   )
 )
 
@@ -28,10 +32,11 @@ const addressSummary = (address) =>
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Search for an approved commercial transporter', {
+    ...kit.base(copy.title, {
       backLink: pagePath('transporters'),
       journey
     }),
+    copy,
     errors,
     errorSummary: kit.errorSummary(errors),
     transporterOptions: addressBook
@@ -40,7 +45,10 @@ const render = (h, journey, values, errors = {}) =>
         value: option.id,
         text: option.name,
         hint: {
-          text: `${addressSummary(option.address)} — approval number ${option.approvalNumber}`
+          text: copy.optionHint(
+            addressSummary(option.address),
+            option.approvalNumber
+          )
         },
         checked: option.name === values.selectedName
       }))

@@ -2,20 +2,24 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import { privateTransporterDetailsPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['privateTransporter'] }
 const view = `${TEMPLATES}/features/transport/private-transporter-details`
 
+const copy = copyFor({ en }).privateTransporterDetails
+
 const MANDATORY_MESSAGES = {
-  nameOrOrganisationName: 'Enter a name or organisation name',
-  addressLine1: 'Enter address line 1',
-  townOrCity: 'Enter a town or city',
-  postalOrZipCode: 'Enter a postal or zip code',
-  country: 'Select a country',
-  telephoneNumber: 'Enter a telephone number',
-  emailAddress: 'Enter an email address'
+  nameOrOrganisationName: copy.errors.nameRequired,
+  addressLine1: copy.errors.addressLine1Required,
+  townOrCity: copy.errors.townOrCityRequired,
+  postalOrZipCode: copy.errors.postalOrZipCodeRequired,
+  country: copy.errors.countryRequired,
+  telephoneNumber: copy.errors.telephoneRequired,
+  emailAddress: copy.errors.emailRequired
 }
 
 const FIELD_ORDER = [
@@ -31,31 +35,15 @@ const FIELD_ORDER = [
 ]
 
 const fields = compose(
-  maxText(
-    'nameOrOrganisationName',
-    255,
-    'Name or organisation name must be 255 characters or less'
-  ),
-  maxText('addressLine1', 255, 'Address line 1 must be 255 characters or less'),
-  maxText('addressLine2', 255, 'Address line 2 must be 255 characters or less'),
-  maxText('townOrCity', 100, 'Town or city must be 100 characters or less'),
-  maxText('county', 100, 'County must be 100 characters or less'),
-  maxText(
-    'postalOrZipCode',
-    12,
-    'Postal or zip code must be 12 characters or less'
-  ),
-  oneOf(
-    'country',
-    countries.addressCountries(),
-    'Select a country from the list'
-  ),
-  maxText(
-    'telephoneNumber',
-    20,
-    'Telephone number must be 20 characters or less'
-  ),
-  maxText('emailAddress', 254, 'Email address must be 254 characters or less')
+  maxText('nameOrOrganisationName', 255, copy.errors.nameMaxLength),
+  maxText('addressLine1', 255, copy.errors.addressLine1MaxLength),
+  maxText('addressLine2', 255, copy.errors.addressLine2MaxLength),
+  maxText('townOrCity', 100, copy.errors.townOrCityMaxLength),
+  maxText('county', 100, copy.errors.countyMaxLength),
+  maxText('postalOrZipCode', 12, copy.errors.postalOrZipCodeMaxLength),
+  oneOf('country', countries.addressCountries(), copy.errors.countryFromList),
+  maxText('telephoneNumber', 20, copy.errors.telephoneMaxLength),
+  maxText('emailAddress', 254, copy.errors.emailMaxLength)
 )
 
 const recordProvided = (values) =>
@@ -69,7 +57,7 @@ const missingMandatoryErrors = (values) => {
 }
 
 const countryItems = (selected) => [
-  { value: '', text: 'Select a country' },
+  { value: '', text: copy.countryPlaceholder },
   { text: '──────────', disabled: true },
   ...countries.addressCountries().map((name) => ({
     value: name,
@@ -80,11 +68,11 @@ const countryItems = (selected) => [
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Private transporter details', {
+    ...kit.base(copy.title, {
       backLink: pagePath('transporters'),
       journey
     }),
-    heading: 'Private transporter details',
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),

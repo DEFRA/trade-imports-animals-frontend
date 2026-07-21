@@ -2,11 +2,15 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { transportersPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['transporterType'] }
 const view = `${TEMPLATES}/features/transport/transporters`
+
+const copy = copyFor({ en }).transporters
 
 const fields = compose(
   oneOf('transporterType', transportReference.transporterTypes())
@@ -14,7 +18,8 @@ const fields = compose(
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Transporter', { backLink: hubPath(), journey }),
+    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors)

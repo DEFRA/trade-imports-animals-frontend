@@ -5,7 +5,7 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -13,13 +13,13 @@
     {{ govukSelect({
       id: "destinationCountry",
       name: "destinationCountry",
-      label: { text: "Destination country", classes: "govuk-label--s" },
-      hint: { text: "The country the consignment travels on to after Great Britain." },
+      label: { text: copy.country.label, classes: "govuk-label--s" },
+      hint: { text: copy.country.hint },
       value: values.destinationCountry,
       errorMessage: errors.destinationCountry and { text: errors.destinationCountry },
       items: countryItems
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

@@ -4,15 +4,15 @@
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 
 {% block journeyContent %}
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {{ govukWarningText({ text: "Providing a false address is an act of fraud." }) }}
+  {{ govukWarningText({ text: copy.warning }) }}
 
   {{ govukSummaryList({ rows: rows }) }}
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-    {{ saveActions(hubHref, { text: "Continue" }) }}
+    {{ saveActions(hubHref, { text: copy.continueButton }, sharedCopy.saveActions) }}
   </form>
 {% endblock %}

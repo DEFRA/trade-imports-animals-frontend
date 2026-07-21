@@ -6,10 +6,10 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  <p class="govuk-body">Countries the consignment will travel through are countries between the country of origin and the destination country.</p>
-  <p class="govuk-body">This does not include the United Kingdom.</p>
+  <p class="govuk-body">{{ copy.betweenCountries }}</p>
+  <p class="govuk-body">{{ copy.excludesUk }}</p>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -19,8 +19,8 @@
         {{ govukSelect({
           id: "transitedCountries",
           name: "transitedCountries",
-          label: { text: "Enter all countries", classes: "govuk-label--s" },
-          hint: { text: "You can add up to 12 countries" },
+          label: { text: copy.enterAll.label, classes: "govuk-label--s" },
+          hint: { text: copy.enterAll.hint },
           errorMessage: errors.transitedCountries and { text: errors.transitedCountries },
           items: items,
           attributes: { "data-select-autocomplete": "" }
@@ -29,7 +29,7 @@
         {{ govukSelect({
           id: "transitedCountries-" + loop.index,
           name: "transitedCountries",
-          label: { text: "Country " + loop.index, classes: "govuk-visually-hidden" },
+          label: { text: copy.countryLabel + " " + loop.index, classes: "govuk-visually-hidden" },
           items: items,
           attributes: { "data-select-autocomplete": "" }
         }) }}
@@ -38,14 +38,14 @@
 
     {% if canAddAnother %}
       {{ govukButton({
-        text: "Add another country",
+        text: copy.addAnother,
         classes: "govuk-button--secondary",
         name: "addCountry",
         value: "add"
       }) }}
     {% endif %}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}
 

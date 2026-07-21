@@ -1,16 +1,20 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import { transitCountriesPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['transitedCountries'] }
 const view = `${TEMPLATES}/features/transport/transit-countries`
 
 export const MAX_TRANSITED_COUNTRIES = 12
 
+const copy = copyFor({ en }).transitCountries
+
 const countryItems = (selected) => [
-  { value: '', text: 'Select a country' },
+  { value: '', text: copy.placeholder },
   ...countries.originCountries().map(({ value, text }) => ({
     value,
     text,
@@ -26,11 +30,11 @@ const selectRows = (selected) => {
 
 const transitedCountriesErrors = (selected) => {
   if (selected.some((code) => countries.originLabel(code) === undefined)) {
-    return { transitedCountries: 'Select countries from the list' }
+    return { transitedCountries: copy.errors.fromList }
   }
   if (selected.length > MAX_TRANSITED_COUNTRIES) {
     return {
-      transitedCountries: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`
+      transitedCountries: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
     }
   }
   return {}
@@ -38,11 +42,11 @@ const transitedCountriesErrors = (selected) => {
 
 const render = (h, journey, selected, errors = {}) =>
   h.view(view, {
-    ...kit.base('Which countries will the consignment travel through?', {
+    ...kit.base(copy.title, {
       backLink: hubPath(),
       journey
     }),
-    heading: 'Which countries will the consignment travel through?',
+    copy,
     errors,
     errorSummary: kit.errorSummary(errors),
     countryRows: selectRows(selected),

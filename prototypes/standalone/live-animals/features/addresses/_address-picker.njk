@@ -10,7 +10,7 @@
    both submits, told apart by their `action` value. Paging is a link, so the
    selection travels in the link's query string and in a hidden field — no
    client JS anywhere. #}
-{% macro addressPickerResults(picker) %}
+{% macro addressPickerResults(picker, copy) %}
   {% set rows = [] %}
   {% for row in picker.rows %}
     {% set selectCell %}
@@ -20,7 +20,7 @@
         classes: "govuk-radios--small",
         items: [{
           value: row.id,
-          text: "Select " + row.name,
+          text: copy.selectRowPrefix + " " + row.name,
           checked: row.checked,
           label: { classes: "govuk-visually-hidden" }
         }]
@@ -29,7 +29,7 @@
     {% set detailsCell %}
       <details class="govuk-details">
         <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">View details<span class="govuk-visually-hidden"> for {{ row.name }}</span></span>
+          <span class="govuk-details__summary-text">{{ copy.viewDetails }}<span class="govuk-visually-hidden"> {{ copy.viewDetailsFor }} {{ row.name }}</span></span>
         </summary>
         <div class="govuk-details__text">
           <ul class="govuk-list">
@@ -53,11 +53,11 @@
     caption: picker.resultsCaption,
     captionClasses: "govuk-table__caption--s",
     head: [
-      { html: '<span class="govuk-visually-hidden">Select</span>' },
-      { text: "Name" },
-      { text: "Address" },
-      { text: "Country" },
-      { html: '<span class="govuk-visually-hidden">Actions</span>' }
+      { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
+      { text: copy.table.name },
+      { text: copy.table.address },
+      { text: copy.table.country },
+      { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
     ],
     rows: rows
   }) }}
@@ -67,7 +67,7 @@
   {% endif %}
 {% endmacro %}
 
-{% macro addressPicker(picker, crumb) %}
+{% macro addressPicker(picker, crumb, copy) %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="page" value="{{ picker.page }}" />
@@ -79,38 +79,38 @@
       id: "q",
       name: "q",
       classes: "govuk-!-width-two-thirds",
-      label: { text: "Search", classes: "govuk-label--s" },
-      hint: { text: "Name, address or country" },
+      label: { text: copy.search.label, classes: "govuk-label--s" },
+      hint: { text: copy.search.hint },
       value: picker.query
     }) }}
 
     {{ govukButton({
-      text: "Search",
+      text: copy.search.button,
       classes: "govuk-button--secondary",
       name: "action",
       value: "search"
     }) }}
 
     {% if picker.selected %}
-      {{ govukInsetText({ text: "Selected address: " + picker.selected.name }) }}
+      {{ govukInsetText({ text: copy.selectedAddressPrefix + " " + picker.selected.name }) }}
     {% endif %}
 
     {% if picker.error %}
       <p id="party-error" class="govuk-error-message">
-        <span class="govuk-visually-hidden">Error:</span> {{ picker.error }}
+        <span class="govuk-visually-hidden">{{ copy.errorPrefix }}</span> {{ picker.error }}
       </p>
     {% endif %}
 
     {% if picker.rows.length %}
-      {{ addressPickerResults(picker) }}
+      {{ addressPickerResults(picker, copy) }}
     {% else %}
-      <p class="govuk-body">No addresses match your search.</p>
+      <p class="govuk-body">{{ copy.noMatches }}</p>
     {% endif %}
 
     <div class="govuk-button-group">
-      {{ govukButton({ text: "Save and continue", name: "action", value: "save" }) }}
+      {{ govukButton({ text: copy.saveAndContinue, name: "action", value: "save" }) }}
       {{ govukButton({
-        text: "Add a new address",
+        text: copy.addNewAddress,
         classes: "govuk-button--secondary",
         href: picker.createAddressHref
       }) }}

@@ -9,6 +9,8 @@ import {
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 import { maxDocuments } from '../../bridge/applicability.js'
 import { documentUploads } from '../../services/document-uploads/index.js'
 import { deriveDocumentTypeFromFilename } from './derive-document-type.js'
@@ -24,6 +26,7 @@ import {
   attachmentTypeFor
 } from './upload-config.js'
 import { documentsPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['documents'] }
 const view = `${TEMPLATES}/features/documents/template`
@@ -31,18 +34,16 @@ const view = `${TEMPLATES}/features/documents/template`
 export const MAX_DOCUMENTS = maxDocuments()
 export const MAX_POLLING_ATTEMPTS = 10
 
-const NOT_PROVIDED = 'Not provided'
-const CANNOT_CONTINUE_MESSAGE =
-  'You cannot continue until all documents have been scanned or removed'
-const UPLOAD_FAILURE_MESSAGE = 'The file could not be uploaded. Try again.'
+const copy = copyFor({ en })
+const sharedCopy = copyFor({ en: sharedEn })
+
+const NOT_PROVIDED = copy.notProvided
+const CANNOT_CONTINUE_MESSAGE = copy.errors.cannotContinue
+const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
 
 const fields = compose(
-  maxText(
-    'accompanyingDocumentReference',
-    58,
-    'Document reference must be 58 characters or fewer'
-  ),
-  dateParts('accompanyingDocumentDateOfIssue', 'Enter a real date of issue')
+  maxText('accompanyingDocumentReference', 58, copy.errors.referenceMaxLength),
+  dateParts('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
 )
 
 export const documentFromPayload = (payload) => ({
@@ -61,9 +62,9 @@ export const documentFromPayload = (payload) => ({
 const presenceErrors = (entry) => ({
   ...(entry.accompanyingDocumentReference
     ? {}
-    : { accompanyingDocumentReference: 'Enter a document reference' }),
+    : { accompanyingDocumentReference: copy.errors.referenceRequired }),
   ...(isBlank(entry.accompanyingDocumentDateOfIssue)
-    ? { 'accompanyingDocumentDateOfIssue-day': 'Enter the date of issue' }
+    ? { 'accompanyingDocumentDateOfIssue-day': copy.errors.dateRequired }
     : {})
 })
 
@@ -73,7 +74,7 @@ const EMPTY_FORM = {
 }
 
 export const fileErrors = (file) => {
-  if (!file?.payload?.length) return { file: 'Select a file to upload' }
+  if (!file?.payload?.length) return { file: copy.errors.fileRequired }
   if (file.payload.length > MAX_FILE_SIZE_BYTES) {
     return { file: OVERSIZE_FILE_MESSAGE }
   }
@@ -114,14 +115,14 @@ const loadPage = async (request, h) => {
 }
 
 const SCAN_STATUS_TAGS = {
-  COMPLETE: { text: 'Safe', classes: 'govuk-tag--green' },
-  REJECTED: { text: 'Virus found', classes: 'govuk-tag--red' },
-  PENDING: { text: 'Checking', classes: 'govuk-tag--blue' }
+  COMPLETE: { text: copy.scanTags.safe, classes: 'govuk-tag--green' },
+  REJECTED: { text: copy.scanTags.virusFound, classes: 'govuk-tag--red' },
+  PENDING: { text: copy.scanTags.checking, classes: 'govuk-tag--blue' }
 }
 
 const statusTagHtml = (scanStatus) => {
   const tag = SCAN_STATUS_TAGS[scanStatus] ?? {
-    text: 'Unknown',
+    text: copy.scanTags.unknown,
     classes: 'govuk-tag--grey'
   }
   return `<strong class="govuk-tag ${tag.classes}">${tag.text}</strong>`
@@ -139,7 +140,7 @@ const removeCell = (request, index) => {
   )
   return (
     `<a class="govuk-link" href="${href}">` +
-    `Remove<span class="govuk-visually-hidden"> document ${index + 1}</span></a>`
+    `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></a>`
   )
 }
 
@@ -156,7 +157,9 @@ const rejectedErrors = (documents) =>
   documents
     .filter((item) => item.scanStatus === 'REJECTED')
     .map((item) => ({
-      text: `${item.entry.filename ?? 'The file'} contains a virus. Remove it and try again with a different file.`,
+      text: copy.errors.virusFound(
+        item.entry.filename ?? copy.errors.fileFallbackName
+      ),
       href: '#documents-added'
     }))
 
@@ -188,16 +191,15 @@ const render = (
     ...(kit.errorSummary(errors)?.errorList ?? [])
   ]
   return h.view(view, {
-    ...kit.base('Upload documents', { backLink: hubPath(), journey }),
+    ...kit.base(copy.title, { backLink: hubPath(), journey }),
     ...extra,
-    heading: 'Upload documents',
+    copy,
     rows: documentRows(request, documents),
     hasDocuments: documents.length > 0,
-    emptyText: 'You have not added any documents yet.',
     values,
     errors,
     errorSummary: errorList.length
-      ? { titleText: 'There is a problem', errorList }
+      ? { titleText: sharedCopy.errorSummary.title, errorList }
       : null,
     anyPending,
     timedOut: anyPending && attempt >= MAX_POLLING_ATTEMPTS,
@@ -206,8 +208,8 @@ const render = (
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
-      label: 'Date of issue',
-      hint: 'For example, 12 12 2025',
+      label: copy.dateOfIssue.label,
+      hint: copy.dateOfIssue.hint,
       value: values.accompanyingDocumentDateOfIssue ?? {},
       error: errors['accompanyingDocumentDateOfIssue-day']
     })
@@ -240,7 +242,7 @@ const postAdd = async (request, h, payload) => {
   if (pageState.documents.length >= MAX_DOCUMENTS) {
     return render(request, h, pageState, bare, {}, [
       {
-        text: `You can add a maximum of ${MAX_DOCUMENTS} documents`,
+        text: copy.errors.maxDocuments(MAX_DOCUMENTS),
         href: '#documents-added'
       }
     ])

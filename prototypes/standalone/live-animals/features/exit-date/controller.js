@@ -2,23 +2,27 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, dateParts, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import { exitDatePage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['exitDate'] }
 const view = `${TEMPLATES}/features/exit-date/template`
 
-const fields = () => compose(dateParts('exitDate', 'Enter a real exit date'))
+const copy = copyFor({ en })
+
+const fields = () => compose(dateParts('exitDate', copy.errors.dateInvalid))
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Exit date', { backLink: hubPath(), journey }),
-    heading: 'Exit date',
+    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
     exitDate: kit.dateField('exitDate', {
-      label: 'Exit date',
-      hint: 'The date the animals are expected to leave Great Britain. For example, 27/3/2026',
+      label: copy.date.label,
+      hint: copy.date.hint,
       value: values.exitDate ?? {},
       error: errors['exitDate-day']
     })

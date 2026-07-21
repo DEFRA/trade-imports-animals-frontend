@@ -2,14 +2,18 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as ports from '../../services/ports/index.js'
 import { portOfExitPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['portOfExit'] }
 const view = `${TEMPLATES}/features/port-of-exit/template`
 
+const copy = copyFor({ en })
+
 const portItems = (selected) => [
-  { value: '', text: 'Select port of exit' },
+  { value: '', text: copy.port.placeholder },
   { value: '', text: '──────────', disabled: true },
   ...ports.list().map((port) => ({
     value: port.code,
@@ -23,14 +27,14 @@ const fields = () =>
     requiredOneOf(
       'portOfExit',
       ports.list().map((port) => port.code),
-      'Select the port of exit'
+      copy.errors.portRequired
     )
   )
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Port of exit', { backLink: hubPath(), journey }),
-    heading: 'Port of exit',
+    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),

@@ -8,9 +8,11 @@ import {
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as ports from '../../services/ports/index.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { portOfEntryPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = {
   ...page,
@@ -24,8 +26,10 @@ export const meta = {
 }
 const view = `${TEMPLATES}/features/transport/port-of-entry`
 
+const copy = copyFor({ en }).portOfEntry
+
 const portItems = (selected) => [
-  { value: '', text: 'Select port of entry' },
+  { value: '', text: copy.port.placeholder },
   { value: '', text: '──────────', disabled: true },
   ...ports.list().map((port) => ({
     value: port.code,
@@ -36,35 +40,31 @@ const portItems = (selected) => [
 
 const fields = () =>
   compose(
-    dateParts('arrivalDateAtPort', 'Enter a real arrival date'),
+    dateParts('arrivalDateAtPort', copy.errors.arrivalDateInvalid),
     oneOf(
       'portOfEntry',
       ports.list().map((port) => port.code)
     ),
     oneOf('meansOfTransport', transportReference.meansOfTransport()),
-    maxText(
-      'transportIdentification',
-      58,
-      'Transport identification must be 58 characters or less'
-    ),
+    maxText('transportIdentification', 58, copy.errors.identificationMaxLength),
     maxText(
       'transportDocumentReference',
       58,
-      'Transport document reference must be 58 characters or less'
+      copy.errors.documentReferenceMaxLength
     )
   )
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Arrival details', { backLink: hubPath(), journey }),
-    heading: 'Arrival details',
+    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
     portItems: portItems(values.portOfEntry),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
-      label: 'Arrival date at port of entry',
-      hint: 'The expected date of arrival at the port of entry. For example, 27/3/2026',
+      label: copy.arrivalDate.label,
+      hint: copy.arrivalDate.hint,
       value: values.arrivalDateAtPort ?? {},
       error: errors['arrivalDateAtPort-day']
     })

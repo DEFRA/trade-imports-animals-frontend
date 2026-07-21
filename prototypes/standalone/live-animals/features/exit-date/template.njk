@@ -5,13 +5,13 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
     {{ govukDateInput(exitDate) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

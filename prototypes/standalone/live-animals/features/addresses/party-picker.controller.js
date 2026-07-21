@@ -2,11 +2,17 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 import * as addressBook from '../../services/address-book/index.js'
 import { CREATE_ADDRESS_SLUG } from './create-address.controller.js'
 import { PARTIES } from './parties.js'
+import { copy as en } from './copy.en.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker`
+
+const copy = copyFor({ en }).picker
+const sharedCopy = copyFor({ en: sharedEn })
 
 const ADDRESS_PARTS = [
   'addressLine1',
@@ -76,7 +82,7 @@ const committedId = (answers, party) =>
 const errorSummary = (error, hasRows) =>
   error
     ? {
-        titleText: 'There is a problem',
+        titleText: sharedCopy.errorSummary.title,
         errorList: [{ text: error, href: hasRows ? '#party' : '#q' }]
       }
     : null
@@ -95,6 +101,7 @@ const render = (h, journey, party, { query, page, selectedId, error }) => {
     }),
     heading: party.title,
     description: party.hint,
+    pickerCopy: copy,
     errorSummary: errorSummary(error, found.results.length > 0),
     picker: {
       query,
@@ -102,7 +109,7 @@ const render = (h, journey, party, { query, page, selectedId, error }) => {
       error,
       selected,
       createAddressHref: pagePath(`${CREATE_ADDRESS_SLUG}?for=${party.id}`),
-      resultsCaption: `Showing ${found.results.length} of ${found.total} addresses`,
+      resultsCaption: copy.resultsCaption(found.results.length, found.total),
       rows: found.results.map((record, index) => ({
         id: record.id,
         idPrefix: index === 0 ? 'party' : `party-${from + index + 1}`,

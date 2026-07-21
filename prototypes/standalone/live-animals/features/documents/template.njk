@@ -9,7 +9,7 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <form method="post" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -17,8 +17,8 @@
     {{ govukInput({
       id: "accompanyingDocumentReference",
       name: "accompanyingDocumentReference",
-      label: { text: "Document reference", classes: "govuk-label--s" },
-      hint: { text: "For example, GBHC1234567890." },
+      label: { text: copy.reference.label, classes: "govuk-label--s" },
+      hint: { text: copy.reference.hint },
       classes: "govuk-input--width-20",
       value: values.accompanyingDocumentReference,
       errorMessage: errors.accompanyingDocumentReference and { text: errors.accompanyingDocumentReference }
@@ -27,24 +27,24 @@
     {{ govukDateInput(dateOfIssue) }}
 
     {%- set fileHintHtml -%}
-      <p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p>
+      <p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.file.mustBe }}</p>
       <ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0">
-        <li>smaller than {{ maxFileSizeLabel }}</li>
-        <li>a {{ allowedFileTypesHint }}</li>
+        <li>{{ copy.file.smallerThan }} {{ maxFileSizeLabel }}</li>
+        <li>{{ copy.file.a }} {{ allowedFileTypesHint }}</li>
       </ul>
     {%- endset -%}
 
     {{ govukFileUpload({
       id: "file",
       name: "file",
-      label: { text: "Upload a file", classes: "govuk-label--s" },
+      label: { text: copy.file.label, classes: "govuk-label--s" },
       hint: { html: fileHintHtml },
       attributes: { accept: acceptAttribute },
       errorMessage: errors.file and { text: errors.file }
     }) }}
 
     {{ govukButton({
-      text: "Save and add another",
+      text: copy.addAnother,
       classes: "govuk-button--secondary",
       name: "action",
       value: "add"
@@ -53,30 +53,30 @@
     {% if hasDocuments %}
       <div id="documents-added">
         {{ govukTable({
-          caption: "Documents you have added",
+          caption: copy.table.caption,
           captionClasses: "govuk-visually-hidden",
           head: [
-            { text: "Document reference" },
-            { text: "Document type" },
-            { text: "Date of issue" },
-            { text: "Status" },
-            { html: '<span class="govuk-visually-hidden">Actions</span>' }
+            { text: copy.table.reference },
+            { text: copy.table.type },
+            { text: copy.table.dateOfIssue },
+            { text: copy.table.status },
+            { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
           ],
           rows: rows
         }) }}
       </div>
       {% if anyPending %}
         <p class="govuk-body">
-          <a href="{{ refreshHref }}" class="govuk-link">Refresh virus scan status</a>
+          <a href="{{ refreshHref }}" class="govuk-link">{{ copy.refreshStatus }}</a>
         </p>
       {% endif %}
       {% if timedOut %}
-        <p class="govuk-hint">Still checking some documents. Refresh again in a moment.</p>
+        <p class="govuk-hint">{{ copy.stillChecking }}</p>
       {% endif %}
     {% else %}
-      <p class="govuk-body">{{ emptyText }}</p>
+      <p class="govuk-body">{{ copy.empty }}</p>
     {% endif %}
 
-    {{ saveActions(hubHref, { text: "Continue", name: "action", value: "continue" }) }}
+    {{ saveActions(hubHref, { text: copy.continueButton, name: "action", value: "continue" }, sharedCopy.saveActions) }}
   </form>
 {% endblock %}

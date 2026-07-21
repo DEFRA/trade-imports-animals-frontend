@@ -2,14 +2,18 @@ import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import { destinationCountryPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['destinationCountry'] }
 const view = `${TEMPLATES}/features/destination-country/template`
 
+const copy = copyFor({ en })
+
 const countryItems = () => [
-  { value: '', text: 'Select a country' },
+  { value: '', text: copy.country.placeholder },
   { value: '', text: '──────────', disabled: true },
   ...countries.originCountries()
 ]
@@ -19,14 +23,14 @@ const fields = () =>
     requiredOneOf(
       'destinationCountry',
       countries.originCountries().map(({ value }) => value),
-      'Select the destination country'
+      copy.errors.countryRequired
     )
   )
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base('Destination country', { backLink: hubPath(), journey }),
-    heading: 'Destination country',
+    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    copy,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),

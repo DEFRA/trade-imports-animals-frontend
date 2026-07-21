@@ -12,29 +12,29 @@
       name: "transporterType",
       fieldset: {
         legend: {
-          text: "What type of transporter will move the animals?",
+          text: copy.legend,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }
       },
-      hint: { text: "We will ask for the transporter's details next." },
+      hint: { text: copy.hint },
       errorMessage: errors.transporterType and { text: errors.transporterType },
       items: [
         {
           value: "Commercial",
-          text: "Commercial",
-          hint: { text: "A business approved to transport animals — you will choose one from a list" },
+          text: copy.options["Commercial"].text,
+          hint: { text: copy.options["Commercial"].hint },
           checked: values.transporterType == "Commercial"
         },
         {
           value: "Private",
-          text: "Private",
-          hint: { text: "You or another individual moving the animals — you will give their address" },
+          text: copy.options["Private"].text,
+          hint: { text: copy.options["Private"].hint },
           checked: values.transporterType == "Private"
         }
       ]
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}
