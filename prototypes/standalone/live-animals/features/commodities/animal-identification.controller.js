@@ -306,6 +306,7 @@ const buildCard = (request, answers, line, form, errors) => {
     'animalIdentifiers'
   ])
   const atMax = cap !== null && units.length >= cap
+  const overBy = cap !== null ? units.length - cap : 0
   const species = speciesTextOf(entry)
   const values = form?.values ?? blankValuesFor(commodity)
   const addressValues = form?.addressValues ?? blankAddress()
@@ -316,9 +317,12 @@ const buildCard = (request, answers, line, form, errors) => {
     title: cardTitleOf(entry),
     species,
     counter: atMax ? null : counterOf(species, units.length, cap),
-    maxReachedText: atMax
-      ? `You have entered details for all ${cap} ${species} animals. Remove a record if you need to replace it.`
-      : null,
+    maxReachedText:
+      overBy > 0
+        ? `This commodity line lists ${cap} ${species} animals but you have entered details for ${units.length}. Remove ${overBy} to continue.`
+        : atMax
+          ? `You have entered details for all ${cap} ${species} animals. Remove a record if you need to replace it.`
+          : null,
     atMax,
     rows: unitRows(request, index, units),
     hasUnits: units.length > 0,

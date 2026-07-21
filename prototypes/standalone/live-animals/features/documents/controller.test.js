@@ -14,6 +14,7 @@ import { documentUploads } from '../../services/document-uploads/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import { documents as manifestDocuments } from '../../model/obligations/obligations.js'
 import {
   FILE_TYPE_MESSAGE,
   MAX_FILE_SIZE_BYTES,
@@ -36,7 +37,6 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
 })
 
 const validDocument = {
-  accompanyingDocumentType: 'ITAHC',
   accompanyingDocumentReference: 'GBHC1234567890',
   'accompanyingDocumentDateOfIssue-day': '12',
   'accompanyingDocumentDateOfIssue-month': '12',
@@ -79,7 +79,20 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should append the uploaded document with the derived attachment type, uploadId and filename, then redirect', async () => {
+  it('Should require a document reference and a date of issue at add time', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'add', file: pdfFile() }
+    })
+    expect(result.view.context.errors.accompanyingDocumentReference).toBe(
+      'Enter a document reference'
+    )
+    expect(
+      result.view.context.errors['accompanyingDocumentDateOfIssue-day']
+    ).toBe('Enter the date of issue')
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should append the uploaded document with the type and attachment type derived from the filename, then redirect', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
     })
@@ -89,6 +102,18 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(entry.filename).toBe('itahc.pdf')
     expect(entry.uploadId).toBeDefined()
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
+  })
+
+  it('Should derive Other for a filename matching no document type', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: 'add',
+        ...validDocument,
+        file: pdfFile('holiday-snaps.pdf')
+      }
+    })
+    const [entry] = result.after.documents
+    expect(entry.accompanyingDocumentType).toBe('Other')
   })
 
   it('Should refuse an add without a file and append nothing', async () => {
@@ -223,10 +248,14 @@ describe('documents — real upload leg on the single-page loop', () => {
       seed: { documents: tenDocuments },
       payload: { action: 'add', ...validDocument, file: pdfFile() }
     })
-    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+    expect(summaryTexts(result)).toContain(
       `You can add a maximum of ${documents.MAX_DOCUMENTS} documents`
     )
     expect(result.after.documents).toHaveLength(documents.MAX_DOCUMENTS)
+  })
+
+  it('Should derive the controller cap from the manifest, not a copied number', () => {
+    expect(documents.MAX_DOCUMENTS).toBe(manifestDocuments.requires.maxEntries)
   })
 
   it('Should treat a POST without the add action as Continue, appending nothing', async () => {

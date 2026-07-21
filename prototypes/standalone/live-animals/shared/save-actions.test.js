@@ -162,8 +162,10 @@ describe('save actions — hub exit semantics', () => {
     const add = await drivePost(postHandlerOf(documents), {
       payload: {
         action: 'add',
-        accompanyingDocumentType: '',
         accompanyingDocumentReference: 'GBHC1234567890',
+        'accompanyingDocumentDateOfIssue-day': '12',
+        'accompanyingDocumentDateOfIssue-month': '12',
+        'accompanyingDocumentDateOfIssue-year': '2025',
         file: {
           filename: 'itahc-certificate.pdf',
           headers: { 'content-type': 'application/pdf' },

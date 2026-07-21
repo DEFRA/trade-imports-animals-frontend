@@ -111,6 +111,26 @@ describe('animal identification — the single card-per-species surface (inc-063
       expect(card.rows).toHaveLength(1)
       expect(card.rows[0].actions.items[0].text).toBe('Remove')
     })
+
+    it('Should name the count mismatch when the declared number drops below the entered records', async () => {
+      const [card] = await viewCards({
+        commodityLines: [
+          cowLine({
+            numberOfAnimalsQuantity: '1',
+            animalIdentifiers: [
+              { animalIdentifierEarTag: 'UK1' },
+              { animalIdentifierEarTag: 'UK2' }
+            ]
+          })
+        ]
+      })
+      expect(card.atMax).toBe(true)
+      expect(card.maxReachedText).toBe(
+        'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
+      )
+      expect(card.rows).toHaveLength(2)
+      expect(card.rows[0].actions.items[0].text).toBe('Remove')
+    })
   })
 
   describe('Save and add another', () => {

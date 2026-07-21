@@ -145,8 +145,10 @@ describe('change context — collection round-trip', () => {
       const { response, after } = await drive(postHandlerOf(documents), {
         payload: {
           action: 'add',
-          accompanyingDocumentType: '',
           accompanyingDocumentReference: 'GBHC1234567890',
+          'accompanyingDocumentDateOfIssue-day': '12',
+          'accompanyingDocumentDateOfIssue-month': '12',
+          'accompanyingDocumentDateOfIssue-year': '2025',
           file: {
             filename: 'itahc-certificate.pdf',
             headers: { 'content-type': 'application/pdf' },

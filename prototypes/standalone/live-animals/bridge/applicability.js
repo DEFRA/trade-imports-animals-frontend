@@ -38,3 +38,13 @@ export const appliesForCommodity = (obligationName, commodityName) => {
   const inList = values.includes(commodityCodeFor(commodityName))
   return metadata?.type === 'notInUnionOf' ? !inList : inList
 }
+
+/**
+ * The manifest's cap on the documents collection
+ * (`documents.requires.maxEntries`) — the single source the controller
+ * cap derives from.
+ *
+ * @returns {number}
+ */
+export const maxDocuments = () =>
+  obligationByName.get('documents').requires.maxEntries

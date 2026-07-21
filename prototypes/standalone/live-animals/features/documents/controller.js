@@ -5,13 +5,13 @@ import {
   compose,
   dateParts,
   maxText,
-  oneOf,
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
-import * as documentTypes from '../../services/document-types/index.js'
+import { maxDocuments } from '../../bridge/applicability.js'
 import { documentUploads } from '../../services/document-uploads/index.js'
+import { deriveDocumentTypeFromFilename } from './derive-document-type.js'
 import {
   ACCEPT_ATTRIBUTE,
   ALLOWED_FILE_TYPES_HINT,
@@ -28,7 +28,7 @@ import { documentsPage as page } from './page.js'
 export const meta = { ...page, collects: ['documents'] }
 const view = `${TEMPLATES}/features/documents/template`
 
-export const MAX_DOCUMENTS = 10
+export const MAX_DOCUMENTS = maxDocuments()
 export const MAX_POLLING_ATTEMPTS = 10
 
 const NOT_PROVIDED = 'Not provided'
@@ -37,7 +37,6 @@ const CANNOT_CONTINUE_MESSAGE =
 const UPLOAD_FAILURE_MESSAGE = 'The file could not be uploaded. Try again.'
 
 const fields = compose(
-  oneOf('accompanyingDocumentType', documentTypes.documentTypes()),
   maxText(
     'accompanyingDocumentReference',
     58,
@@ -46,17 +45,7 @@ const fields = compose(
   dateParts('accompanyingDocumentDateOfIssue', 'Enter a real date of issue')
 )
 
-const selectItems = (placeholder, options, selected) => [
-  { value: '', text: placeholder },
-  ...options.map((value) => ({
-    value,
-    text: value,
-    selected: value === selected
-  }))
-]
-
 export const documentFromPayload = (payload) => ({
-  accompanyingDocumentType: payload.accompanyingDocumentType ?? '',
   accompanyingDocumentReference: (
     payload.accompanyingDocumentReference ?? ''
   ).trim(),
@@ -66,8 +55,19 @@ export const documentFromPayload = (payload) => ({
   )
 })
 
+// Every document field is mandatory per record and there is no edit
+// page — a record added with blanks could never be completed in place,
+// so presence is enforced at add time.
+const presenceErrors = (entry) => ({
+  ...(entry.accompanyingDocumentReference
+    ? {}
+    : { accompanyingDocumentReference: 'Enter a document reference' }),
+  ...(isBlank(entry.accompanyingDocumentDateOfIssue)
+    ? { 'accompanyingDocumentDateOfIssue-day': 'Enter the date of issue' }
+    : {})
+})
+
 const EMPTY_FORM = {
-  accompanyingDocumentType: '',
   accompanyingDocumentReference: '',
   accompanyingDocumentDateOfIssue: {}
 }
@@ -202,11 +202,6 @@ const render = (
     anyPending,
     timedOut: anyPending && attempt >= MAX_POLLING_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1),
-    typeItems: selectItems(
-      'Select a document type',
-      documentTypes.documentTypes(),
-      values.accompanyingDocumentType
-    ),
     acceptAttribute: ACCEPT_ATTRIBUTE,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
@@ -241,26 +236,37 @@ const uploadDetails = (journey, entry, file, filename) => ({
 
 const postAdd = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
-  const entry = documentFromPayload(payload)
+  const bare = documentFromPayload(payload)
   if (pageState.documents.length >= MAX_DOCUMENTS) {
-    return render(request, h, pageState, entry, {
-      accompanyingDocumentType: `You can add a maximum of ${MAX_DOCUMENTS} documents`
-    })
+    return render(request, h, pageState, bare, {}, [
+      {
+        text: `You can add a maximum of ${MAX_DOCUMENTS} documents`,
+        href: '#documents-added'
+      }
+    ])
   }
   const { errors } = validate(fields, payload)
-  const allErrors = { ...errors, ...fileErrors(payload.file) }
+  const allErrors = {
+    ...errors,
+    ...presenceErrors(bare),
+    ...fileErrors(payload.file)
+  }
   if (Object.keys(allErrors).length > 0) {
-    return render(request, h, pageState, entry, allErrors)
+    return render(request, h, pageState, bare, allErrors)
   }
 
   const filename = payload.file.filename ?? 'upload'
+  const entry = {
+    ...bare,
+    accompanyingDocumentType: deriveDocumentTypeFromFilename(filename)
+  }
   let uploadId
   try {
     uploadId = await documentUploads.upload(
       uploadDetails(pageState.journey, entry, payload.file, filename)
     )
   } catch {
-    return render(request, h, pageState, entry, {
+    return render(request, h, pageState, bare, {
       file: UPLOAD_FAILURE_MESSAGE
     })
   }

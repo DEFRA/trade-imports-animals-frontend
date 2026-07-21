@@ -1,5 +1,4 @@
 {% extends "standalone/live-animals/shared/layout.njk" %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
 {% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
@@ -14,15 +13,6 @@
 
   <form method="post" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
-
-    {{ govukSelect({
-      id: "accompanyingDocumentType",
-      name: "accompanyingDocumentType",
-      label: { text: "Document type", classes: "govuk-label--s" },
-      value: values.accompanyingDocumentType,
-      errorMessage: errors.accompanyingDocumentType and { text: errors.accompanyingDocumentType },
-      items: typeItems
-    }) }}
 
     {{ govukInput({
       id: "accompanyingDocumentReference",
