@@ -17,13 +17,16 @@ const drive = driveHandler
 
 const fields = compose(currency('syntheticAmount'))
 
+// The commit lands on a real obligation key (transportDocumentReference) —
+// the write guard rejects unrecognised keys, and this test's subject is the
+// currency cleaning, not the key.
 const syntheticCurrencyPost = async (request, h) => {
   const payload = request.payload ?? {}
   const raw = (payload.syntheticAmount ?? '').trim()
   const { value: clean, errors } = validate(fields, payload)
   if (errors) return h.view('synthetic', { value: raw, errors })
   await state.commit(request, h, {
-    syntheticAmount: clean.syntheticAmount ?? ''
+    transportDocumentReference: clean.syntheticAmount ?? ''
   })
   return h.redirect('/next')
 }
@@ -41,7 +44,7 @@ describe('T1 — cleaned currency values are persisted, not the raw payload', ()
     const { after } = await drive(syntheticCurrencyPost, {
       payload: { syntheticAmount: '£1,500' }
     })
-    expect(after.syntheticAmount).toBe('1500')
+    expect(after.transportDocumentReference).toBe('1500')
   })
 })
 

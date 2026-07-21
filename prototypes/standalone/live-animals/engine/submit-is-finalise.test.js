@@ -35,7 +35,7 @@ describe('submit is finalise', () => {
     expect(result.journey.submittedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     expect(result.journey.answers).toEqual(committed)
     await expect(
-      commit(buildRequest(), stubH(), { late: true })
+      commit(buildRequest(), stubH(), { countryOfOrigin: 'DE' })
     ).rejects.toThrow(/is submitted — writes blocked/)
   })
 
