@@ -6,7 +6,7 @@
 {# One card per species line (design 01-16/17, D16): the entered-identifiers
    table with per-row Remove, then the counter-driven entry form for the NEXT
    record — replaced by the maximum-reached state at N = M. #}
-{% macro identificationCard(card) %}
+{% macro identificationCard(card, copy) %}
   <section id="{{ card.anchor }}" class="govuk-!-margin-bottom-6">
     <h2 class="govuk-heading-m">{{ card.title }}</h2>
 
@@ -32,8 +32,8 @@
       {% endfor %}
 
       {% if card.showAddress %}
-        <h3 class="govuk-heading-s">Permanent address</h3>
-        <p class="govuk-body">A permanent address is required for this animal.</p>
+        <h3 class="govuk-heading-s">{{ copy.permanentAddress.heading }}</h3>
+        <p class="govuk-body">{{ copy.permanentAddress.required }}</p>
 
         {% for field in card.addressFields %}
           {% if field.kind == "select" %}
@@ -60,7 +60,7 @@
       {% endif %}
 
       {{ govukButton({
-        text: "Save and add another",
+        text: copy.saveAndAddAnother,
         classes: "govuk-button--secondary",
         name: "action",
         value: "add:" ~ card.index

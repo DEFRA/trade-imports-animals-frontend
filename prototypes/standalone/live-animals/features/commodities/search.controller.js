@@ -1,11 +1,15 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import { commoditiesPage as page, consignmentDetailsPage } from './page.js'
+import { copy as en } from './copy.en.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search`
+
+const copy = copyFor({ en }).search
 
 /** One commodity line = one commodity plus ONE species (inc-062). The pair is
  * the line's identity for batch reconcile. */
@@ -75,11 +79,11 @@ const selectedSummary = (selected) =>
 
 const render = (request, h, journey, { query = '', selected, errors = {} }) =>
   h.view(view, {
-    ...kit.base('What are you importing?', {
+    ...kit.base(copy.title, {
       backLink: hubPath(),
       journey
     }),
-    heading: 'What are you importing?',
+    copy,
     query,
     results: resultGroups(query, selected),
     searched: query.trim() !== '',
@@ -123,7 +127,7 @@ const post = async (request, h) => {
     return render(request, h, journey, {
       query,
       selected,
-      errors: { search: 'Select a commodity' }
+      errors: { search: copy.errors.selectCommodity }
     })
   }
 

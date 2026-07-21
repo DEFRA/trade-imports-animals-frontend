@@ -1,11 +1,11 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 
 {# One row per selected commodity: code, common name, Remove (design 01-14). #}
-{% macro selectedCommoditiesTable(groups) %}
+{% macro selectedCommoditiesTable(groups, copy) %}
   {% set rows = [] %}
   {% for group in groups %}
     {% set removeCell %}
-      <a class="govuk-link" href="{{ group.removeHref }}">Remove<span class="govuk-visually-hidden"> {{ group.name }}</span></a>
+      <a class="govuk-link" href="{{ group.removeHref }}">{{ copy.remove }}<span class="govuk-visually-hidden"> {{ group.name }}</span></a>
     {% endset %}
     {% set ignored = rows.push([
       { text: group.code },
@@ -14,12 +14,12 @@
     ]) %}
   {% endfor %}
   {{ govukTable({
-    caption: "Selected commodities",
+    caption: copy.caption,
     captionClasses: "govuk-table__caption--m",
     head: [
-      { text: "Commodity code" },
-      { text: "Common name" },
-      { html: '<span class="govuk-visually-hidden">Actions</span>' }
+      { text: copy.commodityCode },
+      { text: copy.commonName },
+      { html: '<span class="govuk-visually-hidden">' + copy.actionsHidden + '</span>' }
     ],
     rows: rows
   }) }}

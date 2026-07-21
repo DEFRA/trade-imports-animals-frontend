@@ -9,10 +9,10 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {{ govukInsetText({
-    text: "Each health certificate requires a separate notification."
+    text: copy.inset
   }) }}
 
   <form method="post" novalidate>
@@ -21,14 +21,14 @@
     {{ govukInput({
       id: "search",
       name: "search",
-      label: { text: "Search for a common name, commodity code or scientific name", classes: "govuk-label--s" },
-      hint: { text: "For example, Cow, 0102, or Bos taurus" },
+      label: { text: copy.search.label, classes: "govuk-label--s" },
+      hint: { text: copy.search.hint },
       value: query,
       errorMessage: errors.search and { text: errors.search }
     }) }}
 
     {{ govukButton({
-      text: "Search",
+      text: copy.search.button,
       classes: "govuk-button--secondary",
       name: "action",
       value: "search"
@@ -47,22 +47,22 @@
         {% endfor %}
       {% endfor %}
     {% elif searched %}
-      <p class="govuk-body">No commodities match your search.</p>
+      <p class="govuk-body">{{ copy.noMatches }}</p>
     {% endif %}
 
     {% if selectedSummary.length %}
-      <h2 class="govuk-heading-s">{{ selectedSummary.length }} selected</h2>
+      <h2 class="govuk-heading-s">{{ copy.selectedCount(selectedSummary.length) }}</h2>
       <ul class="govuk-list">
         {% for item in selectedSummary %}
           <li>
             <input type="hidden" name="selected" value="{{ item.key }}" />
             {{ item.text }}
             {{ govukButton({
-              text: "Remove",
+              text: copy.remove,
               classes: "govuk-button--secondary govuk-!-margin-bottom-1 govuk-!-margin-left-2",
               name: "action",
               value: "remove:" + item.key,
-              attributes: { "aria-label": "Remove " + item.text }
+              attributes: { "aria-label": copy.removeAria(item.text) }
             }) }}
           </li>
         {% endfor %}
@@ -70,10 +70,10 @@
     {% endif %}
 
     {{ govukDetails({
-      summaryText: "Help with commodity codes",
-      text: "Commodity codes are used to classify goods for import and export."
+      summaryText: copy.help.summary,
+      text: copy.help.text
     }) }}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

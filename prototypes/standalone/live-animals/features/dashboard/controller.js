@@ -7,12 +7,16 @@ import {
   startJourney
 } from '../../engine/journey.js'
 import { CYA_SLUG, journeyStrip, open } from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import { importTypeFilterPage } from '../import-type-filter/page.js'
 import { dashboardPage as page } from './page.js'
+import { copy as en } from './copy.en.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 
 const view = `${TEMPLATES}/features/dashboard/template`
 
-const NOT_SUBMITTED = 'Not submitted'
+const copy = copyFor({ en })
+const sharedCopy = copyFor({ en: sharedEn })
 
 const dateText = (value) =>
   value
@@ -27,17 +31,17 @@ const rowActions = (journey) =>
   journey.status === SUBMITTED
     ? [
         {
-          text: 'View',
+          text: copy.actions.view,
           href: pagePath(`home/${journey.journeyId}/view`)
         },
         {
-          text: 'Amend',
+          text: copy.actions.amend,
           postAction: pagePath(`home/${journey.journeyId}/amend`)
         }
       ]
     : [
         {
-          text: 'Resume',
+          text: copy.actions.resume,
           href: pagePath(`home/${journey.journeyId}/resume`)
         }
       ]
@@ -46,20 +50,16 @@ const toRow = (journey) => ({
   reference: journey.journeyId,
   status: journeyStrip(journey).status,
   created: dateText(journey.createdAt),
-  submitted: dateText(journey.submittedAt) ?? NOT_SUBMITTED,
+  submitted: dateText(journey.submittedAt) ?? copy.notSubmitted,
   actions: rowActions(journey)
 })
 
 const listGet = async (request, h) => {
   const journeys = await listKnownJourneys(request)
   return h.view(view, {
-    pageTitle: 'Import notification service',
-    heading: 'Import notification service',
-    body:
-      'Use this service to tell the authorities about live animals ' +
-      'you are importing. You will answer a short set of questions ' +
-      'about the consignment, then submit your notification.',
-    buttonText: 'Start a new notification',
+    pageTitle: copy.title,
+    copy,
+    sharedCopy,
     startAction: startPath(),
     notificationRows: journeys.map(toRow)
   })

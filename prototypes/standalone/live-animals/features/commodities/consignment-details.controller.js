@@ -3,6 +3,7 @@ import * as state from '../../engine/index.js'
 import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
+import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import {
   animalIdentificationPage,
@@ -10,9 +11,14 @@ import {
   consignmentDetailsPage as page
 } from './page.js'
 import { lineKey } from './search.controller.js'
+import { copy as en } from './copy.en.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/consignment-details`
+
+const copy = copyFor({ en }).consignmentDetails
+const sharedCopy = copyFor({ en: sharedEn })
 
 export const packagesApply = (commoditySelection) =>
   commodities.packageCountCommodities().includes(commoditySelection)
@@ -25,13 +31,13 @@ const fieldsFor = (lines) =>
     ...lines.flatMap(({ index, entry }) => [
       integerInRange(animalsField(index), {
         min: 1,
-        message: 'Number of animals must be a whole number, like 25'
+        message: copy.errors.animalsWholeNumber
       }),
       ...(packagesApply(entry.commoditySelection)
         ? [
             integerInRange(packagesField(index), {
               min: 1,
-              message: 'Number of packages must be a whole number, like 5'
+              message: copy.errors.packagesWholeNumber
             })
           ]
         : [])
@@ -101,23 +107,20 @@ const render = (
   errorSummary = null
 ) =>
   h.view(view, {
-    ...kit.base('Consignment details', {
+    ...kit.base(copy.title, {
       backLink: kit.withChangeContext(request, pagePath(commoditiesPage.slug)),
       journey
     }),
-    heading: 'Consignment details',
+    copy,
     hasLines: lines.length > 0,
-    emptyText: 'You have not added any commodities yet.',
     addHref: kit.withChangeContext(request, pagePath(commoditiesPage.slug)),
-    addText: lines.length > 0 ? 'Add another commodity' : 'Add a commodity',
+    addText: lines.length > 0 ? copy.addAnother : copy.addFirst,
     groups: buildGroups(request, lines, values, errors),
     errors,
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
 const linesOf = (answers) => state.collectionView(answers, ['commodityLines'])
-
-const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
 // The count-drop rule (inc-063, c-031 ruling): lowering a species' animal
 // count below its existing identifier-record count BLOCKS the save — never
@@ -135,7 +138,7 @@ const countDropIssues = (request, lines, values) =>
     return [
       {
         field: animalsField(index),
-        text: `You have ${plural(records, 'identifier record')} for ${species} but entered ${plural(entered, 'animal')}. Remove identifier records or keep the higher count.`,
+        text: copy.errors.countDrop(records, species, entered),
         href: `${kit.withChangeContext(
           request,
           pagePath(animalIdentificationPage.slug)
@@ -168,7 +171,7 @@ const post = async (request, h) => {
       values,
       Object.fromEntries(issues.map((issue) => [issue.field, issue.text])),
       {
-        titleText: 'There is a problem',
+        titleText: sharedCopy.errorSummary.title,
         errorList: issues.map(({ text, href }) => ({ text, href }))
       }
     )

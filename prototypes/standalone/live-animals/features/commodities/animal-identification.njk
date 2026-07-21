@@ -6,10 +6,10 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {{ govukInsetText({
-    text: "You must add all animal identification details before the consignment arrives at the port of entry."
+    text: copy.inset
   }) }}
 
   {% if hasLines %}
@@ -17,15 +17,15 @@
       <input type="hidden" name="crumb" value="{{ crumb }}" />
 
       {% for card in cards %}
-        {{ identificationCard(card) }}
+        {{ identificationCard(card, copy) }}
       {% endfor %}
 
-      {{ saveActions(hubHref, { text: "Save and finish", name: "action", value: "finish" }) }}
+      {{ saveActions(hubHref, { text: copy.saveAndFinish, name: "action", value: "finish" }, sharedCopy.saveActions) }}
     </form>
   {% else %}
-    <p class="govuk-body">{{ emptyText }}</p>
+    <p class="govuk-body">{{ copy.emptyText }}</p>
     <p class="govuk-body">
-      <a class="govuk-link" href="{{ addHref }}">Add a commodity</a>
+      <a class="govuk-link" href="{{ addHref }}">{{ copy.addCommodity }}</a>
     </p>
   {% endif %}
 {% endblock %}

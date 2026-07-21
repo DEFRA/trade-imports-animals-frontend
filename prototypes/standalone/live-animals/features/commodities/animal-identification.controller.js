@@ -7,79 +7,40 @@ import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { animalIdentificationPage as page } from './page.js'
 import { appliesForCommodity } from '../../bridge/applicability.js'
+import { copyFor } from '../../shared/copy.js'
+import { copy as en } from './copy.en.js'
+import { copy as sharedEn } from '../../shared/copy.en.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification`
 
-export const IDENTIFIER_LABELS = {
-  animalIdentifierPassport: 'Passport',
-  animalIdentifierTattoo: 'Tattoo',
-  animalIdentifierEarTag: 'Ear tag',
-  horseName: 'Horse name',
-  animalIdentifierIdentificationDetails: 'Identification details',
-  animalIdentifierDescription: 'Description'
-}
+const copy = copyFor({ en }).identification
+const sharedCopy = copyFor({ en: sharedEn })
+
+export const IDENTIFIER_LABELS = copy.identifierLabels
 
 export const animalIdentifierSummary = (unit) => {
   const parts = Object.entries(IDENTIFIER_LABELS)
     .filter(([id]) => (unit[id] ?? '').toString().trim() !== '')
     .map(([id, label]) => `${label}: ${unit[id]}`)
   if (unit.permanentAddress?.name) {
-    parts.push(`Permanent address: ${unit.permanentAddress.name}`)
+    parts.push(
+      `${copy.permanentAddressSummaryLabel}: ${unit.permanentAddress.name}`
+    )
   }
-  return parts.length ? parts.join(', ') : 'No identifier provided'
+  return parts.length ? parts.join(', ') : copy.noIdentifier
 }
 
-const TYPE_FIELDS = [
-  {
-    id: 'animalIdentifierPassport',
-    label: 'Passport number',
-    hint: 'For example, UK123456789'
-  },
-  {
-    id: 'animalIdentifierTattoo',
-    label: 'Tattoo',
-    hint: 'For example, AB1234'
-  },
-  {
-    id: 'animalIdentifierEarTag',
-    label: 'Ear tag number',
-    hint: 'For example, UK123456789012'
-  },
-  { id: 'horseName', label: 'Horse name' }
-]
+const toFields = (byId) =>
+  Object.entries(byId).map(([id, field]) => ({ id, ...field }))
 
-const FALLBACK_FIELDS = [
-  {
-    id: 'animalIdentifierIdentificationDetails',
-    label: 'Identification details',
-    hint: 'Any other way this animal is identified, if it has no passport, tattoo or ear tag'
-  },
-  {
-    id: 'animalIdentifierDescription',
-    label: 'Animal description'
-  }
-]
+const TYPE_FIELDS = toFields(copy.typeFields)
 
-const IDENTIFIER_MAX_MESSAGES = {
-  animalIdentifierPassport: 'Passport must be 58 characters or fewer',
-  animalIdentifierTattoo: 'Tattoo must be 58 characters or fewer',
-  animalIdentifierEarTag: 'Ear tag must be 58 characters or fewer',
-  horseName: 'Horse name must be 58 characters or fewer',
-  animalIdentifierIdentificationDetails:
-    'Identification details must be 58 characters or fewer',
-  animalIdentifierDescription: 'Description must be 58 characters or fewer'
-}
+const FALLBACK_FIELDS = toFields(copy.fallbackFields)
 
-const ADDRESS_MANDATORY_MESSAGES = {
-  nameOrOrganisationName: 'Enter a name or organisation name',
-  addressLine1: 'Enter address line 1',
-  townOrCity: 'Enter a town or city',
-  postalOrZipCode: 'Enter a postal or zip code',
-  country: 'Select a country',
-  telephoneNumber: 'Enter a telephone number',
-  emailAddress: 'Enter an email address'
-}
+const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
+
+const ADDRESS_MANDATORY_MESSAGES = copy.errors.addressMandatory
 
 const ADDRESS_FIELD_ORDER = [
   'nameOrOrganisationName',
@@ -121,47 +82,43 @@ const addressChecksFor = (index) =>
     maxText(
       fieldName('nameOrOrganisationName', index),
       255,
-      'Name or organisation name must be 255 characters or less'
+      copy.errors.addressFormat.nameOrOrganisationName
     ),
     maxText(
       fieldName('addressLine1', index),
       255,
-      'Address line 1 must be 255 characters or less'
+      copy.errors.addressFormat.addressLine1
     ),
     maxText(
       fieldName('addressLine2', index),
       255,
-      'Address line 2 must be 255 characters or less'
+      copy.errors.addressFormat.addressLine2
     ),
     maxText(
       fieldName('townOrCity', index),
       100,
-      'Town or city must be 100 characters or less'
+      copy.errors.addressFormat.townOrCity
     ),
-    maxText(
-      fieldName('county', index),
-      100,
-      'County must be 100 characters or less'
-    ),
+    maxText(fieldName('county', index), 100, copy.errors.addressFormat.county),
     maxText(
       fieldName('postalOrZipCode', index),
       12,
-      'Postal or zip code must be 12 characters or less'
+      copy.errors.addressFormat.postalOrZipCode
     ),
     oneOf(
       fieldName('country', index),
       countries.addressCountries(),
-      'Select a country from the list'
+      copy.errors.addressFormat.country
     ),
     maxText(
       fieldName('telephoneNumber', index),
       20,
-      'Telephone number must be 20 characters or less'
+      copy.errors.addressFormat.telephoneNumber
     ),
     maxText(
       fieldName('emailAddress', index),
       254,
-      'Email address must be 254 characters or less'
+      copy.errors.addressFormat.emailAddress
     )
   )
 
@@ -203,7 +160,7 @@ const missingAddressErrors = (values, index) => {
 }
 
 const addressCountryItems = (selected) => [
-  { value: '', text: 'Select a country' },
+  { value: '', text: copy.address.countryPlaceholder },
   ...countries.addressCountries().map((name) => ({
     value: name,
     text: name,
@@ -226,12 +183,12 @@ const cardTitleOf = (entry) => {
 
 const counterOf = (species, records, cap) =>
   cap === null
-    ? `Enter details for ${species}`
-    : `Enter details for ${species} ${records + 1} of ${cap}`
+    ? copy.counterNoCap(species)
+    : copy.counter(species, records + 1, cap)
 
 const unitRows = (request, index, units) =>
   units.map((unit, unitIndex) => ({
-    key: { text: `Animal ${unitIndex + 1}` },
+    key: { text: copy.animalRow(unitIndex + 1) },
     value: { text: animalIdentifierSummary(unit) },
     actions: {
       items: [
@@ -240,8 +197,8 @@ const unitRows = (request, index, units) =>
             request,
             pagePath(`${page.slug}/${index}/${unitIndex}/remove`)
           ),
-          text: 'Remove',
-          visuallyHiddenText: `animal ${unitIndex + 1}`
+          text: copy.removeRow,
+          visuallyHiddenText: copy.removeRowAria(unitIndex + 1)
         }
       ]
     }
@@ -257,39 +214,39 @@ const addressFieldsFor = (index, values, errors) => {
     ...extra
   })
   return [
-    input('nameOrOrganisationName', 'Name or organisation name', {
+    input('nameOrOrganisationName', copy.address.nameOrOrganisationName, {
       autocomplete: 'name'
     }),
-    input('addressLine1', 'Address line 1', {
+    input('addressLine1', copy.address.addressLine1, {
       autocomplete: 'address-line1'
     }),
-    input('addressLine2', 'Address line 2 (optional)', {
+    input('addressLine2', copy.address.addressLine2, {
       autocomplete: 'address-line2'
     }),
-    input('townOrCity', 'Town or city', {
+    input('townOrCity', copy.address.townOrCity, {
       classes: 'govuk-!-width-two-thirds',
       autocomplete: 'address-level2'
     }),
-    input('county', 'County (optional)', {
+    input('county', copy.address.county, {
       classes: 'govuk-!-width-two-thirds'
     }),
-    input('postalOrZipCode', 'Postal or zip code', {
+    input('postalOrZipCode', copy.address.postalOrZipCode, {
       classes: 'govuk-input--width-10',
       autocomplete: 'postal-code'
     }),
     {
       kind: 'select',
       id: fieldName('country', index),
-      label: 'Country',
+      label: copy.address.country,
       items: addressCountryItems(values.country ?? ''),
       error: errors[fieldName('country', index)]
     },
-    input('telephoneNumber', 'Telephone number', {
+    input('telephoneNumber', copy.address.telephoneNumber, {
       type: 'tel',
       classes: 'govuk-input--width-20',
       autocomplete: 'tel'
     }),
-    input('emailAddress', 'Email address', {
+    input('emailAddress', copy.address.emailAddress, {
       type: 'email',
       autocomplete: 'email'
     })
@@ -319,9 +276,9 @@ const buildCard = (request, answers, line, form, errors) => {
     counter: atMax ? null : counterOf(species, units.length, cap),
     maxReachedText:
       overBy > 0
-        ? `This commodity line lists ${cap} ${species} animals but you have entered details for ${units.length}. Remove ${overBy} to continue.`
+        ? copy.overCount(cap, species, units.length, overBy)
         : atMax
-          ? `You have entered details for all ${cap} ${species} animals. Remove a record if you need to replace it.`
+          ? copy.allEntered(cap, species)
           : null,
     atMax,
     rows: unitRows(request, index, units),
@@ -354,7 +311,7 @@ const summaryOf = (errors, cardErrors) => {
     }))
   ]
   return errorList.length
-    ? { titleText: 'There is a problem', errorList }
+    ? { titleText: sharedCopy.errorSummary.title, errorList }
     : null
 }
 
@@ -367,16 +324,15 @@ const render = (
 ) => {
   const lines = state.collectionView(answers, ['commodityLines'])
   return h.view(view, {
-    ...kit.base('Animal identification details', {
+    ...kit.base(copy.title, {
       backLink: hubPath(),
       journey
     }),
-    heading: 'Animal identification details',
+    copy,
     cards: lines.map((line) =>
       buildCard(request, answers, line, forms.get(line.index), errors)
     ),
     hasLines: lines.length > 0,
-    emptyText: 'You have not added any commodities yet.',
     addHref: kit.withChangeContext(request, pagePath('commodities')),
     errors,
     errorSummary: summaryOf(errors, cardErrors)
@@ -451,7 +407,7 @@ const post = async (request, h) => {
       cardErrors: [
         {
           index: addIndex,
-          text: `You have already entered details for all ${atMaxByIndex.get(addIndex)} animals — remove a record before adding another`
+          text: copy.errors.capReached(atMaxByIndex.get(addIndex))
         }
       ]
     })
@@ -463,8 +419,7 @@ const post = async (request, h) => {
   if (addIndex !== null && !anyData && forms.has(addIndex)) {
     const { commodity } = forms.get(addIndex)
     const [first] = scopedFields(commodity)
-    errors[fieldName(first.id, addIndex)] =
-      'Enter at least one identifier for this animal'
+    errors[fieldName(first.id, addIndex)] = copy.errors.atLeastOneIdentifier
   }
 
   if (Object.keys(errors).length > 0) {
@@ -505,7 +460,7 @@ const post = async (request, h) => {
       ])
       cardErrors.push({
         index,
-        text: `You have already entered details for all ${cap} animals — remove a record before adding another`
+        text: copy.errors.capReached(cap)
       })
     }
   }

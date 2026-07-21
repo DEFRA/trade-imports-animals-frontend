@@ -6,12 +6,12 @@
 {% block journeyContent %}
   {% include "standalone/live-animals/shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {% if hasLines %}
-    {{ selectedCommoditiesTable(groups) }}
+    {{ selectedCommoditiesTable(groups, copy.table) }}
   {% else %}
-    <p class="govuk-body">{{ emptyText }}</p>
+    <p class="govuk-body">{{ copy.emptyText }}</p>
   {% endif %}
 
   <p class="govuk-body">
@@ -22,9 +22,9 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
     {% for group in groups %}
-      {{ speciesQuantityGroup(group) }}
+      {{ speciesQuantityGroup(group, copy) }}
     {% endfor %}
 
-    {{ saveActions(hubHref) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

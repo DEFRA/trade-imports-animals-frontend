@@ -3,7 +3,7 @@
 {# One block per commodity group: heading, then per-species quantity inputs
    for every line of that commodity (design 01-14/15, "same animal different
    genus" renders one sub-block per species). #}
-{% macro speciesQuantityGroup(group) %}
+{% macro speciesQuantityGroup(group, copy) %}
   <h2 class="govuk-heading-m">{{ group.name }} ({{ group.code }})</h2>
   {% for line in group.lines %}
     <h3 class="govuk-heading-s">{{ line.speciesText }}</h3>
@@ -11,8 +11,8 @@
     {{ govukInput({
       id: line.animalsField,
       name: line.animalsField,
-      label: { text: "Number of animals" },
-      hint: { text: "For example, 1, 25 or 5000." },
+      label: { text: copy.animals.label },
+      hint: { text: copy.animals.hint },
       classes: "govuk-input--width-5",
       inputmode: "numeric",
       value: line.animalsValue,
@@ -23,8 +23,8 @@
       {{ govukInput({
         id: line.packagesField,
         name: line.packagesField,
-        label: { text: "Number of packages (optional)" },
-        hint: { text: "Such as crates, bags or boxes" },
+        label: { text: copy.packages.label },
+        hint: { text: copy.packages.hint },
         classes: "govuk-input--width-5",
         inputmode: "numeric",
         value: line.packagesValue,
