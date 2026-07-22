@@ -36,11 +36,11 @@ describe('#upload-config', () => {
     )
   })
 
-  it('Should hold the ruled 50MB limit with multipart headroom on the route cap', () => {
-    expect(MAX_FILE_SIZE_BYTES).toBe(50000000)
-    expect(MAX_PAYLOAD_BYTES).toBe(50001024)
+  it('Should hold the 10MB decimal limit with multipart headroom on the route cap', () => {
+    expect(MAX_FILE_SIZE_BYTES).toBe(10000000)
+    expect(MAX_PAYLOAD_BYTES).toBe(10001024)
     expect(OVERSIZE_FILE_MESSAGE).toBe(
-      'The selected file must be smaller than 50MB'
+      'The selected file must be smaller than 10 MB'
     )
   })
 })

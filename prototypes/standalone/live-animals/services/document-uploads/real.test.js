@@ -16,7 +16,7 @@ const uploadDetails = {
   documentType: 'ITAHC',
   documentReference: 'GBHC1234567890',
   dateOfIssue: '2025-12-12',
-  maxFileSize: 50000000,
+  maxFileSize: 10000000,
   mimeTypes: ['application/pdf']
 }
 
@@ -39,7 +39,7 @@ describe('#documentUploads', () => {
         documentType: 'ITAHC',
         documentReference: 'GBHC1234567890',
         dateOfIssue: '2025-12-12',
-        maxFileSize: 50000000,
+        maxFileSize: 10000000,
         mimeTypes: ['application/pdf']
       })
       const [fileUrl, fileOptions] = fetchMocker.mock.calls[1]

@@ -1315,14 +1315,14 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
 
-    // A file over the 50MB limit is refused: this one blows the route-level
+    // A file over the 10MB limit is refused: this one blows the route-level
     // payload cap, exercising the 413 safety net that re-renders the page
     // with the friendly oversize error instead of a bare 413.
-    await setUploadFile(page, 'oversize.pdf', Buffer.alloc(50_100_000, 1))
+    await setUploadFile(page, 'oversize.pdf', Buffer.alloc(10_100_000, 1))
     await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(
       page.getByRole('link', {
-        name: 'The selected file must be smaller than 50MB'
+        name: 'The selected file must be smaller than 10 MB'
       })
     ).toBeVisible()
 
