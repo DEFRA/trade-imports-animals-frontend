@@ -37,23 +37,29 @@ export const isCommoditySpecies = (name, value) =>
  * @param {string} query
  * @returns {Array<{name: string, code: string, species: object[]}>}
  */
+const commodityMatchesQuery = (name, normalisedQuery) => {
+  const code = COMMODITY_CODES[name] ?? ''
+  return (
+    name.toLowerCase().includes(normalisedQuery) ||
+    code.toLowerCase().includes(normalisedQuery) ||
+    speciesFor(name).some((option) =>
+      option.text.toLowerCase().includes(normalisedQuery)
+    )
+  )
+}
+
+const toSearchResult = (name) => ({
+  name,
+  code: COMMODITY_CODES[name],
+  species: speciesFor(name)
+})
+
 export const search = (query) => {
   const normalisedQuery = (query ?? '').trim().toLowerCase()
   if (normalisedQuery === '') return []
-  return COMMODITY_OPTIONS.filter((name) => {
-    const code = COMMODITY_CODES[name] ?? ''
-    return (
-      name.toLowerCase().includes(normalisedQuery) ||
-      code.toLowerCase().includes(normalisedQuery) ||
-      speciesFor(name).some((option) =>
-        option.text.toLowerCase().includes(normalisedQuery)
-      )
-    )
-  }).map((name) => ({
-    name,
-    code: COMMODITY_CODES[name],
-    species: speciesFor(name)
-  }))
+  return COMMODITY_OPTIONS.filter((name) =>
+    commodityMatchesQuery(name, normalisedQuery)
+  ).map(toSearchResult)
 }
 
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES

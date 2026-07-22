@@ -41,18 +41,26 @@ const assertPathSafeIds = () => {
   }
 }
 
+const indexPageMetadata = (page) => {
+  collectsByPageMap.set(page.id, page.collects ?? [])
+  slugByPageMap.set(page.id, page.slug)
+}
+
+const claimObligationOwner = (obligationId, pageId) => {
+  if (pageOfObligationMap.has(obligationId)) {
+    throw new Error(
+      `Obligation "${obligationId}" is collected by two pages: ` +
+        `"${pageOfObligationMap.get(obligationId)}" and "${pageId}"`
+    )
+  }
+  pageOfObligationMap.set(obligationId, pageId)
+}
+
 const indexPages = (pages) => {
   for (const page of pages) {
-    collectsByPageMap.set(page.id, page.collects ?? [])
-    slugByPageMap.set(page.id, page.slug)
+    indexPageMetadata(page)
     for (const obligationId of page.collects ?? []) {
-      if (pageOfObligationMap.has(obligationId)) {
-        throw new Error(
-          `Obligation "${obligationId}" is collected by two pages: ` +
-            `"${pageOfObligationMap.get(obligationId)}" and "${page.id}"`
-        )
-      }
-      pageOfObligationMap.set(obligationId, page.id)
+      claimObligationOwner(obligationId, page.id)
     }
   }
 }

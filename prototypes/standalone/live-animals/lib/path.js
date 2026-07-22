@@ -44,16 +44,24 @@ export const isStrictPathPrefix = (prefix, path) =>
   prefix.length < path.length &&
   prefix.every((segment, i) => segment === path[i])
 
-export const wipeOrder = (pathA, pathB) => {
+const firstDivergingIndex = (pathA, pathB) => {
   const shared = Math.min(pathA.length, pathB.length)
   for (let index = 0; index < shared; index++) {
-    if (pathA[index] === pathB[index]) continue
-    if (typeof pathA[index] === 'number' && typeof pathB[index] === 'number') {
-      return pathB[index] - pathA[index]
-    }
-    return 0
+    if (pathA[index] !== pathB[index]) return index
   }
-  return pathB.length - pathA.length
+  return -1
+}
+
+const orderByDivergence = (pathA, pathB, index) =>
+  typeof pathA[index] === 'number' && typeof pathB[index] === 'number'
+    ? pathB[index] - pathA[index]
+    : 0
+
+export const wipeOrder = (pathA, pathB) => {
+  const index = firstDivergingIndex(pathA, pathB)
+  return index === -1
+    ? pathB.length - pathA.length
+    : orderByDivergence(pathA, pathB, index)
 }
 
 export const destroyWiped = (answers, wiped) => {

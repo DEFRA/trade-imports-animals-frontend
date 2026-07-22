@@ -19,21 +19,27 @@ const targets = [
   }
 ]
 
+const optionalTag = (target) =>
+  target.optional ? ' (expected — endpoint not built)' : ''
+
+const reportFetchFailure = (target, message) => {
+  console.log(`${target.name}: ${message}`)
+  if (!target.optional) process.exitCode = 1
+}
+
 const fetchTarget = async (target) => {
   try {
     const response = await fetch(target.url)
     if (!response.ok) {
-      const tag = target.optional ? ' (expected — endpoint not built)' : ''
-      console.log(
-        `${target.name}: HTTP ${response.status} ${response.statusText}${tag}`
+      reportFetchFailure(
+        target,
+        `HTTP ${response.status} ${response.statusText}${optionalTag(target)}`
       )
-      if (!target.optional) process.exitCode = 1
       return null
     }
     return response
   } catch (error) {
-    console.log(`${target.name}: FETCH FAILED ${error.message}`)
-    if (!target.optional) process.exitCode = 1
+    reportFetchFailure(target, `FETCH FAILED ${error.message}`)
     return null
   }
 }

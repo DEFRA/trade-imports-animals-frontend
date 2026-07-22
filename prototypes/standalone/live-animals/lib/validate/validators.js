@@ -135,6 +135,19 @@ export const currency = (name, message = defaults.currency) =>
       .messages({ 'any.invalid': message })
   )
 
+// A date field's fill state: none of the three parts entered, some but not
+// all, or all three.
+const classifyDateFill = (filledCount, totalCount) => {
+  if (filledCount === 0) return 'empty'
+  if (filledCount < totalCount) return 'partial'
+  return 'complete'
+}
+
+const isValidCalendarDate = (parts) => {
+  const [parsedDay, parsedMonth, parsedYear] = parts.map(Number)
+  return isRealDate(parsedYear, parsedMonth, parsedDay)
+}
+
 export const dateParts = (name, message = defaults.date) => {
   const dayKey = `${name}-day`
   const monthKey = `${name}-month`
@@ -147,13 +160,10 @@ export const dateParts = (name, message = defaults.date) => {
           String(part ?? '').trim()
         )
         const filled = parts.filter((part) => part !== '')
-        if (filled.length === 0) return day
-        if (filled.length < 3) return helpers.error('any.invalid')
-        const [parsedDay, parsedMonth, parsedYear] = parts.map(Number)
-        if (!isRealDate(parsedYear, parsedMonth, parsedDay)) {
-          return helpers.error('any.invalid')
-        }
-        return day
+        const fill = classifyDateFill(filled.length, parts.length)
+        if (fill === 'empty') return day
+        if (fill === 'partial') return helpers.error('any.invalid')
+        return isValidCalendarDate(parts) ? day : helpers.error('any.invalid')
       })
       .messages({ 'any.invalid': message }),
     [monthKey]: Joi.any(),

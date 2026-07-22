@@ -66,37 +66,47 @@ const anyInstanceAnswered = (answers, id) => {
   )
 }
 
+// A depth-0 group's node has no parent, so a single bare key.
+const groupNodeKey = (inScope, aId) => {
+  inScope.add(aId)
+}
+
+// A nested group's node is keyed once per PARENT-group instance — derived
+// from the parent's instances, not the group's own records, so a parent
+// instance whose nested group is empty still contributes its node key.
+const groupInstanceKeys = (inScope, implications, obligation, chain, aId) => {
+  const parentRecords = implications[obligation.within.id]?.records ?? []
+  for (const { fulfilmentId } of parentRecords) {
+    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, aId)))
+  }
+}
+
+// Grouped leaf — one positional pathKey per in-scope record.
+const leafRecordKeys = (inScope, chain, aId, records) => {
+  for (const { fulfilmentId } of records) {
+    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, aId)))
+  }
+}
+
+// Top-level scalar/field — the bare obligation id.
+const leafScalarKey = (inScope, aId) => {
+  inScope.add(aId)
+}
+
 // Add every pathKey an in-scope implication projects onto.
 const addProjectedKeys = (inScope, implications, obligation) => {
   const aId = obligation.name
   const chain = ancestorChain(obligation)
 
   if (groupObligations.has(obligation)) {
-    // The group node is keyed once per PARENT-group instance (a depth-0
-    // group has no parent, so a single bare key). Derived from the
-    // parent's instances, not the group's own records, so a parent
-    // instance whose nested group is empty still contributes its node key.
-    if (chain.length === 0) {
-      inScope.add(aId)
-      return
-    }
-    const parentRecords = implications[obligation.within.id]?.records ?? []
-    for (const { fulfilmentId } of parentRecords) {
-      inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, aId)))
-    }
-    return
+    if (chain.length === 0) return groupNodeKey(inScope, aId)
+    return groupInstanceKeys(inScope, implications, obligation, chain, aId)
   }
 
   const implication = implications[obligation.id]
-  if (Array.isArray(implication.records)) {
-    // Grouped leaf — one positional pathKey per in-scope record.
-    for (const { fulfilmentId } of implication.records) {
-      inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, aId)))
-    }
-  } else {
-    // Top-level scalar/field — the bare obligation id.
-    inScope.add(aId)
-  }
+  return Array.isArray(implication.records)
+    ? leafRecordKeys(inScope, chain, aId, implication.records)
+    : leafScalarKey(inScope, aId)
 }
 
 const projectInScope = (answers) => {

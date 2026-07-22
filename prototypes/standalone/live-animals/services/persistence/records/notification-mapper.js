@@ -153,61 +153,55 @@ const commodityFromLinesA = (lines) => {
   }
 }
 
-export const answersToNotification = (answers = {}) => {
-  const notification = {}
+const directFieldsFrom = (answers) =>
+  compact({
+    referenceNumber: answers.referenceNumber,
+    reasonForImport: answers.reasonForImport,
+    placeOfOrigin: answers.placeOfOrigin,
+    consignor: answers.consignor,
+    consignee: answers.consignee,
+    importer: answers.importer,
+    destination: answers.placeOfDestination,
+    consignment: answers.contactAddress,
+    cphNumber: answers.countyParishHoldingCph
+  })
 
-  if (answers.referenceNumber !== undefined) {
-    notification.referenceNumber = answers.referenceNumber
-  }
-
-  const origin = orUndefined(
+const originFrom = (answers) =>
+  orUndefined(
     compact({
       countryCode: answers.countryOfOrigin,
       requiresRegionCode: answers.regionOfOriginCodeRequirement,
       internalReference: answers.internalReferenceNumber
     })
   )
-  if (origin) notification.origin = origin
 
-  const additionalDetails = orUndefined(
+const additionalDetailsFrom = (answers) =>
+  orUndefined(
     compact({
       certifiedFor: answers.animalsCertifiedFor,
       unweanedAnimals: answers.containsUnweanedAnimals
     })
   )
-  if (additionalDetails) notification.additionalDetails = additionalDetails
 
-  if (answers.reasonForImport !== undefined) {
-    notification.reasonForImport = answers.reasonForImport
-  }
-
-  if (answers.placeOfOrigin !== undefined) {
-    notification.placeOfOrigin = answers.placeOfOrigin
-  }
-  if (answers.consignor !== undefined) {
-    notification.consignor = answers.consignor
-  }
-  if (answers.consignee !== undefined) {
-    notification.consignee = answers.consignee
-  }
-  if (answers.importer !== undefined) notification.importer = answers.importer
-  if (answers.placeOfDestination !== undefined) {
-    notification.destination = answers.placeOfDestination
-  }
-  if (answers.contactAddress !== undefined) {
-    notification.consignment = answers.contactAddress
-  }
-  if (answers.countyParishHoldingCph !== undefined) {
-    notification.cphNumber = answers.countyParishHoldingCph
-  }
-
-  const transport = orUndefined(
+const transportFrom = (answers) =>
+  orUndefined(
     compact({
       portOfEntry: answers.portOfEntry,
       arrivalDate: isoFromDateParts(answers.arrivalDateAtPort),
       transporter: transporterFromAnswers(answers)
     })
   )
+
+export const answersToNotification = (answers = {}) => {
+  const notification = { ...directFieldsFrom(answers) }
+
+  const origin = originFrom(answers)
+  if (origin) notification.origin = origin
+
+  const additionalDetails = additionalDetailsFrom(answers)
+  if (additionalDetails) notification.additionalDetails = additionalDetails
+
+  const transport = transportFrom(answers)
   if (transport) notification.transport = transport
 
   const commodity = commodityFromLinesA(answers.commodityLines)
@@ -241,65 +235,50 @@ const linesFromCommodityA = (commodity) => {
   )
 }
 
-export const notificationToAnswers = (notification = {}) => {
-  const answers = {}
-  const { origin, additionalDetails, transport } = notification
+const directAnswersFrom = (notification) =>
+  compact({
+    referenceNumber: notification.referenceNumber,
+    reasonForImport: notification.reasonForImport,
+    placeOfOrigin: notification.placeOfOrigin,
+    consignor: notification.consignor,
+    consignee: notification.consignee,
+    importer: notification.importer,
+    placeOfDestination: notification.destination,
+    contactAddress: notification.consignment,
+    countyParishHoldingCph: notification.cphNumber
+  })
 
-  if (notification.referenceNumber !== undefined) {
-    answers.referenceNumber = notification.referenceNumber
-  }
+const originAnswersFrom = (origin) =>
+  compact({
+    countryOfOrigin: origin?.countryCode,
+    regionOfOriginCodeRequirement: origin?.requiresRegionCode,
+    internalReferenceNumber: origin?.internalReference
+  })
 
-  if (origin?.countryCode !== undefined) {
-    answers.countryOfOrigin = origin.countryCode
-  }
-  if (origin?.requiresRegionCode !== undefined) {
-    answers.regionOfOriginCodeRequirement = origin.requiresRegionCode
-  }
-  if (origin?.internalReference !== undefined) {
-    answers.internalReferenceNumber = origin.internalReference
-  }
+const additionalDetailsAnswersFrom = (additionalDetails) =>
+  compact({
+    animalsCertifiedFor: additionalDetails?.certifiedFor,
+    containsUnweanedAnimals: additionalDetails?.unweanedAnimals
+  })
 
-  if (additionalDetails?.certifiedFor !== undefined) {
-    answers.animalsCertifiedFor = additionalDetails.certifiedFor
-  }
-  if (additionalDetails?.unweanedAnimals !== undefined) {
-    answers.containsUnweanedAnimals = additionalDetails.unweanedAnimals
-  }
-
-  if (notification.reasonForImport !== undefined) {
-    answers.reasonForImport = notification.reasonForImport
-  }
-
-  if (notification.placeOfOrigin !== undefined) {
-    answers.placeOfOrigin = notification.placeOfOrigin
-  }
-  if (notification.consignor !== undefined) {
-    answers.consignor = notification.consignor
-  }
-  if (notification.consignee !== undefined) {
-    answers.consignee = notification.consignee
-  }
-  if (notification.importer !== undefined) {
-    answers.importer = notification.importer
-  }
-  if (notification.destination !== undefined) {
-    answers.placeOfDestination = notification.destination
-  }
-  if (notification.consignment !== undefined) {
-    answers.contactAddress = notification.consignment
-  }
-  if (notification.cphNumber !== undefined) {
-    answers.countyParishHoldingCph = notification.cphNumber
-  }
-
-  if (transport?.portOfEntry !== undefined) {
-    answers.portOfEntry = transport.portOfEntry
-  }
-  if (transport?.arrivalDate !== undefined) {
-    answers.arrivalDateAtPort = datePartsFromIso(transport.arrivalDate)
-  }
+const transportAnswersFrom = (transport) => {
+  const answers = compact({
+    portOfEntry: transport?.portOfEntry,
+    arrivalDateAtPort: datePartsFromIso(transport?.arrivalDate)
+  })
   if (transport?.transporter !== undefined) {
     Object.assign(answers, transporterToAnswers(transport.transporter))
+  }
+  return answers
+}
+
+export const notificationToAnswers = (notification = {}) => {
+  const { origin, additionalDetails, transport } = notification
+  const answers = {
+    ...directAnswersFrom(notification),
+    ...originAnswersFrom(origin),
+    ...additionalDetailsAnswersFrom(additionalDetails),
+    ...transportAnswersFrom(transport)
   }
 
   const commodityLines = linesFromCommodityA(notification.commodity)
@@ -371,25 +350,33 @@ const targetCommodityFromLines = (lines) => {
 // the extras were stripped (e.g. by a backend that only keeps the storable
 // field set): first group takes the top-level name, per-species earTag/
 // passport become the line's single identifier unit.
+// 3-step name-resolution fallback: complement.name, else commodityCode
+// resolved via the reference-data lookup (or the raw code if unknown),
+// else the top-level commodity name (first complement only).
+const commodityNameForComplement = (commodity, complement, index) => {
+  const fallbackName = index === 0 ? commodity.name : undefined
+  const codeName =
+    complement.commodityCode === undefined
+      ? fallbackName
+      : (commodityNameFor(complement.commodityCode) ?? complement.commodityCode)
+  return complement.name ?? codeName
+}
+
+const identifiersFromEntry = (entry) =>
+  entry.animalIdentifiers === undefined
+    ? identifiersFromSpeciesEntry(entry)
+    : entry.animalIdentifiers.map(unitFromTarget)
+
 const targetLinesFromCommodity = (commodity) => {
   if (!commodity || !Array.isArray(commodity.commodityComplement)) {
     return undefined
   }
   return commodity.commodityComplement.flatMap((complement, index) => {
-    const fallbackName = index === 0 ? commodity.name : undefined
-    const codeName =
-      complement.commodityCode === undefined
-        ? fallbackName
-        : (commodityNameFor(complement.commodityCode) ??
-          complement.commodityCode)
-    const name = complement.name ?? codeName
+    const name = commodityNameForComplement(commodity, complement, index)
     return (complement.species ?? [{}]).map((entry) =>
       compact({
         ...lineFromSpeciesEntry(name)(entry),
-        animalIdentifiers:
-          entry.animalIdentifiers === undefined
-            ? identifiersFromSpeciesEntry(entry)
-            : entry.animalIdentifiers.map(unitFromTarget)
+        animalIdentifiers: identifiersFromEntry(entry)
       })
     )
   })
@@ -419,6 +406,23 @@ const documentsFromTarget = (documents) => {
   )
 }
 
+const originWithRegion = (notification, answers) =>
+  answers.regionOfOriginCode !== undefined
+    ? { ...notification.origin, regionCode: answers.regionOfOriginCode }
+    : notification.origin
+
+const transportWithExtras = (notification, answers) => {
+  const extras = compact({
+    meansOfTransport: answers.meansOfTransport,
+    transportIdentification: answers.transportIdentification,
+    transportDocumentReference: answers.transportDocumentReference,
+    transitedCountries: answers.transitedCountries
+  })
+  return Object.keys(extras).length
+    ? { ...notification.transport, ...extras }
+    : notification.transport
+}
+
 export const answersToTargetNotification = (answers = {}) => {
   const notification = answersToNotification(answers)
 
@@ -432,22 +436,11 @@ export const answersToTargetNotification = (answers = {}) => {
     notification.declaration = answers.declaration
   }
 
-  if (answers.regionOfOriginCode !== undefined) {
-    notification.origin = {
-      ...notification.origin,
-      regionCode: answers.regionOfOriginCode
-    }
-  }
+  const origin = originWithRegion(notification, answers)
+  if (origin !== undefined) notification.origin = origin
 
-  const transportExtras = compact({
-    meansOfTransport: answers.meansOfTransport,
-    transportIdentification: answers.transportIdentification,
-    transportDocumentReference: answers.transportDocumentReference,
-    transitedCountries: answers.transitedCountries
-  })
-  if (Object.keys(transportExtras).length) {
-    notification.transport = { ...notification.transport, ...transportExtras }
-  }
+  const transport = transportWithExtras(notification, answers)
+  if (transport !== undefined) notification.transport = transport
 
   const commodity = targetCommodityFromLines(answers.commodityLines)
   if (commodity) notification.commodity = commodity
@@ -458,35 +451,27 @@ export const answersToTargetNotification = (answers = {}) => {
   return notification
 }
 
+const directTargetAnswersFrom = (notification) =>
+  compact({
+    responsiblePersonForLoad: notification.responsiblePersonForLoad,
+    purposeInInternalMarket: notification.purpose,
+    declaration: notification.declaration,
+    regionOfOriginCode: notification.origin?.regionCode
+  })
+
+const transportExtrasAnswersFrom = (transport) =>
+  compact({
+    meansOfTransport: transport?.meansOfTransport,
+    transportIdentification: transport?.transportIdentification,
+    transportDocumentReference: transport?.transportDocumentReference,
+    transitedCountries: transport?.transitedCountries
+  })
+
 export const targetNotificationToAnswers = (notification = {}) => {
-  const answers = notificationToAnswers(notification)
-  const { origin, transport } = notification
-
-  if (notification.responsiblePersonForLoad !== undefined) {
-    answers.responsiblePersonForLoad = notification.responsiblePersonForLoad
-  }
-  if (notification.purpose !== undefined) {
-    answers.purposeInInternalMarket = notification.purpose
-  }
-  if (notification.declaration !== undefined) {
-    answers.declaration = notification.declaration
-  }
-
-  if (origin?.regionCode !== undefined) {
-    answers.regionOfOriginCode = origin.regionCode
-  }
-
-  if (transport?.meansOfTransport !== undefined) {
-    answers.meansOfTransport = transport.meansOfTransport
-  }
-  if (transport?.transportIdentification !== undefined) {
-    answers.transportIdentification = transport.transportIdentification
-  }
-  if (transport?.transportDocumentReference !== undefined) {
-    answers.transportDocumentReference = transport.transportDocumentReference
-  }
-  if (transport?.transitedCountries !== undefined) {
-    answers.transitedCountries = transport.transitedCountries
+  const answers = {
+    ...notificationToAnswers(notification),
+    ...directTargetAnswersFrom(notification),
+    ...transportExtrasAnswersFrom(notification.transport)
   }
 
   const commodityLines = targetLinesFromCommodity(notification.commodity)

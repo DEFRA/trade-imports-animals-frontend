@@ -56,6 +56,21 @@ const marshal = (notification, userId = null) => {
   }
 }
 
+const resolveStatus = async (journeyId, known) => {
+  if (known != null && known.journeyId === journeyId) return known.status
+  const existing = await getNotification(journeyId)
+  if (existing === undefined) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
+  return mapStatus(existing.status)
+}
+
+const assertWritable = (journeyId, status) => {
+  if (status === SUBMITTED) {
+    throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
+  }
+}
+
 const getNotification = async (referenceNumber) => {
   const response = await fetch(`${notificationsUrl}/${referenceNumber}`, {
     method: 'GET',
@@ -107,19 +122,8 @@ export const records = {
   },
 
   async saveAnswers(journeyId, answers, { known } = {}) {
-    let status
-    if (known != null && known.journeyId === journeyId) {
-      status = known.status
-    } else {
-      const existing = await getNotification(journeyId)
-      if (existing === undefined) {
-        throw new Error(`Unknown journey "${journeyId}"`)
-      }
-      status = mapStatus(existing.status)
-    }
-    if (status === SUBMITTED) {
-      throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
-    }
+    const status = await resolveStatus(journeyId, known)
+    assertWritable(journeyId, status)
 
     const notification = toNotification({
       ...answers,

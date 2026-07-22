@@ -123,21 +123,23 @@ const partKey = (part) => (isFacet(part) ? part.collection : part)
 // Top-level scalar requiredness comes from the evaluator's EFFECTIVE
 // status — a retain-value gate (regionOfOriginCode) is in scope on both
 // branches with a per-state mandatory/optional flip, so the static
-// whenTrue heuristic would over-claim. Collections, facets and flow-only
-// parts keep the structural answer.
-const partRequired = (part, state) => {
-  if (!isFacet(part)) {
-    const structural = structuralOf(part)
-    if (structural?.collection) return isRequiredObligation(structural)
-    const b = bOf(part)
-    if (b && state) return effectiveStatus(b, null, state) === 'mandatory'
-    return isRequiredObligation(structural)
-  }
-  return (
-    isRequiredObligation(facetParent(part)) ||
-    facetMembers(part).some(isRequiredObligation)
-  )
+// whenTrue heuristic would over-claim. Collections and flow-only parts
+// keep the structural answer.
+const scalarRequired = (part, state) => {
+  const structural = structuralOf(part)
+  if (structural?.collection) return isRequiredObligation(structural)
+  const b = bOf(part)
+  if (b && state) return effectiveStatus(b, null, state) === 'mandatory'
+  return isRequiredObligation(structural)
 }
+
+// A facet is required if its parent collection is, or any facet member is.
+const facetRequired = (part) =>
+  isRequiredObligation(facetParent(part)) ||
+  facetMembers(part).some(isRequiredObligation)
+
+const partRequired = (part, state) =>
+  isFacet(part) ? facetRequired(part) : scalarRequired(part, state)
 
 const partStarted = (part, answers) => {
   if (!isFacet(part)) return isAnswered(answers[part])
@@ -209,6 +211,20 @@ const childRecords = (bColl, parentRecId, state) => {
       )
 }
 
+// Empty collection: satisfied iff there's no requiredAtLeastOne floor.
+const emptyCollectionSatisfiesFloor = (aColl) => !aColl.requiredAtLeastOne
+
+// Collection cap (MAX_ENTRIES) — group-level, no instanceId.
+const collectionCapExceeded = (invariantErrors) =>
+  invariantErrors.some((error) => error.code === 'MAX_ENTRIES')
+
+// Per-parent count invariant (recordCountEquals) — keyed by the PARENT
+// record id (the commodity line), not this collection's own record ids,
+// so it is checked here rather than per entry.
+const parentCountInvariantViolated = (invariantErrors, parentRecId) =>
+  parentRecId !== null &&
+  invariantErrors.some((error) => error.instanceId === parentRecId)
+
 // Every in-scope record complete, plus the requiredAtLeastOne floor,
 // the collection cap and the per-parent count invariant.
 // `memberFilter` applies only at THIS level (facet split); nested
@@ -217,21 +233,10 @@ const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
   const bColl = bOf(aColl.id)
   if (!bColl) return true
   const records = childRecords(bColl, parentRecId, state)
-  if (records.length === 0) return !aColl.requiredAtLeastOne
+  if (records.length === 0) return emptyCollectionSatisfiesFloor(aColl)
   const invariantErrors = groupInvariantErrors(bColl, state)
-  // Collection cap (MAX_ENTRIES) — group-level, no instanceId.
-  if (invariantErrors.some((error) => error.code === 'MAX_ENTRIES')) {
-    return false
-  }
-  // Per-parent count invariant (recordCountEquals) — keyed by the
-  // PARENT record id (the commodity line), not this collection's own
-  // record ids, so it is checked here rather than per entry.
-  if (
-    parentRecId !== null &&
-    invariantErrors.some((error) => error.instanceId === parentRecId)
-  ) {
-    return false
-  }
+  if (collectionCapExceeded(invariantErrors)) return false
+  if (parentCountInvariantViolated(invariantErrors, parentRecId)) return false
   return records.every((rec) =>
     entrySatisfied(
       aColl,
@@ -243,27 +248,30 @@ const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
   )
 }
 
-// The engine's per-record group-invariant verdict (the anyOfIds rule),
-// then every filtered member (nested collection -> recurse; leaf ->
-// satisfied unless in scope AND mandatory AND unfulfilled). MIN_ENTRIES
-// errors carry no instanceId, so only per-record violations bite here.
-const entrySatisfied = (aColl, recId, memberFilter, invariantErrors, state) => {
-  const members = memberFilter
-    ? (aColl.item ?? []).filter(memberFilter)
-    : (aColl.item ?? [])
+const filteredMembers = (aColl, memberFilter) =>
+  memberFilter ? (aColl.item ?? []).filter(memberFilter) : (aColl.item ?? [])
 
+// A member's own satisfaction: nested-collection recursion, out-of-scope
+// pass, not-mandatory pass, or the fulfilment check.
+const memberSatisfied = (member, recId, state) => {
+  if (isCollection(member)) {
+    return collectionSatisfied(member, recId, null, state)
+  }
+  if (!leafInScopeForRecord(member.id, recId, state)) return true
+  if (!leafMandatoryForRecord(member.id, recId, state)) return true
+  return leafFulfilledForRecord(member.id, recId, state)
+}
+
+// The engine's per-record group-invariant verdict (the anyOfIds rule),
+// then every filtered member. MIN_ENTRIES errors carry no instanceId, so
+// only per-record violations bite here.
+const entrySatisfied = (aColl, recId, memberFilter, invariantErrors, state) => {
   if (invariantErrors.some((error) => error.instanceId === recId)) {
     return false
   }
-
-  return members.every((member) => {
-    if (isCollection(member)) {
-      return collectionSatisfied(member, recId, null, state)
-    }
-    if (!leafInScopeForRecord(member.id, recId, state)) return true
-    if (!leafMandatoryForRecord(member.id, recId, state)) return true
-    return leafFulfilledForRecord(member.id, recId, state)
-  })
+  return filteredMembers(aColl, memberFilter).every((member) =>
+    memberSatisfied(member, recId, state)
+  )
 }
 
 const partSatisfied = (part, answers, state) => {
@@ -280,6 +288,26 @@ const partSatisfied = (part, answers, state) => {
   return singletonFulfilled(part, answers, state)
 }
 
+// No required parts: OPTIONAL if untouched, else FULFILLED/IN_PROGRESS by
+// whether every in-scope part is satisfied.
+const optionalOrProgressStatus = (inScopeParts, started, answers, state) => {
+  if (!started) return OPTIONAL
+  const allSatisfied = inScopeParts.every((part) =>
+    partSatisfied(part, answers, state)
+  )
+  return allSatisfied ? FULFILLED : IN_PROGRESS
+}
+
+// Required parts present: FULFILLED if every required part is satisfied,
+// else IN_PROGRESS/NOT_STARTED by whether anything has been started.
+const requiredPartsStatus = (required, started, answers, state) => {
+  const requiredSatisfied = required.every((part) =>
+    partSatisfied(part, answers, state)
+  )
+  if (requiredSatisfied) return FULFILLED
+  return started ? IN_PROGRESS : NOT_STARTED
+}
+
 /**
  * The 5-way status for a list of parts.
  *
@@ -294,20 +322,9 @@ export const statusOf = (parts, answers, inScope) => {
 
   const state = evaluator.evaluate(answersToFulfilments(answers))
   const required = inScopeParts.filter((part) => partRequired(part, state))
-
   const started = inScopeParts.some((part) => partStarted(part, answers))
 
-  if (required.length === 0) {
-    if (!started) return OPTIONAL
-    const allSatisfied = inScopeParts.every((part) =>
-      partSatisfied(part, answers, state)
-    )
-    return allSatisfied ? FULFILLED : IN_PROGRESS
-  }
-
-  const requiredSatisfied = required.every((part) =>
-    partSatisfied(part, answers, state)
-  )
-  if (requiredSatisfied) return FULFILLED
-  return started ? IN_PROGRESS : NOT_STARTED
+  return required.length === 0
+    ? optionalOrProgressStatus(inScopeParts, started, answers, state)
+    : requiredPartsStatus(required, started, answers, state)
 }
