@@ -36,30 +36,38 @@ export const DISPLAY_KEYS = Object.freeze([
 const isWalkable = (value) =>
   value !== null && (typeof value === 'object' || typeof value === 'function')
 
+const arrayChildEntries = (value, path) =>
+  value.map((item, index) => [`${path}[${index}]`, item])
+
+const mapChildEntries = (value, path) =>
+  [...value.entries()].map(([key, entry]) => [`${path}[${String(key)}]`, entry])
+
+// Own enumerable string-keyed properties — for a plain object its data, for
+// a function only the explicitly-assigned sidecars (`.metadata`); intrinsic
+// non-enumerable function props (`name`, `length`) are skipped.
+const entriesOf = (value, path) =>
+  Object.entries(value).map(([key, child]) => [key, `${path}.${key}`, child])
+
 const walk = (value, path, banned, seen, offenders) => {
   if (!isWalkable(value)) return
   if (seen.has(value)) return
   seen.add(value)
 
   if (Array.isArray(value)) {
-    value.forEach((item, index) =>
-      walk(item, `${path}[${index}]`, banned, seen, offenders)
-    )
-    return
-  }
-
-  if (value instanceof Map) {
-    for (const [key, entry] of value.entries()) {
-      walk(entry, `${path}[${String(key)}]`, banned, seen, offenders)
+    for (const [childPath, item] of arrayChildEntries(value, path)) {
+      walk(item, childPath, banned, seen, offenders)
     }
     return
   }
 
-  // Own enumerable string-keyed properties — for a plain object its data,
-  // for a function only the explicitly-assigned sidecars (`.metadata`);
-  // intrinsic non-enumerable function props (`name`, `length`) are skipped.
-  for (const [key, child] of Object.entries(value)) {
-    const childPath = `${path}.${key}`
+  if (value instanceof Map) {
+    for (const [childPath, entry] of mapChildEntries(value, path)) {
+      walk(entry, childPath, banned, seen, offenders)
+    }
+    return
+  }
+
+  for (const [key, childPath, child] of entriesOf(value, path)) {
     if (banned.has(key)) offenders.push(childPath)
     walk(child, childPath, banned, seen, offenders)
   }

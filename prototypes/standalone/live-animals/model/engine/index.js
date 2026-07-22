@@ -165,6 +165,29 @@ export function firstPagePresentingObligation(flow, obligationId) {
 // JourneyEvaluator primitives — status
 // ---------------------------------------------------------------------------
 
+const presentedEntries = (page) =>
+  (page.presents ?? []).map((entry) => ({
+    obligation: entry.obligation,
+    path: entry.path ?? null,
+    mandatoryToProceed: entry.mandatoryToProceed ?? false,
+    errors: entry.errors ?? null
+  }))
+
+// The virtual entries a `presentsForEach` page expands to — one per
+// group-instance record present in the current post-purge state.
+const forEachPresentedEntries = (page, state) => {
+  const forEach = page.presentsForEach
+  if (!forEach) return []
+  const impl = state.obligations?.[forEach.forEachOf.id]
+  const records = impl?.records ?? []
+  return records.map((record) => ({
+    obligation: forEach.obligation,
+    path: record.fulfilmentId,
+    mandatoryToProceed: forEach.mandatoryToProceed ?? false,
+    errors: forEach.errors ?? null
+  }))
+}
+
 /**
  * Expand a Page's `presents` + `presentsForEach` into a flat list of
  * `{ obligation, path, mandatoryToProceed, errors }` entries.
@@ -179,29 +202,7 @@ export function firstPagePresentingObligation(flow, obligationId) {
  * can consume them. See flow.js for the property semantics.
  */
 export function expandPresents(page, state) {
-  const out = []
-  for (const entry of page.presents ?? []) {
-    out.push({
-      obligation: entry.obligation,
-      path: entry.path ?? null,
-      mandatoryToProceed: entry.mandatoryToProceed ?? false,
-      errors: entry.errors ?? null
-    })
-  }
-  const forEach = page.presentsForEach
-  if (forEach) {
-    const impl = state.obligations?.[forEach.forEachOf.id]
-    const records = impl?.records ?? []
-    for (const record of records) {
-      out.push({
-        obligation: forEach.obligation,
-        path: record.fulfilmentId,
-        mandatoryToProceed: forEach.mandatoryToProceed ?? false,
-        errors: forEach.errors ?? null
-      })
-    }
-  }
-  return out
+  return [...presentedEntries(page), ...forEachPresentedEntries(page, state)]
 }
 
 const STATUSES = {
@@ -257,23 +258,61 @@ function isValueFulfilled(oblId, value) {
   return !isBlankValue(value)
 }
 
+// The obligation's raw stored value — a scalar for a singleton obligation,
+// or a `{ fulfilmentId: value }` map for a path-scoped one.
+const storedValueFor = (entry, state) =>
+  state.fulfilments?.[entry.obligation.id]
+
+// `stored` is not a plain map, so the path-scoped record can't exist.
+const isRecordMap = (stored) =>
+  stored !== undefined &&
+  stored !== null &&
+  typeof stored === 'object' &&
+  !Array.isArray(stored)
+
+// Singleton obligation — `stored` IS the value being checked.
+const isSingletonFulfilled = (entry, stored) =>
+  isValueFulfilled(entry.obligation.id, stored)
+
+const isRecordFulfilled = (entry, stored) =>
+  isRecordMap(stored) &&
+  isValueFulfilled(entry.obligation.id, stored[entry.path])
+
 function hasFulfilment(entry, state) {
-  const stored = state.fulfilments?.[entry.obligation.id]
-  if (entry.path === null) {
-    // Singleton obligation — `stored` IS the value being checked.
-    return isValueFulfilled(entry.obligation.id, stored)
+  const stored = storedValueFor(entry, state)
+  return entry.path === null
+    ? isSingletonFulfilled(entry, stored)
+    : isRecordFulfilled(entry, stored)
+}
+
+const touchedEntries = (inScope, state) =>
+  inScope.filter((entry) => hasAnyInput(entry, state))
+
+// `{ total, unsatisfied }` mandatory-concern counts — mandatory obligations
+// in scope plus group-invariant errors, and the subset still unfulfilled.
+const mandatoryConcernCounts = (inScope, state, groupErrorCount) => {
+  const mandatoryInScope = inScope.filter(
+    (entry) =>
+      effectiveStatus(entry.obligation, entry.path, state) === 'mandatory'
+  )
+  const mandatoryUnfulfilled = mandatoryInScope.filter(
+    (entry) => !hasFulfilment(entry, state)
+  )
+  return {
+    total: mandatoryInScope.length + groupErrorCount,
+    unsatisfied: mandatoryUnfulfilled.length + groupErrorCount
   }
-  // Path-scoped obligation — `stored` is a `{ fulfilmentId: value }`
-  // map. If it's not a plain map, the record can't exist.
-  if (
-    stored === undefined ||
-    stored === null ||
-    typeof stored !== 'object' ||
-    Array.isArray(stored)
-  ) {
-    return false
+}
+
+const statusFromCounts = (counts, touchedCount) => {
+  if (counts.total > 0) {
+    if (counts.unsatisfied === 0) return STATUSES.FULFILLED
+    if (touchedCount === 0) return STATUSES.NOT_STARTED
+    return STATUSES.IN_PROGRESS
   }
-  return isValueFulfilled(entry.obligation.id, stored[entry.path])
+  // Only optional obligations are in scope — Case A.
+  if (touchedCount === 0) return STATUSES.OPTIONAL
+  return STATUSES.FULFILLED
 }
 
 /**
@@ -321,27 +360,9 @@ function classifyEntries(inScope, state, groupErrorCount) {
   if (inScope.length === 0 && groupErrorCount === 0) {
     return STATUSES.NOT_APPLICABLE
   }
-
-  const touched = inScope.filter((entry) => hasAnyInput(entry, state))
-  const mandatoryInScope = inScope.filter(
-    (entry) =>
-      effectiveStatus(entry.obligation, entry.path, state) === 'mandatory'
-  )
-  const mandatoryUnfulfilled = mandatoryInScope.filter(
-    (entry) => !hasFulfilment(entry, state)
-  )
-  const totalMandatoryConcerns = mandatoryInScope.length + groupErrorCount
-  const totalMandatoryUnsatisfied =
-    mandatoryUnfulfilled.length + groupErrorCount
-
-  if (totalMandatoryConcerns > 0) {
-    if (totalMandatoryUnsatisfied === 0) return STATUSES.FULFILLED
-    if (touched.length === 0) return STATUSES.NOT_STARTED
-    return STATUSES.IN_PROGRESS
-  }
-  // Only optional obligations are in scope — Case A.
-  if (touched.length === 0) return STATUSES.OPTIONAL
-  return STATUSES.FULFILLED
+  const touched = touchedEntries(inScope, state)
+  const counts = mandatoryConcernCounts(inScope, state, groupErrorCount)
+  return statusFromCounts(counts, touched.length)
 }
 
 /** True iff the user has typed ANY non-blank value into the entry.
@@ -353,17 +374,9 @@ function classifyEntries(inScope, state, groupErrorCount) {
  *  but the mandatory concern isn't fulfilled). Contrast with
  *  `hasFulfilment` which requires the address to be `isComplete`. */
 function hasAnyInput(entry, state) {
-  const stored = state.fulfilments?.[entry.obligation.id]
+  const stored = storedValueFor(entry, state)
   if (entry.path === null) return !isBlankValue(stored)
-  if (
-    stored === undefined ||
-    stored === null ||
-    typeof stored !== 'object' ||
-    Array.isArray(stored)
-  ) {
-    return false
-  }
-  return !isBlankValue(stored[entry.path])
+  return isRecordMap(stored) && !isBlankValue(stored[entry.path])
 }
 
 /**
@@ -614,6 +627,11 @@ export function groupInvariantErrors(group, state) {
   ].filter(Boolean)
 }
 
+const groupFromForEach = (node) => node.presentsForEach?.forEachOf ?? null
+
+const groupsFromPresentedContainers = (node) =>
+  (node.presents ?? []).flatMap((entry) => entry.obligation?.containers ?? [])
+
 /** Collect every group obligation whose invariants apply to this
  *  container's subtree. Two edges into the collector:
  *
@@ -631,14 +649,10 @@ export function groupInvariantErrors(group, state) {
 function collectGroupsPresentedIn(container) {
   const groups = new Map()
   const visit = (node) => {
-    if (node.presentsForEach?.forEachOf) {
-      const group = node.presentsForEach.forEachOf
-      groups.set(group.id, group)
-    }
-    for (const entry of node.presents ?? []) {
-      for (const groupContainer of entry.obligation?.containers ?? []) {
-        groups.set(groupContainer.id, groupContainer)
-      }
+    const forEachGroup = groupFromForEach(node)
+    if (forEachGroup) groups.set(forEachGroup.id, forEachGroup)
+    for (const groupContainer of groupsFromPresentedContainers(node)) {
+      groups.set(groupContainer.id, groupContainer)
     }
     for (const child of node.children ?? []) visit(child)
   }

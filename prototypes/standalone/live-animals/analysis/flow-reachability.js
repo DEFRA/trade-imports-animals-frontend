@@ -239,6 +239,40 @@ const isNotPagePresented = (key) =>
   FLOW_ONLY_OBLIGATIONS.has(stripIndices(key)) ||
   SYSTEM_POPULATED.has(leafName(key))
 
+// The problem (if any) an in-scope obligation contributes: none when it's
+// not page-presented, `no-owning-page` when dispatch has no owner, or
+// `owning-page-unreachable-in-scope` when the owning page isn't reachable.
+const obligationProblem = (key, reachablePages) => {
+  if (isNotPagePresented(key)) return undefined
+  const pageId = pageOfObligation(key)
+  if (!pageId) return { obligation: key, reason: REASON_NO_OWNING_PAGE }
+  return reachablePages.has(pageId)
+    ? undefined
+    : { obligation: key, pageId, reason: REASON_UNREACHABLE_IN_SCOPE }
+}
+
+// Every problem raised by one answers state's in-scope obligations.
+const problemsForAnswers = (answers, scopeFor, pagesFor) => {
+  const { inScope } = scopeFor(answers)
+  const reachablePages = new Set(pagesFor(answers))
+  return [...inScope]
+    .map((key) => obligationProblem(key, reachablePages))
+    .filter(Boolean)
+}
+
+const dedupeKeyFor = (problem) =>
+  `${problem.reason}:${problem.obligation}:${problem.pageId ?? ''}`
+
+// First-occurrence-wins dedupe over every state's problems, in state order.
+const dedupedProblems = (problems) => {
+  const seen = new Map()
+  for (const problem of problems) {
+    const key = dedupeKeyFor(problem)
+    if (!seen.has(key)) seen.set(key, problem)
+  }
+  return [...seen.values()]
+}
+
 /**
  * proveFlowReachability — for every seed variant × scope state, confirm each
  * in-scope obligation is presented by a page (`pageOfObligation`) AND that
@@ -258,33 +292,10 @@ export function proveFlowReachability({
   scopeFor = makeScope,
   pagesFor = simulateJourney
 } = {}) {
-  const problems = new Map()
-  const record = (problem) => {
-    const dedupeKey = `${problem.reason}:${problem.obligation}:${problem.pageId ?? ''}`
-    if (!problems.has(dedupeKey)) problems.set(dedupeKey, problem)
-  }
-
-  for (const answers of enumerateAnswerStates()) {
-    const { inScope } = scopeFor(answers)
-    const reachablePages = new Set(pagesFor(answers))
-    for (const key of inScope) {
-      if (isNotPagePresented(key)) continue
-      const pageId = pageOfObligation(key)
-      if (!pageId) {
-        record({ obligation: key, reason: REASON_NO_OWNING_PAGE })
-        continue
-      }
-      if (!reachablePages.has(pageId)) {
-        record({
-          obligation: key,
-          pageId,
-          reason: REASON_UNREACHABLE_IN_SCOPE
-        })
-      }
-    }
-  }
-
-  return [...problems.values()]
+  const problems = enumerateAnswerStates().flatMap((answers) =>
+    problemsForAnswers(answers, scopeFor, pagesFor)
+  )
+  return dedupedProblems(problems)
 }
 
 // Every prover input: each seed variant overlaid with each scope state.

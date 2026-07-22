@@ -58,30 +58,11 @@
 
 import { obligationMetadata } from '../obligations/helpers.js'
 
-/**
- * proveReachability — run the graph-level prover over a list of
- * `{ id, dependsOn }` records. Three-outcome enumeration:
- *
- *   {
- *     reachable:   string[],  // ids that trace to a seed
- *     unreachable: string[],  // ids whose deps never terminate at a seed
- *     errors:      { obligationId, reason }[]  // structural defects
- *   }
- *
- * Called from `analysis/reachability.test.js` and from this module's
- * own `proveWithWitnesses`, which walks `obligations` +
- * `obligationMetadata` to build the record list.
- *
- * @param {Array<{id: string, dependsOn: string[] | undefined}>} records
- * @returns {{ reachable: string[], unreachable: string[], errors: Array<{obligationId: string, reason: string}> }}
- */
-export const proveReachability = (records) => {
-  const byId = new Map(records.map((record) => [record.id, record]))
+// Dangling ids and missing dependsOn arrays. Anomalous obligations are
+// excluded from the reachable/unreachable classification and reported only
+// in errors.
+const findStructuralDefects = (records, byId) => {
   const errors = []
-
-  // First pass — surface structural anomalies (dangling ids, missing
-  // dependsOn arrays). Anomalous obligations are excluded from the
-  // reachable/unreachable classification and reported only in errors.
   const structurallyBad = new Set()
   for (const rec of records) {
     if (!Array.isArray(rec.dependsOn)) {
@@ -105,39 +86,30 @@ export const proveReachability = (records) => {
       }
     }
   }
+  return { errors, structurallyBad }
+}
 
-  // Reachability closure — fixed-point iteration. An obligation is
-  // reachable if either:
-  //   (a) it has an empty dependsOn (an always-in-scope seed), OR
-  //   (b) its dependsOn is a pure self-loop `[own-id]` — no external
-  //       prerequisite, so it acts as a seed (see docstring); OR
-  //   (c) every non-self dep is already reachable.
-  //
-  // Iterate until no new nodes are marked. Structurally-bad nodes are
-  // never marked reachable — they're excluded from the classification.
+// An obligation is a seed if it has an empty dependsOn (always in scope) or
+// its dependsOn is a pure self-loop `[own-id]` — no external prerequisite.
+const isSeedObligation = (rec) =>
+  rec.dependsOn.length === 0 || rec.dependsOn.every((depId) => depId === rec.id)
+
+// Fixed-point iteration: an obligation becomes reachable once it's a seed
+// or every non-self dep is already reachable. Iterate until no new nodes
+// are marked; structurally-bad nodes are never marked reachable.
+const closeReachableSet = (records, structurallyBad) => {
   const reachable = new Set()
-  const isSeed = (rec) => {
-    if (rec.dependsOn.length === 0) return true
-    // pure self-loop — all deps are the obligation's own id
-    if (rec.dependsOn.every((depId) => depId === rec.id)) return true
-    return false
-  }
-
   let changed = true
   while (changed) {
     changed = false
     for (const rec of records) {
       if (reachable.has(rec.id)) continue
       if (structurallyBad.has(rec.id)) continue
-      if (isSeed(rec)) {
+      if (isSeedObligation(rec)) {
         reachable.add(rec.id)
         changed = true
         continue
       }
-      // Non-self deps must ALL be reachable. Self-deps are ignored
-      // (the self-loop-as-seed rule above handles the pure case; here
-      // a mixed dep list — some external, some self — still needs the
-      // external prereqs satisfied, and the self-ref is a no-op).
       const externalDeps = rec.dependsOn.filter((depId) => depId !== rec.id)
       if (externalDeps.every((depId) => reachable.has(depId))) {
         reachable.add(rec.id)
@@ -145,7 +117,30 @@ export const proveReachability = (records) => {
       }
     }
   }
+  return reachable
+}
 
+/**
+ * proveReachability — run the graph-level prover over a list of
+ * `{ id, dependsOn }` records. Three-outcome enumeration:
+ *
+ *   {
+ *     reachable:   string[],  // ids that trace to a seed
+ *     unreachable: string[],  // ids whose deps never terminate at a seed
+ *     errors:      { obligationId, reason }[]  // structural defects
+ *   }
+ *
+ * Called from `analysis/reachability.test.js` and from this module's
+ * own `proveWithWitnesses`, which walks `obligations` +
+ * `obligationMetadata` to build the record list.
+ *
+ * @param {Array<{id: string, dependsOn: string[] | undefined}>} records
+ * @returns {{ reachable: string[], unreachable: string[], errors: Array<{obligationId: string, reason: string}> }}
+ */
+export const proveReachability = (records) => {
+  const byId = new Map(records.map((record) => [record.id, record]))
+  const { errors, structurallyBad } = findStructuralDefects(records, byId)
+  const reachable = closeReachableSet(records, structurallyBad)
   const unreachable = records
     .filter((rec) => !reachable.has(rec.id) && !structurallyBad.has(rec.id))
     .map((rec) => rec.id)
@@ -244,6 +239,36 @@ export const STRUCTURED_HELPER_TYPES = new Set([
  */
 export const OPAQUE_HELPER_TYPES = new Set([])
 
+// A witness from an allowlist-shaped `meta.values` array: the first entry,
+// or opaque when the array is missing/empty. `withProjection` controls
+// whether the returned witness carries a `projection` key at all (some
+// callers never included one).
+const firstListedValueWitness = (
+  meta,
+  emptyReason,
+  { withProjection } = {}
+) => {
+  if (!Array.isArray(meta.values) || meta.values.length === 0) {
+    return { kind: WITNESS_KIND.OPAQUE, reason: emptyReason }
+  }
+  const witness = {
+    kind: WITNESS_KIND.WITNESS,
+    obligationId: meta.obligation,
+    value: meta.values[0]
+  }
+  return withProjection
+    ? { ...witness, projection: meta.projection ?? null }
+    : witness
+}
+
+const isTotalBranchGate = (meta) =>
+  meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true
+
+// Meta-first gate helpers (equalsGate/presentGate/includesGate) share the
+// same total-branches-are-trivial guard ahead of their own witness shape.
+const totalBranchWitnessOrValue = (meta, makeWitness) =>
+  isTotalBranchGate(meta) ? { kind: WITNESS_KIND.TRIVIAL } : makeWitness()
+
 /**
  * synthesiseWitness — inspect an obligation's `applyTo.metadata` and
  * return a witness classification.
@@ -280,33 +305,19 @@ export const synthesiseWitness = (obligation) => {
       // records: [] and `inScope: false`, which would be a false
       // negative — the gate WOULD open in the real evaluator, which
       // always seeds unitRecord paths from user-created units.
-      if (!Array.isArray(meta.values) || meta.values.length === 0) {
-        return {
-          kind: WITNESS_KIND.OPAQUE,
-          reason: 'allowListed metadata has empty values array'
-        }
-      }
-      return {
-        kind: WITNESS_KIND.WITNESS,
-        obligationId: meta.obligation,
-        value: meta.values[0],
-        projection: meta.projection ?? null
-      }
+      return firstListedValueWitness(
+        meta,
+        'allowListed metadata has empty values array',
+        { withProjection: true }
+      )
 
     case 'anyAllowListed':
       // Same shape as allowListed — but anyAllowListed has no
       // projection group (notification-level aggregate).
-      if (!Array.isArray(meta.values) || meta.values.length === 0) {
-        return {
-          kind: WITNESS_KIND.OPAQUE,
-          reason: 'anyAllowListed metadata has empty values array'
-        }
-      }
-      return {
-        kind: WITNESS_KIND.WITNESS,
-        obligationId: meta.obligation,
-        value: meta.values[0]
-      }
+      return firstListedValueWitness(
+        meta,
+        'anyAllowListed metadata has empty values array'
+      )
 
     case 'matches':
       // metadata.value IS the scalar target.
@@ -335,47 +346,33 @@ export const synthesiseWitness = (obligation) => {
       // branch. If both branches are in-scope (regionCode's status-swap
       // shape), the gate is TRIVIAL — every input opens it, no witness
       // needed. Otherwise the value witnesses the whenTrue branch.
-      if (meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true) {
-        return { kind: WITNESS_KIND.TRIVIAL }
-      }
-      return {
+      return totalBranchWitnessOrValue(meta, () => ({
         kind: WITNESS_KIND.WITNESS,
         obligationId: meta.obligation,
         value: meta.value
-      }
+      }))
 
     case 'presentGate':
       // Meta-first equivalent of branchedGate + predicateMeta.isFilled.
       // Any non-blank scalar opens the gate. Total-branches case is
       // trivial (both in-scope); otherwise use the same sentinel
       // convention as branchedGate's `isFilled` synth.
-      if (meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true) {
-        return { kind: WITNESS_KIND.TRIVIAL }
-      }
-      return {
+      return totalBranchWitnessOrValue(meta, () => ({
         kind: WITNESS_KIND.WITNESS,
         obligationId: meta.obligation,
         value: '__witness__'
-      }
+      }))
 
     case 'includesGate':
       // Meta-first equivalent of branchedGate + predicateMeta.includes.
       // metadata.values IS the admitted list; first entry is a witness.
       // Total-branches case is trivial.
-      if (meta.whenTrue?.inScope === true && meta.whenFalse?.inScope === true) {
-        return { kind: WITNESS_KIND.TRIVIAL }
-      }
-      if (!Array.isArray(meta.values) || meta.values.length === 0) {
-        return {
-          kind: WITNESS_KIND.OPAQUE,
-          reason: 'includesGate metadata has empty values array'
-        }
-      }
-      return {
-        kind: WITNESS_KIND.WITNESS,
-        obligationId: meta.obligation,
-        value: meta.values[0]
-      }
+      return totalBranchWitnessOrValue(meta, () =>
+        firstListedValueWitness(
+          meta,
+          'includesGate metadata has empty values array'
+        )
+      )
 
     case 'alwaysInScope':
       // Unconditional — the gate is always open by construction, no
@@ -496,6 +493,62 @@ function synthesiseNotInUnionOfWitness(meta) {
   }
 }
 
+// Prefer the derived-or-declared dependsOn from `obligationMetadata` —
+// meta-first helpers name their gate obligation on `.metadata`, so the
+// dependency graph is recoverable without an explicit `dependsOn`
+// declaration.
+const dependencyRecordFor = (obligation) =>
+  typeof obligation.applyTo === 'function'
+    ? {
+        id: obligation.id,
+        dependsOn: obligationMetadata(obligation).dependsOn
+      }
+    : { id: obligation.id, dependsOn: [] }
+
+// The `{ fulfilments, fulfilmentIds }` pair that feeds the real `applyTo`
+// closure for a fidelity check. Depth-N gates (allowListed with a
+// projection group, e.g. passport / tattoo projecting onto unitRecord)
+// need a synthetic instance path seeded in `fulfilmentIds` or
+// `filterAndProject` returns `records: []` regardless of the value.
+// Depth-1 `allowListed`/`notInUnionOf` still read as a map; every other
+// helper accepts a plain scalar.
+const witnessFulfilments = (obligation, witness) => {
+  const fulfilmentIds = new Map()
+  if (witness.projection) {
+    fulfilmentIds.set(witness.projection, ['line1/unit1'])
+    return {
+      fulfilments: { [witness.obligationId]: { line1: witness.value } },
+      fulfilmentIds
+    }
+  }
+  const metaType = obligation.applyTo.metadata?.type
+  if (metaType === 'allowListed' || metaType === 'notInUnionOf') {
+    return {
+      fulfilments: { [witness.obligationId]: { line1: witness.value } },
+      fulfilmentIds
+    }
+  }
+  return {
+    fulfilments: { [witness.obligationId]: witness.value },
+    fulfilmentIds
+  }
+}
+
+// Fidelity check — the witness must actually open the closure. Any
+// mismatch is a build-time defect (metadata drift vs. the real predicate).
+const confirmWitnessOpensGate = (obligation, witness) => {
+  const { fulfilments, fulfilmentIds } = witnessFulfilments(obligation, witness)
+  const decision = obligation.applyTo(fulfilments, fulfilmentIds)
+  if (decision && decision.inScope === true) return { opened: true }
+  return {
+    opened: false,
+    error: {
+      obligationId: obligation.id,
+      reason: `synthesised witness { ${witness.obligationId}: ${JSON.stringify(witness.value)} } did not open the gate (got ${JSON.stringify(decision)})`
+    }
+  }
+}
+
 /**
  * proveWithWitnesses — tightened prover. Runs the graph-level check
  * first (must succeed), then confirms every gate whose helper carries
@@ -522,20 +575,7 @@ function synthesiseNotInUnionOfWitness(meta) {
  * }}
  */
 export const proveWithWitnesses = (obligations) => {
-  const records = obligations.map((obligation) => {
-    if (typeof obligation.applyTo === 'function') {
-      // Prefer the derived-or-declared dependsOn from
-      // `obligationMetadata` — meta-first helpers name their gate
-      // obligation on `.metadata`, so the dependency graph is
-      // recoverable without an explicit `dependsOn` declaration.
-      return {
-        id: obligation.id,
-        dependsOn: obligationMetadata(obligation).dependsOn
-      }
-    }
-    return { id: obligation.id, dependsOn: [] }
-  })
-
+  const records = obligations.map(dependencyRecordFor)
   const graph = proveReachability(records)
 
   const synthesisable = []
@@ -553,53 +593,11 @@ export const proveWithWitnesses = (obligations) => {
         opaque.push(obligation.id)
         break
       case WITNESS_KIND.WITNESS: {
-        // Fidelity check — the witness must actually open the closure.
-        // Any mismatch is a build-time defect (metadata drift vs. the
-        // real predicate).
-        //
-        // Depth-N > 1 gates use `allowListed` with a projection group
-        // (e.g. passport / tattoo project onto unitRecord). The
-        // closure's filterAndProject requires ≥ 1 path in
-        // `fulfilmentIdsByObligationId` for the projection group,
-        // otherwise `records: []` → `inScope: false` regardless of
-        // the value. In the real evaluator paths come from user-
-        // created group instances; for the fidelity check we seed a
-        // synthetic instance-path whose prefix matches the gate key
-        // used below. Depth-1 gates and non-projected helpers
-        // (anyAllowListed, matches, branchedGate) pass an empty Map.
-        //
-        // Gate storage shape:
-        //   - `allowListed` reads `fulfilments[gateId]` as a MAP
-        //     `{ instancePath: value }`. Use `line1` as the mnemonic
-        //     path key.
-        //   - non-projected helpers accept either a scalar or a map
-        //     interchangeably; a scalar is simplest.
-        const fulfilmentIds = new Map()
-        let fulfilments
-        if (witness.projection) {
-          // Depth-N gate — seed one synthetic unit path whose prefix
-          // (`line1`) matches the map key we place the value under.
-          fulfilments = { [witness.obligationId]: { line1: witness.value } }
-          fulfilmentIds.set(witness.projection, ['line1/unit1'])
-        } else if (
-          obligation.applyTo.metadata?.type === 'allowListed' ||
-          obligation.applyTo.metadata?.type === 'notInUnionOf'
-        ) {
-          // Depth-1 allowListed / notInUnionOf without a projection
-          // group — still reads as a map (filterAndProject enumerates
-          // entries).
-          fulfilments = { [witness.obligationId]: { line1: witness.value } }
-        } else {
-          fulfilments = { [witness.obligationId]: witness.value }
-        }
-        const decision = obligation.applyTo(fulfilments, fulfilmentIds)
-        if (!decision || decision.inScope !== true) {
-          errors.push({
-            obligationId: obligation.id,
-            reason: `synthesised witness { ${witness.obligationId}: ${JSON.stringify(witness.value)} } did not open the gate (got ${JSON.stringify(decision)})`
-          })
-        } else {
+        const result = confirmWitnessOpensGate(obligation, witness)
+        if (result.opened) {
           synthesisable.push(obligation.id)
+        } else {
+          errors.push(result.error)
         }
         break
       }

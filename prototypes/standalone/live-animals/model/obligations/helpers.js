@@ -247,6 +247,9 @@ export const matches = (gateObligation, value) => {
   return fn
 }
 
+const isNullish = (value) => value === undefined || value === null
+const hasRecordEntries = (stored) => Object.keys(stored).length > 0
+
 /**
  * present — predicate primitive. True iff the given obligation has
  * any stored value. For scalar obligations checks `!== undefined`;
@@ -259,9 +262,8 @@ export const matches = (gateObligation, value) => {
 export const present = (obligation) => {
   return (fulfilments) => {
     const stored = fulfilments[obligation.id]
-    if (stored === undefined) return false
-    if (stored === null) return false
-    if (isRecordMap(stored)) return Object.keys(stored).length > 0
+    if (isNullish(stored)) return false
+    if (isRecordMap(stored)) return hasRecordEntries(stored)
     return true
   }
 }
@@ -548,6 +550,36 @@ const recordMapPassingKeys = (stored, predicate) =>
 
 const scalarPassingKeys = (stored, predicate) => (predicate(stored) ? [''] : [])
 
+const pathMatchesPassingKey = (path, key) =>
+  key === '' || path === key || path.startsWith(`${key}/`)
+
+const projectedRecords = (
+  projectionGroup,
+  passingKeys,
+  fulfilmentIdsByObligationId
+) => {
+  const projectionPaths =
+    fulfilmentIdsByObligationId?.get(projectionGroup.id) ?? []
+  return projectionPaths.filter((path) =>
+    passingKeys.some((key) => pathMatchesPassingKey(path, key))
+  )
+}
+
+const decisionForPassingKeys = (
+  passingKeys,
+  projectionGroup,
+  fulfilmentIdsByObligationId
+) => {
+  if (passingKeys.length === 0) return { inScope: false }
+  if (!projectionGroup) return { inScope: true, records: passingKeys }
+  const records = projectedRecords(
+    projectionGroup,
+    passingKeys,
+    fulfilmentIdsByObligationId
+  )
+  return { inScope: records.length > 0, records }
+}
+
 const filterAndProject = (
   storedForGate,
   predicate,
@@ -559,18 +591,9 @@ const filterAndProject = (
     ? recordMapPassingKeys(stored, predicate)
     : scalarPassingKeys(stored, predicate)
 
-  if (passingKeys.length === 0) return { inScope: false }
-
-  if (!projectionGroup) {
-    return { inScope: true, records: passingKeys }
-  }
-
-  const projectionPaths =
-    fulfilmentIdsByObligationId?.get(projectionGroup.id) ?? []
-  const records = projectionPaths.filter((path) =>
-    passingKeys.some(
-      (key) => key === '' || path === key || path.startsWith(`${key}/`)
-    )
+  return decisionForPassingKeys(
+    passingKeys,
+    projectionGroup,
+    fulfilmentIdsByObligationId
   )
-  return { inScope: records.length > 0, records }
 }

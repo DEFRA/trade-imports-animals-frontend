@@ -221,23 +221,25 @@ export function buildObligationChildren(obligations) {
 //                    (always-in-scope-for-parent-group leaf).
 //   'group'        — has children via `within` back-refs.
 //   'single'       — otherwise (scalar leaf value at fulfilments[o.id]).
+const categoryOf = (obligation, obligationChildren) => {
+  if (obligation.indexedBy) {
+    return obligation.indexedBy.source === 'derived'
+      ? 'derived-leaf'
+      : 'user-leaf'
+  }
+  if (obligation.applyTo && obligation.within) return 'derived-leaf'
+  if (obligation.status !== undefined && !obligation.applyTo) return 'field'
+  if (obligationChildren.has(obligation.id)) return 'group'
+  return 'single'
+}
+
 export function classifyObligations(obligations, obligationChildren) {
   const obligationsByCategory = new Map()
   for (const obligation of obligations) {
-    if (obligation.indexedBy) {
-      obligationsByCategory.set(
-        obligation.id,
-        obligation.indexedBy.source === 'derived' ? 'derived-leaf' : 'user-leaf'
-      )
-    } else if (obligation.applyTo && obligation.within) {
-      obligationsByCategory.set(obligation.id, 'derived-leaf')
-    } else if (obligation.status !== undefined && !obligation.applyTo) {
-      obligationsByCategory.set(obligation.id, 'field')
-    } else if (obligationChildren.has(obligation.id)) {
-      obligationsByCategory.set(obligation.id, 'group')
-    } else {
-      obligationsByCategory.set(obligation.id, 'single')
-    }
+    obligationsByCategory.set(
+      obligation.id,
+      categoryOf(obligation, obligationChildren)
+    )
   }
   return obligationsByCategory
 }
@@ -292,6 +294,39 @@ export function dropUnknownFulfilments(fulfilments, obligationsById) {
   return recognisedFulfilments
 }
 
+// The instance-path prefixes one descendant's stored keyed-record
+// contributes to its group's instance-id set.
+const instancePathPrefixesFromRecord = (stored, prefixLen) => {
+  if (!isKeyedRecord(stored)) return []
+  return Object.keys(stored)
+    .map((key) => splitPath(key))
+    .filter((segments) => segments.length >= prefixLen)
+    .map((segments) => joinPath(segments.slice(0, prefixLen)))
+}
+
+// A group's instance-id set: the union, across every descendant, of the
+// instance-path prefixes of its stored composite keys. `storedFor`
+// resolves a descendant to its stored fulfilment (pre- or post-purge,
+// depending on the caller).
+const groupInstancePaths = (
+  obligation,
+  obligationAncestorGroups,
+  obligationDescendants,
+  storedFor
+) => {
+  const prefixLen = obligationAncestorGroups.get(obligation.id).length + 1
+  const ids = new Set()
+  for (const desc of obligationDescendants.get(obligation.id)) {
+    for (const id of instancePathPrefixesFromRecord(
+      storedFor(desc),
+      prefixLen
+    )) {
+      ids.add(id)
+    }
+  }
+  return ids
+}
+
 // Step 2: pre-purge enumeration of group instance-paths from raw
 // storage. Same shape as `enumerateGroupFulfilmentIds` (step 6) but
 // without an `isInScope` filter — pre-purge, so no scope decisions
@@ -311,18 +346,12 @@ export function enumerateGroupPathsFromStorage(
     if (obligationsByCategory.get(obligation.id) !== 'group') {
       continue
     }
-    const prefixLen = obligationAncestorGroups.get(obligation.id).length + 1
-    const ids = new Set()
-    for (const desc of obligationDescendants.get(obligation.id)) {
-      const stored = fulfilments[desc.id]
-      if (!isKeyedRecord(stored)) continue
-      for (const key of Object.keys(stored)) {
-        const segments = splitPath(key)
-        if (segments.length >= prefixLen) {
-          ids.add(joinPath(segments.slice(0, prefixLen)))
-        }
-      }
-    }
+    const ids = groupInstancePaths(
+      obligation,
+      obligationAncestorGroups,
+      obligationDescendants,
+      (desc) => fulfilments[desc.id]
+    )
     paths.set(obligation.id, [...ids])
   }
   return paths
@@ -382,6 +411,52 @@ export function makeInScopeCheck(
   return isInScope
 }
 
+// applyTo returns the leaf fulfilmentIds it currently authorises; keep
+// only stored records whose fulfilmentId is in that set. `{ keep: false }`
+// when nothing survives the filter.
+const purgedDerivedLeaf = (
+  obligation,
+  fulfilment,
+  obligationApplicabilityDecisions
+) => {
+  const fulfilmentIds = new Set(
+    obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
+  )
+  const filtered = {}
+  for (const [fulfilmentId, recordValue] of Object.entries(fulfilment ?? {})) {
+    if (fulfilmentIds.has(fulfilmentId)) {
+      filtered[fulfilmentId] = recordValue
+    }
+  }
+  return Object.keys(filtered).length > 0
+    ? { keep: true, value: filtered }
+    : { keep: false }
+}
+
+// field record or user-leaf with a keyed map — drop only if it's empty.
+const purgedKeyedRecord = (fulfilment) =>
+  Object.keys(fulfilment).length > 0
+    ? { keep: true, value: fulfilment }
+    : { keep: false }
+
+const purgedFulfilmentFor = (
+  obligation,
+  fulfilment,
+  category,
+  obligationApplicabilityDecisions
+) => {
+  if (category === 'derived-leaf') {
+    return purgedDerivedLeaf(
+      obligation,
+      fulfilment,
+      obligationApplicabilityDecisions
+    )
+  }
+  if (category === 'single') return { keep: true, value: fulfilment }
+  if (isKeyedRecord(fulfilment)) return purgedKeyedRecord(fulfilment)
+  return { keep: true, value: fulfilment }
+}
+
 // Step 5: purge storage.
 //   - Out-of-scope obligation → drop entire entry.
 //   - Derived indexed leaf → keep only records whose fulfilmentId is in
@@ -404,33 +479,14 @@ export function purgeStorage(recognisedFulfilments, context) {
     if (!isInScope(obligation)) continue
 
     const category = obligationsByCategory.get(obligation.id)
-
-    if (category === 'derived-leaf') {
-      // applyTo returns the leaf fulfilmentIds it currently authorises;
-      // keep only stored records whose fulfilmentId is in that set.
-      const fulfilmentIds = new Set(
-        obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
-      )
-      const filtered = {}
-      for (const [fulfilmentId, recordValue] of Object.entries(
-        fulfilment ?? {}
-      )) {
-        if (fulfilmentIds.has(fulfilmentId)) {
-          filtered[fulfilmentId] = recordValue
-        }
-      }
-      if (Object.keys(filtered).length > 0) {
-        amendedFulfilments[obligationId] = filtered
-      }
-    } else if (category === 'single') {
-      amendedFulfilments[obligationId] = fulfilment
-    } else if (isKeyedRecord(fulfilment)) {
-      // field record or user-leaf with a keyed map.
-      if (Object.keys(fulfilment).length > 0) {
-        amendedFulfilments[obligationId] = fulfilment
-      }
-    } else {
-      amendedFulfilments[obligationId] = fulfilment
+    const purged = purgedFulfilmentFor(
+      obligation,
+      fulfilment,
+      category,
+      obligationApplicabilityDecisions
+    )
+    if (purged.keep) {
+      amendedFulfilments[obligationId] = purged.value
     }
   }
   return amendedFulfilments
@@ -461,18 +517,12 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
       fulfilmentIdsByObligationId.set(obligation.id, new Set())
       continue
     }
-    const prefixLen = obligationAncestorGroups.get(obligation.id).length + 1
-    const ids = new Set()
-    for (const desc of obligationDescendants.get(obligation.id)) {
-      const descendantFulfilment = amendedFulfilments[desc.id]
-      if (!isKeyedRecord(descendantFulfilment)) continue
-      for (const key of Object.keys(descendantFulfilment)) {
-        const segments = splitPath(key)
-        if (segments.length >= prefixLen) {
-          ids.add(joinPath(segments.slice(0, prefixLen)))
-        }
-      }
-    }
+    const ids = groupInstancePaths(
+      obligation,
+      obligationAncestorGroups,
+      obligationDescendants,
+      (desc) => amendedFulfilments[desc.id]
+    )
     fulfilmentIdsByObligationId.set(obligation.id, ids)
   }
   return fulfilmentIdsByObligationId
@@ -493,6 +543,68 @@ export function buildImplications(obligations, context) {
   return implicationsByObligation
 }
 
+const singleImplication = (own) => own ?? { inScope: true }
+
+const groupImplication = (obligation, own, fulfilmentIdsByObligationId) => {
+  const fulfilmentIds = [
+    ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
+  ]
+  const impl = { inScope: true }
+  if (own?.reasons) impl.reasons = own.reasons
+  impl.records = fulfilmentIds.map((fulfilmentId) => ({ fulfilmentId }))
+  return impl
+}
+
+// Two shapes land here:
+//   1. Group-scoped field record (`within` set) — enumerate the parent
+//      group's instance-paths and stamp each one with `obligation.status`.
+//   2. Top-level scalar with intrinsic status (no `within`) — the natural
+//      data-only shape for an always-in-scope obligation. There is no
+//      parent group to enumerate, so return the status directly,
+//      mirroring what `applyTo: () => ({ inScope: true, status })` would
+//      return.
+const fieldImplication = (obligation, fulfilmentIdsByObligationId) => {
+  if (!obligation.within) {
+    return { inScope: true, status: obligation.status }
+  }
+  const parentGroupFulfilmentIds = [
+    ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
+  ]
+  return {
+    inScope: true,
+    records: parentGroupFulfilmentIds.map((fulfilmentId) => ({
+      fulfilmentId,
+      status: obligation.status
+    }))
+  }
+}
+
+// Id set comes from applyTo — the authoritative "what records CAN exist".
+// Storage tracks which ones have VALUES.
+const derivedLeafImplication = (obligation, own) => {
+  const impl = { inScope: true }
+  if (own?.reasons) impl.reasons = own.reasons
+  const fulfilmentIds = own?.records ?? []
+  impl.records = fulfilmentIds.map((fulfilmentId) => ({
+    fulfilmentId,
+    status: obligation.status
+  }))
+  return impl
+}
+
+// Record presence via own storage keys.
+const userLeafImplication = (obligation, own, amendedFulfilments) => {
+  const impl = { inScope: true }
+  if (own?.reasons) impl.reasons = own.reasons
+  const fulfilment = amendedFulfilments[obligation.id]
+  const fulfilmentIds = isKeyedRecord(fulfilment) ? Object.keys(fulfilment) : []
+  impl.records = fulfilmentIds.map((fulfilmentId) => ({
+    fulfilmentId,
+    status: obligation.status
+  }))
+  return impl
+}
+
 // Build one obligation's implication given the evaluate-call context.
 //
 // Returns `{ inScope: false }` if the obligation is out of scope.
@@ -511,76 +623,20 @@ export function buildImplication(obligation, context) {
   const category = obligationsByCategory.get(obligation.id)
   const own = obligationApplicabilityDecisions.get(obligation.id)
 
-  if (category === 'single') {
-    return own ?? { inScope: true }
+  switch (category) {
+    case 'single':
+      return singleImplication(own)
+    case 'group':
+      return groupImplication(obligation, own, fulfilmentIdsByObligationId)
+    case 'field':
+      return fieldImplication(obligation, fulfilmentIdsByObligationId)
+    case 'derived-leaf':
+      return derivedLeafImplication(obligation, own)
+    case 'user-leaf':
+      return userLeafImplication(obligation, own, amendedFulfilments)
+    default:
+      return { inScope: true }
   }
-
-  if (category === 'group') {
-    const fulfilmentIds = [
-      ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
-    ]
-    const impl = { inScope: true }
-    if (own?.reasons) impl.reasons = own.reasons
-    impl.records = fulfilmentIds.map((fulfilmentId) => ({
-      fulfilmentId
-    }))
-    return impl
-  }
-
-  if (category === 'field') {
-    // Two shapes land here:
-    //   1. Group-scoped field record (`within` set) — enumerate the
-    //      parent group's instance-paths and stamp each one with
-    //      `obligation.status`.
-    //   2. Top-level scalar with intrinsic status (no `within`) — the
-    //      natural data-only shape for an always-in-scope obligation.
-    //      There is no parent group to enumerate, so return the status
-    //      directly, mirroring what `applyTo: () => ({ inScope: true,
-    //      status })` would return.
-    if (!obligation.within) {
-      return { inScope: true, status: obligation.status }
-    }
-    const parentGroupFulfilmentIds = [
-      ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
-    ]
-    return {
-      inScope: true,
-      records: parentGroupFulfilmentIds.map((fulfilmentId) => ({
-        fulfilmentId,
-        status: obligation.status
-      }))
-    }
-  }
-
-  if (category === 'derived-leaf') {
-    // Id set comes from applyTo — the authoritative "what records
-    // CAN exist". Storage tracks which ones have VALUES.
-    const impl = { inScope: true }
-    if (own?.reasons) impl.reasons = own.reasons
-    const fulfilmentIds = own?.records ?? []
-    impl.records = fulfilmentIds.map((fulfilmentId) => ({
-      fulfilmentId,
-      status: obligation.status
-    }))
-    return impl
-  }
-
-  if (category === 'user-leaf') {
-    // Record presence via own storage keys.
-    const impl = { inScope: true }
-    if (own?.reasons) impl.reasons = own.reasons
-    const fulfilment = amendedFulfilments[obligation.id]
-    const fulfilmentIds = isKeyedRecord(fulfilment)
-      ? Object.keys(fulfilment)
-      : []
-    impl.records = fulfilmentIds.map((fulfilmentId) => ({
-      fulfilmentId,
-      status: obligation.status
-    }))
-    return impl
-  }
-
-  return { inScope: true }
 }
 
 // ---------------------------------------------------------------------------
@@ -589,6 +645,18 @@ export function buildImplication(obligation, context) {
 
 function isKeyedRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+// purge may recreate keyed-record entries — compare their keys.
+const keyedRecordsEqual = (recordA, recordB) => {
+  const recordKeysA = Object.keys(recordA)
+  const recordKeysB = Object.keys(recordB)
+  if (recordKeysA.length !== recordKeysB.length) return false
+  for (const recordKey of recordKeysA) {
+    if (!Object.hasOwn(recordB, recordKey)) return false
+    if (recordA[recordKey] !== recordB[recordKey]) return false
+  }
+  return true
 }
 
 // Structural equality between two fulfilment views (obligation-id → value).
@@ -608,16 +676,9 @@ function viewsEqual(viewA, viewB) {
     const valueA = viewA[key]
     const valueB = viewB[key]
     if (valueA === valueB) continue
-    // purge may recreate keyed-record entries — compare their keys.
     if (isKeyedRecord(valueA) && isKeyedRecord(valueB)) {
-      const recordKeysA = Object.keys(valueA)
-      const recordKeysB = Object.keys(valueB)
-      if (recordKeysA.length !== recordKeysB.length) return false
-      for (const recordKey of recordKeysA) {
-        if (!Object.hasOwn(valueB, recordKey)) return false
-        if (valueA[recordKey] !== valueB[recordKey]) return false
-      }
-      continue
+      if (keyedRecordsEqual(valueA, valueB)) continue
+      return false
     }
     return false
   }
