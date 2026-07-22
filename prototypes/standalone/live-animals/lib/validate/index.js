@@ -2,6 +2,7 @@ export { validate } from './run.js'
 export {
   compose,
   requiredText,
+  requiredExactDigits,
   optionalText,
   maxText,
   pattern,

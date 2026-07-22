@@ -6,7 +6,8 @@ export const copy = {
     hint: 'Er enghraifft, 123456789 neu 123/456/789.'
   },
   errors: {
-    cphMaxLength:
-      "Rhaid i'r rhif Daliad Plwyf Sirol (CPH) fod yn 11 nod neu lai"
+    cphRequired: 'Nodwch rif CPH',
+    cphLength: "Rhaid i'r rhif CPH fod yn union 9 digid",
+    cphDigitsOnly: "Rhaid i'r rhif CPH gynnwys rhifau yn unig"
   }
 }

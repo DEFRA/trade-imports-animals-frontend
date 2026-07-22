@@ -30,6 +30,17 @@ export const requiredText = (name, message) =>
     })
   )
 
+export const requiredExactDigits = (name, digitCount, messages) =>
+  single(
+    name,
+    Joi.string().required().length(digitCount).pattern(/^\d+$/).messages({
+      'string.empty': messages.required,
+      'any.required': messages.required,
+      'string.length': messages.length,
+      'string.pattern.base': messages.digitsOnly
+    })
+  )
+
 export const optionalText = (name) =>
   single(name, Joi.string().trim().allow(''))
 

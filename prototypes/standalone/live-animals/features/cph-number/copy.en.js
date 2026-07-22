@@ -5,7 +5,8 @@ export const copy = {
     hint: 'For example, 123456789 or 123/456/789.'
   },
   errors: {
-    cphMaxLength:
-      'County Parish Holding (CPH) number must be 11 characters or fewer'
+    cphRequired: 'Enter a CPH number',
+    cphLength: 'CPH number must be exactly 9 digits',
+    cphDigitsOnly: 'CPH number must only contain numbers'
   }
 }

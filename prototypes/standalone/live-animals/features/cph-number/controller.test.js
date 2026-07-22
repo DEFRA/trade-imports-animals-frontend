@@ -34,7 +34,7 @@ const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
   return { response, view: h.captured.view }
 }
 
-describe('POST cph-number — slash stripping', () => {
+describe('POST cph-number — the 9-digit rule after slash stripping', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -43,7 +43,16 @@ describe('POST cph-number — slash stripping', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should commit the CPH with slashes stripped', async () => {
+  it('Should commit a 9-digit CPH', async () => {
+    const result = await driveHandler(postCph, {
+      seed: seed(),
+      payload: { countyParishHoldingCph: '123456789' }
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.after.countyParishHoldingCph).toBe('123456789')
+  })
+
+  it('Should validate the stripped value, not the raw value, and commit it stripped', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
       payload: { countyParishHoldingCph: '12/345/6789' }
@@ -52,13 +61,51 @@ describe('POST cph-number — slash stripping', () => {
     expect(result.after.countyParishHoldingCph).toBe('123456789')
   })
 
-  it('Should validate the stripped value, not the raw value', async () => {
+  it('Should reject a blank submit, committing nothing', async () => {
+    const result = await driveHandler(postCph, {
+      seed: seed(),
+      payload: { countyParishHoldingCph: '' }
+    })
+    expect(result.view.context.errors).toEqual({
+      countyParishHoldingCph: 'Enter a CPH number'
+    })
+    expect(result.after.countyParishHoldingCph).toBeUndefined()
+  })
+
+  it('Should reject a stripped value shorter than 9 digits', async () => {
+    const result = await driveHandler(postCph, {
+      seed: seed(),
+      payload: { countyParishHoldingCph: '12/345/678' }
+    })
+    expect(result.view.context.errors).toEqual({
+      countyParishHoldingCph: 'CPH number must be exactly 9 digits'
+    })
+    expect(result.after.countyParishHoldingCph).toBeUndefined()
+  })
+
+  it('Should reject a stripped value longer than 9 digits, echoing the raw input', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
       payload: { countyParishHoldingCph: '123456789/12' }
     })
-    expect(result.view).toBeUndefined()
-    expect(result.after.countyParishHoldingCph).toBe('12345678912')
+    expect(result.view.context.errors).toEqual({
+      countyParishHoldingCph: 'CPH number must be exactly 9 digits'
+    })
+    expect(result.view.context.values.countyParishHoldingCph).toBe(
+      '123456789/12'
+    )
+    expect(result.after.countyParishHoldingCph).toBeUndefined()
+  })
+
+  it('Should reject non-digit characters', async () => {
+    const result = await driveHandler(postCph, {
+      seed: seed(),
+      payload: { countyParishHoldingCph: '12345678a' }
+    })
+    expect(result.view.context.errors).toEqual({
+      countyParishHoldingCph: 'CPH number must only contain numbers'
+    })
+    expect(result.after.countyParishHoldingCph).toBeUndefined()
   })
 })
 

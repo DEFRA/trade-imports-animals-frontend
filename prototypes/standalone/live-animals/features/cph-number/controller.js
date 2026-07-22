@@ -1,6 +1,10 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
-import { compose, maxText, validate } from '../../lib/validate/index.js'
+import {
+  compose,
+  requiredExactDigits,
+  validate
+} from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
@@ -20,10 +24,14 @@ export const isCphApplicable = (answers) =>
     commodities.cphCommodities().includes(line?.commoditySelection)
   )
 
-const CPH_MAX_LENGTH = 11
+const CPH_DIGITS = 9
 
 const fields = compose(
-  maxText('countyParishHoldingCph', CPH_MAX_LENGTH, copy.errors.cphMaxLength)
+  requiredExactDigits('countyParishHoldingCph', CPH_DIGITS, {
+    required: copy.errors.cphRequired,
+    length: copy.errors.cphLength,
+    digitsOnly: copy.errors.cphDigitsOnly
+  })
 )
 
 const hubEntryReturn = (request) =>

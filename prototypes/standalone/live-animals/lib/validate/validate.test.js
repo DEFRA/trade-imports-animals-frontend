@@ -8,6 +8,7 @@ import {
   maxText,
   oneOf,
   postcode,
+  requiredExactDigits,
   requiredOneOf,
   requiredText,
   ukPhone,
@@ -33,6 +34,42 @@ describe('#requiredText — the sole save-blocking primitive', () => {
   it('Should block a whitespace-only value (trimmed to empty)', () => {
     expect(run(schema, { fullName: '   ' }).errors).toEqual({
       fullName: 'Enter your full name'
+    })
+  })
+})
+
+describe('#requiredExactDigits — save-blocking fixed-length digit string', () => {
+  const schema = requiredExactDigits('cph', 9, {
+    required: 'Enter a CPH number',
+    length: 'CPH number must be exactly 9 digits',
+    digitsOnly: 'CPH number must only contain numbers'
+  })
+
+  it('Should pass a value of exactly the digit count', () => {
+    expect(run(schema, { cph: '123456789' }).errors).toBeNull()
+  })
+
+  it('Should block blank and missing values with the required message', () => {
+    expect(run(schema, { cph: '' }).errors).toEqual({
+      cph: 'Enter a CPH number'
+    })
+    expect(run(schema, {}).errors).toEqual({
+      cph: 'Enter a CPH number'
+    })
+  })
+
+  it('Should reject too-short and too-long values with the length message', () => {
+    expect(run(schema, { cph: '12345678' }).errors).toEqual({
+      cph: 'CPH number must be exactly 9 digits'
+    })
+    expect(run(schema, { cph: '1234567890' }).errors).toEqual({
+      cph: 'CPH number must be exactly 9 digits'
+    })
+  })
+
+  it('Should reject non-digit characters with the digits-only message', () => {
+    expect(run(schema, { cph: '12345678a' }).errors).toEqual({
+      cph: 'CPH number must only contain numbers'
     })
   })
 })

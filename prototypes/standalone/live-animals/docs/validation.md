@@ -66,9 +66,9 @@ value — a shape or a domain — reusable by any page.
 runner from `run.js` and a flat set of small, named Joi factories from
 `validators.js`:
 
-`compose`, `requiredText`, `optionalText`, `maxText`, `pattern`,
-`postcode`, `vehicleReg`, `ukPhone`, `oneOf`, `requiredOneOf`,
-`integerInRange`, `currency` and `dateParts`.
+`compose`, `requiredText`, `requiredExactDigits`, `optionalText`,
+`maxText`, `pattern`, `postcode`, `vehicleReg`, `ukPhone`, `oneOf`,
+`requiredOneOf`, `integerInRange`, `currency` and `dateParts`.
 
 - Each factory returns a single-key schema, built by the internal
   `single(name, rule)` helper as `Joi.object({ [name]: rule }).unknown(true)`.
@@ -84,13 +84,17 @@ finish". They live in different places.
 
 ### Save-blocking (hard)
 
-`requiredText` and `requiredOneOf` are the save-blocking primitives —
-they carry no `.allow('')`, so a blank value fails on submit. They guard
-the journey's three flow-control points:
+`requiredText`, `requiredExactDigits` and `requiredOneOf` are the
+save-blocking primitives — they carry no `.allow('')`, so a blank value
+fails on submit. They guard the journey's three flow-control points and
+the CPH number:
 
 - `importType` on the import-type filter (`features/import-type-filter`).
 - `countryOfOrigin` on the origin page (`features/origin`).
 - `declaration` on the declaration page (`features/declaration`).
+- `countyParishHoldingCph` on the CPH page (`features/cph-number`) —
+  `requiredExactDigits` blocks blank, wrong-length and non-digit values,
+  checked on the slash-stripped value.
 
 Every other validator is optional: it carries `.allow('')`, so a blank
 value saves and only a malformed non-blank value fails. A user can walk
