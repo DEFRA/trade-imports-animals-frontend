@@ -140,10 +140,58 @@ Two levels:
   `minEntries` / `maxEntries` / `anyOfIds` / `recordCountEquals`
   describes.
 
+**Prune parameterised test lists FIRST.** Several tests enumerate
+obligations by hand — `it.each` arrays or manual "stragglers"
+arrays — and when an obligation's shape changes, its entry needs
+pruning from those lists. Before writing new tests, grep for the
+obligation's name across `*.test.js` and read each hit:
+
+```bash
+grep -n "<yourObligation>" prototypes/journey-config-spikes/EUDPA-249-flow-layer/**/*.test.js
+```
+
+Known culprits at time of writing:
+
+- `evaluator.test.js` §"V4 — always-mandatory notification-level
+  singles" — `it.each` list of obligations expected to be
+  always-in-scope-mandatory on empty input. Any obligation that
+  becomes conditional-scope must be removed from this list.
+- `evaluator.test.js` §"Phase 4.5.3 — trivial applyTo drop
+  fidelity" — TWO arrays (fidelity `it.each` + `stragglers` filters)
+  enumerating obligations that should have no `applyTo` and no
+  `dependsOn`. Any obligation that gains an `applyTo` closure
+  must be removed from both arrays.
+- `dump.test.js` §`dump.report(empty)` — asserts per-subsection
+  status on the empty-session summary. An obligation flipping from
+  unconditional-mandatory to commodity-gated typically flips its
+  parent subsection from `not-started` to `not-applicable` on empty
+  state; update the assertion.
+- Fixture files under `fixtures/` — check whether any scenario
+  fixture relied on the old shape.
+
+If in doubt, run the suite and treat every failure that mentions
+your obligation by name as a bookkeeping update, not a bug.
+
+**But** — if a test's ASSERTIONS no longer match its stated
+purpose (not just its expected values), STOP and check with the
+user whether the test should be updated, deleted, or replaced. Do
+not silently rewrite the test's intent.
+
 Run the suite:
 
 ```bash
 TZ=UTC npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer/obligations prototypes/journey-config-spikes/EUDPA-249-flow-layer/engine prototypes/journey-config-spikes/EUDPA-249-flow-layer/domain
+```
+
+Then run the FULL spike suite once (not just the obligation-layer
+paths above) to catch downstream fixture / walk / routes-test
+breakage. Failures under `e2e-walk.test.js` and `routes.test.js`
+often reveal that a page presenting the obligation now needs its
+setup adjusted (e.g. a page-render test that hits an obligation-
+gated page needs to seed the gate value first):
+
+```bash
+TZ=UTC npx vitest run prototypes/journey-config-spikes/EUDPA-249-flow-layer
 ```
 
 ### 8. Regenerate MODEL.md
@@ -227,6 +275,10 @@ Everything the skill needs is copied into `references/`:
 - Do NOT skip the domain entry. Coverage test blocks the PR.
 - Do NOT skip the MODEL.md regenerate. Staleness test blocks the
   PR.
+- Do NOT write new tests before pruning existing parameterised
+  lists (see step 7 "Prune parameterised test lists FIRST"). New
+  tests + un-pruned old lists = two categories of failure hitting
+  at once and harder to reason about.
 
 ## Graduation from spike (post-EUDPA-288)
 
