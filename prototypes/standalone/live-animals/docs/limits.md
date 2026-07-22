@@ -42,15 +42,20 @@ losses:
   carries at least a commodity selection, so this edge is not reached through
   the UI.
 
-## Accompanying documents are capped at one
+## Accompanying documents are capped at ten
 
-The model holds the four `accompanyingDocument*` fields as notification-level
-singletons. The documents bridge maps A's `documents[0]` to those four fields;
-**`documents[1]` and later are dropped**, and the upload `filename` metadata
-is dropped with them — the model stores a document-type selection, not the
-uploaded bytes. B → A rebuilds a single-element `documents` array. A journey
-that needs several accompanying documents on one notification is beyond the
-current model.
+`documents` is an ordinary model collection — the four `accompanyingDocument*`
+fields sit `within` it — and the manifest pins the V4 cap as a group invariant,
+`requires: { maxEntries: 10 }`
+([model/obligations/obligations.js](../model/obligations/obligations.js)). The
+documents page also caps its Add affordance (`MAX_DOCUMENTS`), but the model
+invariant is the after-the-fact defence: records saved over a later, lower cap
+surface as an invariant error rather than passing silently. Each document
+record stores its obligation fields plus two feature-owned aux keys
+(`uploadId`, `filename` — `AUX_ENTRY_KEYS` in
+[flow/obligation-source.js](../flow/obligation-source.js)); the file bytes
+never enter the answers — they live behind the `document-uploads` service,
+linked by `uploadId`.
 
 ## Mapper A loses data in reverse; Mapper B is lossless
 
@@ -94,6 +99,16 @@ reads their values:
 Both are safe today; both are the first places a future value-comparing gate
 would break.
 
+## No gate reads an array-valued answer
+
+The gate helpers compare a scalar stored value —
+`values.includes(value)` in
+[model/obligations/helpers.js](../model/obligations/helpers.js) — so an
+array-valued answer would silently compare as no-match, not throw. The only
+array-valued obligation, `transitedCountries`, gates nothing, so no live gate
+reads an array. A future gate over an array-valued field must first teach the
+helpers scalar-or-array membership; do not rely on the raw comparison.
+
 ## Identifier records are capped at the declared animal count
 
 A collection may declare `maxEntriesFrom`, a reference to a sibling count
@@ -113,6 +128,10 @@ The edges of the cap:
 - A **non-integer** stored count is no cap — garbage never blocks a save.
 - The cap is a **maximum only**. It does not force a minimum: one record for
   a hundred animals still passes, per the spec.
+- A **count drop below the record count blocks, never trims.** Lowering a
+  species' animal count below its existing identifier-record count is rejected
+  at the consignment-details save with an error naming the species; identifier
+  records are never silently deleted to fit the new count.
 
 ## Re-entry is by reference and session-scoped, not by identity
 

@@ -8,7 +8,7 @@ import { unrecognisedAnswerKeys } from './obligation-source.js'
 // these tests pin that such keys are reported, with their path.
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 ).values
 
 describe('#unrecognisedAnswerKeys', () => {

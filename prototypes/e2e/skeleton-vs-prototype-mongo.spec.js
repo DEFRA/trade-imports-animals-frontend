@@ -45,7 +45,7 @@ const strip = (doc) => {
 const { values } = JSON.parse(
   readFileSync(
     new URL(
-      '../standalone/live-animals/spec/fixtures/happy-path.json',
+      '../standalone/live-animals/flow/fixtures/happy-path.json',
       import.meta.url
     ),
     'utf8'

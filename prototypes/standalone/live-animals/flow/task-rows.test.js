@@ -19,7 +19,7 @@ import { sectionGatePasses } from './gates.js'
 import { rowStatus, taskRowById, taskRows } from './task-rows.js'
 
 const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 )
 
 const statusIn = (rowId, answers) =>

@@ -109,6 +109,10 @@ Two obligations are **system-populated**: `poApprovedReferenceNumber`
 (taken from gov.identity). They are declared for completeness and carry
 `status: 'mandatory'`, but no page presents them and their value
 legality is enforced upstream, so neither carries a domain entry.
+`commodityType` rides the same coverage exemption (`SYSTEM_POPULATED` in
+`flow/obligation-source.js`): it is declared on each commodity line for
+V4 completeness, but no page presents it — the batch commodity search
+subsumes the type filter's purpose.
 
 ## Scope: the gate helpers and their metadata
 

@@ -9,7 +9,7 @@ import { copy as documentsCopy } from '../standalone/live-animals/features/docum
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
  * as pages land, driven by the values in
- * `prototypes/standalone/live-animals/spec/fixtures/happy-path.json`.
+ * `prototypes/standalone/live-animals/flow/fixtures/happy-path.json`.
  * As of inc-028 no car-domain feature remains — every leg walks the
  * live-animals journey end to end (dashboard -> tasks -> declaration ->
  * submit -> confirmation).
@@ -20,7 +20,7 @@ const GBN_REFERENCE = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 const { values } = JSON.parse(
   readFileSync(
     new URL(
-      '../standalone/live-animals/spec/fixtures/happy-path.json',
+      '../standalone/live-animals/flow/fixtures/happy-path.json',
       import.meta.url
     ),
     'utf8'

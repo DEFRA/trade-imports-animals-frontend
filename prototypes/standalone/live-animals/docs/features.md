@@ -309,7 +309,11 @@ On an add surface, a valid POST creates and thereby **mints** the
 entries' identities (collection, index).
 `features/commodities/search.controller.js` batch-reconciles one line per
 selected species (`state.reconcileEntriesAt`) before handing to the
-consolidated details page. Until that POST the draft selection lives only
+consolidated details page. The reconcile is desired-state by key: a
+still-selected (commodity, species) pair keeps its existing line untouched —
+per-line values and nested identifier records included — a newly selected
+pair appends its seed line, and a deselected pair's line is removed, with the
+write's scope-and-wipe pass destroying anything that leaves scope with it. Until that POST the draft selection lives only
 in the payload (hidden `selected`/`shown` inputs across search
 round-trips) — never a half-created entry in the store. A nested add
 validates its parent index before writing, so the append primitive never
@@ -336,6 +340,17 @@ fabricates a phantom parent.
   guidance. It renders only for a submitted notification; any other
   access redirects to the hub, and a declaration GET on a submitted
   notification redirects here.
+
+### The journey reference strip
+
+The shared layout renders a status strip — the journey's reference number
+plus a Draft/Submitted tag (`kit.journeyStrip`) — above the heading of any
+page whose controller passes `journey` into `kit.base`. The hub and the task
+pages pass it. The dashboard and the import-type filter never do; origin
+passes it only once the journey holds committed answers, so the reference
+first appears at the journey's first save; and the confirmation page omits it
+because its panel already carries the reference — rendering both would double
+it.
 
 ### Progressive enhancement (client JS)
 

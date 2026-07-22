@@ -64,6 +64,27 @@ lookup.
 | `address-book`           | Saved trader parties (gov.identity profiles)                                               | `parties(role)` and `party(role, id)` for each consignment role (consignor, consignee, importer, place-of-origin, destination, contact, commercial transporter), each record carrying a stable id and the full Standard Address Block; `search(role, { query, page })` → one page of matches with `total` / `totalPages`; `PAGE_SIZE`; and `addParty(role, …)` to mint a user-created record. The book owns its own search and pagination — the picker pages render only what it returns                                                                 | `features/addresses/party-picker.controller.js`, `features/addresses/create-address.controller.js`, `features/contact/controller.js`, `features/transport/transporters-select.controller.js`                                                              |
 | `document-uploads`       | trade-imports-animals-backend document-upload endpoints (broker for cdp-uploader)          | `upload(details)` → `uploadId`, `scanStatus({ uploadId, … })` → `PENDING` / `COMPLETE` / `REJECTED`, and `remove(uploadId)` — the lifecycle behind the documents page                                                                                                                                                                                                                                                                                                                                                                                    | `features/documents/controller.js`                                                                                                                                                                                                                        |
 
+## Commodity applicability lists — `commodities`
+
+The commodity-keyed applicability lists are the V4 commodity lists expressed
+in the stored commodity vocabulary, and the model's gates read them through
+the same accessors the controllers use — one source, so gate and page can
+never disagree. Two list shapes exist in the stub data:
+
+- The identifier/CPH/unweaned lists (`PASSPORT_COMMODITIES`,
+  `TATTOO_COMMODITIES`, `EAR_TAG_COMMODITIES`, `HORSE_NAME_COMMODITIES`,
+  `PERMANENT_ADDRESS_COMMODITIES`, `UNWEANED_ANIMAL_COMMODITIES`,
+  `CPH_COMMODITIES`) are each V4 list **intersected with the selectable
+  `COMMODITY_OPTIONS`** — V4 entries with no selectable commodity (Ferrets
+  and Pigs on the tattoo list, for example) are omitted, not dormant.
+- `PACKAGE_COUNT_COMMODITIES` carries the full 54-entry V4 list; entries for
+  commodities outside `COMMODITY_OPTIONS` are unreachable until the commodity
+  vocabulary widens.
+
+When commodities come from real MDM, the intersected lists must widen back to
+their full V4 sets alongside the vocabulary — the intersection is a stub
+narrowing, not a requirement.
+
 ## Saved parties — `address-book`
 
 The book returns saved parties per consignment role. Each record has a stable id

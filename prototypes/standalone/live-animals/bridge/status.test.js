@@ -27,7 +27,7 @@ import {
 // rollup across representative journey states.
 
 const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
 )
 
 // Row order is taskRows order; section order is answerSections order.

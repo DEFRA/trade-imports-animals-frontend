@@ -9,7 +9,7 @@ import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 // controllers consume.
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
 ).values
 
 // makeScope computes readyForCheckYourAnswers via the boot-injected fn.

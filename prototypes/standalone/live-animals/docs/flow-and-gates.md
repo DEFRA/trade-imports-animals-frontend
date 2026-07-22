@@ -111,6 +111,8 @@ One wrinkle if the shared page must sit structurally inside two sections: `secti
 
 Together they produce the journey's shape: a linear run through a section, skipping pages whose gates fail (no commercial transporter chosen means no transporter-select page), then back to the hub. `shared/kit.js`'s `nextTarget` wraps `nextInSection` in `kit.exitTarget`, which resolves any exiting POST the same way: an explicit `exit=hub` submit wins, else a `?change=1` request returns to check-your-answers, else the fallback (`nextInSection` for a task page, the loop's own target for a collection list). Collection loops thread the `?change=1` context through their internal links and PRG redirects — only the loop's exit (the list page's Continue) repoints to check-your-answers; mid-loop add/remove/save actions never do.
 
+Every task page renders three exits (`shared/save-actions.njk`): the primary save, a secondary named submit "Save and return to hub" (`name="exit" value="hub"`), and a "Cancel and return to hub" link. The named submit runs the page's POST handler unchanged — identical validation, the same commit path, only the success redirect differs — so a failing save-to-hub shows exactly the errors a failing save-and-continue would, and commits nothing. Cancel is a plain GET to the hub: it never posts, so the form input is discarded. The declaration page keeps a single submit — it is the submit action, not a task save.
+
 Nothing here derives scope or mutates data. Navigation only reads the scope facts the state layer already computed.
 
 ## The opening run

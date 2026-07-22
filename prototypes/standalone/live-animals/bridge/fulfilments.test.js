@@ -29,7 +29,7 @@ import {
 } from '../model/obligations/obligations.js'
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../spec/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
 ).values
 
 const address = {

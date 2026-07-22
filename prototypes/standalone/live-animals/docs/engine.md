@@ -101,6 +101,16 @@ arbitrary iteration.
 - out of scope → drop the whole entry.
 - `derived-leaf` → keep only the records whose fulfilmentId is in the set the
   obligation's `applyTo` authorises (its `records`).
+
+  A projecting gate admits a record by a true path-prefix match — `key === ''`
+  (a scalar gate authorises everything), `path === key`, or
+  `path.startsWith(key + '/')` — so a gate nested inside a depth-2 group still
+  admits its deeper records. The empty-string branch is load-bearing: a naive
+  `startsWith` alone would stop scalar gates authorising any record, and a
+  first-segment-only match would silently destroy the stored records of any
+  gate below depth 1. Pinned by `retrofit/path-prefix-depth.test.js`, whose
+  negative control stops the match being satisfied by admitting everything.
+
 - `single` scalar → keep as-is.
 - keyed record (a `field` record or user-driven leaf) → keep when non-empty.
 
@@ -231,7 +241,11 @@ the shape controllers consume.
 - **`fulfilments.js`** — the translator. `answersToFulfilments` /
   `fulfilmentsToAnswers` convert nested answers to and from the flat map, with
   composite-key ↔ positional-path conversion (`ancestorChain`,
-  `fulfilmentIdToPath`) and value-vocabulary normalisation.
+  `fulfilmentIdToPath`). Values cross unchanged — answers and the manifest's
+  gates share one stored vocabulary — with one exception: the animal count is
+  coerced from the page's HTTP string to a number, because the model's count
+  invariants compare numerically. Unparseable input passes through raw for the
+  controller to reject; the bridge never destroys a value it cannot place.
 - **`scope.js`** — `makeScopeFromB(answers)` returns
   `{ inScope: Set<pathKey>, has(id), answered(id), readyForCheckYourAnswers }`.
   It projects every in-scope implication back into the pathKey grammar (bare
