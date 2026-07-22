@@ -54,7 +54,13 @@ export const copy = {
     checking: 'Yn gwirio',
     unknown: 'Anhysbys'
   },
+  announce: {
+    safe: 'Sgan y ddogfen wedi’i gwblhau: mae’r ffeil yn ddiogel i’w defnyddio',
+    virusFound:
+      'Methodd sgan y ddogfen: canfuwyd firws. Tynnwch y ffeil a rhowch gynnig arall arni.'
+  },
   errors: {
+    hiddenPrefix: 'Gwall:',
     referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 58 nod neu lai',
     dateInvalid: 'Rhowch ddyddiad cyhoeddi go iawn',
     referenceRequired: 'Rhowch gyfeirnod dogfen',

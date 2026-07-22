@@ -47,6 +47,9 @@ export const OVERSIZE_FILE_MESSAGE = en.errors.oversize(MAX_FILE_SIZE_LABEL)
 const MULTIPART_OVERHEAD_BYTES = 1024
 export const MAX_PAYLOAD_BYTES = MAX_FILE_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
 
+export const exceedsMaxFileSize = (byteCount, limit = MAX_FILE_SIZE_BYTES) =>
+  Number.isFinite(byteCount) && Number.isFinite(limit) && byteCount > limit
+
 const fileExtension = (filename = '') =>
   filename.includes('.') ? filename.split('.').pop().toLowerCase() : ''
 

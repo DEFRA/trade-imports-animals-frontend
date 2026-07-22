@@ -53,7 +53,13 @@ export const copy = {
     checking: 'Checking',
     unknown: 'Unknown'
   },
+  announce: {
+    safe: 'Document scan complete: the file is safe to use',
+    virusFound:
+      'Document scan failed: a virus was found. Remove the file and try again.'
+  },
   errors: {
+    hiddenPrefix: 'Error:',
     referenceMaxLength: 'Document reference must be 58 characters or fewer',
     dateInvalid: 'Enter a real date of issue',
     referenceRequired: 'Enter a document reference',

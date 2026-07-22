@@ -5,6 +5,7 @@ import {
   ALLOWED_TYPES,
   ALLOWED_FILE_TYPES_HINT,
   attachmentTypeFor,
+  exceedsMaxFileSize,
   MAX_FILE_SIZE_BYTES,
   MAX_PAYLOAD_BYTES,
   OVERSIZE_FILE_MESSAGE
@@ -42,5 +43,22 @@ describe('#upload-config', () => {
     expect(OVERSIZE_FILE_MESSAGE).toBe(
       'The selected file must be smaller than 10 MB'
     )
+  })
+
+  it('Should judge a byte count against the shared limit, allowing exactly the limit', () => {
+    expect(exceedsMaxFileSize(MAX_FILE_SIZE_BYTES)).toBe(false)
+    expect(exceedsMaxFileSize(MAX_FILE_SIZE_BYTES + 1)).toBe(true)
+    expect(exceedsMaxFileSize(0)).toBe(false)
+  })
+
+  it('Should judge a byte count against a browser-supplied limit', () => {
+    expect(exceedsMaxFileSize(1025, 1024)).toBe(true)
+    expect(exceedsMaxFileSize(1024, 1024)).toBe(false)
+  })
+
+  it('Should not call an unmeasurable byte count oversize', () => {
+    expect(exceedsMaxFileSize(undefined)).toBe(false)
+    expect(exceedsMaxFileSize(Number.NaN)).toBe(false)
+    expect(exceedsMaxFileSize(10, Number.NaN)).toBe(false)
   })
 })

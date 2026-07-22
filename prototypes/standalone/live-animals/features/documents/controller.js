@@ -24,8 +24,10 @@ import {
   MAX_FILE_SIZE_LABEL,
   MAX_PAYLOAD_BYTES,
   OVERSIZE_FILE_MESSAGE,
-  attachmentTypeFor
+  attachmentTypeFor,
+  exceedsMaxFileSize
 } from './upload-config.js'
+import { MAX_POLL_ATTEMPTS, SCAN_STATUS } from './scan-poll.js'
 import { documentsPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
@@ -34,7 +36,6 @@ export const meta = { ...page, collects: ['documents'] }
 const view = `${TEMPLATES}/features/documents/template`
 
 export const MAX_DOCUMENTS = maxDocuments()
-export const MAX_POLLING_ATTEMPTS = 10
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
@@ -42,12 +43,6 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const NOT_PROVIDED = copy.notProvided
 const CANNOT_CONTINUE_MESSAGE = copy.errors.cannotContinue
 const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
-
-const SCAN_STATUS = {
-  COMPLETE: 'COMPLETE',
-  PENDING: 'PENDING',
-  REJECTED: 'REJECTED'
-}
 
 const DOCUMENTS_ADDED_ANCHOR = '#documents-added'
 
@@ -85,7 +80,7 @@ const EMPTY_FORM = {
 
 export const fileErrors = (file) => {
   if (!file?.payload?.length) return { file: copy.errors.fileRequired }
-  if (file.payload.length > MAX_FILE_SIZE_BYTES) {
+  if (exceedsMaxFileSize(file.payload.length)) {
     return { file: OVERSIZE_FILE_MESSAGE }
   }
   if (!attachmentTypeFor(file.filename ?? '')) {
@@ -125,16 +120,28 @@ const loadPage = async (request, h) => {
 }
 
 const SCAN_STATUS_TAGS = {
-  COMPLETE: { text: copy.scanTags.safe, classes: 'govuk-tag--green' },
-  REJECTED: { text: copy.scanTags.virusFound, classes: 'govuk-tag--red' },
+  COMPLETE: {
+    text: copy.scanTags.safe,
+    classes: 'govuk-tag--green',
+    announcement: copy.announce.safe
+  },
+  REJECTED: {
+    text: copy.scanTags.virusFound,
+    classes: 'govuk-tag--red',
+    announcement: copy.announce.virusFound
+  },
   PENDING: { text: copy.scanTags.checking, classes: 'govuk-tag--blue' }
 }
 
+const UNKNOWN_TAG = { text: copy.scanTags.unknown, classes: 'govuk-tag--grey' }
+
+export const scanCopyJson = JSON.stringify({
+  ...SCAN_STATUS_TAGS,
+  UNKNOWN: UNKNOWN_TAG
+})
+
 const statusTagHtml = (scanStatus) => {
-  const tag = SCAN_STATUS_TAGS[scanStatus] ?? {
-    text: copy.scanTags.unknown,
-    classes: 'govuk-tag--grey'
-  }
+  const tag = SCAN_STATUS_TAGS[scanStatus] ?? UNKNOWN_TAG
   return `<strong class="govuk-tag ${tag.classes}">${tag.text}</strong>`
 }
 
@@ -154,12 +161,21 @@ const removeCell = (request, index) => {
   )
 }
 
+// The scan-status cell carries the polling contract: the client rewrites the
+// tag it holds in place, keyed by upload id.
+const statusCell = (entry, scanStatus) => ({
+  html: statusTagHtml(scanStatus),
+  attributes: entry.uploadId
+    ? { 'data-upload-id': entry.uploadId, 'data-scan-status': scanStatus }
+    : undefined
+})
+
 const documentRows = (request, documents) =>
   documents.map(({ index, entry, scanStatus }) => [
     { text: cellText(entry.accompanyingDocumentReference) },
     { text: cellText(copy.types[entry.accompanyingDocumentType]) },
     { text: dateText(entry.accompanyingDocumentDateOfIssue) },
-    { html: statusTagHtml(scanStatus) },
+    statusCell(entry, scanStatus),
     { html: removeCell(request, index) }
   ])
 
@@ -214,11 +230,14 @@ const render = (
       ? { titleText: sharedCopy.errorSummary.title, errorList }
       : null,
     anyPending,
-    timedOut: anyPending && attempt >= MAX_POLLING_ATTEMPTS,
+    timedOut: anyPending && attempt >= MAX_POLL_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1),
     acceptAttribute: ACCEPT_ATTRIBUTE,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
+    maxFileSize: MAX_FILE_SIZE_BYTES,
+    oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
+    scanCopyJson,
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
       label: copy.dateOfIssue.label,
       hint: copy.dateOfIssue.hint,
@@ -240,6 +259,22 @@ const isoDate = ({ day, month, year } = {}) => {
 const get = async (request, h) => {
   const pageState = await loadPage(request, h)
   return render(request, h, pageState, EMPTY_FORM)
+}
+
+const scanned = (documents) =>
+  documents
+    .filter(({ entry }) => entry.uploadId)
+    .map(({ entry, scanStatus }) => ({ uploadId: entry.uploadId, scanStatus }))
+
+// The JSON leg the client bundle polls. A poll is the scripted equivalent of
+// the refresh link, so it asks the upload service for a fresh status.
+const getStatus = async (request, h) => {
+  const { answers } = await state.get(request, h)
+  const documents = await withScanStatus(
+    state.collectionView(answers, ['documents']),
+    true
+  )
+  return h.response({ documents: scanned(documents) })
 }
 
 const uploadDetails = (journey, entry, file, filename) => ({
@@ -393,6 +428,12 @@ export const routes = [
       }
     },
     handler: post
+  },
+  {
+    method: 'GET',
+    path: pagePath(`${page.slug}/status`),
+    options: open,
+    handler: getStatus
   },
   {
     method: 'GET',

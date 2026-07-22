@@ -1252,8 +1252,11 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
 
-    // The stock refresh affordance settles the scan — page reload, no JS.
-    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
+    // The manual refresh link is the no-JS fallback: with the client bundle
+    // running it is hidden and the poll settles the scan on its own.
+    await expect(
+      page.getByRole('link', { name: 'Refresh virus scan status' })
+    ).toBeHidden()
     await expect(firstRow).toContainText('Safe')
 
     await addDocument(page, secondDoc)
@@ -1315,11 +1318,27 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
 
-    // A file over the 10MB limit is refused: this one blows the route-level
-    // payload cap, exercising the 413 safety net that re-renders the page
-    // with the friendly oversize error instead of a bare 413.
+    // A file over the 10MB limit never leaves the browser: the client
+    // preflight blocks the submit, adds its item to the summary already on
+    // the page, marks the field and moves focus to the summary title.
     await setUploadFile(page, 'oversize.pdf', Buffer.alloc(10_100_000, 1))
     await page.getByRole('button', { name: 'Save and add another' }).click()
+    await expect(
+      page.locator('li[data-client-error="file-size-summary"]')
+    ).toContainText('The selected file must be smaller than 10 MB')
+    await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
+    await expect(page.getByLabel('Upload a file')).toHaveAttribute(
+      'aria-describedby',
+      /file-error/
+    )
+
+    // The server safety net still has to catch an oversize body for a user
+    // without the enhancement. form.submit() fires no submit event, so it
+    // posts past the preflight and blows the route-level payload cap — the
+    // 413 is re-rendered as the same friendly oversize error.
+    await page.evaluate(() =>
+      document.querySelector('form[data-max-file-size]').submit()
+    )
     await expect(
       page.getByRole('link', {
         name: 'The selected file must be smaller than 10 MB'
@@ -1337,7 +1356,6 @@ test.describe('live-animals (page-owned spine)', () => {
       hasText: virusDoc.accompanyingDocumentReference
     })
     await expect(virusRow).toContainText('Checking')
-    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
     await expect(virusRow).toContainText('Virus found')
 
     // A rejected document blocks Continue with the per-file error...
@@ -1362,6 +1380,53 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toHaveCount(0)
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+
+  test('documents scan status — the poll rewrites a settled tag in place and announces it, leaving the still-scanning document alone', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await unlockSections(page)
+    await page.getByRole('link', { name: 'Uploaded documents' }).click()
+
+    const settlingDoc = {
+      accompanyingDocumentReference: 'POLL-SETTLES-0001',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename: 'itahc-poll.pdf'
+    }
+    // The never-scans convention keeps one document PENDING, so the batch
+    // never settles and the poll never navigates away — which is what makes
+    // the in-place rewrite and the announcement observable.
+    const stuckDoc = {
+      accompanyingDocumentReference: 'POLL-STUCK-0002',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename: 'never-scans-invoice.pdf'
+    }
+
+    await addDocument(page, settlingDoc)
+    await addDocument(page, stuckDoc)
+
+    // The manual refresh link is the no-JS fallback; the bundle hides it.
+    await expect(
+      page.getByRole('link', { name: 'Refresh virus scan status' })
+    ).toBeHidden()
+
+    const settlingRow = page.locator('.govuk-table__row', {
+      hasText: settlingDoc.accompanyingDocumentReference
+    })
+    const stuckRow = page.locator('.govuk-table__row', {
+      hasText: stuckDoc.accompanyingDocumentReference
+    })
+    await expect(settlingRow).toContainText('Checking')
+    await expect(settlingRow).toContainText('Safe')
+    await expect(stuckRow).toContainText('Checking')
+
+    // A reload would blank the live region, so surviving text proves the
+    // tag was rewritten in the page the user is already on.
+    await expect(page.locator('#js-scan-status-announcer')).toHaveText(
+      'Document scan complete: the file is safe to use'
+    )
   })
 
   test('addresses — selecting a consignor, a place of destination, a place of origin, a consignee and an importer copies each party onto the landing page and completes the task', async ({
@@ -2547,11 +2612,15 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The documents card only renders on the review once a document exists —
     // add the fixture document from the hub first (no change context yet).
-    // Continue needs the scan settled, so refresh the canned lifecycle first.
+    // Continue needs the scan settled, which the poll does on its own.
     const [doc] = values.documents
     await page.getByRole('link', { name: 'Uploaded documents' }).click()
     await addDocument(page, doc)
-    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
+    await expect(
+      page.locator('.govuk-table__row', {
+        hasText: doc.accompanyingDocumentReference
+      })
+    ).toContainText('Safe')
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
@@ -2609,7 +2678,7 @@ test.describe('live-animals (page-owned spine)', () => {
     )
 
     // Documents leg: the card's Change enters the single-page loop with the
-    // change context; adding another document loops; the refresh affordance
+    // change context; adding another document loops; the poll's re-render
     // keeps the context; Continue exits back to the review with the new
     // document rendered.
     const secondDoc = {
@@ -2630,7 +2699,11 @@ test.describe('live-animals (page-owned spine)', () => {
       })
     ).toBeVisible()
     expect(page.url()).toContain('change=1')
-    await page.getByRole('link', { name: 'Refresh virus scan status' }).click()
+    await expect(
+      page.locator('.govuk-table__row', {
+        hasText: secondDoc.accompanyingDocumentReference
+      })
+    ).toContainText('Safe')
     expect(page.url()).toContain('change=1')
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(

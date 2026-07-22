@@ -7,11 +7,17 @@
 {% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
-  {% include "standalone/live-animals/shared/error-summary.njk" %}
+  <div id="js-error-summary-container"
+       data-error-summary-title="{{ sharedCopy.errorSummary.title }}"
+       data-error-prefix="{{ copy.errors.hiddenPrefix }}">
+    {% include "standalone/live-animals/shared/error-summary.njk" %}
+  </div>
 
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  <form method="post" enctype="multipart/form-data" novalidate>
+  <form method="post" enctype="multipart/form-data" novalidate
+        data-max-file-size="{{ maxFileSize }}"
+        data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
     {{ govukInput({
@@ -66,17 +72,27 @@
         }) }}
       </div>
       {% if anyPending %}
-        <p class="govuk-body">
+        <p id="js-refresh-fallback" class="govuk-body">
           <a href="{{ refreshHref }}" class="govuk-link">{{ copy.refreshStatus }}</a>
         </p>
       {% endif %}
-      {% if timedOut %}
-        <p class="govuk-hint">{{ copy.stillChecking }}</p>
-      {% endif %}
+      <p id="js-timeout-message" class="govuk-hint" {% if not timedOut %}hidden{% endif %}>{{ copy.stillChecking }}</p>
     {% else %}
       <p class="govuk-body">{{ copy.empty }}</p>
     {% endif %}
 
     {{ saveActions(hubHref, { text: copy.continueButton, name: "action", value: "continue" }, sharedCopy.saveActions) }}
   </form>
+
+  <div id="js-scan-status-announcer"
+       class="govuk-visually-hidden"
+       aria-live="polite"
+       aria-atomic="true"
+       data-settled-href="{{ refreshHref }}"
+       data-scan-copy="{{ scanCopyJson }}"></div>
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('liveAnimalsDocuments.js') }}"></script>
 {% endblock %}

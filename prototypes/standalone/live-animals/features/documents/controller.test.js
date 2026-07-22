@@ -29,6 +29,9 @@ const get = documents.routes.find(
 const remove = documents.routes.find((route) =>
   route.path.includes('remove')
 ).handler
+const statusRoute = documents.routes.find((route) =>
+  route.path.endsWith('/status')
+)
 
 const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
   filename,
@@ -264,6 +267,88 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     expect(result.response.redirect).toBeDefined()
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should serve the scan statuses the client polls, keyed by upload id', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const result = await driveHandler(statusRoute.handler, {
+      seed: {
+        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+      }
+    })
+    expect(result.response.payload.documents).toEqual([
+      { uploadId, scanStatus: 'COMPLETE' }
+    ])
+  })
+
+  it('Should settle a pending scan through the poll leg, as the refresh link does', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const seed = {
+      documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+    }
+    const beforePoll = await driveHandler(get, { seed })
+    expect(beforePoll.view.context.rows[0][3].html).toContain('Checking')
+
+    const polled = await driveHandler(statusRoute.handler, { seed })
+    expect(polled.response.payload.documents).toEqual([
+      { uploadId, scanStatus: 'COMPLETE' }
+    ])
+
+    const afterPoll = await driveHandler(get, { seed })
+    expect(afterPoll.view.context.rows[0][3].html).toContain('Safe')
+  })
+
+  it('Should report a rejected scan so the client can rewrite the tag', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'virus.pdf' })
+    const result = await driveHandler(statusRoute.handler, {
+      seed: {
+        documents: [storedDocument({ uploadId, filename: 'virus.pdf' })]
+      }
+    })
+    expect(result.response.payload.documents).toEqual([
+      { uploadId, scanStatus: 'REJECTED' }
+    ])
+  })
+
+  it('Should leave documents with no upload out of the poll payload — the client keys on upload id', async () => {
+    const result = await driveHandler(statusRoute.handler, {
+      seed: { documents: [storedDocument()] }
+    })
+    expect(result.response.payload.documents).toEqual([])
+  })
+
+  it('Should tag every uploaded row with its upload id and current scan status', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const result = await driveHandler(get, {
+      seed: {
+        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+      }
+    })
+    expect(result.view.context.rows[0][3].attributes).toEqual({
+      'data-upload-id': uploadId,
+      'data-scan-status': 'PENDING'
+    })
+  })
+
+  it('Should hand the view the browser-side upload limit and the scan copy the client rewrites tags with', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.maxFileSize).toBe(MAX_FILE_SIZE_BYTES)
+    expect(result.view.context.oversizeFileMessage).toBe(OVERSIZE_FILE_MESSAGE)
+    expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
+      COMPLETE: {
+        text: 'Safe',
+        classes: 'govuk-tag--green',
+        announcement: 'Document scan complete: the file is safe to use'
+      },
+      REJECTED: {
+        text: 'Virus found',
+        classes: 'govuk-tag--red',
+        announcement:
+          'Document scan failed: a virus was found. Remove the file and try again.'
+      },
+      PENDING: { text: 'Checking', classes: 'govuk-tag--blue' },
+      UNKNOWN: { text: 'Unknown', classes: 'govuk-tag--grey' }
+    })
   })
 
   it('Should register the multipart POST route with the 10MB payload cap', () => {

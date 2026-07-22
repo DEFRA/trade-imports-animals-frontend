@@ -9,6 +9,7 @@ export const stubH = () => {
       return captured.view
     },
     redirect: (to) => ({ redirect: to }),
+    response: (payload) => ({ payload }),
     state: () => {},
     captured
   }
