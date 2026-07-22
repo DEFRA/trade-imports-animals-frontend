@@ -65,8 +65,12 @@ const shared = {
   arrival: { day: '12', month: '12', year: '2026' }
 }
 
+// Newest first, so the journey's notification is on the first page however
+// many notifications the backend already holds.
 const listRefs = async (request) => {
-  const response = await request.get(`${BACKEND}/notifications`)
+  const response = await request.get(
+    `${BACKEND}/notifications?sort=createdAt,desc`
+  )
   expect(response.ok()).toBeTruthy()
   const body = await response.json()
   return new Set(body.content.map((n) => n.referenceNumber))
