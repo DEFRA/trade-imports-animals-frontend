@@ -2,6 +2,12 @@ export const copy = {
   title: 'Check your answers',
   notProvided: 'Not provided',
   yesNo: { yes: 'Yes', no: 'No' },
+  means: {
+    AIRPLANE: 'Airplane',
+    RAILWAY: 'Railway',
+    ROAD_VEHICLE: 'Road Vehicle',
+    VESSEL: 'Vessel'
+  },
   change: 'Change',
   sections: {
     aboutTheConsignment: '1. About the consignment',

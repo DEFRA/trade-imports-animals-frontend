@@ -47,7 +47,7 @@ describe('POST transit-countries', () => {
     'Should re-render with the transitedCountries message for $name and commit nothing',
     async ({ payload, message }) => {
       const result = await driveHandler(post, {
-        seed: { meansOfTransport: 'Road Vehicle' },
+        seed: { meansOfTransport: 'ROAD_VEHICLE' },
         payload
       })
       expect(result.view.context.errors.transitedCountries).toBe(message)
@@ -57,7 +57,7 @@ describe('POST transit-countries', () => {
 
   it('Should commit the selection and return to the page when adding another country', async () => {
     const result = await driveHandler(post, {
-      seed: { meansOfTransport: 'Road Vehicle' },
+      seed: { meansOfTransport: 'ROAD_VEHICLE' },
       payload: { transitedCountries: 'FR', addCountry: 'add' }
     })
     expect(result.after.transitedCountries).toEqual(['FR'])

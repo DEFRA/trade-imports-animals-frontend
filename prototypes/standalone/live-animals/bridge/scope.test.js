@@ -68,7 +68,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     const scope = makeScope(
       resolveRegion({
         transporterType: 'Commercial',
-        meansOfTransport: 'Road Vehicle',
+        meansOfTransport: 'ROAD_VEHICLE',
         transitedCountries: ['FR']
       })
     )
@@ -80,7 +80,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     const scope = makeScope(
       resolveRegion({
         transporterType: 'Private',
-        meansOfTransport: 'Aeroplane'
+        meansOfTransport: 'AIRPLANE'
       })
     )
     expect(scope.has('privateTransporter')).toBe(true)

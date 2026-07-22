@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
+import { copy as transportCopy } from '../standalone/live-animals/features/transport/copy.en.js'
+
 /**
  * Cross-journey persistence equivalence.
  *
@@ -213,7 +215,10 @@ const drivePrototype = async (page) => {
     .getByRole('option', { name: 'Aberdeen Harbour (GB ABD)', exact: true })
     .click()
   await page
-    .getByRole('radio', { name: values.meansOfTransport, exact: true })
+    .getByRole('radio', {
+      name: transportCopy.portOfEntry.means.options[values.meansOfTransport],
+      exact: true
+    })
     .check()
   await page
     .getByLabel('Transport identification')

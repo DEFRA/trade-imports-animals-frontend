@@ -52,7 +52,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
         regionOfOriginCode: 'FR-75',
         reasonForImport: 'internalMarket',
         purposeInInternalMarket: 'breeding',
-        meansOfTransport: 'Road Vehicle',
+        meansOfTransport: 'ROAD_VEHICLE',
         transporterType: 'Commercial',
         portOfEntry: 'GB ABD',
         transitedCountries: ['FR', 'BE'],
@@ -180,14 +180,6 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       ).toBe('internal-market')
     })
 
-    it('Should normalise meansOfTransport Title Case to kebab', () => {
-      expect(
-        answersToFulfilments({ meansOfTransport: 'Road Vehicle' })[
-          meansOfTransport.id
-        ]
-      ).toBe('road-vehicle')
-    })
-
     it('Should normalise transporterType Title Case to kebab', () => {
       expect(
         answersToFulfilments({ transporterType: 'Commercial' })[
@@ -206,12 +198,14 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       const answers = {
         purposeInInternalMarket: 'breeding',
         animalsCertifiedFor: 'slaughter',
+        meansOfTransport: 'ROAD_VEHICLE',
         transitedCountries: ['FR', 'BE'],
         commodityLines: [{ speciesSelection: ['1148346'] }]
       }
       const fulfilments = answersToFulfilments(answers)
       expect(fulfilments[purposeInInternalMarket.id]).toBe('breeding')
       expect(fulfilments[animalsCertifiedFor.id]).toBe('slaughter')
+      expect(fulfilments[meansOfTransport.id]).toBe('ROAD_VEHICLE')
       expect(fulfilments[transitedCountries.id]).toEqual(['FR', 'BE'])
       expect(fulfilments[species.id]).toEqual({ line0: ['1148346'] })
     })
@@ -219,7 +213,6 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
     it("Should round-trip every divergent field's vocabulary", () => {
       const answers = {
         reasonForImport: 'temporaryAdmissionHorses',
-        meansOfTransport: 'Road Vehicle',
         transporterType: 'Private',
         portOfEntry: 'GB DVR'
       }

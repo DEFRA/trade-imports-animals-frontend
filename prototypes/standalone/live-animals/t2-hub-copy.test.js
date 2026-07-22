@@ -153,13 +153,13 @@ describe('#hubHandler', () => {
 
     const byAir = await renderHub({
       ...unlockedSeed,
-      meansOfTransport: 'Airplane'
+      meansOfTransport: 'AIRPLANE'
     })
     expect(rowByTitle(byAir, 'Transit countries')).toBeUndefined()
 
     const byRoad = await renderHub({
       ...unlockedSeed,
-      meansOfTransport: 'Road Vehicle'
+      meansOfTransport: 'ROAD_VEHICLE'
     })
     const transitRow = rowByTitle(byRoad, 'Transit countries')
     expect(transitRow.href).toBe(

@@ -213,7 +213,7 @@ describe.skipIf(!runsIt('real'))(
           countryOfOrigin: 'FR',
           regionOfOriginCode: 'FR-75',
           purposeInInternalMarket: 'breeding',
-          meansOfTransport: 'Road Vehicle',
+          meansOfTransport: 'ROAD_VEHICLE',
           transportIdentification: 'FR-892-LK',
           transportDocumentReference: 'CMR-2026-884721',
           transitedCountries: ['FR', 'BE'],
@@ -262,7 +262,7 @@ describe.skipIf(!runsIt('real'))(
         // The extras have backend homes on the extended backend and survive.
         expect(loaded.answers.regionOfOriginCode).toBe('FR-75')
         expect(loaded.answers.purposeInInternalMarket).toBe('breeding')
-        expect(loaded.answers.meansOfTransport).toBe('Road Vehicle')
+        expect(loaded.answers.meansOfTransport).toBe('ROAD_VEHICLE')
         expect(loaded.answers.transportIdentification).toBe('FR-892-LK')
         expect(loaded.answers.transportDocumentReference).toBe(
           'CMR-2026-884721'

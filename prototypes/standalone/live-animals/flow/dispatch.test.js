@@ -187,7 +187,7 @@ describe('#buildDispatch', () => {
       },
       portOfEntry: 'GB ABD',
       arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-      meansOfTransport: 'Airplane',
+      meansOfTransport: 'AIRPLANE',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
       transporterType: 'Commercial',

@@ -59,7 +59,7 @@ describe('#rowStatus — one status per hub task row', () => {
         ...unlocked,
         portOfEntry: 'GB ABD',
         arrivalDateAtPort: { day: '1', month: '2', year: '2026' },
-        meansOfTransport: 'Airplane',
+        meansOfTransport: 'AIRPLANE',
         transportIdentification: 'FR-892-LK',
         transportDocumentReference: 'CMR-1'
       })
@@ -109,13 +109,13 @@ describe('#rowStatus — one status per hub task row', () => {
       expect(
         statusIn('transitCountries', {
           ...unlocked,
-          meansOfTransport: 'Airplane'
+          meansOfTransport: 'AIRPLANE'
         })
       ).toBe(NA)
     })
 
     it('Should appear as Optional for each overland means and complete once countries are added', () => {
-      for (const means of ['Railway', 'Road Vehicle']) {
+      for (const means of ['RAILWAY', 'ROAD_VEHICLE']) {
         expect(
           statusIn('transitCountries', {
             ...unlocked,
@@ -126,7 +126,7 @@ describe('#rowStatus — one status per hub task row', () => {
       expect(
         statusIn('transitCountries', {
           ...unlocked,
-          meansOfTransport: 'Road Vehicle',
+          meansOfTransport: 'ROAD_VEHICLE',
           transitedCountries: ['FR', 'BE']
         })
       ).toBe(FULFILLED)
@@ -243,7 +243,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'the happy path': happyPath,
     'the happy path by air (the conditional transit row is Not applicable)': {
       ...happyPath,
-      meansOfTransport: 'Airplane',
+      meansOfTransport: 'AIRPLANE',
       transitedCountries: []
     },
     'the happy path with a private transporter': {

@@ -3,6 +3,12 @@ export const copy = {
   title: 'Gwiriwch eich atebion',
   notProvided: 'Heb ei ddarparu',
   yesNo: { yes: 'Iawn', no: 'Na' },
+  means: {
+    AIRPLANE: 'Awyren',
+    RAILWAY: 'Rheilffordd',
+    ROAD_VEHICLE: 'Cerbyd ffordd',
+    VESSEL: 'Llong'
+  },
   change: 'Newid',
   sections: {
     aboutTheConsignment: '1. Am y llwyth',

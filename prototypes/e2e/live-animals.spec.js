@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 
 import { COUNTRY_LABELS } from '../standalone/live-animals/services/countries/stub.js'
 import { PORTS } from '../standalone/live-animals/services/ports/stub.js'
+import { copy as transportCopy } from '../standalone/live-animals/features/transport/copy.en.js'
 
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
@@ -24,6 +25,11 @@ const { values } = JSON.parse(
     'utf8'
   )
 )
+
+// The fixture stores the notification enum; the radios are labelled with the
+// display copy.
+const meansOfTransportLabel =
+  transportCopy.portOfEntry.means.options[values.meansOfTransport]
 
 const startNotification = async (page) => {
   await page.goto(`${BASE}/home`)
@@ -274,7 +280,7 @@ const completeAnswerSections = async (page) => {
   await page.getByLabel('Year').fill(arrival.year)
   await choosePortOfEntry(page)
   await page
-    .getByRole('radio', { name: values.meansOfTransport, exact: true })
+    .getByRole('radio', { name: meansOfTransportLabel, exact: true })
     .check()
   await page
     .getByLabel('Transport identification')
@@ -1690,7 +1696,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByLabel('Year').fill(arrival.year)
     await choosePortOfEntry(page)
     await page
-      .getByRole('radio', { name: values.meansOfTransport, exact: true })
+      .getByRole('radio', { name: meansOfTransportLabel, exact: true })
       .check()
     await page
       .getByLabel('Transport identification')
@@ -2736,7 +2742,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await page.getByLabel('Year').fill(arrival.year)
     await choosePortOfEntry(page)
     await page
-      .getByRole('radio', { name: values.meansOfTransport, exact: true })
+      .getByRole('radio', { name: meansOfTransportLabel, exact: true })
       .check()
     await page
       .getByLabel('Transport identification')

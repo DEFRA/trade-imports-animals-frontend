@@ -88,7 +88,7 @@ const fullSeed = {
   countyParishHoldingCph: '123456789',
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-  meansOfTransport: 'Road Vehicle',
+  meansOfTransport: 'ROAD_VEHICLE',
   transportIdentification: 'FR-892-LK',
   transportDocumentReference: 'CMR-2026-884721',
   transitedCountries: ['FR', 'BE'],
@@ -136,6 +136,11 @@ describe('#buildSections (check-answers GET)', () => {
       const rows = rowsOf(await sectionsFor(fullSeed))
       expect(valueOf(rows, 'Region of origin code required')).toBe('Yes')
       expect(valueOf(rows, 'Includes unweaned animals')).toBe('No')
+    })
+
+    it('Should map the means-of-transport enum to its display label', async () => {
+      const rows = rowsOf(await sectionsFor(fullSeed))
+      expect(valueOf(rows, 'Means of transport')).toBe('Road Vehicle')
     })
 
     it('Should include the region-of-origin-code row when the requirement is yes', async () => {
@@ -291,7 +296,7 @@ describe('#buildSections (check-answers GET)', () => {
       regionOfOriginCodeRequirement: 'no',
       reasonForImport: 'transit',
       commodityLines: [{ commoditySelection: 'Fish' }],
-      meansOfTransport: 'Airplane',
+      meansOfTransport: 'AIRPLANE',
       transporterType: 'Private',
       privateTransporter: { name: 'Jean Dupont' }
     }

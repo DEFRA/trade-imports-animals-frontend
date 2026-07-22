@@ -14,10 +14,10 @@ export const copy = {
     means: {
       legend: 'Cyfrwng cludo i’r porthladd mynediad',
       options: {
-        Airplane: 'Awyren',
-        Railway: 'Rheilffordd',
-        'Road Vehicle': 'Cerbyd ffordd',
-        Vessel: 'Llong'
+        AIRPLANE: 'Awyren',
+        RAILWAY: 'Rheilffordd',
+        ROAD_VEHICLE: 'Cerbyd ffordd',
+        VESSEL: 'Llong'
       }
     },
     identification: {

@@ -6,12 +6,12 @@ import * as transportReference from '../services/transport-reference/index.js'
 import * as commodities from '../services/commodities/index.js'
 
 // The A→B vocabulary loop, closed: stored answers hold the MDM services'
-// vocabulary ('internalMarket', 'Road Vehicle', 'Cow'), the manifest's gates
-// compare the model's vocabulary ('internal-market', 'road-vehicle', CN
+// vocabulary ('internalMarket', 'ROAD_VEHICLE', 'Cow'), the manifest's gates
+// compare the model's vocabulary ('internal-market', 'ROAD_VEHICLE', CN
 // codes), and the bridge converts by convention (camel/title→kebab,
-// commodityCodeFor). A service value that stops mapping onto the gate
-// constant it targets makes the gate silently never fire — these tests turn
-// that into a loud failure.
+// commodityCodeFor, or pass-through where the vocabularies already agree).
+// A service value that stops mapping onto the gate constant it targets makes
+// the gate silently never fire — these tests turn that into a loud failure.
 //
 // Gate constants are DERIVED from each applyTo helper's metadata sidecar
 // (not hand-copied), so a new gate lands inside the assertion automatically.

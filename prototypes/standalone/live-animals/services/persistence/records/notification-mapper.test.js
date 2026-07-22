@@ -63,7 +63,7 @@ const answersWithGaps = () => ({
   purposeInInternalMarket: 'Breeding',
   transporterType: 'Commercial',
   privateTransporter: address('Jane Private', '9 Private Road'),
-  meansOfTransport: 'Road Vehicle',
+  meansOfTransport: 'ROAD_VEHICLE',
   transportIdentification: 'FR-892-LK',
   transportDocumentReference: 'CMR-2026-884721',
   transitedCountries: ['France', 'Belgium'],
@@ -369,7 +369,7 @@ const allAnswers = () => ({
   countyParishHoldingCph: '12/345/6789',
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
-  meansOfTransport: 'Road Vehicle',
+  meansOfTransport: 'ROAD_VEHICLE',
   transportIdentification: 'FR-892-LK',
   transportDocumentReference: 'CMR-2026-884721',
   transitedCountries: ['France', 'Belgium'],
@@ -450,7 +450,7 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
         address: { addressLine1: '7 Route One' },
         type: 'Commercial'
       },
-      meansOfTransport: 'Road Vehicle',
+      meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
       transitedCountries: ['France', 'Belgium']
@@ -660,7 +660,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
       ...storableAnswers(),
       regionOfOriginCode: 'FR-75',
       purposeInInternalMarket: 'Breeding',
-      meansOfTransport: 'Road Vehicle',
+      meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721',
       documents: [

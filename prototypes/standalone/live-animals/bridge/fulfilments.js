@@ -119,7 +119,6 @@ const VOCAB = {
   commoditySelection: { toB: commodityCodeFor, toA: commodityNameFor },
   reasonForImport: { toB: camelToKebab, toA: kebabToCamel },
   transporterType: { toB: titleToKebab, toA: kebabToTitle },
-  meansOfTransport: { toB: titleToKebab, toA: kebabToTitle },
   portOfEntry: { toB: stripGbPrefix, toA: addGbPrefix },
   numberOfAnimalsQuantity: { toB: toNumberWhenParses, toA: numberToString }
 }

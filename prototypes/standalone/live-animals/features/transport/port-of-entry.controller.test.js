@@ -64,22 +64,22 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
   it('Should wipe the transited countries when the means changes off the overland set (scope-exit wipe survives the merge)', async () => {
     const result = await driveHandler(post, {
       seed: {
-        meansOfTransport: 'Road Vehicle',
+        meansOfTransport: 'ROAD_VEHICLE',
         transitedCountries: ['FR', 'BE']
       },
-      payload: { meansOfTransport: 'Airplane' }
+      payload: { meansOfTransport: 'AIRPLANE' }
     })
-    expect(result.after.meansOfTransport).toBe('Airplane')
+    expect(result.after.meansOfTransport).toBe('AIRPLANE')
     expect(result.after.transitedCountries).toBeUndefined()
   })
 
   it('Should keep the transited countries while the means stays overland', async () => {
     const result = await driveHandler(post, {
       seed: {
-        meansOfTransport: 'Road Vehicle',
+        meansOfTransport: 'ROAD_VEHICLE',
         transitedCountries: ['FR', 'BE']
       },
-      payload: { meansOfTransport: 'Railway' }
+      payload: { meansOfTransport: 'RAILWAY' }
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
   })

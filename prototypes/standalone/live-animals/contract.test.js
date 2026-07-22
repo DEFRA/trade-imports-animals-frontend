@@ -114,7 +114,7 @@ const cases = [
       'arrivalDateAtPort-month': '12',
       'arrivalDateAtPort-year': '2026',
       portOfEntry: 'GB ABD',
-      meansOfTransport: 'Road Vehicle',
+      meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'FR-892-LK',
       transportDocumentReference: 'CMR-2026-884721'
     }
@@ -123,7 +123,7 @@ const cases = [
     id: 'transit-countries',
     collects: transitCountries.meta.collects,
     handler: postHandlerOf(transitCountries),
-    seed: { meansOfTransport: 'Road Vehicle' },
+    seed: { meansOfTransport: 'ROAD_VEHICLE' },
     payload: { transitedCountries: ['FR', 'BE'] }
   },
   {

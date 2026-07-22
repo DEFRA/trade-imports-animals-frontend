@@ -297,7 +297,7 @@ const arrivalDetailsCard = (answers, scope) => ({
     ),
     row(
       copy.rows.meansOfTransport,
-      answers.meansOfTransport,
+      copy.means[answers.meansOfTransport] ?? '',
       'meansOfTransport'
     ),
     ...(transitedCountriesApplies(answers, scope)

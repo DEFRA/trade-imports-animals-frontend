@@ -117,7 +117,7 @@ const privateTransporterReason = {
 const transitedCountriesReason = {
   code: 'obligation.transitedCountries.applicable.becauseLandTransport',
   explanation:
-    'transitedCountries applies when meansOfTransport is railway or road-vehicle'
+    'transitedCountries applies when meansOfTransport is RAILWAY or ROAD_VEHICLE'
 }
 
 const numberOfPackagesReason = {
@@ -427,8 +427,8 @@ export const transportDocumentReference = {
 
 // Conditional in-scope-optional multi-select — stored as an array of
 // country strings. Out of scope (and purged) when means-of-transport
-// is not railway or road-vehicle.
-const LAND_TRANSPORT_MODES = ['railway', 'road-vehicle']
+// is not RAILWAY or ROAD_VEHICLE.
+const LAND_TRANSPORT_MODES = ['RAILWAY', 'ROAD_VEHICLE']
 
 export const transitedCountries = {
   id: '78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b',

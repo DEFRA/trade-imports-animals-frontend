@@ -43,7 +43,7 @@ export const enumerateScopeStates = () =>
   ['no', 'yes'].flatMap((regionOfOriginCodeRequirement) =>
     ['', 'internalMarket', 'transit', 'temporaryAdmissionHorses'].flatMap(
       (reasonForImport) =>
-        ['', 'Road Vehicle'].flatMap((meansOfTransport) =>
+        ['', 'ROAD_VEHICLE'].flatMap((meansOfTransport) =>
           ['', 'Commercial', 'Private'].map((transporterType) => ({
             regionOfOriginCodeRequirement,
             reasonForImport,
@@ -109,7 +109,7 @@ export const submitReadySeed = {
   },
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-  meansOfTransport: 'Airplane',
+  meansOfTransport: 'AIRPLANE',
   transportIdentification: 'FR-892-LK',
   transportDocumentReference: 'CMR-2026-884721',
   transporterType: 'Commercial',

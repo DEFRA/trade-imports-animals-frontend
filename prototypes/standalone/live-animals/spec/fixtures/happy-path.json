@@ -84,7 +84,7 @@
       "month": "12",
       "year": "2026"
     },
-    "meansOfTransport": "Road Vehicle",
+    "meansOfTransport": "ROAD_VEHICLE",
     "transportIdentification": "FR-892-LK",
     "transportDocumentReference": "CMR-2026-884721",
     "transitedCountries": ["FR", "BE"],

@@ -82,7 +82,7 @@ const privateTransporterReason = {
 const transitedCountriesReason = {
   code: 'obligation.transitedCountries.applicable.becauseLandTransport',
   explanation:
-    'transitedCountries applies when meansOfTransport is railway or road-vehicle'
+    'transitedCountries applies when meansOfTransport is RAILWAY or ROAD_VEHICLE'
 }
 
 const numberOfPackagesReason = {
@@ -376,16 +376,16 @@ describe('V4 — transitedCountries conditional gate', () => {
     expect(result.obligations[transitedCountries.id]).toEqual(outOfScope)
   })
 
-  it('is out of scope when meansOfTransport is airplane', () => {
+  it('is out of scope when meansOfTransport is AIRPLANE', () => {
     const result = evaluator.evaluate({
-      [meansOfTransport.id]: 'airplane'
+      [meansOfTransport.id]: 'AIRPLANE'
     })
     expect(result.obligations[transitedCountries.id]).toEqual(outOfScope)
   })
 
-  it('is optional in-scope when meansOfTransport is road-vehicle', () => {
+  it('is optional in-scope when meansOfTransport is ROAD_VEHICLE', () => {
     const result = evaluator.evaluate({
-      [meansOfTransport.id]: 'road-vehicle'
+      [meansOfTransport.id]: 'ROAD_VEHICLE'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
@@ -394,9 +394,9 @@ describe('V4 — transitedCountries conditional gate', () => {
     })
   })
 
-  it('is optional in-scope when meansOfTransport is railway', () => {
+  it('is optional in-scope when meansOfTransport is RAILWAY', () => {
     const result = evaluator.evaluate({
-      [meansOfTransport.id]: 'railway'
+      [meansOfTransport.id]: 'RAILWAY'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
@@ -405,9 +405,9 @@ describe('V4 — transitedCountries conditional gate', () => {
     })
   })
 
-  it('purges stored transitedCountries when meansOfTransport flips to airplane', () => {
+  it('purges stored transitedCountries when meansOfTransport flips to AIRPLANE', () => {
     const result = evaluator.evaluate({
-      [meansOfTransport.id]: 'airplane',
+      [meansOfTransport.id]: 'AIRPLANE',
       [transitedCountries.id]: ['France', 'Belgium']
     })
     expect(result.fulfilments[transitedCountries.id]).toBeUndefined()

@@ -13,10 +13,10 @@ export const copy = {
     means: {
       legend: 'Means of transport to the port of entry',
       options: {
-        Airplane: 'Airplane',
-        Railway: 'Railway',
-        'Road Vehicle': 'Road Vehicle',
-        Vessel: 'Vessel'
+        AIRPLANE: 'Airplane',
+        RAILWAY: 'Railway',
+        ROAD_VEHICLE: 'Road Vehicle',
+        VESSEL: 'Vessel'
       }
     },
     identification: {
