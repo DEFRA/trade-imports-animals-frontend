@@ -660,7 +660,7 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
     ['purposeInInternalMarket', 'mandatory'],
     ['commercialTransporter', 'mandatory'],
     ['privateTransporter', 'mandatory'],
-    ['transitedCountries', 'optional']
+    ['transitedCountries', 'mandatory']
   ])(
     '%s: witness opens the migrated closure with status=%s',
     (name, status) => {

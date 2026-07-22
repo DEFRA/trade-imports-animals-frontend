@@ -49,7 +49,9 @@ export const copy = {
     addAnother: 'Add another country',
     errors: {
       fromList: 'Select countries from the list',
-      maxCountries: (max) => `Select up to ${max} countries`
+      maxCountries: (max) => `Select up to ${max} countries`,
+      selectAtLeastOne:
+        'Select at least one country the consignment will travel through'
     }
   },
   transporters: {

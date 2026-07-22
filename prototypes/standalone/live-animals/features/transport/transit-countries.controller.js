@@ -30,7 +30,7 @@ const selectRows = (selected) => {
     : rows
 }
 
-const transitedCountriesErrors = (selected) => {
+const transitedCountriesErrors = (selected, adding) => {
   if (selected.some((code) => countries.originLabel(code) === undefined)) {
     return { transitedCountries: copy.errors.fromList }
   }
@@ -38,6 +38,9 @@ const transitedCountriesErrors = (selected) => {
     return {
       transitedCountries: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
     }
+  }
+  if (!adding && selected.length === 0) {
+    return { transitedCountries: copy.errors.selectAtLeastOne }
   }
   return {}
 }
@@ -69,7 +72,10 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const selected = selectedFrom(payload)
-  const errors = transitedCountriesErrors(selected)
+  const errors = transitedCountriesErrors(
+    selected,
+    payload.addCountry !== undefined
+  )
   if (Object.keys(errors).length > 0) {
     const { journey } = await state.get(request, h)
     return render(h, journey, selected, errors)

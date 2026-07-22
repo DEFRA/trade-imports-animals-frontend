@@ -320,7 +320,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       expect(result.obligations[purposeInInternalMarket.id].status).toBe(
         'mandatory'
       )
-      expect(result.obligations[transitedCountries.id].status).toBe('optional')
+      expect(result.obligations[transitedCountries.id].status).toBe('mandatory')
     })
 
     it('Should resolve the mutually-exclusive transporter gate (commercial in, private out)', () => {

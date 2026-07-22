@@ -50,7 +50,9 @@ export const copy = {
     addAnother: 'Ychwanegu gwlad arall',
     errors: {
       fromList: 'Dewiswch wledydd o’r rhestr',
-      maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`
+      maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,
+      selectAtLeastOne:
+        'Dewiswch o leiaf un wlad y bydd y llwyth yn teithio drwyddi'
     }
   },
   transporters: {

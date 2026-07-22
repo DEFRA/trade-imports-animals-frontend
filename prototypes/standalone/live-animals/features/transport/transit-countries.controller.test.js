@@ -40,6 +40,11 @@ describe('POST transit-countries', () => {
       name: `more than ${MAX_TRANSITED_COUNTRIES} transited countries`,
       payload: { transitedCountries: tooManyCodes },
       message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`
+    },
+    {
+      name: 'no transited countries on continue',
+      payload: {},
+      message: 'Select at least one country the consignment will travel through'
     }
   ]
 
@@ -61,6 +66,14 @@ describe('POST transit-countries', () => {
       payload: { transitedCountries: 'FR', addCountry: 'add' }
     })
     expect(result.after.transitedCountries).toEqual(['FR'])
+    expect(result.response.redirect).toContain('transit-countries')
+  })
+
+  it('Should return to the page without an error when adding another country with nothing selected', async () => {
+    const result = await driveHandler(post, {
+      seed: { meansOfTransport: 'ROAD_VEHICLE' },
+      payload: { addCountry: 'add' }
+    })
     expect(result.response.redirect).toContain('transit-countries')
   })
 })

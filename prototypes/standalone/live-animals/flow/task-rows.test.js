@@ -114,14 +114,14 @@ describe('#rowStatus — one status per hub task row', () => {
       ).toBe(NA)
     })
 
-    it('Should appear as Optional for each overland means and complete once countries are added', () => {
+    it('Should appear as Not yet started for each overland means and complete once countries are added', () => {
       for (const means of ['RAILWAY', 'ROAD_VEHICLE']) {
         expect(
           statusIn('transitCountries', {
             ...unlocked,
             meansOfTransport: means
           })
-        ).toBe(OPTIONAL)
+        ).toBe(NOT_STARTED)
       }
       expect(
         statusIn('transitCountries', {
@@ -250,16 +250,14 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       ...happyPath,
       transporterType: 'Private',
       commercialTransporter: null
-    },
-    // transitedCountries is optional under land transport — leaving it
-    // empty no longer blocks submission.
-    'the happy path leaving transit countries empty': {
-      ...happyPath,
-      transitedCountries: []
     }
   }
 
   const notSubmittable = {
+    'the happy path leaving transit countries empty': {
+      ...happyPath,
+      transitedCountries: []
+    },
     'a blank journey': {},
     'an origin-only journey': { countryOfOrigin: 'FR' },
     'an unlocked skeleton journey': unlocked,

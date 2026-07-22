@@ -2119,15 +2119,24 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(transitRow).toHaveCount(0)
 
     // Both overland means route through the transit-countries page. A blank
-    // save there is allowed and walks on; the hub row appears, reading
-    // Optional — transited countries are optional when in scope.
+    // save there is blocked with the select-at-least-one error — transited
+    // countries are mandatory when in scope — and the hub row appears,
+    // reading Not yet started.
     await openArrivalDetails()
     await page.getByRole('radio', { name: 'Railway' }).check()
     await save()
     await expect(transitHeading).toBeVisible()
     await save()
-    await saveThroughTransporters()
-    await expect(transitRow).toContainText('Optional')
+    await expect(
+      page.getByRole('heading', { name: 'There is a problem' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: 'Select at least one country the consignment will travel through'
+      })
+    ).toBeVisible()
+    await page.getByRole('link', { name: 'Back' }).click()
+    await expect(transitRow).toContainText('Not yet started')
 
     // Save two transited countries under Road Vehicle...
     await openArrivalDetails()
