@@ -6,6 +6,13 @@ const okResponse = (body) => ({ ok: true, json: async () => body })
 
 const stubFetch = (impl) => vi.stubGlobal('fetch', vi.fn(impl))
 
+const okOnlyForBlock = (block, body) => async (url) => {
+  if (new URL(url).searchParams.get('blocks') !== block) {
+    return { ok: false, status: 400, statusText: 'Unexpected countries query' }
+  }
+  return okResponse(body)
+}
+
 beforeEach(() => {
   vi.resetModules()
 })
@@ -21,6 +28,14 @@ describe('countries client', () => {
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const { fetchCountries } = await import('./countries/client.js')
     await expect(fetchCountries()).resolves.toEqual([
+      { code: 'ZZ', name: 'Zedland' }
+    ])
+  })
+
+  it('Should request countries filtered to the given blocks', async () => {
+    stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
+    const { fetchCountries } = await import('./countries/client.js')
+    await expect(fetchCountries(['GBNAG_SPS_EX'])).resolves.toEqual([
       { code: 'ZZ', name: 'Zedland' }
     ])
   })
@@ -75,7 +90,7 @@ describe('countries service — default stub mode', () => {
 describe('countries service — real mode', () => {
   it('Should replace the cache on prime() so sync accessors serve fetched data', async () => {
     process.env.LIVE_ANIMALS_MODE = 'real'
-    stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
+    stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
     expect(countries.originLabel('ZZ')).toBeUndefined()

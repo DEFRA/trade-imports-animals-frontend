@@ -6,7 +6,7 @@ let labels = { ...COUNTRY_LABELS }
 
 export const prime = async () => {
   if (!isRealMode()) return
-  const countries = await fetchCountries()
+  const countries = await fetchCountries(['GBNAG_SPS_EX'])
   labels = Object.fromEntries(countries.map(({ code, name }) => [code, name]))
 }
 
