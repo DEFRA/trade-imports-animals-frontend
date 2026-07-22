@@ -15,10 +15,6 @@
  * The set is built from the evaluator output: answers ->
  * `answersToFulfilments` -> `evaluate` -> project each in-scope implication
  * into the pathKey grammar (composite->positional conversion).
- *
- * Vocabulary does NOT bite here: inScope keys are obligation ids and positional
- * indices, never values, so the normalisation `answersToFulfilments` applies
- * leaves the projected keys unchanged.
  */
 
 import { obligations } from '../model/obligations/obligations.js'

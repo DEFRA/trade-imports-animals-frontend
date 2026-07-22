@@ -65,18 +65,18 @@ const regionCodeRequiredReason = {
 const purposeInInternalMarketReason = {
   code: 'obligation.purposeInInternalMarket.applicable.becauseInternalMarket',
   explanation:
-    'purposeInInternalMarket applies when reasonForImport is internal-market'
+    'purposeInInternalMarket applies when reasonForImport is internalMarket'
 }
 
 const commercialTransporterReason = {
   code: 'obligation.commercialTransporter.applicable.becauseCommercial',
   explanation:
-    'commercialTransporter applies when transporterType is commercial'
+    'commercialTransporter applies when transporterType is Commercial'
 }
 
 const privateTransporterReason = {
   code: 'obligation.privateTransporter.applicable.becausePrivate',
-  explanation: 'privateTransporter applies when transporterType is private'
+  explanation: 'privateTransporter applies when transporterType is Private'
 }
 
 const transitedCountriesReason = {
@@ -101,13 +101,11 @@ const cphReason = {
 // opaque ULIDs; the tests use readable constants so intent is
 // scannable (option 3 of the readability-vs-machinery discussion —
 // see GAPS.md §1).
-const LINE_UNKNOWN = 'line1' // commodity code not in any allowlist
-const LINE_BEES = 'line2' //    01064100 — packages required, CPH not required
-const LINE_OWLS = 'line3' //    01063100 — packages required, CPH not required
-const LINE_CATTLE = 'line4' //  0102     — packages required AND CPH required, passport + tattoo + earTag
-const LINE_SHEEP = 'line5' //   010410   — CPH required, packages not, earTag only
-const LINE_HORSE = 'lineH' //   0101     — passport + horseName
-const LINE_CATSDOGS = 'lineD' // 01061900 — passport + tattoo + permanentAddress
+const LINE_UNKNOWN = 'line1' // commodity not in any allowlist
+const LINE_FISH = 'line2' //  Fish — no packages, no CPH, no specific identifier
+const LINE_COW = 'line4' //   Cow — packages AND CPH, passport + tattoo + earTag
+const LINE_HORSE = 'lineH' // Horse — packages, passport + horseName
+const LINE_CAT = 'lineD' //   Cat — packages, passport + tattoo + permanentAddress
 
 // Unit-instance-id mnemonics for depth-2 composite keys (`lineId/unitId`).
 const UNIT_1 = 'unit1'
@@ -185,7 +183,7 @@ describe('V4 smoke — evaluator wires up against fresh manifest', () => {
 
 describe('V4 — always-mandatory notification-level singles', () => {
   // Note: containsUnweanedAnimals is NOT in this list any more —
-  // audit #11 gated it on the active commodity codes (equines /
+  // audit #11 gated it on the active commodities (equines /
   // cattle / pigs / sheep / goats), so it's out-of-scope until a
   // matching commodity line is added. Covered separately below.
   it.each([
@@ -287,16 +285,16 @@ describe('V4 — purposeInInternalMarket conditional gate', () => {
     expect(result.obligations[purposeInInternalMarket.id]).toEqual(outOfScope)
   })
 
-  it('is out of scope when reasonForImport is not internal-market', () => {
+  it('is out of scope when reasonForImport is not internalMarket', () => {
     const result = evaluator.evaluate({
       [reasonForImport.id]: 'transit'
     })
     expect(result.obligations[purposeInInternalMarket.id]).toEqual(outOfScope)
   })
 
-  it('is mandatory in-scope when reasonForImport is internal-market', () => {
+  it('is mandatory in-scope when reasonForImport is internalMarket', () => {
     const result = evaluator.evaluate({
-      [reasonForImport.id]: 'internal-market'
+      [reasonForImport.id]: 'internalMarket'
     })
     expect(result.obligations[purposeInInternalMarket.id]).toEqual({
       inScope: true,
@@ -305,7 +303,7 @@ describe('V4 — purposeInInternalMarket conditional gate', () => {
     })
   })
 
-  it('purges stored purpose when reasonForImport flips away from internal-market', () => {
+  it('purges stored purpose when reasonForImport flips away from internalMarket', () => {
     const result = evaluator.evaluate({
       [reasonForImport.id]: 'transit',
       [purposeInInternalMarket.id]: 'slaughter'
@@ -325,9 +323,9 @@ describe('V4 — transporterType → commercial vs private mutual exclusion', ()
     expect(result.obligations[privateTransporter.id]).toEqual(outOfScope)
   })
 
-  it('commercial in-scope, private out-of-scope when type is commercial', () => {
+  it('commercial in-scope, private out-of-scope when type is Commercial', () => {
     const result = evaluator.evaluate({
-      [transporterType.id]: 'commercial'
+      [transporterType.id]: 'Commercial'
     })
     expect(result.obligations[commercialTransporter.id]).toEqual({
       inScope: true,
@@ -337,9 +335,9 @@ describe('V4 — transporterType → commercial vs private mutual exclusion', ()
     expect(result.obligations[privateTransporter.id]).toEqual(outOfScope)
   })
 
-  it('private in-scope, commercial out-of-scope when type is private', () => {
+  it('private in-scope, commercial out-of-scope when type is Private', () => {
     const result = evaluator.evaluate({
-      [transporterType.id]: 'private'
+      [transporterType.id]: 'Private'
     })
     expect(result.obligations[commercialTransporter.id]).toEqual(outOfScope)
     expect(result.obligations[privateTransporter.id]).toEqual({
@@ -349,17 +347,17 @@ describe('V4 — transporterType → commercial vs private mutual exclusion', ()
     })
   })
 
-  it('purges a stored commercialTransporter address when type flips to private', () => {
+  it('purges a stored commercialTransporter address when type flips to Private', () => {
     const result = evaluator.evaluate({
-      [transporterType.id]: 'private',
+      [transporterType.id]: 'Private',
       [commercialTransporter.id]: alpineExporterAddress
     })
     expect(result.fulfilments[commercialTransporter.id]).toBeUndefined()
   })
 
-  it('purges a stored privateTransporter address when type flips to commercial', () => {
+  it('purges a stored privateTransporter address when type flips to Commercial', () => {
     const result = evaluator.evaluate({
-      [transporterType.id]: 'commercial',
+      [transporterType.id]: 'Commercial',
       [privateTransporter.id]: alpineExporterAddress
     })
     expect(result.fulfilments[privateTransporter.id]).toBeUndefined()
@@ -451,27 +449,27 @@ describe('V4 — commodity line group semantics', () => {
   it('infers a group fulfilmentId per line from commodityCode composite-key prefixes', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_BEES]: '01064100',
-        [LINE_OWLS]: '01063100'
+        [LINE_HORSE]: 'Horse',
+        [LINE_CAT]: 'Cat'
       }
     })
     const ids = new Set(
       result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
     )
-    expect(ids).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+    expect(ids).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 
   it('unions fulfilmentIds across any descendant field record', () => {
-    // Only numberOfAnimals is answered on line3 — the line's presence
-    // is still inferred (no dedicated commodityCode entry required).
+    // Only numberOfAnimals is answered on the second line — the line's
+    // presence is still inferred (no dedicated commodityCode entry required).
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' },
-      [numberOfAnimals.id]: { [LINE_OWLS]: 42 }
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
+      [numberOfAnimals.id]: { [LINE_CAT]: 42 }
     })
     const ids = new Set(
       result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
     )
-    expect(ids).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+    expect(ids).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 })
 
@@ -482,9 +480,9 @@ describe('V4 — commodity line group semantics', () => {
 describe('V4 — commodity line field records (round-trip)', () => {
   it('commodityCode stores one value per line', () => {
     const stored = {
-      [LINE_UNKNOWN]: '00000001',
-      [LINE_BEES]: '01064100',
-      [LINE_OWLS]: '01063100'
+      [LINE_UNKNOWN]: 'Unicorn',
+      [LINE_HORSE]: 'Horse',
+      [LINE_CAT]: 'Cat'
     }
     const result = evaluator.evaluate({ [commodityCode.id]: stored })
     expect(result.fulfilments[commodityCode.id]).toEqual(stored)
@@ -492,34 +490,34 @@ describe('V4 — commodity line field records (round-trip)', () => {
 
   it('commodityType stores one value per line', () => {
     const result = evaluator.evaluate({
-      [commodityType.id]: { [LINE_BEES]: 'Adult', [LINE_OWLS]: 'Adult' }
+      [commodityType.id]: { [LINE_HORSE]: 'Adult', [LINE_CAT]: 'Adult' }
     })
     expect(result.fulfilments[commodityType.id]).toEqual({
-      [LINE_BEES]: 'Adult',
-      [LINE_OWLS]: 'Adult'
+      [LINE_HORSE]: 'Adult',
+      [LINE_CAT]: 'Adult'
     })
   })
 
   it('numberOfAnimals stores one whole-number value per line', () => {
     const result = evaluator.evaluate({
-      [numberOfAnimals.id]: { [LINE_BEES]: 250, [LINE_OWLS]: 12 }
+      [numberOfAnimals.id]: { [LINE_HORSE]: 250, [LINE_CAT]: 12 }
     })
     expect(result.fulfilments[numberOfAnimals.id]).toEqual({
-      [LINE_BEES]: 250,
-      [LINE_OWLS]: 12
+      [LINE_HORSE]: 250,
+      [LINE_CAT]: 12
     })
   })
 
   it('species stores an array of species strings per line', () => {
     const result = evaluator.evaluate({
       [species.id]: {
-        [LINE_BEES]: ['Apis mellifera'],
-        [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
+        [LINE_FISH]: ['Salmo salar'],
+        [LINE_COW]: ['Bos taurus', 'Bison bison']
       }
     })
     expect(result.fulfilments[species.id]).toEqual({
-      [LINE_BEES]: ['Apis mellifera'],
-      [LINE_CATTLE]: ['Bos taurus', 'Bison bison']
+      [LINE_FISH]: ['Salmo salar'],
+      [LINE_COW]: ['Bos taurus', 'Bison bison']
     })
   })
 })
@@ -535,52 +533,52 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
     expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
   })
 
-  it('is out of scope when no line has a package-count commodity code', () => {
+  it('is out of scope when no line has a package-count commodity', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_UNKNOWN]: '00000001' }
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' }
     })
     expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
   })
 
   it('is in scope with reason on a matching line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' }
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
     })
     expect(result.obligations[numberOfPackages.id]).toEqual({
       inScope: true,
       reasons: [numberOfPackagesReason],
-      records: [{ fulfilmentId: LINE_BEES, status: 'optional' }]
+      records: [{ fulfilmentId: LINE_HORSE, status: 'optional' }]
     })
   })
 
   it('records list contains only matching line ids (mixed manifest)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_UNKNOWN]: '00000001',
-        [LINE_BEES]: '01064100',
-        [LINE_OWLS]: '01063100'
+        [LINE_FISH]: 'Fish',
+        [LINE_HORSE]: 'Horse',
+        [LINE_CAT]: 'Cat'
       }
     })
     const ids = result.obligations[numberOfPackages.id].records.map(
       (r) => r.fulfilmentId
     )
-    expect(new Set(ids)).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+    expect(new Set(ids)).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 
   it('keeps a stored value on a matching line (round-trip)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' },
-      [numberOfPackages.id]: { [LINE_BEES]: 3 }
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
+      [numberOfPackages.id]: { [LINE_HORSE]: 3 }
     })
     expect(result.fulfilments[numberOfPackages.id]).toEqual({
-      [LINE_BEES]: 3
+      [LINE_HORSE]: 3
     })
   })
 
   it('purges a stored value on a non-matching line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_UNKNOWN]: '00000001' },
-      [numberOfPackages.id]: { [LINE_UNKNOWN]: 7 }
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [numberOfPackages.id]: { [LINE_FISH]: 7 }
     })
     expect(result.fulfilments[numberOfPackages.id]).toBeUndefined()
   })
@@ -588,42 +586,42 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
   it('keeps matching-line values, purges non-matching-line values (mixed)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_UNKNOWN]: '00000001',
-        [LINE_BEES]: '01064100',
-        [LINE_OWLS]: '01063100'
+        [LINE_FISH]: 'Fish',
+        [LINE_HORSE]: 'Horse',
+        [LINE_CAT]: 'Cat'
       },
       [numberOfPackages.id]: {
-        [LINE_UNKNOWN]: 7, // should be purged
-        [LINE_BEES]: 3 // should survive
-        // LINE_OWLS unanswered
+        [LINE_FISH]: 7, // should be purged
+        [LINE_HORSE]: 3 // should survive
+        // LINE_CAT unanswered
       }
     })
     expect(result.fulfilments[numberOfPackages.id]).toEqual({
-      [LINE_BEES]: 3
+      [LINE_HORSE]: 3
     })
   })
 
-  // Identity comes from line-instance-id, not code value — see GAPS.md §1
-  // for why the code-value-keyed shape would collapse here.
-  it('supports two lines sharing the same matching code', () => {
+  // Identity comes from line-instance-id, not commodity value — see GAPS.md
+  // §1 for why the value-keyed shape would collapse here.
+  it('supports two lines sharing the same matching commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_BEES]: '01064100',
-        [LINE_OWLS]: '01064100' // both lines: bees
+        [LINE_HORSE]: 'Horse',
+        [LINE_CAT]: 'Horse' // both lines: horses
       },
       [numberOfPackages.id]: {
-        [LINE_BEES]: 3,
-        [LINE_OWLS]: 5
+        [LINE_HORSE]: 3,
+        [LINE_CAT]: 5
       }
     })
     expect(result.fulfilments[numberOfPackages.id]).toEqual({
-      [LINE_BEES]: 3,
-      [LINE_OWLS]: 5
+      [LINE_HORSE]: 3,
+      [LINE_CAT]: 5
     })
     const ids = result.obligations[numberOfPackages.id].records.map(
       (r) => r.fulfilmentId
     )
-    expect(new Set(ids)).toEqual(new Set([LINE_BEES, LINE_OWLS]))
+    expect(new Set(ids)).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 })
 
@@ -637,21 +635,21 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
 
-  it('is out of scope when no line has a CPH-required commodity code', () => {
+  it('is out of scope when no line has a CPH-required commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_BEES]: '01064100',
-        [LINE_OWLS]: '01063100'
+        [LINE_HORSE]: 'Horse',
+        [LINE_CAT]: 'Cat'
       }
     })
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
 
-  it('is mandatory in-scope when at least one line has a CPH-required code', () => {
+  it('is mandatory in-scope when at least one line has a CPH-required commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_BEES]: '01064100', // not CPH-required
-        [LINE_SHEEP]: '010410' //   CPH-required
+        [LINE_HORSE]: 'Horse', // not CPH-required
+        [LINE_COW]: 'Cow' //      CPH-required
       }
     })
     expect(result.obligations[cph.id]).toEqual({
@@ -661,17 +659,17 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
     })
   })
 
-  it('keeps a stored cph value when a required code is present', () => {
+  it('keeps a stored cph value when a required commodity is present', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [cph.id]: '123456789'
     })
     expect(result.fulfilments[cph.id]).toBe('123456789')
   })
 
-  it('purges a stored cph value when no line has a required code', () => {
+  it('purges a stored cph value when no line has a required commodity', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' },
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
       [cph.id]: '123456789'
     })
     expect(result.fulfilments[cph.id]).toBeUndefined()
@@ -682,14 +680,14 @@ describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
 // Interlock — one cattle line triggers both packages and CPH gates
 // ---------------------------------------------------------------------------
 
-describe('V4 — cattle line triggers both packages and CPH gates', () => {
+describe('V4 — cow line triggers both packages and CPH gates', () => {
   it('activates numberOfPackages (per-line) and cph (notification-level) simultaneously', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     expect(
       result.obligations[numberOfPackages.id].records.map((r) => r.fulfilmentId)
-    ).toEqual([LINE_CATTLE])
+    ).toEqual([LINE_COW])
     expect(result.obligations[cph.id]).toEqual({
       inScope: true,
       status: 'mandatory',
@@ -707,7 +705,7 @@ describe('V4 — cattle line triggers both packages and CPH gates', () => {
 describe('V4 — unit record group semantics', () => {
   it('has no records when no unit-level obligations have storage', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     expect(result.obligations[unitRecord.id]).toEqual({
       inScope: true,
@@ -717,31 +715,31 @@ describe('V4 — unit record group semantics', () => {
 
   it('infers unit-instance paths from a per-unit identifier storage', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [passport.id]: {
-        [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123',
-        [`${LINE_CATTLE}/${UNIT_2}`]: 'UK456'
+        [`${LINE_COW}/${UNIT_1}`]: 'UK123',
+        [`${LINE_COW}/${UNIT_2}`]: 'UK456'
       }
     })
     const ids = new Set(
       result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_CATTLE}/${UNIT_1}`, `${LINE_CATTLE}/${UNIT_2}`])
+      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_COW}/${UNIT_2}`])
     )
   })
 
   it('unions unit-instance paths across multiple identifier storages', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
-      [passport.id]: { [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123' },
-      [earTag.id]: { [`${LINE_CATTLE}/${UNIT_2}`]: 'UK-EAR-999' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [passport.id]: { [`${LINE_COW}/${UNIT_1}`]: 'UK123' },
+      [earTag.id]: { [`${LINE_COW}/${UNIT_2}`]: 'UK-EAR-999' }
     })
     const ids = new Set(
       result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_CATTLE}/${UNIT_1}`, `${LINE_CATTLE}/${UNIT_2}`])
+      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_COW}/${UNIT_2}`])
     )
   })
 })
@@ -750,26 +748,26 @@ describe('V4 — unit record group semantics', () => {
 // passport — commodity-gated per-unit identifier (gatedBy, depth-2)
 // ---------------------------------------------------------------------------
 
-describe('V4 — passport (gatedBy allowListed(commodityCode, PASSPORT_COMMODITIES))', () => {
+describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', () => {
   it('is out of scope when no commodity lines exist', () => {
     expect(evaluator.evaluate({}).obligations[passport.id]).toEqual({
       inScope: false
     })
   })
 
-  it('is out of scope for lines with non-passport commodity codes', () => {
+  it('is out of scope for lines with non-passport commodities', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' }
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' }
     })
     expect(result.obligations[passport.id]).toEqual({ inScope: false })
   })
 
   it('is in scope with one record per unit under a passport-list line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [passport.id]: {
-        [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123',
-        [`${LINE_CATTLE}/${UNIT_2}`]: 'UK456'
+        [`${LINE_COW}/${UNIT_1}`]: 'UK123',
+        [`${LINE_COW}/${UNIT_2}`]: 'UK456'
       }
     })
     expect(result.obligations[passport.id].inScope).toBe(true)
@@ -778,24 +776,24 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, PASSPORT_COMMODITI
       result.obligations[passport.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_CATTLE}/${UNIT_1}`, `${LINE_CATTLE}/${UNIT_2}`])
+      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_COW}/${UNIT_2}`])
     )
   })
 
   it('keeps a stored passport value on a matching-line unit (round-trip)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
-      [passport.id]: { [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [passport.id]: { [`${LINE_COW}/${UNIT_1}`]: 'UK123' }
     })
     expect(result.fulfilments[passport.id]).toEqual({
-      [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123'
+      [`${LINE_COW}/${UNIT_1}`]: 'UK123'
     })
   })
 
   it('purges a stored passport value on a non-matching-line unit', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' },
-      [passport.id]: { [`${LINE_BEES}/${UNIT_1}`]: 'STRAY' }
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [passport.id]: { [`${LINE_FISH}/${UNIT_1}`]: 'STRAY' }
     })
     expect(result.fulfilments[passport.id]).toBeUndefined()
   })
@@ -803,16 +801,16 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, PASSPORT_COMMODITI
   it('keeps matching-line values, purges non-matching (mixed lines)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_BEES]: '01064100',
-        [LINE_CATTLE]: '0102'
+        [LINE_FISH]: 'Fish',
+        [LINE_COW]: 'Cow'
       },
       [passport.id]: {
-        [`${LINE_BEES}/${UNIT_1}`]: 'STRAY',
-        [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123'
+        [`${LINE_FISH}/${UNIT_1}`]: 'STRAY',
+        [`${LINE_COW}/${UNIT_1}`]: 'UK123'
       }
     })
     expect(result.fulfilments[passport.id]).toEqual({
-      [`${LINE_CATTLE}/${UNIT_1}`]: 'UK123'
+      [`${LINE_COW}/${UNIT_1}`]: 'UK123'
     })
   })
 })
@@ -821,34 +819,34 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, PASSPORT_COMMODITI
 // tattoo / earTag / horseName — same gatedBy shape, different whitelists
 // ---------------------------------------------------------------------------
 
-describe('V4 — tattoo (gatedBy allowListed(commodityCode, TATTOO_COMMODITIES))', () => {
-  it('is in scope for cattle line (0102 in TATTOO_COMMODITIES)', () => {
+describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
+  it('is in scope for a cow line (Cow in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
-      [tattoo.id]: { [`${LINE_CATTLE}/${UNIT_1}`]: 'CT-99' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [tattoo.id]: { [`${LINE_COW}/${UNIT_1}`]: 'CT-99' }
     })
     expect(result.obligations[tattoo.id].inScope).toBe(true)
     expect(result.obligations[tattoo.id].reasons).toEqual([tattooReason])
   })
 
-  it('is out of scope for horse (0101 not in TATTOO_COMMODITIES)', () => {
+  it('is out of scope for horse (Horse not in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: '0101' }
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
     })
     expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
   })
 })
 
-describe('V4 — earTag (gatedBy allowListed(commodityCode, EAR_TAG_COMMODITIES))', () => {
-  it('is in scope for cattle (0102) and sheep (010410)', () => {
+describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () => {
+  it('is in scope across two cow lines', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_CATTLE]: '0102',
-        [LINE_SHEEP]: '010410'
+        [LINE_COW]: 'Cow',
+        [LINE_UNKNOWN]: 'Cow'
       },
       [earTag.id]: {
-        [`${LINE_CATTLE}/${UNIT_1}`]: 'UK-CAT-1',
-        [`${LINE_SHEEP}/${UNIT_1}`]: 'UK-SHEEP-1'
+        [`${LINE_COW}/${UNIT_1}`]: 'UK-COW-1',
+        [`${LINE_UNKNOWN}/${UNIT_1}`]: 'UK-COW-2'
       }
     })
     expect(result.obligations[earTag.id].inScope).toBe(true)
@@ -857,31 +855,31 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, EAR_TAG_COMMODITIES)
       result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_CATTLE}/${UNIT_1}`, `${LINE_SHEEP}/${UNIT_1}`])
+      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_UNKNOWN}/${UNIT_1}`])
     )
   })
 
-  it('is out of scope for cats/dogs (01061900 not in EAR_TAG_COMMODITIES)', () => {
+  it('is out of scope for cats (Cat not in the ear-tag list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATSDOGS]: '01061900' }
+      [commodityCode.id]: { [LINE_CAT]: 'Cat' }
     })
     expect(result.obligations[earTag.id]).toEqual({ inScope: false })
   })
 })
 
-describe('V4 — horseName (gatedBy allowListed(commodityCode, HORSE_NAME_COMMODITIES))', () => {
+describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))', () => {
   it('is in scope only for horse commodity', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: '0101' },
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
       [horseName.id]: { [`${LINE_HORSE}/${UNIT_1}`]: 'Silver' }
     })
     expect(result.obligations[horseName.id].inScope).toBe(true)
     expect(result.obligations[horseName.id].reasons).toEqual([horseNameReason])
   })
 
-  it('is out of scope for cattle', () => {
+  it('is out of scope for cows', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     expect(result.obligations[horseName.id]).toEqual({ inScope: false })
   })
@@ -893,11 +891,11 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, HORSE_NAME_COMMOD
 // ---------------------------------------------------------------------------
 
 describe('V4 — identificationDetails (inverse gate — no specific identifier applies)', () => {
-  it('is in scope for bees (01064100 — no specific identifier)', () => {
+  it('is in scope for fish (no specific identifier)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' },
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
       [identificationDetails.id]: {
-        [`${LINE_BEES}/${UNIT_1}`]: 'Hive HM-2026-004'
+        [`${LINE_FISH}/${UNIT_1}`]: 'Tank 12, batch 7'
       }
     })
     expect(result.obligations[identificationDetails.id].inScope).toBe(true)
@@ -906,9 +904,9 @@ describe('V4 — identificationDetails (inverse gate — no specific identifier 
     ])
   })
 
-  it('is out of scope for cattle (passport / tattoo / earTag apply)', () => {
+  it('is out of scope for cows (passport / tattoo / earTag apply)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     expect(result.obligations[identificationDetails.id]).toEqual({
       inScope: false
@@ -917,16 +915,16 @@ describe('V4 — identificationDetails (inverse gate — no specific identifier 
 
   it('is out of scope for horse (passport / horseName apply)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: '0101' }
+      [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
     })
     expect(result.obligations[identificationDetails.id]).toEqual({
       inScope: false
     })
   })
 
-  it('is out of scope for sheep (earTag applies)', () => {
+  it('is out of scope for cats (passport / tattoo apply)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_SHEEP]: '010410' }
+      [commodityCode.id]: { [LINE_CAT]: 'Cat' }
     })
     expect(result.obligations[identificationDetails.id]).toEqual({
       inScope: false
@@ -935,9 +933,9 @@ describe('V4 — identificationDetails (inverse gate — no specific identifier 
 
   it('purges a stored idDetails value on a specific-identifier line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [identificationDetails.id]: {
-        [`${LINE_CATTLE}/${UNIT_1}`]: 'STRAY'
+        [`${LINE_COW}/${UNIT_1}`]: 'STRAY'
       }
     })
     expect(result.fulfilments[identificationDetails.id]).toBeUndefined()
@@ -945,24 +943,24 @@ describe('V4 — identificationDetails (inverse gate — no specific identifier 
 })
 
 describe('V4 — description (same inverse gate as identificationDetails)', () => {
-  it('is in scope for bees, out of scope for cattle', () => {
-    const bees = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' }
+  it('is in scope for fish, out of scope for cows', () => {
+    const fish = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' }
     })
-    const cattle = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+    const cow = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     // With no unit storage the inScope flag reflects "any path in scope"
-    // → for bees, the enumerated paths at unit level are empty, so
+    // → for fish, the enumerated paths at unit level are empty, so
     // technically no records are in scope even though the gate would
-    // permit them. Add a stored record to make bees concrete.
-    const beesWithUnit = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_BEES]: '01064100' },
-      [description.id]: { [`${LINE_BEES}/${UNIT_1}`]: 'Worker bees' }
+    // permit them. Add a stored record to make fish concrete.
+    const fishWithUnit = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [description.id]: { [`${LINE_FISH}/${UNIT_1}`]: 'Farmed salmon' }
     })
-    expect(beesWithUnit.obligations[description.id].inScope).toBe(true)
-    expect(cattle.obligations[description.id]).toEqual({ inScope: false })
-    expect(bees.obligations[description.id]).toEqual({ inScope: false })
+    expect(fishWithUnit.obligations[description.id].inScope).toBe(true)
+    expect(cow.obligations[description.id]).toEqual({ inScope: false })
+    expect(fish.obligations[description.id]).toEqual({ inScope: false })
   })
 })
 
@@ -970,7 +968,7 @@ describe('V4 — description (same inverse gate as identificationDetails)', () =
 // permanentAddress — depth-2 standard address block, commodity-gated
 // ---------------------------------------------------------------------------
 
-describe('V4 — permanentAddress (gatedBy for cats/dogs/ferrets)', () => {
+describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
   const petAddress = {
     name: 'Meadow Farm Distribution',
     addressLine1: 'Plot 8, Rural Enterprise Park',
@@ -981,34 +979,34 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs/ferrets)', () => {
     email: 'intake@meadowfarm.co.uk'
   }
 
-  it('is in scope for cats/dogs (01061900) with composite address value', () => {
+  it('is in scope for cats with composite address value', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATSDOGS]: '01061900' },
-      [permanentAddress.id]: { [`${LINE_CATSDOGS}/${UNIT_1}`]: petAddress }
+      [commodityCode.id]: { [LINE_CAT]: 'Cat' },
+      [permanentAddress.id]: { [`${LINE_CAT}/${UNIT_1}`]: petAddress }
     })
     expect(result.obligations[permanentAddress.id].inScope).toBe(true)
     expect(result.obligations[permanentAddress.id].reasons).toEqual([
       permanentAddressReason
     ])
     expect(result.obligations[permanentAddress.id].records).toEqual([
-      { fulfilmentId: `${LINE_CATSDOGS}/${UNIT_1}`, status: 'mandatory' }
+      { fulfilmentId: `${LINE_CAT}/${UNIT_1}`, status: 'mandatory' }
     ])
     expect(result.fulfilments[permanentAddress.id]).toEqual({
-      [`${LINE_CATSDOGS}/${UNIT_1}`]: petAddress
+      [`${LINE_CAT}/${UNIT_1}`]: petAddress
     })
   })
 
-  it('is out of scope for cattle', () => {
+  it('is out of scope for cows', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     expect(result.obligations[permanentAddress.id]).toEqual({ inScope: false })
   })
 
   it('purges a stored permanentAddress on a non-cats/dogs line', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CATTLE]: '0102' },
-      [permanentAddress.id]: { [`${LINE_CATTLE}/${UNIT_1}`]: petAddress }
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [permanentAddress.id]: { [`${LINE_COW}/${UNIT_1}`]: petAddress }
     })
     expect(result.fulfilments[permanentAddress.id]).toBeUndefined()
   })
@@ -1020,30 +1018,30 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs/ferrets)', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — mixed lines drive per-line identifier gating', () => {
-  it('cattle + horse: passport applies to both, earTag only to cattle, horseName only to horse', () => {
+  it('cow + horse: passport applies to both, earTag only to cow, horseName only to horse', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
-        [LINE_CATTLE]: '0102',
-        [LINE_HORSE]: '0101'
+        [LINE_COW]: 'Cow',
+        [LINE_HORSE]: 'Horse'
       },
       [passport.id]: {
-        [`${LINE_CATTLE}/${UNIT_1}`]: 'UK-C-1',
+        [`${LINE_COW}/${UNIT_1}`]: 'UK-C-1',
         [`${LINE_HORSE}/${UNIT_1}`]: 'UK-H-1'
       },
-      [earTag.id]: { [`${LINE_CATTLE}/${UNIT_1}`]: 'ET-1' },
+      [earTag.id]: { [`${LINE_COW}/${UNIT_1}`]: 'ET-1' },
       [horseName.id]: { [`${LINE_HORSE}/${UNIT_1}`]: 'Silver' }
     })
     const passportIds = new Set(
       result.obligations[passport.id].records.map((r) => r.fulfilmentId)
     )
     expect(passportIds).toEqual(
-      new Set([`${LINE_CATTLE}/${UNIT_1}`, `${LINE_HORSE}/${UNIT_1}`])
+      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_HORSE}/${UNIT_1}`])
     )
 
     const earTagIds = new Set(
       result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
     )
-    expect(earTagIds).toEqual(new Set([`${LINE_CATTLE}/${UNIT_1}`]))
+    expect(earTagIds).toEqual(new Set([`${LINE_COW}/${UNIT_1}`]))
 
     const horseNameIds = new Set(
       result.obligations[horseName.id].records.map((r) => r.fulfilmentId)

@@ -48,7 +48,7 @@ describe('scope bridge — per-gate scoping (B)', () => {
     )
   })
 
-  it('Should scope purposeInInternalMarket only under the internal-market reason', () => {
+  it('Should scope purposeInInternalMarket only under the internalMarket reason', () => {
     expect(
       makeScope(
         resolveRegion({

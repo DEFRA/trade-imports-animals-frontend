@@ -22,18 +22,15 @@
  * their instances are inferred from descendant records — so the bridge never
  * emits a fulfilment for them and rebuilds the answer arrays from the leaves.
  *
- * Vocabulary is normalised answers->model at the boundary: answers store the
- * MDM option vocabulary, the manifest's gates compare the model vocabulary.
- * The commodity case is the one non-injective transform — `Cat`/`Dog` both
- * map to `01061900` — so the reverse direction recovers only a
- * representative name.
+ * Values pass through unchanged — answers and the manifest's gates share the
+ * stored vocabulary. The one exception is the animal count, coerced from the
+ * page's HTTP string to the number `recordCountEquals` compares.
  */
 
-import { obligations } from '../model/obligations/obligations.js'
 import {
-  commodityCodeFor,
-  commodityNameFor
-} from '../services/commodities/index.js'
+  numberOfAnimals,
+  obligations
+} from '../model/obligations/obligations.js'
 import { setAt } from '../lib/path.js'
 
 // The nested collection groups, outermost first. The prefix is cosmetic
@@ -73,31 +70,6 @@ const segmentToken = (group) =>
   GROUP_SEGMENT_PREFIXES[ancestorChain(group).length] ??
   `grp${ancestorChain(group).length}`
 
-// ---------------------------------------------------------------------------
-// Vocabulary normalisation — per-field, A<->B. Fields absent here pass
-// through unchanged. Only string/number scalars are transformed;
-// addresses, dates and arrays are opaque composite values.
-// ---------------------------------------------------------------------------
-
-const camelToKebab = (value) =>
-  value.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-
-const kebabToCamel = (value) =>
-  value.replace(/-([a-z0-9])/g, (_, char) => char.toUpperCase())
-
-const titleToKebab = (value) => value.toLowerCase().replace(/\s+/g, '-')
-
-const kebabToTitle = (value) =>
-  value
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-
-const stripGbPrefix = (value) =>
-  value.startsWith('GB ') ? value.slice(3) : value
-
-const addGbPrefix = (value) => (value.startsWith('GB') ? value : `GB ${value}`)
-
 // The pages store form payloads as strings; the model's
 // `recordCountEquals` invariant compares the stored count against a
 // record tally with strict equality, so the count must reach the
@@ -109,33 +81,8 @@ const toNumberWhenParses = (value) => {
   return Number.isFinite(n) ? n : value
 }
 
-const numberToString = (value) =>
-  typeof value === 'number' ? String(value) : value
-
-const VOCAB = {
-  // Answers store the display name (`Cow`); the manifest's gates compare the
-  // CN code (`0102`). The commodity map is NON-INJECTIVE — `Cat`/`Dog` ->
-  // `01061900` — so `toA` is lossy and recovers a representative name only.
-  commoditySelection: { toB: commodityCodeFor, toA: commodityNameFor },
-  reasonForImport: { toB: camelToKebab, toA: kebabToCamel },
-  transporterType: { toB: titleToKebab, toA: kebabToTitle },
-  portOfEntry: { toB: stripGbPrefix, toA: addGbPrefix },
-  numberOfAnimalsQuantity: { toB: toNumberWhenParses, toA: numberToString }
-}
-
-const normalise = (direction, aId, value) => {
-  const converter = VOCAB[aId]?.[direction]
-  if (!converter || (typeof value !== 'string' && typeof value !== 'number')) {
-    return value
-  }
-  const converted = converter(value)
-  // A converter that cannot place a value (unknown commodity name/code) must
-  // not destroy it — pass the original through rather than emit `undefined`.
-  return converted === undefined ? value : converted
-}
-
-const normaliseToB = (aId, value) => normalise('toB', aId, value)
-const normaliseToA = (aId, value) => normalise('toA', aId, value)
+const modelValue = (aId, value) =>
+  aId === numberOfAnimals.name ? toNumberWhenParses(value) : value
 
 // ---------------------------------------------------------------------------
 // answers -> fulfilments
@@ -149,7 +96,7 @@ const collectGroupedRecords = (answers, chain, aId) => {
     if (remainingGroups.length === 0) {
       const value = node?.[aId]
       if (value !== undefined) {
-        records[segments.join('/')] = normaliseToB(aId, value)
+        records[segments.join('/')] = modelValue(aId, value)
       }
       return
     }
@@ -167,7 +114,7 @@ const collectGroupedRecords = (answers, chain, aId) => {
 
 const scalarFulfilment = (answers, aId) => {
   const value = answers?.[aId]
-  return value === undefined ? undefined : normaliseToB(aId, value)
+  return value === undefined ? undefined : modelValue(aId, value)
 }
 
 const groupFulfilment = (answers, chain, aId) => {
@@ -242,16 +189,12 @@ export const instanceFulfilmentId = (collectionPath, index) => {
 }
 
 const answersWithScalar = (answers, aId, stored) =>
-  setAt(answers, [aId], normaliseToA(aId, stored))
+  setAt(answers, [aId], stored)
 
 const answersWithRecords = (answers, chain, aId, stored) =>
   Object.entries(stored).reduce(
     (acc, [fulfilmentId, value]) =>
-      setAt(
-        acc,
-        fulfilmentIdToPath(chain, fulfilmentId, aId),
-        normaliseToA(aId, value)
-      ),
+      setAt(acc, fulfilmentIdToPath(chain, fulfilmentId, aId), value),
     answers
   )
 
@@ -270,8 +213,8 @@ const withObligationAnswer = (answers, fulfilments, obligation) => {
  * Translate the model `fulfilments` back into the page `answers`.
  *
  * The inverse of {@link answersToFulfilments} over bridge-convention
- * fulfilmentIds. Non-injective commodity codes recover a representative name
- * only.
+ * fulfilmentIds. The animal count comes back as the number the model stores,
+ * not the page's original string.
  *
  * @param {object} [fulfilments={}] - the flat, UUID-keyed fulfilments map.
  * @returns {object} the nested answer POJO.

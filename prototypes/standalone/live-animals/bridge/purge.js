@@ -6,7 +6,7 @@
  * the obligation (or its instance) is out of scope.
  *
  * Mechanism:
- *   answers -> answersToFulfilments (vocab-normalised)           = fIn
+ *   answers -> answersToFulfilments                              = fIn
  *   evaluate(fIn).fulfilments (the converged post-purge view)    = fOut
  *   for each non-group leaf obligation answered in fIn but absent from fOut,
  *   emit its pathKey via the composite->positional rule.

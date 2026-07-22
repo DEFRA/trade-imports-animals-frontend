@@ -522,7 +522,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
 
   it('Should open the closure with a witness for purposeInInternalMarket (non-total branchedGate)', () => {
     // Non-total: whenTrue.inScope === true, whenFalse.inScope === false.
-    // predicateMeta declares operator: 'equals' + value: 'internal-market'.
+    // predicateMeta declares operator: 'equals' + value: 'internalMarket'.
     // This is the load-bearing fidelity check for annotated call sites.
     const purposeInInternalMarketObl = obligations.find(
       (o) => o.name === 'purposeInInternalMarket'

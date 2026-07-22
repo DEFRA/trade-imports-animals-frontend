@@ -40,12 +40,12 @@ const address = {
 describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
   // ---------------------------------------------------------------------------
   // Round-trip property — answersToFulfilments then fulfilmentsToAnswers
-  // recovers the original A answers (except the non-injective commodity case,
-  // tested separately below as a known limitation).
+  // recovers the original A answers (the animal count comes back as the
+  // number the model stores, pinned separately below).
   // ---------------------------------------------------------------------------
 
   describe('round-trip A -> B -> A recovers the original', () => {
-    it('Should recover notification-level scalars on round-trip (mixed vocabularies)', () => {
+    it('Should recover notification-level scalars on round-trip', () => {
       const answers = {
         countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'yes',
@@ -64,7 +64,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       )
     })
 
-    it('Should recover a multi-line, multi-unit collection on round-trip', () => {
+    it('Should recover a multi-line, multi-unit collection on round-trip (counts as numbers)', () => {
       const answers = {
         commodityLines: [
           {
@@ -83,9 +83,22 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
           }
         ]
       }
-      expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
-        answers
-      )
+      const recovered = fulfilmentsToAnswers(answersToFulfilments(answers))
+      expect(recovered).toEqual({
+        commodityLines: [
+          { ...answers.commodityLines[0], numberOfAnimalsQuantity: 25 },
+          { ...answers.commodityLines[1], numberOfAnimalsQuantity: 2 }
+        ]
+      })
+    })
+
+    it('Should round-trip every commodity name exactly', () => {
+      for (const name of ['Cow', 'Horse', 'Fish', 'Cat', 'Dog']) {
+        const answers = { commodityLines: [{ commoditySelection: name }] }
+        expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
+          answers
+        )
+      }
     })
 
     it('Should keep a blank scalar value on round-trip (not dropped)', () => {
@@ -119,12 +132,17 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       const fulfilments = answersToFulfilments(answers)
       // The count field is coerced to a NUMBER on the way in — the
       // model's recordCountEquals invariant compares it strictly against
-      // a record tally — and back to the page's string on the way out.
+      // a record tally — and stays a number on the way out.
       expect(fulfilments[numberOfAnimals.id]).toEqual({
         line0: 10,
         line1: 20
       })
-      expect(fulfilmentsToAnswers(fulfilments)).toEqual(answers)
+      expect(fulfilmentsToAnswers(fulfilments)).toEqual({
+        commodityLines: [
+          { numberOfAnimalsQuantity: 10 },
+          { numberOfAnimalsQuantity: 20 }
+        ]
+      })
     })
 
     it('Should translate a depth-2 nested array to a two-segment composite (line<i>/unit<j>)', () => {
@@ -160,41 +178,30 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // Vocabulary normalisation — A -> B per divergent field; pass-through fields
-  // untouched.
+  // Stored vocabulary passes through unchanged — the manifest's gates compare
+  // the same values the pages store. The animal count is the one coercion.
   // ---------------------------------------------------------------------------
 
-  describe('vocabulary normalisation A -> B', () => {
-    it('Should normalise a commodity name to its CN code', () => {
+  describe('stored values pass through', () => {
+    it('Should store the picker name for a commodity selection', () => {
       const fulfilments = answersToFulfilments({
         commodityLines: [{ commoditySelection: 'Cow' }]
       })
-      expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
+      expect(fulfilments[commodityCode.id]).toEqual({ line0: 'Cow' })
     })
 
-    it('Should normalise reasonForImport camelCase to kebab', () => {
-      expect(
-        answersToFulfilments({ reasonForImport: 'internalMarket' })[
-          reasonForImport.id
-        ]
-      ).toBe('internal-market')
+    it('Should store reasonForImport, transporterType and portOfEntry as the pages submit them', () => {
+      const fulfilments = answersToFulfilments({
+        reasonForImport: 'internalMarket',
+        transporterType: 'Commercial',
+        portOfEntry: 'GB ABD'
+      })
+      expect(fulfilments[reasonForImport.id]).toBe('internalMarket')
+      expect(fulfilments[transporterType.id]).toBe('Commercial')
+      expect(fulfilments[portOfEntry.id]).toBe('GB ABD')
     })
 
-    it('Should normalise transporterType Title Case to kebab', () => {
-      expect(
-        answersToFulfilments({ transporterType: 'Commercial' })[
-          transporterType.id
-        ]
-      ).toBe('commercial')
-    })
-
-    it('Should normalise a GB-prefixed portOfEntry to its bare code', () => {
-      expect(
-        answersToFulfilments({ portOfEntry: 'GB ABD' })[portOfEntry.id]
-      ).toBe('ABD')
-    })
-
-    it('Should leave pass-through fields untouched', () => {
+    it('Should leave every other field untouched', () => {
       const answers = {
         purposeInInternalMarket: 'breeding',
         animalsCertifiedFor: 'slaughter',
@@ -210,44 +217,11 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       expect(fulfilments[species.id]).toEqual({ line0: ['1148346'] })
     })
 
-    it("Should round-trip every divergent field's vocabulary", () => {
-      const answers = {
-        reasonForImport: 'temporaryAdmissionHorses',
-        transporterType: 'Private',
-        portOfEntry: 'GB DVR'
-      }
-      expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
-        answers
-      )
-    })
-  })
-
-  // ---------------------------------------------------------------------------
-  // Non-injective commodity — the sharpest risk. A -> B is safe; B -> A cannot
-  // recover Cat vs Dog from the shared code 01061900.
-  // ---------------------------------------------------------------------------
-
-  describe('non-injective commodity (Cat/Dog -> 01061900)', () => {
-    it('Should round-trip injective commodities exactly', () => {
-      for (const name of ['Cow', 'Horse', 'Fish', 'Cat']) {
-        const answers = { commodityLines: [{ commoditySelection: name }] }
-        expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
-          answers
-        )
-      }
-    })
-
-    it('KNOWN LIMITATION: Should round-trip Dog to Cat — the shared code cannot recover the name', () => {
-      const dog = { commodityLines: [{ commoditySelection: 'Dog' }] }
-      // A -> B is deterministic and correct: both map to the shared CN code.
-      expect(answersToFulfilments(dog)[commodityCode.id]).toEqual({
-        line0: '01061900'
+    it('Should keep an unparseable animal count raw for controller-side validation', () => {
+      const fulfilments = answersToFulfilments({
+        commodityLines: [{ numberOfAnimalsQuantity: 'many' }]
       })
-      // B -> A recovers the representative name (Cat), NOT Dog. Surfaced here,
-      // never a silent pass — DESIGN-DELTA §7.
-      expect(fulfilmentsToAnswers(answersToFulfilments(dog))).toEqual({
-        commodityLines: [{ commoditySelection: 'Cat' }]
-      })
+      expect(fulfilments[numberOfAnimals.id]).toEqual({ line0: 'many' })
     })
   })
 
@@ -323,8 +297,8 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
     const fulfilments = answersToFulfilments(happyPath)
     const result = evaluator.evaluate(fulfilments)
 
-    it('Should normalise the commodity name to the CN code the gates compare', () => {
-      expect(fulfilments[commodityCode.id]).toEqual({ line0: '0102' })
+    it('Should store the commodity name the gates compare', () => {
+      expect(fulfilments[commodityCode.id]).toEqual({ line0: 'Cow' })
     })
 
     it('Should fire commodity-gated notification obligations (cph mandatory)', () => {
@@ -342,7 +316,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       ).toContain('line0/unit0')
     })
 
-    it('Should fire value-gated notification obligations (internal-market, land transport)', () => {
+    it('Should fire value-gated notification obligations (internalMarket, land transport)', () => {
       expect(result.obligations[purposeInInternalMarket.id].status).toBe(
         'mandatory'
       )

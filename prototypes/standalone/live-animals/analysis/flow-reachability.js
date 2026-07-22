@@ -60,9 +60,7 @@ const withoutBlanks = (state) =>
 /**
  * A maximal happy-path answer set that puts (almost) every obligation in
  * scope, overlaid per state with the scope-flag cross-product above.
- * Answer-shaped, which is exactly what `makeScope` consumes (its
- * `answersToFulfilments` normalises the stored vocabulary on the way into
- * the evaluator).
+ * Answer-shaped, which is exactly what `makeScope` consumes.
  */
 export const submitReadySeed = {
   countryOfOrigin: 'FR',
@@ -131,8 +129,8 @@ export const submitReadySeed = {
 /**
  * Seed variants — overlays on `submitReadySeed` whose commodity/documents
  * choices open the gates the base seed leaves shut. The base seed's single
- * Cow (0102) line never scopes the 0101-gated `horseName`, the 01061900-gated
- * `permanentAddress`, the `notInUnionOf` free-text identifiers (0102 sits in
+ * Cow line never scopes the Horse-gated `horseName`, the Cat/Dog-gated
+ * `permanentAddress`, the `notInUnionOf` free-text identifiers (Cow sits in
  * the passport∪tattoo∪earTag union) or the four per-document leaves (no
  * `documents` records). Values are the services' real canned data
  * (`services/commodities`, `services/document-types`) — the same vocabulary
@@ -147,7 +145,7 @@ export const submitReadySeed = {
 export const seedVariants = () => [
   { id: 'base', answers: submitReadySeed },
   {
-    // 0101: horseName (and passport) per unit record.
+    // Horse: horseName (and passport) per unit record.
     id: 'horse-line',
     answers: {
       ...submitReadySeed,
@@ -163,7 +161,7 @@ export const seedVariants = () => [
     }
   },
   {
-    // 01061900: permanentAddress (mandatory when in scope) per unit record.
+    // Cat: permanentAddress (mandatory when in scope) per unit record.
     id: 'cat-line',
     answers: {
       ...submitReadySeed,
@@ -179,7 +177,7 @@ export const seedVariants = () => [
     }
   },
   {
-    // 0301 is outside the specific-identifier union — the notInUnionOf
+    // Fish is outside the specific-identifier union — the notInUnionOf
     // free-text identifiers (identificationDetails, description) apply.
     id: 'fish-line',
     answers: {

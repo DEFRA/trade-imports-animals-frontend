@@ -126,8 +126,8 @@ export const allowListed = (
  *
  * Two input shapes accepted:
  *   - `[[a, b], [c, d]]` — a list of allowlists (typical case:
- *     `notInUnionOf(commodityCode, [PASSPORT_COMMODITIES,
- *     TATTOO_COMMODITIES, EAR_TAG_COMMODITIES, HORSE_NAME_COMMODITIES],
+ *     `notInUnionOf(commodityCode, [passportCommodities(),
+ *     tattooCommodities(), earTagCommodities(), horseNameCommodities()],
  *     unitRecord, reasons)`). The union is set-like — duplicates across
  *     allowlists collapse.
  *   - `[a, b, c]` — a flat list of values (single-allowlist complement).
@@ -304,7 +304,7 @@ export const present = (obligation) => {
  *   - `regionCode` — mandatory when `regionCodeRequirement === 'yes'`,
  *     otherwise optional (both branches in-scope; status flips).
  *   - `purposeInInternalMarket` — mandatory when `reasonForImport ===
- *     'internal-market'`, otherwise out of scope (purge on flip).
+ *     'internalMarket'`, otherwise out of scope (purge on flip).
  *   - `commercialTransporter` / `privateTransporter` — in scope when
  *     `transporterType` matches, otherwise out of scope.
  *

@@ -215,7 +215,7 @@ describe('pageStatus', () => {
         { obligation: reasonOb, impl: { inScope: true, status: 'optional' } },
         { obligation: purposeOb, impl: { inScope: true, status: 'optional' } }
       ]),
-      fulfilments: { [reasonOb.id]: 'internal-market' }
+      fulfilments: { [reasonOb.id]: 'internalMarket' }
     })
     expect(pageStatus(page, st)).toBe(STATUSES.FULFILLED)
   })
@@ -420,7 +420,7 @@ describe('containerStatus', () => {
       obligations: impls([
         { obligation: reasonOb, impl: { inScope: true, status: 'optional' } }
       ]),
-      fulfilments: { [reasonOb.id]: 'internal-market' }
+      fulfilments: { [reasonOb.id]: 'internalMarket' }
     })
     expect(containerStatus({ children: [optionalPage] }, stEngaged)).toBe(
       STATUSES.FULFILLED

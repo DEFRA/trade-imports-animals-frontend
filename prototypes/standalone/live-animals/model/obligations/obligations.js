@@ -50,7 +50,7 @@
  * both are on the `KNOWN_UNWIRED` allow-list in `coverage.test.js`
  * with a reason.
  *
- * MDM-sourced enum values (commodity codes / species / ports of
+ * MDM-sourced enum values (commodities / species / ports of
  * entry / country of origin / animals-certified-for options) are
  * stubbed in test fixtures rather than modelled as obligations —
  * their real option lists come from MDM in production.
@@ -69,6 +69,16 @@ import {
   includesGate,
   notInUnionOf
 } from './helpers.js'
+import {
+  cphCommodities,
+  earTagCommodities,
+  horseNameCommodities,
+  packageCountCommodities,
+  passportCommodities,
+  permanentAddressCommodities,
+  tattooCommodities,
+  unweanedCommodities
+} from '../../services/commodities/index.js'
 
 // -----------------------------------------------------------------------------
 // Reason constants — collected here so obligation declarations stay tight.
@@ -82,36 +92,36 @@ const regionCodeRequiredReason = {
 const purposeInInternalMarketReason = {
   code: 'obligation.purposeInInternalMarket.applicable.becauseInternalMarket',
   explanation:
-    'purposeInInternalMarket applies when reasonForImport is internal-market'
+    'purposeInInternalMarket applies when reasonForImport is internalMarket'
 }
 
 const destinationCountryReason = {
   code: 'obligation.destinationCountry.applicable.becauseTransitOrTranshipment',
   explanation:
-    'destinationCountry applies when reasonForImport is transit or transhipment-or-onward-travel'
+    'destinationCountry applies when reasonForImport is transit or transhipmentOrOnwardTravel'
 }
 
 const portOfExitReason = {
   code: 'obligation.portOfExit.applicable.becauseTransitOrTemporaryAdmissionHorses',
   explanation:
-    'portOfExit applies when reasonForImport is transit or temporary-admission-horses'
+    'portOfExit applies when reasonForImport is transit or temporaryAdmissionHorses'
 }
 
 const exitDateReason = {
   code: 'obligation.exitDate.applicable.becauseTemporaryAdmissionHorses',
   explanation:
-    'exitDate applies when reasonForImport is temporary-admission-horses'
+    'exitDate applies when reasonForImport is temporaryAdmissionHorses'
 }
 
 const commercialTransporterReason = {
   code: 'obligation.commercialTransporter.applicable.becauseCommercial',
   explanation:
-    'commercialTransporter applies when transporterType is commercial'
+    'commercialTransporter applies when transporterType is Commercial'
 }
 
 const privateTransporterReason = {
   code: 'obligation.privateTransporter.applicable.becausePrivate',
-  explanation: 'privateTransporter applies when transporterType is private'
+  explanation: 'privateTransporter applies when transporterType is Private'
 }
 
 const transitedCountriesReason = {
@@ -240,7 +250,7 @@ export const reasonForImport = {
   status: 'mandatory'
 }
 
-// Purge-on-flip: when reasonForImport is not 'internal-market',
+// Purge-on-flip: when reasonForImport is not 'internalMarket',
 // purposeInInternalMarket goes out of scope and any stored value is
 // dropped.
 export const purposeInInternalMarket = {
@@ -248,7 +258,7 @@ export const purposeInInternalMarket = {
   name: 'purposeInInternalMarket',
   applyTo: equalsGate(
     reasonForImport,
-    'internal-market',
+    'internalMarket',
     {
       inScope: true,
       status: 'mandatory',
@@ -260,10 +270,10 @@ export const purposeInInternalMarket = {
 
 // V4 (Confluence page 6497338582, "Reason of Import" section):
 // destinationCountry applies when reasonForImport ∈ { transit,
-// transhipment-or-onward-travel }. Purge-on-flip.
+// transhipmentOrOnwardTravel }. Purge-on-flip.
 const DESTINATION_COUNTRY_APPLICABLE_REASONS = [
   'transit',
-  'transhipment-or-onward-travel'
+  'transhipmentOrOnwardTravel'
 ]
 
 export const destinationCountry = {
@@ -282,12 +292,9 @@ export const destinationCountry = {
 }
 
 // V4: portOfExit applies when reasonForImport ∈ { transit,
-// temporary-admission-horses }. Spec: "Port selected from the port of
+// temporaryAdmissionHorses }. Spec: "Port selected from the port of
 // entry list (Exit and Entry share the same list)." Purge-on-flip.
-const PORT_OF_EXIT_APPLICABLE_REASONS = [
-  'transit',
-  'temporary-admission-horses'
-]
+const PORT_OF_EXIT_APPLICABLE_REASONS = ['transit', 'temporaryAdmissionHorses']
 
 export const portOfExit = {
   id: 'a67b8c9d-0e1f-4023-8145-6c7d8e9f0112',
@@ -305,13 +312,13 @@ export const portOfExit = {
 }
 
 // V4: exitDate applies only when reasonForImport is
-// temporary-admission-horses. Purge-on-flip.
+// temporaryAdmissionHorses. Purge-on-flip.
 export const exitDate = {
   id: 'b78c9d0e-1f20-4134-8256-7d8e9f012023',
   name: 'exitDate',
   applyTo: equalsGate(
     reasonForImport,
-    'temporary-admission-horses',
+    'temporaryAdmissionHorses',
     {
       inScope: true,
       status: 'mandatory',
@@ -371,14 +378,14 @@ export const transporterType = {
   status: 'mandatory'
 }
 
-// Purge-on-flip: switching transporterType from 'commercial' to
-// 'private' drops any stored commercialTransporter address.
+// Purge-on-flip: switching transporterType from 'Commercial' to
+// 'Private' drops any stored commercialTransporter address.
 export const commercialTransporter = {
   id: 'de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071',
   name: 'commercialTransporter',
   applyTo: equalsGate(
     transporterType,
-    'commercial',
+    'Commercial',
     {
       inScope: true,
       status: 'mandatory',
@@ -393,7 +400,7 @@ export const privateTransporter = {
   name: 'privateTransporter',
   applyTo: equalsGate(
     transporterType,
-    'private',
+    'Private',
     {
       inScope: true,
       status: 'mandatory',
@@ -555,38 +562,20 @@ export const numberOfAnimals = {
   status: 'mandatory'
 }
 
-// Commodity codes for which V4 requires a package count. The spec
-// (Confluence page 6497338582) lists 54 codes total; every code in
-// the spike's stub COMMODITY_OPTIONS is in that list, so package
-// count is applicable on every wired line. The list is enumerated
-// (rather than defaulting to "always on") to preserve the gate
-// mechanism — when a future commodity code lands in
-// COMMODITY_OPTIONS that ISN'T in the spec's 54 (e.g. 0203 Pig meat
-// under safeguard), the gate will correctly hide the field for it.
-// Audit finding #6.
-export const PACKAGE_COUNT_COMMODITIES = [
-  '0101', // Horse (also Donkey per V4)
-  '0102', // Cattle
-  '0103', // Pig (Domestic)
-  '010410', // Sheep (Domestic)
-  '010420', // Goats
-  '01061900', // Cats / Dogs / Ferrets / Rodents
-  '01063100', // Birds of prey
-  '01064100' // Bees
-]
-
-// Depth-1 commodity-code-gated field record. `applyTo` returns records
+// Depth-1 commodity-gated field record. `applyTo` returns records
 // = matching line-ids; no projection group needed (the gate lives at
 // the same identity level as the gated obligation). Uses `allowListed`
 // with `null` projection (NOT `includesGate`) — see helpers.js
 // taxonomy: the gate `commodityCode` is `within: commodityLine`, so
 // `fulfilments[commodityCode.id]` is a records-map, not a scalar.
+// The allowlist is the service's package-count list; only entries that
+// are picker names can ever match a stored selection.
 export const numberOfPackages = {
   id: '252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507',
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, PACKAGE_COUNT_COMMODITIES, null, [
+  applyTo: allowListed(commodityCode, packageCountCommodities(), null, [
     numberOfPackagesReason
   ])
 }
@@ -595,39 +584,12 @@ export const numberOfPackages = {
 // CPH — notification-level single, aggregated across commodity lines.
 // -----------------------------------------------------------------------------
 
-// V4 CPH whitelist per Confluence page 6497338582 (updated
-// 2026-07-07). Spec lists 19 species/product rows but the codes
-// collapse to 17 unique values — 01059920/01059930 duplicate at
-// species level (Geese and Turkeys share 04071911; Ducks and
-// Guinea Fowl share 04071919). Iteration 10 shipped with the
-// 4 mammal codes only; step 5a expands to the full whitelist so
-// Poultry consignments correctly gate on CPH.
-export const CPH_REQUIRED_COMMODITIES = [
-  '0102', // Cattle
-  '0103', // Pig (Domestic)
-  '010410', // Sheep (Domestic)
-  '010420', // Goats
-  '01051111', // Poultry — Day-old chicks — Chickens
-  '01051200', // Poultry — Day-old chicks — Turkeys
-  '01051300', // Poultry — Day-old chicks — Ducks
-  '01051400', // Poultry — Day-old chicks — Geese
-  '01051500', // Poultry — Day-old chicks — Guinea Fowl
-  '01059400', // Poultry — Adult Birds — Chickens
-  '01059910', // Poultry — Adult Birds — Ducks
-  '01059920', // Poultry — Adult Birds — Geese
-  '01059930', // Poultry — Adult Birds — Turkeys
-  '01059950', // Poultry — Adult Birds — Guinea Fowl
-  '04071100', // Poultry — Hatching eggs — Chickens
-  '04071911', // Poultry — Hatching eggs — Geese / Turkeys
-  '04071919' //  Poultry — Hatching eggs — Ducks / Guinea Fowl
-]
-
 export const cph = {
   id: '263b4c5d-6e7f-4c93-8012-6cd3e4f50618',
   name: 'countyParishHoldingCph',
   applyTo: anyAllowListed(
     commodityCode,
-    CPH_REQUIRED_COMMODITIES,
+    cphCommodities(),
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
   )
@@ -635,7 +597,7 @@ export const cph = {
 
 // -----------------------------------------------------------------------------
 // Contains unweaned animals — notification-level yes/no, gated on the
-// active commodity codes per V4. Only mandatory when the
+// active commodities per V4. Only mandatory when the
 // consignment includes at least one commodity requiring unweaned
 // tracking (equines / cattle / pigs / sheep / goats). Declared here
 // (rather than up top with
@@ -643,14 +605,6 @@ export const cph = {
 // applyTo closure captures `commodityCode` — declaring it before
 // commodityCode would trip the temporal dead zone.
 // -----------------------------------------------------------------------------
-
-const UNWEANED_APPLICABLE_COMMODITIES = [
-  '0101', // Equines (horses, asses, mules, hinnies)
-  '0102', // Cattle
-  '0103', // Pigs
-  '010410', // Sheep
-  '010420' // Goats
-]
 
 const unweanedApplicableReason = {
   code: 'obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity',
@@ -663,7 +617,7 @@ export const containsUnweanedAnimals = {
   name: 'containsUnweanedAnimals',
   applyTo: anyAllowListed(
     commodityCode,
-    UNWEANED_APPLICABLE_COMMODITIES,
+    unweanedCommodities(),
     { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
   )
@@ -722,38 +676,11 @@ export const unitRecord = {
 }
 
 // -----------------------------------------------------------------------------
-// Commodity-code whitelists for per-unit identifier gates. Subsets of
-// the full V4 lists — enough to exercise every pattern in tests.
-// -----------------------------------------------------------------------------
-
-export const PASSPORT_COMMODITIES = [
-  '0101', // Horse
-  '0102', // Cattle
-  '01061900' // Cats / Dogs / Ferrets
-]
-
-export const TATTOO_COMMODITIES = [
-  '01061900', // Cats / Dogs / Ferrets
-  '0103', // Pig
-  '0102' // Bovine
-]
-
-export const EAR_TAG_COMMODITIES = [
-  '0102', // Cattle
-  '0103', // Pig
-  '010410', // Sheep
-  '010420' // Goats
-]
-
-export const HORSE_NAME_COMMODITIES = ['0101']
-
-export const PERMANENT_ADDRESS_COMMODITIES = ['01061900']
-
-// -----------------------------------------------------------------------------
-// Per-unit identifier field records — depth-2, commodity-code-gated
-// via `allowListed` with projection to unitRecord's instance-paths.
+// Per-unit identifier field records — depth-2, commodity-gated via
+// `allowListed` with projection to unitRecord's instance-paths.
 // The evaluator's pre-purge enumeration supplies the paths; the
-// obligation code doesn't enumerate them itself.
+// obligation code doesn't enumerate them itself. Allowlists come from
+// the commodities service in the stored picker-name vocabulary.
 // -----------------------------------------------------------------------------
 
 export const passport = {
@@ -761,7 +688,7 @@ export const passport = {
   name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, PASSPORT_COMMODITIES, unitRecord, [
+  applyTo: allowListed(commodityCode, passportCommodities(), unitRecord, [
     passportReason
   ])
   // Note: `unitRecord` is a structural projection group (the closure's
@@ -775,7 +702,7 @@ export const tattoo = {
   name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, TATTOO_COMMODITIES, unitRecord, [
+  applyTo: allowListed(commodityCode, tattooCommodities(), unitRecord, [
     tattooReason
   ])
 }
@@ -785,7 +712,7 @@ export const earTag = {
   name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, EAR_TAG_COMMODITIES, unitRecord, [
+  applyTo: allowListed(commodityCode, earTagCommodities(), unitRecord, [
     earTagReason
   ])
 }
@@ -795,7 +722,7 @@ export const horseName = {
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, HORSE_NAME_COMMODITIES, unitRecord, [
+  applyTo: allowListed(commodityCode, horseNameCommodities(), unitRecord, [
     horseNameReason
   ])
 }
@@ -811,10 +738,10 @@ export const horseName = {
 // union widens automatically. Hand-restated four-conjunct complements
 // would silently double-gate on such an addition.
 const SPECIFIC_IDENTIFIER_WHITELISTS = [
-  PASSPORT_COMMODITIES,
-  TATTOO_COMMODITIES,
-  EAR_TAG_COMMODITIES,
-  HORSE_NAME_COMMODITIES
+  passportCommodities(),
+  tattooCommodities(),
+  earTagCommodities(),
+  horseNameCommodities()
 ]
 
 export const identificationDetails = {
@@ -850,7 +777,7 @@ export const permanentAddress = {
   status: 'mandatory',
   applyTo: allowListed(
     commodityCode,
-    PERMANENT_ADDRESS_COMMODITIES,
+    permanentAddressCommodities(),
     unitRecord,
     [permanentAddressReason]
   )

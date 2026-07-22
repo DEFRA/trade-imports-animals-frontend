@@ -6,19 +6,17 @@
  * identifier fields to render for a picked commodity, which CYA rows a
  * line's commodity earns), so runtime scope (`makeScope`) cannot answer
  * it. Sourced from the manifest's gate metadata: the commodity-gated
- * helpers expose their allowlist on `applyTo.metadata.values` as CN
- * codes; the stored commodity is the picker NAME, translated through the
- * commodities service — the same translation the write path applies.
+ * helpers expose their allowlist on `applyTo.metadata.values` in the
+ * stored picker-name vocabulary, so the stored commodity compares
+ * directly.
  *
  * `notInUnionOf` gates (the free-text identifiers) are complements: they
- * apply exactly when the commodity is NOT in the derived union, including
- * a commodity the service cannot code (no CN code → not in any list).
- * Every other shape applies when the commodity's code is in the list; an
- * obligation with no commodity gate never applies here.
+ * apply exactly when the commodity is NOT in the derived union. Every
+ * other shape applies when the commodity is in the list; an obligation
+ * with no commodity gate never applies here.
  */
 
 import { obligations } from '../model/obligations/obligations.js'
-import { commodityCodeFor } from '../services/commodities/index.js'
 
 const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
@@ -35,7 +33,7 @@ const obligationByName = new Map(
 export const appliesForCommodity = (obligationName, commodityName) => {
   const metadata = obligationByName.get(obligationName)?.applyTo?.metadata
   const values = metadata?.values ?? []
-  const inList = values.includes(commodityCodeFor(commodityName))
+  const inList = values.includes(commodityName)
   return metadata?.type === 'notInUnionOf' ? !inList : inList
 }
 
