@@ -27,6 +27,13 @@ export const COMMODITY_SPECIES = {
 
 export const SPECIES_OPTIONS = Object.values(COMMODITY_SPECIES).flat()
 
+// Type of commodity, in the skeleton's submitted vocabulary — the select
+// option value IS the type text (mock-species.json data.types). Only
+// 0102/Cow carries type data in the skeleton's reference data.
+export const COMMODITY_TYPES = {
+  Cow: 'Domestic'
+}
+
 export const PACKAGE_COUNT_COMMODITIES = [
   '01064100 - Bees',
   '01063100 - Birds of Prey- Owls',

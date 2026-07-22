@@ -16,7 +16,8 @@
 import {
   speciesLabel,
   commodityCodeFor,
-  commodityNameFor
+  commodityNameFor,
+  commodityTypeFor
 } from '../../commodities/index.js'
 
 const compact = (source) =>
@@ -134,9 +135,12 @@ const transporterToAnswers = (transporter) => {
 // One complement per commodity group. The complement totals are numbers (the
 // skeleton computes them via a lodash sum over the per-species counts), while
 // the per-species noOfAnimals/noOfPackages stay the raw string answers.
+// typeOfCommodity is system-populated — no page collects it — derived from
+// the commodity reference data in the skeleton's vocabulary (the type text).
 const baseComplementFromGroup = (group) => {
   const species = speciesLines(group).map(speciesEntryFromLine)
   return compact({
+    typeOfCommodity: commodityTypeFor(group[0].commoditySelection),
     totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity'),
     totalNoOfPackages: totalOf(group, 'numberOfPackages'),
     species: species.length > 0 ? species : undefined

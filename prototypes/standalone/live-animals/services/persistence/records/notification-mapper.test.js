@@ -138,6 +138,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       name: 'Cow',
       commodityComplement: [
         {
+          typeOfCommodity: 'Domestic',
           totalNoOfAnimals: 25,
           totalNoOfPackages: 5,
           species: [
@@ -180,6 +181,15 @@ describe('Mapper A — current backend notification (as-is)', () => {
         passport: 'UK-CAT-1'
       }
     ])
+  })
+
+  test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', () => {
+    const { commodity } = answersToNotification({
+      commodityLines: groupedLines()
+    })
+    const [cow, cat] = commodity.commodityComplement
+    expect(cow.typeOfCommodity).toBe('Domestic')
+    expect('typeOfCommodity' in cat).toBe(false)
   })
 
   test('Should lose the commodity identity of every group after the first on a round-trip (the lossy-A caveat)', () => {
@@ -583,7 +593,11 @@ const storableSubset = (notification) => {
       name: notification.commodity.name,
       commodityComplement: notification.commodity.commodityComplement.map(
         (complement) => ({
-          ...pick(complement, ['totalNoOfAnimals', 'totalNoOfPackages']),
+          ...pick(complement, [
+            'typeOfCommodity',
+            'totalNoOfAnimals',
+            'totalNoOfPackages'
+          ]),
           species: complement.species?.map((entry) =>
             pick(entry, [
               'value',

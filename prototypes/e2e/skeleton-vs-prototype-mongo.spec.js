@@ -37,17 +37,6 @@ const VOLATILE = [
 const strip = (doc) => {
   const copy = { ...doc }
   for (const key of VOLATILE) delete copy[key]
-  // c-037 (inc-062): the prototype journey no longer asks the commodity type
-  // question — typeSelection is out of the flow pending PO sign-off — so the
-  // skeleton-side typeOfCommodity has no prototype counterpart to compare.
-  if (copy.commodity?.commodityComplement) {
-    copy.commodity = {
-      ...copy.commodity,
-      commodityComplement: copy.commodity.commodityComplement.map(
-        ({ typeOfCommodity, ...complement }) => complement
-      )
-    }
-  }
   return copy
 }
 

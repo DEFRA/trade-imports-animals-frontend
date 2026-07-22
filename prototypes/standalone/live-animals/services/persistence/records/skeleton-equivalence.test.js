@@ -118,14 +118,16 @@ const twoSpeciesCommodity = {
 }
 
 // (a) The skeleton commodity session object, built exactly as the skeleton
-// controllers store it: species carries value/text/per-species counts/earTag/
-// passport (counts are the raw payload strings), and the complement totals are
-// produced by the skeleton's own getTotal helper (lodash sum -> Number) over
-// the per-species counts.
+// controllers store it: the complement carries the typeOfCommodity the select
+// page submits ('Domestic' — the only real option for 0102), species carries
+// value/text/per-species counts/earTag/passport (counts are the raw payload
+// strings), and the complement totals are produced by the skeleton's own
+// getTotal helper (lodash sum -> Number) over the per-species counts.
 const skeletonCommodity = (commodity) => ({
   name: commodity.name,
   commodityComplement: [
     {
+      typeOfCommodity: 'Domestic',
       species: commodity.species.map((entry) => ({ ...entry })),
       totalNoOfAnimals: getTotal(
         commodity.species.map((entry) => entry.noOfAnimals)

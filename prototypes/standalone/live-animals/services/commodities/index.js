@@ -2,6 +2,7 @@ import {
   COMMODITY_OPTIONS,
   COMMODITY_CODES,
   COMMODITY_SPECIES,
+  COMMODITY_TYPES,
   SPECIES_OPTIONS,
   PACKAGE_COUNT_COMMODITIES,
   PASSPORT_COMMODITIES,
@@ -19,6 +20,8 @@ export const commodityCodeFor = (name) => COMMODITY_CODES[name]
 
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
+
+export const commodityTypeFor = (name) => COMMODITY_TYPES[name]
 
 export const species = () => SPECIES_OPTIONS
 
