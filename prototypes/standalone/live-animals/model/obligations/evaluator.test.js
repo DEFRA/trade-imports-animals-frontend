@@ -1082,7 +1082,7 @@ describe('V4 — accompanying documents: no documents at all', () => {
 
 describe('V4 — accompanying documents: every field is mandatory per record', () => {
   const withType = {
-    [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' }
+    [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' }
   }
 
   it('a document record appears once any of its fields is stored', () => {
@@ -1107,7 +1107,7 @@ describe('V4 — accompanying documents: every field is mandatory per record', (
 
 describe('V4 — accompanying documents: all four filled on one record', () => {
   const stored = {
-    [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' },
+    [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
     [accompanyingDocumentAttachmentType.id]: { d0: 'PDF' },
     [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890' },
     [accompanyingDocumentDateOfIssue.id]: { d0: '2025-12-12' }
@@ -1129,7 +1129,7 @@ describe('V4 — accompanying documents: all four filled on one record', () => {
 describe('V4 — accompanying documents: a partial record keeps every field owed', () => {
   it('a record with only a Reference keeps its other fields mandatory (nothing purged)', () => {
     const result = evaluator.evaluate({
-      [accompanyingDocumentType.id]: { d0: 'Veterinary health certificate' },
+      [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
       [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890', d1: 'KEPT' }
     })
     expect(result.obligations[accompanyingDocumentReference.id]).toEqual({

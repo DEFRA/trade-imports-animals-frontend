@@ -44,7 +44,7 @@ const validDocument = {
 }
 
 const storedDocument = (overrides = {}) => ({
-  accompanyingDocumentType: 'ITAHC',
+  accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'PDF',
   accompanyingDocumentReference: 'GBHC1234567890',
   accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' },
@@ -113,7 +113,7 @@ describe('documents — real upload leg on the single-page loop', () => {
       }
     })
     const [entry] = result.after.documents
-    expect(entry.accompanyingDocumentType).toBe('Other')
+    expect(entry.accompanyingDocumentType).toBe('OTHER')
   })
 
   it('Should refuse an add without a file and append nothing', async () => {
@@ -150,7 +150,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     const [row] = result.view.context.rows
     expect(row[0].text).toBe('GBHC1234567890')
-    expect(row[1].text).toBe('ITAHC')
+    expect(row[1].text).toBe('Veterinary health certificate')
     expect(row[2].text).toBe('12/12/2025')
     expect(row[3].html).toContain('Safe')
     expect(row[4].html).toContain('accompanying-documents/0/remove')

@@ -27,8 +27,12 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 
 // String leaves that may legitimately be byte-identical across en and cy
 // (proper nouns, codes, reference formats). Keyed `${module}:${path}` —
-// empty today; every addition must be justified here.
-const IDENTICAL_ALLOWLIST = new Set()
+// every addition must be justified here.
+// - ITAHC is a certificate acronym; both locales display it verbatim.
+const IDENTICAL_ALLOWLIST = new Set([
+  'documents:types.ITAHC',
+  'check-answers:documentTypes.ITAHC'
+])
 
 const kindOf = (value) => (typeof value === 'function' ? 'function' : 'string')
 

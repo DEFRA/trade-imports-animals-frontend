@@ -79,16 +79,17 @@ a submit-then-reload cannot restore the fields above. See
 
 ## Some values cross the bridge unmapped
 
-Two fields pass through the vocabulary bridge unchanged because no clean
-mapping exists and no gate reads them:
+Two fields pass through the vocabulary bridge unchanged because no gate
+reads their values:
 
 - **`species`** — stored as taxonomy ids. No gate compares species, so the
   value is opaque to the evaluator and passes through. If a future gate ever
   reads species, it will need a taxonomy-id ↔ species-code map that does not
   exist today.
-- **`accompanyingDocumentType`** — stored as display strings. Its gate is a
-  presence check, not a value check, so the string passes through. A wire
-  mapper that needs coded document types would need a code table.
+- **`accompanyingDocumentType`** — stored as the notification enum codes
+  (`ITAHC`, `VETERINARY_HEALTH_CERTIFICATE`, …). Its gate is a presence
+  check, not a value check, so the code passes through and the wire needs
+  no mapping.
 
 Both are safe today; both are the first places a future value-comparing gate
 would break.

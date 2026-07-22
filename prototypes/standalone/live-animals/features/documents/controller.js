@@ -157,7 +157,7 @@ const removeCell = (request, index) => {
 const documentRows = (request, documents) =>
   documents.map(({ index, entry, scanStatus }) => [
     { text: cellText(entry.accompanyingDocumentReference) },
-    { text: cellText(entry.accompanyingDocumentType) },
+    { text: cellText(copy.types[entry.accompanyingDocumentType]) },
     { text: dateText(entry.accompanyingDocumentDateOfIssue) },
     { html: statusTagHtml(scanStatus) },
     { html: removeCell(request, index) }

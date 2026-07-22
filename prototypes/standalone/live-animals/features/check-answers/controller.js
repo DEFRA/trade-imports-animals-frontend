@@ -440,7 +440,10 @@ const documentsCard = (answers) => {
           copy.rows.documentReference,
           entry.accompanyingDocumentReference
         ),
-        readOnlyRow(copy.rows.documentType, entry.accompanyingDocumentType),
+        readOnlyRow(
+          copy.rows.documentType,
+          copy.documentTypes[entry.accompanyingDocumentType]
+        ),
         {
           key: { text: copy.rows.dateOfIssue },
           value: { text: dateText(entry.accompanyingDocumentDateOfIssue) }

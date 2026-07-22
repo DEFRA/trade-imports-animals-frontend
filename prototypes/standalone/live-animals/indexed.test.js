@@ -17,7 +17,7 @@ const commoditiesSection = sections.find(
 const documentsSection = sections.find((section) => section.id === 'documents')
 
 const completeDocument = {
-  accompanyingDocumentType: 'health-certificate',
+  accompanyingDocumentType: 'HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'upload',
   accompanyingDocumentReference: 'HC-2026-01',
   accompanyingDocumentDateOfIssue: { day: '1', month: '2', year: '2026' }
@@ -138,7 +138,7 @@ describe('indexed obligations are first-class', () => {
 
   it('Should read an optional section with an incomplete entry as IN_PROGRESS', () => {
     const answers = {
-      documents: [{ accompanyingDocumentType: 'health-certificate' }]
+      documents: [{ accompanyingDocumentType: 'HEALTH_CERTIFICATE' }]
     }
     expect(
       sectionStatus(documentsSection, answers, makeScope(answers).inScope)

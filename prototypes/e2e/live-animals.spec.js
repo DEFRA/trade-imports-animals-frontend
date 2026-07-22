@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test'
 import { COUNTRY_LABELS } from '../standalone/live-animals/services/countries/stub.js'
 import { PORTS } from '../standalone/live-animals/services/ports/stub.js'
 import { copy as transportCopy } from '../standalone/live-animals/features/transport/copy.en.js'
+import { copy as documentsCopy } from '../standalone/live-animals/features/documents/copy.en.js'
 
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
@@ -163,7 +164,8 @@ const setUploadFile = (page, filename, bytes) =>
   })
 
 // There is no type field: `accompanyingDocumentType` on an entry is the
-// type its filename should DERIVE (asserted on the read-back table row).
+// enum code its filename should DERIVE; the read-back table row shows the
+// code's display label.
 const addDocument = async (page, entry) => {
   await page
     .getByLabel('Document reference')
@@ -1180,7 +1182,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const [doc] = values.documents
     const issued = doc.accompanyingDocumentDateOfIssue
     const secondDoc = {
-      accompanyingDocumentType: 'Commercial invoice',
+      accompanyingDocumentType: 'COMMERCIAL_INVOICE',
       accompanyingDocumentReference: 'INV-2026-0042',
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
@@ -1230,7 +1232,9 @@ test.describe('live-animals (page-owned spine)', () => {
     const firstRow = page.locator('.govuk-table__row', {
       hasText: doc.accompanyingDocumentReference
     })
-    await expect(firstRow).toContainText(doc.accompanyingDocumentType)
+    await expect(firstRow).toContainText(
+      documentsCopy.types[doc.accompanyingDocumentType]
+    )
     await expect(firstRow).toContainText(
       `${issued.day}/${issued.month}/${issued.year}`
     )
@@ -1256,7 +1260,9 @@ test.describe('live-animals (page-owned spine)', () => {
     const secondRow = page.locator('.govuk-table__row', {
       hasText: secondDoc.accompanyingDocumentReference
     })
-    await expect(secondRow).toContainText(secondDoc.accompanyingDocumentType)
+    await expect(secondRow).toContainText(
+      documentsCopy.types[secondDoc.accompanyingDocumentType]
+    )
     await expect(secondRow).toContainText('Checking')
 
     // Removing the second document leaves the first row intact — and with
@@ -1290,7 +1296,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     const virusDoc = {
-      accompanyingDocumentType: 'Commercial invoice',
+      accompanyingDocumentType: 'COMMERCIAL_INVOICE',
       accompanyingDocumentReference: 'INV-VIRUS-0001',
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'virus-invoice.pdf'
@@ -2598,7 +2604,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // keeps the context; Continue exits back to the review with the new
     // document rendered.
     const secondDoc = {
-      accompanyingDocumentType: 'Commercial invoice',
+      accompanyingDocumentType: 'COMMERCIAL_INVOICE',
       accompanyingDocumentReference: 'INV-2026-0042',
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'

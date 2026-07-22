@@ -1,18 +1,18 @@
 export const DOCUMENT_TYPE_OPTIONS = [
   'ITAHC',
-  'Veterinary health certificate',
-  'Air waybill',
-  'Import permit',
-  'Letter of authority (Directive 2008/61/EC)',
-  'Commercial invoice',
-  'Sea waybill',
-  'Rail waybill',
-  'Bill of lading',
-  'Catch certificate',
-  'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
-  'Health certificate',
-  'Journey log',
-  'Other'
+  'VETERINARY_HEALTH_CERTIFICATE',
+  'AIR_WAYBILL',
+  'IMPORT_PERMIT',
+  'LETTER_OF_AUTHORITY',
+  'COMMERCIAL_INVOICE',
+  'SEA_WAYBILL',
+  'RAIL_WAYBILL',
+  'BILL_OF_LADING',
+  'CATCH_CERTIFICATE',
+  'LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN',
+  'HEALTH_CERTIFICATE',
+  'JOURNEY_LOG',
+  'OTHER'
 ]
 
 export const ATTACHMENT_TYPE_OPTIONS = [

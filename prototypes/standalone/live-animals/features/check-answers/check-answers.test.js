@@ -67,7 +67,7 @@ const fullSeed = {
   containsUnweanedAnimals: 'no',
   documents: [
     {
-      accompanyingDocumentType: 'ITAHC',
+      accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
       accompanyingDocumentAttachmentType: 'PDF',
       accompanyingDocumentReference: 'GBHC1234567890',
       accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
@@ -218,7 +218,9 @@ describe('#buildSections (check-answers GET)', () => {
       expect(valueOf(document.rows, 'Document reference')).toBe(
         'GBHC1234567890'
       )
-      expect(valueOf(document.rows, 'Document type')).toBe('ITAHC')
+      expect(valueOf(document.rows, 'Document type')).toBe(
+        'Veterinary health certificate'
+      )
       expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
       expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
     })

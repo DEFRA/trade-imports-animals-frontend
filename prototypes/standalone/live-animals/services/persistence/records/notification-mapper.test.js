@@ -420,7 +420,7 @@ const allAnswers = () => ({
       accompanyingDocumentDateOfIssue: '2025-12-12'
     },
     {
-      accompanyingDocumentType: 'Air waybill',
+      accompanyingDocumentType: 'AIR_WAYBILL',
       accompanyingDocumentAttachmentType: 'PNG',
       accompanyingDocumentReference: 'AWB-42',
       accompanyingDocumentDateOfIssue: '2025-11-01'
