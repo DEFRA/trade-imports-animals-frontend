@@ -164,12 +164,9 @@ describe('change context — collection round-trip', () => {
     })
 
     it('Should carry the context through a documents remove round-trip', async () => {
-      const removeHandler = documents.routes.find(
-        (route) => route.method === 'GET' && route.path.includes('/remove')
-      ).handler
-      const { response, after } = await drive(removeHandler, {
+      const { response, after } = await drive(postHandlerOf(documents), {
         query: change,
-        params: { index: '0' },
+        payload: { action: 'remove:0' },
         seed: { documents: [{ accompanyingDocumentReference: 'GBHC1' }] }
       })
       expect(response).toEqual({

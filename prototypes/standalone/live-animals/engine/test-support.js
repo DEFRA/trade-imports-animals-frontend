@@ -1,6 +1,11 @@
 import { store } from './store.js'
 import { JOURNEY_COOKIE } from './journey.js'
 
+const stubResponse = (payload) => ({
+  payload,
+  code: (statusCode) => ({ payload, statusCode })
+})
+
 export const stubH = () => {
   const captured = {}
   return {
@@ -9,7 +14,7 @@ export const stubH = () => {
       return captured.view
     },
     redirect: (to) => ({ redirect: to }),
-    response: (payload) => ({ payload }),
+    response: stubResponse,
     state: () => {},
     captured
   }

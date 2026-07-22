@@ -150,16 +150,13 @@ const cellText = (value) => (value ?? '').trim() || NOT_PROVIDED
 const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`
 
-const removeCell = (request, index) => {
-  const href = kit.withChangeContext(
-    request,
-    pagePath(`accompanying-documents/${index}/remove`)
-  )
-  return (
-    `<a class="govuk-link" href="${href}">` +
-    `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></a>`
-  )
-}
+const REMOVE_ACTION_PREFIX = 'remove:'
+
+// A removal deletes the backend upload, so it submits the page form — the
+// crumb travels with it and no GET can trigger it.
+const removeCell = (index) =>
+  `<button type="submit" class="govuk-link app-link-button" name="action" value="${REMOVE_ACTION_PREFIX}${index}">` +
+  `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></button>`
 
 // The scan-status cell carries the polling contract: the client rewrites the
 // tag it holds in place, keyed by upload id.
@@ -170,13 +167,13 @@ const statusCell = (entry, scanStatus) => ({
     : undefined
 })
 
-const documentRows = (request, documents) =>
+const documentRows = (documents) =>
   documents.map(({ index, entry, scanStatus }) => [
     { text: cellText(entry.accompanyingDocumentReference) },
     { text: cellText(copy.types[entry.accompanyingDocumentType]) },
     { text: dateText(entry.accompanyingDocumentDateOfIssue) },
     statusCell(entry, scanStatus),
-    { html: removeCell(request, index) }
+    { html: removeCell(index) }
   ])
 
 const rejectedErrors = (documents) =>
@@ -222,7 +219,7 @@ const render = (
     ...kit.base(copy.title, { backLink: hubPath(), journey }),
     ...extra,
     copy,
-    rows: documentRows(request, documents),
+    rows: documentRows(documents),
     hasDocuments: documents.length > 0,
     values,
     errors,
@@ -356,9 +353,40 @@ const settlingSummaryErrors = (documents) =>
     ? []
     : [{ text: CANNOT_CONTINUE_MESSAGE, href: DOCUMENTS_ADDED_ANCHOR }]
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
+const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
+
+const removeIndexOf = (action) =>
+  Number(action.slice(REMOVE_ACTION_PREFIX.length))
+
+const documentAt = (answers, index) =>
+  state.collectionView(answers, ['documents'])[index]?.entry
+
+const postRemove = async (request, h, index) => {
+  const { answers } = await state.get(request, h)
+  const entry = documentAt(answers, index)
+  if (!entry) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+
+  const backToPage = kit.withChangeContext(request, pagePath(page.slug))
+  if (entry.uploadId) {
+    try {
+      await documentUploads.remove(entry.uploadId)
+    } catch {
+      return h.redirect(backToPage)
+    }
+  }
+  await state.removeEntry(request, h, 'documents', index)
+  return h.redirect(backToPage)
+}
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  if (payload.action === 'add') return postAdd(request, h, payload)
+  const action = payload.action ?? ''
+  if (action === 'add') return postAdd(request, h, payload)
+  if (isRemoveAction(action)) {
+    return postRemove(request, h, removeIndexOf(action))
+  }
   const pageState = await loadPage(request, h)
   if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
     return render(
@@ -371,22 +399,6 @@ const post = async (request, h) => {
     )
   }
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
-}
-
-const getRemove = async (request, h) => {
-  const index = Number(request.params.index)
-  const backToPage = kit.withChangeContext(request, pagePath(page.slug))
-  const { answers } = await state.get(request, h)
-  const entry = state.collectionView(answers, ['documents'])[index]?.entry
-  if (entry?.uploadId) {
-    try {
-      await documentUploads.remove(entry.uploadId)
-    } catch {
-      return h.redirect(backToPage)
-    }
-  }
-  await state.removeEntry(request, h, 'documents', index)
-  return h.redirect(backToPage)
 }
 
 const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
@@ -434,11 +446,5 @@ export const routes = [
     path: pagePath(`${page.slug}/status`),
     options: open,
     handler: getStatus
-  },
-  {
-    method: 'GET',
-    path: pagePath('accompanying-documents/{index}/remove'),
-    options: open,
-    handler: getRemove
   }
 ]

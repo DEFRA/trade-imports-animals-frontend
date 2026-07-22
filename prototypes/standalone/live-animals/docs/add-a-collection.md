@@ -192,12 +192,17 @@ never a half-created instance in the store:
 await state.appendEntry(request, h, 'documents', entry)
 ```
 
-Remove splices the instance out and reconciles, so anything left dangling
-out of scope is pruned too:
+Remove is a third branch of the same POST — a submit button named
+`action` with a `remove:<index>` value, so the page form's crumb travels
+with it and no GET can trigger a delete. It splices the instance out and
+reconciles, so anything left dangling out of scope is pruned too:
 
 ```js
 await state.removeEntry(request, h, 'documents', index)
 ```
+
+Look the instance up before writing and refuse an index the collection has
+no entry for, so a forged or stale index is rejected rather than acted on.
 
 `appendEntry` / `updateEntry` / `removeEntry` are the top-level convenience
 forms; each delegates to the `…At` form with a single-segment path

@@ -1271,7 +1271,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Removing the second document leaves the first row intact — and with
     // only the settled Safe document left, Continue is free again.
     await secondRow
-      .getByRole('link', { name: 'Remove document 2', exact: true })
+      .getByRole('button', { name: 'Remove document 2', exact: true })
       .click()
     await expect(
       page.locator('.govuk-table__row', {
@@ -1371,7 +1371,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // ...until it is removed, after which Continue reaches the hub.
     await virusRow
-      .getByRole('link', { name: 'Remove document 1', exact: true })
+      .getByRole('button', { name: 'Remove document 1', exact: true })
       .click()
     await expect(
       page.locator('.govuk-table__row', {

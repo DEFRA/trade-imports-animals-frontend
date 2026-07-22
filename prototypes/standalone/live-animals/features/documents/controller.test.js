@@ -1,6 +1,8 @@
+import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
@@ -23,12 +25,7 @@ import {
 } from './upload-config.js'
 
 const post = postHandlerOf(documents)
-const get = documents.routes.find(
-  (route) => route.method === 'GET' && !route.path.includes('remove')
-).handler
-const remove = documents.routes.find((route) =>
-  route.path.includes('remove')
-).handler
+const get = documents.routes.find((route) => route.method === 'GET').handler
 const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
@@ -147,7 +144,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should list added documents with a scan-status tag and a per-row remove link', async () => {
+  it('Should list added documents with a scan-status tag and a per-row remove submit button, not a link', async () => {
     const result = await driveHandler(get, {
       seed: { documents: [storedDocument()] }
     })
@@ -156,7 +153,9 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(row[1].text).toBe('Veterinary health certificate')
     expect(row[2].text).toBe('12/12/2025')
     expect(row[3].html).toContain('Safe')
-    expect(row[4].html).toContain('accompanying-documents/0/remove')
+    expect(row[4].html).toContain('<button type="submit"')
+    expect(row[4].html).toContain('name="action" value="remove:0"')
+    expect(row[4].html).not.toContain('href')
   })
 
   it('Should show Checking on every render of a fresh upload until a refresh-link GET settles it to Safe', async () => {
@@ -231,16 +230,61 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.response.redirect).toBeDefined()
   })
 
-  it('Should remove the document and its upload session via the per-row remove link', async () => {
+  it('Should remove the named document and its upload session on the remove POST, leaving the others', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
-    const result = await driveHandler(remove, {
+    const result = await driveHandler(post, {
       seed: {
-        documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+        documents: [
+          storedDocument({ accompanyingDocumentReference: 'KEEP-ME' }),
+          storedDocument({ uploadId, filename: 'itahc.pdf' })
+        ]
       },
-      params: { index: '0' }
+      payload: { action: 'remove:1' }
     })
     expect(result.response.redirect).toBeDefined()
-    expect(result.after.documents).toEqual([])
+    expect(result.after.documents).toHaveLength(1)
+    expect(result.after.documents[0].accompanyingDocumentReference).toBe(
+      'KEEP-ME'
+    )
+  })
+
+  it('Should refuse a remove for an index outside the collection and delete nothing', async () => {
+    const seed = { documents: [storedDocument()] }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'remove:7' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.after).toEqual(seed)
+  })
+
+  it('Should refuse a remove whose index is not a number and delete nothing', async () => {
+    const seed = { documents: [storedDocument()] }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'remove:../0' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.after).toEqual(seed)
+  })
+
+  it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
+    const server = Hapi.server()
+    await server.register(Crumb)
+    server.route(documents.routes)
+
+    const forged = await server.inject({
+      method: 'POST',
+      url: pagePath('accompanying-documents'),
+      payload: { action: 'remove:0' }
+    })
+    expect(forged.statusCode).toBe(403)
+
+    const prefetched = await server.inject({
+      method: 'GET',
+      url: pagePath('accompanying-documents/0/remove')
+    })
+    expect(prefetched.statusCode).toBe(404)
   })
 
   it('Should refuse an eleventh document with the maximum message and append nothing', async () => {
