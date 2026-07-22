@@ -94,4 +94,34 @@ describe('#documentUploads', () => {
       })
     })
   })
+
+  describe('#streamFile', () => {
+    it('Should GET the file leg and hand back the streamed body and headers', async () => {
+      fetchMocker.mockResponse('%PDF-1.4 stored bytes', {
+        headers: {
+          'content-type': 'application/pdf',
+          'content-disposition': 'inline; filename="itahc.pdf"'
+        }
+      })
+
+      const response = await documentUploads.streamFile('up-1')
+
+      const [url, options] = fetchMocker.mock.calls[0]
+      expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1/file`)
+      expect(options.method).toBe('GET')
+      expect(response.headers.get('content-type')).toBe('application/pdf')
+      expect(response.headers.get('content-disposition')).toBe(
+        'inline; filename="itahc.pdf"'
+      )
+      expect(await response.text()).toBe('%PDF-1.4 stored bytes')
+    })
+
+    it('Should throw with the response status when the file is not there', async () => {
+      fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
+
+      await expect(documentUploads.streamFile('up-2')).rejects.toMatchObject({
+        status: 404
+      })
+    })
+  })
 })

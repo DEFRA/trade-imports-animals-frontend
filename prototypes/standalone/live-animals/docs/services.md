@@ -62,7 +62,7 @@ lookup.
 | `transport-reference`    | Transport reference enums                                                                  | `meansOfTransport()` (the means-of-transport radios), `overlandMeans()` (the overland subset that reveals the transited-countries question), and `transporterTypes()` (the transporter-type enum), for the arrival-details page and the transporters select                                                                                                                                                                                                                                                                                              | `features/transport/port-of-entry.controller.js`, `features/transport/transporters.controller.js`, `features/check-answers/controller.js`                                                                                                                 |
 | `document-types`         | MDM document/attachment types                                                              | `documentTypes()` for the accompanying-document type select and its validation membership; `attachmentTypes()` — the value domain of the system-derived attachment type, which `features/documents/upload-config.js` resolves from the uploaded file's extension                                                                                                                                                                                                                                                                                         | `features/documents/controller.js`                                                                                                                                                                                                                        |
 | `address-book`           | Saved trader parties (gov.identity profiles)                                               | `parties(role)` and `party(role, id)` for each consignment role (consignor, consignee, importer, place-of-origin, destination, contact, commercial transporter), each record carrying a stable id and the full Standard Address Block; `search(role, { query, page })` → one page of matches with `total` / `totalPages`; `PAGE_SIZE`; and `addParty(role, …)` to mint a user-created record. The book owns its own search and pagination — the picker pages render only what it returns                                                                 | `features/addresses/party-picker.controller.js`, `features/addresses/create-address.controller.js`, `features/contact/controller.js`, `features/transport/transporters-select.controller.js`                                                              |
-| `document-uploads`       | trade-imports-animals-backend document-upload endpoints (broker for cdp-uploader)          | `upload(details)` → `uploadId`, `scanStatus({ uploadId, … })` → `PENDING` / `COMPLETE` / `REJECTED`, and `remove(uploadId)` — the lifecycle behind the documents page                                                                                                                                                                                                                                                                                                                                                                                    | `features/documents/controller.js`                                                                                                                                                                                                                        |
+| `document-uploads`       | trade-imports-animals-backend document-upload endpoints (broker for cdp-uploader)          | `upload(details)` → `uploadId`, `scanStatus({ uploadId, … })` → `PENDING` / `COMPLETE` / `REJECTED`, `remove(uploadId)`, and `streamFile(uploadId)` → a fetch `Response` the controller streams back to the browser — the lifecycle behind the documents page                                                                                                                                                                                                                                                                                            | `features/documents/controller.js`                                                                                                                                                                                                                        |
 
 ## Commodity applicability lists — `commodities`
 
@@ -110,8 +110,9 @@ notification.
 **Real mode** (`real.js`) calls the backend at `TRADE_IMPORTS_ANIMALS_BACKEND_URL`:
 `upload` POSTs `/notifications/{journeyId}/document-uploads` to initiate, then
 POSTs the file to `/document-uploads/{uploadId}/file`; `scanStatus` GETs
-`/document-uploads/{uploadId}`; `remove` DELETEs the same. Every request carries
-the tracing header.
+`/document-uploads/{uploadId}`; `remove` DELETEs the same; `streamFile` GETs
+`/document-uploads/{uploadId}/file` and hands the response back unread so the
+controller can stream it. Every request carries the tracing header.
 
 **Stub mode** (`stub.js`) cans the lifecycle and discards the file bytes. It
 settles on an explicit refresh signal rather than read counts, because a
@@ -122,4 +123,8 @@ at which point the upload settles by filename: a name containing `virus` settles
 `REJECTED`, one containing `never-scans` stays `PENDING` through every refresh,
 and anything else settles `COMPLETE`. Once settled it stays settled. An unknown
 `uploadId` (for example after a restart) settles straight from the filename, and
-an entry with no `uploadId` is treated as `COMPLETE`.
+an entry with no `uploadId` is treated as `COMPLETE`. Holding no bytes, its
+`streamFile` serves the same canned one-page PDF for every upload.
+
+Both adapters answer `streamFile` with a fetch `Response`, so the controller
+reads `body` and `headers` the same way in either mode.

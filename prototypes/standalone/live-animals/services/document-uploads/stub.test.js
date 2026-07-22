@@ -94,6 +94,22 @@ describe('#documentUploads', () => {
     })
   })
 
+  describe('#streamFile', () => {
+    it('Should serve a canned placeholder PDF, as the stub keeps no uploaded bytes', async () => {
+      const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+
+      const response = await documentUploads.streamFile(uploadId)
+
+      expect(response.headers.get('content-type')).toBe('application/pdf')
+      expect(response.headers.get('content-disposition')).toBe(
+        'inline; filename="placeholder.pdf"'
+      )
+      const body = await response.text()
+      expect(body.startsWith('%PDF-')).toBe(true)
+      expect(body).toContain('Placeholder file')
+    })
+  })
+
   describe('#remove', () => {
     it('Should settle a removed uploadId from its filename, not the lifecycle', async () => {
       const uploadId = await documentUploads.upload({

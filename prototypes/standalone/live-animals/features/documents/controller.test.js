@@ -6,6 +6,7 @@ import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
+import { JOURNEY_COOKIE, registerJourneyCookie } from '../../engine/journey.js'
 import { configureRecords } from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
@@ -395,11 +396,113 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
   })
 
+  it('Should offer View file only once a scan has settled clean, alongside Remove', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const seed = {
+      documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+    }
+
+    const pending = await driveHandler(get, { seed })
+    expect(pending.view.context.rows[0][4].html).not.toContain('View file')
+    expect(pending.view.context.rows[0][4].html).toContain('Remove')
+
+    await driveHandler(statusRoute.handler, { seed })
+
+    const settled = await driveHandler(get, { seed })
+    expect(settled.view.context.rows[0][4].html).toContain(
+      `href="${pagePath(`accompanying-documents/${uploadId}/file`)}"`
+    )
+    expect(settled.view.context.rows[0][4].html).toContain('Remove')
+  })
+
+  it('Should offer no View file for a document that never reached an upload', async () => {
+    const result = await driveHandler(get, {
+      seed: { documents: [storedDocument()] }
+    })
+    expect(result.view.context.rows[0][4].html).not.toContain('View file')
+  })
+
   it('Should register the multipart POST route with the 10MB payload cap', () => {
     const server = Hapi.server()
     server.route(documents.routes)
     const route = server.table().find((entry) => entry.method === 'post')
     expect(route.settings.payload.maxBytes).toBe(MAX_PAYLOAD_BYTES)
     expect(route.settings.payload.multipart).toEqual({ output: 'annotated' })
+  })
+})
+
+describe('documents — reading an uploaded file back', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
+  beforeEach(() => store.clear())
+
+  const journeyHolding = async (uploadId) => {
+    const server = Hapi.server()
+    registerJourneyCookie(server)
+    server.route(documents.routes)
+    const journey = await store.create()
+    await store.saveAnswers(journey.journeyId, {
+      documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
+    })
+    return { server, journeyId: journey.journeyId }
+  }
+
+  const readFile = ({ server, journeyId }, uploadId) =>
+    server.inject({
+      method: 'GET',
+      url: pagePath(`accompanying-documents/${uploadId}/file`),
+      headers: { cookie: `${JOURNEY_COOKIE}=${journeyId}` }
+    })
+
+  it('Should stream an owned upload with its content type, disposition and nosniff', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const held = await journeyHolding(uploadId)
+
+    const response = await readFile(held, uploadId)
+
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toMatch(/^application\/pdf/)
+    expect(response.headers['content-disposition']).toBe(
+      'inline; filename="placeholder.pdf"'
+    )
+    expect(response.headers['x-content-type-options']).toBe('nosniff')
+    expect(response.payload.startsWith('%PDF-')).toBe(true)
+  })
+
+  it('Should answer 404 for a well-formed upload id the journey does not hold', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const held = await journeyHolding(uploadId)
+
+    const response = await readFile(held, 'somebody-elses-upload-id')
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('Should refuse a malformed upload id before it reaches the upload service', async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const held = await journeyHolding(uploadId)
+
+    const response = await readFile(held, 'up_1234%20')
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('Should answer 404 for a journey with no documents at all', async () => {
+    const server = Hapi.server()
+    registerJourneyCookie(server)
+    server.route(documents.routes)
+    const journey = await store.create()
+
+    const response = await server.inject({
+      method: 'GET',
+      url: pagePath('accompanying-documents/up-1234/file'),
+      headers: { cookie: `${JOURNEY_COOKIE}=${journey.journeyId}` }
+    })
+
+    expect(response.statusCode).toBe(404)
   })
 })

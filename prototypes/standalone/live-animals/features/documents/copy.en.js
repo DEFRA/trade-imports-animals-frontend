@@ -42,6 +42,8 @@ export const copy = {
   },
   remove: 'Remove',
   removeHidden: (documentNumber) => `document ${documentNumber}`,
+  viewFile: 'View file',
+  viewFileHidden: (documentNumber) => `for document ${documentNumber}`,
   refreshStatus: 'Refresh virus scan status',
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
   empty: 'You have not added any documents yet.',

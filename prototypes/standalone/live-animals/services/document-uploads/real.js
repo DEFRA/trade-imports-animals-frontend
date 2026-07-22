@@ -85,5 +85,14 @@ export const documentUploads = {
       { method: 'DELETE', headers: traceHeaders() }
     )
     if (!response.ok) throw failed('delete document upload', response)
+  },
+
+  streamFile: async (uploadId) => {
+    const response = await fetch(
+      `${backendBaseUrl}/document-uploads/${uploadId}/file`,
+      { method: 'GET', headers: traceHeaders() }
+    )
+    if (!response.ok) throw failed('stream document file', response)
+    return response
   }
 }

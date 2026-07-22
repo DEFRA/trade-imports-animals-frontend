@@ -1,3 +1,6 @@
+import { Readable } from 'node:stream'
+import Joi from 'joi'
+
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { isBlank } from '../../lib/answered.js'
@@ -27,6 +30,10 @@ import {
   attachmentTypeFor,
   exceedsMaxFileSize
 } from './upload-config.js'
+import {
+  resolveContentDisposition,
+  resolveDownloadContentType
+} from './download-content-type.js'
 import { MAX_POLL_ATTEMPTS, SCAN_STATUS } from './scan-poll.js'
 import { documentsPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
@@ -154,9 +161,28 @@ const REMOVE_ACTION_PREFIX = 'remove:'
 
 // A removal deletes the backend upload, so it submits the page form — the
 // crumb travels with it and no GET can trigger it.
-const removeCell = (index) =>
+const removeButton = (index) =>
   `<button type="submit" class="govuk-link app-link-button" name="action" value="${REMOVE_ACTION_PREFIX}${index}">` +
   `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></button>`
+
+const filePath = (uploadId) => pagePath(`${page.slug}/${uploadId}/file`)
+
+// Reading the file back is a read, so it is a link, not a submit — it needs
+// no crumb and the form's client-side submit handling never sees it.
+const viewFileLink = (entry, index) =>
+  `<a class="govuk-link govuk-!-margin-right-3" href="${filePath(entry.uploadId)}">` +
+  `${copy.viewFile}<span class="govuk-visually-hidden"> ${copy.viewFileHidden(index + 1)}</span></a>`
+
+// A file is only offered once its scan has settled clean — a pending or
+// virus-bearing upload has nothing safe to open.
+const isViewable = (entry, scanStatus) =>
+  Boolean(entry.uploadId) && scanStatus === SCAN_STATUS.COMPLETE
+
+const actionsCell = ({ entry, index, scanStatus }) => ({
+  html: isViewable(entry, scanStatus)
+    ? `${viewFileLink(entry, index)}${removeButton(index)}`
+    : removeButton(index)
+})
 
 // The scan-status cell carries the polling contract: the client rewrites the
 // tag it holds in place, keyed by upload id.
@@ -173,7 +199,7 @@ const documentRows = (documents) =>
     { text: cellText(copy.types[entry.accompanyingDocumentType]) },
     { text: dateText(entry.accompanyingDocumentDateOfIssue) },
     statusCell(entry, scanStatus),
-    { html: removeCell(index) }
+    actionsCell({ entry, index, scanStatus })
   ])
 
 const rejectedErrors = (documents) =>
@@ -272,6 +298,35 @@ const getStatus = async (request, h) => {
     true
   )
   return h.response({ documents: scanned(documents) })
+}
+
+const HTTP_STATUS_NOT_FOUND = 404
+
+// The upload id is a path segment, so it is constrained before it reaches
+// the service — no traversal, no encoded separators.
+const UPLOAD_ID_PATTERN = /^[a-zA-Z0-9-]+$/
+
+const ownsUpload = (answers, uploadId) =>
+  state
+    .collectionView(answers, ['documents'])
+    .some(({ entry }) => entry.uploadId === uploadId)
+
+const fileResponse = (h, streamed) =>
+  h
+    .response(Readable.fromWeb(streamed.body))
+    .header('Content-Type', resolveDownloadContentType(streamed.headers))
+    .header('Content-Disposition', resolveContentDisposition(streamed.headers))
+    .header('X-Content-Type-Options', 'nosniff')
+
+// A well-formed id belonging to somebody else's journey is answered 404, not
+// 403 — the journey never confirms an upload it does not own exists.
+const getFile = async (request, h) => {
+  const { answers } = await state.get(request, h)
+  const { uploadId } = request.params
+  if (!ownsUpload(answers, uploadId)) {
+    return h.response().code(HTTP_STATUS_NOT_FOUND)
+  }
+  return fileResponse(h, await documentUploads.streamFile(uploadId))
 }
 
 const uploadDetails = (journey, entry, file, filename) => ({
@@ -446,5 +501,18 @@ export const routes = [
     path: pagePath(`${page.slug}/status`),
     options: open,
     handler: getStatus
+  },
+  {
+    method: 'GET',
+    path: pagePath(`${page.slug}/{uploadId}/file`),
+    options: {
+      ...open,
+      validate: {
+        params: Joi.object({
+          uploadId: Joi.string().pattern(UPLOAD_ID_PATTERN).required()
+        })
+      }
+    },
+    handler: getFile
   }
 ]

@@ -1429,6 +1429,48 @@ test.describe('live-animals (page-owned spine)', () => {
     )
   })
 
+  test('documents view file — a document offers no View file link while it is still being checked, then serves the file with nosniff once the scan settles clean', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await unlockSections(page)
+    await page.getByRole('link', { name: 'Uploaded documents' }).click()
+
+    const doc = {
+      accompanyingDocumentReference: 'VIEW-SETTLES-0001',
+      accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
+      filename: 'itahc-view.pdf'
+    }
+    await addDocument(page, doc)
+
+    const row = page.locator('.govuk-table__row', {
+      hasText: doc.accompanyingDocumentReference
+    })
+    const viewLink = row.getByRole('link', { name: 'View file for document 1' })
+
+    // A pending scan has nothing safe to open, so the row offers Remove only.
+    await expect(row).toContainText('Checking')
+    await expect(viewLink).toHaveCount(0)
+
+    // The poll settles the only scan, so it re-renders the page from the
+    // server — and the settled row gains the link alongside Remove.
+    await expect(row).toContainText('Safe')
+    await expect(viewLink).toBeVisible()
+    await expect(
+      row.getByRole('button', { name: 'Remove document 1', exact: true })
+    ).toBeVisible()
+
+    // The link is a plain GET carrying the journey cookie, so it never meets
+    // the upload form's submit handling — the stub serves its placeholder.
+    const href = await viewLink.getAttribute('href')
+    const file = await page.request.get(new URL(href, page.url()).toString())
+    expect(file.status()).toBe(200)
+    expect(file.headers()['content-type']).toContain('application/pdf')
+    expect(file.headers()['x-content-type-options']).toBe('nosniff')
+    expect((await file.text()).startsWith('%PDF-')).toBe(true)
+  })
+
   test('addresses — selecting a consignor, a place of destination, a place of origin, a consignee and an importer copies each party onto the landing page and completes the task', async ({
     page
   }) => {

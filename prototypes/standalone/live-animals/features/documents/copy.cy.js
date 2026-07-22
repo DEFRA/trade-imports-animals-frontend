@@ -43,6 +43,8 @@ export const copy = {
   },
   remove: 'Tynnu',
   removeHidden: (documentNumber) => `dogfen ${documentNumber}`,
+  viewFile: 'Gweld y ffeil',
+  viewFileHidden: (documentNumber) => `ar gyfer dogfen ${documentNumber}`,
   refreshStatus: 'Adnewyddu statws y sgan firws',
   stillChecking: 'Yn dal i wirio rhai dogfennau. Adnewyddwch eto mewn eiliad.',
   empty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
