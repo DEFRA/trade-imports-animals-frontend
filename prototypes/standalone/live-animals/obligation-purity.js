@@ -45,6 +45,18 @@ const insideModel = (absolute) => {
   return fromModel !== '' && !fromModel.startsWith('..')
 }
 
+const isBoundaryViolation = (file, specifier) => {
+  if (!specifier.startsWith('.')) return true
+  const resolved = resolve(dirname(file), specifier)
+  if (insideModel(resolved)) return false
+  return !SERVICE_INDEX_PATH.test(appPath(resolved))
+}
+
+const violationsIn = (file, read) =>
+  specifiersIn(read(file, 'utf8'))
+    .filter((specifier) => isBoundaryViolation(file, specifier))
+    .map((specifier) => `${appPath(file)} imports '${specifier}'`)
+
 /**
  * Assert every non-test file under model/ imports only intra-model paths or
  * `services/<name>/index.js`. `files`/`read` are injectable so tests can feed
@@ -56,17 +68,7 @@ export const assertModelImportBoundary = ({
   files = modelSourceFiles(),
   read = readFileSync
 } = {}) => {
-  const violations = files.flatMap((file) =>
-    specifiersIn(read(file, 'utf8'))
-      .filter((specifier) => {
-        if (!specifier.startsWith('.')) return true
-        const resolved = resolve(dirname(file), specifier)
-        if (insideModel(resolved)) return false
-        if (SERVICE_INDEX_PATH.test(appPath(resolved))) return false
-        return true
-      })
-      .map((specifier) => `${appPath(file)} imports '${specifier}'`)
-  )
+  const violations = files.flatMap((file) => violationsIn(file, read))
   if (violations.length > 0) {
     throw new Error(
       'Model import boundary violated — model/** may import only ' +

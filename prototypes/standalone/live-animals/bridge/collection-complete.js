@@ -81,6 +81,52 @@ const groupsFrom = (group) =>
       (o === group || ancestorChain(o).includes(group))
   )
 
+// An unconditional mandatory field leaf directly under this group is a
+// concern for the instance even when the evaluator enumerated no record —
+// an empty entry has no leaf storage, so the evaluator never sees the
+// instance, but the entry still shows and its mandatory fields are unfilled.
+const emptyEntryBlocks = (leaf, group, instanceId, stored) => {
+  if (leaf.within !== group || leaf.applyTo) return false
+  if ((leaf.status ?? 'mandatory') !== 'mandatory') return false
+  return !isFulfilled(leaf.id, stored?.[instanceId])
+}
+
+const belongingRecordBlocks = (leaf, belonging, stored) =>
+  belonging.some(
+    (record) =>
+      (record.status ?? 'mandatory') === 'mandatory' &&
+      !isFulfilled(leaf.id, stored?.[record.fulfilmentId])
+  )
+
+const leafBlocksInstance = (
+  leaf,
+  group,
+  instanceId,
+  implications,
+  fulfilments
+) => {
+  if (STRUCTURAL_PLACEHOLDERS.has(leaf.name)) return false
+  const implication = implications[leaf.id]
+  if (!implication?.inScope) return false
+  const stored = fulfilments[leaf.id]
+  const belonging = (implication.records ?? []).filter((record) =>
+    belongsToInstance(record.fulfilmentId, instanceId)
+  )
+  return belonging.length === 0
+    ? emptyEntryBlocks(leaf, group, instanceId, stored)
+    : belongingRecordBlocks(leaf, belonging, stored)
+}
+
+const groupInvariantBlocksInstance = (group, instanceId, state) =>
+  groupsFrom(group).some(
+    (nested) =>
+      nested.requires?.anyOfIds &&
+      groupInvariantErrors(nested, state).some(
+        (error) =>
+          error.instanceId && belongsToInstance(error.instanceId, instanceId)
+      )
+  )
+
 /**
  * Per-instance completeness for the collection entry at `collectionPath[index]`.
  * True iff the evaluator finds no unsatisfied mandatory concern anywhere
@@ -98,37 +144,11 @@ export const entryComplete = (answers, collectionPath, index) => {
   const instanceId = instanceFulfilmentId(collectionPath, index)
   const { obligations: implications, fulfilments } = evaluate(answers)
 
-  for (const leaf of leavesUnder(group)) {
-    if (STRUCTURAL_PLACEHOLDERS.has(leaf.name)) continue
-    const implication = implications[leaf.id]
-    if (!implication?.inScope) continue
-    const stored = fulfilments[leaf.id]
-    const belonging = (implication.records ?? []).filter((record) =>
-      belongsToInstance(record.fulfilmentId, instanceId)
-    )
-    // An unconditional mandatory field leaf directly under this group is a
-    // concern for the instance even when the evaluator enumerated no record —
-    // an empty entry has no leaf storage, so the evaluator never sees the
-    // instance, but the entry still shows and its mandatory fields are unfilled.
-    if (belonging.length === 0 && leaf.within === group && !leaf.applyTo) {
-      if ((leaf.status ?? 'mandatory') !== 'mandatory') continue
-      if (isFulfilled(leaf.id, stored?.[instanceId])) continue
-      return false
-    }
-    for (const record of belonging) {
-      if ((record.status ?? 'mandatory') !== 'mandatory') continue
-      if (!isFulfilled(leaf.id, stored?.[record.fulfilmentId])) return false
-    }
-  }
+  const blockedByLeaf = leavesUnder(group).some((leaf) =>
+    leafBlocksInstance(leaf, group, instanceId, implications, fulfilments)
+  )
+  if (blockedByLeaf) return false
 
   const state = { obligations: implications, fulfilments }
-  for (const nested of groupsFrom(group)) {
-    if (!nested.requires?.anyOfIds) continue
-    for (const error of groupInvariantErrors(nested, state)) {
-      if (error.instanceId && belongsToInstance(error.instanceId, instanceId)) {
-        return false
-      }
-    }
-  }
-  return true
+  return !groupInvariantBlocksInstance(group, instanceId, state)
 }

@@ -28,6 +28,33 @@ import { isAnswered } from '../lib/answered.js'
 
 const evaluator = createObligationEvaluator()
 
+const wipedScalarKey = (obligation, inVal, fulfilmentsOut) =>
+  isAnswered(inVal) && fulfilmentsOut[obligation.id] === undefined
+    ? [pathKey([obligation.name])]
+    : []
+
+const wipedRecordKeys = (obligation, chain, inVal, fulfilmentsOut) => {
+  const outRecords = fulfilmentsOut[obligation.id] ?? {}
+  return Object.entries(inVal)
+    .filter(
+      ([fulfilmentId, value]) =>
+        isAnswered(value) && outRecords[fulfilmentId] === undefined
+    )
+    .map(([fulfilmentId]) =>
+      pathKey(fulfilmentIdToPath(chain, fulfilmentId, obligation.name))
+    )
+}
+
+const wipedKeysFor = (obligation, fulfilmentsIn, fulfilmentsOut) => {
+  if (groupObligations.has(obligation)) return []
+  const inVal = fulfilmentsIn[obligation.id]
+  if (inVal === undefined) return []
+  const chain = ancestorChain(obligation)
+  return chain.length === 0
+    ? wipedScalarKey(obligation, inVal, fulfilmentsOut)
+    : wipedRecordKeys(obligation, chain, inVal, fulfilmentsOut)
+}
+
 /**
  * The pathKeys the purge destroys for the given answers.
  *
@@ -37,24 +64,7 @@ const evaluator = createObligationEvaluator()
 export const wipeSet = (answers) => {
   const fulfilmentsIn = answersToFulfilments(answers)
   const { fulfilments: fulfilmentsOut } = evaluator.evaluate(fulfilmentsIn)
-  return obligations.flatMap((obligation) => {
-    if (groupObligations.has(obligation)) return []
-    const inVal = fulfilmentsIn[obligation.id]
-    if (inVal === undefined) return []
-    const chain = ancestorChain(obligation)
-    if (chain.length === 0) {
-      return isAnswered(inVal) && fulfilmentsOut[obligation.id] === undefined
-        ? [pathKey([obligation.name])]
-        : []
-    }
-    const outRecords = fulfilmentsOut[obligation.id] ?? {}
-    return Object.entries(inVal)
-      .filter(
-        ([fulfilmentId, value]) =>
-          isAnswered(value) && outRecords[fulfilmentId] === undefined
-      )
-      .map(([fulfilmentId]) =>
-        pathKey(fulfilmentIdToPath(chain, fulfilmentId, obligation.name))
-      )
-  })
+  return obligations.flatMap((obligation) =>
+    wipedKeysFor(obligation, fulfilmentsIn, fulfilmentsOut)
+  )
 }

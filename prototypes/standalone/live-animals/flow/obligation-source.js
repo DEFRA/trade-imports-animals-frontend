@@ -87,21 +87,28 @@ const memberKeysOf = (group) =>
     ...(AUX_ENTRY_KEYS[group.name] ?? [])
   ])
 
+const sweepKey = (memberKeys, entryPath, key, value) => {
+  if (!memberKeys.has(key)) return [{ key, path: entryPath }]
+  const member = byNameMap.get(key)
+  return member && groupSet.has(member)
+    ? sweepEntries(member, value, `${entryPath}.${key}`)
+    : []
+}
+
+const sweepEntry = (memberKeys, path, entry, index) => {
+  if (entry === null || typeof entry !== 'object') return []
+  const entryPath = `${path}[${index}]`
+  return Object.entries(entry).flatMap(([key, value]) =>
+    sweepKey(memberKeys, entryPath, key, value)
+  )
+}
+
 const sweepEntries = (group, items, path) => {
   if (!Array.isArray(items)) return []
   const memberKeys = memberKeysOf(group)
-  return items.flatMap((entry, index) => {
-    if (entry === null || typeof entry !== 'object') return []
-    const entryPath = `${path}[${index}]`
-    return Object.entries(entry).flatMap(([key, value]) => {
-      if (!memberKeys.has(key)) return [{ key, path: entryPath }]
-      const member = byNameMap.get(key)
-      if (member && groupSet.has(member)) {
-        return sweepEntries(member, value, `${entryPath}.${key}`)
-      }
-      return []
-    })
-  })
+  return items.flatMap((entry, index) =>
+    sweepEntry(memberKeys, path, entry, index)
+  )
 }
 
 /**
@@ -113,16 +120,19 @@ const sweepEntries = (group, items, path) => {
  * @param {object} answers - the nested answer POJO.
  * @returns {Array<{ key: string, path: string }>} empty when fully recognised.
  */
+const unrecognisedKeysFor = (key, value) => {
+  if (!topLevelKeys.has(key)) return [{ key, path: '(top level)' }]
+  const obligation = byNameMap.get(key)
+  return obligation && groupSet.has(obligation)
+    ? sweepEntries(obligation, value, key)
+    : []
+}
+
 export const unrecognisedAnswerKeys = (answers) => {
   if (answers === null || typeof answers !== 'object') return []
-  return Object.entries(answers).flatMap(([key, value]) => {
-    if (!topLevelKeys.has(key)) return [{ key, path: '(top level)' }]
-    const obligation = byNameMap.get(key)
-    if (obligation && groupSet.has(obligation)) {
-      return sweepEntries(obligation, value, key)
-    }
-    return []
-  })
+  return Object.entries(answers).flatMap(([key, value]) =>
+    unrecognisedKeysFor(key, value)
+  )
 }
 
 /**

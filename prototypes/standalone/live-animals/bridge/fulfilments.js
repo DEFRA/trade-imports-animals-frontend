@@ -166,6 +166,24 @@ const collectGroupedRecords = (answers, chain, aId) => {
   return records
 }
 
+const scalarFulfilment = (answers, aId) => {
+  const value = answers?.[aId]
+  return value === undefined ? undefined : normaliseToB(aId, value)
+}
+
+const groupFulfilment = (answers, chain, aId) => {
+  const records = collectGroupedRecords(answers, chain, aId)
+  return Object.keys(records).length > 0 ? records : undefined
+}
+
+const fulfilmentFor = (answers, obligation) => {
+  const aId = obligation.name
+  const chain = ancestorChain(obligation)
+  return chain.length === 0
+    ? scalarFulfilment(answers, aId)
+    : groupFulfilment(answers, chain, aId)
+}
+
 /**
  * Translate the page `answers` into the model `fulfilments`.
  *
@@ -175,19 +193,10 @@ const collectGroupedRecords = (answers, chain, aId) => {
 export const answersToFulfilments = (answers = {}) => {
   const fulfilments = {}
   for (const obligation of obligations) {
-    const aId = obligation.name
     if (groupObligations.has(obligation)) continue
-    const chain = ancestorChain(obligation)
-    if (chain.length === 0) {
-      const value = answers?.[aId]
-      if (value !== undefined) {
-        fulfilments[obligation.id] = normaliseToB(aId, value)
-      }
-    } else {
-      const records = collectGroupedRecords(answers, chain, aId)
-      if (Object.keys(records).length > 0) {
-        fulfilments[obligation.id] = records
-      }
+    const value = fulfilmentFor(answers, obligation)
+    if (value !== undefined) {
+      fulfilments[obligation.id] = value
     }
   }
   return fulfilments
@@ -233,6 +242,31 @@ export const instanceFulfilmentId = (collectionPath, index) => {
     .join('/')
 }
 
+const answersWithScalar = (answers, aId, stored) =>
+  setAt(answers, [aId], normaliseToA(aId, stored))
+
+const answersWithRecords = (answers, chain, aId, stored) =>
+  Object.entries(stored).reduce(
+    (acc, [fulfilmentId, value]) =>
+      setAt(
+        acc,
+        fulfilmentIdToPath(chain, fulfilmentId, aId),
+        normaliseToA(aId, value)
+      ),
+    answers
+  )
+
+const withObligationAnswer = (answers, fulfilments, obligation) => {
+  if (groupObligations.has(obligation)) return answers
+  const aId = obligation.name
+  const stored = fulfilments?.[obligation.id]
+  if (stored === undefined) return answers
+  const chain = ancestorChain(obligation)
+  return chain.length === 0
+    ? answersWithScalar(answers, aId, stored)
+    : answersWithRecords(answers, chain, aId, stored)
+}
+
 /**
  * Translate the model `fulfilments` back into the page `answers`.
  *
@@ -244,22 +278,8 @@ export const instanceFulfilmentId = (collectionPath, index) => {
  * @returns {object} the nested answer POJO.
  */
 export const fulfilmentsToAnswers = (fulfilments = {}) =>
-  obligations.reduce((answers, obligation) => {
-    const aId = obligation.name
-    if (groupObligations.has(obligation)) return answers
-    const stored = fulfilments?.[obligation.id]
-    if (stored === undefined) return answers
-    const chain = ancestorChain(obligation)
-    if (chain.length === 0) {
-      return setAt(answers, [aId], normaliseToA(aId, stored))
-    }
-    return Object.entries(stored).reduce(
-      (acc, [fulfilmentId, value]) =>
-        setAt(
-          acc,
-          fulfilmentIdToPath(chain, fulfilmentId, aId),
-          normaliseToA(aId, value)
-        ),
-      answers
-    )
-  }, {})
+  obligations.reduce(
+    (answers, obligation) =>
+      withObligationAnswer(answers, fulfilments, obligation),
+    {}
+  )
