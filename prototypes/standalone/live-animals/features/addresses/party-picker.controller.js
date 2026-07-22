@@ -47,12 +47,15 @@ const resultsHref = (party, { query, page, selectedId }) => {
   return `${pagePath(party.slug)}?${params.toString()}`
 }
 
-const paginationItems = (page, totalPages, hrefFor) => {
+const numbersToShow = (page, totalPages) => {
   const shown = [1, page - 1, page, page + 1, totalPages].filter(
     (number) => number >= 1 && number <= totalPages
   )
-  const sorted = [...new Set(shown)].sort((a, b) => a - b)
-  return sorted.reduce(
+  return [...new Set(shown)].sort((a, b) => a - b)
+}
+
+const itemsWithEllipses = (numbers, page, hrefFor) =>
+  numbers.reduce(
     (acc, number) => {
       const items =
         number - acc.last > 1 ? [...acc.items, { ellipsis: true }] : acc.items
@@ -66,7 +69,9 @@ const paginationItems = (page, totalPages, hrefFor) => {
     },
     { items: [], last: 0 }
   ).items
-}
+
+const paginationItems = (page, totalPages, hrefFor) =>
+  itemsWithEllipses(numbersToShow(page, totalPages), page, hrefFor)
 
 const pagination = (party, { query, page, totalPages, selectedId }) => {
   if (totalPages < 2) return null
@@ -150,21 +155,31 @@ const get = (party) => async (request, h) => {
   })
 }
 
+const isSearchAction = (payload) => payload.action === 'search'
+
+// A row ticked on THIS page wins; otherwise the hidden field carries the
+// selection made on an earlier page or search (no-JS safe across pagination).
+const chosenPartyFor = (party, selectedId) =>
+  selectedId ? addressBook.party(party.role, selectedId) : undefined
+
+const commitSelection = async (request, h, party, chosen) => {
+  await state.commit(request, h, {
+    [party.id]: { name: chosen.name, address: { ...chosen.address } }
+  })
+  return h.redirect(pagePath('addresses'))
+}
+
 const post = (party) => async (request, h) => {
   const payload = request.payload ?? {}
   const query = payload.q ?? ''
-  // A row ticked on THIS page wins; otherwise the hidden field carries the
-  // selection made on an earlier page or search (no-JS safe across pagination).
   const selectedId = payload.party || payload.selected || ''
 
-  if (payload.action === 'search') {
+  if (isSearchAction(payload)) {
     const { journey } = await state.get(request, h)
     return render(h, journey, party, { query, page: 1, selectedId })
   }
 
-  const chosen = selectedId
-    ? addressBook.party(party.role, selectedId)
-    : undefined
+  const chosen = chosenPartyFor(party, selectedId)
   if (!chosen) {
     const { journey } = await state.get(request, h)
     return render(h, journey, party, {
@@ -175,10 +190,7 @@ const post = (party) => async (request, h) => {
     })
   }
 
-  await state.commit(request, h, {
-    [party.id]: { name: chosen.name, address: { ...chosen.address } }
-  })
-  return h.redirect(pagePath('addresses'))
+  return commitSelection(request, h, party, chosen)
 }
 
 export const routes = PARTIES.flatMap((party) => [

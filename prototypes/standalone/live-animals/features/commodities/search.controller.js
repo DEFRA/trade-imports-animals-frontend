@@ -111,33 +111,31 @@ const seedLine = (key) => {
 const SEARCH_ACTION = 'search'
 const REMOVE_ACTION_PREFIX = 'remove:'
 
-const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const action = payload.action ?? ''
-  const query = payload.search ?? ''
-  let selected = selectedKeysFromPayload(payload)
+const isSearchOrRemove = (action) =>
+  action === SEARCH_ACTION || action.startsWith(REMOVE_ACTION_PREFIX)
 
-  if (action === SEARCH_ACTION || action.startsWith(REMOVE_ACTION_PREFIX)) {
-    if (action.startsWith(REMOVE_ACTION_PREFIX)) {
-      const removed = action.slice(REMOVE_ACTION_PREFIX.length)
-      selected = selected.filter((key) => key !== removed)
-    }
-    const { journey } = await state.get(request, h)
-    return render(request, h, journey, { query, selected })
-  }
+const withRemovalApplied = (action, selected) =>
+  action.startsWith(REMOVE_ACTION_PREFIX)
+    ? selected.filter(
+        (key) => key !== action.slice(REMOVE_ACTION_PREFIX.length)
+      )
+    : selected
 
-  if (selected.length === 0) {
-    const { journey } = await state.get(request, h)
-    return render(request, h, journey, {
-      query,
-      selected,
-      errors: { search: copy.errors.selectCommodity }
-    })
-  }
+const renderSearchOrRemove = async (request, h, query, selected) => {
+  const { journey } = await state.get(request, h)
+  return render(request, h, journey, { query, selected })
+}
 
-  // Batch-create: one line per selected species. A line whose species stays
-  // selected keeps ALL its data (per-species values, nested identifier
-  // records); a deselected species' line is removed with wipe semantics.
+const renderSelectionRequired = async (request, h, query, selected) => {
+  const { journey } = await state.get(request, h)
+  return render(request, h, journey, {
+    query,
+    selected,
+    errors: { search: copy.errors.selectCommodity }
+  })
+}
+
+const commitSelection = async (request, h, selected) => {
   await state.reconcileEntriesAt(
     request,
     h,
@@ -149,6 +147,28 @@ const post = async (request, h) => {
     kit.hubExitTarget(request) ??
       kit.withChangeContext(request, pagePath(consignmentDetailsPage.slug))
   )
+}
+
+const post = async (request, h) => {
+  const payload = request.payload ?? {}
+  const action = payload.action ?? ''
+  const query = payload.search ?? ''
+  const selected = selectedKeysFromPayload(payload)
+
+  if (isSearchOrRemove(action)) {
+    return renderSearchOrRemove(
+      request,
+      h,
+      query,
+      withRemovalApplied(action, selected)
+    )
+  }
+
+  if (selected.length === 0) {
+    return renderSelectionRequired(request, h, query, selected)
+  }
+
+  return commitSelection(request, h, selected)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

@@ -61,6 +61,11 @@ const groupLine = ({ index, entry }, values, errors) => ({
   packagesError: errors[packagesField(index)]
 })
 
+const linesForGroup = (lines, name, values, errors) =>
+  lines
+    .filter(({ entry }) => entry.commoditySelection === name)
+    .map((line) => groupLine(line, values, errors))
+
 const buildGroups = (request, lines, values, errors) => {
   const names = [...new Set(lines.map(({ entry }) => entry.commoditySelection))]
   return names.map((name) => ({
@@ -71,9 +76,7 @@ const buildGroups = (request, lines, values, errors) => {
       request,
       pagePath(`${page.slug}/${encodeURIComponent(name)}/remove`)
     ),
-    lines: lines
-      .filter(({ entry }) => entry.commoditySelection === name)
-      .map((line) => groupLine(line, values, errors))
+    lines: linesForGroup(lines, name, values, errors)
   }))
 }
 
@@ -118,30 +121,28 @@ const render = (
 
 const linesOf = (answers) => state.collectionView(answers, ['commodityLines'])
 
-// The count-drop rule (inc-063, c-031 ruling): lowering a species' animal
-// count below its existing identifier-record count BLOCKS the save — never
-// silently trim. The error names the species and the summary links straight
-// to that species' card on the identification surface.
+const countDropIssueFor = (request, { index, entry }, values) => {
+  const records = (entry.animalIdentifiers ?? []).length
+  const value = values[animalsField(index)]
+  if (records === 0 || value === '') return []
+  const entered = Number(value)
+  if (!Number.isInteger(entered) || entered >= records) return []
+  const species =
+    commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
+  return [
+    {
+      field: animalsField(index),
+      text: copy.errors.countDrop(records, species, entered),
+      href: `${kit.withChangeContext(
+        request,
+        pagePath(animalIdentificationPage.slug)
+      )}#identification-card-${index}`
+    }
+  ]
+}
+
 const countDropIssues = (request, lines, values) =>
-  lines.flatMap(({ index, entry }) => {
-    const records = (entry.animalIdentifiers ?? []).length
-    const value = values[animalsField(index)]
-    if (records === 0 || value === '') return []
-    const entered = Number(value)
-    if (!Number.isInteger(entered) || entered >= records) return []
-    const species =
-      commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
-    return [
-      {
-        field: animalsField(index),
-        text: copy.errors.countDrop(records, species, entered),
-        href: `${kit.withChangeContext(
-          request,
-          pagePath(animalIdentificationPage.slug)
-        )}#identification-card-${index}`
-      }
-    ]
-  })
+  lines.flatMap((line) => countDropIssueFor(request, line, values))
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)

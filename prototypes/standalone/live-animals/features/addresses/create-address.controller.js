@@ -92,40 +92,49 @@ const get = async (request, h) => {
   return render(h, journey, party, emptyValues())
 }
 
-const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const party = partyOf(payload.for)
-  if (!party) return h.redirect(pagePath('addresses'))
-
-  const values = Object.fromEntries(
+const trimmedValues = (payload) =>
+  Object.fromEntries(
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
+
+const fieldErrors = (payload, values) => {
   const { errors } = validate(fields(), payload)
   const merged = { ...missingMandatoryErrors(values), ...(errors ?? {}) }
-  const allErrors = Object.fromEntries(
+  return Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [
       field,
       merged[field]
     ])
   )
+}
+
+const addressRecordFrom = (values) => ({
+  name: values.nameOrOrganisationName,
+  address: {
+    addressLine1: values.addressLine1,
+    addressLine2: values.addressLine2,
+    townOrCity: values.townOrCity,
+    county: values.county,
+    postalOrZipCode: values.postalOrZipCode,
+    country: values.country,
+    telephoneNumber: values.telephoneNumber,
+    emailAddress: values.emailAddress
+  }
+})
+
+const post = async (request, h) => {
+  const payload = request.payload ?? {}
+  const party = partyOf(payload.for)
+  if (!party) return h.redirect(pagePath('addresses'))
+
+  const values = trimmedValues(payload)
+  const allErrors = fieldErrors(payload, values)
   if (Object.keys(allErrors).length > 0) {
     const { journey } = await state.get(request, h)
     return render(h, journey, party, values, allErrors)
   }
 
-  const record = addressBook.addParty(party.role, {
-    name: values.nameOrOrganisationName,
-    address: {
-      addressLine1: values.addressLine1,
-      addressLine2: values.addressLine2,
-      townOrCity: values.townOrCity,
-      county: values.county,
-      postalOrZipCode: values.postalOrZipCode,
-      country: values.country,
-      telephoneNumber: values.telephoneNumber,
-      emailAddress: values.emailAddress
-    }
-  })
+  const record = addressBook.addParty(party.role, addressRecordFrom(values))
   await state.commit(request, h, {
     [party.id]: { name: record.name, address: { ...record.address } }
   })

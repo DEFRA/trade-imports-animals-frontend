@@ -78,17 +78,26 @@ const buildReviewItem = ({ title, hint }, answers, scope) => {
   }
 }
 
+const isHiddenRow = (row, status) => row.conditional && status === NA
+
+const blockedRowItem = (base) => ({ ...base, status: CANNOT_START_STATUS })
+
+const openRowItem = (base, row, scope, status) => ({
+  ...base,
+  href: rowEntry(row, scope),
+  status: statusTag(status)
+})
+
 const buildRowItem = (id, answers, scope) => {
   const { title, hint } = copy.rows[id]
   if (id === 'review') return buildReviewItem({ title, hint }, answers, scope)
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope)
-  if (row.conditional && status === NA) return null
+  if (isHiddenRow(row, status)) return null
   const base = { title: { text: title }, hint: { text: hint } }
-  if (!rowGatePasses(row, scope)) {
-    return { ...base, status: CANNOT_START_STATUS }
-  }
-  return { ...base, href: rowEntry(row, scope), status: statusTag(status) }
+  return rowGatePasses(row, scope)
+    ? openRowItem(base, row, scope, status)
+    : blockedRowItem(base)
 }
 
 const buildGroups = (answers, scope) =>

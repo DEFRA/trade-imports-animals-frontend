@@ -271,17 +271,41 @@ const addressFieldsFor = (index, values, errors) => {
   ]
 }
 
-const buildCard = (request, answers, line, form, errors) => {
-  const { index, entry } = line
-  const commodity = entry.commoditySelection
-  const units = entry.animalIdentifiers ?? []
+const capacityStateFor = (answers, index, unitCount) => {
   const cap = state.collectionCapAt(answers, [
     'commodityLines',
     index,
     'animalIdentifiers'
   ])
-  const atMax = cap !== null && units.length >= cap
-  const overBy = cap !== null ? units.length - cap : 0
+  const atMax = cap !== null && unitCount >= cap
+  const overBy = cap !== null ? unitCount - cap : 0
+  return { cap, atMax, overBy }
+}
+
+const visibleIdentifierFields = (atMax, commodity, index, values, errors) =>
+  atMax
+    ? []
+    : scopedFields(commodity).map((field) => ({
+        ...field,
+        id: fieldName(field.id, index),
+        value: values[field.id] ?? '',
+        error: errors[fieldName(field.id, index)]
+      }))
+
+const visibleAddressFields = (
+  showAddress,
+  atMax,
+  index,
+  addressValues,
+  errors
+) =>
+  showAddress && !atMax ? addressFieldsFor(index, addressValues, errors) : []
+
+const buildCard = (request, answers, line, form, errors) => {
+  const { index, entry } = line
+  const commodity = entry.commoditySelection
+  const units = entry.animalIdentifiers ?? []
+  const { cap, atMax, overBy } = capacityStateFor(answers, index, units.length)
   const species = speciesTextOf(entry)
   const values = form?.values ?? blankValuesFor(commodity)
   const addressValues = form?.addressValues ?? blankAddress()
@@ -302,19 +326,15 @@ const buildCard = (request, answers, line, form, errors) => {
     atMax,
     rows: unitRows(request, index, units),
     hasUnits: units.length > 0,
-    fields: atMax
-      ? []
-      : scopedFields(commodity).map((field) => ({
-          ...field,
-          id: fieldName(field.id, index),
-          value: values[field.id] ?? '',
-          error: errors[fieldName(field.id, index)]
-        })),
+    fields: visibleIdentifierFields(atMax, commodity, index, values, errors),
     showAddress: showAddress && !atMax,
-    addressFields:
-      showAddress && !atMax
-        ? addressFieldsFor(index, addressValues, errors)
-        : []
+    addressFields: visibleAddressFields(
+      showAddress,
+      atMax,
+      index,
+      addressValues,
+      errors
+    )
   }
 }
 
@@ -366,26 +386,34 @@ const get = async (request, h) => {
 const parseAddAction = (action) =>
   action.startsWith('add:') ? Number(action.slice('add:'.length)) : null
 
+const formHoldsData = (showAddress, values, addressValues) =>
+  identifierProvided(values) ||
+  (showAddress && addressRecordProvided(addressValues))
+
+const addressErrorsFor = (showAddress, addressValues, index, payload) => {
+  if (!showAddress) return {}
+  const { errors: addrFormatErrors } = addressRecordProvided(addressValues)
+    ? validate(addressChecksFor(index), payload)
+    : { errors: null }
+  return {
+    ...missingAddressErrors(addressValues, index),
+    ...(addrFormatErrors ?? {})
+  }
+}
+
 const buildLineForm = (payload, commodity, index) => {
   const values = identifierValuesFromPayload(payload, commodity, index)
   const addressValues = addressValuesFromPayload(payload, index)
   const showAddress = permanentAddressApplies(commodity)
-  const holdsData =
-    identifierProvided(values) ||
-    (showAddress && addressRecordProvided(addressValues))
+  const holdsData = formHoldsData(showAddress, values, addressValues)
 
   const { errors: idErrors } = validate(
     identifierChecksFor(commodity, index),
     payload
   )
-  const { errors: addrFormatErrors } =
-    showAddress && addressRecordProvided(addressValues)
-      ? validate(addressChecksFor(index), payload)
-      : { errors: null }
   const errors = {
     ...(idErrors ?? {}),
-    ...(showAddress ? missingAddressErrors(addressValues, index) : {}),
-    ...(addrFormatErrors ?? {})
+    ...addressErrorsFor(showAddress, addressValues, index, payload)
   }
 
   return {
@@ -457,43 +485,48 @@ const withEmptyFormGuard = (errors, forms, addIndex) => {
   }
 }
 
+const unitFromForm = (form) => {
+  const unit = { ...form.values }
+  if (form.showAddress && addressRecordProvided(form.addressValues)) {
+    unit.permanentAddress = {
+      name: form.addressValues.nameOrOrganisationName,
+      address: {
+        addressLine1: form.addressValues.addressLine1,
+        addressLine2: form.addressValues.addressLine2,
+        townOrCity: form.addressValues.townOrCity,
+        county: form.addressValues.county,
+        postalOrZipCode: form.addressValues.postalOrZipCode,
+        country: form.addressValues.country,
+        telephoneNumber: form.addressValues.telephoneNumber,
+        emailAddress: form.addressValues.emailAddress
+      }
+    }
+  }
+  return unit
+}
+
+const recordCapFailure = async (request, h, index) => {
+  const { answers: current } = await state.get(request, h)
+  const cap = state.collectionCapAt(current, [
+    'commodityLines',
+    index,
+    'animalIdentifiers'
+  ])
+  return { index, text: copy.errors.capReached(cap) }
+}
+
 const appendLineRecords = async (request, h, forms) => {
   const cardErrors = []
   for (const [index, form] of forms) {
     if (!form.holdsData) continue
-    const unit = { ...form.values }
-    if (form.showAddress && addressRecordProvided(form.addressValues)) {
-      unit.permanentAddress = {
-        name: form.addressValues.nameOrOrganisationName,
-        address: {
-          addressLine1: form.addressValues.addressLine1,
-          addressLine2: form.addressValues.addressLine2,
-          townOrCity: form.addressValues.townOrCity,
-          county: form.addressValues.county,
-          postalOrZipCode: form.addressValues.postalOrZipCode,
-          country: form.addressValues.country,
-          telephoneNumber: form.addressValues.telephoneNumber,
-          emailAddress: form.addressValues.emailAddress
-        }
-      }
-    }
     const appended = await state.appendEntryAt(
       request,
       h,
       ['commodityLines', index, 'animalIdentifiers'],
-      unit
+      unitFromForm(form)
     )
     if (appended === null) {
-      const { answers: current } = await state.get(request, h)
-      const cap = state.collectionCapAt(current, [
-        'commodityLines',
-        index,
-        'animalIdentifiers'
-      ])
-      cardErrors.push({
-        index,
-        text: copy.errors.capReached(cap)
-      })
+      cardErrors.push(await recordCapFailure(request, h, index))
     }
   }
   return cardErrors

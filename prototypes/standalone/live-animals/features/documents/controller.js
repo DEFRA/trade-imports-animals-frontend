@@ -254,23 +254,40 @@ const uploadDetails = (journey, entry, file, filename) => ({
   mimeTypes: ALLOWED_MIME_TYPES
 })
 
-const postAdd = async (request, h, payload) => {
-  const pageState = await loadPage(request, h)
-  const bare = documentFromPayload(payload)
-  if (pageState.documents.length >= MAX_DOCUMENTS) {
-    return render(request, h, pageState, bare, {}, [
-      {
-        text: copy.errors.maxDocuments(MAX_DOCUMENTS),
-        href: DOCUMENTS_ADDED_ANCHOR
-      }
-    ])
+const capacityExceededError = () => [
+  {
+    text: copy.errors.maxDocuments(MAX_DOCUMENTS),
+    href: DOCUMENTS_ADDED_ANCHOR
   }
+]
+
+const documentAddErrors = (payload, bare) => {
   const { errors } = validate(fields, payload)
-  const allErrors = {
+  return {
     ...errors,
     ...presenceErrors(bare),
     ...fileErrors(payload.file)
   }
+}
+
+const uploadOutcome = async (pageState, entry, file, filename) => {
+  try {
+    const uploadId = await documentUploads.upload(
+      uploadDetails(pageState.journey, entry, file, filename)
+    )
+    return { uploadId }
+  } catch {
+    return { failed: true }
+  }
+}
+
+const postAdd = async (request, h, payload) => {
+  const pageState = await loadPage(request, h)
+  const bare = documentFromPayload(payload)
+  if (pageState.documents.length >= MAX_DOCUMENTS) {
+    return render(request, h, pageState, bare, {}, capacityExceededError())
+  }
+  const allErrors = documentAddErrors(payload, bare)
   if (Object.keys(allErrors).length > 0) {
     return render(request, h, pageState, bare, allErrors)
   }
@@ -280,12 +297,8 @@ const postAdd = async (request, h, payload) => {
     ...bare,
     accompanyingDocumentType: deriveDocumentTypeFromFilename(filename)
   }
-  let uploadId
-  try {
-    uploadId = await documentUploads.upload(
-      uploadDetails(pageState.journey, entry, payload.file, filename)
-    )
-  } catch {
+  const outcome = await uploadOutcome(pageState, entry, payload.file, filename)
+  if (outcome.failed) {
     return render(request, h, pageState, bare, {
       file: UPLOAD_FAILURE_MESSAGE
     })
@@ -294,29 +307,33 @@ const postAdd = async (request, h, payload) => {
   await state.appendEntry(request, h, 'documents', {
     ...entry,
     accompanyingDocumentAttachmentType: attachmentTypeFor(filename),
-    uploadId,
+    uploadId: outcome.uploadId,
     filename
   })
   return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
 }
 
+const isStillSettling = (documents) =>
+  documents.some((item) => item.scanStatus !== SCAN_STATUS.COMPLETE)
+
+const settlingSummaryErrors = (documents) =>
+  documents.some((item) => item.scanStatus === SCAN_STATUS.REJECTED)
+    ? []
+    : [{ text: CANNOT_CONTINUE_MESSAGE, href: DOCUMENTS_ADDED_ANCHOR }]
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   if (payload.action === 'add') return postAdd(request, h, payload)
   const pageState = await loadPage(request, h)
-  if (!kit.hubExitTarget(request)) {
-    const anyRejected = pageState.documents.some(
-      (item) => item.scanStatus === SCAN_STATUS.REJECTED
+  if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
+    return render(
+      request,
+      h,
+      pageState,
+      EMPTY_FORM,
+      {},
+      settlingSummaryErrors(pageState.documents)
     )
-    const anySettling = pageState.documents.some(
-      (item) => item.scanStatus !== SCAN_STATUS.COMPLETE
-    )
-    if (anySettling) {
-      const summaryErrors = anyRejected
-        ? []
-        : [{ text: CANNOT_CONTINUE_MESSAGE, href: DOCUMENTS_ADDED_ANCHOR }]
-      return render(request, h, pageState, EMPTY_FORM, {}, summaryErrors)
-    }
   }
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }

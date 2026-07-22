@@ -106,41 +106,53 @@ const get = async (request, h) => {
   })
 }
 
-const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const values = Object.fromEntries(
+const trimmedValues = (payload) =>
+  Object.fromEntries(
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
+
+const formErrors = (payload, values) => {
   const { errors } = validate(fields, payload)
   const merged = { ...missingMandatoryErrors(values), ...(errors ?? {}) }
-  const allErrors = Object.fromEntries(
+  return Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [
       field,
       merged[field]
     ])
   )
+}
+
+const privateTransporterRecord = (values) => ({
+  privateTransporter: {
+    name: values.nameOrOrganisationName,
+    address: {
+      addressLine1: values.addressLine1,
+      addressLine2: values.addressLine2,
+      townOrCity: values.townOrCity,
+      county: values.county,
+      postalOrZipCode: values.postalOrZipCode,
+      country: values.country,
+      telephoneNumber: values.telephoneNumber,
+      emailAddress: values.emailAddress
+    }
+  }
+})
+
+const commitOrSkip = (request, h, values) =>
+  recordProvided(values)
+    ? state.commit(request, h, privateTransporterRecord(values))
+    : state.get(request, h)
+
+const post = async (request, h) => {
+  const payload = request.payload ?? {}
+  const values = trimmedValues(payload)
+  const allErrors = formErrors(payload, values)
   if (Object.keys(allErrors).length > 0) {
     const { journey } = await state.get(request, h)
     return render(h, journey, values, allErrors)
   }
 
-  const { scope } = await (recordProvided(values)
-    ? state.commit(request, h, {
-        privateTransporter: {
-          name: values.nameOrOrganisationName,
-          address: {
-            addressLine1: values.addressLine1,
-            addressLine2: values.addressLine2,
-            townOrCity: values.townOrCity,
-            county: values.county,
-            postalOrZipCode: values.postalOrZipCode,
-            country: values.country,
-            telephoneNumber: values.telephoneNumber,
-            emailAddress: values.emailAddress
-          }
-        }
-      })
-    : state.get(request, h))
+  const { scope } = await commitOrSkip(request, h, values)
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

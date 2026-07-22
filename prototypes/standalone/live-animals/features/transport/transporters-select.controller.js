@@ -62,6 +62,19 @@ const get = async (request, h) => {
   })
 }
 
+const commercialTransporterRecord = (chosen) => ({
+  commercialTransporter: {
+    name: chosen.name,
+    address: { ...chosen.address },
+    approvalNumber: chosen.approvalNumber
+  }
+})
+
+const commitOrSkip = (request, h, chosen) =>
+  chosen
+    ? state.commit(request, h, commercialTransporterRecord(chosen))
+    : state.get(request, h)
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const { errors } = validate(fields, payload)
@@ -74,15 +87,7 @@ const post = async (request, h) => {
     'commercialTransporter',
     payload.commercialTransporter
   )
-  const { scope } = await (chosen
-    ? state.commit(request, h, {
-        commercialTransporter: {
-          name: chosen.name,
-          address: { ...chosen.address },
-          approvalNumber: chosen.approvalNumber
-        }
-      })
-    : state.get(request, h))
+  const { scope } = await commitOrSkip(request, h, chosen)
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

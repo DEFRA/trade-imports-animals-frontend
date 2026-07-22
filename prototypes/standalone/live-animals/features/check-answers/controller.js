@@ -232,51 +232,52 @@ const identifierTable = (units) => {
   }
 }
 
+const unitsForCommodityLine = (answers, index) =>
+  state
+    .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
+    .map(({ entry: unit }) => unit)
+
+const speciesCardActions = (index, units) => ({
+  items: [
+    {
+      href: withChange(pagePath(consignmentDetailsPage.slug)),
+      text: copy.change,
+      visuallyHiddenText: copy.hidden.commodity(index + 1)
+    },
+    ...(units.length
+      ? [
+          {
+            href: `${withChange(
+              pagePath(animalIdentificationPage.slug)
+            )}#identification-card-${index}`,
+            text: copy.change,
+            visuallyHiddenText: copy.hidden.identifiersForCommodity(index + 1)
+          }
+        ]
+      : [])
+  ]
+})
+
+const speciesCardRows = (entry) => [
+  readOnlyRow(
+    copy.rows.commodityCode,
+    commodities.commodityCodeFor(entry.commoditySelection)
+  ),
+  readOnlyRow(copy.rows.commonName, entry.commoditySelection),
+  readOnlyRow(copy.rows.species, speciesText(entry)),
+  readOnlyRow(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
+  ...(packagesApply(entry.commoditySelection)
+    ? [readOnlyRow(copy.rows.numberOfPackages, entry.numberOfPackages)]
+    : [])
+]
+
 const speciesCards = (answers) =>
   state.collectionView(answers, ['commodityLines']).map(({ index, entry }) => {
-    const units = state
-      .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
-      .map(({ entry: unit }) => unit)
+    const units = unitsForCommodityLine(answers, index)
     return {
       title: speciesCardTitle(entry),
-      actions: {
-        items: [
-          {
-            // The consolidated details page is the editing surface for a
-            // line's quantities and its table manages the selection itself.
-            href: withChange(pagePath(consignmentDetailsPage.slug)),
-            text: copy.change,
-            visuallyHiddenText: copy.hidden.commodity(index + 1)
-          },
-          ...(units.length
-            ? [
-                {
-                  // The single identification surface (inc-063, D16); the
-                  // fragment lands on this species' card.
-                  href: `${withChange(
-                    pagePath(animalIdentificationPage.slug)
-                  )}#identification-card-${index}`,
-                  text: copy.change,
-                  visuallyHiddenText: copy.hidden.identifiersForCommodity(
-                    index + 1
-                  )
-                }
-              ]
-            : [])
-        ]
-      },
-      rows: [
-        readOnlyRow(
-          copy.rows.commodityCode,
-          commodities.commodityCodeFor(entry.commoditySelection)
-        ),
-        readOnlyRow(copy.rows.commonName, entry.commoditySelection),
-        readOnlyRow(copy.rows.species, speciesText(entry)),
-        readOnlyRow(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
-        ...(packagesApply(entry.commoditySelection)
-          ? [readOnlyRow(copy.rows.numberOfPackages, entry.numberOfPackages)]
-          : [])
-      ],
+      actions: speciesCardActions(index, units),
+      rows: speciesCardRows(entry),
       identifierTable: identifierTable(units)
     }
   })
@@ -345,38 +346,44 @@ const transporterAddressRow = (party, id) => {
   }
 }
 
+const approvalNumberRow = (active) =>
+  isBlank(active.party?.approvalNumber)
+    ? []
+    : [
+        row(
+          copy.rows.approvalNumber,
+          active.party.approvalNumber,
+          active.id,
+          copy.hidden.transporterApprovalNumber
+        )
+      ]
+
+const activeTransporterRows = (active) =>
+  active
+    ? [
+        row(
+          copy.rows.name,
+          active.party?.name,
+          active.id,
+          copy.hidden.transporterName
+        ),
+        transporterAddressRow(active.party, active.id),
+        row(
+          copy.rows.country,
+          active.party?.address?.country,
+          active.id,
+          copy.hidden.transporterCountry
+        ),
+        ...approvalNumberRow(active)
+      ]
+    : []
+
 const transportDetailsCard = (answers, scope) => {
   const active = activeTransporter(answers, scope)
   return {
     title: copy.cards.transportDetails,
     rows: [
-      ...(active
-        ? [
-            row(
-              copy.rows.name,
-              active.party?.name,
-              active.id,
-              copy.hidden.transporterName
-            ),
-            transporterAddressRow(active.party, active.id),
-            row(
-              copy.rows.country,
-              active.party?.address?.country,
-              active.id,
-              copy.hidden.transporterCountry
-            ),
-            ...(isBlank(active.party?.approvalNumber)
-              ? []
-              : [
-                  row(
-                    copy.rows.approvalNumber,
-                    active.party.approvalNumber,
-                    active.id,
-                    copy.hidden.transporterApprovalNumber
-                  )
-                ])
-          ]
-        : []),
+      ...activeTransporterRows(active),
       row(
         copy.rows.type,
         answers.transporterType,
