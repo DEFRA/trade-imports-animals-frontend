@@ -2,32 +2,30 @@
 
 The prototype has one obligation model and derives everything a page shows —
 scope, status, navigation, the wipe set — from it. This page describes the
-runtime that does that derivation: the pure evaluator, the status and
-navigation primitives layered over its output, the bridge seam that projects
-that output into the shapes controllers consume, and the hapi-facing barrel a
-page controller actually imports.
+runtime that does that derivation: the pure evaluator, the state queries
+layered over its output, the bridge seam that projects that output into the
+shapes controllers consume, and the hapi-facing barrel a page controller
+actually imports.
 
 See the [docs index](README.md) for the surrounding guides. The obligation
 manifest itself is covered in [obligation-model.md](obligation-model.md); the
 scope and wipe grammar in [scope-and-wipe.md](scope-and-wipe.md); durable
 storage in [persistence.md](persistence.md).
 
-## Two engines, one door
-
-There are two directories called `engine`, and they do different jobs:
+## One model, one door
 
 ```
-model/obligations/evaluator.js   the pure evaluator over flat fulfilments
-model/engine/index.js            pure derivation: status, navigation, invariants
-model/bridge/                    the seam — runs the evaluator, projects its output
-engine/index.js                  the hapi barrel a page controller imports
+model/obligations/evaluator.js       the pure evaluator over flat fulfilments
+model/obligations/state-queries.js   pure queries: mandates, group invariants
+model/bridge/                        the seam — runs the evaluator, projects its output
+engine/index.js                      the hapi barrel a page controller imports
 ```
 
 - **`model/`** is pure. No `request`/`h`, no I/O, no imports from `flow/` or
   `features/`. The evaluator takes a flat `fulfilments` map and returns an
-  implication per obligation; `model/engine/index.js` reads that output and
-  answers one specific question (what is this page's status, which page comes
-  next).
+  implication per obligation; `model/obligations/state-queries.js` reads that
+  output and answers one specific question (is this record mandatory here,
+  which group invariants are unmet).
 - **`engine/`** is the hapi side: session, records, and the read/write surface
   a page controller sees. It never touches the evaluator directly — it reaches
   the model **through the bridges** in `model/bridge/`.
@@ -149,86 +147,34 @@ carries scope (`inScope`), the per-record or per-obligation mandate (`status`
 = `mandatory` | `optional`), any failure `reasons`, and the record membership
 (`records[].fulfilmentId`).
 
-## Status and navigation derivation
+## State queries
 
-`model/engine/index.js` is a set of pure functions over `state` — exactly the
-`{ fulfilments, obligations }` that `evaluate` returns. No evaluator state is
-kept between calls; each primitive stands alone.
+`model/obligations/state-queries.js` is a set of pure functions over `state` —
+exactly the `{ fulfilments, obligations }` that `evaluate` returns. No
+evaluator state is kept between calls; each query stands alone.
 
-### The five statuses
-
-One classifier, `classifyEntries`, produces every status at every level:
-
-| Status           | Meaning                                                       |
-| ---------------- | ------------------------------------------------------------- |
-| `not-applicable` | no in-scope obligations at all                                |
-| `optional`       | only optional obligations in scope, nothing entered yet       |
-| `not-started`    | a mandatory concern in scope, nothing entered anywhere        |
-| `in-progress`    | a mandatory concern still unsatisfied, some value entered     |
-| `fulfilled`      | every mandatory concern satisfied (or an optional one filled) |
-
-`journeyState` adds a sixth, `submitted`, which short-circuits — it is a
-user-driven event, not a derivable status. The constants live on `STATUSES`.
-
-The three entry points share the classifier:
-
-- **`pageStatus(page, state)`** — classify the page's in-scope presented
-  entries. A page cannot enforce a group invariant on its own, so it always
-  passes a zero error count.
-- **`containerStatus(container, state)`** — re-derive over every in-scope entry
-  collected from the subtree, plus that subtree's group-invariant errors. It
-  re-classifies rather than rolling up child statuses, so one classifier serves
-  section, subsection and page alike.
-- **`journeyState(flow, state, submitted?)`** — `submitted` returns
-  `submitted`; otherwise classify every in-scope entry across every section,
-  with the whole flow's group-invariant errors folded in.
-
-### What the classifier reads
-
-- **`expandPresents(page, state)`** flattens a page's `presents` plus
-  `presentsForEach` into `{ obligation, path, mandatoryToProceed }` entries.
-  `presentsForEach` expands to one entry per surviving group instance, read
-  from the group implication's `records`.
-- **`entryInScope`** keeps an entry only when its implication is `inScope` and,
-  for a grouped obligation, its instance still exists post-purge.
 - **`effectiveStatus(obligation, path, state)`** returns the per-record or
   per-obligation mandate (`mandatory` / `optional`), reading `impl.records` for
   grouped leaves and the top-level `status` for singletons.
-- **`hasFulfilment` vs `hasAnyInput`** — the two differ only for addresses. A
-  partially typed address counts as _input_ (so a subsection reads In progress,
-  not Not started) but not as _fulfilled_ (the composite must pass the domain
-  entry's `isComplete`). `isValueFulfilled` delegates to the domain entry's
-  `isComplete` for addresses and falls back to `isBlankValue` for everything
-  else.
+- **`groupInvariantErrors(group, state)`** emits one error per unmet rule on a
+  group's `requires`:
+  - **`minEntries`** — a collection floor. One `MIN_ENTRIES` error when the
+    group has fewer records than the floor. This is what stops an empty
+    consignment reading as fulfilled.
+  - **`maxEntries`** — a collection cap, symmetric to the floor.
+  - **`anyOfIds`** — a per-instance rule. One error per in-scope instance
+    where none of the listed leaves is filled (and at least one is in scope).
+    This carries the "at least one identifier per unit" rule.
+  - **`allOrNothingOfIds`** — a scalar field-block rule. One error when the
+    block is partially filled; none when all-blank or all-filled.
+  - **`recordCountEquals`** — a per-parent-instance count check. One error per
+    parent whose child-record count differs from the declared count field.
 
-### Group invariants
-
-`groupInvariantErrors(group, state)` emits one error per unmet rule on a
-group's `requires`:
-
-- **`minEntries`** — a collection floor. One `MIN_ENTRIES` error when the
-  group has fewer records than the floor. This is what stops an empty
-  consignment collapsing to Not applicable and reading as fulfilled.
-- **`anyOfIds`** — a per-instance rule. One error per in-scope instance where
-  none of the listed leaves is filled (and at least one is in scope). This
-  carries the "at least one identifier per unit" rule.
-
-Both feed `classifyEntries` uniformly as extra unsatisfied mandatory concerns —
-an unmet floor blocks `fulfilled` the same way an unfilled mandatory obligation
-does. `groupInvariantErrorsForContainer` collects them for every group a
-container surfaces.
-
-### Navigation
-
-The same module answers "where next":
-
-- `firstApplicablePage(root)` — first page in declared order (status-blind);
-  default section entry.
-- `firstUnfulfilledPage(root, state)` and the line- and unit-scoped
-  `firstUnfulfilledPageForLine` / `firstUnfulfilledPageForUnit` — first page
-  with an in-scope mandatory obligation still unfilled; Resume / Continue.
-- `firstPagePresentingObligation(flow, obligationId)` — the page that presents
-  an obligation; Check-your-answers Change links.
+The 5-way task and section status (`not-applicable` / `optional` /
+`not-started` / `in-progress` / `fulfilled`) is classified in the bridge —
+`status.js` below — from these queries plus the domain's completeness rules.
+`submitted` is a user-driven event owned by the journey engine, not a derived
+status.
 
 ## The bridge seam
 

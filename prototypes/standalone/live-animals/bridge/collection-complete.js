@@ -10,8 +10,8 @@
  * maps a positional entry to its composite fulfilmentId prefix with the segment
  * machinery, exactly as scope.js / purge.js convert composite <-> positional.
  *
- * `entryComplete` reproduces the `containerStatus`-FULFILLED verdict scoped to
- * one instance: the instance is complete iff the evaluator finds no unsatisfied
+ * `entryComplete` reproduces the FULFILLED verdict scoped to one
+ * instance: the instance is complete iff the evaluator finds no unsatisfied
  * mandatory concern beneath it — a mandatory leaf record left unfulfilled
  * (`effectiveStatus` semantics: a record's `status`, defaulting to mandatory),
  * or an unmet per-instance group invariant (`groupInvariantErrors`, the
@@ -36,8 +36,8 @@ import {
   groupObligations,
   instanceFulfilmentId
 } from './fulfilments.js'
-import { groupInvariantErrors } from '../model/engine/index.js'
-import { isBlankValue } from '../model/engine/is-blank-value.js'
+import { groupInvariantErrors } from '../model/obligations/state-queries.js'
+import { isBlankValue } from '../model/obligations/is-blank-value.js'
 import { domain } from '../model/domain/index.js'
 
 const evaluator = createObligationEvaluator()

@@ -5,8 +5,8 @@
  *   { type: 'address', required: string[], isComplete: (value) → boolean }
  *
  * `isComplete` is the completeness signal the status classifiers consume
- * (`bridge/status.js`, `bridge/collection-complete.js`,
- * `model/engine/index.js`): a partially-filled address is treated as
+ * (`bridge/status.js`, `bridge/collection-complete.js`): a
+ * partially-filled address is treated as
  * unfulfilled so the task list stays In progress and CYA prompts
  * "Complete the address". Scalar value legality (enum membership,
  * max-lengths, date shapes) is owned by the feature folders'

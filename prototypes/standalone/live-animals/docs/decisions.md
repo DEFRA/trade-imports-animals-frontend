@@ -106,8 +106,9 @@ without a framework, at that price.
 ### Principle
 
 Scope, wipe, completeness and status are questions about **data**, and
-they live in the model and its derivation primitives
-([`model/engine/index.js`](../model/engine/index.js)). Page sequence,
+they live in the model and its state queries
+([`model/obligations/state-queries.js`](../model/obligations/state-queries.js)).
+Page sequence,
 gating and the section roll-up are questions about **journey shape**, and
 they live in the flow ([`flow/`](../flow/flow.js)). The flow reads the
 model's facts downward; the model imports zero flow modules.
@@ -277,7 +278,7 @@ The frontend stores a user's data as a nested answers POJO
 (`answers.commodityLines[0].animalIdentifiers[1]…`). The model evaluates a
 flat fulfilments map keyed by obligation id. Controllers and templates
 never touch the model's evaluator directly — they reach it through
-[`model/engine/index.js`](../model/engine/index.js) and the bridge modules
+the bridge modules
 under [`model/bridge/`](../model/bridge/), which project the model's
 per-obligation output into the `scope` / `status` / `wipe` views the
 controllers consume:

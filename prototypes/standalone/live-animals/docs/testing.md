@@ -57,7 +57,7 @@ The obligation model is pure and synchronous, so it is proven entirely in unit t
 
 - **Obligations** — `model/obligations/evaluator.test.js`, `evaluator.units.test.js`, `helpers.test.js`, `whitelists.test.js` and `coverage.test.js` pin the evaluator's scope, purge-to-fixpoint and implication output, the gate-helper factories, the exported whitelist arrays, and full obligation coverage.
 - **Domain** — `model/domain/index.test.js` pins value-legality: enum option sourcing, predicate error codes and the address-block rules.
-- **Engine (derivation)** — `model/engine/index.test.js` and `is-blank-value.test.js` pin the pure status/navigation primitives over evaluator output.
+- **State queries** — `model/obligations/state-queries.test.js` and `is-blank-value.test.js` pin the group-invariant rules and the shared blank-check over evaluator output.
 - **Analysis** — `model/analysis/reachability.test.js` and `coverage.test.js` pin the obligation-dependency reachability prover and its witness synthesis.
 - **No display copy** — `model/no-display-keys.test.js` pins the rule that no obligation or domain entry carries a display key (`label`, `title`, `titleKey`, `hint`, `legend`, `widget`). `obligation-purity.test.js` runs the same assertion the server runs at boot.
 

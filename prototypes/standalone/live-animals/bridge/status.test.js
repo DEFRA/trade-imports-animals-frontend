@@ -300,7 +300,7 @@ describe('statusOf — the commodities/identification facet split', () => {
     ],
     // A unit that EXISTS (permanentAddress stored, Cat-scoped) but violates
     // the at-least-one-identifier invariant — the per-record verdict the
-    // engine's groupInvariantErrors supplies.
+    // model's groupInvariantErrors supplies.
     [
       {
         commodityLines: [

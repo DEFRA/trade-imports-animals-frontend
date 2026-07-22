@@ -41,12 +41,10 @@ The model is plain data plus pure functions. It has four parts:
   legality: enums, integer/string/date predicates and address blocks, keyed by
   obligation id. Enum options are delegated to the MDM services under
   `services/`; the domain carries no display copy.
-- **Derivation primitives** — [`model/engine/index.js`](../model/engine/index.js)
-  is a barrel of small pure functions over evaluator output: page and container
-  status, `journeyState`, `effectiveStatus`, group-invariant checks and the
-  navigation walkers (`firstApplicablePage`, `firstUnfulfilledPage`). One 5-way
-  classifier (`not-applicable / not-started / optional / in-progress /
-fulfilled`, plus `submitted`) serves every level.
+- **State queries** — [`model/obligations/state-queries.js`](../model/obligations/state-queries.js)
+  holds small pure functions over evaluator output: `effectiveStatus` (the
+  per-record mandate) and `groupInvariantErrors` (the five `requires` rule
+  shapes). The 5-way status classification lives in the bridge (`status.js`).
 - **Analysis** — [`model/analysis/reachability.js`](../model/analysis/reachability.js)
   proves every obligation's scope gate can fire. See [analysis.md](analysis.md).
 

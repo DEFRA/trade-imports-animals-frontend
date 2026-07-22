@@ -515,13 +515,9 @@ export const commodityLine = {
   // inferred from field-record composite-key prefixes.
   //
   // Collection floor: V4 requires at least one commodity line on
-  // every consignment. Without this floor a zero-line session
-  // collapses to NA in `commodity-lines-details` and
-  // `journeyState → fulfilled` — see engine/index.js
-  // `groupInvariantErrors`. Hub also has an imperative
-  // `linesManageStatus` override that pins the manage-subsection tag;
-  // the floor here is the engine-level fix that propagates through
-  // `journeyState` and container rollups uniformly.
+  // every consignment. Without this floor a zero-line session is
+  // vacuously satisfied — see state-queries.js
+  // `groupInvariantErrors`.
   requires: {
     minEntries: 1,
     errorCode: 'obligation.commodityLine.atLeastOne'
@@ -643,21 +639,19 @@ export const unitRecord = {
   // declaration-order coupling and makes the "requires-any-of" edge
   // legible as data to the reachability prover.
   //
-  // Engine primitive `groupInvariantErrors` walks in-scope
+  // `groupInvariantErrors` (state-queries.js) walks in-scope
   // instances and emits one error per instance that violates the
-  // invariant. `containerStatus` treats a violating instance as
-  // "not fulfilled" so the per-unit-records subsection stays IP
-  // until the user fixes it. See engine/index.js.
+  // invariant, so the per-unit-records subsection stays In progress
+  // until the user fixes it.
   //
   // V4 spec cross-check ("unit records ARE animals" reading of
   // Confluence page 6497338582): the count of unit-record instances
   // on a given commodity line must equal `numberOfAnimals` on that
   // line. Modelled as `requires.recordCountEquals` — a per-parent-
-  // instance count check that fires one error per mismatched line
-  // (see engine/index.js#groupInvariantErrors). Rollup-only: neither
-  // the number field nor the unit records are purged when the other
-  // changes — the user resolves the mismatch by adding / removing
-  // units or amending the number.
+  // instance count check that fires one error per mismatched line.
+  // Rollup-only: neither the number field nor the unit records are
+  // purged when the other changes — the user resolves the mismatch
+  // by adding / removing units or amending the number.
   requires: {
     anyOfIds: [
       '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
@@ -904,11 +898,8 @@ export const groups = obligations.filter((obligation) =>
 // -----------------------------------------------------------------------------
 // Container back-refs — populate `member.containers` for every scalar
 // obligation that participates in a `requires.allOrNothingOfIds`
-// invariant carrier. Consumed by `engine/index.js#collectGroupsPresentedIn`
-// so a flow page presenting any member surfaces its parent invariant
-// container the same way `presentsForEach.forEachOf` surfaces records
-// groups. The current manifest has zero `allOrNothingOfIds` carriers;
-// the loop is retained as a general primitive for any future
+// invariant carrier. The current manifest has zero `allOrNothingOfIds`
+// carriers; the loop is retained as a general primitive for any future
 // notification-level scalar invariant block. Idempotent — repeated
 // imports rebuild the same list.
 // -----------------------------------------------------------------------------

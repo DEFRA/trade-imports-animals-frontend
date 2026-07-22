@@ -22,14 +22,11 @@ describe('isBlankValue', () => {
     expect(isBlankValue(['a'])).toBe(false)
   })
 
-  it('treats empty object as blank (Fix #5 regression)', () => {
-    // isBlankLeaf used to gate the composite branch on
-    // `Object.keys(value).length > 0`, so `{}` fell through to
-    // `return false` and was mis-classified as filled.
+  it('treats empty object as blank', () => {
     expect(isBlankValue({})).toBe(true)
   })
 
-  it('treats a composite with every sub-field blank as blank (Fix #4/#6/#7 regression)', () => {
+  it('treats a composite with every sub-field blank as blank', () => {
     // Address block after the user cleared every input: this must
     // roll back to Not started, not stay Fulfilled.
     expect(

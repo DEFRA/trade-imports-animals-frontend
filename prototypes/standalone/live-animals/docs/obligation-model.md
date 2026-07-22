@@ -272,9 +272,9 @@ A group can pin invariants the evaluator enforces:
   "requires-any-of" edge legible as data, and avoids coupling to
   declaration order.
 
-The derivation engine (`model/engine/`) reads `requires` to emit one
-invariant error per violating instance and to hold a group's status at
-in-progress until the invariant is satisfied.
+`groupInvariantErrors` (`model/obligations/state-queries.js`) reads
+`requires` to emit one invariant error per violating instance; the bridge's
+status rollups hold a group at in-progress until the invariant is satisfied.
 
 ## The domain: value legality
 

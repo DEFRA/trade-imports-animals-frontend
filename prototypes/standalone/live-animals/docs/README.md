@@ -59,8 +59,9 @@ The code is three layers plus a bridge seam. The **model** (`model/`) is pure
 data and pure functions: obligations declare identity, cardinality and scope
 (`model/obligations/`); the domain registry declares value legality
 (`model/domain/`); the evaluator turns a flat map of answers into per-obligation
-in-scope decisions (`model/obligations/evaluator.js`); and the engine barrel
-(`model/engine/index.js`) derives status and navigation from that output. The model
+in-scope decisions (`model/obligations/evaluator.js`); and the state queries
+(`model/obligations/state-queries.js`) answer mandate and group-invariant
+questions over that output. The model
 carries no display copy — no `label`, `title`, `hint`, `legend` or `widget` — and
 that rule is enforced at boot by `model/no-display-keys.js`.
 

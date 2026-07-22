@@ -27,9 +27,9 @@
  *
  * The empty-collection floor is manifest-sourced (`requiredAtLeastOne`:
  * `requires.minEntries` or `requires.anyOfIds`) and stays a presentation
- * rule — the engine emits nothing for a group with zero records, but an
+ * rule — the model emits nothing for a group with zero records, but an
  * empty required collection must still block FULFILLED. The per-record
- * any-of verdict is sourced from the engine's `groupInvariantErrors`
+ * any-of verdict is sourced from the model's `groupInvariantErrors`
  * (filtered by instanceId), the same interpreter collection-complete
  * uses.
  */
@@ -37,8 +37,11 @@
 import { obligations, groups } from '../model/obligations/obligations.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import { answersToFulfilments } from './fulfilments.js'
-import { effectiveStatus, groupInvariantErrors } from '../model/engine/index.js'
-import { isBlankValue } from '../model/engine/is-blank-value.js'
+import {
+  effectiveStatus,
+  groupInvariantErrors
+} from '../model/obligations/state-queries.js'
+import { isBlankValue } from '../model/obligations/is-blank-value.js'
 import { domain } from '../model/domain/index.js'
 import { isAnswered } from '../lib/answered.js'
 import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
@@ -262,7 +265,7 @@ const memberSatisfied = (member, recId, state) => {
   return leafFulfilledForRecord(member.id, recId, state)
 }
 
-// The engine's per-record group-invariant verdict (the anyOfIds rule),
+// The model's per-record group-invariant verdict (the anyOfIds rule),
 // then every filtered member. MIN_ENTRIES errors carry no instanceId, so
 // only per-record violations bite here.
 const entrySatisfied = (aColl, recId, memberFilter, invariantErrors, state) => {

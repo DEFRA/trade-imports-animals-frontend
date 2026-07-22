@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
-import { groupInvariantErrors } from '../engine/index.js'
+import { groupInvariantErrors } from './state-queries.js'
 import {
   poApprovedReferenceNumber,
   responsiblePersonForLoad,
