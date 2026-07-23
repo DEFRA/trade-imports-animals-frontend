@@ -1,5 +1,9 @@
 import { randomInt } from 'node:crypto'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import {
+  decodePersistedFulfilment,
+  encodeEvaluatorFulfilments
+} from './fulfilment-codec.js'
 
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 const REFERENCE_BODY_LENGTH = 6
@@ -16,11 +20,18 @@ const mintReferenceNumber = () => {
 const journeys = new Map()
 const byUser = new Map()
 
+const marshal = (document) => ({
+  journeyId: document.id,
+  userId: document.userId,
+  status: document.status,
+  createdAt: document.createdAt,
+  submittedAt: document.submittedAt,
+  fulfilment: decodePersistedFulfilment(document.fulfilment)
+})
+
 const assertWritable = (journey) => {
   if (journey.status === SUBMITTED) {
-    throw new Error(
-      `Journey "${journey.journeyId}" is submitted — writes blocked`
-    )
+    throw new Error(`Journey "${journey.id}" is submitted — writes blocked`)
   }
 }
 
@@ -33,17 +44,17 @@ const loadWritable = (journeyId) => {
 
 export const records = {
   async create({ userId } = {}) {
-    const journey = {
-      journeyId: mintReferenceNumber(),
+    const document = {
+      id: mintReferenceNumber(),
       userId: userId ?? null,
       status: IN_PROGRESS,
       createdAt: new Date().toISOString(),
       submittedAt: null,
-      answers: {}
+      fulfilment: []
     }
-    journeys.set(journey.journeyId, journey)
-    if (journey.userId != null) byUser.set(journey.userId, journey.journeyId)
-    return structuredClone(journey)
+    journeys.set(document.id, document)
+    if (document.userId != null) byUser.set(document.userId, document.id)
+    return structuredClone(marshal(document))
   },
 
   async load({ journeyId, userId } = {}) {
@@ -51,31 +62,33 @@ export const records = {
       journeyId ?? (userId != null ? byUser.get(userId) : undefined)
     if (resolvedJourneyId == null) return undefined
     const journey = journeys.get(resolvedJourneyId)
-    return journey ? structuredClone(journey) : undefined
+    return journey ? structuredClone(marshal(journey)) : undefined
   },
 
   async list({ journeyIds = [] } = {}) {
     return journeyIds
       .map((journeyId) => journeys.get(journeyId))
       .filter(Boolean)
-      .map((journey) => structuredClone(journey))
+      .map((journey) => structuredClone(marshal(journey)))
   },
 
   async has(journeyId) {
     return journeys.has(journeyId)
   },
 
-  async saveAnswers(journeyId, answers) {
+  async replaceFulfilment(journeyId, fulfilment) {
     const journey = loadWritable(journeyId)
-    journey.answers = structuredClone(answers ?? {})
-    return structuredClone(journey)
+    journey.fulfilment = structuredClone(
+      encodeEvaluatorFulfilments(fulfilment ?? {})
+    )
+    return structuredClone(marshal(journey))
   },
 
   async finalise(journeyId) {
     const journey = loadWritable(journeyId)
     journey.status = SUBMITTED
     journey.submittedAt = new Date().toISOString()
-    return structuredClone(journey)
+    return structuredClone(marshal(journey))
   },
 
   async amend(journeyId) {
@@ -86,7 +99,7 @@ export const records = {
     }
     journey.status = IN_PROGRESS
     journey.submittedAt = null
-    return structuredClone(journey)
+    return structuredClone(marshal(journey))
   },
 
   async clear() {

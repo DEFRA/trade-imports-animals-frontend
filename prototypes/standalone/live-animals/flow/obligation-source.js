@@ -52,6 +52,15 @@ export const MAX_ENTRIES_FROM = {
 // pre-journey import-type filter and the submit-time declaration step.
 export const FLOW_ONLY_OBLIGATIONS = ['importType', 'declaration']
 
+export const flowOnlyAnswersFrom = (answers) =>
+  Object.fromEntries(
+    FLOW_ONLY_OBLIGATIONS.filter(
+      (key) =>
+        Object.prototype.hasOwnProperty.call(answers ?? {}, key) &&
+        answers[key] !== undefined
+    ).map((key) => [key, answers[key]])
+  )
+
 // Keys the system itself writes into answers outside the manifest: the
 // backend-assigned notification reference restored on real-mode resume
 // (services/persistence/records/notification-mapper.js).

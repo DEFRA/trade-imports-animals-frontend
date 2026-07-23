@@ -69,6 +69,25 @@ const buildServer = async () => {
       handler: async (request) => ({
         record: (await session.openingRun(request)) ?? null
       })
+    },
+    {
+      method: 'POST',
+      path: '/flow/{journeyId}',
+      handler: async (request, h) => {
+        await session.setFlowOnlyAnswers(
+          h,
+          request.params.journeyId,
+          request.payload
+        )
+        return { ok: true }
+      }
+    },
+    {
+      method: 'GET',
+      path: '/flow/{journeyId}',
+      handler: async (request) => ({
+        values: await session.flowOnlyAnswers(request, request.params.journeyId)
+      })
     }
   ])
   return server
@@ -205,6 +224,44 @@ describe('#session.openingRun (real, yar)', () => {
     const server = await buildServer()
     const get = await server.inject({ method: 'GET', url: '/run' })
     expect(get.result.record).toBe(null)
+  })
+})
+
+describe('#session.flowOnlyAnswers (real, yar)', () => {
+  it('Should retain journey-keyed values without leaking across journeys', async () => {
+    const server = await buildServer()
+    const first = await server.inject({
+      method: 'POST',
+      url: '/flow/J-1',
+      payload: { importType: 'live-animals' }
+    })
+    const second = await server.inject({
+      method: 'POST',
+      url: '/flow/J-2',
+      payload: { declaration: 'confirmed' },
+      headers: { cookie: cookieOf(first) }
+    })
+    const cookie = cookieOf(second) ?? cookieOf(first)
+
+    const journey1 = await server.inject({
+      method: 'GET',
+      url: '/flow/J-1',
+      headers: { cookie }
+    })
+    const journey2 = await server.inject({
+      method: 'GET',
+      url: '/flow/J-2',
+      headers: { cookie }
+    })
+    const unknown = await server.inject({
+      method: 'GET',
+      url: '/flow/J-3',
+      headers: { cookie }
+    })
+
+    expect(journey1.result.values).toEqual({ importType: 'live-animals' })
+    expect(journey2.result.values).toEqual({ declaration: 'confirmed' })
+    expect(unknown.result.values).toEqual({})
   })
 })
 

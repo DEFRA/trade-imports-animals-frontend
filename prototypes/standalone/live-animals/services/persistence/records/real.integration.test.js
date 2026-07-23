@@ -2,6 +2,10 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { records } from './real.js'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 import { runsIt } from '../it-mode.js'
+import {
+  answersToFulfilments,
+  projectAnswers
+} from '../../../bridge/fulfilments.js'
 
 // Gated backend integration test for the REAL records adapter (S3c).
 //
@@ -33,6 +37,9 @@ const backendBaseUrl =
 const runPrefix = `it-${Date.now()}`
 let seq = 0
 const uniqueUserId = () => `${runPrefix}-${seq++}`
+const replaceAnswers = (journeyId, answers) =>
+  records.replaceFulfilment(journeyId, answersToFulfilments(answers))
+const answersOf = (journey) => projectAnswers(journey.fulfilment)
 
 const REF_PATTERN = /^GBN-AG-\d{2}-[A-Z0-9]{6}$/
 
@@ -65,8 +72,8 @@ describe.skipIf(!runsIt('real'))(
       expect(loaded.status).toBe(IN_PROGRESS)
       // A freshly-minted notification carries no obligation answers; the mapper
       // only round-trips its server-minted referenceNumber back into answers.
-      expect(loaded.answers.countryOfOrigin).toBeUndefined()
-      expect(loaded.answers.commodityLines).toBeUndefined()
+      expect(answersOf(loaded).countryOfOrigin).toBeUndefined()
+      expect(answersOf(loaded).commodityLines).toBeUndefined()
     })
 
     it('Should persist the Mapper A storable set write-through and re-read it', async () => {
@@ -116,25 +123,25 @@ describe.skipIf(!runsIt('real'))(
         ]
       }
 
-      await records.saveAnswers(journeyId, answers)
+      await replaceAnswers(journeyId, answers)
       const loaded = await records.load({ journeyId })
 
       // Storable set survives the real backend.
-      expect(loaded.answers.countryOfOrigin).toBe('FR')
-      expect(loaded.answers.placeOfOrigin).toEqual(answers.placeOfOrigin)
-      expect(loaded.answers.arrivalDateAtPort).toEqual({
+      expect(answersOf(loaded).countryOfOrigin).toBe('FR')
+      expect(answersOf(loaded).placeOfOrigin).toEqual(answers.placeOfOrigin)
+      expect(answersOf(loaded).arrivalDateAtPort).toEqual({
         day: 14,
         month: 3,
         year: 2026
       })
       // The collapsed Transporter (name/address/approvalNumber/type) round-trips.
-      expect(loaded.answers.transporterType).toBe('Commercial')
-      expect(loaded.answers.commercialTransporter).toEqual(
+      expect(answersOf(loaded).transporterType).toBe('Commercial')
+      expect(answersOf(loaded).commercialTransporter).toEqual(
         answers.commercialTransporter
       )
       // commodityCode drops, so commoditySelection is recovered from the
       // commodity name; species earTag/passport survive on the species entry.
-      expect(loaded.answers.commodityLines).toEqual([
+      expect(answersOf(loaded).commodityLines).toEqual([
         {
           commoditySelection: 'live-bovine',
           typeSelection: 'breeding',
@@ -151,45 +158,45 @@ describe.skipIf(!runsIt('real'))(
       ])
 
       // Stage-2 extras have no backend home yet and drop (documenting the gap).
-      expect(loaded.answers.regionOfOriginCode).toBeUndefined()
-      expect(loaded.answers.purposeInInternalMarket).toBeUndefined()
+      expect(answersOf(loaded).regionOfOriginCode).toBeUndefined()
+      expect(answersOf(loaded).purposeInInternalMarket).toBeUndefined()
       expect(
-        loaded.answers.commodityLines[0].animalIdentifiers[0]
+        answersOf(loaded).commodityLines[0].animalIdentifiers[0]
           .animalIdentifierTattoo
       ).toBeUndefined()
     })
 
-    it('Should full-replace on a second saveAnswers so dropped keys are gone', async () => {
+    it('Should full-replace on a second canonical save so dropped keys are gone', async () => {
       const { journeyId } = await records.create({ userId: uniqueUserId() })
 
-      await records.saveAnswers(journeyId, {
+      await replaceAnswers(journeyId, {
         countryOfOrigin: 'FR',
         internalReferenceNumber: 'Imports456GB'
       })
-      expect((await records.load({ journeyId })).answers).toMatchObject({
+      expect(answersOf(await records.load({ journeyId }))).toMatchObject({
         countryOfOrigin: 'FR',
         internalReferenceNumber: 'Imports456GB'
       })
 
-      await records.saveAnswers(journeyId, { countryOfOrigin: 'DE' })
+      await replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
       const reloaded = await records.load({ journeyId })
 
-      expect(reloaded.answers.countryOfOrigin).toBe('DE')
+      expect(answersOf(reloaded).countryOfOrigin).toBe('DE')
       // Present in the first write, absent in the second — the whole-map re-POST
       // + backend full-replace must have cleared it.
-      expect(reloaded.answers.internalReferenceNumber).toBeUndefined()
+      expect(answersOf(reloaded).internalReferenceNumber).toBeUndefined()
     })
 
-    it('Should freeze after finalise so a later saveAnswers throws', async () => {
+    it('Should freeze after finalise so a later canonical save throws', async () => {
       const { journeyId } = await records.create({ userId: uniqueUserId() })
-      await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+      await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
 
       const finalised = await records.finalise(journeyId)
       expect(finalised.status).toBe(SUBMITTED)
       expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
 
       await expect(
-        records.saveAnswers(journeyId, { countryOfOrigin: 'DE' })
+        replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
       ).rejects.toThrow(/is submitted — writes blocked/)
     })
 
@@ -256,27 +263,29 @@ describe.skipIf(!runsIt('real'))(
           ]
         }
 
-        await records.saveAnswers(journeyId, answers)
+        await replaceAnswers(journeyId, answers)
         const loaded = await records.load({ journeyId })
 
         // The extras have backend homes on the extended backend and survive.
-        expect(loaded.answers.regionOfOriginCode).toBe('FR-75')
-        expect(loaded.answers.purposeInInternalMarket).toBe('breeding')
-        expect(loaded.answers.meansOfTransport).toBe('ROAD_VEHICLE')
-        expect(loaded.answers.transportIdentification).toBe('FR-892-LK')
-        expect(loaded.answers.transportDocumentReference).toBe(
+        expect(answersOf(loaded).regionOfOriginCode).toBe('FR-75')
+        expect(answersOf(loaded).purposeInInternalMarket).toBe('breeding')
+        expect(answersOf(loaded).meansOfTransport).toBe('ROAD_VEHICLE')
+        expect(answersOf(loaded).transportIdentification).toBe('FR-892-LK')
+        expect(answersOf(loaded).transportDocumentReference).toBe(
           'CMR-2026-884721'
         )
-        expect(loaded.answers.transitedCountries).toEqual(['FR', 'BE'])
-        expect(loaded.answers.documents).toEqual(answers.documents)
+        expect(answersOf(loaded).transitedCountries).toEqual(['FR', 'BE'])
+        expect(answersOf(loaded).documents).toEqual(answers.documents)
         // The full identifier unit round-trips, including the fields Mapper A
         // drops (tattoo, horseName, identificationDetails, description).
-        expect(loaded.answers.commodityLines[0].animalIdentifiers).toEqual(
+        expect(answersOf(loaded).commodityLines[0].animalIdentifiers).toEqual(
           answers.commodityLines[0].animalIdentifiers
         )
         // commodityCode ('0102') now persists, so commoditySelection is
         // recovered from the code, not just the commodity name.
-        expect(loaded.answers.commodityLines[0].commoditySelection).toBe('Cow')
+        expect(answersOf(loaded).commodityLines[0].commoditySelection).toBe(
+          'Cow'
+        )
       } finally {
         if (previousMapper === undefined) {
           delete process.env.LIVE_ANIMALS_MAPPER

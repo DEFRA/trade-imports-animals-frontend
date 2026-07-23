@@ -6,6 +6,10 @@ import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from './test-support.js'
 import { JOURNEY_COOKIE, configureSession } from './persistence/session.js'
+import {
+  countryOfOrigin,
+  transporterType
+} from '../model/obligations/obligations.js'
 
 describe('#get — per-request read view', () => {
   beforeAll(() => {
@@ -21,11 +25,16 @@ describe('#get — per-request read view', () => {
       transporterType: 'Commercial'
     }
     const journey = await store.create()
-    await store.saveAnswers(journey.journeyId, seed)
+    await store.seedAnswers(journey.journeyId, seed)
 
     const view = await get(journeyRequest(journey.journeyId), recordingH())
 
     expect(view.journey.journeyId).toBe(journey.journeyId)
+    expect(view.fulfilment).toEqual({
+      [countryOfOrigin.id]: 'FR',
+      [transporterType.id]: 'Commercial'
+    })
+    expect(view.evaluation.fulfilments).toEqual(view.fulfilment)
     expect(view.answers).toEqual(seed)
     expect(view.scope.has('countryOfOrigin')).toBe(true)
     expect(view.scope.has('purposeInInternalMarket')).toBe(false)

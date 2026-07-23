@@ -21,7 +21,7 @@ const drive = async (
   { payload = {}, query = {}, seed = {}, params = {} } = {}
 ) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed)
+  await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(
     journeyRequest(journey.journeyId, { payload, query, params }),
@@ -90,7 +90,7 @@ describe('change context — collection round-trip', () => {
 
     it('Should carry the context on the details page Add-another affordance', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, lineSeed)
+      await store.seedAnswers(journey.journeyId, lineSeed)
       const h = stubH()
       const getHandler = consignmentDetails.routes.find(
         (route) => route.method === 'GET'

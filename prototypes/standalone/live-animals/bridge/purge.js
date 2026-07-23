@@ -28,6 +28,12 @@ import { isAnswered } from '../lib/answered.js'
 
 const evaluator = createObligationEvaluator()
 
+/**
+ * Evaluate a canonical fulfilment map and return the converged post-purge
+ * evaluator state. This is the durable write-path authority.
+ */
+export const purgeFulfilments = (fulfilments) => evaluator.evaluate(fulfilments)
+
 const wipedScalarKey = (obligation, inVal, fulfilmentsOut) =>
   isAnswered(inVal) && fulfilmentsOut[obligation.id] === undefined
     ? [pathKey([obligation.name])]

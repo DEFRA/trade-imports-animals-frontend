@@ -22,7 +22,7 @@ const drivePost = async (
   { payload = {}, query = {}, seed = {}, params = {} } = {}
 ) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed)
+  await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(
     journeyRequest(journey.journeyId, { payload, query, params }),
@@ -132,7 +132,7 @@ describe('save actions — hub exit semantics', () => {
       }
     )
     expect(response).toEqual({ redirect: hubPath() })
-    expect(after.commodityLines[0].numberOfAnimalsQuantity).toBe('2')
+    expect(after.commodityLines[0].numberOfAnimalsQuantity).toBe(2)
   })
 
   it('Should commit a depth-2 identifier unit and redirect to the hub on the exit submit', async () => {

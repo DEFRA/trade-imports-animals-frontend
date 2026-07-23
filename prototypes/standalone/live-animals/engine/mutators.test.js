@@ -79,7 +79,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
 
   describe('#updateEntryAt — edits in place, siblings intact', () => {
     it('Should edit a line in place', async () => {
-      await store.saveAnswers(journeyId, {
+      await store.seedAnswers(journeyId, {
         commodityLines: [line('Cow'), line('010420 - Goats')]
       })
       await updateEntryAt(
@@ -97,7 +97,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
 
   describe('#removeEntryAt — splices positionally, siblings intact', () => {
     it('Should remove a line by index', async () => {
-      await store.saveAnswers(journeyId, {
+      await store.seedAnswers(journeyId, {
         commodityLines: [line('Cow'), line('010420 - Goats')]
       })
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
@@ -120,7 +120,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     })
 
     it('Should reject an append at the sibling-count cap', async () => {
-      await store.saveAnswers(journeyId, { commodityLines: [cappedLine()] })
+      await store.seedAnswers(journeyId, { commodityLines: [cappedLine()] })
       const rejected = await appendEntryAt(
         buildRequest(),
         stubH(),
@@ -134,10 +134,10 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     })
   })
 
-  describe('#appendEntryAt — an empty appended entry survives in storage', () => {
-    it('Should hold an empty unit the evaluator cannot express — positional identity, not evaluator-addressability, owns storage', async () => {
+  describe('#appendEntryAt — an empty appended entry is not persisted', () => {
+    it('Should accept the ruled loss of a leaf-less unit the canonical evaluator cannot express', async () => {
       // No numberOfAnimalsQuantity → uncapped (blank-count semantics).
-      await store.saveAnswers(journeyId, {
+      await store.seedAnswers(journeyId, {
         commodityLines: [{ commoditySelection: 'Cat', animalIdentifiers: [] }]
       })
       const index = await appendEntryAt(
@@ -148,11 +148,9 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       )
       expect(index).toBe(0)
       // The evaluator infers instances from leaf composite prefixes, so this
-      // leaf-less unit produces NO evaluator fulfilment — the evaluator cannot
-      // address it. The positional array still holds it verbatim.
-      expect((await answersNow()).commodityLines[0].animalIdentifiers).toEqual([
-        {}
-      ])
+      expect(
+        (await answersNow()).commodityLines[0].animalIdentifiers
+      ).toBeUndefined()
     })
   })
 
@@ -160,7 +158,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     it('Should let the evaluator purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
       // triggering commodity (Cow) existing in ANY line, and carries wipeOnExit.
-      await store.saveAnswers(journeyId, {
+      await store.seedAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
           { commoditySelection: 'Cow', speciesSelection: '1148346' },
@@ -198,7 +196,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       )
 
     it('Should sync the collection to the desired species set, preserving kept lines', async () => {
-      await store.saveAnswers(journeyId, {
+      await store.seedAnswers(journeyId, {
         commodityLines: [
           {
             commoditySelection: 'Cow',
@@ -225,7 +223,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     })
 
     it('Should run the evaluator as the wipe authority: deselecting the last triggering commodity destroys the dependent', async () => {
-      await store.saveAnswers(journeyId, {
+      await store.seedAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
           { commoditySelection: 'Cow', speciesSelection: '1148346' },

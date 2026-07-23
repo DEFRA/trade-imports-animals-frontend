@@ -23,7 +23,7 @@ const seed = () => ({ commodityLines: [{ commoditySelection: 'Cow' }] })
 
 const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed())
+  await store.seedAnswers(journey.journeyId, seed())
   const h = stubH()
   const response = await handler(
     journeyRequest(journey.journeyId, { payload, query }),

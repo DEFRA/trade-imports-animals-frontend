@@ -42,7 +42,7 @@ const cowLine = (extra = {}) => ({
 
 const viewCards = async (seed) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed)
+  await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   await getHandler(journeyRequest(journey.journeyId), h)
   return h.captured.view.context.cards
@@ -266,7 +266,7 @@ describe('#animalIdentificationController — the single card-per-species surfac
       expect(result.response).toEqual({
         redirect: pagePath('commodities/identification')
       })
-      expect(result.after.commodityLines[0].animalIdentifiers).toEqual([])
+      expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
     })
 
     it('Should refuse a remove for an out-of-range line index and delete nothing', async () => {

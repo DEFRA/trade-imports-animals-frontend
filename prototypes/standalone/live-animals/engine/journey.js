@@ -3,7 +3,8 @@ import {
   session,
   JOURNEY_COOKIE,
   KNOWN_JOURNEYS_COOKIE,
-  OPENING_RUN_COOKIE
+  OPENING_RUN_COOKIE,
+  FLOW_ONLY_ANSWERS_COOKIE
 } from './persistence/session.js'
 import { records, SUBMITTED } from './persistence/records.js'
 
@@ -27,6 +28,10 @@ export const registerJourneyCookie = (server) => {
     encoding: 'base64json'
   })
   server.state(OPENING_RUN_COOKIE, {
+    ...cookieOptions,
+    encoding: 'base64json'
+  })
+  server.state(FLOW_ONLY_ANSWERS_COOKIE, {
     ...cookieOptions,
     encoding: 'base64json'
   })
@@ -70,15 +75,21 @@ export const currentJourney = async (request, h) => {
   return startJourney(request, h)
 }
 
-export const saveJourneyAnswers = async (request, journeyId, answers) => {
+export const replaceJourneyFulfilment = async (
+  request,
+  journeyId,
+  fulfilment
+) => {
   const cached = memoRead(request)
   const known = cached?.journeyId === journeyId ? cached : undefined
-  const saved = await records.saveAnswers(journeyId, answers, { known })
+  const saved = await records.replaceFulfilment(journeyId, fulfilment, {
+    known
+  })
   memoWrite(
     request,
-    known ? { ...known, answers: structuredClone(answers) } : saved
+    known ? { ...known, fulfilment: structuredClone(fulfilment) } : saved
   )
-  return saved
+  return known ? { ...known, fulfilment: structuredClone(fulfilment) } : saved
 }
 
 export const listKnownJourneys = async (request) =>

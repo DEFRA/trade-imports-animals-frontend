@@ -6,6 +6,8 @@ import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { wipeSet } from '../bridge/purge.js'
+import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
+import { projectAnswers } from '../bridge/fulfilments.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // commit's wipe authority is the evaluator purge (projected to positional
@@ -29,8 +31,13 @@ const TURN_PURPOSE_GATE_OFF = { reasonForImport: 'research' }
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
-const seed = (answers) => records.saveAnswers(journeyId, answers)
-const durable = async () => (await records.load({ journeyId })).answers
+const seed = (answers) =>
+  records.replaceFulfilment(
+    journeyId,
+    migrateNameKeyedAnswersToFulfilments(answers)
+  )
+const durable = async () =>
+  projectAnswers((await records.load({ journeyId })).fulfilment)
 
 describe('#commit — evaluator-authoritative purge', () => {
   beforeEach(async () => {

@@ -7,12 +7,18 @@ const evaluator = createObligationEvaluator()
 /**
  * Assemble the request-local views derived from a decoded fulfilment map.
  *
- * This is deliberately separate from read.js until canonical fulfilment
- * persistence replaces the live name-keyed records port.
+ * The optional evaluation lets canonical write/purge reuse the evaluator
+ * result it is about to persist.
  */
-export const assembleRequestView = (fulfilments) => {
-  const evaluation = evaluator.evaluate(fulfilments)
-  const answers = projectAnswers(evaluation.fulfilments)
+export const assembleRequestView = (
+  fulfilments,
+  evaluation = evaluator.evaluate(fulfilments),
+  answerOverlay = {}
+) => {
+  const answers = {
+    ...projectAnswers(evaluation.fulfilments),
+    ...answerOverlay
+  }
   const scope = makeScopeFromEvaluation(evaluation, answers)
   return { evaluation, answers, scope }
 }

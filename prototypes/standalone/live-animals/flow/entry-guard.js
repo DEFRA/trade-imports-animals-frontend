@@ -1,6 +1,6 @@
 import { BASE, pagePath, startPath } from '../config.js'
 import { isAnswered } from '../lib/answered.js'
-import { currentJourney } from '../engine/journey.js'
+import { get } from '../engine/read.js'
 import { obligationByName, SYSTEM_POPULATED } from './obligation-source.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
@@ -44,8 +44,8 @@ export const hasCommittedNotificationAnswers = (answers) =>
  * to the entry filter (see docs/flow-and-gates.md, "The opening run"). */
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) return null
-  const journey = await currentJourney(request, h)
+  const { journey, answers } = await get(request, h)
   if (await hasEnteredThroughFilter(request, journey.journeyId)) return null
-  if (hasCommittedNotificationAnswers(journey.answers)) return null
+  if (hasCommittedNotificationAnswers(answers)) return null
   return pagePath(importTypeFilterPage.slug)
 }

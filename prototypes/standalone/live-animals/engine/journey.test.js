@@ -6,6 +6,7 @@ import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { recordingH } from './test-support.js'
+import { countryOfOrigin } from '../model/obligations/obligations.js'
 
 const buildRequest = (cookies) => ({ state: { ...cookies }, headers: {} })
 
@@ -26,13 +27,13 @@ describe('#currentJourney', () => {
 
   it('Should resume the same journey within a session (cookie points at a live journey)', async () => {
     const first = await currentJourney(buildRequest({}), recordingH())
-    await store.saveAnswers(first.journeyId, { countryOfOrigin: 'FR' })
+    await store.seedAnswers(first.journeyId, { countryOfOrigin: 'FR' })
     const again = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: first.journeyId }),
       recordingH()
     )
     expect(again.journeyId).toBe(first.journeyId)
-    expect(again.answers).toEqual({ countryOfOrigin: 'FR' })
+    expect(again.fulfilment).toEqual({ [countryOfOrigin.id]: 'FR' })
   })
 
   it('Should re-mint when the cookie points at a stale/unknown journey', async () => {
@@ -50,8 +51,8 @@ describe('#currentJourney', () => {
     const journeyA = await currentJourney(buildRequest({}), recordingH())
     const journeyB = await currentJourney(buildRequest({}), recordingH())
     expect(journeyA.journeyId).not.toBe(journeyB.journeyId)
-    await store.saveAnswers(journeyA.journeyId, { who: 'A' })
-    await store.saveAnswers(journeyB.journeyId, { who: 'B' })
+    await store.seedAnswers(journeyA.journeyId, { countryOfOrigin: 'FR' })
+    await store.seedAnswers(journeyB.journeyId, { countryOfOrigin: 'DE' })
     const journeyAResumed = await currentJourney(
       buildRequest({ [JOURNEY_COOKIE]: journeyA.journeyId }),
       recordingH()
@@ -60,7 +61,11 @@ describe('#currentJourney', () => {
       buildRequest({ [JOURNEY_COOKIE]: journeyB.journeyId }),
       recordingH()
     )
-    expect(journeyAResumed.answers).toEqual({ who: 'A' })
-    expect(journeyBResumed.answers).toEqual({ who: 'B' })
+    expect(journeyAResumed.fulfilment).toEqual({
+      [countryOfOrigin.id]: 'FR'
+    })
+    expect(journeyBResumed.fulfilment).toEqual({
+      [countryOfOrigin.id]: 'DE'
+    })
   })
 })

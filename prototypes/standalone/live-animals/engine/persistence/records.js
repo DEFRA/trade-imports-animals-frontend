@@ -10,7 +10,7 @@ let impl = {
   load: unconfigured,
   list: unconfigured,
   has: unconfigured,
-  saveAnswers: unconfigured,
+  replaceFulfilment: unconfigured,
   finalise: unconfigured,
   amend: unconfigured,
   clear: unconfigured
@@ -25,7 +25,7 @@ export const records = {
   load: (...args) => impl.load(...args),
   list: (...args) => impl.list(...args),
   has: (...args) => impl.has(...args),
-  saveAnswers: (...args) => impl.saveAnswers(...args),
+  replaceFulfilment: (...args) => impl.replaceFulfilment(...args),
   finalise: (...args) => impl.finalise(...args),
   amend: (...args) => impl.amend(...args),
   clear: (...args) => impl.clear(...args)

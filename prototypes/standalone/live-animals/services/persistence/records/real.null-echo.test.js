@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { IN_PROGRESS } from '../../../engine/persistence/records.js'
+import {
+  answersToFulfilments,
+  projectAnswers
+} from '../../../bridge/fulfilments.js'
+import { toNotification } from './mapper.js'
 import { records } from './real.js'
 
 // S3 hardening — backend null echo. The backend echoes typed-but-unset nested
@@ -32,20 +37,50 @@ describe('real records adapter — backend null-padded echo', () => {
     fetchMocker.mockResponse(JSON.stringify(nullPaddedEcho))
   })
 
-  it('Should strip echoed nulls before mapping so saveAnswers does not throw', async () => {
-    const record = await records.saveAnswers(
+  it('Should strip echoed nulls before mapping so canonical replacement does not throw', async () => {
+    const answers = {
+      portOfEntry: 'GB ABD',
+      arrivalDateAtPort: { day: 12, month: 12, year: 2026 }
+    }
+    const record = await records.replaceFulfilment(
       'GBN-1',
-      {
-        portOfEntry: 'GB ABD',
-        arrivalDateAtPort: { day: 12, month: 12, year: 2026 }
-      },
+      answersToFulfilments(answers),
       { known: { journeyId: 'GBN-1', status: IN_PROGRESS } }
     )
 
-    expect(record.answers).toEqual({
-      referenceNumber: 'GBN-1',
+    expect(projectAnswers(record.fulfilment)).toEqual({
       portOfEntry: 'GB ABD',
       arrivalDateAtPort: { day: 12, month: 12, year: 2026 }
     })
+    expect(await fetchMocker.requests()[0].clone().json()).toEqual(
+      toNotification({
+        ...answers,
+        referenceNumber: 'GBN-1'
+      })
+    )
+  })
+
+  it('Should preserve legacy string animal counts in the posted notification', async () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfAnimalsQuantity: '5',
+          numberOfPackages: '2'
+        }
+      ]
+    }
+
+    await records.replaceFulfilment('GBN-1', answersToFulfilments(answers), {
+      known: { journeyId: 'GBN-1', status: IN_PROGRESS }
+    })
+
+    expect(await fetchMocker.requests()[0].clone().json()).toEqual(
+      toNotification({
+        ...answers,
+        referenceNumber: 'GBN-1'
+      })
+    )
   })
 })

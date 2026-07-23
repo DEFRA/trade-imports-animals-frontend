@@ -64,7 +64,7 @@ const buildRequest = (journeyId, { record, ...overrides } = {}) => ({
 
 const drive = async (handler, { seed = {}, ...overrides } = {}) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed)
+  await store.seedAnswers(journey.journeyId, seed)
   const h = captureH()
   await handler(buildRequest(journey.journeyId, overrides), h)
   return { journeyId: journey.journeyId, h }
@@ -123,7 +123,7 @@ describe('the opening run', () => {
 
     it('Should keep a run underway when the filter is re-submitted mid-run', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, {
+      await store.seedAnswers(journey.journeyId, {
         importType: 'live-animals'
       })
       const h = captureH()
@@ -176,7 +176,7 @@ describe('the opening run', () => {
 
     it('Should send the consignment details page to import reason mid-run, and to the hub outside the run', async () => {
       const inRun = await store.create()
-      await store.saveAnswers(inRun.journeyId, lineSeed)
+      await store.seedAnswers(inRun.journeyId, lineSeed)
       const h = captureH()
       await postHandlerOf(consignmentDetails)(
         buildRequest(inRun.journeyId, {
@@ -198,7 +198,7 @@ describe('the opening run', () => {
 
     it('Should pass a zero-record identification Save-and-finish through to additional details mid-run', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, lineSeed)
+      await store.seedAnswers(journey.journeyId, lineSeed)
       const h = captureH()
       await postHandlerOf(animalIdentification)(
         buildRequest(journey.journeyId, {
@@ -212,7 +212,7 @@ describe('the opening run', () => {
 
     it('Should send import purpose to the first line identification mid-run', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, {
+      await store.seedAnswers(journey.journeyId, {
         ...lineSeed,
         reasonForImport: 'internalMarket'
       })
@@ -229,7 +229,7 @@ describe('the opening run', () => {
 
     it('Should land additional details on the hub — the run is exhausted', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, lineSeed)
+      await store.seedAnswers(journey.journeyId, lineSeed)
       const h = captureH()
       await postHandlerOf(additionalDetails)(
         buildRequest(journey.journeyId, {
@@ -387,7 +387,7 @@ describe('the opening run', () => {
 
     it('Should let a journey with a committed answer straight through', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, { countryOfOrigin: 'FR' })
+      await store.seedAnswers(journey.journeyId, { countryOfOrigin: 'FR' })
       const target = await entryGuardTarget(
         buildRequest(journey.journeyId, { path: pagePath('origin') }),
         captureH()
@@ -397,7 +397,7 @@ describe('the opening run', () => {
 
     it('Should treat an importType-only journey that never entered through the filter as fresh', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, { importType: 'poao' })
+      await store.seedAnswers(journey.journeyId, { importType: 'poao' })
       const target = await entryGuardTarget(
         buildRequest(journey.journeyId, { path: pagePath('origin') }),
         captureH()
@@ -494,7 +494,7 @@ describe('the opening run', () => {
       'Should send a fresh real-mode draft deep-linking to origin back to the filter (%s)',
       async (_mapper, seed) => {
         const journey = await store.create()
-        await store.saveAnswers(journey.journeyId, seed)
+        await store.seedAnswers(journey.journeyId, seed)
         const target = await entryGuardTarget(
           buildRequest(journey.journeyId, { path: pagePath('origin') }),
           captureH()
@@ -505,7 +505,7 @@ describe('the opening run', () => {
 
     it('Should still treat a real-mode journey with a user answer as started — the echoed reference rides alongside it', async () => {
       const journey = await store.create()
-      await store.saveAnswers(journey.journeyId, startedRealDraft)
+      await store.seedAnswers(journey.journeyId, startedRealDraft)
       const target = await entryGuardTarget(
         buildRequest(journey.journeyId, { path: pagePath('origin') }),
         captureH()

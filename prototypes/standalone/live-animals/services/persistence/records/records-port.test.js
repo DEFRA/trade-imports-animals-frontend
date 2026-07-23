@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { records } from './stub.js'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import { countryOfOrigin } from '../../../model/obligations/obligations.js'
+
+const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
 
 describe('records durable port', () => {
   beforeEach(() => records.clear())
@@ -38,21 +41,42 @@ describe('records durable port', () => {
     expect(await records.load({ userId: 'nobody' })).toBeUndefined()
   })
 
-  it('Should make saveAnswers durable immediately, with no finalise', async () => {
+  it('Should mint an empty decoded canonical fulfilment, never answers', async () => {
+    const journey = await records.create({ userId: 'user-A' })
+
+    expect(journey.fulfilment).toEqual({})
+    expect(journey).not.toHaveProperty('answers')
+  })
+
+  it('Should whole-replace canonical fulfilment durably, with no finalise', async () => {
     const { journeyId } = await records.create({ userId: 'user-A' })
-    await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
-    expect((await records.load({ journeyId })).answers).toEqual({
-      countryOfOrigin: 'FR'
-    })
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    expect((await records.load({ journeyId })).fulfilment).toEqual(
+      originFulfilment('FR')
+    )
     expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
   })
 
-  it('Should freeze after finalise so a later saveAnswers throws', async () => {
+  it('Should replace the whole canonical snapshot, not patch it', async () => {
     const { journeyId } = await records.create({ userId: 'user-A' })
-    await records.saveAnswers(journeyId, { countryOfOrigin: 'FR' })
+    await records.replaceFulfilment(journeyId, {
+      ...originFulfilment('FR'),
+      historic: 'first'
+    })
+
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+
+    expect((await records.load({ journeyId })).fulfilment).toEqual(
+      originFulfilment('DE')
+    )
+  })
+
+  it('Should freeze after finalise so a later replacement throws', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
     await records.finalise(journeyId)
     await expect(
-      records.saveAnswers(journeyId, { late: true })
+      records.replaceFulfilment(journeyId, { late: true })
     ).rejects.toThrow(/is submitted — writes blocked/)
   })
 
@@ -71,10 +95,10 @@ describe('records durable port', () => {
 
     expect(amended.status).toBe(IN_PROGRESS)
     expect(amended.submittedAt).toBeNull()
-    await records.saveAnswers(journeyId, { countryOfOrigin: 'DE' })
-    expect((await records.load({ journeyId })).answers).toEqual({
-      countryOfOrigin: 'DE'
-    })
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+    expect((await records.load({ journeyId })).fulfilment).toEqual(
+      originFulfilment('DE')
+    )
   })
 
   it('Should re-finalise after an amend — the amend-and-resubmit cycle round-trips', async () => {

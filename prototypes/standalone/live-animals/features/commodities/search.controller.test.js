@@ -122,7 +122,9 @@ describe('POST commodities (batch search-select)', () => {
         shown: ['Cat|923501']
       }
     })
-    expect(result.after.commodityLines).toEqual([kept])
+    expect(result.after.commodityLines).toEqual([
+      { ...kept, numberOfAnimalsQuantity: 25 }
+    ])
   })
 
   it('Should treat an unchecked-but-shown species as deselected and a not-shown one as carried', async () => {

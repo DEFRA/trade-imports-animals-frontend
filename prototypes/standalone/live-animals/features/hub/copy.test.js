@@ -17,7 +17,7 @@ const hubHandler = routes.find((route) => route.method === 'GET').handler
 
 const renderHub = async (seed = {}) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed)
+  await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   await hubHandler(journeyRequest(journey.journeyId), h)
   return h.captured.view.context
@@ -231,9 +231,21 @@ describe('#hubHandler', () => {
   it('Should sum animals and packages over the commodity lines, treating blanks as 0', async () => {
     const { commodityTotals } = await renderHub({
       commodityLines: [
-        { numberOfAnimalsQuantity: '25', numberOfPackages: '5' },
-        { numberOfAnimalsQuantity: '3', numberOfPackages: '' },
-        { numberOfAnimalsQuantity: '', numberOfPackages: '2' }
+        {
+          commoditySelection: 'Cow',
+          numberOfAnimalsQuantity: '25',
+          numberOfPackages: '5'
+        },
+        {
+          commoditySelection: 'Cow',
+          numberOfAnimalsQuantity: '3',
+          numberOfPackages: ''
+        },
+        {
+          commoditySelection: 'Cow',
+          numberOfAnimalsQuantity: '',
+          numberOfPackages: '2'
+        }
       ]
     })
     expect(commodityTotals).toEqual({ animals: 28, packages: 7 })

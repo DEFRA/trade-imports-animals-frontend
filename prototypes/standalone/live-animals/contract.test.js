@@ -41,11 +41,7 @@ const obligationNames = [...walkObligations()].map(
   (node) => node.obligation.name
 )
 
-// importType (the filter's service-routing pick) and declaration (the final
-// attestation) are flow-collected keys the notification model does not carry as
-// obligations — enumerate them alongside the obligation names so the commit
-// contract still sees them land.
-const committableKeys = [...obligationNames, 'importType', 'declaration']
+const committableKeys = obligationNames
 
 const committedIds = ({ before, after }) =>
   committableKeys.filter(
@@ -55,7 +51,7 @@ const committedIds = ({ before, after }) =>
 const committableCollects = (collects) =>
   collects.filter((id) => {
     const obligation = obligationByName(id)
-    return !obligation?.renderOnly && !obligation?.system
+    return obligation && !obligation.renderOnly && !obligation.system
   })
 
 const cases = [
@@ -226,7 +222,7 @@ describe('controller <-> model commit contract', () => {
     expect(result.after.commodityLines[0]).toEqual({
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
-      numberOfAnimalsQuantity: '25',
+      numberOfAnimalsQuantity: 25,
       numberOfPackages: '5'
     })
   })

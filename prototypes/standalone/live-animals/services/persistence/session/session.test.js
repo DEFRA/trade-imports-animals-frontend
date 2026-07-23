@@ -3,7 +3,8 @@ import { session } from './stub.js'
 import {
   JOURNEY_COOKIE,
   KNOWN_JOURNEYS_COOKIE,
-  OPENING_RUN_COOKIE
+  OPENING_RUN_COOKIE,
+  FLOW_ONLY_ANSWERS_COOKIE
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 
@@ -70,5 +71,52 @@ describe('#session.openingRun', () => {
 
   it('Should report no opening run for a fresh session', async () => {
     expect(await session.openingRun({ state: {} })).toBeUndefined()
+  })
+})
+
+describe('#session.flowOnlyAnswers', () => {
+  it('Should round-trip values without leaking them between journeys', async () => {
+    const h = recordingH()
+    const request = { state: {} }
+
+    await session.setFlowOnlyAnswers(
+      h,
+      'journey-1',
+      { importType: 'live-animals' },
+      request
+    )
+
+    const stored = h.cookies[FLOW_ONLY_ANSWERS_COOKIE]
+    expect(
+      await session.flowOnlyAnswers(
+        { state: { [FLOW_ONLY_ANSWERS_COOKIE]: stored } },
+        'journey-1'
+      )
+    ).toEqual({ importType: 'live-animals' })
+    expect(
+      await session.flowOnlyAnswers(
+        { state: { [FLOW_ONLY_ANSWERS_COOKIE]: stored } },
+        'journey-2'
+      )
+    ).toEqual({})
+  })
+
+  it('Should preserve another journey while updating the current one', async () => {
+    const existing = {
+      'journey-1': { importType: 'live-animals' }
+    }
+    const h = recordingH()
+
+    await session.setFlowOnlyAnswers(
+      h,
+      'journey-2',
+      { declaration: 'confirmed' },
+      { state: { [FLOW_ONLY_ANSWERS_COOKIE]: existing } }
+    )
+
+    expect(h.cookies[FLOW_ONLY_ANSWERS_COOKIE]).toEqual({
+      ...existing,
+      'journey-2': { declaration: 'confirmed' }
+    })
   })
 })

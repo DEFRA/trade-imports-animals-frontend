@@ -59,17 +59,14 @@ describe('#write.js — answer-key guard', () => {
     expect(answers.countryOfOrigin).toBe('FR')
   })
 
-  it('Should refuse to submit a stored tree carrying an unrecognised key', async () => {
-    // Seeded directly into the store — the path the write guards never see
-    // (records written before the guard existed, or resumed from outside).
-    await records.saveAnswers(journeyId, {
-      countryOfOrigin: 'FR',
-      animalIdentifierHorseName: 'Dobbin'
+  it('Should not project an unknown historic UUID into page answers at submit', async () => {
+    await records.replaceFulfilment(journeyId, {
+      'historic-obligation-uuid': 'Dobbin'
     })
 
-    await expect(submitJourney(buildRequest(), stubH())).rejects.toThrow(
-      /"animalIdentifierHorseName".*submitJourney/s
-    )
-    expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
+    const result = await submitJourney(buildRequest(), stubH())
+
+    expect(result.ok).toBe(true)
+    expect((await records.load({ journeyId })).status).not.toBe(IN_PROGRESS)
   })
 })

@@ -112,7 +112,7 @@ const canonicalViewOf = (answers) =>
   )
 
 const contextFor = async (handler, journeyId, answers) => {
-  await store.saveAnswers(journeyId, answers)
+  await store.seedAnswers(journeyId, answers)
   const h = stubH()
   await handler(journeyRequest(journeyId), h)
   return h.captured.view?.context

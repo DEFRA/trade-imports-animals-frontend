@@ -1,5 +1,9 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import {
+  answersToFulfilments,
+  projectAnswers
+} from '../../../bridge/fulfilments.js'
 import { toNotification, toAnswers } from './mapper.js'
 
 const backendBaseUrl =
@@ -44,6 +48,24 @@ const stripNulls = (value) => {
   return value
 }
 
+// The evaluator canonically stores animal counts as numbers. The unchanged
+// real notification mapper historically received the form's string counts,
+// and Mapper A preserves that type in each species entry. Restore only that
+// legacy edge representation so the posted notification stays byte-identical.
+const answersForLegacyNotification = (fulfilment) => {
+  const answers = projectAnswers(fulfilment)
+  if (!Array.isArray(answers.commodityLines)) return answers
+  return {
+    ...answers,
+    commodityLines: answers.commodityLines.map((line) => ({
+      ...line,
+      ...(typeof line.numberOfAnimalsQuantity === 'number'
+        ? { numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity) }
+        : {})
+    }))
+  }
+}
+
 const marshal = (notification, userId = null) => {
   const status = mapStatus(notification.status)
   return {
@@ -52,7 +74,7 @@ const marshal = (notification, userId = null) => {
     status,
     createdAt: notification.created ?? null,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
-    answers: toAnswers(stripNulls(notification))
+    fulfilment: answersToFulfilments(toAnswers(stripNulls(notification)))
   }
 }
 
@@ -96,7 +118,7 @@ export const records = {
       status: IN_PROGRESS,
       createdAt: notification.created ?? null,
       submittedAt: null,
-      answers: {}
+      fulfilment: {}
     }
   },
 
@@ -121,12 +143,12 @@ export const records = {
     return (await getNotification(journeyId)) !== undefined
   },
 
-  async saveAnswers(journeyId, answers, { known } = {}) {
+  async replaceFulfilment(journeyId, fulfilment, { known } = {}) {
     const status = await resolveStatus(journeyId, known)
     assertWritable(journeyId, status)
 
     const notification = toNotification({
-      ...answers,
+      ...answersForLegacyNotification(fulfilment),
       referenceNumber: journeyId
     })
     const response = await fetch(notificationsUrl, {

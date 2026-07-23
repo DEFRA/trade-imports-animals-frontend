@@ -7,6 +7,7 @@ import { JOURNEY_COOKIE, configureSession } from './persistence/session.js'
 import { records as realRecords } from '../services/persistence/records/real.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { recordingH } from './test-support.js'
+import { countryOfOrigin } from '../model/obligations/obligations.js'
 
 // Network-boundary perf contract for the REAL records adapter (S5 hardening —
 // "one load per request"). Every currentJourney call — whether from a read
@@ -66,9 +67,10 @@ describe('one load per request — real records adapter GET count', () => {
   test('Should issue exactly one GET for a read-then-write request, plus the write POST', async () => {
     const request = buildRequest()
 
-    await get(request, recordingH())
+    const before = await get(request, recordingH())
     await commit(request, recordingH(), { countryOfOrigin: 'FR' })
 
+    expect(before.fulfilment).toEqual({})
     expect(getsFor(notificationUrl)).toHaveLength(1)
     expect(postsTo(notificationsUrl)).toHaveLength(1)
   })
@@ -81,6 +83,7 @@ describe('one load per request — real records adapter GET count', () => {
     const after = await get(request, recordingH())
 
     expect(after.answers.countryOfOrigin).toBe('FR')
+    expect(after.fulfilment).toEqual({ [countryOfOrigin.id]: 'FR' })
     expect(getsFor(notificationUrl)).toHaveLength(1)
   })
 

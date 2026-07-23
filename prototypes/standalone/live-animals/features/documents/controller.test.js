@@ -489,7 +489,7 @@ describe('documents — reading an uploaded file back', () => {
     registerJourneyCookie(server)
     server.route(documents.routes)
     const journey = await store.create()
-    await store.saveAnswers(journey.journeyId, {
+    await store.seedAnswers(journey.journeyId, {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
     })
     return { server, journeyId: journey.journeyId }

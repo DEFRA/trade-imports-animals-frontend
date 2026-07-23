@@ -21,7 +21,7 @@ const getHandlerOf = (routes) =>
 
 const renderWith = async (handler, seed) => {
   const journey = await store.create()
-  if (seed) await store.saveAnswers(journey.journeyId, seed)
+  if (seed) await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   await handler(journeyRequest(journey.journeyId), h)
   return { journey, context: h.captured.view.context }

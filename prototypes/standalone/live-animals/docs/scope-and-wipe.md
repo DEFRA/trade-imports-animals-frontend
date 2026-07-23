@@ -96,16 +96,15 @@ journey never asked for.
 Three layers enforce it, and no single layer can be bypassed:
 
 1. **The evaluator derives.** `convergePurge` in
-   `model/obligations/evaluator.js` decides what leaves scope; `wipeSetFromB`
-   in `bridge/purge.js` names the answer paths to destroy. Neither
-   touches the session — they compute a list.
-2. **Write applies.** `commit`, `removeEntryAt` and `reconcileEntriesAt` in
-   `engine/write.js` call `destroyWiped` with that list on every write. The
-   write surface has no `setScope` and no per-obligation `delete`, so a page
-   cannot hand-roll a wipe or fake scope.
+   `model/obligations/evaluator.js` decides what leaves scope and returns the
+   post-purge canonical map.
+2. **Write applies.** Every mutation in `engine/write.js` calls
+   `purgeFulfilments` and persists only `evaluation.fulfilments`. The write
+   surface has no `setScope` and no per-obligation `delete`, so a page cannot
+   hand-roll a wipe or fake scope.
 3. **The records port cannot express a partial delete.** The persistence port
-   (`engine/persistence/records.js`) offers only whole-map `saveAnswers` —
-   there is no delete-a-key surface. Even code holding the port directly
+   (`engine/persistence/records.js`) offers only whole-map
+   `replaceFulfilment` — there is no delete-a-key surface. Even code holding the port directly
    cannot wipe one obligation by hand.
 
 ## How purge works

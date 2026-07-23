@@ -13,6 +13,8 @@ import {
   STUB_USER
 } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
+import { migrateNameKeyedAnswersToFulfilments } from '../../bridge/name-keyed-migration.js'
+import { projectAnswers } from '../../bridge/fulfilments.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 
 import { routes } from './controller.js'
@@ -201,7 +203,10 @@ describe('dashboard row actions', () => {
     expect(h.captured.cookies[JOURNEY_COOKIE]).toBe(submitted.journeyId)
     const amended = await records.load({ journeyId: submitted.journeyId })
     expect(amended.status).toBe(IN_PROGRESS)
-    await records.saveAnswers(submitted.journeyId, { countryOfOrigin: 'FR' })
+    await records.replaceFulfilment(
+      submitted.journeyId,
+      migrateNameKeyedAnswersToFulfilments({ countryOfOrigin: 'FR' })
+    )
   })
 
   it('Should list an amending journey as Draft again', async () => {
@@ -265,7 +270,10 @@ describe('dashboard start with an in-flight draft', () => {
 
   it('Should start a NEW journey and keep the old one listed', async () => {
     const oldDraft = await startDraft()
-    await records.saveAnswers(oldDraft.journeyId, { countryOfOrigin: 'FR' })
+    await records.replaceFulfilment(
+      oldDraft.journeyId,
+      migrateNameKeyedAnswersToFulfilments({ countryOfOrigin: 'FR' })
+    )
     const h = buildH()
 
     await startPost(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
@@ -277,7 +285,9 @@ describe('dashboard start with an in-flight draft', () => {
       newJourneyId
     ])
     expect(
-      (await records.load({ journeyId: oldDraft.journeyId })).answers
+      projectAnswers(
+        (await records.load({ journeyId: oldDraft.journeyId })).fulfilment
+      )
     ).toEqual({ countryOfOrigin: 'FR' })
   })
 })

@@ -82,14 +82,14 @@ const fields = () =>
     )
   )
 
-const journeyIfStarted = (journey) =>
-  hasCommittedNotificationAnswers(journey.answers) ? journey : undefined
+const journeyIfStarted = (journey, answers) =>
+  hasCommittedNotificationAnswers(answers) ? journey : undefined
 
-const render = (h, journey, values, errors = {}) =>
+const render = (h, journey, values, errors = {}, answers = values) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(),
-      journey: journeyIfStarted(journey)
+      journey: journeyIfStarted(journey, answers)
     }),
     copy,
     values,
@@ -100,7 +100,7 @@ const render = (h, journey, values, errors = {}) =>
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, valuesFrom(answers))
+  return render(h, journey, valuesFrom(answers), {}, answers)
 }
 
 const post = async (request, h) => {
@@ -110,8 +110,10 @@ const post = async (request, h) => {
   })
   const { errors } = validate(fields(), payload)
   if (errors) {
-    const { journey } = await state.get(request, h)
-    return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
+    const { journey, answers } = await state.get(request, h)
+    return render(h, journey, values, errors, answers).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   const { scope } = await state.commit(request, h, values)

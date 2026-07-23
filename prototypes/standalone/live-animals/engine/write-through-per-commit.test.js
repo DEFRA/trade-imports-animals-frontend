@@ -6,6 +6,10 @@ import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
+import {
+  countryOfOrigin,
+  internalReferenceNumber
+} from '../model/obligations/obligations.js'
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
@@ -21,8 +25,8 @@ describe('#commit', () => {
 
   it('Should persist to the records port on the first commit, before any submit', async () => {
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
-    expect((await records.load({ journeyId })).answers).toEqual({
-      countryOfOrigin: 'FR'
+    expect((await records.load({ journeyId })).fulfilment).toEqual({
+      [countryOfOrigin.id]: 'FR'
     })
   })
 
@@ -31,9 +35,9 @@ describe('#commit', () => {
     await commit(buildRequest(), stubH(), {
       internalReferenceNumber: 'Imports456GB'
     })
-    expect((await records.load({ journeyId })).answers).toEqual({
-      countryOfOrigin: 'FR',
-      internalReferenceNumber: 'Imports456GB'
+    expect((await records.load({ journeyId })).fulfilment).toEqual({
+      [countryOfOrigin.id]: 'FR',
+      [internalReferenceNumber.id]: 'Imports456GB'
     })
   })
 })

@@ -196,11 +196,10 @@ describe('#buildSections (check-answers GET)', () => {
       )
       expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
         'Animal',
-        'Passport',
-        'Permanent address'
+        'Passport'
       ])
       expect(card.identifierTable.rows).toEqual([
-        [{ text: 'Animal 1' }, { text: 'UK123456789' }, { text: 'Pet Owner' }]
+        [{ text: 'Animal 1' }, { text: 'UK123456789' }]
       ])
     })
 

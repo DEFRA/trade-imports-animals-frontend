@@ -14,6 +14,7 @@ import { session as sessionStub } from './services/persistence/session/stub.js'
 import { stubH, journeyRequest } from './engine/test-support.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
+import { projectAnswers } from './bridge/fulfilments.js'
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
@@ -22,7 +23,7 @@ const answersNow = async () => (await store.get(journeyId)).answers
 const line = (commoditySelection, extra = {}) => ({
   commoditySelection,
   speciesSelection: '1148346',
-  numberOfAnimalsQuantity: '25',
+  numberOfAnimalsQuantity: 25,
   ...extra
 })
 
@@ -63,7 +64,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should edit a commodity line in place, leaving siblings intact', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow'), line('010420 - Goats')]
     })
     await updateEntryAt(
@@ -82,7 +83,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should remove a commodity line in place, leaving siblings intact', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow'), line('010420 - Goats')]
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
@@ -94,7 +95,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should ignore a non-integer index on remove (a malformed URL must not destroy instance 0)', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow'), line('010420 - Goats')]
     })
     await removeEntryAt(
@@ -111,7 +112,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should ignore an out-of-range index on remove', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow')]
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 5)
@@ -119,7 +120,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should ignore a non-integer index on update', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow')]
     })
     await updateEntryAt(
@@ -133,7 +134,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should ignore an out-of-range index on update', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow')]
     })
     await updateEntryAt(
@@ -147,26 +148,29 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 
   it('Should write through a commit that mutates a line, re-running reconcile and destroying the now-out-of-scope package count at its exact path', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow', { numberOfPackages: '5' })]
     })
     await commit(buildRequest(), stubH(), {
       commodityLines: [line('Fish', { numberOfPackages: '5' })]
     })
-    const persisted = (await records.load({ journeyId })).answers
+    const persisted = projectAnswers(
+      (await records.load({ journeyId })).fulfilment
+    )
     expect(persisted.commodityLines[0].commoditySelection).toBe('Fish')
     expect('numberOfPackages' in persisted.commodityLines[0]).toBe(false)
   })
 
   it('Should preserve an in-scope package count when a commit leaves the line on the list', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow', { numberOfPackages: '5' })]
     })
     await commit(buildRequest(), stubH(), {
       commodityLines: [line('Cow', { numberOfPackages: '9' })]
     })
     expect(
-      (await records.load({ journeyId })).answers.commodityLines[0]
+      projectAnswers((await records.load({ journeyId })).fulfilment)
+        .commodityLines[0]
     ).toEqual(line('Cow', { numberOfPackages: '9' }))
   })
 })
@@ -205,7 +209,7 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
   })
 
   it("Should keep ALL of an existing line's data when its species stays selected — per-line quantities and nested identifiers survive the reconcile", async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cow',
@@ -223,14 +227,14 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
       numberOfPackages: '5',
-      numberOfAnimalsQuantity: '25',
+      numberOfAnimalsQuantity: 25,
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
     })
     expect(lines[1]).toEqual(seed('Cow', '716661'))
   })
 
   it("Should remove a deselected species' line entirely — deselect wipes the line and its nested records", async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cow',
@@ -249,13 +253,13 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
     const lines = (await answersNow()).commodityLines
     expect(lines).toHaveLength(1)
     expect(lines[0].commoditySelection).toBe('Cat')
-    expect(lines[0].numberOfAnimalsQuantity).toBe('2')
+    expect(lines[0].numberOfAnimalsQuantity).toBe(2)
   })
 
   it('Should run the scope-and-wipe pass: dropping the last triggering commodity destroys the dependent notification-level answer', async () => {
     // containsUnweanedAnimals is gated on an unweaned-triggering commodity
     // (Cow) existing in ANY line (frame:anyItem) and carries wipeOnExit.
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       containsUnweanedAnimals: 'no',
       commodityLines: [
         { commoditySelection: 'Cow', speciesSelection: '1148346' },
@@ -283,7 +287,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
   it('Should append a unit into a specific line, minting the nested index and persisting it', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [catsLine(), catsLine()]
     })
     const first = await appendEntryAt(
@@ -300,7 +304,9 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
       { animalIdentifierPassport: 'UK-2' }
     )
     expect(second).toBe(1)
-    expect((await answersNow()).commodityLines[0].animalIdentifiers).toEqual([])
+    expect(
+      (await answersNow()).commodityLines[0].animalIdentifiers
+    ).toBeUndefined()
     expect(
       (await answersNow()).commodityLines[1].animalIdentifiers.map(
         (unit) => unit.animalIdentifierPassport
@@ -309,7 +315,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should edit a unit in place at depth-2, leaving sibling units intact', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         catsLine([
           { animalIdentifierPassport: 'UK-1' },
@@ -328,7 +334,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should remove a unit in place at depth-2, leaving sibling units intact', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         catsLine([
           { animalIdentifierPassport: 'UK-1' },
@@ -345,7 +351,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should ignore a non-integer nested index on remove (a malformed URL must not destroy unit 0)', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [catsLine([{ animalIdentifierPassport: 'UK-1' }])]
     })
     await removeEntryAt(
@@ -362,7 +368,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should ignore an out-of-range nested index on update', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [catsLine([{ animalIdentifierPassport: 'UK-1' }])]
     })
     await updateEntryAt(buildRequest(), stubH(), identifiersPath(0), 5, {
@@ -375,7 +381,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should reject an append at the cardinality cap — records never exceed the sibling animal count', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cat',
@@ -400,7 +406,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should append below the cap, minting the next index as before', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cat',
@@ -422,7 +428,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should apply NO cap while the sibling count is unanswered — the ruled blank-count semantics (the floor still bites at submit)', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cat',
@@ -441,7 +447,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should apply NO cap for a non-integer count value — garbage never blocks the append', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cat',
@@ -460,7 +466,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it("Should resolve the cap per frame — one line at its cap never blocks a sibling line's append", async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         {
           commoditySelection: 'Cat',
@@ -487,7 +493,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should leave a collection WITHOUT the cardinality link uncapped — commodityLines appends stay unbounded', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [line('Cow', { numberOfAnimalsQuantity: '1' })]
     })
     const index = await appendEntryAt(
@@ -500,7 +506,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
   })
 
   it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', async () => {
-    await store.saveAnswers(journeyId, {
+    await store.seedAnswers(journeyId, {
       commodityLines: [
         catsLine([
           { animalIdentifierPassport: 'UK-1', permanentAddress: address }
@@ -517,7 +523,9 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
         }
       ]
     })
-    const persisted = (await records.load({ journeyId })).answers
+    const persisted = projectAnswers(
+      (await records.load({ journeyId })).fulfilment
+    )
     const unit = persisted.commodityLines[0].animalIdentifiers[0]
     expect(unit.animalIdentifierPassport).toBe('UK-1')
     expect('permanentAddress' in unit).toBe(false)

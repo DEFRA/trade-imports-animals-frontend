@@ -1,12 +1,30 @@
 import { records } from './persistence/records.js'
+import { projectAnswers } from '../bridge/fulfilments.js'
+import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
 
 export { IN_PROGRESS, SUBMITTED } from './persistence/records.js'
 
+const withAnswersProjection = async (journeyPromise) => {
+  const journey = await journeyPromise
+  return journey
+    ? { ...journey, answers: projectAnswers(journey.fulfilment) }
+    : undefined
+}
+
 export const store = Object.freeze({
-  create: (createOptions) => records.create(createOptions),
-  get: (journeyId) => records.load({ journeyId }),
+  create: (createOptions) =>
+    withAnswersProjection(records.create(createOptions)),
+  get: (journeyId) => withAnswersProjection(records.load({ journeyId })),
   has: records.has,
-  saveAnswers: records.saveAnswers,
-  submit: records.finalise,
+  seedAnswers: (journeyId, answers) =>
+    withAnswersProjection(
+      records.replaceFulfilment(
+        journeyId,
+        migrateNameKeyedAnswersToFulfilments(answers)
+      )
+    ),
+  replaceFulfilment: (journeyId, fulfilment) =>
+    withAnswersProjection(records.replaceFulfilment(journeyId, fulfilment)),
+  submit: (journeyId) => withAnswersProjection(records.finalise(journeyId)),
   clear: records.clear
 })

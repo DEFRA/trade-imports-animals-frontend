@@ -61,7 +61,7 @@ export const driveHandler = async (
   { payload = {}, seed = {}, params = {}, query = {} } = {}
 ) => {
   const journey = await store.create()
-  await store.saveAnswers(journey.journeyId, seed)
+  await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(
     journeyRequest(journey.journeyId, { payload, params, query }),

@@ -230,17 +230,21 @@ wipe.
 
 ### The read side — `engine/read.js`
 
-`makeScope(answers)` delegates straight to the bridge's `makeScopeFromB` —
-scope is the evaluator's projection, nothing more. `get(request, h)` loads the
-current journey and attaches its answers and scope for the controller.
+`get(request, h)` loads the current canonical fulfilment and calls
+`assembleRequestView` once to derive `{ evaluation, answers, scope }`, merging
+the current journey's session-backed flow-only answers into that projection.
+The result is memoised for the request; only fulfilment is durable record
+state.
 
 ### The write side — `engine/write.js`
 
-- `commit` merges the incoming patch into the answers, **purges** by calling
-  `destroyWiped(answers, wipeSetFromB(answers))`, saves, and returns the fresh
-  scope. Every write runs the wipe, so answers can never drift out of scope.
+- `commit` merges the incoming name-keyed patch into the request projection,
+  splits any `FLOW_ONLY_OBLIGATIONS` into the journey-keyed session map, and
+  rebuilds canonical fulfilment from the remaining patch through the
+  increment-4 migration facade. The canonical side is evaluated/purged and
+  whole-replaces `evaluation.fulfilments`.
 - `appendEntryAt` respects `collectionCapAt` — an append past the cap returns
-  `null`. `removeEntryAt` and `reconcileEntriesAt` purge after mutating.
+  `null`. Every collection mutation follows the same canonical replacement.
 - `submitJourney` gates on `scope.readyForCheckYourAnswers`; only when ready
   does it finalise the records port.
 
@@ -255,8 +259,8 @@ does not configure readiness.
 
 ### store.js
 
-`engine/store.js` is a small frozen facade over the records port (`create`,
-`get`, `has`, `saveAnswers`, `submit`, `clear`). It is a test convenience only
+`engine/store.js` is a small frozen test facade over the records port (`create`,
+`get`, `has`, `seedAnswers`, `replaceFulfilment`, `submit`, `clear`). It is a test convenience only
 — it is not part of the barrel and no controller imports it. New code imports
 the ports directly (`engine/persistence/records.js`,
 `engine/persistence/session.js`).

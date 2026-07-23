@@ -527,21 +527,21 @@ export const buildSections = (answers, scope) => {
   ]
 }
 
-const renderCya = (h, journey, scope) =>
+const renderCya = (h, journey, answers, scope) =>
   h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    sections: buildSections(journey.answers, scope),
+    sections: buildSections(answers, scope),
     backLink: hubPath(),
     breadcrumbs: breadcrumbs(copy.title)
   })
 
 const get = async (request, h) => {
-  const { journey, scope } = await state.get(request, h)
-  return renderCya(h, journey, scope)
+  const { journey, answers, scope } = await state.get(request, h)
+  return renderCya(h, journey, answers, scope)
 }
 
 const post = async (request, h) => {

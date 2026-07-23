@@ -26,14 +26,14 @@ describe('submit is finalise', () => {
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', async () => {
     configureReadyForCheckYourAnswers(() => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
-    const committed = (await records.load({ journeyId })).answers
+    const committed = (await records.load({ journeyId })).fulfilment
 
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(true)
     expect(result.journey.status).toBe(SUBMITTED)
     expect(result.journey.submittedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
-    expect(result.journey.answers).toEqual(committed)
+    expect(result.journey.fulfilment).toEqual(committed)
     await expect(
       commit(buildRequest(), stubH(), { countryOfOrigin: 'DE' })
     ).rejects.toThrow(/is submitted — writes blocked/)

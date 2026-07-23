@@ -65,11 +65,11 @@ describe('#consignmentDetailsController — per-species quantities over every li
       }
     })
     const lines = result.after.commodityLines
-    expect(lines[0].numberOfAnimalsQuantity).toBe('25')
+    expect(lines[0].numberOfAnimalsQuantity).toBe(25)
     expect(lines[0].numberOfPackages).toBe('5')
-    expect(lines[1].numberOfAnimalsQuantity).toBe('10')
+    expect(lines[1].numberOfAnimalsQuantity).toBe(10)
     expect(lines[1].numberOfPackages).toBe('2')
-    expect(lines[2].numberOfAnimalsQuantity).toBe('40')
+    expect(lines[2].numberOfAnimalsQuantity).toBe(40)
     expect('numberOfPackages' in lines[2]).toBe(false)
   })
 
@@ -117,7 +117,14 @@ describe('#consignmentDetailsController — per-species quantities over every li
       'commodities/identification'
     )
     expect(errorSummary.errorList[0].href).toContain('#identification-card-0')
-    expect(result.after).toEqual(result.before)
+    expect(result.after).toEqual({
+      commodityLines: [
+        {
+          ...seed.commodityLines[0],
+          numberOfAnimalsQuantity: 3
+        }
+      ]
+    })
   })
 
   it('Should save a count equal to or above the identifier-record count', async () => {
@@ -136,7 +143,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       payload: { 'numberOfAnimalsQuantity-0': '1', 'numberOfPackages-0': '' }
     })
     expect(result.view).toBeUndefined()
-    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe('1')
+    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(1)
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
@@ -162,7 +169,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
 
   it('Should group the view by commodity with one quantity block per species line', async () => {
     const journey = await store.create()
-    await store.saveAnswers(journey.journeyId, seedLines())
+    await store.seedAnswers(journey.journeyId, seedLines())
     const request = journeyRequest(journey.journeyId)
     const h = stubH()
     const getHandler = consignmentDetails.routes.find(
