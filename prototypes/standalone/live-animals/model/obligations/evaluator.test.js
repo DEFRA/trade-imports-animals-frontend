@@ -45,7 +45,9 @@ import {
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
-  accompanyingDocumentDateOfIssue
+  accompanyingDocumentDateOfIssue,
+  documentUploadId,
+  documentFilename
 } from './obligations.js'
 
 let evaluator
@@ -1049,11 +1051,10 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Accompanying Documents — 0..10 user-driven indexed group. All four
-// fields are plain `status: 'mandatory'` within the group: a document
-// record demands its type, attachment, reference and date of issue
-// alike (no per-record trigger). The cap rides `requires.maxEntries`
-// via `groupInvariantErrors`.
+// Accompanying Documents — 0..10 user-driven indexed group. The four
+// document metadata fields are plain `status: 'mandatory'` within the
+// group; the upload-return fields are optional. The cap rides
+// `requires.maxEntries` via `groupInvariantErrors`.
 // ---------------------------------------------------------------------------
 
 const documentFields = [
@@ -1063,20 +1064,66 @@ const documentFields = [
   ['DateOfIssue', accompanyingDocumentDateOfIssue]
 ]
 
+const optionalDocumentFields = [
+  ['UploadId', documentUploadId],
+  ['Filename', documentFilename]
+]
+
 describe('V4 — accompanying documents: no documents at all', () => {
-  it.each([['documents group', documents], ...documentFields])(
-    '%s is in scope with no records',
+  it.each([
+    ['documents group', documents],
+    ...documentFields,
+    ...optionalDocumentFields
+  ])('%s is in scope with no records', (_name, obligation) => {
+    const result = evaluator.evaluate({})
+    expect(result.obligations[obligation.id]).toEqual({
+      inScope: true,
+      records: []
+    })
+  })
+})
+
+describe('V4 — accompanying documents: upload returns are optional obligations', () => {
+  const uploadOnly = {
+    [documentUploadId.id]: { d0: 'upload-001' },
+    [documentFilename.id]: { d0: 'certificate.pdf' }
+  }
+
+  it('an upload-only record is a visible group instance', () => {
+    const result = evaluator.evaluate(uploadOnly)
+    expect(result.obligations[documents.id]).toEqual({
+      inScope: true,
+      records: [{ fulfilmentId: 'd0' }]
+    })
+  })
+
+  it.each(optionalDocumentFields)(
+    '%s is optional and its value round-trips',
     (_name, obligation) => {
-      const result = evaluator.evaluate({})
+      const result = evaluator.evaluate(uploadOnly)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: []
+        records: [{ fulfilmentId: 'd0', status: 'optional' }]
+      })
+      expect(result.fulfilments[obligation.id]).toEqual(
+        uploadOnly[obligation.id]
+      )
+    }
+  )
+
+  it.each(documentFields)(
+    '%s remains mandatory on an upload-only record',
+    (_name, obligation) => {
+      const result = evaluator.evaluate(uploadOnly)
+      expect(result.obligations[obligation.id]).toEqual({
+        inScope: true,
+        records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
       })
     }
   )
 })
 
-describe('V4 — accompanying documents: every field is mandatory per record', () => {
+describe('V4 — accompanying documents: four metadata fields are mandatory per record', () => {
   const withType = {
     [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' }
   }
@@ -1148,16 +1195,16 @@ describe('V4 — accompanying documents: the 0..10 cap', () => {
       Array.from({ length: count }, (_, i) => [`d${i}`, 'ITAHC'])
     )
 
-  it('ten documents raise no invariant error', () => {
+  it('ten inferred upload-only document instances raise no invariant error', () => {
     const state = evaluator.evaluate({
-      [accompanyingDocumentType.id]: recordsOf(10)
+      [documentUploadId.id]: recordsOf(10)
     })
     expect(groupInvariantErrors(documents, state)).toEqual([])
   })
 
-  it('an eleventh document trips MAX_ENTRIES', () => {
+  it('an eleventh inferred upload-only document instance trips MAX_ENTRIES', () => {
     const state = evaluator.evaluate({
-      [accompanyingDocumentType.id]: recordsOf(11)
+      [documentUploadId.id]: recordsOf(11)
     })
     expect(groupInvariantErrors(documents, state)).toEqual([
       {

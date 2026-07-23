@@ -57,13 +57,6 @@ export const FLOW_ONLY_OBLIGATIONS = ['importType', 'declaration']
 // (services/persistence/records/notification-mapper.js).
 export const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
 
-// Feature-owned auxiliary keys stored inside a collection entry alongside
-// its obligation fields, keyed by collection name. The documents feature
-// stores its upload handle and original filename on each record.
-export const AUX_ENTRY_KEYS = {
-  documents: new Set(['uploadId', 'filename'])
-}
-
 const groupSet = new Set(
   obligations.filter((obligation) =>
     obligations.some((other) => other.within === obligation)
@@ -82,8 +75,7 @@ const memberKeysOf = (group) =>
   new Set([
     ...obligations
       .filter((obligation) => obligation.within === group)
-      .map((obligation) => obligation.name),
-    ...(AUX_ENTRY_KEYS[group.name] ?? [])
+      .map((obligation) => obligation.name)
   ])
 
 const sweepKey = (memberKeys, entryPath, key, value) => {
@@ -112,9 +104,8 @@ const sweepEntries = (group, items, path) => {
 
 /**
  * Every key in the answers tree that is not a manifest obligation name in
- * its declared position, a flow-only key, a system key, or a declared
- * auxiliary entry key. Values below leaf keys (addresses, date parts,
- * arrays) are opaque and not swept.
+ * its declared position, a flow-only key, or a system key. Values below leaf
+ * keys (addresses, date parts, arrays) are opaque and not swept.
  *
  * @param {object} answers - the nested answer POJO.
  * @returns {Array<{ key: string, path: string }>} empty when fully recognised.

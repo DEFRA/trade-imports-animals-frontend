@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { unrecognisedAnswerKeys } from './obligation-source.js'
 
 // The recognition surface: manifest obligation names in their declared
-// positions, flow-only keys, system keys, declared auxiliary entry keys.
-// Anything else is inert to the evaluator yet ships raw at finalise —
-// these tests pin that such keys are reported, with their path.
+// positions, flow-only keys and system keys. Anything else is inert to the
+// evaluator yet ships raw at finalise — these tests pin that such keys are
+// reported, with their path.
 
 const happyPath = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
@@ -39,7 +39,7 @@ describe('#unrecognisedAnswerKeys', () => {
     ])
   })
 
-  it('Should report an unknown key on a documents entry but allow the declared auxiliaries', () => {
+  it('Should report an unknown key on a documents entry but allow its manifest obligations', () => {
     const answers = {
       documents: [
         {

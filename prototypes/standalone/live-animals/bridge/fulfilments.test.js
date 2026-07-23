@@ -25,7 +25,9 @@ import {
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
-  accompanyingDocumentDateOfIssue
+  accompanyingDocumentDateOfIssue,
+  documentUploadId,
+  documentFilename
 } from '../model/obligations/obligations.js'
 
 const happyPath = JSON.parse(
@@ -244,6 +246,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
             month: '12',
             year: '2025'
           },
+          uploadId: 'upload-001',
           filename: 'itahc-certificate.pdf'
         },
         { accompanyingDocumentType: 'OTHER' }
@@ -265,9 +268,15 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       expect(fulfilments[accompanyingDocumentDateOfIssue.id]).toEqual({
         line0: { day: '12', month: '12', year: '2025' }
       })
+      expect(fulfilments[documentUploadId.id]).toEqual({
+        line0: 'upload-001'
+      })
+      expect(fulfilments[documentFilename.id]).toEqual({
+        line0: 'itahc-certificate.pdf'
+      })
     })
 
-    it('Should round-trip a MULTI-document journey answers->fulfilments->answers and drop the answers-only filename', () => {
+    it('Should round-trip uploadId and filename in a MULTI-document journey answers->fulfilments->answers', () => {
       const recovered = fulfilmentsToAnswers(answersToFulfilments(answers))
       expect(recovered.documents).toHaveLength(2)
       expect(recovered.documents[0]).toEqual({
@@ -278,12 +287,13 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
           day: '12',
           month: '12',
           year: '2025'
-        }
+        },
+        uploadId: 'upload-001',
+        filename: 'itahc-certificate.pdf'
       })
       expect(recovered.documents[1]).toEqual({
         accompanyingDocumentType: 'OTHER'
       })
-      expect(recovered.documents[0].filename).toBeUndefined()
     })
   })
 

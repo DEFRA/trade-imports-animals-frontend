@@ -116,6 +116,37 @@ describe('#entryComplete', () => {
     const path = ['commodityLines', 0, 'animalIdentifiers']
     expect(completeFlags(answers, path)).toEqual([true])
   })
+
+  it('Should treat an upload-only document as started but incomplete', () => {
+    const answers = {
+      documents: [{ uploadId: 'upload-001', filename: 'itahc-certificate.pdf' }]
+    }
+    expect(completeFlags(answers, ['documents'])).toEqual([false])
+  })
+
+  it('Should not let optional upload fields block a complete document', () => {
+    const completeDocument = {
+      accompanyingDocumentType: 'ITAHC',
+      accompanyingDocumentAttachmentType: 'PDF',
+      accompanyingDocumentReference: 'GBHC1234567890',
+      accompanyingDocumentDateOfIssue: {
+        day: '12',
+        month: '12',
+        year: '2025'
+      }
+    }
+    const answers = {
+      documents: [
+        completeDocument,
+        {
+          ...completeDocument,
+          uploadId: 'upload-001',
+          filename: 'itahc-certificate.pdf'
+        }
+      ]
+    }
+    expect(completeFlags(answers, ['documents'])).toEqual([true, true])
+  })
 })
 
 describe('collectionCapAt reads from positional storage (maxEntriesFrom)', () => {

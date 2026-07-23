@@ -833,6 +833,20 @@ export const accompanyingDocumentDateOfIssue = {
   status: 'mandatory'
 }
 
+export const documentUploadId = {
+  id: '59dc2402-3805-4af3-9690-2b9628a59e83',
+  name: 'uploadId',
+  within: documents,
+  status: 'optional'
+}
+
+export const documentFilename = {
+  id: '74dc1adc-b2d4-4a66-bf75-3af127810264',
+  name: 'filename',
+  within: documents,
+  status: 'optional'
+}
+
 // -----------------------------------------------------------------------------
 // Manifest — order does not affect evaluation (evaluator builds group
 // hierarchy via `within` back-references).
@@ -886,7 +900,9 @@ export const obligations = [
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
   accompanyingDocumentReference,
-  accompanyingDocumentDateOfIssue
+  accompanyingDocumentDateOfIssue,
+  documentUploadId,
+  documentFilename
 ]
 
 // Groups are obligations that other obligations reference via `within`.

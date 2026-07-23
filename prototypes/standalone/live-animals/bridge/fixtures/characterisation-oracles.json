@@ -178,6 +178,14 @@
           "month": "11",
           "year": "2025"
         }
+      },
+      "59dc2402-3805-4af3-9690-2b9628a59e83": {
+        "line0": "upload-001",
+        "line1": "upload-002"
+      },
+      "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+        "line0": "itahc-certificate.pdf",
+        "line1": "air-waybill.png"
       }
     },
     "evaluation": {
@@ -320,6 +328,14 @@
             "month": "11",
             "year": "2025"
           }
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "line0": "upload-001",
+          "line1": "upload-002"
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+          "line0": "itahc-certificate.pdf",
+          "line1": "air-waybill.png"
         }
       },
       "obligations": {
@@ -695,6 +711,32 @@
               "status": "mandatory"
             }
           ]
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "optional"
+            }
+          ]
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "optional"
+            }
+          ]
         }
       }
     },
@@ -854,7 +896,9 @@
             "day": "12",
             "month": "12",
             "year": "2025"
-          }
+          },
+          "uploadId": "upload-001",
+          "filename": "itahc-certificate.pdf"
         },
         {
           "accompanyingDocumentType": "AIR_WAYBILL",
@@ -864,7 +908,9 @@
             "day": "1",
             "month": "11",
             "year": "2025"
-          }
+          },
+          "uploadId": "upload-002",
+          "filename": "air-waybill.png"
         }
       ]
     },
@@ -1149,6 +1195,12 @@
       },
       "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
         "line0": "ITAHC"
+      },
+      "59dc2402-3805-4af3-9690-2b9628a59e83": {
+        "line0": "upload-partial"
+      },
+      "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+        "line0": "partial.pdf"
       }
     },
     "evaluation": {
@@ -1159,6 +1211,12 @@
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "line0": "ITAHC"
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "line0": "upload-partial"
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+          "line0": "partial.pdf"
         }
       },
       "obligations": {
@@ -1410,6 +1468,24 @@
               "status": "mandatory"
             }
           ]
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            }
+          ]
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            }
+          ]
         }
       }
     },
@@ -1422,7 +1498,9 @@
       ],
       "documents": [
         {
-          "accompanyingDocumentType": "ITAHC"
+          "accompanyingDocumentType": "ITAHC",
+          "uploadId": "upload-partial",
+          "filename": "partial.pdf"
         }
       ]
     },
@@ -1632,6 +1710,14 @@
           "records": []
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": []
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "inScope": true,
+          "records": []
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
           "records": []
         }
@@ -1961,6 +2047,14 @@
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
           "inScope": true,
           "records": []
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "inScope": true,
+          "records": []
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
+          "inScope": true,
+          "records": []
         }
       }
     },
@@ -2285,6 +2379,14 @@
           "records": []
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": []
+        },
+        "59dc2402-3805-4af3-9690-2b9628a59e83": {
+          "inScope": true,
+          "records": []
+        },
+        "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
           "records": []
         }
