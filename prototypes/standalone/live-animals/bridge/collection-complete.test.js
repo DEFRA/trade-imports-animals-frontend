@@ -5,8 +5,8 @@ import { entryComplete } from './collection-complete.js'
 import { valueAt } from '../lib/path.js'
 
 // Per-instance completeness (entryComplete), pinned against the manifest. The
-// two known structural divergences are retained with their DESIGN-DELTA.md §12
-// rationale so a regression fails loudly.
+// two known structural divergences are pinned here so a regression fails
+// loudly.
 
 const address = {
   name: 'Owner',
@@ -66,7 +66,7 @@ describe('#entryComplete', () => {
     expect(completeFlags(answers, path)).toEqual([true, true])
   })
 
-  it('Should keep entries / index / path A-side (positional storage)', () => {
+  it('Should keep entries / index / path in positional storage', () => {
     const answers = { commodityLines: [completeLine, emptyLine] }
     const view = collectionView(answers, ['commodityLines'])
     expect(
@@ -75,13 +75,13 @@ describe('#entryComplete', () => {
       { index: 0, path: ['commodityLines', 0], entry: completeLine },
       { index: 1, path: ['commodityLines', 1], entry: emptyLine }
     ])
-    // entry is the SAME reference the store held, unchanged by the B path.
+    // entry is the SAME reference the store held, unchanged by the evaluator.
     expect(view[0].entry).toBe(completeLine)
   })
 
-  // Behaviour retained from the oracle's "known divergence" pins (finds, NOT
-  // repaired). B scopes each concern precisely, so these read complete; a future
-  // change that flips them fails loudly. See DESIGN-DELTA.md §12.
+  // Two known structural divergences, pinned (not repaired). The evaluator
+  // scopes each concern precisely, so these read complete; a future change that
+  // flips them fails loudly.
 
   it('Should read a Cow unit without permanentAddress as complete (scoped to 01061900)', () => {
     const answers = {
@@ -97,9 +97,10 @@ describe('#entryComplete', () => {
     expect(completeFlags(answers, ['commodityLines'])).toEqual([true])
   })
 
-  it('Should read a fully-empty nested unit as complete (vanishes from B)', () => {
-    // B infers instances from leaf composite prefixes; a unit with no stored
-    // leaf is never enumerated, so B cannot flag its unmet at-least-one rule.
+  it('Should read a fully-empty nested unit as complete (never enumerated)', () => {
+    // The evaluator infers instances from leaf composite prefixes; a unit with
+    // no stored leaf is never enumerated, so its unmet at-least-one rule cannot
+    // fire.
     const answers = {
       commodityLines: [
         {
@@ -115,8 +116,8 @@ describe('#entryComplete', () => {
   })
 })
 
-describe('collectionCapAt stays A-side (maxEntriesFrom, inc-024a)', () => {
-  it('returns A cardinality', () => {
+describe('collectionCapAt reads from positional storage (maxEntriesFrom)', () => {
+  it('returns the positional cardinality', () => {
     const answers = {
       commodityLines: [
         { numberOfAnimalsQuantity: '3', animalIdentifiers: [{}, {}] }

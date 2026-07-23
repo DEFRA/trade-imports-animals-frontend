@@ -1,19 +1,18 @@
 /**
- * reachability.test.js — Phase 3 commit 1 of the EUDPA-288 blend plan.
+ * reachability.test.js — the graph-level reachability check.
  *
- * Port of A's reachability prover scaffold, narrowed to the graph-level
- * check A's prover collapses to when a gate's predicate is opaque:
+ * Narrowed to the check the prover collapses to when a gate's predicate is
+ * opaque:
  *
  *   "an obligation is reachable IFF every id it declares in
  *    `dependsOn` is reachable, seeded from the always-in-scope set
  *    (obligations with `dependsOn: []`)."
  *
  * Witness synthesis at the value level ("what value of `regionCode-
- * Requirement` opens `regionCode`?") is deferred to Phase 3 commit 2
- * (structured helpers) + commit 3 (coverage gate). See BRIEF
- * §Migration #3, REPORT §5.1 and DESIGN-DELTA.md.
+ * Requirement` opens `regionCode`?") is handled by the structured helpers
+ * and the coverage gate.
  *
- * These tests pin behaviour that must survive commits 2 and 3:
+ * These tests pin:
  *   - always-in-scope obligation trivially reachable
  *   - transitive dependency chain reachable
  *   - unreachable-in-principle obligation is flagged (via a synthetic
@@ -47,13 +46,13 @@ import {
 // ---------------------------------------------------------------------------
 // Helpers — turn an obligation into the `{ id, dependsOn }` record the
 // prover operates over. Mirrors how the real manifest gets fed in
-// (via obligationMetadata from Phase 2 commit 1).
+// (via obligationMetadata).
 // ---------------------------------------------------------------------------
 
 const record = (id, dependsOn) => ({ id, dependsOn })
 
 // A record's dependsOn is:
-//   - the metadata dependsOn when the obligation has an applyTo (Phase 2
+//   - the metadata dependsOn when the obligation has an applyTo (the
 //     coverage assertion pins this to a string[]).
 //   - `[]` for obligations WITHOUT an applyTo — plain field records like
 //     `commodityCode`, `commodityType`, `species`, `numberOfAnimals` and
@@ -69,13 +68,13 @@ const manifestRecords = () =>
   })
 
 // ---------------------------------------------------------------------------
-// Trivial reachability — the base case A's prover handles vacuously.
+// Trivial reachability — the base case the prover handles vacuously.
 // ---------------------------------------------------------------------------
 
 describe('#proveReachability — trivial cases', () => {
   it('Should classify an obligation with dependsOn: [] as reachable', () => {
-    // Cite: countryOfOrigin in the real manifest has dependsOn: [] —
-    // one of 19 always-in-scope closures per the Phase 2 sweep.
+    // countryOfOrigin in the real manifest has dependsOn: [] — one of
+    // the 19 always-in-scope obligations.
     const result = proveReachability([record('countryOfOrigin', [])])
     expect(result.reachable).toContain('countryOfOrigin')
     expect(result.unreachable).toEqual([])
@@ -148,8 +147,8 @@ describe('#proveReachability — unreachable detection', () => {
 
 describe('#proveReachability — real V4 manifest', () => {
   it('Should report ZERO unreachable obligations', () => {
-    // Phase 2 commit 2 landed dependsOn on every gated obligation.
-    // Under the conservative closure treatment (a closure "opens" iff
+    // Every gated obligation carries dependsOn. Under the conservative
+    // closure treatment (a closure "opens" iff
     // every dependsOn is reachable), no cycle-free set of closures on
     // the real manifest can trap a gate that's never opened. Any
     // regression here means someone shipped a real reachability
@@ -163,10 +162,10 @@ describe('#proveReachability — real V4 manifest', () => {
 
 // ---------------------------------------------------------------------------
 // Self-loop handling — the prover must treat a pure self-referencing
-// dependsOn as a seed and never recurse forever. (inc-016b removed the
-// manifest's only self-loop — accompanyingDocumentType is now an
-// applyTo-less per-record trigger — so this exercises the rule with a
-// synthetic record and pins the whole-manifest run stays clean.)
+// dependsOn as a seed and never recurse forever. The manifest has no
+// self-loop — accompanyingDocumentType is an applyTo-less per-record
+// trigger — so this exercises the rule with a synthetic record and pins
+// that the whole-manifest run stays clean.
 // ---------------------------------------------------------------------------
 
 describe('#proveReachability — self-loop handling', () => {
@@ -216,12 +215,11 @@ describe('#proveReachability — defensive against dangling ids', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Phase 3 commit 2 — witness synthesis. The `synthesiseWitness` accessor
-// tightens the graph-only pass into a value-level check for structured
-// helpers. BRIEF §Migration #3 + REPORT §5.1 tax warning: "witness
-// synthesiser + seeding rule per operator". Each helper this test
-// covers must round-trip through the REAL applyTo closure and return
-// `inScope: true` — that's the fidelity assertion.
+// Witness synthesis. The `synthesiseWitness` accessor tightens the
+// graph-only pass into a value-level check for structured helpers. The
+// standing tax is a witness synthesiser plus a seeding rule per operator.
+// Each helper this test covers must round-trip through the REAL applyTo
+// closure and return `inScope: true` — that's the fidelity assertion.
 // ---------------------------------------------------------------------------
 
 describe('#synthesiseWitness — per-helper metadata inversion', () => {
@@ -352,7 +350,7 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
   })
 
   it('Should return a value NOT in the derived union as witness for notInUnionOf', () => {
-    // Phase 4 §Migration #4: `notInUnionOf` closes the last opaque gap.
+    // `notInUnionOf` closes the last opaque gap.
     // Witness = a stable sentinel that's NOT in the derived union. The
     // fidelity check re-runs the closure against the witness and must
     // return `inScope: true` — that's the load-bearing invariant that
@@ -399,11 +397,10 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
   })
 
   // -------------------------------------------------------------------------
-  // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. Each is a
-  // structured helper whose `.metadata` fully describes the gate, so
-  // witness synth reads directly and the fidelity round-trip must open
-  // the real closure. Migration onto them is Phase 4.5.2's job — this
-  // block only pins the witness-synth contract.
+  // Meta-first gate helpers. Each is a structured helper whose
+  // `.metadata` fully describes the gate, so witness synth reads directly
+  // and the fidelity round-trip must open the real closure. This block
+  // only pins the witness-synth contract.
   // -------------------------------------------------------------------------
 
   it('Should synthesise a witness that opens the real closure for equalsGate (purge-on-flip)', () => {
@@ -583,7 +580,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
 // ---------------------------------------------------------------------------
 
 describe('#proveWithWitnesses — real V4 manifest classification', () => {
-  it('Should leave the graph-level result unchanged (backwards compat with commit 1)', () => {
+  it('Should leave the graph-level result unchanged (backwards compatible)', () => {
     const result = proveWithWitnesses(obligations)
     expect(result.unreachable).toEqual([])
     // Fidelity errors — none expected on the real manifest. Any error
@@ -598,9 +595,9 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
     expect(classifiedCount).toBe(obligations.length)
   })
 
-  it('Should have the expected classification counts after Phase 4 notInUnionOf migration (≥14 synthesisable, 0 opaque)', () => {
+  it('Should have the expected classification counts after the notInUnionOf migration (≥14 synthesisable, 0 opaque)', () => {
     const result = proveWithWitnesses(obligations)
-    // Phase 4 §Migration #4: identificationDetails + description
+    // identificationDetails + description
     // migrated off `allowListedByPredicate` onto `notInUnionOf`. Both
     // now witness-synthesisable — the manifest carries ZERO opaque
     // gates.
@@ -634,8 +631,8 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Phase 4.5.2 migration fidelity — EXHAUSTIVE round-trip across all 9
-// sites migrated from `branchedGate`+`predicateMeta` onto the meta-first
+// Migration fidelity — EXHAUSTIVE round-trip across all 9 sites migrated
+// from `branchedGate`+`predicateMeta` onto the meta-first
 // helpers (`equalsGate`, `presentGate`, `includesGate`). This is the
 // load-bearing "migration didn't change semantics" pin: for each site
 // we synthesise a witness, inject it into a fulfilments map, feed it to
@@ -651,7 +648,7 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
 // shape.
 // ---------------------------------------------------------------------------
 
-describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
+describe('migration fidelity — 9 sites round-trip', () => {
   const findOblByName = (name) => obligations.find((o) => o.name === name)
 
   // Non-total: whenTrue in scope, whenFalse out. Witness synth returns
@@ -740,17 +737,17 @@ describe('Phase 4.5.2 migration fidelity — 9 sites round-trip', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Backwards compat — a graph-level-only test from commit 1 still
-// passes verbatim. numberOfPackages was already reachable graph-side;
-// it must remain so after commit 2.
+// Backwards compat — the graph-level-only check still passes verbatim.
+// numberOfPackages was already reachable graph-side; the witness pass
+// must not change that.
 // ---------------------------------------------------------------------------
 
-describe('#proveReachability — backwards compat with commit 1', () => {
+describe('#proveReachability — graph-level backwards compat', () => {
   it('Should keep numberOfPackages reachable in the graph-only pass', () => {
-    // The commit-1 whole-manifest test asserts zero unreachable. This
-    // pin picks out a specific gate to prove the graph-level behaviour
-    // is UNCHANGED — commit 2 tightens on top of commit 1, it does
-    // not replace it.
+    // The whole-manifest test asserts zero unreachable. This pin picks
+    // out a specific gate to prove the graph-level behaviour is
+    // UNCHANGED — the witness pass tightens on top of it, it does not
+    // replace it.
     const records = obligations.map((o) => {
       if (typeof o.applyTo === 'function') {
         return { id: o.id, dependsOn: obligationMetadata(o).dependsOn }

@@ -2,9 +2,8 @@
  * Obligations — Live Animals V4 data-field model.
  *
  * Source: Confluence "Live Animals Data Fields - V4" (page 6497338582).
- * Model under test: obligations model from EUDPA-249 spike (see
- * ../obligations/). This manifest expresses the V4 domain against that
- * model; see GAPS.md for gaps discovered and how they were closed.
+ * Model under test: the obligations model (see ../obligations/). This
+ * manifest expresses the V4 domain against that model.
  *
  * Scope mechanism: every obligation with a conditional scope uses
  * `applyTo(fulfilments, fulfilmentIdsByObligationId)`. Common gate
@@ -188,7 +187,7 @@ const permanentAddressReason = {
 // presented in the flow layer. Value legality is enforced upstream
 // (system minting for the reference number; gov.identity for the
 // responsible person), so both are on `KNOWN_UNWIRED` in
-// obligations/coverage.test.js. Added during step 5c spec pass.
+// obligations/coverage.test.js.
 // -----------------------------------------------------------------------------
 
 // V4: `GBN-AG-YY-XXXXXX` where XXXXXX is a 6-char Crockford base32
@@ -202,7 +201,7 @@ export const poApprovedReferenceNumber = {
 
 // V4: Consumed from gov.identity on authentication. Composite:
 // { person, telephone, email, orgName, orgAddress, orgTelephone }.
-// gov.identity guarantees the shape upstream so the spike does not
+// gov.identity guarantees the shape upstream so the model does not
 // enforce a domain-level predicate.
 export const responsiblePersonForLoad = {
   id: 'ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e',

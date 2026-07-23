@@ -181,7 +181,7 @@ const additionalAnimalDetailsCard = (answers, scope) => ({
   ]
 })
 
-// One card per commodity line = one per species (inc-062); the title carries
+// One card per commodity line = one per species; the title carries
 // both the commodity and the species so same-commodity cards stay distinct.
 const speciesCardTitle = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()

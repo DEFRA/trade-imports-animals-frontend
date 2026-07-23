@@ -1,7 +1,7 @@
 /**
  * Model purity — key-level display-key ban.
  *
- * Enforces the ruling "No display logic in the model." The import-specifier
+ * Enforces "No display logic in the model." The import-specifier
  * guard in `obligation-purity.js` is necessary but not sufficient — it never
  * inspects a key, so it would not catch someone adding `titleKey:` or
  * `label:` directly onto an obligation or domain entry.

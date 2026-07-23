@@ -43,7 +43,7 @@ const datePartsFromIso = (iso) => {
 // Shared builders (used by both mappers)
 // ---------------------------------------------------------------------------
 
-// The store is line-per-species (inc-062): a commodity line is one commodity
+// The store is line-per-species: a commodity line is one commodity
 // code plus ONE species with its own counts and nested identifier records.
 // The skeleton commodity blob is one complement per COMMODITY with a species
 // array, per-species counts and complement-level totals — so both mappers

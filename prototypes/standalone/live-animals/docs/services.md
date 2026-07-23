@@ -13,7 +13,7 @@ Each service is a folder with a fixed shape:
 - `services/<name>/index.js` — the interface the controllers call. It is
   synchronous and holds no data of its own; it reads from a data module and
   shapes the result into option lists and label lookups.
-- `services/<name>/stub.js` — the vendored reference data: the code→label maps
+- `services/<name>/stub.js` — the built-in reference data: the code→label maps
   and option arrays that stand in for the real backing system.
 - `services/<name>/client.js` or `real.js` — present only where a real backend
   exists (`countries`, `ports`, `document-uploads`, and the persistence
@@ -39,7 +39,7 @@ fetch fails boot loudly. Stub mode never calls the network.
 `persistence/session`. Their `index.js` picks the whole implementation module —
 `real.js` or `stub.js` — by `isRealMode()` at import time, and re-exports it.
 
-Services with no real backend serve their vendored data in both modes.
+Services with no real backend serve their built-in data in both modes.
 
 ## Value storage and labels
 
@@ -92,7 +92,7 @@ and the full Standard Address Block; the commercial-transporter records also
 carry an approval number. A chosen party is saved into the notification by copy,
 so every field is preserved even if the book later changes.
 
-`parties(role)` merges the vendored records for that role with any created in the
+`parties(role)` merges the built-in records for that role with any created in the
 session. `search(role, { query, page })` is a free-text match over each record's
 name, address and country and returns one page — `results`, `total`, `page`,
 `totalPages`, `pageSize` — with `PAGE_SIZE` fixed at 5 and an out-of-range page

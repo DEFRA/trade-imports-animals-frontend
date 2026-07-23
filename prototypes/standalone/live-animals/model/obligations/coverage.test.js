@@ -126,11 +126,10 @@ describe('uniqueness — every obligation has a distinct id and name', () => {
   })
 })
 
-describe('step 5c — system-populated V4 fields declared but not presented', () => {
+describe('system-populated V4 fields declared but not presented', () => {
   it('poApprovedReferenceNumber + responsiblePersonForLoad are on the manifest', () => {
-    // Regression against the parent EUDPA-277 spike's decision to
-    // skip these entirely. Step 5c added them for V4 completeness;
-    // if either goes missing, this fires.
+    // These were skipped in an earlier iteration; they're required for
+    // V4 completeness, so if either goes missing this fires.
     const names = obligations.map((o) => o.name)
     expect(names).toContain('poApprovedReferenceNumber')
     expect(names).toContain('responsiblePersonForLoad')
@@ -140,8 +139,8 @@ describe('step 5c — system-populated V4 fields declared but not presented', ()
     // They're system-populated (mint / gov.identity), so scope is
     // unconditional; the notification can't exist without them.
     //
-    // Post Phase 4.5.3 (EUDPA-288): the data-only shape { id, name,
-    // status } is the declaration — no `applyTo` closure needed. The
+    // The data-only shape { id, name, status } is the declaration — no
+    // `applyTo` closure needed. The
     // evaluator's `field` classifier routes these through the "top-
     // level scalar with intrinsic status" branch and returns
     // `{ inScope: true, status: obligation.status }`. We pin both the
@@ -158,25 +157,22 @@ describe('step 5c — system-populated V4 fields declared but not presented', ()
 })
 
 // -----------------------------------------------------------------------------
-// EUDPA-288 Phase 2 commit 2 — dependsOn coverage.
+// dependsOn coverage.
 //
 // Every obligation that carries an `applyTo` closure must resolve to a
 // `dependsOn: string[]` listing the ids of the obligations whose stored
 // values the closure reads. `dependsOn: []` is the honest annotation
 // for unconditional / always-in-scope closures (no reads).
 //
-// Rationale — BRIEF §Migration #2 (★ highest value-per-line item in the
-// whole comparison) + REPORT §5.1: closures are opaque to A's
-// reachability prover; without a declared dependency graph the prover
-// goes vacuously green because `gateValue` cannot invert an opaque
-// closure body. Making `dependsOn` a declared field alongside the
-// closure recovers the statically-recoverable graph without giving up
-// the imperative-JS gate surface. Phase 3 ports A's prover on top of
-// this data.
+// Rationale: closures are opaque to the reachability prover; without a
+// declared dependency graph the prover goes vacuously green because
+// `gateValue` cannot invert an opaque closure body. Making `dependsOn`
+// a declared field alongside the closure recovers the statically-
+// recoverable graph without giving up the imperative-JS gate surface.
 //
-// Phase 4.5.2 refinement (EUDPA-288): meta-first helpers name their
-// gate obligation on `.metadata.obligation`, so `dependsOn` becomes
-// DERIVABLE for those sites. The assertion accepts either:
+// Meta-first helpers name their gate obligation on
+// `.metadata.obligation`, so `dependsOn` becomes DERIVABLE for those
+// sites. The assertion accepts either:
 //   (a) an explicit `dependsOn: string[]` on the obligation, OR
 //   (b) a helper metadata whose type is one that `obligationMetadata`
 //       can derive from (`equalsGate`, `presentGate`, `includesGate`,
@@ -198,8 +194,8 @@ describe('coverage — every gated obligation carries (or derives) dependsOn', (
       .filter((o) => typeof o.applyTo === 'function')
       .filter((o) => {
         // `obligationMetadata` prefers explicit `dependsOn` but falls
-        // back to deriving from the helper metadata (Phase 4.5.2).
-        // Either path must terminate in an array.
+        // back to deriving from the helper metadata. Either path must
+        // terminate in an array.
         const meta = obligationMetadata(o)
         return !Array.isArray(meta.dependsOn)
       })

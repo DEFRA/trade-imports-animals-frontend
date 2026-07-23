@@ -84,7 +84,7 @@ const pagination = (party, { query, page, totalPages, selectedId }) => {
   }
 }
 
-/** The committed answer is a COPY of the record (name + address, no id — c-020),
+/** The committed answer is a COPY of the record (name + address, no id),
  * so the picker re-finds the record it came from by name to pre-check its row. */
 const committedId = (answers, party) =>
   addressBook

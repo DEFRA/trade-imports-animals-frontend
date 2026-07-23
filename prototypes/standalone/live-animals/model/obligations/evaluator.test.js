@@ -99,8 +99,7 @@ const cphReason = {
 
 // Line-instance-id mnemonics. Real orchestrator-generated ids are
 // opaque ULIDs; the tests use readable constants so intent is
-// scannable (option 3 of the readability-vs-machinery discussion —
-// see GAPS.md §1).
+// scannable.
 const LINE_UNKNOWN = 'line1' // commodity not in any allowlist
 const LINE_FISH = 'line2' //  Fish — no packages, no CPH, no specific identifier
 const LINE_COW = 'line4' //   Cow — packages AND CPH, passport + tattoo + earTag
@@ -524,7 +523,6 @@ describe('V4 — commodity line field records (round-trip)', () => {
 
 // ---------------------------------------------------------------------------
 // numberOfPackages — derived-leaf reuse (commodity-code-gated per line)
-// See GAPS.md §1.
 // ---------------------------------------------------------------------------
 
 describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
@@ -601,8 +599,8 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
     })
   })
 
-  // Identity comes from line-instance-id, not commodity value — see GAPS.md
-  // §1 for why the value-keyed shape would collapse here.
+  // Identity comes from line-instance-id, not commodity value — a value-keyed
+  // shape would collapse here.
   it('supports two lines sharing the same matching commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
@@ -1178,9 +1176,8 @@ describe('V4 — accompanying documents: the 0..10 cap', () => {
 // applyTo runs on the post-purge view (two-hop cascade)
 // ---------------------------------------------------------------------------
 //
-// BRIEF §Migration #1 + REPORT §7 "Sharper than resurrection": within a
-// single evaluate() call, an obligation's applyTo must read from the
-// post-purge fulfilments, not the pre-purge `recognisedFulfilments`.
+// Within a single evaluate() call, an obligation's applyTo must read from
+// the post-purge fulfilments, not the pre-purge `recognisedFulfilments`.
 // Otherwise a value that this same evaluate call purges via one gate can
 // still drive OTHER gates in the same call — the D2 in "G1 gates D; D
 // gates D2".
@@ -1261,28 +1258,25 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
 })
 
 // ---------------------------------------------------------------------------
-// EUDPA-288 Phase 4.5.3 — trivial `applyTo` drop fidelity.
+// Trivial `applyTo` drop fidelity.
 //
-// 19 always-in-scope obligations previously carried a redundant
-// `applyTo: () => ({ inScope: true, status: '<literal>' })` closure and
-// `dependsOn: []`. This commit deletes both, leaving the data-only shape
-// `{ id, name, status: '<literal>' }` that Phase 1.3's `within.id` deref
-// guard made routable through the evaluator's `field` classifier
-// (evaluator.js buildImplication → the "top-level scalar with intrinsic
-// status" branch returns `{ inScope: true, status: obligation.status }`).
+// 19 always-in-scope obligations use the data-only shape
+// `{ id, name, status: '<literal>' }` with no `applyTo` closure and no
+// `dependsOn`. The `within.id` deref guard makes them routable through
+// the evaluator's `field` classifier (evaluator.js buildImplication →
+// the "top-level scalar with intrinsic status" branch returns
+// `{ inScope: true, status: obligation.status }`).
 //
 // The fidelity contract this block pins: for every one of the 19
-// obligations, `evaluator.evaluate({})` returns EXACTLY the same
-// decision object shape (`{ inScope: true, status: '<literal>' }`) it
-// returned before the applyTo was removed. Any regression here means
-// the classifier didn't route the obligation to the `field` category or
-// the field branch produced a different shape.
+// obligations, `evaluator.evaluate({})` returns EXACTLY the decision
+// object shape `{ inScope: true, status: '<literal>' }`. Any regression
+// here means the classifier didn't route the obligation to the `field`
+// category or the field branch produced a different shape.
 //
-// Captured pre-migration output (see PLAN.md §8.5 Phase 4.5.3): 18
-// mandatory + 1 optional (`internalReferenceNumber`).
+// Expected split: 18 mandatory + 1 optional (`internalReferenceNumber`).
 // ---------------------------------------------------------------------------
 
-describe('Phase 4.5.3 — trivial applyTo drop fidelity (19 always-in-scope obligations)', () => {
+describe('trivial applyTo drop fidelity (19 always-in-scope obligations)', () => {
   const trivialAlwaysMandatoryObligations = [
     ['poApprovedReferenceNumber', poApprovedReferenceNumber],
     ['responsiblePersonForLoad', responsiblePersonForLoad],

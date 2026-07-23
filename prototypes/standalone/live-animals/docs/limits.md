@@ -22,8 +22,8 @@ editing a config file. See [obligation-model.md](obligation-model.md).
 
 ## The bridge round-trip loses data in two named places
 
-Controllers store answers in A's nested shape and the model evaluates B's
-flat fulfilments; [model/bridge/fulfilments.js](../model/bridge/fulfilments.js)
+Controllers store answers in a nested shape and the model evaluates flat
+fulfilments; [model/bridge/fulfilments.js](../model/bridge/fulfilments.js)
 translates between them. The forward direction (answers → fulfilments, the
 evaluate path) is always exact. The reverse direction has two documented
 losses:

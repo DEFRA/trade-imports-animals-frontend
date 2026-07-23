@@ -99,12 +99,12 @@ describe('allowListed', () => {
 // browser-side controllers that inspect metadata) never has to execute
 // the closure to know "would this code be admitted?".
 //
-// Rationale — REPORT §5.2: "notInUnionOf as a derived-union helper over
-// B's .metadata.values — STRICTLY better than B's hand-restated four-
-// whitelist complement, which silently double-gates if you add a fifth
-// typed identifier and forget a conjunct." Phase 4 §Migration #4 lands
-// the helper and migrates the two opaque `allowListedByPredicate` sites
-// (identificationDetails, description) off it.
+// Rationale: notInUnionOf is a derived-union helper over the metadata's
+// .values — strictly better than a hand-restated four-whitelist
+// complement, which silently double-gates if you add a fifth typed
+// identifier and forget a conjunct. The helper migrated the two opaque
+// `allowListedByPredicate` sites (identificationDetails, description)
+// onto it.
 // ---------------------------------------------------------------------------
 
 describe('notInUnionOf', () => {
@@ -144,10 +144,10 @@ describe('notInUnionOf', () => {
   })
 
   it('Should expose metadata.values as the union of the input allowlists (derived at helper-invocation time)', () => {
-    // The load-bearing REPORT §5.2 point: the union is DATA on the
-    // metadata sidecar, not a re-computation on each call. Adds a
-    // fifth typed identifier to the list of allowlists → the union
-    // widens; the closure body doesn't need updating.
+    // The load-bearing point: the union is DATA on the metadata
+    // sidecar, not a re-computation on each call. Adds a fifth typed
+    // identifier to the list of allowlists → the union widens; the
+    // closure body doesn't need updating.
     const gate = notInUnionOf(
       codeObl,
       [firstAllowlist, secondAllowlist],
@@ -328,11 +328,10 @@ describe('present', () => {
 // obligationMetadata — surfaces the obligation-level metadata sidecar
 // (gate shape from applyTo.metadata + the new `dependsOn` schema key).
 //
-// Rationale: BRIEF §Migration #2 (★ highest value-per-line) + REPORT §5.1.
-// Closures are opaque, so gates must declare their dependency graph as
-// data alongside the closure. `dependsOn` is the schema key; the
-// accessor surfaces it so a future coverage assertion (Phase 2 commit 2)
-// can enforce "every gated obligation carries a complete dependsOn".
+// Rationale: closures are opaque, so gates must declare their dependency
+// graph as data alongside the closure. `dependsOn` is the schema key; the
+// accessor surfaces it so the coverage assertion can enforce "every gated
+// obligation carries a complete dependsOn".
 // ---------------------------------------------------------------------------
 
 describe('obligationMetadata', () => {
@@ -349,8 +348,9 @@ describe('obligationMetadata', () => {
   })
 
   it('Should return dependsOn: undefined when the obligation omits the key', () => {
-    // Commit 2 will grep this shape: "if dependsOn is undefined and the
-    // obligation carries a gated applyTo, fail the coverage assertion."
+    // The coverage assertion checks this shape: "if dependsOn is
+    // undefined and the obligation carries a gated applyTo, fail the
+    // coverage assertion."
     const obligation = {
       id: 'y-id',
       name: 'y',
@@ -387,16 +387,15 @@ describe('obligationMetadata', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Meta-first gate helpers — EUDPA-288 Phase 4.5.1.
+// Meta-first gate helpers.
 //
 // The `regionCode` / `purposeInInternalMarket` / `commercialTransporter`
-// pattern under Phase 3.2 declares its dependency THREE times: closure
-// body reads `fulfilments[X.id]`, `predicateMeta` restates that as
+// pattern declares its dependency THREE times: closure body reads
+// `fulfilments[X.id]`, `predicateMeta` restates that as
 // `{operator:'equals', obligationId:X.id, value:V}`, and `dependsOn`
 // restates it a third time as `[X.id]`. These helpers collapse the
 // duplication: the metadata IS the definition, the closure body is
-// auto-generated. Phase 4.5.2 will migrate the 10 sites; this commit
-// only introduces the helpers (purely additive).
+// auto-generated.
 //
 // Frame semantics: all four helpers use the SAME-FRAME scalar-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
@@ -586,7 +585,7 @@ describe('alwaysInScope', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Shared internals — isRecordMap / readGate. Phase 4.6.4 (Q4).
+// Shared internals — isRecordMap / readGate.
 //
 // Extracted from the "stored → candidates" normalization that used to be
 // inlined verbatim in `anyAllowListed` and (in an entries-shaped variant)

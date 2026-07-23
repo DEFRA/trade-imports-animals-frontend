@@ -15,7 +15,7 @@ import {
 } from './evaluator.js'
 
 // Synthetic fixtures — small hand-crafted obligation manifests that let each
-// extracted function be exercised without the whole car-insurance model.
+// extracted function be exercised without the full obligations model.
 //
 // Naming convention: two-letter ids for readability at assertion sites
 // ('g1' = group 1, 'f1' = field 1, etc.). Real obligations use UUIDs.
@@ -705,11 +705,8 @@ describe('buildImplication', () => {
 
   // A top-level field-category obligation (no `within`) is a scalar
   // with an intrinsic status — e.g. `{ id, name, status: 'optional' }`.
-  // The pre-fix engine dereferenced `obligation.within.id`
-  // unconditionally in the field branch and threw TypeError on this
-  // natural data-only shape (BRIEF §Migration #1; REPORT §3.1, §5.1).
-  // Guarding the deref is a precondition for the Phase 2
-  // closure-to-data sweep.
+  // The field branch must guard the `obligation.within.id` deref, since
+  // an unconditional deref throws TypeError on this data-only shape.
   it('field record with no `within` (top-level scalar) → { inScope, status } like an always-in-scope applyTo', () => {
     const obligation = { id: 'o', status: 'optional' }
     const result = buildImplication(obligation, {

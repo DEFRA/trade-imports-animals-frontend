@@ -7,7 +7,7 @@ import {
 } from './obligation-purity.js'
 
 describe('obligation model purity', () => {
-  it('Should pass for the real vendored model (no display keys)', () => {
+  it('Should pass for the real model (no display keys)', () => {
     expect(() => assertObligationPurity()).not.toThrow()
   })
 })

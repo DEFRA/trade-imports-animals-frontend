@@ -70,9 +70,9 @@ import { isRecordMap, readGate } from './helper-internals.js'
  *   ANY commodityCode across commodity lines" case; see its docstring.
  *
  *   `branchedGate` is the escape hatch for genuinely non-derivable
- *   predicates. After Phase 4.5 it is absent from the manifest but
- *   retained here for future use — it must be paired with `predicateMeta`
- *   for the reachability prover to synthesise a witness.
+ *   predicates. It is absent from the manifest today but retained here
+ *   for future use — it must be paired with `predicateMeta` for the
+ *   reachability prover to synthesise a witness.
  */
 
 /**
@@ -203,7 +203,7 @@ export const anyAllowListed = (gateObligation, values, whenTrue, whenFalse) => {
  * `(fulfilments, fulfilmentIdsByObligationId) → boolean`.
  *
  * `predicateMeta` (optional) — structured description of the predicate
- * shape so the Phase 3 reachability prover can synthesise a witness
+ * shape so the reachability prover can synthesise a witness
  * value that opens the gate without executing the closure. Shape:
  *
  *   { operator: 'equals'    , obligationId: string, value: string  }  // fulfilments[id] === value
@@ -283,10 +283,9 @@ export const present = (obligation) => {
 // The four helpers below (`equalsGate`, `presentGate`, `includesGate`,
 // `alwaysInScope`) extend the pattern that `allowListed` / `notInUnionOf`
 // already use — the helper's `.metadata` IS the definition, and the
-// closure body is auto-generated from it. Phase 4.5.2 migrates the 10
-// call sites; this file only introduces the helpers (purely additive —
-// `branchedGate` stays as an escape hatch for genuinely opaque
-// predicates, of which the manifest today has none).
+// closure body is auto-generated from it. `branchedGate` stays as an
+// escape hatch for genuinely opaque predicates, of which the manifest
+// today has none.
 //
 // Frame semantics — all four helpers use the SAME-FRAME scalar-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate`: the
@@ -337,12 +336,11 @@ export const equalsGate = (gateObligation, value, whenTrue, whenFalse) => {
  * scalar values other than `null`/`undefined` count as present; indexed
  * obligations count as present iff at least one key exists.
  *
- * Migration site: `accompanyingDocumentType`'s self-referential
- * status-swap block (though the four accompanying-document siblings
- * currently share a `branchedGate` reading `documentTypePresent`).
- * Under Phase 4.5.2 the four siblings can either share a single
- * `presentGate(accompanyingDocumentType, {mandatory}, {optional})` or
- * each site declares its own.
+ * Applies to `accompanyingDocumentType`'s self-referential status-swap
+ * block (though the four accompanying-document siblings currently share
+ * a `branchedGate` reading `documentTypePresent`). The four siblings can
+ * either share a single `presentGate(accompanyingDocumentType,
+ * {mandatory}, {optional})` or each site declares its own.
  *
  * @param {object} gateObligation — the obligation whose "answered" state gates.
  * @param {object} whenTrue — decision returned when gate is answered.
@@ -393,8 +391,8 @@ export const includesGate = (gateObligation, values, whenTrue, whenFalse) => {
 
 /**
  * alwaysInScope — no gate; the decision is unconditional. Retained
- * post Phase 4.5.3 for the ONE case the data-only obligation shape
- * cannot express: an always-in-scope obligation that must attach a
+ * for the ONE case the data-only obligation shape cannot express: an
+ * always-in-scope obligation that must attach a
  * `reasons` list to the decision object. The evaluator's `field`
  * classifier returns `{ inScope: true, status: obligation.status }`
  * — no reasons channel. Any always-in-scope obligation that needs to
@@ -403,8 +401,8 @@ export const includesGate = (gateObligation, values, whenTrue, whenFalse) => {
  * than reintroducing a bare closure — the helper's metadata is
  * introspectable and its witness classifies as TRIVIAL.
  *
- * The 19 sites Phase 4.5.3 dropped had NO reasons, so the data-only
- * shape absorbed them all; `alwaysInScope` sits idle on the manifest
+ * The always-in-scope sites carry NO reasons, so the data-only shape
+ * absorbs them all; `alwaysInScope` sits idle on the manifest
  * today but is not deprecated — it is the reserved lane for the
  * "always in scope + reasons" combination the field branch cannot
  * express.
@@ -453,16 +451,16 @@ export const alwaysInScope = (status, reasons) => {
  *      duplicating it on the obligation. See `deriveDependsOn` below
  *      for the per-helper rules.
  *
- * The derivation preserves the graph invariant that Phase 2 commit 2
- * established: every gated obligation resolves to a `string[]` here,
- * even when the site itself has dropped the explicit annotation.
+ * The derivation preserves the graph invariant: every gated obligation
+ * resolves to a `string[]` here, even when the site itself has dropped
+ * the explicit annotation.
  *
  * @param {object} obligation — the obligation object from the manifest.
  * @returns {object} — combined metadata: gate-shape fields (if any) +
  *   `dependsOn` (a `string[]` for any obligation whose helper metadata
  *   names its gate; `undefined` only when the obligation has neither an
- *   explicit `dependsOn` nor a recoverable helper metadata — commit 2
- *   uses that to detect uncovered gates).
+ *   explicit `dependsOn` nor a recoverable helper metadata — the
+ *   coverage assertion uses that to detect uncovered gates).
  */
 export const obligationMetadata = (obligation) => {
   const gateMeta = obligation?.applyTo?.metadata ?? {}
@@ -485,7 +483,7 @@ export const obligationMetadata = (obligation) => {
  *     names the single gate obligation; derive `[metadata.obligation]`.
  *   - `branchedGate` — an OPAQUE-by-default helper; the closure body is
  *     the source of truth. Falls back to `metadata.predicateMeta.obligationId`
- *     when the caller annotated it (Phase 3 shape), otherwise `undefined`
+ *     when the caller annotated it, otherwise `undefined`
  *     (the coverage assertion catches this — a `branchedGate` used as an
  *     escape hatch must still carry an explicit `dependsOn`).
  *   - `alwaysInScope` — no reads; derive `[]`.

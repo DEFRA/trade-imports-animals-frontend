@@ -9,16 +9,16 @@ import {
 } from './no-display-keys.js'
 
 /**
- * Key-level purity gate for the vendored model (EUDPA-288 inc-007b).
+ * Key-level purity gate for the model.
  *
- * Sam's ruling (PLAN §5.4): no display logic in the model. `obligation-
+ * No display logic in the model. `obligation-
  * purity.js` polices imports; this polices keys. Object-scoped — it inspects
  * the live obligation + domain objects, never source text, so `analysis/`'s
  * `OPERATOR_LABELS` / helper-type "labels" AST-operator constants are out of
  * scope and cannot false-positive.
  */
 describe('model has no display keys', () => {
-  it('bans the display keys the ruling names', () => {
+  it('bans the display keys', () => {
     expect(DISPLAY_KEYS).toEqual([
       'label',
       'title',
@@ -29,16 +29,16 @@ describe('model has no display keys', () => {
     ])
   })
 
-  it('finds NO display key on the real vendored model', () => {
+  it('finds NO display key on the real model', () => {
     expect(findDisplayKeyOffenders(obligations, domain)).toEqual([])
   })
 
-  it('does not throw on the real vendored model', () => {
+  it('does not throw on the real model', () => {
     expect(() => assertNoDisplayKeys(obligations, domain)).not.toThrow()
   })
 
-  // Positive control — mirrors inc-003's negative-control discipline. A
-  // labelled fixture MUST be caught; if the walk were a no-op this bite test
+  // Positive control — the negative-control discipline. A labelled fixture
+  // MUST be caught; if the walk were a no-op this bite test
   // would fail, so a green suite proves the check actually inspects keys.
   describe('positive control — a labelled fixture is caught', () => {
     it('catches a top-level display key on an obligation-shaped object', () => {

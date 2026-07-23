@@ -70,7 +70,7 @@ const consignment = {
     approvalNumber: 'UK/NEWCA/T1/00090953',
     address: { addressLine1: '7 Route One' }
   },
-  // One commodity with per-species rows (inc-062 line-per-species grain: the
+  // One commodity with per-species rows (line-per-species grain: the
   // prototype stores one commodity line per species; the skeleton stores one
   // complement with a species array). value + resolved display text are
   // captured identically by both systems — 'Bos taurus' is what the
@@ -162,7 +162,7 @@ const skeletonSession = (commodity) => ({
 })
 
 // (b) The equivalent prototype answers for the same consignment: one commodity
-// line per species (inc-062), each carrying its own counts and one identifier
+// line per species, each carrying its own counts and one identifier
 // unit for the earTag/passport pair.
 const prototypeAnswers = (commodity) => {
   const { type, ...transporterParty } = consignment.transporter

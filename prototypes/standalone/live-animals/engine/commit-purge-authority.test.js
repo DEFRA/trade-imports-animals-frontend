@@ -8,11 +8,11 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
-// commit's wipe authority is B's evaluator purge (projected to A pathKeys),
-// sharing A's session/journey/save layer. The region-requirement gate is the
-// c-017 case: answering the requirement 'no' flips regionOfOriginCode out of
-// scope and B's purge destroys the stored code. The purpose gate is a second
-// case B purges, proving the purge fires widely.
+// commit's wipe authority is the evaluator purge (projected to positional
+// pathKeys), sharing the session/journey/save layer. The region-requirement
+// gate: answering the requirement 'no' flips regionOfOriginCode out of scope
+// and the purge destroys the stored code. The purpose gate is a second case
+// the evaluator purges, proving the purge fires widely.
 
 const REGION_ANSWERED = {
   countryOfOrigin: 'FR',
@@ -32,7 +32,7 @@ const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) => records.saveAnswers(journeyId, answers)
 const durable = async () => (await records.load({ journeyId })).answers
 
-describe('#commit — B-authoritative purge', () => {
+describe('#commit — evaluator-authoritative purge', () => {
   beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -59,7 +59,7 @@ describe('#commit — B-authoritative purge', () => {
     )
   })
 
-  it("Should destroy exactly B's evaluator purge set", async () => {
+  it('Should destroy exactly the evaluator purge set', async () => {
     await seed(PURPOSE_ANSWERED)
     const merged = { ...PURPOSE_ANSWERED, ...TURN_PURPOSE_GATE_OFF }
     const expectedWipe = wipeSet(merged)

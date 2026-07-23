@@ -12,7 +12,7 @@ const address = (name, line1) => ({
 })
 
 // Answers carrying only the obligations Mapper A maps to the current backend
-// notification. One commodity line = one species (inc-062), with one animal
+// notification. One commodity line = one species, with one animal
 // identifier unit carrying earTag + passport — the identifiers that DO have a
 // home on the backend species entry.
 const mappedAnswers = () => ({

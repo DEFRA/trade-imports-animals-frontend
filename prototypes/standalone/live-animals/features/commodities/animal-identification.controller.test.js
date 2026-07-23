@@ -50,7 +50,7 @@ const viewCards = async (seed) => {
   return h.captured.view.context.cards
 }
 
-describe('#animalIdentificationController — the single card-per-species surface (inc-063, D16)', () => {
+describe('#animalIdentificationController — the single card-per-species surface', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -320,11 +320,11 @@ describe('#animalIdentificationController — the single card-per-species surfac
     })
   })
 
-  // The identifier-field render reads B's `.metadata.values` (the coverage-gated
+  // The identifier-field render reads the `.metadata.values` (the coverage-gated
   // sidecar), normalising the selected commodity NAME to a CN code via
   // commodityCodeFor before comparing. This matrix pins the rendered fields per
   // selectable species (Cow/Horse/Cat/Dog/Fish).
-  describe('identifier render matrix — B metadata per selectable species', () => {
+  describe('identifier render matrix — model metadata per selectable species', () => {
     const speciesLine = (commoditySelection, speciesSelection) => ({
       commoditySelection,
       speciesSelection,

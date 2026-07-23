@@ -290,7 +290,7 @@ describe('controller <-> model commit contract', () => {
       'importer'
     ])
 
-    // One shared picker serves all five spokes (inc-066): the chosen address
+    // One shared picker serves all five spokes: the chosen address
     // travels as the book's stable id, whichever page of results it sat on.
     const spokes = [
       {

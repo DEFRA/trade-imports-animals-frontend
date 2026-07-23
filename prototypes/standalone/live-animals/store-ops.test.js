@@ -174,7 +174,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
   })
 })
 
-describe('batch reconcile (reconcileEntriesAt — the inc-062 species-grain create)', () => {
+describe('batch reconcile (reconcileEntriesAt — the species-grain create)', () => {
   setupJourneyEngine()
 
   const keyOf = (entry) =>
@@ -377,7 +377,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toBe('UK-1')
   })
 
-  it('Should reject an append at the cardinality cap — records never exceed the sibling animal count (inc-063)', async () => {
+  it('Should reject an append at the cardinality cap — records never exceed the sibling animal count', async () => {
     await store.saveAnswers(journeyId, {
       commodityLines: [
         {
@@ -489,7 +489,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     ).toBe(1)
   })
 
-  it('Should leave a collection WITHOUT the cardinality link uncapped — commodityLines appends are byte-for-byte pre-inc-063', async () => {
+  it('Should leave a collection WITHOUT the cardinality link uncapped — commodityLines appends stay unbounded', async () => {
     await store.saveAnswers(journeyId, {
       commodityLines: [line('Cow', { numberOfAnimalsQuantity: '1' })]
     })

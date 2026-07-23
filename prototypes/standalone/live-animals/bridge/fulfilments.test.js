@@ -164,9 +164,9 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       expect(fulfilmentsToAnswers(fulfilments)).toEqual(answers)
     })
 
-    it('Should not represent an empty collection in B (documented)', () => {
-      // B infers group instances from descendant storage, so a group with no
-      // answered leaves is invisible — an oracle blind spot (PLAN §3, D-notes).
+    it('Should not represent an empty collection (documented)', () => {
+      // The evaluator infers group instances from descendant storage, so a
+      // group with no answered leaves is invisible — a known blind spot.
       expect(answersToFulfilments({ commodityLines: [] })).toEqual({})
       expect(answersToFulfilments({ commodityLines: [{}] })).toEqual({})
     })
@@ -226,13 +226,13 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // Accompanying documents — A's repeatable collection <-> B's `documents`
-  // collection. inc-016b resolved D1: B now models the same nested topology,
-  // so documents bridges as an ordinary A-collection <-> B-collection
-  // mapping (like commodityLines) — the D1 cap-at-one is gone.
+  // Accompanying documents — the answers' repeatable collection maps to the
+  // model's `documents` collection. Both model the same nested topology, so
+  // documents bridges as an ordinary collection <-> collection mapping (like
+  // commodityLines).
   // ---------------------------------------------------------------------------
 
-  describe('accompanying documents topology (A collection <-> B collection, D1 resolved inc-016b)', () => {
+  describe('accompanying documents topology (answers collection <-> model collection)', () => {
     const answers = {
       documents: [
         {
@@ -267,7 +267,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
       })
     })
 
-    it('Should round-trip a MULTI-document journey A->B->A (D1 cap removed) and drop the A-only filename', () => {
+    it('Should round-trip a MULTI-document journey answers->fulfilments->answers and drop the answers-only filename', () => {
       const recovered = fulfilmentsToAnswers(answersToFulfilments(answers))
       expect(recovered.documents).toHaveLength(2)
       expect(recovered.documents[0]).toEqual({
@@ -288,11 +288,11 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // B-evaluator smoke — the first time A's data meets B's engine. Proves the
-  // bridge output is shaped the way B's evaluator wants and drives real gates.
+  // Evaluator smoke — bridged answers meet the evaluator. Proves the bridge
+  // output is shaped the way the evaluator wants and drives real gates.
   // ---------------------------------------------------------------------------
 
-  describe('B evaluator smoke — A happy-path produces real implications', () => {
+  describe('evaluator smoke — a happy path produces real implications', () => {
     const evaluator = createObligationEvaluator()
     const fulfilments = answersToFulfilments(happyPath)
     const result = evaluator.evaluate(fulfilments)

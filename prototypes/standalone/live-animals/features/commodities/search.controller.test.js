@@ -90,7 +90,7 @@ describe('POST commodities (batch search-select)', () => {
     expect(result.response.redirect).toContain('consignment-details')
   })
 
-  it("Should preserve a still-selected line's data and drop a deselected one on reselect (c-017)", async () => {
+  it("Should preserve a still-selected line's data and drop a deselected one on reselect", async () => {
     const kept = {
       commoditySelection: 'Cow',
       speciesSelection: '1148346',

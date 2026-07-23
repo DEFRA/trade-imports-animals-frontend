@@ -309,7 +309,7 @@ const enumerateAnswerStates = () =>
  * proveScopeCompleteness — the enumeration's own completeness check. A
  * manifest obligation that NO variant × state pair puts in scope is one the
  * flow prover silently never checks — exactly how a newly imported obligation
- * (a re-vendor of the model) would dodge `proveFlowReachability` when its
+ * (a model addition) would dodge `proveFlowReachability` when its
  * gate values are missing from the seeds. Returns the names of every such
  * obligation; `[]` means the enumeration reaches the whole manifest
  * (SYSTEM_POPULATED fields excepted — no page presents them).

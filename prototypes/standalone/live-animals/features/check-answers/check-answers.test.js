@@ -387,10 +387,11 @@ describe('#buildSections (check-answers GET)', () => {
     })
   })
 
-  // The CYA commodity gates (packages / unweaned / CPH) read B's obligation
-  // `.metadata.values` (CN codes) with A-name -> code normalisation. This matrix
-  // pins the gate outcome per selectable species (Cow/Horse/Cat/Dog/Fish).
-  describe('commodity-gate render matrix — B metadata per selectable species', () => {
+  // The CYA commodity gates (packages / unweaned / CPH) read the obligation
+  // `.metadata.values` (CN codes), normalising the stored commodity name to a
+  // code. This matrix pins the gate outcome per selectable species
+  // (Cow/Horse/Cat/Dog/Fish).
+  describe('commodity-gate render matrix — model metadata per selectable species', () => {
     const gatesFor = async (commodity) => {
       const sections = await sectionsFor({
         commodityLines: [{ commoditySelection: commodity }]

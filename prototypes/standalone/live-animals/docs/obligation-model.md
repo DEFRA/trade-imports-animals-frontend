@@ -18,7 +18,7 @@ Two supporting files complete the picture: `model/obligations/helpers.js`
 (the gate-helper library that builds scope closures) and
 `model/no-display-keys.js` (the boot-time purity check).
 
-All file paths in this document are relative to the spike root
+All file paths in this document are relative to the prototype root
 (`prototypes/standalone/live-animals/`).
 
 ## What an obligation carries

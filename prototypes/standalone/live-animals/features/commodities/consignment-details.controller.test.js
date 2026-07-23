@@ -91,7 +91,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming (inc-063, c-031)', async () => {
+  it('Should block a count drop below the identifier-record count with an error naming the species, never silently trimming', async () => {
     const seed = {
       commodityLines: [
         {

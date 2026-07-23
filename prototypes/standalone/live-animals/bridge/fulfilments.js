@@ -15,7 +15,7 @@
  *                 per enclosing group (`line0` at depth 1, `line0/unit1` at
  *                 depth 2). Top-level scalars store the value directly.
  *
- * The structure is derived from the vendored manifest, not restated here: an
+ * The structure is derived from the manifest, not restated here: an
  * obligation's `name` is its answers key, its `id` is its fulfilments UUID,
  * and its `within` chain gives its depth. Group obligations
  * (`commodityLines`, `animalIdentifiers`) carry no value of their own —
@@ -42,7 +42,7 @@ import { setAt } from '../lib/path.js'
 const GROUP_SEGMENT_PREFIXES = ['line', 'unit']
 
 // ---------------------------------------------------------------------------
-// Manifest-derived lookups — computed once from the vendored obligations.
+// Manifest-derived lookups — computed once from the obligations.
 // ---------------------------------------------------------------------------
 
 const obligationByName = new Map(

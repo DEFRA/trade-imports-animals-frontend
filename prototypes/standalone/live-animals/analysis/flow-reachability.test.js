@@ -17,10 +17,10 @@ import {
   submitReadySeed
 } from './flow-reachability.js'
 
-// Ported from A's retired analysis/reachability.test.js — the two FLOW-level
-// checks A's prover carried over B's graph prover: every in-scope obligation
-// has an owning page (`no-owning-page`) and that page is reachable through the
-// flow gates in the state that scopes it (`owning-page-unreachable-in-scope`).
+// The two FLOW-level checks layered on top of the graph prover: every
+// in-scope obligation has an owning page (`no-owning-page`) and that page is
+// reachable through the flow gates in the state that scopes it
+// (`owning-page-unreachable-in-scope`).
 
 describe('#proveFlowReachability', () => {
   beforeAll(() => {
@@ -90,8 +90,8 @@ describe('#proveFlowReachability', () => {
   it('Should put every manifest obligation in scope under some enumerated state', () => {
     // The completeness half of the prover: a manifest obligation the seed
     // variants never scope would dodge proveFlowReachability silently — a
-    // re-vendored model addition whose gate values are missing from the
-    // seeds turns this red instead.
+    // new model addition whose gate values are missing from the seeds turns
+    // this red instead.
     expect(proveScopeCompleteness()).toEqual([])
   })
 

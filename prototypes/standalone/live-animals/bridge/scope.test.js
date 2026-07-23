@@ -28,7 +28,7 @@ const line = (commodity, units) => ({
   animalIdentifiers: units
 })
 
-describe('scope bridge — per-gate scoping (B)', () => {
+describe('scope bridge — per-gate scoping', () => {
   it('Should keep regionOfOriginCode in scope whatever the requirement answers (retain-value)', () => {
     expect(
       makeScope(resolveRegion({ countryOfOrigin: 'FR' })).has(
@@ -111,8 +111,8 @@ describe('scope bridge — per-gate scoping (B)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// The A-side flow shim — the two obligations B does not model, layered onto the
-// FULL scope so their owning pages stay reachable; the RAW projection
+// The flow shim — the two obligations the evaluator does not model, layered
+// onto the FULL scope so their owning pages stay reachable; the RAW projection
 // excludes them.
 // ---------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
     expect(raw.has('commodityLines[0].commodityType')).toBe(true)
   })
 
-  it('Should carry the documents collection (D1 resolved at inc-016b)', () => {
+  it('Should carry the documents collection', () => {
     const full = makeScope(happyPath).inScope
     expect(full.has('documents')).toBe(true)
     expect(full.has('documents[0].accompanyingDocumentType')).toBe(true)

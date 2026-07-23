@@ -1,27 +1,26 @@
 /**
- * coverage.test.js — Phase 3 commit 3 of the EUDPA-288 blend plan.
+ * coverage.test.js — the witness-synth coverage gate.
  *
  * The witness-synth registry inside `synthesiseWitness` grows one case
- * per structured helper. BRIEF §Migration #3 + REPORT §5.1 name the
- * tax explicitly:
+ * per structured helper. That carries a standing tax:
  *
- *   "Every new operator A adds carries a second tax: a witness
- *    synthesiser in `gateValue` and a seeding rule in `scaffoldFor`.
- *    Skip it and the pin silently stops proving anything."
+ *   "Every new operator adds a second tax: a witness synthesiser in
+ *    `gateValue` and a seeding rule in `scaffoldFor`. Skip it and the pin
+ *    silently stops proving anything."
  *
- * The equivalent tax for B: every new helper in `obligations/helpers.js`
- * that attaches `.metadata.type` must either be added to the witness-
- * synthesiser dispatch (STRUCTURED) or explicitly listed as opaque-by-
- * design (OPAQUE). Without this coverage gate, someone can add a sixth
- * helper next quarter without a synth, and the prover's classification
- * silently drifts toward "everything opaque, everything green" — the
- * vacuously-green failure mode BRIEF explicitly warns against.
+ * So every new helper in `obligations/helpers.js` that attaches
+ * `.metadata.type` must either be added to the witness-synthesiser
+ * dispatch (STRUCTURED) or explicitly listed as opaque-by-design
+ * (OPAQUE). Without this coverage gate, someone can add a sixth helper
+ * without a synth, and the prover's classification silently drifts toward
+ * "everything opaque, everything green" — the vacuously-green failure
+ * mode this gate guards against.
  *
  * The invariants pinned here:
  *
  *   1. `STRUCTURED_HELPER_TYPES` and `OPAQUE_HELPER_TYPES` are exported
  *      from `analysis/reachability.js`. STRUCTURED is non-empty;
- *      OPAQUE may be empty (post-Phase-4 §Migration #4 clean-slate).
+ *      OPAQUE may be empty (a clean-slate state).
  *   2. The two sets are DISJOINT (a helper type can't be both).
  *   3. `STRUCTURED_HELPER_TYPES` exactly matches the `case` labels
  *      dispatched inside `synthesiseWitness` — the registry can't
@@ -102,7 +101,7 @@ const SAMPLE_OBLIGATIONS = {
       ['c', 'd']
     ])
   },
-  // Meta-first gate helpers — EUDPA-288 Phase 4.5.1. The purge-on-flip
+  // Meta-first gate helpers. The purge-on-flip
   // shape (whenFalse.inScope === false) exercises the WITNESS path in
   // synthesiseWitness; the total-branches shape (both in-scope) would
   // exercise TRIVIAL — either is acceptable per invariant #5.
@@ -149,7 +148,7 @@ describe('coverage — helper classification sets are exported and disjoint', ()
   })
 
   it('Should export OPAQUE_HELPER_TYPES as a Set (may be empty — see reachability.js)', () => {
-    // Phase 4 §Migration #4 landed `notInUnionOf` and migrated the two
+    // The `notInUnionOf` helper landed and migrated the two
     // former opaque sites (identificationDetails, description) onto it.
     // The set is retained as the enforcement point for future opaque-
     // by-design helpers, but is currently EMPTY on the manifest — a
