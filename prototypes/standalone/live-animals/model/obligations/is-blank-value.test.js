@@ -8,17 +8,15 @@ describe('isBlankValue', () => {
     expect(isBlankValue(null)).toBe(true)
   })
 
-  it('treats empty string as blank; non-empty as filled', () => {
+  it('treats empty and whitespace-only strings as blank', () => {
     expect(isBlankValue('')).toBe(true)
+    expect(isBlankValue(' ')).toBe(true)
     expect(isBlankValue('a')).toBe(false)
-    // Whitespace-only is NOT trimmed at this layer — that's a
-    // widget/validation concern. Contract.validatePagePayload does
-    // its own trim() before calling us so we don't double-trim.
-    expect(isBlankValue(' ')).toBe(false)
   })
 
-  it('treats empty array as blank; non-empty as filled', () => {
+  it('treats an array as blank when every nested value is blank', () => {
     expect(isBlankValue([])).toBe(true)
+    expect(isBlankValue(['', { nested: ['   ', null] }])).toBe(true)
     expect(isBlankValue(['a'])).toBe(false)
   })
 
@@ -27,8 +25,6 @@ describe('isBlankValue', () => {
   })
 
   it('treats a composite with every sub-field blank as blank', () => {
-    // Address block after the user cleared every input: this must
-    // roll back to Not started, not stay Fulfilled.
     expect(
       isBlankValue({
         name: '',
@@ -38,6 +34,14 @@ describe('isBlankValue', () => {
       })
     ).toBe(true)
     expect(isBlankValue({ name: null, addressLine1: undefined })).toBe(true)
+    expect(
+      isBlankValue({
+        address: {
+          line1: ' ',
+          contact: { telephone: '', email: null }
+        }
+      })
+    ).toBe(true)
   })
 
   it('treats a composite with any non-blank sub-field as filled', () => {

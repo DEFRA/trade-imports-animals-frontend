@@ -1,10 +1,4 @@
-export const isBlank = (value) => {
-  if (value === undefined || value === null) return true
-  if (Array.isArray(value)) return value.length === 0
-  if (typeof value === 'object') {
-    return Object.values(value).every(isBlank)
-  }
-  return String(value).trim() === ''
-}
+import { isBlankValue } from '../model/obligations/is-blank-value.js'
 
-export const isAnswered = (value) => !isBlank(value)
+export const isBlank = isBlankValue
+export const isAnswered = (value) => !isBlankValue(value)
