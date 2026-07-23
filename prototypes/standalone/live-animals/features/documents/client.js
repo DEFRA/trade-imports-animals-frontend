@@ -56,8 +56,43 @@ const announce = (message) => {
   }
 }
 
-const applyStatus = (cell, scanStatus, scanCopy) => {
+const filePath = (uploadId) =>
+  pagePath(`${documentsPage.slug}/${uploadId}/file`)
+
+const actionsCellOf = (statusCell) =>
+  statusCell.closest('tr')?.querySelector('[data-view-file-text]')
+
+const viewFileLink = (actionsCell, uploadId) =>
+  createEl('a', {
+    className: 'govuk-link govuk-!-margin-right-3',
+    text: actionsCell.dataset.viewFileText,
+    attrs: { href: filePath(uploadId) },
+    children: [
+      createEl('span', {
+        className: 'govuk-visually-hidden',
+        text: ` ${actionsCell.dataset.viewFileHidden}`
+      })
+    ]
+  })
+
+const applyActions = (statusCell, uploadId, scanStatus) => {
+  const actionsCell = actionsCellOf(statusCell)
+  const removeButton = actionsCell?.querySelector(
+    'button[name="action"][value^="remove:"]'
+  )
+  if (!actionsCell || !removeButton) {
+    return
+  }
+  actionsCell.replaceChildren()
+  if (scanStatus === SCAN_STATUS.COMPLETE) {
+    actionsCell.appendChild(viewFileLink(actionsCell, uploadId))
+  }
+  actionsCell.appendChild(removeButton)
+}
+
+const applyStatus = (cell, uploadId, scanStatus, scanCopy) => {
   cell.dataset.scanStatus = scanStatus
+  applyActions(cell, uploadId, scanStatus)
   const presentation = scanCopy[scanStatus] ?? scanCopy[UNKNOWN_STATUS]
   const tag = cell.querySelector('.govuk-tag')
   if (!tag || !presentation) {
@@ -72,7 +107,7 @@ const applyStatusUpdates = (documents, scanCopy) => {
   documents.forEach(({ uploadId, scanStatus }) => {
     const cell = document.querySelector(`[data-upload-id="${uploadId}"]`)
     if (cell && cell.dataset.scanStatus !== scanStatus) {
-      applyStatus(cell, scanStatus, scanCopy)
+      applyStatus(cell, uploadId, scanStatus, scanCopy)
     }
   })
 }

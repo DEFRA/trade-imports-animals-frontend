@@ -1389,7 +1389,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('documents scan status — the poll rewrites a settled tag in place and announces it, leaving the still-scanning document alone', async ({
+  test('documents scan status — the poll rewrites a settled row in place and announces it, leaving the still-scanning document alone', async ({
     page
   }) => {
     test.slow()
@@ -1427,6 +1427,17 @@ test.describe('live-animals (page-owned spine)', () => {
     })
     await expect(settlingRow).toContainText('Checking')
     await expect(settlingRow).toContainText('Safe')
+    await expect(
+      settlingRow.getByRole('link', {
+        name: 'View file for document 1'
+      })
+    ).toBeVisible()
+    await expect(
+      settlingRow.getByRole('button', {
+        name: 'Remove document 1',
+        exact: true
+      })
+    ).toBeVisible()
     await expect(stuckRow).toContainText('Checking')
 
     // A reload would blank the live region, so surviving text proves the

@@ -448,6 +448,21 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(settled.view.context.rows[0][4].html).toContain('Remove')
   })
 
+  it('Should hand the actions cell the feature copy needed for an in-place poll update', async () => {
+    const result = await driveHandler(get, {
+      seed: { documents: [storedDocument(), storedDocument()] }
+    })
+
+    expect(result.view.context.rows[0][4].attributes).toEqual({
+      'data-view-file-text': 'View file',
+      'data-view-file-hidden': 'for document 1'
+    })
+    expect(result.view.context.rows[1][4].attributes).toEqual({
+      'data-view-file-text': 'View file',
+      'data-view-file-hidden': 'for document 2'
+    })
+  })
+
   it('Should offer no View file for a document that never reached an upload', async () => {
     const result = await driveHandler(get, {
       seed: { documents: [storedDocument()] }

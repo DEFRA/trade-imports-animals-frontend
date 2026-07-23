@@ -184,7 +184,11 @@ const isViewable = (entry, scanStatus) =>
 const actionsCell = ({ entry, index, scanStatus }) => ({
   html: isViewable(entry, scanStatus)
     ? `${viewFileLink(entry, index)}${removeButton(index)}`
-    : removeButton(index)
+    : removeButton(index),
+  attributes: {
+    'data-view-file-text': copy.viewFile,
+    'data-view-file-hidden': copy.viewFileHidden(index + 1)
+  }
 })
 
 // The scan-status cell carries the polling contract: the client rewrites the
