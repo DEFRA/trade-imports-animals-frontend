@@ -865,7 +865,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByRole('heading', { name: 'Consignment details' })
     ).toBeVisible()
-    await page.getByRole('link', { name: 'Remove Cat' }).click()
+    await page.getByRole('button', { name: 'Remove Cat' }).click()
     await expect(table).not.toContainText('Cat')
     await expect(
       page.getByRole('heading', { name: 'Felis catus' })
@@ -1099,7 +1099,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Remove frees a slot: the entry form reopens at 2 of 2.
     await page
       .locator('.govuk-summary-list__row', { hasText: 'Animal 2' })
-      .getByRole('link', { name: 'Remove' })
+      .getByRole('button', { name: 'Remove' })
       .click()
     await expect(
       page.getByRole('heading', { name: 'Enter details for Bos taurus 2 of 2' })
@@ -2703,7 +2703,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     expect(page.url()).toContain('change=1')
     await page
-      .getByRole('link', { name: 'Remove animal 1', exact: true })
+      .getByRole('button', { name: 'Remove animal 1', exact: true })
       .click()
     await expect(
       page.getByRole('heading', { name: 'Animal identification details' })

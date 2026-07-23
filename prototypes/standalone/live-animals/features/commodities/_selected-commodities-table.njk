@@ -5,7 +5,7 @@
   {% set rows = [] %}
   {% for group in groups %}
     {% set removeCell %}
-      <a class="govuk-link" href="{{ group.removeHref }}">{{ copy.remove }}<span class="govuk-visually-hidden"> {{ group.name }}</span></a>
+      <button type="submit" class="govuk-link app-link-button" name="action" value="remove:{{ group.index }}">{{ copy.remove }}<span class="govuk-visually-hidden"> {{ group.name }}</span></button>
     {% endset %}
     {% set ignored = rows.push([
       { text: group.code },

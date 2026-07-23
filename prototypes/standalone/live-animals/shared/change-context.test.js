@@ -91,30 +91,28 @@ describe('change context — collection round-trip', () => {
       expect(after.commodityLines).toHaveLength(1)
     })
 
-    it('Should carry the context on the details page Add-another and Remove affordances', async () => {
+    it('Should carry the context on the details page Add-another affordance', async () => {
       const journey = await store.create()
       await store.saveAnswers(journey.journeyId, lineSeed)
       const h = stubH()
       const getHandler = consignmentDetails.routes.find(
-        (route) => route.method === 'GET' && !route.path.includes('remove')
+        (route) => route.method === 'GET'
       ).handler
       await getHandler(journeyRequest(journey.journeyId, { query: change }), h)
       const { addHref, groups } = h.captured.view.context
       expect(addHref).toBe(`${pagePath('commodities')}?change=1`)
-      expect(groups[0].removeHref).toBe(
-        `${pagePath('consignment-details/Cat/remove')}?change=1`
-      )
+      expect(groups[0].index).toBe(0)
     })
 
     it('Should carry the context through a commodity remove round-trip', async () => {
-      const removeHandler = consignmentDetails.routes.find((route) =>
-        route.path.includes('/remove')
-      ).handler
-      const { response, after } = await drive(removeHandler, {
-        query: change,
-        params: { commodity: 'Cat' },
-        seed: lineSeed
-      })
+      const { response, after } = await drive(
+        postHandlerOf(consignmentDetails),
+        {
+          payload: { action: 'remove:0' },
+          query: change,
+          seed: lineSeed
+        }
+      )
       expect(response).toEqual({
         redirect: `${pagePath('consignment-details')}?change=1`
       })

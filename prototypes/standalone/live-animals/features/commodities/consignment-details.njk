@@ -9,7 +9,10 @@
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {% if hasLines %}
-    {{ selectedCommoditiesTable(groups, copy.table) }}
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ selectedCommoditiesTable(groups, copy.table) }}
+    </form>
   {% else %}
     <p class="govuk-body">{{ copy.emptyText }}</p>
   {% endif %}

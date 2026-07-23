@@ -1,5 +1,8 @@
+import Crumb from '@hapi/crumb'
+import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
@@ -182,20 +185,53 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(groups[1].showPackages).toBe(false)
   })
 
-  it('Should remove every line of a commodity via its remove route, leaving other commodities intact', async () => {
-    const journey = await store.create()
-    await store.saveAnswers(journey.journeyId, seedLines())
-    const request = journeyRequest(journey.journeyId, {
-      params: { commodity: 'Cow' }
+  it('Should remove every line of a commodity on the remove POST, leaving other commodities intact', async () => {
+    const result = await driveHandler(post, {
+      seed: seedLines(),
+      payload: { action: 'remove:0' }
     })
-    const removeHandler = consignmentDetails.routes.find((route) =>
-      route.path.includes('remove')
-    ).handler
-    const response = await removeHandler(request, stubH())
-    const answers = (await store.get(journey.journeyId)).answers
+    expect(result.response.redirect).toContain('consignment-details')
     expect(
-      answers.commodityLines.map((line) => line.commoditySelection)
+      result.after.commodityLines.map((line) => line.commoditySelection)
     ).toEqual(['Fish'])
-    expect(response.redirect).toContain('consignment-details')
+  })
+
+  it('Should refuse a remove for a group index outside the selection and delete nothing', async () => {
+    const seed = seedLines()
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'remove:7' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.after).toEqual(seed)
+  })
+
+  it('Should refuse a remove whose group index is not a number and delete nothing', async () => {
+    const seed = seedLines()
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'remove:../0' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.after).toEqual(seed)
+  })
+
+  it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
+    const server = Hapi.server()
+    await server.register(Crumb)
+    server.route(consignmentDetails.routes)
+
+    const forged = await server.inject({
+      method: 'POST',
+      url: pagePath('consignment-details'),
+      payload: { action: 'remove:0' }
+    })
+    expect(forged.statusCode).toBe(403)
+
+    const prefetched = await server.inject({
+      method: 'GET',
+      url: pagePath('consignment-details/Cow/remove')
+    })
+    expect(prefetched.statusCode).toBe(404)
   })
 })

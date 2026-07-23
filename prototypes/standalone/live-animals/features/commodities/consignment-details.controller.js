@@ -2,7 +2,6 @@ import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, integerInRange, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { open } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import {
@@ -66,16 +65,13 @@ const linesForGroup = (lines, name, values, errors) =>
     .filter(({ entry }) => entry.commoditySelection === name)
     .map((line) => groupLine(line, values, errors))
 
-const buildGroups = (request, lines, values, errors) => {
+const buildGroups = (lines, values, errors) => {
   const names = [...new Set(lines.map(({ entry }) => entry.commoditySelection))]
-  return names.map((name) => ({
+  return names.map((name, index) => ({
+    index,
     name,
     code: commodities.commodityCodeFor(name) ?? '',
     showPackages: packagesApply(name),
-    removeHref: kit.withChangeContext(
-      request,
-      pagePath(`${page.slug}/${encodeURIComponent(name)}/remove`)
-    ),
     lines: linesForGroup(lines, name, values, errors)
   }))
 }
@@ -114,7 +110,7 @@ const render = (
     hasLines: lines.length > 0,
     addHref: kit.withChangeContext(request, pagePath(commoditiesPage.slug)),
     addText: lines.length > 0 ? copy.addAnother : copy.addFirst,
-    groups: buildGroups(request, lines, values, errors),
+    groups: buildGroups(lines, values, errors),
     errors,
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
@@ -154,6 +150,10 @@ const post = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const lines = linesOf(answers)
   const payload = request.payload ?? {}
+  const action = (payload.action ?? '').toString()
+  if (isRemoveAction(action)) {
+    return postRemove(request, h, removeIndexOf(action))
+  }
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
   if (errors) return render(request, h, journey, lines, values, errors)
@@ -187,21 +187,32 @@ const post = async (request, h) => {
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
-const getRemove = async (request, h) => {
+const HTTP_STATUS_BAD_REQUEST = 400
+const REMOVE_ACTION_PREFIX = 'remove:'
+
+const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
+
+const removeIndexOf = (action) =>
+  Number(action.slice(REMOVE_ACTION_PREFIX.length))
+
+const groupNames = (answers) => [
+  ...new Set(linesOf(answers).map(({ entry }) => entry.commoditySelection))
+]
+
+// A removal drops every line of one commodity group, so it submits the page
+// form — the crumb travels with it and no GET can trigger it. The group index
+// keys back to a name in the journey; anything else is refused before any
+// reconcile runs.
+const postRemove = async (request, h, index) => {
   const { answers } = await state.get(request, h)
+  const name = groupNames(answers)[index]
+  if (name === undefined) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+
   const kept = (answers.commodityLines ?? []).filter(
-    (entry) => entry.commoditySelection !== request.params.commodity
+    (entry) => entry.commoditySelection !== name
   )
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
   return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
 }
 
-export const routes = [
-  ...kit.pageRoutes(page, { get, post }),
-  {
-    method: 'GET',
-    path: pagePath(`${page.slug}/{commodity}/remove`),
-    options: open,
-    handler: getRemove
-  }
-]
+export const routes = kit.pageRoutes(page, { get, post })

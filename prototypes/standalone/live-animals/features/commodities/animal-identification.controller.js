@@ -2,7 +2,6 @@ import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { open } from '../../shared/kit.js'
 import * as countries from '../../services/countries/index.js'
 import * as commodities from '../../services/commodities/index.js'
 import { animalIdentificationPage as page } from './page.js'
@@ -204,22 +203,13 @@ const maxReachedTextFor = (cap, species, units, overBy, atMax) => {
   return null
 }
 
-const unitRows = (request, index, units) =>
+const unitEntries = (index, units) =>
   units.map((unit, unitIndex) => ({
-    key: { text: copy.animalRow(unitIndex + 1) },
-    value: { text: animalIdentifierSummary(unit) },
-    actions: {
-      items: [
-        {
-          href: kit.withChangeContext(
-            request,
-            pagePath(`${page.slug}/${index}/${unitIndex}/remove`)
-          ),
-          text: copy.removeRow,
-          visuallyHiddenText: copy.removeRowAria(unitIndex + 1)
-        }
-      ]
-    }
+    line: index,
+    unitIndex,
+    label: copy.animalRow(unitIndex + 1),
+    summary: animalIdentifierSummary(unit),
+    removeAria: copy.removeRowAria(unitIndex + 1)
   }))
 
 const addressFieldsFor = (index, values, errors) => {
@@ -301,7 +291,7 @@ const visibleAddressFields = (
 ) =>
   showAddress && !atMax ? addressFieldsFor(index, addressValues, errors) : []
 
-const buildCard = (request, answers, line, form, errors) => {
+const buildCard = (answers, line, form, errors) => {
   const { index, entry } = line
   const commodity = entry.commoditySelection
   const units = entry.animalIdentifiers ?? []
@@ -324,7 +314,7 @@ const buildCard = (request, answers, line, form, errors) => {
       atMax
     ),
     atMax,
-    rows: unitRows(request, index, units),
+    units: unitEntries(index, units),
     hasUnits: units.length > 0,
     fields: visibleIdentifierFields(atMax, commodity, index, values, errors),
     showAddress: showAddress && !atMax,
@@ -369,7 +359,7 @@ const render = (
     }),
     copy,
     cards: lines.map((line) =>
-      buildCard(request, answers, line, forms.get(line.index), errors)
+      buildCard(answers, line, forms.get(line.index), errors)
     ),
     hasLines: lines.length > 0,
     addHref: kit.withChangeContext(request, pagePath('commodities')),
@@ -536,6 +526,7 @@ const post = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
+  if (isRemoveAction(action)) return postRemove(request, h, action)
   const addIndex = parseAddAction(action)
   const lines = state.collectionView(answers, ['commodityLines'])
 
@@ -576,27 +567,35 @@ const post = async (request, h) => {
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
-const getRemove = async (request, h) => {
+const HTTP_STATUS_BAD_REQUEST = 400
+const REMOVE_ACTION_PREFIX = 'remove:'
+
+const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
+
+const removeTargetOf = (action) => {
+  const [line, unit] = action.slice(REMOVE_ACTION_PREFIX.length).split(':')
+  return { line: Number(line), unit: Number(unit) }
+}
+
+const unitAt = (answers, line, unit) =>
+  (answers.commodityLines ?? [])[line]?.animalIdentifiers?.[unit]
+
+// A removal deletes one identifier record, so it submits the card form — the
+// crumb travels with it and no GET can trigger it. Line and unit must both
+// resolve to a stored record; anything else is refused before any delete runs.
+const postRemove = async (request, h, action) => {
   const { answers } = await state.get(request, h)
-  const index = Number(request.params.line)
-  const lines = answers.commodityLines ?? []
-  if (Number.isInteger(index) && index >= 0 && index < lines.length) {
-    await state.removeEntryAt(
-      request,
-      h,
-      ['commodityLines', index, 'animalIdentifiers'],
-      Number(request.params.unit)
-    )
+  const { line, unit } = removeTargetOf(action)
+  if (!unitAt(answers, line, unit)) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
+  await state.removeEntryAt(
+    request,
+    h,
+    ['commodityLines', line, 'animalIdentifiers'],
+    unit
+  )
   return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
 }
 
-export const routes = [
-  ...kit.pageRoutes(page, { get, post }),
-  {
-    method: 'GET',
-    path: pagePath(`${page.slug}/{line}/{unit}/remove`),
-    options: open,
-    handler: getRemove
-  }
-]
+export const routes = kit.pageRoutes(page, { get, post })

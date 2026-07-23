@@ -1,3 +1,5 @@
+import Crumb from '@hapi/crumb'
+import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../config.js'
@@ -21,10 +23,7 @@ import * as animalIdentification from './animal-identification.controller.js'
 
 const post = postHandlerOf(animalIdentification)
 const getHandler = animalIdentification.routes.find(
-  (route) => route.method === 'GET' && !route.path.includes('remove')
-).handler
-const removeHandler = animalIdentification.routes.find((route) =>
-  route.path.includes('remove')
+  (route) => route.method === 'GET'
 ).handler
 
 const catLine = (extra = {}) => ({
@@ -73,8 +72,8 @@ describe('#animalIdentificationController — the single card-per-species surfac
       expect(card.title).toBe('Cow (0102) — Bos taurus')
       expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
       expect(card.atMax).toBe(false)
-      expect(card.rows).toHaveLength(1)
-      expect(card.rows[0].value.text).toContain('Ear tag: UK1')
+      expect(card.units).toHaveLength(1)
+      expect(card.units[0].summary).toContain('Ear tag: UK1')
     })
 
     it('Should drop the M from the counter while the count is unanswered — no cap, entry still allowed', async () => {
@@ -108,8 +107,8 @@ describe('#animalIdentificationController — the single card-per-species surfac
       expect(card.counter).toBe(null)
       expect(card.fields).toEqual([])
       expect(card.maxReachedText).toContain('all 1 Bos taurus animals')
-      expect(card.rows).toHaveLength(1)
-      expect(card.rows[0].actions.items[0].text).toBe('Remove')
+      expect(card.units).toHaveLength(1)
+      expect(card.units[0].removeAria).toBe('animal 1')
     })
 
     it('Should name the count mismatch when the declared number drops below the entered records', async () => {
@@ -128,8 +127,8 @@ describe('#animalIdentificationController — the single card-per-species surfac
       expect(card.maxReachedText).toBe(
         'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
       )
-      expect(card.rows).toHaveLength(2)
-      expect(card.rows[0].actions.items[0].text).toBe('Remove')
+      expect(card.units).toHaveLength(2)
+      expect(card.units[0].removeAria).toBe('animal 1')
     })
   })
 
@@ -233,9 +232,30 @@ describe('#animalIdentificationController — the single card-per-species surfac
     })
   })
 
+  describe('Implicit submit — Enter mid-entry fires the safe default, never a remove', () => {
+    it('Should treat the finish default as non-destructive — keeps existing records and appends the half-filled entry', async () => {
+      const result = await driveHandler(post, {
+        seed: {
+          commodityLines: [
+            cowLine({
+              numberOfAnimalsQuantity: '3',
+              animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+            })
+          ]
+        },
+        payload: { action: 'finish', 'animalIdentifierEarTag-0': 'UK2' }
+      })
+      expect(result.response).toEqual({ redirect: hubPath() })
+      const tags = result.after.commodityLines[0].animalIdentifiers.map(
+        (unit) => unit.animalIdentifierEarTag
+      )
+      expect(tags).toEqual(['UK1', 'UK2'])
+    })
+  })
+
   describe('Remove', () => {
-    it('Should remove the named record and return to the surface — a freed slot reopens the entry form', async () => {
-      const result = await driveHandler(removeHandler, {
+    it('Should remove the named record on the remove POST and return to the surface — a freed slot reopens the entry form', async () => {
+      const result = await driveHandler(post, {
         seed: {
           commodityLines: [
             cowLine({
@@ -244,7 +264,7 @@ describe('#animalIdentificationController — the single card-per-species surfac
             })
           ]
         },
-        params: { line: '0', unit: '0' }
+        payload: { action: 'remove:0:0' }
       })
       expect(result.response).toEqual({
         redirect: pagePath('commodities/identification')
@@ -252,16 +272,51 @@ describe('#animalIdentificationController — the single card-per-species surfac
       expect(result.after.commodityLines[0].animalIdentifiers).toEqual([])
     })
 
-    it('Should ignore an out-of-range line index', async () => {
-      const result = await driveHandler(removeHandler, {
-        seed: {
-          commodityLines: [
-            cowLine({ animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }] })
-          ]
-        },
-        params: { line: '5', unit: '0' }
+    it('Should refuse a remove for an out-of-range line index and delete nothing', async () => {
+      const seed = {
+        commodityLines: [
+          cowLine({ animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }] })
+        ]
+      }
+      const result = await driveHandler(post, {
+        seed,
+        payload: { action: 'remove:5:0' }
       })
-      expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
+      expect(result.response.statusCode).toBe(400)
+      expect(result.after).toEqual(seed)
+    })
+
+    it('Should refuse a remove for an out-of-range unit index and delete nothing', async () => {
+      const seed = {
+        commodityLines: [
+          cowLine({ animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }] })
+        ]
+      }
+      const result = await driveHandler(post, {
+        seed,
+        payload: { action: 'remove:0:5' }
+      })
+      expect(result.response.statusCode).toBe(400)
+      expect(result.after).toEqual(seed)
+    })
+
+    it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
+      const server = Hapi.server()
+      await server.register(Crumb)
+      server.route(animalIdentification.routes)
+
+      const forged = await server.inject({
+        method: 'POST',
+        url: pagePath('commodities/identification'),
+        payload: { action: 'remove:0:0' }
+      })
+      expect(forged.statusCode).toBe(403)
+
+      const prefetched = await server.inject({
+        method: 'GET',
+        url: pagePath('commodities/identification/0/0/remove')
+      })
+      expect(prefetched.statusCode).toBe(404)
     })
   })
 
