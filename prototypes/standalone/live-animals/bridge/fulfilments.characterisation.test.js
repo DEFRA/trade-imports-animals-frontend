@@ -10,9 +10,8 @@ import {
   purposeInInternalMarket
 } from '../model/obligations/obligations.js'
 import {
-  answersToNotification,
   answersToTargetNotification,
-  answersToTargetNotificationOracle
+  fulfilmentToNotification
 } from '../services/persistence/records/notification-mapper.js'
 
 const oracles = JSON.parse(
@@ -22,26 +21,6 @@ const oracles = JSON.parse(
 )
 
 const evaluator = createObligationEvaluator({ obligations })
-
-const legacyTargetAnswersFrom = (fulfilments, referenceNumber) => {
-  const answers = projectAnswers(fulfilments)
-  return {
-    ...answers,
-    referenceNumber,
-    ...(Array.isArray(answers.commodityLines)
-      ? {
-          commodityLines: answers.commodityLines.map((line) => ({
-            ...line,
-            ...(typeof line.numberOfAnimalsQuantity === 'number'
-              ? {
-                  numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity)
-                }
-              : {})
-          }))
-        }
-      : {})
-  }
-}
 
 describe('increment 0 golden boundary characterisation', () => {
   test.each(characterisationCorpus)(
@@ -60,12 +39,9 @@ describe('increment 0 golden boundary characterisation', () => {
       expect(JSON.stringify(evaluation)).toBe(JSON.stringify(oracle.evaluation))
 
       expect(projectAnswers(fulfilments)).toEqual(oracle.answersFromFulfilments)
-      expect(answersToNotification(answers)).toEqual(oracle.mapperA)
       expect(
-        answersToTargetNotificationOracle(
-          legacyTargetAnswersFrom(fulfilments, answers.referenceNumber)
-        )
-      ).toEqual(oracle.mapperB)
+        fulfilmentToNotification(fulfilments, answers.referenceNumber)
+      ).toEqual(oracle.mapperA)
       expect(
         answersToTargetNotification(fulfilments, answers.referenceNumber)
       ).toEqual(oracle.mapperB)

@@ -1,7 +1,8 @@
 # Scope and wipe
 
 Scope is the set of obligations the journey currently owes, derived from the
-answers alone. This file explains how scope is computed, how out-of-scope
+canonical fulfilment plus request-local flow answers. This file explains how
+scope is computed, how out-of-scope
 values are purged, how paths address nested instances, why leaving scope
 destroys data, and who consumes the result.
 
@@ -9,10 +10,9 @@ The code:
 
 - `model/obligations/evaluator.js` — the obligation evaluator (`convergePurge`,
   the purge fixpoint).
-- `bridge/scope.js` — `makeScopeFromB`, which projects the evaluator's
+- `bridge/scope.js` — `makeScopeFromEvaluation`, which projects the evaluator's
   in-scope implications into the pathKey grammar the controllers read.
-- `bridge/purge.js` — `wipeSetFromB`, which projects the evaluator's
-  purge into the answer paths to destroy.
+- `bridge/purge.js` — `purgeFulfilments`, the canonical write authority.
 - `engine/read.js` — `makeScope`, the read surface.
 - `engine/write.js` — `commit`, `removeEntryAt`, `reconcileEntriesAt`, which
   apply the purge on every write.
@@ -22,15 +22,20 @@ The code:
 
 Scope is a projection of the obligation evaluator's output.
 
-`makeScope(answers)` in `engine/read.js` delegates to `makeScopeFromB` in
-`bridge/scope.js`. That function:
+The runtime read path loads canonical fulfilment and `assembleRequestView`:
 
-1. Converts the nested answers POJO to the flat, composite-key `fulfilments`
-   map with `answersToFulfilments` (`bridge/fulfilments.js`).
-2. Runs `evaluator.evaluate(fulfilments)`. The evaluator returns
+1. Runs `evaluator.evaluate(fulfilments)`. The evaluator returns
    `{ fulfilments, obligations }`, where `obligations` is the
    per-obligation implications map (`{ inScope, status?, records?, reasons? }`).
-3. Projects every in-scope implication back into the answer pathKey grammar.
+2. Projects the converged fulfilment back into name-keyed request answers.
+3. Overlays session-backed `importType` and `declaration`.
+4. Passes that one evaluation and answer projection to
+   `makeScopeFromEvaluation`, which projects every in-scope implication into the
+   answer pathKey grammar.
+
+`makeScope(answers)` remains a convenience for callers that already hold page
+answers; it assembles canonical input through the feature-owned binding
+registry and reaches the same evaluator.
 
 `makeScope` returns a scope object with four members:
 
@@ -39,12 +44,13 @@ Scope is a projection of the obligation evaluator's output.
 - `answered(id)` — whether any instance of the obligation holds a value.
 - `readyForCheckYourAnswers` — the submit-readiness roll-up.
 
-`makeScope` is pure over its `answers` argument and runs on every request.
-Nothing derived is stored (see [Nothing derived is stored](#nothing-derived-is-stored)).
+The request view is memoised, so normal runtime reads evaluate once per request.
+Nothing derived is stored (see
+[Nothing derived is stored](#nothing-derived-is-stored)).
 
 ## What lands in `inScope`
 
-`makeScopeFromB` adds one path key per in-scope obligation instance, in three
+`makeScopeFromEvaluation` adds one path key per in-scope obligation instance, in three
 shapes:
 
 - **Bare top-level ids** — `'countryOfOrigin'`, a scalar obligation in scope.
@@ -64,8 +70,8 @@ key.
 Two flow obligations the model does not evaluate — `importType` (the
 pre-journey import-type filter) and `declaration` (the submit-time
 declaration) — are always-in-scope, top-level, and added to the full scope by
-`projectAOnlyFlowScope` so their owning pages stay reachable. The raw
-evaluator scope (`rawInScopeFromB`) excludes them; the controllers consume the
+`projectFlowOnlyScope` so their owning pages stay reachable. The raw evaluator
+scope (`rawInScope`) excludes them; the controllers consume the
 full scope that includes them.
 
 ## Path vocabulary
@@ -109,8 +115,6 @@ Three layers enforce it, and no single layer can be bypassed:
 
 ## How purge works
 
-Two stages compute the wipe, then one stage applies it.
-
 **Stage 1 — the evaluator converges on the surviving fulfilments.**
 `evaluate(fulfilments)` runs `convergePurge`, a bounded fixpoint loop
 (`MAX_PURGE_ITERATIONS = 16`, throws on non-convergence). Each iteration:
@@ -128,12 +132,11 @@ a value this evaluation is purging can never silently drive another gate.
 `purgeStorage` only ever drops keys, so convergence is monotonic and typically
 lands in one or two iterations.
 
-**Stage 2 — the bridge names the answer paths destroyed.** `wipeSetFromB`
-(`bridge/purge.js`) runs the same evaluation, then diffs the input
-fulfilments against the converged output:
+The focused bridge tests can also ask `wipeSet` to name the request-answer paths
+dropped by an evaluation:
 
 ```
-fIn  = answersToFulfilments(answers)
+fIn  = assembleFulfilments(answers)
 fOut = evaluate(fIn).fulfilments
 for each non-group leaf obligation answered in fIn but absent from fOut,
   emit its answer pathKey.
@@ -143,21 +146,11 @@ For a top-level scalar the emitted key is the bare id; for a grouped leaf it is
 the positional path of each dropped record. Groups are skipped — dropping a
 group's leaves destroys its data. The result is an array of answer pathKeys.
 
-**Stage 3 — write destroys them.** `purge(answers)` in `engine/write.js` calls
-`destroyWiped(answers, wipeSetFromB(answers))`. `destroyWiped` (`lib/path.js`)
-parses each key, sorts them with `wipeOrder`, and deletes each in turn.
-`wipeOrder` deletes a nested path before the shallower path that contains it,
-and a higher array index before a lower sibling, so no delete ever shifts the
-target of another. `destroyWiped` is the single home of scope-exit deletion,
-shared by `commit`, `removeEntryAt` and `reconcileEntriesAt`.
-
-## Appending never purges
-
-`appendEntryAt` in `engine/write.js` skips the purge step. An append only adds
-scope — it can activate new sub-obligation instances but can never deactivate
-anything — so there is nothing to wipe. The asymmetry with `removeEntryAt`
-(which does purge, because removing an entry can strand dependants) is
-deliberate. `appendEntryAt` also caps the collection at `collectionCapAt`
+The runtime write path does not edit a durable answers tree. Every commit or
+collection mutation assembles the changed request projection, calls
+`purgeFulfilments`, and whole-replaces only the converged
+`evaluation.fulfilments`. Out-of-scope values therefore never enter the durable
+record. `appendEntryAt` also caps the collection at `collectionCapAt`
 (`engine/evaluate/cardinality.js`) and returns `null` at the cap.
 
 ## Who consumes scope
@@ -165,15 +158,15 @@ deliberate. `appendEntryAt` also caps the collection at `collectionCapAt`
 Gating pages is only one use of scope. The consumers all read the one
 `makeScope` output, so they cannot disagree:
 
-1. **Wipe** — `commit`, `removeEntryAt` and `reconcileEntriesAt`
-   (`engine/write.js`) destroy the answer paths `wipeSetFromB` names.
+1. **Wipe** — every mutation persists only the evaluator's converged canonical
+   fulfilment.
 2. **Submit-readiness** — `readyForCheckYourAnswers` on the scope object is the
    submit gate, consulted by `submitJourney` (`engine/write.js`) and the review
    section's authored gate (`flow/flow.js`). It is true once every answer
    section is fulfilled, not applicable or optional, judged against `inScope`
    (`flow/section-status.js`, the static default held by
    `engine/readiness-config.js`).
-3. **Status** — `statusOfFromB` (`bridge/status.js`), reached through
+3. **Status** — `statusOf` (`bridge/status.js`), reached through
    `rowStatus` (`flow/task-rows.js`), filters an obligation's instances to
    those in scope; none in scope means Not applicable.
 4. **Navigation** — derived gates (`flow/gates.js`) pass when some collected
@@ -188,11 +181,11 @@ applicable, and are skipped by navigation, all from the same scope.
 
 ## Nothing derived is stored
 
-The record persists answers and lifecycle metadata only — never scope, status
-or wipe results. Every read rebuilds scope fresh: `makeScope`
-(`engine/read.js`) runs the evaluator on the loaded answers, on every request.
+The record persists canonical fulfilment and lifecycle metadata only — never
+answers, scope, status, or wipe results. Every read evaluates the loaded
+fulfilment and derives the request answers and scope.
 
 This is why resume self-heals. A journey loaded later derives its scope from
-the answers under the current model — there is no stale stored scope to
+canonical fulfilment under the current model — there is no stale stored scope to
 contradict them. See [persistence.md](persistence.md) for the resume flow and
 the ports.

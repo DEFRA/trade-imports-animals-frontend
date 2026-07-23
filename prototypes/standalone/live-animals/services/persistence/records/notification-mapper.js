@@ -1,23 +1,17 @@
-// Native mappers between canonical UUID-keyed fulfilment, the name-keyed page
-// projection, and backend notifications.
+// Native mappers from canonical UUID-keyed fulfilment to backend notifications.
 //
-// Mapper A (fulfilmentToNotification / notificationToAnswers) reproduces
-// exactly what the production skeleton frontend persists — the same backend
-// field homes and transforms as src/server/common/clients/notification-client.js
-// (buildNotificationPayload / setNotificationSessionValues). The old
-// answersToNotification direction remains as the golden parity oracle.
+// Mapper A (fulfilmentToNotification) reproduces exactly what the production
+// skeleton frontend persists — the same backend field homes and transforms as
+// src/server/common/clients/notification-client.js (buildNotificationPayload).
 //
-// Mapper B (answersToTargetNotification / targetNotificationToAnswers) is Mapper
-// A plus the durable extra fields, including the per-species commodity lines.
-// It reads the same canonical fulfilment snapshot as Mapper A and layers its
-// extras over Mapper A's base. The old answers-based direction remains as the
-// golden parity oracle.
+// Mapper B (answersToTargetNotification) is Mapper A plus the durable extra
+// fields, including the per-species commodity lines. Despite its legacy name,
+// it reads the same canonical fulfilment snapshot as Mapper A and layers its
+// extras over Mapper A's base.
 
 import {
   speciesLabel,
   commodityCodeFor,
-  commodityNameFor,
-  typeIdForSpecies,
   typeTextForId
 } from '../../commodities/index.js'
 import { readFulfilment } from '../../../bridge/read-fulfilment.js'
@@ -83,12 +77,6 @@ const isoFromDateParts = (parts) => {
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-const datePartsFromIso = (iso) => {
-  if (!iso) return undefined
-  const [year, month, day] = iso.split('-')
-  return { day: Number(day), month: Number(month), year: Number(year) }
-}
-
 // ---------------------------------------------------------------------------
 // Shared builders (used by both mappers)
 // ---------------------------------------------------------------------------
@@ -134,50 +122,6 @@ const speciesEntryFromLine = (line) => {
 const speciesLines = (group) =>
   group.filter((line) => line.speciesSelection !== undefined)
 
-const identifiersFromSpeciesEntry = (entry) => {
-  const unit = compact({
-    animalIdentifierEarTag: entry.earTag,
-    animalIdentifierPassport: entry.passport
-  })
-  return Object.keys(unit).length > 0 ? [unit] : undefined
-}
-
-// The whole backend Transporter {name,address,approvalNumber,type}, built from
-// whichever of the mutually-exclusive commercial/private transporter answers is
-// present plus the transporterType. Matches the skeleton, which persists the
-// entire transporter object under transport.transporter.
-const transporterFromAnswers = (answers) => {
-  const source = answers.commercialTransporter ?? answers.privateTransporter
-  return orUndefined(
-    compact({
-      name: source?.name,
-      address: source?.address,
-      approvalNumber: source?.approvalNumber,
-      type: answers.transporterType
-    })
-  )
-}
-
-const transporterToAnswers = (transporter) => {
-  const out = {}
-  if (transporter.type !== undefined) out.transporterType = transporter.type
-  const party = orUndefined(
-    compact({
-      name: transporter.name,
-      address: transporter.address,
-      approvalNumber: transporter.approvalNumber
-    })
-  )
-  if (party) {
-    if (transporter.type === 'Private') {
-      out.privateTransporter = party
-    } else {
-      out.commercialTransporter = party
-    }
-  }
-  return out
-}
-
 // ---------------------------------------------------------------------------
 // Mapper A — skeleton-exact backend notification
 // ---------------------------------------------------------------------------
@@ -212,45 +156,6 @@ const commodityFromLinesA = (lines) => {
   }
 }
 
-const directFieldsFrom = (answers) =>
-  compact({
-    referenceNumber: answers.referenceNumber,
-    reasonForImport: answers.reasonForImport,
-    placeOfOrigin: answers.placeOfOrigin,
-    consignor: answers.consignor,
-    consignee: answers.consignee,
-    importer: answers.importer,
-    destination: answers.placeOfDestination,
-    consignment: answers.contactAddress,
-    cphNumber: answers.countyParishHoldingCph
-  })
-
-const originFrom = (answers) =>
-  orUndefined(
-    compact({
-      countryCode: answers.countryOfOrigin,
-      requiresRegionCode: answers.regionOfOriginCodeRequirement,
-      internalReference: answers.internalReferenceNumber
-    })
-  )
-
-const additionalDetailsFrom = (answers) =>
-  orUndefined(
-    compact({
-      certifiedFor: answers.animalsCertifiedFor,
-      unweanedAnimals: answers.containsUnweanedAnimals
-    })
-  )
-
-const transportFrom = (answers) =>
-  orUndefined(
-    compact({
-      portOfEntry: answers.portOfEntry,
-      arrivalDate: isoFromDateParts(answers.arrivalDateAtPort),
-      transporter: transporterFromAnswers(answers)
-    })
-  )
-
 const identifierObligations = [
   passport,
   tattoo,
@@ -276,7 +181,7 @@ const legacyAnimalCount = (value) =>
 // One logical line/unit join over the independent canonical record maps. Line
 // and unit identity comes only from exact composite ids; a leaf is joined only
 // when its record map contains that exact id.
-export const commodityLinesFromFulfilment = (reader) => {
+const commodityLinesFromFulfilment = (reader) => {
   const recordsByObligation = new Map(
     commodityObligations.map((obligation) => [
       obligation,
@@ -399,110 +304,8 @@ export const fulfilmentToNotification = (fulfilment = {}, referenceNumber) => {
   return notificationFromFulfilment(reader, referenceNumber, lines)
 }
 
-// Answers-based Mapper A is retained as the parity oracle while the canonical
-// projections are promoted incrementally.
-export const answersToNotification = (answers = {}) => {
-  const notification = { ...directFieldsFrom(answers) }
-
-  const origin = originFrom(answers)
-  if (origin) notification.origin = origin
-
-  const additionalDetails = additionalDetailsFrom(answers)
-  if (additionalDetails) notification.additionalDetails = additionalDetails
-
-  const transport = transportFrom(answers)
-  if (transport) notification.transport = transport
-
-  const commodity = commodityFromLinesA(answers.commodityLines)
-  if (commodity) notification.commodity = commodity
-
-  return notification
-}
-
-// One line per species entry, recovering the per-species counts from the
-// species entries themselves. The commodity name attributes only to the FIRST
-// complement — the skeleton notification carries a single top-level name, so
-// later groups' commodity identity does not survive a Mapper A round-trip
-// (the known lossy-A caveat; see docs/persistence.md).
-// commodityType is re-derived from the species (its owning type), so a resumed
-// line carries its mandatory type again. When the commodity name is lost (the
-// later groups of a Mapper A round-trip), the type cannot resolve either — the
-// same lossy-A caveat.
-const lineFromSpeciesEntry = (commodityName) => (entry) =>
-  compact({
-    commoditySelection: commodityName,
-    speciesSelection: entry.value,
-    commodityType: typeIdForSpecies(commodityName, entry.value),
-    numberOfPackages: entry.noOfPackages,
-    numberOfAnimalsQuantity: entry.noOfAnimals,
-    animalIdentifiers: identifiersFromSpeciesEntry(entry)
-  })
-
-const linesFromCommodityA = (commodity) => {
-  if (!commodity || !Array.isArray(commodity.commodityComplement)) {
-    return undefined
-  }
-  return commodity.commodityComplement.flatMap((complement, index) =>
-    (complement.species ?? [{}]).map(
-      lineFromSpeciesEntry(index === 0 ? commodity.name : undefined)
-    )
-  )
-}
-
-const directAnswersFrom = (notification) =>
-  compact({
-    referenceNumber: notification.referenceNumber,
-    reasonForImport: notification.reasonForImport,
-    placeOfOrigin: notification.placeOfOrigin,
-    consignor: notification.consignor,
-    consignee: notification.consignee,
-    importer: notification.importer,
-    placeOfDestination: notification.destination,
-    contactAddress: notification.consignment,
-    countyParishHoldingCph: notification.cphNumber
-  })
-
-const originAnswersFrom = (origin) =>
-  compact({
-    countryOfOrigin: origin?.countryCode,
-    regionOfOriginCodeRequirement: origin?.requiresRegionCode,
-    internalReferenceNumber: origin?.internalReference
-  })
-
-const additionalDetailsAnswersFrom = (additionalDetails) =>
-  compact({
-    animalsCertifiedFor: additionalDetails?.certifiedFor,
-    containsUnweanedAnimals: additionalDetails?.unweanedAnimals
-  })
-
-const transportAnswersFrom = (transport) => {
-  const answers = compact({
-    portOfEntry: transport?.portOfEntry,
-    arrivalDateAtPort: datePartsFromIso(transport?.arrivalDate)
-  })
-  if (transport?.transporter !== undefined) {
-    Object.assign(answers, transporterToAnswers(transport.transporter))
-  }
-  return answers
-}
-
-export const notificationToAnswers = (notification = {}) => {
-  const { origin, additionalDetails, transport } = notification
-  const answers = {
-    ...directAnswersFrom(notification),
-    ...originAnswersFrom(origin),
-    ...additionalDetailsAnswersFrom(additionalDetails),
-    ...transportAnswersFrom(transport)
-  }
-
-  const commodityLines = linesFromCommodityA(notification.commodity)
-  if (commodityLines) answers.commodityLines = commodityLines
-
-  return answers
-}
-
 // ---------------------------------------------------------------------------
-// Mapper B — Mapper A plus the extra fields (lossless on all 46 obligations)
+// Mapper B — Mapper A plus the full set of durable projection fields
 // ---------------------------------------------------------------------------
 
 const targetUnit = (unit) =>
@@ -513,17 +316,6 @@ const targetUnit = (unit) =>
     horseName: unit.horseName,
     identificationDetails: unit.animalIdentifierIdentificationDetails,
     description: unit.animalIdentifierDescription,
-    permanentAddress: unit.permanentAddress
-  })
-
-const unitFromTarget = (unit) =>
-  compact({
-    animalIdentifierPassport: unit.passport,
-    animalIdentifierTattoo: unit.tattoo,
-    animalIdentifierEarTag: unit.earTag,
-    horseName: unit.horseName,
-    animalIdentifierIdentificationDetails: unit.identificationDetails,
-    animalIdentifierDescription: unit.description,
     permanentAddress: unit.permanentAddress
   })
 
@@ -560,54 +352,6 @@ const targetCommodityFromLines = (lines) => {
   }
 }
 
-// Reconstructs the per-species lines. Falls back to Mapper A's recovery when
-// the extras were stripped (e.g. by a backend that only keeps the storable
-// field set): first group takes the top-level name, per-species earTag/
-// passport become the line's single identifier unit.
-// 3-step name-resolution fallback: complement.name, else commodityCode
-// resolved via the reference-data lookup (or the raw code if unknown),
-// else the top-level commodity name (first complement only).
-const commodityNameForComplement = (commodity, complement, index) => {
-  const fallbackName = index === 0 ? commodity.name : undefined
-  const codeName =
-    complement.commodityCode === undefined
-      ? fallbackName
-      : (commodityNameFor(complement.commodityCode) ?? complement.commodityCode)
-  return complement.name ?? codeName
-}
-
-const identifiersFromEntry = (entry) =>
-  entry.animalIdentifiers === undefined
-    ? identifiersFromSpeciesEntry(entry)
-    : entry.animalIdentifiers.map(unitFromTarget)
-
-const targetLinesFromCommodity = (commodity) => {
-  if (!commodity || !Array.isArray(commodity.commodityComplement)) {
-    return undefined
-  }
-  return commodity.commodityComplement.flatMap((complement, index) => {
-    const name = commodityNameForComplement(commodity, complement, index)
-    return (complement.species ?? [{}]).map((entry) =>
-      compact({
-        ...lineFromSpeciesEntry(name)(entry),
-        animalIdentifiers: identifiersFromEntry(entry)
-      })
-    )
-  })
-}
-
-const targetDocuments = (documents) => {
-  if (!Array.isArray(documents) || documents.length === 0) return undefined
-  return documents.map((doc) =>
-    compact({
-      documentType: doc.accompanyingDocumentType,
-      attachmentType: doc.accompanyingDocumentAttachmentType,
-      reference: doc.accompanyingDocumentReference,
-      dateOfIssue: doc.accompanyingDocumentDateOfIssue
-    })
-  )
-}
-
 const documentObligations = [
   accompanyingDocumentType,
   accompanyingDocumentAttachmentType,
@@ -640,66 +384,6 @@ const targetDocumentsFromFulfilment = (reader) => {
       dateOfIssue: valueAt(accompanyingDocumentDateOfIssue, id)
     })
   )
-}
-
-const documentsFromTarget = (documents) => {
-  if (!Array.isArray(documents)) return undefined
-  return documents.map((doc) =>
-    compact({
-      accompanyingDocumentType: doc.documentType,
-      accompanyingDocumentAttachmentType: doc.attachmentType,
-      accompanyingDocumentReference: doc.reference,
-      accompanyingDocumentDateOfIssue: doc.dateOfIssue
-    })
-  )
-}
-
-const originWithRegion = (notification, answers) =>
-  answers.regionOfOriginCode !== undefined
-    ? { ...notification.origin, regionCode: answers.regionOfOriginCode }
-    : notification.origin
-
-const transportWithExtras = (notification, answers) => {
-  const extras = compact({
-    meansOfTransport: answers.meansOfTransport,
-    transportIdentification: answers.transportIdentification,
-    transportDocumentReference: answers.transportDocumentReference,
-    transitedCountries: answers.transitedCountries
-  })
-  return Object.keys(extras).length
-    ? { ...notification.transport, ...extras }
-    : notification.transport
-}
-
-// Answers-based Mapper B is retained solely as the pre-increment-7 golden
-// oracle. It intentionally includes declaration so tests can pin that its
-// removal is the only projection change.
-export const answersToTargetNotificationOracle = (answers = {}) => {
-  const notification = answersToNotification(answers)
-
-  if (answers.responsiblePersonForLoad !== undefined) {
-    notification.responsiblePersonForLoad = answers.responsiblePersonForLoad
-  }
-  if (answers.purposeInInternalMarket !== undefined) {
-    notification.purpose = answers.purposeInInternalMarket
-  }
-  if (answers.declaration !== undefined) {
-    notification.declaration = answers.declaration
-  }
-
-  const origin = originWithRegion(notification, answers)
-  if (origin !== undefined) notification.origin = origin
-
-  const transport = transportWithExtras(notification, answers)
-  if (transport !== undefined) notification.transport = transport
-
-  const commodity = targetCommodityFromLines(answers.commodityLines)
-  if (commodity) notification.commodity = commodity
-
-  const documents = targetDocuments(answers.documents)
-  if (documents) notification.documents = documents
-
-  return notification
 }
 
 // Mapper B's production entry point: canonical UUID map + envelope id. The
@@ -750,35 +434,4 @@ export const answersToTargetNotification = (
   if (targetDocumentEntries) notification.documents = targetDocumentEntries
 
   return notification
-}
-
-const directTargetAnswersFrom = (notification) =>
-  compact({
-    responsiblePersonForLoad: notification.responsiblePersonForLoad,
-    purposeInInternalMarket: notification.purpose,
-    regionOfOriginCode: notification.origin?.regionCode
-  })
-
-const transportExtrasAnswersFrom = (transport) =>
-  compact({
-    meansOfTransport: transport?.meansOfTransport,
-    transportIdentification: transport?.transportIdentification,
-    transportDocumentReference: transport?.transportDocumentReference,
-    transitedCountries: transport?.transitedCountries
-  })
-
-export const targetNotificationToAnswers = (notification = {}) => {
-  const answers = {
-    ...notificationToAnswers(notification),
-    ...directTargetAnswersFrom(notification),
-    ...transportExtrasAnswersFrom(notification.transport)
-  }
-
-  const commodityLines = targetLinesFromCommodity(notification.commodity)
-  if (commodityLines) answers.commodityLines = commodityLines
-
-  const documents = documentsFromTarget(notification.documents)
-  if (documents) answers.documents = documents
-
-  return answers
 }

@@ -57,30 +57,29 @@ options come from the services.
 
 ### bridge/ — the seam
 
-The evaluator speaks in **fulfilments**: a flat map keyed by obligation UUID,
-with grouped values held as `{ fulfilmentId: value }` maps under composite keys
-(`line0`, `line0/unit1`). Controllers and templates speak in **answers**: a
-nested POJO (`answers.commodityLines[0].animalIdentifiers[1]…`). The bridge is
-the only door between the two.
+The evaluator and durable store speak in **fulfilments**: a flat map keyed by
+obligation UUID, with grouped values held as `{ fulfilmentId: value }` maps
+under composite keys (`line0`, `line0/unit1`). Controllers and templates speak
+in request-local **answers**: a nested POJO
+(`answers.commodityLines[0].animalIdentifiers[1]…`). The bridge is the only door
+between the two.
 
-- [`bridge/fulfilments.js`](../bridge/fulfilments.js) —
-  `answersToFulfilments` / `projectAnswers`: nested answers ⇄ flat
-  fulfilments, including composite-key ↔ positional-path conversion. Values
-  pass through unchanged except for numeric animal-count coercion.
-- [`bridge/scope.js`](../bridge/scope.js) — `makeScopeFromB(answers)`
-  returns `{ inScope: Set<pathKey>, has(id), answered(id),
-readyForCheckYourAnswers }`. It runs the evaluator and projects every in-scope
-  implication back into the positional path grammar the controllers use.
-- [`bridge/status.js`](../bridge/status.js) — `statusOfFromB` is the
-  sole runtime source of task-list and section status (the 5-way alphabet).
-- [`bridge/purge.js`](../bridge/purge.js) — `wipeSetFromB(answers)`
-  lists the answer paths the evaluator's purge destroys; the write path feeds
-  this to `destroyWiped`.
-- [`bridge/collection-complete.js`](../bridge/collection-complete.js)
-  — per-instance completeness for the collection views.
+- [`bridge/fulfilment-bindings.js`](../bridge/fulfilment-bindings.js) and each
+  feature's `evaluation.js` own the answer-field → obligation-UUID bindings.
+  [`bridge/fulfilment-registry.js`](../bridge/fulfilment-registry.js) fails boot
+  when a leaf is missing, duplicated, or bound at the wrong group depth.
+- [`bridge/assemble-fulfilments.js`](../bridge/assemble-fulfilments.js) merges
+  the feature contributions into one canonical evaluator map.
+- [`bridge/fulfilments.js`](../bridge/fulfilments.js) projects canonical
+  fulfilment back to nested answers, including composite-key ↔ positional-path
+  conversion.
+- [`bridge/evaluation.js`](../bridge/evaluation.js) owns the shared evaluator;
+  `scope.js`, `status.js`, `purge.js`, and `collection-complete.js` project one
+  evaluation into the facts the pages consume.
 
-Each bridge instantiates its own evaluator and runs the answers through it, so
-the frontend never touches the evaluator directly. See
+Composite ids describe positions in one snapshot, not stable record identity.
+Removing or reordering collection entries can change `line0` or `line0/unit1`;
+persistence therefore replaces the whole canonical snapshot. See
 [scope-and-wipe.md](scope-and-wipe.md).
 
 ### engine/ — the state facade
@@ -89,7 +88,8 @@ the frontend never touches the evaluator directly. See
 `import * as state`. It exposes:
 
 - **Read** — `get` and `makeScope` ([`engine/read.js`](../engine/read.js)).
-  `makeScope` dispatches straight to the bridge's `makeScopeFromB`.
+  Runtime `get` derives one request view from canonical fulfilment; `makeScope`
+  is the answers-based convenience used by focused callers and tests.
 - **Write** — `commit`, `appendEntryAt`, `updateEntryAt`, `removeEntryAt`,
   `reconcileEntriesAt` and `submitJourney` ([`engine/write.js`](../engine/write.js)).
 - **Collection views** — `collectionView`, `collectionCapAt`.
@@ -101,11 +101,10 @@ the frontend never touches the evaluator directly. See
   configurable ports, wired at boot to the implementations under
   `services/persistence/`. See [persistence.md](persistence.md).
 
-Data crosses the seam in one direction only. Pages write answers down (`commit`
-and the entry verbs); the model derives scope, status and wipe and hands them
-back as read-only facts. There is no `setScope` and no per-key delete: a page
-cannot hand-roll a wipe. The write path applies the wipe itself, in `purge`,
-using the bridge's `wipeSetFromB`.
+Pages write name-keyed patches through `commit` and the entry verbs. The engine
+assembles them through the feature bindings, evaluates/purges once, and
+whole-replaces canonical fulfilment. Scope, status and answers are read-only
+request projections. There is no `setScope` and no per-key persistence delete.
 
 ### flow/ — the page spine and sequencing
 
@@ -121,7 +120,8 @@ using the bridge's `wipeSetFromB`.
   obligation it collects is in scope.
 - [`flow/task-rows.js`](../flow/task-rows.js) and
   [`flow/section-status.js`](../flow/section-status.js) — the hub rows and the
-  section roll-ups, both resolving through `statusOfFromB`.
+  section roll-ups, both resolving through `statusOf` and the request
+  evaluation.
   `readyForCheckYourAnswers` is true when every task row is fulfilled, not
   applicable or optional.
 - [`flow/entry-guard.js`](../flow/entry-guard.js) — the deep-link guard, run as an
@@ -146,6 +146,9 @@ reference-data (MDM) services — `countries`, `ports`, `commodities`,
 `transport-reference` — plus `address-book`, `document-uploads`, and the
 `records` and `session` persistence implementations. A `stub` mode and a `real`
 mode are selected by `LIVE_ANIMALS_MODE` ([`services/mode.js`](../services/mode.js)).
+The records service stores canonical fulfilment natively in stub mode. Real
+mode reads and writes `/fulfilments` as the source of truth and also writes the
+current and proposed notification shapes as downstream projections.
 See [services.md](services.md).
 
 ## How a request flows
@@ -155,10 +158,10 @@ A **GET** for a collecting page:
 1. The route (from `kit.pageRoutes`) runs the entry-guard `onPreHandler`, then
    the controller's `get`.
 2. `get` calls `state.get(request, h)`. `engine/read.js` loads the journey's
-   answers through the session port (`currentJourney`) and builds the read view
-   `{ journey, answers, scope: makeScope(answers) }`.
-3. `makeScope(answers)` runs `answersToFulfilments`, evaluates the model, and
-   projects the in-scope implications into the `scope` object.
+   canonical fulfilment through the records port and evaluates it once.
+3. `assembleRequestView` projects `{ evaluation, answers, scope }`, overlays the
+   journey's session-backed `importType` and `declaration`, and memoises the
+   result for the request.
 4. The controller renders its template with the answers and the scope-derived
    facts. Enum options come from the services.
 
@@ -167,16 +170,17 @@ A **POST**:
 1. The controller validates the payload with `lib/validate/`. On error it
    re-renders with a GDS error summary.
 2. On success it calls `state.commit(request, h, values)`.
-   [`engine/write.js`](../engine/write.js) merges the patch into the answers,
-   runs `purge` (which asks the bridge for `wipeSetFromB` and calls
-   `destroyWiped`), saves through the session port, and returns the fresh scope.
+   [`engine/write.js`](../engine/write.js) separates flow-only values, assembles
+   the remaining answers through feature-owned bindings, evaluates/purges, and
+   whole-replaces the canonical fulfilment through the records port.
 3. The controller asks the flow where to go next (`kit.nextTarget`), which
    consults the gates, and redirects.
 
 The **hub** and **Check your answers** read status the same way: they call the
-flow's `rowStatus` / `sectionStatus`, which run through `statusOfFromB`. Nothing
-derived is stored — scope and status are rebuilt from the answers on every read,
-so a days-later resume self-heals to the current rules.
+flow's `rowStatus` / `sectionStatus`, which read the request evaluation. Nothing
+derived is stored — answers, scope and status are rebuilt from canonical
+fulfilment on every read, so a days-later resume self-heals to the current
+rules.
 
 **Submit** is a pure status flip: `submitJourney` checks
 `scope.readyForCheckYourAnswers` and, if ready, finalises the record through the
@@ -188,16 +192,18 @@ At plugin registration, [`routes.js`](../routes.js) runs, in order:
 
 1. `assertObligationPurity()` — fails the boot if the model carries any display
    key.
-2. `buildDispatch(dispatchPages)` — builds the obligation-to-page index and
+2. `assertFulfilmentBindingCoverage()` — fails if a non-group obligation has no
+   feature binding, duplicate ownership, or an invalid grouped path.
+3. `buildDispatch(dispatchPages)` — builds the obligation-to-page index and
    coverage-asserts every non-system obligation is collected by exactly one
    page.
-3. `configureRecords(records)` and `configureSession(session)` — wire the
+4. `configureRecords(records)` and `configureSession(session)` — wire the
    persistence ports to their `services/persistence/` implementations.
-4. `registerJourneyCookie(server)` — defines the journey cookie.
-5. `onPreHandler` — installs the entry-guard redirect.
-6. In real mode only, `countries.prime()` and `ports.prime()` warm the MDM
+5. `registerJourneyCookie(server)` — defines the journey cookies.
+6. `onPreHandler` — installs the entry-guard redirect.
+7. In real mode only, `countries.prime()` and `ports.prime()` warm the MDM
    caches.
-7. `server.route(allRoutes)` — registers every route.
+8. `server.route(allRoutes)` — registers every route.
 
 The guards fail loud. So does a gate consulted before `buildDispatch` has run:
 an unbuilt index is indistinguishable from "this page collects nothing" and
@@ -218,7 +224,8 @@ live-animals/
     analysis/             reachability prover
     no-display-keys.js    the purity assertion
 
-  bridge/                 THE SEAM — answers ⇄ fulfilments, scope/status/purge
+  bridge/                 THE SEAM — feature bindings, canonical assembly,
+                          answer/scope/status projection
 
   engine/                 the state facade pages import (import * as state)
     index.js              the barrel
@@ -232,13 +239,13 @@ live-animals/
     flow.js               ordered sections → pages
     dispatch.js           obligation → owning page index, built at boot
     gates.js              derived-default / authored-override gate seam
-    task-rows.js          hub rows → statusOfFromB
+    task-rows.js          hub rows → statusOf
     section-status.js     sectionStatus, readyForCheckYourAnswers
     entry-guard.js        deep-link guard (onPreHandler)
 
   features/               THE PAGE SPINE — one vertical slice per feature
     index.js              assembles dispatchPages (collects) + allRoutes
-    <feature>/            page.js, controller.js (meta + routes), template.njk
+    <feature>/            page/controller/template plus evaluation bindings
 
   services/               reference-data (MDM) + persistence, stub|real
   lib/                    path maths, answered-ness, validate/ (validators)

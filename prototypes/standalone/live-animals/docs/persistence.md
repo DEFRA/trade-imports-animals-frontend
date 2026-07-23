@@ -56,7 +56,7 @@ auth is off.
 The cookies are path-scoped to `BASE` (see `config.js`), so this
 prototype can never read another prototype's cookie, and parallel
 browser contexts each carry their own journey. `registerJourneyCookie`
-in `engine/journey.js` declares all three cookies (httpOnly, SameSite
+in `engine/journey.js` declares all four cookies (httpOnly, SameSite
 Lax).
 
 ### RECORDS (`engine/persistence/records.js`)
@@ -69,7 +69,12 @@ A record is:
 
 ```js
 {
-  ;(journeyId, userId, status, createdAt, submittedAt, fulfilment)
+  journeyId: 'GBN-AG-26-ABC123',
+  userId: 'user-123',
+  status: 'in-progress',
+  createdAt: '2026-07-23T12:00:00.000Z',
+  submittedAt: null,
+  fulfilment: {}
 }
 ```
 
@@ -89,6 +94,14 @@ journey.
 
 - At rest it uses `{ id, fulfilment: entry[] }` (plus lifecycle metadata).
   `fulfilment-codec.js` encodes on replacement and decodes on load.
+- A scalar entry is `{ obligationId, value }`; a grouped entry is
+  `{ obligationId, records: [{ fulfilmentId, value }] }`. Empty grouped
+  instances have no leaf record from which to infer identity, so they are not
+  persisted.
+- Composite fulfilment ids such as `line0` and `line0/unit1` identify positions
+  within one whole snapshot. Removing or reordering entries can change them;
+  they are not stable longitudinal record ids and must not be patched
+  individually.
 - Records are deep-copied across the boundary both ways
   (`structuredClone`), so a caller can never mutate stored state by
   reference.
@@ -109,51 +122,43 @@ journey.
 
 **Real** (`services/persistence/records/real.js`) is a REST client for
 the trade-imports backend, rooted at
-`TRADE_IMPORTS_ANIMALS_BACKEND_URL` (`.../notifications`). It forwards
-the CDP trace id on every call.
+`TRADE_IMPORTS_ANIMALS_BACKEND_URL`. It forwards the CDP trace id on
+every call.
 
-| Port method         | Backend call                              |
-| ------------------- | ----------------------------------------- |
-| `create`            | `POST /notifications` (empty body)        |
-| `load`              | `GET /notifications/{ref}`                |
-| `list`              | `GET /notifications/{ref}` per handed ref |
-| `has`               | `GET /notifications/{ref}`                |
-| `replaceFulfilment` | `POST /notifications` (mapped body)       |
-| `finalise`          | `POST /notifications/{ref}/submit`        |
-| `amend`             | `POST /notifications/{ref}/amend`         |
+| Port method         | Backend call                                                       |
+| ------------------- | ------------------------------------------------------------------ |
+| `create`            | `POST /fulfilments`                                                |
+| `load`              | `GET /fulfilments/{ref}`                                           |
+| `list`              | `GET /fulfilments/{ref}` per handed ref                            |
+| `has`               | `GET /fulfilments/{ref}`                                           |
+| `replaceFulfilment` | `PUT /fulfilments/{ref}`, then both notification projection `PUT`s |
+| `finalise`          | `POST /fulfilments/{ref}/submit`                                   |
+| `amend`             | `POST /fulfilments/{ref}/amend`                                    |
 
-- `marshal` turns a backend notification into a record. It reads the
-  reference number, maps the backend status (`SUBMITTED` → `submitted`,
-  anything else → `in-progress`), and runs the notification through the
-  answers mapper and then `answersToFulfilments`. It **strips backend nulls before mapping**
-  (`stripNulls`), so a backend field echoed back as `null` cannot leak
-  in as a stored answer.
-- `replaceFulfilment` confirms the record is not submitted (from the passed
-  `known` record if the caller has it, otherwise a `GET`), projects canonical
-  fulfilment to answers, and passes those answers through the unchanged
-  `toNotification` mapper before `POST`ing the whole document. This edge
-  bridge keeps the notification endpoint and stored notification unchanged.
+- `/fulfilments` is the source of truth. `marshal` maps lifecycle metadata and
+  decodes `document.fulfilment` directly; resume never passes through a
+  notification or a name-keyed answers store.
+- `replaceFulfilment` freezes one canonical evaluator snapshot, encodes
+  `{ id, fulfilment: entry[] }`, and writes it first with idempotent `PUT`.
+  It then writes the current notification to `/notifications/{ref}` and the
+  full-fat notification to `/proposed-notifications/{ref}`. Each projection is
+  derived from that same snapshot and retried once; neither is a resume source.
+- If a projection write still fails after retry, the adapter reports that the
+  canonical save succeeded and identifies the failed projection. A later repair
+  can safely regenerate it from canonical fulfilment.
 - `load({ userId })` returns `undefined` and issues no read — the real
   adapter has no resume-by-user path.
 
-## The notification mapper
+## The notification projections
 
-`services/persistence/records/mapper.js` bridges the request-local
-name-keyed `answers` projection and the backend `notification` (the Live
-Animals Data Fields V4 shape). It exposes `toNotification(answers)` and
-`toAnswers(notification)` and selects one of two mapper pairs in
-`notification-mapper.js` by `LIVE_ANIMALS_MAPPER` (default `a`), read at
-call time so a test can switch it.
+`services/persistence/records/mapper.js` exposes two forward projections from
+canonical fulfilment. There is no runtime mapper selector and no reverse mapper:
 
-- **Mapper A** (`answersToNotification` / `notificationToAnswers`)
-  reproduces exactly what the production skeleton frontend persists —
-  the same backend field homes and transforms. It is total over the
-  storable obligations and carries nothing the skeleton does not
-  persist.
-- **Mapper B** (`answersToTargetNotification` /
-  `targetNotificationToAnswers`) is Mapper A plus the extra fields — a
-  lossless round-trip over every captured obligation, including the
-  per-species commodity lines and the full identifier records.
+- **Mapper A** (`fulfilmentToNotification`) reproduces exactly what the
+  production skeleton frontend persists and is written to `/notifications`.
+- **Mapper B** (`answersToTargetNotification`, a legacy name for a canonical
+  input) is Mapper A plus the additional durable fields and is written to
+  `/proposed-notifications`.
 
 The store is line-per-species: a commodity line is one commodity code
 plus one species with its own counts and nested identifier records. The
@@ -162,25 +167,12 @@ array, per-species counts and complement-level totals. Both mappers
 group lines by commodity and consolidate counts up to the complement
 total (`groupLinesByCommodity`).
 
-### Mapper A is lossy in reverse
-
-The skeleton notification shape cannot carry everything the store holds,
-so `notificationToAnswers` loses:
-
-- **Commodity identity of every group after the first.** The
-  notification has a single top-level `commodity.name` and no
-  per-complement code, so lines rebuilt from the second commodity
-  onwards come back with no `commoditySelection`.
-- **Identifier records beyond one per species, and every identifier
-  field except earTag and passport.** Tattoo, horse name, the free-text
-  fallbacks and the per-animal permanent address have no home in the
-  skeleton shape.
-
-Mapper B carries per-group `commodityCode` and full per-species
-`animalIdentifiers` arrays precisely to round-trip losslessly, falling
-back to Mapper A recovery when a backend strips the extras. The forward
-direction is pinned in `skeleton-equivalence.test.js`; both directions
-in `notification-mapper.test.js`.
+Mapper A is intentionally narrower: its notification shape cannot carry the
+identity of every commodity group or every animal identifier. Mapper B adds
+per-group `commodityCode`, full per-species `animalIdentifiers`, typed
+documents, and the other projection fields. This loss never affects resume
+because both shapes are downstream views; the forward directions are pinned by
+`skeleton-equivalence.test.js` and `notification-mapper.test.js`.
 
 ## journeyId lifecycle
 
@@ -210,7 +202,7 @@ request is tied to a journey document. It memoises the loaded journey on
 Durable fulfilments land on every write. `commit` and every collection
 mutation (`appendEntryAt`, `updateEntryAt`, `removeEntryAt`,
 `reconcileEntriesAt` in `engine/write.js`) rebuild the canonical map through
-the increment-4 migration facade, evaluate/purge it, and call
+the feature-owned binding registry, evaluate/purge it, and call
 `replaceJourneyFulfilment` → `records.replaceFulfilment` with
 `evaluation.fulfilments`. The store never holds a name-keyed answers tree (see
 [scope-and-wipe.md](scope-and-wipe.md)).

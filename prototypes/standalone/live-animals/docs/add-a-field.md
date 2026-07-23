@@ -12,19 +12,20 @@ all three.
 A field is called an **obligation** in the model — a data-field requirement.
 The model never renders and carries no display copy. Declaring an obligation
 buys you the state-layer behaviour: the field joins scope, the evaluator
-preserves or purges its value with the rest of the notification, and its
+preserves or purges its value with the rest of the canonical fulfilment, and its
 `status` decides whether it moves a section's completeness. You author the
 widget, the page-level validation, the persistence wiring and the Check your
 answers row by hand.
 
-Adding a field touches up to six places:
+Adding a field touches up to seven places:
 
 1. Declare the obligation in the model manifest.
 2. Add a domain entry if the value has legality rules.
 3. Add the obligation name to the owning page's `collects`.
-4. Wire the controller — the GET seed and the POST value map.
-5. Render the widget in the template.
-6. Add the Check your answers row.
+4. Add the feature-owned fulfilment binding.
+5. Wire the controller — the GET seed and the POST value map.
+6. Render the widget in the template.
+7. Add the Check your answers row.
 
 To add a repeating collection rather than a single field, see
 [add-a-collection.md](add-a-collection.md). To add a whole new page, see
@@ -144,7 +145,37 @@ the missing `collects` entry is the crash message.
 The Change links on Check your answers resolve the owning page through this
 index (`pageOfObligation`), so you never hardcode a slug.
 
-## 4. Wire the controller
+## 4. Add the fulfilment binding
+
+The durable key is the obligation UUID, not its page-field name. Add the scalar
+binding to the owning feature's `evaluation.js`, for example
+`features/origin/evaluation.js`:
+
+```js
+import { feature, scalar } from '../../bridge/fulfilment-bindings.js'
+import {
+  // ...existing obligations...
+  exporterReference
+} from '../../model/obligations/obligations.js'
+
+export const evaluationBindings = feature('origin', [
+  // ...existing bindings...
+  scalar({ field: 'exporterReference', obligation: exporterReference })
+])
+```
+
+`features/evaluation.js` registers every feature contribution. Boot calls
+`assertFulfilmentBindingCoverage`, which rejects a missing or duplicate
+obligation owner and a binding at the wrong collection depth. The engine merges
+these contributions into the canonical fulfilment persisted by both record
+adapters.
+
+If the field must appear in either backend notification, also add its UUID read
+to the relevant forward projection in
+`services/persistence/records/notification-mapper.js`. Notifications are
+downstream projections, not the resume source.
+
+## 5. Wire the controller
 
 Two edits in `features/origin/controller.js`.
 
@@ -188,7 +219,7 @@ controller shapes the error the user sees.
 recomputed `scope`; the origin controller already redirects with
 `kit.nextTarget`.
 
-## 5. Render the widget
+## 6. Render the widget
 
 Add a govuk macro to `features/origin/template.njk`. The template already
 imports `govukInput`:
@@ -209,7 +240,7 @@ Copy lives here, in the template — the label, hint and legend the model is
 forbidden to hold. Stay inside the govuk-frontend toolbox: govuk-\* components
 and utility classes, no custom CSS.
 
-## 6. Add the Check your answers row
+## 7. Add the Check your answers row
 
 Check your answers is bespoke composition, sectioned into summary cards in
 `features/check-answers/controller.js`. Add one `row(...)` to the card that
@@ -233,6 +264,8 @@ equals the page's declared `collects`. So:
   case — the declared set and the committed set differ.
 - A field the handler commits but no page declares also fails, and boot's
   `buildDispatch` refuses to start until some page collects it.
+- A declared leaf with no feature binding, or two features claiming the same
+  UUID, fails `assertFulfilmentBindingCoverage` at boot.
 
 Run the unit suite from the frontend repo root:
 

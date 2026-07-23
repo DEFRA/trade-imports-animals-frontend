@@ -5,7 +5,7 @@ export const RUN_ACTIVE = 'active'
 export const RUN_COMPLETE = 'complete'
 
 // Session-side presentation state `{ journeyId, phase }` for the opening
-// run — never notification data (see docs/flow-and-gates.md). Shared shape
+// run — never canonical fulfilment data (see docs/flow-and-gates.md). Shared shape
 // read/written by all four exports below.
 
 export const beginOpeningRun = async (request, h) => {

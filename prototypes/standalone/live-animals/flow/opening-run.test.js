@@ -10,10 +10,6 @@ import {
 } from '../engine/persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import {
-  notificationToAnswers,
-  targetNotificationToAnswers
-} from '../services/persistence/records/notification-mapper.js'
 import { postHandlerOf } from '../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from './dispatch.js'
@@ -437,81 +433,6 @@ describe('the opening run', () => {
         captureH()
       )
       expect(target).toBe(null)
-    })
-  })
-
-  // Retain the old reverse-mapper fixtures as opening-run characterisation:
-  // even a reference-only projected answer set is not user-started state.
-  // Canonical real-mode loading no longer passes through either reverse mapper.
-  describe('a reference-only projected answer set is still an unstarted journey', () => {
-    const post = postHandlerOf(importTypeFilter)
-
-    const freshBackendDraft = {
-      id: '66f2c1a4e1b2c3d4e5f60718',
-      referenceNumber: 'GBN-AG-26-29Q5Q7',
-      status: 'DRAFT',
-      created: '2026-07-14T09:00:00.000Z',
-      updated: '2026-07-14T09:00:00.000Z'
-    }
-
-    const freshRealDraft = [
-      ['mapper A', notificationToAnswers(freshBackendDraft)],
-      ['mapper B', targetNotificationToAnswers(freshBackendDraft)]
-    ]
-
-    const startedRealDraft = {
-      ...notificationToAnswers(freshBackendDraft),
-      countryOfOrigin: 'FR'
-    }
-
-    it('Should marshal a fresh backend draft to the reference alone', () => {
-      for (const [, answers] of freshRealDraft) {
-        expect(answers).toEqual({ referenceNumber: 'GBN-AG-26-29Q5Q7' })
-      }
-    })
-
-    it.each(freshRealDraft)(
-      'Should open the run on a fresh real-mode draft (%s)',
-      async (_mapper, seed) => {
-        const { journeyId, h } = await drive(post, {
-          payload: { importType: 'live-animals' },
-          seed
-        })
-        expect(h.captured.redirect).toBe(pagePath('origin'))
-        expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual(
-          active(journeyId)
-        )
-      }
-    )
-
-    it.each(freshRealDraft)(
-      'Should send a fresh real-mode draft deep-linking to origin back to the filter (%s)',
-      async (_mapper, seed) => {
-        const journey = await store.create()
-        await store.seedAnswers(journey.journeyId, seed)
-        const target = await entryGuardTarget(
-          buildRequest(journey.journeyId, { path: pagePath('origin') }),
-          captureH()
-        )
-        expect(target).toBe(pagePath('import-type'))
-      }
-    )
-
-    it('Should still treat a real-mode journey with a user answer as started — the echoed reference rides alongside it', async () => {
-      const journey = await store.create()
-      await store.seedAnswers(journey.journeyId, startedRealDraft)
-      const target = await entryGuardTarget(
-        buildRequest(journey.journeyId, { path: pagePath('origin') }),
-        captureH()
-      )
-      expect(target).toBe(null)
-
-      const { h } = await drive(post, {
-        payload: { importType: 'live-animals' },
-        seed: startedRealDraft
-      })
-      expect(h.captured.redirect).toBe(hubPath())
-      expect(OPENING_RUN_COOKIE in h.captured.cookies).toBe(false)
     })
   })
 })

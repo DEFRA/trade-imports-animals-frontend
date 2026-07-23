@@ -1,14 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import { characterisationCorpus } from '../../../bridge/fixtures/characterisation-corpus.js'
-import { projectAnswers } from '../../../bridge/fulfilments.js'
 import {
-  answersToNotification,
-  fulfilmentToNotification,
-  notificationToAnswers,
   answersToTargetNotification,
-  answersToTargetNotificationOracle,
-  targetNotificationToAnswers
+  fulfilmentToNotification
 } from './notification-mapper.js'
 
 const address = (name, line1) => ({
@@ -27,27 +22,6 @@ const targetNotificationFrom = (answers) =>
     assembleFulfilments(answers),
     answers.referenceNumber
   )
-const withoutDeclaration = ({ declaration: _declaration, ...notification }) =>
-  notification
-const legacyTargetAnswersFrom = (fulfilment, referenceNumber) => {
-  const answers = projectAnswers(fulfilment)
-  return {
-    ...answers,
-    referenceNumber,
-    ...(Array.isArray(answers.commodityLines)
-      ? {
-          commodityLines: answers.commodityLines.map((line) => ({
-            ...line,
-            ...(typeof line.numberOfAnimalsQuantity === 'number'
-              ? {
-                  numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity)
-                }
-              : {})
-          }))
-        }
-      : {})
-  }
-}
 
 // Answers carrying only the obligations Mapper A maps to the current backend
 // notification. One commodity line = one species, with one animal
@@ -168,13 +142,6 @@ const groupedLines = () => [
 ]
 
 describe('Mapper A — current backend notification (as-is)', () => {
-  test('Should round-trip every mapped obligation losslessly for a single commodity', () => {
-    const answers = mappedAnswers()
-    expect(notificationToAnswers(currentNotificationFrom(answers))).toEqual(
-      answers
-    )
-  })
-
   test('Should reshape per-species lines into the fixed backend commodity shape', () => {
     const { commodity } = currentNotificationFrom(mappedAnswers())
     expect(commodity).toEqual({
@@ -233,19 +200,6 @@ describe('Mapper A — current backend notification (as-is)', () => {
     const [cow, cat] = commodity.commodityComplement
     expect(cow.typeOfCommodity).toBe('Domestic')
     expect('typeOfCommodity' in cat).toBe(false)
-  })
-
-  test('Should lose the commodity identity of every group after the first on a round-trip (the lossy-A caveat)', () => {
-    const recovered = notificationToAnswers(
-      currentNotificationFrom({ commodityLines: groupedLines() })
-    )
-    expect(
-      recovered.commodityLines.map((line) => line.commoditySelection)
-    ).toEqual(['Cow', 'Cow', undefined])
-    // The per-species split itself survives: counts come back per species.
-    expect(
-      recovered.commodityLines.map((line) => line.numberOfAnimalsQuantity)
-    ).toEqual(['25', '10', '2'])
   })
 
   test('Should place every storable answer in its skeleton field home', () => {
@@ -372,100 +326,18 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(JSON.stringify(notification)).not.toContain('SECOND-EAR-TAG')
     expect(JSON.stringify(notification)).not.toContain('SECOND-PASSPORT')
   })
-
-  test('Should lose every gap obligation across a full round-trip (pinning the lossiness)', () => {
-    const answers = answersWithGaps()
-    const recovered = notificationToAnswers(currentNotificationFrom(answers))
-
-    expect(recovered).not.toEqual(answers)
-    // transporterType is no longer a gap — it is stored as transporter.type and
-    // recovered — so it is absent from this dropped-keys list. privateTransporter
-    // still drops: only the commercial variant survives the single Transporter.
-    for (const key of [
-      'responsiblePersonForLoad',
-      'regionOfOriginCode',
-      'purposeInInternalMarket',
-      'privateTransporter',
-      'meansOfTransport',
-      'transportIdentification',
-      'transportDocumentReference',
-      'transitedCountries',
-      'declaration',
-      'documents'
-    ]) {
-      expect(key in recovered).toBe(false)
-    }
-
-    // earTag + passport survive; the other five unit identifiers do not.
-    expect(recovered.commodityLines[0].animalIdentifiers).toEqual([
-      {
-        animalIdentifierEarTag: 'UK123456789012',
-        animalIdentifierPassport: 'UK123456789'
-      }
-    ])
-  })
 })
 
-describe('Mapper A — canonical fulfilment golden parity', () => {
-  test('Should use the envelope id as the reference number', () => {
-    const actual = fulfilmentToNotification(
-      assembleFulfilments({
-        referenceNumber: 'LEGACY-ANSWERS-REFERENCE',
-        poApprovedReferenceNumber: 'SYSTEM-OBLIGATION-REFERENCE'
-      }),
-      'JOURNEY-ID'
-    )
-
-    expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
-  })
-
-  test.each(characterisationCorpus)(
-    'Should deep- and byte-equal the answers oracle for increment-0 case $name',
-    ({ answers }) => {
-      const expected = answersToNotification({
-        ...answers,
-        referenceNumber
-      })
-      const actual = fulfilmentToNotification(
-        assembleFulfilments(answers),
-        referenceNumber
-      )
-
-      expect(actual).toEqual(expected)
-      expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
-    }
+test('Mapper A should use the envelope id as the reference number', () => {
+  const actual = fulfilmentToNotification(
+    assembleFulfilments({
+      referenceNumber: 'LEGACY-ANSWERS-REFERENCE',
+      poApprovedReferenceNumber: 'SYSTEM-OBLIGATION-REFERENCE'
+    }),
+    'JOURNEY-ID'
   )
 
-  test.each([
-    ['mapped answers', mappedAnswers()],
-    ['known Mapper A gaps', answersWithGaps()],
-    ['multi-commodity grouping', { commodityLines: groupedLines() }],
-    [
-      'private transporter',
-      {
-        transporterType: 'Private',
-        privateTransporter: {
-          name: 'Jane Private',
-          address: { addressLine1: '9 Private Road' }
-        }
-      }
-    ]
-  ])(
-    'Should deep- and byte-equal the answers oracle for %s',
-    (_name, answers) => {
-      const expected = answersToNotification({
-        ...answers,
-        referenceNumber
-      })
-      const actual = fulfilmentToNotification(
-        assembleFulfilments(answers),
-        referenceNumber
-      )
-
-      expect(actual).toEqual(expected)
-      expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
-    }
-  )
+  expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
 })
 
 // A fixture exercising every captured obligation: multi-commodity per-species
@@ -566,61 +438,7 @@ const allAnswers = () => ({
   ]
 })
 
-test('Mapper A should deep- and byte-equal its oracle for the all-obligations fixture', () => {
-  const answers = allAnswers()
-  const expected = answersToNotification(answers)
-  const actual = currentNotificationFrom(answers)
-
-  expect(actual).toEqual(expected)
-  expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
-  expect(actual.commodity.commodityComplement[0].species[0]).not.toHaveProperty(
-    'animalIdentifiers'
-  )
-})
-
-describe('Mapper B — proposed target notification (superset, lossless)', () => {
-  test.each(characterisationCorpus)(
-    'Should deep- and byte-equal the legacy runtime oracle for $name',
-    ({ answers }) => {
-      const fulfilment = assembleFulfilments(answers)
-      const expected = answersToTargetNotificationOracle(
-        legacyTargetAnswersFrom(fulfilment, answers.referenceNumber)
-      )
-      const actual = answersToTargetNotification(
-        fulfilment,
-        answers.referenceNumber
-      )
-
-      expect(actual).toEqual(expected)
-      expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
-      expect(actual).not.toHaveProperty('declaration')
-    }
-  )
-
-  test('Should deep- and byte-equal the old all-obligations Mapper B except declaration', () => {
-    const answers = allAnswers()
-    const expected = withoutDeclaration(
-      answersToTargetNotificationOracle(answers)
-    )
-    const actual = targetNotificationFrom(answers)
-
-    expect(actual).toEqual(expected)
-    expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
-    expect(answersToTargetNotificationOracle(answers)).toHaveProperty(
-      'declaration',
-      ['confirmed']
-    )
-    expect(actual).not.toHaveProperty('declaration')
-  })
-
-  test('Should round-trip every durable captured obligation, including multi-commodity per-species lines', () => {
-    const answers = allAnswers()
-    const { declaration: _declaration, ...durableAnswers } = answers
-    expect(
-      targetNotificationToAnswers(targetNotificationFrom(answers))
-    ).toEqual(durableAnswers)
-  })
-
+describe('Mapper B — proposed target notification (superset, full-fat)', () => {
   test('Should give every gap obligation a typed home in the target notification', () => {
     const notification = targetNotificationFrom(allAnswers())
 
@@ -735,7 +553,7 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
     ).toBeDefined()
   })
 
-  test('Should collapse a private transporter into the single Transporter, then restore it', () => {
+  test('Should collapse a private transporter into the single Transporter', () => {
     const answers = {
       transporterType: 'Private',
       privateTransporter: {
@@ -749,179 +567,5 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
       address: { addressLine1: '9 Private Road' },
       type: 'Private'
     })
-    expect(targetNotificationToAnswers(notification)).toEqual(answers)
-  })
-})
-
-// Prunes a Mapper B notification down to exactly what the real backend keeps —
-// the typed POJO fields (Origin, AdditionalDetails, Commodity/CommodityComplement
-// /Species, Transport/Transporter, the five party addresses, consignment,
-// cphNumber). Everything else (origin.regionCode, purpose, the split transport
-// fields, per-complement commodityCode + name, per-species animalIdentifiers,
-// documents, declaration, responsiblePersonForLoad) has no backend home and is
-// dropped, exactly as Jackson would drop unknown JSON on deserialisation.
-const storableSubset = (notification) => {
-  const out = {}
-  const keep = (key) => {
-    if (notification[key] !== undefined) out[key] = notification[key]
-  }
-  const pick = (obj, keys) => {
-    const picked = {}
-    for (const key of keys) {
-      if (obj?.[key] !== undefined) picked[key] = obj[key]
-    }
-    return picked
-  }
-
-  keep('referenceNumber')
-  keep('reasonForImport')
-  keep('additionalDetails')
-  for (const key of [
-    'placeOfOrigin',
-    'consignor',
-    'consignee',
-    'importer',
-    'destination',
-    'consignment',
-    'cphNumber'
-  ]) {
-    keep(key)
-  }
-
-  if (notification.origin) {
-    out.origin = pick(notification.origin, [
-      'countryCode',
-      'requiresRegionCode',
-      'internalReference'
-    ])
-  }
-  if (notification.transport) {
-    out.transport = pick(notification.transport, ['portOfEntry', 'arrivalDate'])
-    if (notification.transport.transporter) {
-      out.transport.transporter = pick(notification.transport.transporter, [
-        'name',
-        'address',
-        'approvalNumber',
-        'type'
-      ])
-    }
-  }
-  if (notification.commodity) {
-    out.commodity = {
-      name: notification.commodity.name,
-      commodityComplement: notification.commodity.commodityComplement.map(
-        (complement) => ({
-          ...pick(complement, [
-            'typeOfCommodity',
-            'totalNoOfAnimals',
-            'totalNoOfPackages'
-          ]),
-          species: complement.species?.map((entry) =>
-            pick(entry, [
-              'value',
-              'text',
-              'noOfAnimals',
-              'noOfPackages',
-              'earTag',
-              'passport'
-            ])
-          )
-        })
-      )
-    }
-  }
-  return out
-}
-
-// mappedAnswers is Mapper A's exact storable coverage, plus transporterType so
-// the collapsed Transporter carries a type. This is the backend-storable set.
-const storableAnswers = () => ({
-  ...mappedAnswers(),
-  transporterType: 'Commercial'
-})
-
-describe('Mapper B storable superset — survives the real backend field set', () => {
-  test('Should round-trip every storable answer through the backend-kept fields', () => {
-    const answers = storableAnswers()
-    const recovered = targetNotificationToAnswers(
-      storableSubset(targetNotificationFrom(answers))
-    )
-    expect(recovered).toEqual(answers)
-  })
-
-  test('Should recover earTag and passport from species when the extra identifiers are dropped', () => {
-    const recovered = targetNotificationToAnswers(
-      storableSubset(targetNotificationFrom(storableAnswers()))
-    )
-    expect(recovered.commodityLines[0].animalIdentifiers).toEqual([
-      {
-        animalIdentifierEarTag: 'UK123456789012',
-        animalIdentifierPassport: 'UK123456789'
-      }
-    ])
-  })
-
-  test('Should restore the commercial transporter object and its type from the single Transporter', () => {
-    const recovered = targetNotificationToAnswers(
-      storableSubset(targetNotificationFrom(storableAnswers()))
-    )
-    expect(recovered.transporterType).toBe('Commercial')
-    expect(recovered.commercialTransporter).toEqual({
-      name: 'Transporter Co',
-      approvalNumber: 'UK/NEWCA/T1/00090953',
-      address: { addressLine1: '7 Route One' }
-    })
-  })
-
-  test('Should drop the Stage-2 extras that have no backend home', () => {
-    const answers = {
-      ...storableAnswers(),
-      regionOfOriginCode: 'FR-75',
-      purposeInInternalMarket: 'Breeding',
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'FR-892-LK',
-      transportDocumentReference: 'CMR-2026-884721',
-      documents: [
-        {
-          accompanyingDocumentType: 'ITAHC',
-          accompanyingDocumentReference: 'GBHC1234567890'
-        }
-      ],
-      commodityLines: [
-        {
-          ...storableAnswers().commodityLines[0],
-          animalIdentifiers: [
-            {
-              animalIdentifierEarTag: 'UK123456789012',
-              animalIdentifierPassport: 'UK123456789',
-              animalIdentifierTattoo: 'AB1234',
-              animalIdentifierDescription: 'Brown cow'
-            }
-          ]
-        }
-      ]
-    }
-    const recovered = targetNotificationToAnswers(
-      storableSubset(targetNotificationFrom(answers))
-    )
-
-    for (const key of [
-      'regionOfOriginCode',
-      'purposeInInternalMarket',
-      'meansOfTransport',
-      'transportIdentification',
-      'transportDocumentReference',
-      'documents'
-    ]) {
-      expect(key in recovered).toBe(false)
-    }
-    // The richer per-animal identifier fields (tattoo, description) have no
-    // backend home; only earTag + passport survive, via the species entry.
-    expect(recovered.commodityLines[0].animalIdentifiers).toEqual([
-      {
-        animalIdentifierEarTag: 'UK123456789012',
-        animalIdentifierPassport: 'UK123456789'
-      }
-    ])
   })
 })

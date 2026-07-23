@@ -23,11 +23,11 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 - **template(s)** — the feature's own Nunjucks markup (`template.njk`,
   or one per page like `transport/port-of-entry.njk`)
 
-A feature owns no obligation data. The obligation model is a single
-central manifest at `model/obligations/obligations.js`; a controller
-names the obligations it gathers by id in its `collects` list (see
-[section 4](#4-the-collects-contract)). Copy and validation live
-page-side; the model carries neither.
+A feature owns no obligation definition. The obligation model is a single
+central manifest at `model/obligations/obligations.js`; a controller names the
+obligations it gathers in its `collects` list and the feature's `evaluation.js`
+owns the page-field → manifest-UUID persistence bindings. Copy and validation
+live page-side; the model carries neither.
 
 `features/import-reason/` is the smallest complete example: one
 controller, one page leaf, one template, gathering the single

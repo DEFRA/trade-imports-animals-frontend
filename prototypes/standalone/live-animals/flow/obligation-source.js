@@ -61,10 +61,10 @@ export const flowOnlyAnswersFrom = (answers) =>
     ).map((key) => [key, answers[key]])
   )
 
-// Keys the system itself writes into answers outside the manifest: the
-// backend-assigned notification reference restored on real-mode resume
-// (services/persistence/records/notification-mapper.js).
-export const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
+// Compatibility key accepted by answer validation but excluded from canonical
+// assembly. Runtime notification projections take the reference from the
+// journey envelope instead.
+const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
 
 const groupSet = new Set(
   obligations.filter((obligation) =>

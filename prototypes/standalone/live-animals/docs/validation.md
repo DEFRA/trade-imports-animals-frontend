@@ -146,7 +146,7 @@ Joi schema (`model/obligations/obligations.js`):
 
 The engine checks completion in two places:
 
-- **The hub.** `statusOfFromB` (`bridge/status.js`), reached
+- **The hub.** `statusOf` (`bridge/status.js`), reached
   through `flow/task-rows.js` `rowStatus` and `flow/section-status.js`
   `sectionStatus`, reports a row or section Fulfilled only when every
   in-scope obligation it covers is satisfied.
@@ -190,8 +190,9 @@ the raw input, validates the stripped value and commits it stripped,
 echoing the raw input on failure (`features/cph-number/controller.js`).
 
 **`integerInRange`** checks that the value is a whole number in range but
-returns the trimmed _string_, not a number. Stored answers are strings
-throughout; a validator never changes a stored type.
+returns the trimmed _string_, not a number. The page answer stays a string; a
+feature binding may convert it for canonical fulfilment (the animal-count
+binding does).
 
 ## Dates
 

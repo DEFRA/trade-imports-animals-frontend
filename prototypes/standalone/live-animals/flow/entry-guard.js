@@ -20,15 +20,10 @@ export const guardedJourneyPath = (path) =>
     (prefix) => path === prefix || path.startsWith(`${prefix}/`)
   )
 
-/** Only an answer the USER entered starts a journey.
+/** Only a model answer the USER entered starts a journey.
  *
- * `importType` is the filter's own service-routing pick, not notification
- * data — and it is the one answer that does not survive a real-mode
- * round-trip. Keys that are not page-collected obligations belong to the
- * backend, not the user: in real mode `answers` is rebuilt from the stored
- * notification on every load, so a freshly-created DRAFT arrives already
- * carrying its server-minted referenceNumber. Counting either would make
- * stub and real mode diverge. */
+ * `importType` is flow-only session state, not canonical fulfilment. System
+ * populated obligations do not represent user progress either. */
 const userEntered = (key) => {
   if (key === IMPORT_TYPE_KEY) return false
   const obligation = obligationByName(key)

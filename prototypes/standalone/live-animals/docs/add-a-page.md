@@ -29,7 +29,7 @@ Once the slice is registered, the model derives the rest:
 - **Navigation** — `nextInSection` and `sectionEntry`
   ([`flow/navigation.js`](../flow/navigation.js)) walk the `sections` array. A
   one-page section returns to the hub on save with no wiring.
-- **Status roll-up** — task and section status come from `statusOfFromB`
+- **Status roll-up** — task and section status come from `statusOf`
   ([`bridge/status.js`](../bridge/status.js)), driven by the
   obligations your page collects. A mandatory obligation moves the tag Not
   started → In progress → Completed on its own.
@@ -198,7 +198,7 @@ pages, and its wiring lives in two places:
   `{ collection: 'commodityLines', except: ['animalIdentifiers'] }`, when the
   row should reflect a subset of a collection) and `conditional: true` (the
   hub hides the row while its status is Not applicable). `rowStatus` derives
-  the tag from `statusOfFromB` over the row's collected obligations.
+  the tag from `statusOf` over the row's collected obligations.
 
 - In [`features/hub/controller.js`](../features/hub/controller.js), present the
   row inside the `GROUPS` literal. Each group has a `caption` and a list of

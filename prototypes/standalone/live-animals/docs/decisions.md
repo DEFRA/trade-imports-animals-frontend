@@ -274,20 +274,19 @@ model would re-couple the seams this principle separates.
 
 ### Principle
 
-The frontend stores a user's data as a nested answers POJO
-(`answers.commodityLines[0].animalIdentifiers[1]…`). The model evaluates a
-flat fulfilments map keyed by obligation id. Controllers and templates
-never touch the model's evaluator directly — they reach it through
-the bridge modules
-under [`bridge/`](../bridge/), which project the model's
-per-obligation output into the `scope` / `status` / `wipe` views the
-controllers consume:
+The durable record and the model use one flat canonical fulfilment map keyed by
+obligation UUID. Controllers and templates use a request-local nested answers
+projection (`answers.commodityLines[0].animalIdentifiers[1]…`) and never touch
+the evaluator directly. They reach it through the bridge modules under
+[`bridge/`](../bridge/):
 
-- [`fulfilments.js`](../bridge/fulfilments.js) — converts nested answers ⇄
-  flat fulfilments, passing values through unchanged except for numeric
-  animal-count coercion.
-- [`scope.js`](../bridge/scope.js) — `makeScopeFromB(answers)`,
-  projecting each in-scope implication back into the answers path grammar.
+- [`fulfilment-bindings.js`](../bridge/fulfilment-bindings.js) and the feature
+  `evaluation.js` files own answer-field → UUID mappings;
+  [`assemble-fulfilments.js`](../bridge/assemble-fulfilments.js) merges them.
+- [`fulfilments.js`](../bridge/fulfilments.js) projects canonical fulfilment to
+  nested request answers.
+- [`scope.js`](../bridge/scope.js) projects each in-scope implication back into
+  the answers path grammar.
 - [`status.js`](../bridge/status.js) — the task and section status
   for the hub.
 - [`purge.js`](../bridge/purge.js) — the set of paths a scope-exit
@@ -297,16 +296,15 @@ controllers consume:
 
 ### Why
 
-Keeping every model read behind one seam means the controllers depend on a
+Keeping every model read and write translation behind one seam means the controllers depend on a
 small, stable interface — a scope set, a status enum, a wipe set — rather
 than on the evaluator's internal shape. The model stays swappable and
-independently testable, and the frontend keeps its own storage grammar
-without leaking positional-array knowledge into the model.
+independently testable, and pages keep their positional grammar without making
+it the durable storage contract.
 
 ### Accepted costs
 
-Two representations of the same data exist at once — the frontend's nested
-store and the model's flat map — so the bridge carries the structural
-conversion. That conversion is pure and centralised in
-[`fulfilments.js`](../bridge/fulfilments.js), so the cost is one
-well-tested module rather than translation scattered across controllers.
+Two representations of the same data exist during a request — the page's
+nested projection and the canonical flat map — so the bridge carries the
+structural conversion. Forward bindings are feature-owned and boot-checked;
+render-back remains central and well tested.

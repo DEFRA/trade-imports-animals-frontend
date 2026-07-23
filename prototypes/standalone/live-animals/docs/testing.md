@@ -12,7 +12,13 @@ All commands run from the frontend repo root (`trade-imports-animals-frontend`).
 npm run test:live-animals
 ```
 
-Vitest runs every `*.test.js` under the prototype in well under a second (`TZ=UTC vitest run prototypes/standalone/live-animals --no-coverage`). The suite loads the whole module graph, and two specs run the boot guards directly: `obligation-purity.test.js` runs the model-purity check and `contract.test.js` runs `buildDispatch`, which coverage-asserts every obligation against each page's `collects` declaration. A mis-wired model fails the unit run — you do not need to start the server to find out.
+Vitest runs every `*.test.js` under the prototype (`TZ=UTC vitest run
+prototypes/standalone/live-animals --no-coverage`). The suite loads the whole
+module graph and runs the boot guards directly: `obligation-purity.test.js`
+checks model purity, `fulfilment-registry.test.js` checks complete and unique
+feature-owned UUID bindings, and `contract.test.js` runs the page `collects`
+coverage. A mis-wired model fails the unit run — you do not need to start the
+server to find out.
 
 ### E2E suite
 
@@ -63,9 +69,16 @@ The obligation model is pure and synchronous, so it is proven entirely in unit t
 
 ### Bridge tier (`bridge/**`)
 
-The bridge is the only door between the model and the hapi frontend. Its four specs pin the projections the controllers and templates depend on:
+The bridge is the only door between the model and the hapi frontend. Its specs
+pin the assembly and projections the controllers and templates depend on:
 
-- `fulfilments.test.js` — nested answers ⇄ flat fulfilments, composite-key ↔ positional-path conversion, value pass-through and animal-count coercion.
+- `fulfilment-registry.test.js` and `feature-assembly.golden.test.js` — every
+  non-group UUID is owned once by a correctly-pathed feature binding, and those
+  bindings assemble the characterised canonical map.
+- `fulfilments.test.js` — canonical fulfilment → nested answers,
+  composite-key ↔ positional-path conversion, and render-back behaviour.
+- `fulfilments.characterisation.test.js` — the increment-0 canonical,
+  evaluator, answer, and notification boundary oracles.
 - `scope.test.js` — the in-scope path-key set the controllers read.
 - `status.test.js` — the five status constants (`NA`, `NOT_STARTED`, `IN_PROGRESS`, `FULFILLED`, `OPTIONAL`) and the completeness projection.
 - `collection-complete.test.js` — per-instance completeness for the collection views.
@@ -90,7 +103,12 @@ Each page's controller has a spec that drives its real GET/POST handler headless
 
 The persistence and reference-data services are proven against their ports:
 
-- **Records** — `services/persistence/records/notification-mapper.test.js` pins both mappers; `skeleton-equivalence.test.js` pins, at unit level, that the mapper produces a notification equivalent to the production skeleton's; `records-port.test.js` and the `real.*` specs pin the backend REST client (null stripping, amend, resume scoping).
+- **Records** — `fulfilment-codec.test.js` pins canonical at-rest round trips;
+  `notification-mapper.test.js` pins both forward projections, including Mapper
+  A ⊆ Mapper B and commodity/unit/document behaviour;
+  `skeleton-equivalence.test.js` pins Mapper A against the production skeleton;
+  `records-port.test.js` and the `real.*` specs pin native stub storage and the
+  `/fulfilments` source-of-truth client plus both projection writes.
 - **Session** — `services/persistence/session/*` pins the stub and the Redis/yar real port.
 - **Reference data and uploads** — `address-book`, `document-uploads` (stub and real) and `run-mode` pin the MDM and upload services and the `stub`/`real` mode switch.
 
@@ -100,7 +118,12 @@ The persistence and reference-data services are proven against their ports:
 
 ### The persistence-parity oracle
 
-`prototypes/e2e/skeleton-vs-prototype-mongo.spec.js` is the top of the net. It drives BOTH journeys this frontend serves — the production skeleton (`src/server`) and this prototype — against the same real backend, strips the volatile fields, and asserts the two persisted notifications are equal. `skeleton-equivalence.test.js` pins the same claim at unit level against the mapper; this pins it through the real HTTP adapter, the real backend and Mongo. It runs in the `parity` project, so every change is parity-checked with nothing to opt into.
+`prototypes/e2e/skeleton-vs-prototype-mongo.spec.js` drives both journeys this
+frontend serves — the production skeleton (`src/server`) and this prototype —
+against the same real backend and compares the current notification projection.
+`skeleton-equivalence.test.js` pins the same claim at unit level. Canonical
+fulfilment remains the prototype's resume source; notification parity proves
+only the downstream Mapper A shape.
 
 ### Sibling prototype specs
 

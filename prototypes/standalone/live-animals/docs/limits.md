@@ -22,9 +22,10 @@ editing a config file. See [obligation-model.md](obligation-model.md).
 
 ## The bridge preserves vocabulary, with two representation edges
 
-Controllers store answers in a nested shape and the model evaluates flat
-fulfilments; [bridge/fulfilments.js](../bridge/fulfilments.js) translates
-between them. Values pass through unchanged except for the animal count:
+Controllers use request-local answers in a nested shape while the durable store
+and model use flat fulfilments. Feature-owned bindings assemble the canonical
+map and [bridge/fulfilments.js](../bridge/fulfilments.js) projects it back.
+Values pass through unchanged except for the animal count:
 
 - **Parsable animal-count strings become numbers.** The page stores
   `numberOfAnimalsQuantity` from HTTP as a string. The bridge coerces a
@@ -48,50 +49,43 @@ fields sit `within` it — and the manifest pins the V4 cap as a group invariant
 documents page also caps its Add affordance (`MAX_DOCUMENTS`), but the model
 invariant is the after-the-fact defence: records saved over a later, lower cap
 surface as an invariant error rather than passing silently. Each document
-record stores its obligation fields plus two feature-owned aux keys
-(`uploadId`, `filename` — `AUX_ENTRY_KEYS` in
-[flow/obligation-source.js](../flow/obligation-source.js)); the file bytes
-never enter the answers — they live behind the `document-uploads` service,
-linked by `uploadId`.
+record stores its typed fields plus the manifest-owned `documentUploadId` and
+`documentFilename` obligations. The file bytes never enter fulfilment — they
+live behind the `document-uploads` service, linked by `uploadId`.
 
-## Mapper A loses data in reverse; Mapper B is lossless
+## Mapper A is narrower than Mapper B
 
-Two mappers translate answers to the backend notification
+Two forward mappers translate the same canonical snapshot to backend
+notifications
 ([services/persistence/records/notification-mapper.js](../services/persistence/records/notification-mapper.js)).
-The active mapper is selected in
-[services/persistence/records/mapper.js](../services/persistence/records/mapper.js).
+Both run on every real-mode replacement.
 
 **Mapper A** targets the skeleton notification shape, which cannot carry
-everything the store holds. `notificationToAnswers` therefore loses:
+everything canonical fulfilment holds:
 
 - **Commodity identity of every group after the first** — the notification
   has one top-level `commodity.name` and no per-complement code, so lines
-  rebuilt from the second commodity onward come back with no
-  `commoditySelection`.
+  cannot represent every complement's identity.
 - **Identifier records beyond one per species, and every identifier field
   except ear tag and passport** — tattoo, horse name, the free-text
   fallbacks and the per-animal permanent address have no home in the skeleton
   shape.
 
-**Mapper B** carries per-group `commodityCode` and full per-species
-`animalIdentifiers` arrays precisely to round-trip losslessly, falling back to
-Mapper A recovery when a backend strips the extras. If the wired mapper is A,
-a submit-then-reload cannot restore the fields above. See
+**Mapper B** carries per-group `commodityCode`, full per-species
+`animalIdentifiers`, typed documents, and the other additional projection
+fields. Neither notification is used to resume: `/fulfilments` is the source of
+truth, so Mapper A's narrower shape cannot lose durable data. See
 [persistence.md](persistence.md).
 
 ## Commodity mapping belongs to notification persistence
 
-The answer-to-fulfilment bridge does not translate commodity names or codes;
-the answers and gates use the same stored values. Commodity translation is a
+The answer/fulfilment bridge does not translate commodity names or codes; page
+answers and gates use the same values. Commodity translation is a
 notification-mapper concern
 ([services/persistence/records/notification-mapper.js](../services/persistence/records/notification-mapper.js)).
-Mapper B writes each complement's `commodityCode` with `commodityCodeFor` and,
-when a complement name is absent on recovery, resolves that code with
-`commodityNameFor`. That fallback is non-injective for `Cat` and `Dog`: both
-write `01061900`, whose reverse lookup returns `Cat`. Mapper B's normal shape
-also stores the complement name, so the fallback only applies when that name
-is absent. Mapper A stores the first commodity name at the notification's top
-level and has the separate reverse-mapping losses described above.
+Mapper B writes each complement's `commodityCode` with `commodityCodeFor` and
+also carries its name. Mapper A stores only the first commodity name at the
+notification's top level.
 
 ## No gate reads an array-valued answer
 
@@ -152,9 +146,9 @@ production concerns:
 
 - The session stub is a cookie standing in for the production session-id plus
   Redis indirection.
-- The records stub mints and stores notifications in memory; the real adapter
-  posts to the backend, but that mapping is exercised against a stub backend,
-  not a verified production service.
+- The records stub mints and stores canonical fulfilment in memory; the real
+  adapter persists the same at-rest shape to `/fulfilments` and writes both
+  notification projections.
 - The stub's resume-by-identity affordance (`load({ userId })`) is a
   demo-only convenience the real adapter does not implement.
 

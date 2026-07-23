@@ -28,10 +28,10 @@ A collection is a **group obligation** plus the member obligations that point
 at it. Both live in
 [`model/obligations/obligations.js`](../model/obligations/obligations.js).
 
-A group carries an `id` (a UUID) and a `name` (the A-facing id used as the
-storage key and DOM field name). It carries no `status` and no value of its
-own. It becomes a group purely because other obligations name it in their
-`within`:
+A group carries an `id` (a UUID used by canonical fulfilment) and a `name` (the
+request-local answers key and DOM field name). It carries no `status` and no
+value of its own. It becomes a group purely because other obligations name it
+in their `within`:
 
 ```js
 export const commodityLine = {
@@ -73,7 +73,7 @@ Collection-level facts:
   referenced by literal id. Omit `requires` entirely — as `documents` does — and
   an empty collection is complete, but every instance that exists must still be
   complete.
-- Member ids are the keys inside each instance object
+- Member names are the keys inside each request-local instance object
   (`answers.commodityLines[0].commoditySelection`) and the DOM field names.
   They must be path-safe — no `.`, `[` or `]` — or `buildDispatch` throws at
   boot ([`flow/dispatch.js`](../flow/dispatch.js)).
@@ -96,6 +96,45 @@ export const unitRecord = {
   }
 }
 ```
+
+### Declare the feature-owned grouped bindings
+
+The collection's feature owns the translation from those page fields to UUID
+fulfilments. In `features/<feature>/evaluation.js`, describe each group with its
+page field, stable token and manifest obligation, then bind each leaf:
+
+```js
+const line = {
+  field: 'commodityLines',
+  token: 'line',
+  obligation: commodityLine
+}
+
+const unit = {
+  field: 'animalIdentifiers',
+  token: 'unit',
+  obligation: unitRecord
+}
+
+export const evaluationBindings = feature('commodities', [
+  grouped({
+    field: 'commoditySelection',
+    obligation: commodityCode,
+    groups: [line]
+  }),
+  grouped({
+    field: 'animalIdentifierEarTag',
+    obligation: earTag,
+    groups: [line, unit]
+  })
+])
+```
+
+Boot rejects a missing leaf, duplicate UUID owner, inconsistent group token, or
+binding whose depth disagrees with the manifest's `within` chain. The resulting
+fulfilment ids (`line0`, `line0/unit1`) are positions within one canonical
+snapshot, not durable identities for individual collection records. Every save
+replaces the whole snapshot, so removing an earlier item may renumber the rest.
 
 ## 2. Add a per-instance conditional field
 
@@ -139,9 +178,9 @@ the entry template. Scope and wipe stay in the model.
 
 Once the manifest declares the group, you write no scope or wipe code. The
 evaluator ([`model/obligations/evaluator.js`](../model/obligations/evaluator.js))
-materialises the tree against the answers, so a two-line journey yields
-`commodityLines[0]` and `commodityLines[1]` as independent instances, each
-scoped on its own values.
+evaluates the feature-assembled canonical map, so a two-line journey yields
+`line0` and `line1` as independent instances; the request projection exposes
+them as `commodityLines[0]` and `commodityLines[1]`.
 
 - **Per-instance scope.** Every in-scope field of every instance is projected
   into the controller-facing scope through
@@ -184,13 +223,17 @@ export const meta = { ...page, collects: ['documents'] }
 ```
 
 Its POST branches on the submit button. `action === 'add'` validates the entry
-fields and appends; a plain Continue advances with no write. The append mints
-the instance's identity — until that POST the draft lives only in the payload,
-never a half-created instance in the store:
+fields and appends; a plain Continue advances with no write. The append creates
+the snapshot-local position — until that POST the draft lives only in the
+payload, never a half-created instance in the store:
 
 ```js
 await state.appendEntry(request, h, 'documents', entry)
 ```
+
+A leaf-less entry has no canonical record from which to infer an instance and
+is therefore not persisted. Collection forms should commit an entry only after
+validation has produced at least one bound leaf.
 
 Remove is a third branch of the same POST — a submit button named
 `action` with a `remove:<index>` value, so the page form's crumb travels

@@ -45,8 +45,9 @@ turns the closures into analysable data.
 
 `simulateJourney(answers)` in [`analysis/simulate.js`](../analysis/simulate.js)
 takes a persona and returns the ordered list of page ids that persona would
-visit. A persona is just an answers map — the same shape the store holds. There
-is no persona DSL:
+visit. A persona is a request-local answers map — the same shape controllers
+consume, which feature bindings assemble into canonical fulfilment. There is no
+persona DSL:
 
 ```js
 simulateJourney({

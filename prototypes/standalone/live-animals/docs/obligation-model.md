@@ -39,11 +39,11 @@ no widget choice and no page-level validation on an obligation. Those
 live where they are read — in the templates, controllers and the domain
 registry.
 
-`id` and `name` split two roles. `id` is the storage key and the domain
-registry key; `name` is the field vocabulary the frontend and the storage
-answers speak. The bridge layer (`bridge/`)
-converts between the model's flat `fulfilments` map (keyed by `id`) and
-the frontend's nested answers (keyed by `name`).
+`id` and `name` split two roles. `id` is the canonical storage key and the
+domain registry key; `name` is the request-local field vocabulary controllers
+and templates speak. Feature-owned bindings assemble name-keyed answers into
+the flat fulfilment map; the bridge projects canonical fulfilment back to
+nested answers.
 
 ### Always-in-scope vs gated
 

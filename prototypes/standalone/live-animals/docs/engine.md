@@ -180,34 +180,36 @@ status.
 
 Controllers speak in nested `answers` and pathKeys; the evaluator speaks in
 flat `fulfilments` and composite keys. `bridge/` is the only place the
-two meet. Each bridge instantiates its own `createObligationEvaluator()`, runs
-`answersToFulfilments(answers)` through it, and projects the output back into
-the shape controllers consume.
+two meet. Feature-owned bindings assemble name-keyed page values into the
+canonical UUID map; one shared evaluator produces the request state, and the
+other bridge modules project that state into the shapes controllers consume.
 
-- **`fulfilments.js`** — the translator. `answersToFulfilments` /
-  `projectAnswers` convert nested answers to and from the flat map, with
-  composite-key ↔ positional-path conversion (`ancestorChain`,
-  `fulfilmentIdToPath`). Values cross unchanged — answers and the manifest's
-  gates share one stored vocabulary — with one exception: the animal count is
-  coerced from the page's HTTP string to a number, because the model's count
-  invariants compare numerically. Unparseable input passes through raw for the
-  controller to reject; the bridge never destroys a value it cannot place.
-- **`scope.js`** — `makeScopeFromB(answers)` returns
+- **`fulfilment-bindings.js` / `fulfilment-registry.js` /
+  `assemble-fulfilments.js`** — feature `evaluation.js` files own each scalar or
+  grouped answer-field → obligation binding. Boot checks complete, unique,
+  correctly-pathed UUID ownership; assembly merges the contributions and
+  coerces parsable animal counts to numbers.
+- **`fulfilments.js`** — `projectAnswers` renders canonical fulfilment back to
+  nested request answers, with composite-key ↔ positional-path conversion
+  (`ancestorChain`, `fulfilmentIdToPath`).
+- **`evaluation.js`** — owns the shared evaluator used for canonical reads and
+  name-keyed request mutations.
+- **`scope.js`** — `makeScopeFromEvaluation(evaluation, answers)` returns
   `{ inScope: Set<pathKey>, has(id), answered(id), readyForCheckYourAnswers }`.
   It projects every in-scope implication back into the pathKey grammar (bare
   id, group-node key, positional leaf) and adds the flow-only obligations the
   obligation model does not carry (`importType`, `declaration`), so their pages
   stay reachable. `readyForCheckYourAnswers` comes from `readiness-config.js`.
-- **`status.js`** — `statusOfFromB(parts, answers, inScope)` is the sole
+- **`status.js`** — `statusOf(parts, answers, inScope, evaluation)` is the sole
   runtime source of the 5-way task and section status. It projects the manifest
   into a structural registry shape (`toStructural`) and reads completeness from
   the evaluator state — per-record scope from the implication's `records`,
   per-record mandate from `effectiveStatus`, fulfilment from the domain's
   `isComplete` / `isBlankValue`.
-- **`purge.js`** — `wipeSetFromB(answers)` returns the pathKeys the evaluator's
-  purge destroys: every leaf answered in the input but absent from the
-  post-purge output. It feeds `lib/path.js`'s `destroyWiped`.
-- **`collection-complete.js`** — `entryCompleteFromB` gives per-instance
+- **`purge.js`** — `purgeFulfilments` evaluates a canonical input and returns
+  the converged post-purge fulfilment used by the write path. `wipeSet` remains
+  the path projection used by focused bridge tests.
+- **`collection-complete.js`** — `entryComplete` gives per-instance
   completeness for the collection views.
 
 ## The hapi barrel
@@ -241,7 +243,7 @@ state.
 - `commit` merges the incoming name-keyed patch into the request projection,
   splits any `FLOW_ONLY_OBLIGATIONS` into the journey-keyed session map, and
   rebuilds canonical fulfilment from the remaining patch through the
-  increment-4 migration facade. The canonical side is evaluated/purged and
+  feature-owned binding registry. The canonical side is evaluated/purged and
   whole-replaces `evaluation.fulfilments`.
 - `appendEntryAt` respects `collectionCapAt` — an append past the cap returns
   `null`. Every collection mutation follows the same canonical replacement.
