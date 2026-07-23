@@ -1,0 +1,2362 @@
+{
+  "comprehensive": {
+    "fulfilments": {
+      "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": "GBN-AG-26-ABC123",
+      "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+        "responsiblePerson": "Auth User",
+        "responsiblePersonEmail": "auth@example.com"
+      },
+      "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "FR",
+      "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": "yes",
+      "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": "FR-75",
+      "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "internalMarket",
+      "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
+      "f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01": "IE",
+      "a67b8c9d-0e1f-4023-8145-6c7d8e9f0112": "GB DOV",
+      "b78c9d0e-1f20-4134-8256-7d8e9f012023": {
+        "day": "20",
+        "month": "12",
+        "year": "2026"
+      },
+      "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": "no",
+      "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+        "name": "Origin Farm",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "addressLine2": "County Clare",
+          "country": "Ireland"
+        }
+      },
+      "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+        "name": "Astra Rosales",
+        "address": {
+          "addressLine1": "43 East Hague Extension",
+          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+          "addressLine3": "Quasoccaecat ut ear, 30055",
+          "country": "Switzerland"
+        }
+      },
+      "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+        "name": "British Livestock Ltd",
+        "address": {
+          "addressLine1": "10 Market Street",
+          "addressLine2": "Leeds LS1 6HB",
+          "country": "United Kingdom"
+        }
+      },
+      "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+        "name": "Import Co UK",
+        "address": {
+          "addressLine1": "20 Trade Road",
+          "addressLine2": "London EC1A 1BB",
+          "country": "United Kingdom"
+        }
+      },
+      "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+        "name": "Tech Imports Ltd",
+        "address": {
+          "addressLine1": "643 Main Street",
+          "addressLine2": "Birmingham G1 3AZ",
+          "country": "United Kingdom"
+        }
+      },
+      "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": "Commercial",
+      "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+        "name": "García Livestock Transport SL",
+        "approvalNumber": "ES-T2-45001294",
+        "address": {
+          "addressLine1": "43 East Hague Extension",
+          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+          "addressLine3": "Quasoccaecat ut ear, 30055",
+          "country": "Switzerland"
+        }
+      },
+      "ef26d7e8-f9a0-4b15-8c61-ed4e5f607182": {
+        "name": "Jean Dupont",
+        "address": {
+          "addressLine1": "12 Rue des Fermes",
+          "addressLine2": "",
+          "townOrCity": "Amiens",
+          "county": "",
+          "postalOrZipCode": "80000",
+          "country": "France",
+          "telephoneNumber": "+33 3 22 55 01 44",
+          "emailAddress": "jean.dupont@example.fr"
+        }
+      },
+      "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": "ROAD_VEHICLE",
+      "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": "FR-892-LK",
+      "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": "CMR-2026-884721",
+      "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": ["FR", "BE"],
+      "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+        "day": "12",
+        "month": "12",
+        "year": "2026"
+      },
+      "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
+      "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+        "name": "Animal and Plant Health Agency",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "addressLine2": "New Haw",
+          "addressLine3": "Addlestone, KT15 3NB",
+          "country": "United Kingdom"
+        }
+      },
+      "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
+      "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
+      "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+        "line0": "Cow",
+        "line1": "Cow"
+      },
+      "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+        "line0": "16",
+        "line1": "16"
+      },
+      "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+        "line0": "1148346",
+        "line1": "716661"
+      },
+      "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+        "line0": 2,
+        "line1": 1
+      },
+      "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+        "line0": "1",
+        "line1": "1"
+      },
+      "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": "12/345/6789",
+      "39657a80-91a2-4fc6-8345-9f0617284a51": {
+        "line0/unit0": "UK123456789"
+      },
+      "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+        "line0/unit0": "AB1234"
+      },
+      "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+        "line0/unit0": "UK123456789012",
+        "line1/unit0": "UK000000000001"
+      },
+      "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
+        "line0/unit1": "Silver"
+      },
+      "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
+        "line0/unit1": "Microchip 900123"
+      },
+      "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
+        "line0/unit1": "Brown with a white blaze"
+      },
+      "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
+        "line0/unit1": {
+          "name": "Owner",
+          "address": {
+            "addressLine1": "8 Stable Close",
+            "addressLine2": "Little Pasture",
+            "country": "United Kingdom"
+          }
+        }
+      },
+      "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+        "line0": "ITAHC",
+        "line1": "AIR_WAYBILL"
+      },
+      "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+        "line0": "PDF",
+        "line1": "PNG"
+      },
+      "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+        "line0": "GBHC1234567890",
+        "line1": "AWB-42"
+      },
+      "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+        "line0": {
+          "day": "12",
+          "month": "12",
+          "year": "2025"
+        },
+        "line1": {
+          "day": "1",
+          "month": "11",
+          "year": "2025"
+        }
+      }
+    },
+    "evaluation": {
+      "fulfilments": {
+        "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": "GBN-AG-26-ABC123",
+        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+          "responsiblePerson": "Auth User",
+          "responsiblePersonEmail": "auth@example.com"
+        },
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "FR",
+        "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": "yes",
+        "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": "FR-75",
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "internalMarket",
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
+        "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": "no",
+        "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+          "name": "Origin Farm",
+          "address": {
+            "addressLine1": "1 Farm Lane",
+            "addressLine2": "County Clare",
+            "country": "Ireland"
+          }
+        },
+        "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+          "name": "Astra Rosales",
+          "address": {
+            "addressLine1": "43 East Hague Extension",
+            "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+            "addressLine3": "Quasoccaecat ut ear, 30055",
+            "country": "Switzerland"
+          }
+        },
+        "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+          "name": "British Livestock Ltd",
+          "address": {
+            "addressLine1": "10 Market Street",
+            "addressLine2": "Leeds LS1 6HB",
+            "country": "United Kingdom"
+          }
+        },
+        "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+          "name": "Import Co UK",
+          "address": {
+            "addressLine1": "20 Trade Road",
+            "addressLine2": "London EC1A 1BB",
+            "country": "United Kingdom"
+          }
+        },
+        "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+          "name": "Tech Imports Ltd",
+          "address": {
+            "addressLine1": "643 Main Street",
+            "addressLine2": "Birmingham G1 3AZ",
+            "country": "United Kingdom"
+          }
+        },
+        "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": "Commercial",
+        "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+          "name": "García Livestock Transport SL",
+          "approvalNumber": "ES-T2-45001294",
+          "address": {
+            "addressLine1": "43 East Hague Extension",
+            "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+            "addressLine3": "Quasoccaecat ut ear, 30055",
+            "country": "Switzerland"
+          }
+        },
+        "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": "ROAD_VEHICLE",
+        "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": "FR-892-LK",
+        "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": "CMR-2026-884721",
+        "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": ["FR", "BE"],
+        "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+          "day": "12",
+          "month": "12",
+          "year": "2026"
+        },
+        "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
+        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+          "name": "Animal and Plant Health Agency",
+          "address": {
+            "addressLine1": "Woodham Lane",
+            "addressLine2": "New Haw",
+            "addressLine3": "Addlestone, KT15 3NB",
+            "country": "United Kingdom"
+          }
+        },
+        "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
+        "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "line0": "Cow",
+          "line1": "Cow"
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "line0": "16",
+          "line1": "16"
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "line0": "1148346",
+          "line1": "716661"
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "line0": 2,
+          "line1": 1
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "line0": "1",
+          "line1": "1"
+        },
+        "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": "12/345/6789",
+        "39657a80-91a2-4fc6-8345-9f0617284a51": {
+          "line0/unit0": "UK123456789"
+        },
+        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+          "line0/unit0": "AB1234"
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "line0/unit0": "UK123456789012",
+          "line1/unit0": "UK000000000001"
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "line0": "ITAHC",
+          "line1": "AIR_WAYBILL"
+        },
+        "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+          "line0": "PDF",
+          "line1": "PNG"
+        },
+        "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+          "line0": "GBHC1234567890",
+          "line1": "AWB-42"
+        },
+        "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "line0": {
+            "day": "12",
+            "month": "12",
+            "year": "2025"
+          },
+          "line1": {
+            "day": "1",
+            "month": "11",
+            "year": "2025"
+          }
+        }
+      },
+      "obligations": {
+        "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.regionCode.mandatory.becauseRegionCodeRequired",
+              "explanation": "regionCode is mandatory when regionCodeRequirement is yes"
+            }
+          ]
+        },
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.purposeInInternalMarket.applicable.becauseInternalMarket",
+              "explanation": "purposeInInternalMarket applies when reasonForImport is internalMarket"
+            }
+          ]
+        },
+        "f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01": {
+          "inScope": false
+        },
+        "a67b8c9d-0e1f-4023-8145-6c7d8e9f0112": {
+          "inScope": false
+        },
+        "b78c9d0e-1f20-4134-8256-7d8e9f012023": {
+          "inScope": false
+        },
+        "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity",
+              "explanation": "consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)"
+            }
+          ]
+        },
+        "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.commercialTransporter.applicable.becauseCommercial",
+              "explanation": "commercialTransporter applies when transporterType is Commercial"
+            }
+          ]
+        },
+        "ef26d7e8-f9a0-4b15-8c61-ed4e5f607182": {
+          "inScope": false
+        },
+        "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.transitedCountries.applicable.becauseLandTransport",
+              "explanation": "transitedCountries applies when meansOfTransport is RAILWAY or ROAD_VEHICLE"
+            }
+          ]
+        },
+        "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "274c5d6e-7f80-4da4-8123-7de4f5061729": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0"
+            },
+            {
+              "fulfilmentId": "line1"
+            }
+          ]
+        },
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.numberOfPackages.applicable.becausePackageCountCommodity",
+              "explanation": "numberOfPackages applies on lines whose commodityCode is in the package-count list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "optional"
+            }
+          ]
+        },
+        "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.cph.applicable.becauseCphCommodity",
+              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+            }
+          ]
+        },
+        "385d6e7f-8091-4eb5-8234-8ef506172940": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0"
+            },
+            {
+              "fulfilmentId": "line1/unit0"
+            }
+          ]
+        },
+        "39657a80-91a2-4fc6-8345-9f0617284a51": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.passport.applicable.becausePassportCommodity",
+              "explanation": "passport applies on units of lines whose commodityCode is in the passport list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0",
+              "status": "optional"
+            },
+            {
+              "fulfilmentId": "line1/unit0",
+              "status": "optional"
+            }
+          ]
+        },
+        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.tattoo.applicable.becauseTattooCommodity",
+              "explanation": "tattoo applies on units of lines whose commodityCode is in the tattoo list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0",
+              "status": "optional"
+            },
+            {
+              "fulfilmentId": "line1/unit0",
+              "status": "optional"
+            }
+          ]
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.earTag.applicable.becauseEarTagCommodity",
+              "explanation": "earTag applies on units of lines whose commodityCode is in the ear-tag list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0",
+              "status": "optional"
+            },
+            {
+              "fulfilmentId": "line1/unit0",
+              "status": "optional"
+            }
+          ]
+        },
+        "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
+          "inScope": false
+        },
+        "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
+          "inScope": false
+        },
+        "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
+          "inScope": false
+        },
+        "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
+          "inScope": false
+        },
+        "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0"
+            },
+            {
+              "fulfilmentId": "line1"
+            }
+          ]
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            },
+            {
+              "fulfilmentId": "line1",
+              "status": "mandatory"
+            }
+          ]
+        }
+      }
+    },
+    "answersFromFulfilments": {
+      "poApprovedReferenceNumber": "GBN-AG-26-ABC123",
+      "responsiblePersonForLoad": {
+        "responsiblePerson": "Auth User",
+        "responsiblePersonEmail": "auth@example.com"
+      },
+      "countryOfOrigin": "FR",
+      "regionOfOriginCodeRequirement": "yes",
+      "regionOfOriginCode": "FR-75",
+      "reasonForImport": "internalMarket",
+      "purposeInInternalMarket": "breeding",
+      "destinationCountry": "IE",
+      "portOfExit": "GB DOV",
+      "exitDate": {
+        "day": "20",
+        "month": "12",
+        "year": "2026"
+      },
+      "containsUnweanedAnimals": "no",
+      "placeOfOrigin": {
+        "name": "Origin Farm",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "addressLine2": "County Clare",
+          "country": "Ireland"
+        }
+      },
+      "consignor": {
+        "name": "Astra Rosales",
+        "address": {
+          "addressLine1": "43 East Hague Extension",
+          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+          "addressLine3": "Quasoccaecat ut ear, 30055",
+          "country": "Switzerland"
+        }
+      },
+      "consignee": {
+        "name": "British Livestock Ltd",
+        "address": {
+          "addressLine1": "10 Market Street",
+          "addressLine2": "Leeds LS1 6HB",
+          "country": "United Kingdom"
+        }
+      },
+      "importer": {
+        "name": "Import Co UK",
+        "address": {
+          "addressLine1": "20 Trade Road",
+          "addressLine2": "London EC1A 1BB",
+          "country": "United Kingdom"
+        }
+      },
+      "placeOfDestination": {
+        "name": "Tech Imports Ltd",
+        "address": {
+          "addressLine1": "643 Main Street",
+          "addressLine2": "Birmingham G1 3AZ",
+          "country": "United Kingdom"
+        }
+      },
+      "transporterType": "Commercial",
+      "commercialTransporter": {
+        "name": "García Livestock Transport SL",
+        "approvalNumber": "ES-T2-45001294",
+        "address": {
+          "addressLine1": "43 East Hague Extension",
+          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+          "addressLine3": "Quasoccaecat ut ear, 30055",
+          "country": "Switzerland"
+        }
+      },
+      "privateTransporter": {
+        "name": "Jean Dupont",
+        "address": {
+          "addressLine1": "12 Rue des Fermes",
+          "addressLine2": "",
+          "townOrCity": "Amiens",
+          "county": "",
+          "postalOrZipCode": "80000",
+          "country": "France",
+          "telephoneNumber": "+33 3 22 55 01 44",
+          "emailAddress": "jean.dupont@example.fr"
+        }
+      },
+      "meansOfTransport": "ROAD_VEHICLE",
+      "transportIdentification": "FR-892-LK",
+      "transportDocumentReference": "CMR-2026-884721",
+      "transitedCountries": ["FR", "BE"],
+      "arrivalDateAtPort": {
+        "day": "12",
+        "month": "12",
+        "year": "2026"
+      },
+      "portOfEntry": "GB ABD",
+      "contactAddress": {
+        "name": "Animal and Plant Health Agency",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "addressLine2": "New Haw",
+          "addressLine3": "Addlestone, KT15 3NB",
+          "country": "United Kingdom"
+        }
+      },
+      "internalReferenceNumber": "",
+      "animalsCertifiedFor": "slaughter",
+      "commodityLines": [
+        {
+          "commoditySelection": "Cow",
+          "commodityType": "16",
+          "speciesSelection": "1148346",
+          "numberOfAnimalsQuantity": 2,
+          "numberOfPackages": "1",
+          "animalIdentifiers": [
+            {
+              "animalIdentifierPassport": "UK123456789",
+              "animalIdentifierTattoo": "AB1234",
+              "animalIdentifierEarTag": "UK123456789012"
+            },
+            {
+              "horseName": "Silver",
+              "animalIdentifierIdentificationDetails": "Microchip 900123",
+              "animalIdentifierDescription": "Brown with a white blaze",
+              "permanentAddress": {
+                "name": "Owner",
+                "address": {
+                  "addressLine1": "8 Stable Close",
+                  "addressLine2": "Little Pasture",
+                  "country": "United Kingdom"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "commoditySelection": "Cow",
+          "commodityType": "16",
+          "speciesSelection": "716661",
+          "numberOfAnimalsQuantity": 1,
+          "numberOfPackages": "1",
+          "animalIdentifiers": [
+            {
+              "animalIdentifierEarTag": "UK000000000001"
+            }
+          ]
+        }
+      ],
+      "countyParishHoldingCph": "12/345/6789",
+      "documents": [
+        {
+          "accompanyingDocumentType": "ITAHC",
+          "accompanyingDocumentAttachmentType": "PDF",
+          "accompanyingDocumentReference": "GBHC1234567890",
+          "accompanyingDocumentDateOfIssue": {
+            "day": "12",
+            "month": "12",
+            "year": "2025"
+          }
+        },
+        {
+          "accompanyingDocumentType": "AIR_WAYBILL",
+          "accompanyingDocumentAttachmentType": "PNG",
+          "accompanyingDocumentReference": "AWB-42",
+          "accompanyingDocumentDateOfIssue": {
+            "day": "1",
+            "month": "11",
+            "year": "2025"
+          }
+        }
+      ]
+    },
+    "mapperA": {
+      "referenceNumber": "GBN-AG-26-ABC123",
+      "reasonForImport": "internalMarket",
+      "placeOfOrigin": {
+        "name": "Origin Farm",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "addressLine2": "County Clare",
+          "country": "Ireland"
+        }
+      },
+      "consignor": {
+        "name": "Astra Rosales",
+        "address": {
+          "addressLine1": "43 East Hague Extension",
+          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+          "addressLine3": "Quasoccaecat ut ear, 30055",
+          "country": "Switzerland"
+        }
+      },
+      "consignee": {
+        "name": "British Livestock Ltd",
+        "address": {
+          "addressLine1": "10 Market Street",
+          "addressLine2": "Leeds LS1 6HB",
+          "country": "United Kingdom"
+        }
+      },
+      "importer": {
+        "name": "Import Co UK",
+        "address": {
+          "addressLine1": "20 Trade Road",
+          "addressLine2": "London EC1A 1BB",
+          "country": "United Kingdom"
+        }
+      },
+      "destination": {
+        "name": "Tech Imports Ltd",
+        "address": {
+          "addressLine1": "643 Main Street",
+          "addressLine2": "Birmingham G1 3AZ",
+          "country": "United Kingdom"
+        }
+      },
+      "consignment": {
+        "name": "Animal and Plant Health Agency",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "addressLine2": "New Haw",
+          "addressLine3": "Addlestone, KT15 3NB",
+          "country": "United Kingdom"
+        }
+      },
+      "cphNumber": "12/345/6789",
+      "origin": {
+        "countryCode": "FR",
+        "requiresRegionCode": "yes",
+        "internalReference": ""
+      },
+      "additionalDetails": {
+        "certifiedFor": "slaughter",
+        "unweanedAnimals": "no"
+      },
+      "transport": {
+        "portOfEntry": "GB ABD",
+        "arrivalDate": "2026-12-12",
+        "transporter": {
+          "name": "García Livestock Transport SL",
+          "address": {
+            "addressLine1": "43 East Hague Extension",
+            "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+            "addressLine3": "Quasoccaecat ut ear, 30055",
+            "country": "Switzerland"
+          },
+          "approvalNumber": "ES-T2-45001294",
+          "type": "Commercial"
+        }
+      },
+      "commodity": {
+        "name": "Cow",
+        "commodityComplement": [
+          {
+            "typeOfCommodity": "Domestic",
+            "totalNoOfAnimals": 3,
+            "totalNoOfPackages": 2,
+            "species": [
+              {
+                "value": "1148346",
+                "text": "Bos taurus",
+                "noOfAnimals": "2",
+                "noOfPackages": "1",
+                "earTag": "UK123456789012",
+                "passport": "UK123456789"
+              },
+              {
+                "value": "716661",
+                "text": "Bison bison",
+                "noOfAnimals": "1",
+                "noOfPackages": "1",
+                "earTag": "UK000000000001"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mapperB": {
+      "referenceNumber": "GBN-AG-26-ABC123",
+      "reasonForImport": "internalMarket",
+      "placeOfOrigin": {
+        "name": "Origin Farm",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "addressLine2": "County Clare",
+          "country": "Ireland"
+        }
+      },
+      "consignor": {
+        "name": "Astra Rosales",
+        "address": {
+          "addressLine1": "43 East Hague Extension",
+          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+          "addressLine3": "Quasoccaecat ut ear, 30055",
+          "country": "Switzerland"
+        }
+      },
+      "consignee": {
+        "name": "British Livestock Ltd",
+        "address": {
+          "addressLine1": "10 Market Street",
+          "addressLine2": "Leeds LS1 6HB",
+          "country": "United Kingdom"
+        }
+      },
+      "importer": {
+        "name": "Import Co UK",
+        "address": {
+          "addressLine1": "20 Trade Road",
+          "addressLine2": "London EC1A 1BB",
+          "country": "United Kingdom"
+        }
+      },
+      "destination": {
+        "name": "Tech Imports Ltd",
+        "address": {
+          "addressLine1": "643 Main Street",
+          "addressLine2": "Birmingham G1 3AZ",
+          "country": "United Kingdom"
+        }
+      },
+      "consignment": {
+        "name": "Animal and Plant Health Agency",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "addressLine2": "New Haw",
+          "addressLine3": "Addlestone, KT15 3NB",
+          "country": "United Kingdom"
+        }
+      },
+      "cphNumber": "12/345/6789",
+      "origin": {
+        "countryCode": "FR",
+        "requiresRegionCode": "yes",
+        "internalReference": "",
+        "regionCode": "FR-75"
+      },
+      "additionalDetails": {
+        "certifiedFor": "slaughter",
+        "unweanedAnimals": "no"
+      },
+      "transport": {
+        "portOfEntry": "GB ABD",
+        "arrivalDate": "2026-12-12",
+        "transporter": {
+          "name": "García Livestock Transport SL",
+          "address": {
+            "addressLine1": "43 East Hague Extension",
+            "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+            "addressLine3": "Quasoccaecat ut ear, 30055",
+            "country": "Switzerland"
+          },
+          "approvalNumber": "ES-T2-45001294",
+          "type": "Commercial"
+        },
+        "meansOfTransport": "ROAD_VEHICLE",
+        "transportIdentification": "FR-892-LK",
+        "transportDocumentReference": "CMR-2026-884721",
+        "transitedCountries": ["FR", "BE"]
+      },
+      "commodity": {
+        "name": "Cow",
+        "commodityComplement": [
+          {
+            "commodityCode": "0102",
+            "name": "Cow",
+            "typeOfCommodity": "Domestic",
+            "totalNoOfAnimals": 3,
+            "totalNoOfPackages": 2,
+            "species": [
+              {
+                "value": "1148346",
+                "text": "Bos taurus",
+                "noOfAnimals": "2",
+                "noOfPackages": "1",
+                "earTag": "UK123456789012",
+                "passport": "UK123456789",
+                "animalIdentifiers": [
+                  {
+                    "passport": "UK123456789",
+                    "tattoo": "AB1234",
+                    "earTag": "UK123456789012"
+                  },
+                  {
+                    "horseName": "Silver",
+                    "identificationDetails": "Microchip 900123",
+                    "description": "Brown with a white blaze",
+                    "permanentAddress": {
+                      "name": "Owner",
+                      "address": {
+                        "addressLine1": "8 Stable Close",
+                        "addressLine2": "Little Pasture",
+                        "country": "United Kingdom"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "value": "716661",
+                "text": "Bison bison",
+                "noOfAnimals": "1",
+                "noOfPackages": "1",
+                "earTag": "UK000000000001",
+                "animalIdentifiers": [
+                  {
+                    "earTag": "UK000000000001"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "responsiblePersonForLoad": {
+        "responsiblePerson": "Auth User",
+        "responsiblePersonEmail": "auth@example.com"
+      },
+      "purpose": "breeding",
+      "declaration": ["confirmed"],
+      "documents": [
+        {
+          "documentType": "ITAHC",
+          "attachmentType": "PDF",
+          "reference": "GBHC1234567890",
+          "dateOfIssue": {
+            "day": "12",
+            "month": "12",
+            "year": "2025"
+          }
+        },
+        {
+          "documentType": "AIR_WAYBILL",
+          "attachmentType": "PNG",
+          "reference": "AWB-42",
+          "dateOfIssue": {
+            "day": "1",
+            "month": "11",
+            "year": "2025"
+          }
+        }
+      ]
+    }
+  },
+  "partially-filled-record": {
+    "fulfilments": {
+      "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "",
+      "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+        "line0": "Cow"
+      },
+      "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+        "line0": "ITAHC"
+      }
+    },
+    "evaluation": {
+      "fulfilments": {
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "",
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "line0": "Cow"
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "line0": "ITAHC"
+        }
+      },
+      "obligations": {
+        "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": {
+          "inScope": false
+        },
+        "f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01": {
+          "inScope": false
+        },
+        "a67b8c9d-0e1f-4023-8145-6c7d8e9f0112": {
+          "inScope": false
+        },
+        "b78c9d0e-1f20-4134-8256-7d8e9f012023": {
+          "inScope": false
+        },
+        "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity",
+              "explanation": "consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)"
+            }
+          ]
+        },
+        "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+          "inScope": false
+        },
+        "ef26d7e8-f9a0-4b15-8c61-ed4e5f607182": {
+          "inScope": false
+        },
+        "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": {
+          "inScope": false
+        },
+        "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "274c5d6e-7f80-4da4-8123-7de4f5061729": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0"
+            }
+          ]
+        },
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.numberOfPackages.applicable.becausePackageCountCommodity",
+              "explanation": "numberOfPackages applies on lines whose commodityCode is in the package-count list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            }
+          ]
+        },
+        "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.cph.applicable.becauseCphCommodity",
+              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+            }
+          ]
+        },
+        "385d6e7f-8091-4eb5-8234-8ef506172940": {
+          "inScope": true,
+          "records": []
+        },
+        "39657a80-91a2-4fc6-8345-9f0617284a51": {
+          "inScope": false
+        },
+        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+          "inScope": false
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "inScope": false
+        },
+        "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
+          "inScope": false
+        },
+        "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
+          "inScope": false
+        },
+        "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
+          "inScope": false
+        },
+        "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
+          "inScope": false
+        },
+        "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0"
+            }
+          ]
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        }
+      }
+    },
+    "answersFromFulfilments": {
+      "countryOfOrigin": "",
+      "commodityLines": [
+        {
+          "commoditySelection": "Cow"
+        }
+      ],
+      "documents": [
+        {
+          "accompanyingDocumentType": "ITAHC"
+        }
+      ]
+    },
+    "mapperA": {
+      "origin": {
+        "countryCode": ""
+      },
+      "commodity": {
+        "name": "Cow",
+        "commodityComplement": [{}]
+      }
+    },
+    "mapperB": {
+      "origin": {
+        "countryCode": ""
+      },
+      "commodity": {
+        "name": "Cow",
+        "commodityComplement": [
+          {
+            "commodityCode": "0102",
+            "name": "Cow"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "documentType": "ITAHC"
+        }
+      ]
+    }
+  },
+  "completely-empty-started-record": {
+    "fulfilments": {},
+    "evaluation": {
+      "fulfilments": {},
+      "obligations": {
+        "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": {
+          "inScope": false
+        },
+        "f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01": {
+          "inScope": false
+        },
+        "a67b8c9d-0e1f-4023-8145-6c7d8e9f0112": {
+          "inScope": false
+        },
+        "b78c9d0e-1f20-4134-8256-7d8e9f012023": {
+          "inScope": false
+        },
+        "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": {
+          "inScope": false
+        },
+        "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+          "inScope": false
+        },
+        "ef26d7e8-f9a0-4b15-8c61-ed4e5f607182": {
+          "inScope": false
+        },
+        "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": {
+          "inScope": false
+        },
+        "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "274c5d6e-7f80-4da4-8123-7de4f5061729": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
+          "inScope": true,
+          "records": []
+        },
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "inScope": true,
+          "records": []
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "inScope": true,
+          "records": []
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "inScope": true,
+          "records": []
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "inScope": true,
+          "records": []
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "inScope": false
+        },
+        "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": {
+          "inScope": false
+        },
+        "385d6e7f-8091-4eb5-8234-8ef506172940": {
+          "inScope": true,
+          "records": []
+        },
+        "39657a80-91a2-4fc6-8345-9f0617284a51": {
+          "inScope": false
+        },
+        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+          "inScope": false
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "inScope": false
+        },
+        "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
+          "inScope": false
+        },
+        "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
+          "inScope": false
+        },
+        "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
+          "inScope": false
+        },
+        "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
+          "inScope": false
+        },
+        "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
+          "inScope": true,
+          "records": []
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "inScope": true,
+          "records": []
+        },
+        "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+          "inScope": true,
+          "records": []
+        },
+        "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+          "inScope": true,
+          "records": []
+        },
+        "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": []
+        }
+      }
+    },
+    "answersFromFulfilments": {},
+    "mapperA": {},
+    "mapperB": {
+      "documents": [{}]
+    }
+  },
+  "gate-open": {
+    "fulfilments": {
+      "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "internalMarket",
+      "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
+      "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+        "line0": "Cow"
+      },
+      "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+        "line0": "16"
+      },
+      "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+        "line0": "1148346"
+      },
+      "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+        "line0": 1
+      },
+      "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+        "line0": "1"
+      },
+      "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+        "line0/unit0": "UK123456789012"
+      }
+    },
+    "evaluation": {
+      "fulfilments": {
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "internalMarket",
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "line0": "Cow"
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "line0": "16"
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "line0": "1148346"
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "line0": 1
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "line0": "1"
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "line0/unit0": "UK123456789012"
+        }
+      },
+      "obligations": {
+        "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.purposeInInternalMarket.applicable.becauseInternalMarket",
+              "explanation": "purposeInInternalMarket applies when reasonForImport is internalMarket"
+            }
+          ]
+        },
+        "f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01": {
+          "inScope": false
+        },
+        "a67b8c9d-0e1f-4023-8145-6c7d8e9f0112": {
+          "inScope": false
+        },
+        "b78c9d0e-1f20-4134-8256-7d8e9f012023": {
+          "inScope": false
+        },
+        "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity",
+              "explanation": "consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)"
+            }
+          ]
+        },
+        "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+          "inScope": false
+        },
+        "ef26d7e8-f9a0-4b15-8c61-ed4e5f607182": {
+          "inScope": false
+        },
+        "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": {
+          "inScope": false
+        },
+        "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "274c5d6e-7f80-4da4-8123-7de4f5061729": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0"
+            }
+          ]
+        },
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.numberOfPackages.applicable.becausePackageCountCommodity",
+              "explanation": "numberOfPackages applies on lines whose commodityCode is in the package-count list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "optional"
+            }
+          ]
+        },
+        "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.cph.applicable.becauseCphCommodity",
+              "explanation": "CPH applies when any commodity line has a CPH-required commodityCode"
+            }
+          ]
+        },
+        "385d6e7f-8091-4eb5-8234-8ef506172940": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0"
+            }
+          ]
+        },
+        "39657a80-91a2-4fc6-8345-9f0617284a51": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.passport.applicable.becausePassportCommodity",
+              "explanation": "passport applies on units of lines whose commodityCode is in the passport list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0",
+              "status": "optional"
+            }
+          ]
+        },
+        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.tattoo.applicable.becauseTattooCommodity",
+              "explanation": "tattoo applies on units of lines whose commodityCode is in the tattoo list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0",
+              "status": "optional"
+            }
+          ]
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "inScope": true,
+          "reasons": [
+            {
+              "code": "obligation.earTag.applicable.becauseEarTagCommodity",
+              "explanation": "earTag applies on units of lines whose commodityCode is in the ear-tag list"
+            }
+          ],
+          "records": [
+            {
+              "fulfilmentId": "line0/unit0",
+              "status": "optional"
+            }
+          ]
+        },
+        "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
+          "inScope": false
+        },
+        "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
+          "inScope": false
+        },
+        "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
+          "inScope": false
+        },
+        "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
+          "inScope": false
+        },
+        "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
+          "inScope": true,
+          "records": []
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "inScope": true,
+          "records": []
+        },
+        "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+          "inScope": true,
+          "records": []
+        },
+        "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+          "inScope": true,
+          "records": []
+        },
+        "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": []
+        }
+      }
+    },
+    "answersFromFulfilments": {
+      "reasonForImport": "internalMarket",
+      "purposeInInternalMarket": "breeding",
+      "commodityLines": [
+        {
+          "commoditySelection": "Cow",
+          "commodityType": "16",
+          "speciesSelection": "1148346",
+          "numberOfAnimalsQuantity": 1,
+          "numberOfPackages": "1",
+          "animalIdentifiers": [
+            {
+              "animalIdentifierEarTag": "UK123456789012"
+            }
+          ]
+        }
+      ]
+    },
+    "mapperA": {
+      "reasonForImport": "internalMarket",
+      "commodity": {
+        "name": "Cow",
+        "commodityComplement": [
+          {
+            "typeOfCommodity": "Domestic",
+            "totalNoOfAnimals": 1,
+            "totalNoOfPackages": 1,
+            "species": [
+              {
+                "value": "1148346",
+                "text": "Bos taurus",
+                "noOfAnimals": "1",
+                "noOfPackages": "1",
+                "earTag": "UK123456789012"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mapperB": {
+      "reasonForImport": "internalMarket",
+      "commodity": {
+        "name": "Cow",
+        "commodityComplement": [
+          {
+            "commodityCode": "0102",
+            "name": "Cow",
+            "typeOfCommodity": "Domestic",
+            "totalNoOfAnimals": 1,
+            "totalNoOfPackages": 1,
+            "species": [
+              {
+                "value": "1148346",
+                "text": "Bos taurus",
+                "noOfAnimals": "1",
+                "noOfPackages": "1",
+                "earTag": "UK123456789012",
+                "animalIdentifiers": [
+                  {
+                    "earTag": "UK123456789012"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "purpose": "breeding"
+    }
+  },
+  "gate-flipped": {
+    "fulfilments": {
+      "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "transit",
+      "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
+      "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+        "line0": "Fish"
+      },
+      "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+        "line0": "0301"
+      },
+      "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+        "line0": "801204"
+      },
+      "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+        "line0": 1
+      },
+      "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+        "line0": "1"
+      },
+      "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+        "line0/unit0": "UK123456789012"
+      }
+    },
+    "evaluation": {
+      "fulfilments": {
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": "transit",
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "line0": "Fish"
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "line0": "0301"
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "line0": "801204"
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "line0": 1
+        }
+      },
+      "obligations": {
+        "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "d34e5f6a-7b8c-4d9e-8f01-2a3b4c5d6e7f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": {
+          "inScope": false
+        },
+        "f56a7b8c-9d0e-4f12-8034-5b6c7d8e9f01": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.destinationCountry.applicable.becauseTransitOrTranshipment",
+              "explanation": "destinationCountry applies when reasonForImport is transit or transhipmentOrOnwardTravel"
+            }
+          ]
+        },
+        "a67b8c9d-0e1f-4023-8145-6c7d8e9f0112": {
+          "inScope": true,
+          "status": "mandatory",
+          "reasons": [
+            {
+              "code": "obligation.portOfExit.applicable.becauseTransitOrTemporaryAdmissionHorses",
+              "explanation": "portOfExit applies when reasonForImport is transit or temporaryAdmissionHorses"
+            }
+          ]
+        },
+        "b78c9d0e-1f20-4134-8256-7d8e9f012023": {
+          "inScope": false
+        },
+        "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": {
+          "inScope": false
+        },
+        "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "abe2f3a4-b5c6-4d71-8e2d-af0a1b2c3d4e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "bcf3a4b5-c6d7-4e82-8f3e-ba1b2c3d4e5f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "cd04b5c6-d7e8-4f93-8a4f-cb2c3d4e5f60": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "34d5e6f7-a8b9-4c0a-8dbc-3e4f5a6b7c8d": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "de15c6d7-e8f9-4a04-8b50-dc3d4e5f6071": {
+          "inScope": false
+        },
+        "ef26d7e8-f9a0-4b15-8c61-ed4e5f607182": {
+          "inScope": false
+        },
+        "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "56f7a8b9-c0d1-4e2c-8fde-5a6b7c8d9e0f": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "67a8b9c0-d1e2-4f3d-8aef-6b7c8d9e0f1a": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "78b9c0d1-e2f3-4a4e-8bfa-7c8d9e0f1a2b": {
+          "inScope": false
+        },
+        "12b3c4d5-e6f7-4a08-8b9a-1c2d3e4f5a6b": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": {
+          "inScope": true,
+          "status": "optional"
+        },
+        "274c5d6e-7f80-4da4-8123-7de4f5061729": {
+          "inScope": true,
+          "status": "mandatory"
+        },
+        "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0"
+            }
+          ]
+        },
+        "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
+          "inScope": true,
+          "records": [
+            {
+              "fulfilmentId": "line0",
+              "status": "mandatory"
+            }
+          ]
+        },
+        "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
+          "inScope": false
+        },
+        "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": {
+          "inScope": false
+        },
+        "385d6e7f-8091-4eb5-8234-8ef506172940": {
+          "inScope": true,
+          "records": []
+        },
+        "39657a80-91a2-4fc6-8345-9f0617284a51": {
+          "inScope": false
+        },
+        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
+          "inScope": false
+        },
+        "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
+          "inScope": false
+        },
+        "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
+          "inScope": false
+        },
+        "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
+          "inScope": false
+        },
+        "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
+          "inScope": false
+        },
+        "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
+          "inScope": false
+        },
+        "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
+          "inScope": true,
+          "records": []
+        },
+        "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
+          "inScope": true,
+          "records": []
+        },
+        "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
+          "inScope": true,
+          "records": []
+        },
+        "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
+          "inScope": true,
+          "records": []
+        },
+        "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
+          "inScope": true,
+          "records": []
+        }
+      }
+    },
+    "answersFromFulfilments": {
+      "reasonForImport": "transit",
+      "purposeInInternalMarket": "breeding",
+      "commodityLines": [
+        {
+          "commoditySelection": "Fish",
+          "commodityType": "0301",
+          "speciesSelection": "801204",
+          "numberOfAnimalsQuantity": 1,
+          "numberOfPackages": "1",
+          "animalIdentifiers": [
+            {
+              "animalIdentifierEarTag": "UK123456789012"
+            }
+          ]
+        }
+      ]
+    },
+    "mapperA": {
+      "reasonForImport": "transit",
+      "commodity": {
+        "name": "Fish",
+        "commodityComplement": [
+          {
+            "totalNoOfAnimals": 1,
+            "totalNoOfPackages": 1,
+            "species": [
+              {
+                "value": "801204",
+                "text": "Salmo salar",
+                "noOfAnimals": "1",
+                "noOfPackages": "1",
+                "earTag": "UK123456789012"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mapperB": {
+      "reasonForImport": "transit",
+      "commodity": {
+        "name": "Fish",
+        "commodityComplement": [
+          {
+            "commodityCode": "0301",
+            "name": "Fish",
+            "totalNoOfAnimals": 1,
+            "totalNoOfPackages": 1,
+            "species": [
+              {
+                "value": "801204",
+                "text": "Salmo salar",
+                "noOfAnimals": "1",
+                "noOfPackages": "1",
+                "earTag": "UK123456789012",
+                "animalIdentifiers": [
+                  {
+                    "earTag": "UK123456789012"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "purpose": "breeding"
+    }
+  }
+}
