@@ -440,12 +440,10 @@ describe('the opening run', () => {
     })
   })
 
-  // In real mode `answers` is rebuilt from the stored notification on every
-  // load, so a freshly-created backend DRAFT arrives already carrying its
-  // server-minted referenceNumber — an answer set the user never entered. The
-  // stub store hands back a literally empty one, so no stub-mode test above
-  // can see this. These pin the two surfaces on the shared start check.
-  describe('real mode — a backend-echoed answer set is still an unstarted journey', () => {
+  // Retain the old reverse-mapper fixtures as opening-run characterisation:
+  // even a reference-only projected answer set is not user-started state.
+  // Canonical real-mode loading no longer passes through either reverse mapper.
+  describe('a reference-only projected answer set is still an unstarted journey', () => {
     const post = postHandlerOf(importTypeFilter)
 
     const freshBackendDraft = {
@@ -456,10 +454,6 @@ describe('the opening run', () => {
       updated: '2026-07-14T09:00:00.000Z'
     }
 
-    // real.js marshals through whichever mapper LIVE_ANIMALS_MAPPER selects at
-    // call time, so drive both. The answer sets come from the mappers
-    // themselves — a mapper that starts echoing another backend field fails
-    // these rather than silently reopening the bug.
     const freshRealDraft = [
       ['mapper A', notificationToAnswers(freshBackendDraft)],
       ['mapper B', targetNotificationToAnswers(freshBackendDraft)]

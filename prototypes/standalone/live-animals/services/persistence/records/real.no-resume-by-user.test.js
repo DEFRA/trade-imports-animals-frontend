@@ -3,7 +3,7 @@ import createFetchMock from 'vitest-fetch-mock'
 import { records } from './real.js'
 
 // S5 hardening — user-scoping leak. The real adapter used to answer
-// load({ userId }) with a global-newest read (GET /notifications?sort=updated,desc)
+// load({ userId }) with a global-newest read
 // and hand back list[0] — whoever's notification was updated last, across all
 // users. The real production FE has no resume-by-user path (it resumes only by
 // referenceNumber), so the faithful mirror is: real-mode load({ userId }) does
@@ -13,14 +13,14 @@ import { records } from './real.js'
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
-const notificationsUrl = 'http://localhost:8085/notifications'
+const fulfilmentsUrl = 'http://localhost:8085/fulfilments'
 
 const getsToList = () =>
   fetchMocker
     .requests()
     .filter(
       (request) =>
-        request.method === 'GET' && request.url.startsWith(notificationsUrl)
+        request.method === 'GET' && request.url.startsWith(fulfilmentsUrl)
     )
 
 describe('real records adapter — no resume-by-user list read', () => {
