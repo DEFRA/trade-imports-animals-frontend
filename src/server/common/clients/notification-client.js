@@ -487,7 +487,7 @@ export const notificationClient = {
   /**
    * Retrieves a page of notifications from the backend (NotificationPageResponse).
    */
-  async findAll(_request, traceId, { page = 1, sort } = {}) {
+  async findAll(_request, traceId, { page = 1, sort, referenceNumber } = {}) {
     const url = new URL(`${tradeImportsAnimalsBackendUrl}/notifications`)
 
     if (page > 1) {
@@ -496,6 +496,10 @@ export const notificationClient = {
 
     if (sort) {
       url.searchParams.set('sort', sort)
+    }
+
+    if (referenceNumber) {
+      url.searchParams.set('referenceNumber', referenceNumber)
     }
 
     const response = await fetch(url.toString(), {

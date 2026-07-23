@@ -1,6 +1,28 @@
 @use "../../../../node_modules/govuk-frontend" as *;
+@use "../variables/colours" as *;
 
 .notification-list {
+  &__layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: govuk-spacing(6);
+    margin-top: govuk-spacing(6);
+  }
+
+  &__filters {
+    flex: 0 0 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background-color: $app-light-grey;
+    padding: govuk-spacing(4);
+  }
+
+  &__main {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
   &__toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -23,6 +45,16 @@
 
     .govuk-form-group {
       margin-bottom: 0;
+    }
+
+    .govuk-button {
+      margin-bottom: 0;
+    }
+  }
+
+  &__search-form {
+    .govuk-form-group {
+      margin-bottom: govuk-spacing(4);
     }
 
     .govuk-button {
@@ -81,7 +113,19 @@
   }
 }
 
-// Responsive adjustments
+@include govuk-media-query($from: desktop) {
+  .notification-list {
+    &__filters {
+      flex: 0 0 280px;
+      max-width: 280px;
+    }
+
+    &__main {
+      flex: 1 1 0;
+    }
+  }
+}
+
 @include govuk-media-query($until: tablet) {
   .notification-list {
     &__toolbar {

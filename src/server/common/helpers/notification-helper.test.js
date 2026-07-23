@@ -297,12 +297,37 @@ describe('#notificationListView', () => {
     test('Should include sort in pagination links when not the default', () => {
       const result = buildPaginationLinks(
         { page: 2, totalPages: 3 },
-        '/',
+        undefined,
         'createdAt,desc'
       )
 
       expect(result.previous.href).toBe('/?sort=createdAt%2Cdesc')
       expect(result.next.href).toBe('/?page=3&sort=createdAt%2Cdesc')
+    })
+
+    test('Should include referenceNumber in pagination links when provided', () => {
+      const result = buildPaginationLinks(
+        { page: 2, totalPages: 3 },
+        'GBN-AG-26-ABC123'
+      )
+
+      expect(result.previous.href).toBe('/?referenceNumber=GBN-AG-26-ABC123')
+      expect(result.next.href).toBe('/?page=3&referenceNumber=GBN-AG-26-ABC123')
+    })
+
+    test('Should include referenceNumber and sort in pagination links', () => {
+      const result = buildPaginationLinks(
+        { page: 2, totalPages: 3 },
+        'GBN-AG-26-ABC123',
+        'createdAt,desc'
+      )
+
+      expect(result.previous.href).toBe(
+        '/?sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123'
+      )
+      expect(result.next.href).toBe(
+        '/?page=3&sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123'
+      )
     })
   })
 
@@ -326,6 +351,16 @@ describe('#notificationListView', () => {
       expect(
         buildHomeListQueryString({ page: 2, sort: 'createdAt,desc' })
       ).toBe('?page=2&sort=createdAt%2Cdesc')
+    })
+
+    test('Should include referenceNumber when provided', () => {
+      expect(
+        buildHomeListQueryString({
+          page: 2,
+          sort: 'createdAt,desc',
+          referenceNumber: 'GBN-AG-26-ABC123'
+        })
+      ).toBe('?page=2&sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123')
     })
   })
 

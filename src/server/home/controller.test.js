@@ -469,6 +469,121 @@ describe('#homeController', () => {
       expect(result).toEqual(expect.stringContaining('value="2"'))
     })
 
+    test('Should render search form and pass referenceNumber to findAll', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [
+          {
+            ...mockFindAllApiResponse.content[0],
+            referenceNumber: 'GBN-AG-26-ABC123'
+          }
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1
+      })
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/?referenceNumber=GBN-AG-26-ABC123',
+        auth: sessionAuth('home-get-search-match')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(
+        expect.stringContaining('data-testid="notification-search-form"')
+      )
+      expect(result).toEqual(expect.stringContaining('Filter notifications'))
+      expect(result).toEqual(expect.stringContaining('Keyword or reference'))
+      expect(result).toEqual(expect.stringContaining('GBN-AG-26-ABC123'))
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        {
+          page: 1,
+          sort: 'arrivalDate,desc',
+          referenceNumber: 'GBN-AG-26-ABC123'
+        }
+      )
+    })
+
+    test('Should show No notifications found when search has no matches', async () => {
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/?referenceNumber=GBN-AG-26-ZZZZZZ',
+        auth: sessionAuth('home-get-search-empty')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('No notifications found'))
+      expect(result).not.toEqual(expect.stringContaining('govuk-summary-card'))
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        {
+          page: 1,
+          sort: 'arrivalDate,desc',
+          referenceNumber: 'GBN-AG-26-ZZZZZZ'
+        }
+      )
+    })
+
+    test('Should trim referenceNumber before calling findAll', async () => {
+      await server.inject({
+        method: 'GET',
+        url: '/?referenceNumber=%20GBN-AG-26-ABC123%20',
+        auth: sessionAuth('home-get-search-trim')
+      })
+
+      expect(notificationClient.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        {
+          page: 1,
+          sort: 'arrivalDate,desc',
+          referenceNumber: 'GBN-AG-26-ABC123'
+        }
+      )
+    })
+
+    test('Should show No notifications found when search text is free text', async () => {
+      notificationClient.findAll.mockResolvedValueOnce({
+        content: [],
+        page: 1,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0
+      })
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/?referenceNumber=invalid-ref',
+        auth: sessionAuth('home-get-search-free-text')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('No notifications found'))
+      expect(result).not.toEqual(expect.stringContaining('There is a problem'))
+      expect(result).not.toEqual(expect.stringContaining('govuk-summary-card'))
+    })
+
+    test('Should show No notifications found when backend rejects search with bad request', async () => {
+      const error = new Error('Failed to get notifications')
+      error.status = 400
+      error.statusText = 'Bad Request'
+      notificationClient.findAll.mockRejectedValueOnce(error)
+
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/?referenceNumber=invalid-ref',
+        auth: sessionAuth('home-get-search-bad-request')
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('No notifications found'))
+      expect(result).not.toEqual(expect.stringContaining('There is a problem'))
+    })
+
     test('Should use backend-clamped page for view links when query page is too large', async () => {
       notificationClient.findAll.mockResolvedValueOnce({
         content: mockFindAllApiResponse.content,
