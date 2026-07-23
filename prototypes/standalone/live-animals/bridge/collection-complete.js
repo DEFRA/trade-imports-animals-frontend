@@ -43,7 +43,7 @@ import { domain } from '../model/domain/index.js'
 const evaluator = createObligationEvaluator()
 const evaluate = (answers) => evaluator.evaluate(answersToFulfilments(answers))
 
-const byAName = new Map(
+const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
 )
 
@@ -139,7 +139,7 @@ const groupInvariantBlocksInstance = (group, instanceId, state) =>
  */
 export const entryComplete = (answers, collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
-  const group = byAName.get(names[names.length - 1])
+  const group = obligationByName.get(names[names.length - 1])
   if (!group) return true
   const instanceId = instanceFulfilmentId(collectionPath, index)
   const { obligations: implications, fulfilments } = evaluate(answers)

@@ -63,46 +63,46 @@ const anyInstanceAnswered = (answers, id) => {
 }
 
 // A depth-0 group's node has no parent, so a single bare key.
-const groupNodeKey = (inScope, aId) => {
-  inScope.add(aId)
+const groupNodeKey = (inScope, name) => {
+  inScope.add(name)
 }
 
 // A nested group's node is keyed once per PARENT-group instance — derived
 // from the parent's instances, not the group's own records, so a parent
 // instance whose nested group is empty still contributes its node key.
-const groupInstanceKeys = (inScope, implications, obligation, chain, aId) => {
+const groupInstanceKeys = (inScope, implications, obligation, chain, name) => {
   const parentRecords = implications[obligation.within.id]?.records ?? []
   for (const { fulfilmentId } of parentRecords) {
-    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, aId)))
+    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, name)))
   }
 }
 
 // Grouped leaf — one positional pathKey per in-scope record.
-const leafRecordKeys = (inScope, chain, aId, records) => {
+const leafRecordKeys = (inScope, chain, name, records) => {
   for (const { fulfilmentId } of records) {
-    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, aId)))
+    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, name)))
   }
 }
 
 // Top-level scalar/field — the bare obligation id.
-const leafScalarKey = (inScope, aId) => {
-  inScope.add(aId)
+const leafScalarKey = (inScope, name) => {
+  inScope.add(name)
 }
 
 // Add every pathKey an in-scope implication projects onto.
 const addProjectedKeys = (inScope, implications, obligation) => {
-  const aId = obligation.name
+  const name = obligation.name
   const chain = ancestorChain(obligation)
 
   if (groupObligations.has(obligation)) {
-    if (chain.length === 0) return groupNodeKey(inScope, aId)
-    return groupInstanceKeys(inScope, implications, obligation, chain, aId)
+    if (chain.length === 0) return groupNodeKey(inScope, name)
+    return groupInstanceKeys(inScope, implications, obligation, chain, name)
   }
 
   const implication = implications[obligation.id]
   return Array.isArray(implication.records)
-    ? leafRecordKeys(inScope, chain, aId, implication.records)
-    : leafScalarKey(inScope, aId)
+    ? leafRecordKeys(inScope, chain, name, implication.records)
+    : leafScalarKey(inScope, name)
 }
 
 const projectInScope = (answers) => {

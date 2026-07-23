@@ -45,7 +45,7 @@ const GROUP_SEGMENT_PREFIXES = ['line', 'unit']
 // Manifest-derived lookups — computed once from the vendored obligations.
 // ---------------------------------------------------------------------------
 
-const byAId = new Map(
+const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
 )
 
@@ -81,8 +81,8 @@ const toNumberWhenParses = (value) => {
   return Number.isFinite(n) ? n : value
 }
 
-const modelValue = (aId, value) =>
-  aId === numberOfAnimals.name ? toNumberWhenParses(value) : value
+const modelValue = (name, value) =>
+  name === numberOfAnimals.name ? toNumberWhenParses(value) : value
 
 // ---------------------------------------------------------------------------
 // answers -> fulfilments
@@ -90,13 +90,13 @@ const modelValue = (aId, value) =>
 
 // Walk the nested answer arrays for one leaf obligation, emitting one
 // `[compositeFulfilmentId, value]` per answered instance.
-const collectGroupedRecords = (answers, chain, aId) => {
+const collectGroupedRecords = (answers, chain, name) => {
   const records = {}
   const walk = (node, remainingGroups, segments) => {
     if (remainingGroups.length === 0) {
-      const value = node?.[aId]
+      const value = node?.[name]
       if (value !== undefined) {
-        records[segments.join('/')] = modelValue(aId, value)
+        records[segments.join('/')] = modelValue(name, value)
       }
       return
     }
@@ -112,22 +112,22 @@ const collectGroupedRecords = (answers, chain, aId) => {
   return records
 }
 
-const scalarFulfilment = (answers, aId) => {
-  const value = answers?.[aId]
-  return value === undefined ? undefined : modelValue(aId, value)
+const scalarFulfilment = (answers, name) => {
+  const value = answers?.[name]
+  return value === undefined ? undefined : modelValue(name, value)
 }
 
-const groupFulfilment = (answers, chain, aId) => {
-  const records = collectGroupedRecords(answers, chain, aId)
+const groupFulfilment = (answers, chain, name) => {
+  const records = collectGroupedRecords(answers, chain, name)
   return Object.keys(records).length > 0 ? records : undefined
 }
 
 const fulfilmentFor = (answers, obligation) => {
-  const aId = obligation.name
+  const name = obligation.name
   const chain = ancestorChain(obligation)
   return chain.length === 0
-    ? scalarFulfilment(answers, aId)
-    : groupFulfilment(answers, chain, aId)
+    ? scalarFulfilment(answers, name)
+    : groupFulfilment(answers, chain, name)
 }
 
 /**
@@ -158,13 +158,13 @@ export const answersToFulfilments = (answers = {}) => {
 // the reverse direction.
 const indexOfSegment = (segment) => Number(segment.match(/\d+$/)?.[0])
 
-export const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
+export const fulfilmentIdToPath = (chain, fulfilmentId, name) => {
   const segments = fulfilmentId.split('/')
   const path = []
   chain.forEach((group, depth) => {
     path.push(group.name, indexOfSegment(segments[depth]))
   })
-  path.push(aId)
+  path.push(name)
   return path
 }
 
@@ -177,7 +177,7 @@ export const fulfilmentIdToPath = (chain, fulfilmentId, aId) => {
 // a third collection level needs no change here.
 export const instanceFulfilmentId = (collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
-  const group = byAId.get(names[names.length - 1])
+  const group = obligationByName.get(names[names.length - 1])
   const chain = [...ancestorChain(group), group]
   const indices = [
     ...collectionPath.filter((segment) => typeof segment === 'number'),
@@ -188,25 +188,25 @@ export const instanceFulfilmentId = (collectionPath, index) => {
     .join('/')
 }
 
-const answersWithScalar = (answers, aId, stored) =>
-  setAt(answers, [aId], stored)
+const answersWithScalar = (answers, name, stored) =>
+  setAt(answers, [name], stored)
 
-const answersWithRecords = (answers, chain, aId, stored) =>
+const answersWithRecords = (answers, chain, name, stored) =>
   Object.entries(stored).reduce(
     (acc, [fulfilmentId, value]) =>
-      setAt(acc, fulfilmentIdToPath(chain, fulfilmentId, aId), value),
+      setAt(acc, fulfilmentIdToPath(chain, fulfilmentId, name), value),
     answers
   )
 
 const withObligationAnswer = (answers, fulfilments, obligation) => {
   if (groupObligations.has(obligation)) return answers
-  const aId = obligation.name
+  const name = obligation.name
   const stored = fulfilments?.[obligation.id]
   if (stored === undefined) return answers
   const chain = ancestorChain(obligation)
   return chain.length === 0
-    ? answersWithScalar(answers, aId, stored)
-    : answersWithRecords(answers, chain, aId, stored)
+    ? answersWithScalar(answers, name, stored)
+    : answersWithRecords(answers, chain, name, stored)
 }
 
 /**

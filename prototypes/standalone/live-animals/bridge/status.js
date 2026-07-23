@@ -53,10 +53,10 @@ export const FULFILLED = 'fulfilled'
 export const OPTIONAL = 'optional'
 
 const evaluator = createObligationEvaluator()
-const bByAId = new Map(
+const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
 )
-const bOf = (aId) => bByAId.get(aId)
+const obligationFor = (name) => obligationByName.get(name)
 
 // --- structure: the manifest, projected into the status object shape ------
 //
@@ -70,13 +70,13 @@ const bOf = (aId) => bByAId.get(aId)
 //                        (the animalIdentifiers floor is a per-unit any-of)
 //   .item              → obligations whose `within` is this group
 
-const bIsGroup = (obligation) => groups.includes(obligation)
+const isGroup = (obligation) => groups.includes(obligation)
 
 // Collection members for status = the group's `within` obligations MINUS the
 // system-populated placeholders (`commodityType` et al) that no page collects
 // — the same exclusion `flow/dispatch.js` applies when indexing pages to
 // obligations.
-const bMembersOf = (group) =>
+const membersOf = (group) =>
   obligations.filter(
     (obligation) =>
       obligation.within === group && !SYSTEM_POPULATED.has(obligation.name)
@@ -87,19 +87,19 @@ const bMembersOf = (group) =>
 // (commercial/privateTransporter, purposeInInternalMarket, cph,
 // containsUnweanedAnimals). Top-level scalars are re-judged per state in
 // `partRequired` via `effectiveStatus`.
-const bIsMandatory = (obligation) =>
+const isMandatory = (obligation) =>
   obligation.status === 'mandatory' ||
   obligation.applyTo?.metadata?.whenTrue?.status === 'mandatory'
 
 const toStructural = (obligation) => ({
   id: obligation.name,
-  collection: bIsGroup(obligation),
-  required: bIsMandatory(obligation),
+  collection: isGroup(obligation),
+  required: isMandatory(obligation),
   requiredAtLeastOne: Boolean(
     obligation.requires?.minEntries || obligation.requires?.anyOfIds
   ),
-  item: bIsGroup(obligation)
-    ? bMembersOf(obligation).map(toStructural)
+  item: isGroup(obligation)
+    ? membersOf(obligation).map(toStructural)
     : undefined
 })
 
@@ -131,8 +131,10 @@ const partKey = (part) => (isFacet(part) ? part.collection : part)
 const scalarRequired = (part, state) => {
   const structural = structuralOf(part)
   if (structural?.collection) return isRequiredObligation(structural)
-  const b = bOf(part)
-  if (b && state) return effectiveStatus(b, null, state) === 'mandatory'
+  const obligation = obligationFor(part)
+  if (obligation && state) {
+    return effectiveStatus(obligation, null, state) === 'mandatory'
+  }
   return isRequiredObligation(structural)
 }
 
@@ -154,8 +156,8 @@ const partStarted = (part, answers) => {
 
 // --- completeness: the evaluator state ------------------------------------
 
-const isValueFulfilled = (aId, value) => {
-  const entry = domain.get(aId)
+const isValueFulfilled = (name, value) => {
+  const entry = domain.get(name)
   if (entry?.type === 'address' && typeof entry.isComplete === 'function') {
     return entry.isComplete(value)
   }
@@ -163,8 +165,8 @@ const isValueFulfilled = (aId, value) => {
 }
 
 // The record map for a grouped leaf ({ fulfilmentId: value }), or undefined.
-const recordMap = (bObligation, state) => {
-  const stored = state.fulfilments?.[bObligation.id]
+const recordMap = (obligation, state) => {
+  const stored = state.fulfilments?.[obligation.id]
   if (
     stored === undefined ||
     stored === null ||
@@ -178,35 +180,35 @@ const recordMap = (bObligation, state) => {
 
 // A leaf is present for a record iff the record's fulfilmentId is in the
 // leaf's in-scope implication (post-purge membership).
-const leafInScopeForRecord = (aId, recId, state) => {
-  const b = bOf(aId)
-  const impl = b && state.obligations?.[b.id]
+const leafInScopeForRecord = (name, recId, state) => {
+  const obligation = obligationFor(name)
+  const impl = obligation && state.obligations?.[obligation.id]
   if (!impl?.inScope) return false
   return (impl.records ?? []).some((r) => r.fulfilmentId === recId)
 }
 
-const leafMandatoryForRecord = (aId, recId, state) =>
-  effectiveStatus(bOf(aId), recId, state) === 'mandatory'
+const leafMandatoryForRecord = (name, recId, state) =>
+  effectiveStatus(obligationFor(name), recId, state) === 'mandatory'
 
-const leafFulfilledForRecord = (aId, recId, state) => {
-  const map = recordMap(bOf(aId), state)
-  return map === undefined ? false : isValueFulfilled(aId, map[recId])
+const leafFulfilledForRecord = (name, recId, state) => {
+  const map = recordMap(obligationFor(name), state)
+  return map === undefined ? false : isValueFulfilled(name, map[recId])
 }
 
 // A top-level scalar. Flow-only obligations the manifest does not carry
 // (pre-flow filters like `importType`) have no fulfilment, so fall back to the
 // answered check rather than a phantom fulfilment.
-const singletonFulfilled = (aId, answers, state) => {
-  const b = bOf(aId)
-  return b
-    ? isValueFulfilled(aId, state.fulfilments?.[b.id])
-    : isAnswered(answers[aId])
+const singletonFulfilled = (name, answers, state) => {
+  const obligation = obligationFor(name)
+  return obligation
+    ? isValueFulfilled(name, state.fulfilments?.[obligation.id])
+    : isAnswered(answers[name])
 }
 
 // The in-scope records for a collection that sit directly under parentRecId
 // (parentRecId null -> a top-level collection: all its records).
-const childRecords = (bColl, parentRecId, state) => {
-  const records = state.obligations?.[bColl.id]?.records ?? []
+const childRecords = (obligation, parentRecId, state) => {
+  const records = state.obligations?.[obligation.id]?.records ?? []
   return parentRecId === null
     ? records
     : records.filter((record) =>
@@ -215,7 +217,8 @@ const childRecords = (bColl, parentRecId, state) => {
 }
 
 // Empty collection: satisfied iff there's no requiredAtLeastOne floor.
-const emptyCollectionSatisfiesFloor = (aColl) => !aColl.requiredAtLeastOne
+const emptyCollectionSatisfiesFloor = (collection) =>
+  !collection.requiredAtLeastOne
 
 // Collection cap (MAX_ENTRIES) — group-level, no instanceId.
 const collectionCapExceeded = (invariantErrors) =>
@@ -232,17 +235,17 @@ const parentCountInvariantViolated = (invariantErrors, parentRecId) =>
 // the collection cap and the per-parent count invariant.
 // `memberFilter` applies only at THIS level (facet split); nested
 // sub-collections recurse over all members.
-const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
-  const bColl = bOf(aColl.id)
-  if (!bColl) return true
-  const records = childRecords(bColl, parentRecId, state)
-  if (records.length === 0) return emptyCollectionSatisfiesFloor(aColl)
-  const invariantErrors = groupInvariantErrors(bColl, state)
+const collectionSatisfied = (collection, parentRecId, memberFilter, state) => {
+  const obligation = obligationFor(collection.id)
+  if (!obligation) return true
+  const records = childRecords(obligation, parentRecId, state)
+  if (records.length === 0) return emptyCollectionSatisfiesFloor(collection)
+  const invariantErrors = groupInvariantErrors(obligation, state)
   if (collectionCapExceeded(invariantErrors)) return false
   if (parentCountInvariantViolated(invariantErrors, parentRecId)) return false
   return records.every((rec) =>
     entrySatisfied(
-      aColl,
+      collection,
       rec.fulfilmentId,
       memberFilter,
       invariantErrors,
@@ -251,8 +254,10 @@ const collectionSatisfied = (aColl, parentRecId, memberFilter, state) => {
   )
 }
 
-const filteredMembers = (aColl, memberFilter) =>
-  memberFilter ? (aColl.item ?? []).filter(memberFilter) : (aColl.item ?? [])
+const filteredMembers = (collection, memberFilter) =>
+  memberFilter
+    ? (collection.item ?? []).filter(memberFilter)
+    : (collection.item ?? [])
 
 // A member's own satisfaction: nested-collection recursion, out-of-scope
 // pass, not-mandatory pass, or the fulfilment check.
@@ -268,11 +273,17 @@ const memberSatisfied = (member, recId, state) => {
 // The model's per-record group-invariant verdict (the anyOfIds rule),
 // then every filtered member. MIN_ENTRIES errors carry no instanceId, so
 // only per-record violations bite here.
-const entrySatisfied = (aColl, recId, memberFilter, invariantErrors, state) => {
+const entrySatisfied = (
+  collection,
+  recId,
+  memberFilter,
+  invariantErrors,
+  state
+) => {
   if (invariantErrors.some((error) => error.instanceId === recId)) {
     return false
   }
-  return filteredMembers(aColl, memberFilter).every((member) =>
+  return filteredMembers(collection, memberFilter).every((member) =>
     memberSatisfied(member, recId, state)
   )
 }
@@ -286,8 +297,10 @@ const partSatisfied = (part, answers, state) => {
       state
     )
   }
-  const aObl = structuralOf(part)
-  if (isCollection(aObl)) return collectionSatisfied(aObl, null, null, state)
+  const obligation = structuralOf(part)
+  if (isCollection(obligation)) {
+    return collectionSatisfied(obligation, null, null, state)
+  }
   return singletonFulfilled(part, answers, state)
 }
 
