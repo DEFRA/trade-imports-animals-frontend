@@ -5,7 +5,7 @@ const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
 const completeLine = {
   commoditySelection: 'Cow',
-  typeSelection: 'Domestic',
+  commodityType: '16',
   speciesSelection: ['1148346'],
   numberOfAnimalsQuantity: '1',
   animalIdentifiers: [

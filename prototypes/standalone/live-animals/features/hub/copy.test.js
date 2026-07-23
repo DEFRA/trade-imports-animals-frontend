@@ -163,6 +163,7 @@ describe('#hubHandler', () => {
         {
           commoditySelection: 'Cow',
           speciesSelection: '1148346',
+          commodityType: '16',
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '25'
         }

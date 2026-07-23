@@ -73,9 +73,8 @@ const obligationFor = (name) => obligationByName.get(name)
 const isGroup = (obligation) => groups.includes(obligation)
 
 // Collection members for status = the group's `within` obligations MINUS the
-// system-populated placeholders (`commodityType` et al) that no page collects
-// — the same exclusion `flow/dispatch.js` applies when indexing pages to
-// obligations.
+// system-populated placeholders that no page collects — the same exclusion
+// `flow/dispatch.js` applies when indexing pages to obligations.
 const membersOf = (group) =>
   obligations.filter(
     (obligation) =>

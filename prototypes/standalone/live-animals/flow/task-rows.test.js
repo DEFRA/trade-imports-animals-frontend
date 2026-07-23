@@ -145,6 +145,7 @@ describe('#rowStatus — one status per hub task row', () => {
           {
             commoditySelection: 'Cow',
             speciesSelection: '1148346',
+            commodityType: '16',
             numberOfPackages: '5',
             numberOfAnimalsQuantity: '25'
           }

@@ -10,6 +10,12 @@ export const copy = {
       button: 'Search'
     },
     noMatches: 'No commodities match your search.',
+    typeFilter: {
+      label: 'Type of commodity',
+      hint: 'Filter the species by type',
+      all: 'All types',
+      button: 'Filter species'
+    },
     selectedCount: (count) => `${count} selected`,
     remove: 'Remove',
     removeAria: (text) => `Remove ${text}`,

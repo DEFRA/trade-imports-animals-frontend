@@ -129,6 +129,7 @@ const cases = {
         {
           commoditySelection: 'Cow',
           speciesSelection: '1148346',
+          commodityType: '16',
           numberOfAnimalsQuantity: '25'
         }
       ]
@@ -279,6 +280,7 @@ describe('statusOf — the commodities/identification facet split', () => {
           {
             commoditySelection: 'Cow',
             speciesSelection: '1148346',
+            commodityType: '16',
             numberOfAnimalsQuantity: '25'
           }
         ]

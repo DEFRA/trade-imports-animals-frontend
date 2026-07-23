@@ -27,11 +27,24 @@ export const COMMODITY_SPECIES = {
 
 export const SPECIES_OPTIONS = Object.values(COMMODITY_SPECIES).flat()
 
-// Type of commodity, in the skeleton's submitted vocabulary — the select
-// option value IS the type text (mock-species.json data.types). Only
-// 0102/Cow carries type data in the skeleton's reference data.
-export const COMMODITY_TYPES = {
-  Cow: 'Domestic'
+// Type of commodity, per commodity, from the real IPAFFS commodity-categories
+// MDM extract (commodity-type-data/commodity-types.json). Each type carries its
+// real id, its display text and the species values that belong to it — the
+// value is always the real non-blank type id, so every stored line has a type.
+// 0102/Cow is the multi-type case (Domestic + Game): its species partition
+// across the two types. The single-type commodities carry one blank-text type,
+// so their type maps to nothing in the backend payload. Species values are the
+// prototype's own COMMODITY_SPECIES; the extract's Domestic/Game split is
+// applied to them by scientific name (Bos spp. is Game, the rest Domestic).
+export const COMMODITY_TYPE_DATA = {
+  Cow: [
+    { id: '16', text: 'Domestic', species: ['716661', '1148346', '749313'] },
+    { id: '24', text: 'Game', species: ['1388624'] }
+  ],
+  Horse: [{ id: '2', text: '', species: ['822332'] }],
+  Cat: [{ id: '2', text: '', species: ['923501'] }],
+  Dog: [{ id: '2', text: '', species: ['923502'] }],
+  Fish: [{ id: '0301', text: '', species: ['801204'] }]
 }
 
 export const PACKAGE_COUNT_COMMODITIES = [

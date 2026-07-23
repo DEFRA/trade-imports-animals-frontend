@@ -188,6 +188,9 @@ const prototypeAnswers = (commodity) => {
     commodityLines: commodity.species.map((entry) => ({
       commoditySelection: commodity.name,
       speciesSelection: entry.value,
+      // Both test species are Cow/Domestic (type id 16) — the type the
+      // skeleton's select page submits as 'Domestic'.
+      commodityType: '16',
       numberOfPackages: entry.noOfPackages,
       numberOfAnimalsQuantity: entry.noOfAnimals,
       animalIdentifiers: [

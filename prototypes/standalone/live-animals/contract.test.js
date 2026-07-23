@@ -201,12 +201,14 @@ describe('controller <-> model commit contract', () => {
       {
         commoditySelection: 'Cow',
         speciesSelection: '1148346',
+        commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
         commoditySelection: 'Cat',
         speciesSelection: '923501',
+        commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }

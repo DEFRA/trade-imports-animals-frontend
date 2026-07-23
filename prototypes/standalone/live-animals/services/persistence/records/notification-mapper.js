@@ -17,7 +17,8 @@ import {
   speciesLabel,
   commodityCodeFor,
   commodityNameFor,
-  commodityTypeFor
+  typeIdForSpecies,
+  typeTextForId
 } from '../../commodities/index.js'
 
 const compact = (source) =>
@@ -135,12 +136,17 @@ const transporterToAnswers = (transporter) => {
 // One complement per commodity group. The complement totals are numbers (the
 // skeleton computes them via a lodash sum over the per-species counts), while
 // the per-species noOfAnimals/noOfPackages stay the raw string answers.
-// typeOfCommodity is system-populated — no page collects it — derived from
-// the commodity reference data in the skeleton's vocabulary (the type text).
+// typeOfCommodity is the payload text of the line's stored commodityType id,
+// omitted when that type's text is blank (the single-type commodities).
+const typeTextForLine = (line) => {
+  const text = typeTextForId(line.commoditySelection, line.commodityType)
+  return text === '' ? undefined : text
+}
+
 const baseComplementFromGroup = (group) => {
   const species = speciesLines(group).map(speciesEntryFromLine)
   return compact({
-    typeOfCommodity: commodityTypeFor(group[0].commoditySelection),
+    typeOfCommodity: typeTextForLine(group[0]),
     totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity'),
     totalNoOfPackages: totalOf(group, 'numberOfPackages'),
     species: species.length > 0 ? species : undefined
@@ -219,10 +225,15 @@ export const answersToNotification = (answers = {}) => {
 // complement — the skeleton notification carries a single top-level name, so
 // later groups' commodity identity does not survive a Mapper A round-trip
 // (the known lossy-A caveat; see docs/persistence.md).
+// commodityType is re-derived from the species (its owning type), so a resumed
+// line carries its mandatory type again. When the commodity name is lost (the
+// later groups of a Mapper A round-trip), the type cannot resolve either — the
+// same lossy-A caveat.
 const lineFromSpeciesEntry = (commodityName) => (entry) =>
   compact({
     commoditySelection: commodityName,
     speciesSelection: entry.value,
+    commodityType: typeIdForSpecies(commodityName, entry.value),
     numberOfPackages: entry.noOfPackages,
     numberOfAnimalsQuantity: entry.noOfAnimals,
     animalIdentifiers: identifiersFromSpeciesEntry(entry)

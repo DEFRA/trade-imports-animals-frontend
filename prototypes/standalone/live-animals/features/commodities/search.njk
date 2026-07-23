@@ -2,6 +2,7 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/details/macro.njk" import govukDetails %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "standalone/live-animals/shared/save-actions.njk" import saveActions %}
@@ -36,6 +37,21 @@
 
     {% if results.length %}
       {% for group in results %}
+        {% if group.multiType %}
+          {{ govukSelect({
+            id: "typeFilter-" + group.name,
+            name: "typeFilter:" + group.name,
+            label: { text: copy.typeFilter.label, classes: "govuk-label--s" },
+            hint: { text: copy.typeFilter.hint },
+            items: group.typeItems
+          }) }}
+          {{ govukButton({
+            text: copy.typeFilter.button,
+            classes: "govuk-button--secondary",
+            name: "action",
+            value: "filter"
+          }) }}
+        {% endif %}
         {{ govukCheckboxes({
           name: "species",
           classes: "govuk-checkboxes--small",

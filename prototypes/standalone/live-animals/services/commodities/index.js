@@ -2,7 +2,7 @@ import {
   COMMODITY_OPTIONS,
   COMMODITY_CODES,
   COMMODITY_SPECIES,
-  COMMODITY_TYPES,
+  COMMODITY_TYPE_DATA,
   SPECIES_OPTIONS,
   PACKAGE_COUNT_COMMODITIES,
   PASSPORT_COMMODITIES,
@@ -21,7 +21,31 @@ export const commodityCodeFor = (name) => COMMODITY_CODES[name]
 export const commodityNameFor = (code) =>
   Object.keys(COMMODITY_CODES).find((name) => COMMODITY_CODES[name] === code)
 
-export const commodityTypeFor = (name) => COMMODITY_TYPES[name]
+export const typesFor = (name) => COMMODITY_TYPE_DATA[name] ?? []
+
+export const isMultiType = (name) => typesFor(name).length > 1
+
+// The type id whose species list holds this species value — a species belongs
+// to exactly one type, so the line's stored commodityType derives from its
+// species. Single-type commodities collapse to their one type id.
+export const typeIdForSpecies = (name, speciesValue) =>
+  typesFor(name).find((type) => type.species.includes(speciesValue))?.id
+
+// The backend-payload text for a stored type id — 'Domestic'/'Game' for Cow,
+// blank for the single-type commodities (dropped from the payload).
+export const typeTextForId = (name, id) =>
+  typesFor(name).find((type) => type.id === id)?.text
+
+// The select options for a multi-type commodity's type filter.
+export const typeSelectOptions = (name) =>
+  typesFor(name).map((type) => ({ value: type.id, text: type.text }))
+
+// The species offered for one type — the commodity's species narrowed to the
+// type's own value list, keeping the commodity's canonical species order.
+export const speciesForType = (name, id) => {
+  const values = new Set(typesFor(name).find((type) => type.id === id)?.species)
+  return speciesFor(name).filter((option) => values.has(option.value))
+}
 
 export const species = () => SPECIES_OPTIONS
 

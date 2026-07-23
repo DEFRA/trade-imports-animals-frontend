@@ -57,18 +57,41 @@ const selectedKeysFromPayload = (payload) => {
 const storedKeys = (answers) =>
   normaliseKeys((answers.commodityLines ?? []).map(lineKey))
 
-const resultGroups = (query, selected) =>
-  commodities.search(query).map((group) => ({
-    legend: `${group.name} (${group.code})`,
-    items: group.species.map((option) => {
-      const key = `${group.name}|${option.value}`
-      return {
-        value: key,
-        text: option.text,
-        checked: selected.includes(key)
-      }
-    })
-  }))
+// A multi-type commodity (Cow) shows a type select whose choice narrows the
+// species offered; before a type is picked, or for single-type commodities, its
+// full species set shows and no control is rendered.
+const groupSpecies = (group, typeFilters) => {
+  if (!commodities.isMultiType(group.name)) return group.species
+  const typeId = typeFilters[group.name]
+  return typeId ? commodities.speciesForType(group.name, typeId) : group.species
+}
+
+const typeItemsFor = (name, typeFilters) => {
+  const chosen = typeFilters[name] ?? ''
+  return [
+    { value: '', text: copy.typeFilter.all },
+    ...commodities.typeSelectOptions(name)
+  ].map((option) => ({ ...option, selected: option.value === chosen }))
+}
+
+const resultGroups = (query, selected, typeFilters) =>
+  commodities.search(query).map((group) => {
+    const multiType = commodities.isMultiType(group.name)
+    return {
+      legend: `${group.name} (${group.code})`,
+      name: group.name,
+      multiType,
+      typeItems: multiType ? typeItemsFor(group.name, typeFilters) : [],
+      items: groupSpecies(group, typeFilters).map((option) => {
+        const key = `${group.name}|${option.value}`
+        return {
+          value: key,
+          text: option.text,
+          checked: selected.includes(key)
+        }
+      })
+    }
+  })
 
 const selectedSummary = (selected) =>
   selected.map((key) => {
@@ -78,7 +101,12 @@ const selectedSummary = (selected) =>
     return { key, text: `${name} (${code}) — ${label}` }
   })
 
-const render = (request, h, journey, { query = '', selected, errors = {} }) =>
+const render = (
+  request,
+  h,
+  journey,
+  { query = '', selected, typeFilters = {}, errors = {} }
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(),
@@ -86,7 +114,7 @@ const render = (request, h, journey, { query = '', selected, errors = {} }) =>
     }),
     copy,
     query,
-    results: resultGroups(query, selected),
+    results: resultGroups(query, selected, typeFilters),
     searched: query.trim() !== '',
     selectedSummary: selectedSummary(selected),
     errors,
@@ -98,21 +126,42 @@ const get = async (request, h) => {
   return render(request, h, journey, { selected: storedKeys(answers) })
 }
 
+// The line's type is its species' owning type id — always non-blank, so every
+// line completes. Multi-type commodities (Cow) carry the chosen type's id via
+// the species the filter narrowed to; single-type commodities collapse to their
+// one type id with no control shown.
 const seedLine = (key) => {
   const [commoditySelection, speciesSelection] = splitKey(key)
   return {
     commoditySelection,
     speciesSelection,
+    commodityType: commodities.typeIdForSpecies(
+      commoditySelection,
+      speciesSelection
+    ),
     numberOfPackages: '',
     numberOfAnimalsQuantity: ''
   }
 }
 
 const SEARCH_ACTION = 'search'
+const FILTER_ACTION = 'filter'
 const REMOVE_ACTION_PREFIX = 'remove:'
+const TYPE_FILTER_PREFIX = 'typeFilter:'
 
-const isSearchOrRemove = (action) =>
-  action === SEARCH_ACTION || action.startsWith(REMOVE_ACTION_PREFIX)
+const isReRenderAction = (action) =>
+  action === SEARCH_ACTION ||
+  action === FILTER_ACTION ||
+  action.startsWith(REMOVE_ACTION_PREFIX)
+
+// The type-select values, keyed by commodity name, carried on every submit as
+// `typeFilter:<name>` fields.
+const typeFiltersFromPayload = (payload) =>
+  Object.fromEntries(
+    Object.entries(payload)
+      .filter(([key]) => key.startsWith(TYPE_FILTER_PREFIX))
+      .map(([key, value]) => [key.slice(TYPE_FILTER_PREFIX.length), value])
+  )
 
 const withRemovalApplied = (action, selected) =>
   action.startsWith(REMOVE_ACTION_PREFIX)
@@ -121,16 +170,29 @@ const withRemovalApplied = (action, selected) =>
       )
     : selected
 
-const renderSearchOrRemove = async (request, h, query, selected) => {
+const renderSearchOrRemove = async (
+  request,
+  h,
+  query,
+  selected,
+  typeFilters
+) => {
   const { journey } = await state.get(request, h)
-  return render(request, h, journey, { query, selected })
+  return render(request, h, journey, { query, selected, typeFilters })
 }
 
-const renderSelectionRequired = async (request, h, query, selected) => {
+const renderSelectionRequired = async (
+  request,
+  h,
+  query,
+  selected,
+  typeFilters
+) => {
   const { journey } = await state.get(request, h)
   return render(request, h, journey, {
     query,
     selected,
+    typeFilters,
     errors: { search: copy.errors.selectCommodity }
   })
 }
@@ -153,19 +215,21 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = payload.action ?? ''
   const query = payload.search ?? ''
+  const typeFilters = typeFiltersFromPayload(payload)
   const selected = selectedKeysFromPayload(payload)
 
-  if (isSearchOrRemove(action)) {
+  if (isReRenderAction(action)) {
     return renderSearchOrRemove(
       request,
       h,
       query,
-      withRemovalApplied(action, selected)
+      withRemovalApplied(action, selected),
+      typeFilters
     )
   }
 
   if (selected.length === 0) {
-    return renderSelectionRequired(request, h, query, selected)
+    return renderSelectionRequired(request, h, query, selected, typeFilters)
   }
 
   return commitSelection(request, h, selected)

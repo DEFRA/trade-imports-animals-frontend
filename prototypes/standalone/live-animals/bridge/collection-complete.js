@@ -17,10 +17,9 @@
  * or an unmet per-instance group invariant (`groupInvariantErrors`, the
  * `requires.anyOf` at-least-one rule).
  *
- * Structural placeholder obligations (commodityType, the two system
- * fields) are declared in the manifest but no page collects them, so they must
- * not mark an instance incomplete — otherwise every commodity line would read
- * incomplete (no `commodityType` value is ever stored).
+ * Structural placeholder obligations (the two system fields) are declared in
+ * the manifest but no page collects them, so they must not mark an instance
+ * incomplete.
  *
  * Known structural divergence: instances are inferred from leaf composite
  * prefixes, so a fully-EMPTY nested instance (a unit with no stored leaf)
@@ -48,7 +47,6 @@ const obligationByName = new Map(
 )
 
 const STRUCTURAL_PLACEHOLDERS = new Set([
-  'commodityType',
   'poApprovedReferenceNumber',
   'responsiblePersonForLoad'
 ])

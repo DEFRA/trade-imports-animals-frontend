@@ -15,6 +15,12 @@ export const copy = {
       button: 'Chwilio'
     },
     noMatches: 'Nid oes unrhyw nwyddau’n cyfateb i’ch chwiliad.',
+    typeFilter: {
+      label: 'Math o nwydd',
+      hint: 'Hidlo’r rhywogaethau yn ôl math',
+      all: 'Pob math',
+      button: 'Hidlo rhywogaethau'
+    },
     selectedCount: (count) => `${count} wedi’u dewis`,
     remove: 'Tynnu',
     removeAria: (text) => `Tynnu ${text}`,

@@ -41,6 +41,7 @@ const mappedAnswers = () => ({
     {
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
+      commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -80,6 +81,7 @@ const answersWithGaps = () => ({
     {
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
+      commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -104,6 +106,7 @@ const groupedLines = () => [
   {
     commoditySelection: 'Cow',
     speciesSelection: '1148346',
+    commodityType: '16',
     numberOfPackages: '5',
     numberOfAnimalsQuantity: '25',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
@@ -111,6 +114,7 @@ const groupedLines = () => [
   {
     commoditySelection: 'Cow',
     speciesSelection: '716661',
+    commodityType: '16',
     numberOfPackages: '2',
     numberOfAnimalsQuantity: '10',
     animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
@@ -118,6 +122,7 @@ const groupedLines = () => [
   {
     commoditySelection: 'Cat',
     speciesSelection: '923501',
+    commodityType: '2',
     numberOfPackages: '1',
     numberOfAnimalsQuantity: '2',
     animalIdentifiers: [{ animalIdentifierPassport: 'UK-CAT-1' }]
@@ -378,6 +383,7 @@ const allAnswers = () => ({
     {
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
+      commodityType: '16',
       numberOfPackages: '5',
       numberOfAnimalsQuantity: '25',
       animalIdentifiers: [
@@ -394,6 +400,7 @@ const allAnswers = () => ({
     {
       commoditySelection: 'Cow',
       speciesSelection: '716661',
+      commodityType: '16',
       numberOfPackages: '2',
       numberOfAnimalsQuantity: '10',
       animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
@@ -401,6 +408,7 @@ const allAnswers = () => ({
     {
       commoditySelection: 'Cat',
       speciesSelection: '923501',
+      commodityType: '2',
       numberOfAnimalsQuantity: '2',
       animalIdentifiers: [
         {

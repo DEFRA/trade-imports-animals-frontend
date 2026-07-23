@@ -37,6 +37,13 @@ describe('POST commodities (batch search-select)', () => {
     expect(result.view.context.results).toEqual([
       {
         legend: 'Cow (0102)',
+        name: 'Cow',
+        multiType: true,
+        typeItems: [
+          { value: '', text: 'All types', selected: true },
+          { value: '16', text: 'Domestic', selected: false },
+          { value: '24', text: 'Game', selected: false }
+        ],
         items: [
           { value: 'Cow|716661', text: 'Bison bison', checked: false },
           { value: 'Cow|1388624', text: 'Bos spp.', checked: false },
@@ -71,18 +78,21 @@ describe('POST commodities (batch search-select)', () => {
       {
         commoditySelection: 'Cow',
         speciesSelection: '716661',
+        commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
         commoditySelection: 'Cow',
         speciesSelection: '1148346',
+        commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       },
       {
         commoditySelection: 'Cat',
         speciesSelection: '923501',
+        commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }
@@ -157,6 +167,7 @@ describe('POST commodities (batch search-select)', () => {
       {
         commoditySelection: 'Cow',
         speciesSelection: '1148346',
+        commodityType: '16',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }

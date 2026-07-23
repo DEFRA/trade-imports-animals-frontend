@@ -24,8 +24,7 @@ export const obligationByPath = (templatePath) => byPathMap.get(templatePath)
 
 export const SYSTEM_POPULATED = new Set([
   'poApprovedReferenceNumber',
-  'responsiblePersonForLoad',
-  'commodityType'
+  'responsiblePersonForLoad'
 ])
 
 export const ENFORCED_AT_CONTINUE = new Set([

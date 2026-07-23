@@ -149,7 +149,7 @@ describe('#buildDispatch', () => {
       commodityLines: [
         {
           commoditySelection: 'Cow',
-          typeSelection: 'Domestic',
+          commodityType: '16',
           speciesSelection: ['1148346'],
           numberOfPackages: '5',
           numberOfAnimalsQuantity: '1',
