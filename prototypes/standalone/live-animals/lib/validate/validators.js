@@ -130,22 +130,6 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       })
   )
 
-export const currency = (name, message = defaults.currency) =>
-  single(
-    name,
-    Joi.string()
-      .trim()
-      .allow('')
-      .custom((raw, helpers) => {
-        const cleaned = raw.replace(/[£,\s]/g, '')
-        if (!/^\d+$/.test(cleaned) || Number(cleaned) <= 0) {
-          return helpers.error('any.invalid')
-        }
-        return cleaned
-      })
-      .messages({ 'any.invalid': message })
-  )
-
 // A date field's fill state: none of the three parts entered, some but not
 // all, or all three.
 const classifyDateFill = (filledCount, totalCount) => {

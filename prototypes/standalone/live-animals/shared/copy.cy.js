@@ -37,7 +37,6 @@ export const validatorDefaults = {
   postcode: 'Rhowch god post dilys',
   vehicleReg: 'Rhowch rif cofrestru dilys',
   ukPhone: 'Rhowch rif ffôn dilys yn y DU',
-  currency: 'Rhowch swm dilys',
   date: 'Rhowch ddyddiad dilys',
   wholeNumber: 'Rhowch rif cyfan',
   maxLength: (max) => `Rhowch ${max} nod neu lai`,

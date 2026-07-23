@@ -68,7 +68,7 @@ runner from `run.js` and a flat set of small, named Joi factories from
 
 `compose`, `requiredText`, `requiredExactDigits`, `optionalText`,
 `maxText`, `pattern`, `postcode`, `vehicleReg`, `ukPhone`, `oneOf`,
-`requiredOneOf`, `integerInRange`, `currency` and `dateParts`.
+`requiredOneOf`, `integerInRange` and `dateParts`.
 
 - Each factory returns a single-key schema, built by the internal
   `single(name, rule)` helper as `Joi.object({ [name]: rule }).unknown(true)`.
@@ -167,26 +167,27 @@ decides completion.
 
 ## Normalising validators: persist the clean value
 
-Two validators return a changed value, and the contract matters.
+Some validators return a changed value, and the contract matters.
 
-**`currency`** strips `£`, commas and spaces and returns the cleaned
-digit string. A controller collecting a currency amount must persist the
-value the validator returns, not the raw payload:
+**`maxText`** (and every trimming validator) returns the trimmed value.
+A controller must persist the value the validator returns, not the raw
+payload:
 
 ```js
 const { value: clean, errors } = validate(fields(), payload)
 if (errors) return render(h, value, errors) // raw value echoed back
-state.commit(request, h, { amount: clean.amount ?? '' })
+state.commit(request, h, { reference: clean.reference ?? '' })
 ```
 
-- **Success path: commit the cleaned string.** A stored `'£9,000'` would
-  reach downstream arithmetic as `Number('£9,000')` — `NaN`. No
-  live-animals page collects a currency amount today, so the contract is
-  pinned against a synthetic currency controller — see
-  [limits.md](limits.md).
-- **Error path: echo the raw input.** A malformed amount re-renders the
-  user's own text (`'£9,00x'`, not a half-cleaned version) and commits
-  nothing.
+- **Success path: commit the cleaned string.** Surrounding whitespace the
+  user typed never reaches the store. The guarantee is pinned in
+  `lib/validate/persists-cleaned-value.test.js`.
+- **Error path: echo the raw input.** A value that fails re-renders the
+  user's own text, not a half-cleaned version, and commits nothing.
+
+`cph-number` is the journey's live worked example: it strips slashes from
+the raw input, validates the stripped value and commits it stripped,
+echoing the raw input on failure (`features/cph-number/controller.js`).
 
 **`integerInRange`** checks that the value is a whole number in range but
 returns the trimmed _string_, not a number. Stored answers are strings
@@ -280,4 +281,4 @@ enforces it.
 - [persistence.md](persistence.md) — what happens to a committed value.
 - [scope-and-wipe.md](scope-and-wipe.md) — how `status` and scope drive
   section status.
-- [limits.md](limits.md) — the currency-persist contract test.
+- [limits.md](limits.md) — limits and edge cases.

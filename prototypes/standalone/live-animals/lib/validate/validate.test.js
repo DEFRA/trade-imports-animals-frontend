@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   compose,
-  currency,
   dateParts,
   integerInRange,
   maxText,
@@ -80,7 +79,6 @@ describe('optional validators save blank (the mandate split)', () => {
     ['registration', vehicleReg('registration')],
     ['phone', ukPhone('phone')],
     ['year', integerInRange('year', { min: 1900, max: 2100 })],
-    ['estimatedValue', currency('estimatedValue')],
     ['country', oneOf('country', ['england', 'wales'])],
     ['description', maxText('description', 200)]
   ])('Should pass %s when blank', (field, schema) => {
@@ -178,24 +176,6 @@ describe('#integerInRange — bounds', () => {
   it('Should reject out-of-range and non-numeric input', () => {
     expect(run(schema, { year: '1850' }).errors).toHaveProperty('year')
     expect(run(schema, { year: 'twenty' }).errors).toHaveProperty('year')
-  })
-})
-
-describe('#currency — positive amount, £/commas stripped', () => {
-  it('Should accept and clean a formatted amount', () => {
-    const { value, errors } = run(currency('estimatedValue'), {
-      estimatedValue: '£8,000'
-    })
-    expect(errors).toBeNull()
-    expect(value.estimatedValue).toBe('8000')
-  })
-
-  it('Should reject zero, negatives, decimals and non-numbers', () => {
-    for (const bad of ['0', '-5', '12.50', 'lots']) {
-      expect(run(currency('amount'), { amount: bad }).errors).toHaveProperty(
-        'amount'
-      )
-    }
   })
 })
 

@@ -112,7 +112,7 @@ The E2E specs assert the rendered page — headings, roles, `govuk-*` classes, r
 
 ### Why the hub hint is also pinned in a unit test
 
-The E2E specs navigate hub rows by **title** and never read the hint text, so hint copy has no E2E coverage. `t2-hub-copy.test.js` renders the hub handler headlessly and pins the Check and submit row's hint, href and starting status. If a row's hint copy matters, pin it there.
+The E2E specs navigate hub rows by **title** and never read the hint text, so hint copy has no E2E coverage. `features/hub/copy.test.js` renders the hub handler headlessly and pins the Check and submit row's hint, href and starting status. If a row's hint copy matters, pin it there.
 
 ## The boot-replication rule
 
@@ -186,7 +186,7 @@ Either way the assertion output shows exactly which obligation drifted, on which
 
 ### Naming
 
-Engine and controller specs use `describe('#functionName ...')` for the unit under test and `it('Should ...')` titles. Follow the pattern in `t2-hub-copy.test.js` or `indexed.test.js`.
+Engine and controller specs use `describe('#functionName ...')` for the unit under test and `it('Should ...')` titles. Follow the pattern in `features/hub/copy.test.js` or `indexed.test.js`.
 
 ### Prove changes by running them
 

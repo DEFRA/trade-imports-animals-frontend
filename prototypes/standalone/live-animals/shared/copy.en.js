@@ -51,7 +51,6 @@ export const validatorDefaults = {
   postcode: 'Enter a valid postcode',
   vehicleReg: 'Enter a valid registration number',
   ukPhone: 'Enter a valid UK telephone number',
-  currency: 'Enter a valid amount',
   date: 'Enter a valid date',
   wholeNumber: 'Enter a whole number',
   maxLength: (max) => `Enter ${max} characters or fewer`,
