@@ -57,7 +57,12 @@ const withChange = (href) => `${href}?change=1`
 const changeHref = (obligationId) =>
   withChange(pagePath(slugOfPage(pageOfObligation(obligationId))))
 
-const valueText = (value) => (isBlank(value) ? NOT_PROVIDED : value)
+const valueText = (value) =>
+  isBlank(value)
+    ? NOT_PROVIDED
+    : typeof value === 'number'
+      ? value.toString()
+      : value
 
 const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`

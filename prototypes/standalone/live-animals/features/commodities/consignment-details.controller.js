@@ -76,10 +76,13 @@ const buildGroups = (lines, values, errors) => {
   }))
 }
 
+const formValue = (value) =>
+  typeof value === 'number' ? value.toString() : (value ?? '')
+
 const storedValues = (lines) =>
   Object.fromEntries(
     lines.flatMap(({ index, entry }) => [
-      [animalsField(index), entry.numberOfAnimalsQuantity ?? ''],
+      [animalsField(index), formValue(entry.numberOfAnimalsQuantity)],
       [packagesField(index), entry.numberOfPackages ?? '']
     ])
   )

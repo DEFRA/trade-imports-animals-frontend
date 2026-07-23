@@ -32,6 +32,7 @@ import {
   obligations
 } from '../model/obligations/obligations.js'
 import { setAt } from '../lib/path.js'
+import { hasIndexedSegments, indicesOf, segmentsOf } from './fulfilment-id.js'
 
 // The nested collection groups, outermost first. The prefix is cosmetic
 // and reversible — the evaluator treats a fulfilmentId as opaque; only the
@@ -152,17 +153,35 @@ export const answersToFulfilments = (answers = {}) => {
 // fulfilments -> answers
 // ---------------------------------------------------------------------------
 
-// Positional index carried by one composite segment (`line0` -> 0). The
-// inverse is defined over bridge-convention fulfilmentIds; opaque
-// orchestrator ULIDs carry no positional index and are out of scope for
-// the reverse direction.
-const indexOfSegment = (segment) => Number(segment.match(/\d+$/)?.[0])
+const failProjection = (message) => {
+  throw new TypeError(`Invalid answers projection: ${message}`)
+}
+
+const validateFulfilmentId = (chain, fulfilmentId, name) => {
+  if (!hasIndexedSegments(fulfilmentId)) {
+    failProjection(
+      `fulfilmentId "${String(
+        fulfilmentId
+      )}" for ${name} must have a trailing numeric index on every segment`
+    )
+  }
+
+  const actualDepth = segmentsOf(fulfilmentId).length
+  if (actualDepth !== chain.length) {
+    failProjection(
+      `fulfilmentId "${fulfilmentId}" for ${name} has depth ${actualDepth}; ` +
+        `the within chain requires depth ${chain.length}`
+    )
+  }
+
+  return indicesOf(fulfilmentId)
+}
 
 export const fulfilmentIdToPath = (chain, fulfilmentId, name) => {
-  const segments = fulfilmentId.split('/')
+  const indices = validateFulfilmentId(chain, fulfilmentId, name)
   const path = []
   chain.forEach((group, depth) => {
-    path.push(group.name, indexOfSegment(segments[depth]))
+    path.push(group.name, indices[depth])
   })
   path.push(name)
   return path
@@ -191,26 +210,107 @@ export const instanceFulfilmentId = (collectionPath, index) => {
 const answersWithScalar = (answers, name, stored) =>
   setAt(answers, [name], stored)
 
-const answersWithRecords = (answers, chain, name, stored) =>
-  Object.entries(stored).reduce(
+const compareIndices = (left, right) => {
+  const sharedDepth = Math.min(left.indices.length, right.indices.length)
+  for (let depth = 0; depth < sharedDepth; depth++) {
+    if (left.indices[depth] !== right.indices[depth]) {
+      return left.indices[depth] - right.indices[depth]
+    }
+  }
+  return left.indices.length - right.indices.length
+}
+
+const answersWithRecords = (answers, chain, name, records) =>
+  records.reduce(
     (acc, [fulfilmentId, value]) =>
       setAt(acc, fulfilmentIdToPath(chain, fulfilmentId, name), value),
     answers
   )
 
-const withObligationAnswer = (answers, fulfilments, obligation) => {
+const recordProjectionOf = (obligation, stored) => {
+  const chain = ancestorChain(obligation)
+  return {
+    obligation,
+    chain,
+    records: Object.entries(stored)
+      .map(([fulfilmentId, value]) => ({
+        fulfilmentId,
+        indices: validateFulfilmentId(chain, fulfilmentId, obligation.name),
+        value
+      }))
+      .sort(compareIndices)
+  }
+}
+
+const addCollectionIndices = (collectionIndices, projection) => {
+  for (const { indices } of projection.records) {
+    projection.chain.forEach((group, depth) => {
+      const byParent = collectionIndices.get(group) ?? new Map()
+      collectionIndices.set(group, byParent)
+      const parent = indices.slice(0, depth).join('/')
+      const present = byParent.get(parent) ?? new Set()
+      byParent.set(parent, present)
+      present.add(indices[depth])
+    })
+  }
+}
+
+const validateDenseIndices = (collectionIndices) => {
+  for (const [group, byParent] of collectionIndices) {
+    for (const [parent, present] of byParent) {
+      const indices = [...present].sort((left, right) => left - right)
+      const gap = indices.findIndex((index, position) => index !== position)
+      if (gap !== -1) {
+        const location = parent ? ` below ${parent}` : ''
+        failProjection(
+          `${group.name}${location} has sparse indices ` +
+            `[${indices.join(', ')}]; expected consecutive indices from 0`
+        )
+      }
+    }
+  }
+}
+
+const projectionsOf = (fulfilments) => {
+  const projections = new Map()
+  const collectionIndices = new Map()
+
+  for (const obligation of obligations) {
+    if (groupObligations.has(obligation)) continue
+    const stored = fulfilments?.[obligation.id]
+    if (stored === undefined || !obligation.within) continue
+    const projection = recordProjectionOf(obligation, stored)
+    projections.set(obligation, projection)
+    addCollectionIndices(collectionIndices, projection)
+  }
+
+  validateDenseIndices(collectionIndices)
+  return projections
+}
+
+const withObligationAnswer = (
+  answers,
+  fulfilments,
+  projections,
+  obligation
+) => {
   if (groupObligations.has(obligation)) return answers
-  const name = obligation.name
   const stored = fulfilments?.[obligation.id]
   if (stored === undefined) return answers
-  const chain = ancestorChain(obligation)
-  return chain.length === 0
-    ? answersWithScalar(answers, name, stored)
-    : answersWithRecords(answers, chain, name, stored)
+  if (!obligation.within) {
+    return answersWithScalar(answers, obligation.name, stored)
+  }
+  const { chain, records } = projections.get(obligation)
+  return answersWithRecords(
+    answers,
+    chain,
+    obligation.name,
+    records.map(({ fulfilmentId, value }) => [fulfilmentId, value])
+  )
 }
 
 /**
- * Translate the model `fulfilments` back into the page `answers`.
+ * Project the model `fulfilments` into the request-local page `answers`.
  *
  * The inverse of {@link answersToFulfilments} over bridge-convention
  * fulfilmentIds. The animal count comes back as the number the model stores,
@@ -219,9 +319,11 @@ const withObligationAnswer = (answers, fulfilments, obligation) => {
  * @param {object} [fulfilments={}] - the flat, UUID-keyed fulfilments map.
  * @returns {object} the nested answer POJO.
  */
-export const fulfilmentsToAnswers = (fulfilments = {}) =>
-  obligations.reduce(
+export const projectAnswers = (fulfilments = {}) => {
+  const projections = projectionsOf(fulfilments)
+  return obligations.reduce(
     (answers, obligation) =>
-      withObligationAnswer(answers, fulfilments, obligation),
+      withObligationAnswer(answers, fulfilments, projections, obligation),
     {}
   )
+}

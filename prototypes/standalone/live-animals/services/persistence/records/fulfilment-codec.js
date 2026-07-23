@@ -7,6 +7,11 @@
  */
 
 import { groups, obligations } from '../../../model/obligations/obligations.js'
+import {
+  depthOf,
+  hasIndexedSegments,
+  segmentsOf
+} from '../../../bridge/fulfilment-id.js'
 
 const obligationsById = new Map(
   obligations.map((obligation) => [obligation.id, obligation])
@@ -40,25 +45,6 @@ const validateValue = (value, location) => {
   if (value === undefined) {
     fail(`${location} value must be present`)
   }
-}
-
-const segmentsOf = (fulfilmentId) => fulfilmentId.split('/')
-
-const hasIndexedSegments = (fulfilmentId) =>
-  typeof fulfilmentId === 'string' &&
-  fulfilmentId.length > 0 &&
-  segmentsOf(fulfilmentId).every(
-    (segment) => segment.length > 0 && /\d+$/.test(segment)
-  )
-
-const depthOf = (obligation) => {
-  let depth = 0
-  let ancestor = obligation.within
-  while (ancestor) {
-    depth += 1
-    ancestor = ancestor.within
-  }
-  return depth
 }
 
 const validateFulfilmentId = (fulfilmentId, obligation) => {

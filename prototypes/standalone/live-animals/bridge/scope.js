@@ -105,10 +105,7 @@ const addProjectedKeys = (inScope, implications, obligation) => {
     : leafScalarKey(inScope, name)
 }
 
-const projectInScope = (answers) => {
-  const { obligations: implications } = evaluator.evaluate(
-    answersToFulfilments(answers)
-  )
+const projectInScope = (implications) => {
   const inScope = new Set()
   for (const obligation of obligations) {
     if (implications[obligation.id]?.inScope) {
@@ -125,7 +122,8 @@ const projectInScope = (answers) => {
  * flow-only obligations on TOP of this for the FULL scope the controllers
  * consume; this export stays the raw evaluator scope.
  */
-export const rawInScope = (answers) => projectInScope(answers)
+export const rawInScope = (answers) =>
+  projectInScope(evaluator.evaluate(answersToFulfilments(answers)).obligations)
 
 // Flow-only obligations the notification model does not carry: the pre-journey
 // import-type filter (the service entry filter) and the
@@ -163,13 +161,23 @@ const projectFlowOnlyScope = (inScope) => {
  * @returns {{ inScope: Set<string>, has: (id: string) => boolean,
  *   answered: (id: string) => boolean, readyForCheckYourAnswers: boolean }}
  */
-export const makeScope = (answers) => {
-  const inScope = projectInScope(answers)
+const scopeFrom = (answers, evaluation, reuseEvaluation) => {
+  const inScope = projectInScope(evaluation.obligations)
   projectFlowOnlyScope(inScope)
   return {
     inScope,
     has: (id) => inScope.has(id),
     answered: (id) => anyInstanceAnswered(answers, id),
-    readyForCheckYourAnswers: computeReadyForCheckYourAnswers(answers, inScope)
+    readyForCheckYourAnswers: computeReadyForCheckYourAnswers(
+      answers,
+      inScope,
+      reuseEvaluation ? evaluation : undefined
+    )
   }
 }
+
+export const makeScopeFromEvaluation = (evaluation, answers) =>
+  scopeFrom(answers, evaluation, true)
+
+export const makeScope = (answers) =>
+  scopeFrom(answers, evaluator.evaluate(answersToFulfilments(answers)), false)

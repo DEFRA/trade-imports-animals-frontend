@@ -64,7 +64,7 @@ nested POJO (`answers.commodityLines[0].animalIdentifiers[1]…`). The bridge is
 the only door between the two.
 
 - [`bridge/fulfilments.js`](../bridge/fulfilments.js) —
-  `answersToFulfilments` / `fulfilmentsToAnswers`: nested answers ⇄ flat
+  `answersToFulfilments` / `projectAnswers`: nested answers ⇄ flat
   fulfilments, including composite-key ↔ positional-path conversion. Values
   pass through unchanged except for numeric animal-count coercion.
 - [`bridge/scope.js`](../bridge/scope.js) — `makeScopeFromB(answers)`

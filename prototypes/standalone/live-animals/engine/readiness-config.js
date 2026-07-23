@@ -12,5 +12,5 @@ export const configureReadyForCheckYourAnswers = (compute) => {
   readyForCheckYourAnswersFn = compute
 }
 
-export const computeReadyForCheckYourAnswers = (answers, inScope) =>
-  readyForCheckYourAnswersFn(answers, inScope)
+export const computeReadyForCheckYourAnswers = (answers, inScope, evaluation) =>
+  readyForCheckYourAnswersFn(answers, inScope, evaluation)

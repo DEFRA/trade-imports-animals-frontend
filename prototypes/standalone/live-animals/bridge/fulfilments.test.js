@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
-import { answersToFulfilments, fulfilmentsToAnswers } from './fulfilments.js'
+import { answersToFulfilments, projectAnswers } from './fulfilments.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
   countryOfOrigin,
@@ -39,9 +39,9 @@ const address = {
   address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
 }
 
-describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
+describe('#fulfilments — answersToFulfilments / projectAnswers', () => {
   // ---------------------------------------------------------------------------
-  // Round-trip property — answersToFulfilments then fulfilmentsToAnswers
+  // Round-trip property — answersToFulfilments then projectAnswers
   // recovers the original A answers (the animal count comes back as the
   // number the model stores, pinned separately below).
   // ---------------------------------------------------------------------------
@@ -61,9 +61,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
         animalsCertifiedFor: 'slaughter',
         consignor: address
       }
-      expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
-        answers
-      )
+      expect(projectAnswers(answersToFulfilments(answers))).toEqual(answers)
     })
 
     it('Should recover a multi-line, multi-unit collection on round-trip (counts as numbers)', () => {
@@ -85,7 +83,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
           }
         ]
       }
-      const recovered = fulfilmentsToAnswers(answersToFulfilments(answers))
+      const recovered = projectAnswers(answersToFulfilments(answers))
       expect(recovered).toEqual({
         commodityLines: [
           { ...answers.commodityLines[0], numberOfAnimalsQuantity: 25 },
@@ -97,17 +95,13 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
     it('Should round-trip every commodity name exactly', () => {
       for (const name of ['Cow', 'Horse', 'Fish', 'Cat', 'Dog']) {
         const answers = { commodityLines: [{ commoditySelection: name }] }
-        expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
-          answers
-        )
+        expect(projectAnswers(answersToFulfilments(answers))).toEqual(answers)
       }
     })
 
     it('Should keep a blank scalar value on round-trip (not dropped)', () => {
       const answers = { countryOfOrigin: '' }
-      expect(fulfilmentsToAnswers(answersToFulfilments(answers))).toEqual(
-        answers
-      )
+      expect(projectAnswers(answersToFulfilments(answers))).toEqual(answers)
     })
   })
 
@@ -119,7 +113,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
     it('Should store a notification scalar directly under the UUID', () => {
       const fulfilments = answersToFulfilments({ countryOfOrigin: 'FR' })
       expect(fulfilments).toEqual({ [countryOfOrigin.id]: 'FR' })
-      expect(fulfilmentsToAnswers(fulfilments)).toEqual({
+      expect(projectAnswers(fulfilments)).toEqual({
         countryOfOrigin: 'FR'
       })
     })
@@ -139,7 +133,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
         line0: 10,
         line1: 20
       })
-      expect(fulfilmentsToAnswers(fulfilments)).toEqual({
+      expect(projectAnswers(fulfilments)).toEqual({
         commodityLines: [
           { numberOfAnimalsQuantity: 10 },
           { numberOfAnimalsQuantity: 20 }
@@ -163,7 +157,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
         'line0/unit0': 'first',
         'line0/unit1': 'second'
       })
-      expect(fulfilmentsToAnswers(fulfilments)).toEqual(answers)
+      expect(projectAnswers(fulfilments)).toEqual(answers)
     })
 
     it('Should not represent an empty collection (documented)', () => {
@@ -175,7 +169,108 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
 
     it('Should treat a missing scalar as absent, not null', () => {
       expect(answersToFulfilments({})).toEqual({})
-      expect(fulfilmentsToAnswers({})).toEqual({})
+      expect(projectAnswers({})).toEqual({})
+    })
+  })
+
+  describe('page projection validation and ordering', () => {
+    it.each([
+      {
+        name: 'deeper',
+        fulfilments: {
+          [commodityCode.id]: { 'line0/unit0': 'Cow' }
+        }
+      },
+      {
+        name: 'shallower',
+        fulfilments: {
+          [earTag.id]: { line0: 'UK123456789012' }
+        }
+      }
+    ])(
+      'Should reject a $name composite id than its within chain',
+      ({ fulfilments }) => {
+        expect(() => projectAnswers(fulfilments)).toThrow(
+          /within chain requires depth/
+        )
+      }
+    )
+
+    it('Should reject a segment without a trailing numeric index', () => {
+      expect(() =>
+        projectAnswers({
+          [earTag.id]: {
+            'line0/unit-unknown': 'UK123456789012'
+          }
+        })
+      ).toThrow(/trailing numeric index/)
+    })
+
+    it('Should accept out-of-order records and canonicalise arrays by numeric index', () => {
+      const fulfilments = {
+        [commodityCode.id]: { line1: 'Horse', line0: 'Cow' },
+        [species.id]: { line1: '716661', line0: '1148346' },
+        [earTag.id]: {
+          'line1/unit1': 'horse-2',
+          'line0/unit0': 'cow-1',
+          'line1/unit0': 'horse-1'
+        }
+      }
+      const before = structuredClone(fulfilments)
+
+      expect(projectAnswers(fulfilments)).toEqual({
+        commodityLines: [
+          {
+            commoditySelection: 'Cow',
+            speciesSelection: '1148346',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'cow-1' }]
+          },
+          {
+            commoditySelection: 'Horse',
+            speciesSelection: '716661',
+            animalIdentifiers: [
+              { animalIdentifierEarTag: 'horse-1' },
+              { animalIdentifierEarTag: 'horse-2' }
+            ]
+          }
+        ]
+      })
+      expect(fulfilments).toEqual(before)
+    })
+
+    it.each([
+      {
+        name: 'top-level collection',
+        fulfilments: {
+          [commodityCode.id]: { line0: 'Cow', line2: 'Horse' }
+        }
+      },
+      {
+        name: 'nested collection',
+        fulfilments: {
+          [commodityCode.id]: { line0: 'Cow' },
+          [earTag.id]: {
+            'line0/unit0': 'first',
+            'line0/unit2': 'third'
+          }
+        }
+      }
+    ])('Should reject a sparse $name', ({ fulfilments }) => {
+      expect(() => projectAnswers(fulfilments)).toThrow(/sparse indices/)
+    })
+
+    it('Should determine density across partial leaves, not per obligation records-map', () => {
+      expect(
+        projectAnswers({
+          [commodityCode.id]: { line0: 'Cow' },
+          [species.id]: { line1: '716661' }
+        })
+      ).toEqual({
+        commodityLines: [
+          { commoditySelection: 'Cow' },
+          { speciesSelection: '716661' }
+        ]
+      })
     })
   })
 
@@ -277,7 +372,7 @@ describe('#fulfilments — answersToFulfilments / fulfilmentsToAnswers', () => {
     })
 
     it('Should round-trip uploadId and filename in a MULTI-document journey answers->fulfilments->answers', () => {
-      const recovered = fulfilmentsToAnswers(answersToFulfilments(answers))
+      const recovered = projectAnswers(answersToFulfilments(answers))
       expect(recovered.documents).toHaveLength(2)
       expect(recovered.documents[0]).toEqual({
         accompanyingDocumentType: 'ITAHC',

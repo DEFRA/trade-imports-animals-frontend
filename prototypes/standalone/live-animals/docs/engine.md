@@ -185,7 +185,7 @@ two meet. Each bridge instantiates its own `createObligationEvaluator()`, runs
 the shape controllers consume.
 
 - **`fulfilments.js`** — the translator. `answersToFulfilments` /
-  `fulfilmentsToAnswers` convert nested answers to and from the flat map, with
+  `projectAnswers` convert nested answers to and from the flat map, with
   composite-key ↔ positional-path conversion (`ancestorChain`,
   `fulfilmentIdToPath`). Values cross unchanged — answers and the manifest's
   gates share one stored vocabulary — with one exception: the animal count is

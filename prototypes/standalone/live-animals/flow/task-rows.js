@@ -63,5 +63,5 @@ export const taskRowById = (id) => taskRows.find((row) => row.id === id)
 export const rowParts = (row) =>
   row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
 
-export const rowStatus = (row, answers, inScope) =>
-  statusOf(rowParts(row), answers, inScope)
+export const rowStatus = (row, answers, inScope, evaluation) =>
+  statusOf(rowParts(row), answers, inScope, evaluation)

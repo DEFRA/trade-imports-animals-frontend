@@ -331,11 +331,11 @@ const requiredPartsStatus = (required, started, answers, state) => {
  * @param {Set<string>} inScope - the pathKey scope Set.
  * @returns {string} NA / NOT_STARTED / IN_PROGRESS / FULFILLED / OPTIONAL.
  */
-export const statusOf = (parts, answers, inScope) => {
+export const statusOf = (parts, answers, inScope, evaluation) => {
   const inScopeParts = parts.filter((part) => inScope.has(partKey(part)))
   if (inScopeParts.length === 0) return NA
 
-  const state = evaluator.evaluate(answersToFulfilments(answers))
+  const state = evaluation ?? evaluator.evaluate(answersToFulfilments(answers))
   const required = inScopeParts.filter((part) => partRequired(part, state))
   const started = inScopeParts.some((part) => partStarted(part, answers))
 

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
-import { answersToFulfilments, fulfilmentsToAnswers } from './fulfilments.js'
+import { answersToFulfilments, projectAnswers } from './fulfilments.js'
 import { characterisationCorpus } from './fixtures/characterisation-corpus.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
@@ -37,9 +37,7 @@ describe('increment 0 golden boundary characterisation', () => {
       expect(evaluation).toEqual(oracle.evaluation)
       expect(JSON.stringify(evaluation)).toBe(JSON.stringify(oracle.evaluation))
 
-      expect(fulfilmentsToAnswers(fulfilments)).toEqual(
-        oracle.answersFromFulfilments
-      )
+      expect(projectAnswers(fulfilments)).toEqual(oracle.answersFromFulfilments)
       expect(answersToNotification(answers)).toEqual(oracle.mapperA)
       expect(answersToTargetNotification(answers)).toEqual(oracle.mapperB)
     }
