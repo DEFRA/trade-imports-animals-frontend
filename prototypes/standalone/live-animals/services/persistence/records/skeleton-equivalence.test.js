@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { notificationClient } from '../../../../../../src/server/common/clients/notification-client.js'
 import { getTotal } from '../../../../../../src/server/common/helpers/object-helpers.js'
 import { sessionKeys } from '../../../../../../src/server/common/constants/session-keys.js'
-import { answersToNotification } from './notification-mapper.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { fulfilmentToNotification } from './notification-mapper.js'
 
 // notification-client pulls `config` and the pino logger at module load. Neither
 // is exercised by buildNotificationPayload — stub them so the import is hermetic.
@@ -225,8 +226,9 @@ const skeletonNotification = async (commodity) => {
 describe('Mapper A equivalence with the production skeleton frontend', () => {
   it('Should produce the same backend notification the skeleton POSTs', async () => {
     const skeletonPayload = await skeletonNotification(consignment.commodity)
-    const mapperAPayload = answersToNotification(
-      prototypeAnswers(consignment.commodity)
+    const mapperAPayload = fulfilmentToNotification(
+      assembleFulfilments(prototypeAnswers(consignment.commodity)),
+      consignment.referenceNumber
     )
 
     expect(mapperAPayload).toEqual(skeletonPayload)
@@ -234,8 +236,9 @@ describe('Mapper A equivalence with the production skeleton frontend', () => {
 
   it('Should consolidate two per-species lines to the identical summed complement the skeleton POSTs', async () => {
     const skeletonPayload = await skeletonNotification(twoSpeciesCommodity)
-    const mapperAPayload = answersToNotification(
-      prototypeAnswers(twoSpeciesCommodity)
+    const mapperAPayload = fulfilmentToNotification(
+      assembleFulfilments(prototypeAnswers(twoSpeciesCommodity)),
+      consignment.referenceNumber
     )
 
     expect(mapperAPayload).toEqual(skeletonPayload)

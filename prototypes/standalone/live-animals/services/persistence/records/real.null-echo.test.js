@@ -51,10 +51,7 @@ describe('real records adapter — backend null-padded echo', () => {
       arrivalDateAtPort: { day: 12, month: 12, year: 2026 }
     })
     expect(await fetchMocker.requests()[0].clone().json()).toEqual(
-      toNotification({
-        ...answers,
-        referenceNumber: 'GBN-1'
-      })
+      toNotification(assembleFulfilments(answers), 'GBN-1')
     )
   })
 
@@ -75,10 +72,7 @@ describe('real records adapter — backend null-padded echo', () => {
     })
 
     expect(await fetchMocker.requests()[0].clone().json()).toEqual(
-      toNotification({
-        ...answers,
-        referenceNumber: 'GBN-1'
-      })
+      toNotification(assembleFulfilments(answers), 'GBN-1')
     )
   })
 })

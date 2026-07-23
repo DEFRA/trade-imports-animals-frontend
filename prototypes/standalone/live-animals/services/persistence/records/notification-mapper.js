@@ -1,11 +1,11 @@
-// Native bidirectional mappers between the engine's obligation-id-keyed
-// `answers` and a backend `notification`.
+// Native mappers between canonical UUID-keyed fulfilment, the name-keyed page
+// projection, and backend notifications.
 //
-// Mapper A (answersToNotification / notificationToAnswers) reproduces exactly
-// what the production skeleton frontend persists — the same backend field homes
-// and transforms as src/server/common/clients/notification-client.js
-// (buildNotificationPayload / setNotificationSessionValues). It is total on the
-// storable obligations and carries nothing the skeleton does not persist.
+// Mapper A (fulfilmentToNotification / notificationToAnswers) reproduces
+// exactly what the production skeleton frontend persists — the same backend
+// field homes and transforms as src/server/common/clients/notification-client.js
+// (buildNotificationPayload / setNotificationSessionValues). The old
+// answersToNotification direction remains as the golden parity oracle.
 //
 // Mapper B (answersToTargetNotification / targetNotificationToAnswers) is Mapper
 // A plus the extra fields — a lossless round-trip demonstrator over every
@@ -20,6 +20,41 @@ import {
   typeIdForSpecies,
   typeTextForId
 } from '../../commodities/index.js'
+import { readFulfilment } from '../../../bridge/read-fulfilment.js'
+import {
+  animalsCertifiedFor,
+  arrivalDateAtPort,
+  commercialTransporter,
+  commodityCode,
+  commodityLine,
+  commodityType,
+  consignee,
+  consignor,
+  contactAddress,
+  containsUnweanedAnimals,
+  countryOfOrigin,
+  cph,
+  description,
+  earTag,
+  horseName,
+  identificationDetails,
+  importer,
+  internalReferenceNumber,
+  numberOfAnimals,
+  numberOfPackages,
+  passport,
+  permanentAddress,
+  placeOfDestination,
+  placeOfOrigin,
+  portOfEntry,
+  privateTransporter,
+  reasonForImport,
+  regionCodeRequirement,
+  species,
+  tattoo,
+  transporterType,
+  unitRecord
+} from '../../../model/obligations/obligations.js'
 
 const compact = (source) =>
   Object.fromEntries(
@@ -202,6 +237,151 @@ const transportFrom = (answers) =>
     })
   )
 
+const identifierObligations = [
+  passport,
+  tattoo,
+  earTag,
+  horseName,
+  identificationDetails,
+  description,
+  permanentAddress
+]
+
+const commodityObligations = [
+  commodityCode,
+  commodityType,
+  species,
+  numberOfAnimals,
+  numberOfPackages,
+  ...identifierObligations
+]
+
+const legacyAnimalCount = (value) =>
+  typeof value === 'number' ? String(value) : value
+
+// One logical line/unit join over the independent canonical record maps. Line
+// and unit identity comes only from exact composite ids; a leaf is joined only
+// when its record map contains that exact id.
+export const commodityLinesFromFulfilment = (reader) => {
+  const recordsByObligation = new Map(
+    commodityObligations.map((obligation) => [
+      obligation,
+      reader.records(obligation)
+    ])
+  )
+  const valueAt = (obligation, id) => recordsByObligation.get(obligation)[id]
+  const unitFrom = (unitId) =>
+    compact({
+      animalIdentifierPassport: valueAt(passport, unitId),
+      animalIdentifierTattoo: valueAt(tattoo, unitId),
+      animalIdentifierEarTag: valueAt(earTag, unitId),
+      horseName: valueAt(horseName, unitId),
+      animalIdentifierIdentificationDetails: valueAt(
+        identificationDetails,
+        unitId
+      ),
+      animalIdentifierDescription: valueAt(description, unitId),
+      permanentAddress: valueAt(permanentAddress, unitId)
+    })
+
+  return reader
+    .instanceIds(commodityLine, commodityObligations)
+    .map((lineId) => {
+      const unitIds = reader.instanceIds(
+        unitRecord,
+        identifierObligations,
+        lineId
+      )
+      return compact({
+        commoditySelection: valueAt(commodityCode, lineId),
+        commodityType: valueAt(commodityType, lineId),
+        speciesSelection: valueAt(species, lineId),
+        numberOfAnimalsQuantity: legacyAnimalCount(
+          valueAt(numberOfAnimals, lineId)
+        ),
+        numberOfPackages: valueAt(numberOfPackages, lineId),
+        animalIdentifiers:
+          unitIds.length > 0 ? unitIds.map(unitFrom) : undefined
+      })
+    })
+}
+
+const directFieldsFromFulfilment = (reader, referenceNumber) =>
+  compact({
+    referenceNumber,
+    reasonForImport: reader.scalar(reasonForImport),
+    placeOfOrigin: reader.scalar(placeOfOrigin),
+    consignor: reader.scalar(consignor),
+    consignee: reader.scalar(consignee),
+    importer: reader.scalar(importer),
+    destination: reader.scalar(placeOfDestination),
+    consignment: reader.scalar(contactAddress),
+    cphNumber: reader.scalar(cph)
+  })
+
+const originFromFulfilment = (reader) =>
+  orUndefined(
+    compact({
+      countryCode: reader.scalar(countryOfOrigin),
+      requiresRegionCode: reader.scalar(regionCodeRequirement),
+      internalReference: reader.scalar(internalReferenceNumber)
+    })
+  )
+
+const additionalDetailsFromFulfilment = (reader) =>
+  orUndefined(
+    compact({
+      certifiedFor: reader.scalar(animalsCertifiedFor),
+      unweanedAnimals: reader.scalar(containsUnweanedAnimals)
+    })
+  )
+
+const transporterFromFulfilment = (reader) => {
+  const source =
+    reader.scalar(commercialTransporter) ?? reader.scalar(privateTransporter)
+  return orUndefined(
+    compact({
+      name: source?.name,
+      address: source?.address,
+      approvalNumber: source?.approvalNumber,
+      type: reader.scalar(transporterType)
+    })
+  )
+}
+
+const transportFromFulfilment = (reader) =>
+  orUndefined(
+    compact({
+      portOfEntry: reader.scalar(portOfEntry),
+      arrivalDate: isoFromDateParts(reader.scalar(arrivalDateAtPort)),
+      transporter: transporterFromFulfilment(reader)
+    })
+  )
+
+// Mapper A's production entry point: canonical UUID map + envelope id.
+export const fulfilmentToNotification = (fulfilment = {}, referenceNumber) => {
+  const reader = readFulfilment(fulfilment)
+  const notification = {
+    ...directFieldsFromFulfilment(reader, referenceNumber)
+  }
+
+  const origin = originFromFulfilment(reader)
+  if (origin) notification.origin = origin
+
+  const additionalDetails = additionalDetailsFromFulfilment(reader)
+  if (additionalDetails) notification.additionalDetails = additionalDetails
+
+  const transport = transportFromFulfilment(reader)
+  if (transport) notification.transport = transport
+
+  const commodity = commodityFromLinesA(commodityLinesFromFulfilment(reader))
+  if (commodity) notification.commodity = commodity
+
+  return notification
+}
+
+// Answers-based Mapper A is retained as the parity oracle while the canonical
+// projections are promoted incrementally.
 export const answersToNotification = (answers = {}) => {
   const notification = { ...directFieldsFrom(answers) }
 

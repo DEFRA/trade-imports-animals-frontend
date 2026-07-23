@@ -5,16 +5,39 @@
 // services/persistence/it-mode.js.
 
 import {
-  answersToNotification,
+  fulfilmentToNotification,
   notificationToAnswers,
   answersToTargetNotification,
   targetNotificationToAnswers
 } from './notification-mapper.js'
+import { projectAnswers } from '../../../bridge/fulfilments.js'
 
 const useB = () => (process.env.LIVE_ANIMALS_MAPPER ?? 'a') === 'b'
 
-export const toNotification = (answers) =>
-  (useB() ? answersToTargetNotification : answersToNotification)(answers)
+// Mapper B remains answers-based until increment 7. Keep its legacy edge
+// projection isolated to that opt-in path; Mapper A reads canonical fulfilment
+// directly.
+const answersForTargetNotification = (fulfilment) => {
+  const answers = projectAnswers(fulfilment)
+  if (!Array.isArray(answers.commodityLines)) return answers
+  return {
+    ...answers,
+    commodityLines: answers.commodityLines.map((line) => ({
+      ...line,
+      ...(typeof line.numberOfAnimalsQuantity === 'number'
+        ? { numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity) }
+        : {})
+    }))
+  }
+}
+
+export const toNotification = (fulfilment, referenceNumber) =>
+  useB()
+    ? answersToTargetNotification({
+        ...answersForTargetNotification(fulfilment),
+        referenceNumber
+      })
+    : fulfilmentToNotification(fulfilment, referenceNumber)
 
 export const toAnswers = (notification) =>
   (useB() ? targetNotificationToAnswers : notificationToAnswers)(notification)

@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { characterisationCorpus } from '../../../bridge/fixtures/characterisation-corpus.js'
 import {
   answersToNotification,
+  fulfilmentToNotification,
   notificationToAnswers,
   answersToTargetNotification,
   targetNotificationToAnswers
@@ -10,6 +13,13 @@ const address = (name, line1) => ({
   name,
   address: { addressLine1: line1, postcode: 'AB1 2CD' }
 })
+
+const referenceNumber = 'GBN-AG-26-ABC123'
+const currentNotificationFrom = (answers) =>
+  fulfilmentToNotification(
+    assembleFulfilments(answers),
+    answers.referenceNumber ?? referenceNumber
+  )
 
 // Answers carrying only the obligations Mapper A maps to the current backend
 // notification. One commodity line = one species, with one animal
@@ -132,13 +142,13 @@ const groupedLines = () => [
 describe('Mapper A — current backend notification (as-is)', () => {
   test('Should round-trip every mapped obligation losslessly for a single commodity', () => {
     const answers = mappedAnswers()
-    expect(notificationToAnswers(answersToNotification(answers))).toEqual(
+    expect(notificationToAnswers(currentNotificationFrom(answers))).toEqual(
       answers
     )
   })
 
   test('Should reshape per-species lines into the fixed backend commodity shape', () => {
-    const { commodity } = answersToNotification(mappedAnswers())
+    const { commodity } = currentNotificationFrom(mappedAnswers())
     expect(commodity).toEqual({
       name: 'Cow',
       commodityComplement: [
@@ -162,7 +172,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 
   test('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
-    const { commodity } = answersToNotification({
+    const { commodity } = currentNotificationFrom({
       commodityLines: groupedLines()
     })
     expect(commodity.name).toBe('Cow')
@@ -189,7 +199,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 
   test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', () => {
-    const { commodity } = answersToNotification({
+    const { commodity } = currentNotificationFrom({
       commodityLines: groupedLines()
     })
     const [cow, cat] = commodity.commodityComplement
@@ -199,7 +209,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
 
   test('Should lose the commodity identity of every group after the first on a round-trip (the lossy-A caveat)', () => {
     const recovered = notificationToAnswers(
-      answersToNotification({ commodityLines: groupedLines() })
+      currentNotificationFrom({ commodityLines: groupedLines() })
     )
     expect(
       recovered.commodityLines.map((line) => line.commoditySelection)
@@ -211,7 +221,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 
   test('Should place every storable answer in its skeleton field home', () => {
-    const notification = answersToNotification({
+    const notification = currentNotificationFrom({
       ...mappedAnswers(),
       transporterType: 'Commercial'
     })
@@ -262,13 +272,13 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 
   test('Should convert the arrival date parts to an ISO string', () => {
-    expect(answersToNotification(mappedAnswers()).transport.arrivalDate).toBe(
+    expect(currentNotificationFrom(mappedAnswers()).transport.arrivalDate).toBe(
       '2026-12-12'
     )
   })
 
   test('Should omit every gap obligation from the notification', () => {
-    const notification = answersToNotification(answersWithGaps())
+    const notification = currentNotificationFrom(answersWithGaps())
 
     expect('responsiblePersonForLoad' in notification).toBe(false)
     expect('purpose' in notification).toBe(false)
@@ -291,7 +301,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
   })
 
   test('Should keep only earTag and passport on the species entry, dropping the five unit identifiers', () => {
-    const notification = answersToNotification(answersWithGaps())
+    const notification = currentNotificationFrom(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
     expect(species).toEqual({
@@ -305,9 +315,39 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect('animalIdentifiers' in notification.commodity).toBe(false)
   })
 
+  test('Should intentionally keep ear tag and passport from only the first unit', () => {
+    const notification = currentNotificationFrom({
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          animalIdentifiers: [
+            {
+              animalIdentifierEarTag: 'FIRST-EAR-TAG',
+              animalIdentifierPassport: 'FIRST-PASSPORT'
+            },
+            {
+              animalIdentifierEarTag: 'SECOND-EAR-TAG',
+              animalIdentifierPassport: 'SECOND-PASSPORT'
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(
+      notification.commodity.commodityComplement[0].species[0]
+    ).toMatchObject({
+      earTag: 'FIRST-EAR-TAG',
+      passport: 'FIRST-PASSPORT'
+    })
+    expect(JSON.stringify(notification)).not.toContain('SECOND-EAR-TAG')
+    expect(JSON.stringify(notification)).not.toContain('SECOND-PASSPORT')
+  })
+
   test('Should lose every gap obligation across a full round-trip (pinning the lossiness)', () => {
     const answers = answersWithGaps()
-    const recovered = notificationToAnswers(answersToNotification(answers))
+    const recovered = notificationToAnswers(currentNotificationFrom(answers))
 
     expect(recovered).not.toEqual(answers)
     // transporterType is no longer a gap — it is stored as transporter.type and
@@ -336,6 +376,68 @@ describe('Mapper A — current backend notification (as-is)', () => {
       }
     ])
   })
+})
+
+describe('Mapper A — canonical fulfilment golden parity', () => {
+  test('Should use the envelope id as the reference number', () => {
+    const actual = fulfilmentToNotification(
+      assembleFulfilments({
+        referenceNumber: 'LEGACY-ANSWERS-REFERENCE',
+        poApprovedReferenceNumber: 'SYSTEM-OBLIGATION-REFERENCE'
+      }),
+      'JOURNEY-ID'
+    )
+
+    expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
+  })
+
+  test.each(characterisationCorpus)(
+    'Should deep- and byte-equal the answers oracle for increment-0 case $name',
+    ({ answers }) => {
+      const expected = answersToNotification({
+        ...answers,
+        referenceNumber
+      })
+      const actual = fulfilmentToNotification(
+        assembleFulfilments(answers),
+        referenceNumber
+      )
+
+      expect(actual).toEqual(expected)
+      expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
+    }
+  )
+
+  test.each([
+    ['mapped answers', mappedAnswers()],
+    ['known Mapper A gaps', answersWithGaps()],
+    ['multi-commodity grouping', { commodityLines: groupedLines() }],
+    [
+      'private transporter',
+      {
+        transporterType: 'Private',
+        privateTransporter: {
+          name: 'Jane Private',
+          address: { addressLine1: '9 Private Road' }
+        }
+      }
+    ]
+  ])(
+    'Should deep- and byte-equal the answers oracle for %s',
+    (_name, answers) => {
+      const expected = answersToNotification({
+        ...answers,
+        referenceNumber
+      })
+      const actual = fulfilmentToNotification(
+        assembleFulfilments(answers),
+        referenceNumber
+      )
+
+      expect(actual).toEqual(expected)
+      expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
+    }
+  )
 })
 
 // A fixture exercising every captured obligation: multi-commodity per-species
@@ -434,6 +536,18 @@ const allAnswers = () => ({
       accompanyingDocumentDateOfIssue: '2025-11-01'
     }
   ]
+})
+
+test('Mapper A should deep- and byte-equal its oracle for the all-obligations fixture', () => {
+  const answers = allAnswers()
+  const expected = answersToNotification(answers)
+  const actual = currentNotificationFrom(answers)
+
+  expect(actual).toEqual(expected)
+  expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
+  expect(actual.commodity.commodityComplement[0].species[0]).not.toHaveProperty(
+    'animalIdentifiers'
+  )
 })
 
 describe('Mapper B — proposed target notification (superset, lossless)', () => {

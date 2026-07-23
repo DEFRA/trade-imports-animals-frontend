@@ -1,7 +1,6 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../../../bridge/fulfilments.js'
 import { toNotification, toAnswers } from './mapper.js'
 
 const backendBaseUrl =
@@ -44,24 +43,6 @@ const stripNulls = (value) => {
     )
   }
   return value
-}
-
-// The evaluator canonically stores animal counts as numbers. The unchanged
-// real notification mapper historically received the form's string counts,
-// and Mapper A preserves that type in each species entry. Restore only that
-// legacy edge representation so the posted notification stays byte-identical.
-const answersForLegacyNotification = (fulfilment) => {
-  const answers = projectAnswers(fulfilment)
-  if (!Array.isArray(answers.commodityLines)) return answers
-  return {
-    ...answers,
-    commodityLines: answers.commodityLines.map((line) => ({
-      ...line,
-      ...(typeof line.numberOfAnimalsQuantity === 'number'
-        ? { numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity) }
-        : {})
-    }))
-  }
 }
 
 const marshal = (notification, userId = null) => {
@@ -145,10 +126,7 @@ export const records = {
     const status = await resolveStatus(journeyId, known)
     assertWritable(journeyId, status)
 
-    const notification = toNotification({
-      ...answersForLegacyNotification(fulfilment),
-      referenceNumber: journeyId
-    })
+    const notification = toNotification(fulfilment, journeyId)
     const response = await fetch(notificationsUrl, {
       method: 'POST',
       headers: headers(),
