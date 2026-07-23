@@ -58,6 +58,22 @@ export const copy = {
     title: 'Transporter',
     legend: 'What type of transporter will move the animals?',
     hint: "We will ask for the transporter's details next.",
+    guidance: {
+      authorisationLead:
+        'Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:',
+      authorisationConditions: [
+        'transporting any live vertebrate animals in, to, from or through Great Britain (GB)',
+        'travelling on journeys of over 65 km',
+        'transporting as part of an economic (commercial) activity'
+      ],
+      linkText:
+        'Find out how to transport animals in connection with an economic activity (opens in new tab)',
+      linkHref:
+        'https://www.gov.uk/guidance/transporting-animals-in-great-britain',
+      daeraValid: 'Documents issued by DAERA are valid for use in GB.',
+      euNotValid:
+        'Documents issued in any EU Member State are not valid for use in GB.'
+    },
     options: {
       Commercial: {
         text: 'Commercial',

@@ -12,6 +12,7 @@ import { driveHandler } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 
 import * as portOfEntry from './port-of-entry.controller.js'
+import * as transporters from './transporters.controller.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>
@@ -70,6 +71,40 @@ describe('GET /port-of-entry', () => {
     )
     expect(result.view.context.arrivalDate.fieldset.legend.text).toBe(
       copy.portOfEntry.arrivalDate.label
+    )
+  })
+})
+
+describe('GET /transporters', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
+  })
+  beforeEach(() => store.clear())
+
+  test('Should carry the transporter-authorisation guidance in the view model', async () => {
+    const get = transporters.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get)
+    const guidance = result.view.context.copy.guidance
+
+    expect(guidance.authorisationLead).toBe(
+      copy.transporters.guidance.authorisationLead
+    )
+    expect(guidance.authorisationConditions).toContain(
+      'travelling on journeys of over 65 km'
+    )
+    expect(guidance.linkHref).toBe(
+      'https://www.gov.uk/guidance/transporting-animals-in-great-britain'
+    )
+    expect(guidance.daeraValid).toBe(
+      'Documents issued by DAERA are valid for use in GB.'
+    )
+    expect(guidance.euNotValid).toBe(
+      'Documents issued in any EU Member State are not valid for use in GB.'
     )
   })
 })

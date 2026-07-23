@@ -29,9 +29,11 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 // (proper nouns, codes, reference formats). Keyed `${module}:${path}` —
 // every addition must be justified here.
 // - ITAHC is a certificate acronym; both locales display it verbatim.
+// - transporters.guidance.linkHref is a gov.uk URL, identical in both locales.
 const IDENTICAL_ALLOWLIST = new Set([
   'documents:types.ITAHC',
-  'check-answers:documentTypes.ITAHC'
+  'check-answers:documentTypes.ITAHC',
+  'transport:transporters.guidance.linkHref'
 ])
 
 const kindOf = (value) => (typeof value === 'function' ? 'function' : 'string')

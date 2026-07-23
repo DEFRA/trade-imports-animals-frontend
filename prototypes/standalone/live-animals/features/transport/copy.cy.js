@@ -59,6 +59,23 @@ export const copy = {
     title: 'Cludwr',
     legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
     hint: 'Byddwn yn gofyn am fanylion y cludwr nesaf.',
+    guidance: {
+      authorisationLead:
+        'Rhaid i’ch cludwr feddu ar awdurdodiad cludo dilys, a roddwyd gan DAERA neu APHA yn y DU os ydynt yn:',
+      authorisationConditions: [
+        'cludo unrhyw anifeiliaid fertebrat byw i mewn i, i, o neu drwy Brydain Fawr (GB)',
+        'teithio ar deithiau dros 65 km',
+        'cludo fel rhan o weithgaredd economaidd (masnachol)'
+      ],
+      linkText:
+        'Darganfyddwch sut i gludo anifeiliaid mewn cysylltiad â gweithgaredd economaidd (yn agor mewn tab newydd)',
+      linkHref:
+        'https://www.gov.uk/guidance/transporting-animals-in-great-britain',
+      daeraValid:
+        'Mae dogfennau a roddwyd gan DAERA yn ddilys i’w defnyddio yn GB.',
+      euNotValid:
+        'Nid yw dogfennau a roddwyd mewn unrhyw Aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
+    },
     options: {
       Commercial: {
         text: 'Masnachol',
