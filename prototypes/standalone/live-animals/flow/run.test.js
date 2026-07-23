@@ -12,9 +12,7 @@ import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { portOfEntryPage } from '../features/transport/page.js'
 import { makeScope } from '../engine/index.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { buildDispatch } from './dispatch.js'
-import { readyForCheckYourAnswers } from './section-status.js'
 import { nextRunTarget } from './run.js'
 
 const next = (stepId, answers) => nextRunTarget(stepId, makeScope(answers))
@@ -27,7 +25,6 @@ const lineSeed = {
 describe('#nextRunTarget — the opening run sequence', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   it('Should send the entry filter to origin on a blank journey', () => {

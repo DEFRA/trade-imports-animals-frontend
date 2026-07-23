@@ -2,7 +2,6 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
 import { configureRecords } from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
@@ -29,7 +28,6 @@ describe('#declaration', () => {
         configureRecords(recordsStub)
         configureSession(sessionStub)
         buildDispatch(dispatchPages)
-        configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
       })
       beforeEach(() => store.clear())
 

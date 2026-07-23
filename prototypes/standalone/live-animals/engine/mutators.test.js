@@ -10,8 +10,6 @@ import { configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from './read.js'
-import { readyForCheckYourAnswers } from '../flow/section-status.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { wipeSet } from '../bridge/purge.js'
@@ -50,7 +48,6 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(async () => {
     await store.clear()

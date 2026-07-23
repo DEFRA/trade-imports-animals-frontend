@@ -4,11 +4,9 @@ import { dispatchPages } from '../features/index.js'
 import { transportersSelectPage } from '../features/transport/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { makeScope } from '../engine/index.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { enumerateScopeStates } from '../analysis/flow-reachability.js'
 import { buildDispatch } from './dispatch.js'
 import { sections } from './flow.js'
-import { readyForCheckYourAnswers } from './section-status.js'
 import { pageGatePasses, sectionGatePasses } from './gates.js'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
@@ -57,7 +55,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
   describe('once the dispatch index is built', () => {
     beforeAll(() => {
       buildDispatch(dispatchPages)
-      configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
     })
 
     it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
@@ -84,7 +81,6 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   const sectionById = (id) => sections.find((section) => section.id === id)
@@ -139,7 +135,6 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
 describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no deadlock)', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   const reviewSection = sections.find((section) => section.id === 'review')

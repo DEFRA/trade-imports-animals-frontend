@@ -4,14 +4,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
 import { JOURNEY_COOKIE, registerJourneyCookie } from '../../engine/journey.js'
 import { configureRecords } from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import {
   driveHandler,
   journeyRequest,
@@ -65,7 +63,6 @@ describe('documents — real upload leg on the single-page loop', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -484,7 +481,6 @@ describe('documents — reading an uploaded file back', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

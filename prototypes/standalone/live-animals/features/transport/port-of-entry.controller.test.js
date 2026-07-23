@@ -9,13 +9,11 @@ import {
 } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
 import { configureRecords } from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import { driveHandler, postHandlerOf } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as ports from '../../services/ports/index.js'
@@ -29,7 +27,6 @@ describe('POST port-of-entry — port membership', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -48,7 +45,6 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -92,7 +88,6 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -119,7 +114,6 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

@@ -2,13 +2,11 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../config.js'
 import { buildDispatch } from '../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../flow/section-status.js'
 import { store } from '../engine/store.js'
 import { configureRecords } from '../engine/persistence/records.js'
 import { configureSession } from '../engine/persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { stubH, journeyRequest, postHandlerOf } from '../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import { base, hubExitTarget } from './kit.js'
@@ -39,7 +37,6 @@ describe('save actions — hub exit semantics', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

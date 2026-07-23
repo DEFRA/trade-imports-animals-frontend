@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { makeScope } from './engine/index.js'
-import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { FULFILLED, IN_PROGRESS, OPTIONAL } from './bridge/status.js'
 import {
   readyForCheckYourAnswers,
@@ -26,7 +25,6 @@ const completeDocument = {
 describe('indexed obligations are first-class', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {

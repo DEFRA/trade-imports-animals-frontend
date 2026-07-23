@@ -4,7 +4,6 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { makeScope } from '../engine/index.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { rowParts, taskRows } from '../flow/task-rows.js'
 import {
   readyForCheckYourAnswers,
@@ -224,7 +223,6 @@ const cases = {
 describe('statusOf — the presentation rollup', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   describe.each(Object.entries(cases))(

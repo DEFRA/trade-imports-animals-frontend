@@ -9,13 +9,11 @@ import {
 } from 'vitest'
 
 import { buildDispatch } from '../../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../../flow/section-status.js'
 import { store } from '../../engine/store.js'
 import { configureRecords } from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import { driveHandler, postHandlerOf } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as countries from '../../services/countries/index.js'
@@ -29,7 +27,6 @@ describe('POST /origin — invalid payload', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -82,7 +79,6 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 
@@ -103,7 +99,6 @@ describe('POST /origin — country membership follows the primed list', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

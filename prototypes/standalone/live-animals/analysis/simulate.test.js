@@ -1,15 +1,12 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../flow/section-status.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from './simulate.js'
 
 describe('#simulateJourney', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   const prereqs = {

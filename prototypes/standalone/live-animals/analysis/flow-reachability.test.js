@@ -1,8 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch, pageOfObligation } from '../flow/dispatch.js'
-import { readyForCheckYourAnswers } from '../flow/section-status.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
 import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
@@ -25,7 +23,6 @@ import {
 describe('#proveFlowReachability', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   it('Should enumerate a small finite scope space', () => {

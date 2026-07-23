@@ -14,11 +14,9 @@ import {
   notificationToAnswers,
   targetNotificationToAnswers
 } from '../services/persistence/records/notification-mapper.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import { postHandlerOf } from '../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from './dispatch.js'
-import { readyForCheckYourAnswers } from './section-status.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from './run-state.js'
 import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 
@@ -91,7 +89,6 @@ describe('the opening run', () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
   beforeEach(() => store.clear())
 

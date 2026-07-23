@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import * as obligationSource from './obligation-source.js'
 import { readyForCheckYourAnswers } from './section-status.js'
 import {
@@ -15,7 +14,6 @@ import { nextInSection, sectionEntry } from './navigation.js'
 describe('#buildDispatch', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
-    configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
   })
 
   it('Should build the dispatch without throwing for every non-system obligation', () => {

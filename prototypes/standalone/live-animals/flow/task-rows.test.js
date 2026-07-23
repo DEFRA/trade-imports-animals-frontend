@@ -3,7 +3,6 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
 import {
   FULFILLED,
   IN_PROGRESS,
@@ -32,7 +31,6 @@ const unlocked = {
 
 beforeAll(() => {
   buildDispatch(dispatchPages)
-  configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
 })
 
 describe('#rowStatus — one status per hub task row', () => {
