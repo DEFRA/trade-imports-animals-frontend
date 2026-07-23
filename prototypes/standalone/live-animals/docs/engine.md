@@ -106,7 +106,7 @@ arbitrary iteration.
   admits its deeper records. The empty-string branch is load-bearing: a naive
   `startsWith` alone would stop scalar gates authorising any record, and a
   first-segment-only match would silently destroy the stored records of any
-  gate below depth 1. Pinned by `retrofit/path-prefix-depth.test.js`, whose
+  gate below depth 1. Pinned by `model/obligations/path-prefix-depth.test.js`, whose
   negative control stops the match being satisfied by admitting everything.
 
 - `single` scalar → keep as-is.
