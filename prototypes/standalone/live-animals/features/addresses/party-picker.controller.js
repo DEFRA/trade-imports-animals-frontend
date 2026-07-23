@@ -16,6 +16,8 @@ const view = `${TEMPLATES}/features/addresses/party-picker`
 const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const ADDRESS_PARTS = [
   'addressLine1',
   'addressLine2',
@@ -187,7 +189,7 @@ const post = (party) => async (request, h) => {
       page: pageNumber(payload.page),
       selectedId: '',
       error: party.error
-    })
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   return commitSelection(request, h, party, chosen)

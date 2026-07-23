@@ -6,13 +6,24 @@ const stubResponse = (payload) => ({
   code: (statusCode) => ({ payload, statusCode })
 })
 
+const stubView = (captured) => (view, context) => {
+  const rendered = {
+    view,
+    context,
+    statusCode: 200,
+    code(statusCode) {
+      this.statusCode = statusCode
+      return this
+    }
+  }
+  captured.view = rendered
+  return rendered
+}
+
 export const stubH = () => {
   const captured = {}
   return {
-    view: (view, context) => {
-      captured.view = { view, context }
-      return captured.view
-    },
+    view: stubView(captured),
     redirect: (to) => ({ redirect: to }),
     response: stubResponse,
     state: () => {},

@@ -37,6 +37,7 @@ describe('#declaration', () => {
         const result = await driveHandler(post, {
           payload: { declaration: '' }
         })
+        expect(result.response.statusCode).toBe(400)
         expect(result.view.context.errors.declaration).toBe(
           'Confirm that the information is true and correct before submitting'
         )

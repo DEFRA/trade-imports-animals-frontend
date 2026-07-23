@@ -37,6 +37,7 @@ describe('POST port-of-entry — port membership', () => {
     const result = await driveHandler(post, {
       payload: { portOfEntry: 'XX NOPE' }
     })
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.portOfEntry).toBe('Select a valid option')
     expect(result.after).toEqual(result.before)
   })
@@ -55,6 +56,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
     const result = await driveHandler(post, {
       payload: { meansOfTransport: 'Hovercraft' }
     })
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.meansOfTransport).toBe(
       'Select a valid option'
     )

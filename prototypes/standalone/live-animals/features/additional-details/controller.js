@@ -17,6 +17,8 @@ const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const asArray = (value) => [].concat(value ?? [])
 
 export const unweanedApplies = (answers) =>
@@ -82,7 +84,11 @@ const post = async (request, h) => {
     ? compose(certifiedField, unweanedField)
     : compose(certifiedField)
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, journey, values, showUnweaned, errors)
+  if (errors) {
+    return render(h, journey, values, showUnweaned, errors).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
+  }
 
   const { scope: committed } = await state.commit(request, h, {
     animalsCertifiedFor: values.animalsCertifiedFor,

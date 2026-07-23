@@ -16,6 +16,8 @@ export const CREATE_ADDRESS_SLUG = 'addresses/create'
 
 const copy = copyFor({ en, cy }).createAddress
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,
   addressLine1: copy.errors.addressLine1Required,
@@ -131,7 +133,9 @@ const post = async (request, h) => {
   const allErrors = fieldErrors(payload, values)
   if (Object.keys(allErrors).length > 0) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, party, values, allErrors)
+    return render(h, journey, party, values, allErrors).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   const record = addressBook.addParty(party.role, addressRecordFrom(values))

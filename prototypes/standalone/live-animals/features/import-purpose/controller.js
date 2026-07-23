@@ -13,6 +13,8 @@ const view = `${TEMPLATES}/features/import-purpose/template`
 
 const copy = copyFor({ en, cy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const fields = compose(
   oneOf(
     'purposeInInternalMarket',
@@ -52,7 +54,7 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, values, errors)
+    return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const { scope } = await state.commit(request, h, values)

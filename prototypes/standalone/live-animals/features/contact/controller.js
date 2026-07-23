@@ -13,6 +13,8 @@ const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const fields = compose(
   oneOf(
     'contactAddress',
@@ -58,7 +60,7 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, {}, errors)
+    return render(h, journey, {}, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = addressBook.party('contact', payload.contactAddress)

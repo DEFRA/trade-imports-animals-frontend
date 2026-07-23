@@ -118,6 +118,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
       }
     })
 
+    expect(result.response.statusCode).toBe(400)
     expect(Object.keys(result.view.context.errors)).toEqual([
       'nameOrOrganisationName',
       'addressLine1',

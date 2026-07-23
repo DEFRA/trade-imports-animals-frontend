@@ -55,6 +55,7 @@ describe('POST transit-countries', () => {
         seed: { meansOfTransport: 'ROAD_VEHICLE' },
         payload
       })
+      expect(result.response.statusCode).toBe(400)
       expect(result.view.context.errors.transitedCountries).toBe(message)
       expect(result.after).toEqual(result.before)
     }

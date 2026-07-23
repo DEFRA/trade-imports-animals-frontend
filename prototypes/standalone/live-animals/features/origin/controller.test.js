@@ -70,6 +70,7 @@ describe('POST /origin — invalid payload', () => {
     'Should re-render $name with its message and commit nothing',
     async ({ payload, field, message }) => {
       const result = await driveHandler(post, { payload })
+      expect(result.response.statusCode).toBe(400)
       expect(result.view.context.errors[field]).toBe(message)
       expect(result.after).toEqual(result.before)
     }

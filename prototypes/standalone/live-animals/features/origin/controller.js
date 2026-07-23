@@ -29,6 +29,8 @@ const view = `${TEMPLATES}/features/origin/template`
 
 const copy = copyFor({ en, cy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const REGION_CODE_MAX_LENGTH = 5
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 
@@ -109,7 +111,7 @@ const post = async (request, h) => {
   const { errors } = validate(fields(), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, values, errors)
+    return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const { scope } = await state.commit(request, h, values)

@@ -53,6 +53,9 @@ const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
 
 const DOCUMENTS_ADDED_ANCHOR = '#documents-added'
 
+const HTTP_STATUS_BAD_REQUEST = 400
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
+
 const fields = compose(
   maxText('accompanyingDocumentReference', 58, copy.errors.referenceMaxLength),
   dateParts('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
@@ -372,11 +375,20 @@ const postAdd = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
   const bare = documentFromPayload(payload)
   if (pageState.documents.length >= MAX_DOCUMENTS) {
-    return render(request, h, pageState, bare, {}, capacityExceededError())
+    return render(
+      request,
+      h,
+      pageState,
+      bare,
+      {},
+      capacityExceededError()
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const allErrors = documentAddErrors(payload, bare)
   if (Object.keys(allErrors).length > 0) {
-    return render(request, h, pageState, bare, allErrors)
+    return render(request, h, pageState, bare, allErrors).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   const filename = payload.file.filename ?? 'upload'
@@ -388,7 +400,7 @@ const postAdd = async (request, h, payload) => {
   if (outcome.failed) {
     return render(request, h, pageState, bare, {
       file: UPLOAD_FAILURE_MESSAGE
-    })
+    }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   }
 
   await state.appendEntry(request, h, 'documents', {
@@ -407,8 +419,6 @@ const settlingSummaryErrors = (documents) =>
   documents.some((item) => item.scanStatus === SCAN_STATUS.REJECTED)
     ? []
     : [{ text: CANNOT_CONTINUE_MESSAGE, href: DOCUMENTS_ADDED_ANCHOR }]
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
 
@@ -462,7 +472,7 @@ const isOversizeBoom = (request) =>
   request.response?.isBoom &&
   request.response.output?.statusCode === HTTP_STATUS_PAYLOAD_TOO_LARGE
 
-const handleOversizePayload = async (request, h) => {
+export const handleOversizePayload = async (request, h) => {
   if (!isOversizeBoom(request)) return h.continue
   const pageState = await loadPage(request, h)
   const crumb =
@@ -475,7 +485,7 @@ const handleOversizePayload = async (request, h) => {
     { file: OVERSIZE_FILE_MESSAGE },
     [],
     { crumb }
-  )
+  ).code(HTTP_STATUS_BAD_REQUEST)
 }
 
 export const routes = [

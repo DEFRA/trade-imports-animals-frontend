@@ -17,6 +17,8 @@ const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const asArray = (value) => [].concat(value ?? [])
 
 export const isCphApplicable = (answers) =>
@@ -71,7 +73,7 @@ const post = async (request, h) => {
       journey,
       { countyParishHoldingCph: rawCphNumber },
       errors
-    )
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const { scope } = await state.commit(request, h, values)

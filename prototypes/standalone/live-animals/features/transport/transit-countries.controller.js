@@ -14,6 +14,8 @@ export const MAX_TRANSITED_COUNTRIES = 12
 
 const copy = copyFor({ en, cy }).transitCountries
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const countryItems = (selected) => [
   { value: '', text: copy.placeholder },
   ...countries.originCountries().map(({ value, text }) => ({
@@ -78,7 +80,7 @@ const post = async (request, h) => {
   )
   if (Object.keys(errors).length > 0) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, selected, errors)
+    return render(h, journey, selected, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const { scope } = await state.commit(request, h, {

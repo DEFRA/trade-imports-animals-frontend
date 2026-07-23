@@ -66,6 +66,7 @@ describe('POST cph-number — the 9-digit rule after slash stripping', () => {
       seed: seed(),
       payload: { countyParishHoldingCph: '' }
     })
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors).toEqual({
       countyParishHoldingCph: 'Enter a CPH number'
     })

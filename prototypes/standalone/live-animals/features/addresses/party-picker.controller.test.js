@@ -130,6 +130,7 @@ describe('POST /consignors/select', () => {
     })
     const picker = pickerFrom(result)
 
+    expect(result.response.statusCode).toBe(200)
     expect(picker.page).toBe(1)
     expect(idsOf(picker)).toEqual(['danish-meat-export'])
     expect(result.after.consignor).toBeUndefined()
@@ -193,6 +194,7 @@ describe('POST /consignors/select', () => {
       payload: { action: 'save', page: '2' }
     })
 
+    expect(result.response.statusCode).toBe(400)
     expect(result.view.context.picker.error).toBe(
       'Select a consignor from the list'
     )

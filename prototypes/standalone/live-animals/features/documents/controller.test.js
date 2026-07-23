@@ -1,6 +1,6 @@
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
@@ -12,7 +12,12 @@ import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
-import { driveHandler, postHandlerOf } from '../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  postHandlerOf,
+  stubH
+} from '../../engine/test-support.js'
 import { documentUploads } from '../../services/document-uploads/index.js'
 import { dispatchPages } from '../index.js'
 
@@ -74,6 +79,7 @@ describe('documents — real upload leg on the single-page loop', () => {
         'accompanyingDocumentDateOfIssue-year': '2000'
       }
     })
+    expect(result.response.statusCode).toBe(400)
     expect(
       result.view.context.errors['accompanyingDocumentDateOfIssue-day']
     ).toBe('Enter a real date of issue')
@@ -145,6 +151,31 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should answer 500 when the upload service fails, re-rendering the failure and appending nothing', async () => {
+    const spy = vi
+      .spyOn(documentUploads, 'upload')
+      .mockRejectedValueOnce(new Error('upload service unavailable'))
+    const result = await driveHandler(post, {
+      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
+    })
+    expect(result.response.statusCode).toBe(500)
+    expect(result.view.context.errors.file).toBeDefined()
+    expect(result.after).toEqual(result.before)
+    spy.mockRestore()
+  })
+
+  it('Should answer 400 from the oversize-payload safety net rather than a bare 413', async () => {
+    const journey = await store.create()
+    const h = stubH()
+    const request = journeyRequest(journey.journeyId, {
+      response: { isBoom: true, output: { statusCode: 413 } },
+      state: { [JOURNEY_COOKIE]: journey.journeyId, crumb: 'test-crumb' }
+    })
+    const response = await documents.handleOversizePayload(request, h)
+    expect(response.statusCode).toBe(400)
+    expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
+  })
+
   it('Should list added documents with a scan-status tag and a per-row remove submit button, not a link', async () => {
     const result = await driveHandler(get, {
       seed: { documents: [storedDocument()] }
@@ -191,6 +222,7 @@ describe('documents — real upload leg on the single-page loop', () => {
       },
       payload: { action: 'continue' }
     })
+    expect(result.response.statusCode).toBe(200)
     expect(result.response.redirect).toBeUndefined()
     expect(summaryTexts(result)).toContain(
       'You cannot continue until all documents have been scanned or removed'
@@ -296,6 +328,7 @@ describe('documents — real upload leg on the single-page loop', () => {
       seed: { documents: tenDocuments },
       payload: { action: 'add', ...validDocument, file: pdfFile() }
     })
+    expect(result.response.statusCode).toBe(400)
     expect(summaryTexts(result)).toContain(
       `You can add a maximum of ${documents.MAX_DOCUMENTS} documents`
     )

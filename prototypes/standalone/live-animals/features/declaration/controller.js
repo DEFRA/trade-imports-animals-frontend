@@ -13,6 +13,8 @@ const view = `${TEMPLATES}/features/declaration/template`
 
 const copy = copyFor({ en, cy })
 
+const HTTP_STATUS_BAD_REQUEST = 400
+
 const fields = compose(
   requiredOneOf('declaration', ['confirmed'], copy.errors.declarationRequired)
 )
@@ -54,7 +56,9 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, journey, values, errors)
+  if (errors) {
+    return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   await state.commit(request, h, values)
   const result = await state.submitJourney(request, h)
