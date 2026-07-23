@@ -1,17 +1,11 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest'
-import { configureReadyForCheckYourAnswers, get, makeScope } from './read.js'
+import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { store } from './store.js'
 import { configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from './test-support.js'
 import { JOURNEY_COOKIE, configureSession } from './persistence/session.js'
-
-describe('#makeScope', () => {
-  test('Should throw when readyForCheckYourAnswers has not been configured at boot', () => {
-    expect(() => makeScope({})).toThrow(/not configured/)
-  })
-})
 
 describe('#get — per-request read view', () => {
   beforeAll(() => {

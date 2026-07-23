@@ -1,9 +1,7 @@
 import { buildDispatch } from './flow/dispatch.js'
-import { readyForCheckYourAnswers } from './flow/section-status.js'
 import { entryGuardTarget } from './flow/entry-guard.js'
 import { allRoutes, dispatchPages } from './features/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
-import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { records } from './services/persistence/records/index.js'
 import { configureSession } from './engine/persistence/session.js'
@@ -19,7 +17,6 @@ export const liveAnimals = {
     register: async (server) => {
       assertObligationPurity()
       buildDispatch(dispatchPages)
-      configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
       configureRecords(records)
       configureSession(session)
       registerJourneyCookie(server)

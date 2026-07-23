@@ -146,11 +146,11 @@ const projectFlowOnlyScope = (inScope) => {
  * Project the evaluator output into the `scope` object the controllers and hub
  * consume.
  *
- * `readyForCheckYourAnswers` comes from the boot-injected fn
- * (`flow/section-status.js`'s `readyForCheckYourAnswers`, reached through
- * `engine/readiness-config.js`), which rolls up the task rows via `rowStatus` /
- * `statusOf` — so passing the projected `inScope` yields readiness without this
- * module importing `read.js`.
+ * `readyForCheckYourAnswers` comes from the readiness seam
+ * (`flow/section-status.js`'s `readyForCheckYourAnswers` by default, reached
+ * through `engine/readiness-config.js`), which rolls up the task rows via
+ * `rowStatus` / `statusOf` — so passing the projected `inScope` yields readiness
+ * without this module importing `read.js`.
  *
  * The FULL scope also carries the flow-only obligations the notification model
  * does not model (importType, declaration — `projectFlowOnlyScope`), so their
