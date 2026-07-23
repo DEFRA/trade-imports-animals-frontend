@@ -521,6 +521,13 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByText(/You have completed \d+ of \d+ tasks/)
     ).toHaveCount(0)
 
+    // Footer meta links (p-027): the service-standard Privacy, Cookies and
+    // Accessibility-statement links render in the govuk footer.
+    const footerMeta = page.locator('.govuk-footer__meta')
+    for (const name of ['Privacy', 'Cookies', 'Accessibility statement']) {
+      await expect(footerMeta.getByRole('link', { name })).toBeVisible()
+    }
+
     // Chrome (D13): a back link and a Return-to-dashboard secondary button
     // replace the breadcrumbs; there is no Review-and-submit primary button.
     await expect(page.locator('.govuk-breadcrumbs')).toHaveCount(0)

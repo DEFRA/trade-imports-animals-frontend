@@ -15,6 +15,14 @@
 
 {% block pageTitle %}{% if errorSummary %}{{ sharedCopy.layout.errorTitlePrefix }}{% endif %}{{ pageTitle }} | {{ sharedCopy.layout.serviceName }}{% endblock %}
 
+{% block govukHeader %}
+  {{ govukHeader({
+    homepageUrl: "https://www.gov.uk/",
+    classes: "app-header",
+    containerClasses: "govuk-width-container"
+  }) }}
+{% endblock %}
+
 {% block govukServiceNavigation %}
   {{ govukServiceNavigation({
     serviceName: sharedCopy.layout.serviceName,
@@ -53,6 +61,27 @@
       {% block journeyContent %}{% endblock %}
     </div>
   </div>
+{% endblock %}
+
+{% block govukFooter %}
+  {{ govukFooter({
+    meta: {
+      items: [
+        {
+          href: "https://www.gov.uk/help/privacy-notice",
+          text: sharedCopy.layout.footer.privacy
+        },
+        {
+          href: "https://www.gov.uk/help/cookies",
+          text: sharedCopy.layout.footer.cookies
+        },
+        {
+          href: "https://www.gov.uk/help/accessibility-statement",
+          text: sharedCopy.layout.footer.accessibility
+        }
+      ]
+    }
+  }) }}
 {% endblock %}
 
 {% block bodyEnd %}

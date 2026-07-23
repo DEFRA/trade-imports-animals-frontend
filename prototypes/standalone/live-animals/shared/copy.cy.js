@@ -11,6 +11,11 @@ export const copy = {
     breadcrumbs: {
       prototypes: 'Prototeipiau',
       spikeHome: 'Rhwymedigaethau v2 (annibynnol)'
+    },
+    footer: {
+      privacy: 'Preifatrwydd',
+      cookies: 'Cwcis',
+      accessibility: 'Datganiad hygyrchedd'
     }
   },
   errorSummary: {

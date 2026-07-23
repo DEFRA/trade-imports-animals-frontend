@@ -60,6 +60,14 @@ describe('copy convention — shared chrome', () => {
     )
   })
 
+  it('Should carry the footer meta-link labels the layout renders', () => {
+    expect(sharedCopy.layout.footer).toEqual({
+      privacy: 'Privacy',
+      cookies: 'Cookies',
+      accessibility: 'Accessibility statement'
+    })
+  })
+
   it('Should keep every shared and validator-default leaf valid copy', () => {
     for (const { path: leafPath, value } of [
       ...leaves(sharedCopy),

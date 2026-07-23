@@ -18,6 +18,11 @@ export const copy = {
     breadcrumbs: {
       prototypes: 'Prototypes',
       spikeHome: 'Obligations v2 (standalone)'
+    },
+    footer: {
+      privacy: 'Privacy',
+      cookies: 'Cookies',
+      accessibility: 'Accessibility statement'
     }
   },
   errorSummary: {
