@@ -12,15 +12,15 @@ import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
-// submitJourney reads its scope through `makeScope` (B-derived) and gates on
-// that scope's `readyForCheckYourAnswers`. `records.finalise` is A's
-// persistence (B has none). These tests confirm submit finalises the journey
-// by its journeyId when CYA-ready and blocks when not.
+// submitJourney reads its scope through `makeScope` and gates on that scope's
+// `readyForCheckYourAnswers`. `records.finalise` is the persistence layer.
+// These tests confirm submit finalises the journey by its journeyId when
+// CYA-ready and blocks when not.
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 
-describe('submitJourney — B-derived scope gate, A finalise', () => {
+describe('submitJourney — gates on scope readiness, finalises via records', () => {
   beforeEach(async () => {
     configureRecords(recordsStub)
     configureSession(sessionStub)

@@ -17,16 +17,16 @@ import { dispatchPages } from '../features/index.js'
 import { wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
-// Mutator behaviour. A owns storage (positional array; B holds no instance
-// record and infers instances from leaf composite prefixes), so every mutator's
-// storage mechanic — index-minting, in-place `with`, `toSpliced`, key-matched
-// reconcile — is A-side:
+// Mutator behaviour. Storage is positional (an array; the evaluator holds no
+// instance record and infers instances from leaf composite prefixes), so every
+// mutator's storage mechanic — index-minting, in-place `with`, `toSpliced`,
+// key-matched reconcile — is a storage concern:
 //   - append/update/remove/reconcile store positionally;
-//   - append's cap rejection fires via A's `collectionCapAt` (`maxEntriesFrom`);
-//   - an empty appended entry survives in A's storage even though B cannot
-//     address it (no leaf → no B instance);
-//   - remove/reconcile route their purge to B (B-authoritative wipe of
-//     now-orphaned notification-level data).
+//   - append's cap rejection fires via `collectionCapAt` (`maxEntriesFrom`);
+//   - an empty appended entry survives in storage even though the evaluator
+//     cannot address it (no leaf → no evaluator instance);
+//   - remove/reconcile route their purge to the evaluator (evaluator-authoritative
+//     wipe of now-orphaned notification-level data).
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
@@ -45,7 +45,7 @@ const identifiersPath = (lineIndex) => [
   'animalIdentifiers'
 ]
 
-describe('mutators — storage is A-positional, purge is B-authoritative', () => {
+describe('mutators — storage is positional, purge is evaluator-authoritative', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -58,7 +58,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
   })
 
   describe('#appendEntryAt — mints the next index, stores positionally', () => {
-    it('Should append a commodity line and persist it in A order', async () => {
+    it('Should append a commodity line and persist it in positional order', async () => {
       const first = await appendEntryAt(
         buildRequest(),
         stubH(),
@@ -112,7 +112,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('#appendEntryAt cap — A-side `maxEntriesFrom` fires (inc-014)', () => {
+  describe('#appendEntryAt cap — `maxEntriesFrom` fires', () => {
     const cappedLine = () => ({
       commoditySelection: 'Cat',
       numberOfAnimalsQuantity: '2',
@@ -137,9 +137,9 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('#appendEntryAt — an empty appended entry survives in A storage', () => {
-    it('Should hold an empty unit A cannot express in B — positional identity, not B-addressability, owns storage', async () => {
-      // No numberOfAnimalsQuantity → uncapped (ruled blank-count semantics).
+  describe('#appendEntryAt — an empty appended entry survives in storage', () => {
+    it('Should hold an empty unit the evaluator cannot express — positional identity, not evaluator-addressability, owns storage', async () => {
+      // No numberOfAnimalsQuantity → uncapped (blank-count semantics).
       await store.saveAnswers(journeyId, {
         commodityLines: [{ commoditySelection: 'Cat', animalIdentifiers: [] }]
       })
@@ -150,17 +150,17 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
         {}
       )
       expect(index).toBe(0)
-      // B infers instances from leaf composite prefixes, so this leaf-less unit
-      // produces NO B fulfilment — B cannot address it. A's positional array
-      // still holds it verbatim.
+      // The evaluator infers instances from leaf composite prefixes, so this
+      // leaf-less unit produces NO evaluator fulfilment — the evaluator cannot
+      // address it. The positional array still holds it verbatim.
       expect((await answersNow()).commodityLines[0].animalIdentifiers).toEqual([
         {}
       ])
     })
   })
 
-  describe('#removeEntryAt — the purge is B-authoritative', () => {
-    it('Should let B purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
+  describe('#removeEntryAt — the purge is evaluator-authoritative', () => {
+    it('Should let the evaluator purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
       // triggering commodity (Cow) existing in ANY line, and carries wipeOnExit.
       await store.saveAnswers(journeyId, {
@@ -170,7 +170,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
           { commoditySelection: 'Cat', speciesSelection: '923501' }
         ]
       })
-      // After removing the Cow line, B's evaluator owns the wipe decision.
+      // After removing the Cow line, the evaluator owns the wipe decision.
       const afterRemoval = {
         containsUnweanedAnimals: 'no',
         commodityLines: [
@@ -188,7 +188,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
     })
   })
 
-  describe('#reconcileEntriesAt — multi-select sync + B-authoritative purge', () => {
+  describe('#reconcileEntriesAt — multi-select sync + evaluator-authoritative purge', () => {
     const keyOf = (entry) =>
       `${entry.commoditySelection}|${entry.speciesSelection}`
     const reconcileLines = (entries) =>
@@ -227,7 +227,7 @@ describe('mutators — storage is A-positional, purge is B-authoritative', () =>
       })
     })
 
-    it('Should run B as the wipe authority: deselecting the last triggering commodity destroys the dependent', async () => {
+    it('Should run the evaluator as the wipe authority: deselecting the last triggering commodity destroys the dependent', async () => {
       await store.saveAnswers(journeyId, {
         containsUnweanedAnimals: 'no',
         commodityLines: [
