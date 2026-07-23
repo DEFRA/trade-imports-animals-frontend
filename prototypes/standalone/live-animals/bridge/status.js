@@ -1,8 +1,8 @@
 /**
  * Project the obligation implications into the 5-way task/section status.
  *
- * `statusOf(parts, answers, inScope)` is the sole runtime source of the 5-way
- * task/section status at the row/section callers (`flow/task-rows.js`
+ * `statusOf(parts, answers, inScope, evaluation)` is the sole runtime source
+ * of the 5-way task/section status at the row/section callers (`flow/task-rows.js`
  * `rowStatus`, `flow/section-status.js` `sectionStatus`;
  * `readyForCheckYourAnswers` rolls up through the former).
  *
@@ -35,8 +35,6 @@
  */
 
 import { obligations, groups } from '../model/obligations/obligations.js'
-import { createObligationEvaluator } from '../model/obligations/evaluator.js'
-import { answersToFulfilments } from './fulfilments.js'
 import {
   effectiveStatus,
   groupInvariantErrors
@@ -52,7 +50,6 @@ export const IN_PROGRESS = 'in-progress'
 export const FULFILLED = 'fulfilled'
 export const OPTIONAL = 'optional'
 
-const evaluator = createObligationEvaluator()
 const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
 )
@@ -329,17 +326,17 @@ const requiredPartsStatus = (required, started, answers, state) => {
  * @param {Array<string|{collection:string, only?:string[], except?:string[]}>} parts - the row/section parts to roll up
  * @param {object} answers - the nested answer POJO.
  * @param {Set<string>} inScope - the pathKey scope Set.
+ * @param {object} evaluation - the request-level evaluator result.
  * @returns {string} NA / NOT_STARTED / IN_PROGRESS / FULFILLED / OPTIONAL.
  */
 export const statusOf = (parts, answers, inScope, evaluation) => {
   const inScopeParts = parts.filter((part) => inScope.has(partKey(part)))
   if (inScopeParts.length === 0) return NA
 
-  const state = evaluation ?? evaluator.evaluate(answersToFulfilments(answers))
-  const required = inScopeParts.filter((part) => partRequired(part, state))
+  const required = inScopeParts.filter((part) => partRequired(part, evaluation))
   const started = inScopeParts.some((part) => partStarted(part, answers))
 
   return required.length === 0
-    ? optionalOrProgressStatus(inScopeParts, started, answers, state)
-    : requiredPartsStatus(required, started, answers, state)
+    ? optionalOrProgressStatus(inScopeParts, started, answers, evaluation)
+    : requiredPartsStatus(required, started, answers, evaluation)
 }

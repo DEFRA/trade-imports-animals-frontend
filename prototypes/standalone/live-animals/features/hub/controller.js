@@ -65,7 +65,7 @@ const CANNOT_START_STATUS = {
 
 const reviewSection = () => sections.find((section) => section.id === 'review')
 
-const buildReviewItem = ({ title, hint }, answers, scope) => {
+const buildReviewItem = ({ title, hint }, answers, scope, evaluation) => {
   const section = reviewSection()
   const base = { title: { text: title }, hint: { text: hint } }
   if (!sectionGatePasses(section, scope)) {
@@ -74,7 +74,9 @@ const buildReviewItem = ({ title, hint }, answers, scope) => {
   return {
     ...base,
     href: sectionEntry('review', scope),
-    status: statusTag(sectionStatus(section, answers, scope.inScope))
+    status: statusTag(
+      sectionStatus(section, answers, scope.inScope, evaluation)
+    )
   }
 }
 
@@ -88,11 +90,13 @@ const openRowItem = (base, row, scope, status) => ({
   status: statusTag(status)
 })
 
-const buildRowItem = (id, answers, scope) => {
+const buildRowItem = (id, answers, scope, evaluation) => {
   const { title, hint } = copy.rows[id]
-  if (id === 'review') return buildReviewItem({ title, hint }, answers, scope)
+  if (id === 'review') {
+    return buildReviewItem({ title, hint }, answers, scope, evaluation)
+  }
   const row = taskRowById(id)
-  const status = rowStatus(row, answers, scope.inScope)
+  const status = rowStatus(row, answers, scope.inScope, evaluation)
   if (isHiddenRow(row, status)) return null
   const base = { title: { text: title }, hint: { text: hint } }
   return rowGatePasses(row, scope)
@@ -100,12 +104,12 @@ const buildRowItem = (id, answers, scope) => {
     : blockedRowItem(base)
 }
 
-const buildGroups = (answers, scope) =>
+const buildGroups = (answers, scope, evaluation) =>
   GROUPS.map((group) => ({
     id: group.id,
     caption: copy.groups[group.id],
     items: group.rows
-      .map((id) => buildRowItem(id, answers, scope))
+      .map((id) => buildRowItem(id, answers, scope, evaluation))
       .filter(Boolean)
   }))
 
@@ -117,8 +121,8 @@ const toCount = (value) => {
 const sumOverLines = (lines, field) =>
   lines.reduce((total, { entry }) => total + toCount(entry[field]), 0)
 
-const buildCommodityTotals = (answers) => {
-  const lines = state.collectionView(answers, ['commodityLines'])
+const buildCommodityTotals = (answers, evaluation) => {
+  const lines = state.collectionView(answers, ['commodityLines'], evaluation)
   if (lines.length === 0) return null
   return {
     animals: sumOverLines(lines, 'numberOfAnimalsQuantity'),
@@ -128,7 +132,7 @@ const buildCommodityTotals = (answers) => {
 
 const handler = async (request, h) => {
   await completeOpeningRun(request, h)
-  const { journey, answers, scope } = await state.get(request, h)
+  const { journey, answers, scope, evaluation } = await state.get(request, h)
 
   return h.view(view, {
     pageTitle: copy.title,
@@ -136,8 +140,8 @@ const handler = async (request, h) => {
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    commodityTotals: buildCommodityTotals(answers),
-    groups: buildGroups(answers, scope),
+    commodityTotals: buildCommodityTotals(answers, evaluation),
+    groups: buildGroups(answers, scope, evaluation),
     dashboardHref: pagePath(dashboardPage.slug),
     backLink: pagePath(dashboardPage.slug),
     breadcrumbs: false

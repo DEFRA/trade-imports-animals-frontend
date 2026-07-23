@@ -1,8 +1,6 @@
 import { projectAnswers } from '../bridge/fulfilments.js'
 import { makeScopeFromEvaluation } from '../bridge/scope.js'
-import { createObligationEvaluator } from '../model/obligations/evaluator.js'
-
-const evaluator = createObligationEvaluator()
+import { evaluateFulfilments } from '../bridge/evaluation.js'
 
 /**
  * Assemble the request-local views derived from a decoded fulfilment map.
@@ -12,7 +10,7 @@ const evaluator = createObligationEvaluator()
  */
 export const assembleRequestView = (
   fulfilments,
-  evaluation = evaluator.evaluate(fulfilments),
+  evaluation = evaluateFulfilments(fulfilments),
   answerOverlay = {}
 ) => {
   const answers = {

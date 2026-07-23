@@ -2,10 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { records } from './real.js'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
 import { runsIt } from '../it-mode.js'
-import {
-  answersToFulfilments,
-  projectAnswers
-} from '../../../bridge/fulfilments.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../../../bridge/fulfilments.js'
 
 // Gated backend integration test for the REAL records adapter (S3c).
 //
@@ -38,7 +36,7 @@ const runPrefix = `it-${Date.now()}`
 let seq = 0
 const uniqueUserId = () => `${runPrefix}-${seq++}`
 const replaceAnswers = (journeyId, answers) =>
-  records.replaceFulfilment(journeyId, answersToFulfilments(answers))
+  records.replaceFulfilment(journeyId, assembleFulfilments(answers))
 const answersOf = (journey) => projectAnswers(journey.fulfilment)
 
 const REF_PATTERN = /^GBN-AG-\d{2}-[A-Z0-9]{6}$/

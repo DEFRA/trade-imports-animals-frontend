@@ -6,7 +6,7 @@ import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureSession, STUB_USER } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { journeyRequest, recordingH } from './test-support.js'
-import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
 describe('re-entry self-heal (nothing derived is stored)', () => {
   beforeEach(async () => {
@@ -20,7 +20,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
     const { journeyId } = await records.create({ userId: STUB_USER })
     await records.replaceFulfilment(
       journeyId,
-      migrateNameKeyedAnswersToFulfilments({
+      assembleFulfilments({
         countryOfOrigin: 'FR',
         reasonForImport: 'research',
         purposeInInternalMarket: 'breeding'
@@ -37,7 +37,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
     const { journeyId } = await records.create({ userId: STUB_USER })
     await records.replaceFulfilment(
       journeyId,
-      migrateNameKeyedAnswersToFulfilments({ countryOfOrigin: 'FR' })
+      assembleFulfilments({ countryOfOrigin: 'FR' })
     )
 
     const result = await get(journeyRequest(journeyId), recordingH())

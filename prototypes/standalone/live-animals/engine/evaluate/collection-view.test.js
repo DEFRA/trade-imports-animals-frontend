@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { collectionView } from './collection-view.js'
+import { evaluateAnswers } from '../../bridge/evaluation.js'
 
 const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
@@ -15,10 +16,13 @@ const completeLine = {
 
 const incompleteLine = { commoditySelection: 'Cow' }
 
+const viewOf = (answers, collectionPath) =>
+  collectionView(answers, collectionPath, evaluateAnswers(answers))
+
 describe('#collectionView', () => {
   it('Should map each stored entry to {index, path, entry} in order', () => {
     const answers = { commodityLines: [completeLine, incompleteLine] }
-    const rows = collectionView(answers, ['commodityLines'])
+    const rows = viewOf(answers, ['commodityLines'])
     expect(rows).toHaveLength(2)
     expect(rows[0]).toMatchObject({ index: 0, path: ['commodityLines', 0] })
     expect(rows[0].entry).toBe(completeLine)
@@ -27,21 +31,16 @@ describe('#collectionView', () => {
   })
 
   it('Should set complete per-row from entryComplete across a mixed list', () => {
-    const rows = collectionView(
-      { commodityLines: [completeLine, incompleteLine] },
-      ['commodityLines']
-    )
+    const rows = viewOf({ commodityLines: [completeLine, incompleteLine] }, [
+      'commodityLines'
+    ])
     expect(rows[0].complete).toBe(true)
     expect(rows[1].complete).toBe(false)
   })
 
   it('Should resolve a nested collection path to its own obligation and entries', () => {
     const answers = { commodityLines: [completeLine] }
-    const rows = collectionView(answers, [
-      'commodityLines',
-      0,
-      'animalIdentifiers'
-    ])
+    const rows = viewOf(answers, ['commodityLines', 0, 'animalIdentifiers'])
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
       index: 0,
@@ -59,6 +58,6 @@ describe('#collectionView', () => {
   })
 
   it('Should return an empty list when the collection is absent from answers', () => {
-    expect(collectionView({}, ['commodityLines'])).toEqual([])
+    expect(viewOf({}, ['commodityLines'])).toEqual([])
   })
 })

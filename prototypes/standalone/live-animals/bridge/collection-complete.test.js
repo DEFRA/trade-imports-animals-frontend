@@ -3,6 +3,7 @@ import { collectionView } from '../engine/evaluate/collection-view.js'
 import { collectionCapAt } from '../engine/evaluate/cardinality.js'
 import { entryComplete } from './collection-complete.js'
 import { valueAt } from '../lib/path.js'
+import { evaluateAnswers } from './evaluation.js'
 
 // Per-instance completeness (entryComplete), pinned against the manifest. The
 // two known structural divergences are pinned here so a regression fails
@@ -34,8 +35,9 @@ const emptyLine = {}
 
 const completeFlags = (answers, collectionPath) => {
   const entries = valueAt(answers, collectionPath) ?? []
+  const evaluation = evaluateAnswers(answers)
   return entries.map((_entry, index) =>
-    entryComplete(answers, collectionPath, index)
+    entryComplete(evaluation, collectionPath, index)
   )
 }
 
@@ -69,7 +71,11 @@ describe('#entryComplete', () => {
 
   it('Should keep entries / index / path in positional storage', () => {
     const answers = { commodityLines: [completeLine, emptyLine] }
-    const view = collectionView(answers, ['commodityLines'])
+    const view = collectionView(
+      answers,
+      ['commodityLines'],
+      evaluateAnswers(answers)
+    )
     expect(
       view.map((r) => ({ index: r.index, path: r.path, entry: r.entry }))
     ).toEqual([

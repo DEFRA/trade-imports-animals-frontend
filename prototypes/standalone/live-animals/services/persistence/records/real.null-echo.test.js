@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { IN_PROGRESS } from '../../../engine/persistence/records.js'
-import {
-  answersToFulfilments,
-  projectAnswers
-} from '../../../bridge/fulfilments.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../../../bridge/fulfilments.js'
 import { toNotification } from './mapper.js'
 import { records } from './real.js'
 
@@ -44,7 +42,7 @@ describe('real records adapter — backend null-padded echo', () => {
     }
     const record = await records.replaceFulfilment(
       'GBN-1',
-      answersToFulfilments(answers),
+      assembleFulfilments(answers),
       { known: { journeyId: 'GBN-1', status: IN_PROGRESS } }
     )
 
@@ -72,7 +70,7 @@ describe('real records adapter — backend null-padded echo', () => {
       ]
     }
 
-    await records.replaceFulfilment('GBN-1', answersToFulfilments(answers), {
+    await records.replaceFulfilment('GBN-1', assembleFulfilments(answers), {
       known: { journeyId: 'GBN-1', status: IN_PROGRESS }
     })
 

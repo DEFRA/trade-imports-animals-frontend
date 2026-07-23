@@ -5,8 +5,8 @@ import { rowStatus, taskRows } from './task-rows.js'
 export const sectionObligationIds = (section) =>
   section.pages.flatMap((page) => collectsOf(page.id))
 
-export const sectionStatus = (section, answers, inScope) =>
-  statusOf(sectionObligationIds(section), answers, inScope)
+export const sectionStatus = (section, answers, inScope, evaluation) =>
+  statusOf(sectionObligationIds(section), answers, inScope, evaluation)
 
 export const readyForCheckYourAnswers = (answers, inScope, evaluation) =>
   taskRows.every((row) => {

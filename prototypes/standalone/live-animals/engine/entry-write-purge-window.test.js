@@ -5,8 +5,8 @@ import { records, configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { wipeSet } from '../bridge/purge.js'
-import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
+import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments.js'
 import { stubH, journeyRequest } from './test-support.js'
 
@@ -46,12 +46,13 @@ const STALE_HORSE_NAME_KEY = 'commodityLines[0].animalIdentifiers[0].horseName'
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) =>
-  records.replaceFulfilment(
-    journeyId,
-    migrateNameKeyedAnswersToFulfilments(answers)
-  )
+  records.replaceFulfilment(journeyId, assembleFulfilments(answers))
 const durable = async () =>
   projectAnswers((await records.load({ journeyId })).fulfilment)
+const wipeOf = (answers) => {
+  const fulfilments = assembleFulfilments(answers)
+  return wipeSet(fulfilments, purgeFulfilments(fulfilments))
+}
 
 describe('entry-write canonical purge', () => {
   beforeEach(async () => {
@@ -73,7 +74,7 @@ describe('entry-write canonical purge', () => {
   })
 
   it('Should name the stale value in the wipe set', () => {
-    expect(wipeSet(STALE_COW_LINE)).toContain(STALE_HORSE_NAME_KEY)
+    expect(wipeOf(STALE_COW_LINE)).toContain(STALE_HORSE_NAME_KEY)
   })
 
   it('Should destroy an out-of-scope value in the same updateEntryAt snapshot', async () => {

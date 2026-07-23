@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
+import { evaluateAnswers } from '../bridge/evaluation.js'
 import {
   FULFILLED,
   IN_PROGRESS,
@@ -21,8 +22,15 @@ const { values: happyPath } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 )
 
-const statusIn = (rowId, answers) =>
-  rowStatus(taskRowById(rowId), answers, makeScope(answers).inScope)
+const statusIn = (rowId, answers) => {
+  const evaluation = evaluateAnswers(answers)
+  return rowStatus(
+    taskRowById(rowId),
+    answers,
+    makeScope(answers).inScope,
+    evaluation
+  )
+}
 
 const unlocked = {
   countryOfOrigin: 'FR',
@@ -233,9 +241,9 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
 
 describe('submit-readiness equivalence — the row roll-up admits exactly the journeys the section roll-up did', () => {
   const PASSING = [FULFILLED, NA, OPTIONAL]
-  const sectionRollUp = (answers, inScope) =>
+  const sectionRollUp = (answers, inScope, evaluation) =>
     answerSections.every((section) =>
-      PASSING.includes(sectionStatus(section, answers, inScope))
+      PASSING.includes(sectionStatus(section, answers, inScope, evaluation))
     )
 
   const submittable = {
@@ -295,8 +303,9 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'Should agree with the retired section roll-up for %s',
     (label, answers) => {
       const { inScope } = makeScope(answers)
-      expect(readyForCheckYourAnswers(answers, inScope)).toBe(
-        sectionRollUp(answers, inScope)
+      const evaluation = evaluateAnswers(answers)
+      expect(readyForCheckYourAnswers(answers, inScope, evaluation)).toBe(
+        sectionRollUp(answers, inScope, evaluation)
       )
     }
   )
@@ -305,7 +314,9 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'Should hold %s submittable',
     (label, answers) => {
       const { inScope } = makeScope(answers)
-      expect(readyForCheckYourAnswers(answers, inScope)).toBe(true)
+      expect(
+        readyForCheckYourAnswers(answers, inScope, evaluateAnswers(answers))
+      ).toBe(true)
     }
   )
 
@@ -313,7 +324,9 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'Should hold %s not submittable',
     (label, answers) => {
       const { inScope } = makeScope(answers)
-      expect(readyForCheckYourAnswers(answers, inScope)).toBe(false)
+      expect(
+        readyForCheckYourAnswers(answers, inScope, evaluateAnswers(answers))
+      ).toBe(false)
     }
   )
 

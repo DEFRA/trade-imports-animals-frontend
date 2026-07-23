@@ -13,7 +13,7 @@ import {
   STUB_USER
 } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
-import { migrateNameKeyedAnswersToFulfilments } from '../../bridge/name-keyed-migration.js'
+import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../bridge/fulfilments.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 
@@ -205,7 +205,7 @@ describe('dashboard row actions', () => {
     expect(amended.status).toBe(IN_PROGRESS)
     await records.replaceFulfilment(
       submitted.journeyId,
-      migrateNameKeyedAnswersToFulfilments({ countryOfOrigin: 'FR' })
+      assembleFulfilments({ countryOfOrigin: 'FR' })
     )
   })
 
@@ -272,7 +272,7 @@ describe('dashboard start with an in-flight draft', () => {
     const oldDraft = await startDraft()
     await records.replaceFulfilment(
       oldDraft.journeyId,
-      migrateNameKeyedAnswersToFulfilments({ countryOfOrigin: 'FR' })
+      assembleFulfilments({ countryOfOrigin: 'FR' })
     )
     const h = buildH()
 

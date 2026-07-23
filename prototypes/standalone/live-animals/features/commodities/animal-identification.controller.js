@@ -349,9 +349,10 @@ const render = (
   h,
   journey,
   answers,
+  evaluation,
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
-  const lines = state.collectionView(answers, ['commodityLines'])
+  const lines = state.collectionView(answers, ['commodityLines'], evaluation)
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(),
@@ -369,8 +370,8 @@ const render = (
 }
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  return render(request, h, journey, answers)
+  const { journey, answers, evaluation } = await state.get(request, h)
+  return render(request, h, journey, answers, evaluation)
 }
 
 const parseAddAction = (action) =>
@@ -446,12 +447,13 @@ const capReachedResponse = (
   h,
   journey,
   answers,
+  evaluation,
   forms,
   addIndex,
   atMaxByIndex
 ) => {
   if (addIndex === null || !atMaxByIndex.has(addIndex)) return null
-  return render(request, h, journey, answers, {
+  return render(request, h, journey, answers, evaluation, {
     forms,
     cardErrors: [
       {
@@ -523,12 +525,12 @@ const appendLineRecords = async (request, h, forms) => {
 }
 
 const post = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, answers, evaluation } = await state.get(request, h)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
   if (isRemoveAction(action)) return postRemove(request, h, action)
   const addIndex = parseAddAction(action)
-  const lines = state.collectionView(answers, ['commodityLines'])
+  const lines = state.collectionView(answers, ['commodityLines'], evaluation)
 
   const {
     forms,
@@ -541,6 +543,7 @@ const post = async (request, h) => {
     h,
     journey,
     answers,
+    evaluation,
     forms,
     addIndex,
     atMaxByIndex
@@ -550,14 +553,19 @@ const post = async (request, h) => {
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 
   if (Object.keys(errors).length > 0) {
-    return render(request, h, journey, answers, { forms, errors })
+    return render(request, h, journey, answers, evaluation, { forms, errors })
   }
 
   const cardErrors = await appendLineRecords(request, h, forms)
 
   if (cardErrors.length > 0) {
-    const { answers: current } = await state.get(request, h)
-    return render(request, h, journey, current, { cardErrors })
+    const { answers: current, evaluation: currentEvaluation } = await state.get(
+      request,
+      h
+    )
+    return render(request, h, journey, current, currentEvaluation, {
+      cardErrors
+    })
   }
 
   if (addIndex !== null) {

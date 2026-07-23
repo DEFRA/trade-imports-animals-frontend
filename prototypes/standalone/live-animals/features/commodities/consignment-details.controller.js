@@ -118,7 +118,8 @@ const render = (
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
-const linesOf = (answers) => state.collectionView(answers, ['commodityLines'])
+const linesOf = (answers, evaluation) =>
+  state.collectionView(answers, ['commodityLines'], evaluation)
 
 const countDropIssueFor = (request, { index, entry }, values) => {
   const records = (entry.animalIdentifiers ?? []).length
@@ -144,14 +145,14 @@ const countDropIssues = (request, lines, values) =>
   lines.flatMap((line) => countDropIssueFor(request, line, values))
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const lines = linesOf(answers)
+  const { journey, answers, evaluation } = await state.get(request, h)
+  const lines = linesOf(answers, evaluation)
   return render(request, h, journey, lines, storedValues(lines))
 }
 
 const post = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  const lines = linesOf(answers)
+  const { journey, answers, evaluation } = await state.get(request, h)
+  const lines = linesOf(answers, evaluation)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
   if (isRemoveAction(action)) {
@@ -198,8 +199,10 @@ const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
 const removeIndexOf = (action) =>
   Number(action.slice(REMOVE_ACTION_PREFIX.length))
 
-const groupNames = (answers) => [
-  ...new Set(linesOf(answers).map(({ entry }) => entry.commoditySelection))
+const groupNames = (answers, evaluation) => [
+  ...new Set(
+    linesOf(answers, evaluation).map(({ entry }) => entry.commoditySelection)
+  )
 ]
 
 // A removal drops every line of one commodity group, so it submits the page
@@ -207,8 +210,8 @@ const groupNames = (answers) => [
 // keys back to a name in the journey; anything else is refused before any
 // reconcile runs.
 const postRemove = async (request, h, index) => {
-  const { answers } = await state.get(request, h)
-  const name = groupNames(answers)[index]
+  const { answers, evaluation } = await state.get(request, h)
+  const name = groupNames(answers, evaluation)[index]
   if (name === undefined) return h.response().code(HTTP_STATUS_BAD_REQUEST)
 
   const kept = (answers.commodityLines ?? []).filter(

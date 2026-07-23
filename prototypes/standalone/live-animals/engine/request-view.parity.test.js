@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
-import { answersToFulfilments } from '../bridge/fulfilments.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { characterisationCorpus } from '../bridge/fixtures/characterisation-corpus.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
@@ -107,7 +107,7 @@ const scalarPages = [
 const canonicalViewOf = (answers) =>
   assembleRequestView(
     decodePersistedFulfilment(
-      encodeEvaluatorFulfilments(answersToFulfilments(answers))
+      encodeEvaluatorFulfilments(assembleFulfilments(answers))
     )
   )
 

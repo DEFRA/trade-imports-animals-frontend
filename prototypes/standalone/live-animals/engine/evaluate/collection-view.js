@@ -2,7 +2,7 @@ import { valueAt } from '../../lib/path.js'
 import { obligationByPath } from '../../flow/obligation-source.js'
 import { entryComplete } from '../../bridge/collection-complete.js'
 
-export const collectionView = (answers, collectionPath) => {
+export const collectionView = (answers, collectionPath, evaluation) => {
   const templatePath = collectionPath
     .filter((segment) => typeof segment === 'string')
     .join('.')
@@ -12,11 +12,11 @@ export const collectionView = (answers, collectionPath) => {
     index,
     path: [...collectionPath, index],
     entry,
-    complete: completeAt(obligation, answers, collectionPath, index)
+    complete: completeAt(obligation, evaluation, collectionPath, index)
   }))
 }
 
-const completeAt = (obligation, answers, collectionPath, index) => {
+const completeAt = (obligation, evaluation, collectionPath, index) => {
   if (!obligation) return true
-  return entryComplete(answers, collectionPath, index)
+  return entryComplete(evaluation, collectionPath, index)
 }

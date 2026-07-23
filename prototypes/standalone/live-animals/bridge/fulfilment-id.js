@@ -19,3 +19,12 @@ export const depthOf = (obligation) => {
 
 export const indicesOf = (fulfilmentId) =>
   segmentsOf(fulfilmentId).map((segment) => Number(segment.match(/\d+$/)?.[0]))
+
+export const formatFulfilmentId = (groups, indices) =>
+  groups.map(({ token }, depth) => `${token}${indices[depth]}`).join('/')
+
+export const instanceFulfilmentId = (collectionPath, index, groups) =>
+  formatFulfilmentId(groups, [
+    ...collectionPath.filter((segment) => typeof segment === 'number'),
+    index
+  ])

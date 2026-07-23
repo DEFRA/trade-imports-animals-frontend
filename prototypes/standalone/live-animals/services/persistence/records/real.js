@@ -1,9 +1,7 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
-import {
-  answersToFulfilments,
-  projectAnswers
-} from '../../../bridge/fulfilments.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../../../bridge/fulfilments.js'
 import { toNotification, toAnswers } from './mapper.js'
 
 const backendBaseUrl =
@@ -74,7 +72,7 @@ const marshal = (notification, userId = null) => {
     status,
     createdAt: notification.created ?? null,
     submittedAt: status === SUBMITTED ? (notification.updated ?? null) : null,
-    fulfilment: answersToFulfilments(toAnswers(stripNulls(notification)))
+    fulfilment: assembleFulfilments(toAnswers(stripNulls(notification)))
   }
 }
 

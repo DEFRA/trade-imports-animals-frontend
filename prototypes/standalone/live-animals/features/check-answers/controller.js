@@ -237,9 +237,13 @@ const identifierTable = (units) => {
   }
 }
 
-const unitsForCommodityLine = (answers, index) =>
+const unitsForCommodityLine = (answers, evaluation, index) =>
   state
-    .collectionView(answers, ['commodityLines', index, 'animalIdentifiers'])
+    .collectionView(
+      answers,
+      ['commodityLines', index, 'animalIdentifiers'],
+      evaluation
+    )
     .map(({ entry: unit }) => unit)
 
 const speciesCardActions = (index, units) => ({
@@ -276,16 +280,18 @@ const speciesCardRows = (entry) => [
     : [])
 ]
 
-const speciesCards = (answers) =>
-  state.collectionView(answers, ['commodityLines']).map(({ index, entry }) => {
-    const units = unitsForCommodityLine(answers, index)
-    return {
-      title: speciesCardTitle(entry),
-      actions: speciesCardActions(index, units),
-      rows: speciesCardRows(entry),
-      identifierTable: identifierTable(units)
-    }
-  })
+const speciesCards = (answers, evaluation) =>
+  state
+    .collectionView(answers, ['commodityLines'], evaluation)
+    .map(({ index, entry }) => {
+      const units = unitsForCommodityLine(answers, evaluation, index)
+      return {
+        title: speciesCardTitle(entry),
+        actions: speciesCardActions(index, units),
+        rows: speciesCardRows(entry),
+        identifierTable: identifierTable(units)
+      }
+    })
 
 const arrivalDetailsCard = (answers, scope) => ({
   title: copy.cards.arrivalDetails,
@@ -435,9 +441,9 @@ const contactAddressCard = (answers) => ({
   ]
 })
 
-const documentsCard = (answers) => {
+const documentsCard = (answers, evaluation) => {
   const documents = state
-    .collectionView(answers, ['documents'])
+    .collectionView(answers, ['documents'], evaluation)
     .map(({ index, entry }) => ({
       heading: copy.documentN(index + 1),
       rows: [
@@ -475,9 +481,9 @@ const documentsCard = (answers) => {
   }
 }
 
-export const buildSections = (answers, scope) => {
-  const species = speciesCards(answers)
-  const documents = documentsCard(answers)
+export const buildSections = (answers, scope, evaluation) => {
+  const species = speciesCards(answers, evaluation)
+  const documents = documentsCard(answers, evaluation)
   return [
     {
       heading: copy.sections.aboutTheConsignment,
@@ -527,21 +533,21 @@ export const buildSections = (answers, scope) => {
   ]
 }
 
-const renderCya = (h, journey, answers, scope) =>
+const renderCya = (h, journey, answers, scope, evaluation) =>
   h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    sections: buildSections(answers, scope),
+    sections: buildSections(answers, scope, evaluation),
     backLink: hubPath(),
     breadcrumbs: breadcrumbs(copy.title)
   })
 
 const get = async (request, h) => {
-  const { journey, answers, scope } = await state.get(request, h)
-  return renderCya(h, journey, answers, scope)
+  const { journey, answers, scope, evaluation } = await state.get(request, h)
+  return renderCya(h, journey, answers, scope, evaluation)
 }
 
 const post = async (request, h) => {

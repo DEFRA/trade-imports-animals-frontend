@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, it, expect } from 'vitest'
-import { makeScope, rawInScope } from './scope.js'
-import { configureReadyForCheckYourAnswers } from '../engine/read.js'
+import { rawInScope } from './scope.js'
+import { configureReadyForCheckYourAnswers, makeScope } from '../engine/read.js'
+import { evaluateAnswers } from './evaluation.js'
 
 // The scope projection, pinned against the manifest: each gate scopes its
 // obligation in/out as the manifest declares, positional keys project under
@@ -119,7 +120,7 @@ describe('scope bridge — per-gate scoping', () => {
 describe('scope bridge — flow-only obligations layered on the full scope', () => {
   it('Should add importType + declaration to the full scope, not the raw projection', () => {
     const full = makeScope(happyPath).inScope
-    const raw = rawInScope(happyPath)
+    const raw = rawInScope(evaluateAnswers(happyPath))
     expect(full.has('importType')).toBe(true)
     expect(full.has('declaration')).toBe(true)
     expect(raw.has('importType')).toBe(false)
@@ -127,7 +128,7 @@ describe('scope bridge — flow-only obligations layered on the full scope', () 
   })
 
   it('Should carry the system fields the raw projection owns', () => {
-    const raw = rawInScope(happyPath)
+    const raw = rawInScope(evaluateAnswers(happyPath))
     expect(raw.has('poApprovedReferenceNumber')).toBe(true)
     expect(raw.has('responsiblePersonForLoad')).toBe(true)
     expect(raw.has('commodityLines[0].commodityType')).toBe(true)

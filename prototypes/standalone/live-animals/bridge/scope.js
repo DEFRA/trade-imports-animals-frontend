@@ -1,6 +1,7 @@
 /**
  * Project the obligation evaluator's implications into the `scope` object the
- * controllers and hub consume — `makeScope(answers)`, four members.
+ * controllers and hub consume — `makeScopeFromEvaluation(evaluation,
+ * answers)`, four members.
  *
  * The load-bearing member is `inScope: Set<pathKey>` — one key for every
  * in-scope node, a mix of:
@@ -12,15 +13,13 @@
  * The group OBLIGATION node is keyed once per parent instance, never a bare
  * group instance (`'commodityLines[0]'` is not a key).
  *
- * The set is built from the evaluator output: answers ->
- * `answersToFulfilments` -> `evaluate` -> project each in-scope implication
- * into the pathKey grammar (composite->positional conversion).
+ * The set is built from the request-level evaluator output by projecting each
+ * in-scope implication into the pathKey grammar (composite->positional
+ * conversion).
  */
 
 import { obligations } from '../model/obligations/obligations.js'
-import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
-  answersToFulfilments,
   ancestorChain,
   fulfilmentIdToPath,
   groupObligations
@@ -29,8 +28,6 @@ import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from '../engine/readiness-config.js'
 import { FLOW_ONLY_OBLIGATIONS } from '../flow/obligation-source.js'
-
-const evaluator = createObligationEvaluator()
 
 // `anyInstanceAnswered` — look up the obligation named `id` and walk the
 // answers tree over its ancestor-group chain, testing each positional instance
@@ -122,8 +119,7 @@ const projectInScope = (implications) => {
  * flow-only obligations on TOP of this for the FULL scope the controllers
  * consume; this export stays the raw evaluator scope.
  */
-export const rawInScope = (answers) =>
-  projectInScope(evaluator.evaluate(answersToFulfilments(answers)).obligations)
+export const rawInScope = (evaluation) => projectInScope(evaluation.obligations)
 
 // Flow-only obligations the notification model does not carry: the pre-journey
 // import-type filter (the service entry filter) and the
@@ -158,10 +154,11 @@ const projectFlowOnlyScope = (inScope) => {
  * importType/declaration.
  *
  * @param {object} answers - the nested answer POJO.
+ * @param {object} evaluation - the request-level evaluator result.
  * @returns {{ inScope: Set<string>, has: (id: string) => boolean,
  *   answered: (id: string) => boolean, readyForCheckYourAnswers: boolean }}
  */
-const scopeFrom = (answers, evaluation, reuseEvaluation) => {
+const scopeFrom = (answers, evaluation) => {
   const inScope = projectInScope(evaluation.obligations)
   projectFlowOnlyScope(inScope)
   return {
@@ -171,13 +168,10 @@ const scopeFrom = (answers, evaluation, reuseEvaluation) => {
     readyForCheckYourAnswers: computeReadyForCheckYourAnswers(
       answers,
       inScope,
-      reuseEvaluation ? evaluation : undefined
+      evaluation
     )
   }
 }
 
 export const makeScopeFromEvaluation = (evaluation, answers) =>
-  scopeFrom(answers, evaluation, true)
-
-export const makeScope = (answers) =>
-  scopeFrom(answers, evaluator.evaluate(answersToFulfilments(answers)), false)
+  scopeFrom(answers, evaluation)

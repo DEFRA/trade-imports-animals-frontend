@@ -5,8 +5,8 @@ import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { wipeSet } from '../bridge/purge.js'
-import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
+import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments.js'
 import { stubH, journeyRequest } from './test-support.js'
 
@@ -32,12 +32,13 @@ const TURN_PURPOSE_GATE_OFF = { reasonForImport: 'research' }
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const seed = (answers) =>
-  records.replaceFulfilment(
-    journeyId,
-    migrateNameKeyedAnswersToFulfilments(answers)
-  )
+  records.replaceFulfilment(journeyId, assembleFulfilments(answers))
 const durable = async () =>
   projectAnswers((await records.load({ journeyId })).fulfilment)
+const wipeOf = (answers) => {
+  const fulfilments = assembleFulfilments(answers)
+  return wipeSet(fulfilments, purgeFulfilments(fulfilments))
+}
 
 describe('#commit — evaluator-authoritative purge', () => {
   beforeEach(async () => {
@@ -58,7 +59,7 @@ describe('#commit — evaluator-authoritative purge', () => {
     // Retain-value pattern: the field stays in scope (optional) on 'no',
     // so the purge never claims it and the stored value survives.
     expect(
-      wipeSet({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })
+      wipeOf({ ...REGION_ANSWERED, ...TURN_REGION_GATE_OFF })
     ).not.toContain('regionOfOriginCode')
     expect(answers.regionOfOriginCode).toBe(REGION_ANSWERED.regionOfOriginCode)
     expect((await durable()).regionOfOriginCode).toBe(
@@ -69,7 +70,7 @@ describe('#commit — evaluator-authoritative purge', () => {
   it('Should destroy exactly the evaluator purge set', async () => {
     await seed(PURPOSE_ANSWERED)
     const merged = { ...PURPOSE_ANSWERED, ...TURN_PURPOSE_GATE_OFF }
-    const expectedWipe = wipeSet(merged)
+    const expectedWipe = wipeOf(merged)
 
     const { answers } = await commit(
       buildRequest(),

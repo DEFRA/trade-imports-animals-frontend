@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
+import { evaluateAnswers } from '../bridge/evaluation.js'
 import * as obligationSource from './obligation-source.js'
 import { readyForCheckYourAnswers } from './section-status.js'
 import {
@@ -204,14 +205,20 @@ describe('#buildDispatch', () => {
       declaration: 'confirmed'
     }
     const { inScope } = makeScope(complete)
-    expect(readyForCheckYourAnswers(complete, inScope)).toBe(true)
+    expect(
+      readyForCheckYourAnswers(complete, inScope, evaluateAnswers(complete))
+    ).toBe(true)
 
     const incomplete = {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'no'
     }
     expect(
-      readyForCheckYourAnswers(incomplete, makeScope(incomplete).inScope)
+      readyForCheckYourAnswers(
+        incomplete,
+        makeScope(incomplete).inScope,
+        evaluateAnswers(incomplete)
+      )
     ).toBe(false)
   })
 })

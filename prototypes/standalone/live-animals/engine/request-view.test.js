@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { answersToFulfilments, projectAnswers } from '../bridge/fulfilments.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments.js'
 import { characterisationCorpus } from '../bridge/fixtures/characterisation-corpus.js'
 import {
   earTag,
@@ -14,7 +15,7 @@ import { assembleRequestView } from './request-view.js'
 const canonicalViewOf = (answers) =>
   assembleRequestView(
     decodePersistedFulfilment(
-      encodeEvaluatorFulfilments(answersToFulfilments(answers))
+      encodeEvaluatorFulfilments(assembleFulfilments(answers))
     )
   )
 

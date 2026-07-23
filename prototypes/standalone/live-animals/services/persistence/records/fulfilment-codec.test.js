@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { characterisationCorpus } from '../../../bridge/fixtures/characterisation-corpus.js'
-import { answersToFulfilments } from '../../../bridge/fulfilments.js'
+import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import { createObligationEvaluator } from '../../../model/obligations/evaluator.js'
 import {
   commodityCode,
@@ -48,7 +48,7 @@ const extraMapCorpus = [
 const mapCorpus = [
   ...characterisationCorpus.map(({ name, answers }) => ({
     name,
-    map: answersToFulfilments(answers)
+    map: assembleFulfilments(answers)
   })),
   ...extraMapCorpus
 ]
@@ -108,7 +108,7 @@ describe('persisted fulfilment codec', () => {
   test.each(characterisationCorpus)(
     'Should pass both golden-equivalence gates for $name',
     ({ answers }) => {
-      const oldMap = answersToFulfilments(answers)
+      const oldMap = assembleFulfilments(answers)
       const decodedMap = decodePersistedFulfilment(
         encodeEvaluatorFulfilments(oldMap)
       )

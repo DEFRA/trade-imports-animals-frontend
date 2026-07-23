@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
-import { answersToFulfilments, projectAnswers } from './fulfilments.js'
+import { assembleFulfilments } from './assemble-fulfilments.js'
+import { projectAnswers } from './fulfilments.js'
 import { characterisationCorpus } from './fixtures/characterisation-corpus.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
@@ -26,7 +27,7 @@ describe('increment 0 golden boundary characterisation', () => {
     'Should preserve the current outputs for $name',
     ({ name, answers }) => {
       const oracle = oracles[name]
-      const fulfilments = answersToFulfilments(answers)
+      const fulfilments = assembleFulfilments(answers)
 
       expect(fulfilments).toEqual(oracle.fulfilments)
       expect(JSON.stringify(fulfilments)).toBe(

@@ -2,6 +2,7 @@ import { buildDispatch } from './flow/dispatch.js'
 import { entryGuardTarget } from './flow/entry-guard.js'
 import { allRoutes, dispatchPages } from './features/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
+import { assertFulfilmentBindingCoverage } from './bridge/fulfilment-registry.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { records } from './services/persistence/records/index.js'
 import { configureSession } from './engine/persistence/session.js'
@@ -16,6 +17,7 @@ export const liveAnimals = {
     name: 'standalone-live-animals',
     register: async (server) => {
       assertObligationPurity()
+      assertFulfilmentBindingCoverage()
       buildDispatch(dispatchPages)
       configureRecords(records)
       configureSession(session)

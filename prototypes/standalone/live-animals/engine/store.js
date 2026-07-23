@@ -1,6 +1,6 @@
 import { records } from './persistence/records.js'
 import { projectAnswers } from '../bridge/fulfilments.js'
-import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
 export { IN_PROGRESS, SUBMITTED } from './persistence/records.js'
 
@@ -18,10 +18,7 @@ export const store = Object.freeze({
   has: records.has,
   seedAnswers: (journeyId, answers) =>
     withAnswersProjection(
-      records.replaceFulfilment(
-        journeyId,
-        migrateNameKeyedAnswersToFulfilments(answers)
-      )
+      records.replaceFulfilment(journeyId, assembleFulfilments(answers))
     ),
   replaceFulfilment: (journeyId, fulfilment) =>
     withAnswersProjection(records.replaceFulfilment(journeyId, fulfilment)),

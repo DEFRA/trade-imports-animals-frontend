@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../flow/dispatch.js'
-import { makeScope } from '../engine/index.js'
+import { makeScopeFromEvaluation } from './scope.js'
+import { evaluateAnswers } from './evaluation.js'
 import { rowParts, taskRows } from '../flow/task-rows.js'
 import {
   readyForCheckYourAnswers,
@@ -228,26 +229,40 @@ describe('statusOf — the presentation rollup', () => {
   describe.each(Object.entries(cases))(
     '%s',
     (_label, { answers, rows, sections, ready }) => {
-      const scope = () => makeScope(answers).inScope
+      const requestState = () => {
+        const evaluation = evaluateAnswers(answers)
+        const inScope = makeScopeFromEvaluation(evaluation, answers).inScope
+        return { evaluation, inScope }
+      }
 
       it('Should roll each task row up to the expected status', () => {
-        const inScope = scope()
+        const { evaluation, inScope } = requestState()
         expect(
-          taskRows.map((row) => statusOf(rowParts(row), answers, inScope))
+          taskRows.map((row) =>
+            statusOf(rowParts(row), answers, inScope, evaluation)
+          )
         ).toEqual(rows)
       })
 
       it('Should roll each answer section up to the expected status', () => {
-        const inScope = scope()
+        const { evaluation, inScope } = requestState()
         expect(
           answerSections.map((section) =>
-            statusOf(sectionObligationIds(section), answers, inScope)
+            statusOf(
+              sectionObligationIds(section),
+              answers,
+              inScope,
+              evaluation
+            )
           )
         ).toEqual(sections)
       })
 
       it('Should derive readiness for check-your-answers', () => {
-        expect(readyForCheckYourAnswers(answers, scope())).toBe(ready)
+        const { evaluation, inScope } = requestState()
+        expect(readyForCheckYourAnswers(answers, inScope, evaluation)).toBe(
+          ready
+        )
       })
     }
   )
@@ -329,8 +344,13 @@ describe('statusOf — the commodities/identification facet split', () => {
 
   it('Should classify each facet as B derives it', () => {
     for (const [answers, exceptStatus, onlyStatus] of facetCases) {
-      expect(statusOf([exceptIdentifiers], answers, inScope)).toBe(exceptStatus)
-      expect(statusOf([onlyIdentifiers], answers, inScope)).toBe(onlyStatus)
+      const evaluation = evaluateAnswers(answers)
+      expect(statusOf([exceptIdentifiers], answers, inScope, evaluation)).toBe(
+        exceptStatus
+      )
+      expect(statusOf([onlyIdentifiers], answers, inScope, evaluation)).toBe(
+        onlyStatus
+      )
     }
   })
 })
@@ -356,13 +376,17 @@ describe('statusOf — the recordCountEquals invariant in isolation', () => {
   it('Should block the identifiers facet while the unit count trails the declared quantity', () => {
     // One complete unit satisfies the any-of rule, so the count
     // mismatch is the only outstanding concern.
-    expect(statusOf([onlyIdentifiers], lineWith('2'), inScope)).toBe(
-      IN_PROGRESS
-    )
+    const answers = lineWith('2')
+    expect(
+      statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
+    ).toBe(IN_PROGRESS)
   })
 
   it('Should fulfil the identifiers facet when the unit count matches the declared quantity', () => {
-    expect(statusOf([onlyIdentifiers], lineWith('1'), inScope)).toBe(FULFILLED)
+    const answers = lineWith('1')
+    expect(
+      statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
+    ).toBe(FULFILLED)
   })
 })
 
@@ -379,14 +403,16 @@ describe('statusOf — the documents MAX_ENTRIES cap', () => {
   })
 
   it('Should fulfil the documents part at the cap', () => {
-    expect(statusOf(['documents'], completeDocuments(10), inScope)).toBe(
-      FULFILLED
-    )
+    const answers = completeDocuments(10)
+    expect(
+      statusOf(['documents'], answers, inScope, evaluateAnswers(answers))
+    ).toBe(FULFILLED)
   })
 
   it('Should block the documents part beyond the cap', () => {
-    expect(statusOf(['documents'], completeDocuments(11), inScope)).toBe(
-      IN_PROGRESS
-    )
+    const answers = completeDocuments(11)
+    expect(
+      statusOf(['documents'], answers, inScope, evaluateAnswers(answers))
+    ).toBe(IN_PROGRESS)
   })
 })

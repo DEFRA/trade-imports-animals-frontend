@@ -12,7 +12,8 @@ import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { buildDispatch } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
-import { wipeSet } from '../bridge/purge.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
+import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // Mutator behaviour. Storage is positional (an array; the evaluator holds no
@@ -29,6 +30,10 @@ import { stubH, journeyRequest } from './test-support.js'
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const answersNow = async () => (await store.get(journeyId)).answers
+const wipeOf = (answers) => {
+  const fulfilments = assembleFulfilments(answers)
+  return wipeSet(fulfilments, purgeFulfilments(fulfilments))
+}
 
 const line = (commoditySelection, extra = {}) => ({
   commoditySelection,
@@ -172,7 +177,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
           { commoditySelection: 'Cat', speciesSelection: '923501' }
         ]
       }
-      expect(wipeSet(afterRemoval)).toContain('containsUnweanedAnimals')
+      expect(wipeOf(afterRemoval)).toContain('containsUnweanedAnimals')
 
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       const answers = await answersNow()

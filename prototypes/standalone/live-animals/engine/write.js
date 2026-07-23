@@ -3,7 +3,7 @@ import { collectionCapAt } from './evaluate/cardinality.js'
 import { get, memoRequestView } from './read.js'
 import { assembleRequestView } from './request-view.js'
 import { purgeFulfilments } from '../bridge/purge.js'
-import { migrateNameKeyedAnswersToFulfilments } from '../bridge/name-keyed-migration.js'
+import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { records } from './persistence/records.js'
 import { session } from './persistence/session.js'
 import { setAt, valueAt } from '../lib/path.js'
@@ -44,10 +44,6 @@ const viewWithFlowOnlyAnswers = (
   return { ...view, ...assembled, flowOnlyAnswers }
 }
 
-// MIGRATION FACADE: increment 4 controllers still mutate their name-keyed
-// request projection. Rebuild the canonical map here, evaluate/purge it, and
-// persist only state.fulfilments. Feature-owned UUID writes replace this seam
-// in increment 5.
 const replaceFromNameKeyedMutation = async (
   request,
   journey,
@@ -59,9 +55,7 @@ const replaceFromNameKeyedMutation = async (
   const { canonical } = splitPatch(answers)
   if (assertKeys) assertRecognisedAnswerKeys(canonical, context)
 
-  const evaluation = purgeFulfilments(
-    migrateNameKeyedAnswersToFulfilments(canonical)
-  )
+  const evaluation = purgeFulfilments(assembleFulfilments(canonical))
   const savedJourney = await replaceJourneyFulfilment(
     request,
     journey.journeyId,

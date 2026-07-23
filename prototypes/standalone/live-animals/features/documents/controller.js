@@ -121,12 +121,12 @@ const withScanStatus = (documents, refresh) =>
   )
 
 const loadPage = async (request, h) => {
-  const { journey, answers, scope } = await state.get(request, h)
+  const { journey, answers, scope, evaluation } = await state.get(request, h)
   const documents = await withScanStatus(
-    state.collectionView(answers, ['documents']),
+    state.collectionView(answers, ['documents'], evaluation),
     getAttempt(request) > 0
   )
-  return { journey, answers, scope, documents }
+  return { journey, answers, scope, evaluation, documents }
 }
 
 const SCAN_STATUS_TAGS = {
@@ -299,9 +299,9 @@ const scanned = (documents) =>
 // The JSON leg the client bundle polls. A poll is the scripted equivalent of
 // the refresh link, so it asks the upload service for a fresh status.
 const getStatus = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { answers, evaluation } = await state.get(request, h)
   const documents = await withScanStatus(
-    state.collectionView(answers, ['documents']),
+    state.collectionView(answers, ['documents'], evaluation),
     true
   )
   return h.response({ documents: scanned(documents) })
@@ -313,9 +313,9 @@ const HTTP_STATUS_NOT_FOUND = 404
 // the service — no traversal, no encoded separators.
 const UPLOAD_ID_PATTERN = /^[a-zA-Z0-9-]+$/
 
-const ownsUpload = (answers, uploadId) =>
+const ownsUpload = (answers, evaluation, uploadId) =>
   state
-    .collectionView(answers, ['documents'])
+    .collectionView(answers, ['documents'], evaluation)
     .some(({ entry }) => entry.uploadId === uploadId)
 
 const fileResponse = (h, streamed) =>
@@ -328,9 +328,9 @@ const fileResponse = (h, streamed) =>
 // A well-formed id belonging to somebody else's journey is answered 404, not
 // 403 — the journey never confirms an upload it does not own exists.
 const getFile = async (request, h) => {
-  const { answers } = await state.get(request, h)
+  const { answers, evaluation } = await state.get(request, h)
   const { uploadId } = request.params
-  if (!ownsUpload(answers, uploadId)) {
+  if (!ownsUpload(answers, evaluation, uploadId)) {
     return h.response().code(HTTP_STATUS_NOT_FOUND)
   }
   return fileResponse(h, await documentUploads.streamFile(uploadId))
@@ -429,12 +429,12 @@ const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
 const removeIndexOf = (action) =>
   Number(action.slice(REMOVE_ACTION_PREFIX.length))
 
-const documentAt = (answers, index) =>
-  state.collectionView(answers, ['documents'])[index]?.entry
+const documentAt = (answers, evaluation, index) =>
+  state.collectionView(answers, ['documents'], evaluation)[index]?.entry
 
 const postRemove = async (request, h, index) => {
-  const { answers } = await state.get(request, h)
-  const entry = documentAt(answers, index)
+  const { answers, evaluation } = await state.get(request, h)
+  const entry = documentAt(answers, evaluation, index)
   if (!entry) return h.response().code(HTTP_STATUS_BAD_REQUEST)
 
   const backToPage = kit.withChangeContext(request, pagePath(page.slug))

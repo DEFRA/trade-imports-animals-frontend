@@ -1,7 +1,7 @@
 /**
- * Bridge — page `answers` <-> model `fulfilments`.
+ * Bridge — model `fulfilments` -> page `answers`.
  *
- * A pure, storage-agnostic translation between the two shapes:
+ * A pure, storage-agnostic projection between the two shapes:
  *
  *   `answers`     nested POJO keyed by obligation name. Collections are
  *                 positional arrays in `lib/path.js`'s `a.b[0].c` grammar:
@@ -15,40 +15,19 @@
  *                 per enclosing group (`line0` at depth 1, `line0/unit1` at
  *                 depth 2). Top-level scalars store the value directly.
  *
- * The structure is derived from the manifest, not restated here: an
- * obligation's `name` is its answers key, its `id` is its fulfilments UUID,
+ * An obligation's `name` is its answers key, its `id` is its fulfilments UUID,
  * and its `within` chain gives its depth. Group obligations
  * (`commodityLines`, `animalIdentifiers`) carry no value of their own —
- * their instances are inferred from descendant records — so the bridge never
- * emits a fulfilment for them and rebuilds the answer arrays from the leaves.
+ * their instances are inferred from descendant records — so the bridge
+ * rebuilds the answer arrays from the leaves.
  *
- * Values pass through unchanged — answers and the manifest's gates share the
- * stored vocabulary. The one exception is the animal count, coerced from the
- * page's HTTP string to the number `recordCountEquals` compares.
+ * Forward input assembly is feature-owned in `features/<feature>/evaluation.js` and
+ * coordinated by `assemble-fulfilments.js`.
  */
 
-import {
-  numberOfAnimals,
-  obligations
-} from '../model/obligations/obligations.js'
+import { obligations } from '../model/obligations/obligations.js'
 import { setAt } from '../lib/path.js'
 import { hasIndexedSegments, indicesOf, segmentsOf } from './fulfilment-id.js'
-
-// The nested collection groups, outermost first. The prefix is cosmetic
-// and reversible — the evaluator treats a fulfilmentId as opaque; only the
-// trailing integer carries the positional index. A group whose depth exceeds this
-// list falls back to `grp<depth>`. `documents` is a depth-0 collection and
-// so shares the `line` token with `commodityLines`; the tokens never
-// collide because each obligation owns a separate record map.
-const GROUP_SEGMENT_PREFIXES = ['line', 'unit']
-
-// ---------------------------------------------------------------------------
-// Manifest-derived lookups — computed once from the obligations.
-// ---------------------------------------------------------------------------
-
-const obligationByName = new Map(
-  obligations.map((obligation) => [obligation.name, obligation])
-)
 
 export const groupObligations = new Set(
   obligations.filter((obligation) =>
@@ -65,88 +44,6 @@ export const ancestorChain = (obligation) => {
     cur = cur.within
   }
   return chain
-}
-
-const segmentToken = (group) =>
-  GROUP_SEGMENT_PREFIXES[ancestorChain(group).length] ??
-  `grp${ancestorChain(group).length}`
-
-// The pages store form payloads as strings; the model's
-// `recordCountEquals` invariant compares the stored count against a
-// record tally with strict equality, so the count must reach the
-// evaluator as a NUMBER. Unparseable input passes through raw —
-// validation is controller-side.
-const toNumberWhenParses = (value) => {
-  if (typeof value !== 'string' || value.trim() === '') return value
-  const n = Number(value)
-  return Number.isFinite(n) ? n : value
-}
-
-const modelValue = (name, value) =>
-  name === numberOfAnimals.name ? toNumberWhenParses(value) : value
-
-// ---------------------------------------------------------------------------
-// answers -> fulfilments
-// ---------------------------------------------------------------------------
-
-// Walk the nested answer arrays for one leaf obligation, emitting one
-// `[compositeFulfilmentId, value]` per answered instance.
-const collectGroupedRecords = (answers, chain, name) => {
-  const records = {}
-  const walk = (node, remainingGroups, segments) => {
-    if (remainingGroups.length === 0) {
-      const value = node?.[name]
-      if (value !== undefined) {
-        records[segments.join('/')] = modelValue(name, value)
-      }
-      return
-    }
-    const [group, ...rest] = remainingGroups
-    const items = node?.[group.name]
-    if (!Array.isArray(items)) return
-    const token = segmentToken(group)
-    items.forEach((item, index) => {
-      walk(item, rest, [...segments, `${token}${index}`])
-    })
-  }
-  walk(answers, chain, [])
-  return records
-}
-
-const scalarFulfilment = (answers, name) => {
-  const value = answers?.[name]
-  return value === undefined ? undefined : modelValue(name, value)
-}
-
-const groupFulfilment = (answers, chain, name) => {
-  const records = collectGroupedRecords(answers, chain, name)
-  return Object.keys(records).length > 0 ? records : undefined
-}
-
-const fulfilmentFor = (answers, obligation) => {
-  const name = obligation.name
-  const chain = ancestorChain(obligation)
-  return chain.length === 0
-    ? scalarFulfilment(answers, name)
-    : groupFulfilment(answers, chain, name)
-}
-
-/**
- * Translate the page `answers` into the model `fulfilments`.
- *
- * @param {object} [answers={}] - the nested answer POJO.
- * @returns {object} the flat, UUID-keyed fulfilments map.
- */
-export const answersToFulfilments = (answers = {}) => {
-  const fulfilments = {}
-  for (const obligation of obligations) {
-    if (groupObligations.has(obligation)) continue
-    const value = fulfilmentFor(answers, obligation)
-    if (value !== undefined) {
-      fulfilments[obligation.id] = value
-    }
-  }
-  return fulfilments
 }
 
 // ---------------------------------------------------------------------------
@@ -185,26 +82,6 @@ export const fulfilmentIdToPath = (chain, fulfilmentId, name) => {
   })
   path.push(name)
   return path
-}
-
-// The composite fulfilmentId of a whole collection INSTANCE, from its
-// positional answer path. The instance-level counterpart of
-// `fulfilmentIdToPath` (which addresses a single leaf): given a collection
-// path in the `a.b[0].c` grammar (e.g. `['commodityLines', 0,
-// 'animalIdentifiers']`) and a positional index, emit the group fulfilmentId
-// prefix (`line0/unit<index>`). Reuses `segmentToken` + `ancestorChain`, so
-// a third collection level needs no change here.
-export const instanceFulfilmentId = (collectionPath, index) => {
-  const names = collectionPath.filter((segment) => typeof segment === 'string')
-  const group = obligationByName.get(names[names.length - 1])
-  const chain = [...ancestorChain(group), group]
-  const indices = [
-    ...collectionPath.filter((segment) => typeof segment === 'number'),
-    index
-  ]
-  return chain
-    .map((groupNode, depth) => `${segmentToken(groupNode)}${indices[depth]}`)
-    .join('/')
 }
 
 const answersWithScalar = (answers, name, stored) =>
@@ -312,9 +189,9 @@ const withObligationAnswer = (
 /**
  * Project the model `fulfilments` into the request-local page `answers`.
  *
- * The inverse of {@link answersToFulfilments} over bridge-convention
- * fulfilmentIds. The animal count comes back as the number the model stores,
- * not the page's original string.
+ * The request-local page projection of canonical fulfilments. The animal
+ * count comes back as the number the model stores, not the page's original
+ * string.
  *
  * @param {object} [fulfilments={}] - the flat, UUID-keyed fulfilments map.
  * @returns {object} the nested answer POJO.

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { makeScope } from './engine/index.js'
+import { evaluateAnswers } from './bridge/evaluation.js'
 import { FULFILLED, IN_PROGRESS, OPTIONAL } from './bridge/status.js'
 import {
   readyForCheckYourAnswers,
@@ -121,17 +122,31 @@ describe('indexed obligations are first-class', () => {
       commodityLines: [{ commoditySelection: 'Cow' }]
     }
     expect(
-      readyForCheckYourAnswers(complete, makeScope(complete).inScope)
+      readyForCheckYourAnswers(
+        complete,
+        makeScope(complete).inScope,
+        evaluateAnswers(complete)
+      )
     ).toBe(true)
     expect(
-      readyForCheckYourAnswers(incomplete, makeScope(incomplete).inScope)
+      readyForCheckYourAnswers(
+        incomplete,
+        makeScope(incomplete).inScope,
+        evaluateAnswers(incomplete)
+      )
     ).toBe(false)
   })
 
   it('Should read an untouched optional section as OPTIONAL (not Completed, does not count)', () => {
-    expect(sectionStatus(documentsSection, {}, makeScope({}).inScope)).toBe(
-      OPTIONAL
-    )
+    const answers = {}
+    expect(
+      sectionStatus(
+        documentsSection,
+        answers,
+        makeScope(answers).inScope,
+        evaluateAnswers(answers)
+      )
+    ).toBe(OPTIONAL)
   })
 
   it('Should read an optional section with an incomplete entry as IN_PROGRESS', () => {
@@ -139,14 +154,24 @@ describe('indexed obligations are first-class', () => {
       documents: [{ accompanyingDocumentType: 'HEALTH_CERTIFICATE' }]
     }
     expect(
-      sectionStatus(documentsSection, answers, makeScope(answers).inScope)
+      sectionStatus(
+        documentsSection,
+        answers,
+        makeScope(answers).inScope,
+        evaluateAnswers(answers)
+      )
     ).toBe(IN_PROGRESS)
   })
 
   it('Should read an optional section with a complete entry as FULFILLED', () => {
     const answers = { documents: [completeDocument] }
     expect(
-      sectionStatus(documentsSection, answers, makeScope(answers).inScope)
+      sectionStatus(
+        documentsSection,
+        answers,
+        makeScope(answers).inScope,
+        evaluateAnswers(answers)
+      )
     ).toBe(FULFILLED)
   })
 
@@ -170,14 +195,16 @@ describe('indexed obligations are first-class', () => {
       sectionStatus(
         commoditiesSection,
         withIncompleteLine,
-        makeScope(withIncompleteLine).inScope
+        makeScope(withIncompleteLine).inScope,
+        evaluateAnswers(withIncompleteLine)
       )
     ).toBe(IN_PROGRESS)
     expect(
       sectionStatus(
         commoditiesSection,
         withCompleteLine,
-        makeScope(withCompleteLine).inScope
+        makeScope(withCompleteLine).inScope,
+        evaluateAnswers(withCompleteLine)
       )
     ).toBe(FULFILLED)
   })

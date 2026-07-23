@@ -28,19 +28,12 @@
  */
 
 import { obligations } from '../model/obligations/obligations.js'
-import { createObligationEvaluator } from '../model/obligations/evaluator.js'
-import {
-  answersToFulfilments,
-  ancestorChain,
-  groupObligations,
-  instanceFulfilmentId
-} from './fulfilments.js'
+import { ancestorChain, groupObligations } from './fulfilments.js'
+import { instanceFulfilmentId } from './fulfilment-id.js'
+import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
 import { domain } from '../model/domain/index.js'
-
-const evaluator = createObligationEvaluator()
-const evaluate = (answers) => evaluator.evaluate(answersToFulfilments(answers))
 
 const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
@@ -130,17 +123,21 @@ const groupInvariantBlocksInstance = (group, instanceId, state) =>
  * True iff the evaluator finds no unsatisfied mandatory concern anywhere
  * beneath the instance.
  *
- * @param {object} answers - the nested answer POJO.
+ * @param {object} evaluation - the request-level evaluator result.
  * @param {Array<string|number>} collectionPath - a collection path.
  * @param {number} index - positional entry index within that collection.
  * @returns {boolean}
  */
-export const entryComplete = (answers, collectionPath, index) => {
+export const entryComplete = (evaluation, collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
   const group = obligationByName.get(names[names.length - 1])
   if (!group) return true
-  const instanceId = instanceFulfilmentId(collectionPath, index)
-  const { obligations: implications, fulfilments } = evaluate(answers)
+  const groupChain = [...ancestorChain(group), group]
+  const descriptors = groupChain.map(({ id }) =>
+    fulfilmentRegistry.groupDescriptorOf(id)
+  )
+  const instanceId = instanceFulfilmentId(collectionPath, index, descriptors)
+  const { obligations: implications, fulfilments } = evaluation
 
   const blockedByLeaf = leavesUnder(group).some((leaf) =>
     leafBlocksInstance(leaf, group, instanceId, implications, fulfilments)

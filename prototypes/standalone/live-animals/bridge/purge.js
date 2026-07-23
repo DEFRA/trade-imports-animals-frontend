@@ -6,8 +6,8 @@
  * the obligation (or its instance) is out of scope.
  *
  * Mechanism:
- *   answers -> answersToFulfilments                              = fIn
- *   evaluate(fIn).fulfilments (the converged post-purge view)    = fOut
+ *   request input fulfilments                                   = fIn
+ *   request evaluation.fulfilments (converged post-purge view)  = fOut
  *   for each non-group leaf obligation answered in fIn but absent from fOut,
  *   emit its pathKey via the composite->positional rule.
  *
@@ -16,23 +16,20 @@
  */
 
 import { obligations } from '../model/obligations/obligations.js'
-import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {
-  answersToFulfilments,
   ancestorChain,
   fulfilmentIdToPath,
   groupObligations
 } from './fulfilments.js'
+import { evaluateFulfilments } from './evaluation.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
-
-const evaluator = createObligationEvaluator()
 
 /**
  * Evaluate a canonical fulfilment map and return the converged post-purge
  * evaluator state. This is the durable write-path authority.
  */
-export const purgeFulfilments = (fulfilments) => evaluator.evaluate(fulfilments)
+export const purgeFulfilments = evaluateFulfilments
 
 const wipedScalarKey = (obligation, inVal, fulfilmentsOut) =>
   isAnswered(inVal) && fulfilmentsOut[obligation.id] === undefined
@@ -62,14 +59,14 @@ const wipedKeysFor = (obligation, fulfilmentsIn, fulfilmentsOut) => {
 }
 
 /**
- * The pathKeys the purge destroys for the given answers.
+ * The pathKeys the request evaluation destroys from its input fulfilments.
  *
- * @param {object} answers - the nested answer POJO.
+ * @param {object} fulfilmentsIn - the assembled request input.
+ * @param {object} evaluation - the request-level evaluator result.
  * @returns {string[]} pathKeys to pass to `destroyWiped`.
  */
-export const wipeSet = (answers) => {
-  const fulfilmentsIn = answersToFulfilments(answers)
-  const { fulfilments: fulfilmentsOut } = evaluator.evaluate(fulfilmentsIn)
+export const wipeSet = (fulfilmentsIn, evaluation) => {
+  const fulfilmentsOut = evaluation.fulfilments
   return obligations.flatMap((obligation) =>
     wipedKeysFor(obligation, fulfilmentsIn, fulfilmentsOut)
   )
