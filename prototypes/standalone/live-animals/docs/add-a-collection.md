@@ -145,12 +145,12 @@ scoped on its own values.
 
 - **Per-instance scope.** Every in-scope field of every instance is projected
   into the controller-facing scope through
-  [`model/bridge/scope.js`](../model/bridge/scope.js).
-- **Per-path wipe.** [`model/bridge/purge.js`](../model/bridge/purge.js) names
+  [`bridge/scope.js`](../bridge/scope.js).
+- **Per-path wipe.** [`bridge/purge.js`](../bridge/purge.js) names
   exactly the out-of-scope paths that still hold data; the write layer destroys
   them.
 - **Per-instance completeness.**
-  [`model/bridge/collection-complete.js`](../model/bridge/collection-complete.js)
+  [`bridge/collection-complete.js`](../bridge/collection-complete.js)
   answers whether one instance is complete; the group is complete when its
   `requires` floor is met and every instance is complete.
 - **Dispatch coverage at depth.** Boot asserts every obligation, at every

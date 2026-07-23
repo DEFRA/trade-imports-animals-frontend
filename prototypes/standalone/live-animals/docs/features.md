@@ -435,8 +435,8 @@ Some verbs live outside the barrel on purpose:
 - `listKnownJourneys` / `selectJourney` / `amendJourney`
   (`engine/journey.js`) — the dashboard's list and row actions (see
   [section 6](#6-the-page-catalogue)); no task page touches them
-- `configureReadyForCheckYourAnswers` (`engine/read.js`) — boot-only
-  injection of the flow's readiness roll-up; controllers never touch it
+- `configureReadyForCheckYourAnswers` (`engine/read.js`) — a test override for
+  the static flow readiness default; controllers never touch it
 
 There is deliberately no `setScope` and no per-key delete. Scope is
 always derived from answers, and out-of-scope data is wiped by the

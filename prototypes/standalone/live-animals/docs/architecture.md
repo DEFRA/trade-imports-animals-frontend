@@ -14,8 +14,8 @@ each field is in scope, and what a partly-filled journey's status is.
 ```
 features/  →  flow/            (page spine + sequencing)
            →  engine/          (the state facade pages call)
-                 └─ model/bridge/  (the seam)
-                       └─ model/   (identity, scope, legality, derivation)
+                 └─ bridge/     (the seam)
+                       └─ model/  (identity, scope, legality, derivation)
 services/  supplies option lists and the persistence ports
 ```
 
@@ -55,7 +55,7 @@ or `widget` on any obligation or domain entry. This is enforced at boot by
 fails the boot, not just a test. Copy lives in the `.njk` templates; value
 options come from the services.
 
-### model/bridge/ — the seam
+### bridge/ — the seam
 
 The evaluator speaks in **fulfilments**: a flat map keyed by obligation UUID,
 with grouped values held as `{ fulfilmentId: value }` maps under composite keys
@@ -63,20 +63,20 @@ with grouped values held as `{ fulfilmentId: value }` maps under composite keys
 nested POJO (`answers.commodityLines[0].animalIdentifiers[1]…`). The bridge is
 the only door between the two.
 
-- [`model/bridge/fulfilments.js`](../model/bridge/fulfilments.js) —
+- [`bridge/fulfilments.js`](../bridge/fulfilments.js) —
   `answersToFulfilments` / `fulfilmentsToAnswers`: nested answers ⇄ flat
-  fulfilments, including composite-key ↔ positional-path conversion and the
-  vocabulary normalisation the evaluator's gates need.
-- [`model/bridge/scope.js`](../model/bridge/scope.js) — `makeScopeFromB(answers)`
+  fulfilments, including composite-key ↔ positional-path conversion. Values
+  pass through unchanged except for numeric animal-count coercion.
+- [`bridge/scope.js`](../bridge/scope.js) — `makeScopeFromB(answers)`
   returns `{ inScope: Set<pathKey>, has(id), answered(id),
 readyForCheckYourAnswers }`. It runs the evaluator and projects every in-scope
   implication back into the positional path grammar the controllers use.
-- [`model/bridge/status.js`](../model/bridge/status.js) — `statusOfFromB` is the
+- [`bridge/status.js`](../bridge/status.js) — `statusOfFromB` is the
   sole runtime source of task-list and section status (the 5-way alphabet).
-- [`model/bridge/purge.js`](../model/bridge/purge.js) — `wipeSetFromB(answers)`
+- [`bridge/purge.js`](../bridge/purge.js) — `wipeSetFromB(answers)`
   lists the answer paths the evaluator's purge destroys; the write path feeds
   this to `destroyWiped`.
-- [`model/bridge/collection-complete.js`](../model/bridge/collection-complete.js)
+- [`bridge/collection-complete.js`](../bridge/collection-complete.js)
   — per-instance completeness for the collection views.
 
 Each bridge instantiates its own evaluator and runs the answers through it, so
@@ -189,16 +189,15 @@ At plugin registration, [`routes.js`](../routes.js) runs, in order:
 1. `assertObligationPurity()` — fails the boot if the model carries any display
    key.
 2. `buildDispatch(dispatchPages)` — builds the obligation-to-page index and
-   coverage-asserts every obligation is collected by exactly one page.
-3. `configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` — injects the
-   flow's submit-readiness roll-up so the engine holds no `flow/` import.
-4. `configureRecords(records)` and `configureSession(session)` — wire the
+   coverage-asserts every non-system obligation is collected by exactly one
+   page.
+3. `configureRecords(records)` and `configureSession(session)` — wire the
    persistence ports to their `services/persistence/` implementations.
-5. `registerJourneyCookie(server)` — defines the journey cookie.
-6. `onPreHandler` — installs the entry-guard redirect.
-7. In real mode only, `countries.prime()` and `ports.prime()` warm the MDM
+4. `registerJourneyCookie(server)` — defines the journey cookie.
+5. `onPreHandler` — installs the entry-guard redirect.
+6. In real mode only, `countries.prime()` and `ports.prime()` warm the MDM
    caches.
-8. `server.route(allRoutes)` — registers every route.
+7. `server.route(allRoutes)` — registers every route.
 
 The guards fail loud. So does a gate consulted before `buildDispatch` has run:
 an unbuilt index is indistinguishable from "this page collects nothing" and
@@ -214,12 +213,12 @@ live-animals/
   dump.js                 headless state dump for an editable fixture
 
   model/                  THE PURE CORE — no frontend imports
-    obligations/          obligations.js manifest, helpers.js, evaluator.js
+    obligations/          manifest, gate helpers, evaluator, state queries
     domain/               value legality (enum/predicate/address)
-    engine/               derivation primitives (status, navigation)
     analysis/             reachability prover
-    bridge/               THE SEAM — answers ⇄ fulfilments, scope/status/purge
     no-display-keys.js    the purity assertion
+
+  bridge/                 THE SEAM — answers ⇄ fulfilments, scope/status/purge
 
   engine/                 the state facade pages import (import * as state)
     index.js              the barrel

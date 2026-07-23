@@ -17,7 +17,7 @@ storage in [persistence.md](persistence.md).
 ```
 model/obligations/evaluator.js       the pure evaluator over flat fulfilments
 model/obligations/state-queries.js   pure queries: mandates, group invariants
-model/bridge/                        the seam — runs the evaluator, projects its output
+bridge/                              the seam — runs the evaluator, projects its output
 engine/index.js                      the hapi barrel a page controller imports
 ```
 
@@ -28,7 +28,7 @@ engine/index.js                      the hapi barrel a page controller imports
   which group invariants are unmet).
 - **`engine/`** is the hapi side: session, records, and the read/write surface
   a page controller sees. It never touches the evaluator directly — it reaches
-  the model **through the bridges** in `model/bridge/`.
+  the model **through the bridges** in `bridge/`.
 
 A page controller imports exactly one barrel, `engine/index.js`, and gets a
 narrow one-directional surface: read scope and status up, write answers down.
@@ -179,7 +179,7 @@ status.
 ## The bridge seam
 
 Controllers speak in nested `answers` and pathKeys; the evaluator speaks in
-flat `fulfilments` and composite keys. `model/bridge/` is the only place the
+flat `fulfilments` and composite keys. `bridge/` is the only place the
 two meet. Each bridge instantiates its own `createObligationEvaluator()`, runs
 `answersToFulfilments(answers)` through it, and projects the output back into
 the shape controllers consume.
@@ -244,15 +244,14 @@ current journey and attaches its answers and scope for the controller.
 - `submitJourney` gates on `scope.readyForCheckYourAnswers`; only when ready
   does it finalise the records port.
 
-### The boot seam
+### The readiness seam
 
 `readyForCheckYourAnswers` needs the boot-built dispatch index and the flow's
-section list — flow knowledge the model must not import. So `routes.js` injects
-it at boot via `configureReadyForCheckYourAnswers` (in
-`engine/readiness-config.js`); the model reaches it through
-`computeReadyForCheckYourAnswers`. The unconfigured default **throws** — an
-unconfigured readiness check is a loud failure, never a silent wrong answer.
-Do not soften the throw to `return false`.
+task-row list. `engine/readiness-config.js` statically defaults to
+`flow/section-status.js`'s `readyForCheckYourAnswers`, and
+`bridge/scope.js` reaches it through `computeReadyForCheckYourAnswers`.
+`configureReadyForCheckYourAnswers` remains as a test override; runtime boot
+does not configure readiness.
 
 ### store.js
 

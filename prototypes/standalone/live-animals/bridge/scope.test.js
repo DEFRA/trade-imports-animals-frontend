@@ -12,7 +12,7 @@ const happyPath = JSON.parse(
   readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
 ).values
 
-// makeScope computes readyForCheckYourAnswers via the boot-injected fn.
+// Pin readiness false through the test override seam.
 beforeAll(() => configureReadyForCheckYourAnswers(() => false))
 
 const resolveRegion = (answers) => ({

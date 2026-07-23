@@ -9,9 +9,9 @@ The code:
 
 - `model/obligations/evaluator.js` — the obligation evaluator (`convergePurge`,
   the purge fixpoint).
-- `model/bridge/scope.js` — `makeScopeFromB`, which projects the evaluator's
+- `bridge/scope.js` — `makeScopeFromB`, which projects the evaluator's
   in-scope implications into the pathKey grammar the controllers read.
-- `model/bridge/purge.js` — `wipeSetFromB`, which projects the evaluator's
+- `bridge/purge.js` — `wipeSetFromB`, which projects the evaluator's
   purge into the answer paths to destroy.
 - `engine/read.js` — `makeScope`, the read surface.
 - `engine/write.js` — `commit`, `removeEntryAt`, `reconcileEntriesAt`, which
@@ -23,10 +23,10 @@ The code:
 Scope is a projection of the obligation evaluator's output.
 
 `makeScope(answers)` in `engine/read.js` delegates to `makeScopeFromB` in
-`model/bridge/scope.js`. That function:
+`bridge/scope.js`. That function:
 
 1. Converts the nested answers POJO to the flat, composite-key `fulfilments`
-   map with `answersToFulfilments` (`model/bridge/fulfilments.js`).
+   map with `answersToFulfilments` (`bridge/fulfilments.js`).
 2. Runs `evaluator.evaluate(fulfilments)`. The evaluator returns
    `{ fulfilments, obligations }`, where `obligations` is the
    per-obligation implications map (`{ inScope, status?, records?, reasons? }`).
@@ -97,7 +97,7 @@ Three layers enforce it, and no single layer can be bypassed:
 
 1. **The evaluator derives.** `convergePurge` in
    `model/obligations/evaluator.js` decides what leaves scope; `wipeSetFromB`
-   in `model/bridge/purge.js` names the answer paths to destroy. Neither
+   in `bridge/purge.js` names the answer paths to destroy. Neither
    touches the session — they compute a list.
 2. **Write applies.** `commit`, `removeEntryAt` and `reconcileEntriesAt` in
    `engine/write.js` call `destroyWiped` with that list on every write. The
@@ -130,7 +130,7 @@ a value this evaluation is purging can never silently drive another gate.
 lands in one or two iterations.
 
 **Stage 2 — the bridge names the answer paths destroyed.** `wipeSetFromB`
-(`model/bridge/purge.js`) runs the same evaluation, then diffs the input
+(`bridge/purge.js`) runs the same evaluation, then diffs the input
 fulfilments against the converged output:
 
 ```
@@ -172,8 +172,9 @@ Gating pages is only one use of scope. The consumers all read the one
    submit gate, consulted by `submitJourney` (`engine/write.js`) and the review
    section's authored gate (`flow/flow.js`). It is true once every answer
    section is fulfilled, not applicable or optional, judged against `inScope`
-   (`flow/section-status.js`, wired through `engine/readiness-config.js`).
-3. **Status** — `statusOfFromB` (`model/bridge/status.js`), reached through
+   (`flow/section-status.js`, the static default held by
+   `engine/readiness-config.js`).
+3. **Status** — `statusOfFromB` (`bridge/status.js`), reached through
    `rowStatus` (`flow/task-rows.js`), filters an obligation's instances to
    those in scope; none in scope means Not applicable.
 4. **Navigation** — derived gates (`flow/gates.js`) pass when some collected

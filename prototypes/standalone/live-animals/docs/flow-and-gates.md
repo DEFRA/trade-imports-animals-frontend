@@ -41,7 +41,7 @@ Deriving both the gate and the status from one source makes an invariant hold by
 
 > Absent prerequisites, a derived gate passes exactly when the section's status is not Not applicable.
 
-If a gate hard-coded `inScope.has('<key>')` and that string diverged from the model, you would get a ghost Not applicable row on the hub, or a section that could never unlock. `flow/gates.test.js` pins the equivalence exhaustively — it checks it for a derived section's gate across every enumerable scope state (`analysis/reachability.js`), holding prerequisites satisfied so the clause under test is isolated.
+If a gate hard-coded `inScope.has('<key>')` and that string diverged from the model, you would get a ghost Not applicable row on the hub, or a section that could never unlock. `flow/gates.test.js` pins the equivalence exhaustively — it checks it for a derived section's gate across every enumerable scope state (`analysis/flow-reachability.js`), holding prerequisites satisfied so the clause under test is isolated.
 
 ### The prerequisites clause — mandate-derived sequencing
 
@@ -66,7 +66,10 @@ The derived gate refuses to answer until `buildDispatch()` has run. `flow/gates.
 
 The reason is an ambiguity: `collectsOf(pageId)` legitimately returns `[]` for a known page that collects nothing, and its `?? []` fallback would return the same for every page if the index were simply not built yet. Unbuilt and collects-nothing are indistinguishable from the caller's side. Without the guard, a derived gate consulted before boot would silently gate every page and section out — no error, just an empty journey. So `flow/dispatch.js` tracks `isDispatchBuilt()` and `flow/gates.js` checks it before every derived answer.
 
-This mirrors the engine's `configureReadyForCheckYourAnswers` default, which throws until boot configures it — the same fail-loud stance at both ends of the boot seam (see [architecture.md](architecture.md)).
+Readiness has no corresponding boot requirement:
+`engine/readiness-config.js` statically defaults to the real
+`flow/section-status.js` roll-up. `configureReadyForCheckYourAnswers` is a test
+override.
 
 ## The dispatch seam
 
@@ -76,7 +79,7 @@ This mirrors the engine's `configureReadyForCheckYourAnswers` default, which thr
 
 1. **Ids are path-safe.** An obligation id becomes both a store key and a segment of a dotted template address, so it must not contain `.`, `[` or `]` (`ID_UNSAFE`). A metacharacter would make addresses ambiguous — `commodityLines.commoditySelection` could not be told from a single stray-dotted id. Boot throws on the first unsafe id.
 2. **No obligation has two owners.** Two pages declaring the same obligation throw at boot. See [one obligation, one page](#one-obligation-one-page) for why.
-3. **Every obligation has one owner.** Coverage walks `walkObligations()` — every non-system obligation at every depth of the tree — and asserts each resolves to an owning page. System-populated obligations (`SYSTEM_POPULATED` = `poApprovedReferenceNumber`, `responsiblePersonForLoad`, `commodityType`) are exempt. A forgotten `collects` is a startup crash, not a silent runtime hole.
+3. **Every obligation has one owner.** Coverage walks `walkObligations()` — every non-system obligation at every depth of the tree — and asserts each resolves to an owning page. Only `poApprovedReferenceNumber` and `responsiblePersonForLoad` are exempt through `SYSTEM_POPULATED`. `commodityType` is covered through its `commodityLines` ancestor and stored by the commodity search with the rest of each selected line. A forgotten `collects` is a startup crash, not a silent runtime hole.
 
 After a successful build, three lookups are live: `pageOfObligation(id)`, `collectsOf(pageId)` and `slugOfPage(pageId)`.
 
@@ -134,7 +137,12 @@ Precedence: **hub exit > change context > run sequence > `nextInSection`**. `kit
 - `sectionObligationIds(section)` / `sectionStatus(section, answers, inScope)` — the section-shaped equivalents, consumed by the review row, `analysis/simulate.js` and `dump.js`.
 - `readyForCheckYourAnswers(answers, inScope)` (`flow/section-status.js`) — the submit-readiness gate: true once every task row is Fulfilled, Not applicable or Optional. Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
 
-The dependency direction is one-way: flow calls the engine's `statusOfFromB` downward, never the reverse. The engine still needs submit-readiness inside `makeScope`, so boot hands `readyForCheckYourAnswers` down into `engine/read.js` via `configureReadyForCheckYourAnswers` (`routes.js`). The engine keeps zero `flow/` imports. See [architecture.md](architecture.md) for the full boot sequence and [engine.md](engine.md) for the status values themselves.
+Flow applies the bridge's `statusOfFromB` to its page groupings. The bounded
+reverse dependency is readiness: `engine/readiness-config.js` imports
+`flow/section-status.js`'s `readyForCheckYourAnswers` as its static default,
+and `bridge/scope.js` calls that adapter while building scope. The model keeps
+zero `flow/` imports. See [architecture.md](architecture.md) for the dependency
+layout and [engine.md](engine.md) for the status values themselves.
 
 ## Repeated-name dedupe footgun
 

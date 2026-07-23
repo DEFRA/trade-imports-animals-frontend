@@ -20,23 +20,20 @@ a database, or let a non-developer edit it. Growing the model means writing
 JavaScript — a new obligation object, a gate helper, a domain entry — not
 editing a config file. See [obligation-model.md](obligation-model.md).
 
-## The bridge round-trip loses data in two named places
+## The bridge preserves vocabulary, with two representation edges
 
 Controllers store answers in a nested shape and the model evaluates flat
-fulfilments; [model/bridge/fulfilments.js](../model/bridge/fulfilments.js)
-translates between them. The forward direction (answers → fulfilments, the
-evaluate path) is always exact. The reverse direction has two documented
-losses:
+fulfilments; [bridge/fulfilments.js](../bridge/fulfilments.js) translates
+between them. Values pass through unchanged except for the animal count:
 
-- **`Cat` and `Dog` collapse to `Cat`.** `COMMODITY_CODES` maps both to the
-  CN code `01061900`, so it is non-injective. `commodityCodeFor` (A → B) is
-  exact — a cats-or-dogs consignment always produces the right code and the
-  right gate decisions — but `commodityNameFor` (B → A) recovers only the
-  representative name. The wire-durable value (the CN code) is preserved
-  exactly; only the display name `Dog` degrades to `Cat` on rehydration. This
-  is deterministic, tested loss, never a silent pass.
-- **Value-less lines cannot be reconstructed.** B infers a group's instances
-  from its descendant storage, so `{ commodityLines: [] }` and
+- **Parsable animal-count strings become numbers.** The page stores
+  `numberOfAnimalsQuantity` from HTTP as a string. The bridge coerces a
+  parsable value to the number that the model's strict record-count comparison
+  expects. Rebuilding answers returns that number, not the original string.
+  Blank and unparseable strings pass through unchanged for controller-side
+  validation.
+- **Value-less lines cannot be reconstructed.** The bridge infers a group's
+  instances from its descendant storage, so `{ commodityLines: [] }` and
   `{ commodityLines: [{}] }` both translate to `{}`. An empty line leaves no
   fulfilment for the bridge to rebuild. In the live journey every line always
   carries at least a commodity selection, so this edge is not reached through
@@ -82,22 +79,19 @@ Mapper A recovery when a backend strips the extras. If the wired mapper is A,
 a submit-then-reload cannot restore the fields above. See
 [persistence.md](persistence.md).
 
-## Some values cross the bridge unmapped
+## Commodity mapping belongs to notification persistence
 
-Two fields pass through the vocabulary bridge unchanged because no gate
-reads their values:
-
-- **`species`** — stored as taxonomy ids. No gate compares species, so the
-  value is opaque to the evaluator and passes through. If a future gate ever
-  reads species, it will need a taxonomy-id ↔ species-code map that does not
-  exist today.
-- **`accompanyingDocumentType`** — stored as the notification enum codes
-  (`ITAHC`, `VETERINARY_HEALTH_CERTIFICATE`, …). Its gate is a presence
-  check, not a value check, so the code passes through and the wire needs
-  no mapping.
-
-Both are safe today; both are the first places a future value-comparing gate
-would break.
+The answer-to-fulfilment bridge does not translate commodity names or codes;
+the answers and gates use the same stored values. Commodity translation is a
+notification-mapper concern
+([services/persistence/records/notification-mapper.js](../services/persistence/records/notification-mapper.js)).
+Mapper B writes each complement's `commodityCode` with `commodityCodeFor` and,
+when a complement name is absent on recovery, resolves that code with
+`commodityNameFor`. That fallback is non-injective for `Cat` and `Dog`: both
+write `01061900`, whose reverse lookup returns `Cat`. Mapper B's normal shape
+also stores the complement name, so the fallback only applies when that name
+is absent. Mapper A stores the first commodity name at the notification's top
+level and has the separate reverse-mapping losses described above.
 
 ## No gate reads an array-valued answer
 

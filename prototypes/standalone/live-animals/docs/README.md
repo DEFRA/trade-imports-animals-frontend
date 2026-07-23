@@ -65,7 +65,7 @@ questions over that output. The model
 carries no display copy — no `label`, `title`, `hint`, `legend` or `widget` — and
 that rule is enforced at boot by `model/no-display-keys.js`.
 
-The **bridge** (`model/bridge/`) is the only door between the model and the hapi
+The **bridge** (`bridge/`) is the only door between the model and the hapi
 frontend. It converts the nested answers the controllers hold into the flat
 fulfilments the evaluator wants and back (`fulfilments.js`), and projects the
 evaluator's decisions into the `scope`, `status` and `wipe` shapes the controllers
@@ -91,7 +91,7 @@ Then pick the topic you need from the table below.
 
 | File                                                         | What it covers                                                                                                                         |
 | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [architecture.md](architecture.md)                           | The page-owned spine, the model/bridge/flow/frontend layers, the dependency direction, and how boot wires them                         |
+| [architecture.md](architecture.md)                           | The page-owned spine, the model, bridge, flow and frontend layers, the dependency direction, and how boot wires them                   |
 | [obligation-model.md](obligation-model.md)                   | Obligations as pure data: identity, `within` groups, `status`, `requires` floors, and the gate-helper families that build `applyTo`    |
 | [engine.md](engine.md)                                       | The evaluator's purge/implication pipeline and the derivation barrel pages read for status and navigation                              |
 | [scope-and-wipe.md](scope-and-wipe.md)                       | Why answering to take an obligation out of scope purges its data instead of hiding it, and how the bridge derives the wipe set         |

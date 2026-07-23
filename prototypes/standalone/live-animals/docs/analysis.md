@@ -69,13 +69,12 @@ comes from the engine the app uses; gating comes from the flow the app uses.
 There is no second copy of the rules, so the simulation cannot drift from
 runtime behaviour.
 
-One setup requirement: the simulator needs the same boot wiring as the app. Call
-`buildDispatch(dispatchPages)` and
-`configureReadyForCheckYourAnswers(readyForCheckYourAnswers)` first, exactly as
-[`routes.js`](../routes.js) does — derived gates and submit readiness both fail
-loud if you skip this. The `beforeAll` in
+One setup requirement: the simulator needs the app's dispatch index, so call
+`buildDispatch(dispatchPages)` first. Derived gates fail loud without it.
+Readiness already has the real `flow/section-status.js` function as its static
+default. The `beforeAll` in
 [`analysis/flow-reachability.test.js`](../analysis/flow-reachability.test.js)
-shows the two calls.
+also resets the test override seam to that default.
 
 ## The page-level prover: no owed obligation is a dead end
 

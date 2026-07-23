@@ -41,7 +41,7 @@ registry.
 
 `id` and `name` split two roles. `id` is the storage key and the domain
 registry key; `name` is the field vocabulary the frontend and the storage
-answers speak. The bridge layer (`model/bridge/`)
+answers speak. The bridge layer (`bridge/`)
 converts between the model's flat `fulfilments` map (keyed by `id`) and
 the frontend's nested answers (keyed by `name`).
 
@@ -109,10 +109,12 @@ Two obligations are **system-populated**: `poApprovedReferenceNumber`
 (taken from gov.identity). They are declared for completeness and carry
 `status: 'mandatory'`, but no page presents them and their value
 legality is enforced upstream, so neither carries a domain entry.
-`commodityType` rides the same coverage exemption (`SYSTEM_POPULATED` in
-`flow/obligation-source.js`): it is declared on each commodity line for
-V4 completeness, but no page presents it — the batch commodity search
-subsumes the type filter's purpose.
+
+`commodityType` is a normal collected obligation within `commodityLines`.
+The commodity search derives the stored type id from each selected species
+when it reconciles the line entries. A multi-type commodity exposes a type
+filter to narrow the species list; a single-type commodity derives its sole
+type without rendering a control.
 
 ## Scope: the gate helpers and their metadata
 

@@ -14,7 +14,7 @@ The prototype is a Hapi plugin ([`routes.js`](../routes.js) →
 - **frontend** ([`features/`](../features/), [`shared/`](../shared/),
   [`engine/`](../engine/), [`services/`](../services/)) — page-owned
   controllers, templates and the session/records/MDM plumbing.
-- **bridge** ([`model/bridge/`](../model/bridge/)) — the single door
+- **bridge** ([`bridge/`](../bridge/)) — the single door
   between the model and the frontend.
 
 The layers depend in one direction only: flow and frontend read the
@@ -119,12 +119,11 @@ Two placements follow:
   because the model never names a page. Pages declare `collects`; boot
   inverts those declarations so the hub and check-your-answers can ask
   "which page owns obligation X" without the model knowing pages exist.
-- **`readyForCheckYourAnswers` is boot-injected.** Submit readiness needs
-  the dispatch index and the section list — flow knowledge the model must
-  not import. The flow hands the function down at boot via
-  `configureReadyForCheckYourAnswers` ([`engine/read.js`](../engine/read.js));
-  the unconfigured default throws loudly rather than returning a silent
-  wrong answer.
+- **`readyForCheckYourAnswers` has a static flow default.** Submit readiness
+  needs the dispatch index and task-row list — flow knowledge the model must
+  not import. [`engine/readiness-config.js`](../engine/readiness-config.js)
+  uses `flow/section-status.js`'s roll-up by default and exposes
+  `configureReadyForCheckYourAnswers` only as a test override.
 
 ### Why
 
@@ -136,9 +135,9 @@ model for the same reason: it needs the section list.
 
 ### Accepted costs
 
-A boot-order contract: the injection and the dispatch build must run at
-plugin registration, before any request. Both seams fail loud if consulted
-early, so a violation is a startup crash, not a wrong answer.
+A boot-order contract remains for the dispatch build: it must run at plugin
+registration before any request. Derived gates fail loud if consulted before
+the index exists, so a violation is a startup crash, not a wrong answer.
 
 ---
 
@@ -263,7 +262,8 @@ registration.
 
 ### Accepted costs
 
-Model-level analysis ([`analysis/reachability.js`](../analysis/reachability.js))
+Model-level analysis
+([`model/analysis/reachability.js`](../model/analysis/reachability.js))
 can prove scope and completion-readiness but not input validity — judging
 validity would need the controllers' field maps, and exposing those to the
 model would re-couple the seams this principle separates.
@@ -279,20 +279,20 @@ The frontend stores a user's data as a nested answers POJO
 flat fulfilments map keyed by obligation id. Controllers and templates
 never touch the model's evaluator directly — they reach it through
 the bridge modules
-under [`model/bridge/`](../model/bridge/), which project the model's
+under [`bridge/`](../bridge/), which project the model's
 per-obligation output into the `scope` / `status` / `wipe` views the
 controllers consume:
 
-- [`fulfilments.js`](../model/bridge/fulfilments.js) — converts nested
-  answers ⇄ flat fulfilments, and normalises stored vocabulary to the
-  vocabulary the gates compare.
-- [`scope.js`](../model/bridge/scope.js) — `makeScopeFromB(answers)`,
+- [`fulfilments.js`](../bridge/fulfilments.js) — converts nested answers ⇄
+  flat fulfilments, passing values through unchanged except for numeric
+  animal-count coercion.
+- [`scope.js`](../bridge/scope.js) — `makeScopeFromB(answers)`,
   projecting each in-scope implication back into the answers path grammar.
-- [`status.js`](../model/bridge/status.js) — the task and section status
+- [`status.js`](../bridge/status.js) — the task and section status
   for the hub.
-- [`purge.js`](../model/bridge/purge.js) — the set of paths a scope-exit
+- [`purge.js`](../bridge/purge.js) — the set of paths a scope-exit
   destroys, feeding `engine/write.js`'s `destroyWiped`.
-- [`collection-complete.js`](../model/bridge/collection-complete.js) —
+- [`collection-complete.js`](../bridge/collection-complete.js) —
   per-instance completeness for a collection row.
 
 ### Why
@@ -306,7 +306,7 @@ without leaking positional-array knowledge into the model.
 ### Accepted costs
 
 Two representations of the same data exist at once — the frontend's nested
-store and the model's flat map — so the bridge carries the conversion and
-the vocabulary normalisation. That conversion is pure and centralised in
-[`fulfilments.js`](../model/bridge/fulfilments.js), so the cost is one
+store and the model's flat map — so the bridge carries the structural
+conversion. That conversion is pure and centralised in
+[`fulfilments.js`](../bridge/fulfilments.js), so the cost is one
 well-tested module rather than translation scattered across controllers.

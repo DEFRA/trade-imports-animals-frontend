@@ -30,7 +30,7 @@ Once the slice is registered, the model derives the rest:
   ([`flow/navigation.js`](../flow/navigation.js)) walk the `sections` array. A
   one-page section returns to the hub on save with no wiring.
 - **Status roll-up** — task and section status come from `statusOfFromB`
-  ([`model/bridge/status.js`](../model/bridge/status.js)), driven by the
+  ([`bridge/status.js`](../bridge/status.js)), driven by the
   obligations your page collects. A mandatory obligation moves the tag Not
   started → In progress → Completed on its own.
 - **Submit gating** — `readyForCheckYourAnswers`

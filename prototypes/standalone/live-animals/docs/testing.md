@@ -61,11 +61,11 @@ The obligation model is pure and synchronous, so it is proven entirely in unit t
 - **Analysis** — `model/analysis/reachability.test.js` and `coverage.test.js` pin the obligation-dependency reachability prover and its witness synthesis.
 - **No display copy** — `model/no-display-keys.test.js` pins the rule that no obligation or domain entry carries a display key (`label`, `title`, `titleKey`, `hint`, `legend`, `widget`). `obligation-purity.test.js` runs the same assertion the server runs at boot.
 
-### Bridge tier (`model/bridge/**`)
+### Bridge tier (`bridge/**`)
 
 The bridge is the only door between the model and the hapi frontend. Its four specs pin the projections the controllers and templates depend on:
 
-- `fulfilments.test.js` — nested answers ⇄ flat fulfilments, composite-key ↔ positional-path conversion, and the A↔B vocabulary normalisation.
+- `fulfilments.test.js` — nested answers ⇄ flat fulfilments, composite-key ↔ positional-path conversion, value pass-through and animal-count coercion.
 - `scope.test.js` — the in-scope path-key set the controllers read.
 - `status.test.js` — the five status constants (`NA`, `NOT_STARTED`, `IN_PROGRESS`, `FULFILLED`, `OPTIONAL`) and the completeness projection.
 - `collection-complete.test.js` — per-instance completeness for the collection views.
@@ -121,7 +121,6 @@ The server boots the journey in `routes.js` by running, in order:
 ```
 assertObligationPurity()
 buildDispatch(dispatchPages)
-configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
 configureRecords(records)
 configureSession(session)
 registerJourneyCookie(server)
@@ -134,15 +133,21 @@ beforeAll(() => {
   configureRecords(recordsStub)
   configureSession(sessionStub)
   buildDispatch(dispatchPages)
-  configureReadyForCheckYourAnswers(readyForCheckYourAnswers)
 })
 ```
 
-If you skip these, the engine throws — deliberately:
+Readiness needs no boot setup:
+`engine/readiness-config.js` statically uses
+`flow/section-status.js`'s `readyForCheckYourAnswers`. Tests can call
+`configureReadyForCheckYourAnswers` when they need to override that result.
 
-- every scope build computes `readyForCheckYourAnswers`, and the unconfigured default in `engine/read.js` throws rather than return a silent wrong answer.
-- derived gates and section status read the dispatch index, and `flow/gates.js` refuses to answer before `buildDispatch()` has run, because an empty index would silently gate every page out.
-- the store reads and writes through the records and session ports, so a handler-driving spec must configure both to the stubs.
+The remaining setup is load-bearing:
+
+- derived gates and section status read the dispatch index, and
+  `flow/gates.js` refuses to answer before `buildDispatch()` has run because an
+  empty index would silently gate every page out.
+- the store reads and writes through the records and session ports, so a
+  handler-driving spec must configure both to the stubs.
 
 See `contract.test.js` for the pattern in use, and [architecture.md](architecture.md) for why these seams exist.
 
