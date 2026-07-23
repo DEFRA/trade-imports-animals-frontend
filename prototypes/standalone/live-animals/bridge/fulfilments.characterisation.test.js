@@ -11,7 +11,8 @@ import {
 } from '../model/obligations/obligations.js'
 import {
   answersToNotification,
-  answersToTargetNotification
+  answersToTargetNotification,
+  answersToTargetNotificationOracle
 } from '../services/persistence/records/notification-mapper.js'
 
 const oracles = JSON.parse(
@@ -21,6 +22,26 @@ const oracles = JSON.parse(
 )
 
 const evaluator = createObligationEvaluator({ obligations })
+
+const legacyTargetAnswersFrom = (fulfilments, referenceNumber) => {
+  const answers = projectAnswers(fulfilments)
+  return {
+    ...answers,
+    referenceNumber,
+    ...(Array.isArray(answers.commodityLines)
+      ? {
+          commodityLines: answers.commodityLines.map((line) => ({
+            ...line,
+            ...(typeof line.numberOfAnimalsQuantity === 'number'
+              ? {
+                  numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity)
+                }
+              : {})
+          }))
+        }
+      : {})
+  }
+}
 
 describe('increment 0 golden boundary characterisation', () => {
   test.each(characterisationCorpus)(
@@ -40,7 +61,14 @@ describe('increment 0 golden boundary characterisation', () => {
 
       expect(projectAnswers(fulfilments)).toEqual(oracle.answersFromFulfilments)
       expect(answersToNotification(answers)).toEqual(oracle.mapperA)
-      expect(answersToTargetNotification(answers)).toEqual(oracle.mapperB)
+      expect(
+        answersToTargetNotificationOracle(
+          legacyTargetAnswersFrom(fulfilments, answers.referenceNumber)
+        )
+      ).toEqual(oracle.mapperB)
+      expect(
+        answersToTargetNotification(fulfilments, answers.referenceNumber)
+      ).toEqual(oracle.mapperB)
     }
   )
 

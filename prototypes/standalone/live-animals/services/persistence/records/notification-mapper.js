@@ -8,10 +8,10 @@
 // answersToNotification direction remains as the golden parity oracle.
 //
 // Mapper B (answersToTargetNotification / targetNotificationToAnswers) is Mapper
-// A plus the extra fields — a lossless round-trip demonstrator over every
-// captured obligation, including the per-species commodity lines. It reuses
-// Mapper A's builders and layers the extras on top; it is not wired to the real
-// POST beyond the storable set.
+// A plus the durable extra fields, including the per-species commodity lines.
+// It reads the same canonical fulfilment snapshot as Mapper A and layers its
+// extras over Mapper A's base. The old answers-based direction remains as the
+// golden parity oracle.
 
 import {
   speciesLabel,
@@ -22,6 +22,10 @@ import {
 } from '../../commodities/index.js'
 import { readFulfilment } from '../../../bridge/read-fulfilment.js'
 import {
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentDateOfIssue,
+  accompanyingDocumentReference,
+  accompanyingDocumentType,
   animalsCertifiedFor,
   arrivalDateAtPort,
   commercialTransporter,
@@ -35,11 +39,15 @@ import {
   countryOfOrigin,
   cph,
   description,
+  documentFilename,
+  documentUploadId,
+  documents,
   earTag,
   horseName,
   identificationDetails,
   importer,
   internalReferenceNumber,
+  meansOfTransport,
   numberOfAnimals,
   numberOfPackages,
   passport,
@@ -48,10 +56,16 @@ import {
   placeOfOrigin,
   portOfEntry,
   privateTransporter,
+  purposeInInternalMarket,
   reasonForImport,
+  regionCode,
   regionCodeRequirement,
+  responsiblePersonForLoad,
   species,
   tattoo,
+  transitedCountries,
+  transportDocumentReference,
+  transportIdentification,
   transporterType,
   unitRecord
 } from '../../../model/obligations/obligations.js'
@@ -358,9 +372,7 @@ const transportFromFulfilment = (reader) =>
     })
   )
 
-// Mapper A's production entry point: canonical UUID map + envelope id.
-export const fulfilmentToNotification = (fulfilment = {}, referenceNumber) => {
-  const reader = readFulfilment(fulfilment)
+const notificationFromFulfilment = (reader, referenceNumber, lines) => {
   const notification = {
     ...directFieldsFromFulfilment(reader, referenceNumber)
   }
@@ -374,10 +386,17 @@ export const fulfilmentToNotification = (fulfilment = {}, referenceNumber) => {
   const transport = transportFromFulfilment(reader)
   if (transport) notification.transport = transport
 
-  const commodity = commodityFromLinesA(commodityLinesFromFulfilment(reader))
+  const commodity = commodityFromLinesA(lines)
   if (commodity) notification.commodity = commodity
 
   return notification
+}
+
+// Mapper A's production entry point: canonical UUID map + envelope id.
+export const fulfilmentToNotification = (fulfilment = {}, referenceNumber) => {
+  const reader = readFulfilment(fulfilment)
+  const lines = commodityLinesFromFulfilment(reader)
+  return notificationFromFulfilment(reader, referenceNumber, lines)
 }
 
 // Answers-based Mapper A is retained as the parity oracle while the canonical
@@ -589,6 +608,40 @@ const targetDocuments = (documents) => {
   )
 }
 
+const documentObligations = [
+  accompanyingDocumentType,
+  accompanyingDocumentAttachmentType,
+  accompanyingDocumentReference,
+  accompanyingDocumentDateOfIssue
+]
+const documentInstanceObligations = [
+  ...documentObligations,
+  documentUploadId,
+  documentFilename
+]
+
+const targetDocumentsFromFulfilment = (reader) => {
+  const recordsByObligation = new Map(
+    documentObligations.map((obligation) => [
+      obligation,
+      reader.records(obligation)
+    ])
+  )
+  const valueAt = (obligation, id) => recordsByObligation.get(obligation)[id]
+  // Upload metadata establishes the canonical document record but is not
+  // projected into Mapper B's proposed-notification document shape.
+  const ids = reader.instanceIds(documents, documentInstanceObligations)
+  if (ids.length === 0) return undefined
+  return ids.map((id) =>
+    compact({
+      documentType: valueAt(accompanyingDocumentType, id),
+      attachmentType: valueAt(accompanyingDocumentAttachmentType, id),
+      reference: valueAt(accompanyingDocumentReference, id),
+      dateOfIssue: valueAt(accompanyingDocumentDateOfIssue, id)
+    })
+  )
+}
+
 const documentsFromTarget = (documents) => {
   if (!Array.isArray(documents)) return undefined
   return documents.map((doc) =>
@@ -618,7 +671,10 @@ const transportWithExtras = (notification, answers) => {
     : notification.transport
 }
 
-export const answersToTargetNotification = (answers = {}) => {
+// Answers-based Mapper B is retained solely as the pre-increment-7 golden
+// oracle. It intentionally includes declaration so tests can pin that its
+// removal is the only projection change.
+export const answersToTargetNotificationOracle = (answers = {}) => {
   const notification = answersToNotification(answers)
 
   if (answers.responsiblePersonForLoad !== undefined) {
@@ -646,11 +702,60 @@ export const answersToTargetNotification = (answers = {}) => {
   return notification
 }
 
+// Mapper B's production entry point: canonical UUID map + envelope id. The
+// line/unit projection is constructed once and shared by Mapper A's base and
+// Mapper B's enriched commodity projection.
+export const answersToTargetNotification = (
+  fulfilment = {},
+  referenceNumber
+) => {
+  const reader = readFulfilment(fulfilment)
+  const lines = commodityLinesFromFulfilment(reader)
+  const notification = notificationFromFulfilment(
+    reader,
+    referenceNumber,
+    lines
+  )
+
+  const responsiblePerson = reader.scalar(responsiblePersonForLoad)
+  if (responsiblePerson !== undefined) {
+    notification.responsiblePersonForLoad = responsiblePerson
+  }
+
+  const purpose = reader.scalar(purposeInInternalMarket)
+  if (purpose !== undefined) notification.purpose = purpose
+
+  const region = reader.scalar(regionCode)
+  if (region !== undefined) {
+    notification.origin = { ...notification.origin, regionCode: region }
+  }
+
+  const transportExtras = compact({
+    meansOfTransport: reader.scalar(meansOfTransport),
+    transportIdentification: reader.scalar(transportIdentification),
+    transportDocumentReference: reader.scalar(transportDocumentReference),
+    transitedCountries: reader.scalar(transitedCountries)
+  })
+  if (Object.keys(transportExtras).length > 0) {
+    notification.transport = {
+      ...notification.transport,
+      ...transportExtras
+    }
+  }
+
+  const commodity = targetCommodityFromLines(lines)
+  if (commodity) notification.commodity = commodity
+
+  const targetDocumentEntries = targetDocumentsFromFulfilment(reader)
+  if (targetDocumentEntries) notification.documents = targetDocumentEntries
+
+  return notification
+}
+
 const directTargetAnswersFrom = (notification) =>
   compact({
     responsiblePersonForLoad: notification.responsiblePersonForLoad,
     purposeInInternalMarket: notification.purpose,
-    declaration: notification.declaration,
     regionOfOriginCode: notification.origin?.regionCode
   })
 

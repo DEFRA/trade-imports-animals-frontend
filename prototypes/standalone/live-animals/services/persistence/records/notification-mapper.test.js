@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import { characterisationCorpus } from '../../../bridge/fixtures/characterisation-corpus.js'
+import { projectAnswers } from '../../../bridge/fulfilments.js'
 import {
   answersToNotification,
   fulfilmentToNotification,
   notificationToAnswers,
   answersToTargetNotification,
+  answersToTargetNotificationOracle,
   targetNotificationToAnswers
 } from './notification-mapper.js'
 
@@ -20,6 +22,32 @@ const currentNotificationFrom = (answers) =>
     assembleFulfilments(answers),
     answers.referenceNumber ?? referenceNumber
   )
+const targetNotificationFrom = (answers) =>
+  answersToTargetNotification(
+    assembleFulfilments(answers),
+    answers.referenceNumber
+  )
+const withoutDeclaration = ({ declaration: _declaration, ...notification }) =>
+  notification
+const legacyTargetAnswersFrom = (fulfilment, referenceNumber) => {
+  const answers = projectAnswers(fulfilment)
+  return {
+    ...answers,
+    referenceNumber,
+    ...(Array.isArray(answers.commodityLines)
+      ? {
+          commodityLines: answers.commodityLines.map((line) => ({
+            ...line,
+            ...(typeof line.numberOfAnimalsQuantity === 'number'
+              ? {
+                  numberOfAnimalsQuantity: String(line.numberOfAnimalsQuantity)
+                }
+              : {})
+          }))
+        }
+      : {})
+  }
+}
 
 // Answers carrying only the obligations Mapper A maps to the current backend
 // notification. One commodity line = one species, with one animal
@@ -551,20 +579,55 @@ test('Mapper A should deep- and byte-equal its oracle for the all-obligations fi
 })
 
 describe('Mapper B — proposed target notification (superset, lossless)', () => {
-  test('Should round-trip every captured obligation losslessly, including multi-commodity per-species lines', () => {
+  test.each(characterisationCorpus)(
+    'Should deep- and byte-equal the legacy runtime oracle for $name',
+    ({ answers }) => {
+      const fulfilment = assembleFulfilments(answers)
+      const expected = answersToTargetNotificationOracle(
+        legacyTargetAnswersFrom(fulfilment, answers.referenceNumber)
+      )
+      const actual = answersToTargetNotification(
+        fulfilment,
+        answers.referenceNumber
+      )
+
+      expect(actual).toEqual(expected)
+      expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
+      expect(actual).not.toHaveProperty('declaration')
+    }
+  )
+
+  test('Should deep- and byte-equal the old all-obligations Mapper B except declaration', () => {
     const answers = allAnswers()
+    const expected = withoutDeclaration(
+      answersToTargetNotificationOracle(answers)
+    )
+    const actual = targetNotificationFrom(answers)
+
+    expect(actual).toEqual(expected)
+    expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
+    expect(answersToTargetNotificationOracle(answers)).toHaveProperty(
+      'declaration',
+      ['confirmed']
+    )
+    expect(actual).not.toHaveProperty('declaration')
+  })
+
+  test('Should round-trip every durable captured obligation, including multi-commodity per-species lines', () => {
+    const answers = allAnswers()
+    const { declaration: _declaration, ...durableAnswers } = answers
     expect(
-      targetNotificationToAnswers(answersToTargetNotification(answers))
-    ).toEqual(answers)
+      targetNotificationToAnswers(targetNotificationFrom(answers))
+    ).toEqual(durableAnswers)
   })
 
   test('Should give every gap obligation a typed home in the target notification', () => {
-    const notification = answersToTargetNotification(allAnswers())
+    const notification = targetNotificationFrom(allAnswers())
 
     expect(notification.origin.regionCode).toBe('FR-75')
     expect(notification.purpose).toBe('Breeding')
     expect(notification.responsiblePersonForLoad).toBeDefined()
-    expect(notification.declaration).toEqual(['confirmed'])
+    expect(notification).not.toHaveProperty('declaration')
     expect(notification.transport).toMatchObject({
       transporter: {
         name: 'Transporter Co',
@@ -586,8 +649,34 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
     })
   })
 
+  test('Should keep upload id and filename out of typed document entries', () => {
+    const { answers } = characterisationCorpus.find(
+      ({ name }) => name === 'comprehensive'
+    )
+    const notification = targetNotificationFrom(answers)
+
+    expect(notification.documents).toHaveLength(2)
+    for (const document of notification.documents) {
+      expect(document).not.toHaveProperty('uploadId')
+      expect(document).not.toHaveProperty('filename')
+    }
+  })
+
+  test('Should retain an upload-only document record without projecting its upload metadata', () => {
+    const notification = targetNotificationFrom({
+      documents: [
+        {
+          uploadId: 'upload-only',
+          filename: 'upload-only.pdf'
+        }
+      ]
+    })
+
+    expect(notification.documents).toEqual([{}])
+  })
+
   test('Should keep every group commodity identity and the full per-species identifier records', () => {
-    const notification = answersToTargetNotification(allAnswers())
+    const notification = targetNotificationFrom(allAnswers())
     const complements = notification.commodity.commodityComplement
 
     expect(complements).toHaveLength(2)
@@ -613,7 +702,7 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
   })
 
   test('Should carry the storable species fields Mapper A does (counts + earTag/passport)', () => {
-    const notification = answersToTargetNotification(mappedAnswers())
+    const notification = targetNotificationFrom(mappedAnswers())
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
       value: '1148346',
       text: 'Bos taurus',
@@ -627,8 +716,15 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
 
   test('Should be a superset of Mapper A — B contains every field A produces, plus extras', () => {
     const answers = allAnswers()
-    const mapperANotification = answersToNotification(answers)
-    const mapperBNotification = answersToTargetNotification(answers)
+    const fulfilment = assembleFulfilments(answers)
+    const mapperANotification = fulfilmentToNotification(
+      fulfilment,
+      answers.referenceNumber
+    )
+    const mapperBNotification = answersToTargetNotification(
+      fulfilment,
+      answers.referenceNumber
+    )
 
     expect(mapperBNotification).toMatchObject(mapperANotification)
     // ...plus the extras A has no home for.
@@ -647,7 +743,7 @@ describe('Mapper B — proposed target notification (superset, lossless)', () =>
         address: { addressLine1: '9 Private Road' }
       }
     }
-    const notification = answersToTargetNotification(answers)
+    const notification = targetNotificationFrom(answers)
     expect(notification.transport.transporter).toEqual({
       name: 'Jane Private',
       address: { addressLine1: '9 Private Road' },
@@ -748,14 +844,14 @@ describe('Mapper B storable superset — survives the real backend field set', (
   test('Should round-trip every storable answer through the backend-kept fields', () => {
     const answers = storableAnswers()
     const recovered = targetNotificationToAnswers(
-      storableSubset(answersToTargetNotification(answers))
+      storableSubset(targetNotificationFrom(answers))
     )
     expect(recovered).toEqual(answers)
   })
 
   test('Should recover earTag and passport from species when the extra identifiers are dropped', () => {
     const recovered = targetNotificationToAnswers(
-      storableSubset(answersToTargetNotification(storableAnswers()))
+      storableSubset(targetNotificationFrom(storableAnswers()))
     )
     expect(recovered.commodityLines[0].animalIdentifiers).toEqual([
       {
@@ -767,7 +863,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
 
   test('Should restore the commercial transporter object and its type from the single Transporter', () => {
     const recovered = targetNotificationToAnswers(
-      storableSubset(answersToTargetNotification(storableAnswers()))
+      storableSubset(targetNotificationFrom(storableAnswers()))
     )
     expect(recovered.transporterType).toBe('Commercial')
     expect(recovered.commercialTransporter).toEqual({
@@ -806,7 +902,7 @@ describe('Mapper B storable superset — survives the real backend field set', (
       ]
     }
     const recovered = targetNotificationToAnswers(
-      storableSubset(answersToTargetNotification(answers))
+      storableSubset(targetNotificationFrom(answers))
     )
 
     for (const key of [

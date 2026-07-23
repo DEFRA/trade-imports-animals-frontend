@@ -1162,7 +1162,6 @@
         "responsiblePersonEmail": "auth@example.com"
       },
       "purpose": "breeding",
-      "declaration": ["confirmed"],
       "documents": [
         {
           "documentType": "ITAHC",
@@ -1725,9 +1724,7 @@
     },
     "answersFromFulfilments": {},
     "mapperA": {},
-    "mapperB": {
-      "documents": [{}]
-    }
+    "mapperB": {}
   },
   "gate-open": {
     "fulfilments": {
