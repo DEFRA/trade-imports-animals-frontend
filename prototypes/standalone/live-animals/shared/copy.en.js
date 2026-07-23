@@ -17,7 +17,7 @@ export const copy = {
     back: 'Back',
     breadcrumbs: {
       prototypes: 'Prototypes',
-      spikeHome: 'Obligations v2 (standalone)'
+      serviceHome: 'Import notifications (standalone)'
     },
     footer: {
       privacy: 'Privacy',

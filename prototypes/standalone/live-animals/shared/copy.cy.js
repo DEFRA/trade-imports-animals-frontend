@@ -10,7 +10,7 @@ export const copy = {
     back: 'Yn ôl',
     breadcrumbs: {
       prototypes: 'Prototeipiau',
-      spikeHome: 'Rhwymedigaethau v2 (annibynnol)'
+      serviceHome: 'Hysbysiadau mewnforio (annibynnol)'
     },
     footer: {
       privacy: 'Preifatrwydd',

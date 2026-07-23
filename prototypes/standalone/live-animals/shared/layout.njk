@@ -6,7 +6,7 @@
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 
-{% set spikeHome = "/prototype-standalone/live-animals" %}
+{% set homeUrl = "/prototype-standalone/live-animals" %}
 
 {% block head %}
   <meta name="csrf-token" content="{{ crumb }}">
@@ -26,7 +26,7 @@
 {% block govukServiceNavigation %}
   {{ govukServiceNavigation({
     serviceName: sharedCopy.layout.serviceName,
-    serviceUrl: spikeHome
+    serviceUrl: homeUrl
   }) }}
 {% endblock %}
 
@@ -39,7 +39,7 @@
     {{ govukBreadcrumbs({
       items: breadcrumbs if breadcrumbs else [
         { text: sharedCopy.layout.breadcrumbs.prototypes, href: "/prototype-standalone" },
-        { text: sharedCopy.layout.breadcrumbs.spikeHome, href: spikeHome },
+        { text: sharedCopy.layout.breadcrumbs.serviceHome, href: homeUrl },
         { text: pageTitle }
       ]
     }) }}
