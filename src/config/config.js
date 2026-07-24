@@ -340,6 +340,43 @@ export const config = convict({
       default: 'http://localhost:8086',
       env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
     }
+  },
+  // EUDPA-106 spike: frontend-side cdp-uploader integration for the direct
+  // browser → /upload-and-scan → cdp-uploader flow. Backend today owns
+  // /initiate; the spike moves it to the frontend so the byte upload never
+  // touches the app.
+  cdpUploader: {
+    baseUrl: {
+      doc: 'CDP Uploader service base URL (server-side calls, e.g. /initiate)',
+      format: String,
+      default: 'http://localhost:7337',
+      env: 'CDP_UPLOADER_BASE_URL'
+    },
+    documentsBucket: {
+      doc: 'S3 bucket cdp-uploader delivers scanned documents to',
+      format: String,
+      default: 'trade-imports-animals-documents',
+      env: 'CDP_UPLOADER_DOCUMENTS_BUCKET'
+    },
+    maxFileSize: {
+      doc: 'Per-upload maximum file size in bytes',
+      format: Number,
+      default: 52428800,
+      env: 'CDP_UPLOADER_MAX_FILE_SIZE'
+    },
+    mimeTypes: {
+      doc: 'Comma-separated allowed MIME types for the upload',
+      format: String,
+      default:
+        'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      env: 'CDP_UPLOADER_MIME_TYPES'
+    },
+    redirectPath: {
+      doc: 'Relative path cdp-uploader 302s to after receiving the file',
+      format: String,
+      default: '/accompanying-documents/upload-successful',
+      env: 'CDP_UPLOADER_REDIRECT_PATH'
+    }
   }
 })
 
