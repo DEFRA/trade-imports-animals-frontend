@@ -26,6 +26,6 @@ export const copy = {
     internalReferenceMaxLength:
       "Rhaid i'r cyfeirnod mewnol fod yn 58 nod neu lai",
     internalReferencePattern:
-      "Rhaid i'r cyfeirnod mewnol gynnwys llythrennau a rhifau yn unig"
+      "Rhaid i'r cyfeirnod mewnol gynnwys llythrennau, rhifau a thanlinellau yn unig"
   }
 }

@@ -24,6 +24,6 @@ export const copy = {
     internalReferenceMaxLength:
       'Internal reference must be 58 characters or less',
     internalReferencePattern:
-      'Internal reference must only contain letters and numbers'
+      'Internal reference must only contain letters, numbers and underscores'
   }
 }

@@ -52,14 +52,15 @@ describe('POST /origin — invalid payload', () => {
       message: 'Select the country where the animal originates from'
     },
     {
-      name: 'non-alphanumeric internalReferenceNumber',
+      name: 'invalid-character internalReferenceNumber',
       payload: {
         countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'no',
         internalReferenceNumber: 'bad ref!'
       },
       field: 'internalReferenceNumber',
-      message: 'Internal reference must only contain letters and numbers'
+      message:
+        'Internal reference must only contain letters, numbers and underscores'
     }
   ]
 
@@ -72,6 +73,28 @@ describe('POST /origin — invalid payload', () => {
       expect(result.after).toEqual(result.before)
     }
   )
+})
+
+describe('POST /origin — valid internal reference', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should accept and save an internal reference containing an underscore', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: 'Imports456_GB'
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.internalReferenceNumber).toBe('Imports456_GB')
+  })
 })
 
 describe('GET /origin — server-rendered select data (no-JS path)', () => {

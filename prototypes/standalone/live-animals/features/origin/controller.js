@@ -77,7 +77,7 @@ const fields = () =>
     ),
     pattern(
       'internalReferenceNumber',
-      /^[a-zA-Z0-9]*$/,
+      /^[a-zA-Z0-9_]*$/,
       copy.errors.internalReferencePattern
     )
   )
